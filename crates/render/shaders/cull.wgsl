@@ -12,7 +12,7 @@ struct Params {
 struct Item {
     // world bounding sphere
     sphere: vec4f,
-    // model, casts shadow, 0, 0
+    // model, casts shadow, hidden, 0
     info: vec4u,
 }
 
@@ -51,6 +51,9 @@ fn cull(@builtin(global_invocation_id) id: vec3u) {
         return;
     }
     let item = items[index];
+    if (item.info.z != 0u) {
+        return;
+    }
     let model = item.info.x;
     for (var view = 0u; view < 2u; view++) {
         if (view == 1u && item.info.y == 0u) {

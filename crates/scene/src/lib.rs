@@ -215,6 +215,7 @@ pub fn build(
             statics: instances,
             glows: look.glows.by_model(&content)?,
             point_lights: lights,
+            actor_models: Vec::new(),
         },
         hour,
         size: map.size,

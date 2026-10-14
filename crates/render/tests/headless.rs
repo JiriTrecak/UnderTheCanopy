@@ -283,6 +283,7 @@ fn a_tiny_world_renders_without_holes() {
         }],
         glows: Default::default(),
         point_lights: Vec::new(),
+        actor_models: Vec::new(),
     };
     renderer.load_world(&gpu, &pack, &world).unwrap();
     let mut camera = RtsCamera::new([0.0, 0.0], None);
@@ -306,7 +307,7 @@ fn a_tiny_world_renders_without_holes() {
         image::save_buffer(out, &pixels, width, height, image::ExtendedColorType::Rgba8).unwrap();
     }
 
-    assert_eq!(report.passes, ["cull", "shadow", "forward", "post"]);
+    assert_eq!(report.passes, ["cull", "skin", "shadow", "forward", "post"]);
     assert!(report.draws >= 4, "{report:?}");
     assert!(report.terrain_chunks == 1);
     let texels: Vec<[u8; 4]> = pixels

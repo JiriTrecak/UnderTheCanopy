@@ -11,12 +11,12 @@
 use crate::{
     camera::frustum_planes,
     device::GpuFeatures,
+    material::{GpuMaterial, Textures, Variant},
     targets::{self, HDR_FORMAT},
-    texture,
 };
 use anyhow::{Context, Result};
 use bytemuck::{Pod, Zeroable};
-use canopy_assets::{AlphaMode, IndexFormat, Material, ModelMeta, Pack, VertexColor};
+use canopy_assets::{IndexFormat, ModelMeta, Pack};
 use glam::{Mat4, Vec3, Vec4};
 use std::collections::{BTreeMap, HashMap};
 use wgpu::util::DeviceExt;
@@ -57,30 +57,6 @@ const MODEL_STRIDE: u64 = 256;
 /// Shorter instances cast no shadow (old `SHADOW_MIN_HEIGHT`).
 pub const SHADOW_MIN_HEIGHT: f32 = 0.75;
 
-const FLAG_TEAM: u32 = 1;
-const FLAG_TEAM_MASK: u32 = 2;
-const FLAG_FOLIAGE: u32 = 4;
-const FLAG_DOUBLE_SIDED: u32 = 8;
-const FLAG_NORMAL_MAP: u32 = 16;
-const FLAG_OCCLUSION_MAP: u32 = 32;
-const FLAG_PAINTED: u32 = 64;
-const FLAG_ALPHA_MASK: u32 = 128;
-const FLAG_ALPHA_BLEND: u32 = 256;
-
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Pod, Zeroable)]
-struct MaterialUniform {
-    base_color: [f32; 4],
-    emissive: [f32; 4],
-    params: [f32; 4],
-    light: [f32; 4],
-    team_default: [f32; 4],
-    flags: [u32; 4],
-    glow: [f32; 4],
-    glow_terms: [[f32; 4]; 3],
-    glow_to: [f32; 4],
-}
-
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
 struct ModelUniform {
@@ -111,36 +87,12 @@ struct CullParams {
     counts: [u32; 4],
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-enum Variant {
-    Opaque { double_sided: bool },
-    Mask { double_sided: bool },
-    Blend { double_sided: bool },
-}
-
-impl Variant {
-    fn of(material: &Material) -> Self {
-        let double_sided = material.double_sided;
-        match material.alpha {
-            AlphaMode::Opaque => Self::Opaque { double_sided },
-            AlphaMode::Mask => Self::Mask { double_sided },
-            AlphaMode::Blend => Self::Blend { double_sided },
-        }
-    }
-}
-
 /// One indirect draw.
 struct DrawRecord {
     model: usize,
     /// Section index, or `None` for the depth stream.
     section: Option<usize>,
     args: usize,
-}
-
-struct GpuMaterial {
-    bind_group: wgpu::BindGroup,
-    variant: Variant,
-    casts_shadow: bool,
 }
 
 struct GpuModel {
@@ -187,6 +139,10 @@ pub struct StaticsGpu {
     args: wgpu::Buffer,
     items: u32,
     draws: u32,
+    /// Cull items (one per instance, in model order) and each input instance's item.
+    item_buffer: wgpu::Buffer,
+    item_info: Vec<[u32; 4]>,
+    slot_of: Vec<u32>,
     /// Bytes of GPU memory (buffers and textures).
     pub bytes: u64,
     pub stats: StaticsStats,
@@ -224,40 +180,6 @@ pub fn sphere_visible(planes: &[Vec4; 6], sphere: Vec4) -> bool {
         .all(|p| p.truncate().dot(sphere.truncate()) + p.w >= -sphere.w)
 }
 
-struct Textures<'a> {
-    device: &'a wgpu::Device,
-    queue: &'a wgpu::Queue,
-    features: GpuFeatures,
-    pack: &'a Pack,
-    cache: HashMap<String, wgpu::TextureView>,
-    white_srgb: wgpu::TextureView,
-    white: wgpu::TextureView,
-    white_r8: wgpu::TextureView,
-    flat_normal: wgpu::TextureView,
-    bytes: u64,
-}
-
-impl Textures<'_> {
-    fn get(
-        &mut self,
-        name: Option<&str>,
-        fallback: &wgpu::TextureView,
-    ) -> Result<wgpu::TextureView> {
-        let Some(name) = name else {
-            return Ok(fallback.clone());
-        };
-        if let Some(view) = self.cache.get(name) {
-            return Ok(view.clone());
-        }
-        let tex = self.pack.texture(name).with_context(|| name.to_owned())?;
-        self.bytes += tex.meta.mips.iter().map(|m| u64::from(m.len)).sum::<u64>();
-        let gpu = texture::upload(self.device, self.queue, self.features, &tex);
-        let view = gpu.create_view(&Default::default());
-        self.cache.insert(name.to_owned(), view.clone());
-        Ok(view)
-    }
-}
-
 impl StaticsGpu {
     pub fn new(
         device: &wgpu::Device,
@@ -269,78 +191,17 @@ impl StaticsGpu {
         frame_layout: &wgpu::BindGroupLayout,
     ) -> Result<Self> {
         let _span = tracing::info_span!("statics_upload").entered();
-        let mut by_model: BTreeMap<&str, Vec<&StaticInstance>> = BTreeMap::new();
-        for instance in instances {
-            by_model.entry(&instance.model).or_default().push(instance);
+        // Instances by model, each with its input index (for `set_hidden`).
+        let mut by_model: BTreeMap<&str, Vec<(usize, &StaticInstance)>> = BTreeMap::new();
+        for (input, instance) in instances.iter().enumerate() {
+            by_model
+                .entry(&instance.model)
+                .or_default()
+                .push((input, instance));
         }
-        let solid = |label, format, rgba| {
-            texture::solid(device, queue, label, format, rgba).create_view(&Default::default())
-        };
-        let mut textures = Textures {
-            device,
-            queue,
-            features,
-            pack,
-            cache: HashMap::new(),
-            white_srgb: solid("white", wgpu::TextureFormat::Rgba8UnormSrgb, [255; 4]),
-            white: solid("white linear", wgpu::TextureFormat::Rgba8Unorm, [255; 4]),
-            white_r8: solid("white mask", wgpu::TextureFormat::R8Unorm, [255; 4]),
-            flat_normal: solid(
-                "flat normal",
-                wgpu::TextureFormat::Rgba8Unorm,
-                [128, 128, 255, 255],
-            ),
-            bytes: 0,
-        };
-        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("material"),
-            address_mode_u: wgpu::AddressMode::Repeat,
-            address_mode_v: wgpu::AddressMode::Repeat,
-            mag_filter: wgpu::FilterMode::Linear,
-            min_filter: wgpu::FilterMode::Linear,
-            mipmap_filter: wgpu::MipmapFilterMode::Linear,
-            anisotropy_clamp: 8,
-            ..Default::default()
-        });
-        let frag = wgpu::ShaderStages::FRAGMENT;
+        let mut slot_of = vec![u32::MAX; instances.len()];
+        let mut textures = Textures::new(device, queue, features);
         let vf = wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT;
-        let tex_entry = |binding| wgpu::BindGroupLayoutEntry {
-            binding,
-            visibility: frag,
-            ty: wgpu::BindingType::Texture {
-                sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                view_dimension: wgpu::TextureViewDimension::D2,
-                multisampled: false,
-            },
-            count: None,
-        };
-        let material_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("material"),
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: vf,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                },
-                tex_entry(1),
-                tex_entry(2),
-                tex_entry(3),
-                tex_entry(4),
-                tex_entry(5),
-                tex_entry(6),
-                wgpu::BindGroupLayoutEntry {
-                    binding: 7,
-                    visibility: frag,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
-            ],
-        });
         let storage = |binding, dynamic, visibility, read_only| wgpu::BindGroupLayoutEntry {
             binding,
             visibility,
@@ -431,125 +292,7 @@ impl StaticsGpu {
             let glow = glows.get(*name);
             let mut materials = Vec::with_capacity(meta.materials.len());
             for material in &meta.materials {
-                let t = &material.textures;
-                let mut flags = 0;
-                if material.team_color.is_some() {
-                    flags |= FLAG_TEAM;
-                }
-                if t.team_mask.is_some() {
-                    flags |= FLAG_TEAM_MASK;
-                }
-                if material.foliage {
-                    flags |= FLAG_FOLIAGE;
-                }
-                if material.double_sided {
-                    flags |= FLAG_DOUBLE_SIDED;
-                }
-                if t.normal.is_some() {
-                    flags |= FLAG_NORMAL_MAP;
-                }
-                if t.occlusion.is_some() {
-                    flags |= FLAG_OCCLUSION_MAP;
-                }
-                if material.painted {
-                    flags |= FLAG_PAINTED;
-                }
-                match material.alpha {
-                    AlphaMode::Mask => flags |= FLAG_ALPHA_MASK,
-                    AlphaMode::Blend => flags |= FLAG_ALPHA_BLEND,
-                    AlphaMode::Opaque => {}
-                }
-                let team = material.team_color.as_ref();
-                let uniform = MaterialUniform {
-                    base_color: material.base_color,
-                    emissive: [
-                        material.emissive[0],
-                        material.emissive[1],
-                        material.emissive[2],
-                        material.normal_scale,
-                    ],
-                    params: [
-                        material.roughness,
-                        material.metalness,
-                        material.alpha_cutoff,
-                        material.occlusion_strength,
-                    ],
-                    light: [
-                        material.backside_lighting,
-                        if material.foliage {
-                            material.crown_normal
-                        } else {
-                            0.0
-                        },
-                        team.map_or(1.0, |t| t.source_max),
-                        0.0,
-                    ],
-                    team_default: team.map_or([1.0; 4], |t| {
-                        [t.default[0], t.default[1], t.default[2], 1.0]
-                    }),
-                    flags: [
-                        match material.vertex_color {
-                            VertexColor::None => 0,
-                            VertexColor::Tint => 1,
-                            VertexColor::Occlusion => 2,
-                        },
-                        flags,
-                        0,
-                        0,
-                    ],
-                    glow: glow.map_or([0.0; 4], |g| {
-                        [g.color[0], g.color[1], g.color[2], g.strength]
-                    }),
-                    glow_terms: glow.map_or([[0.0; 4]; 3], |g| {
-                        g.terms
-                            .map(|t| [t.weights[0], t.weights[1], t.weights[2], t.from])
-                    }),
-                    glow_to: glow.map_or([1.0; 4], |g| {
-                        [g.terms[0].to, g.terms[1].to, g.terms[2].to, 0.0]
-                    }),
-                };
-                let uniform_buffer = buffer(
-                    "material",
-                    bytemuck::bytes_of(&uniform),
-                    wgpu::BufferUsages::UNIFORM,
-                );
-                let (white_srgb, white, white_r8, flat) = (
-                    textures.white_srgb.clone(),
-                    textures.white.clone(),
-                    textures.white_r8.clone(),
-                    textures.flat_normal.clone(),
-                );
-                let views = [
-                    textures.get(t.base_color.as_deref(), &white_srgb)?,
-                    textures.get(t.team_mask.as_deref(), &white_r8)?,
-                    textures.get(t.normal.as_deref(), &flat)?,
-                    textures.get(t.metallic_roughness.as_deref(), &white)?,
-                    textures.get(t.occlusion.as_deref(), &white)?,
-                    textures.get(t.emissive.as_deref(), &white_srgb)?,
-                ];
-                let mut entries = vec![wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: uniform_buffer.as_entire_binding(),
-                }];
-                for (i, view) in views.iter().enumerate() {
-                    entries.push(wgpu::BindGroupEntry {
-                        binding: i as u32 + 1,
-                        resource: wgpu::BindingResource::TextureView(view),
-                    });
-                }
-                entries.push(wgpu::BindGroupEntry {
-                    binding: 7,
-                    resource: wgpu::BindingResource::Sampler(&sampler),
-                });
-                materials.push(GpuMaterial {
-                    bind_group: device.create_bind_group(&wgpu::BindGroupDescriptor {
-                        label: Some(&material.name),
-                        layout: &material_layout,
-                        entries: &entries,
-                    }),
-                    variant: Variant::of(material),
-                    casts_shadow: material.casts_shadow,
-                });
+                materials.push(textures.material(device, queue, pack, material, glow)?);
             }
 
             let wind = meta.wind.as_ref();
@@ -589,7 +332,8 @@ impl StaticsGpu {
             let casts = materials.iter().any(|m| m.casts_shadow);
             let (center, radius) = sphere(meta);
             let height = meta.rest_bounds.max[1] - meta.rest_bounds.min[1];
-            for instance in placed {
+            for &(input, instance) in placed {
+                slot_of[input] = items.len() as u32;
                 let t = instance.transform;
                 let rows = t.transpose();
                 gpu_instances.push(InstanceGpu {
@@ -891,14 +635,14 @@ impl StaticsGpu {
         let module = crate::shader::module(
             device,
             "statics",
-            crate::shader::LIT,
+            crate::shader::MODEL,
             include_str!("../shaders/statics.wgsl"),
         );
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("statics"),
             bind_group_layouts: &[
                 Some(frame_layout),
-                Some(&material_layout),
+                Some(textures.layout()),
                 Some(&instance_layout),
             ],
             immediate_size: 0,
@@ -1029,6 +773,9 @@ impl StaticsGpu {
         Ok(Self {
             items: items.len() as u32,
             draws: args.len() as u32,
+            item_info: items.iter().map(|i| i.info).collect(),
+            item_buffer,
+            slot_of,
             models,
             forward_draws,
             blend_draws,
@@ -1164,6 +911,23 @@ impl StaticsGpu {
             count += 1;
         }
         count
+    }
+
+    /// Hides or shows instance `input` (its index in the list the scene was built from):
+    /// a felled tree or a depleted deposit leaves the static scene while the live scene
+    /// draws what it became. Writes 16 bytes.
+    pub fn set_hidden(&mut self, queue: &wgpu::Queue, input: usize, hidden: bool) {
+        let Some(&slot) = self.slot_of.get(input) else {
+            return;
+        };
+        let info = &mut self.item_info[slot as usize];
+        if (info[2] != 0) == hidden {
+            return;
+        }
+        info[2] = u32::from(hidden);
+        // `CullItem.info` follows the 16-byte sphere.
+        let offset = u64::from(slot) * std::mem::size_of::<CullItem>() as u64 + 16;
+        queue.write_buffer(&self.item_buffer, offset, bytemuck::bytes_of(info));
     }
 
     /// Instances of each model, for reports.

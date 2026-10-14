@@ -16,6 +16,8 @@ pub enum Module {
     Wind,
     /// `surface_light` and its parts; needs `Frame` and `Dither`.
     Lighting,
+    /// Cooked model materials (group 1) and `shade_material`; needs everything above.
+    Material,
 }
 
 impl Module {
@@ -28,6 +30,7 @@ impl Module {
             Self::Team => include_str!("../shaders/lib/team.wgsl"),
             Self::Wind => include_str!("../shaders/lib/wind.wgsl"),
             Self::Lighting => include_str!("../shaders/lib/lighting.wgsl"),
+            Self::Material => include_str!("../shaders/lib/material.wgsl"),
         }
     }
 }
@@ -41,6 +44,18 @@ pub const LIT: &[Module] = &[
     Module::Team,
     Module::Wind,
     Module::Lighting,
+];
+
+/// The modules every model pass (statics, actors) uses.
+pub const MODEL: &[Module] = &[
+    Module::Frame,
+    Module::Color,
+    Module::Packing,
+    Module::Dither,
+    Module::Team,
+    Module::Wind,
+    Module::Lighting,
+    Module::Material,
 ];
 
 /// Library modules followed by a shader's own source.
@@ -70,9 +85,11 @@ pub fn module(
 pub fn all() -> Vec<(&'static str, &'static [Module], &'static str)> {
     vec![
         ("terrain", LIT, include_str!("../shaders/terrain.wgsl")),
-        ("statics", LIT, include_str!("../shaders/statics.wgsl")),
+        ("statics", MODEL, include_str!("../shaders/statics.wgsl")),
         ("water", LIT, include_str!("../shaders/water.wgsl")),
         ("floor", LIT, include_str!("../shaders/floor.wgsl")),
+        ("actors", MODEL, include_str!("../shaders/actors.wgsl")),
+        ("skin", &[], include_str!("../shaders/skin.wgsl")),
         ("cull", &[], include_str!("../shaders/cull.wgsl")),
         (
             "post",

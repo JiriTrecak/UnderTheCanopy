@@ -13,6 +13,8 @@ use std::fmt;
 pub enum Resource {
     /// Per-view lists of visible static instances and their indirect draw arguments.
     VisibleStatics,
+    /// Joint palettes of the frame's posed live models.
+    Palettes,
     /// The sun's depth map.
     ShadowMap,
     /// HDR scene colour (multisampled) and its single-sample resolve.
@@ -145,25 +147,28 @@ impl FrameGraph {
 /// Pass names of the world frame, in order.
 pub mod passes {
     pub const CULL: &str = "cull";
+    pub const SKIN: &str = "skin";
     pub const SHADOW: &str = "shadow";
     pub const FORWARD: &str = "forward";
     pub const POST: &str = "post";
 }
 
 /// The world frame (renderer §4.1, the parts that exist so far): GPU culling of statics
-/// for both views, the sun shadow map, the forward HDR pass (terrain, statics, water;
-/// MSAA resolved in the pass), and resolve + tone map + grade into the output.
+/// for both views, joint palettes of the live models, the sun shadow map, the forward HDR
+/// pass (terrain, statics, live models, water; MSAA resolved in the pass), and resolve +
+/// tone map + grade into the output.
 pub fn world_frame() -> FrameGraph {
     use PassKind::*;
     use Resource::*;
     FrameGraph::new(
         vec![
             Pass::new(passes::CULL, Compute).writes(&[VisibleStatics]),
+            Pass::new(passes::SKIN, Compute).writes(&[Palettes]),
             Pass::new(passes::SHADOW, Render)
-                .reads(&[VisibleStatics])
+                .reads(&[VisibleStatics, Palettes])
                 .writes(&[ShadowMap]),
             Pass::new(passes::FORWARD, Render)
-                .reads(&[VisibleStatics, ShadowMap])
+                .reads(&[VisibleStatics, Palettes, ShadowMap])
                 .writes(&[SceneColor, SceneDepth]),
             Pass::new(passes::POST, Render)
                 .reads(&[SceneColor, SceneDepth])
@@ -183,9 +188,10 @@ mod tests {
     #[test]
     fn the_world_frame_is_well_formed() {
         let graph = world_frame();
-        assert_eq!(graph.passes().len(), 4);
+        assert_eq!(graph.passes().len(), 5);
         assert_eq!(graph.last_use(ShadowMap), Some(passes::FORWARD));
-        assert_eq!(graph.index(passes::POST), Some(3));
+        assert_eq!(graph.last_use(Palettes), Some(passes::FORWARD));
+        assert_eq!(graph.index(passes::POST), Some(4));
     }
 
     #[test]

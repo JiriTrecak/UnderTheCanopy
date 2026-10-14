@@ -1,37 +1,5 @@
-// Static models (scenery, resources, buildings): instanced per model section, drawn
-// from the GPU-culled visible lists, lit by the shared lighting model.
-
-const VERTEX_TINT: u32 = 1u;
-const VERTEX_OCCLUSION: u32 = 2u;
-const HAS_TEAM: u32 = 1u;
-const HAS_TEAM_MASK: u32 = 2u;
-const FOLIAGE: u32 = 4u;
-const DOUBLE_SIDED: u32 = 8u;
-const HAS_NORMAL_MAP: u32 = 16u;
-const HAS_OCCLUSION_MAP: u32 = 32u;
-const PAINTED: u32 = 64u;
-const ALPHA_MASK: u32 = 128u;
-const ALPHA_BLEND: u32 = 256u;
-
-struct Material {
-    base_color: vec4f,
-    // rgb emissive, a: normal scale
-    emissive: vec4f,
-    // roughness, metalness, alpha cutoff, occlusion strength
-    params: vec4f,
-    // backside lighting, crown normal weight, team source max, 0
-    light: vec4f,
-    // rgb: colour without an owner
-    team_default: vec4f,
-    // x: vertex colour use, y: flags
-    flags: vec4u,
-    // rgb colour, a strength (0: none)
-    glow: vec4f,
-    // per term: albedo weights xyz, w: smoothstep start
-    glow_terms: array<vec4f, 3>,
-    // smoothstep ends per term
-    glow_to: vec4f,
-}
+// Static models (scenery, stamps, standing resources): instanced per model section,
+// drawn from the GPU-culled visible lists, shaded by the shared material (lib/material).
 
 struct ModelInfo {
     // xyz quantisation origin; w: top of the model (sway height)
@@ -52,22 +20,9 @@ struct Instance {
     color: vec4f,
 }
 
-@group(1) @binding(0) var<uniform> material: Material;
-@group(1) @binding(1) var base_texture: texture_2d<f32>;
-@group(1) @binding(2) var team_mask: texture_2d<f32>;
-@group(1) @binding(3) var normal_texture: texture_2d<f32>;
-@group(1) @binding(4) var metal_rough_texture: texture_2d<f32>;
-@group(1) @binding(5) var occlusion_texture: texture_2d<f32>;
-@group(1) @binding(6) var emissive_texture: texture_2d<f32>;
-@group(1) @binding(7) var material_sampler: sampler;
-
 @group(2) @binding(0) var<storage, read> instances: array<Instance>;
 @group(2) @binding(1) var<storage, read> visible: array<u32>;
 @group(2) @binding(2) var<uniform> model: ModelInfo;
-
-fn has(flag: u32) -> bool {
-    return (material.flags.y & flag) != 0u;
-}
 
 struct VertexIn {
     @location(0) position: vec4f,
@@ -148,96 +103,21 @@ fn vs_main(in: VertexIn, @builtin(instance_index) slot: u32) -> VsOut {
     return out;
 }
 
-fn albedo_of(uv: vec2f, color: vec4f, instance: u32) -> vec4f {
-    let texel = textureSample(base_texture, material_sampler, uv);
-    // Team-coloured materials keep the authored texture outside the mask: the factor is
-    // the colour without an owner (old `maskedTeamColor` replaces the map lookup).
-    var base = select(material.base_color * texel, vec4f(texel.rgb, material.base_color.a * texel.a), has(HAS_TEAM));
-    if (material.flags.x == VERTEX_TINT) {
-        base = vec4f(base.rgb * color.rgb, base.a);
-    }
-    let mask = textureSample(team_mask, material_sampler, uv).r;
-    if (has(HAS_TEAM)) {
-        let owner = instances[instance].color;
-        let player = select(material.team_default.rgb, owner.rgb, owner.a > 0.5);
-        let m = select(1.0, mask, has(HAS_TEAM_MASK));
-        base = vec4f(team_color(base.rgb, m, player, material.light.z), base.a);
-    }
-    return base;
-}
-
-// Alpha-tested coverage: a sharpened alpha for alpha-to-coverage, so MSAA smooths the
-// cut edge (D24); fully transparent texels are discarded.
-fn coverage(alpha: f32) -> f32 {
-    let cutoff = material.params.z;
-    return clamp((alpha - cutoff) / max(fwidth(alpha), 1e-4) + 0.5, 0.0, 1.0);
-}
-
 @fragment
 fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> @location(0) vec4f {
-    let frag = in.clip;
-    let world_dx = dpdx(in.world);
-    let world_dy = dpdy(in.world);
-    let uv_dx = dpdx(in.uv);
-    let uv_dy = dpdy(in.uv);
-    let base = albedo_of(in.uv, in.color, in.instance);
-    let mr = textureSample(metal_rough_texture, material_sampler, in.uv);
-    let occlusion_map = textureSample(occlusion_texture, material_sampler, in.uv).r;
-    let normal_map = textureSample(normal_texture, material_sampler, in.uv).xyz * 2.0 - 1.0;
-    let emissive = textureSample(emissive_texture, material_sampler, in.uv).rgb * material.emissive.rgb;
-    var alpha = base.a;
-    if (has(ALPHA_MASK)) {
-        alpha = coverage(base.a);
-        if (alpha <= 0.0) {
-            discard;
-        }
-    } else if (!has(ALPHA_BLEND)) {
-        alpha = 1.0;
+    var f: MaterialFragment;
+    f.frag = in.clip;
+    f.world = in.world;
+    f.normal = in.normal;
+    f.uv = in.uv;
+    f.color = in.color;
+    f.owner = instances[in.instance].color;
+    f.front = front;
+    let shaded = shade_material(f);
+    if (has(ALPHA_MASK) && shaded.a <= 0.0) {
+        discard;
     }
-
-    var n = normalize(in.normal);
-    if (has(DOUBLE_SIDED) && !front) {
-        n = -n;
-    }
-    if (has(HAS_NORMAL_MAP)) {
-        // Cotangent frame from screen derivatives (the pack has no tangents).
-        let dp2perp = cross(world_dy, n);
-        let dp1perp = cross(n, world_dx);
-        let t = dp2perp * uv_dx.x + dp1perp * uv_dy.x;
-        let b = dp2perp * uv_dx.y + dp1perp * uv_dy.y;
-        let inv = inverseSqrt(max(max(dot(t, t), dot(b, b)), 1e-12));
-        let scaled = vec3f(normal_map.xy * material.emissive.a, normal_map.z);
-        n = normalize(mat3x3f(t * inv, b * inv, n) * scaled);
-    }
-    var occlusion = 1.0;
-    if (material.flags.x == VERTEX_OCCLUSION) {
-        occlusion = in.color.r;
-    }
-    if (has(HAS_OCCLUSION_MAP)) {
-        occlusion *= mix(1.0, occlusion_map, material.params.w);
-    }
-    var surface: Surface;
-    surface.position = in.world;
-    surface.normal = n;
-    surface.albedo = base.rgb;
-    surface.roughness = material.params.x * mr.g;
-    surface.metalness = material.params.y * mr.b;
-    surface.occlusion = occlusion;
-    surface.backside = material.light.x;
-    surface.specular = select(1.0, 0.0, has(PAINTED));
-    surface.model = LIGHT_STANDARD;
-    let view = normalize(frame.eye.xyz - in.world);
-    var glow = vec3f(0.0);
-    if (material.glow.a > 0.0) {
-        var amount = material.glow.a;
-        for (var i = 0; i < 3; i++) {
-            let term = material.glow_terms[i];
-            amount *= smoothstep(term.w, material.glow_to[i], dot(base.rgb, term.xyz));
-        }
-        glow = material.glow.rgb * amount;
-    }
-    let color = surface_light(surface, view, frag.xy) + emissive + glow;
-    return vec4f(color, alpha);
+    return shaded;
 }
 
 // --- Shadows -------------------------------------------------------------------------
@@ -268,8 +148,7 @@ fn vs_masked(in: VertexIn, @builtin(instance_index) slot: u32) -> MaskedOut {
 
 @fragment
 fn fs_masked(in: MaskedOut) {
-    let alpha = material.base_color.a * textureSample(base_texture, material_sampler, in.uv).a;
-    if (alpha < material.params.z) {
+    if (masked_out(in.uv)) {
         discard;
     }
 }
