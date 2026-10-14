@@ -52,3 +52,7 @@ parity-maps old="../Settlers 3 Web":
     mkdir -p target/parity
     cd "{{old}}" && node_modules/.bin/tsx "{{justfile_directory()}}/tools/parity/maps-ts.mts" "$PWD" "{{justfile_directory()}}/target/parity/maps.json"
     cargo run -q --release -p canopy-content --example map_parity -- "{{old}}" target/parity/maps.json
+
+# Which engine features the shipped data uses
+content-report:
+    cargo run -q -p canopy-content --example report -- "{{justfile_directory()}}"
