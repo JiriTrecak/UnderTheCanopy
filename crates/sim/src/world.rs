@@ -3,7 +3,7 @@
 use crate::{
     action::Action,
     catalog::Catalog,
-    fingerprint, mission,
+    combat, fingerprint, mission,
     movement::Motion,
     orders,
     setup::MatchSetup,
@@ -55,6 +55,8 @@ pub struct World {
     vision: Vision,
     /// Derived spatial model and movement scratch; rebuilt on restore, never saved.
     motion: Motion,
+    /// Derived combat rules, camps and planning scratch; rebuilt on restore.
+    combat: combat::Runtime,
 }
 
 impl World {
@@ -62,6 +64,7 @@ impl World {
     pub fn new(content: Arc<Content>, map: &UtcMap, setup: MatchSetup) -> Result<Self, SetupError> {
         let catalog = Arc::new(Catalog::new(content));
         let terrain = Arc::new(compile(map, &catalog)?);
+        let combat = combat::Runtime::new(&catalog, map, &setup).map_err(SetupError)?;
         let mut state = State::new(setup.seed);
         let mission = mission_runtime(map)?;
         if mission.is_some() {
@@ -70,7 +73,8 @@ impl World {
         let placements = spawn::placements(map, &catalog, &terrain, &setup).map_err(SetupError)?;
         spawn::validate(&catalog, &terrain, &setup, &placements).map_err(SetupError)?;
         for placement in placements.iter().filter(|p| p.activation.is_none()) {
-            spawn::create(&mut state, &catalog, placement).map_err(SetupError)?;
+            let id = spawn::create(&mut state, &catalog, placement).map_err(SetupError)?;
+            crate::camps::enlist(&mut state, &combat.camps, id, None);
         }
         for slot in &setup.slots {
             state.wallets.entry(Owner::Player(slot.player)).or_default();
@@ -99,6 +103,7 @@ impl World {
             mission,
             vision,
             motion,
+            combat,
         })
     }
 
@@ -164,20 +169,50 @@ impl World {
             self.observe();
             return;
         }
-        // Steps 4–5: order advance, then order planning, separation, idle motion and
-        // movement.
+        macro_rules! senses {
+            () => {
+                combat::Senses {
+                    catalog: &self.catalog,
+                    terrain: &self.terrain,
+                    vision: &self.vision,
+                    rules: &SIGHT,
+                    combat: &self.combat.rules,
+                    camps: &self.combat.camps,
+                    teams: &self.combat.teams,
+                    cache: None,
+                }
+            };
+        }
+        // Step 4: order advance.
         self.motion.spatial.sync_static(&self.state);
-        orders::plan::advance(&mut self.motion, &mut self.state);
-        let perception = orders::plan::Perception {
-            vision: &self.vision,
-            catalog: &self.catalog,
-            terrain: &self.terrain,
-            rules: &SIGHT,
-        };
-        orders::plan::plan(&mut self.motion, &mut self.state, perception);
+        orders::plan::advance(&mut self.motion, &mut self.state, &senses!());
+        // Step 5: garrisons, combat and order planning, separation, idle motion, movement.
+        crate::garrisons::tick(&mut self.state, &self.catalog, &mut self.motion.spatial);
+        combat::plan::plan(
+            &senses!(),
+            &mut self.motion.spatial,
+            &mut self.state,
+            &mut self.combat.scratch,
+        );
         self.motion.separate(&mut self.state);
         self.motion.idle(&mut self.state);
         self.motion.move_units(&mut self.state);
+        // Step 7: combat resolution on current sight, then deaths.
+        self.vision
+            .sync(&self.state, &self.catalog, &self.terrain, &SIGHT);
+        let outcome = combat::resolve::resolve(&senses!(), &self.motion.spatial, &mut self.state);
+        if !outcome.dead.is_empty() {
+            // The dead no longer see.
+            self.vision
+                .sync(&self.state, &self.catalog, &self.terrain, &SIGHT);
+            combat::deaths::process(
+                &senses!(),
+                &mut self.motion.spatial,
+                &mut self.state,
+                self.combat.limits,
+                &outcome.dead,
+            );
+        }
         // Step 10: the mission script.
         if let Some(mission) = &mut self.mission {
             mission.tick(&mut self.state, &self.catalog);
@@ -216,8 +251,24 @@ impl World {
             Action::Noop | Action::Ping => Ok(()),
             _ if orders::command::handles(action) => {
                 self.motion.spatial.sync_static(&self.state);
-                orders::command::apply(&mut self.state, &mut self.motion.spatial, owner, action)
-                    .map(|_| ())
+                let senses = combat::Senses {
+                    catalog: &self.catalog,
+                    terrain: &self.terrain,
+                    vision: &self.vision,
+                    rules: &SIGHT,
+                    combat: &self.combat.rules,
+                    camps: &self.combat.camps,
+                    teams: &self.combat.teams,
+                    cache: None,
+                };
+                orders::command::apply(
+                    &mut self.state,
+                    &mut self.motion.spatial,
+                    &senses,
+                    owner,
+                    action,
+                )
+                .map(|_| ())
             }
             _ => Err("not available yet".into()),
         }
@@ -230,19 +281,54 @@ impl World {
 
     /// What `owner` sees.
     pub fn view(&self, owner: Owner) -> View {
-        View::build(
+        let mut view = View::build(
             &self.state,
             &self.catalog,
             &self.terrain,
             &self.vision,
             &SIGHT,
             owner,
-        )
+        );
+        self.add_combat(&mut view, Some(owner));
+        view
     }
 
     /// Everything, for spectators.
     pub fn observer_view(&self) -> View {
-        View::observe(&self.state, &self.vision)
+        let mut view = View::observe(&self.state, &self.vision);
+        self.add_combat(&mut view, None);
+        view
+    }
+
+    /// Combat state of the view's live entities and the viewer's battle.
+    fn add_combat(&self, view: &mut View, viewer: Option<Owner>) {
+        let senses = self.senses();
+        for entity in view.entities.iter_mut().filter(|e| !e.remembered) {
+            if let Some(e) = self.state.entities.get(entity.id()) {
+                entity.combat = combat::CombatView::of(
+                    &senses,
+                    &self.state,
+                    e,
+                    viewer,
+                    entity.private.is_some(),
+                );
+            }
+        }
+        view.battle = combat::Battle::of(&senses, &self.state, viewer);
+    }
+
+    /// Combat's perception and allegiance answers.
+    pub fn senses(&self) -> combat::Senses<'_> {
+        combat::Senses {
+            catalog: &self.catalog,
+            terrain: &self.terrain,
+            vision: &self.vision,
+            rules: &SIGHT,
+            combat: &self.combat.rules,
+            camps: &self.combat.camps,
+            teams: &self.combat.teams,
+            cache: None,
+        }
     }
 
     /// Sight questions (what an owner sees, knows or detects) without building a view:
@@ -289,6 +375,7 @@ impl World {
         }
         let catalog = Arc::new(Catalog::new(content));
         let terrain = Arc::new(compile(map, &catalog)?);
+        let combat = combat::Runtime::new(&catalog, map, &save.setup).map_err(SetupError)?;
         let mission = mission_runtime(map)?;
         if mission.is_some() != save.state.mission.is_some() {
             return Err(SetupError(
@@ -314,6 +401,7 @@ impl World {
             mission,
             vision,
             motion,
+            combat,
         })
     }
 }

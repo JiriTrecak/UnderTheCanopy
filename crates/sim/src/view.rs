@@ -30,6 +30,8 @@ pub struct EntityView {
     pub private: Option<Private>,
     /// How a seen unit moves; `None` for other entities and remembered ones.
     pub motion: Option<MotionView>,
+    /// Stats, swing, charge and lookout of a seen body (`combat`).
+    pub combat: Option<crate::combat::CombatView>,
 }
 
 /// Movement a renderer animates.
@@ -159,6 +161,8 @@ pub struct View {
     pub objectives: BTreeMap<Owner, u32>,
     pub mission: Option<MissionView>,
     pub outcome: Option<Outcome>,
+    /// Projectiles in flight, corpses and fallen heroes (`combat`).
+    pub battle: crate::combat::Battle,
 }
 
 impl View {
@@ -193,6 +197,7 @@ impl View {
                 remembered: false,
                 private: (e.owner == owner).then(|| private(e)),
                 motion: MotionView::of(e, state.tick),
+                combat: None,
             })
             .peekable();
         // Remembered structures stand in where nothing with their id is seen.
@@ -254,6 +259,7 @@ impl View {
                 .unwrap_or_default(),
             mission: state.mission.as_ref().map(mission),
             outcome: state.outcome.clone(),
+            battle: crate::combat::Battle::default(),
         }
     }
 
@@ -274,6 +280,7 @@ impl View {
                 remembered: false,
                 private: Some(private(e)),
                 motion: MotionView::of(e, state.tick),
+                combat: None,
             })
             .collect();
         Self {
@@ -287,6 +294,7 @@ impl View {
             objectives: state.objectives.clone(),
             mission: state.mission.as_ref().map(mission),
             outcome: state.outcome.clone(),
+            battle: crate::combat::Battle::default(),
         }
     }
 
@@ -316,6 +324,7 @@ fn remembered_view(sighting: &Sighting, relation: Relation) -> EntityView {
         remembered: true,
         private: None,
         motion: None,
+        combat: None,
     }
 }
 

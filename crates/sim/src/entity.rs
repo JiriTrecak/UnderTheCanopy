@@ -144,6 +144,13 @@ pub struct Unit {
     pub release: Option<Place>,
     /// Held inside another entity (a training building, a cage).
     pub contained: Option<EntityId>,
+    /// Weapon timeline, pursuit, charge and slows (`combat`).
+    #[serde(default, skip_serializing_if = "crate::combat::UnitCombat::is_idle")]
+    pub combat: crate::combat::UnitCombat,
+    /// Membership of a neutral camp (`camps`).
+    pub camp: Option<crate::camps::Member>,
+    /// Standing in a lookout (`garrisons`).
+    pub garrison: Option<crate::garrisons::Lookout>,
 }
 
 #[skip_serializing_none]
@@ -167,6 +174,11 @@ pub struct Entity {
     pub construction: Option<Construction>,
     pub resource: Option<Resource>,
     pub item: Option<LooseItem>,
+    /// Experience of a definition with levels (`heroes`).
+    pub progression: Option<crate::heroes::Progression>,
+    /// A hero that died and waits for revival, kept with its identity (`heroes`).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub fallen: bool,
 }
 
 /// Entities ordered by id with O(1) lookup. Removal leaves a hole that later compaction
@@ -292,6 +304,8 @@ mod tests {
             construction: None,
             resource: None,
             item: None,
+            progression: None,
+            fallen: false,
         }
     }
 

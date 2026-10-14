@@ -2,53 +2,18 @@
 //! pass (`Combat.planUnits`, `moveOrder`, the patrol, follow and hold branches in
 //! `src/sim/game/combat.ts`) and the queue advance (`UnitOrders.advance`).
 //!
-//! Combat inserts target acquisition and attack approach into this pass when it lands;
-//! until then an attack-move walks like a move.
+//! The per-unit planning loop itself lives in [`crate::combat::plan`], which interleaves
+//! these with target acquisition and attack approach exactly as the old pass did.
 
-use super::{Order, command, discard_navigation, release_combat};
+use super::{Order, discard_navigation, release_combat};
 use crate::{
     action::{Action, CellPoint},
+    combat::Senses,
     entity::{EntityId, Place},
     movement::Motion,
     spatial::Spot,
     state::{FactKind, State},
 };
-
-/// What units perceive while planning (old `Combat.perceives`): choosing a destination
-/// cell ignores bodies the unit's owner cannot see.
-#[derive(Clone, Copy)]
-pub struct Perception<'a> {
-    pub vision: &'a crate::vision::Vision,
-    pub catalog: &'a crate::catalog::Catalog,
-    pub terrain: &'a crate::terrain::Terrain,
-    pub rules: &'a dyn crate::vision::rules::SightRules,
-}
-
-impl Perception<'_> {
-    /// Whether `viewer` perceives the entity `other`.
-    pub fn perceives(
-        &self,
-        state: &State,
-        viewer: &crate::entity::Entity,
-        other: EntityId,
-    ) -> bool {
-        let Some(other) = state.entities.get(other) else {
-            return false;
-        };
-        // Neutral camp sight (aggro radii) arrives with camps; they perceive every body.
-        if viewer.owner == canopy_content::placement::Owner::Nobody {
-            return true;
-        }
-        let sight = crate::vision::Sight {
-            vision: self.vision,
-            state,
-            catalog: self.catalog,
-            terrain: self.terrain,
-            rules: self.rules,
-        };
-        sight.detects(viewer.owner, other, Some(viewer)) && sight.visible(viewer.owner, other)
-    }
-}
 
 fn at(e: &crate::entity::Entity, spot: Spot, deck: Option<crate::terrain::DeckId>) -> bool {
     deck == spot.deck && e.position.x == spot.x * 1000 && e.position.y == spot.y * 1000
@@ -56,7 +21,7 @@ fn at(e: &crate::entity::Entity, spot: Spot, deck: Option<crate::terrain::DeckId
 
 /// Step 4 (old `UnitOrders.advance`): idle units start their next queued order, replayed
 /// through the command rules; a rejected one is dropped with its error fact.
-pub fn advance(motion: &mut Motion, state: &mut State) {
+pub fn advance(motion: &mut Motion, state: &mut State, senses: &Senses) {
     let _span = tracing::trace_span!("orders advance").entered();
     let tick = state.tick;
     let units: Vec<EntityId> = state
@@ -107,8 +72,20 @@ pub fn advance(motion: &mut Motion, state: &mut State) {
                     target: target.0,
                     append: None,
                 },
+                Order::Attack { target, force } => Action::Attack {
+                    actors,
+                    target: target.0,
+                    force: Some(*force),
+                    append: None,
+                },
+                Order::Garrison { target } => Action::Garrison {
+                    actors,
+                    target: target.0,
+                    append: None,
+                },
             };
-            let accepted = command::apply(state, &mut motion.spatial, owner, &action);
+            let accepted =
+                super::command::apply(state, &mut motion.spatial, senses, owner, &action);
             if let Err(reason) = &accepted {
                 state.fact(owner, FactKind::Error, reason.clone());
             }
@@ -122,81 +99,42 @@ pub fn advance(motion: &mut Motion, state: &mut State) {
     }
 }
 
-/// Step 5 order planning: routes for move, patrol and follow orders; hold discards them.
-pub fn plan(motion: &mut Motion, state: &mut State, perception: Perception) {
-    let _span = tracing::trace_span!("order planning").entered();
-    motion.spatial.sync_bodies(state);
+/// Patrols: walks to `destination`; on arrival the legs swap (old patrol branch of
+/// `planUnits`). `origin` was set when the patrol was first planned.
+pub(crate) fn patrol(
+    spatial: &mut crate::spatial::Spatial,
+    state: &mut State,
+    senses: &Senses,
+    id: EntityId,
+    destination: Place,
+    origin: Option<Place>,
+) {
     let tick = state.tick;
-    let units: Vec<EntityId> = state
-        .entities
-        .iter()
-        .filter(|e| {
-            e.hp.is_none_or(|hp| hp > 0) && e.ready_tick <= tick && crate::spatial::present(e)
-        })
-        .map(|e| e.id)
-        .collect();
-    motion.spatial.with_shared_routes(|spatial| {
-        for id in units {
-            let Some(order) = state
-                .entities
-                .get(id)
-                .and_then(|e| e.unit.as_ref()?.order.clone())
-            else {
-                continue;
-            };
-            match order {
-                Order::Move { destination, .. } => {
-                    if let Some(u) = state.entities.get_mut(id).and_then(|e| e.unit.as_mut()) {
-                        release_combat(u);
-                    }
-                    move_order(spatial, state, perception, id, &destination);
-                }
-                Order::Patrol {
-                    destination,
-                    origin,
-                } => {
-                    let e = state.entities.get_mut(id).expect("unit");
-                    let (cx, cy) = e.position.cell();
-                    let origin = origin.unwrap_or(Place::new(cx, cy));
-                    if move_order(spatial, state, perception, id, &destination) {
-                        let u = state
-                            .entities
-                            .get_mut(id)
-                            .expect("unit")
-                            .unit
-                            .as_mut()
-                            .expect("unit");
-                        u.order = Some(Order::Patrol {
-                            destination: origin,
-                            origin: Some(destination),
-                        });
-                        u.retry_at = tick + 1;
-                    } else if let Some(Order::Patrol { origin: slot, .. }) = state
-                        .entities
-                        .get_mut(id)
-                        .and_then(|e| e.unit.as_mut())
-                        .and_then(|u| u.order.as_mut())
-                    {
-                        slot.get_or_insert(origin);
-                    }
-                }
-                Order::Follow { target, escort } => follow(spatial, state, id, target, escort),
-                Order::Hold => {
-                    if let Some(u) = state.entities.get_mut(id).and_then(|e| e.unit.as_mut()) {
-                        discard_navigation(u);
-                    }
-                }
-            }
-        }
-    });
+    let e = state.entities.get(id).expect("unit");
+    let (cx, cy) = e.position.cell();
+    let origin = origin.unwrap_or(Place::new(cx, cy));
+    if move_order(spatial, state, senses, id, &destination) {
+        let u = state
+            .entities
+            .get_mut(id)
+            .expect("unit")
+            .unit
+            .as_mut()
+            .expect("unit");
+        u.order = Some(Order::Patrol {
+            destination: origin,
+            origin: Some(destination),
+        });
+        u.retry_at = tick + 1;
+    }
 }
 
 /// Walks towards `destination`; returns whether the unit has arrived (old `moveOrder`).
 /// An unreachable destination ends the order with an error fact.
-fn move_order(
+pub(crate) fn move_order(
     spatial: &mut crate::spatial::Spatial,
     state: &mut State,
-    perception: Perception,
+    senses: &Senses,
     id: EntityId,
     destination: &Place,
 ) -> bool {
@@ -227,7 +165,12 @@ fn move_order(
         return true;
     }
     if u.route.is_empty() && u.retry_at <= tick {
-        let known = |b: &crate::spatial::BodyRecord| perception.perceives(state, e, b.id);
+        let known = |b: &crate::spatial::BodyRecord| {
+            state
+                .entities
+                .get(b.id)
+                .is_some_and(|other| senses.perceives(state, e, other))
+        };
         let goal = spatial.nearest(target, 8, Some(id), None, None, Some(&known));
         let owner = e.owner;
         if let Some(goal) = goal {
@@ -258,7 +201,7 @@ fn move_order(
 }
 
 /// Keeps close to a friendly unit (old follow branch of `planUnits`).
-fn follow(
+pub(crate) fn follow(
     spatial: &mut crate::spatial::Spatial,
     state: &mut State,
     id: EntityId,
