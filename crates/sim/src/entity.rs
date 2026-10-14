@@ -47,6 +47,8 @@ pub struct Resource {
     pub amount: u32,
     pub initial_amount: Option<u32>,
     pub growing_until: Option<u32>,
+    /// A tree's felling state (economy).
+    pub felling: Option<crate::economy::Felling>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -144,6 +146,9 @@ pub struct Unit {
     pub release: Option<Place>,
     /// Held inside another entity (a training building, a cage).
     pub contained: Option<EntityId>,
+    /// Job, cargo and workplace of a worker (economy).
+    #[serde(default, skip_serializing_if = "crate::economy::Work::is_idle")]
+    pub work: crate::economy::Work,
     /// Weapon timeline, pursuit, charge and slows (`combat`).
     #[serde(default, skip_serializing_if = "crate::combat::UnitCombat::is_idle")]
     pub combat: crate::combat::UnitCombat,
@@ -174,6 +179,14 @@ pub struct Entity {
     pub construction: Option<Construction>,
     pub resource: Option<Resource>,
     pub item: Option<LooseItem>,
+    /// Training, automatic production and the workplace staff (economy).
+    pub production: Option<Box<crate::economy::Production>>,
+    /// Research tasks queued at this building (economy).
+    pub research: Option<crate::economy::ResearchQueue>,
+    /// An in-place building upgrade in progress (economy).
+    pub upgrade: Option<crate::economy::UpgradeTask>,
+    /// Hero revivals queued at this building (economy).
+    pub revival: Option<crate::economy::RevivalQueue>,
     /// Experience of a definition with levels (`heroes`).
     pub progression: Option<crate::heroes::Progression>,
     /// A hero that died and waits for revival, kept with its identity (`heroes`).
@@ -304,6 +317,10 @@ mod tests {
             construction: None,
             resource: None,
             item: None,
+            production: None,
+            research: None,
+            upgrade: None,
+            revival: None,
             progression: None,
             fallen: false,
         }

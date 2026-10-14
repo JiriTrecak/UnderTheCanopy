@@ -23,6 +23,7 @@ pub fn idle(motion: &mut Motion, state: &mut State) {
         let u = e.unit.as_mut().expect("unit");
         let busy = u.order.is_some()
             || !u.order_queue.is_empty()
+            || !u.work.is_idle()
             || u.target.is_some()
             || u.combat.cooldown > 0
             || u.camp.is_some();

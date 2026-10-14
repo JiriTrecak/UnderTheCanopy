@@ -147,9 +147,10 @@ pub fn eligible(
         return false;
     };
     let policy = catalog.get(host.definition).garrison.as_ref();
-    // M2.5: units carrying cargo; M2.6: split forms and containing abilities.
+    // M2.6: split forms and containing abilities.
     u.contained.is_none()
         && u.release.is_none()
+        && u.work.cargo.is_none()
         && alive(host)
         && host.ready_tick <= state.tick
         && host.construction.is_none()
@@ -314,9 +315,8 @@ pub fn command(
                 );
             };
             let host = host.id;
-            let tick = state.tick;
+            issue(state, id, Order::Garrison { target: host }, append);
             let e = state.entities.get_mut(id).expect("actor");
-            issue(e, Order::Garrison { target: host }, append, tick);
             settle(spatial, e);
             Ok(vec![id])
         }

@@ -2,7 +2,7 @@
 //! then modifiers. One path for simulation, views and AI.
 //!
 //! Modifier hooks, filled by the steps that add their sources:
-//! - research (M2.5): [`research`] lists an owner's completed research;
+//! - research: [`research`] lists an owner's completed research;
 //! - items, statuses and permanent bonuses (M2.6): join in [`Stats::of`] where marked.
 
 use crate::{catalog::Catalog, entity::Entity, state::State};
@@ -24,10 +24,9 @@ pub struct Stats {
     pub move_speed_permille: u32,
 }
 
-/// An owner's completed research, in completion order. Research arrives with the economy
-/// (M2.5); until then nobody has any.
-pub fn research(_state: &State, _owner: Owner) -> &[Id] {
-    &[]
+/// An owner's completed research (sorted, as the old game kept it).
+pub fn research(state: &State, owner: Owner) -> &[Id] {
+    state.economy.researched(owner)
 }
 
 impl Stats {

@@ -103,6 +103,9 @@ pub struct State {
     pub mission: Option<MissionState>,
     /// What each team and player has seen (`vision`).
     pub knowledge: Knowledge,
+    /// Jobs and completed research (economy).
+    #[serde(default)]
+    pub economy: crate::economy::EconomyState,
     /// Projectiles in flight, corpses and scripted damage (`combat`).
     #[serde(default)]
     pub combat: crate::combat::CombatState,
@@ -123,6 +126,7 @@ impl State {
             outcome: None,
             mission: None,
             knowledge: Knowledge::default(),
+            economy: crate::economy::EconomyState::default(),
             combat: crate::combat::CombatState::default(),
         }
     }

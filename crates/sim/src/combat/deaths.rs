@@ -29,6 +29,7 @@ pub fn process(
     senses: &Senses,
     spatial: &mut Spatial,
     state: &mut State,
+    economy: &mut crate::economy::Economy,
     limits: heroes::Limits,
     dead: &[(EntityId, Option<Owner>)],
 ) {
@@ -52,12 +53,18 @@ pub fn process(
         }
     }
     for &(id, _) in dead {
-        die(senses, spatial, state, id);
+        die(senses, spatial, state, economy, id);
     }
 }
 
 /// One death (old `Game.onCombatDeath`).
-pub fn die(senses: &Senses, spatial: &mut Spatial, state: &mut State, id: EntityId) {
+pub fn die(
+    senses: &Senses,
+    spatial: &mut Spatial,
+    state: &mut State,
+    economy: &mut crate::economy::Economy,
+    id: EntityId,
+) {
     let Some(e) = state.entities.get(id) else {
         return;
     };
@@ -74,9 +81,14 @@ pub fn die(senses: &Senses, spatial: &mut Spatial, state: &mut State, id: Entity
     let e = state.entities.get(id).expect("dead");
     let (owner, hero) = (e.owner, senses.combat.profile(e.definition).hero);
     state.fact(owner, FactKind::Death, "Entity destroyed");
-    // M2.5: jobs, employment and paid tasks of the dead are released here (old
-    // `Economy.remove`).
+    // Jobs, employment, carried goods and paid tasks of the dead (old `Economy.remove`).
+    {
+        let mut ctx = economy.ctx(state, senses.catalog, spatial);
+        crate::economy::work::release_references(&mut ctx, id, false);
+    }
     crate::garrisons::evict(state, spatial, id);
+    let held = state.entities.get(id).expect("dead").clone();
+    crate::economy::work::record_losses(state, senses.catalog, &held, false);
     if hero {
         heroes::retain(state.entities.get_mut(id).expect("dead"));
     } else {

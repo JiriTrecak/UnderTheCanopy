@@ -30,8 +30,7 @@ pub enum MissionEffect {
     Follow { placement: String, target: String },
     /// Order a forced attack.
     Attack { placement: String, target: String },
-    /// Interrupt a unit's work so it can turn; the turn itself is mission state (M2.5
-    /// economy interrupt).
+    /// Interrupt a unit's work so it can turn; the turn itself is mission state.
     Face { placement: String },
     /// Spell damage from nobody, resolved by the next tick's combat.
     Damage {
@@ -92,11 +91,7 @@ pub(super) fn apply(
             destination,
             attack_move,
         } => {
-            let tick = state.tick;
-            if let Some(entity) = entity_by_placement_mut(state, placement)
-                && entity.unit.is_some()
-                && super::alive(entity)
-            {
+            if let Some(id) = living_unit(state, placement) {
                 let order = Order::Move {
                     destination: Place::new(
                         destination.x / Milli::CELL,
@@ -104,58 +99,48 @@ pub(super) fn apply(
                     ),
                     attack_move: *attack_move,
                 };
-                orders::issue(entity, order, false, tick);
+                orders::issue(state, id, order, false);
             }
         }
         MissionEffect::Follow { placement, target } => {
-            let tick = state.tick;
             let target = super::entity_by_placement(state, target)
                 .filter(|t| super::alive(t))
                 .map(|t| t.id);
             if let Some(target) = target
-                && let Some(entity) = entity_by_placement_mut(state, placement)
-                && entity.unit.is_some()
-                && super::alive(entity)
+                && let Some(id) = living_unit(state, placement)
             {
                 orders::issue(
-                    entity,
+                    state,
+                    id,
                     Order::Follow {
                         target,
                         escort: true,
                     },
                     false,
-                    tick,
                 );
             }
         }
         MissionEffect::Attack { placement, target } => {
-            let tick = state.tick;
             let target = super::entity_by_placement(state, target)
                 .filter(|t| super::alive(t))
                 .map(|t| t.id);
             if let Some(target) = target
-                && let Some(entity) = entity_by_placement_mut(state, placement)
-                && entity.unit.is_some()
-                && super::alive(entity)
+                && let Some(id) = living_unit(state, placement)
             {
                 orders::issue(
-                    entity,
+                    state,
+                    id,
                     Order::Attack {
                         target,
                         force: true,
                     },
                     false,
-                    tick,
                 );
             }
         }
         MissionEffect::Face { placement } => {
-            if let Some(entity) = entity_by_placement_mut(state, placement)
-                && entity.unit.is_some()
-                && super::alive(entity)
-            {
-                // M2.5: the unit's job is abandoned too.
-                orders::interrupt(entity, None);
+            if let Some(id) = living_unit(state, placement) {
+                crate::economy::interrupt(state, id, None);
             }
         }
         MissionEffect::Damage {
@@ -184,12 +169,9 @@ pub(super) fn apply(
             }
         }
         MissionEffect::Transfer { placement, owner } => {
-            if let Some(entity) = entity_by_placement_mut(state, placement)
-                && entity.unit.is_some()
-                && super::alive(entity)
-            {
-                // M2.5: interrupt the unit's job.
-                entity.owner = *owner;
+            if let Some(id) = living_unit(state, placement) {
+                crate::economy::interrupt(state, id, None);
+                state.entities.get_mut(id).expect("unit").owner = *owner;
             }
         }
         MissionEffect::Transform {
@@ -198,11 +180,12 @@ pub(super) fn apply(
             owner,
             camp,
         } => {
-            let Some(entity) = entity_by_placement_mut(state, placement) else {
+            let Some(id) = entity_by_placement_mut(state, placement).map(|e| e.id) else {
                 return;
             };
+            crate::economy::interrupt(state, id, None);
+            let entity = state.entities.get_mut(id).expect("entity");
             let before = systems.max_hp(catalog, entity);
-            // M2.5: interrupt the unit's job.
             entity.definition = *definition;
             entity.owner = *owner;
             // A fresh unit: orders and transient state end; position is kept.
@@ -234,6 +217,13 @@ pub(super) fn apply(
         // Applied by systems later build steps add; see each variant.
         MissionEffect::Equip { .. } => {}
     }
+}
+
+/// The living unit placed as `placement`.
+fn living_unit(state: &State, placement: &str) -> Option<crate::entity::EntityId> {
+    super::entity_by_placement(state, placement)
+        .filter(|e| e.unit.is_some() && super::alive(e))
+        .map(|e| e.id)
 }
 
 /// Makes a unit a member of a camp.

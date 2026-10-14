@@ -19,6 +19,7 @@ pub fn separate(motion: &mut Motion, state: &mut State) {
         let parked = (tick + id.0).is_multiple_of(20)
             && u.route.is_empty()
             && u.order.is_none()
+            && u.work.job.is_none()
             && u.target.is_none()
             && motion.spatial.profiles.get(e.definition).motion.is_some();
         if !parked {

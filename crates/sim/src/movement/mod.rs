@@ -837,6 +837,9 @@ impl Motion {
                 || idle.order.is_some()
                 || !idle.order_queue.is_empty()
                 || !idle.route.is_empty()
+                || idle.work.job.is_some()
+                || idle.work.employment.is_some()
+                || idle.work.pending_move.is_some()
                 || idle.contained.is_some()
                 || idle.release.is_some()
                 || idle.garrison.is_some()
@@ -1034,7 +1037,7 @@ impl Motion {
             u.route.remove(0);
         }
         if finished_yield && let Some(goal) = u.goal {
-            if u.order.is_none() && goal == waypoint {
+            if u.order.is_none() && u.work.job.is_none() && goal == waypoint {
                 u.goal = None;
             } else {
                 let destination = self.spatial.spot(goal);

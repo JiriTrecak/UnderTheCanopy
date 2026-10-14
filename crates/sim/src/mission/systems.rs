@@ -10,7 +10,7 @@ use crate::{
 use canopy_content::Id;
 
 pub trait Systems {
-    /// The unit is carrying out an order (M2.2).
+    /// The unit is carrying out an order (M2.2, M2.5).
     fn has_order(&self, entity: &Entity) -> bool;
     /// Hero item slots (M2.6); `None` for entities without an inventory.
     fn equipment(&self, entity: &Entity) -> Option<Vec<Option<Id>>>;

@@ -2,7 +2,7 @@
 //! garrison/unload branches of the old `Game.command`, `src/sim/game/game.ts`), with the
 //! old validation.
 
-use super::{Order, can_issue, interrupt, issue};
+use super::{Order, can_issue, issue};
 use crate::{
     action::{Action, Actor, CellPoint},
     combat::Senses,
@@ -113,7 +113,6 @@ pub fn apply(
         let seen = |state: &State, e: &crate::entity::Entity| senses.sight(state).seen(owner, e);
         return crate::garrisons::command(state, senses.catalog, spatial, &eligible, action, &seen);
     }
-    let tick = state.tick;
     let movable = |state: &State, spatial: &Spatial, id: EntityId| {
         state.entities.get(id).is_some_and(|e| {
             e.unit.is_some() && spatial.profiles.get(e.definition).motion.is_some()
@@ -143,8 +142,7 @@ pub fn apply(
                 if !movable(state, spatial, id) || Some(id) == target {
                     continue;
                 }
-                let e = state.entities.get_mut(id).expect("eligible");
-                if !can_issue(e, append) {
+                if !can_issue(state.entities.get(id).expect("eligible"), append) {
                     continue;
                 }
                 let order = match action {
@@ -159,9 +157,9 @@ pub fn apply(
                     },
                     _ => unreachable!(),
                 };
-                issue(e, order, append, tick);
+                issue(state, id, order, append);
                 // A unit ordered out of a lookout steps outside at once.
-                crate::garrisons::settle(spatial, e);
+                crate::garrisons::settle(spatial, state.entities.get_mut(id).expect("eligible"));
                 applied.push(id);
             }
         }
@@ -193,8 +191,7 @@ pub fn apply(
                 {
                     continue;
                 }
-                let e = state.entities.get_mut(id).expect("eligible");
-                issue(e, Order::Attack { target, force }, append, tick);
+                issue(state, id, Order::Attack { target, force }, append);
                 applied.push(id);
             }
         }
@@ -203,7 +200,7 @@ pub fn apply(
                 if !movable(state, spatial, id) {
                     continue;
                 }
-                interrupt(state.entities.get_mut(id).expect("eligible"), None);
+                crate::economy::interrupt(state, id, None);
                 applied.push(id);
             }
         }
@@ -269,7 +266,7 @@ pub fn apply(
                 if !movable(state, spatial, id) {
                     continue;
                 }
-                let e = state.entities.get_mut(id).expect("eligible");
+                let e = state.entities.get(id).expect("eligible");
                 if !can_issue(e, append)
                     || (attack_move && !spatial.profiles.get(e.definition).combat)
                 {
@@ -284,15 +281,15 @@ pub fn apply(
                     surface: slot.deck.map(|d| spatial.deck_name(d)),
                 };
                 issue(
-                    e,
+                    state,
+                    id,
                     Order::Move {
                         destination,
                         attack_move,
                     },
                     append,
-                    tick,
                 );
-                crate::garrisons::settle(spatial, e);
+                crate::garrisons::settle(spatial, state.entities.get_mut(id).expect("eligible"));
                 applied.push(id);
             }
         }

@@ -121,7 +121,8 @@ fn plan_unit(
     }
     // M2.6: pending casts, cast orders, ability charges, stuns, taunts and disarms.
     let order = unit(state, id).order.clone();
-    if order.as_ref().is_some_and(Order::stands_down) {
+    // Workers on a job, and work, pickup and garrison orders, move as their system plans.
+    if unit(state, id).work.job.is_some() || order.as_ref().is_some_and(Order::stands_down) {
         release_combat(unit_mut(state, id));
         return;
     }

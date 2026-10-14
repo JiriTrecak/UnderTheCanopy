@@ -81,6 +81,20 @@ pub fn fingerprint(state: &State) -> u32 {
         h.owner(*owner);
         h.word(*count);
     }
+    // Jobs are a small active-work set: harvests in full, the rest by count.
+    for job in state.economy.jobs.iter() {
+        if job.kind == crate::economy::JobKind::Harvest {
+            h.word(job.id);
+            h.word(job.worker.0);
+            h.option(job.source.map(|s| i64::from(s.0)));
+            h.word(job.target.0);
+            h.word(job.phase as u32);
+            h.option(job.arrived_tick.map(i64::from));
+            h.word(job.progress);
+            h.word(job.amount);
+        }
+    }
+    h.int(state.economy.jobs.len() as i64);
     h.option(state.outcome.as_ref().map(|o| o.defeated.len() as i64));
     if let Some(outcome) = &state.outcome {
         h.option(outcome.winner.map(|w| i64::from(owner_code(w))));
@@ -104,6 +118,26 @@ pub fn fingerprint(state: &State) -> u32 {
         h.stock(&e.inventory);
         h.option(e.construction.as_ref().map(|c| i64::from(c.progress)));
         h.option(e.resource.as_ref().map(|r| i64::from(r.amount)));
+        let cargo = e.unit.as_ref().and_then(|u| u.work.cargo.as_ref());
+        h.option(cargo.map(|c| i64::from(c.amount)));
+        if let Some(c) = cargo {
+            h.text(c.item.as_str());
+        }
+        let p = e.production.as_ref();
+        h.option(p.map(|p| p.queue.len() as i64));
+        h.option(p.and_then(|p| p.queue.first()).map(|q| i64::from(q.id)));
+        h.option(
+            p.and_then(|p| p.active.as_ref())
+                .map(|a| i64::from(a.progress)),
+        );
+        h.option(p.map(|p| i64::from(p.produced)));
+        for q in e.revival.iter().flat_map(|r| &r.queue) {
+            h.word(q.id);
+            h.word(q.hero.0);
+            h.word(q.level);
+            h.word(q.progress);
+        }
+        h.option(e.upgrade.as_ref().map(|u| i64::from(u.progress)));
     }
     h.finish()
 }

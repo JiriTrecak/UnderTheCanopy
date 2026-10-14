@@ -3,13 +3,17 @@
 use crate::{
     action::Action,
     catalog::Catalog,
-    combat, fingerprint, mission,
+    combat,
+    economy::{self, Economy},
+    entity::EntityId,
+    fingerprint, mission,
     movement::Motion,
     orders,
     setup::MatchSetup,
     spawn,
     state::{FactKind, State},
     terrain::Terrain,
+    victory,
     view::View,
     vision::{self, Sight, Vision},
 };
@@ -57,6 +61,10 @@ pub struct World {
     motion: Motion,
     /// Derived combat rules, camps and planning scratch; rebuilt on restore.
     combat: combat::Runtime,
+    /// Derived economy indexes and tables; rebuilt on restore, never saved.
+    economy: Economy,
+    /// How the match ends.
+    rules: victory::Rules,
 }
 
 impl World {
@@ -71,10 +79,25 @@ impl World {
             state.mission = Some(mission::MissionState::default());
         }
         let placements = spawn::placements(map, &catalog, &terrain, &setup).map_err(SetupError)?;
-        spawn::validate(&catalog, &terrain, &setup, &placements).map_err(SetupError)?;
-        for placement in placements.iter().filter(|p| p.activation.is_none()) {
+        spawn::validate(&catalog, &terrain, &setup, &placements.list).map_err(SetupError)?;
+        let mut starting = std::collections::BTreeSet::new();
+        for placement in placements.list.iter().filter(|p| p.activation.is_none()) {
             let id = spawn::create(&mut state, &catalog, placement).map_err(SetupError)?;
             crate::camps::enlist(&mut state, &combat.camps, id, None);
+            if placements.starting_units.contains(&placement.id) {
+                starting.insert(id);
+            }
+        }
+        let rules = match_rules(map);
+        if rules == victory::Rules::Skirmish {
+            for start in &map.player_starts {
+                let fort = state
+                    .entities
+                    .iter()
+                    .find(|e| e.placement.as_deref() == Some(start.main_fort.as_str()))
+                    .ok_or_else(|| SetupError("Missing main fort".into()))?;
+                state.objectives.insert(start.owner(), fort.id.0);
+            }
         }
         for slot in &setup.slots {
             state.wallets.entry(Owner::Player(slot.player)).or_default();
@@ -87,13 +110,18 @@ impl World {
             map.exploration(),
             &SIGHT,
         );
-        let motion = Motion::new(
+        let mut motion = Motion::new(
             terrain.clone(),
             &catalog,
             &state,
             crate::teams::Teams::new(&setup),
             appearance_scales(map, &terrain),
         );
+        let mut economy = Economy::new(&state, &catalog, &setup);
+        if rules == victory::Rules::Skirmish {
+            let mut ctx = economy.ctx(&mut state, &catalog, &mut motion.spatial);
+            economy::harvest::start_gathering(&mut ctx, &setup, &starting);
+        }
         Ok(Self {
             catalog,
             terrain,
@@ -104,6 +132,8 @@ impl World {
             vision,
             motion,
             combat,
+            economy,
+            rules,
         })
     }
 
@@ -183,9 +213,34 @@ impl World {
                 }
             };
         }
-        // Step 4: order advance.
+        // A decided match stands still.
+        if self.state.outcome.is_some() {
+            self.observe();
+            self.state.tick += 1;
+            return;
+        }
+        // Step 4: order advance, then work assignment.
         self.motion.spatial.sync_static(&self.state);
-        orders::plan::advance(&mut self.motion, &mut self.state, &senses!());
+        orders::plan::advance(
+            &mut self.motion,
+            &mut self.state,
+            &senses!(),
+            orders::plan::Work {
+                economy: &mut self.economy,
+                catalog: &self.catalog,
+                senses: economy::command::Senses {
+                    vision: &self.vision,
+                    terrain: &self.terrain,
+                    rules: &SIGHT,
+                },
+            },
+        );
+        {
+            let mut ctx =
+                self.economy
+                    .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
+            economy::assign(&mut ctx);
+        }
         // Step 5: garrisons, combat and order planning, separation, idle motion, movement.
         crate::garrisons::tick(&mut self.state, &self.catalog, &mut self.motion.spatial);
         combat::plan::plan(
@@ -209,17 +264,36 @@ impl World {
                 &senses!(),
                 &mut self.motion.spatial,
                 &mut self.state,
+                &mut self.economy,
                 self.combat.limits,
                 &outcome.dead,
             );
+        }
+        // Step 9: revival, jobs, training, regrowth, upgrades and research.
+        {
+            let mut ctx =
+                self.economy
+                    .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
+            economy::advance(&mut ctx);
         }
         // Step 10: the mission script.
         if let Some(mission) = &mut self.mission {
             mission.tick(&mut self.state, &self.catalog);
             self.motion.spatial.sync_static(&self.state);
         }
-        // Step 11: fog and knowledge.
+        // Step 11: fog and knowledge, then defeat and victory.
         self.observe();
+        if self.rules == victory::Rules::Skirmish {
+            let teams = self.vision.teams().clone();
+            let mut ctx =
+                self.economy
+                    .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
+            if victory::advance(&mut ctx, &teams) {
+                self.motion.spatial.sync_static(&self.state);
+                self.observe();
+            }
+        }
+        self.economy.index(&self.state, &self.catalog);
         self.state.tick += 1;
     }
 
@@ -247,6 +321,12 @@ impl World {
         if let Some(reason) = mission::blocks_commands(&self.state) {
             return Err(reason.into());
         }
+        if self.state.outcome.is_some() {
+            return Err("Match has ended".into());
+        }
+        if self.defeated(owner) {
+            return Err("Your colony has been defeated".into());
+        }
         match action {
             Action::Noop | Action::Ping => Ok(()),
             _ if orders::command::handles(action) => {
@@ -270,8 +350,76 @@ impl World {
                 )
                 .map(|_| ())
             }
+            _ if economy::command::handles(action) => {
+                self.motion.spatial.sync_static(&self.state);
+                self.motion.spatial.sync_bodies(&self.state);
+                let senses = economy::command::Senses {
+                    vision: &self.vision,
+                    terrain: &self.terrain,
+                    rules: &SIGHT,
+                };
+                let mut ctx =
+                    self.economy
+                        .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
+                economy::command::apply(&mut ctx, senses, owner, action).map(|_| ())
+            }
             _ => Err("not available yet".into()),
         }
+    }
+
+    /// Whether `owner` is out of the match (old `isDefeated`).
+    pub fn defeated(&mut self, owner: Owner) -> bool {
+        let index = self.economy.index(&self.state, &self.catalog);
+        victory::defeated(self.rules, &self.state, &self.catalog, index, owner)
+    }
+
+    /// Why `owner` may not place `definition` at `point` with `builder`, if it may not
+    /// (old `Game.canBuild`; the AI's placement search asks this).
+    pub fn can_build(
+        &mut self,
+        owner: Owner,
+        definition: &str,
+        point: &crate::action::FoundationPoint,
+        builder: Option<EntityId>,
+        rotation: i32,
+    ) -> Option<String> {
+        self.motion.spatial.sync_static(&self.state);
+        let senses = economy::command::Senses {
+            vision: &self.vision,
+            terrain: &self.terrain,
+            rules: &SIGHT,
+        };
+        let ctx = self
+            .economy
+            .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
+        let sight = senses.sight(&ctx);
+        economy::construction::can_build(&ctx, &sight, owner, definition, point, builder, rotation)
+    }
+
+    /// The economy's derived data (indexes, supply hints, the tick's deliveries).
+    pub fn economy(&self) -> &Economy {
+        &self.economy
+    }
+
+    /// Runs `f` with the economy context, for tests and tools that set up economic state
+    /// directly (as a mission would).
+    pub fn with_economy<T>(&mut self, f: impl FnOnce(&mut economy::Ctx) -> T) -> T {
+        let mut ctx = self
+            .economy
+            .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
+        f(&mut ctx)
+    }
+
+    /// Checks every incrementally maintained economy index against a rebuild.
+    pub fn verify_economy(&mut self) -> Result<(), String> {
+        self.state.economy.jobs.verify()?;
+        self.economy.verify(&self.state, &self.catalog)
+    }
+
+    /// Removes an entity with its economic consequences but without a death (old
+    /// `Economy.remove`): what a cancelled project or a defeated colony does.
+    pub fn remove_entity(&mut self, id: EntityId) {
+        self.with_economy(|ctx| economy::work::remove(ctx, id, false));
     }
 
     /// The desync fingerprint of the current tick (docs/decisions.md D13).
@@ -287,6 +435,7 @@ impl World {
             &self.terrain,
             &self.vision,
             &SIGHT,
+            &self.economy,
             owner,
         );
         self.add_combat(&mut view, Some(owner));
@@ -295,7 +444,13 @@ impl World {
 
     /// Everything, for spectators.
     pub fn observer_view(&self) -> View {
-        let mut view = View::observe(&self.state, &self.vision);
+        let mut view = View::observe(
+            &self.state,
+            &self.catalog,
+            &self.terrain,
+            &self.vision,
+            &self.economy,
+        );
         self.add_combat(&mut view, None);
         view
     }
@@ -392,6 +547,7 @@ impl World {
             crate::teams::Teams::new(&save.setup),
             appearance_scales(map, &terrain),
         );
+        let economy = Economy::new(&state, &catalog, &save.setup);
         Ok(Self {
             catalog,
             terrain,
@@ -402,7 +558,20 @@ impl World {
             vision,
             motion,
             combat,
+            economy,
+            rules: match_rules(map),
         })
+    }
+}
+
+/// How the map decides its outcome.
+fn match_rules(map: &UtcMap) -> victory::Rules {
+    if map.mission.is_some() {
+        victory::Rules::Mission
+    } else if map.sandbox {
+        victory::Rules::Sandbox
+    } else {
+        victory::Rules::Skirmish
     }
 }
 

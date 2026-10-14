@@ -7,7 +7,7 @@
 //! paying at a level cap; a lone hero earns a bonus that grows with roster capacity.
 //!
 //! Dead heroes are kept as **fallen** entities with their identity and experience, so
-//! revival (M2.5) can bring the same hero back.
+//! revival ([`crate::economy::revival`]) brings the same hero back.
 
 use crate::{
     catalog::Catalog,
@@ -80,7 +80,13 @@ impl Roster {
                 if e.construction.is_none() {
                     roster.capacity = roster.capacity.max(d.hero_capacity.unwrap_or(0));
                 }
-                // M2.5: heroes queued in production join `definitions` here.
+                // Paid recruits hold their place.
+                for q in e.production.iter().flat_map(|p| &p.queue) {
+                    let queued = catalog.get(q.definition);
+                    if queued.is_hero() && !roster.definitions.contains(&queued.id) {
+                        roster.definitions.push(queued.id.clone());
+                    }
+                }
             }
         }
         roster

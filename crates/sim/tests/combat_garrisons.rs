@@ -72,7 +72,11 @@ fn an_archer_walks_in_and_stands_on_the_lookout() {
     ));
     // It sees from 6 m up and ghosts through bodies.
     assert_eq!(canopy_sim::vision::Current.lift_cm(archer), 600);
-    assert!(canopy_sim::spatial::ignores_units(world.state(), archer));
+    assert!(canopy_sim::spatial::ignores_units(
+        world.state(),
+        &world.spatial().profiles,
+        archer
+    ));
     let view = world.view(player(1));
     assert_eq!(
         view.entity(EntityId(a))
