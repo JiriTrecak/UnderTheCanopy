@@ -7,7 +7,7 @@
 //! paying at a level cap; a lone hero earns a bonus that grows with roster capacity.
 //!
 //! Dead heroes are kept as **fallen** entities with their identity and experience, so
-//! revival (M2.5) can bring the same hero back.
+//! revival ([`crate::economy::revival`]) brings the same hero back.
 
 use crate::{
     catalog::Catalog,

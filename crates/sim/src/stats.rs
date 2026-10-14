@@ -2,7 +2,7 @@
 //! then modifiers. One path for simulation, views and AI.
 //!
 //! Modifier hooks, filled by the steps that add their sources:
-//! - research (M2.5): [`research`] lists an owner's completed research;
+//! - research: [`research`] lists an owner's completed research;
 //! - items, statuses and permanent bonuses (M2.6): join in [`Stats::of`] where marked.
 
 use crate::{catalog::Catalog, entity::Entity, state::State};

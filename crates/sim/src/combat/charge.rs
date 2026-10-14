@@ -27,10 +27,11 @@ pub fn maintain(state: &mut State, id: EntityId) {
         .entities
         .get(target)
         .is_some_and(|t| t.hp.is_none_or(|hp| hp > 0));
-    // M2.5 jobs, M2.6 stuns, casts and roots also end a charge.
+    // M2.6: stuns, casts and roots also end a charge.
     let ends = charge.expires <= tick
         || !victim_alive
         || u.target != Some(target)
+        || u.work.job.is_some()
         || u.contained.is_some()
         || u.camp.as_ref().is_some_and(|c| c.returning)
         || matches!(

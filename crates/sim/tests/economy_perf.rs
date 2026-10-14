@@ -132,6 +132,7 @@ fn site(
     def: &str,
     centre: (f64, f64),
     builder: u32,
+    lane: bool,
 ) -> Option<(f64, f64)> {
     let footprint = world.catalog().content.definition(def)?.footprint.clone()?;
     let snap = |c: f64, w: u32| {
@@ -142,14 +143,20 @@ fn site(
         snap(centre.0, footprint.width),
         snap(centre.1, footprint.depth),
     );
-    for r in 1i32..12 {
+    // With `lane`, leave at least four cells between buildings, as players do.
+    let step = if lane {
+        f64::from((footprint.width.max(footprint.depth) + 4).div_ceil(4) * 4)
+    } else {
+        4.0
+    };
+    for r in 0i32..40 {
         for dy in -r..=r {
             for dx in -r..=r {
                 if dx.abs().max(dy.abs()) != r {
                     continue;
                 }
-                let x = sx + f64::from(4 * dx);
-                let y = sy + f64::from(4 * dy);
+                let x = sx + step * f64::from(dx);
+                let y = sy + step * f64::from(dy);
                 if x < 0.0 || y < 0.0 {
                     continue;
                 }
@@ -161,6 +168,7 @@ fn site(
                 if world
                     .can_build(owner, def, &point, Some(EntityId(builder)), 0)
                     .is_none()
+                    && (!lane || spaced(world, (x, y), &footprint))
                 {
                     return Some((x, y));
                 }
@@ -168,6 +176,25 @@ fn site(
         }
     }
     None
+}
+
+/// No other building within four cells of the footprint.
+fn spaced(world: &World, at: (f64, f64), footprint: &canopy_content::game::Footprint) -> bool {
+    world.state().entities.iter().all(|e| {
+        let Some(f) = world.catalog().get(e.definition).footprint.as_ref() else {
+            return true;
+        };
+        if world.catalog().kind(e.definition) != Kind::Building {
+            return true;
+        }
+        let (ex, ey) = (
+            f64::from(e.position.x) / 1000.0,
+            f64::from(e.position.y) / 1000.0,
+        );
+        let gap_x = (ex - at.0).abs() - f64::from(f.width + footprint.width) / 2.0;
+        let gap_y = (ey - at.1).abs() - f64::from(f.depth + footprint.depth) / 2.0;
+        gap_x >= 4.0 || gap_y >= 4.0
+    })
 }
 
 fn enqueue(world: &mut World, player: u8, seq: &mut u32, action: Action) {
@@ -363,7 +390,7 @@ fn eight_colonies_run_a_full_economy() {
                 candidates.sort_by(|a, b| distance(b, &anchors).total_cmp(&distance(a, &anchors)));
                 let found = candidates
                     .into_iter()
-                    .find_map(|c| site(&mut world, owner, fort.as_str(), c, workers[0]))
+                    .find_map(|c| site(&mut world, owner, fort.as_str(), c, workers[0], false))
                     .expect("fort site");
                 place(
                     &mut world,
@@ -378,6 +405,28 @@ fn eight_colonies_run_a_full_economy() {
                 found
             }
         };
+        // Buildings first, on the far side of the hall, then the workforce at its door.
+        for b in 0..13 {
+            let def = if b < 9 { &house } else { &barracks };
+            if let Some((x, y)) = site(
+                &mut world,
+                owner,
+                def.as_str(),
+                (hall.0, hall.1 - 24.0),
+                workers[0],
+                true,
+            ) {
+                place(
+                    &mut world,
+                    &catalog,
+                    owner,
+                    def.as_str(),
+                    x,
+                    y,
+                    &format!("bench.{p}.b{b}"),
+                );
+            }
+        }
         let centre = (hall.0 as i32, hall.1 as i32 + 16);
         let cells = free_cells(&world, worker_id, centre, 40 - workers.len(), &mut taken);
         for (i, (x, y)) in cells.into_iter().enumerate() {
@@ -390,20 +439,6 @@ fn eight_colonies_run_a_full_economy() {
                 f64::from(y),
                 &format!("bench.{p}.w{i}"),
             ));
-        }
-        for b in 0..13 {
-            let def = if b < 9 { &house } else { &barracks };
-            if let Some((x, y)) = site(&mut world, owner, def.as_str(), hall, workers[0]) {
-                place(
-                    &mut world,
-                    &catalog,
-                    owner,
-                    def.as_str(),
-                    x,
-                    y,
-                    &format!("bench.{p}.b{b}"),
-                );
-            }
         }
         // Mining, felling, a construction site, training and repairs.
         let near = |world: &World, def: &canopy_content::Id, from: (f64, f64)| {
@@ -448,7 +483,7 @@ fn eight_colonies_run_a_full_economy() {
                 append: None,
             },
         );
-        if let Some((x, y)) = site(&mut world, owner, house.as_str(), hall, workers[36]) {
+        if let Some((x, y)) = site(&mut world, owner, house.as_str(), hall, workers[36], true) {
             enqueue(
                 &mut world,
                 p as u8,

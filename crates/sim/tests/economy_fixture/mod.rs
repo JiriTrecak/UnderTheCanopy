@@ -206,7 +206,7 @@ fn game() -> Value {
                 "body": body(300), "footprint": {"width": 4, "depth": 4}, "entrance": {"x": 0.5, "y": 2.5},
                 "creation": {"method": "construct", "items": [cost(AMBER, 20)],
                     "workTicks": 30, "workAnimation": "build"},
-                "behaviors": {"playerControl": {}, "research": {"outputs": [TOOLS, VIGOUR], "queueCapacity": 2}},
+                "behaviors": {"playerControl": {}, "research": {"outputs": [TOOLS, VIGOUR], "queueCapacity": 1}},
             })),
             definition(SANCTUARY, "building", json!({
                 "body": body(300), "footprint": {"width": 8, "depth": 8}, "entrance": {"x": 0.5, "y": 4.5},

@@ -96,15 +96,16 @@ fn cancelled_research_is_refunded_and_full_queues_refuse() {
     fund(&mut world, P1, AMBER, 100);
     fund(&mut world, P1, WOOD, 20);
     let forge = id(&world, "forge");
-    command(&mut world, research(forge, TOOLS));
-    command(&mut world, research(forge, VIGOUR));
-    world.step();
-    assert_eq!(get(&world, forge).research.as_ref().unwrap().queue.len(), 2);
-    assert_eq!(wallet(&world, P1, AMBER), 70);
+    assert_eq!(try_command(&mut world, research(forge, VIGOUR)), None);
+    assert_eq!(wallet(&world, P1, AMBER), 90);
+    assert_eq!(
+        try_command(&mut world, research(forge, TOOLS)),
+        Some("Research queue is full".into())
+    );
     assert_eq!(
         try_command(
             &mut world,
-            json!({"type": "cancelResearch", "actor": forge, "research": "research.test.other"})
+            json!({"type": "cancelResearch", "actor": forge, "research": TOOLS})
         ),
         Some("Research is not queued here".into())
     );
@@ -115,8 +116,16 @@ fn cancelled_research_is_refunded_and_full_queues_refuse() {
         ),
         None
     );
-    assert_eq!(wallet(&world, P1, AMBER), 80);
+    assert_eq!(wallet(&world, P1, AMBER), 100);
     assert!(get(&world, forge).inventory.is_empty());
+    assert!(
+        get(&world, forge)
+            .research
+            .as_ref()
+            .unwrap()
+            .queue
+            .is_empty()
+    );
 }
 
 #[test]

@@ -30,8 +30,7 @@ pub enum MissionEffect {
     Follow { placement: String, target: String },
     /// Order a forced attack.
     Attack { placement: String, target: String },
-    /// Interrupt a unit's work so it can turn; the turn itself is mission state (M2.5
-    /// economy interrupt).
+    /// Interrupt a unit's work so it can turn; the turn itself is mission state.
     Face { placement: String },
     /// Spell damage from nobody, resolved by the next tick's combat.
     Damage {
