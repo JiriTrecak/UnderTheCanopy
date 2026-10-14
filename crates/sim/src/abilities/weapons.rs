@@ -173,7 +173,7 @@ pub fn evade(catalog: &Catalog, state: &mut State, holder: EntityId) -> Option<A
         .into_iter()
         .filter(|g| g.evasion > 0)
         .collect();
-    list.sort_by(|a, b| b.evasion.cmp(&a.evasion));
+    list.sort_by_key(|g| std::cmp::Reverse(g.evasion));
     let best = list.first()?;
     (best.evasion == 1000 || crate::camps::random_below(state, 1000) < best.evasion)
         .then_some(best.ability)
@@ -431,6 +431,10 @@ pub fn tick(ctx: &mut Ctx, state: &mut State) {
     }
 }
 
+/// A manual weapon release that cannot happen: the attack is called off.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Unreleasable;
+
 /// The enhancement of a weapon release (old `SpellWeaponCasts.release`): `Err` cancels a
 /// manual release that cannot happen, `Ok(None)` is an ordinary shot.
 pub fn release(
@@ -439,7 +443,7 @@ pub fn release(
     source: EntityId,
     target: EntityId,
     projectile: bool,
-) -> Result<Option<Enhancement>, ()> {
+) -> Result<Option<Enhancement>, Unreleasable> {
     let catalog = ctx.catalog();
     let Some(e) = state.entities.get(source) else {
         return Ok(None);
@@ -503,7 +507,7 @@ pub fn release(
         && (o.target != target || extras.is_empty())
     {
         abandon(ctx, state, source, "Weapon ability could not release");
-        return Err(());
+        return Err(Unreleasable);
     }
     let Some((ability, rank, bonus, status)) = enhance(
         catalog,

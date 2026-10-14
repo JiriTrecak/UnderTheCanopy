@@ -262,7 +262,7 @@ pub fn resolve(ctx: &mut Ctx, state: &mut State) -> Outcome {
             None
         } else {
             match weapons::release(ctx, state, a, b, projectile) {
-                Err(()) => continue,
+                Err(weapons::Unreleasable) => continue,
                 Ok(e) => e,
             }
         };
@@ -580,10 +580,8 @@ fn cleave_hits(
         f64::from(p.position.x) / 1000.0 - origin.x,
         f64::from(p.position.y) / 1000.0 - origin.y,
     );
-    let n = match crate::math::hypot(dx, dy) {
-        v if v == 0.0 => 1.0,
-        v => v,
-    };
+    let n = crate::math::hypot(dx, dy);
+    let n = if n == 0.0 { 1.0 } else { n };
     let limit = crate::math::cos(c.arc_degrees * std::f64::consts::PI / 360.0);
     let offset = |t: &Entity| {
         (

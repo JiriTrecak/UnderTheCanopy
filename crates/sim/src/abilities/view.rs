@@ -266,10 +266,8 @@ impl Spellcraft {
                     d.point.yf() - d.position.yf(),
                     d.point.hf() - d.position.hf(),
                 );
-                let n = match (dx * dx + dy * dy + dh * dh).sqrt() {
-                    n if n == 0.0 => 1.0,
-                    n => n,
-                };
+                let n = (dx * dx + dy * dy + dh * dh).sqrt();
+                let n = if n == 0.0 { 1.0 } else { n };
                 let m = d.position.milli();
                 DeliveryView {
                     cast: d.cast,

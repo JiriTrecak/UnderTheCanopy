@@ -283,11 +283,7 @@ mod pairs {
 }
 
 /// Sorted map helpers over `Vec<(K, V)>`.
-pub fn entry<'a, K: Ord + Copy, V>(
-    list: &'a mut Vec<(K, V)>,
-    key: K,
-    make: impl FnOnce() -> V,
-) -> &'a mut V {
+pub fn entry<K: Ord + Copy, V>(list: &mut Vec<(K, V)>, key: K, make: impl FnOnce() -> V) -> &mut V {
     let i = match list.binary_search_by(|(k, _)| k.cmp(&key)) {
         Ok(i) => i,
         Err(i) => {

@@ -1122,7 +1122,8 @@ impl Spatial {
             0.0
         };
         // Radii come off one after the other, as in the old game (float order matters).
-        let gap = (self.point_range(x, y, b).sqrt() - self.profiles.get(a.definition).body.radius
+        let gap = (self.point_range(x, y, b).sqrt()
+            - self.profiles.get(a.definition).body.radius
             - other)
             .max(0.0);
         gap * gap

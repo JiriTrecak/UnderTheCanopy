@@ -67,10 +67,8 @@ pub fn launch(ctx: &mut Ctx, state: &mut State, caster: &Actor, p: &Pending) {
     let mut point = Fine::of(mark.position, target_height);
     if let Delivery::Line { length, .. } = &delivery {
         let (dx, dy) = (point.xf() - origin.xf(), point.yf() - origin.yf());
-        let len = match crate::math::hypot(dx, dy) {
-            l if l == 0.0 => 1.0,
-            l => l,
-        };
+        let len = crate::math::hypot(dx, dy);
+        let len = if len == 0.0 { 1.0 } else { len };
         let (x, y) = (
             origin.xf() + dx / len * length,
             origin.yf() + dy / len * length,
@@ -240,6 +238,7 @@ fn caster_of(ctx: &Ctx, state: &State, shot: &Shot) -> Actor {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn hit_unit(
     ctx: &mut Ctx,
     state: &mut State,
@@ -302,9 +301,7 @@ pub fn tick(ctx: &mut Ctx, state: &mut State) {
 fn step(ctx: &mut Ctx, state: &mut State, mut shot: Shot) -> Option<Shot> {
     let caster = caster_of(ctx, state, &shot);
     let spell = ctx.ability(shot.ability);
-    let Some(d) = spell.delivery.clone() else {
-        return None;
-    };
+    let d = spell.delivery.clone()?;
     let tick = state.tick;
     match &d {
         Delivery::Swarm { .. } => {

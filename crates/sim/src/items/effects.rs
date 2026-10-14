@@ -76,7 +76,7 @@ fn runtime<'a>(ctx: &Ctx, e: &'a mut Entity, slot: usize) -> &'a mut ItemRuntime
             .and_then(|a| a.charges)
             .or_else(|| rescue_of(e).map(|r| r.charges))
     });
-    q.runtime[slot].get_or_insert_with(|| ItemRuntime {
+    q.runtime[slot].get_or_insert(ItemRuntime {
         ready_tick: 0,
         hits: 0,
         charges,

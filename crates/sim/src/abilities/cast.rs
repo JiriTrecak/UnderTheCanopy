@@ -121,20 +121,17 @@ pub fn eligibility(
         return Err("Too many active spell deliveries");
     }
     let range = library::value(spell, rank, &spell.targeting.range).max(0) * 1000;
-    match spell.targeting.kind {
-        TargetingKind::Caster => {
-            if aim != Aim::Unit(caster.id) {
-                return Err("This ability targets its caster");
-            }
-            if !matches_target(spell, caster, caster, Side::Ally) {
-                return Err("Target does not match spell filters");
-            }
-            if !accepts(spell, caster, Side::Ally) {
-                return Err("Target is immune to this spell");
-            }
-            return validate_world(ctx, state, caster.id, aim, ability, rank);
+    if spell.targeting.kind == TargetingKind::Caster {
+        if aim != Aim::Unit(caster.id) {
+            return Err("This ability targets its caster");
         }
-        _ => {}
+        if !matches_target(spell, caster, caster, Side::Ally) {
+            return Err("Target does not match spell filters");
+        }
+        if !accepts(spell, caster, Side::Ally) {
+            return Err("Target is immune to this spell");
+        }
+        return validate_world(ctx, state, caster.id, aim, ability, rank);
     }
     let target_id = match aim {
         Aim::Point(p) => {

@@ -962,6 +962,7 @@ pub fn grant(
 
 /// Runs one template status from a weapon enhancement against its victim (old
 /// `weaponStatus`).
+#[allow(clippy::too_many_arguments)]
 pub fn template(
     ctx: &mut Ctx,
     state: &mut State,

@@ -168,6 +168,9 @@ pub fn gather_orders(ctx: &mut Ctx) {
             continue;
         }
         let u = w.unit.as_ref().expect("unit");
+        if u.taunt.is_some() {
+            continue;
+        }
         let Some(Order::Gather { target }) = u.order else {
             continue;
         };
@@ -358,7 +361,9 @@ pub fn admit_harvesters(ctx: &mut Ctx) {
             continue;
         }
         let mut phase = job.phase;
-        if phase == Phase::Walk && work::arrived(ctx, job.worker) {
+        let worker = ctx.state.entities.get(job.worker).expect("worker");
+        let (taunted, held) = (super::taunted(worker), super::held(ctx.catalog, worker));
+        if phase == Phase::Walk && !taunted && work::arrived(ctx, job.worker) {
             let job = ctx.state.economy.job_mut(id).expect("job");
             job.phase = Phase::Wait;
             job.arrived_tick = Some(tick);
@@ -366,7 +371,7 @@ pub fn admit_harvesters(ctx: &mut Ctx) {
         }
         if phase == Phase::Work {
             *working.entry(source).or_default() += 1;
-        } else if phase == Phase::Wait {
+        } else if phase == Phase::Wait && !held {
             let arrived = ctx
                 .state
                 .economy

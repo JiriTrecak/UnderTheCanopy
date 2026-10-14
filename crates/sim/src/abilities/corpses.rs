@@ -230,7 +230,9 @@ pub fn resurrect(
         if let Some(c) = &corpse.caster {
             e.caster = Some(c.clone());
         }
-        let stats = crate::stats::Stats::of(catalog, e, &[]);
+        let e = state.entities.get(unit).expect("raised");
+        let stats = crate::stats::Stats::of(catalog, e, crate::stats::research(state, e.owner));
+        let e = state.entities.get_mut(unit).expect("raised");
         let health = library::value(spell, rank, &op.health_permille);
         let mana = library::value(spell, rank, &op.mana_permille);
         e.hp = Some(((i64::from(stats.max_hp) * health / 1000).max(1)) as u32);

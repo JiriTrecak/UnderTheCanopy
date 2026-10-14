@@ -192,6 +192,11 @@ pub(super) fn apply(
             entity.owner = *owner;
             // A fresh unit: orders and transient state end; position is kept.
             entity.unit = Some(Box::<Unit>::default());
+            // Item statuses end with the old body; spell statuses carry over (old game).
+            if let Some(equipment) = &mut entity.equipment {
+                equipment.statuses.clear();
+            }
+            crate::items::tidy(entity);
             join_camp(entity, camp.as_deref());
             let after = systems.max_hp(catalog, entity);
             let hp = u64::from(entity.hp.unwrap_or(before));

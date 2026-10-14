@@ -77,6 +77,7 @@ fn hero(ctx: &Ctx, e: &crate::entity::Entity) -> bool {
 }
 
 /// Where a teleported unit lands (old `landing`).
+#[allow(clippy::too_many_arguments)]
 fn landing(
     ctx: &Ctx,
     state: &State,
@@ -191,6 +192,17 @@ pub fn occupants(state: &State, host: EntityId) -> Vec<EntityId> {
         })
         .map(|e| e.id)
         .collect()
+}
+
+/// Whether a living unit is held inside `host` by a containing ability.
+pub fn hosting(state: &State, host: EntityId) -> bool {
+    state.entities.iter().any(|e| {
+        alive(e)
+            && e.links
+                .as_ref()
+                .and_then(|l| l.containment.as_ref())
+                .is_some_and(|c| c.host == host)
+    })
 }
 
 /// Why a unit cannot change hands (old `UnitOwnership.reason`).
@@ -1363,7 +1375,7 @@ pub fn tick_returns(ctx: &mut Ctx, state: &mut State) {
                     let mut ectx = ctx.economy.ctx(state, ctx.senses.catalog, ctx.spatial);
                     crate::economy::revival::restore(&mut ectx, id, spot);
                 }
-                restore_pools(ctx, state, id, health, mana);
+                restore_pools(ctx.catalog(), state, id, health, mana);
                 clear_return(state, id);
                 revival_outcome(ctx, state, id, &record, true);
             }
@@ -1377,8 +1389,10 @@ pub fn tick_returns(ctx: &mut Ctx, state: &mut State) {
 }
 
 /// Health and mana of a returned hero as fractions of the maximum (old `returnAt`).
+/// Pools of a returning hero (the end of old `returnAt`): health and mana at the given
+/// shares, casting and regeneration restarted. Building revival returns them full.
 pub fn restore_pools(
-    ctx: &Ctx,
+    catalog: &crate::catalog::Catalog,
     state: &mut State,
     id: EntityId,
     health_permille: i64,
@@ -1387,7 +1401,7 @@ pub fn restore_pools(
     let Some(e) = state.entities.get(id) else {
         return;
     };
-    let stats = Stats::of(ctx.catalog(), e, crate::stats::research(state, e.owner));
+    let stats = Stats::of(catalog, e, crate::stats::research(state, e.owner));
     let e = state.entities.get_mut(id).expect("hero");
     e.hp = Some(((i64::from(stats.max_hp) * health_permille / 1000).max(1)) as u32);
     if let Some(c) = &mut e.caster {

@@ -421,6 +421,9 @@ pub fn construction_orders(ctx: &mut Ctx) {
             continue;
         }
         let u = e.unit.as_ref().expect("unit");
+        if u.taunt.is_some() {
+            continue;
+        }
         let Some(Order::Construct { target }) = u.order else {
             continue;
         };
@@ -442,7 +445,14 @@ pub fn construction_orders(ctx: &mut Ctx) {
             .get(id)
             .and_then(|e| e.unit.as_ref())
             .expect("unit");
-        if u.work.job.is_some() || cargo_blocks_construction(ctx, id) || u.retry_at > tick {
+        if u.work.job.is_some()
+            || cargo_blocks_construction(ctx, id)
+            || u.retry_at > tick
+            || crate::abilities::statuses::stunned(
+                ctx.catalog,
+                ctx.state.entities.get(id).expect("unit"),
+            )
+        {
             continue;
         }
         let site = ctx.state.entities.get(target).expect("site");
