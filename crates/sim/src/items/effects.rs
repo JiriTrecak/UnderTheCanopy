@@ -100,6 +100,7 @@ fn aura_of(effect: &ItemEffect) -> Option<&canopy_content::items::ItemAura> {
 /// Item statuses expire and auras are rebuilt; pools follow the new maximums (old
 /// `ItemEffects.tick`).
 pub fn tick(ctx: &mut Ctx, state: &mut State) {
+    let _span = tracing::trace_span!("item effects").entered();
     let tick = state.tick;
     let catalog = ctx.catalog();
     for e in state.entities.iter_mut() {

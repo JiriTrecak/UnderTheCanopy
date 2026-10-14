@@ -134,6 +134,7 @@ fn pickers(state: &State) -> Vec<(EntityId, EntityId)> {
 
 /// Walks pickup orders toward their items (old `Inventory.plan`, step 5).
 pub fn plan(ctx: &mut Ctx, state: &mut State) {
+    let _span = tracing::trace_span!("item pickups").entered();
     let tick = state.tick;
     for (hero, target) in pickers(state) {
         if let Some(error) = pickup_error(ctx, state, hero, target) {

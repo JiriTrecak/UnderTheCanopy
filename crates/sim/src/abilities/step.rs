@@ -39,13 +39,17 @@ pub fn lifecycle(ctx: &mut Ctx, state: &mut State) {
     crate::combat::deaths::expire_corpses(&mut state.combat, tick);
     summons::tick(ctx, state);
     status_ops::tick(ctx, state);
-    auras(ctx, state);
+    {
+        let _span = tracing::trace_span!("auras").entered();
+        auras(ctx, state);
+    }
     weapons::tick(ctx, state);
     cast::tick_casters(ctx, state);
 }
 
 /// Step 6: cast orders whose casters arrived in range during movement.
 pub fn after_movement(ctx: &mut Ctx, state: &mut State) {
+    let _span = tracing::trace_span!("cast approach").entered();
     orders::tick(ctx, state, false);
 }
 

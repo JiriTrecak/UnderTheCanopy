@@ -477,3 +477,40 @@ fn weapon_casts_enhance_the_next_shot() {
             .all(|e| e.status.as_deref() == Some("chilled"))
     );
 }
+
+#[test]
+fn lines_need_no_aim_area() {
+    let mut spec = Spec::default();
+    give(
+        &mut spec,
+        with(
+            spell(
+                "ability.test.wave",
+                "point",
+                &["enemy"],
+                12,
+                45,
+                60,
+                8,
+                8,
+                json!([{"op": "damage", "target": "target", "amount": 50, "damageType": "spell"}]),
+            ),
+            json!({"delivery": {"kind": "line", "speed": 16, "length": 14, "width": 1.5}}),
+        ),
+        "wave",
+    );
+    let entities = vec![
+        placed("a", "unit.caster", 100.0, 100.0, 1),
+        placed("b", "unit.warrior", 105.0, 100.0, 2),
+        placed("c", "unit.warrior", 110.0, 101.0, 2),
+    ];
+    let played = Script::new(
+        "delivery-line-bare",
+        spec,
+        entities,
+        80,
+        vec![(1, 1, cast_at_point(1, "wave", 106, 100))],
+    )
+    .play();
+    assert_eq!(played.count(EventKind::Damaged), 2);
+}

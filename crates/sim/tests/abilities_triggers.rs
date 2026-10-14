@@ -446,3 +446,27 @@ fn lifecycle_reactions_are_bounded_per_tick() {
         "{per_tick:?}"
     );
 }
+
+#[test]
+fn auras_may_carry_damage_triggers() {
+    // The old rule scanned trigger operations too, so an aura could not also pulse damage.
+    let mut spec = Spec::default();
+    spec.abilities.push(with(
+        passive(
+            "ability.test.ember",
+            json!([{"op": "status", "target": "target", "id": "warmth", "amount": 1, "polarity": "positive", "dispel": false, "modifiers": {"armor": 1}}]),
+        ),
+        json!({"aura": {"radius": 4, "meleeOnly": false},
+            "triggers": [{"id": "flare", "event": "interval", "intervalTicks": 20, "operations": [
+                {"op": "damage", "target": "target", "query": {"center": "caster", "radius": 4, "relations": ["enemy"]}, "amount": 3, "damageType": "spell"}]}]}),
+    ));
+    spec.hero.push(bind("ember", "ability.test.ember", 1));
+    let entities = vec![
+        placed("a", "unit.hero", 100.0, 100.0, 1),
+        placed("b", "unit.warrior", 102.0, 100.0, 1),
+        placed("c", "unit.critter", 140.0, 140.0, 0),
+    ];
+    let played = Script::new("trigger-aura", spec, entities, 60, vec![]).play();
+    assert_eq!(statuses(&played.world, "b"), vec!["warmth"]);
+    assert!(played.count(EventKind::Interval) >= 2);
+}

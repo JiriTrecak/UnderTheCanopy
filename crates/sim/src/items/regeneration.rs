@@ -14,6 +14,7 @@ pub const POINT: u32 = 40_000;
 
 /// Step 3 (old `Regeneration.tick`).
 pub fn tick(ctx: &mut Ctx, state: &mut State) {
+    let _span = tracing::trace_span!("regeneration").entered();
     let tick = state.tick;
     let units: Vec<EntityId> = state
         .entities

@@ -54,6 +54,33 @@ impl World<'_> {
     }
 }
 
+/// How far from its caster (cells) a unit can matter when scoring `spell`: the range, the
+/// widest area around an aim, the delivery's reach, the strategic threat checks and building
+/// footprints, and never less than the 24-cell threat radius. The caster's own units count
+/// wherever they are (existing summons).
+fn reach(spell: &Ability, rank: u8) -> i64 {
+    let value = |a: &canopy_content::abilities::Amount| library::value(spell, rank, a).max(0);
+    let range = value(&spell.targeting.range);
+    let area = spell.targeting.radius.as_ref().map_or(0, value);
+    let query = spell
+        .on_release
+        .iter()
+        .flat_map(Operation::effects)
+        .filter_map(Effect::query)
+        .map(|q| value(&q.radius))
+        .max()
+        .unwrap_or(0);
+    let delivery = match &spell.delivery {
+        Some(Delivery::Chain {
+            bounces, radius, ..
+        }) => value(bounces) * radius.ceil() as i64,
+        Some(Delivery::Line { length, width, .. }) => (length + width).ceil() as i64,
+        Some(Delivery::Swarm { radius, .. }) => radius.ceil() as i64,
+        _ => 0,
+    };
+    (range + area + query + delivery + 16).max(24)
+}
+
 fn threats(w: &World, observed: &[Actor]) -> bool {
     observed
         .iter()
@@ -70,6 +97,16 @@ fn score(
     preference: AiPreference,
 ) -> f64 {
     let caster = w.caster;
+    if let Some(Delivery::Line { width, .. }) = &spell.delivery
+        && spell.targeting.radius.is_none()
+    {
+        // A line aimed without an area: predict the units within its width of the aim.
+        let mut copy = spell.clone();
+        copy.targeting.radius = Some(canopy_content::abilities::Amount::Fixed(
+            width.ceil().max(1.0) as u32,
+        ));
+        return score(w, &copy, rank, aim, observed, preference);
+    }
     if let Some(d @ Delivery::Swarm { count, .. }) = &spell.delivery {
         // Score the bite program; returning cargo is not an immediate restore.
         let mut copy = spell.clone();
@@ -677,6 +714,7 @@ fn corpse_aims(spell: &Ability, corpses: &[CorpseView]) -> Vec<(EntityId, Milli)
 
 /// Autocast and neutral casters (old `ambient`).
 pub fn ambient(ctx: &mut Ctx, state: &mut State) {
+    let _span = tracing::trace_span!("autocast").entered();
     let tick = state.tick;
     for id in cast::casters(state) {
         let Some(e) = state.entities.get(id) else {
@@ -742,10 +780,16 @@ pub fn ambient(ctx: &mut Ctx, state: &mut State) {
                 break;
             };
             let caster = access.actor;
+            // Units beyond `reach` cannot change the choice; skipping them saves the exact
+            // sight test, the costliest part of autocast.
+            let reach = reach(spell, rank) * 1000;
             let observed: Vec<Actor> = state
                 .entities
                 .iter()
                 .filter(|t| t.hp.is_some() && actor::alive(t))
+                .filter(|t| {
+                    t.owner == caster.owner || actor::within(t.position, caster.position, reach)
+                })
                 .filter(|t| super::visible(ctx, state, caster.owner, t.id, Some(&caster)))
                 .map(|t| actor::of(&ctx.senses, state, t))
                 .collect();
