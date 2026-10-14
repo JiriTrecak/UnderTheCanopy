@@ -12,7 +12,7 @@ Devices are created with WebGPU's default limits and only features WebGPU also o
 
 ## D3. Simulation at 40 Hz on its own thread (2026-10-14)
 
-The simulation ticks every 25 ms on its own thread; the renderer runs at the display rate and interpolates between snapshots. Why: the frozen server and lockstep input delay are built on 25 ms ticks, finer ticks keep commands responsive, gameplay is tuned at this rate, and the cost in Rust is small. The tick length is one constant; content is authored in seconds and converted on load. Parallel work inside a tick merges results in a fixed order.
+The simulation ticks every 25 ms on its own thread; the renderer runs at the display rate and interpolates between snapshots. Why: the frozen server and lockstep input delay are built on 25 ms ticks, finer ticks keep commands responsive, gameplay is tuned at this rate, and the cost in Rust is small. The tick length is one constant. Content durations (`*Ticks` fields) are authored in fixed 25 ms units (`AUTHORED_TICK_MS`) and converted to simulation ticks on load, so a different tick rate would not change the data. Parallel work inside a tick merges results in a fixed order.
 
 ## D4. Determinism from day one (2026-10-14)
 
@@ -45,3 +45,7 @@ The TypeScript match server stays in the old repository and stays deployed. `can
 ## D11. Profiling built in (2026-10-14)
 
 `tracing` spans everywhere; the `profile` feature streams them and frame marks to Tracy (`just profile`). The `profiling` Cargo profile is release with full symbols. Why: performance claims come from measurements on the reference machine.
+
+## D12. Content validation scope in phase 1 (2026-10-14)
+
+`canopy-content` rejects anything structurally wrong (unknown fields, wrong types, unknown enum values) and enforces every cross-reference and invariant the simulation relies on, matching the old loader's rules. Pure authoring limits (for example a maximum speed of 40) are not duplicated while the old editors still validate the data; they move to Rust with the editors in phase 2. `just parity` compares the Rust reader with the TypeScript loader on the same files. Why: full constraint parity is editor work; the game needs correct reading and sound invariants.
