@@ -30,6 +30,11 @@ pub const HALL: &str = "building.test.hall";
 pub const HOUSE: &str = "building.test.house";
 pub const BARRACKS: &str = "building.test.barracks";
 pub const MINE: &str = "building.test.mine";
+/// A hero spell whose value lies in its second operation: a token hit, then the blow.
+pub const SMITE: &str = "ability.test.smite";
+pub const RUSH: &str = "ability.test.rush";
+pub const CHARM: &str = "item.test.charm";
+pub const WARD: &str = "ability.test.ward";
 
 pub const P1: Owner = Owner::Player(0);
 pub const P2: Owner = Owner::Player(1);
@@ -47,7 +52,7 @@ fn definition(id: &str, kind: &str, extra: Value) -> Value {
 
 fn level(experience: u32, max_hp: u32, damage: u32) -> Value {
     json!({"experience": experience, "maxHp": max_hp, "damage": damage, "armor": 2,
-        "cooldownTicks": 30, "maxMana": 0, "healthRegenPerSecond": 0, "manaRegenPerSecond": 0})
+        "cooldownTicks": 30, "maxMana": 100, "healthRegenPerSecond": 0, "manaRegenPerSecond": 1})
 }
 
 fn game() -> Value {
@@ -107,6 +112,16 @@ fn game() -> Value {
             "playerControl": {}, "movement": {"speed": 4}, "combat": blade(20, 30),
             "progression": {"levels": [level(0, 300, 20), level(80, 360, 24), level(200, 420, 28)],
                 "experienceRadius": 14},
+            "inventory": {"slots": 2, "pickupRange": 1.5},
+            "abilities": {"maxMana": 100, "manaRegenPerSecond": 1, "bindings": [
+                {"id": "smite", "ability": SMITE, "initialRank": 0, "controls": ["player", "ai", "scenario"],
+                    "learning": {"requiredLevels": [1]},
+                    "ai": {"preference": "enemy", "intervalTicks": 40}},
+                {"id": "rush", "ability": RUSH, "initialRank": 0, "controls": ["player", "ai", "scenario"],
+                    "learning": {"requiredLevels": [1]}},
+                {"id": "ward", "ability": WARD, "initialRank": 0, "controls": ["player", "ai", "scenario"],
+                    "learning": {"requiredLevels": [2]}},
+            ]},
         },
     });
     let building = |hp: u32, width: u32, extra: Value| {
@@ -166,7 +181,7 @@ fn game() -> Value {
                     "campPermille": 1400, "retreatHealthPermille": 300, "pursuitRadius": 20},
                 "limits": {"commandsPerBeat": 4, "placementCandidates": 24, "spellCandidates": 16},
                 "composition": [{"definition": SOLDIER, "weight": 60}, {"definition": ARCHER, "weight": 40}],
-                "skillPreference": [],
+                "skillPreference": [RUSH, WARD, SMITE],
             },
         },
         "definitions": [
@@ -204,6 +219,8 @@ fn game() -> Value {
                     "workTicks": 8, "workAnimation": "chop"},
             })),
             definition(ARCHER, "unit", archer),
+            definition(CHARM, "item", json!({"stackLimit": 1, "itemTier": 1,
+                "itemEffect": {"type": "equipment", "damage": 2, "armor": 0, "maxHp": 0}})),
             definition(CREEP, "unit", json!({
                 "body": body(80, 0, "armor.light"), "supplyCost": 1, "vision": 10, "experienceYield": 60,
                 "dimensions": dimensions(0.4),
@@ -224,11 +241,73 @@ fn game() -> Value {
     })
 }
 
+const REVALIDATE: [&str; 5] = ["caster", "target", "range", "visibility", "relationship"];
+
+fn ability(
+    id: &str,
+    activation: &str,
+    kind: &str,
+    relations: &[&str],
+    range: u32,
+    mana: u32,
+    on_release: Value,
+) -> Value {
+    json!({
+        "schemaVersion": 1, "id": id, "name": id, "description": "", "activation": activation,
+        "ranks": [{}],
+        "targeting": {"kind": kind, "relations": relations, "allowSelf": kind == "self", "alive": true,
+            "visible": true, "range": range, "outOfRange": "reject"},
+        "cast": {"prepareTicks": 4, "recoverTicks": 4,
+            "cost": {"resource": "mana", "amount": mana, "commit": "release"},
+            "cooldown": {"ticks": 80, "start": "release", "scope": "ability"},
+            "cancelBeforeRelease": "refund", "revalidateAtRelease": REVALIDATE},
+        "onRelease": on_release,
+        "presentation": format!("presentation.{}", id.trim_start_matches("ability.")),
+    })
+}
+
+/// A passive that only sharpens its owner (it never needs casting).
+fn passive(id: &str) -> Value {
+    let mut a = ability(id, "passive", "self", &["ally"], 0, 0, json!([]));
+    a["combatModifiers"] = json!({"evasionPermille": 50});
+    a
+}
+
+fn library() -> Value {
+    let abilities = vec![
+        ability(
+            SMITE,
+            "targeted",
+            "unit",
+            &["enemy"],
+            8,
+            10,
+            json!([
+                {"op": "damage", "target": "target", "amount": 1, "damageType": "spell"},
+                {"op": "damage", "target": "target", "amount": 40, "damageType": "spell"},
+            ]),
+        ),
+        passive(RUSH),
+        passive(WARD),
+    ];
+    let presentations: Vec<Value> = abilities
+        .iter()
+        .map(|a| {
+            json!({"schemaVersion": 1, "id": a["presentation"],
+                "animations": {"prepare": "attack", "release": "attack", "recover": "idle", "fallback": "idle"},
+                "effects": []})
+        })
+        .collect();
+    json!({"schemaVersion": 1, "abilities": abilities, "presentations": presentations})
+}
+
 pub fn content() -> Arc<Content> {
     static CONTENT: OnceLock<Arc<Content>> = OnceLock::new();
     CONTENT
         .get_or_init(|| {
-            let folder = DataFolder::new(game(), vec![image("asset.icon"), model("asset.model")]);
+            let mut folder =
+                DataFolder::new(game(), vec![image("asset.icon"), model("asset.model")]);
+            folder.abilities = library();
             Arc::new(
                 folder
                     .load("sim-ai")

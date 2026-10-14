@@ -10,7 +10,7 @@
 //!   state, and questions about it (power, prerequisites, safe points).
 //! - [`navigation`]: known blockers and the engine's sweeps, sectors, grid and mesh over
 //!   them; [`placement`]: building sites from the same knowledge.
-//! - Decisions, in the old order: abilities ([`powers`], the M2.6 seam), heroes and
+//! - Decisions, in the old order: ability learning and casting ([`powers`]), heroes and
 //!   items, strategy (every `strategyTicks`), economy (every `economyTicks`), reactions
 //!   (every decision), operations (every `operationTicks`).
 //! - [`continuity`]: orders already in progress are kept rather than reissued.
