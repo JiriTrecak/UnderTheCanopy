@@ -31,3 +31,9 @@ package:
 # Mirror content/, assets/ and art/ from the old TypeScript repository
 sync-data old="../Settlers 3 Web":
     tools/sync-data.sh "{{old}}"
+
+# Compare the Rust content reader with the old TypeScript loader on the old repository's data
+parity old="../Settlers 3 Web":
+    mkdir -p target/parity
+    cd "{{old}}" && node_modules/.bin/tsx "{{justfile_directory()}}/tools/parity/dump-ts.mts" "$PWD" "{{justfile_directory()}}/target/parity/content.json"
+    cargo run -q -p canopy-content --example parity -- "{{old}}" target/parity/content.json
