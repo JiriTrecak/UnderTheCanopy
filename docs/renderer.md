@@ -1,6 +1,6 @@
 # Native renderer
 
-Status: agreed direction, 2026-10-14. Based on a read-only audit of the old game's `src/render/` (in the old repository; summarised in §1). Implementation follows [the plan](plan.md), milestone M3. Open questions in §7 are decided with Jiri at the start of M3; agreed answers are recorded in [decisions](decisions.md).
+Status: agreed direction, 2026-10-14. Based on a read-only audit of the old game's `src/render/` (in the old repository; summarised in §1). Implementation follows [the plan](plan.md), milestone M3. §7 was decided with Jiri on 2026-10-14: every recommendation accepted (D24).
 
 ## Decision in brief
 
@@ -19,7 +19,7 @@ The current renderer is about 13.6k dense lines in 144 files. Three.js itself pr
 3. **Emulating another engine's lighting.** The "source"/"reference" material path recreates a different game's FX lighting (cube-map IBL, BRDF LUT, custom GGX, `RE_Direct_Physical` body rewrite) inside Three's PBR. It also drives terrain, grass and water.
 4. **Light count changes shaders.** Changing the number of lights recompiles every lit program, which forced fixed pools of 4 effect lights and 4 scenery lights, a separate portrait warm-up, and dummy-mesh warm-up of every material permutation.
 5. **Draw calls and CPU work scale per entity.** Health bars, status badges, selection circles, rally flags, command rings and decals each cost at least one draw per instance; circles and grids are re-draped on the CPU every frame. Buildings clone every material per instance and are never batched. Spell particles have one material each and are updated on the CPU.
-6. **Duplicated truths.** Terrain colour is computed three times (shader, CPU foliage-tint bake, minimap name-matching palette) and they disagree. The asset contract is split across `asset.json` capabilities, glTF extras and material/asset names (`TC_TeamColor`, wind, grounding and seasons by regex); `capabilities.teamColor` and `capabilities.wind` are validated but never read.
+6. **Duplicated truths.** Terrain colour is computed three times (shader, CPU foliage-tint bake, minimap name-matching palette) and they disagree. The asset contract is split across `asset.json` capabilities, glTF extras and material/asset names (`TC_TeamColor`, wind, grounding and the retired seasons by regex); `capabilities.teamColor` and `capabilities.wind` are validated but never read.
 7. **Renderer guesses gameplay.** Hit sparks are inferred from HP decreases (with an O(N²) attacker search), aura pulses from tick rounding, melee trail windows are hard-coded (0.43–0.69).
 8. **Expensive full-resolution work.** At native Retina there is no upscaling. The composite reconstructs world position about nine times per pixel. Water does full-screen colour and depth copies, a 64-tap SSR march, caustics regeneration and 60+ fetches per pixel. VSM shadows run two blur passes every frame. Fog changes rescan every cell and re-upload the whole texture (about 16 MB on a 2048 map).
 9. **Terrain has no LOD.** One vertex per world unit, about 8.5M triangles on a 2048 map, and the fragment cost scales with the total number of layers on the map rather than the local ones. `terrainDisplace` runs the whole layer loop in the vertex shader and discards it (`src/render/terrain/sourceTerrainShader.ts:135`).
@@ -157,7 +157,7 @@ The runtime never loads glTF or matches names. An offline cook step produces, pe
 - A merged depth-only stream (positions plus skin).
 - Skeleton, clips, animation state table with loop flags and normalized event times, socket tracks.
 - Team-colour mask channel and flag; local bounds with animation/wind padding.
-- Per-prototype data: blockers, lights, wind, seasonal palettes.
+- Per-prototype data: blockers, lights, wind.
 - BC7 textures, with ownership masks preserved losslessly.
 
 `asset.json` capabilities become the single source of these declarations; glTF extras and name conventions are import-time inputs only. In phase 1 the cook reads the published outputs mirrored into `assets/` from the old repository.
@@ -171,7 +171,7 @@ The runtime never loads glTF or matches names. An offline cook step produces, pe
 
 ## 7. Open decisions
 
-Recommended defaults in **bold**; the owner confirms or changes them.
+Decided 2026-10-14 (D24): every recommendation in **bold** is accepted.
 
 | # | Question | Recommendation |
 |---|---|---|
@@ -183,8 +183,8 @@ Recommended defaults in **bold**; the owner confirms or changes them.
 | Q6 | Dew, resin, vivid foliage, speech rigs | **Cut** |
 | Q7 | Terrain layer cap | **4 blended layers per cell plus atlas tiles and cliffs** |
 | Q8 | Rock displacement | **Normal-mapped only in v1**, real displacement later if missed |
-| Q9 | Largest map size and weakest target GPU | Weakest GPU: base M1 (7-core), Apple Silicon only. Largest map size: still open |
-| Q10 | Seasons and tree colour variants | Deferred to phase 2 (new content, not parity) |
+| Q9 | Largest map size and weakest target GPU | Decided: maps up to 1024×1024 (larger ones refused); weakest GPU base M1 (7-core), Apple Silicon only (D24) |
+| Q10 | Seasons and tree colour variants | Decided: no seasons, ever. A biome is the whole configuration; a "winter forest" is just another biome (D24) |
 | Q11 | Effect format | **v2 primitives with an automatic converter from v1** |
 | Q12 | Workbench and spell preview renderer | Decided: editors stay in the old repository with TS previews until phase 2; the renderer stays WebGPU-compatible so they can embed it then |
 | Q13 | Animation clips | **Model-space matrices in v1**; local TRS later for additive/IK |
