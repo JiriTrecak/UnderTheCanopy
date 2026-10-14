@@ -302,7 +302,9 @@ impl Motion {
                 }
             }
         }
-        let budget = ((speed * 1000.0 * 1000.0 * 1000.0) / 40_000_000.0).floor() as i64;
+        let (pace, charge) = crate::combat::speed_factors(e, tick);
+        let budget =
+            ((speed * 1000.0 * f64::from(pace) * f64::from(charge)) / 40_000_000.0).floor() as i64;
         if e.unit.as_ref().is_some_and(|u| u.detour.is_some()) {
             self.move_detour(state, id, budget, step);
         } else {

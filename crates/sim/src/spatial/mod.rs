@@ -71,10 +71,10 @@ pub enum Obstruction {
 }
 
 /// Whether a unit ghosts through other bodies. Harvest and delivery traffic and garrisoned
-/// archers do in the old game (`GameContext` `ignoresUnits`); the jobs and garrisons that
-/// decide it arrive with the economy and combat steps.
-pub fn ignores_units(_state: &State, _e: &Entity) -> bool {
-    false
+/// archers do in the old game (`GameContext` `ignoresUnits`); the jobs that decide it
+/// arrive with the economy step.
+pub fn ignores_units(_state: &State, e: &Entity) -> bool {
+    crate::garrisons::ghost(e)
 }
 
 /// Whether a unit is alive and physically present on the map.

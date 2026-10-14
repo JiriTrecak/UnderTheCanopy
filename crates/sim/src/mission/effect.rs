@@ -1,10 +1,11 @@
 //! What a successful run changes outside the mission state. Effects are queued during the
 //! run and applied in call order only after the whole run succeeded.
 
-use super::{Script, entity_by_placement_mut, systems::Systems};
+use super::{Script, entity_by_placement, entity_by_placement_mut, systems::Systems};
 use crate::{
     catalog::{Catalog, Def},
-    entity::{EntityId, Milli, Unit},
+    entity::{EntityId, Milli, Place, Unit},
+    orders::{self, Order},
     spawn,
     state::{Outcome, State},
 };
@@ -19,26 +20,26 @@ pub enum MissionEffect {
         placement: String,
         camp: Option<String>,
     },
-    /// Order a unit to a cell (M2.2 orders).
+    /// Order a unit to a cell.
     Move {
         placement: String,
         destination: Milli,
         attack_move: bool,
     },
-    /// Order a unit to escort another (M2.2 orders).
+    /// Order a unit to escort another.
     Follow { placement: String, target: String },
-    /// Order a forced attack (M2.2 orders, M2.4 combat).
+    /// Order a forced attack.
     Attack { placement: String, target: String },
     /// Interrupt a unit's work so it can turn; the turn itself is mission state (M2.5
     /// economy interrupt).
     Face { placement: String },
-    /// Spell damage from nobody, resolved by the next tick's combat (M2.4).
+    /// Spell damage from nobody, resolved by the next tick's combat.
     Damage {
         target: EntityId,
         source: Option<EntityId>,
         amount: u32,
     },
-    /// Restore a living unit's health and mana (M2.4 stats, M2.6 mana).
+    /// Restore a living unit's health and mana (M2.6 mana).
     Recover { placement: String },
     /// Give a unit to another owner, interrupting its work.
     Transfer { placement: String, owner: Owner },
@@ -72,7 +73,7 @@ pub(super) fn apply(
     systems: &dyn Systems,
 ) {
     match effect {
-        MissionEffect::Spawn { placement, camp: _ } => {
+        MissionEffect::Spawn { placement, camp } => {
             let Some(placement) = script.placement(placement) else {
                 return;
             };
@@ -82,9 +83,105 @@ pub(super) fn apply(
                 if let Some(entity) = state.entities.get_mut(id) {
                     // Created mid-tick: it takes part from the next tick.
                     entity.ready_tick = tick + 1;
+                    join_camp(entity, camp.as_deref());
                 }
             }
-            // M2.4: camp membership (`camp`) once units carry it.
+        }
+        MissionEffect::Move {
+            placement,
+            destination,
+            attack_move,
+        } => {
+            let tick = state.tick;
+            if let Some(entity) = entity_by_placement_mut(state, placement)
+                && entity.unit.is_some()
+                && super::alive(entity)
+            {
+                let order = Order::Move {
+                    destination: Place::new(
+                        destination.x / Milli::CELL,
+                        destination.y / Milli::CELL,
+                    ),
+                    attack_move: *attack_move,
+                };
+                orders::issue(entity, order, false, tick);
+            }
+        }
+        MissionEffect::Follow { placement, target } => {
+            let tick = state.tick;
+            let target = super::entity_by_placement(state, target)
+                .filter(|t| super::alive(t))
+                .map(|t| t.id);
+            if let Some(target) = target
+                && let Some(entity) = entity_by_placement_mut(state, placement)
+                && entity.unit.is_some()
+                && super::alive(entity)
+            {
+                orders::issue(
+                    entity,
+                    Order::Follow {
+                        target,
+                        escort: true,
+                    },
+                    false,
+                    tick,
+                );
+            }
+        }
+        MissionEffect::Attack { placement, target } => {
+            let tick = state.tick;
+            let target = super::entity_by_placement(state, target)
+                .filter(|t| super::alive(t))
+                .map(|t| t.id);
+            if let Some(target) = target
+                && let Some(entity) = entity_by_placement_mut(state, placement)
+                && entity.unit.is_some()
+                && super::alive(entity)
+            {
+                orders::issue(
+                    entity,
+                    Order::Attack {
+                        target,
+                        force: true,
+                    },
+                    false,
+                    tick,
+                );
+            }
+        }
+        MissionEffect::Face { placement } => {
+            if let Some(entity) = entity_by_placement_mut(state, placement)
+                && entity.unit.is_some()
+                && super::alive(entity)
+            {
+                // M2.5: the unit's job is abandoned too.
+                orders::interrupt(entity, None);
+            }
+        }
+        MissionEffect::Damage {
+            target,
+            source,
+            amount,
+        } => {
+            state.combat.scripted.push(crate::combat::ScriptedHit {
+                target: *target,
+                source: *source,
+                amount: *amount,
+            });
+        }
+        MissionEffect::Recover { placement } => {
+            let research = entity_by_placement(state, placement)
+                .map(|e| crate::stats::research(state, e.owner).to_vec())
+                .unwrap_or_default();
+            if let Some(entity) = entity_by_placement_mut(state, placement)
+                && entity.unit.is_some()
+                && super::alive(entity)
+                && !systems.fallen(entity)
+            {
+                let stats = crate::stats::Stats::of(catalog, entity, &research);
+                entity.hp = Some(stats.max_hp);
+                // M2.6: mana refills to the maximum too.
+            }
         }
         MissionEffect::Transfer { placement, owner } => {
             if let Some(entity) = entity_by_placement_mut(state, placement)
@@ -99,7 +196,7 @@ pub(super) fn apply(
             placement,
             definition,
             owner,
-            camp: _,
+            camp,
         } => {
             let Some(entity) = entity_by_placement_mut(state, placement) else {
                 return;
@@ -110,7 +207,7 @@ pub(super) fn apply(
             entity.owner = *owner;
             // A fresh unit: orders and transient state end; position is kept.
             entity.unit = Some(Box::<Unit>::default());
-            // M2.4: camp membership (`camp`) once units carry it.
+            join_camp(entity, camp.as_deref());
             let after = systems.max_hp(catalog, entity);
             let hp = u64::from(entity.hp.unwrap_or(before));
             entity.hp = Some(if before == 0 {
@@ -135,12 +232,16 @@ pub(super) fn apply(
             });
         }
         // Applied by systems later build steps add; see each variant.
-        MissionEffect::Move { .. }
-        | MissionEffect::Follow { .. }
-        | MissionEffect::Attack { .. }
-        | MissionEffect::Face { .. }
-        | MissionEffect::Damage { .. }
-        | MissionEffect::Recover { .. }
-        | MissionEffect::Equip { .. } => {}
+        MissionEffect::Equip { .. } => {}
+    }
+}
+
+/// Makes a unit a member of a camp.
+fn join_camp(entity: &mut crate::entity::Entity, camp: Option<&str>) {
+    if let (Some(u), Some(camp)) = (entity.unit.as_mut(), camp) {
+        u.camp = Some(crate::camps::Member {
+            id: camp.to_string(),
+            returning: false,
+        });
     }
 }

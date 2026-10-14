@@ -667,7 +667,14 @@ pub fn create(
         item: (definition.kind == Kind::Item).then(|| LooseItem {
             quantity: initial.quantity.unwrap_or(1),
         }),
+        progression: crate::heroes::initial(definition, initial.experience),
+        fallen: false,
     };
+    let mut entity = entity;
+    // A body starts at full health for its level unless the placement says otherwise.
+    if initial.health.is_none() && entity.hp.is_some() {
+        entity.hp = Some(crate::stats::max_hp(catalog, &entity));
+    }
     state.entities.insert(entity);
     Ok(id)
 }

@@ -37,6 +37,20 @@ pub enum Order {
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         escort: bool,
     },
+    /// Engage one entity until it dies or is lost; `force` also attacks friends and
+    /// passive neutrals (combat).
+    Attack { target: EntityId, force: bool },
+    /// Walk into a friendly lookout and hold there (garrisons).
+    Garrison { target: EntityId },
+}
+
+impl Order {
+    /// Orders another system carries out on its own (old `planUnits`: work, pickup and
+    /// garrison orders): combat stands down while one runs. The economy and item steps
+    /// add their orders here.
+    pub fn stands_down(&self) -> bool {
+        matches!(self, Self::Garrison { .. })
+    }
 }
 
 /// A route is a disposable plan, never the unit's position (old `discardNavigation`).
@@ -48,9 +62,46 @@ pub fn discard_navigation(u: &mut Unit) {
 }
 
 /// Drops the engagement without touching another system's movement plan (old
-/// `releaseCombat`; pursuit, attack and charge state arrive with combat).
+/// `releaseCombat`): target, pursuit and weapon swing end; a spent charge keeps its
+/// cooldown.
 pub fn release_combat(u: &mut Unit) {
     u.target = None;
+    u.combat.pursuit = None;
+    u.combat.attack = None;
+    if let Some(charge) = &mut u.combat.charge {
+        charge.target = None;
+    }
+}
+
+/// Suspends the engagement but keeps orders (old `suspendCombat`): a unit that plans its
+/// own navigation for the fight drops that route and replans at once.
+pub fn suspend_combat(u: &mut Unit, tick: u32) {
+    let engaged = u.target.is_some()
+        || u.combat.pursuit.is_some()
+        || u.combat.attack.is_some()
+        || u.combat.charge.as_ref().is_some_and(|c| c.target.is_some())
+        || matches!(u.order, Some(Order::Attack { .. }));
+    let returning = u.camp.as_ref().is_some_and(|c| c.returning);
+    let owns_navigation = !returning
+        && match &u.order {
+            None | Some(Order::Attack { .. } | Order::Hold | Order::Patrol { .. }) => true,
+            Some(Order::Move { attack_move, .. }) => *attack_move,
+            Some(_) => false,
+        };
+    if engaged && owns_navigation {
+        discard_navigation(u);
+        u.retry_at = tick;
+    }
+    release_combat(u);
+}
+
+/// Completes an explicit attack order; queued orders, attack-moves and patrols go on
+/// (old `finishCombat`).
+pub fn finish_combat(u: &mut Unit, tick: u32) {
+    suspend_combat(u, tick);
+    if matches!(u.order, Some(Order::Attack { .. })) {
+        u.order = None;
+    }
 }
 
 /// Whether a new order would queue behind current work (old `UnitOrders.busy`).
@@ -104,10 +155,34 @@ pub fn issue(e: &mut Entity, order: Order, append: bool, tick: u32) -> bool {
         Order::Move { destination, .. } => Some(destination.clone()),
         _ => None,
     };
+    let u = e.unit.as_mut().expect("unit");
+    // A lookout keeps its archer only for holding and attacking.
+    let leaves = u.garrison.is_some() && !matches!(order, Order::Hold | Order::Attack { .. });
+    // Reaffirming the current target keeps a charge already under way.
+    let charge = match &order {
+        Order::Attack { target, .. }
+            if u.combat.charge.as_ref().and_then(|c| c.target) == Some(*target) =>
+        {
+            Some(*target)
+        }
+        _ => None,
+    };
     interrupt(e, destination);
     let u = e.unit.as_mut().expect("unit");
+    if leaves {
+        crate::garrisons::leave(u);
+    }
+    u.target = match &order {
+        Order::Attack { target, .. } => Some(*target),
+        _ => None,
+    };
+    if charge.is_some()
+        && u.target == charge
+        && let Some(c) = &mut u.combat.charge
+    {
+        c.target = charge;
+    }
     u.order = Some(order);
-    u.target = None;
     u.retry_at = tick;
     true
 }
