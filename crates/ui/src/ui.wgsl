@@ -48,6 +48,7 @@ const KIND_LINEAR: u32 = 6u;
 const KIND_RADIAL: u32 = 7u;
 const FLAG_PREMULTIPLIED: u32 = 256u;
 const FLAG_GRAYSCALE: u32 = 512u;
+const FLAG_LINEAR_TEXELS: u32 = 1024u;
 
 @vertex
 fn vs(@builtin(vertex_index) vi: u32, inst: Instance) -> VOut {
@@ -101,6 +102,12 @@ fn to_linear(c: vec3<f32>) -> vec3<f32> {
     return select(hi, lo, c <= vec3(0.04045));
 }
 
+fn to_srgb(c: vec3<f32>) -> vec3<f32> {
+    let lo = c * 12.92;
+    let hi = 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055;
+    return select(hi, lo, c <= vec3(0.0031308));
+}
+
 @fragment
 fn fs(in: VOut) -> @location(0) vec4<f32> {
     // Sampled in uniform control flow (mips need derivatives).
@@ -126,6 +133,12 @@ fn fs(in: VOut) -> @location(0) vec4<f32> {
         }
         case KIND_IMAGE: {
             var t = texel;
+            if (in.flags & FLAG_LINEAR_TEXELS) != 0u && t.a > 0.0 {
+                // Straight or premultiplied, encode the colour, not the coverage.
+                let straight = select(t.rgb / t.a, t.rgb, (in.flags & FLAG_PREMULTIPLIED) == 0u);
+                let encoded = to_srgb(straight);
+                t = vec4(select(encoded * t.a, encoded, (in.flags & FLAG_PREMULTIPLIED) == 0u), t.a);
+            }
             if (in.flags & FLAG_PREMULTIPLIED) == 0u {
                 t = premul(t);
             }

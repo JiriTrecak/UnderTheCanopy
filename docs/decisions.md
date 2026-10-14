@@ -173,3 +173,17 @@ AI players (`canopy_sim::ai`) follow the old `PlayerAI` layer by layer: briefing
 The five AI fixes from the M2.8 port (D27) stay: ranged units step back after a shot when melee is close, trees seen at their real scale, recommended workers per deposit respected, no gathering orders for unseen resources, spells judged by their whole program. They make the AI play as the old code intended.
 
 From here until Jiri is back, decisions he would normally make are taken by the lead with the best available judgement and recorded here marked "review".
+
+## D33. UI toolkit `canopy-ui` (2026-10-15, decided while Jiri was away — review)
+
+`canopy-ui` draws the HUD and menus as [docs/ui.md](ui.md) describes; the old game's DOM HUD and stylesheets are the reference.
+
+- **A retained tree built from data, updated immediate-style**: screens and widget templates are JSON layout documents in `config/ui/layouts/` styled by `config/ui/theme.json`, written as CSS properties (taffy parses the layout values), so the old stylesheets port almost literally. The game pushes its models into named nodes each frame; setters invalidate only what changed; layout and shaping re-run only where text sized a box. Both files hot-reload in debug builds and keep the game's values. Rejected: immediate mode (layouts would be code, taffy and shaping would rerun every frame) and a hand-written widget API (no designer iteration).
+- **One quad pass**: every primitive (rounded boxes, borders, shadows, gradients, sweeps, nine-slices, images, glyphs) is a 64-byte instance of one pipeline; batches split only on image texture or scissor. The reference wgpu pass lives in the crate (feature `wgpu`); the renderer may embed it.
+- **Compositing in sRGB space**, as the browser did, so the old colours, gradients and translucency match; the renderer draws the UI into a non-sRGB view of the target (or the pass linearises for sRGB targets). Textures may be bound through sRGB views (`ImageDesc::srgb_view`). (review: visible)
+- **Fonts**: Outfit (the old HUD font, OFL 1.1) is bundled from the old game's npm package, converted from WOFF2. Georgia and the system UI font, which the old game took from the operating system, are again taken from the operating system (both ship with macOS and Windows; neither may be redistributed), with Outfit as the fallback. Recommended follow-up: bundle Gelasio (OFL, metric-compatible with Georgia), which needs a font download that was not made unattended. (review: visible)
+- **Tooltips show at once** (`delay-ms: 0`), as in the old game; the delay and the warm switching window are theme values. (review: felt)
+- Boxes default to `position: relative` (absolute children are placed in their parent, as every old HUD rule assumed).
+- Requested font weights snap to a static family's faces as CSS matching does; cosmic-text alone matches exact weights only.
+- Tests use their own theme and layouts; text tests fall back to system fonts when the bundled font is a Git LFS pointer (CI). The gallery render test skips without a GPU adapter.
+- `Ui` is not `Send` (taffy styles hold calc pointers): it lives on the window thread.

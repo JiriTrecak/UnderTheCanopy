@@ -1,7 +1,9 @@
 //! Painting: the node tree → quads, in tree order within z layers.
 
 use crate::config::Kind;
-use crate::draw::{FLAG_GRAYSCALE, FLAG_PREMULTIPLIED, Painter, Quad, QuadKind};
+use crate::draw::{
+    FLAG_GRAYSCALE, FLAG_LINEAR_TEXELS, FLAG_PREMULTIPLIED, Painter, Quad, QuadKind,
+};
 use crate::geom::{Color, Rect};
 use crate::input::InputState;
 use crate::layout::text_area;
@@ -525,6 +527,9 @@ impl Ctx<'_, '_> {
         if desc.premultiplied {
             q.flags |= FLAG_PREMULTIPLIED;
         }
+        if desc.srgb_view {
+            q.flags |= FLAG_LINEAR_TEXELS;
+        }
         if fx.grayscale {
             q.flags |= FLAG_GRAYSCALE;
         }
@@ -570,6 +575,9 @@ impl Ctx<'_, '_> {
                 q.shade = fx.brightness;
                 if desc.premultiplied {
                     q.flags |= FLAG_PREMULTIPLIED;
+                }
+                if desc.srgb_view {
+                    q.flags |= FLAG_LINEAR_TEXELS;
                 }
                 if fx.grayscale {
                     q.flags |= FLAG_GRAYSCALE;
@@ -720,6 +728,9 @@ impl Ctx<'_, '_> {
             q.shade = fx.brightness * if luminosity { 1.8 } else { 1.0 };
             if desc.premultiplied {
                 q.flags |= FLAG_PREMULTIPLIED;
+            }
+            if desc.srgb_view {
+                q.flags |= FLAG_LINEAR_TEXELS;
             }
             if luminosity || fx.grayscale {
                 q.flags |= FLAG_GRAYSCALE;

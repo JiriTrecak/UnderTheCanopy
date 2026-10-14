@@ -67,6 +67,9 @@ pub struct ImageDesc {
     pub uv: [f32; 4],
     /// Texels are premultiplied by alpha (the asset pack's translucent images are).
     pub premultiplied: bool,
+    /// The renderer binds this texture through an sRGB view (e.g. the pack's
+    /// `Bc7RgbaUnormSrgb`), so samples arrive linear; the pass re-encodes them.
+    pub srgb_view: bool,
 }
 
 impl ImageDesc {
@@ -76,6 +79,7 @@ impl ImageDesc {
             size: [width, height],
             uv: [0.0, 0.0, 1.0, 1.0],
             premultiplied: true,
+            srgb_view: false,
         }
     }
 }

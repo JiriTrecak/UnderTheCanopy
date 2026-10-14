@@ -501,3 +501,31 @@ fn colour_overrides_reach_quads() {
             .any(|q| q.color == [0x12, 0x34, 0x56, 255])
     );
 }
+
+#[test]
+fn reloads_changed_files_from_disk() {
+    let dir = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("ui-reload");
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join("layouts")).unwrap();
+    std::fs::write(dir.join("theme.json"), THEME).unwrap();
+    std::fs::write(dir.join("layouts/test.json"), LAYOUT).unwrap();
+    let mut ui = Ui::new(canopy_ui::UiConfig::load(&dir).unwrap(), fonts()).unwrap();
+    ui.set_viewport(1280, 720, 1.0);
+    ui.frame(0.0);
+    assert!(!ui.reload_if_changed().unwrap());
+    let moved = LAYOUT.replace(
+        "\"left\": \"100px\", \"top\": \"50px\"",
+        "\"left\": \"120px\", \"top\": \"50px\"",
+    );
+    std::fs::write(dir.join("layouts/test.json"), moved).unwrap();
+    let later = std::time::SystemTime::now() + std::time::Duration::from_secs(5);
+    std::fs::File::options()
+        .write(true)
+        .open(dir.join("layouts/test.json"))
+        .unwrap()
+        .set_modified(later)
+        .unwrap();
+    assert!(ui.reload_if_changed().unwrap());
+    ui.frame(0.1);
+    assert_eq!(rect(&ui, "test/grid/0").x, 120.0);
+}

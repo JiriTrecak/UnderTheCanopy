@@ -1,0 +1,142 @@
+# UI toolkit (`canopy-ui`)
+
+Status: M4 toolkit, 2026-10-15 ([D33](decisions.md)). Implements [renderer §6](renderer.md#6-ui): the HUD and menus drawn in one batched quad pass, layout with taffy, text with cosmic-text, layouts in hot-reloaded data files. egui stays for debug tools only.
+
+The old game's DOM HUD (`src/ui/**` and its CSS in the old repository) is the visual and behavioural reference. Its stylesheets port almost literally: the theme is written in CSS terms.
+
+## Design
+
+**A retained tree built from data, updated immediate-style.**
+
+- Screens and widget templates are layout documents (`config/ui/layouts/*.json`) styled by a theme (`config/ui/theme.json`). They are compiled once into a node tree; taffy keeps its layout cache in that tree and every text node keeps its shaped buffer and glyph list.
+- Each frame the game pushes its presentation models into named nodes: `set_text`, `set_value`, `set_image`, `set_enabled`, `set_checked`, `set_tooltip`, `set_count` for lists. Setters compare and invalidate only what changed: a value or colour change repaints, a text change reshapes one block, and only text that sizes its box re-runs layout. Hover and press states change paint only (state blocks may not change layout).
+- `Ui::frame(time)` lays out what is dirty, places tooltips and paints the tree into a `DrawList`. `Ui::input(&event)` returns whether the UI consumed an event; interactions come back from `take_actions()` as `Action`s carrying the node's path, its layout `action` name and the index of the list entry it sits in.
+
+Why not immediate mode: layouts are data (designers edit files while the game runs), taffy and cosmic-text are expensive to recompute from scratch, and a steady HUD should cost almost nothing. Why not a fully retained widget API: the game's models change every tick; pushing values into stable handles is as simple as immediate mode without rebuilding anything.
+
+The crate holds no gameplay logic and never sees simulation types. It does no I/O except `UiConfig::load` and the optional system font scan; the game passes textures as ids.
+
+## Files
+
+| Path | What |
+|---|---|
+| `config/ui/theme.json` | palette, font roles and files, image names → asset paths, tooltip behaviour, styles |
+| `config/ui/layouts/*.json` | one document per file (the file stem is its name): `templates` and an optional `root` screen |
+| `config/ui/fonts/` | bundled fonts (Git LFS) and their licences |
+
+`config/` is this repository's own data (D30), not mirrored from the old repository.
+
+## Theme and styles
+
+A style is a map of CSS properties to values, with state blocks `":hover"`, `":active"`, `":focus"`, `":checked"` (toggled buttons, `aria-pressed`), `":disabled"`. A node's `class` lists styles applied in order, then its inline `style`. `$name` refers to a palette entry. Styles named `@<kind>` (`@button`, `@image`) apply to every node of that kind first; `root` styles the tree root (inherited text defaults).
+
+- **Layout** (taffy): `display` (flex, grid, block, none), `position`, `left/top/right/bottom/inset`, `width/height`, `min-*`, `max-*`, `aspect-ratio`, `margin*`, `padding*`, `border-width`, `box-sizing`, `flex*`, `justify-*`, `align-*`, `gap`, `grid-template-columns/rows` (with `repeat()` and `minmax()`), `grid-auto-flow`, `grid-row/column`, `overflow` (`hidden` clips, `scroll` scrolls). Every box defaults to `position: relative`, so absolute children are placed in their parent (CSS `static` would place them against a farther ancestor). Bare numbers are pixels.
+- **Painting**: `background` (colour, `linear-gradient`, `radial-gradient`; first and last stop), `background-image` + `background-size` (`100% 100%`, `contain`, `cover`) + `background-inset` (an inset or outset like a pseudo element's), `border`, `border-color`, `border-radius` (px or %), `border-image` (nine-slice: `image slice / width / outset [fill]`), `box-shadow` (outer and `inset`, blur, spread, lists), `outline` + `outline-offset`, `opacity` and `filter: brightness() grayscale()` (both apply to the subtree), `image-tint`, `image-radius`, `object-fit`.
+- **Bars and sweeps**: `fill`, `fill-image`, `fill-inset`, `fill-radius`, `fill-mode: luminosity` (the old health bar's `background-blend-mode`); `sweep-rest`, `sweep-ring`. Bar images are cut, not squeezed, by the value.
+- **Text** (inherited): `font` shorthand, `font-family` (a role from `fonts.families`), `font-size`, `font-weight`, `font-style`, `line-height`, `color`, `letter-spacing` (em or px), `text-shadow`, `text-align`, `vertical-align` (`top`, `middle`, `bottom` inside the box), `text-transform: uppercase`, `font-variant: small-caps` (synthesised), `font-variant-numeric: tabular-nums`, `white-space: nowrap`, `text-overflow: ellipsis`, `line-clamp`.
+- **Behaviour**: `pointer-events` (inherited; `none` lets clicks through to the world), `z-index` (paint and hit order layer for the subtree), `transform: scale()` + `transform-origin` (the HUD scale; text is shaped at the final size).
+- **Widget parts** are styled by `<class>::<part>` (or `<kind>::<part>` for every widget of a kind): slider `track`, `fill`, `thumb`; checkbox `box`, `mark`; dropdown `arrow`, `popup`, `option`; text field `caret`, `selection`, `placeholder`; scrolling boxes `scrollbar`, `scroll-thumb`. Parts read `width`/`height` in px and may have states.
+
+Unknown properties, bad values, unknown styles or templates and state blocks that change layout are errors naming the file and style; a hot reload with an error keeps the running UI.
+
+## Layout documents
+
+```json
+{ "visible": false,
+  "templates": { "command": { "kind": "button", "class": "command", "action": "command",
+                              "tooltip_anchor": "actions",
+                              "children": [ { "id": "icon", "kind": "image", "class": "command-icon" } ] } },
+  "root": { "class": "hud", "children": [
+      { "id": "commands", "class": "command-grid", "repeat": "command", "count": 12 } ] } }
+```
+
+Node fields: `id`, `kind`, `class`, `style`, `text`, `image`, `value`, `min`/`max`/`step` (sliders), `options`/`selected` (dropdowns), `placeholder`/`max_length` (text fields), `action`, `hotkey` (`"Q"`, `"Shift+F1"`), `tooltip` (static), `tooltip_anchor` (an ancestor id whose box places and sizes the tooltip, like the old command grid), `toggle`, `checked`, `drag`, `visible`, `enabled`, `repeat` + `count`, `children`.
+
+**Paths** join the ids of addressable ancestors: the screen is the document name, list entries are numbers (`hud/dock/actions/commands/3/icon`). `ui.find(path)`, `ui.child(list, i)` and `ui.find_in(node, "icon")` return `NodeId` handles that stay valid across hot reloads and list resizes (setters on a vanished node do nothing). `ui.show(screen, visible)` shows a screen; `ui.dump()` prints the laid-out tree.
+
+## Widgets
+
+| Widget | How |
+|---|---|
+| Command cell / button | `button` (click, double click, hotkey, toggle, tooltip, focus) composed in a template: icon image, cooldown `sweep` with seconds, rim image, hotkey label (`common.json` → `command`) |
+| Icon slot | `button` template with icon, rim and count badge (`slot`) |
+| Bar | `bar`: value 0–1, fill colour (`set_color` for the health ramp), fill image, child label for the numbers |
+| Label / rich text | `label` with markup: `[b]`, `[i]`, `[color=#hex]`, `[key]` (the theme's hotkey colour), `[[` for a bracket; wrapping, ellipsis, line clamp |
+| Tooltip | the theme's tooltip template (`title`, `costs` list of icon + amount, `body`, `note`) filled from the hovered node's `Tooltip`; `delay-ms` before the first one, then switching is instant for `warm-ms` |
+| Scroll list | any box with `overflow: scroll` and a `repeat` template: wheel, draggable thumb, page clicks on the track, clipped by a scissor rectangle |
+| Text field | `text_field`: caret, selection (shift and the mouse), Home/End, Backspace/Delete, select all, copy/cut (`ActionKind::Copy`), paste (`PasteRequest` → `ui.paste`), IME composition shown at the caret, `max_length` in characters, Enter submits, Escape leaves |
+| Slider, checkbox, dropdown | `slider` (click, drag, arrow keys, step), `checkbox`, `dropdown` (popup above everything, keyboard selection) |
+| Minimap, portrait | `image` nodes whose image is a render target the game registers; `drag: true` reports `DragStart/Drag/DragEnd` with positions 0–1 for minimap panning |
+| Sweep | clockwise from twelve o'clock (cooldowns, the experience ring) |
+
+The shipped HUD (`layouts/hud.json`, templates in `common.json`) reproduces the old woodland dock: connected frame art, minimap, portrait, name, stats, vitals with bar rims, satchel inventory, 4 × 3 command card, resource ribbon and hero bar, scaled by `transform: scale(0.65)` like the old `--hud-scale`. `layouts/gallery.json` shows the remaining widgets in the old menu and settings styles.
+
+## Text and fonts
+
+Font roles map to family stacks; the first family present wins. `system-ui`, `serif`, `sans-serif` and `monospace` name the platform's fonts.
+
+| Role | Stack | Old game |
+|---|---|---|
+| `dock` | Outfit | `Outfit Variable` from `@fontsource-variable/outfit` (HUD, resource numbers) |
+| `serif` | Georgia, Outfit | `Georgia, serif` (titles, menu, stats, vitals) |
+| `ui` | system-ui, Outfit | `system-ui` (tooltips, hotkeys, notes) |
+| `mono` | ui-monospace, Outfit | debug text |
+
+- **Outfit** (variable, weights 100–900) is bundled: `config/ui/fonts/Outfit-Latin.ttf` and `Outfit-LatinExt.ttf`, the old game's own npm subsets converted from WOFF2 to TrueType unchanged. Licence: SIL Open Font License 1.1, © 2021 The Outfit Project Authors; the licence text is `config/ui/fonts/Outfit-OFL.txt` and must ship with the fonts.
+- **Georgia** and the **system UI font** are what the old game used, from the operating system (both ship with macOS and Windows). They are not redistributable, so they are not bundled: the game loads system fonts (`FontSources { system: true }`) and falls back to Outfit where they are missing. Bundling Gelasio (OFL, metric-compatible with Georgia) would make the look independent of the system (D33, review).
+- cosmic-text only matches exact weights of static fonts, so requested weights snap to the family's available ones as CSS font matching would (600 → Georgia Bold); variable fonts take any weight.
+- Text is shaped at its final pixel size (font size × display scale × transforms) and keeps its buffer and positioned glyphs until text, style, width or scale change. Glyphs are rasterised by swash into one R8 atlas (1024², growing to 4096², cleared and refilled when full).
+
+## Draw list and the renderer contract
+
+`DrawList` = `quads` (64-byte instances: rectangle, texture coordinates, two colours, radius, border, softness, a parameter, brightness, kind and flags), `batches` (quad ranges sharing one image texture and one scissor rectangle) and `atlas` changes. Shapes, gradients, shadows, sweeps and glyphs never break a batch; only a different image texture or clip does. One pipeline, one instanced `draw(0..6, range)` per batch.
+
+- **Colours are sRGB with straight alpha and the pass blends premultiplied in sRGB space**, as browsers do, so the old stylesheets' colours, gradients and translucency match. Draw into a non-sRGB view of the target (WebGPU allows `rgba8unorm` / `bgra8unorm` views of sRGB textures through `view_formats`). With an sRGB target the pass linearises its output instead (blending then happens in linear space and translucent overlays look slightly different).
+- **Image textures** are premultiplied when `ImageDesc::premultiplied` (the pack's translucent images are, D26). Bind them through a non-sRGB view, or set `ImageDesc::srgb_view` when binding the pack's sRGB view so the pass re-encodes the samples. Mipmaps matter: the woodland art is drawn far below its source size.
+- **Atlas changes are incremental**: every frame's draw list must reach the renderer (`UiRenderer::prepare`). When a renderer is created after the UI or loses its textures, call `Ui::reset_glyph_atlas()`.
+- The reference pass is `canopy_ui::gpu::UiRenderer` (feature `wgpu`): WebGPU baseline only (D2), WGSL in `crates/ui/src/ui.wgsl`. `gpu::render_to_rgba`, `gpu::upload_rgba` and `gpu::headless_device` serve tools and tests.
+
+## Input
+
+`canopy_ui::winit::translate(&WindowEvent)` (feature `winit`) turns window events into `InputEvent`s: pointer moves in physical pixels, buttons, wheel lines (trackpad pixels / 40), keys (logical, so hotkeys follow the keyboard layout), modifiers, typed text from `KeyEvent::text`, IME preedit and commit, focus loss.
+
+- A pointer event is consumed when it hits a painted node with `pointer-events: auto` or a press that began on one is held (`wants_pointer()`), so clicks never fall through to the world. Hit testing uses the regions of the last paint, top layer first.
+- Clicks fire on release over the pressed node; `count` is 2 for a double click (hero portraits centre the camera). Disabled nodes still block the world.
+- Hotkeys trigger the topmost visible, enabled node with that key; shift held with a plain hotkey still triggers it and is reported (shift-queued commands). A focused text field takes keys instead (`wants_keyboard()`); `ime_area()` gives the caret rectangle for `Window::set_ime_cursor_area`.
+- Tab and Shift-Tab move focus once something has focus (`ui.focus(id)` starts keyboard navigation in menus); Enter and Space activate; arrows drive sliders and dropdowns; Escape closes a dropdown, leaves a field, then hides a tooltip.
+- `cursor()` says which mouse cursor to show.
+
+## Hot reload
+
+`UiConfig::load(config/ui)` remembers file times; debug builds call `ui.reload_if_changed()` a few times a second. A reload recompiles everything and rebuilds the tree, keeping every value the game set (texts, values, images, list counts, visibility, focus) for paths that still exist. On error the old UI stays and the error names the file and style.
+
+## Game integration (sketch)
+
+```rust
+let mut ui = Ui::new(UiConfig::load(&paths.config().join("ui"))?, FontSources { bundled: vec![], system: true })?;
+for (name, asset) in ui.theme_images().map(|(n, a)| (n.to_owned(), a.to_owned())).collect::<Vec<_>>() {
+    let (id, w, h) = renderer.ui_texture(&pack, &asset)?; // a non-sRGB (or srgb_view) view of the BC7 texture
+    ui.register_image(&name, ImageDesc::new(id, w, h));
+}
+// per window event:   for e in canopy_ui::winit::translate(&event) { if !ui.input(&e) { world_input(&e) } }
+// per frame:          hud.update(&mut ui, &presentation);  let list = ui.frame(t);  renderer.ui_pass(list);
+//                     for a in ui.take_actions() { commands.handle(a) }
+```
+
+`Ui` is not `Send` (taffy styles hold raw calc pointers): it lives on the window thread.
+
+## Performance
+
+`cargo run --release -p canopy-ui --example bench` on an M4 Max, 2560×1440: the woodland HUD with a full 4 × 3 command card, hero bar, minimap and portrait frames, inventory, resource ribbon, a tooltip shown, the 100-line log, the settings dialog and the main menu (305 nodes, about 1,500 quads in 64 batches):
+
+| Frame | Mean | p99 |
+|---|---|---|
+| Steady: bars, cooldown sweep and experience ring animate | 0.033 ms | 0.037 ms |
+| Busy: plus five texts change every frame and the pointer moves across commands (tooltip switches) | 0.094 ms | 0.152 ms |
+| Worst: all 100 log lines change text every frame | 1.26 ms | 1.38 ms |
+
+Display scale 2 gives the same numbers. Start-up (scanning system fonts, compiling, building) takes about 140 ms. Batches are mostly one per distinct icon texture; an icon atlas or texture array would bring them down to a handful if draw calls ever matter. Measure on the base M1 before setting budgets.
+
+## Gallery
+
+`cargo run -p canopy-ui --example gallery` renders the HUD and every widget offscreen to `target/shots/ui-gallery.png` (`--size 2560x1440 --scale 2` for Retina). It decodes the art from `assets/library` (pull it with Git LFS); the game binds the pack's textures instead.

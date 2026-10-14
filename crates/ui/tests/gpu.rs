@@ -47,3 +47,51 @@ fn reference_pass_draws_boxes_images_and_text() {
         .count();
     assert!(bright > 10, "text drawn ({bright} bright pixels)");
 }
+
+#[test]
+fn srgb_views_keep_colours() {
+    use wgpu::util::DeviceExt;
+    let Some((device, queue)) = headless_device() else {
+        eprintln!("no GPU adapter: skipped");
+        return;
+    };
+    let mut ui = common::ui();
+    ui.reset_glyph_atlas();
+    let mut renderer = UiRenderer::new(&device, &queue, wgpu::TextureFormat::Rgba8Unorm);
+    // As the asset pack's colour textures: sRGB format, sampled linear.
+    let texture = device.create_texture_with_data(
+        &queue,
+        &wgpu::TextureDescriptor {
+            label: Some("grey"),
+            size: wgpu::Extent3d {
+                width: 1,
+                height: 1,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        },
+        wgpu::util::TextureDataOrder::LayerMajor,
+        &[128, 64, 200, 255],
+    );
+    renderer.set_texture(
+        &device,
+        TextureId(3),
+        &texture.create_view(&Default::default()),
+    );
+    let mut desc = ImageDesc::new(TextureId(3), 1.0, 1.0);
+    desc.srgb_view = true;
+    let grey = ui.register_image("grey", desc);
+    let map = ui.find("test/map").unwrap();
+    ui.set_image(map, Some(grey));
+    let list = ui.frame(0.1).clone();
+    let pixels = render_to_rgba(&device, &queue, &mut renderer, &list, [0, 0, 0, 255]);
+    let i = ((100 * 1280 + 950) * 4) as usize;
+    for (got, want) in pixels[i..i + 3].iter().zip([128u8, 64, 200]) {
+        assert!(got.abs_diff(want) <= 1, "{:?}", &pixels[i..i + 4]);
+    }
+}

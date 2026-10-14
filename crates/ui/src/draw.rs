@@ -41,6 +41,9 @@ pub enum QuadKind {
 pub const FLAG_PREMULTIPLIED: u32 = 1 << 8;
 /// Flag: image converted to luminance before tinting.
 pub const FLAG_GRAYSCALE: u32 = 1 << 9;
+/// Flag: the texture is bound through an sRGB view, so samples arrive linear and are
+/// re-encoded before blending.
+pub const FLAG_LINEAR_TEXELS: u32 = 1 << 10;
 
 /// One instance of the UI pipeline. Positions are physical pixels, origin top left.
 /// Colours are sRGB with straight alpha; the pass blends in sRGB space.
