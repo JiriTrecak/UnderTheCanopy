@@ -49,3 +49,23 @@ The TypeScript match server stays in the old repository and stays deployed. `can
 ## D12. Content validation scope in phase 1 (2026-10-14)
 
 `canopy-content` rejects anything structurally wrong (unknown fields, wrong types, unknown enum values) and enforces every cross-reference and invariant the simulation relies on, matching the old loader's rules. Pure authoring limits (for example a maximum speed of 40) are not duplicated while the old editors still validate the data; they move to Rust with the editors in phase 2. `just parity` compares the Rust reader with the TypeScript loader on the same files. Why: full constraint parity is editor work; the game needs correct reading and sound invariants.
+
+## D13. Sampled multiplayer hash (2026-10-14)
+
+Desync detection keeps the old design: every 8 ticks a cheap fingerprint of the id counters, jobs, stocks, outcome and a rotating sample of at most 32 actors, in the existing `hash` message. A full-state hash is not computed. Why: it is enough to catch desyncs, and hashing everything every few ticks costs too much.
+
+## D14. Fix bugs found in the old simulation (2026-10-14)
+
+"Behaves the same" covers intended gameplay, not defects. Clear bugs found while rebuilding are fixed and noted in the commit and, if players would notice, in the release notes. Changes to how the game plays still go to Jiri first.
+
+## D15. Movement and pathfinding keep the old rules for now (2026-10-14)
+
+Movement, pathfinding, collision and traffic are rebuilt with the same rules and behaviour as the old game, implemented efficiently. A proper redesign (flow fields and more) comes later as its own piece of work.
+
+## D16. New save format (2026-10-14)
+
+No compatibility with the old game's saves; nobody depends on them. The Rust save format is designed fresh.
+
+## D17. Verification by play (2026-10-14)
+
+No automated behaviour comparison against the old game. Correctness comes from scenario and determinism tests, and from Jiri playing the game once it is close.
