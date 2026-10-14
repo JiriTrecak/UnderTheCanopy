@@ -15,7 +15,6 @@
 pub mod landscape;
 pub mod models;
 pub mod previews;
-mod sha256;
 pub mod textures;
 
 use crate::{
@@ -25,6 +24,7 @@ use crate::{
 };
 use serde::{Deserialize, Deserializer, Serialize, de::DeserializeOwned};
 use serde_with::skip_serializing_none;
+use sha2::Digest;
 use std::{collections::BTreeSet, fmt, path::Path};
 
 const MANIFEST: &str = crate::MANIFEST_FILE;
@@ -361,6 +361,12 @@ pub fn output_paths(manifest: &Manifest) -> BTreeSet<&str> {
 /// Asset rules that need the whole content: render assets placed as scenery name a
 /// published scenery entry.
 pub fn validate(content: &Content, errors: &mut Vec<Error>) {
+    landscape::validate(
+        &content.landscape,
+        &content.manifest,
+        &content.definitions,
+        errors,
+    );
     let scenery: BTreeSet<&str> = scenery(&content.manifest).map(|s| s.id.as_str()).collect();
     for asset in &content.render_assets {
         if let Some(id) = &asset.scenery_asset
@@ -403,7 +409,10 @@ pub fn verify_outputs(data: &Path) -> Vec<Error> {
                 output.bytes
             ));
         }
-        let hash = sha256::hex(&bytes);
+        let hash: String = sha2::Sha256::digest(&bytes)
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
         if !hash.eq_ignore_ascii_case(&output.sha256) {
             fail(format!("SHA-256 {hash}, manifest says {}", output.sha256));
         }

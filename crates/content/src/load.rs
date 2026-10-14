@@ -2,7 +2,7 @@
 
 use crate::{
     abilities::{self, AbilityLibrary},
-    assets::{self, Manifest},
+    assets::{self, Manifest, landscape::LandscapeAsset},
     effects::{self, VisualEffect},
     error::{Error, Errors, parse, read_json},
     game::{Actions, Definition, GameSource, RenderAsset, Rules},
@@ -26,6 +26,9 @@ pub struct Content {
     /// Render assets of every published record, sorted by id.
     pub render_assets: Vec<RenderAsset>,
     pub manifest: Manifest,
+    /// Landscape catalogue (`assets/authoring/catalogue.json`): scenery, ground textures,
+    /// water profiles and recipes the map scene is compiled from.
+    pub landscape: Vec<LandscapeAsset>,
     pub abilities: AbilityLibrary,
     pub effects: Vec<VisualEffect>,
     definition_index: BTreeMap<String, usize>,
@@ -75,6 +78,7 @@ impl Content {
         let manifest: Option<Manifest> = assets::load(data, errors);
         let abilities = abilities::load(data, errors);
         let effects = effects::load(data, errors);
+        let landscape = assets::landscape::load(data, errors);
         let game = game?;
         let rules: Option<Rules> = part(&game.rules, "rules", errors);
         let actions: Option<Actions> = part(&game.actions, "actions", errors);
@@ -108,6 +112,7 @@ impl Content {
             actions: actions?,
             render_assets,
             manifest,
+            landscape: landscape?,
             abilities: abilities?,
             effects: effects?,
             definition_index,
