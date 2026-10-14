@@ -9,6 +9,7 @@ use crate::{
     state::{FactKind, State},
     terrain::Terrain,
     view::View,
+    vision::{self, Sight, Vision},
 };
 use canopy_content::{Content, map::UtcMap, placement::Owner};
 use serde::{Deserialize, Serialize};
@@ -48,6 +49,8 @@ pub struct World {
     state: State,
     pending: Vec<Queued>,
     mission: Option<mission::Runtime>,
+    /// Derived sight coverage; rebuilt on restore.
+    vision: Vision,
 }
 
 impl World {
@@ -68,6 +71,14 @@ impl World {
         for slot in &setup.slots {
             state.wallets.entry(Owner::Player(slot.player)).or_default();
         }
+        let vision = Vision::new(
+            &mut state,
+            &catalog,
+            &terrain,
+            &setup,
+            map.exploration(),
+            &SIGHT,
+        );
         Ok(Self {
             catalog,
             terrain,
@@ -75,6 +86,7 @@ impl World {
             state,
             pending: Vec::new(),
             mission,
+            vision,
         })
     }
 
@@ -127,13 +139,21 @@ impl World {
         self.apply_due();
         // Step 2: cinematic dialogue pauses the game; only the clock advances.
         if mission::pause(&mut self.state) {
+            self.observe();
             return;
         }
         // Step 10: the mission script.
         if let Some(mission) = &mut self.mission {
             mission.tick(&mut self.state, &self.catalog);
         }
+        // Step 11: fog and knowledge.
+        self.observe();
         self.state.tick += 1;
+    }
+
+    fn observe(&mut self) {
+        self.vision
+            .update(&mut self.state, &self.catalog, &self.terrain, &SIGHT);
     }
 
     fn apply_due(&mut self) {
@@ -168,7 +188,41 @@ impl World {
 
     /// What `owner` sees.
     pub fn view(&self, owner: Owner) -> View {
-        View::build(&self.state, &self.catalog, owner)
+        View::build(
+            &self.state,
+            &self.catalog,
+            &self.terrain,
+            &self.vision,
+            &SIGHT,
+            owner,
+        )
+    }
+
+    /// Everything, for spectators.
+    pub fn observer_view(&self) -> View {
+        View::observe(&self.state, &self.vision)
+    }
+
+    /// Sight questions (what an owner sees, knows or detects) without building a view:
+    /// the AI's and the command checks' way in.
+    pub fn sight(&self) -> Sight<'_> {
+        Sight {
+            vision: &self.vision,
+            state: &self.state,
+            catalog: &self.catalog,
+            terrain: &self.terrain,
+            rules: &SIGHT,
+        }
+    }
+
+    pub fn vision(&self) -> &Vision {
+        &self.vision
+    }
+
+    /// Direct access for tests and tools. Derived data (vision) follows the changes at the
+    /// next step.
+    pub fn state_mut(&mut self) -> &mut State {
+        &mut self.state
     }
 
     /// A save: setup, state and pending commands. The content and map are referenced by the
@@ -199,13 +253,17 @@ impl World {
                 "the save does not match the map's mission".into(),
             ));
         }
+        let mut state = save.state;
+        let vision = Vision::restore(&mut state, &catalog, &terrain, &save.setup, &SIGHT)
+            .map_err(SetupError)?;
         Ok(Self {
             catalog,
             terrain,
             setup: save.setup,
-            state: save.state,
+            state,
             pending: save.pending,
             mission,
+            vision,
         })
     }
 }
@@ -218,6 +276,9 @@ fn mission_runtime(map: &UtcMap) -> Result<Option<mission::Runtime>, SetupError>
     let script = mission::Script::new(map).map_err(SetupError)?;
     Ok(script.map(|s| mission::Runtime::new(Arc::new(s))))
 }
+
+/// The sight rules of the systems built so far.
+const SIGHT: vision::Current = vision::Current;
 
 pub const SAVE_VERSION: u32 = 1;
 

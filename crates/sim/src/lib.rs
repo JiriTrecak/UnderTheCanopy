@@ -14,6 +14,7 @@ pub mod spawn;
 pub mod state;
 pub mod terrain;
 pub mod view;
+pub mod vision;
 pub mod world;
 
 pub use action::Action;

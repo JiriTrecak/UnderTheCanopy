@@ -4,6 +4,7 @@
 use crate::{
     entity::{Entities, Stock},
     mission::MissionState,
+    vision::Knowledge,
 };
 use canopy_content::placement::Owner;
 use serde::{Deserialize, Serialize};
@@ -100,6 +101,8 @@ pub struct State {
     /// Campaign script progress; `None` outside missions.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mission: Option<MissionState>,
+    /// What each team and player has seen (`vision`).
+    pub knowledge: Knowledge,
 }
 
 impl State {
@@ -116,6 +119,7 @@ impl State {
             cleared_camps: Vec::new(),
             outcome: None,
             mission: None,
+            knowledge: Knowledge::default(),
         }
     }
 
