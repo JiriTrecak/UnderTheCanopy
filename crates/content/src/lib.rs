@@ -13,6 +13,8 @@ pub mod id;
 pub mod items;
 pub mod map;
 pub mod placement;
+#[cfg(feature = "testing")]
+pub mod testing;
 
 mod load;
 mod registry;

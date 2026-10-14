@@ -2,8 +2,6 @@
 
 mod map_fixture;
 
-mod support;
-
 use canopy_content::{Content, map};
 use map_fixture::{parse, set};
 use serde_json::{Value, json};
@@ -113,11 +111,11 @@ fn content() -> &'static Content {
     static CONTENT: OnceLock<Content> = OnceLock::new();
     CONTENT.get_or_init(|| {
         let records = vec![
-            support::image("asset.icon"),
-            support::model("asset.model"),
-            support::scenery_model("asset.tree"),
+            canopy_content::testing::image("asset.icon"),
+            canopy_content::testing::model("asset.model"),
+            canopy_content::testing::scenery_model("asset.tree"),
         ];
-        support::DataFolder::new(game(), records)
+        canopy_content::testing::DataFolder::new(game(), records)
             .load("map-rules")
             .unwrap_or_else(|errors| panic!("{errors}"))
     })

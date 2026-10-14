@@ -270,6 +270,7 @@ dependencies = [
 name = "canopy-content"
 version = "0.1.0"
 dependencies = [
+ "canopy-content",
  "serde",
  "serde_json",
  "serde_path_to_error",

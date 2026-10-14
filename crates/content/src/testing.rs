@@ -1,8 +1,7 @@
-//! A complete, valid data folder for integration tests, written from test-owned JSON.
+//! A complete, valid data folder written from test-owned JSON, for tests in any crate
+//! (feature `testing`). Tests never use shipped content ids.
 
-#![allow(dead_code)]
-
-use canopy_content::{Content, Errors};
+use crate::{Content, Errors};
 use serde_json::{Value, json};
 use std::path::PathBuf;
 
@@ -30,9 +29,10 @@ impl DataFolder {
         }
     }
 
-    /// Writes the folder below the test target directory and returns its path.
+    /// Writes the folder to a fresh directory named after `name` (unique per process) and
+    /// returns its path.
     pub fn write(&self, name: &str) -> PathBuf {
-        let root = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join(format!("data-{name}"));
+        let root = std::env::temp_dir().join(format!("canopy-data-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let write = |file: &str, bytes: &[u8]| {
             let path = root.join(file);
@@ -40,17 +40,17 @@ impl DataFolder {
             std::fs::write(path, bytes).unwrap();
         };
         let json = |value: Value| value.to_string().into_bytes();
-        write(canopy_content::GAME_FILE, &json(self.game.clone()));
+        write(crate::GAME_FILE, &json(self.game.clone()));
         write(
-            canopy_content::ABILITIES_FILE,
+            crate::ABILITIES_FILE,
             &json(json!({"schemaVersion": 1, "abi": "abilities-1", "library": self.abilities})),
         );
         write(
-            canopy_content::EFFECTS_FILE,
+            crate::EFFECTS_FILE,
             &json(json!({"schemaVersion": 1, "effects": self.effects})),
         );
         write(
-            canopy_content::MANIFEST_FILE,
+            crate::MANIFEST_FILE,
             &json(json!({"version": 1, "records": self.records})),
         );
         write(

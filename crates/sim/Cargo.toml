@@ -15,5 +15,8 @@ serde_json.workspace = true
 serde_with.workspace = true
 thiserror.workspace = true
 
+[dev-dependencies]
+canopy-content = { path = "../content", features = ["testing"] }
+
 [lints]
 workspace = true
