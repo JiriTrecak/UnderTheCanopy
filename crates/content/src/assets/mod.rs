@@ -325,12 +325,26 @@ impl PartialEq<str> for AuthoringId {
     }
 }
 
+/// Whether loading checks that published output files exist on disk. A packaged game
+/// ships the cooked pack instead of the outputs, so it skips that check (the cooker
+/// verified the files when it built the pack).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Files {
+    Check,
+    Skip,
+}
+
 /// Reads `assets/manifest.json` and checks it: unique record, scenery and output paths;
 /// every output below `assets/` and present under `data`; render and scenery files
 /// declared as outputs.
 pub fn load(data: &Path, errors: &mut Vec<Error>) -> Option<Manifest> {
+    load_with(data, Files::Check, errors)
+}
+
+/// [`load`], choosing whether output files must exist on disk.
+pub fn load_with(data: &Path, files: Files, errors: &mut Vec<Error>) -> Option<Manifest> {
     let manifest: Manifest = read(data, MANIFEST, errors)?;
-    check_manifest(data, &manifest, errors);
+    check_manifest(data, &manifest, files, errors);
     Some(manifest)
 }
 
@@ -458,7 +472,7 @@ fn safe_path(path: &str) -> bool {
         && !path.split('/').any(|segment| segment == "..")
 }
 
-fn check_manifest(data: &Path, manifest: &Manifest, errors: &mut Vec<Error>) {
+fn check_manifest(data: &Path, manifest: &Manifest, files: Files, errors: &mut Vec<Error>) {
     unique(
         MANIFEST,
         "records",
@@ -494,7 +508,7 @@ fn check_manifest(data: &Path, manifest: &Manifest, errors: &mut Vec<Error>) {
                 fail(format!(
                     "output {path:?} must be a plain path below assets/"
                 ));
-            } else if !data.join(path).is_file() {
+            } else if files == Files::Check && !data.join(path).is_file() {
                 fail(format!("missing output {path}"));
             }
             if !lowercase.insert(path.to_lowercase()) {

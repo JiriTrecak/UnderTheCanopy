@@ -39,8 +39,18 @@ impl Content {
     /// Reads, resolves and validates everything under `data` (the folder holding `content/`
     /// and `assets/`). Returns every problem found, not just the first.
     pub fn load(data: &Path) -> Result<Self, Errors> {
+        Self::load_with(data, assets::Files::Check)
+    }
+
+    /// Loads a packaged game's data: like [`Content::load`], but published asset outputs
+    /// are not required on disk, because the cooked pack replaces them.
+    pub fn load_packaged(data: &Path) -> Result<Self, Errors> {
+        Self::load_with(data, assets::Files::Skip)
+    }
+
+    fn load_with(data: &Path, files: assets::Files) -> Result<Self, Errors> {
         let mut errors = Vec::new();
-        let content = Self::read(data, &mut errors);
+        let content = Self::read(data, files, &mut errors);
         match content {
             Some(content) if errors.is_empty() => {
                 registry::validate(&content, &mut errors);
@@ -54,7 +64,7 @@ impl Content {
         }
     }
 
-    fn read(data: &Path, errors: &mut Vec<Error>) -> Option<Self> {
+    fn read(data: &Path, files: assets::Files, errors: &mut Vec<Error>) -> Option<Self> {
         fn load<T: serde::de::DeserializeOwned>(
             data: &Path,
             file: &str,
@@ -75,7 +85,7 @@ impl Content {
                 .ok()
         }
         let game: Option<GameSource> = load(data, GAME_FILE, errors);
-        let manifest: Option<Manifest> = assets::load(data, errors);
+        let manifest: Option<Manifest> = assets::load_with(data, files, errors);
         let abilities = abilities::load(data, errors);
         let effects = effects::load(data, errors);
         let landscape = assets::landscape::load(data, errors);
