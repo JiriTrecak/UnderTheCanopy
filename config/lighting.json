@@ -1,0 +1,50 @@
+{
+  "daylight": {
+    "temperate": {
+      "day": {
+        "ambient": { "rgb": [245, 248, 245], "multiplier": 3 },
+        "sky": { "rgb": [222, 233, 249], "multiplier": 1.5 },
+        "sun": { "rgb": [255, 255, 255], "multiplier": 3.2 }
+      },
+      "night": {
+        "ambient": { "rgb": [208, 220, 243], "multiplier": 2.8 },
+        "sky": { "rgb": [182, 205, 236], "multiplier": 1.2 },
+        "sun": { "rgb": [213, 225, 250], "multiplier": 2.2 }
+      }
+    },
+    "winter": {
+      "day": {
+        "ambient": { "rgb": [232, 240, 250], "multiplier": 3 },
+        "sky": { "rgb": [203, 223, 247], "multiplier": 1.5 },
+        "sun": { "rgb": [239, 246, 255], "multiplier": 3.2 }
+      },
+      "night": {
+        "ambient": { "rgb": [208, 220, 243], "multiplier": 2.8 },
+        "sky": { "rgb": [182, 205, 236], "multiplier": 1.2 },
+        "sun": { "rgb": [213, 225, 250], "multiplier": 2.2 }
+      }
+    }
+  },
+  "phases": { "dawnStart": 5.8, "dawnEnd": 6.2, "duskStart": 17.8, "duskEnd": 18.2 },
+  "bounceStrength": 0.15,
+  "groundProbe": {
+    "up": [0.7007, 0.7430, 0.7728],
+    "side": [0.5523, 0.5766, 0.5563],
+    "down": [0.3834, 0.3759, 0.3383]
+  },
+  "environment": {
+    "intensity": 0.75,
+    "irradiance": [
+      [0.53869, 0.56642, 0.51636],
+      [-0.44126, -0.45248, -0.45138],
+      [0.13826, 0.12025, 0.08979],
+      [0.02699, 0.02362, 0.01787],
+      [-0.03913, -0.034, -0.02534],
+      [-0.20571, -0.1789, -0.13355],
+      [-0.01322, -0.0279, -0.04795],
+      [0.0402, 0.03502, 0.02625],
+      [-0.22782, -0.22728, -0.21787]
+    ]
+  },
+  "shadow": { "resolution": 2048, "below": 6, "above": 12, "padding": 2, "step": 4 }
+}

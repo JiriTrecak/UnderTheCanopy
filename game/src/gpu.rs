@@ -1,29 +1,17 @@
-//! The GPU device and the window surface.
-//!
-//! The device is created with WebGPU's default limits and no optional features, so
-//! everything rendered here also runs in the editors' WebGPU viewports. Optional
-//! features are added only as agreed exceptions (see docs/decisions.md).
+//! The window surface on the renderer's device (`canopy_render::Gpu`).
 
-use anyhow::{Context, Result};
+use anyhow::Result;
+use canopy_render::{DeviceOptions, Gpu};
 use std::sync::Arc;
 use winit::{dpi::PhysicalSize, window::Window};
 
-/// Neutral zinc (#18181b) in linear space.
-const CLEAR: wgpu::Color = wgpu::Color {
-    r: 0.0091,
-    g: 0.0091,
-    b: 0.0111,
-    a: 1.0,
-};
-
-pub struct Gpu {
+pub struct Display {
+    pub gpu: Gpu,
     surface: wgpu::Surface<'static>,
-    device: wgpu::Device,
-    queue: wgpu::Queue,
     config: wgpu::SurfaceConfiguration,
 }
 
-impl Gpu {
+impl Display {
     pub fn new(window: Arc<Window>, vsync: bool) -> Result<Self> {
         let mut descriptor =
             wgpu::InstanceDescriptor::new_with_display_handle(Box::new(window.clone()));
@@ -31,26 +19,8 @@ impl Gpu {
         let instance = wgpu::Instance::new(descriptor);
         let size = window.inner_size();
         let surface = instance.create_surface(window)?;
-        let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
-            power_preference: wgpu::PowerPreference::HighPerformance,
-            compatible_surface: Some(&surface),
-            force_fallback_adapter: false,
-            apply_limit_buckets: false,
-        }))
-        .context("no compatible GPU")?;
-        let info = adapter.get_info();
-        tracing::info!(gpu = %info.name, backend = ?info.backend, "adapter");
-
-        let (device, queue) =
-            pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-                label: Some("canopy"),
-                required_features: wgpu::Features::empty(),
-                required_limits: wgpu::Limits::default(),
-                memory_hints: wgpu::MemoryHints::Performance,
-                ..Default::default()
-            }))?;
-
-        let capabilities = surface.get_capabilities(&adapter);
+        let gpu = Gpu::for_surface(instance, &surface, DeviceOptions::default())?;
+        let capabilities = surface.get_capabilities(&gpu.adapter);
         let format = capabilities
             .formats
             .iter()
@@ -72,13 +42,20 @@ impl Gpu {
             color_space: wgpu::SurfaceColorSpace::Auto,
             view_formats: vec![],
         };
-        surface.configure(&device, &config);
+        surface.configure(&gpu.device, &config);
         Ok(Self {
+            gpu,
             surface,
-            device,
-            queue,
             config,
         })
+    }
+
+    pub fn format(&self) -> wgpu::TextureFormat {
+        self.config.format
+    }
+
+    pub fn size(&self) -> [u32; 2] {
+        [self.config.width, self.config.height]
     }
 
     pub fn resize(&mut self, size: PhysicalSize<u32>) {
@@ -87,48 +64,29 @@ impl Gpu {
         }
         self.config.width = size.width;
         self.config.height = size.height;
-        self.surface.configure(&self.device, &self.config);
+        self.surface.configure(&self.gpu.device, &self.config);
     }
 
-    pub fn render(&mut self) {
-        let _span = tracing::trace_span!("render").entered();
-        let frame = match self.surface.get_current_texture() {
-            wgpu::CurrentSurfaceTexture::Success(frame) => frame,
+    /// The next frame to draw into, if the surface has one.
+    pub fn acquire(&mut self) -> Option<wgpu::SurfaceTexture> {
+        match self.surface.get_current_texture() {
+            wgpu::CurrentSurfaceTexture::Success(frame) => Some(frame),
             wgpu::CurrentSurfaceTexture::Suboptimal(frame) => {
-                self.surface.configure(&self.device, &self.config);
-                frame
+                self.surface.configure(&self.gpu.device, &self.config);
+                Some(frame)
             }
             wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Lost => {
-                self.surface.configure(&self.device, &self.config);
-                return;
+                self.surface.configure(&self.gpu.device, &self.config);
+                None
             }
             skipped => {
                 tracing::debug!(?skipped, "skipped frame");
-                return;
+                None
             }
-        };
-        let view = frame
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("frame"),
-            });
-        encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("clear"),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view: &view,
-                depth_slice: None,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Clear(CLEAR),
-                    store: wgpu::StoreOp::Store,
-                },
-            })],
-            ..Default::default()
-        });
-        self.queue.submit([encoder.finish()]);
-        self.queue.present(frame);
+        }
+    }
+
+    pub fn present(&self, frame: wgpu::SurfaceTexture) {
+        self.gpu.queue.present(frame);
     }
 }
