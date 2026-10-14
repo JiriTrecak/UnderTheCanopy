@@ -280,12 +280,20 @@ fn grid(f: impl Fn(i32, i32) -> f32) -> String {
 
 /// Committed terrain from ground heights per cell (world units), dry everywhere.
 pub fn terrain(ground: impl Fn(i32, i32) -> f32) -> Value {
+    terrain_with_water(ground, |_, _| -1.0)
+}
+
+/// Committed terrain from ground and water heights per cell (world units).
+pub fn terrain_with_water(
+    ground: impl Fn(i32, i32) -> f32,
+    water: impl Fn(i32, i32) -> f32,
+) -> Value {
     let span = (SIZE + 2 * HALO as u32) as usize;
     let flow: Vec<u8> = (0..span * span).flat_map(|_| [128, 128, 0, 0]).collect();
     let zero = grid(|_, _| 0.0);
     json!({
         "version": 1, "size": SIZE,
-        "heights": grid(ground), "waterHeights": grid(|_, _| -1.0),
+        "heights": grid(ground), "waterHeights": grid(water),
         "waterFlow": base64(&flow), "waterProfiles": [],
         "grass": zero, "rock": zero, "paint": [],
     })

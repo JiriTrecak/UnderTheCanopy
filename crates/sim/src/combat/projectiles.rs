@@ -43,8 +43,7 @@ pub struct Aim {
 }
 
 impl Aim {
-    fn of(senses: &Senses, point: SurfacePoint, surface: Option<String>) -> Self {
-        let _ = senses;
+    fn of(point: SurfacePoint, surface: Option<String>) -> Self {
         Self {
             position: Milli {
                 x: crate::terrain::round_half_up(point.x * 1000.0) as i32,
@@ -154,8 +153,8 @@ pub fn launch_missile(
         target: b,
         definition: ea.definition,
         owner: ea.owner,
-        origin: Aim::of(senses, origin, ea.surface.clone()),
-        destination: Aim::of(senses, destination, eb.surface.clone()),
+        origin: Aim::of(origin, ea.surface.clone()),
+        destination: Aim::of(destination, eb.surface.clone()),
         launched: state.tick,
         impact: state.tick + flight,
         damage_milli,
@@ -237,7 +236,7 @@ pub fn launch_shell(
         source: a,
         definition: ea.definition,
         owner: ea.owner,
-        origin: Aim::of(senses, origin, ea.surface.clone()),
+        origin: Aim::of(origin, ea.surface.clone()),
         target,
         launched: state.tick,
         impact: state.tick + flight,
@@ -369,7 +368,7 @@ pub fn land_missiles(senses: &Senses, state: &mut State, hits: &mut Vec<Hit>) {
             .get(target)
             .filter(|t| t.hp.is_none_or(|hp| hp > 0));
         if let Some(t) = living {
-            let destination = Aim::of(senses, senses.eye(state, t), t.surface.clone());
+            let destination = Aim::of(senses.eye(state, t), t.surface.clone());
             state.combat.missiles[index].destination = destination;
         }
         let m = &state.combat.missiles[index];
