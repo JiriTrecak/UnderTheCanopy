@@ -7,13 +7,17 @@ package_format := if os() == "macos" { "app" } else { "nsis" }
 default:
     @just --list
 
-# Run the game against the repository's data
-play *args:
+# Run the game against the repository's data (cooks first; a no-op when up to date)
+play *args: cook
     cargo run -p canopy -- --data "{{justfile_directory()}}" {{args}}
 
 # Run an optimised build with Tracy profiling (connect the Tracy app)
-profile *args:
+profile *args: cook
     cargo run -p canopy --profile profiling --features profile -- --data "{{justfile_directory()}}" --no-vsync {{args}}
+
+# Cook published assets into target/cooked/canopy.pack; `just cook --inspect <asset id>` shows one, `--stats` the whole pack
+cook *args:
+    cargo run -q -p canopy-cook -- --data "{{justfile_directory()}}" --out "{{justfile_directory()}}/target/cooked" {{args}}
 
 # Everything CI checks: formatting, lints, tests
 check:
