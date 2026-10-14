@@ -262,7 +262,7 @@ pub fn on_death(
 
 /// The nearest free cell around a death site, no item closer than two cells, reachable in
 /// a straight line (old `dropPosition`); the site itself when everything is crowded.
-fn drop_position(
+pub(crate) fn drop_position(
     state: &State,
     spatial: &Spatial,
     origin: (i32, i32, Option<String>),

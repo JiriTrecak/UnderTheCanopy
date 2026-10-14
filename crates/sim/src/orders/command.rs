@@ -100,9 +100,9 @@ pub fn apply(
             state.entities.get(id).is_some_and(|e| {
                 alive(e)
                     && spatial.profiles.get(e.definition).player_control
-                    && e.unit
-                        .as_ref()
-                        .is_none_or(|u| u.contained.is_none() && u.release.is_none())
+                    && e.unit.as_ref().is_none_or(|u| {
+                        u.taunt.is_none() && u.contained.is_none() && u.release.is_none()
+                    })
             })
         })
         .collect();
@@ -185,7 +185,7 @@ pub fn apply(
                     state.entities.get(target).expect("target"),
                 );
                 if !can_issue(e, append)
-                    || !senses.combat.reaches(e.definition, t.definition)
+                    || !senses.reaches(e, t)
                     || id == target
                     || (!force && !senses.hostile(e, t))
                 {
@@ -215,7 +215,7 @@ pub fn apply(
                     .filter(|&id| {
                         let e = state.entities.get(id).expect("eligible");
                         let profile = spatial.profiles.get(e.definition);
-                        profile.body.air == air
+                        spatial.body_of(e).air == air
                             && movable(state, spatial, id)
                             && can_issue(e, append)
                             && (!attack_move || profile.combat)
@@ -234,7 +234,7 @@ pub fn apply(
                     .iter()
                     .map(|&id| {
                         let e = state.entities.get(id).expect("eligible");
-                        let b = spatial.profiles.get(e.definition).body;
+                        let b = spatial.body_of(e);
                         body.radius = body.radius.max(b.radius);
                         body.height = body.height.max(b.height);
                         body.spacing = body.spacing.max(b.spacing);

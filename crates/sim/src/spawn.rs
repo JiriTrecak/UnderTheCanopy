@@ -733,6 +733,7 @@ pub fn insert(state: &mut State, catalog: &Catalog, spawn: Spawn) -> EntityId {
                 .map(|f| crate::economy::Felling::standing(f.max_hp)),
         }),
         item: (definition.kind == Kind::Item).then(|| LooseItem {
+            runtime: None,
             quantity: initial.quantity.unwrap_or(1),
         }),
         production: behaviors
@@ -750,6 +751,10 @@ pub fn insert(state: &mut State, catalog: &Catalog, spawn: Spawn) -> EntityId {
             .map(|_| crate::economy::RevivalQueue::default()),
         progression: crate::heroes::initial(definition, initial.experience),
         fallen: false,
+        caster: None,
+        statuses: Vec::new(),
+        links: None,
+        equipment: None,
     };
     // A complete body starts at full health for its level and its owner's research,
     // unless the placement says otherwise.
@@ -774,6 +779,7 @@ pub fn insert(state: &mut State, catalog: &Catalog, spawn: Spawn) -> EntityId {
             entity.inventory.remove(&item);
         }
     }
+    crate::abilities::equip_new(catalog, &mut entity);
     state.entities.insert(entity);
     id
 }

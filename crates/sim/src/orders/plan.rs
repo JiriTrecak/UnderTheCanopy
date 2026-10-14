@@ -24,6 +24,11 @@ pub struct Work<'a> {
     pub economy: &'a mut crate::economy::Economy,
     pub catalog: &'a crate::catalog::Catalog,
     pub senses: crate::economy::command::Senses<'a>,
+    /// Ability events, for queued casts and pickups.
+    pub events: &'a mut crate::abilities::Events,
+    pub limits: crate::heroes::Limits,
+    /// Owners whose slots an AI plays (their casts use AI control).
+    pub ai: &'a [canopy_content::placement::Owner],
 }
 
 /// Step 4 (old `UnitOrders.advance`): idle units start their next queued order, replayed
@@ -46,6 +51,14 @@ pub fn advance(motion: &mut Motion, state: &mut State, senses: &Senses, work: Wo
             continue;
         };
         if u.order.is_some() || u.work.job.is_some() || u.work.pending_move.is_some() {
+            continue;
+        }
+        // Taunted, casting and stunned units start nothing new.
+        let e = state.entities.get(id).expect("unit");
+        if u.taunt.is_some()
+            || e.caster.as_ref().is_some_and(|c| c.pending.is_some())
+            || crate::abilities::statuses::stunned(work.catalog, e)
+        {
             continue;
         }
         if u.work.cargo.is_some() {
@@ -113,6 +126,18 @@ pub fn advance(motion: &mut Motion, state: &mut State, senses: &Senses, work: Wo
                     target: target.0,
                     append: None,
                 },
+                Order::CastAbility {
+                    binding, target, ..
+                } => Action::CastAbility {
+                    actor: id.0,
+                    binding: binding.clone(),
+                    target: target.clone(),
+                },
+                Order::Pickup { target } => Action::Pickup {
+                    actor: id.0,
+                    target: target.0,
+                    append: None,
+                },
                 Order::Construct { target } => {
                     // Activated directly while the site still takes this builder.
                     let valid = construct_target(state, work.catalog, id, *target);
@@ -126,7 +151,30 @@ pub fn advance(motion: &mut Motion, state: &mut State, senses: &Senses, work: Wo
                     continue;
                 }
             };
-            let accepted = if crate::economy::command::handles(&action) {
+            let accepted = if crate::abilities::orders::handles(&action)
+                || crate::items::inventory::handles(&action)
+            {
+                let mut ctx = crate::abilities::Ctx {
+                    senses: *senses,
+                    spatial: &mut motion.spatial,
+                    events: &mut *work.events,
+                    economy: &mut *work.economy,
+                    limits: work.limits,
+                    suppress: 0,
+                };
+                if crate::items::inventory::handles(&action) {
+                    crate::items::inventory::apply(&mut ctx, state, owner, &action)
+                        .map(|_| Vec::new())
+                } else {
+                    let control = if work.ai.contains(&owner) {
+                        canopy_content::abilities::Control::Ai
+                    } else {
+                        canopy_content::abilities::Control::Player
+                    };
+                    crate::abilities::orders::apply(&mut ctx, state, owner, &action, control)
+                        .map(|_| Vec::new())
+                }
+            } else if crate::economy::command::handles(&action) {
                 let economy_senses = work.senses;
                 let mut ctx = work.economy.ctx(state, work.catalog, &mut motion.spatial);
                 crate::economy::command::apply(&mut ctx, economy_senses, owner, &action)

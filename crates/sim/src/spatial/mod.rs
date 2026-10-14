@@ -707,7 +707,7 @@ impl Spatial {
             } else {
                 0.0
             },
-            air: profile.body.air,
+            air: crate::abilities::forms::air(profile.body.air, e),
             ignores,
             active: present(e),
             ready_tick: e.ready_tick,
@@ -753,7 +753,10 @@ impl Spatial {
 
     /// The collision body of a unit.
     pub fn body_of(&self, e: &Entity) -> Body {
-        self.profiles.get(e.definition).body
+        let mut body = self.profiles.get(e.definition).body;
+        // Flight forms change the collision class, never the body size.
+        body.air = crate::abilities::forms::air(body.air, e);
+        body
     }
 
     // ----- sweeps --------------------------------------------------------------------------

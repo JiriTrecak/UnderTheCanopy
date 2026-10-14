@@ -248,8 +248,13 @@ impl Rules {
     /// Damage after the matchup and armour (old `resolveDamage`): at least 1 unless the
     /// matchup is 0. `raw_milli` is the raw damage in thousandths.
     pub fn mitigate(&self, raw_milli: u64, kind: DamageType, armor: ArmorType, value: i32) -> u32 {
+        self.mitigate_points(raw_milli as f64 / 1000.0, kind, armor, value)
+    }
+
+    /// [`Rules::mitigate`] on raw damage in points (after spell damage multipliers).
+    pub fn mitigate_points(&self, raw: f64, kind: DamageType, armor: ArmorType, value: i32) -> u32 {
         let matchup = self.matrix[usize::from(kind.0) * self.armor_types + usize::from(armor.0)];
-        if raw_milli == 0 || matchup == 0 {
+        if raw <= 0.0 || matchup == 0 {
             return 0;
         }
         let multiplier = if self.applies_armor[usize::from(kind.0)] {
@@ -257,7 +262,6 @@ impl Rules {
         } else {
             1.0
         };
-        let raw = raw_milli as f64 / 1000.0;
         super::round(raw * f64::from(matchup) / 1000.0 * multiplier).max(1.0) as u32
     }
 

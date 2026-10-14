@@ -38,7 +38,7 @@ pub enum MissionEffect {
         source: Option<EntityId>,
         amount: u32,
     },
-    /// Restore a living unit's health and mana (M2.6 mana).
+    /// Restore a living unit's health and mana.
     Recover { placement: String },
     /// Give a unit to another owner, interrupting its work.
     Transfer { placement: String, owner: Owner },
@@ -49,7 +49,7 @@ pub enum MissionEffect {
         owner: Owner,
         camp: Option<String>,
     },
-    /// Set a hero item slot; taking an item clamps health and mana (M2.6 items).
+    /// Set a hero item slot; taking an item clamps health and mana.
     Equip {
         entity: EntityId,
         slot: usize,
@@ -165,7 +165,9 @@ pub(super) fn apply(
             {
                 let stats = crate::stats::Stats::of(catalog, entity, &research);
                 entity.hp = Some(stats.max_hp);
-                // M2.6: mana refills to the maximum too.
+                if let Some(c) = &mut entity.caster {
+                    c.mana = stats.max_mana;
+                }
             }
         }
         MissionEffect::Transfer { placement, owner } => {
@@ -214,8 +216,10 @@ pub(super) fn apply(
                 defeated: vec![CAMPAIGN_PLAYER],
             });
         }
-        // Applied by systems later build steps add; see each variant.
-        MissionEffect::Equip { .. } => {}
+        MissionEffect::Equip { entity, slot, item } => {
+            let item = item.as_ref().and_then(|id| catalog.find(id.as_str()));
+            crate::items::inventory::set_slot(catalog, state, *entity, *slot, item);
+        }
     }
 }
 

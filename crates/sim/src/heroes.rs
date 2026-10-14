@@ -71,7 +71,10 @@ impl Roster {
         for e in state.entities.iter().filter(|e| e.owner == owner) {
             let d = catalog.get(e.definition);
             if e.unit.is_some() || d.kind == canopy_content::game::Kind::Building {
-                if d.is_hero() && !roster.definitions.contains(&d.id) {
+                if d.is_hero()
+                    && !crate::abilities::actor::summoned(e)
+                    && !roster.definitions.contains(&d.id)
+                {
                     roster.definitions.push(d.id.clone());
                 }
                 if e.hp.is_some_and(|hp| hp == 0) {
@@ -135,8 +138,12 @@ pub fn award(
         let index = (level as usize).min(table.len()).saturating_sub(1);
         table.get(index).copied().unwrap_or(0)
     });
-    // M2.6: summoned victims pay `summonMultiplierPermille`.
-    let reward = base;
+    // Summoned victims pay less.
+    let reward = if crate::abilities::actor::summoned(victim) {
+        base * policy.summon_multiplier_permille / 1000
+    } else {
+        base
+    };
     if reward == 0 {
         return;
     }
@@ -170,6 +177,7 @@ pub fn award(
                 .as_ref()
                 .is_some_and(|p| p.experience < ceiling(e))
             && e.owner != Owner::Nobody
+            && !crate::abilities::actor::summoned(e)
             && teams.allied(e.owner, owner)
     };
     let candidates: Vec<EntityId> = state
@@ -252,7 +260,10 @@ pub fn award(
             *hp =
                 (i64::from(*hp) + i64::from(after.max_hp) - i64::from(before.max_hp)).max(0) as u32;
         }
-        // M2.6: mana follows the same rule.
+        if let Some(c) = &mut e.caster {
+            c.mana = (i64::from(c.mana) + i64::from(after.max_mana) - i64::from(before.max_mana))
+                .max(0) as u32;
+        }
         if after.level > before.level {
             state.fact(
                 owner,

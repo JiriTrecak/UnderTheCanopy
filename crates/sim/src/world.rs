@@ -1,5 +1,6 @@
 //! The world: state, content, map and the command queue, advanced one tick at a time.
 
+use crate::abilities::{self, sight::SpellSight};
 use crate::{
     action::Action,
     catalog::Catalog,
@@ -15,7 +16,7 @@ use crate::{
     terrain::Terrain,
     victory,
     view::View,
-    vision::{self, Sight, Vision},
+    vision::{Sight, Vision},
 };
 use canopy_content::{Content, map::UtcMap, placement::Owner};
 use serde::{Deserialize, Serialize};
@@ -65,6 +66,10 @@ pub struct World {
     economy: Economy,
     /// How the match ends.
     rules: victory::Rules,
+    /// What vision asks of abilities: forms, concealment, detection, lent sight.
+    sight: SpellSight,
+    /// Recent ability events for views (cosmetic, never saved).
+    events: abilities::Events,
 }
 
 impl World {
@@ -102,13 +107,16 @@ impl World {
         for slot in &setup.slots {
             state.wallets.entry(Owner::Player(slot.player)).or_default();
         }
+        let sight = SpellSight {
+            catalog: catalog.clone(),
+        };
         let vision = Vision::new(
             &mut state,
             &catalog,
             &terrain,
             &setup,
             map.exploration(),
-            &SIGHT,
+            &sight,
         );
         let mut motion = Motion::new(
             terrain.clone(),
@@ -134,6 +142,8 @@ impl World {
             combat,
             economy,
             rules,
+            sight,
+            events: abilities::Events::default(),
         })
     }
 
@@ -205,11 +215,23 @@ impl World {
                     catalog: &self.catalog,
                     terrain: &self.terrain,
                     vision: &self.vision,
-                    rules: &SIGHT,
+                    rules: &self.sight,
                     combat: &self.combat.rules,
                     camps: &self.combat.camps,
                     teams: &self.combat.teams,
                     cache: None,
+                }
+            };
+        }
+        macro_rules! ctx {
+            () => {
+                abilities::Ctx {
+                    senses: senses!(),
+                    spatial: &mut self.motion.spatial,
+                    events: &mut self.events,
+                    economy: &mut self.economy,
+                    limits: self.combat.limits,
+                    suppress: 0,
                 }
             };
         }
@@ -219,8 +241,16 @@ impl World {
             self.state.tick += 1;
             return;
         }
+        // Step 2: the ability lifecycle, cast orders, autocast and taunts.
+        self.motion.spatial.sync_static(&self.state);
+        self.motion.spatial.sync_bodies(&self.state);
+        abilities::step::begin(&mut ctx!(), &mut self.state);
+        // Step 3: item effects and regeneration.
+        crate::items::effects::tick(&mut ctx!(), &mut self.state);
+        crate::items::regeneration::tick(&mut ctx!(), &mut self.state);
         // Step 4: order advance, then work assignment.
         self.motion.spatial.sync_static(&self.state);
+        let ai = self.ai_owners();
         orders::plan::advance(
             &mut self.motion,
             &mut self.state,
@@ -231,8 +261,11 @@ impl World {
                 senses: economy::command::Senses {
                     vision: &self.vision,
                     terrain: &self.terrain,
-                    rules: &SIGHT,
+                    rules: &self.sight,
                 },
+                events: &mut self.events,
+                limits: self.combat.limits,
+                ai: &ai,
             },
         );
         {
@@ -241,8 +274,10 @@ impl World {
                     .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
             economy::assign(&mut ctx);
         }
-        // Step 5: garrisons, combat and order planning, separation, idle motion, movement.
+        // Step 5: garrisons, pickups, combat and order planning, separation, idle motion,
+        // movement.
         crate::garrisons::tick(&mut self.state, &self.catalog, &mut self.motion.spatial);
+        crate::items::inventory::plan(&mut ctx!(), &mut self.state);
         combat::plan::plan(
             &senses!(),
             &mut self.motion.spatial,
@@ -252,30 +287,33 @@ impl World {
         self.motion.separate(&mut self.state);
         self.motion.idle(&mut self.state);
         self.motion.move_units(&mut self.state);
+        // Step 6: casters that arrived in range; item effects after movement.
+        abilities::step::after_movement(&mut ctx!(), &mut self.state);
+        crate::items::effects::tick(&mut ctx!(), &mut self.state);
         // Step 7: combat resolution on current sight, then deaths.
         self.vision
-            .sync(&self.state, &self.catalog, &self.terrain, &SIGHT);
-        let outcome = combat::resolve::resolve(&senses!(), &self.motion.spatial, &mut self.state);
+            .sync(&self.state, &self.catalog, &self.terrain, &self.sight);
+        let outcome = combat::resolve::resolve(&mut ctx!(), &mut self.state);
         if !outcome.dead.is_empty() {
             // The dead no longer see.
             self.vision
-                .sync(&self.state, &self.catalog, &self.terrain, &SIGHT);
-            combat::deaths::process(
-                &senses!(),
-                &mut self.motion.spatial,
-                &mut self.state,
-                &mut self.economy,
-                self.combat.limits,
-                &outcome.dead,
-            );
+                .sync(&self.state, &self.catalog, &self.terrain, &self.sight);
+            combat::deaths::process(&mut ctx!(), &mut self.state, &outcome.dead);
         }
-        // Step 9: revival, jobs, training, regrowth, upgrades and research.
+        // Step 8: reactions, persistent effects, deliveries and releases, then taunts.
+        self.vision
+            .sync(&self.state, &self.catalog, &self.terrain, &self.sight);
+        abilities::step::resolve(&mut ctx!(), &mut self.state);
+        // Step 9: hero returns, revival, jobs, training, regrowth, upgrades, research,
+        // and items taken in reach.
+        abilities::world_ops::tick_returns(&mut ctx!(), &mut self.state);
         {
             let mut ctx =
                 self.economy
                     .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
             economy::advance(&mut ctx);
         }
+        crate::items::inventory::advance(&mut ctx!(), &mut self.state);
         // Step 10: the mission script.
         if let Some(mission) = &mut self.mission {
             mission.tick(&mut self.state, &self.catalog);
@@ -297,9 +335,19 @@ impl World {
         self.state.tick += 1;
     }
 
+    /// Owners whose slot an AI plays.
+    fn ai_owners(&self) -> Vec<Owner> {
+        self.setup
+            .slots
+            .iter()
+            .filter(|s| s.kind == crate::setup::SlotKind::Ai)
+            .map(|s| Owner::Player(s.player))
+            .collect()
+    }
+
     fn observe(&mut self) {
         self.vision
-            .update(&mut self.state, &self.catalog, &self.terrain, &SIGHT);
+            .update(&mut self.state, &self.catalog, &self.terrain, &self.sight);
     }
 
     fn apply_due(&mut self) {
@@ -335,20 +383,75 @@ impl World {
                     catalog: &self.catalog,
                     terrain: &self.terrain,
                     vision: &self.vision,
-                    rules: &SIGHT,
+                    rules: &self.sight,
                     combat: &self.combat.rules,
                     camps: &self.combat.camps,
                     teams: &self.combat.teams,
                     cache: None,
                 };
-                orders::command::apply(
+                let applied = orders::command::apply(
                     &mut self.state,
                     &mut self.motion.spatial,
                     &senses,
                     owner,
                     action,
-                )
-                .map(|_| ())
+                )?;
+                // A new order (or stop) cancels the casts of the units it reached.
+                let append = match action {
+                    Action::Move { append, .. }
+                    | Action::Hold { append, .. }
+                    | Action::Patrol { append, .. }
+                    | Action::Follow { append, .. }
+                    | Action::Attack { append, .. }
+                    | Action::Garrison { append, .. } => append.unwrap_or(false),
+                    _ => false,
+                };
+                if !append && !matches!(action, Action::Unload { .. }) {
+                    let mut ctx = abilities::Ctx {
+                        senses,
+                        spatial: &mut self.motion.spatial,
+                        events: &mut self.events,
+                        economy: &mut self.economy,
+                        limits: self.combat.limits,
+                        suppress: 0,
+                    };
+                    for id in applied {
+                        abilities::cast::cancel(&mut ctx, &mut self.state, id, "Interrupted");
+                    }
+                }
+                Ok(())
+            }
+            _ if abilities::orders::handles(action) || crate::items::inventory::handles(action) => {
+                self.motion.spatial.sync_static(&self.state);
+                self.motion.spatial.sync_bodies(&self.state);
+                let control = if self.ai_owners().contains(&owner) {
+                    canopy_content::abilities::Control::Ai
+                } else {
+                    canopy_content::abilities::Control::Player
+                };
+                let senses = combat::Senses {
+                    catalog: &self.catalog,
+                    terrain: &self.terrain,
+                    vision: &self.vision,
+                    rules: &self.sight,
+                    combat: &self.combat.rules,
+                    camps: &self.combat.camps,
+                    teams: &self.combat.teams,
+                    cache: None,
+                };
+                let mut ctx = abilities::Ctx {
+                    senses,
+                    spatial: &mut self.motion.spatial,
+                    events: &mut self.events,
+                    economy: &mut self.economy,
+                    limits: self.combat.limits,
+                    suppress: 0,
+                };
+                if crate::items::inventory::handles(action) {
+                    crate::items::inventory::apply(&mut ctx, &mut self.state, owner, action)
+                } else {
+                    abilities::orders::apply(&mut ctx, &mut self.state, owner, action, control)
+                }
             }
             _ if economy::command::handles(action) => {
                 self.motion.spatial.sync_static(&self.state);
@@ -356,7 +459,7 @@ impl World {
                 let senses = economy::command::Senses {
                     vision: &self.vision,
                     terrain: &self.terrain,
-                    rules: &SIGHT,
+                    rules: &self.sight,
                 };
                 let mut ctx =
                     self.economy
@@ -387,7 +490,7 @@ impl World {
         let senses = economy::command::Senses {
             vision: &self.vision,
             terrain: &self.terrain,
-            rules: &SIGHT,
+            rules: &self.sight,
         };
         let ctx = self
             .economy
@@ -434,7 +537,7 @@ impl World {
             &self.catalog,
             &self.terrain,
             &self.vision,
-            &SIGHT,
+            &self.sight,
             &self.economy,
             owner,
         );
@@ -467,9 +570,26 @@ impl World {
                     viewer,
                     entity.private.is_some(),
                 );
+                entity.magic = abilities::view::MagicView::of(
+                    &senses,
+                    &self.state,
+                    e,
+                    entity.private.is_some(),
+                );
             }
         }
         view.battle = combat::Battle::of(&senses, &self.state, viewer);
+        view.spells = abilities::view::Spellcraft::of(&senses, &self.state, &self.events, viewer);
+    }
+
+    /// Recent ability events (all of them; views filter by viewer).
+    pub fn events(&self) -> &abilities::Events {
+        &self.events
+    }
+
+    /// Takes the recorded ability events (tests and tools).
+    pub fn drain_events(&mut self) -> Vec<abilities::AbilityEvent> {
+        self.events.drain()
     }
 
     /// Combat's perception and allegiance answers.
@@ -478,7 +598,7 @@ impl World {
             catalog: &self.catalog,
             terrain: &self.terrain,
             vision: &self.vision,
-            rules: &SIGHT,
+            rules: &self.sight,
             combat: &self.combat.rules,
             camps: &self.combat.camps,
             teams: &self.combat.teams,
@@ -494,7 +614,7 @@ impl World {
             state: &self.state,
             catalog: &self.catalog,
             terrain: &self.terrain,
-            rules: &SIGHT,
+            rules: &self.sight,
         }
     }
 
@@ -538,7 +658,10 @@ impl World {
             ));
         }
         let mut state = save.state;
-        let vision = Vision::restore(&mut state, &catalog, &terrain, &save.setup, &SIGHT)
+        let sight = SpellSight {
+            catalog: catalog.clone(),
+        };
+        let vision = Vision::restore(&mut state, &catalog, &terrain, &save.setup, &sight)
             .map_err(SetupError)?;
         let motion = Motion::new(
             terrain.clone(),
@@ -560,6 +683,8 @@ impl World {
             combat,
             economy,
             rules: match_rules(map),
+            sight,
+            events: abilities::Events::default(),
         })
     }
 }
@@ -593,9 +718,6 @@ fn mission_runtime(map: &UtcMap) -> Result<Option<mission::Runtime>, SetupError>
     let script = mission::Script::new(map).map_err(SetupError)?;
     Ok(script.map(|s| mission::Runtime::new(Arc::new(s))))
 }
-
-/// The sight rules of the systems built so far.
-const SIGHT: vision::Current = vision::Current;
 
 pub const SAVE_VERSION: u32 = 1;
 
