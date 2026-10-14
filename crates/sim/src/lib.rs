@@ -16,8 +16,10 @@ pub mod setup;
 pub mod spatial;
 pub mod spawn;
 pub mod state;
+pub mod teams;
 pub mod terrain;
 pub mod view;
+pub mod vision;
 pub mod world;
 
 pub use action::Action;
