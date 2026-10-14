@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "id": "asset.terrain.winter-rock-normal",
+  "name": "winter rock · normal/height",
+  "kind": "terrain-material",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin",
+      "sha256": "f83059ef6e29f71f6b2b4df3c2c50f03b3808f12507c21d6dd646c5748580d8d",
+      "bytes": 1344227
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

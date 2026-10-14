@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.item-canopy-aegis",
+  "name": "Canopy Aegis",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "57f8ab8aa401ddef5751f2b6ae22cdb570c4fa38b8b137e22cda1d52ffb0ddbe",
+      "bytes": 22256
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.item.canopy-aegis",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.item-canopy-aegis"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "57f8ab8aa401ddef5751f2b6ae22cdb570c4fa38b8b137e22cda1d52ffb0ddbe"
+  }
+}

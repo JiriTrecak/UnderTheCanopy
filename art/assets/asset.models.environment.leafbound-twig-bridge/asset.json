@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.leafbound-twig-bridge",
+  "name": "leafbound twig bridge",
+  "kind": "bridge",
+  "revision": 3,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland",
+    "forest"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "138aec79fd72d75d0d2d62d64d9756010c2d086acb7db2e53adf497006bc0384",
+      "bytes": 629048
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "e28212baf6eb162bf82a0a29064cb39251055571ca4d9e888e707ce55c0b9821",
+      "bytes": 2430286
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "5ba5e38c3f60f5de61a16de00980bfad07a56f8f9b023012b7718eb43a1aa837",
+      "bytes": 236370
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [],
+    "scenery": [
+      {
+        "id": "leafbound-twig-bridge",
+        "name": "leafbound twig bridge",
+        "category": "landmark",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        },
+        "deck": {
+          "width": 6.6,
+          "depth": 24,
+          "height": 0.35,
+          "arch": 0.75,
+          "thickness": 0.7,
+          "level": 1,
+          "connections": {
+            "start": 0,
+            "end": 0
+          }
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "vegetationClearance": 0,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original Blender geometry and procedural bark. Original pine-bough albedo generated with built-in ImageGen. All geometry and pixels independently authored."
+  }
+}

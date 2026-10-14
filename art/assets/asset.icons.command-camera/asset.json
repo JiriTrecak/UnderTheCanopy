@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "id": "asset.icons.command-camera",
+  "name": "Cycle camera",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "command",
+    "camera",
+    "ants"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "e2b94117d9f7292aa11e018e3ea9227dafe571fa50b8dfb5de2036c71a1fa258",
+      "bytes": 30481
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "282b1a463ce5f0819a3ae2059001a7415bedfd5a04007a12904bb51151123c6c",
+      "bytes": 1736612
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.action.camera",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.command-camera"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "282b1a463ce5f0819a3ae2059001a7415bedfd5a04007a12904bb51151123c6c"
+  }
+}

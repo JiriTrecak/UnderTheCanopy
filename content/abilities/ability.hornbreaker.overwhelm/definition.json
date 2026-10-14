@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "id": "ability.hornbreaker.overwhelm",
+  "name": "Overwhelm",
+  "description": "Each damaging primary melee hit marks its target for six seconds, stacking three times. Subsequent basic attacks from this hero gain 5/10/15 damage per stack; the target loses 5/7/10% movement per stack. First hit has no bonus. Hits refresh all stacks; allies do not gain the damage bonus.",
+  "activation": "passive",
+  "ranks": [
+    {
+      "bonus": 5,
+      "slow": -50
+    },
+    {
+      "bonus": 10,
+      "slow": -70
+    },
+    {
+      "bonus": 15,
+      "slow": -100
+    }
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 0,
+    "recoverTicks": 0,
+    "cost": {
+      "resource": "mana",
+      "amount": 0,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 0,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [],
+  "presentation": "presentation.hornbreaker.overwhelm",
+  "combatModifiers": {
+    "attackBonus": {
+      "status": "pressure",
+      "amount": 0,
+      "manaCost": 0,
+      "weapon": "melee",
+      "blockedBySilence": false
+    }
+  },
+  "statuses": [
+    {
+      "op": "status",
+      "target": "target",
+      "id": "pressure",
+      "amount": 240,
+      "polarity": "negative",
+      "dispel": true,
+      "modifiers": {},
+      "rankedModifiers": {
+        "moveSpeedPermille": {
+          "rankParameter": "slow"
+        }
+      },
+      "stacking": {
+        "max": 3,
+        "scope": "source"
+      },
+      "sourceAttackBonus": {
+        "rankParameter": "bonus"
+      },
+      "lifetime": "duration"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "presentation.ants.thorn-rush",
+  "animations": {
+    "prepare": "charge",
+    "release": "charge",
+    "recover": "attack",
+    "fallback": "idle"
+  },
+  "effects": [
+    {
+      "id": "dash",
+      "effect": "effect.ants.thorn-rush-trail",
+      "event": "projectile",
+      "anchor": "caster",
+      "lifetime": "finite",
+      "durationFrom": "delivery"
+    },
+    {
+      "id": "push-off",
+      "effect": "effect.ants.thorn-rush-launch",
+      "event": "projectile",
+      "anchor": "caster",
+      "lifetime": "finite"
+    },
+    {
+      "id": "contact",
+      "effect": "effect.ants.thorn-rush-impact",
+      "event": "impact",
+      "anchor": "target",
+      "lifetime": "finite"
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.woodland-reed-tuft",
+  "name": "Quiet-water reeds",
+  "kind": "foliage",
+  "revision": 2,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland",
+    "waterfront"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "ab357cbfe1e68422abb0be6d32e7e1f2070503bf85f3e1e4b3cab57b634e8b03",
+      "bytes": 110352
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "58ef2b6902802721df5d954ddf907aa95751dfd70899da7b088be5014fc2c78b",
+      "bytes": 762894
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.scenery.woodland-reed-tuft",
+        "sceneryAsset": "woodland-reed-tuft",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.environment.woodland-reed-tuft"
+        }
+      }
+    ],
+    "scenery": [
+      {
+        "id": "woodland-reed-tuft",
+        "name": "Quiet-water reeds",
+        "category": "foliage",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    },
+    "vegetationClearance": 0.1
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

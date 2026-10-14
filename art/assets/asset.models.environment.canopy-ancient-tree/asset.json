@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.canopy-ancient-tree",
+  "name": "canopy ancient tree",
+  "kind": "prop",
+  "revision": 3,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "9741582e396376f968880358a381a3206543d0d8da7950602ca0c6873de3cbed",
+      "bytes": 1581644
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "edc7447cf046d17f65a43159962d9d9f02ddffd2d9aaa57233b90df39fd3b515",
+      "bytes": 1632837
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.scenery.canopy-ancient-tree",
+        "sceneryAsset": "canopy-ancient-tree",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.environment.canopy-ancient-tree"
+        }
+      }
+    ],
+    "scenery": [
+      {
+        "id": "canopy-ancient-tree",
+        "name": "canopy ancient tree",
+        "category": "landmark",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        },
+        "blocker": {
+          "width": 8,
+          "depth": 8,
+          "shape": "ellipse"
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "vegetationClearance": 5,
+    "canopy": true,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

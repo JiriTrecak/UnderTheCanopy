@@ -1,0 +1,174 @@
+{
+  "version": 1,
+  "id": "asset.models.buildings.beetles-carapace-hall",
+  "name": "Carapace Bastion",
+  "kind": "building",
+  "revision": 25,
+  "status": "published",
+  "tags": [
+    "original",
+    "beetles",
+    "main-building",
+    "tripo",
+    "team-mask"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "8864de496242d59bb6f1988e41b51052e9d563ed8dca5343d0c09c6f767ca172",
+      "bytes": 6867912
+    },
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "e7497e7c07f691c8950742bcd672011a820cf1ea09dc5aa96788730f4369d4ed",
+      "bytes": 12896092
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "3f369096a99d8133b89e1696494a74fb8eb9ab5cf4b16d8bfbc4aa75ba47df35",
+      "bytes": 21638
+    },
+    {
+      "role": "metalness",
+      "index": 1,
+      "format": "png",
+      "sha256": "ef383904bc00113c8450d84ba3f6dc76c2a0f686cc198ae80310ac019a9d46c0",
+      "bytes": 1877185
+    },
+    {
+      "role": "normal",
+      "index": 1,
+      "format": "png",
+      "sha256": "43c0b3481324263975af9022c6437a192181183cff74e211a848b8ad041652da",
+      "bytes": 2544479
+    },
+    {
+      "role": "roughness",
+      "index": 1,
+      "format": "png",
+      "sha256": "011aeb931a402d7a58ce2876d62fcaeaee32f6b1632e7e3ace1c5e86362cb402",
+      "bytes": 1987301
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "e6fc97a057ca437d8ccfbce654457242393e85c4c5806e0be670b6f2a73257f1",
+      "bytes": 27956773
+    },
+    {
+      "role": "team_mask",
+      "index": 1,
+      "format": "png",
+      "sha256": "28e1788a4db07e32a135b78bc906e324c05701a4563070ca11a199b89899275f",
+      "bytes": 117874
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [
+    {
+      "slot": "TC_TeamColor",
+      "shader": "standard",
+      "color": "#ffffff",
+      "roughness": 1,
+      "metalness": 1,
+      "alphaMode": "opaque",
+      "alphaCutoff": 0.4,
+      "doubleSided": false,
+      "textures": {
+        "albedo": {
+          "role": "albedo",
+          "index": 1
+        },
+        "normal": {
+          "role": "normal",
+          "index": 1
+        },
+        "roughness": {
+          "role": "roughness",
+          "index": 1
+        },
+        "metalness": {
+          "role": "metalness",
+          "index": 1
+        },
+        "teamMask": {
+          "role": "team_mask",
+          "index": 1
+        }
+      }
+    }
+  ],
+  "bindings": {
+    "faction": "beetles",
+    "profile": "building",
+    "render": [
+      {
+        "id": "asset.beetles.carapace-hall",
+        "scale": 1,
+        "healthHeight": 10.840951919555664,
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.buildings.beetles-carapace-hall"
+        }
+      },
+      {
+        "id": "icon.beetles.carapace-hall",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.models.buildings.beetles-carapace-hall"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_TeamColor"
+      ],
+      "mask": {
+        "role": "team_mask",
+        "index": 1
+      }
+    },
+    "blocker": {
+      "shape": "box",
+      "size": [
+        20,
+        20
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 10,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

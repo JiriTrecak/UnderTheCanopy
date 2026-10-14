@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.frost-grass",
+  "name": "frost grass",
+  "kind": "foliage",
+  "revision": 4,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "d725586cdb3c71100fbffbe5406e913d5d2a97d0ee536f2c4a4fa8d50eb27758",
+      "bytes": 133028
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "18d6272aef03abc3feb5b8bfabc9d1db6857302a007b80879114874a82d0dc3f",
+      "bytes": 222299
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "1c9f35888a669edbbf9470c9b25783a0eb948a891c3a14f79f7944e77ed3dcc4",
+      "bytes": 129815
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [],
+    "scenery": [
+      {
+        "id": "frost-grass",
+        "name": "frost grass",
+        "category": "foliage",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "terrain"
+    },
+    "wind": {
+      "mode": "grass",
+      "strength": 0.12,
+      "speed": 0.2,
+      "stiffness": 0.75
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

@@ -1,0 +1,174 @@
+{
+  "version": 1,
+  "id": "asset.models.units.ants-cleaver-warrior",
+  "name": "Ant Cleaver Warrior",
+  "kind": "unit",
+  "revision": 73,
+  "status": "published",
+  "tags": [
+    "ants",
+    "warrior",
+    "tripo",
+    "skinned"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "abe048cd604982d7c5d389548b5413e5be1dc304bae6aef14b7047bf3d408901",
+      "bytes": 2188483
+    },
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "46c329e233bbe8f0722d3daf32368d5dee302414c8583a48936ca841951075b1",
+      "bytes": 4079792
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "1f77a15dcc5f499551f0a8e7174027b58abf30062f9a1962c97d6405fcd13ae4",
+      "bytes": 20102
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "1d6f623edcce32bfb8713e3c9f9488f6dbc49391c3e5aedac6b61ff6e0c04b75",
+      "bytes": 38596814
+    },
+    {
+      "role": "team_mask",
+      "index": 1,
+      "format": "png",
+      "sha256": "596fcd76c029b0681397a7a30b3dfb04d272e6def1984b43ba2bf7422b5361c3",
+      "bytes": 42705
+    }
+  ],
+  "usesGeometry": true,
+  "exportSettings": {
+    "textureSize": 1024
+  },
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "faction": "ants",
+    "profile": "base",
+    "render": [
+      {
+        "id": "asset.ants.cleaver-warrior",
+        "character": "base",
+        "scale": 2,
+        "healthHeight": 2.15,
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.units.ants-cleaver-warrior"
+        }
+      },
+      {
+        "id": "icon.ants.cleaver-warrior",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.models.units.ants-cleaver-warrior"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_TeamColor"
+      ],
+      "mask": {
+        "role": "team_mask",
+        "index": 1
+      }
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "walk",
+        "clip": "walk",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "run",
+        "clip": "run",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "attack",
+        "clip": "attack",
+        "loop": false,
+        "events": [
+          {
+            "name": "hit",
+            "time": 0.8333333333333334
+          }
+        ]
+      },
+      {
+        "semantic": "hit",
+        "clip": "hit",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "death",
+        "clip": "death",
+        "loop": false,
+        "events": []
+      }
+    ],
+    "sockets": [
+      {
+        "name": "handL",
+        "node": "socket_handL",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "handR",
+        "node": "socket_handR",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original generated artwork for Under the Canopy."
+  }
+}

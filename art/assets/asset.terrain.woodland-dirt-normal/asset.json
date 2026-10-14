@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "id": "asset.terrain.woodland-dirt-normal",
+  "name": "woodland dirt · normal/height",
+  "kind": "terrain-material",
+  "revision": 17,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin",
+      "sha256": "2f8d8a207021db466e35069ebc7a48ba28e209778cd327d614d01813d8eabe3a",
+      "bytes": 1282230
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

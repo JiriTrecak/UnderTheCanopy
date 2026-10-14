@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.command-patrol",
+  "name": "Patrol",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "ants-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "8497af4a4bbef1f1719442ffa544fa3d904be5494c0f9ace6cc22de13a5e0136",
+      "bytes": 16344
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.action.patrol",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.command-patrol"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "8497af4a4bbef1f1719442ffa544fa3d904be5494c0f9ace6cc22de13a5e0136"
+  }
+}

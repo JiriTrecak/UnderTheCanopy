@@ -1,0 +1,12 @@
+[
+  {"id":"thornback-foragers","name":"Thornback Foragers","difficulty":"small","theme":"Bramble-nesting rodents that guard berries and fling thorns.","members":{"thorn-slinger":3}},
+  {"id":"dewdrop-sprites","name":"Dewdrop Sprites","difficulty":"small","theme":"Fragile water spirits gathered around wet leaves.","members":{"dew-sprite":2,"puddle-wisp":1}},
+  {"id":"hungry-weblings","name":"Hungry Weblings","difficulty":"small","theme":"A webbed hollow with rushing spiders and a silk-spitting defender.","members":{"webling":3,"spitter":1}},
+  {"id":"mushroom-circle","name":"Mushroom Circle","difficulty":"small","theme":"Animated mushrooms hiding among ordinary forest fungi.","members":{"capling":2,"puffcap":1}},
+  {"id":"rootbound-guardians","name":"Rootbound Guardians","difficulty":"medium","theme":"Ancient roots defending an overgrown grove.","members":{"rootling":2,"twigcaster":2,"old-root":1}},
+  {"id":"hornet-raiders","name":"Hornet Raiders","difficulty":"medium","theme":"Wild hornets patrolling a paper nest.","members":{"hornet-guard":2,"needle-wasp":2,"nest-mother":1}},
+  {"id":"bog-toad-hunters","name":"Bog Toad Hunters","difficulty":"medium","theme":"Large amphibians and pond spirits hunting at the waterline.","members":{"young-toad":1,"tree-frog":2,"tadpole-spirit":2}},
+  {"id":"briar-covenant","name":"Briar Covenant","difficulty":"medium","theme":"Hostile thorn growth animated into a fighting grove.","members":{"briar-hulk":2,"seedcaster":2,"bloom-witch":1}},
+  {"id":"hollow-stag","name":"The Hollow Stag","difficulty":"hard","theme":"A sacred forest guardian and its bark-and-willow retinue.","members":{"hollow-stag":1,"barkguard":2,"willow-wisp":2}},
+  {"id":"rotwood-court","name":"The Rotwood Court","difficulty":"hard","theme":"A corrupted ancient surrounded by rootbeasts and violet spores.","members":{"rotwood-ancient":1,"corrupted-rootbeast":2,"violet-sporeling":2,"root-seer":1}}
+]

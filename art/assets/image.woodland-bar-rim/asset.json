@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "id": "image.woodland-bar-rim",
+  "name": "Woodland Bar Rim",
+  "kind": "interface",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "interface",
+    "woodland-interface"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "f55ff14de01adf9a50e27dd6c6ddece464c08a9c76bb05baf363df3dfa2907ae",
+      "bytes": 78667
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "099b4b467ac6f51aaaee7eb43554cf00ad238c12dfc485d18f08d85e98f8bcbc",
+      "bytes": 798391
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "interface-rim",
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "099b4b467ac6f51aaaee7eb43554cf00ad238c12dfc485d18f08d85e98f8bcbc"
+  }
+}

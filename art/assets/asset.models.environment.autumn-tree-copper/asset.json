@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.autumn-tree-copper",
+  "name": "autumn tree copper",
+  "kind": "tree",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "autumn",
+    "original",
+    "amberleaf"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "721139af5eeebd9b7d5f5c5251394b173aeec715e977ad6ca3ce08c2ea040fb6",
+      "bytes": 1565080
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "eb2bf604905d644ff286d1adbe751e9e807d901b32568c411738b93f3eab94e5",
+      "bytes": 1633988
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "1b001252731c001ae90c62464d3a1a73c6d469d65515562c32a8de2b580c76d7",
+      "bytes": 1518265
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.scenery.autumn-tree-copper",
+        "sceneryAsset": "autumn-tree-copper",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.environment.autumn-tree-copper"
+        },
+        "harvestAnimation": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.environment.autumn-tree-copper"
+        }
+      }
+    ],
+    "scenery": [
+      {
+        "id": "autumn-tree-copper",
+        "name": "autumn tree copper",
+        "category": "foliage",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "wind": {
+      "mode": "tree",
+      "strength": 0.09,
+      "speed": 0.2,
+      "stiffness": 0.8
+    },
+    "vegetationClearance": 1.1,
+    "groundContact": {
+      "mode": "pivot"
+    },
+    "harvesting": {
+      "replacement": "asset.models.environment.autumn-stump",
+      "definition": "resource.forest.tree"
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original procedural geometry and ImageGen leaf albedo. No imported tree geometry or textures."
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "id": "image.woodland-health-fill",
+  "name": "Woodland Health Fill",
+  "kind": "interface",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "interface",
+    "woodland-interface"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "24815f4d8f16bdeaecd53d1a1529a3ee4b26b09ca25aa3714451df0681b9ac59",
+      "bytes": 232384
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "9a53b192cdeb1736285f94f8adfba8e35b1c3675de0c98f7ba93d14a644cf86c",
+      "bytes": 1317837
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "interface-fill",
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "9a53b192cdeb1736285f94f8adfba8e35b1c3675de0c98f7ba93d14a644cf86c"
+  }
+}

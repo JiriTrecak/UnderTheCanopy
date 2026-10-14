@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "id": "asset.models.resources.amber-deposit",
+  "name": "Amber Deposit",
+  "kind": "building",
+  "revision": 15,
+  "status": "published",
+  "tags": [
+    "original",
+    "neutral",
+    "woodland",
+    "resource",
+    "tripo"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "b2393b43d237b2ed927dfc5b8f5c871aace7ab68b5e11c346b1bd3d25d073288",
+      "bytes": 6561225
+    },
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "f3359659efe8bb99aab48d016f241ea823cca94eca9db6892a9d924232929ce9",
+      "bytes": 3932528
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "9a24f37483c3a48609587f969806908a690acfe4bfec8be476d2776e2834c34f",
+      "bytes": 25961
+    },
+    {
+      "role": "normal",
+      "index": 1,
+      "format": "png",
+      "sha256": "f536079a7a324cc2e7a0a4e386b7ec372f29bc8353cb41b719fce345e51d4c0c",
+      "bytes": 3796966
+    },
+    {
+      "role": "roughness",
+      "index": 1,
+      "format": "png",
+      "sha256": "67a9c7c02a89f603287b116858b777859c6b384ac4ef004709c760d9977f5ec4",
+      "bytes": 1953719
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "8cb765e0cffefb843b75792b35ff98de14f2ad3ef0bb325ced087bf993cb7551",
+      "bytes": 12503477
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "faction": "neutral",
+    "profile": "building",
+    "render": [
+      {
+        "id": "asset.resource.amber-seam",
+        "scale": 2,
+        "healthHeight": 7.6,
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.resources.amber-deposit"
+        }
+      },
+      {
+        "id": "asset.resource.woodland-amber-deposit",
+        "scale": 2,
+        "healthHeight": 7.6,
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.resources.amber-deposit"
+        }
+      },
+      {
+        "id": "icon.neutral.amber-deposit",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.models.resources.amber-deposit"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "blocker": {
+      "shape": "box",
+      "size": [
+        15,
+        15
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 7.5,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "id": "asset.terrain.autumn-leaf-litter",
+  "name": "Autumn fallen leaves · albedo/roughness",
+  "kind": "terrain-material",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "autumn",
+    "original"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin",
+      "sha256": "0706447c799f2875c464ea9cd52f10510dc351ca8a4163779977ccafa450681d",
+      "bytes": 2329736
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "847837c72d254ff7f351d7d320492aa9127fcb6a4c96249613bc1a78044e63e0",
+      "bytes": 2384493
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original ImageGen terrain texture; packed into renderer channels."
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.pl-fern-sword-b",
+  "name": "fern sword b",
+  "kind": "foliage",
+  "revision": 8,
+  "status": "published",
+  "tags": [
+    "pl-pack",
+    "woodland",
+    "fern"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "5f9da691b82079f9be76ac33131cdc6c4164a9170e9a7fd1672543c57ebd4cc0",
+      "bytes": 1053651
+    },
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "fb65a12d9773fc16291e058b5e60455e93e6b3d9a1d2735d7d71beb388b801de",
+      "bytes": 1060908
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "2a42f07efd0ccbf3c954745413b06a8ee06a844f84eae306c1bdebfb3d67be4e",
+      "bytes": 16500480
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [],
+    "scenery": [
+      {
+        "id": "pl-fern-sword-b",
+        "name": "fern sword b",
+        "category": "foliage",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "wind": {
+      "mode": "grass",
+      "strength": 0.05,
+      "speed": 0.16,
+      "stiffness": 0.9
+    },
+    "groundContact": {
+      "mode": "terrain"
+    }
+  },
+  "provenance": {
+    "method": "import",
+    "licenseNote": "Adapted from the purchased PL Stylized Fantasy Foliage Environment Assets Pack (licensed for this project); mesh rescaled and re-pivoted, albedo downsized."
+  }
+}

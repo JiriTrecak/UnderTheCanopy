@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.shore-lily-white",
+  "name": "shore lily white",
+  "kind": "prop",
+  "revision": 5,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland",
+    "river"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "76b1d0da1d1aac026f123481b7c0e9577188abc6f3d616802f390cf33b1fe76a",
+      "bytes": 9080
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "6d9b63d9efb7efbc6fabe62e9ee2875ebea88ddbb9d4487e01e261b19f2aca65",
+      "bytes": 643281
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.scenery.shore-lily-white",
+        "sceneryAsset": "shore-lily-white",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.environment.shore-lily-white"
+        }
+      }
+    ],
+    "scenery": [
+      {
+        "id": "shore-lily-white",
+        "name": "shore lily white",
+        "category": "landmark",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    },
+    "vegetationClearance": 0.1
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

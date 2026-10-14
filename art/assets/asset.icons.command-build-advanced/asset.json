@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.command-build-advanced",
+  "name": "Build Advanced",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "ants-v1",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "eb24982848dbcebd8df9533cc56257d44e9b8dafde92f934329f1ee4e5b13c16",
+      "bytes": 32537
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.action.build-advanced",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.command-build-advanced"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "eb24982848dbcebd8df9533cc56257d44e9b8dafde92f934329f1ee4e5b13c16"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.item-stormwing-spurs",
+  "name": "Stormwing Spurs",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "c0ea7d67b03501e711e5efa2cb27faee23e083e2a8aa313d24409da0404fa21a",
+      "bytes": 22898
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.item.stormwing-spurs",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.item-stormwing-spurs"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "c0ea7d67b03501e711e5efa2cb27faee23e083e2a8aa313d24409da0404fa21a"
+  }
+}

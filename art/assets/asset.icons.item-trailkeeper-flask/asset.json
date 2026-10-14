@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.item-trailkeeper-flask",
+  "name": "Trailkeeper Flask",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "92e68c760815127e8397f5d23d34ba55d64dd7c998123b94deeae8e9344689ee",
+      "bytes": 22375
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.item.trailkeeper-flask",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.item-trailkeeper-flask"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "92e68c760815127e8397f5d23d34ba55d64dd7c998123b94deeae8e9344689ee"
+  }
+}

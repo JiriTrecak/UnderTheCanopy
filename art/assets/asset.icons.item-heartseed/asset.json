@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.item-heartseed",
+  "name": "Heartseed",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "132c527a2d20e404c48817edbfcbf7f91df4ba150106914d7fb2a7af3669c07a",
+      "bytes": 20349
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.item.heartseed",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.item-heartseed"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "132c527a2d20e404c48817edbfcbf7f91df4ba150106914d7fb2a7af3669c07a"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "id": "asset.effects.ants.silk-net",
+  "name": "Ant silk capture net",
+  "kind": "texture",
+  "revision": 5,
+  "status": "published",
+  "tags": [
+    "ants",
+    "spell-effects",
+    "silk",
+    "generated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "dc44d5ca2c171486f5e87747956c2a92b4e11c080c67d73cdac131a029601e72",
+      "bytes": 201320
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "f3bfbe98f7c81e573b0dd134ec8ecc8356f790a25daa93389cdd82ffcb810201",
+      "bytes": 1216917
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork generated for Under the Canopy."
+  }
+}

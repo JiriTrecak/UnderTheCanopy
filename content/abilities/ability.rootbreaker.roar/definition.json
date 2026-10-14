@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "id": "ability.rootbreaker.roar",
+  "name": "Challenge Roar",
+  "description": "Force nearby enemies within 12 units to attack Rootbreaker for 2/2.5/3 seconds (half against heroes), and gain 4/6/8 armor for 5 seconds. Enemies resume their orders afterward. Taunt and the armor ward can be dispelled.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "taunt": 80,
+      "heroTaunt": 40,
+      "armor": 4,
+      "mana": 60,
+      "cooldown": 560
+    },
+    {
+      "taunt": 100,
+      "heroTaunt": 50,
+      "armor": 6,
+      "mana": 65,
+      "cooldown": 520
+    },
+    {
+      "taunt": 120,
+      "heroTaunt": 60,
+      "armor": 8,
+      "mana": 70,
+      "cooldown": 480
+    }
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 16,
+    "recoverTicks": 20,
+    "cost": {
+      "resource": "mana",
+      "amount": {
+        "rankParameter": "mana"
+      },
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": {
+        "rankParameter": "cooldown"
+      },
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "target",
+      "query": {
+        "center": "caster",
+        "radius": 12,
+        "relations": [
+          "enemy"
+        ],
+        "allowSelf": false,
+        "includeBuildings": false,
+        "excludePrimary": false,
+        "maxTargets": 32,
+        "order": "nearest"
+      },
+      "id": "challenged",
+      "amount": {
+        "rankParameter": "taunt"
+      },
+      "heroDuration": {
+        "rankParameter": "heroTaunt"
+      },
+      "polarity": "negative",
+      "dispel": true,
+      "modifiers": {},
+      "taunt": true,
+      "lifetime": "duration"
+    },
+    {
+      "op": "status",
+      "target": "caster",
+      "id": "stoneguard",
+      "amount": 200,
+      "polarity": "positive",
+      "dispel": true,
+      "modifiers": {},
+      "rankedModifiers": {
+        "armor": {
+          "rankParameter": "armor"
+        }
+      },
+      "lifetime": "duration"
+    }
+  ],
+  "presentation": "presentation.rootbreaker.roar"
+}

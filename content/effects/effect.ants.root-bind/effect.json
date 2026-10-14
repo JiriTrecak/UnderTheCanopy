@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "effect.ants.root-bind",
+  "name": "Root Bind · living cage",
+  "description": "Natural root cage follows the bound unit until the status expires or is dispelled.",
+  "durationTicks": 24,
+  "loop": true,
+  "layers": [
+    {
+      "id": "root-cage",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "billboard",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 24,
+      "count": 1,
+      "size": 4,
+      "height": 1,
+      "blend": "normal",
+      "follow": true,
+      "spread": 0.8,
+      "length": 1,
+      "texture": {
+        "asset": "asset.effects.living-roots",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

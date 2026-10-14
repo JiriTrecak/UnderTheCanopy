@@ -1,0 +1,199 @@
+{
+  "version": 1,
+  "id": "asset.models.units.ants-marshal",
+  "name": "Ant Marshal",
+  "kind": "unit",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "ants",
+    "marshal",
+    "tripo",
+    "skinned"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "e748edffb6d28641dfc9463eada97e405e770f846de05c0cc026a8dc9060182e",
+      "bytes": 2169468
+    },
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "8ab26324b838580ede8200470491dc8970f935a515f9f2d7c7e0916b1461a695",
+      "bytes": 3195852
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "069c90d85240c079769993ba051e14fbd5dbbe74fc67ed6e09e2ec549329a392",
+      "bytes": 19181
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "ce7e51f03d2e31e21b5bd0377c1c0dc6fd3fd771a7c7b9a3b046e2a4ca08692a",
+      "bytes": 36314532
+    },
+    {
+      "role": "team_mask",
+      "index": 1,
+      "format": "png",
+      "sha256": "a171579ae60f891b99341bf9a07805549423d1ae606d548b64702d109bec0789",
+      "bytes": 42865
+    }
+  ],
+  "usesGeometry": true,
+  "exportSettings": {
+    "textureSize": 1024
+  },
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "faction": "ants",
+    "profile": "base",
+    "render": [
+      {
+        "id": "asset.ants.marshal",
+        "character": "base",
+        "scale": 2,
+        "healthHeight": 2.15,
+        "castContact": 0.5384615384615384,
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.units.ants-marshal"
+        }
+      },
+      {
+        "id": "icon.ants.marshal",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.models.units.ants-marshal"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_TeamColor"
+      ],
+      "mask": {
+        "role": "team_mask",
+        "index": 1
+      }
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "walk",
+        "clip": "walk",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "run",
+        "clip": "run",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "cast",
+        "clip": "cast",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "attack",
+        "clip": "attack",
+        "loop": false,
+        "events": [
+          {
+            "name": "hit",
+            "time": 0.875
+          }
+        ]
+      },
+      {
+        "semantic": "hit",
+        "clip": "hit",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "death",
+        "clip": "death",
+        "loop": false,
+        "events": []
+      }
+    ],
+    "sockets": [
+      {
+        "name": "handL",
+        "node": "socket_handL",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "handR",
+        "node": "socket_handR",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "projectile",
+        "node": "socket_projectile",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "cast",
+        "node": "socket_cast",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original generated artwork for Under the Canopy."
+  }
+}

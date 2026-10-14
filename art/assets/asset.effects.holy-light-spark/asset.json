@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "id": "asset.effects.holy-light-spark",
+  "name": "Holy Light · warm spark",
+  "kind": "texture",
+  "revision": 4,
+  "status": "published",
+  "tags": [
+    "effect",
+    "holy-light",
+    "particle"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "b1f2ab7e5cc8782d76369a37d4be597b7b6dc8456c9bd0ab529f97efdeacdb40",
+      "bytes": 43252
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "c3a7c2407ba90a57ee6d25c2c8f1f6af3c3e56bd71739c4b55f2f7e1f3a2a515",
+      "bytes": 556713
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original generated Holy Light particle source, 2026-09-30."
+  }
+}

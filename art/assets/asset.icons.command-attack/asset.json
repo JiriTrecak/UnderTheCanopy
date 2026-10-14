@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.command-attack",
+  "name": "Attack",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "ants-v1",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "545b5e1639649a60b7493dc60665dbae57d1144a61b37684ee74f8edb23580b3",
+      "bytes": 24527
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.action.attack",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.command-attack"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "545b5e1639649a60b7493dc60665dbae57d1144a61b37684ee74f8edb23580b3"
+  }
+}

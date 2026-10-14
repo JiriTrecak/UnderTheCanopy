@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.item-reaper-mandible",
+  "name": "Reaper Mandible",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "5eadab8c962262bea36563bc11c1603947d3b084bb0e3f53939c3b172a5f3113",
+      "bytes": 18956
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.item.reaper-mandible",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.item-reaper-mandible"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "5eadab8c962262bea36563bc11c1603947d3b084bb0e3f53939c3b172a5f3113"
+  }
+}

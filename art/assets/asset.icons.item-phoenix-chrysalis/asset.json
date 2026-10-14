@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.item-phoenix-chrysalis",
+  "name": "Phoenix Chrysalis",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "2b700d24f47bbf6e5b5fd7f2aec96fc7cbe1e3e0b3ad0cf5807c108f5348a7d7",
+      "bytes": 15637
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.item.phoenix-chrysalis",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.item-phoenix-chrysalis"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "2b700d24f47bbf6e5b5fd7f2aec96fc7cbe1e3e0b3ad0cf5807c108f5348a7d7"
+  }
+}

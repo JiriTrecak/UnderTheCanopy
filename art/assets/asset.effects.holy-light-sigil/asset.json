@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "id": "asset.effects.holy-light-sigil",
+  "name": "Holy Light · floating sigil",
+  "kind": "texture",
+  "revision": 4,
+  "status": "published",
+  "tags": [
+    "effect",
+    "holy-light",
+    "sigil"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "749efa6d496fd4b4bac8d73e200ba6fda9955b1e801223a26f984a00faf6557e",
+      "bytes": 59294
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "730778b11d0ac12c8d4a9e4d240545f3cbfd97b547f2cbddf99139036903b241",
+      "bytes": 871760
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original generated healing sigil source, 2026-09-30."
+  }
+}

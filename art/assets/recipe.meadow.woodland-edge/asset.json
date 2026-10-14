@@ -1,0 +1,381 @@
+{
+  "version": 1,
+  "id": "recipe.meadow.woodland-edge",
+  "name": "Meadow · woodland edge (tree-driven)",
+  "kind": "landscape-recipe",
+  "revision": 28,
+  "status": "published",
+  "tags": [
+    "authoring",
+    "original"
+  ],
+  "resources": [],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "recipe": {
+    "type": "meadow",
+    "material": "asset.terrain.woodland-grass",
+    "canopy": 0,
+    "reach": 9,
+    "falloff": 4,
+    "under": 1,
+    "peak": 1,
+    "open": 0,
+    "edgeFade": 0,
+    "noise": {
+      "scale": 12,
+      "strength": 0.2
+    },
+    "ragged": {
+      "width": 3.5,
+      "scale": 2.2,
+      "strength": 1.4
+    },
+    "accents": [
+      {
+        "species": [
+          {
+            "asset": "asset.models.environment.pl-grass-lush-b",
+            "weight": 5
+          },
+          {
+            "asset": "asset.models.environment.pl-grass-lush-c",
+            "weight": 4
+          },
+          {
+            "asset": "asset.models.environment.pl-grass-lush-a",
+            "weight": 2
+          }
+        ],
+        "spacing": 1,
+        "probability": 0.55,
+        "jitter": 0.8,
+        "scaleMin": 0.45,
+        "scaleMax": 0.8,
+        "maxSlope": 1,
+        "waterClearance": 0.3,
+        "objectClearance": 0,
+        "edgeFade": 0,
+        "minSpacing": 0.45,
+        "patchiness": {
+          "scale": 3.5,
+          "strength": 0.6
+        },
+        "id": "fringe",
+        "coverage": {
+          "min": 0.15,
+          "max": 0.6
+        }
+      },
+      {
+        "species": [
+          {
+            "asset": "asset.models.environment.pl-grass-tall",
+            "weight": 3
+          },
+          {
+            "asset": "asset.models.environment.pl-grass-lush-b",
+            "weight": 2
+          }
+        ],
+        "spacing": 2.2,
+        "probability": 0.22,
+        "jitter": 0.8,
+        "scaleMin": 0.55,
+        "scaleMax": 0.85,
+        "maxSlope": 1,
+        "waterClearance": 0.3,
+        "objectClearance": 0,
+        "edgeFade": 0,
+        "patchiness": {
+          "scale": 5,
+          "strength": 0.7
+        },
+        "id": "lush",
+        "trees": {
+          "min": 2,
+          "max": 9
+        }
+      },
+      {
+        "species": [
+          {
+            "asset": "asset.models.environment.pl-fern-bushy",
+            "weight": 2
+          },
+          {
+            "asset": "asset.models.environment.pl-fern-bushy-b",
+            "weight": 2
+          },
+          {
+            "asset": "asset.models.environment.pl-fern-sword",
+            "weight": 1.5
+          },
+          {
+            "asset": "asset.models.environment.pl-fern-sword-b",
+            "weight": 1.5
+          }
+        ],
+        "spacing": 3,
+        "probability": 0.4,
+        "jitter": 0.8,
+        "scaleMin": 1.1,
+        "scaleMax": 1.6,
+        "maxSlope": 1,
+        "waterClearance": 0.3,
+        "objectClearance": 0,
+        "edgeFade": 0,
+        "minSpacing": 2,
+        "patchiness": {
+          "scale": 6,
+          "strength": 0.75
+        },
+        "id": "ferns",
+        "trees": {
+          "min": 1.2,
+          "max": 5
+        }
+      },
+      {
+        "species": [
+          {
+            "asset": "asset.models.environment.pl-flowers-white",
+            "weight": 3
+          },
+          {
+            "asset": "asset.models.environment.pl-flowers-yellow",
+            "weight": 2
+          },
+          {
+            "asset": "asset.models.environment.pl-flowers-blue",
+            "weight": 1
+          },
+          {
+            "asset": "asset.models.environment.pl-daisy",
+            "weight": 1.5
+          }
+        ],
+        "spacing": 1.5,
+        "probability": 0.34,
+        "jitter": 0.8,
+        "scaleMin": 1.05,
+        "scaleMax": 1.55,
+        "maxSlope": 1,
+        "waterClearance": 0.3,
+        "objectClearance": 0,
+        "edgeFade": 0,
+        "minSpacing": 0.9,
+        "patchiness": {
+          "scale": 5,
+          "strength": 0.95
+        },
+        "id": "flowers",
+        "trees": {
+          "min": 2,
+          "max": 10
+        }
+      },
+      {
+        "species": [
+          {
+            "asset": "asset.models.environment.pl-clover-sorrel",
+            "weight": 3
+          },
+          {
+            "asset": "asset.models.environment.pl-clover-a",
+            "weight": 3
+          },
+          {
+            "asset": "asset.models.environment.pl-flowers-trillium",
+            "weight": 1.5
+          },
+          {
+            "asset": "asset.models.environment.pl-flowers-bluebell",
+            "weight": 1.5
+          }
+        ],
+        "spacing": 2.4,
+        "probability": 0.35,
+        "jitter": 0.8,
+        "scaleMin": 0.8,
+        "scaleMax": 1.2,
+        "maxSlope": 1,
+        "waterClearance": 0.3,
+        "objectClearance": 0,
+        "edgeFade": 0,
+        "minSpacing": 1.4,
+        "patchiness": {
+          "scale": 5,
+          "strength": 0.8
+        },
+        "id": "floor",
+        "trees": {
+          "min": 0.6,
+          "max": 4.5
+        }
+      },
+      {
+        "species": [
+          {
+            "asset": "asset.models.environment.canopy-mushrooms-russet",
+            "weight": 2
+          },
+          {
+            "asset": "asset.models.environment.canopy-mushrooms-ochre",
+            "weight": 1
+          },
+          {
+            "asset": "asset.models.environment.woodland-mushrooms-button",
+            "weight": 2
+          }
+        ],
+        "spacing": 4,
+        "probability": 0.12,
+        "jitter": 0.8,
+        "scaleMin": 0.7,
+        "scaleMax": 1.1,
+        "maxSlope": 1,
+        "waterClearance": 0.3,
+        "objectClearance": 0,
+        "edgeFade": 0,
+        "minSpacing": 3,
+        "id": "mushrooms",
+        "trees": {
+          "min": 0.8,
+          "max": 3
+        }
+      },
+      {
+        "species": [
+          {
+            "asset": "asset.models.environment.meadow-pebble-a",
+            "weight": 3
+          },
+          {
+            "asset": "asset.models.environment.meadow-pebble-b",
+            "weight": 2
+          },
+          {
+            "asset": "asset.models.environment.meadow-pebble-c",
+            "weight": 1
+          }
+        ],
+        "spacing": 3.2,
+        "probability": 0.24,
+        "jitter": 0.8,
+        "scaleMin": 0.7,
+        "scaleMax": 1.15,
+        "maxSlope": 1,
+        "waterClearance": 0.3,
+        "objectClearance": 0,
+        "edgeFade": 0,
+        "minSpacing": 2,
+        "patchiness": {
+          "scale": 9,
+          "strength": 0.7
+        },
+        "id": "pebbles",
+        "coverage": {
+          "min": 0,
+          "max": 0.55
+        }
+      },
+      {
+        "species": [
+          {
+            "asset": "asset.models.environment.meadow-stick-a",
+            "weight": 2
+          },
+          {
+            "asset": "asset.models.environment.meadow-stick-b",
+            "weight": 3
+          }
+        ],
+        "spacing": 4.5,
+        "probability": 0.25,
+        "jitter": 0.8,
+        "scaleMin": 0.8,
+        "scaleMax": 1.15,
+        "maxSlope": 1,
+        "waterClearance": 0.3,
+        "objectClearance": 0,
+        "edgeFade": 0,
+        "minSpacing": 3,
+        "id": "twigs",
+        "trees": {
+          "min": 1.5,
+          "max": 12
+        }
+      },
+      {
+        "species": [
+          {
+            "asset": "asset.models.environment.woodland-fallen-log",
+            "weight": 1
+          }
+        ],
+        "spacing": 12,
+        "probability": 0.3,
+        "jitter": 0.8,
+        "scaleMin": 0.42,
+        "scaleMax": 0.58,
+        "maxSlope": 1,
+        "waterClearance": 0.3,
+        "objectClearance": 0,
+        "edgeFade": 0,
+        "minSpacing": 9,
+        "id": "logs",
+        "trees": {
+          "min": 1.5,
+          "max": 5
+        }
+      },
+      {
+        "species": [
+          {
+            "asset": "asset.models.environment.meadow-boulder",
+            "weight": 3
+          },
+          {
+            "asset": "asset.models.environment.woodland-moss-boulder",
+            "weight": 1
+          }
+        ],
+        "spacing": 7,
+        "probability": 0.3,
+        "jitter": 0.8,
+        "scaleMin": 0.5,
+        "scaleMax": 0.95,
+        "maxSlope": 1,
+        "waterClearance": 0.3,
+        "objectClearance": 0,
+        "edgeFade": 0,
+        "minSpacing": 5,
+        "id": "rocks",
+        "trees": {
+          "min": 1,
+          "max": 8
+        }
+      }
+    ]
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original deterministic layer recipe; accents use the licensed PL foliage packages."
+  }
+}

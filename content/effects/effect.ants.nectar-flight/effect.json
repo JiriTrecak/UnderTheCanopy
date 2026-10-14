@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "id": "effect.ants.nectar-flight",
+  "name": "Restorative nectar drop",
+  "description": "Original ant army effect, editable in Spell & Effect Studio.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "drop",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "missile",
+      "arcHeight": 0.8,
+      "model": {
+        "asset": "asset.models.effects.nectar",
+        "role": "geometry",
+        "index": 1,
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 1.5,
+      "height": 1,
+      "trail": {
+        "durationTicks": 14,
+        "maxPoints": 20,
+        "width": 0.18,
+        "colour": "#ffce65",
+        "opacity": 0.65,
+        "breakDistance": 8
+      }
+    }
+  ]
+}

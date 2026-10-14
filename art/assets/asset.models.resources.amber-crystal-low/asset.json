@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "id": "asset.models.resources.amber-crystal-low",
+  "name": "Amber Crystals — One Third Remaining",
+  "kind": "prop",
+  "revision": 23,
+  "status": "published",
+  "tags": [
+    "original",
+    "neutral",
+    "resource",
+    "amber",
+    "tripo"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "367b968138d6f9f43094e76010f2f70b6bbdc45a1fbb02c0066fc5a88c7d713d",
+      "bytes": 3462512
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "498c5c8f36078c82e9f6b58d2c4cb0fe75d3f26aeb37433e5b6681b8a9a611c4",
+      "bytes": 10916541
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.resource.amber-crystal-low",
+        "scale": 2,
+        "healthHeight": 4.501642227172852,
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.resources.amber-crystal-low"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "blocker": {
+      "shape": "box",
+      "size": [
+        4,
+        4
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 2,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

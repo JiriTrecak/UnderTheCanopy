@@ -1,0 +1,203 @@
+{
+  "version": 1,
+  "id": "asset.models.units.ants-archer",
+  "name": "Ant Archer",
+  "kind": "unit",
+  "revision": 7,
+  "status": "published",
+  "tags": [
+    "original",
+    "ants",
+    "skinned",
+    "tripo",
+    "ant-archer-tripo"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "c4604ed351c485cebdc0c1f75173f609b127283e52b947ce20667cfb7d204e27",
+      "bytes": 10754292
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "006473789c5327159253d299956d9af22cae24e8474ed0bfca6457a06441c038",
+      "bytes": 20513370
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "d668fadae2e4854444bab8fe50bb56f4e754124e77d0b8096a983d400b491e7f",
+      "bytes": 11144
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "6cef1a016b26f2a6446a0be99da94efe0fcfae5e6aaff7226d4b0ba1788196c5",
+      "bytes": 4650475
+    },
+    {
+      "role": "team_mask",
+      "index": 1,
+      "format": "png",
+      "sha256": "5f41567125610f6e0dc9c2c7484e361eeebdc3e251df788830d2f1fe852c2679",
+      "bytes": 51006
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "faction": "ants",
+    "profile": "archer",
+    "render": [
+      {
+        "id": "asset.ants.archer",
+        "character": "archer",
+        "scale": 1,
+        "healthHeight": 2.15,
+        "projectile": "effect.weapon.arrow",
+        "projectileSocket": "socket_projectile",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.units.ants-archer"
+        }
+      },
+      {
+        "id": "icon.ants.archer",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.models.units.ants-archer"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "dimensions": {
+      "radius": 0.2,
+      "height": 2,
+      "formationSpacing": 1
+    },
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_TeamColor"
+      ],
+      "mask": {
+        "role": "team_mask",
+        "index": 1
+      }
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "walk",
+        "clip": "walk",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "run",
+        "clip": "run",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "charge",
+        "clip": "run",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "attack",
+        "clip": "attack_bow",
+        "loop": false,
+        "events": [
+          {
+            "name": "release",
+            "time": 1.6250000000000002
+          }
+        ]
+      },
+      {
+        "semantic": "hit",
+        "clip": "hit",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "death",
+        "clip": "death",
+        "loop": false,
+        "events": []
+      }
+    ],
+    "sockets": [
+      {
+        "name": "handL",
+        "node": "socket_handL",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "projectile",
+        "node": "socket_projectile",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "handR",
+        "node": "socket_handR",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "back",
+        "node": "socket_back",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

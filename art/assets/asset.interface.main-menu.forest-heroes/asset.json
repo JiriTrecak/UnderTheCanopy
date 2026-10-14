@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "asset.interface.main-menu.forest-heroes",
+  "name": "Forest Heroes",
+  "kind": "interface",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "main-menu",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "dd1afc6203e5f85d934ea39c88d7c1d795b83a0c436b87fa62025403b4cfa938",
+      "bytes": 2021856
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "interface-image",
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "dd1afc6203e5f85d934ea39c88d7c1d795b83a0c436b87fa62025403b4cfa938"
+  }
+}

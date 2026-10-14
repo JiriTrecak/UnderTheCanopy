@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "id": "asset.spells.rootbreaker.stun-stars",
+  "name": "Skullcrack stun stars",
+  "kind": "texture",
+  "revision": 5,
+  "status": "published",
+  "tags": [
+    "spell-effects",
+    "generated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "879ff9c4e622161ac95648f61038c977266de3dbf8fbf6888df952880e5175ae",
+      "bytes": 131490
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "d2db51184249121e5a66fdb8928409db9b6c766b03409a389f93b2e44943db29",
+      "bytes": 942820
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork generated with OpenAI GPT Image 2.5."
+  }
+}

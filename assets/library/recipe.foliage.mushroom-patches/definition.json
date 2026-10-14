@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "id": "recipe.foliage.mushroom-patches",
+  "name": "Woodland mushroom patches",
+  "kind": "landscape-recipe",
+  "revision": 3,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "recipe": {
+    "type": "ground-cover",
+    "density": 1,
+    "pattern": "patches",
+    "species": [
+      {
+        "asset": "asset.models.environment.woodland-mushrooms-button",
+        "weight": 3
+      },
+      {
+        "asset": "asset.models.environment.woodland-mushrooms-fan",
+        "weight": 2
+      }
+    ],
+    "spacing": 1.8,
+    "probability": 0.65,
+    "jitter": 0.8,
+    "scaleMin": 0.6,
+    "scaleMax": 1.25,
+    "maxSlope": 0.9,
+    "waterClearance": 0.5,
+    "objectClearance": 0.2,
+    "edgeFade": 1.2,
+    "minSpacing": 1.2,
+    "patchiness": {
+      "scale": 5,
+      "strength": 0.7
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

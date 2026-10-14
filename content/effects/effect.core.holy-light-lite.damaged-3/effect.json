@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "effect.core.holy-light-lite.damaged-3",
+  "name": "Holy Light Lite Hit",
+  "description": "",
+  "durationTicks": 20,
+  "loop": false,
+  "layers": [
+    {
+      "id": "searing-flash",
+      "shape": "burst",
+      "colour": "#ffdf70",
+      "accent": "#fffcd5",
+      "durationTicks": 20,
+      "count": 12,
+      "size": 0.35,
+      "height": 1.6,
+      "follow": true,
+      "intensity": 1.1,
+      "spread": 1,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "anchor": "target",
+      "enabled": true,
+      "startTick": 0,
+      "sustain": false
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.command-move",
+  "name": "Move",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "ants-v1",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "29e3c5e1b45c206a773e38982300d3f09a94d38bd08ac35e62a3638b9a2200b9",
+      "bytes": 14831
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.action.move",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.command-move"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "29e3c5e1b45c206a773e38982300d3f09a94d38bd08ac35e62a3638b9a2200b9"
+  }
+}

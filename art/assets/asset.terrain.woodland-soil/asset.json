@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "id": "asset.terrain.woodland-soil",
+  "name": "woodland soil · albedo/roughness",
+  "kind": "terrain-material",
+  "revision": 35,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "9cd2622ba6b869df398e247aea5a35f09015b661dd36109f431659240a654104",
+      "bytes": 1489436
+    },
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin",
+      "sha256": "f600875033fc883916e73be8c7ece1e15a2666eac4ab9165251a534dacd924de",
+      "bytes": 1549671
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "2fbfa0d965f248173367e6326fcb2bd94a5542a07472003515e457784a1418f6",
+      "bytes": 1195545
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

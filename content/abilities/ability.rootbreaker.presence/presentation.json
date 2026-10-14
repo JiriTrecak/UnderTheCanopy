@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "presentation.rootbreaker.presence",
+  "icon": "asset.spells.rootbreaker.presence-icon-v2",
+  "animations": {
+    "prepare": "idle",
+    "release": "idle",
+    "recover": "idle",
+    "fallback": "idle"
+  },
+  "effects": [
+    {
+      "id": "presence",
+      "effect": "effect.ants.rootbreaker-presence",
+      "statusId": "presence",
+      "event": "statusApplied",
+      "anchor": "target",
+      "lifetime": "status"
+    }
+  ]
+}

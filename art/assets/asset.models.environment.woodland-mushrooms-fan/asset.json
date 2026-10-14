@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.woodland-mushrooms-fan",
+  "name": "Woodland russet mushrooms",
+  "kind": "foliage",
+  "revision": 3,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland",
+    "mushrooms"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "8304ba212a42a41de0ffbb6242158c69d488177cbe5236b96945500e1ed7eac3",
+      "bytes": 2019300
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "049a762fe65a5b76e0e16baf9ef256ef76d11299aa89ec41e437258f023395cb",
+      "bytes": 2078963
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.scenery.woodland-mushrooms-fan",
+        "sceneryAsset": "woodland-mushrooms-fan",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.environment.woodland-mushrooms-fan"
+        }
+      }
+    ],
+    "scenery": [
+      {
+        "id": "woodland-mushrooms-fan",
+        "name": "Woodland russet mushrooms",
+        "category": "foliage",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    },
+    "vegetationClearance": 0.2
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "id": "asset.texture.woodland-brdf",
+  "name": "Original integrated GGX reflectance",
+  "kind": "texture",
+  "revision": 4,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin",
+      "sha256": "c6d76caeb156079eae5af7a25d667bc037f9aa63a84c680cd01ec9ea48d61d9a",
+      "bytes": 6280
+    },
+    {
+      "role": "data",
+      "index": 2,
+      "format": "json",
+      "sha256": "f02696e7091325130bbbc9637d3488e8cf3cc6d3fcf8c2c1e3832b6775c17d22",
+      "bytes": 120
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

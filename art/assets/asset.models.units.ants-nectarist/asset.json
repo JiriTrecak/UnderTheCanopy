@@ -1,0 +1,201 @@
+{
+  "version": 1,
+  "id": "asset.models.units.ants-nectarist",
+  "name": "Ant Nectarist",
+  "kind": "unit",
+  "revision": 17,
+  "status": "published",
+  "tags": [
+    "ants",
+    "nectarist",
+    "tripo",
+    "skinned"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "9f1cda5687f09f56e5e7e44f2cf515d6ccc0db0a7dcc31d564817b397a857225",
+      "bytes": 2220796
+    },
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "730abe8ec37cabbebdd02f5e259baa239d5e8daef8302294da018f7e980a5d7e",
+      "bytes": 3436732
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "f2fd82e853efadcd870348872c9e4c9b1c49254a90db3321dbed05678018c161",
+      "bytes": 13204
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "f59a96c325089a8d120f77f305da198398d120dca0efebf8ffeea9ef92a7ea08",
+      "bytes": 36366181
+    },
+    {
+      "role": "team_mask",
+      "index": 1,
+      "format": "png",
+      "sha256": "3ea42e91b1a9ea3b573f597825a78e833190551aba6daee06a5f2fd04577d848",
+      "bytes": 54278
+    }
+  ],
+  "usesGeometry": true,
+  "exportSettings": {
+    "textureSize": 1024
+  },
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "faction": "ants",
+    "profile": "base",
+    "render": [
+      {
+        "id": "asset.ants.nectarist",
+        "character": "base",
+        "scale": 2,
+        "healthHeight": 2.15,
+        "projectile": "effect.weapon.nectar",
+        "projectileSocket": "socket_projectile",
+        "castContact": 0.3611111111111111,
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.units.ants-nectarist"
+        }
+      },
+      {
+        "id": "icon.ants.nectarist",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.models.units.ants-nectarist"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_TeamColor"
+      ],
+      "mask": {
+        "role": "team_mask",
+        "index": 1
+      }
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "walk",
+        "clip": "walk",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "run",
+        "clip": "run",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "cast",
+        "clip": "cast",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "attack",
+        "clip": "attack",
+        "loop": false,
+        "events": [
+          {
+            "name": "release",
+            "time": 0.5416666666666666
+          }
+        ]
+      },
+      {
+        "semantic": "hit",
+        "clip": "hit",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "death",
+        "clip": "death",
+        "loop": false,
+        "events": []
+      }
+    ],
+    "sockets": [
+      {
+        "name": "handL",
+        "node": "socket_handL",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "handR",
+        "node": "socket_handR",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "projectile",
+        "node": "socket_projectile",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "cast",
+        "node": "socket_cast",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original generated artwork for Under the Canopy."
+  }
+}

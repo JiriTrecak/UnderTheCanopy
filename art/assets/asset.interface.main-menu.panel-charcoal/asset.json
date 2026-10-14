@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "asset.interface.main-menu.panel-charcoal",
+  "name": "panel charcoal",
+  "kind": "interface",
+  "revision": 4,
+  "status": "published",
+  "tags": [
+    "main-menu",
+    "original"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "webp",
+      "sha256": "0b80286b56ce49d29fb97b9a9f4f2f67ed45c01dfd01436439ed93493f8bc6f5",
+      "bytes": 282380
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "interface-image",
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original Under the Canopy menu artwork, generated from approved concept."
+  }
+}

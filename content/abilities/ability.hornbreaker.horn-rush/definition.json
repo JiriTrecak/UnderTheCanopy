@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "id": "ability.hornbreaker.horn-rush",
+  "name": "Horn Rush",
+  "description": "Charge a visible ground enemy, respecting terrain and other bodies. On contact deal 70/115/160 spell damage and stun for 0.75/1/1.25 seconds. Blocked, interrupted or escaped charges do not hit.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "range": 20,
+      "mana": 55,
+      "cooldown": 480,
+      "damage": 70,
+      "stun": 30
+    },
+    {
+      "range": 20,
+      "mana": 55,
+      "cooldown": 480,
+      "damage": 115,
+      "stun": 40
+    },
+    {
+      "range": 20,
+      "mana": 55,
+      "cooldown": 480,
+      "damage": 160,
+      "stun": 50
+    }
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": {
+      "rankParameter": "range"
+    },
+    "outOfRange": "reject",
+    "filter": {
+      "locomotion": ["ground"]
+    }
+  },
+  "cast": {
+    "prepareTicks": 8,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": {
+        "rankParameter": "mana"
+      },
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": {
+        "rankParameter": "cooldown"
+      },
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "damage",
+      "target": "target",
+      "amount": {
+        "rankParameter": "damage"
+      },
+      "damageType": "spell"
+    },
+    {
+      "op": "status",
+      "target": "target",
+      "id": "impact",
+      "amount": {
+        "rankParameter": "stun"
+      },
+      "polarity": "negative",
+      "dispel": true,
+      "modifiers": {},
+      "stun": true,
+      "lifetime": "duration"
+    }
+  ],
+  "presentation": "presentation.hornbreaker.horn-rush",
+  "delivery": {
+    "kind": "charge",
+    "speed": 32,
+    "maxTicks": 80
+  }
+}

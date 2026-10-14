@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "id": "asset.terrain.woodland-riverbed",
+  "name": "woodland riverbed · albedo/roughness",
+  "kind": "terrain-material",
+  "revision": 3,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin",
+      "sha256": "d8312151646478fece4f868e7eacde73a27f008af55a9089d6b8dd61999c7048",
+      "bytes": 1298618
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "659150117c0debde11611df1079d3522efc2317e97304825b529f6c2f55dad1e",
+      "bytes": 1229485
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "2e1115ed0ffc6fc2b43309bb6981d24b574db3a885124e678e1d0cb4b8f30169",
+      "bytes": 1745924
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

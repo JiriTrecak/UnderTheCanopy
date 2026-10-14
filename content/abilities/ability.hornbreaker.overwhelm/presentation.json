@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "presentation.hornbreaker.overwhelm",
+  "icon": "asset.custom.bash-command-icon",
+  "animations": {
+    "prepare": "attack",
+    "release": "attack",
+    "recover": "idle",
+    "fallback": "idle"
+  },
+  "effects": [
+    {
+      "id": "mark",
+      "effect": "effect.marshal.carapace.cast",
+      "event": "enhancedHit",
+      "anchor": "target",
+      "lifetime": "finite"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.command-stop",
+  "name": "Stop",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "ants-v1",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "039f94a34c5dc73a3b5e5002387b3e3bd670652ad57fe3b4bfae57647dcb3d0f",
+      "bytes": 40740
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.action.stop",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.command-stop"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "039f94a34c5dc73a3b5e5002387b3e3bd670652ad57fe3b4bfae57647dcb3d0f"
+  }
+}

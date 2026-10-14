@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "folders": [
+    {
+      "id": "folder.spells",
+      "name": "spells",
+      "parent": "root"
+    },
+    {
+      "id": "folder.heroes",
+      "name": "heroes",
+      "parent": "folder.spells"
+    },
+    {
+      "id": "folder.paladin",
+      "name": "paladin",
+      "parent": "folder.heroes"
+    },
+    {
+      "id": "folder.spell.holy-light-lite",
+      "name": "holy-light-lite",
+      "parent": "folder.paladin"
+    },
+    {
+      "id": "folder.mountain-king",
+      "name": "mountain-king",
+      "parent": "folder.heroes"
+    },
+    {
+      "id": "folder.keeper-of-the-grove",
+      "name": "keeper-of-the-grove",
+      "parent": "folder.heroes"
+    },
+    {
+      "id": "folder.spell.entangling-roots",
+      "name": "entangling-roots",
+      "parent": "folder.keeper-of-the-grove"
+    },
+    {
+      "id": "folder.81fa7043-0a42-457d-86d8-0edb03fd4bad",
+      "name": "avatar",
+      "parent": "folder.mountain-king"
+    },
+    {
+      "id": "folder.c82876ff-0fd9-4af6-8353-143e5ff72a54",
+      "name": "Marshal",
+      "parent": "folder.heroes"
+    }
+  ],
+  "items": {
+    "effect.core.holy-light-lite.accepted": "folder.spell.holy-light-lite",
+    "effect.core.holy-light-lite.released-1": "folder.spell.holy-light-lite",
+    "effect.core.holy-light-lite.healed-2": "folder.spell.holy-light-lite",
+    "effect.core.holy-light-lite.damaged-3": "folder.spell.holy-light-lite",
+    "effect.core.entangling-roots.released-1": "folder.spell.entangling-roots",
+    "effect.core.avatar": "folder.81fa7043-0a42-457d-86d8-0edb03fd4bad",
+    "effect.marshal.faultline.flight": "folder.c82876ff-0fd9-4af6-8353-143e5ff72a54",
+    "effect.marshal.faultline.hit": "folder.c82876ff-0fd9-4af6-8353-143e5ff72a54",
+    "effect.marshal.rally.cast": "folder.c82876ff-0fd9-4af6-8353-143e5ff72a54",
+    "effect.marshal.rally.ward": "folder.c82876ff-0fd9-4af6-8353-143e5ff72a54",
+    "effect.marshal.carapace.cast": "folder.c82876ff-0fd9-4af6-8353-143e5ff72a54",
+    "effect.marshal.carapace.armor": "folder.c82876ff-0fd9-4af6-8353-143e5ff72a54",
+    "effect.marshal.crownfall.prepare": "folder.c82876ff-0fd9-4af6-8353-143e5ff72a54",
+    "effect.marshal.crownfall.impact": "folder.c82876ff-0fd9-4af6-8353-143e5ff72a54",
+    "effect.marshal.faultline.prepare": "folder.c82876ff-0fd9-4af6-8353-143e5ff72a54",
+    "effect.marshal.rally.recipient": "folder.c82876ff-0fd9-4af6-8353-143e5ff72a54"
+  }
+}

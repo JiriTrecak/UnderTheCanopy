@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "id": "asset.terrain.winter-soil",
+  "name": "winter soil · albedo/roughness",
+  "kind": "terrain-material",
+  "revision": 8,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "50a9fd0fe7805e62d1753a2952f96176779c3c4b0937910c173dead3717fc6ad",
+      "bytes": 1276610
+    },
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin",
+      "sha256": "d023d4338440c730bab38947a57347c89e8cb9e7836d9f392fc2d6dffccb28a3",
+      "bytes": 1349370
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "51629c9442931fc1e75fbac9d38f2c4a927ece8d3259b5ae30303aeb09407c8e",
+      "bytes": 1430319
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

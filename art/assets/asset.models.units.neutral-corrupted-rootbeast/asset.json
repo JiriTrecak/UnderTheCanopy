@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "id": "asset.models.units.neutral-corrupted-rootbeast",
+  "name": "Corrupted Rootbeast",
+  "kind": "unit",
+  "revision": 2,
+  "status": "published",
+  "tags": [
+    "original",
+    "neutral",
+    "rotwood-court",
+    "hard",
+    "skinned",
+    "tripo"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "82ec159e006e5be6fbd18dd36cbfdceaf75b91d5404ee01cda4eb4ed52c6e4c7",
+      "bytes": 1185664
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "210f1423daa5ec0d7f620000f974d8922ece34a8903932d3af28699030c33757",
+      "bytes": 8939282
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "f8235e51aba28e9fd2ecd93292181d3807cf798aa0848ab46efef51b047cbaff",
+      "bytes": 19780
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "base",
+    "render": [
+      {
+        "id": "asset.neutral.corrupted-rootbeast",
+        "geometry": {
+          "asset": "asset.models.units.neutral-corrupted-rootbeast",
+          "role": "geometry",
+          "index": 1
+        },
+        "character": "base",
+        "scale": 1,
+        "healthHeight": 3.3000000000000003
+      },
+      {
+        "id": "icon.neutral.corrupted-rootbeast",
+        "image": {
+          "asset": "asset.models.units.neutral-corrupted-rootbeast",
+          "role": "image",
+          "index": 1
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "dimensions": {
+      "radius": 0.918,
+      "height": 3,
+      "formationSpacing": 2.066
+    },
+    "groundContact": {
+      "mode": "pivot"
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "walk",
+        "clip": "walk",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "run",
+        "clip": "run",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "attack",
+        "clip": "attack",
+        "loop": false,
+        "events": [
+          {
+            "name": "hit",
+            "time": 0.5833333333333333
+          }
+        ]
+      },
+      {
+        "semantic": "hit",
+        "clip": "hit",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "death",
+        "clip": "death",
+        "loop": false,
+        "events": []
+      }
+    ],
+    "sockets": []
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

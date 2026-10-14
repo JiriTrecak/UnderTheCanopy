@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.woodland-hollow-log",
+  "name": "woodland hollow log",
+  "kind": "prop",
+  "revision": 5,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "b66b06744a0f0d1baf6e97bf18c183de0c23783fada763aba517ed414d3ccf69",
+      "bytes": 1547544
+    },
+    {
+      "role": "albedo",
+      "index": 2,
+      "format": "png",
+      "sha256": "0cb743835af1e9d15666d8e521c3ba09d422d7ef8ac88e76d3d28603e032adf6",
+      "bytes": 1705512
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "fdcd019afb0dbc73b7123ee9957f2fc4f6543ec43708086c80c7f4b31904694a",
+      "bytes": 3597481
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "9e93d22c83829ddd11def8ac4664b02842e4f0e3daae662b00939ec027fc75a7",
+      "bytes": 1534415
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.scenery.woodland-hollow-log",
+        "sceneryAsset": "woodland-hollow-log",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.environment.woodland-hollow-log"
+        }
+      }
+    ],
+    "scenery": [
+      {
+        "id": "woodland-hollow-log",
+        "name": "woodland hollow log",
+        "category": "landmark",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "vegetationClearance": 0.25,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

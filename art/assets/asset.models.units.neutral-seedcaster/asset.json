@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "id": "asset.models.units.neutral-seedcaster",
+  "name": "Seedcaster",
+  "kind": "unit",
+  "revision": 4,
+  "status": "published",
+  "tags": [
+    "original",
+    "neutral",
+    "briar-covenant",
+    "medium",
+    "skinned",
+    "tripo"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "86030fcab652f530a1492e8e8e90095110729a85d40faa4af8c8a0a95317eb34",
+      "bytes": 1211612
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "3914591a357c531f6233106dbe6c5560431974e14ee263cfa210d046389868d5",
+      "bytes": 8710527
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "03da73bd269ffed7c83a4cf8829d7a3d7b6d34c397059e88e56af98796a3ff6d",
+      "bytes": 14490
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "base",
+    "render": [
+      {
+        "id": "asset.neutral.seedcaster",
+        "character": "base",
+        "scale": 1,
+        "healthHeight": 2.75,
+        "projectile": "effect.weapon.thorn",
+        "projectileSocket": "socket_projectile",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.units.neutral-seedcaster"
+        }
+      },
+      {
+        "id": "icon.neutral.seedcaster",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.models.units.neutral-seedcaster"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "dimensions": {
+      "radius": 0.42,
+      "height": 2.5,
+      "formationSpacing": 0.945
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "walk",
+        "clip": "walk",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "run",
+        "clip": "run",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "attack",
+        "clip": "attack",
+        "loop": false,
+        "events": [
+          {
+            "name": "release",
+            "time": 0.7083333333333333
+          }
+        ]
+      },
+      {
+        "semantic": "hit",
+        "clip": "hit",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "death",
+        "clip": "death",
+        "loop": false,
+        "events": []
+      }
+    ],
+    "sockets": [
+      {
+        "name": "projectile",
+        "node": "socket_projectile",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

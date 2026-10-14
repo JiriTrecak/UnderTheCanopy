@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "id": "asset.models.construction.beetles",
+  "name": "Beetle iron scaffold",
+  "kind": "building",
+  "revision": 23,
+  "status": "published",
+  "tags": [
+    "construction",
+    "beetles",
+    "tripo",
+    "neutral-colors"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "3c9812977cca0ab7c0f1b78036f6cda90195898549a56149f6204e98ee0ba999",
+      "bytes": 1419232
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "fb57be213746e23fd25ed29f325476aebf55128eea76dec52b7c0c92b0679b2f",
+      "bytes": 72523
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "25daba2cb407eda8a12e3daf2216f1de9f374bba9c6d2e3e1ab44a9b63edd779",
+      "bytes": 11807345
+    }
+  ],
+  "usesGeometry": true,
+  "exportSettings": {
+    "textureSize": 1024
+  },
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.construction.beetles",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.construction.beetles"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original generated artwork for Under the Canopy."
+  }
+}

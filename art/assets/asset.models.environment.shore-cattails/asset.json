@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.shore-cattails",
+  "name": "shore cattails",
+  "kind": "prop",
+  "revision": 5,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland",
+    "river"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "cc71041f40b662802801741b12ca6939d68404629dec990cbbb07261f7c0f76e",
+      "bytes": 10644
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "e2cb84617aa22e29a4ca5d30562b085f10ecff9ce71d2ca28b5e25879056782a",
+      "bytes": 572792
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.scenery.shore-cattails",
+        "sceneryAsset": "shore-cattails",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.environment.shore-cattails"
+        }
+      }
+    ],
+    "scenery": [
+      {
+        "id": "shore-cattails",
+        "name": "shore cattails",
+        "category": "landmark",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    },
+    "vegetationClearance": 0.2
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

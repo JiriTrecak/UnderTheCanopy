@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "effect.weapon.stone",
+  "name": "Weapon stone",
+  "description": "Static model flight. Runtime uses authoritative weapon launch and impact timing.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "body",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "missile",
+      "arcHeight": 0.65,
+      "model": {
+        "asset": "asset.models.effects.stone",
+        "role": "geometry",
+        "index": 1,
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 1,
+      "height": 0
+    }
+  ]
+}

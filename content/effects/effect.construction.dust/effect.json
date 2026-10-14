@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "id": "effect.construction.dust",
+  "name": "Construction dust",
+  "description": "Neutral drifting dust puffs for active scaffold construction. Shared by all races; no ownership color.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "dust",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 40,
+        "rate": 8,
+        "speed": 0.95,
+        "speedVariation": 0.35,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 60,
+        "gravity": 0,
+        "drag": 0.6,
+        "spawnRadius": 1.65,
+        "startSize": 2.2,
+        "endSize": 5.4,
+        "spin": 0.3,
+        "fadeIn": 0.08,
+        "fadeOut": 0.85
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#b2a18a",
+      "accent": "#d5c7b0",
+      "durationTicks": 40,
+      "count": 8,
+      "size": 0.35,
+      "height": 0,
+      "blend": "normal",
+      "intensity": 0.82,
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

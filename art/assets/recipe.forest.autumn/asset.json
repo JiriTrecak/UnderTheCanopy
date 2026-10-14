@@ -1,0 +1,183 @@
+{
+  "version": 1,
+  "id": "recipe.forest.autumn",
+  "name": "Amberleaf woodland",
+  "kind": "landscape-recipe",
+  "revision": 3,
+  "status": "published",
+  "tags": [
+    "autumn",
+    "original"
+  ],
+  "resources": [],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "recipe": {
+    "type": "forest",
+    "density": 1,
+    "species": [
+      {
+        "asset": "asset.models.environment.autumn-tree-gold",
+        "weight": 3
+      },
+      {
+        "asset": "asset.models.environment.autumn-tree-copper",
+        "weight": 2
+      }
+    ],
+    "spacing": 4.6,
+    "probability": 0.95,
+    "jitter": 0.65,
+    "scaleMin": 0.85,
+    "scaleMax": 1.25,
+    "maxSlope": 1,
+    "waterClearance": 2,
+    "objectClearance": 0,
+    "edgeFade": 1,
+    "minSpacing": 3.6,
+    "patchiness": {
+      "scale": 12,
+      "strength": 0.12
+    },
+    "interiorMargin": 3.5,
+    "details": [
+      {
+        "density": 1,
+        "pattern": "patches",
+        "species": [
+          {
+            "asset": "asset.models.environment.canopy-mushrooms-ochre",
+            "weight": 2
+          },
+          {
+            "asset": "asset.models.environment.canopy-mushrooms-russet",
+            "weight": 1
+          }
+        ],
+        "spacing": 3.5,
+        "probability": 0.5,
+        "jitter": 0.9,
+        "scaleMin": 0.7,
+        "scaleMax": 1.2,
+        "maxSlope": 1.2,
+        "waterClearance": 0.5,
+        "objectClearance": 0.3,
+        "edgeFade": 1,
+        "minSpacing": 1.1,
+        "patchiness": {
+          "scale": 7,
+          "strength": 0.55
+        },
+        "id": "mushrooms"
+      },
+      {
+        "density": 1,
+        "pattern": "patches",
+        "species": [
+          {
+            "asset": "asset.models.environment.canopy-acorns",
+            "weight": 3
+          },
+          {
+            "asset": "asset.models.environment.canopy-twig",
+            "weight": 2
+          },
+          {
+            "asset": "asset.models.environment.woodland-moss-boulder",
+            "weight": 1
+          }
+        ],
+        "spacing": 4.2,
+        "probability": 0.5,
+        "jitter": 0.9,
+        "scaleMin": 0.7,
+        "scaleMax": 1.2,
+        "maxSlope": 1.2,
+        "waterClearance": 0.5,
+        "objectClearance": 0.3,
+        "edgeFade": 1,
+        "minSpacing": 1.1,
+        "patchiness": {
+          "scale": 7,
+          "strength": 0.55
+        },
+        "id": "floor"
+      },
+      {
+        "density": 1,
+        "pattern": "patches",
+        "species": [
+          {
+            "asset": "asset.models.environment.autumn-leaf-litter",
+            "weight": 4
+          },
+          {
+            "asset": "asset.models.environment.autumn-grass",
+            "weight": 2
+          }
+        ],
+        "spacing": 1.3,
+        "probability": 0.8,
+        "jitter": 0.9,
+        "scaleMin": 0.6,
+        "scaleMax": 0.95,
+        "maxSlope": 1.2,
+        "waterClearance": 0.5,
+        "objectClearance": 0.3,
+        "edgeFade": 1,
+        "minSpacing": 1.1,
+        "patchiness": {
+          "scale": 7,
+          "strength": 0.55
+        },
+        "id": "undergrowth"
+      }
+    ],
+    "edge": {
+      "species": [
+        {
+          "asset": "asset.models.environment.autumn-shrub-gold",
+          "weight": 2
+        },
+        {
+          "asset": "asset.models.environment.autumn-shrub-copper",
+          "weight": 1
+        }
+      ],
+      "spacing": 2.2,
+      "probability": 0.6,
+      "jitter": 0.65,
+      "scaleMin": 0.75,
+      "scaleMax": 1.1,
+      "maxSlope": 1,
+      "waterClearance": 0.5,
+      "objectClearance": 0,
+      "edgeFade": 1.5,
+      "minSpacing": 1.5,
+      "patchiness": {
+        "scale": 6,
+        "strength": 0.4
+      },
+      "width": 3
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original deterministic layer recipe using original woodland asset packages."
+  }
+}

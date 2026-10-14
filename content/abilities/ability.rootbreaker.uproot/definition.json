@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "id": "ability.rootbreaker.uproot",
+  "name": "Uproot",
+  "description": "Smash the ground to erupt thick roots and stone in an aimed area within 16 units. Ground enemies in an 8-unit radius take 220/330 physical damage, are stunned for 0.8/1.2 seconds (half against heroes), and slowed by 35% for 3 seconds. The roots are a temporary visual eruption, not a permanent terrain obstacle.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "damage": 220,
+      "stun": 32,
+      "heroStun": 16,
+      "mana": 120,
+      "cooldown": 2400
+    },
+    {
+      "damage": 330,
+      "stun": 48,
+      "heroStun": 24,
+      "mana": 150,
+      "cooldown": 2160
+    }
+  ],
+  "targeting": {
+    "filter": {
+      "locomotion": [
+        "ground"
+      ]
+    },
+    "kind": "point",
+    "radius": 8,
+    "maxTargets": 32,
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 16,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 36,
+    "recoverTicks": 24,
+    "cost": {
+      "resource": "mana",
+      "amount": {
+        "rankParameter": "mana"
+      },
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": {
+        "rankParameter": "cooldown"
+      },
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "damage",
+      "target": "target",
+      "amount": {
+        "rankParameter": "damage"
+      },
+      "damageType": "hero"
+    },
+    {
+      "op": "status",
+      "target": "target",
+      "id": "uprooted",
+      "amount": {
+        "rankParameter": "stun"
+      },
+      "heroDuration": {
+        "rankParameter": "heroStun"
+      },
+      "polarity": "negative",
+      "dispel": false,
+      "modifiers": {},
+      "stun": true,
+      "lifetime": "duration"
+    },
+    {
+      "op": "status",
+      "target": "target",
+      "id": "rootDrag",
+      "amount": 120,
+      "polarity": "negative",
+      "dispel": true,
+      "modifiers": {
+        "moveSpeedPermille": -350
+      },
+      "lifetime": "duration"
+    }
+  ],
+  "presentation": "presentation.rootbreaker.uproot"
+}

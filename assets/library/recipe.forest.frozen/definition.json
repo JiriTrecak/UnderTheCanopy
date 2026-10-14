@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "id": "recipe.forest.frozen",
+  "name": "Frozen pine forest",
+  "kind": "landscape-recipe",
+  "revision": 9,
+  "status": "published",
+  "tags": [
+    "authoring",
+    "frozen-forest",
+    "original"
+  ],
+  "resources": [],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "recipe": {
+    "type": "forest",
+    "density": 1,
+    "species": [
+      {
+        "asset": "asset.models.environment.frost-pine-a",
+        "weight": 2
+      },
+      {
+        "asset": "asset.models.environment.frost-pine-b",
+        "weight": 1
+      }
+    ],
+    "spacing": 3.2,
+    "probability": 1,
+    "jitter": 0.65,
+    "scaleMin": 0.85,
+    "scaleMax": 1.15,
+    "maxSlope": 1,
+    "waterClearance": 2,
+    "objectClearance": 0,
+    "edgeFade": 1,
+    "minSpacing": 3.2,
+    "patchiness": {
+      "scale": 12,
+      "strength": 0.12
+    },
+    "interiorMargin": 3.5,
+    "details": [
+      {
+        "density": 1,
+        "pattern": "patches",
+        "species": [
+          {
+            "asset": "asset.models.environment.frost-log",
+            "weight": 1
+          },
+          {
+            "asset": "asset.models.environment.frost-boulder",
+            "weight": 2
+          }
+        ],
+        "spacing": 5,
+        "probability": 0.4,
+        "jitter": 0.9,
+        "scaleMin": 0.7,
+        "scaleMax": 1.2,
+        "maxSlope": 1.2,
+        "waterClearance": 0.5,
+        "objectClearance": 0.3,
+        "edgeFade": 1,
+        "minSpacing": 1.1,
+        "patchiness": {
+          "scale": 7,
+          "strength": 0.55
+        },
+        "id": "winter-floor"
+      },
+      {
+        "density": 1,
+        "pattern": "patches",
+        "species": [
+          {
+            "asset": "asset.models.environment.frost-snow-grass",
+            "weight": 3
+          },
+          {
+            "asset": "asset.models.environment.frost-grass",
+            "weight": 1
+          }
+        ],
+        "spacing": 1.6,
+        "probability": 0.45,
+        "jitter": 0.9,
+        "scaleMin": 0.7,
+        "scaleMax": 1.2,
+        "maxSlope": 1.2,
+        "waterClearance": 0.5,
+        "objectClearance": 0.3,
+        "edgeFade": 1,
+        "minSpacing": 1.1,
+        "patchiness": {
+          "scale": 7,
+          "strength": 0.55
+        },
+        "id": "winter-grass"
+      }
+    ],
+    "edge": {
+      "species": [
+        {
+          "asset": "asset.models.environment.frost-pine-sapling",
+          "weight": 1
+        }
+      ],
+      "spacing": 1.5,
+      "probability": 0.65,
+      "jitter": 0.65,
+      "scaleMin": 0.75,
+      "scaleMax": 1.1,
+      "maxSlope": 1,
+      "waterClearance": 0.5,
+      "objectClearance": 0,
+      "edgeFade": 1.5,
+      "minSpacing": 1.5,
+      "patchiness": {
+        "scale": 6,
+        "strength": 0.4
+      },
+      "width": 5
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original deterministic layer recipe using original woodland asset packages."
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "id": "ability.core.holy-light-lite",
+  "name": "Holy Light",
+  "description": "Restore an ally with a flash of warm light, or sear an enemy with it.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "mana": 25,
+      "heal": 100,
+      "damage": 50,
+      "range": 12,
+      "cooldownTicks": 200
+    }
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally",
+      "enemy"
+    ],
+    "allowSelf": true,
+    "range": {
+      "rankParameter": "range"
+    },
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 12,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": {
+        "rankParameter": "mana"
+      },
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": {
+        "rankParameter": "cooldownTicks"
+      },
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "branch",
+      "condition": {
+        "kind": "relation",
+        "of": "target",
+        "to": "caster",
+        "is": "ally"
+      },
+      "then": [
+        {
+          "op": "heal",
+          "target": "target",
+          "amount": {
+            "rankParameter": "heal"
+          }
+        }
+      ],
+      "else": [
+        {
+          "op": "damage",
+          "target": "target",
+          "amount": {
+            "rankParameter": "damage"
+          },
+          "damageType": "spell"
+        }
+      ]
+    }
+  ],
+  "presentation": "presentation.core.holy-light-lite"
+}

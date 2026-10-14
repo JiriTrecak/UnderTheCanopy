@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "id": "asset.texture.woodland-caustics",
+  "name": "woodland caustics",
+  "kind": "texture",
+  "revision": 4,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "69aac833277d5743a9ae0fe27ed3ea34773d6025e10e32afaedf514d541bd1c9",
+      "bytes": 142614
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

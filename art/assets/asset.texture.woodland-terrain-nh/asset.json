@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "id": "asset.texture.woodland-terrain-nh",
+  "name": "Original terrain preview atlas",
+  "kind": "texture",
+  "revision": 4,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "27619691ff3e01edbfc457af46aaef8e10d6fc94a4ba57b0410968c1dfffa9d2",
+      "bytes": 5094226
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

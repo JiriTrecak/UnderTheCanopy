@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "presentation.ants.silken-snare",
+  "icon": "asset.custom.web-command-icon",
+  "animations": {
+    "prepare": "cast",
+    "release": "cast",
+    "recover": "cast",
+    "fallback": "idle"
+  },
+  "effects": [
+    {
+      "id": "delivery",
+      "effect": "effect.ants.silk-flight",
+      "event": "projectile",
+      "anchor": "target",
+      "lifetime": "finite",
+      "durationFrom": "delivery"
+    },
+    {
+      "id": "bindings",
+      "effect": "effect.ants.silk-bound",
+      "statusId": "webbed",
+      "event": "statusApplied",
+      "anchor": "target",
+      "lifetime": "status"
+    }
+  ]
+}

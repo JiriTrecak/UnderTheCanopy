@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "presentation.rootbreaker.skullcrack",
+  "icon": "asset.spells.rootbreaker.skullcrack-icon",
+  "animations": {
+    "prepare": "skullcrack",
+    "release": "skullcrack",
+    "recover": "skullcrack",
+    "fallback": "idle"
+  },
+  "effects": [
+    {
+      "id": "impact",
+      "effect": "effect.rootbreaker.skullcrack",
+      "event": "damaged",
+      "anchor": "target",
+      "lifetime": "finite"
+    },
+    {
+      "id": "stars",
+      "effect": "effect.rootbreaker.stunned",
+      "statusId": "stunned",
+      "event": "statusApplied",
+      "anchor": "target",
+      "lifetime": "status"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "id": "asset.custom.silence-command-icon",
+  "name": "Silence — sealed casting",
+  "kind": "icon",
+  "revision": 6,
+  "status": "published",
+  "tags": [
+    "spell-effects",
+    "generated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "8e99b588d80da21a105e5db1bf7dc1d5ad4d9fa4bd8a017a4080e7c86f8ed5ea",
+      "bytes": 40170
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "b707e0fefbb2100294c2d1311bd599751fd68a3e0477fc4e7a5878266c0d75be",
+      "bytes": 1291365
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [
+      {
+        "id": "asset.custom.silence-command-icon",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.custom.silence-command-icon"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork generated with OpenAI GPT Image 2.5."
+  }
+}

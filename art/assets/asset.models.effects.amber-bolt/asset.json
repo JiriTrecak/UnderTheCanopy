@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "id": "asset.models.effects.amber-bolt",
+  "name": "Amber focus bolt",
+  "kind": "prop",
+  "revision": 5,
+  "status": "published",
+  "tags": [
+    "weapon",
+    "projectile"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "88164afc24271723a9bbf686a9ca477d8b6effa42f634b9d3fd825639315fd58",
+      "bytes": 2084
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "f3870ee3eca75bac999348e095e6a3eec0651e97bd9c8e56c7fb6b9fee35060d",
+      "bytes": 515609
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original Under the Canopy amber focus projectile."
+  }
+}

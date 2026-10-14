@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "presentation.hornbreaker.colossus",
+  "icon": "asset.custom.avatar-command-icon",
+  "animations": {
+    "prepare": "attack",
+    "release": "attack",
+    "recover": "idle",
+    "fallback": "idle"
+  },
+  "effects": [
+    {
+      "id": "form",
+      "effect": "effect.core.avatar",
+      "event": "statusApplied",
+      "statusId": "form",
+      "anchor": "target",
+      "lifetime": "finite"
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.woodland-mushroom-cluster",
+  "name": "woodland mushroom cluster",
+  "kind": "prop",
+  "revision": 5,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "fa9429404e35ba1bb239a16a2c6f8d975c08a209b587693473ba0ca744c09b7c",
+      "bytes": 12700
+    },
+    {
+      "role": "albedo",
+      "index": 2,
+      "format": "png",
+      "sha256": "0cb743835af1e9d15666d8e521c3ba09d422d7ef8ac88e76d3d28603e032adf6",
+      "bytes": 1705512
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "ae8c7c8adc357156d2cf66ae43befca34984fe196071622f1918b87429dc3f09",
+      "bytes": 3597366
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "9e93d22c83829ddd11def8ac4664b02842e4f0e3daae662b00939ec027fc75a7",
+      "bytes": 1534415
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.scenery.woodland-mushroom-cluster",
+        "sceneryAsset": "woodland-mushroom-cluster",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.environment.woodland-mushroom-cluster"
+        }
+      }
+    ],
+    "scenery": [
+      {
+        "id": "woodland-mushroom-cluster",
+        "name": "woodland mushroom cluster",
+        "category": "landmark",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "vegetationClearance": 0.25,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

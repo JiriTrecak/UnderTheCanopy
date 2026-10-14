@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "id": "asset.terrain.woodland-riverbed-normal",
+  "name": "woodland riverbed · normal/height",
+  "kind": "terrain-material",
+  "revision": 2,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin",
+      "sha256": "de30dd21a654606432d71033f5ad4852a727b6e263ae32fe78269d0db6ef86c5",
+      "bytes": 856496
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

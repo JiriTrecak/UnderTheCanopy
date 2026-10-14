@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "id": "ability.rootbreaker.skullcrack",
+  "name": "Skullcrack",
+  "description": "A heavy overhead club strike deals 120/190/260 physical damage and stuns one ground enemy for 1.2/1.6/2 seconds (half against heroes). Has a visible 0.7-second windup and must connect at melee range.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "damage": 120,
+      "stun": 48,
+      "heroStun": 24,
+      "mana": 65,
+      "cooldown": 360
+    },
+    {
+      "damage": 190,
+      "stun": 64,
+      "heroStun": 32,
+      "mana": 70,
+      "cooldown": 340
+    },
+    {
+      "damage": 260,
+      "stun": 80,
+      "heroStun": 40,
+      "mana": 75,
+      "cooldown": 320
+    }
+  ],
+  "targeting": {
+    "filter": {
+      "locomotion": [
+        "ground"
+      ]
+    },
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 8,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 28,
+    "recoverTicks": 20,
+    "cost": {
+      "resource": "mana",
+      "amount": {
+        "rankParameter": "mana"
+      },
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": {
+        "rankParameter": "cooldown"
+      },
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "damage",
+      "target": "target",
+      "amount": {
+        "rankParameter": "damage"
+      },
+      "damageType": "hero"
+    },
+    {
+      "op": "status",
+      "target": "target",
+      "id": "stunned",
+      "amount": {
+        "rankParameter": "stun"
+      },
+      "heroDuration": {
+        "rankParameter": "heroStun"
+      },
+      "polarity": "negative",
+      "dispel": false,
+      "modifiers": {},
+      "stun": true,
+      "lifetime": "duration"
+    }
+  ],
+  "presentation": "presentation.rootbreaker.skullcrack"
+}

@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "id": "asset.icons.spell-holy-light",
+  "name": "Holy Light spell icon",
+  "kind": "icon",
+  "revision": 6,
+  "status": "published",
+  "tags": [
+    "spell",
+    "command-icon"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "d3bd31ba4cd94d3b208fd6ceb941b56c0f6130f5e627a91e9fc461db1617f76a",
+      "bytes": 43992
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "ed8bdbc5b679d4d6b7c52e52d25adf3960c5a6cb1f4039849ce6fd67dfa299db",
+      "bytes": 2194905
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "asset.icons.spell-holy-light",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.spell-holy-light"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original built-in imagegen artwork. Prompt: Use case: stylized-concept. Create one square painted fantasy RTS spell command icon in a readable hand-painted classic RTS ability style. Original Holy Light icon: a luminous ivory-gold hand cupping a concentrated golden healing star, three broad shafts of sacred golden light descending into the palm, a simple curling golden halo above it. Dark ochre and deep brown background, intense lemon gold and warm ivory focal light. Bold chunky painterly shapes, powerful light-dark contrast, restrained detail, readable at 48x48 pixels. Full bleed square, no UI frame, no lettering, no text, no watermark, no montage. Not photorealistic, not a flat vector."
+  }
+}

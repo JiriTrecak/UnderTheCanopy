@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "presentation.hornbreaker.horn-rush",
+  "icon": "asset.spells.marshal.faultline-icon",
+  "animations": {
+    "prepare": "attack",
+    "release": "attack",
+    "recover": "idle",
+    "fallback": "idle"
+  },
+  "effects": [
+    {
+      "id": "impact",
+      "effect": "effect.marshal.faultline.hit",
+      "event": "impact",
+      "anchor": "target",
+      "lifetime": "finite"
+    }
+  ]
+}

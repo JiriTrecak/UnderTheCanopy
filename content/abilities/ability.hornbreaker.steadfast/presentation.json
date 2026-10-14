@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "presentation.hornbreaker.steadfast",
+  "icon": "asset.spells.marshal.rally-icon",
+  "animations": {
+    "prepare": "attack",
+    "release": "attack",
+    "recover": "idle",
+    "fallback": "idle"
+  },
+  "effects": [
+    {
+      "id": "aura",
+      "effect": "effect.marshal.rally.recipient",
+      "event": "statusApplied",
+      "statusId": "steadfast",
+      "anchor": "target",
+      "lifetime": "status"
+    }
+  ]
+}

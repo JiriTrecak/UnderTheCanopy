@@ -1,0 +1,162 @@
+{
+  "version": 1,
+  "id": "asset.models.buildings.ants-watchtower",
+  "name": "Watchtower",
+  "kind": "building",
+  "revision": 5,
+  "status": "published",
+  "tags": [
+    "original",
+    "ants",
+    "tripo",
+    "team-mask"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "06733b224b04121c9d3d09e89db24f351747577e9175ce92bcd4723dadbd8490",
+      "bytes": 13714396
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "c6bea278b395f006ea631f036a0c1adf6cdb9bf2c129abad3ffbeee3e4256004",
+      "bytes": 28397440
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "428a13f7b6f244b8fcdaea5d2c305e2dd11469f1f345369ccd17227b4d910d90",
+      "bytes": 8122874
+    },
+    {
+      "role": "team_mask",
+      "index": 1,
+      "format": "png",
+      "sha256": "e093e42b8c19a6ff31aeedefcd3029c413bdbba5888c19984a3c27806d234bcb",
+      "bytes": 217588
+    },
+    {
+      "role": "normal",
+      "index": 1,
+      "format": "png",
+      "sha256": "b4707c41f03c0a9b5cb2ebcf3175509bd3c8ce458e8e17cb2f2e63eab671c532",
+      "bytes": 4782248
+    },
+    {
+      "role": "roughness",
+      "index": 1,
+      "format": "png",
+      "sha256": "6e61a364e61cb8176850a54d33abf9e8465def42104cb76e582cb0433a1a11a8",
+      "bytes": 1367305
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "93a47f7be6332a4f66f7302906299fb103c37dde4444a51ed3547fa7a2ad8eea",
+      "bytes": 12730
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [
+    {
+      "slot": "TC_TeamColor",
+      "shader": "standard",
+      "color": "#ffffff",
+      "roughness": 0.72,
+      "metalness": 0,
+      "alphaMode": "opaque",
+      "alphaCutoff": 0.4,
+      "doubleSided": true,
+      "textures": {
+        "albedo": {
+          "role": "albedo",
+          "index": 1
+        },
+        "teamMask": {
+          "role": "team_mask",
+          "index": 1
+        },
+        "normal": {
+          "role": "normal",
+          "index": 1
+        },
+        "roughness": {
+          "role": "roughness",
+          "index": 1
+        }
+      }
+    }
+  ],
+  "bindings": {
+    "faction": "ants",
+    "profile": "building",
+    "render": [
+      {
+        "id": "asset.ants.tower",
+        "scale": 1,
+        "healthHeight": 13.1,
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.buildings.ants-watchtower"
+        }
+      },
+      {
+        "id": "icon.ants.tower",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.models.buildings.ants-watchtower"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_TeamColor"
+      ],
+      "mask": {
+        "role": "team_mask",
+        "index": 1
+      }
+    },
+    "blocker": {
+      "shape": "box",
+      "size": [
+        7,
+        7
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 3.5,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

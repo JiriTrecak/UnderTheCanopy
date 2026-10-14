@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.frost-pine-sapling",
+  "name": "frost pine sapling",
+  "kind": "foliage",
+  "revision": 12,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "1f468c7cea80c13173702293904bb52830710d7cc65a0992a8d136fd775207c7",
+      "bytes": 1070959
+    },
+    {
+      "role": "albedo",
+      "index": 2,
+      "format": "png",
+      "sha256": "5ba5e38c3f60f5de61a16de00980bfad07a56f8f9b023012b7718eb43a1aa837",
+      "bytes": 236370
+    },
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "fec9047339da2918e5850635a854dab2df524f3db8e779ea1640fbd566584da4",
+      "bytes": 1341804
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "4c5acc81277844402f3632f4487443df893579a66dd6bf984a33f2bc3f0105b7",
+      "bytes": 1747486
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.scenery.frost-pine-sapling",
+        "sceneryAsset": "frost-pine-sapling",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.environment.frost-pine-sapling"
+        }
+      }
+    ],
+    "scenery": [
+      {
+        "id": "frost-pine-sapling",
+        "name": "frost pine sapling",
+        "category": "foliage",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "wind": {
+      "mode": "tree",
+      "strength": 0.1,
+      "speed": 0.18,
+      "stiffness": 0.8
+    },
+    "vegetationClearance": 0.3,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "id": "recipe.terrain.bank",
+  "name": "Grassy banks",
+  "kind": "landscape-recipe",
+  "revision": 2,
+  "status": "published",
+  "tags": [
+    "authoring",
+    "original"
+  ],
+  "resources": [],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "recipe": {
+    "type": "terrain",
+    "operation": "raise",
+    "height": 1.7,
+    "falloff": 4,
+    "surface": "bank",
+    "roughness": 0.4,
+    "noiseScale": 7,
+    "grassStrength": 0.8,
+    "rockStrength": 0.85
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original deterministic layer recipe using original woodland asset packages."
+  }
+}

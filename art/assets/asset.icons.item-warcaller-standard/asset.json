@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.item-warcaller-standard",
+  "name": "Warcaller Standard",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "c55101b81bb3a01b68ed5a7ad132da4b5703f21463004342432ab16d34233165",
+      "bytes": 20620
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.item.warcaller-standard",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.item-warcaller-standard"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "c55101b81bb3a01b68ed5a7ad132da4b5703f21463004342432ab16d34233165"
+  }
+}

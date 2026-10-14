@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.item-amber-carapace",
+  "name": "Amber Carapace",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "51e1e4b0aa13c0532cd6a399a845684a7655077d319b9d51644540415abd04e8",
+      "bytes": 22256
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.item.amber-carapace",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.item-amber-carapace"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "51e1e4b0aa13c0532cd6a399a845684a7655077d319b9d51644540415abd04e8"
+  }
+}

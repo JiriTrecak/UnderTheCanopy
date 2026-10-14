@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "id": "effect.marshal.carapace.armor",
+  "name": "Iron Carapace · living shell",
+  "description": "Layered Marshal spell artwork. Gameplay and lifecycle are supplied by its ability binding.",
+  "durationTicks": 160,
+  "loop": true,
+  "layers": [
+    {
+      "id": "protective-shell",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "billboard",
+      "colour": "#ffffff",
+      "accent": "#ffe4a2",
+      "durationTicks": 160,
+      "count": 1,
+      "size": 5.4,
+      "height": 2.5,
+      "motion": {
+        "scale": {
+          "periodTicks": 120,
+          "min": 0.98,
+          "max": 1.03,
+          "easing": "sine",
+          "phase": 0
+        },
+        "opacity": {
+          "periodTicks": 120,
+          "min": 0.58,
+          "max": 0.82,
+          "easing": "sine",
+          "phase": 0
+        }
+      },
+      "follow": true,
+      "intensity": 0.68,
+      "length": 1.1,
+      "texture": {
+        "asset": "asset.effects.marshal.carapace-shell",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "armor-seal",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "billboard",
+      "colour": "#ef9d64",
+      "accent": "#ffe4a2",
+      "durationTicks": 160,
+      "count": 1,
+      "size": 4.8,
+      "height": 0.13,
+      "motion": {
+        "rotation": {
+          "periodTicks": 640,
+          "direction": "counterclockwise"
+        }
+      },
+      "orientation": "ground",
+      "follow": true,
+      "intensity": 0.52,
+      "texture": {
+        "asset": "asset.effects.marshal.cadence-wheel",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "ward-glyph",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "billboard",
+      "colour": "#ffffff",
+      "accent": "#ffe4a2",
+      "durationTicks": 160,
+      "count": 1,
+      "size": 1.4,
+      "height": 6.1,
+      "motion": {
+        "opacity": {
+          "periodTicks": 100,
+          "min": 0.7,
+          "max": 1,
+          "easing": "sine",
+          "phase": 0
+        }
+      },
+      "follow": true,
+      "intensity": 0.8,
+      "texture": {
+        "asset": "asset.effects.marshal.chitin-ward",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "shell-glints",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 36,
+        "rate": 5,
+        "speed": 1.8,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 10,
+        "gravity": 0,
+        "drag": 1,
+        "spawnRadius": 1.7,
+        "startSize": 0.17,
+        "endSize": 0,
+        "spin": 3,
+        "fadeIn": 0.04,
+        "fadeOut": 0.65
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#ffc56e",
+      "accent": "#ffe4a2",
+      "durationTicks": 160,
+      "count": 10,
+      "size": 0.17,
+      "height": 0.4,
+      "follow": true,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

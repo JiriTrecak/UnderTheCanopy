@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "id": "effect.marshal.rally.recipient",
+  "name": "Rally the Colony · allied cadence",
+  "description": "Layered Marshal spell artwork. Gameplay and lifecycle are supplied by its ability binding.",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "march-motes",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 32,
+        "rate": 2,
+        "speed": 1.4,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 15,
+        "gravity": 0,
+        "drag": 0,
+        "spawnRadius": 0.8,
+        "startSize": 0.12,
+        "endSize": 0,
+        "spin": 1,
+        "fadeIn": 0.04,
+        "fadeOut": 0.65
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#ffc56e",
+      "accent": "#ffe4a2",
+      "durationTicks": 80,
+      "count": 4,
+      "size": 0.12,
+      "height": 0.1,
+      "follow": true,
+      "intensity": 0.5,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

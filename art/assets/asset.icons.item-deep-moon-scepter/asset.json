@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.item-deep-moon-scepter",
+  "name": "Deep Moon Scepter",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "e7c2ed570971f96932a04ebc9a1e2cf8b91ab6b0189de626305a38f556849a40",
+      "bytes": 12732
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.item.deep-moon-scepter",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.item-deep-moon-scepter"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "e7c2ed570971f96932a04ebc9a1e2cf8b91ab6b0189de626305a38f556849a40"
+  }
+}

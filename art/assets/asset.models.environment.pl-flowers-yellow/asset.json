@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.pl-flowers-yellow",
+  "name": "flowers yellow",
+  "kind": "foliage",
+  "revision": 15,
+  "status": "published",
+  "tags": [
+    "pl-pack",
+    "woodland",
+    "flowers"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "219fc115c9cd5c0f3e559f2451773f930637e090a43fd86ad7ed57f33918ff74",
+      "bytes": 1000395
+    },
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "cee7c109be9908cd326580b0cd4907b94fdcdfa8ed8fc879a5a2097478f0007f",
+      "bytes": 1006736
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "9981fa1b169ac0670ce74f5c572584de99a7e259f7757f2eaca31d77094b0abb",
+      "bytes": 15312482
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [],
+    "scenery": [
+      {
+        "id": "pl-flowers-yellow",
+        "name": "flowers yellow",
+        "category": "foliage",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "wind": {
+      "mode": "grass",
+      "strength": 0.1,
+      "speed": 0.2,
+      "stiffness": 0.8
+    },
+    "groundContact": {
+      "mode": "terrain"
+    }
+  },
+  "provenance": {
+    "method": "import",
+    "licenseNote": "Adapted from the purchased PL Stylized Fantasy Foliage Environment Assets Pack (licensed for this project); mesh rescaled and re-pivoted, albedo downsized."
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "id": "ability.marshal.faultline",
+  "name": "Faultline",
+  "description": "Slam the mace to send a travelling fracture through enemies: 70/110/150 spell damage and a brief 0.4/0.5/0.6-second stun. Heroes are stunned for half as long.",
+  "activation": "targeted",
+  "delivery": {
+    "kind": "line",
+    "speed": 28,
+    "length": 24,
+    "width": 2.6
+  },
+  "ranks": [
+    {
+      "damage": 70,
+      "stun": 16,
+      "heroStun": 8,
+      "mana": 45,
+      "cooldown": 360
+    },
+    {
+      "damage": 110,
+      "stun": 20,
+      "heroStun": 10,
+      "mana": 45,
+      "cooldown": 360
+    },
+    {
+      "damage": 150,
+      "stun": 24,
+      "heroStun": 12,
+      "mana": 45,
+      "cooldown": 360
+    }
+  ],
+  "targeting": {
+    "filter": {
+      "locomotion": [
+        "ground"
+      ]
+    },
+    "kind": "point",
+    "radius": 3,
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 24,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 14,
+    "recoverTicks": 10,
+    "cost": {
+      "resource": "mana",
+      "amount": {
+        "rankParameter": "mana"
+      },
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": {
+        "rankParameter": "cooldown"
+      },
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "damage",
+      "target": "target",
+      "amount": {
+        "rankParameter": "damage"
+      },
+      "damageType": "spell"
+    },
+    {
+      "op": "status",
+      "target": "target",
+      "id": "stagger",
+      "amount": {
+        "rankParameter": "stun"
+      },
+      "heroDuration": {
+        "rankParameter": "heroStun"
+      },
+      "polarity": "negative",
+      "dispel": true,
+      "modifiers": {},
+      "stun": true,
+      "lifetime": "duration"
+    }
+  ],
+  "presentation": "presentation.marshal.faultline"
+}

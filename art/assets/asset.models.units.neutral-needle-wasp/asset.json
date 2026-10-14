@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "id": "asset.models.units.neutral-needle-wasp",
+  "name": "Needle Wasp",
+  "kind": "unit",
+  "revision": 4,
+  "status": "published",
+  "tags": [
+    "original",
+    "neutral",
+    "hornet-raiders",
+    "medium",
+    "skinned",
+    "tripo"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "aa42ce5e36f4f7b864597ced5c9e799f2da38e97841c7a50deb01cbf75546432",
+      "bytes": 1149032
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "058293ee064753a20818f8bea1e7a7f488b3904c6e35b798dbb432f273b5f446",
+      "bytes": 8463092
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "33133aef3bbe449098a63974350b0d3be938789b7d3d7ce57ef9ae942df4229b",
+      "bytes": 10291
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "base",
+    "render": [
+      {
+        "id": "asset.neutral.needle-wasp",
+        "character": "base",
+        "scale": 1,
+        "healthHeight": 2.4200000000000004,
+        "projectile": "effect.weapon.thorn",
+        "projectileSocket": "socket_projectile",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.units.neutral-needle-wasp"
+        }
+      },
+      {
+        "id": "icon.neutral.needle-wasp",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.models.units.neutral-needle-wasp"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "dimensions": {
+      "radius": 0.42,
+      "height": 2.2,
+      "formationSpacing": 0.945
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "walk",
+        "clip": "walk",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "run",
+        "clip": "run",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "attack",
+        "clip": "attack",
+        "loop": false,
+        "events": [
+          {
+            "name": "release",
+            "time": 0.7083333333333333
+          }
+        ]
+      },
+      {
+        "semantic": "hit",
+        "clip": "hit",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "death",
+        "clip": "death",
+        "loop": false,
+        "events": []
+      }
+    ],
+    "sockets": [
+      {
+        "name": "projectile",
+        "node": "socket_projectile",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

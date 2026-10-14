@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "id": "recipe.path.pebbles",
+  "name": "Pebble forest trail",
+  "kind": "landscape-recipe",
+  "revision": 2,
+  "status": "published",
+  "tags": [
+    "forest",
+    "surface",
+    "paint",
+    "path",
+    "original"
+  ],
+  "resources": [],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "recipe": {
+    "type": "path",
+    "material": "asset.terrain.pebble-trail",
+    "width": 5,
+    "shoulder": 1.5,
+    "flatten": 0,
+    "vegetationClearance": 1
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original deterministic layer recipe using original woodland asset packages."
+  }
+}

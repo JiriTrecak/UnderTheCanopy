@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "id": "asset.spells.rootbreaker.attention",
+  "name": "Challenge Roar attention",
+  "kind": "texture",
+  "revision": 5,
+  "status": "published",
+  "tags": [
+    "spell-effects",
+    "generated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "2111df9e839a0b76cc88ac139b5ceebc6ccf8da97a161e258595e6c8fa2db728",
+      "bytes": 99923
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "c3dc3fc4dd110b4bdd989e10f020268c5a76e1adedba5de51be4d34c927adc62",
+      "bytes": 715096
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork generated with OpenAI GPT Image 2.5."
+  }
+}

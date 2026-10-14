@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "id": "asset.interface.campaign.amber-watch-selection",
+  "name": "amber watch selection",
+  "kind": "interface",
+  "revision": 4,
+  "status": "published",
+  "tags": [
+    "campaign",
+    "original",
+    "amber-watch"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "webp",
+      "sha256": "961265cfdb6c2b75659a1c54bf40fde530a0eed348a0d62e4ae541c0d3f2b547",
+      "bytes": 373540
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "interface-image",
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original Under the Canopy artwork, generated from approved clean menu concepts."
+  }
+}

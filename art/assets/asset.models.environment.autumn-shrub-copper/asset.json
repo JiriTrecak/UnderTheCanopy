@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.autumn-shrub-copper",
+  "name": "autumn shrub copper",
+  "kind": "foliage",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "autumn",
+    "original",
+    "amberleaf"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "0ca2b3b31303004b8b96c3f9a7ed9a4a15092fd40a3b7ed94a8917305d7c9dfe",
+      "bytes": 1549756
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "f5fb4674560589834b987537ed3b4b91d63655e2b8573d4e4a10cfdf89290e1e",
+      "bytes": 1622696
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "1b001252731c001ae90c62464d3a1a73c6d469d65515562c32a8de2b580c76d7",
+      "bytes": 1518265
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.scenery.autumn-shrub-copper",
+        "sceneryAsset": "autumn-shrub-copper",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.environment.autumn-shrub-copper"
+        }
+      }
+    ],
+    "scenery": [
+      {
+        "id": "autumn-shrub-copper",
+        "name": "autumn shrub copper",
+        "category": "foliage",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "wind": {
+      "mode": "foliage",
+      "strength": 0.025,
+      "speed": 0.2,
+      "stiffness": 0.8
+    },
+    "vegetationClearance": 0.25,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original procedural geometry and ImageGen leaf albedo. No imported tree geometry or textures."
+  }
+}

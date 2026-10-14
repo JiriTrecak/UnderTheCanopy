@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.woodland-lily-b",
+  "name": "woodland lily b",
+  "kind": "foliage",
+  "revision": 3,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "a18a43f5359b3446138599b786170cf9b1c9d6c39d5db002aad5e15909ebdda3",
+      "bytes": 13600
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "14eae59f8e2ba8d8146abe9a9164dddf55daf8bdbf9314642f39ab67685cfc55",
+      "bytes": 226719
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [],
+    "scenery": [
+      {
+        "id": "woodland-lily-b",
+        "name": "woodland lily b",
+        "category": "foliage",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "water"
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

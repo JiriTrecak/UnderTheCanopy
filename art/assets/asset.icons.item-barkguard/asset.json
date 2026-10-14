@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.item-barkguard",
+  "name": "Barkguard",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "dcd9d34cbc9cb556bfcac26a8f15dc2fe11216a474674f1a9a8def5a82952f9e",
+      "bytes": 20052
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.item.barkguard",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.item-barkguard"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "dcd9d34cbc9cb556bfcac26a8f15dc2fe11216a474674f1a9a8def5a82952f9e"
+  }
+}

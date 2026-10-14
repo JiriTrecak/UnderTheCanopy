@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.item-broodkeeper-lantern",
+  "name": "Broodkeeper Lantern",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "f04aff7404824a362a4196390f4f32a5df7f46c99915dbb76c8bb52b4ac1ab15",
+      "bytes": 19317
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.item.broodkeeper-lantern",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.item-broodkeeper-lantern"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "f04aff7404824a362a4196390f4f32a5df7f46c99915dbb76c8bb52b4ac1ab15"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "effect.ants.briar-patch",
+  "name": "Briar Patch",
+  "description": "A low root perimeter and scattered ivory-brown root tufts mark the slowing area.",
+  "durationTicks": 22,
+  "loop": false,
+  "layers": [
+    {
+      "id": "perimeter",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "ring",
+      "colour": "#a18354",
+      "accent": "#d3b67b",
+      "durationTicks": 22,
+      "count": 1,
+      "size": 5,
+      "height": 0.08,
+      "follow": false,
+      "intensity": 0.45
+    },
+    {
+      "id": "roots",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "billboard",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 22,
+      "count": 5,
+      "size": 1.7,
+      "height": 0.3,
+      "blend": "normal",
+      "follow": false,
+      "spread": 4,
+      "texture": {
+        "asset": "asset.effects.living-roots",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "id": "asset.effects.ants.rootbreaker-aura",
+  "name": "Ant rootbreaker-aura",
+  "kind": "texture",
+  "revision": 5,
+  "status": "published",
+  "tags": [
+    "ants",
+    "effects",
+    "generated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "6d91d13e4de4f272ecaf4d535b460c55c236c9a906e99f65fe48912ac0fd8f10",
+      "bytes": 153140
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "cb3659b29e5f1be7361d2604b11c9d4400f4b124422b840341b806d87c6a4c19",
+      "bytes": 736868
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork generated for Under the Canopy."
+  }
+}

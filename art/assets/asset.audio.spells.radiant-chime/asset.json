@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "id": "asset.audio.spells.radiant-chime",
+  "name": "Radiant Chime",
+  "kind": "audio",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "spell",
+    "audio",
+    "radiant-chime"
+  ],
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "wav",
+      "sha256": "be0b612604a75d8683588b16e4e53fd0b781df166355ce59cb5608f92d738419",
+      "bytes": 52964
+    },
+    {
+      "role": "recipe",
+      "index": 1,
+      "format": "ts",
+      "sha256": "2cdfed13fe9499b4745da9f7dfe080cdebd01cbdf8cacac0c99031f0da186a99",
+      "bytes": 1850
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

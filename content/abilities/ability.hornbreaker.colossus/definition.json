@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "id": "ability.hornbreaker.colossus",
+  "name": "Colossus",
+  "description": "Become a living siege engine for 18/24 seconds: gain 300/500 maximum health and health, 12/20 damage, 3/5 armor, and 35/50% frontal cleave within 1.5 cells. Physical clearance is unchanged; expiry caps health at the normal maximum.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "range": 0,
+      "mana": 100,
+      "cooldown": 2400,
+      "duration": 720,
+      "health": 300,
+      "damage": 12,
+      "armor": 3,
+      "cleave": 350
+    },
+    {
+      "range": 0,
+      "mana": 100,
+      "cooldown": 2400,
+      "duration": 960,
+      "health": 500,
+      "damage": 20,
+      "armor": 5,
+      "cleave": 500
+    }
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": {
+      "rankParameter": "range"
+    },
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 12,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": {
+        "rankParameter": "mana"
+      },
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": {
+        "rankParameter": "cooldown"
+      },
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "caster",
+      "id": "form",
+      "amount": {
+        "rankParameter": "duration"
+      },
+      "polarity": "positive",
+      "dispel": false,
+      "modifiers": {},
+      "form": {
+        "opacity": 1,
+        "scale": 1.35
+      },
+      "lifetime": "duration",
+      "rankedModifiers": {
+        "maxHp": {
+          "rankParameter": "health"
+        },
+        "damage": {
+          "rankParameter": "damage"
+        },
+        "armor": {
+          "rankParameter": "armor"
+        }
+      },
+      "combatModifiers": {
+        "cleave": {
+          "damagePermille": {
+            "rankParameter": "cleave"
+          },
+          "radius": 6,
+          "arcDegrees": 110,
+          "maxTargets": 6,
+          "includeBuildings": false
+        }
+      }
+    },
+    {
+      "op": "heal",
+      "target": "caster",
+      "amount": {
+        "rankParameter": "health"
+      }
+    }
+  ],
+  "presentation": "presentation.hornbreaker.colossus"
+}

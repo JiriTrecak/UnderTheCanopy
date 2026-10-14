@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "id": "image.woodland-satchel",
+  "name": "Woodland Satchel",
+  "kind": "interface",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "interface",
+    "woodland-interface"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "8dc7f34433712dca7c401790814c43684cff9b11d2adb9b2605aa4c71e18a057",
+      "bytes": 438684
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "56007b817d557d3ec976955af3719fcab40876e8b9f0883972e641db8865bff6",
+      "bytes": 1769918
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "interface-image",
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "56007b817d557d3ec976955af3719fcab40876e8b9f0883972e641db8865bff6"
+  }
+}

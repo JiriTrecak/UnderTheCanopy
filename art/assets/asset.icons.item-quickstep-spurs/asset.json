@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.item-quickstep-spurs",
+  "name": "Quickstep Spurs",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "66ea19243ab2d3ed415dc599661f6734166764f90f4bc39cef6086e2cecba60e",
+      "bytes": 18813
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.item.quickstep-spurs",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.item-quickstep-spurs"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "66ea19243ab2d3ed415dc599661f6734166764f90f4bc39cef6086e2cecba60e"
+  }
+}

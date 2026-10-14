@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.canopy-acorns",
+  "name": "canopy acorns",
+  "kind": "prop",
+  "revision": 2,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "afcb2b190bcdef9ebf0ba1685c5966e1f50f6df20c1dc061cd244c88ae0c134a",
+      "bytes": 1563380
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "3a99e9dcca69bfbb383d511d16a209be1a1686405fd17928799b50d859e43679",
+      "bytes": 1625985
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.scenery.canopy-acorns",
+        "sceneryAsset": "canopy-acorns",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.environment.canopy-acorns"
+        }
+      }
+    ],
+    "scenery": [
+      {
+        "id": "canopy-acorns",
+        "name": "canopy acorns",
+        "category": "foliage",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "vegetationClearance": 0.2,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

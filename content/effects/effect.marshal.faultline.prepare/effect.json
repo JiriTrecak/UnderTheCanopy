@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "id": "effect.marshal.faultline.prepare",
+  "name": "Faultline · gathering force",
+  "description": "Layered Marshal spell artwork. Gameplay and lifecycle are supplied by its ability binding.",
+  "durationTicks": 14,
+  "loop": false,
+  "layers": [
+    {
+      "id": "gather",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "billboard",
+      "colour": "#ffffff",
+      "accent": "#ffe4a2",
+      "durationTicks": 14,
+      "count": 1,
+      "size": 3.8,
+      "height": 0.12,
+      "motion": {
+        "rotation": {
+          "periodTicks": 80,
+          "direction": "counterclockwise"
+        },
+        "scale": {
+          "periodTicks": 56,
+          "min": 0.4,
+          "max": 1.2,
+          "easing": "smoothstep",
+          "phase": 0.5
+        }
+      },
+      "orientation": "ground",
+      "intensity": 0.65,
+      "texture": {
+        "asset": "asset.effects.marshal.cadence-wheel",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "charge",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 14,
+        "rate": 8,
+        "speed": 2,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 75,
+        "gravity": -2,
+        "drag": 1,
+        "spawnRadius": 0.7,
+        "startSize": 0.16,
+        "endSize": 0,
+        "spin": 3,
+        "fadeIn": 0.04,
+        "fadeOut": 0.65
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#ffc56e",
+      "accent": "#ffe4a2",
+      "durationTicks": 14,
+      "count": 10,
+      "size": 0.16,
+      "height": 0.6,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

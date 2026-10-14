@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "effect.core.entangling-roots.released-1",
+  "name": "Entangling Roots Cast",
+  "description": "",
+  "durationTicks": 24,
+  "loop": false,
+  "layers": [
+    {
+      "id": "root-arrival",
+      "shape": "burst",
+      "colour": "#87cc4a",
+      "accent": "#ffffff",
+      "durationTicks": 24,
+      "count": 18,
+      "size": 0.17,
+      "height": 0.5,
+      "spread": 1.1,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "anchor": "target",
+      "enabled": true,
+      "startTick": 0,
+      "sustain": false
+    }
+  ]
+}

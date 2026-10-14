@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "id": "asset.terrain.winter-rock",
+  "name": "winter rock · albedo/roughness",
+  "kind": "terrain-material",
+  "revision": 2,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin",
+      "sha256": "b6368ced6fef0430fca13c33576fe4f16d145eb5d7e3ec8108dc443b6ab4f3b8",
+      "bytes": 1754145
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "f0af50f551e0055288be4f2976b06ff6a3797d93c718b7a0a0e032dba7dcdb49",
+      "bytes": 1666982
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "64798ea32d8243e5619c24b1ea337b7c6c2d99e9e1baabbbe9eb98738bdcd548",
+      "bytes": 2423139
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

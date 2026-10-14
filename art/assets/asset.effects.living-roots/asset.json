@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "id": "asset.effects.living-roots",
+  "name": "living roots effect texture",
+  "kind": "texture",
+  "revision": 4,
+  "status": "published",
+  "tags": [
+    "spell",
+    "effect"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "4f89b37a9b176fb27837dedaa31470332b93b772701fc16621f29ae4ec288181",
+      "bytes": 66822
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "8520c77b08f7619edb11dee866615025f5a7a01780187d270c231128f7f305ac",
+      "bytes": 2121102
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original built-in imagegen. Prompt: A game VFX cutout of a low circular cage of thick winding living roots viewed from the side in three quarter perspective, with 5 curled root tips pointing upward and tiny green leaves, glowing emerald veins. Empty transparent center so a character can be seen through it, transparent outside. Clean stylized painted wood, broad readable shapes. No ground, scene, text, or frame. Original square fantasy RTS command icon; hand-painted chunky shapes, high contrast; no text, frame or watermark."
+  }
+}

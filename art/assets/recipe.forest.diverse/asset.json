@@ -1,0 +1,220 @@
+{
+  "version": 1,
+  "id": "recipe.forest.diverse",
+  "name": "Living pine forest",
+  "kind": "landscape-recipe",
+  "revision": 7,
+  "status": "published",
+  "tags": [
+    "authoring",
+    "original"
+  ],
+  "resources": [],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "recipe": {
+    "type": "forest",
+    "density": 1,
+    "species": [
+      {
+        "asset": "asset.models.environment.woodland-pine-a",
+        "weight": 1
+      },
+      {
+        "asset": "asset.models.environment.woodland-pine-b",
+        "weight": 1
+      }
+    ],
+    "spacing": 3.2,
+    "probability": 1,
+    "jitter": 0.65,
+    "scaleMin": 0.85,
+    "scaleMax": 1.15,
+    "maxSlope": 1,
+    "waterClearance": 2,
+    "objectClearance": 0,
+    "edgeFade": 1,
+    "minSpacing": 3.2,
+    "patchiness": {
+      "scale": 12,
+      "strength": 0.12
+    },
+    "interiorMargin": 3.5,
+    "details": [
+      {
+        "density": 1,
+        "pattern": "patches",
+        "species": [
+          {
+            "asset": "asset.models.environment.canopy-mushrooms-ochre",
+            "weight": 2
+          },
+          {
+            "asset": "asset.models.environment.canopy-mushrooms-russet",
+            "weight": 1
+          }
+        ],
+        "spacing": 3.5,
+        "probability": 0.5,
+        "jitter": 0.9,
+        "scaleMin": 0.7,
+        "scaleMax": 1.2,
+        "maxSlope": 1.2,
+        "waterClearance": 0.5,
+        "objectClearance": 0.3,
+        "edgeFade": 1,
+        "minSpacing": 1.1,
+        "patchiness": {
+          "scale": 7,
+          "strength": 0.55
+        },
+        "id": "mushrooms"
+      },
+      {
+        "density": 1,
+        "pattern": "patches",
+        "species": [
+          {
+            "asset": "asset.models.environment.canopy-acorns",
+            "weight": 3
+          },
+          {
+            "asset": "asset.models.environment.canopy-twig",
+            "weight": 2
+          },
+          {
+            "asset": "asset.models.environment.woodland-moss-boulder",
+            "weight": 1
+          }
+        ],
+        "spacing": 4.2,
+        "probability": 0.5,
+        "jitter": 0.9,
+        "scaleMin": 0.7,
+        "scaleMax": 1.2,
+        "maxSlope": 1.2,
+        "waterClearance": 0.5,
+        "objectClearance": 0.3,
+        "edgeFade": 1,
+        "minSpacing": 1.1,
+        "patchiness": {
+          "scale": 7,
+          "strength": 0.55
+        },
+        "id": "floor"
+      },
+      {
+        "density": 1,
+        "pattern": "patches",
+        "species": [
+          {
+            "asset": "asset.models.environment.pl-fern-bushy",
+            "weight": 3
+          },
+          {
+            "asset": "asset.models.environment.pl-fern-sword",
+            "weight": 2
+          },
+          {
+            "asset": "asset.models.environment.pl-grass-lush-b",
+            "weight": 3
+          },
+          {
+            "asset": "asset.models.environment.pl-grass-tall",
+            "weight": 1
+          }
+        ],
+        "spacing": 1.1,
+        "probability": 0.6,
+        "jitter": 0.9,
+        "scaleMin": 0.7,
+        "scaleMax": 1.15,
+        "maxSlope": 1.2,
+        "waterClearance": 0.5,
+        "objectClearance": 0.3,
+        "edgeFade": 1,
+        "minSpacing": 0.8,
+        "patchiness": {
+          "scale": 6,
+          "strength": 0.5
+        },
+        "id": "undergrowth"
+      },
+      {
+        "density": 1,
+        "pattern": "patches",
+        "species": [
+          {
+            "asset": "asset.models.environment.pl-flowers-white",
+            "weight": 3
+          },
+          {
+            "asset": "asset.models.environment.pl-flowers-yellow",
+            "weight": 2
+          },
+          {
+            "asset": "asset.models.environment.pl-daisy",
+            "weight": 1
+          }
+        ],
+        "spacing": 2.2,
+        "probability": 0.45,
+        "jitter": 0.9,
+        "scaleMin": 0.8,
+        "scaleMax": 1.2,
+        "maxSlope": 1.2,
+        "waterClearance": 0.5,
+        "objectClearance": 0.3,
+        "edgeFade": 1,
+        "minSpacing": 1,
+        "patchiness": {
+          "scale": 8,
+          "strength": 0.6
+        },
+        "id": "flowers"
+      }
+    ],
+    "edge": {
+      "species": [
+        {
+          "asset": "asset.models.environment.woodland-pine-sapling",
+          "weight": 1
+        }
+      ],
+      "spacing": 1.5,
+      "probability": 0.65,
+      "jitter": 0.65,
+      "scaleMin": 0.75,
+      "scaleMax": 1.1,
+      "maxSlope": 1,
+      "waterClearance": 0.5,
+      "objectClearance": 0,
+      "edgeFade": 1.5,
+      "minSpacing": 1.5,
+      "patchiness": {
+        "scale": 6,
+        "strength": 0.4
+      },
+      "width": 5
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original deterministic layer recipe using original woodland asset packages."
+  }
+}

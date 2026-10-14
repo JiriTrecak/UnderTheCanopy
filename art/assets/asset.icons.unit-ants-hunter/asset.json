@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.unit-ants-hunter",
+  "name": "Hunter",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "ants-v1",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "66cffe95ddb5cd266009f586029eea4aed847877f72c8c41ab8b1899d9a7aa1d",
+      "bytes": 14684
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.ants.hunter",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.unit-ants-hunter"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "66cffe95ddb5cd266009f586029eea4aed847877f72c8c41ab8b1899d9a7aa1d"
+  }
+}

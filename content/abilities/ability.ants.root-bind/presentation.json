@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "presentation.ants.root-bind",
+  "icon": "asset.icons.spell-entangling-roots",
+  "animations": {
+    "prepare": "cast",
+    "release": "cast",
+    "recover": "cast",
+    "fallback": "idle"
+  },
+  "effects": [
+    {
+      "id": "roots",
+      "effect": "effect.ants.root-bind",
+      "statusId": "rooted",
+      "event": "statusApplied",
+      "anchor": "target",
+      "lifetime": "status"
+    },
+    {
+      "id": "sprout",
+      "effect": "effect.core.entangling-roots.released-1",
+      "event": "released",
+      "anchor": "target",
+      "lifetime": "finite"
+    }
+  ]
+}

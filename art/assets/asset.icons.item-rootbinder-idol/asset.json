@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.item-rootbinder-idol",
+  "name": "Rootbinder Idol",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "76e61ca2b40a24766904bfb2f1e22054a4cda5f777402018ea537d519e66be88",
+      "bytes": 23227
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.item.rootbinder-idol",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.item-rootbinder-idol"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "76e61ca2b40a24766904bfb2f1e22054a4cda5f777402018ea537d519e66be88"
+  }
+}

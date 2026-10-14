@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.command-produce",
+  "name": "Produce",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "ants-v1",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "838b0bccf735acbad44998fa298187981d252c9aac8405c44c4138ba07182861",
+      "bytes": 32235
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.action.produce",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.command-produce"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "838b0bccf735acbad44998fa298187981d252c9aac8405c44c4138ba07182861"
+  }
+}

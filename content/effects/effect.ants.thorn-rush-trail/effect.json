@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "effect.ants.thorn-rush-trail",
+  "name": "Thorn Rush — slipstream",
+  "description": "Short ivory speed streak following the real collision-checked lunge.",
+  "durationTicks": 8,
+  "loop": false,
+  "layers": [
+    {
+      "id": "streak",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "source",
+      "shape": "missile",
+      "colour": "#e8d5ae",
+      "accent": "#fff2d4",
+      "durationTicks": 8,
+      "count": 1,
+      "size": 0.12,
+      "height": 0.8,
+      "intensity": 0.3,
+      "length": 2,
+      "trail": {
+        "durationTicks": 5,
+        "maxPoints": 12,
+        "width": 0.7,
+        "colour": "#e7d1a3",
+        "opacity": 0.42,
+        "breakDistance": 6
+      }
+    }
+  ]
+}

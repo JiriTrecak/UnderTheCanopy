@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.item-royal-crest",
+  "name": "Royal Crest",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "fed2081ee4ab26b1560200cc24a018f20abdde0e1d11263e3a5817f4f4ac955d",
+      "bytes": 21422
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.item.royal-crest",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.item-royal-crest"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "fed2081ee4ab26b1560200cc24a018f20abdde0e1d11263e3a5817f4f4ac955d"
+  }
+}

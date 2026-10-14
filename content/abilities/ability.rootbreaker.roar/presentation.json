@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "presentation.rootbreaker.roar",
+  "icon": "asset.spells.rootbreaker.roar-icon-v2",
+  "animations": {
+    "prepare": "roar",
+    "release": "roar",
+    "recover": "roar",
+    "fallback": "idle"
+  },
+  "effects": [
+    {
+      "id": "pulse",
+      "effect": "effect.rootbreaker.roar",
+      "event": "released",
+      "anchor": "caster",
+      "lifetime": "finite"
+    },
+    {
+      "id": "guard",
+      "effect": "effect.rootbreaker.roar-armor",
+      "statusId": "stoneguard",
+      "event": "statusApplied",
+      "anchor": "target",
+      "lifetime": "status"
+    },
+    {
+      "id": "attention",
+      "effect": "effect.rootbreaker.challenged",
+      "statusId": "challenged",
+      "event": "statusApplied",
+      "anchor": "target",
+      "lifetime": "status"
+    }
+  ]
+}

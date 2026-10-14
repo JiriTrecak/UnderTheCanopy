@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "asset.interface.campaign.beetles",
+  "name": "beetles campaign crest",
+  "kind": "interface",
+  "revision": 4,
+  "status": "published",
+  "tags": [
+    "campaign",
+    "original"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "webp",
+      "sha256": "f1ca5c80d711673bc656f22df7dbc7a2c549ffc3ef79685bf826b039bcfccbb2",
+      "bytes": 258736
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "interface-image",
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original Under the Canopy faction crest, generated with built-in ImageGen."
+  }
+}

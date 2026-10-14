@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "id": "asset.models.resources.amber-crystal-empty",
+  "name": "Amber Crystals — Empty",
+  "kind": "prop",
+  "revision": 23,
+  "status": "published",
+  "tags": [
+    "original",
+    "neutral",
+    "resource",
+    "amber",
+    "tripo"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "03b430f462d5b1b5d72f2c6ac908af6ba44800b81cd44951d9fe17bc7b393c37",
+      "bytes": 3113500
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "35eee7a6312998e009cf3fe681b9bff9c1c893ab7462eaf2a6e72cfa7d29ae6a",
+      "bytes": 10466070
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.resource.amber-crystal-empty",
+        "scale": 2,
+        "healthHeight": 2.311389446258545,
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.resources.amber-crystal-empty"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "blocker": {
+      "shape": "box",
+      "size": [
+        4,
+        4
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 2,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

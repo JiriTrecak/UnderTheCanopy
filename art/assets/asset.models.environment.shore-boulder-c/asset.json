@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.shore-boulder-c",
+  "name": "shore boulder c",
+  "kind": "prop",
+  "revision": 5,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland",
+    "river"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "14a273b2206c800543c548f8da170af8677e08b50a4b32da667de84af05900b7",
+      "bytes": 10708
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "278fbdfd54ea24c5034558a933820ae928f7332d947b737232aec1b461001faf",
+      "bytes": 583813
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.scenery.shore-boulder-c",
+        "sceneryAsset": "shore-boulder-c",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.environment.shore-boulder-c"
+        }
+      }
+    ],
+    "scenery": [
+      {
+        "id": "shore-boulder-c",
+        "name": "shore boulder c",
+        "category": "landmark",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    },
+    "vegetationClearance": 0.55
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

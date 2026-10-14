@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "id": "recipe.grass.winter",
+  "name": "Winter meadow",
+  "kind": "landscape-recipe",
+  "revision": 3,
+  "status": "published",
+  "tags": [
+    "authoring",
+    "frozen-forest",
+    "original"
+  ],
+  "resources": [],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "recipe": {
+    "type": "grass",
+    "species": [
+      {
+        "asset": "asset.models.environment.frost-grass",
+        "weight": 2
+      },
+      {
+        "asset": "asset.models.environment.frost-snow-grass",
+        "weight": 3
+      }
+    ],
+    "spacing": 0.65,
+    "probability": 0.7,
+    "jitter": 0.65,
+    "scaleMin": 0.65,
+    "scaleMax": 1.05,
+    "maxSlope": 1,
+    "waterClearance": 0.2,
+    "objectClearance": 0,
+    "edgeFade": 2,
+    "minSpacing": 0.2,
+    "patchiness": {
+      "scale": 5,
+      "strength": 0.65
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original deterministic layer recipe using original woodland asset packages."
+  }
+}

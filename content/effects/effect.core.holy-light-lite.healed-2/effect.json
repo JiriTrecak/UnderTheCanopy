@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "effect.core.holy-light-lite.healed-2",
+  "name": "Holy Light Lite Heal",
+  "description": "",
+  "durationTicks": 24,
+  "loop": false,
+  "layers": [
+    {
+      "id": "healing-flash",
+      "shape": "burst",
+      "colour": "#f1ff64",
+      "accent": "#fffcd5",
+      "durationTicks": 24,
+      "count": 9,
+      "size": 0.4,
+      "height": 1.5,
+      "follow": true,
+      "intensity": 1.1,
+      "spread": 0.8,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "anchor": "target",
+      "enabled": true,
+      "startTick": 0,
+      "sustain": false
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "id": "ability.marshal.crownfall",
+  "name": "Crownfall",
+  "description": "Call down an amber crown with a thunderous mace strike. After a visible windup, deal 180/260 spell damage and stun enemies for 1/1.4 seconds (half against heroes) in a 7/9-unit radius. Up to sixteen allies in the impact area gain a 100/160-damage shield for six seconds.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "damage": 180,
+      "stun": 40,
+      "heroStun": 20,
+      "radius": 7,
+      "shield": 100,
+      "mana": 110,
+      "cooldown": 2400
+    },
+    {
+      "damage": 260,
+      "stun": 56,
+      "heroStun": 28,
+      "radius": 9,
+      "shield": 160,
+      "mana": 140,
+      "cooldown": 2160
+    }
+  ],
+  "targeting": {
+    "kind": "point",
+    "radius": {
+      "rankParameter": "radius"
+    },
+    "maxTargets": 16,
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 24,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 32,
+    "recoverTicks": 10,
+    "cost": {
+      "resource": "mana",
+      "amount": {
+        "rankParameter": "mana"
+      },
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": {
+        "rankParameter": "cooldown"
+      },
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "damage",
+      "target": "target",
+      "amount": {
+        "rankParameter": "damage"
+      },
+      "damageType": "spell"
+    },
+    {
+      "op": "status",
+      "target": "target",
+      "id": "crownStun",
+      "amount": {
+        "rankParameter": "stun"
+      },
+      "heroDuration": {
+        "rankParameter": "heroStun"
+      },
+      "polarity": "negative",
+      "dispel": true,
+      "modifiers": {},
+      "stun": true,
+      "lifetime": "duration"
+    },
+    {
+      "op": "status",
+      "target": "caster",
+      "query": {
+        "center": "point",
+        "radius": {
+          "rankParameter": "radius"
+        },
+        "relations": [
+          "ally"
+        ],
+        "allowSelf": true,
+        "includeBuildings": false,
+        "excludePrimary": false,
+        "maxTargets": 16,
+        "order": "nearest"
+      },
+      "id": "crownWard",
+      "amount": 240,
+      "polarity": "positive",
+      "dispel": true,
+      "modifiers": {},
+      "shield": {
+        "rankParameter": "shield"
+      },
+      "onShieldDepleted": "remove",
+      "lifetime": "duration"
+    }
+  ],
+  "presentation": "presentation.marshal.crownfall"
+}

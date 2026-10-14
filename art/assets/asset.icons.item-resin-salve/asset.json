@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.item-resin-salve",
+  "name": "Resin Salve",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "e2e1c664e462e3f1d43cfbd1e2049944159913ecbb2502ca2849934773ad7b7c",
+      "bytes": 21227
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.item.resin-salve",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.item-resin-salve"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "e2e1c664e462e3f1d43cfbd1e2049944159913ecbb2502ca2849934773ad7b7c"
+  }
+}

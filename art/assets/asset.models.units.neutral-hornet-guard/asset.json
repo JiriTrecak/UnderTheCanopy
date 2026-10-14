@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "id": "asset.models.units.neutral-hornet-guard",
+  "name": "Hornet Guard",
+  "kind": "unit",
+  "revision": 2,
+  "status": "published",
+  "tags": [
+    "original",
+    "neutral",
+    "hornet-raiders",
+    "medium",
+    "skinned",
+    "tripo"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "7e636247ed3d32d522d5dcc8c2b6a07a84b52f0916778dfa2e698dd5f4f77640",
+      "bytes": 1120504
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "532c2f91cca704e9079f5079cc3140d42cd4f037af8aa259bba4b001547231ff",
+      "bytes": 8468546
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "84e37a5e7835b39f646e05fbe234f0d4d3f6487e6afd9d793d36a19f3675b427",
+      "bytes": 12979
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "base",
+    "render": [
+      {
+        "id": "asset.neutral.hornet-guard",
+        "geometry": {
+          "asset": "asset.models.units.neutral-hornet-guard",
+          "role": "geometry",
+          "index": 1
+        },
+        "character": "base",
+        "scale": 1,
+        "healthHeight": 2.53
+      },
+      {
+        "id": "icon.neutral.hornet-guard",
+        "image": {
+          "asset": "asset.models.units.neutral-hornet-guard",
+          "role": "image",
+          "index": 1
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "dimensions": {
+      "radius": 0.42,
+      "height": 2.3,
+      "formationSpacing": 0.945
+    },
+    "groundContact": {
+      "mode": "pivot"
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "walk",
+        "clip": "walk",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "run",
+        "clip": "run",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "attack",
+        "clip": "attack",
+        "loop": false,
+        "events": [
+          {
+            "name": "hit",
+            "time": 0.5833333333333333
+          }
+        ]
+      },
+      {
+        "semantic": "hit",
+        "clip": "hit",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "death",
+        "clip": "death",
+        "loop": false,
+        "events": []
+      }
+    ],
+    "sockets": []
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

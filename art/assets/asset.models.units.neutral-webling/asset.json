@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "id": "asset.models.units.neutral-webling",
+  "name": "Webling",
+  "kind": "unit",
+  "revision": 2,
+  "status": "published",
+  "tags": [
+    "original",
+    "neutral",
+    "hungry-weblings",
+    "small",
+    "skinned",
+    "tripo"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "6a42c6dfa257b9368a2760227e5764635a7ad795f3ba861366a8db0947e81063",
+      "bytes": 1110392
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "68e28bfa127125abb9fca047d6155cc2b469a74112c6c2d46469fcdf49db12a4",
+      "bytes": 8206573
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "d2a8fda8d03d3f4d91964a6e93b4e19a0dab9d6dfda6411c71225d711ef58f83",
+      "bytes": 14101
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "base",
+    "render": [
+      {
+        "id": "asset.neutral.webling",
+        "geometry": {
+          "asset": "asset.models.units.neutral-webling",
+          "role": "geometry",
+          "index": 1
+        },
+        "character": "base",
+        "scale": 1,
+        "healthHeight": 1.1
+      },
+      {
+        "id": "icon.neutral.webling",
+        "image": {
+          "asset": "asset.models.units.neutral-webling",
+          "role": "image",
+          "index": 1
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "dimensions": {
+      "radius": 0.333,
+      "height": 1,
+      "formationSpacing": 0.75
+    },
+    "groundContact": {
+      "mode": "pivot"
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "walk",
+        "clip": "walk",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "run",
+        "clip": "run",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "attack",
+        "clip": "attack",
+        "loop": false,
+        "events": [
+          {
+            "name": "hit",
+            "time": 0.5833333333333333
+          }
+        ]
+      },
+      {
+        "semantic": "hit",
+        "clip": "hit",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "death",
+        "clip": "death",
+        "loop": false,
+        "events": []
+      }
+    ],
+    "sockets": []
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

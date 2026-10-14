@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "asset.interface.app-icon.under-the-canopy",
+  "name": "Under The Canopy",
+  "kind": "interface",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "app-icon",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "b2e10d98f24addc3f34ac89e15864f92d0bf8e93f556797184f57664d3b3ad71",
+      "bytes": 1938054
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "interface-image",
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "b2e10d98f24addc3f34ac89e15864f92d0bf8e93f556797184f57664d3b3ad71"
+  }
+}

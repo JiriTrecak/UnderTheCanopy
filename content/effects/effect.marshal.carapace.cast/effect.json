@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "effect.marshal.carapace.cast",
+  "name": "Iron Carapace · shell ignition",
+  "description": "Layered Marshal spell artwork. Gameplay and lifecycle are supplied by its ability binding.",
+  "durationTicks": 32,
+  "loop": false,
+  "layers": [
+    {
+      "id": "hardening-shell",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "billboard",
+      "colour": "#ffffff",
+      "accent": "#ffe4a2",
+      "durationTicks": 28,
+      "count": 1,
+      "size": 6,
+      "height": 2.8,
+      "intensity": 0.85,
+      "length": 1.12,
+      "texture": {
+        "asset": "asset.effects.marshal.carapace-shell",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "chitin-flare",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 32,
+        "rate": 8,
+        "speed": 5,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 75,
+        "gravity": 5,
+        "drag": 1,
+        "spawnRadius": 1.7,
+        "startSize": 0.25,
+        "endSize": 0,
+        "spin": 3,
+        "fadeIn": 0.04,
+        "fadeOut": 0.65
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#ffc56e",
+      "accent": "#ffe4a2",
+      "durationTicks": 32,
+      "count": 28,
+      "size": 0.25,
+      "height": 0.8,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "forge-flash",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#ffd391",
+      "accent": "#ffe4a2",
+      "durationTicks": 12,
+      "count": 1,
+      "size": 6,
+      "height": 2,
+      "intensity": 10
+    }
+  ]
+}

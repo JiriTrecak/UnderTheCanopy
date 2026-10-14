@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "folders": [
+    {
+      "id": "folder.spells",
+      "name": "spells",
+      "parent": "root"
+    },
+    {
+      "id": "folder.heroes",
+      "name": "heroes",
+      "parent": "folder.spells"
+    },
+    {
+      "id": "folder.paladin",
+      "name": "paladin",
+      "parent": "folder.heroes"
+    },
+    {
+      "id": "folder.142ad6e2-001b-447e-b108-e6e85d87334e",
+      "name": "Marshal",
+      "parent": "folder.heroes"
+    },
+    {
+      "id": "folder.hornbreaker",
+      "name": "hornbreaker",
+      "parent": "folder.heroes"
+    }
+  ],
+  "items": {
+    "ability.core.holy-light-lite": "folder.paladin",
+    "ability.marshal.faultline": "folder.142ad6e2-001b-447e-b108-e6e85d87334e",
+    "ability.marshal.rally": "folder.142ad6e2-001b-447e-b108-e6e85d87334e",
+    "ability.marshal.carapace": "folder.142ad6e2-001b-447e-b108-e6e85d87334e",
+    "ability.marshal.crownfall": "folder.142ad6e2-001b-447e-b108-e6e85d87334e",
+    "ability.hornbreaker.horn-rush": "folder.hornbreaker",
+    "ability.hornbreaker.overwhelm": "folder.hornbreaker",
+    "ability.hornbreaker.steadfast": "folder.hornbreaker",
+    "ability.hornbreaker.colossus": "folder.hornbreaker"
+  }
+}

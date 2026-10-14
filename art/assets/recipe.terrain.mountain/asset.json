@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "id": "recipe.terrain.mountain",
+  "name": "Rocky mountains",
+  "kind": "landscape-recipe",
+  "revision": 3,
+  "status": "published",
+  "tags": [
+    "authoring",
+    "original"
+  ],
+  "resources": [],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "recipe": {
+    "type": "terrain",
+    "operation": "raise",
+    "height": 10,
+    "falloff": 8,
+    "surface": "mountain",
+    "roughness": 0.35,
+    "noiseScale": 14,
+    "grassStrength": 0.65,
+    "rockStrength": 1,
+    "chunks": {
+      "density": 1,
+      "species": [
+        {
+          "asset": "asset.models.environment.woodland-rock-ledge",
+          "weight": 2
+        },
+        {
+          "asset": "asset.models.environment.woodland-moss-boulder",
+          "weight": 2
+        },
+        {
+          "asset": "asset.models.environment.woodland-river-stones",
+          "weight": 1
+        }
+      ],
+      "spacing": 5.5,
+      "probability": 0.65,
+      "jitter": 0.8,
+      "scaleMin": 0.65,
+      "scaleMax": 1.05,
+      "maxSlope": 10,
+      "waterClearance": 2,
+      "objectClearance": 1,
+      "edgeFade": 1,
+      "minSpacing": 4
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original deterministic layer recipe using original woodland asset packages."
+  }
+}

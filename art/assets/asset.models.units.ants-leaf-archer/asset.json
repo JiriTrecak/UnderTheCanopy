@@ -1,0 +1,200 @@
+{
+  "version": 1,
+  "id": "asset.models.units.ants-leaf-archer",
+  "name": "Ant Leaf Archer",
+  "kind": "unit",
+  "revision": 19,
+  "status": "published",
+  "tags": [
+    "ants",
+    "archer",
+    "tripo",
+    "skinned"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "46f2c87cbb6ccd54f792605b0fa66c0a07aca5a94774b2c130b0b74737638bfa",
+      "bytes": 2190867
+    },
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "3413eabb5b2636e2e6c3d5db33235629a77a8662d68e472323504efff28fcafd",
+      "bytes": 3956836
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "702e119d16b694382b880d61989ba3382cbd7a47925353201f5e25da717cc77e",
+      "bytes": 8140
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "c5b8c79efcf7c0d9bb286062d446e5c02d49c3b7552d8e58873db76600bb7f5f",
+      "bytes": 36449089
+    },
+    {
+      "role": "team_mask",
+      "index": 1,
+      "format": "png",
+      "sha256": "6a13e88ce8fbb91916b52b32ad5720431a9da2df25daa4fb6e02f1bd76354032",
+      "bytes": 76265
+    }
+  ],
+  "usesGeometry": true,
+  "exportSettings": {
+    "textureSize": 1024
+  },
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "faction": "ants",
+    "profile": "base",
+    "render": [
+      {
+        "id": "asset.ants.leaf-archer",
+        "character": "base",
+        "scale": 2,
+        "healthHeight": 2.15,
+        "projectile": "effect.weapon.arrow",
+        "projectileSocket": "socket_projectile",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.units.ants-leaf-archer"
+        }
+      },
+      {
+        "id": "icon.ants.leaf-archer",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.models.units.ants-leaf-archer"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_TeamColor"
+      ],
+      "mask": {
+        "role": "team_mask",
+        "index": 1
+      }
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "walk",
+        "clip": "walk",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "run",
+        "clip": "run",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "attack",
+        "clip": "attack",
+        "loop": false,
+        "events": [
+          {
+            "name": "release",
+            "time": 1.7083333333333333
+          }
+        ]
+      },
+      {
+        "semantic": "hit",
+        "clip": "hit",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "death",
+        "clip": "death",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "cast",
+        "clip": "cast",
+        "loop": false,
+        "events": []
+      }
+    ],
+    "sockets": [
+      {
+        "name": "handL",
+        "node": "socket_handL",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "handR",
+        "node": "socket_handR",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "projectile",
+        "node": "socket_projectile",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "cast",
+        "node": "socket_cast",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original generated artwork for Under the Canopy."
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "id": "asset.models.buildings.ants-chitin-workshop",
+  "name": "Chitin Workshop",
+  "kind": "building",
+  "revision": 14,
+  "status": "published",
+  "tags": [
+    "ants",
+    "tripo",
+    "team-mask"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "1932bec673e25e03ac3efecc911b162f2725009888dbe0a8a0180387a2805d08",
+      "bytes": 8640682
+    },
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "9faeffc6a948ac93d42168e09aa47626c08ffa42bd8f007613935a44b12422f8",
+      "bytes": 12525884
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "edbaafb7cb3e4fa7f4fe80da5ceb90ecd8b2be2742e69087a9941cc5a5c80bf1",
+      "bytes": 16049
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "71732c50afa450c1a77f5731930c7760307fa5af0d23149cd81362b19f46d681",
+      "bytes": 26407458
+    },
+    {
+      "role": "team_mask",
+      "index": 1,
+      "format": "png",
+      "sha256": "e8991dc05b1a9c2b311156888b237ebfaae6e6757e753a6d590b4e5539759a18",
+      "bytes": 176353
+    }
+  ],
+  "usesGeometry": true,
+  "exportSettings": {
+    "textureSize": 2048
+  },
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "faction": "ants",
+    "profile": "building",
+    "render": [
+      {
+        "id": "asset.ants.chitin-workshop",
+        "scale": 9.6,
+        "healthHeight": 8.254242658615112,
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.buildings.ants-chitin-workshop"
+        }
+      },
+      {
+        "id": "icon.ants.chitin-workshop",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.models.buildings.ants-chitin-workshop"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_TeamColor"
+      ],
+      "mask": {
+        "role": "team_mask",
+        "index": 1
+      }
+    },
+    "blocker": {
+      "shape": "box",
+      "size": [
+        12,
+        12
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 6,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original generated artwork for Under the Canopy."
+  }
+}

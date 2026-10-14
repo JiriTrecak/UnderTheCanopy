@@ -1,0 +1,10 @@
+{
+  "id": "painted-commands",
+  "name": "Classic command symbols",
+  "description": "Clear fantasy RTS command icon. A single dimensional symbol in carved, forged or lacquered materials, dramatic highlights on a dark background. No writing or framing.",
+  "references": [
+    "asset.icons.command-attack",
+    "asset.icons.command-build",
+    "asset.icons.command-build-advanced"
+  ]
+}

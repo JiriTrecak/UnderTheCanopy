@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.building-ants-forester",
+  "name": "Forester",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "ants-v1",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "73fdfeeb2ccbbf6d24c23c9ca713edb89b8497ce0cee3d144ca53766bdc68fee",
+      "bytes": 32238
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.ants.forester",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.building-ants-forester"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "73fdfeeb2ccbbf6d24c23c9ca713edb89b8497ce0cee3d144ca53766bdc68fee"
+  }
+}

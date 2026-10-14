@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "presentation.ants.shield-brace",
+  "icon": "asset.custom.frost-armor-command",
+  "animations": {
+    "prepare": "cast",
+    "release": "cast",
+    "recover": "cast",
+    "fallback": "idle"
+  },
+  "effects": [
+    {
+      "id": "brace",
+      "effect": "effect.ants.shield-brace",
+      "statusId": "shieldBraced",
+      "event": "statusApplied",
+      "anchor": "target",
+      "lifetime": "status"
+    }
+  ]
+}

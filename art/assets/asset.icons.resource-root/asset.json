@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "id": "asset.icons.resource-root",
+  "name": "Root",
+  "kind": "icon",
+  "revision": 6,
+  "status": "published",
+  "tags": [
+    "woodland-interface",
+    "resources",
+    "original"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "f70d76c1efd107ac1defaf9d06b8d0e380981570510488e62ebb73fd7fba8924",
+      "bytes": 27996
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "278950f306c57c37317cfd7af133f5f94693206fbf9bccc3177b2d5b6e0ea836",
+      "bytes": 1800618
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.item.root",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.resource-root"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original Under the Canopy resource artwork generated with built-in ImageGen.",
+    "sourceHash": "278950f306c57c37317cfd7af133f5f94693206fbf9bccc3177b2d5b6e0ea836"
+  }
+}

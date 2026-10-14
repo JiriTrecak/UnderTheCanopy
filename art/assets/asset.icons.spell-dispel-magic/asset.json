@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "id": "asset.icons.spell-dispel-magic",
+  "name": "dispel magic spell icon",
+  "kind": "icon",
+  "revision": 4,
+  "status": "published",
+  "tags": [
+    "spell",
+    "command-icon"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "8a7a2cefaacfa76133bf4d26839bccd9eaac941f36f03d4b24ce3d47e561d4bb",
+      "bytes": 47774
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "61c875d580647e0aa0259e435025fc74546200f0b3e68a791eaedb636c9f98fe",
+      "bytes": 2171030
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "asset.icons.spell-dispel-magic",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.spell-dispel-magic"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original built-in imagegen. Prompt: A brilliant pearl-white magical starburst breaking violet magical chains into glowing fragments, rich cerulean and gold light. Original square fantasy RTS command icon; hand-painted chunky shapes, high contrast; no text, frame or watermark."
+  }
+}

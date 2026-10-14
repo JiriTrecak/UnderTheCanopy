@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "id": "image.woodland-connected-hud",
+  "name": "Woodland Connected HUD",
+  "kind": "interface",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "interface",
+    "woodland-interface"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "6f1ae313757adc1d33c2005c618feb7263969401cde6984ce08e179944184281",
+      "bytes": 2077750
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "c815ee0eb63861564fdbaf43353ae40ffa466043324e46256f0f0ffd46d89706",
+      "bytes": 2422324
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "interface-image",
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "c815ee0eb63861564fdbaf43353ae40ffa466043324e46256f0f0ffd46d89706"
+  }
+}

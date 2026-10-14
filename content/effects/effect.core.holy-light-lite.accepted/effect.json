@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "effect.core.holy-light-lite.accepted",
+  "name": "Holy Light Lite Preparation",
+  "description": "",
+  "durationTicks": 12,
+  "loop": false,
+  "layers": [
+    {
+      "id": "gather",
+      "shape": "ring",
+      "colour": "#effc86",
+      "accent": "#fffbd4",
+      "durationTicks": 12,
+      "count": 1,
+      "size": 0.7,
+      "height": 0.04,
+      "intensity": 0.5,
+      "anchor": "target",
+      "enabled": true,
+      "startTick": 0,
+      "sustain": false
+    }
+  ]
+}

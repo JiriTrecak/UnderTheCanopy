@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "id": "effect.ants.thorn-rush-impact",
+  "name": "Thorn Rush — contact dust",
+  "description": "Small neutral dust cue; no poison or ownership recoloring.",
+  "durationTicks": 8,
+  "loop": false,
+  "layers": [
+    {
+      "id": "dust",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 12,
+        "rate": 5,
+        "speed": 2,
+        "speedVariation": 0.35,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 60,
+        "gravity": 0,
+        "drag": 0.6,
+        "spawnRadius": 0.6,
+        "startSize": 0.55,
+        "endSize": 1.4,
+        "spin": 0.3,
+        "fadeIn": 0,
+        "fadeOut": 1
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#b2a18a",
+      "accent": "#d5c7b0",
+      "durationTicks": 8,
+      "count": 5,
+      "size": 0.35,
+      "height": 0,
+      "blend": "normal",
+      "intensity": 0.45,
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

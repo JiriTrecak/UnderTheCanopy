@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "id": "recipe.path.grass",
+  "name": "Grass ground",
+  "kind": "landscape-recipe",
+  "revision": 5,
+  "status": "published",
+  "tags": [
+    "forest",
+    "surface",
+    "paint",
+    "path",
+    "original"
+  ],
+  "resources": [],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "recipe": {
+    "type": "path",
+    "material": "asset.terrain.woodland-grass",
+    "width": 5,
+    "shoulder": 1.5,
+    "flatten": 0,
+    "vegetationClearance": 0
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original deterministic layer recipe using original woodland asset packages."
+  }
+}

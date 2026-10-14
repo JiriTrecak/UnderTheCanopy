@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "presentation.ants.nectar-cleanse",
+  "icon": "asset.icons.spell-holy-light",
+  "animations": {
+    "prepare": "cast",
+    "release": "cast",
+    "recover": "cast",
+    "fallback": "idle"
+  },
+  "effects": [
+    {
+      "id": "delivery",
+      "effect": "effect.ants.nectar-flight",
+      "event": "projectile",
+      "anchor": "target",
+      "lifetime": "finite",
+      "durationFrom": "delivery"
+    },
+    {
+      "id": "restoration",
+      "effect": "effect.ants.nectar-cleanse",
+      "event": "dispelled",
+      "anchor": "target",
+      "lifetime": "finite"
+    }
+  ]
+}

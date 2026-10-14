@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "id": "asset.models.effects.arrow",
+  "name": "Weapon arrow",
+  "kind": "prop",
+  "revision": 6,
+  "status": "published",
+  "tags": [
+    "weapon",
+    "projectile"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "12aef2188d080e8a2d0661b4cf8bb0aede3aa1d30b7ffbf4b6336b31aa993f3d",
+      "bytes": 7484
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "99b500d6b043951bacd0703cbb1cbb840f8ac6b4479d0949f28554065257c5bc",
+      "bytes": 557575
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original Under the Canopy projectile geometry."
+  }
+}

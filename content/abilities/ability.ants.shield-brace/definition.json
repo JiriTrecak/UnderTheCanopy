@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "id": "ability.ants.shield-brace",
+  "name": "Shield Brace",
+  "description": "Brace behind the tower shield for 8 seconds, gaining 4 armor while moving 40% slower.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "range": 0,
+      "mana": 25,
+      "cooldownTicks": 640
+    }
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 6,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": {
+        "rankParameter": "mana"
+      },
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": {
+        "rankParameter": "cooldownTicks"
+      },
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "target",
+      "id": "shieldBraced",
+      "amount": 320,
+      "polarity": "positive",
+      "dispel": true,
+      "modifiers": {
+        "armor": 4,
+        "moveSpeedPermille": -400
+      },
+      "lifetime": "duration"
+    }
+  ],
+  "presentation": "presentation.ants.shield-brace"
+}

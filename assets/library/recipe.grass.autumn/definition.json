@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "id": "recipe.grass.autumn",
+  "name": "Fallen-leaf meadow",
+  "kind": "landscape-recipe",
+  "revision": 2,
+  "status": "published",
+  "tags": [
+    "autumn",
+    "original"
+  ],
+  "resources": [],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "recipe": {
+    "type": "grass",
+    "species": [
+      {
+        "asset": "asset.models.environment.autumn-leaf-litter",
+        "weight": 7
+      },
+      {
+        "asset": "asset.models.environment.autumn-grass",
+        "weight": 5
+      }
+    ],
+    "spacing": 0.9,
+    "probability": 0.72,
+    "jitter": 0.65,
+    "scaleMin": 0.65,
+    "scaleMax": 1.05,
+    "maxSlope": 1,
+    "waterClearance": 0.2,
+    "objectClearance": 0,
+    "edgeFade": 4,
+    "minSpacing": 0.2,
+    "patchiness": {
+      "scale": 6,
+      "strength": 0.45
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original deterministic layer recipe using original woodland asset packages."
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.mega-fallen-log",
+  "name": "Mega fallen log",
+  "kind": "prop",
+  "revision": 22,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland",
+    "forest-scale",
+    "mega",
+    "tripo"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "67c22102d92009acfd5a090a00d52a5e85d95b1cc55c1a28268ea6437c4ba35a",
+      "bytes": 6693984
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "49a2a1835b978049b252b1062a5b6ff79456c942ab1a85f50a14b4e9b7527e8e",
+      "bytes": 6355393
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.scenery.mega-fallen-log",
+        "sceneryAsset": "mega-fallen-log",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.environment.mega-fallen-log"
+        }
+      }
+    ],
+    "scenery": [
+      {
+        "id": "mega-fallen-log",
+        "name": "Mega fallen log",
+        "category": "landmark",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        },
+        "blockers": [
+          {
+            "width": 5.5,
+            "depth": 11.3,
+            "x": -19.25,
+            "z": -0.56
+          },
+          {
+            "width": 5.5,
+            "depth": 13.89,
+            "x": -13.75,
+            "z": -0.4
+          },
+          {
+            "width": 5.5,
+            "depth": 13.39,
+            "x": -8.25,
+            "z": -0.46
+          },
+          {
+            "width": 5.5,
+            "depth": 12.63,
+            "x": -2.75,
+            "z": -0.04
+          },
+          {
+            "width": 5.5,
+            "depth": 9.7,
+            "x": 2.75,
+            "z": 0.12
+          },
+          {
+            "width": 5.5,
+            "depth": 10.51,
+            "x": 8.25,
+            "z": 0.41
+          },
+          {
+            "width": 5.5,
+            "depth": 13.62,
+            "x": 13.75,
+            "z": 0.55
+          },
+          {
+            "width": 5.5,
+            "depth": 11.75,
+            "x": 19.25,
+            "z": 0.62
+          }
+        ]
+      }
+    ]
+  },
+  "capabilities": {
+    "vegetationClearance": 20,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

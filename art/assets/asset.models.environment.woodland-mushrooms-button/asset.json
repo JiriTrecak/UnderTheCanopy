@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.woodland-mushrooms-button",
+  "name": "Woodland button mushrooms",
+  "kind": "foliage",
+  "revision": 3,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland",
+    "mushrooms"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "0fb4f87370447e3dbe23fe996971cf81921122754c5c60ebbca790d939c1205b",
+      "bytes": 2019300
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "445b1ffc84bb615ea32a2b593112c29b96eb206888127cfc26dcad34d8f8c320",
+      "bytes": 2078991
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.scenery.woodland-mushrooms-button",
+        "sceneryAsset": "woodland-mushrooms-button",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.environment.woodland-mushrooms-button"
+        }
+      }
+    ],
+    "scenery": [
+      {
+        "id": "woodland-mushrooms-button",
+        "name": "Woodland button mushrooms",
+        "category": "foliage",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    },
+    "vegetationClearance": 0.2
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

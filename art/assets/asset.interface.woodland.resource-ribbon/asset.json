@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "id": "asset.interface.woodland.resource-ribbon",
+  "name": "Woodland resource ribbon",
+  "kind": "interface",
+  "revision": 5,
+  "status": "published",
+  "tags": [
+    "woodland-interface",
+    "resources",
+    "original"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "webp",
+      "sha256": "40c05b5c0c2062255103aec9e3209cb33833938daceb585106fb706d20160183",
+      "bytes": 97530
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "28d3fb8d43789892a34a8e81656a7fc5471ffabdfbc1ac52fcc28bed536852d6",
+      "bytes": 1385944
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "interface-image",
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original Under the Canopy interface artwork generated with built-in ImageGen."
+  }
+}

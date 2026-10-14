@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.item-winter-heart",
+  "name": "Winter Heart",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "d6bcb8283220b35388318fdf7baadfe159df5fb7061d5c287c1319d57a70475b",
+      "bytes": 23093
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.item.winter-heart",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.item-winter-heart"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "d6bcb8283220b35388318fdf7baadfe159df5fb7061d5c287c1319d57a70475b"
+  }
+}

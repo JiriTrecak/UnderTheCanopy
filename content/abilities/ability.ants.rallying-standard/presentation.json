@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "presentation.ants.rallying-standard",
+  "icon": "asset.custom.roar-command-icon",
+  "animations": {
+    "prepare": "cast",
+    "release": "cast",
+    "recover": "cast",
+    "fallback": "idle"
+  },
+  "effects": [
+    {
+      "id": "rally",
+      "effect": "effect.ants.rally-pulse",
+      "event": "released",
+      "anchor": "caster",
+      "lifetime": "finite"
+    },
+    {
+      "id": "inspired",
+      "effect": "effect.ants.rallied",
+      "statusId": "rallied",
+      "event": "statusApplied",
+      "anchor": "target",
+      "lifetime": "status"
+    }
+  ]
+}

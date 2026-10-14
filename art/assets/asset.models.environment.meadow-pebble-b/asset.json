@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.meadow-pebble-b",
+  "name": "meadow pebble b",
+  "kind": "prop",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland",
+    "debris"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "e197ab2808b100ed5edb33568741307206bbd1c4e61f90fe1025f156269bc246",
+      "bytes": 4628
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "8c7055802c3e69b1c3881c79d6c1028e0cbf50ddd4c57466a26340a70be693c6",
+      "bytes": 548023
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.scenery.meadow-pebble-b",
+        "sceneryAsset": "meadow-pebble-b",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.environment.meadow-pebble-b"
+        }
+      }
+    ],
+    "scenery": [
+      {
+        "id": "meadow-pebble-b",
+        "name": "meadow pebble b",
+        "category": "landmark",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    },
+    "vegetationClearance": 0.15
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

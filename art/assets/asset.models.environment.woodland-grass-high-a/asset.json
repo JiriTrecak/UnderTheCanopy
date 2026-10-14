@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.woodland-grass-high-a",
+  "name": "woodland grass high a",
+  "kind": "foliage",
+  "revision": 3,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "6cae9d8148078aa362417d3729671cd7acff411813e1d0723ac521a9a5898e06",
+      "bytes": 132860
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "4bf352aaad60f547187628bd4ee9bc46dec8b5ffe99423175e7bdf4062881f00",
+      "bytes": 222353
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "1c9f35888a669edbbf9470c9b25783a0eb948a891c3a14f79f7944e77ed3dcc4",
+      "bytes": 129815
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [],
+    "scenery": [
+      {
+        "id": "woodland-grass-high-a",
+        "name": "woodland grass high a",
+        "category": "foliage",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "wind": {
+      "mode": "grass",
+      "strength": 0.12,
+      "speed": 0.2,
+      "stiffness": 0.75
+    },
+    "groundContact": {
+      "mode": "terrain"
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

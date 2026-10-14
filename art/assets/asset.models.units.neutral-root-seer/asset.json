@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "id": "asset.models.units.neutral-root-seer",
+  "name": "Root Seer",
+  "kind": "unit",
+  "revision": 4,
+  "status": "published",
+  "tags": [
+    "original",
+    "neutral",
+    "rotwood-court",
+    "hard",
+    "skinned",
+    "tripo"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "267b7dc063cd4c346ebce3df889a18e371c2ed081c225026079c1bb481d4eaec",
+      "bytes": 1178040
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "ba70bb8d978c0476c272c9fe51949c2392058a55056763d76b7d084d5dfc457e",
+      "bytes": 8303446
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "c658d0d988959a2af6785b68c68078e4b05f875167ea3166a6d85013344bb8fe",
+      "bytes": 16535
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "base",
+    "render": [
+      {
+        "id": "asset.neutral.root-seer",
+        "character": "base",
+        "scale": 1,
+        "healthHeight": 3.08,
+        "projectile": "effect.weapon.thorn",
+        "projectileSocket": "socket_projectile",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.units.neutral-root-seer"
+        }
+      },
+      {
+        "id": "icon.neutral.root-seer",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.models.units.neutral-root-seer"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "dimensions": {
+      "radius": 0.68,
+      "height": 2.8,
+      "formationSpacing": 1.53
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "walk",
+        "clip": "walk",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "run",
+        "clip": "run",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "attack",
+        "clip": "attack",
+        "loop": false,
+        "events": [
+          {
+            "name": "release",
+            "time": 0.7083333333333333
+          }
+        ]
+      },
+      {
+        "semantic": "hit",
+        "clip": "hit",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "death",
+        "clip": "death",
+        "loop": false,
+        "events": []
+      }
+    ],
+    "sockets": [
+      {
+        "name": "projectile",
+        "node": "socket_projectile",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

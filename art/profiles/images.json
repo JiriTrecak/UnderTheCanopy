@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "profiles": {
+    "icon": {"format":"png","width":128,"height":128,"warningBytes":65536,"alpha":"optional","upscale":false,"kernel":"lanczos3","colorSpace":"srgb"},
+    "interface-rim": {"format":"png","warningBytes":2097152,"alpha":"opening-and-exterior","upscale":false,"kernel":"lanczos3","colorSpace":"srgb"},
+    "interface-fill": {"format":"png","warningBytes":524288,"alpha":"optional","upscale":false,"kernel":"lanczos3","colorSpace":"srgb"},
+    "interface-image": {"format":"png","warningBytes":4194304,"alpha":"optional","upscale":false,"kernel":"lanczos3","colorSpace":"srgb"}
+  }
+}

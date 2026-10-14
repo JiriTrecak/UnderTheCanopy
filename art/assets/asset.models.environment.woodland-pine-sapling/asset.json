@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.woodland-pine-sapling",
+  "name": "woodland pine sapling",
+  "kind": "foliage",
+  "revision": 102,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland",
+    "forest"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "caa767a0d932087ddabf23d3af35ae3313b0ae9ccb5238879219da9d2c550e71",
+      "bytes": 827273
+    },
+    {
+      "role": "albedo",
+      "index": 2,
+      "format": "png",
+      "sha256": "5adb5aa08ca24e3932d00eb544056b99c464ced691472dd24c2a8ee6a71cbe9c",
+      "bytes": 2116207
+    },
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "9355f2c96ee0c33fa4398372d2b0a15f89c8d292e70a97f3dc340a77bdaee88e",
+      "bytes": 828268
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "f6a8a6eeb8e29ce980e288865fd897557fc4f884ece5351d9b190c90634b4f87",
+      "bytes": 3423439
+    }
+  ],
+  "usesGeometry": true,
+  "exportSettings": {
+    "textureSize": 512
+  },
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.scenery.woodland-pine-sapling",
+        "sceneryAsset": "woodland-pine-sapling",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.environment.woodland-pine-sapling"
+        }
+      }
+    ],
+    "scenery": [
+      {
+        "id": "woodland-pine-sapling",
+        "name": "woodland pine sapling",
+        "category": "foliage",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "wind": {
+      "mode": "tree",
+      "strength": 0.1,
+      "speed": 0.18,
+      "stiffness": 0.8
+    },
+    "vegetationClearance": 0.3,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original Blender geometry and original foliage and bark textures generated with built-in ImageGen. All geometry and pixels independently authored."
+  }
+}

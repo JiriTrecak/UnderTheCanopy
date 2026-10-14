@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "id": "effect.rootbreaker.roar-armor",
+  "name": "Challenge Roar · stone guard",
+  "description": "Rootbreaker spell presentation. Authored in the Spell Editor; authoritative gameplay owns timing and cleanup.",
+  "durationTicks": 160,
+  "loop": true,
+  "layers": [
+    {
+      "id": "shield",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "billboard",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 160,
+      "count": 1,
+      "size": 2.4,
+      "height": 10.5,
+      "motion": {
+        "opacity": {
+          "periodTicks": 160,
+          "min": 0.75,
+          "max": 1,
+          "easing": "sine"
+        }
+      },
+      "blend": "normal",
+      "orientation": "camera",
+      "follow": true,
+      "texture": {
+        "asset": "asset.spells.rootbreaker.roar-shield",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.canopy-mushrooms-ochre",
+  "name": "canopy mushrooms ochre",
+  "kind": "prop",
+  "revision": 2,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "aabb7aeca53863cb184caf8ef16ea830f7d343cf78a6c41f97ed5e2edbf5819c",
+      "bytes": 24648
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "3a83963a894a4709f21c57dc2a380639d2e91ac42e124f350f112d60c03b2ef9",
+      "bytes": 1624890
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [
+      {
+        "id": "asset.scenery.canopy-mushrooms-ochre",
+        "sceneryAsset": "canopy-mushrooms-ochre",
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.environment.canopy-mushrooms-ochre"
+        }
+      }
+    ],
+    "scenery": [
+      {
+        "id": "canopy-mushrooms-ochre",
+        "name": "canopy mushrooms ochre",
+        "category": "foliage",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "vegetationClearance": 0.2,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

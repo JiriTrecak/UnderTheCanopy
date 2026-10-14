@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "id": "asset.terrain.warcraft-zsan",
+  "name": "Sand · Ruins",
+  "kind": "terrain-material",
+  "revision": 11,
+  "status": "published",
+  "tags": [
+    "warcraft",
+    "ground",
+    "Zsan"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin",
+      "sha256": "3285196cdf28ccf227b06172a9260d891cdb4a8b087226bdc4fdd8059e83419e",
+      "bytes": 957074
+    },
+    {
+      "role": "data",
+      "index": 2,
+      "format": "bin",
+      "sha256": "b14ba97c4be4d6baf8baf06a91fa04d207f957aecbed6f4c092e596c1f192dcd",
+      "bytes": 2307561
+    },
+    {
+      "role": "data",
+      "index": 3,
+      "format": "bin",
+      "sha256": "ddb406d52f3d6792683abbfcfe7a6ff9fab288f2cbd61cf23e49d4a896e0f96f",
+      "bytes": 4101
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "7f44768c97864fa4d6894ac8b9bc3d753451c5e790f4e77c2c211884ef0f1ce8",
+      "bytes": 1851461,
+      "colorSpace": "srgb"
+    },
+    {
+      "role": "normal",
+      "index": 1,
+      "format": "png",
+      "sha256": "4bfb44553c1601cf3a0e6932e5a38609e968097ed0321f84aad81782a0f92f61",
+      "bytes": 1349859,
+      "colorSpace": "none"
+    },
+    {
+      "role": "occlusion",
+      "index": 1,
+      "format": "png",
+      "sha256": "b04e44f8f7123ad9b6a95afeb8c4f75b63c29d58cd896e803f5a4ef282ef96e8",
+      "bytes": 5353,
+      "colorSpace": "none"
+    },
+    {
+      "role": "roughness",
+      "index": 1,
+      "format": "png",
+      "sha256": "5b62dd36063c3f18a940b80bd6c020e619b95dc13fb2bdf0730648def722303f",
+      "bytes": 701440,
+      "colorSpace": "none"
+    },
+    {
+      "role": "metalness",
+      "index": 1,
+      "format": "png",
+      "sha256": "a3acee77059e3c784c727f5bbee93338ed98fdc5e05ba57fcf31220a3511894d",
+      "bytes": 3150,
+      "colorSpace": "none"
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "69be9db5b393d92d8f8ff3639f8beba01d9e01d21114f142dbe5e8db850246cf",
+      "bytes": 55135,
+      "colorSpace": "srgb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "bin",
+      "sha256": "3b974423f0f71c9e90d629499c691a3952263886c94b890233457102f1658fa0",
+      "bytes": 1398256
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "import",
+    "licenseNote": "Imported from the local Warcraft III installation (definitive). Original sources retain their respective rights.",
+    "sourceHash": "53deaf41a16ba3a84a40c1b36008db2aac43407b1c7c1875b11d29ba6f5c73cb"
+  },
+  "terrain": {
+    "tileWorldSize": 4,
+    "reflectance": 1,
+    "shading": "physical",
+    "sourceIds": [
+      "Zsan"
+    ],
+    "atlas": {
+      "columns": 4,
+      "rows": 4,
+      "fullTiles": [
+        0,
+        15
+      ],
+      "corners": [
+        null,
+        8,
+        4,
+        12,
+        2,
+        10,
+        6,
+        14,
+        1,
+        9,
+        5,
+        13,
+        3,
+        11,
+        7,
+        15
+      ]
+    },
+    "albedo": {
+      "role": "albedo",
+      "index": 1
+    },
+    "normal": {
+      "role": "normal",
+      "index": 1
+    },
+    "occlusion": {
+      "role": "occlusion",
+      "index": 1
+    },
+    "roughness": {
+      "role": "roughness",
+      "index": 1
+    },
+    "metalness": {
+      "role": "metalness",
+      "index": 1
+    },
+    "thumbnail": {
+      "role": "image",
+      "index": 1
+    },
+    "runtime": {
+      "albedoRoughness": {
+        "role": "data",
+        "index": 1
+      },
+      "normalOpacity": {
+        "role": "data",
+        "index": 2
+      },
+      "occlusionMetalness": {
+        "role": "data",
+        "index": 3
+      }
+    }
+  }
+}

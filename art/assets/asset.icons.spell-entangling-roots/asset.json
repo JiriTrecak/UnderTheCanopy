@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "id": "asset.icons.spell-entangling-roots",
+  "name": "entangling roots spell icon",
+  "kind": "icon",
+  "revision": 4,
+  "status": "published",
+  "tags": [
+    "spell",
+    "command-icon"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "9a68a03ada3d01a8dfd64e094b733668d85b51410fb445e4db610532305f350e",
+      "bytes": 43436
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "ef3090fafcfc03ab3e755a6c5321c8249139e9484c87023351d7a4738336c585",
+      "bytes": 2225665
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "asset.icons.spell-entangling-roots",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.spell-entangling-roots"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original built-in imagegen. Prompt: Thick living emerald roots curling upward and trapping a dark boot, fresh leaves and green magical sparks against deep woodland shadows. Original square fantasy RTS command icon; hand-painted chunky shapes, high contrast; no text, frame or watermark."
+  }
+}

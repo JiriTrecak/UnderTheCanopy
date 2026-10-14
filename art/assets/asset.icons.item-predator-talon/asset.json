@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.item-predator-talon",
+  "name": "Predator Talon",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "f99f88b08625898b27b44b55275e11d08bafbf69a260a4585d79dcf4c8d1a8b5",
+      "bytes": 14133
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.item.predator-talon",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.item-predator-talon"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "f99f88b08625898b27b44b55275e11d08bafbf69a260a4585d79dcf4c8d1a8b5"
+  }
+}

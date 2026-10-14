@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "id": "asset.texture.woodland-reflection",
+  "name": "Original woodland reflection sky",
+  "kind": "texture",
+  "revision": 4,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin",
+      "sha256": "40619bba239bd9059f866bfe43c8ae56497ab0f44c0c1431e89ee1c94d455247",
+      "bytes": 25326
+    },
+    {
+      "role": "data",
+      "index": 2,
+      "format": "json",
+      "sha256": "0e292a1d25c4fd5df01e9eafb6fbddc45f3e12f7aae8273c89025bb35c427d7c",
+      "bytes": 165
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

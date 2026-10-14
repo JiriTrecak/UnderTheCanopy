@@ -35,3 +35,6 @@
 *.ttf     filter=lfs diff=lfs merge=lfs -text
 *.otf     filter=lfs diff=lfs merge=lfs -text
 *.woff2   filter=lfs diff=lfs merge=lfs -text
+
+# App icons stay in plain Git so CI can package without fetching LFS.
+game/icons/* -filter binary

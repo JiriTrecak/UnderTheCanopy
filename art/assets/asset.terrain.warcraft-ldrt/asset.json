@@ -1,0 +1,201 @@
+{
+  "version": 1,
+  "id": "asset.terrain.warcraft-ldrt",
+  "name": "Dirt · LordaeronSummer",
+  "kind": "terrain-material",
+  "revision": 11,
+  "status": "published",
+  "tags": [
+    "warcraft",
+    "ground",
+    "Ldrt"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin",
+      "sha256": "a9edfac0ff62398c80ac5565e86a261cea86a7fdb77c13df0b54fd36225fefd0",
+      "bytes": 999539
+    },
+    {
+      "role": "data",
+      "index": 2,
+      "format": "bin",
+      "sha256": "2136fabee3ad73c8098b6f498d46691128af427f3bc224714ffa33bc51269ece",
+      "bytes": 1372267
+    },
+    {
+      "role": "data",
+      "index": 3,
+      "format": "bin",
+      "sha256": "97ee5e115914647c6959262d62c07f47894396bcbbad6b159fbe652b57d4131b",
+      "bytes": 246393
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "541cb686d655b1ac013c53d83f66321838d2c9ee45b42b3ac51f6f4097cd5f6a",
+      "bytes": 1069879,
+      "colorSpace": "srgb"
+    },
+    {
+      "role": "normal",
+      "index": 1,
+      "format": "png",
+      "sha256": "fdfc98d180e8ab23ee579e495b19c06f9b4d5835fb4f7a3ebcf8b345ff6c5e6f",
+      "bytes": 2010244,
+      "colorSpace": "none"
+    },
+    {
+      "role": "occlusion",
+      "index": 1,
+      "format": "png",
+      "sha256": "be78e6ae1d5870b4d2d57bd82ff2ef402f1a016a58b60742461d229afe76ac64",
+      "bytes": 293370,
+      "colorSpace": "none"
+    },
+    {
+      "role": "roughness",
+      "index": 1,
+      "format": "png",
+      "sha256": "bd0724d67ba394243ec206c4032caf60d4bc1f6a6ba926e318a1f8582a84e029",
+      "bytes": 388546,
+      "colorSpace": "none"
+    },
+    {
+      "role": "metalness",
+      "index": 1,
+      "format": "png",
+      "sha256": "bb2e418aa6161528ea550aabcb885ed8ce6c8c6dc144e20dab289976c68a82b2",
+      "bytes": 6212,
+      "colorSpace": "none"
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "467d53300f6ea7d81e24bc11703348647412eab6a5b56efbc99e73224b4c03e2",
+      "bytes": 33350,
+      "colorSpace": "srgb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "bin",
+      "sha256": "792916ac71ff9bd207bba2a78764b28348ad5024501578c17bec49772c885f2c",
+      "bytes": 2796368
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "import",
+    "licenseNote": "Imported from the local Warcraft III installation (definitive). Original sources retain their respective rights.",
+    "sourceHash": "b7e2027fa08c63b7f292ac642643fba8e9a9224268f64111e68d24226944a99c"
+  },
+  "terrain": {
+    "tileWorldSize": 4,
+    "reflectance": 1,
+    "shading": "physical",
+    "sourceIds": [
+      "Ldrt"
+    ],
+    "atlas": {
+      "columns": 8,
+      "rows": 4,
+      "fullTiles": [
+        4,
+        5,
+        6,
+        7,
+        12,
+        13,
+        14,
+        15,
+        20,
+        21,
+        22,
+        23,
+        28,
+        29,
+        30,
+        31,
+        27,
+        0
+      ],
+      "corners": [
+        null,
+        16,
+        8,
+        24,
+        2,
+        18,
+        10,
+        26,
+        1,
+        17,
+        9,
+        25,
+        3,
+        19,
+        11,
+        27
+      ]
+    },
+    "albedo": {
+      "role": "albedo",
+      "index": 1
+    },
+    "normal": {
+      "role": "normal",
+      "index": 1
+    },
+    "occlusion": {
+      "role": "occlusion",
+      "index": 1
+    },
+    "roughness": {
+      "role": "roughness",
+      "index": 1
+    },
+    "metalness": {
+      "role": "metalness",
+      "index": 1
+    },
+    "thumbnail": {
+      "role": "image",
+      "index": 1
+    },
+    "runtime": {
+      "albedoRoughness": {
+        "role": "data",
+        "index": 1
+      },
+      "normalOpacity": {
+        "role": "data",
+        "index": 2
+      },
+      "occlusionMetalness": {
+        "role": "data",
+        "index": 3
+      }
+    }
+  }
+}

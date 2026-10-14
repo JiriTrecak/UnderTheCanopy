@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "id": "asset.custom.web-command-icon",
+  "name": "Web — silk grounding",
+  "kind": "icon",
+  "revision": 6,
+  "status": "published",
+  "tags": [
+    "spell-effects",
+    "generated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "0d0fb3169209b4759d6ae914c88cd021f1df6cc76cce4a3bd2174b511464d15d",
+      "bytes": 40598
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "99f861a0068d7fb903ce5615848875ef215efaf511b168a90e39506635b19a43",
+      "bytes": 1655375
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [
+      {
+        "id": "asset.custom.web-command-icon",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.custom.web-command-icon"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork generated with OpenAI GPT Image 2.5."
+  }
+}

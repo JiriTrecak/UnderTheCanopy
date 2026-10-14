@@ -1,0 +1,331 @@
+{
+  "schemaVersion": 1,
+  "id": "effect.rootbreaker.uproot",
+  "name": "Uproot · scattered roots and stone",
+  "description": "Seven smaller copies of the original roots-and-stone eruption, irregularly scattered through the aimed area with authored size and rotation variation. The arrangement is deterministic, not randomized per cast. Gameplay and cleanup remain owned by Uproot.",
+  "durationTicks": 100,
+  "loop": false,
+  "layers": [
+    {
+      "id": "eruption",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "offset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "anchor": "target",
+      "shape": "mesh",
+      "model": {
+        "asset": "asset.models.effects.rootbreaker-uproot",
+        "role": "geometry",
+        "index": 1,
+        "rotation": {
+          "x": 0,
+          "y": 18,
+          "z": 0
+        },
+        "animation": {
+          "clip": "erupt",
+          "speed": 1,
+          "loop": false
+        }
+      },
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 100,
+      "count": 1,
+      "size": 0.45,
+      "height": 0
+    },
+    {
+      "id": "eruption-2",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "offset": {
+        "x": -4.2,
+        "y": 0,
+        "z": -2.2
+      },
+      "anchor": "target",
+      "shape": "mesh",
+      "model": {
+        "asset": "asset.models.effects.rootbreaker-uproot",
+        "role": "geometry",
+        "index": 1,
+        "rotation": {
+          "x": 0,
+          "y": 83,
+          "z": 0
+        },
+        "animation": {
+          "clip": "erupt",
+          "speed": 1,
+          "loop": false
+        }
+      },
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 100,
+      "count": 1,
+      "size": 0.36,
+      "height": 0
+    },
+    {
+      "id": "eruption-3",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "offset": {
+        "x": 0.5,
+        "y": 0,
+        "z": -4.7
+      },
+      "anchor": "target",
+      "shape": "mesh",
+      "model": {
+        "asset": "asset.models.effects.rootbreaker-uproot",
+        "role": "geometry",
+        "index": 1,
+        "rotation": {
+          "x": 0,
+          "y": 157,
+          "z": 0
+        },
+        "animation": {
+          "clip": "erupt",
+          "speed": 1,
+          "loop": false
+        }
+      },
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 100,
+      "count": 1,
+      "size": 0.5,
+      "height": 0
+    },
+    {
+      "id": "eruption-4",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "offset": {
+        "x": 4.3,
+        "y": 0,
+        "z": -1.7
+      },
+      "anchor": "target",
+      "shape": "mesh",
+      "model": {
+        "asset": "asset.models.effects.rootbreaker-uproot",
+        "role": "geometry",
+        "index": 1,
+        "rotation": {
+          "x": 0,
+          "y": 231,
+          "z": 0
+        },
+        "animation": {
+          "clip": "erupt",
+          "speed": 1,
+          "loop": false
+        }
+      },
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 100,
+      "count": 1,
+      "size": 0.4,
+      "height": 0
+    },
+    {
+      "id": "eruption-5",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "offset": {
+        "x": 3.6,
+        "y": 0,
+        "z": 3.4
+      },
+      "anchor": "target",
+      "shape": "mesh",
+      "model": {
+        "asset": "asset.models.effects.rootbreaker-uproot",
+        "role": "geometry",
+        "index": 1,
+        "rotation": {
+          "x": 0,
+          "y": 312,
+          "z": 0
+        },
+        "animation": {
+          "clip": "erupt",
+          "speed": 1,
+          "loop": false
+        }
+      },
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 100,
+      "count": 1,
+      "size": 0.52,
+      "height": 0
+    },
+    {
+      "id": "eruption-6",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "offset": {
+        "x": -0.9,
+        "y": 0,
+        "z": 4.6
+      },
+      "anchor": "target",
+      "shape": "mesh",
+      "model": {
+        "asset": "asset.models.effects.rootbreaker-uproot",
+        "role": "geometry",
+        "index": 1,
+        "rotation": {
+          "x": 0,
+          "y": 46,
+          "z": 0
+        },
+        "animation": {
+          "clip": "erupt",
+          "speed": 1,
+          "loop": false
+        }
+      },
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 100,
+      "count": 1,
+      "size": 0.34,
+      "height": 0
+    },
+    {
+      "id": "eruption-7",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "offset": {
+        "x": -4.8,
+        "y": 0,
+        "z": 2.4
+      },
+      "anchor": "target",
+      "shape": "mesh",
+      "model": {
+        "asset": "asset.models.effects.rootbreaker-uproot",
+        "role": "geometry",
+        "index": 1,
+        "rotation": {
+          "x": 0,
+          "y": 192,
+          "z": 0
+        },
+        "animation": {
+          "clip": "erupt",
+          "speed": 1,
+          "loop": false
+        }
+      },
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 100,
+      "count": 1,
+      "size": 0.43,
+      "height": 0
+    },
+    {
+      "id": "earth-cloud",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 36,
+        "rate": 16,
+        "speed": 3,
+        "speedVariation": 0.35,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 65,
+        "gravity": 1,
+        "drag": 0.6,
+        "spawnRadius": 6,
+        "startSize": 2.2,
+        "endSize": 5.5,
+        "spin": 0.4,
+        "fadeIn": 0.03,
+        "fadeOut": 0.85
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#987455",
+      "accent": "#ccb493",
+      "durationTicks": 36,
+      "count": 16,
+      "size": 0.5,
+      "height": 0.1,
+      "blend": "normal",
+      "intensity": 0.6,
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "fracture",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "ring",
+      "colour": "#d6a261",
+      "accent": "#f4d1a0",
+      "durationTicks": 18,
+      "count": 1,
+      "size": 8,
+      "height": 0.08,
+      "intensity": 0.7
+    },
+    {
+      "id": "earth-break",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "sound",
+      "sound": {
+        "asset": "asset.audio.spells.frost-impact",
+        "role": "audio",
+        "index": 1,
+        "volume": 0.8,
+        "pitch": 0.45,
+        "loop": false,
+        "fadeInTicks": 0,
+        "fadeOutTicks": 8,
+        "referenceDistance": 12,
+        "maxDistance": 80
+      },
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 50,
+      "count": 1,
+      "size": 1,
+      "height": 0
+    }
+  ]
+}

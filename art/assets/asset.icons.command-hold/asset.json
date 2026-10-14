@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.command-hold",
+  "name": "Hold",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "ants-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "a3ab4eeab947b87418400debaf34a3666e81762b6ce2e3fe8b09c8fdaa50146f",
+      "bytes": 36855
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.action.hold",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.command-hold"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "a3ab4eeab947b87418400debaf34a3666e81762b6ce2e3fe8b09c8fdaa50146f"
+  }
+}

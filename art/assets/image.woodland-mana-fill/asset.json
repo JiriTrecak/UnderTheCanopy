@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "id": "image.woodland-mana-fill",
+  "name": "Woodland Mana Fill",
+  "kind": "interface",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "interface",
+    "woodland-interface"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "2c725158fe5d0a9dfca8fd979b0d347d25804e2f61c4fddf69589ebdad3ae1dd",
+      "bytes": 193332
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "81abfcdd9e6167fc906c9f5063d798413375e81942d575b0d540fb2d8ef6bc76",
+      "bytes": 1082539
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "interface-fill",
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "81abfcdd9e6167fc906c9f5063d798413375e81942d575b0d540fb2d8ef6bc76"
+  }
+}

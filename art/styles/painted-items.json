@@ -1,0 +1,10 @@
+{
+  "id": "painted-items",
+  "name": "Painted forest treasures",
+  "description": "Rich painterly fantasy RTS inventory icon. Natural amber, bark, aged metal and emerald foliage. Strong readable silhouette, dramatic warm light, dark unobtrusive background. Small handcrafted object, clear at 64px.",
+  "references": [
+    "asset.icons.item-amber-carapace",
+    "asset.icons.item-amber-hourglass",
+    "asset.icons.item-ancient-heartwood"
+  ]
+}

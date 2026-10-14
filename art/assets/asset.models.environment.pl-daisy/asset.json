@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "id": "asset.models.environment.pl-daisy",
+  "name": "daisy",
+  "kind": "foliage",
+  "revision": 15,
+  "status": "published",
+  "tags": [
+    "pl-pack",
+    "woodland",
+    "daisy"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "219fc115c9cd5c0f3e559f2451773f930637e090a43fd86ad7ed57f33918ff74",
+      "bytes": 1000395
+    },
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "4ae2149e2678d6e8b8f562a8c43cb49ced8b9b2a41a742fdc42332d4af092cfc",
+      "bytes": 1012848
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "66602ff138abad4639ce9067fa10ccb53cc90b93b9edb2155f156f32793df38b",
+      "bytes": 15333992
+    }
+  ],
+  "usesGeometry": true,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "model",
+    "render": [],
+    "scenery": [
+      {
+        "id": "pl-daisy",
+        "name": "daisy",
+        "category": "foliage",
+        "type": "prop",
+        "geometry": {
+          "role": "geometry",
+          "index": 1
+        }
+      }
+    ]
+  },
+  "capabilities": {
+    "wind": {
+      "mode": "grass",
+      "strength": 0.1,
+      "speed": 0.2,
+      "stiffness": 0.8
+    },
+    "groundContact": {
+      "mode": "terrain"
+    }
+  },
+  "provenance": {
+    "method": "import",
+    "licenseNote": "Adapted from the purchased PL Stylized Fantasy Foliage Environment Assets Pack (licensed for this project); mesh rescaled and re-pivoted, albedo downsized."
+  }
+}

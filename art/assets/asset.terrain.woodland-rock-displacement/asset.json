@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "id": "asset.terrain.woodland-rock-displacement",
+  "name": "Original woodland rock displacement",
+  "kind": "terrain-material",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin",
+      "sha256": "8282017221e84d341a1c06f3eab3530651309af42f43d331b009bf40a5c8b01d",
+      "bytes": 1098250
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

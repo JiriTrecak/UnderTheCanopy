@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.command-pause",
+  "name": "Pause",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "ants-v1",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "56e04418d436d856fb8e289a232def943d8215ae932f355651fc41895183025c",
+      "bytes": 36485
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.action.pause",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.command-pause"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "56e04418d436d856fb8e289a232def943d8215ae932f355651fc41895183025c"
+  }
+}

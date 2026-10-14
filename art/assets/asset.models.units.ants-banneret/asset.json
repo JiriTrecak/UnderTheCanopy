@@ -1,0 +1,199 @@
+{
+  "version": 1,
+  "id": "asset.models.units.ants-banneret",
+  "name": "Ant Banneret",
+  "kind": "unit",
+  "revision": 65,
+  "status": "published",
+  "tags": [
+    "ants",
+    "banneret",
+    "tripo",
+    "skinned"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "sha256": "c1f10739493e52fb1d123df2e1e59e7c3f2c8ebaf731a6e530daadb214343999",
+      "bytes": 2357547
+    },
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb",
+      "sha256": "023492c71a6a6c3f4143ea0fc2af6b0a508014bab5417c8adc34a3b0ba5289e0",
+      "bytes": 3610952
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "911b97e0a986c59dd2e5f032045b299b6fac7c0f541e3da68ee978d48329e4d8",
+      "bytes": 11843
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend",
+      "sha256": "23a377078c92c7d33a687c9fac71fb93fba34f08e1557183d0d485c78b170e99",
+      "bytes": 35915738
+    },
+    {
+      "role": "team_mask",
+      "index": 1,
+      "format": "png",
+      "sha256": "41ccfc0b5c801bdfb70a137203cd9073c0d74fa6baab35970d1db50a3eb49923",
+      "bytes": 105645
+    }
+  ],
+  "usesGeometry": true,
+  "exportSettings": {
+    "textureSize": 1024
+  },
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "faction": "ants",
+    "profile": "base",
+    "render": [
+      {
+        "id": "asset.ants.banneret",
+        "character": "base",
+        "scale": 2,
+        "healthHeight": 2.15,
+        "castContact": 0.325,
+        "geometry": {
+          "role": "geometry",
+          "index": 1,
+          "asset": "asset.models.units.ants-banneret"
+        }
+      },
+      {
+        "id": "icon.ants.banneret",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.models.units.ants-banneret"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_TeamColor"
+      ],
+      "mask": {
+        "role": "team_mask",
+        "index": 1
+      }
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "walk",
+        "clip": "walk",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "run",
+        "clip": "run",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "cast",
+        "clip": "cast",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "attack",
+        "clip": "attack",
+        "loop": false,
+        "events": [
+          {
+            "name": "release",
+            "time": 0.5
+          }
+        ]
+      },
+      {
+        "semantic": "hit",
+        "clip": "hit",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "death",
+        "clip": "death",
+        "loop": false,
+        "events": []
+      }
+    ],
+    "sockets": [
+      {
+        "name": "handL",
+        "node": "socket_handL",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "handR",
+        "node": "socket_handR",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "projectile",
+        "node": "socket_projectile",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "cast",
+        "node": "socket_cast",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original generated artwork for Under the Canopy."
+  }
+}

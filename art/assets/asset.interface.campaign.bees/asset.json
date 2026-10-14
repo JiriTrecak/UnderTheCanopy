@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "asset.interface.campaign.bees",
+  "name": "bees campaign crest",
+  "kind": "interface",
+  "revision": 4,
+  "status": "published",
+  "tags": [
+    "campaign",
+    "original"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "webp",
+      "sha256": "1bca845a8ba56a3f34f0dd3ac36d438d83687841f112518b70cfd1597d999337",
+      "bytes": 238308
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "interface-image",
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original Under the Canopy faction crest, generated with built-in ImageGen."
+  }
+}

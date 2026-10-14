@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "presentation.ants.amber-sever",
+  "icon": "asset.icons.spell-dispel-magic",
+  "animations": {
+    "prepare": "cast",
+    "release": "cast",
+    "recover": "cast",
+    "fallback": "idle"
+  },
+  "effects": [
+    {
+      "id": "delivery",
+      "effect": "effect.ants.amber-flight",
+      "event": "projectile",
+      "anchor": "target",
+      "lifetime": "finite",
+      "durationFrom": "delivery"
+    },
+    {
+      "id": "restoration",
+      "effect": "effect.ants.amber-sever",
+      "event": "dispelled",
+      "anchor": "target",
+      "lifetime": "finite"
+    }
+  ]
+}

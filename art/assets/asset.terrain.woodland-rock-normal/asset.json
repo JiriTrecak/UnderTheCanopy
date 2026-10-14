@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "id": "asset.terrain.woodland-rock-normal",
+  "name": "woodland rock · normal/height",
+  "kind": "terrain-material",
+  "revision": 3,
+  "status": "published",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin",
+      "sha256": "d8b37f5b88dc967e62a69225e0e21a31f7f830f75976b50ac804a54fa19452c6",
+      "bytes": 1200795
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original artwork created for Under the Canopy."
+  }
+}

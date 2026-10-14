@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "id": "asset.effects.seismic-crescent",
+  "name": "seismic crescent effect texture",
+  "kind": "texture",
+  "revision": 4,
+  "status": "published",
+  "tags": [
+    "spell",
+    "effect"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "2e0e90ad3bf99ee07b47a58fb1cce18077edb5c416b050a659d62598554a5341",
+      "bytes": 61262
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png",
+      "sha256": "8da01e3bd2a9b8923aba8d3d671c76fb5f6541b652b50480512d098111978d70",
+      "bytes": 2151549
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "generated",
+    "licenseNote": "Original built-in imagegen. Prompt: A single curved golden shockwave crescent, seen from above, bright hot amber leading edge on right and brown-gold dust trailing left, several large stylized stone fragments swept along. Transparent everywhere outside the crescent, no terrain floor, no background, no text. A bold polished fantasy RTS particle sprite. Original square fantasy RTS command icon; hand-painted chunky shapes, high contrast; no text, frame or watermark."
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "id": "recipe.river.meltwater.water",
+  "name": "Quiet meltwater water",
+  "kind": "water-profile",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "authoring",
+    "frozen-forest"
+  ],
+  "resources": [],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "water": {
+    "shallowColor": "#83aaa9",
+    "deepColor": "#254957",
+    "clarity": 3.5,
+    "rippleScale": 0.15,
+    "rippleStrength": 0.055,
+    "foamStrength": 0.15,
+    "reflectionStrength": 0.45,
+    "causticStrength": 0.3,
+    "cloudStrength": 0.03,
+    "flowSpeed": 0.25
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Designed from supplied prebuild class values and measured Eldenvale patterns. Original brush algorithms were not included."
+  }
+}

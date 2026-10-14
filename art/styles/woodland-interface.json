@@ -1,0 +1,10 @@
+{
+  "id": "woodland-interface",
+  "name": "Woodland interface",
+  "description": "Handcrafted ant-colony interface: detailed gnarled twigs, small leaves, amber bindings, subtly weathered wood. Restrained decoration so game information stays dominant.",
+  "references": [
+    "asset.interface.woodland.map-frame",
+    "asset.interface.woodland.satchel",
+    "asset.interface.woodland.selection"
+  ]
+}

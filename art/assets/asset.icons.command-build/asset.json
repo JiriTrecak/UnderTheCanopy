@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "id": "asset.icons.command-build",
+  "name": "Build",
+  "kind": "icon",
+  "revision": 1,
+  "status": "published",
+  "tags": [
+    "ants-v1",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "sha256": "2f7157b6afe19a9e12e8124362de28850d18ce523035df48a1291268398282db",
+      "bytes": 32460
+    }
+  ],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "profile": "icon",
+    "render": [
+      {
+        "id": "icon.action.build",
+        "image": {
+          "role": "image",
+          "index": 1,
+          "asset": "asset.icons.command-build"
+        }
+      }
+    ],
+    "scenery": []
+  },
+  "capabilities": {},
+  "provenance": {
+    "method": "migration",
+    "sourceHash": "2f7157b6afe19a9e12e8124362de28850d18ce523035df48a1291268398282db"
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "id": "recipe.river.glacial",
+  "name": "Fast glacial stream",
+  "kind": "landscape-recipe",
+  "revision": 3,
+  "status": "published",
+  "tags": [
+    "authoring",
+    "frozen-forest",
+    "original"
+  ],
+  "resources": [],
+  "usesGeometry": false,
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "bindings": {
+    "render": [],
+    "scenery": []
+  },
+  "capabilities": {},
+  "recipe": {
+    "type": "river",
+    "water": "recipe.river.glacial.water",
+    "width": 12,
+    "depth": 3,
+    "bankWidth": 4,
+    "flow": 1.8,
+    "maxUphillGrade": 0,
+    "details": {
+      "banks": {
+        "density": 1,
+        "pattern": "patches",
+        "species": [
+          {
+            "asset": "asset.models.environment.frost-grass",
+            "weight": 2
+          },
+          {
+            "asset": "asset.models.environment.frost-snow-grass",
+            "weight": 3
+          }
+        ],
+        "spacing": 0.8,
+        "probability": 0.45,
+        "jitter": 0.8,
+        "scaleMin": 0.65,
+        "scaleMax": 1.1,
+        "maxSlope": 1.5,
+        "waterClearance": 0.2,
+        "objectClearance": 0.6,
+        "edgeFade": 1,
+        "minSpacing": 0.35,
+        "patchiness": {
+          "scale": 5,
+          "strength": 0.65
+        }
+      }
+    }
+  },
+  "provenance": {
+    "method": "authored",
+    "licenseNote": "Original deterministic layer recipe using original woodland asset packages."
+  }
+}
