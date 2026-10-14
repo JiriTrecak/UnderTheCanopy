@@ -106,3 +106,12 @@ Jobs (deliver, construct, repair, harvest, plant with walk, wait, work, fall and
 - **Supply messages name the player's own supply building**: the cheapest constructable building with `supplyProvided` in the player's race roster. The old messages said "Build a Mound" to every race.
 - Every order change goes through `economy::interrupt` (via `orders::issue`), so a carrier finishes its delivery before a move, and workplaces lose their staff, as in the old game. Combat deaths release jobs, employment and paid tasks through `economy::work::release_references`; a fallen hero is revived in place.
 - A decided skirmish stands still: the tick advances, nothing else runs, and commands are refused with "Match has ended".
+
+## D24. Renderer decisions for M3 (2026-10-14)
+
+- Every recommendation in [renderer §7](renderer.md#7-open-decisions) is accepted: one tonemapper plus a per-biome grade, MSAA 4×, one view-fitted PCF shadow map, no volumetrics or depth of field for now, the listed legacy shading paths cut, 4 blended terrain layers plus cliffs, normal-mapped rocks, authored effects converted by the cooker (their files unchanged), baked animation, live 3D portrait, presentation events from the simulation.
+- **Maps up to 1024×1024**; larger maps are refused. This sets the terrain level-of-detail scheme and memory budget.
+- **Interpolation delay accepted**: the picture trails the simulation by one 25 ms tick for smooth motion at any refresh rate.
+- **No seasons, ever.** Biomes are the only environment configuration; a "winter forest" is simply another biome, not a season of one.
+- **Lighting**: M3 matches the old game's current look inside the new, structurally clean pipeline; a separate graphics pass retunes it later.
+- **Review**: each visual step comes with side-by-side captures (old game vs new renderer, same map, camera and units) for Jiri to judge.

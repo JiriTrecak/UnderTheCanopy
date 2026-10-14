@@ -41,13 +41,16 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use std::collections::BTreeMap;
 
-/// Economy records outside entities: active jobs (by id) and each owner's completed
-/// research (sorted).
+/// Economy records outside entities: active jobs (by id), each owner's completed
+/// research (sorted), and damaged buildings no idle worker could reach, with the tick
+/// before which nobody tries again.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EconomyState {
     pub jobs: Jobs,
     pub research: BTreeMap<Owner, Vec<Id>>,
+    #[serde(default)]
+    pub repair_retry: BTreeMap<EntityId, u32>,
 }
 
 impl EconomyState {

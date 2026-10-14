@@ -564,9 +564,17 @@ pub fn advance_repair(ctx: &mut Ctx, id: u32) {
     }
 }
 
+/// Ticks before idle workers look again for a way to a damaged building none of them
+/// could reach. The old game retried every tick, each worker running a full path search.
+pub const REPAIR_RETRY_TICKS: u32 = 40;
+
 /// Step 4: each damaged completed building without a repairer gets the first idle worker
-/// that can reach it (old repair loop of `assign`).
+/// that can reach it (old repair loop of `assign`). A building nobody could reach waits
+/// [`REPAIR_RETRY_TICKS`] before the next attempt.
 pub fn assign_repairs(ctx: &mut Ctx, buildings: &[EntityId]) {
+    let tick = ctx.state.tick;
+    let retry = &mut ctx.state.economy.repair_retry;
+    retry.retain(|b, until| *until > tick && buildings.contains(b));
     for &b in buildings {
         let Some(e) = ctx.state.entities.get(b) else {
             continue;
@@ -582,15 +590,28 @@ pub fn assign_repairs(ctx: &mut Ctx, buildings: &[EntityId]) {
                 (Some(hp), Some(max)) => hp < max,
                 _ => false,
             };
-        if !damaged || ctx.state.economy.jobs.occupied(JobKind::Repair, b) {
+        if !damaged
+            || ctx.state.economy.jobs.occupied(JobKind::Repair, b)
+            || ctx.state.economy.repair_retry.contains_key(&b)
+        {
             continue;
         }
         let owner = e.owner;
+        let mut tried = false;
+        let mut assigned = false;
         for w in workers(ctx, owner, true) {
+            tried = true;
             if sites::work_point(ctx, b, w).is_some() {
                 jobs::create(ctx, JobKind::Repair, w, b, Spec::default());
+                assigned = true;
                 break;
             }
+        }
+        if tried && !assigned {
+            ctx.state
+                .economy
+                .repair_retry
+                .insert(b, tick + REPAIR_RETRY_TICKS);
         }
     }
 }
