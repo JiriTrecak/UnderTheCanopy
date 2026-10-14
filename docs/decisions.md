@@ -167,3 +167,9 @@ AI players (`canopy_sim::ai`) follow the old `PlayerAI` layer by layer: briefing
   4. Archer spacing compared the weapon's remaining cooldown with the match tick, so it never happened after the first seconds; ranged units now step back after a shot when a melee enemy is close.
   5. Spell scoring for the player AI follows the whole release program as it would run: every operation chooses its recipients from the units as the earlier operations left them (converted, killed, moved). The old scorer did so only for operations with a query; the others chose from the units as they were when the cast began. Enemies' statuses (public) now count in scoring; the old boundary dropped them, so the AI re-applied statuses enemies already had and ignored their immunities. Autocast and camp casting keep the old rule (D25).
   6. Sorts without a total order now break ties by id (then coordinates); an empty army composition no longer yields a NaN army target.
+
+## D28. AI gameplay fixes kept (2026-10-15, decided while Jiri was away — review)
+
+The five AI fixes from the M2.8 port (D27) stay: ranged units step back after a shot when melee is close, trees seen at their real scale, recommended workers per deposit respected, no gathering orders for unseen resources, spells judged by their whole program. They make the AI play as the old code intended.
+
+From here until Jiri is back, decisions he would normally make are taken by the lead with the best available judgement and recorded here marked "review".
