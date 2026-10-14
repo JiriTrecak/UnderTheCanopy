@@ -11,6 +11,7 @@ pub mod math;
 pub mod setup;
 pub mod spawn;
 pub mod state;
+pub mod terrain;
 pub mod view;
 pub mod world;
 
