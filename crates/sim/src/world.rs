@@ -4,6 +4,8 @@ use crate::{
     action::Action,
     catalog::Catalog,
     fingerprint, mission,
+    movement::Motion,
+    orders,
     setup::MatchSetup,
     spawn,
     state::{FactKind, State},
@@ -51,6 +53,8 @@ pub struct World {
     mission: Option<mission::Runtime>,
     /// Derived sight coverage; rebuilt on restore.
     vision: Vision,
+    /// Derived spatial model and movement scratch; rebuilt on restore, never saved.
+    motion: Motion,
 }
 
 impl World {
@@ -79,6 +83,13 @@ impl World {
             map.exploration(),
             &SIGHT,
         );
+        let motion = Motion::new(
+            terrain.clone(),
+            &catalog,
+            &state,
+            crate::teams::Teams::new(&setup),
+            appearance_scales(map, &terrain),
+        );
         Ok(Self {
             catalog,
             terrain,
@@ -87,6 +98,7 @@ impl World {
             pending: Vec::new(),
             mission,
             vision,
+            motion,
         })
     }
 
@@ -111,6 +123,16 @@ impl World {
 
     pub fn setup(&self) -> &MatchSetup {
         &self.setup
+    }
+
+    /// The spatial model: occupancy, bodies, navigation and route queries.
+    pub fn spatial(&self) -> &crate::spatial::Spatial {
+        &self.motion.spatial
+    }
+
+    /// The spatial model for path queries, which only warm its caches.
+    pub fn spatial_mut(&mut self) -> &mut crate::spatial::Spatial {
+        &mut self.motion.spatial
     }
 
     /// The campaign mission, on mission maps.
@@ -142,9 +164,24 @@ impl World {
             self.observe();
             return;
         }
+        // Steps 4–5: order advance, then order planning, separation, idle motion and
+        // movement.
+        self.motion.spatial.sync_static(&self.state);
+        orders::plan::advance(&mut self.motion, &mut self.state);
+        let perception = orders::plan::Perception {
+            vision: &self.vision,
+            catalog: &self.catalog,
+            terrain: &self.terrain,
+            rules: &SIGHT,
+        };
+        orders::plan::plan(&mut self.motion, &mut self.state, perception);
+        self.motion.separate(&mut self.state);
+        self.motion.idle(&mut self.state);
+        self.motion.move_units(&mut self.state);
         // Step 10: the mission script.
         if let Some(mission) = &mut self.mission {
             mission.tick(&mut self.state, &self.catalog);
+            self.motion.spatial.sync_static(&self.state);
         }
         // Step 11: fog and knowledge.
         self.observe();
@@ -171,12 +208,17 @@ impl World {
         }
     }
 
-    fn apply(&mut self, _owner: Owner, action: &Action) -> Result<(), String> {
+    fn apply(&mut self, owner: Owner, action: &Action) -> Result<(), String> {
         if let Some(reason) = mission::blocks_commands(&self.state) {
             return Err(reason.into());
         }
         match action {
             Action::Noop | Action::Ping => Ok(()),
+            _ if orders::command::handles(action) => {
+                self.motion.spatial.sync_static(&self.state);
+                orders::command::apply(&mut self.state, &mut self.motion.spatial, owner, action)
+                    .map(|_| ())
+            }
             _ => Err("not available yet".into()),
         }
     }
@@ -256,6 +298,13 @@ impl World {
         let mut state = save.state;
         let vision = Vision::restore(&mut state, &catalog, &terrain, &save.setup, &SIGHT)
             .map_err(SetupError)?;
+        let motion = Motion::new(
+            terrain.clone(),
+            &catalog,
+            &state,
+            crate::teams::Teams::new(&save.setup),
+            appearance_scales(map, &terrain),
+        );
         Ok(Self {
             catalog,
             terrain,
@@ -264,12 +313,23 @@ impl World {
             pending: save.pending,
             mission,
             vision,
+            motion,
         })
     }
 }
 
 fn compile(map: &UtcMap, catalog: &Catalog) -> Result<Terrain, SetupError> {
     Terrain::compile(map, &catalog.content).map_err(|e| SetupError(e.to_string()))
+}
+
+/// Appearance scales of map and scenery placements: resource collision discs scale with
+/// them.
+fn appearance_scales(map: &UtcMap, terrain: &Terrain) -> std::collections::BTreeMap<String, f64> {
+    map.entities
+        .iter()
+        .chain(&terrain.scene().resources)
+        .filter_map(|p| Some((p.id.clone(), p.appearance.as_ref()?.scale?)))
+        .collect()
 }
 
 fn mission_runtime(map: &UtcMap) -> Result<Option<mission::Runtime>, SetupError> {

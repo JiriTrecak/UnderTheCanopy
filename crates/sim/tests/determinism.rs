@@ -28,6 +28,43 @@ fn setup(players: usize) -> MatchSetup {
     }
 }
 
+/// Orders every player's units towards the map centre, so movement takes part.
+fn march(world: &mut World) {
+    let centre = world.terrain().size() / 2;
+    for slot in world.setup().slots.clone() {
+        let owner = canopy_content::placement::Owner::Player(slot.player);
+        let actors: Vec<u32> = world
+            .state()
+            .entities
+            .iter()
+            .filter(|e| e.owner == owner && e.unit.is_some())
+            .map(|e| e.id.0)
+            .take(canopy_sim::action::MAX_ACTORS)
+            .collect();
+        if actors.is_empty() {
+            continue;
+        }
+        let action = canopy_sim::Action::Move {
+            actors,
+            destination: canopy_sim::action::CellPoint {
+                x: centre,
+                y: centre,
+                surface: None,
+            },
+            attack_move: None,
+            append: None,
+        };
+        world
+            .enqueue(canopy_sim::Queued {
+                tick: 0,
+                player: slot.player,
+                seq: 0,
+                action,
+            })
+            .unwrap();
+    }
+}
+
 /// Fingerprints of every tick.
 fn run(world: &mut World, ticks: u32) -> Vec<u32> {
     (0..ticks)
@@ -47,8 +84,10 @@ fn shipped_maps_simulate_deterministically() {
         let map = file.load().unwrap_or_else(|errors| panic!("{errors}"));
         let setup = setup(map.player_starts.len());
         let start = || {
-            World::new(content.clone(), &map, setup.clone())
-                .unwrap_or_else(|e| panic!("{}: {e}", file.id))
+            let mut world = World::new(content.clone(), &map, setup.clone())
+                .unwrap_or_else(|e| panic!("{}: {e}", file.id));
+            march(&mut world);
+            world
         };
 
         let mut first = start();
