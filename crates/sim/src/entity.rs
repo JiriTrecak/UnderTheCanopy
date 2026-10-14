@@ -1,6 +1,6 @@
 //! Entities: every unit, building, item and resource, in one table ordered by id.
 
-use crate::catalog::Def;
+use crate::{catalog::Def, orders::Order};
 use canopy_content::{Id, placement::Owner};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -55,10 +55,92 @@ pub struct LooseItem {
     pub quantity: u32,
 }
 
-/// Parts present only on mobile units.
+/// A route leg in progress: from a fixed point towards a route node.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Segment {
+    pub from: Milli,
+    pub to: u32,
+    /// Milli-cells, rounded up.
+    pub length: u32,
+    pub progress: u32,
+}
+
+/// A body that agreed to step aside for a stalled leader.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Yielding {
+    pub leader: EntityId,
+    /// The tick the wait ends at the latest.
+    pub until: u32,
+}
+
+/// A bounded local escape around nearby bodies that rejoins the route at `waypoint`.
+#[skip_serializing_none]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Detour {
+    pub goal: u32,
+    pub waypoint: u32,
+    pub yielding: Option<Yielding>,
+    /// Fixed points on the unit's own floor.
+    pub points: Vec<Milli>,
+}
+
+/// Idle strolling around a home cell.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Idle {
+    pub home: Place,
+    pub next_tick: u32,
+    pub walking: bool,
+}
+
+/// A cell, optionally on a walk surface (bridge deck), as orders name it.
+#[skip_serializing_none]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Place {
+    pub x: i32,
+    pub y: i32,
+    pub surface: Option<String>,
+}
+
+impl Place {
+    pub fn new(x: i32, y: i32) -> Self {
+        Self { x, y, surface: None }
+    }
+}
+
+/// Parts present only on mobile units. Navigation fields refer to navigation nodes: ground
+/// cells `y · size + x`, then deck nodes on maps with bridges.
+#[skip_serializing_none]
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Unit {}
+pub struct Unit {
+    pub order: Option<Order>,
+    /// Orders to run after the current one; at most [`crate::orders::MAX_QUEUED_ORDERS`].
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub order_queue: Vec<Order>,
+    /// Waypoint nodes still to reach.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub route: Vec<u32>,
+    /// Where the current route ends.
+    pub goal: Option<u32>,
+    pub segment: Option<Segment>,
+    pub detour: Option<Detour>,
+    pub last_moved_tick: Option<u32>,
+    /// No blocked-route recovery before this tick.
+    #[serde(default)]
+    pub retry_at: u32,
+    pub idle: Option<Idle>,
+    /// The entity it faces and engages (combat).
+    pub target: Option<EntityId>,
+    /// Waiting to be placed back on the map near this cell.
+    pub release: Option<Place>,
+    /// Held inside another entity (a training building, a cage).
+    pub contained: Option<EntityId>,
+}
 
 #[skip_serializing_none]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
