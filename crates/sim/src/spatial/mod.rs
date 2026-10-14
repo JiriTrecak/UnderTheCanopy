@@ -226,7 +226,28 @@ impl Spatial {
         };
         this.sync_static(state);
         this.sync_bodies(state);
+        this.prepare_meshes(state);
         this
+    }
+
+    /// Builds the navigation meshes of the smallest ground body and of every ground unit
+    /// present, so the first long order does not stall (the old `rebuild` did the same).
+    fn prepare_meshes(&mut self, state: &State) {
+        if self.layered() {
+            return;
+        }
+        let mut bodies = vec![self.profiles.navigation_body];
+        for e in state.entities.iter() {
+            if e.unit.is_some() && e.hp.is_none_or(|hp| hp > 0) {
+                bodies.push(self.body_of(e));
+            }
+        }
+        bodies.retain(|b| !b.air && b.radius <= 16.0);
+        bodies.sort_by(|a, b| a.radius.total_cmp(&b.radius));
+        bodies.dedup_by_key(|b| b.radius_milli());
+        for body in bodies {
+            self.mesh(&body);
+        }
     }
 
     pub fn size(&self) -> u32 {

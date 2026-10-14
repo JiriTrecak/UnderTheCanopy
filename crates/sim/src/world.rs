@@ -112,6 +112,11 @@ impl World {
         &self.motion.spatial
     }
 
+    /// The spatial model for path queries, which only warm its caches.
+    pub fn spatial_mut(&mut self) -> &mut crate::spatial::Spatial {
+        &mut self.motion.spatial
+    }
+
     /// The campaign mission, on mission maps.
     pub fn mission(&self) -> Option<&mission::Runtime> {
         self.mission.as_ref()

@@ -285,12 +285,18 @@ impl Spatial {
 
     /// A long route along the navigation mesh, rasterised and checked cell by cell
     /// against the real body sweep, then compacted (old `meshPath`).
-    fn mesh_path(&mut self, start: u32, goal: u32, max_cost: i64, body: &Body) -> Option<Vec<u32>> {
+    /// Ensures the navigation mesh of a body exists.
+    pub(super) fn mesh(&mut self, body: &Body) {
         let radius = body.radius_milli();
         if !self.meshes.contains_key(&radius) {
             let mesh = GroundMesh::new(self.mesh_input(), body.radius);
             self.meshes.insert(radius, mesh);
         }
+    }
+
+    fn mesh_path(&mut self, start: u32, goal: u32, max_cost: i64, body: &Body) -> Option<Vec<u32>> {
+        let radius = body.radius_milli();
+        self.mesh(body);
         let mut mesh = self.meshes.remove(&radius).expect("mesh");
         mesh.prepare(self.mesh_input());
         let (a, b) = (self.spot(start), self.spot(goal));
@@ -376,6 +382,21 @@ impl Spatial {
             compact.push(cell);
         }
         Some((compact, repaired))
+    }
+
+    #[doc(hidden)]
+    pub fn debug_mesh(&mut self, start: u32, goal: u32, body: &Body) -> (Option<Vec<(f64, f64)>>, Option<Vec<u32>>) {
+        let radius = body.radius_milli();
+        if !self.meshes.contains_key(&radius) {
+            let mesh = GroundMesh::new(self.mesh_input(), body.radius);
+            self.meshes.insert(radius, mesh);
+        }
+        let mut mesh = self.meshes.remove(&radius).expect("mesh");
+        mesh.prepare(self.mesh_input());
+        let (a, b) = (self.spot(start), self.spot(goal));
+        let raw = mesh.path((f64::from(a.x), f64::from(a.y)), (f64::from(b.x), f64::from(b.y)));
+        self.meshes.insert(radius, mesh);
+        (raw, self.mesh_path(start, goal, i64::MAX, body))
     }
 
     /// Whether other units' routes cross this one head-on nearby (old `opposingTraffic`):
@@ -510,7 +531,8 @@ impl Spatial {
             let corridors = self.corridors.as_ref().expect("corridors");
             corridors.find(key, from, target, goal, |n| self.point(n), |a, b| self.clear_segment(a, b, None, &body))
         });
-        if shared.is_some() {
+        let reused = shared.is_some();
+        if reused {
             self.stats.shared_corridors += 1;
         }
         let asker = Asker {
@@ -573,6 +595,7 @@ impl Spatial {
             waypoints.push(goal);
         }
         if let Some(key) = corridor_key
+            && !reused
             && let Some(corridors) = self.corridors.as_mut()
         {
             corridors.remember(key, from, target, &waypoints);
