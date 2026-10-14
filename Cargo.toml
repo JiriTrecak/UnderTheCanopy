@@ -13,6 +13,7 @@ publish = false
 anyhow = "1"
 directories = "6"
 libm = "0.2"
+mlua = { version = "0.12", features = ["lua54", "vendored"] }
 pollster = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

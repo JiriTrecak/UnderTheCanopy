@@ -69,7 +69,7 @@ fn shipped_maps_simulate_deterministically() {
         let mut resumed_fingerprints = run(&mut halfway, TICKS / 2);
         let save = serde_json::to_string(&halfway.save()).unwrap();
         let mut resumed =
-            World::restore(content.clone(), serde_json::from_str(&save).unwrap()).unwrap();
+            World::restore(content.clone(), &map, serde_json::from_str(&save).unwrap()).unwrap();
         resumed_fingerprints.extend(run(&mut resumed, TICKS / 2));
         assert_eq!(
             resumed_fingerprints, reference,
