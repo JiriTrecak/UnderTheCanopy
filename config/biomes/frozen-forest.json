@@ -105,7 +105,21 @@
     "floorColor": "#d1dbdb",
     "hazeColor": "#c4d9e4",
     "hazeStart": 170,
-    "hazeEnd": 850
+    "hazeEnd": 850,
+    "forest": {
+      "trunk": "mega-oak-trunk",
+      "mushroom": "mega-mushroom",
+      "log": "mega-fallen-log",
+      "limbTexture": "asset.textures.forest-giants-bark",
+      "rings": [
+        { "distance": 48, "spacing": 92, "height": 155 },
+        { "distance": 145, "spacing": 110, "height": 195 },
+        { "distance": 270, "spacing": 120, "height": 240 }
+      ],
+      "leafColors": ["#729c98", "#9ebbb7", "#e0e6dd", "#4b746d"],
+      "leafSpacing": 16,
+      "leafLength": 24
+    }
   },
   "groundCover": {
     "radius": 1.3,

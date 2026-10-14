@@ -8,12 +8,7 @@
 //! how many instances there are (renderer §4.5). Without `indirect-first-instance`
 //! (D2) each list is reached through a dynamic offset instead of a first instance.
 
-use crate::{
-    camera::frustum_planes,
-    device::GpuFeatures,
-    targets::{self, HDR_FORMAT},
-    texture,
-};
+use crate::{camera::frustum_planes, device::GpuFeatures, targets, texture};
 use anyhow::{Context, Result};
 use bytemuck::{Pod, Zeroable};
 use canopy_assets::{AlphaMode, IndexFormat, Material, ModelMeta, Pack, VertexColor};
@@ -965,11 +960,7 @@ impl StaticsGpu {
                     module: &module,
                     entry_point: Some("fs_main"),
                     compilation_options: Default::default(),
-                    targets: &[Some(wgpu::ColorTargetState {
-                        format: HDR_FORMAT,
-                        blend,
-                        write_mask: wgpu::ColorWrites::ALL,
-                    })],
+                    targets: &targets::forward_targets(blend, blend.is_none()),
                 }),
                 multiview_mask: None,
                 cache: None,

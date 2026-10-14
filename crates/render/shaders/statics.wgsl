@@ -174,7 +174,7 @@ fn coverage(alpha: f32) -> f32 {
 }
 
 @fragment
-fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> @location(0) vec4f {
+fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
     let frag = in.clip;
     let world_dx = dpdx(in.world);
     let world_dy = dpdy(in.world);
@@ -237,7 +237,7 @@ fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> @location(0) vec4f 
         glow = material.glow.rgb * amount;
     }
     let color = surface_light(surface, view, frag.xy) + emissive + glow;
-    return vec4f(color, alpha);
+    return scene_out(vec4f(color, alpha), in.world);
 }
 
 // --- Shadows -------------------------------------------------------------------------

@@ -17,7 +17,8 @@ use canopy_content::{
 };
 use canopy_render::{
     environment::{BiomeConfig, Hex, TREE_COVER_RADIUS},
-    terrain::{LayerKind, Surroundings, TerrainDesc, TerrainLayer, TextureGrid, WaterLook},
+    terrain::{LayerKind, Surroundings, TerrainDesc, TerrainLayer, TextureGrid},
+    water::{DEFAULT_WAVES, WaterDesc, WaterProfile, WaterWaves},
 };
 use std::collections::BTreeMap;
 
@@ -193,13 +194,50 @@ struct Painted<'a> {
     cliff: bool,
 }
 
-/// Builds the render terrain. `objects` are the map's visible scenery objects with their
-/// catalogue kind, for ground cover.
+/// A catalogue water profile as the renderer draws it (linear colours; old
+/// `DEFAULT_WATER_WAVES` when it declares no swells).
+pub fn water_profile(
+    water: &canopy_content::assets::landscape::WaterProfile,
+) -> Result<WaterProfile, String> {
+    let color = |hex: &str| {
+        let text = format!("\"{hex}\"");
+        serde_json::from_str::<Hex>(&text)
+            .map(|h| h.linear().to_array())
+            .map_err(|e| e.to_string())
+    };
+    let waves = water.waves.as_ref().map_or(DEFAULT_WAVES, |w| WaterWaves {
+        height: w.height as f32,
+        length: w.length as f32,
+        speed: w.speed as f32,
+        depth_start: w.depth_start as f32,
+        depth_end: w.depth_end as f32,
+        shallow_strength: w.shallow_strength as f32,
+        shore_width: w.shore_width as f32,
+        crest_strength: w.crest_strength as f32,
+    });
+    Ok(WaterProfile {
+        shallow: color(&water.shallow_color)?,
+        deep: color(&water.deep_color)?,
+        clarity: water.clarity as f32,
+        ripple_scale: water.ripple_scale as f32,
+        ripple_strength: water.ripple_strength as f32,
+        foam_strength: water.foam_strength as f32,
+        reflection_strength: water.reflection_strength as f32,
+        caustic_strength: water.caustic_strength as f32,
+        cloud_strength: water.cloud_strength as f32,
+        flow_speed: water.flow_speed as f32,
+        waves,
+    })
+}
+
+/// Builds the render terrain and its water: slot 0 is the biome's water profile, slots
+/// 1… the map's own (`waterProfiles`), cells keep their committed flow (old
+/// `waterSurface`).
 pub fn build(
     map: &UtcMap,
     landscape: &[LandscapeAsset],
     biome: &BiomeConfig,
-) -> Result<TerrainDesc, String> {
+) -> Result<(TerrainDesc, WaterDesc), String> {
     let _span = tracing::info_span!("scene_terrain").entered();
     let data = &map.authoring.terrain;
     let decoded = data.decode().map_err(|e| e.to_string())?;
@@ -417,23 +455,27 @@ pub fn build(
         });
     }
 
-    let water = catalogue
-        .get(biome.water.as_str())
-        .and_then(|a| a.water.as_ref())
-        .ok_or_else(|| {
-            format!(
-                "biome water {} is not a catalogue water profile",
-                biome.water
-            )
-        })?;
-    let color = |hex: &str| {
-        let text = format!("\"{hex}\"");
-        serde_json::from_str::<Hex>(&text)
-            .map(|h| h.linear().to_array())
-            .map_err(|e| e.to_string())
+    let profile_of = |id: &str| {
+        catalogue
+            .get(id)
+            .and_then(|a| a.water.as_ref())
+            .ok_or_else(|| format!("{id} is not a catalogue water profile"))
+            .and_then(water_profile)
+    };
+    let mut profiles = vec![profile_of(&biome.water).map_err(|e| format!("biome water: {e}"))?];
+    for id in &decoded.water_profiles {
+        profiles.push(profile_of(id)?);
+    }
+    let water = WaterDesc {
+        profiles,
+        flow: decoded
+            .water_flow
+            .iter()
+            .map(|f| [f.x, f.z, f.foam, f.profile])
+            .collect(),
     };
     let s = &biome.surroundings;
-    Ok(TerrainDesc {
+    let terrain = TerrainDesc {
         span,
         origin,
         heights: decoded.heights,
@@ -444,18 +486,14 @@ pub fn build(
             cell_size: layout.cell_size as f32,
             cells: layout.cells,
         },
-        water_look: WaterLook {
-            shallow: color(&water.shallow_color)?,
-            deep: color(&water.deep_color)?,
-            clarity: water.clarity as f32,
-        },
         surroundings: Some(Surroundings {
             floor_texture: format!("assets/library/{}/albedo.png", s.floor_texture),
             floor_color: s.floor_color.linear().to_array(),
             haze_color: s.haze_color.linear().to_array(),
             haze: [s.haze_start, s.haze_end],
         }),
-    })
+    };
+    Ok((terrain, water))
 }
 
 #[cfg(test)]

@@ -86,7 +86,12 @@ impl App {
         let display = Display::new(window.clone(), self.options.vsync)?;
         let (loaded, environment) = match &self.options.map {
             Some(map) => {
-                let loaded = world::load(&self.paths, map, self.options.hour)?;
+                let loaded = world::load(
+                    &self.paths,
+                    map,
+                    self.options.hour,
+                    self.options.biome.as_deref(),
+                )?;
                 let environment = loaded.environment.clone();
                 (Some(loaded), environment)
             }
@@ -100,6 +105,7 @@ impl App {
         };
         let mut renderer =
             Renderer::new(&display.gpu, display.format(), display.size(), environment);
+        renderer.set_quality(&display.gpu, self.options.quality);
         let camera = match &loaded {
             Some(loaded) => {
                 renderer.load_world(&display.gpu, &loaded.pack, &loaded.scene.world)?;

@@ -51,3 +51,28 @@ struct PointLight {
 fn time_seconds() -> f32 {
     return frame.eye.w;
 }
+
+// What an opaque surface writes in the forward pass: colour, and its linear view depth
+// split into a half-precision value and the remainder (targets.rs, LINEAR_DEPTH_FORMAT).
+struct SceneOut {
+    @location(0) color: vec4f,
+    @location(1) depth: vec2f,
+}
+
+fn encode_depth(d: f32) -> vec2f {
+    // Keep 11 significant bits (exact in half precision); the remainder is far smaller.
+    let hi = bitcast<f32>(bitcast<u32>(d) & 0xffffe000u);
+    return vec2f(hi, d - hi);
+}
+
+// Distance of `world` along the camera's view direction (clip w).
+fn view_depth(world: vec3f) -> f32 {
+    return (frame.view_proj * vec4f(world, 1.0)).w;
+}
+
+fn scene_out(color: vec4f, world: vec3f) -> SceneOut {
+    var out: SceneOut;
+    out.color = color;
+    out.depth = encode_depth(view_depth(world));
+    return out;
+}

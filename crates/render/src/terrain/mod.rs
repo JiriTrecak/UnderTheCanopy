@@ -103,15 +103,6 @@ impl TextureGrid {
     }
 }
 
-/// Appearance of the placeholder water.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct WaterLook {
-    /// Linear colours.
-    pub shallow: [f32; 3],
-    pub deep: [f32; 3],
-    pub clarity: f32,
-}
-
 /// Render-only ground around the map.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Surroundings {
@@ -138,7 +129,6 @@ pub struct TerrainDesc {
     /// In compositing order; the first is the base.
     pub layers: Vec<TerrainLayer>,
     pub grid: TextureGrid,
-    pub water_look: WaterLook,
     pub surroundings: Option<Surroundings>,
 }
 
@@ -549,11 +539,6 @@ mod tests {
                 start: [-20.5, -20.5],
                 cell_size: 5.0,
                 cells: [(span + 8) / 5, (span + 8) / 5],
-            },
-            water_look: WaterLook {
-                shallow: [0.0; 3],
-                deep: [0.0; 3],
-                clarity: 1.0,
             },
             surroundings: None,
         }
