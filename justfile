@@ -32,14 +32,23 @@ package:
 sync-data old="../Settlers 3 Web":
     tools/sync-data.sh "{{old}}"
 
-# Compare the Rust content reader with the old TypeScript loader on the old repository's data
-parity old="../Settlers 3 Web":
+# Compare every Rust reader with the old TypeScript game on the old repository's data
+parity old="../Settlers 3 Web": (parity-content old) (parity-assets old) (parity-maps old)
+
+# Content (game.json, abilities, effects) against the old TypeScript loader
+parity-content old="../Settlers 3 Web":
     mkdir -p target/parity
     cd "{{old}}" && node_modules/.bin/tsx "{{justfile_directory()}}/tools/parity/dump-ts.mts" "$PWD" "{{justfile_directory()}}/target/parity/content.json"
     cargo run -q -p canopy-content --example parity -- "{{old}}" target/parity/content.json
 
-# Compare the Rust reader of published asset data with the old TypeScript game on the old repository's data
+# Published asset data against the old TypeScript game
 parity-assets old="../Settlers 3 Web":
     mkdir -p target/parity
     cd "{{old}}" && node_modules/.bin/tsx "{{justfile_directory()}}/tools/parity/assets-ts.mts" "$PWD" "{{justfile_directory()}}/target/parity/assets.json"
     cargo run -q -p canopy-content --example assets_parity -- "{{old}}" target/parity/assets.json
+
+# Every map against the old TypeScript parser
+parity-maps old="../Settlers 3 Web":
+    mkdir -p target/parity
+    cd "{{old}}" && node_modules/.bin/tsx "{{justfile_directory()}}/tools/parity/maps-ts.mts" "$PWD" "{{justfile_directory()}}/target/parity/maps.json"
+    cargo run -q --release -p canopy-content --example map_parity -- "{{old}}" target/parity/maps.json
