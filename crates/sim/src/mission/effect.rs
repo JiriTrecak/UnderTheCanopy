@@ -29,8 +29,7 @@ pub enum MissionEffect {
     Follow { placement: String, target: String },
     /// Order a forced attack (M2.2 orders, M2.4 combat).
     Attack { placement: String, target: String },
-    /// Interrupt a unit's work so it can turn; the turn itself is mission state (M2.5
-    /// economy interrupt).
+    /// Interrupt a unit's work so it can turn; the turn itself is mission state.
     Face { placement: String },
     /// Spell damage from nobody, resolved by the next tick's combat (M2.4).
     Damage {
@@ -91,8 +90,20 @@ pub(super) fn apply(
                 && entity.unit.is_some()
                 && super::alive(entity)
             {
-                // M2.5: interrupt the unit's job.
-                entity.owner = *owner;
+                let id = entity.id;
+                crate::economy::interrupt(state, id, None);
+                if let Some(entity) = state.entities.get_mut(id) {
+                    entity.owner = *owner;
+                }
+            }
+        }
+        MissionEffect::Face { placement } => {
+            if let Some(entity) = entity_by_placement_mut(state, placement)
+                && entity.unit.is_some()
+                && super::alive(entity)
+            {
+                let id = entity.id;
+                crate::economy::interrupt(state, id, None);
             }
         }
         MissionEffect::Transform {
@@ -101,11 +112,12 @@ pub(super) fn apply(
             owner,
             camp: _,
         } => {
-            let Some(entity) = entity_by_placement_mut(state, placement) else {
+            let Some(id) = entity_by_placement_mut(state, placement).map(|e| e.id) else {
                 return;
             };
+            crate::economy::interrupt(state, id, None);
+            let entity = state.entities.get_mut(id).expect("entity");
             let before = systems.max_hp(catalog, entity);
-            // M2.5: interrupt the unit's job.
             entity.definition = *definition;
             entity.owner = *owner;
             // A fresh unit: orders and transient state end; position is kept.
@@ -138,7 +150,6 @@ pub(super) fn apply(
         MissionEffect::Move { .. }
         | MissionEffect::Follow { .. }
         | MissionEffect::Attack { .. }
-        | MissionEffect::Face { .. }
         | MissionEffect::Damage { .. }
         | MissionEffect::Recover { .. }
         | MissionEffect::Equip { .. } => {}

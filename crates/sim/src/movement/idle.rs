@@ -21,7 +21,10 @@ pub fn idle(motion: &mut Motion, state: &mut State) {
         let profile = motion.spatial.profiles.get(e.definition);
         let wanders = profile.work && profile.motion.is_some_and(|m| m.idle_wander);
         let u = e.unit.as_mut().expect("unit");
-        let busy = u.order.is_some() || !u.order_queue.is_empty() || u.target.is_some();
+        let busy = u.order.is_some()
+            || !u.order_queue.is_empty()
+            || !u.work.is_idle()
+            || u.target.is_some();
         if !wanders || busy {
             if u.idle.as_ref().is_some_and(|i| i.walking) {
                 u.route.clear();

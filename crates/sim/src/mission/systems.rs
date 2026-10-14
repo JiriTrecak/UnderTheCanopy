@@ -10,7 +10,7 @@ use crate::{
 use canopy_content::Id;
 
 pub trait Systems {
-    /// The unit is carrying out an order (M2.2).
+    /// The unit is carrying out an order (M2.2, M2.5).
     fn has_order(&self, entity: &Entity) -> bool;
     /// Hero item slots (M2.6); `None` for entities without an inventory.
     fn equipment(&self, entity: &Entity) -> Option<Vec<Option<Id>>>;
@@ -22,13 +22,13 @@ pub trait Systems {
     fn max_hp(&self, catalog: &Catalog, entity: &Entity) -> u32;
 }
 
-/// The systems as built so far: no orders, equipment, containment or fallen heroes yet,
-/// and maximum health straight from the definition.
+/// The systems as built so far: orders (movement and work), no equipment, containment or
+/// fallen heroes yet, and maximum health straight from the definition.
 pub struct Current;
 
 impl Systems for Current {
-    fn has_order(&self, _: &Entity) -> bool {
-        false
+    fn has_order(&self, entity: &Entity) -> bool {
+        entity.unit.as_ref().is_some_and(|u| u.order.is_some())
     }
 
     fn equipment(&self, _: &Entity) -> Option<Vec<Option<Id>>> {

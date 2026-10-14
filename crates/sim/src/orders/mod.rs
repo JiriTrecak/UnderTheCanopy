@@ -37,6 +37,10 @@ pub enum Order {
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         escort: bool,
     },
+    /// Harvest a resource and its neighbours of the same kind (economy).
+    Gather { target: EntityId },
+    /// Build or finish an owned construction site (economy).
+    Construct { target: EntityId },
 }
 
 /// A route is a disposable plan, never the unit's position (old `discardNavigation`).
@@ -53,11 +57,12 @@ pub fn release_combat(u: &mut Unit) {
     u.target = None;
 }
 
-/// Whether a new order would queue behind current work (old `UnitOrders.busy`).
+/// Whether a new order would queue behind current work (old `UnitOrders.busy`): an
+/// order, queued orders, or a job, cargo, workplace or delivery-before-move.
 pub fn busy(e: &Entity) -> bool {
-    e.unit
-        .as_ref()
-        .is_some_and(|u| u.order.is_some() || !u.order_queue.is_empty())
+    e.unit.as_ref().is_some_and(|u| {
+        u.order.is_some() || !u.order_queue.is_empty() || !u.work.is_idle()
+    })
 }
 
 /// Whether the unit accepts an order now (old `canIssue`): the queue has room for an
@@ -69,7 +74,8 @@ pub fn can_issue(e: &Entity, append: bool) -> bool {
 }
 
 /// Cancels current activity: queue, engagement, detours and navigation (the movement part
-/// of old `Economy.interrupt`). A move destination becomes the new order.
+/// of old `Economy.interrupt`; [`crate::economy::interrupt`] adds jobs and workplaces). A
+/// move destination becomes the new order.
 pub fn interrupt(e: &mut Entity, destination: Option<Place>) -> bool {
     let Some(u) = e.unit.as_mut() else {
         return false;
@@ -91,8 +97,13 @@ pub fn interrupt(e: &mut Entity, destination: Option<Place>) -> bool {
 }
 
 /// Gives the unit an order, or queues it behind current work when appending (old
-/// `UnitOrders.issue`).
-pub fn issue(e: &mut Entity, order: Order, append: bool, tick: u32) -> bool {
+/// `UnitOrders.issue`). Replacing work goes through the economy's interrupt, so a carrier
+/// mid-trip delivers first and then follows a move.
+pub fn issue(state: &mut crate::state::State, id: EntityId, order: Order, append: bool) -> bool {
+    let tick = state.tick;
+    let Some(e) = state.entities.get_mut(id) else {
+        return false;
+    };
     if !can_issue(e, append) {
         return false;
     }
@@ -104,8 +115,15 @@ pub fn issue(e: &mut Entity, order: Order, append: bool, tick: u32) -> bool {
         Order::Move { destination, .. } => Some(destination.clone()),
         _ => None,
     };
-    interrupt(e, destination);
-    let u = e.unit.as_mut().expect("unit");
+    crate::economy::interrupt(state, id, destination);
+    let u = state
+        .entities
+        .get_mut(id)
+        .and_then(|e| e.unit.as_mut())
+        .expect("unit");
+    if !matches!(order, Order::Move { .. }) {
+        u.work.pending_move = None;
+    }
     u.order = Some(order);
     u.target = None;
     u.retry_at = tick;

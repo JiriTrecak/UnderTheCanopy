@@ -54,9 +54,18 @@ fn at(e: &crate::entity::Entity, spot: Spot, deck: Option<crate::terrain::DeckId
     deck == spot.deck && e.position.x == spot.x * 1000 && e.position.y == spot.y * 1000
 }
 
+/// What replaying queued work orders needs: the economy and the sight its commands check.
+pub struct Work<'a> {
+    pub economy: &'a mut crate::economy::Economy,
+    pub catalog: &'a crate::catalog::Catalog,
+    pub senses: crate::economy::command::Senses<'a>,
+}
+
 /// Step 4 (old `UnitOrders.advance`): idle units start their next queued order, replayed
-/// through the command rules; a rejected one is dropped with its error fact.
-pub fn advance(motion: &mut Motion, state: &mut State) {
+/// through the command rules; a rejected one is dropped with its error fact. Workers
+/// finish their job, and deliver what they carry, first (a builder keeps its goods when no
+/// store could take them).
+pub fn advance(motion: &mut Motion, state: &mut State, work: Work) {
     let _span = tracing::trace_span!("orders advance").entered();
     let tick = state.tick;
     let units: Vec<EntityId> = state
@@ -68,6 +77,22 @@ pub fn advance(motion: &mut Motion, state: &mut State) {
         .map(|e| e.id)
         .collect();
     for id in units {
+        let Some(u) = state.entities.get(id).and_then(|e| e.unit.as_ref()) else {
+            continue;
+        };
+        if u.order.is_some() || u.work.job.is_some() || u.work.pending_move.is_some() {
+            continue;
+        }
+        if u.work.cargo.is_some() {
+            let construct_next = matches!(u.order_queue.first(), Some(Order::Construct { .. }));
+            let blocked = !construct_next || {
+                let ctx = work.economy.ctx(state, work.catalog, &mut motion.spatial);
+                crate::economy::construction::cargo_blocks_construction(&ctx, id)
+            };
+            if blocked {
+                continue;
+            }
+        }
         while let Some(e) = state.entities.get_mut(id) {
             let u = e.unit.as_mut().expect("unit");
             if u.order.is_some() || u.order_queue.is_empty() {
@@ -107,8 +132,31 @@ pub fn advance(motion: &mut Motion, state: &mut State) {
                     target: target.0,
                     append: None,
                 },
+                Order::Gather { target } => Action::Gather {
+                    actors,
+                    target: target.0,
+                    append: None,
+                },
+                Order::Construct { target } => {
+                    // Activated directly while the site still takes this builder.
+                    let valid = construct_target(state, work.catalog, id, *target);
+                    let accepted = valid && super::issue(state, id, order.clone(), false);
+                    if let Some(u) = state.entities.get_mut(id).and_then(|e| e.unit.as_mut()) {
+                        u.order_queue = remaining;
+                    }
+                    if accepted {
+                        break;
+                    }
+                    continue;
+                }
             };
-            let accepted = command::apply(state, &mut motion.spatial, owner, &action);
+            let accepted = if crate::economy::command::handles(&action) {
+                let senses = work.senses;
+                let mut ctx = work.economy.ctx(state, work.catalog, &mut motion.spatial);
+                crate::economy::command::apply(&mut ctx, senses, owner, &action)
+            } else {
+                command::apply(state, &mut motion.spatial, owner, &action)
+            };
             if let Err(reason) = &accepted {
                 state.fact(owner, FactKind::Error, reason.clone());
             }
@@ -122,7 +170,29 @@ pub fn advance(motion: &mut Motion, state: &mut State) {
     }
 }
 
+/// Whether `worker` may still build `site` (old `activateQueuedOrder` construct check).
+fn construct_target(
+    state: &State,
+    catalog: &crate::catalog::Catalog,
+    worker: EntityId,
+    site: EntityId,
+) -> bool {
+    let (Some(w), Some(b)) = (state.entities.get(worker), state.entities.get(site)) else {
+        return false;
+    };
+    b.construction.is_some()
+        && b.hp.is_none_or(|hp| hp > 0)
+        && b.owner == w.owner
+        && catalog
+            .get(w.definition)
+            .behaviors
+            .work
+            .as_ref()
+            .is_some_and(|work| work.builds.contains(catalog.id(b.definition)))
+}
+
 /// Step 5 order planning: routes for move, patrol and follow orders; hold discards them.
+/// Workers on a job or with a work order move as the economy plans.
 pub fn plan(motion: &mut Motion, state: &mut State, perception: Perception) {
     let _span = tracing::trace_span!("order planning").entered();
     motion.spatial.sync_bodies(state);
@@ -137,11 +207,21 @@ pub fn plan(motion: &mut Motion, state: &mut State, perception: Perception) {
         .collect();
     motion.spatial.with_shared_routes(|spatial| {
         for id in units {
-            let Some(order) = state
-                .entities
-                .get(id)
-                .and_then(|e| e.unit.as_ref()?.order.clone())
-            else {
+            let Some(unit) = state.entities.get(id).and_then(|e| e.unit.as_ref()) else {
+                continue;
+            };
+            let working = unit.work.job.is_some()
+                || matches!(
+                    unit.order,
+                    Some(Order::Gather { .. } | Order::Construct { .. })
+                );
+            if working {
+                if let Some(u) = state.entities.get_mut(id).and_then(|e| e.unit.as_mut()) {
+                    release_combat(u);
+                }
+                continue;
+            }
+            let Some(order) = unit.order.clone() else {
                 continue;
             };
             match order {
@@ -186,6 +266,7 @@ pub fn plan(motion: &mut Motion, state: &mut State, perception: Perception) {
                         discard_navigation(u);
                     }
                 }
+                Order::Gather { .. } | Order::Construct { .. } => {}
             }
         }
     });

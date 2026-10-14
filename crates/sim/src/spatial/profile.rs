@@ -49,6 +49,8 @@ pub struct Profile {
     pub player_control: bool,
     pub work: bool,
     pub combat: bool,
+    /// Harvesters of this resource stay solid (`gatheringUnitCollision`).
+    pub gathering_collision: bool,
 }
 
 /// Profiles for every definition, by [`Def`].
@@ -129,6 +131,7 @@ impl Profiles {
                     player_control: d.behaviors.player_control.is_some(),
                     work: d.behaviors.work.is_some(),
                     combat: d.behaviors.combat.is_some(),
+                    gathering_collision: d.gathering_unit_collision == Some(true),
                 }
             })
             .collect();

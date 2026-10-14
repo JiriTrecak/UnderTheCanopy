@@ -7,6 +7,10 @@
 
 use crate::{
     catalog::{Catalog, Def},
+    economy::{
+        Delivery, Economy,
+        view::{Colony, PrivateWork, PublicWork, WorkViews},
+    },
     entity::{Entity, EntityId, Stock},
     mission::state::{Dialogue, ObjectiveState, Scene},
     state::{Fact, Outcome, State},
@@ -30,6 +34,9 @@ pub struct EntityView {
     pub private: Option<Private>,
     /// How a seen unit moves; `None` for other entities and remembered ones.
     pub motion: Option<MotionView>,
+    /// Carried goods, the work pose and a harvest site's workforce; `None` when there is
+    /// none or the entity is remembered.
+    pub work: Option<PublicWork>,
 }
 
 /// Movement a renderer animates.
@@ -70,6 +77,8 @@ pub struct Private {
     /// The current order and those queued behind it.
     pub order: Option<crate::orders::Order>,
     pub queued: Vec<crate::orders::Order>,
+    /// Job, workplace, production, research, upgrade and revival state.
+    pub economy: Box<PrivateWork>,
 }
 
 /// The viewer's fog of war.
@@ -159,19 +168,26 @@ pub struct View {
     pub objectives: BTreeMap<Owner, u32>,
     pub mission: Option<MissionView>,
     pub outcome: Option<Outcome>,
+    /// The viewer's goods, supply, workers and research; `None` for observers.
+    pub colony: Option<Colony>,
+    /// Goods delivered to the viewer's drop-offs this tick (all of them for observers).
+    pub deliveries: Vec<Delivery>,
 }
 
 impl View {
     /// What `owner` knows.
+    #[allow(clippy::too_many_arguments)]
     pub fn build(
         state: &State,
         catalog: &Catalog,
         terrain: &Terrain,
         vision: &Vision,
         rules: &dyn SightRules,
+        economy: &Economy,
         owner: Owner,
     ) -> Self {
         let _span = tracing::trace_span!("view").entered();
+        let works = WorkViews::new(state, catalog, economy);
         let sight = Sight {
             vision,
             state,
@@ -191,8 +207,15 @@ impl View {
                 public: Sighting::of(e),
                 relation: relation(e.owner),
                 remembered: false,
-                private: (e.owner == owner).then(|| private(e)),
+                private: (e.owner == owner).then(|| private(state, catalog, economy, &works, e)),
                 motion: MotionView::of(e, state.tick),
+                work: crate::economy::view::public(
+                    state,
+                    catalog,
+                    &works,
+                    e,
+                    crate::economy::view::at_goal(terrain, e),
+                ),
             })
             .peekable();
         // Remembered structures stand in where nothing with their id is seen.
@@ -254,12 +277,26 @@ impl View {
                 .unwrap_or_default(),
             mission: state.mission.as_ref().map(mission),
             outcome: state.outcome.clone(),
+            colony: Some(crate::economy::view::colony(state, catalog, economy, owner)),
+            deliveries: economy
+                .deliveries
+                .iter()
+                .filter(|d| d.owner == owner)
+                .cloned()
+                .collect(),
         }
     }
 
     /// Everything, for spectators and replays: every live entity with its private state,
     /// no fog.
-    pub fn observe(state: &State, vision: &Vision) -> Self {
+    pub fn observe(
+        state: &State,
+        catalog: &Catalog,
+        terrain: &Terrain,
+        vision: &Vision,
+        economy: &Economy,
+    ) -> Self {
+        let works = WorkViews::new(state, catalog, economy);
         let entities = vision
             .actors()
             .iter()
@@ -272,8 +309,15 @@ impl View {
                     Relation::Enemy
                 },
                 remembered: false,
-                private: Some(private(e)),
+                private: Some(private(state, catalog, economy, &works, e)),
                 motion: MotionView::of(e, state.tick),
+                work: crate::economy::view::public(
+                    state,
+                    catalog,
+                    &works,
+                    e,
+                    crate::economy::view::at_goal(terrain, e),
+                ),
             })
             .collect();
         Self {
@@ -287,6 +331,8 @@ impl View {
             objectives: state.objectives.clone(),
             mission: state.mission.as_ref().map(mission),
             outcome: state.outcome.clone(),
+            colony: None,
+            deliveries: economy.deliveries.clone(),
         }
     }
 
@@ -298,7 +344,13 @@ impl View {
     }
 }
 
-fn private(entity: &Entity) -> Private {
+fn private(
+    state: &State,
+    catalog: &Catalog,
+    economy: &Economy,
+    works: &WorkViews,
+    entity: &Entity,
+) -> Private {
     Private {
         inventory: entity.inventory.clone(),
         order: entity.unit.as_ref().and_then(|u| u.order.clone()),
@@ -306,6 +358,9 @@ fn private(entity: &Entity) -> Private {
             .unit
             .as_ref()
             .map_or_else(Vec::new, |u| u.order_queue.clone()),
+        economy: Box::new(crate::economy::view::private(
+            state, catalog, economy, works, entity,
+        )),
     }
 }
 
@@ -316,6 +371,7 @@ fn remembered_view(sighting: &Sighting, relation: Relation) -> EntityView {
         remembered: true,
         private: None,
         motion: None,
+        work: None,
     }
 }
 

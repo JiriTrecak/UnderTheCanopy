@@ -5,6 +5,7 @@
 
 pub mod action;
 pub mod catalog;
+pub mod economy;
 pub mod entity;
 pub mod fingerprint;
 pub mod math;
@@ -18,6 +19,7 @@ pub mod spawn;
 pub mod state;
 pub mod teams;
 pub mod terrain;
+pub mod victory;
 pub mod view;
 pub mod vision;
 pub mod world;

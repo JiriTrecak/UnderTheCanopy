@@ -70,11 +70,29 @@ pub enum Obstruction {
     Reservation,
 }
 
-/// Whether a unit ghosts through other bodies. Harvest and delivery traffic and garrisoned
-/// archers do in the old game (`GameContext` `ignoresUnits`); the jobs and garrisons that
-/// decide it arrive with the economy and combat steps.
-pub fn ignores_units(_state: &State, _e: &Entity) -> bool {
-    false
+/// Whether a unit ghosts through other bodies (old `GameContext` `ignoresUnits`): workers
+/// delivering goods, or on harvest traffic to a source that does not opt back into
+/// collision. Garrisoned archers join with the combat step.
+pub fn ignores_units(state: &State, profiles: &Profiles, e: &Entity) -> bool {
+    let Some(u) = e.unit.as_ref() else {
+        return false;
+    };
+    if !profiles.get(e.definition).work {
+        return false;
+    }
+    let job = u.work.job.and_then(|id| state.economy.job(id));
+    if job.is_some_and(|j| j.kind == crate::economy::JobKind::Deliver) {
+        return true;
+    }
+    let source = match (job, &u.order) {
+        (Some(j), _) if j.kind == crate::economy::JobKind::Harvest => j.source,
+        (Some(_), _) => None,
+        (None, Some(crate::orders::Order::Gather { target })) => Some(*target),
+        (None, _) => None,
+    };
+    source
+        .and_then(|id| state.entities.get(id))
+        .is_some_and(|s| !profiles.get(s.definition).gathering_collision)
 }
 
 /// Whether a unit is alive and physically present on the map.
@@ -475,43 +493,60 @@ impl Spatial {
                 .collect();
         }
         if resource {
-            cover.resource = match profile.collision_radius {
-                None => bounds
-                    .cells()
-                    .filter_map(|(cx, cy)| in_map(cx, cy))
-                    .collect(),
-                Some(radius) => {
-                    let scale = e
-                        .placement
-                        .as_ref()
-                        .and_then(|p| self.scales.get(p))
-                        .copied()
-                        .unwrap_or(1.0);
-                    let r = radius * scale;
-                    let mut cells = Vec::new();
-                    let (y0, y1) = (
-                        bounds.min_y.min((y - r).ceil() as i64),
-                        bounds.max_y.max((y + r).floor() as i64),
-                    );
-                    let (x0, x1) = (
-                        bounds.min_x.min((x - r).ceil() as i64),
-                        bounds.max_x.max((x + r).floor() as i64),
-                    );
-                    for cy in y0..=y1 {
-                        for cx in x0..=x1 {
-                            let (fx, fy) = (cx as f64 - x, cy as f64 - y);
-                            if (bounds.contains(cx, cy) || fx * fx + fy * fy <= r * r)
-                                && let Some(cell) = in_map(cx, cy)
-                            {
-                                cells.push(cell);
-                            }
-                        }
-                    }
-                    cells
-                }
-            };
+            cover.resource = self.collision_cells(e);
         }
         cover
+    }
+
+    /// The ground cells a resource closes while it stands, whether or not it stands now:
+    /// its footprint, widened to its scaled collision disc (old `collision`).
+    pub fn collision_cells(&self, e: &Entity) -> Vec<u32> {
+        let profile = self.profiles.get(e.definition);
+        let (x, y) = (
+            f64::from(e.position.x) / 1000.0,
+            f64::from(e.position.y) / 1000.0,
+        );
+        let rotation = f64::from(e.rotation) / 1000.0;
+        let size = i64::from(self.size);
+        let bounds = footprint_cells(x, y, profile.footprint, rotation);
+        let in_map = |cx: i64, cy: i64| {
+            (cx >= 0 && cy >= 0 && cx < size && cy < size).then(|| (cy * size + cx) as u32)
+        };
+        match profile.collision_radius {
+            None => bounds
+                .cells()
+                .filter_map(|(cx, cy)| in_map(cx, cy))
+                .collect(),
+            Some(radius) => {
+                let scale = e
+                    .placement
+                    .as_ref()
+                    .and_then(|p| self.scales.get(p))
+                    .copied()
+                    .unwrap_or(1.0);
+                let r = radius * scale;
+                let mut cells = Vec::new();
+                let (y0, y1) = (
+                    bounds.min_y.min((y - r).ceil() as i64),
+                    bounds.max_y.max((y + r).floor() as i64),
+                );
+                let (x0, x1) = (
+                    bounds.min_x.min((x - r).ceil() as i64),
+                    bounds.max_x.max((x + r).floor() as i64),
+                );
+                for cy in y0..=y1 {
+                    for cx in x0..=x1 {
+                        let (fx, fy) = (cx as f64 - x, cy as f64 - y);
+                        if (bounds.contains(cx, cy) || fx * fx + fy * fy <= r * r)
+                            && let Some(cell) = in_map(cx, cy)
+                        {
+                            cells.push(cell);
+                        }
+                    }
+                }
+                cells
+            }
+        }
     }
 
     /// Brings static occupancy up to date with the buildings and resources in `state`,
@@ -522,27 +557,11 @@ impl Spatial {
         let mut present = std::mem::take(&mut self.present);
         present.clear();
         for e in state.entities.iter() {
-            let kind = self.profiles.get(e.definition).kind;
-            if kind != Kind::Building && e.resource.is_none() {
+            if !self.is_static(e) {
                 continue;
             }
             present.push(e.id);
-            let alive = e.hp.is_none_or(|hp| hp > 0);
-            let standing = e.resource.as_ref().is_some_and(|r| r.amount > 0);
-            let signature = (
-                e.definition,
-                e.position.x,
-                e.position.y,
-                e.rotation,
-                u64::from(alive) | u64::from(standing) << 1,
-                e.surface.clone(),
-            );
-            if self.statics.get(&e.id) == Some(&signature) {
-                continue;
-            }
-            let cover = self.cover(e);
-            self.occupancy.set(e.id, cover, &mut changed);
-            self.statics.insert(e.id, signature);
+            self.sync_one(e, &mut changed);
         }
         // Every present blocker has a signature, so equal counts mean nothing went away.
         let present_count = present.len();
@@ -564,6 +583,62 @@ impl Spatial {
             changed.dedup();
             self.invalidate(&changed);
         }
+    }
+
+    fn is_static(&self, e: &Entity) -> bool {
+        self.profiles.get(e.definition).kind == Kind::Building || e.resource.is_some()
+    }
+
+    /// Brings one static blocker's cells up to date if what decides them changed.
+    fn sync_one(&mut self, e: &Entity, changed: &mut Vec<u32>) {
+        let alive = e.hp.is_none_or(|hp| hp > 0);
+        let standing = e.resource.as_ref().is_some_and(|r| r.amount > 0);
+        let signature = (
+            e.definition,
+            e.position.x,
+            e.position.y,
+            e.rotation,
+            u64::from(alive) | u64::from(standing) << 1,
+            e.surface.clone(),
+        );
+        if self.statics.get(&e.id) == Some(&signature) {
+            return;
+        }
+        let cover = self.cover(e);
+        self.occupancy.set(e.id, cover, changed);
+        self.statics.insert(e.id, signature);
+    }
+
+    /// Follows one entity's static change at once (a site placed, a resource depleted or
+    /// regrown, an upgrade, a removal), so later queries in the same pass see it (old
+    /// `appendOccupancy`, `refreshAfterRemoval`, `refreshOccupancyDefinition`). The full
+    /// [`Spatial::sync_static`] would find the same change.
+    pub fn sync_entity(&mut self, state: &State, id: EntityId) {
+        let mut changed = Vec::new();
+        match state.entities.get(id) {
+            Some(e) if self.is_static(e) => self.sync_one(e, &mut changed),
+            _ => {
+                if self.statics.remove(&id).is_some() {
+                    self.occupancy.set(id, Cover::default(), &mut changed);
+                }
+            }
+        }
+        if !changed.is_empty() {
+            changed.sort_unstable();
+            changed.dedup();
+            self.invalidate(&changed);
+        }
+    }
+
+    /// Whether two nodes lie in one walkable region (old `sectors.connected`).
+    pub fn connected(&mut self, a: u32, b: u32) -> bool {
+        let topo = Topo {
+            walk: &self.walk,
+            heights: self.terrain.heights(),
+            surfaces: self.terrain.surfaces(),
+            occupancy: &self.occupancy,
+        };
+        self.sectors.connected(&topo, a, b)
     }
 
     fn invalidate(&mut self, changed: &[u32]) {
@@ -647,11 +722,21 @@ impl Spatial {
     pub fn sync_bodies(&mut self, state: &State) {
         self.bodies.begin_sync();
         for e in state.entities.iter() {
-            if let Some(record) = self.record(e, ignores_units(state, e)) {
+            if let Some(record) = self.record(e, ignores_units(state, &self.profiles, e)) {
                 self.bodies.update(record);
             }
         }
         self.bodies.end_sync();
+    }
+
+    /// Refreshes one unit's body, re-deciding whether it ghosts (its job changed).
+    pub fn refresh_body(&mut self, state: &State, e: &Entity) {
+        if self.bodies.get(e.id).is_none() {
+            return;
+        }
+        if let Some(record) = self.record(e, ignores_units(state, &self.profiles, e)) {
+            self.bodies.update(record);
+        }
     }
 
     /// Refreshes one unit's body after it moved or changed its plan. Whether it ghosts

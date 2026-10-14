@@ -26,15 +26,24 @@ use canopy_content::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
-/// Every placement the match starts with, in placement-id order: the map's own entities,
-/// each player's starting setup (fort and starting units) on skirmish maps, and the
-/// resources projected from the map's scenery.
+/// The placements a match starts with.
+#[derive(Debug, Clone, Default)]
+pub struct Placements {
+    /// In placement-id order: the map's own entities, each player's starting setup (fort
+    /// and starting units) on skirmish maps, and the resources projected from the map's
+    /// scenery.
+    pub list: Vec<Placement>,
+    /// The placements of players' starting units (not the fort): who starts gathering.
+    pub starting_units: BTreeSet<String>,
+}
+
+/// Every placement the match starts with.
 pub fn placements(
     map: &UtcMap,
     catalog: &Catalog,
     terrain: &Terrain,
     setup: &MatchSetup,
-) -> Result<Vec<Placement>, String> {
+) -> Result<Placements, String> {
     expand(map, &catalog.content, terrain, &setup.slots)
 }
 
@@ -43,12 +52,13 @@ fn expand(
     content: &Content,
     terrain: &Terrain,
     slots: &[Slot],
-) -> Result<Vec<Placement>, String> {
+) -> Result<Placements, String> {
     let rules = &content.rules;
     for slot in slots {
         race_setup(rules, slot.race.as_deref())?;
     }
     let mut result = map.entities.clone();
+    let mut started = BTreeSet::new();
     if skirmish(map) {
         let resources = resources(map, terrain);
         for start in &map.player_starts {
@@ -93,9 +103,11 @@ fn expand(
             let hero = slot.and_then(|s| s.hero.as_deref());
             for (index, (definition, (ox, oy))) in starting_units(setup, hero)?.enumerate() {
                 let (x, y) = starting_unit_position(start.x, start.z, rotation, ox, oy)?;
+                let id = format!("{prefix}/unit-{:03}", index + 1);
+                started.insert(id.clone());
                 result.push(Placement {
                     activation: None,
-                    id: format!("{prefix}/unit-{:03}", index + 1),
+                    id,
                     map_knowledge: None,
                     definition: definition.clone(),
                     position: Point {
@@ -113,7 +125,10 @@ fn expand(
     }
     result.extend(terrain.scene().resources.iter().cloned());
     result.sort_by(|a, b| a.id.cmp(&b.id));
-    Ok(result)
+    Ok(Placements {
+        list: result,
+        starting_units: started,
+    })
 }
 
 fn skirmish(map: &UtcMap) -> bool {
@@ -490,7 +505,7 @@ struct Body<'a> {
 /// and standing resources share no cell on the same floor; unit bodies stay on the map,
 /// off static footprints, and apart from each other.
 fn occupancy(map: &UtcMap, content: &Content, terrain: &Terrain) -> Result<(), String> {
-    let placements = expand(map, content, terrain, &[])?;
+    let placements = expand(map, content, terrain, &[])?.list;
     let size = terrain.size();
     let limit = f64::from(size) - 0.5;
     let layered = placements.iter().any(|p| p.position.surface.is_some());
@@ -620,7 +635,8 @@ fn occupancy(map: &UtcMap, content: &Content, terrain: &Terrain) -> Result<(), S
     Ok(())
 }
 
-/// Creates the entity for a placement and adds it to the state.
+/// Creates the entity for a placement and adds it to the state. Placed buildings are
+/// complete: the old game never read `initialState.construction`.
 pub fn create(
     state: &mut State,
     catalog: &Catalog,
@@ -632,44 +648,129 @@ pub fn create(
             placement.id, placement.definition
         )
     })?;
-    let definition = catalog.get(def);
-    let initial = placement.initial_state.clone().unwrap_or_default();
+    let milli = |v: f64| (v * f64::from(Milli::CELL)).round() as i32;
+    let tick = state.tick;
+    Ok(insert(
+        state,
+        catalog,
+        Spawn {
+            definition: def,
+            owner: placement.owner,
+            position: Milli {
+                x: milli(placement.position.x),
+                y: milli(placement.position.y),
+            },
+            surface: placement.position.surface.clone(),
+            rotation: (placement.rotation * 1000.0).round() as i32,
+            placement: Some(placement.id.clone()),
+            initial: placement.initial_state.clone().unwrap_or_default(),
+            complete: true,
+            ready_tick: tick,
+        },
+    ))
+}
+
+/// A new entity: what it is, where, and in what state.
+#[derive(Debug, Clone)]
+pub struct Spawn {
+    pub definition: Def,
+    pub owner: Owner,
+    pub position: Milli,
+    pub surface: Option<String>,
+    /// Millidegrees.
+    pub rotation: i32,
+    /// The map placement it comes from.
+    pub placement: Option<String>,
+    pub initial: InitialState,
+    /// A building is complete, or a construction site at its starting health.
+    pub complete: bool,
+    pub ready_tick: u32,
+}
+
+/// Adds a new entity to the state (old `GameContext.create`): its parts follow from its
+/// definition. A completed drop-off's authored currencies become its owner's funds.
+pub fn insert(state: &mut State, catalog: &Catalog, spawn: Spawn) -> EntityId {
+    let definition = catalog.get(spawn.definition);
+    let initial = spawn.initial;
     let id = EntityId(state.counters.entity);
     state.counters.entity += 1;
-    let milli = |v: f64| (v * f64::from(Milli::CELL)).round() as i32;
-    let entity = Entity {
+    let site = definition.kind == Kind::Building && !spawn.complete;
+    let site_hp = definition.body.as_ref().map(|b| {
+        (u64::from(b.max_hp)
+            * u64::from(catalog.content.rules.construction_hp_permille)
+            / 1000)
+            .max(1) as u32
+    });
+    let hp = if site {
+        site_hp
+    } else {
+        initial.health.or_else(|| {
+            definition.body.as_ref()?;
+            crate::economy::research::fresh_max_hp(catalog, state, spawn.owner, spawn.definition)
+        })
+    };
+    let behaviors = &definition.behaviors;
+    let mut entity = Entity {
         id,
-        ready_tick: state.tick,
-        placement: Some(placement.id.clone()),
-        definition: def,
-        owner: placement.owner,
-        position: Milli {
-            x: milli(placement.position.x),
-            y: milli(placement.position.y),
-        },
-        surface: placement.position.surface.clone(),
-        rotation: (placement.rotation * 1000.0).round() as i32,
-        hp: initial
-            .health
-            .or(definition.body.as_ref().map(|b| b.max_hp)),
+        ready_tick: spawn.ready_tick,
+        placement: spawn.placement,
+        definition: spawn.definition,
+        owner: spawn.owner,
+        position: spawn.position,
+        surface: spawn.surface,
+        rotation: spawn.rotation,
+        hp,
         inventory: initial.inventory.clone().unwrap_or_default(),
         unit: (definition.kind == Kind::Unit).then(Box::<Unit>::default),
-        construction: (definition.kind == Kind::Building && initial.construction.is_none())
-            .then_some(Construction {
-                progress: 0,
-                supported_hp: 1,
-            }),
+        construction: site.then(|| Construction {
+            progress: 0,
+            supported_hp: site_hp.unwrap_or(1),
+        }),
         resource: definition.resource_yield.map(|full| Resource {
             amount: initial.amount.unwrap_or(full),
             initial_amount: Some(full),
             growing_until: None,
+            felling: definition
+                .felling
+                .as_ref()
+                .map(|f| crate::economy::Felling::standing(f.max_hp)),
         }),
         item: (definition.kind == Kind::Item).then(|| LooseItem {
             quantity: initial.quantity.unwrap_or(1),
         }),
+        production: behaviors
+            .production
+            .as_ref()
+            .map(|_| Box::<crate::economy::Production>::default()),
+        research: behaviors
+            .research
+            .as_ref()
+            .map(|_| crate::economy::ResearchQueue::default()),
+        upgrade: None,
+        revival: behaviors
+            .revival
+            .as_ref()
+            .map(|_| crate::economy::RevivalQueue::default()),
     };
+    let dropoff = behaviors
+        .storage
+        .as_ref()
+        .is_some_and(|s| s.dropoff == Some(true));
+    if spawn.complete && dropoff && entity.owner != Owner::Nobody {
+        let funds: Vec<(Id, u32)> = entity
+            .inventory
+            .iter()
+            .filter(|(item, _)| crate::economy::stock::currency(catalog, item.as_str()))
+            .map(|(item, &amount)| (item.clone(), amount))
+            .collect();
+        let wallet = state.wallets.entry(entity.owner).or_default();
+        for (item, amount) in funds {
+            crate::economy::stock::add(wallet, &item, amount);
+            entity.inventory.remove(&item);
+        }
+    }
     state.entities.insert(entity);
-    Ok(id)
+    id
 }
 
 #[cfg(test)]
