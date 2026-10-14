@@ -612,18 +612,12 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
         }
         if let Some(first) = levels.first() {
             let caster = b.abilities.as_ref();
-            let caster_number = |key: &str| {
-                caster
-                    .and_then(|c| c.get(key))
-                    .and_then(serde_json::Value::as_f64)
-            };
             let matches = Some(first.max_hp) == d.body.as_ref().map(|b| b.max_hp)
                 && Some(first.armor) == d.body.as_ref().map(|b| b.armor)
                 && first.damage == b.combat.as_ref().map_or(0, |c| c.damage)
                 && first.cooldown_ticks == b.combat.as_ref().map_or(1, |c| c.cooldown_ticks)
-                && f64::from(first.max_mana) == caster_number("maxMana").unwrap_or(0.0)
-                && first.mana_regen_per_second
-                    == caster_number("manaRegenPerSecond").unwrap_or(0.0);
+                && first.max_mana == caster.map_or(0, |c| c.max_mana)
+                && first.mana_regen_per_second == caster.map_or(0.0, |c| c.mana_regen_per_second);
             if !matches {
                 check.fail(
                     at,
