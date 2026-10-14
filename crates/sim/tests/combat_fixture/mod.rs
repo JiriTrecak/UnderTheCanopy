@@ -343,6 +343,34 @@ pub fn document(entities: Vec<Value>, camps: Vec<Value>, terrain: Value) -> Valu
     })
 }
 
+/// A sandbox map (no forts) for any number of players.
+pub fn sandbox(entities: Vec<Value>) -> UtcMap {
+    let mut doc = document(entities, vec![], flat());
+    doc["sandbox"] = json!(true);
+    doc["playerStarts"]
+        .as_array_mut()
+        .expect("starts")
+        .truncate(1);
+    UtcMap::from_value(doc, "fixture.utcmap").unwrap_or_else(|errors| panic!("{errors}"))
+}
+
+/// `players` free-for-all slots.
+pub fn free_for_all(players: u8) -> MatchSetup {
+    MatchSetup {
+        seed: 7,
+        slots: (0..players)
+            .map(|player| Slot {
+                player,
+                kind: SlotKind::Human,
+                name: None,
+                team: None,
+                hero: None,
+                race: None,
+            })
+            .collect(),
+    }
+}
+
 pub fn map(entities: Vec<Value>) -> UtcMap {
     map_with(entities, vec![], flat())
 }

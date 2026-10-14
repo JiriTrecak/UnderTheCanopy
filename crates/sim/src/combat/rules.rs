@@ -263,12 +263,54 @@ impl Rules {
 
     /// `1 / (1 + k·armour)`; negative armour mirrors it towards double damage.
     pub fn armor_multiplier(&self, armor: i32) -> f64 {
-        let k = self.armor_coefficient;
-        let armor = f64::from(armor);
-        if armor < 0.0 {
-            2.0 - 1.0 / (1.0 - k * armor)
-        } else {
-            1.0 / (1.0 + k * armor)
-        }
+        armor_multiplier(self.armor_coefficient, armor)
+    }
+}
+
+/// `1 / (1 + k·armour)` (old `armorMultiplier`); negative armour mirrors the curve, so it
+/// approaches double damage.
+pub fn armor_multiplier(k: f64, armor: i32) -> f64 {
+    let armor = f64::from(armor);
+    if armor < 0.0 {
+        2.0 - 1.0 / (1.0 - k * armor)
+    } else {
+        1.0 / (1.0 + k * armor)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn armour_mitigates_and_negative_armour_amplifies() {
+        assert_eq!(armor_multiplier(0.06, 0), 1.0);
+        assert!((armor_multiplier(0.06, 10) - 1.0 / 1.6).abs() < 1e-12);
+        // Mirrored: -10 armour takes 2 − 1/1.6 = 1.375 times the damage.
+        assert!((armor_multiplier(0.06, -10) - 1.375).abs() < 1e-12);
+        assert!(armor_multiplier(0.06, -1_000_000) < 2.0);
+    }
+
+    #[test]
+    fn a_swing_scales_with_the_attack_cycle() {
+        let weapon = Weapon {
+            damage: 1,
+            damage_type: DamageType(0),
+            range: 1.0,
+            range_buffer: 0.5,
+            aggro: 5,
+            cooldown: 54,
+            windup: 12,
+            recovery: 10,
+            delivery: Delivery::Melee,
+            ground: true,
+            air: false,
+            charge: None,
+        };
+        assert_eq!(weapon.timing(54), (12, 10));
+        // A faster cycle shortens both phases, rounding halves up; wind-up stays ≥ 1.
+        assert_eq!(weapon.timing(27), (6, 5));
+        assert_eq!(weapon.timing(9), (2, 2));
+        assert_eq!(weapon.timing(1), (1, 0));
     }
 }

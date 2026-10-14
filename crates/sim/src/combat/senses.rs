@@ -38,12 +38,18 @@ impl SightCache {
     }
 
     fn get(&self, owner: u8, id: EntityId) -> Option<bool> {
+        if id.0 as usize >= self.width.get() {
+            return None;
+        }
         let index = usize::from(owner) * self.width.get() + id.0 as usize;
         let value = *self.stamps.borrow().get(index)?;
         (value >> 1 == self.pass.get()).then_some(value & 1 == 1)
     }
 
     fn set(&self, owner: u8, id: EntityId, visible: bool) {
+        if id.0 as usize >= self.width.get() {
+            return;
+        }
         let index = usize::from(owner) * self.width.get() + id.0 as usize;
         if let Some(slot) = self.stamps.borrow_mut().get_mut(index) {
             *slot = self.pass.get() << 1 | u32::from(visible);

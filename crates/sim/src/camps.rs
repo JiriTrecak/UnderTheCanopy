@@ -335,3 +335,37 @@ pub fn home_milli(camp: &Camp) -> Milli {
         y: m(camp.home.1),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use canopy_content::game::{LootEntry, LootPool};
+
+    #[test]
+    fn rolls_follow_the_generator_and_reject_biased_draws() {
+        let mut state = State::new(7);
+        let pool = LootPool {
+            rolls: 3,
+            max_tier: None,
+            entries: vec![
+                LootEntry {
+                    item: Some(Id::new("item.a").unwrap()),
+                    weight: 3,
+                },
+                LootEntry {
+                    item: None,
+                    weight: 1,
+                },
+            ],
+        };
+        let mut again = State::new(7);
+        assert_eq!(roll(&mut state, &pool), roll(&mut again, &pool));
+        assert_eq!(state.random, again.random);
+        // Every value below the bound is reachable and nothing at or above it.
+        let mut seen = [false; 6];
+        for _ in 0..200 {
+            seen[random_below(&mut state, 6) as usize] = true;
+        }
+        assert!(seen.iter().all(|&s| s));
+    }
+}

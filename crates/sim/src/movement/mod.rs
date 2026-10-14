@@ -839,7 +839,9 @@ impl Motion {
                 || !idle.route.is_empty()
                 || idle.contained.is_some()
                 || idle.release.is_some()
+                || idle.garrison.is_some()
                 || idle.target.is_some()
+                || idle.combat.attack.is_some()
                 || !moves
             {
                 continue;
