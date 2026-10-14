@@ -16,7 +16,7 @@ Phase 1 runs on Apple Silicon Macs with `just play` and is packaged by CI, but n
 
 ### Milestones
 
-Status: M0 and M1 done (2026-10-14).
+Status: M0, M1 and M2 done (2026-10-14); M3 in progress.
 
 **M0. Repository.** Cargo workspace, `just`, CI on macOS and Windows (format, lint, test, package), a window on Metal and DX12, the platform layer (data and user folders, DPI, present modes), Tracy profiling. Data mirrored from the old repository; docs, plan and decision log.
 
