@@ -11,6 +11,9 @@ use canopy_content::placement::Owner;
 use std::collections::BTreeMap;
 
 const NONE: u32 = u32::MAX;
+/// Cells per bucket side (a power of two).
+const BLOCK: u32 = 4;
+const SHIFT: u32 = 2;
 
 /// What spatial queries know about one unit.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -48,21 +51,28 @@ impl BodyRecord {
 
     /// The ground cell of its position.
     pub fn cell(&self, size: u32) -> u32 {
-        let (x, y) = (
+        let (x, y) = self.xy();
+        y as u32 * size + x as u32
+    }
+
+    /// Cell coordinates of its position.
+    pub fn xy(&self) -> (i32, i32) {
+        (
             crate::spatial::geometry::grid(self.x),
             crate::spatial::geometry::grid(self.y),
-        );
-        y as u32 * size + x as u32
+        )
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Bodies {
     size: u32,
+    /// Buckets per side.
+    blocks: u32,
     /// Entity id → slot + 1.
     index: Vec<u32>,
     records: Vec<BodyRecord>,
-    /// Bucket cell of each slot (NONE when not bucketed) and the next slot in its bucket.
+    /// Bucket of each slot (NONE when not bucketed) and the next slot in its bucket.
     bucket: Vec<u32>,
     next: Vec<u32>,
     heads: Vec<u32>,
@@ -74,13 +84,15 @@ pub struct Bodies {
 
 impl Bodies {
     pub fn new(size: u32) -> Self {
+        let blocks = size.div_ceil(BLOCK);
         Self {
             size,
+            blocks,
             index: Vec::new(),
             records: Vec::new(),
             bucket: Vec::new(),
             next: Vec::new(),
-            heads: vec![NONE; (size * size) as usize],
+            heads: vec![NONE; (blocks * blocks) as usize],
             reserved: BTreeMap::new(),
             seen: Vec::new(),
             epoch: 0,
@@ -152,6 +164,14 @@ impl Bodies {
         self.seen.truncate(self.records.len());
     }
 
+    /// The bucket of a body: its cell's block, if the cell is on the map.
+    fn block(&self, record: &BodyRecord) -> Option<u32> {
+        let (x, y) = record.xy();
+        let size = self.size as i32;
+        (x >= 0 && y >= 0 && x < size && y < size)
+            .then(|| (y as u32 >> SHIFT) * self.blocks + (x as u32 >> SHIFT))
+    }
+
     fn link(&mut self, slot: usize, cell: u32) {
         self.bucket[slot] = cell;
         self.next[slot] = self.heads[cell as usize];
@@ -209,8 +229,8 @@ impl Bodies {
                 if old_reservation != new_reservation {
                     self.unreserve(slot);
                 }
-                let cell = record.cell(self.size);
-                if self.bucket[slot] != NONE && (!record.solid() || self.bucket[slot] != cell) {
+                let block = self.block(&record).unwrap_or(NONE);
+                if self.bucket[slot] != NONE && (!record.solid() || self.bucket[slot] != block) {
                     self.unbucket(slot);
                 }
                 self.records[slot] = record;
@@ -240,29 +260,32 @@ impl Bodies {
             self.seen.resize(slot + 1, 0);
         }
         self.seen[slot] = self.epoch;
-        if record.solid() && self.bucket[slot] == NONE {
-            let cell = record.cell(self.size);
-            if (cell as usize) < self.heads.len() {
-                self.link(slot, cell);
-            }
+        if record.solid()
+            && self.bucket[slot] == NONE
+            && let Some(block) = self.block(&record)
+        {
+            self.link(slot, block);
         }
     }
 
-    /// Solid bodies bucketed in ground cell `(x, y)`.
+    /// Solid bodies standing in ground cell `(x, y)`.
     pub fn in_cell(&self, x: i32, y: i32) -> impl Iterator<Item = &BodyRecord> + '_ {
         let size = self.size as i32;
         let mut at = if x >= 0 && y >= 0 && x < size && y < size {
-            self.heads[(y * size + x) as usize]
+            self.heads[((y as u32 >> SHIFT) * self.blocks + (x as u32 >> SHIFT)) as usize]
         } else {
             NONE
         };
         std::iter::from_fn(move || {
-            if at == NONE {
-                return None;
+            while at != NONE {
+                let slot = at as usize;
+                at = self.next[slot];
+                let record = &self.records[slot];
+                if record.xy() == (x, y) {
+                    return Some(record);
+                }
             }
-            let slot = at as usize;
-            at = self.next[slot];
-            Some(&self.records[slot])
+            None
         })
     }
 
@@ -292,27 +315,29 @@ impl Bodies {
         if x0 > x1 || y0 > y1 {
             return true;
         }
+        let inside = |record: &BodyRecord| {
+            let (x, y) = record.xy();
+            let (x, y) = (i64::from(x), i64::from(y));
+            x >= x0 && x <= x1 && y >= y0 && y <= y1
+        };
+        let (bx0, bx1) = ((x0 >> SHIFT) as u32, (x1 >> SHIFT) as u32);
+        let (by0, by1) = ((y0 >> SHIFT) as u32, (y1 >> SHIFT) as u32);
         // Long rectangles are mostly empty: scan the bodies instead.
-        if (x1 - x0 + 1) * (y1 - y0 + 1) > self.solid as i64 * 2 {
+        if u64::from(bx1 - bx0 + 1) * u64::from(by1 - by0 + 1) > self.solid as u64 * 2 {
             for (slot, record) in self.records.iter().enumerate() {
-                let cell = self.bucket[slot];
-                if cell == NONE {
-                    continue;
-                }
-                let (x, y) = (i64::from(cell % self.size), i64::from(cell / self.size));
-                if x >= x0 && x <= x1 && y >= y0 && y <= y1 && !visit(record) {
+                if self.bucket[slot] != NONE && inside(record) && !visit(record) {
                     return false;
                 }
             }
             return true;
         }
-        let size = i64::from(self.size);
-        for y in y0..=y1 {
-            for x in x0..=x1 {
-                let mut at = self.heads[(y * size + x) as usize];
+        for by in by0..=by1 {
+            for bx in bx0..=bx1 {
+                let mut at = self.heads[(by * self.blocks + bx) as usize];
                 while at != NONE {
                     let slot = at as usize;
-                    if !visit(&self.records[slot]) {
+                    let record = &self.records[slot];
+                    if inside(record) && !visit(record) {
                         return false;
                     }
                     at = self.next[slot];

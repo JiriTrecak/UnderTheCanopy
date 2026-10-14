@@ -138,6 +138,50 @@ impl Topology for Topo<'_> {
     }
 }
 
+/// Remembered adjacent body steps of one radius: nine direction bits (stationary
+/// included) per cell. Shared through `&` by the step closures, hence the cells.
+#[derive(Debug)]
+pub(crate) struct StepCache {
+    known: Vec<std::cell::Cell<u16>>,
+    clear: Vec<std::cell::Cell<u16>>,
+}
+
+impl StepCache {
+    fn new(cells: usize) -> Self {
+        Self {
+            known: vec![std::cell::Cell::new(0); cells],
+            clear: vec![std::cell::Cell::new(0); cells],
+        }
+    }
+
+    fn get(&self, cell: u32, direction: u32, compute: impl FnOnce() -> bool) -> bool {
+        let (i, bit) = (cell as usize, 1u16 << direction);
+        if self.known[i].get() & bit == 0 {
+            let value = compute();
+            self.known[i].set(self.known[i].get() | bit);
+            let clear = self.clear[i].get();
+            self.clear[i].set(if value { clear | bit } else { clear & !bit });
+        }
+        self.clear[i].get() & bit != 0
+    }
+
+    /// Forgets steps from cells within `padding` of changed cells.
+    fn invalidate(&self, size: u32, changed: &[u32], padding: i32) {
+        let s = size as i32;
+        for &cell in changed {
+            if cell >= size * size {
+                continue;
+            }
+            let (x, y) = ((cell % size) as i32, (cell / size) as i32);
+            for ny in (y - padding).max(0)..=(y + padding).min(s - 1) {
+                for nx in (x - padding).max(0)..=(x + padding).min(s - 1) {
+                    self.known[(ny * s + nx) as usize].set(0);
+                }
+            }
+        }
+    }
+}
+
 /// What decides a static blocker's cells: definition, position, rotation, standing flags
 /// and floor.
 type Signature = (crate::catalog::Def, i32, i32, i32, u64, Option<String>);
@@ -165,6 +209,15 @@ pub struct Spatial {
     /// Appearance scale of resource placements, by placement id.
     scales: BTreeMap<String, f64>,
     blockers: CellSet,
+    /// Scratch for [`Spatial::sync_static`].
+    present: Vec<EntityId>,
+    /// Remembered adjacent body steps per radius (milli-cells).
+    steps: BTreeMap<i32, StepCache>,
+    /// Remembered body steps between neighbouring walk-surface nodes, per body (radius,
+    /// height bits); cleared on every static change.
+    layered_steps: BTreeMap<(i32, u64), BTreeMap<(u32, u32), bool>>,
+    /// Prefix sums of ground cells under a deck, `(size + 1)²` (layered maps only).
+    deck_cells: Vec<u32>,
     pub stats: Stats,
 }
 
@@ -228,8 +281,24 @@ impl Spatial {
             corridors: None,
             scales,
             blockers: CellSet::new(nodes),
+            present: Vec::new(),
+            deck_cells: Vec::new(),
+            layered_steps: BTreeMap::new(),
+            steps: BTreeMap::new(),
             stats: Stats::default(),
         };
+        if let Some(surfaces) = this.terrain.surfaces() {
+            let n = this.size as usize;
+            let mut prefix = vec![0u32; (n + 1) * (n + 1)];
+            for y in 0..n {
+                let mut row = 0;
+                for x in 0..n {
+                    row += u32::from(surfaces.has_deck((y * n + x) as u32));
+                    prefix[(y + 1) * (n + 1) + x + 1] = prefix[y * (n + 1) + x + 1] + row;
+                }
+            }
+            this.deck_cells = prefix;
+        }
         this.sync_static(state);
         this.sync_bodies(state);
         this.prepare_meshes(state);
@@ -448,8 +517,10 @@ impl Spatial {
     /// Brings static occupancy up to date with the buildings and resources in `state`,
     /// touching only entities whose blocking footprint changed.
     pub fn sync_static(&mut self, state: &State) {
+        let _span = tracing::trace_span!("static occupancy").entered();
         let mut changed = Vec::new();
-        let mut present: Vec<EntityId> = Vec::new();
+        let mut present = std::mem::take(&mut self.present);
+        present.clear();
         for e in state.entities.iter() {
             let kind = self.profiles.get(e.definition).kind;
             if kind != Kind::Building && e.resource.is_none() {
@@ -473,16 +544,21 @@ impl Spatial {
             self.occupancy.set(e.id, cover, &mut changed);
             self.statics.insert(e.id, signature);
         }
-        let gone: Vec<EntityId> = self
-            .statics
-            .keys()
-            .filter(|id| present.binary_search(id).is_err())
-            .copied()
-            .collect();
-        for id in gone {
-            self.statics.remove(&id);
-            self.occupancy.set(id, Cover::default(), &mut changed);
+        // Every present blocker has a signature, so equal counts mean nothing went away.
+        let present_count = present.len();
+        if present_count != self.statics.len() {
+            let gone: Vec<EntityId> = self
+                .statics
+                .keys()
+                .filter(|id| present.binary_search(id).is_err())
+                .copied()
+                .collect();
+            for id in gone {
+                self.statics.remove(&id);
+                self.occupancy.set(id, Cover::default(), &mut changed);
+            }
         }
+        self.present = present;
         if !changed.is_empty() {
             changed.sort_unstable();
             changed.dedup();
@@ -501,6 +577,10 @@ impl Spatial {
             if let Some(clearance) = &mut self.clearance {
                 clearance.refresh(node, self.walk[node as usize]);
             }
+        }
+        self.layered_steps.clear();
+        for (&radius, cache) in &self.steps {
+            cache.invalidate(self.size, changed, (radius + 999) / 1000 + 2);
         }
         let padding = 1 + (self.profiles.max_radius + 500) / 1000;
         for grid in self.grids.values_mut() {
@@ -608,6 +688,17 @@ impl Spatial {
                 && blocked.is_none_or(|b| clear_ray(from, to, self.size, |_, c| !b.has(c)));
         }
         if let Some(surfaces) = self.terrain.surfaces() {
+            if from.deck.is_none() && to.deck.is_none() && !self.decks_near(from, to, radius) {
+                // Away from every deck the layered rules reduce to the ground grid, with
+                // live claims closing every ray of the sweep.
+                let ground = Ground {
+                    walk: &self.walk,
+                    heights: self.terrain.heights(),
+                };
+                let step = |a: u32, b: u32| ground.step(a, b) && blocked.is_none_or(|r| !r.has(b));
+                return clear_ray(from, to, self.size, step)
+                    && clear_sweep(from, to, self.size, &pattern, step);
+            }
             let walk = |n: u32| self.walkable(n);
             let blocked_fn = blocked.map(|b| move |n: u32| b.has(n));
             return clear_layered_sweep(
@@ -633,6 +724,20 @@ impl Spatial {
         self.ground_sweep(from, to, radius, &pattern, &ground)
     }
 
+    /// Whether a deck spans any cell a sweep of `radius` between the points may touch.
+    fn decks_near(&self, from: Fixed, to: Fixed, radius: i32) -> bool {
+        let size = self.size as i64;
+        let cell = |v: i64| (v + 500).div_euclid(1000);
+        let r = i64::from(radius);
+        let x0 = (cell(i64::from(from.x.min(to.x)) - r) - 1).clamp(0, size - 1);
+        let x1 = (cell(i64::from(from.x.max(to.x)) + r) + 1).clamp(0, size - 1);
+        let y0 = (cell(i64::from(from.y.min(to.y)) - r) - 1).clamp(0, size - 1);
+        let y1 = (cell(i64::from(from.y.max(to.y)) + r) + 1).clamp(0, size - 1);
+        let stride = (size + 1) as usize;
+        let at = |x: i64, y: i64| self.deck_cells[y as usize * stride + x as usize];
+        at(x1 + 1, y1 + 1) + at(x0, y0) - at(x0, y1 + 1) - at(x1 + 1, y0) > 0
+    }
+
     fn ground_sweep(
         &self,
         from: Fixed,
@@ -641,9 +746,10 @@ impl Spatial {
         pattern: &[(i32, i32)],
         ground: &Ground,
     ) -> bool {
-        let span = (to.x - from.x).abs().max((to.y - from.y).abs());
-        if (span >= 16000 || (span >= 2000 && radius >= 500))
-            && let Some(clearance) = &self.clearance
+        // The old game tried the envelope proof only on long or wide sweeps; it is a sound
+        // positive proof for any sweep and far cheaper than the rays, so it always goes
+        // first. An unproven sweep still takes the exact rays.
+        if let Some(clearance) = &self.clearance
             && clearance.proves_clear(self.terrain.steep_edges(), from, to, radius)
         {
             return true;
@@ -694,8 +800,8 @@ impl Spatial {
             walk: &self.walk,
             heights: self.terrain.heights(),
         };
-        let pattern = self.pattern(body.radius_milli());
-        clear_sweep(from, to, self.size, &pattern, |a, b| ground.step(a, b))
+        let radius = body.radius_milli();
+        self.ground_sweep(from, to, radius, &self.pattern(radius), &ground)
     }
 
     /// Whether a body fits at a cell centre (old `unitWalkable`).

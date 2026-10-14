@@ -166,6 +166,7 @@ impl Motion {
 
     /// Step 5 movement (old `GameContext.move`): advances every unit along its route.
     pub fn move_units(&mut self, state: &mut State) {
+        let _span = tracing::trace_span!("movement").entered();
         self.spatial.sync_bodies(state);
         self.collect_active(state);
         let n = self.spatial.node_count() as usize;
@@ -478,6 +479,7 @@ impl Motion {
     ) {
         let tick = state.tick;
         if requests.is_none() {
+            let _span = tracing::trace_span!("traffic requests").entered();
             *requests = Some(traffic::requests(
                 &self.spatial,
                 &self.teams,

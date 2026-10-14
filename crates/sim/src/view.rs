@@ -28,6 +28,28 @@ pub struct EntityView {
     /// Owner-only state; `Some` for the viewer's own entities (and for every entity in an
     /// observer's view).
     pub private: Option<Private>,
+    /// How a seen unit moves; `None` for other entities and remembered ones.
+    pub motion: Option<MotionView>,
+}
+
+/// Movement a renderer animates.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MotionView {
+    /// It moved during the latest tick.
+    pub moving: bool,
+    /// It is on an idle stroll (walking pace).
+    pub strolling: bool,
+}
+
+impl MotionView {
+    fn of(entity: &Entity, tick: u32) -> Option<Self> {
+        let unit = entity.unit.as_ref()?;
+        Some(Self {
+            // The state's tick counts completed steps, so the latest step was `tick − 1`.
+            moving: unit.last_moved_tick.is_some_and(|t| t + 1 == tick),
+            strolling: unit.idle.as_ref().is_some_and(|i| i.walking),
+        })
+    }
 }
 
 impl EntityView {
@@ -45,6 +67,9 @@ impl EntityView {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Private {
     pub inventory: Stock,
+    /// The current order and those queued behind it.
+    pub order: Option<crate::orders::Order>,
+    pub queued: Vec<crate::orders::Order>,
 }
 
 /// The viewer's fog of war.
@@ -167,6 +192,7 @@ impl View {
                 relation: relation(e.owner),
                 remembered: false,
                 private: (e.owner == owner).then(|| private(e)),
+                motion: MotionView::of(e, state.tick),
             })
             .peekable();
         // Remembered structures stand in where nothing with their id is seen.
@@ -247,6 +273,7 @@ impl View {
                 },
                 remembered: false,
                 private: Some(private(e)),
+                motion: MotionView::of(e, state.tick),
             })
             .collect();
         Self {
@@ -274,6 +301,11 @@ impl View {
 fn private(entity: &Entity) -> Private {
     Private {
         inventory: entity.inventory.clone(),
+        order: entity.unit.as_ref().and_then(|u| u.order.clone()),
+        queued: entity
+            .unit
+            .as_ref()
+            .map_or_else(Vec::new, |u| u.order_queue.clone()),
     }
 }
 
@@ -283,6 +315,7 @@ fn remembered_view(sighting: &Sighting, relation: Relation) -> EntityView {
         relation,
         remembered: true,
         private: None,
+        motion: None,
     }
 }
 

@@ -7,6 +7,7 @@ use super::Motion;
 use crate::{spatial::Spot, state::State};
 
 pub fn separate(motion: &mut Motion, state: &mut State) {
+    let _span = tracing::trace_span!("separation").entered();
     let tick = state.tick;
     let units = motion.active(state);
     let mut synced = false;

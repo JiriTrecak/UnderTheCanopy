@@ -425,7 +425,9 @@ impl GridNavigation {
         // Only an exhaustive unrestricted search proves the whole reachable region.
         if q.remember_origin && q.corridor.is_none() && blocked.is_none() && q.max_cost == i64::MAX
         {
-            let cells = (0..n as usize).map(|i| s.closed[i] == epoch).collect();
+            let mut cells = self.origin.take().map(|(_, c)| c).unwrap_or_default();
+            cells.clear();
+            cells.extend(s.closed[..n as usize].iter().map(|&c| c == epoch));
             self.origin = Some((start, cells));
         }
         None

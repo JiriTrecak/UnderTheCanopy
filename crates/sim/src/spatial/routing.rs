@@ -52,17 +52,40 @@ impl Spatial {
         result
     }
 
+    /// The body's adjacent-cell step, remembered per directed pair until occupancy around
+    /// it changes (old `TerrainStepCache`).
     fn step_for(&self, radius: i32) -> impl Fn(u32, u32) -> bool + '_ {
-        body_step(
+        let exact = body_step(
             self.size,
             &self.walk,
             self.terrain.heights(),
             &self.adjacent,
             radius,
-        )
+        );
+        let cache = self.steps.get(&radius);
+        let size = self.size;
+        move |a, b| {
+            let Some(cache) = cache else {
+                return exact(a, b);
+            };
+            let n = size * size;
+            if a >= n || b >= n {
+                return exact(a, b);
+            }
+            let dx = (b % size) as i32 - (a % size) as i32;
+            let dy = (b / size) as i32 - (a / size) as i32;
+            if dx.abs() > 1 || dy.abs() > 1 {
+                return exact(a, b);
+            }
+            cache.get(a, ((dy + 1) * 3 + dx + 1) as u32, || exact(a, b))
+        }
     }
 
     fn ensure_navigation(&mut self, radius: i32) {
+        let cells = (self.size * self.size) as usize;
+        self.steps
+            .entry(radius)
+            .or_insert_with(|| super::StepCache::new(cells));
         if radius >= 500 && !self.adjacent.contains_key(&radius) {
             self.adjacent
                 .insert(radius, super::adjacent::AdjacentSweep::new(radius));
@@ -83,6 +106,7 @@ impl Spatial {
         body: &Body,
         asker: Option<Asker>,
     ) -> Option<Vec<u32>> {
+        let _span = tracing::trace_span!("path search").entered();
         if !self.valid_node(start) || !self.valid_node(goal) {
             return None;
         }
@@ -287,38 +311,49 @@ impl Spatial {
             None
         };
         let mut scratch = std::mem::take(&mut self.surface_scratch);
-        let search =
-            |this: &Self, scratch: &mut surfaces::SurfaceScratch, corridor: Option<&[bool]>| {
-                let topo = Topo {
-                    walk: &this.walk,
-                    heights: this.terrain.heights(),
-                    surfaces: Some(layers),
-                    occupancy: &this.occupancy,
-                };
-                let blocked_node = |n: &crate::terrain::SurfaceNode| {
-                    this.occupancy.blocked(n.id)
-                        || blocked.is_some_and(|b| b.contains(n.id))
-                        || corridor.is_some_and(|c| !c[this.sectors.sector(&topo, n.id) as usize])
-                };
-                surfaces::path(
-                    layers,
-                    scratch,
-                    start,
-                    goal,
-                    blocked_node,
-                    max_cost,
-                    |p, q| this.clear_segment(this.point(p), this.point(q), None, body),
-                )
+        // Body steps between neighbouring nodes depend only on static occupancy: remember
+        // them per body until it changes.
+        let key = (body.radius_milli(), body.height.to_bits());
+        let mut steps = self.layered_steps.remove(&key).unwrap_or_default();
+        let search = |this: &Self,
+                      scratch: &mut surfaces::SurfaceScratch,
+                      steps: &mut std::collections::BTreeMap<(u32, u32), bool>,
+                      corridor: Option<&[bool]>| {
+            let topo = Topo {
+                walk: &this.walk,
+                heights: this.terrain.heights(),
+                surfaces: Some(layers),
+                occupancy: &this.occupancy,
             };
-        let route = search(self, &mut scratch, corridor.as_deref());
+            let blocked_node = |n: &crate::terrain::SurfaceNode| {
+                this.occupancy.blocked(n.id)
+                    || blocked.is_some_and(|b| b.contains(n.id))
+                    || corridor.is_some_and(|c| !c[this.sectors.sector(&topo, n.id) as usize])
+            };
+            surfaces::path(
+                layers,
+                scratch,
+                start,
+                goal,
+                blocked_node,
+                max_cost,
+                |p, q| {
+                    *steps.entry((p, q)).or_insert_with(|| {
+                        this.clear_segment(this.point(p), this.point(q), None, body)
+                    })
+                },
+            )
+        };
+        let route = search(self, &mut scratch, &mut steps, corridor.as_deref());
         self.stats.searches += 1;
         let route = if route.is_some() || corridor.is_none() {
             route
         } else {
             self.stats.fallbacks += 1;
-            search(self, &mut scratch, None)
+            search(self, &mut scratch, &mut steps, None)
         };
         self.surface_scratch = scratch;
+        self.layered_steps.insert(key, steps);
         route
     }
 
@@ -516,6 +551,7 @@ impl Spatial {
     /// Plans a route for `e` to `destination` and stores it on the unit (old `route`).
     /// `avoid_units` treats other bodies' cells as walls for the search.
     pub fn route(&mut self, e: &mut Entity, destination: Spot, avoid_units: bool) -> bool {
+        let _span = tracing::trace_span!("route").entered();
         let routed = self.plan_route(e, destination, avoid_units);
         self.update_body(e);
         routed

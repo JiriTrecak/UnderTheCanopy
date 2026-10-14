@@ -57,6 +57,7 @@ fn at(e: &crate::entity::Entity, spot: Spot, deck: Option<crate::terrain::DeckId
 /// Step 4 (old `UnitOrders.advance`): idle units start their next queued order, replayed
 /// through the command rules; a rejected one is dropped with its error fact.
 pub fn advance(motion: &mut Motion, state: &mut State) {
+    let _span = tracing::trace_span!("orders advance").entered();
     let tick = state.tick;
     let units: Vec<EntityId> = state
         .entities
@@ -123,6 +124,7 @@ pub fn advance(motion: &mut Motion, state: &mut State) {
 
 /// Step 5 order planning: routes for move, patrol and follow orders; hold discards them.
 pub fn plan(motion: &mut Motion, state: &mut State, perception: Perception) {
+    let _span = tracing::trace_span!("order planning").entered();
     motion.spatial.sync_bodies(state);
     let tick = state.tick;
     let units: Vec<EntityId> = state

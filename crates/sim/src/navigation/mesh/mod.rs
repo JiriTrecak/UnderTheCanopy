@@ -69,6 +69,7 @@ impl GroundMesh {
         if self.dirty.is_empty() {
             return;
         }
+        let _span = tracing::trace_span!("mesh tiles").entered();
         let dirty = std::mem::take(&mut self.dirty);
         let rebuilt: Vec<_> = dirty
             .into_iter()

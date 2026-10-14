@@ -158,6 +158,13 @@ pub fn requests(
         .enumerate()
         .map(|(i, c)| (c.mover.id, i))
         .collect();
+    // Movers by cell row, for the broad phase.
+    let mut by_cell: Vec<(i32, i32, usize)> = moving
+        .iter()
+        .enumerate()
+        .map(|(i, c)| (c.mover.cell.y, c.mover.cell.x, i))
+        .collect();
+    by_cell.sort_unstable();
     // Waits-for edges along each mover's next attempted step.
     let mut edges: BTreeMap<EntityId, Vec<EntityId>> = BTreeMap::new();
     for c in &moving {
@@ -206,22 +213,21 @@ pub fn requests(
             continue;
         }
         let mut blocked: Vec<EntityId> = Vec::new();
-        for other in &moving {
+        // The broad phase of the old body index: movers whose cell lies within 1.5 cells.
+        let grid = crate::spatial::geometry::grid;
+        let (x0, x1) = (grid(from.x - 1500).max(0), grid(from.x + 1500));
+        let (y0, y1) = (grid(from.y - 1500).max(0), grid(from.y + 1500));
+        let lo = by_cell.partition_point(|&(cy, _, _)| cy < y0);
+        let near = by_cell[lo..]
+            .iter()
+            .take_while(|&&(cy, _, _)| cy <= y1)
+            .filter(|&&(_, cx, _)| (x0..=x1).contains(&cx))
+            .map(|&(_, _, i)| &moving[i]);
+        for other in near {
             let b = &other.mover;
             if b.id == c.mover.id
                 || !teams.allied(other.owner, c.owner)
                 || b.body.air != c.mover.body.air
-            {
-                continue;
-            }
-            // The broad phase of the old body index: cells within 1.5 cells of the start.
-            let (bx, by) = (b.cell.x, b.cell.y);
-            let lo = |v: i32| crate::spatial::geometry::grid(v - 1500);
-            let hi = |v: i32| crate::spatial::geometry::grid(v + 1500);
-            if bx < lo(from.x).max(0)
-                || bx > hi(from.x)
-                || by < lo(from.y).max(0)
-                || by > hi(from.y)
             {
                 continue;
             }

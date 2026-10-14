@@ -24,13 +24,24 @@ fn a_walker_crosses_open_ground_and_stops_on_the_cell() {
         &mut world,
         json!({"type": "move", "actors": [a], "destination": {"x": 60, "y": 30}}),
     );
-    run(&mut world, 1);
+    run(&mut world, 2);
     assert!(order(&world, "a").is_some());
+    let motion = |world: &canopy_sim::World| {
+        let view = world.view(canopy_content::placement::Owner::Player(0));
+        let e = view.entities.iter().find(|e| e.id().0 == a).unwrap();
+        assert!(e.private.as_ref().unwrap().order == order(world, "a"));
+        e.motion.unwrap().moving
+    };
+    // It turns towards the destination before walking off.
+    assert!(!motion(&world));
+    run(&mut world, 8);
+    assert!(motion(&world));
     // Speed 4 cells/s: 41.2 cells take a little over 10 s.
-    run(&mut world, 460);
+    run(&mut world, 452);
     assert_eq!(at(&world, "a"), (60.0, 30.0));
     let u = entity(&world, "a").unit.as_ref().unwrap();
     assert!(u.order.is_none() && u.route.is_empty(), "{u:?}");
+    assert!(!motion(&world));
     assert!(errors(&world).is_empty(), "{:?}", errors(&world));
 }
 

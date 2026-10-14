@@ -11,6 +11,7 @@ use crate::{
 };
 
 pub fn idle(motion: &mut Motion, state: &mut State) {
+    let _span = tracing::trace_span!("idle motion").entered();
     let tick = state.tick;
     let units = motion.active(state);
     let mut synced = false;
