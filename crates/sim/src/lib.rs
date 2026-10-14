@@ -8,6 +8,7 @@ pub mod catalog;
 pub mod entity;
 pub mod fingerprint;
 pub mod math;
+pub mod mission;
 pub mod setup;
 pub mod spawn;
 pub mod state;

@@ -20,7 +20,7 @@ Simulation math uses deterministic functions (`libm` or fixed point), never plat
 
 ## D5. Lua 5.4 through mlua for scenario scripting (2026-10-14)
 
-Map and campaign scripts run on vendored Lua 5.4 via `mlua`, with a fixed string-hash seed, `math` and `random` routed to the simulation's deterministic functions, and `os`/`io` removed. Why: today's scripts target Lua 5.3 (fengari) and run on 5.4 nearly unchanged; Luau would break integer and bitwise semantics.
+Map and campaign scripts run on vendored Lua 5.4 via `mlua` with no standard libraries opened, exactly like the old sandbox: scripts reach only the `mission` API, so platform maths and Lua's own randomness are unreachable, and the unfixed string-hash seed only affects table iteration, which scripts cannot observe. Why: today's scripts target Lua 5.3 (fengari) and run on 5.4 nearly unchanged; Luau would break integer and bitwise semantics. Differences scripts can notice are listed in `crates/sim/src/mission/sandbox.rs`.
 
 ## D6. Platform layer owns every path (2026-10-14)
 
@@ -69,3 +69,7 @@ No compatibility with the old game's saves; nobody depends on them. The Rust sav
 ## D17. Verification by play (2026-10-14)
 
 No automated behaviour comparison against the old game. Correctness comes from scenario and determinism tests, and from Jiri playing the game once it is close.
+
+## D18. One unsafe exception: the Lua instruction hook (2026-10-14)
+
+`crates/sim/src/mission/hook.rs` uses about 15 lines of `unsafe` to install a raw Lua count hook that counts instructions and inspects the running function's registers for strings over 64 KiB, as the old sandbox did. mlua's safe hook cannot see registers and is several times slower per instruction. The rest of the workspace keeps `unsafe_code = "deny"`; any further exception needs a decision here.

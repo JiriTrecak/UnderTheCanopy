@@ -3,7 +3,7 @@
 use crate::{
     action::Action,
     catalog::Catalog,
-    fingerprint,
+    fingerprint, mission,
     setup::MatchSetup,
     spawn,
     state::{FactKind, State},
@@ -47,6 +47,7 @@ pub struct World {
     setup: MatchSetup,
     state: State,
     pending: Vec<Queued>,
+    mission: Option<mission::Runtime>,
 }
 
 impl World {
@@ -55,9 +56,12 @@ impl World {
         let catalog = Arc::new(Catalog::new(content));
         let terrain = Arc::new(compile(map, &catalog)?);
         let mut state = State::new(setup.seed);
+        let mission = mission_runtime(map)?;
+        if mission.is_some() {
+            state.mission = Some(mission::MissionState::default());
+        }
         let placements = spawn::placements(map, &catalog, &terrain, &setup).map_err(SetupError)?;
         spawn::validate(&catalog, &terrain, &setup, &placements).map_err(SetupError)?;
-        spawn::playable(map, &catalog, &terrain).map_err(SetupError)?;
         for placement in placements.iter().filter(|p| p.activation.is_none()) {
             spawn::create(&mut state, &catalog, placement).map_err(SetupError)?;
         }
@@ -70,11 +74,14 @@ impl World {
             setup,
             state,
             pending: Vec::new(),
+            mission,
         })
     }
 
+    /// The lockstep clock commands are scheduled on. It runs on while cinematic dialogue
+    /// pauses the game, so game time (`state().tick`) may lag behind it.
     pub fn tick(&self) -> u32 {
-        self.state.tick
+        mission::clock(&self.state)
     }
 
     pub fn state(&self) -> &State {
@@ -94,10 +101,15 @@ impl World {
         &self.setup
     }
 
+    /// The campaign mission, on mission maps.
+    pub fn mission(&self) -> Option<&mission::Runtime> {
+        self.mission.as_ref()
+    }
+
     /// Schedules a command. Commands for past ticks and malformed ones are refused here;
     /// game rules are checked when the command is applied.
     pub fn enqueue(&mut self, command: Queued) -> Result<(), Rejected> {
-        if command.tick < self.state.tick {
+        if command.tick < self.tick() {
             return Err(Rejected::Late(command.tick));
         }
         if !self.setup.slots.iter().any(|s| s.player == command.player) {
@@ -113,11 +125,19 @@ impl World {
     /// Simulates one tick.
     pub fn step(&mut self) {
         self.apply_due();
+        // Step 2: cinematic dialogue pauses the game; only the clock advances.
+        if mission::pause(&mut self.state) {
+            return;
+        }
+        // Step 10: the mission script.
+        if let Some(mission) = &mut self.mission {
+            mission.tick(&mut self.state, &self.catalog);
+        }
         self.state.tick += 1;
     }
 
     fn apply_due(&mut self) {
-        let tick = self.state.tick;
+        let tick = self.tick();
         let (mut due, keep): (Vec<_>, Vec<_>) = std::mem::take(&mut self.pending)
             .into_iter()
             .partition(|c| c.tick <= tick);
@@ -132,6 +152,9 @@ impl World {
     }
 
     fn apply(&mut self, _owner: Owner, action: &Action) -> Result<(), String> {
+        if let Some(reason) = mission::blocks_commands(&self.state) {
+            return Err(reason.into());
+        }
         match action {
             Action::Noop | Action::Ping => Ok(()),
             _ => Err("not available yet".into()),
@@ -170,18 +193,30 @@ impl World {
         }
         let catalog = Arc::new(Catalog::new(content));
         let terrain = Arc::new(compile(map, &catalog)?);
+        let mission = mission_runtime(map)?;
+        if mission.is_some() != save.state.mission.is_some() {
+            return Err(SetupError(
+                "the save does not match the map's mission".into(),
+            ));
+        }
         Ok(Self {
             catalog,
             terrain,
             setup: save.setup,
             state: save.state,
             pending: save.pending,
+            mission,
         })
     }
 }
 
 fn compile(map: &UtcMap, catalog: &Catalog) -> Result<Terrain, SetupError> {
     Terrain::compile(map, &catalog.content).map_err(|e| SetupError(e.to_string()))
+}
+
+fn mission_runtime(map: &UtcMap) -> Result<Option<mission::Runtime>, SetupError> {
+    let script = mission::Script::new(map).map_err(SetupError)?;
+    Ok(script.map(|s| mission::Runtime::new(Arc::new(s))))
 }
 
 pub const SAVE_VERSION: u32 = 1;

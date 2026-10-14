@@ -1,7 +1,10 @@
 //! The complete saved simulation state. Everything derived (spatial grids, navigation,
 //! indexes) lives outside it and is rebuilt on load.
 
-use crate::entity::{Entities, Stock};
+use crate::{
+    entity::{Entities, Stock},
+    mission::MissionState,
+};
 use canopy_content::placement::Owner;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -94,6 +97,9 @@ pub struct State {
     pub objectives: BTreeMap<Owner, u32>,
     pub cleared_camps: Vec<String>,
     pub outcome: Option<Outcome>,
+    /// Campaign script progress; `None` outside missions.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mission: Option<MissionState>,
 }
 
 impl State {
@@ -109,6 +115,7 @@ impl State {
             objectives: BTreeMap::new(),
             cleared_camps: Vec::new(),
             outcome: None,
+            mission: None,
         }
     }
 

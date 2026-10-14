@@ -7,8 +7,13 @@ use canopy_sim::{World, entity::Milli};
 use serde_json::{Value, json};
 use terrain_fixture::{content, map, object, parse, setup, terrain};
 
+/// Starts a match and runs the map's playability checks (an authoring gate, not part of
+/// starting a match).
 fn start(document: Value, players: u8) -> Result<World, String> {
-    World::new(content(), &parse(document), setup(players)).map_err(|e| e.0)
+    let map = parse(document);
+    let world = World::new(content(), &map, setup(players)).map_err(|e| e.0)?;
+    canopy_sim::spawn::playable(&map, world.catalog(), world.terrain())?;
+    Ok(world)
 }
 
 fn fails(document: Value, expected: &str) {
