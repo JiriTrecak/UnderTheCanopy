@@ -279,6 +279,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "canopy-sim"
+version = "0.1.0"
+dependencies = [
+ "canopy-content",
+ "libm",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "cc"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
