@@ -22,7 +22,7 @@ pub struct AttackView {
 }
 
 /// A body's combat state in a view.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CombatView {
     pub stats: Stats,
     /// Whether the viewer's side fights it unprompted (enemies, hostile camps).

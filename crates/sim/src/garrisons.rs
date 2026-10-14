@@ -147,8 +147,15 @@ pub fn eligible(
         return false;
     };
     let policy = catalog.get(host.definition).garrison.as_ref();
-    // M2.6: split forms and containing abilities.
-    u.contained.is_none()
+    // Split-form members and carriers holding a contained unit stay outside.
+    let split_member = e
+        .links
+        .as_ref()
+        .and_then(|l| l.summoned.as_ref())
+        .is_some_and(|s| s.split.is_some());
+    !split_member
+        && !crate::abilities::world_ops::hosting(state, e.id)
+        && u.contained.is_none()
         && u.release.is_none()
         && u.work.cargo.is_none()
         && alive(host)
@@ -208,8 +215,11 @@ pub fn tick(state: &mut State, catalog: &Catalog, spatial: &mut Spatial) {
         let Some(Order::Garrison { target }) = u.order else {
             continue;
         };
-        // M2.6: taunted and stunned units do not move in.
-        if e.ready_tick > tick {
+        // Taunted and stunned units do not move in.
+        if e.ready_tick > tick
+            || u.taunt.is_some()
+            || crate::abilities::statuses::stunned(catalog, e)
+        {
             continue;
         }
         let host = state.entities.get(target);

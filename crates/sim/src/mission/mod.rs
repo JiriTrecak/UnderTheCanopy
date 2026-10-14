@@ -55,7 +55,7 @@ impl Runtime {
 
     /// Step 10 of the tick: turn scripted units, then run the script when due.
     pub fn tick(&mut self, state: &mut State, catalog: &Catalog) {
-        if let Some(effects) = tick(state, catalog, &self.script, &Current) {
+        if let Some(effects) = tick(state, catalog, &self.script, &systems::Live { catalog }) {
             self.effects = effects;
         }
     }

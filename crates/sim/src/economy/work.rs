@@ -33,6 +33,7 @@ pub fn workers(ctx: &Ctx, owner: Owner, unassigned: bool) -> Vec<EntityId> {
                     && ctx.catalog.get(e.definition).behaviors.work.is_some()
                     && u.order.is_none()
                     && u.order_queue.is_empty()
+                    && u.taunt.is_none()
                     && u.work.pending_move.is_none()
                     && u.work.job.is_none()
                     && u.work.cargo.is_none()
@@ -241,9 +242,9 @@ pub fn reroute_carriers(ctx: &mut Ctx) {
         .filter(|&id| {
             ctx.state.entities.get(id).is_some_and(|e| {
                 active(e, tick)
-                    && e.unit
-                        .as_ref()
-                        .is_some_and(|u| u.work.cargo.is_some() && u.work.job.is_none())
+                    && e.unit.as_ref().is_some_and(|u| {
+                        u.taunt.is_none() && u.work.cargo.is_some() && u.work.job.is_none()
+                    })
             })
         })
         .collect();
@@ -458,12 +459,11 @@ pub fn advance_jobs(ctx: &mut Ctx) {
             abandon(ctx, id);
             continue;
         }
-        let u = ctx
-            .state
-            .entities
-            .get(worker)
-            .and_then(|w| w.unit.as_ref())
-            .expect("unit");
+        let w = ctx.state.entities.get(worker).expect("worker");
+        if super::held(ctx.catalog, w) {
+            continue;
+        }
+        let u = w.unit.as_ref().expect("unit");
         if !u.route.is_empty() {
             continue;
         }

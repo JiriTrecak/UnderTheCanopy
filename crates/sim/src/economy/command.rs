@@ -138,9 +138,9 @@ pub fn apply(
                         .behaviors
                         .player_control
                         .is_some()
-                    && e.unit
-                        .as_ref()
-                        .is_none_or(|u| u.contained.is_none() && u.release.is_none())
+                    && e.unit.as_ref().is_none_or(|u| {
+                        u.taunt.is_none() && u.contained.is_none() && u.release.is_none()
+                    })
             })
         })
         .collect();

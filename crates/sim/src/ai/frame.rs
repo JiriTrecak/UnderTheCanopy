@@ -41,9 +41,23 @@ use std::{
 pub struct Input<'a> {
     pub state: &'a State,
     pub catalog: &'a Catalog,
-    pub economy: &'a Economy,
-    pub profiles: &'a Profiles,
-    pub senses: Senses<'a>,
+    /// The ability runtime's context, read only: perception, the economy's indexes,
+    /// spatial profiles and the ability scorer.
+    pub spells: &'a crate::abilities::Ctx<'a>,
+}
+
+impl<'a> Input<'a> {
+    pub fn economy(&self) -> &'a Economy {
+        self.spells.economy
+    }
+
+    pub fn profiles(&self) -> &'a Profiles {
+        &self.spells.spatial.profiles
+    }
+
+    pub fn senses(&self) -> Senses<'a> {
+        self.spells.senses
+    }
 }
 
 /// An entity as the AI player knows it.
@@ -132,13 +146,13 @@ impl<'a> Frame<'a> {
     ) -> Self {
         let _span = tracing::trace_span!("ai frame").entered();
         let state = input.state;
-        let sight: Sight = input.senses.sight(state);
+        let sight: Sight = input.spells.senses.sight(state);
         let knowledge = sight.knowledge(me);
         let cells = knowledge.map(|k| &k.cells);
         let deck = |name: Option<&String>| name.and_then(|n| geo.terrain.deck_id(n));
         // Appearance is public: a resource's collision disc scales with it. The old
         // observation boundary dropped it, so the AI saw every tree at full size
-        // (docs/decisions.md D24).
+        // (docs/decisions.md D26).
         let scale = |e: Option<&Entity>| {
             e.and_then(|e| e.placement.as_ref())
                 .and_then(|p| geo.scales.get(p))
@@ -146,7 +160,7 @@ impl<'a> Frame<'a> {
                 .unwrap_or(1.0)
         };
         let mut live: Vec<Known<'a>> = Vec::new();
-        for &id in input.senses.vision.actors() {
+        for &id in input.senses().vision.actors() {
             let Some(e) = state.entities.get(id) else {
                 continue;
             };
@@ -154,7 +168,7 @@ impl<'a> Frame<'a> {
                 continue;
             }
             let u = e.unit.as_deref();
-            let hostile = e.owner != me && input.senses.opponents(me, None, e.owner, camp(e));
+            let hostile = e.owner != me && input.senses().opponents(me, None, e.owner, camp(e));
             live.push(Known {
                 id: id.0,
                 def: e.definition,
@@ -285,7 +299,7 @@ impl<'a> Frame<'a> {
                 .unwrap_or_default()
                 .rounded(),
         };
-        let colony = crate::economy::view::colony(state, catalog, input.economy, me);
+        let colony = crate::economy::view::colony(state, catalog, input.economy(), me);
         let bank = colony
             .goods
             .iter()
@@ -393,11 +407,11 @@ impl<'a> Frame<'a> {
     }
 
     pub fn casting(&self, k: &Known<'a>) -> bool {
-        self.own_entity(k).is_some_and(powers::casting)
+        self.own_entity(k).is_some_and(|e| powers::casting(self, e))
     }
 
     pub fn stunned(&self, k: &Known<'a>) -> bool {
-        self.own_entity(k).is_some_and(powers::stunned)
+        self.own_entity(k).is_some_and(|e| powers::stunned(self, e))
     }
 
     /// Free for new work (old `free`).
@@ -472,7 +486,7 @@ impl<'a> Frame<'a> {
         let Some(requires) = requires else {
             return true;
         };
-        let fulfils = &self.input.economy.tables().fulfils;
+        let fulfils = &self.input.economy().tables().fulfils;
         let mut complete = BTreeSet::new();
         for &i in &self.own {
             let k = &self.all[i];
@@ -557,7 +571,7 @@ impl<'a> Frame<'a> {
 
     /// Damage `attacker`'s weapon does to `target` (old `damage`).
     pub fn damage(&self, target: &Known<'a>, attacker: &Known<'a>) -> f64 {
-        let combat = self.input.senses.combat;
+        let combat = self.input.senses().combat;
         let (Some(weapon), Some(armor)) = (
             combat.weapon(attacker.def),
             combat.profile(target.def).armor,
@@ -636,10 +650,10 @@ impl<'a> Frame<'a> {
 
     /// The widest and tallest ground body the player has or can make.
     pub fn base_body(&self) -> (f64, f64) {
-        let nav = self.input.profiles.navigation_body;
+        let nav = self.input.profiles().navigation_body;
         let (mut radius, mut height) = (nav.radius, nav.height);
         for d in self.unit_roster() {
-            let body = self.input.profiles.get(d).body;
+            let body = self.input.profiles().get(d).body;
             if !body.air {
                 radius = radius.max(body.radius);
                 height = height.max(body.height);
@@ -650,7 +664,7 @@ impl<'a> Frame<'a> {
 
     /// The body of a known unit.
     pub fn mover(&self, k: &Known<'a>) -> Mover {
-        let body = self.input.profiles.get(k.def).body;
+        let body = self.input.profiles().get(k.def).body;
         Mover {
             at: Fixed::on(k.pos.x, k.pos.y, k.p.deck),
             radius: body.radius,
@@ -755,7 +769,7 @@ impl<'a> Frame<'a> {
             .unit_roster()
             .into_iter()
             .map(|d| {
-                let body = self.input.profiles.get(d).body;
+                let body = self.input.profiles().get(d).body;
                 Mover {
                     at: Fixed::new(0, 0),
                     radius: body.radius,

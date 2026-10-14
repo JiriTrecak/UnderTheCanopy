@@ -620,9 +620,14 @@ impl Spatial {
         let mut changed = Vec::new();
         match state.entities.get(id) {
             Some(e) if self.is_static(e) => self.sync_one(e, &mut changed),
-            _ => {
+            found => {
                 if self.statics.remove(&id).is_some() {
                     self.occupancy.set(id, Cover::default(), &mut changed);
+                }
+                // A unit that left the world stops blocking at once, as the old game
+                // removed it from the spatial index.
+                if found.is_none() {
+                    self.bodies.remove(id);
                 }
             }
         }
@@ -707,7 +712,7 @@ impl Spatial {
             } else {
                 0.0
             },
-            air: profile.body.air,
+            air: crate::abilities::forms::air(profile.body.air, e),
             ignores,
             active: present(e),
             ready_tick: e.ready_tick,
@@ -753,7 +758,10 @@ impl Spatial {
 
     /// The collision body of a unit.
     pub fn body_of(&self, e: &Entity) -> Body {
-        self.profiles.get(e.definition).body
+        let mut body = self.profiles.get(e.definition).body;
+        // Flight forms change the collision class, never the body size.
+        body.air = crate::abilities::forms::air(body.air, e);
+        body
     }
 
     // ----- sweeps --------------------------------------------------------------------------
@@ -1108,13 +1116,16 @@ impl Spatial {
             f64::from(a.position.x) / 1000.0,
             f64::from(a.position.y) / 1000.0,
         );
-        let reach = self.profiles.get(a.definition).body.radius
-            + if b.unit.is_some() {
-                self.profiles.get(b.definition).body.radius
-            } else {
-                0.0
-            };
-        let gap = (self.point_range(x, y, b).sqrt() - reach).max(0.0);
+        let other = if b.unit.is_some() {
+            self.profiles.get(b.definition).body.radius
+        } else {
+            0.0
+        };
+        // Radii come off one after the other, as in the old game (float order matters).
+        let gap = (self.point_range(x, y, b).sqrt()
+            - self.profiles.get(a.definition).body.radius
+            - other)
+            .max(0.0);
         gap * gap
     }
 }

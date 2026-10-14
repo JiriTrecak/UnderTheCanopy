@@ -216,7 +216,8 @@ pub fn start_workplace(ctx: &mut Ctx, b: EntityId, supply: &mut Cache) {
                 .and_then(|w| ctx.state.entities.get(w))
                 .and_then(|w| w.unit.as_ref())
                 .is_some_and(|u| {
-                    u.work.job.is_some()
+                    u.taunt.is_some()
+                        || u.work.job.is_some()
                         || u.order.is_some()
                         || !u.order_queue.is_empty()
                         || u.work.cargo.is_some()

@@ -364,3 +364,44 @@ fn damaged_buildings_are_repaired_a_point_at_a_time() {
     world.step();
     assert!(job(&world, worker).is_none(), "the job ends at full health");
 }
+
+#[test]
+fn unreachable_repairs_wait_before_workers_search_again() {
+    use canopy_sim::economy::construction::REPAIR_RETRY_TICKS;
+    // The hall stands on an island ringed by deep water; the worker is on the mainland.
+    let ring = |x: i32, z: i32| {
+        let d = (x - 19).abs().max((z - 19).abs());
+        if (6..=9).contains(&d) { 2.0 } else { -1.0 }
+    };
+    let entities = vec![
+        place("hall", HALL, 19.5, 19.5),
+        place("worker", WORKER, 40.0, 40.0),
+        resource("mine", MINE, 41.5, 13.5),
+        resource("tree", TREE, 60.0, 60.0),
+    ];
+    let mut world = world(&sandbox_on(
+        entities,
+        economy_fixture::terrain(|_, _| 0.0, ring),
+    ));
+    let (hall, worker) = (id(&world, "hall"), id(&world, "worker"));
+    let hall_id = canopy_sim::entity::EntityId(hall);
+    world.state_mut().entities.get_mut(hall_id).unwrap().hp = Some(390);
+
+    world.step();
+    let first = world.state().economy.repair_retry.get(&hall_id).copied();
+    assert_eq!(
+        first,
+        Some(REPAIR_RETRY_TICKS),
+        "nobody could reach it: wait before searching again"
+    );
+    run(&mut world, REPAIR_RETRY_TICKS - 1);
+    assert_eq!(
+        world.state().economy.repair_retry.get(&hall_id).copied(),
+        first,
+        "no search while waiting"
+    );
+    run(&mut world, 2);
+    let second = world.state().economy.repair_retry.get(&hall_id).copied();
+    assert!(second > first, "searched again after the wait");
+    assert!(job(&world, worker).is_none());
+}

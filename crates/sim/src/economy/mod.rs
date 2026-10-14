@@ -41,13 +41,16 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 use std::collections::BTreeMap;
 
-/// Economy records outside entities: active jobs (by id) and each owner's completed
-/// research (sorted).
+/// Economy records outside entities: active jobs (by id), each owner's completed
+/// research (sorted), and damaged buildings no idle worker could reach, with the tick
+/// before which nobody tries again.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EconomyState {
     pub jobs: Jobs,
     pub research: BTreeMap<Owner, Vec<Id>>,
+    #[serde(default)]
+    pub repair_retry: BTreeMap<EntityId, u32>,
 }
 
 impl EconomyState {
@@ -439,6 +442,16 @@ pub(crate) fn active(e: &Entity, tick: u32) -> bool {
         && e.unit
             .as_ref()
             .is_some_and(|u| u.contained.is_none() && u.release.is_none())
+}
+
+/// A taunt holds the unit on its challenger: no work, no hauling (old `u.taunt`).
+pub(crate) fn taunted(e: &Entity) -> bool {
+    e.unit.as_ref().is_some_and(|u| u.taunt.is_some())
+}
+
+/// Taunted or stunned: the worker neither starts nor advances a job.
+pub(crate) fn held(catalog: &Catalog, e: &Entity) -> bool {
+    taunted(e) || crate::abilities::statuses::stunned(catalog, e)
 }
 
 /// Squared distance in milli-cells² between the coarse positions the old game compared:

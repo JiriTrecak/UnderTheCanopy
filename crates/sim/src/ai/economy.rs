@@ -415,11 +415,18 @@ fn run(p: &mut Planner) {
     let admitted =
         |d: &Definition| supply::admission(&supply, d.supply_cost.unwrap_or(0), None).is_none();
     for hero in f.fallen.iter() {
-        if buildings.iter().any(|b| {
-            f.own_entity(b)
-                .and_then(|e| e.revival.as_ref())
-                .is_some_and(|r| r.queue.iter().any(|q| q.hero == hero.id))
-        }) {
+        // A hero returning through an ability is not revived at a building.
+        let returning = hero
+            .links
+            .as_ref()
+            .is_some_and(|l| l.spell_return.is_some());
+        if returning
+            || buildings.iter().any(|b| {
+                f.own_entity(b)
+                    .and_then(|e| e.revival.as_ref())
+                    .is_some_and(|r| r.queue.iter().any(|q| q.hero == hero.id))
+            })
+        {
             continue;
         }
         let altar = ready.iter().find(|b| {
@@ -627,7 +634,7 @@ fn run(p: &mut Planner) {
                 && !buildings.iter().any(|b| b.def == d)
         })
     });
-    let fulfils = &f.input.economy.tables().fulfils;
+    let fulfils = &f.input.economy().tables().fulfils;
     let useful_upgrade = |d: &Definition| -> bool {
         let Some(upgrade) = &d.upgrade else {
             return false;
@@ -1074,7 +1081,7 @@ fn harvesting(p: &mut Planner, workers: &[&Known]) {
         |r: &Known| workforce(r).is_none_or(|(workers, recommended)| workers < recommended);
     let hostile_near = |r: &Known, d: f64| f.hostiles.iter().any(|&h| dist(f.at(h).p, r.p) < d);
     // Gathering needs the resource in sight; the old AI also chose remembered ones, which
-    // the simulation refuses, wasting the decision (docs/decisions.md D24).
+    // the simulation refuses, wasting the decision (docs/decisions.md D26).
     let orderable = |r: &Known| !r.remembered;
     for w in workers {
         let Some(target) = gathering_target(w) else {
@@ -1256,12 +1263,12 @@ fn harvesting(p: &mut Planner, workers: &[&Known]) {
 
 /// Workers assigned to each seen harvest building against its recommendation (the
 /// public `gathering` of a view). The old observation boundary dropped it for neutral
-/// deposits, so the AI never respected the recommendation (docs/decisions.md D24).
+/// deposits, so the AI never respected the recommendation (docs/decisions.md D26).
 fn gathering<'a>(f: &'a super::frame::Frame) -> impl Fn(&Known) -> Option<(u32, u32)> + 'a {
     let state = f.input.state;
     let catalog = f.catalog();
     let mut sites: BTreeMap<u32, u32> = BTreeMap::new();
-    for &id in &f.input.economy.index.units {
+    for &id in &f.input.economy().index.units {
         let Some(e) = state.entities.get(id) else {
             continue;
         };

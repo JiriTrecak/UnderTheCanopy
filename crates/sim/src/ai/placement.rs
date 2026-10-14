@@ -118,7 +118,7 @@ pub fn placeable(f: &Frame, def: Def, p: Pt, rotation: i32) -> bool {
         return false;
     }
     let bounds = footprint_bounds(p.x, p.y, extent, f64::from(rotation));
-    let profiles = f.input.profiles;
+    let profiles = f.input.profiles();
     if f.all.iter().any(|e| {
         e.unit && !e.contained && !e.remembered && {
             let body = profiles.get(e.def).body;

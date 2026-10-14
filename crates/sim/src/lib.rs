@@ -3,6 +3,7 @@
 //! No I/O, clocks or threads: the same commands on the same content and map produce the
 //! same results on every machine.
 
+pub mod abilities;
 pub mod action;
 pub mod ai;
 pub mod camps;
@@ -13,6 +14,7 @@ pub mod entity;
 pub mod fingerprint;
 pub mod garrisons;
 pub mod heroes;
+pub mod items;
 pub mod math;
 pub mod mission;
 pub mod movement;

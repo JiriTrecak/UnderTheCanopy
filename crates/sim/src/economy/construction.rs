@@ -421,6 +421,9 @@ pub fn construction_orders(ctx: &mut Ctx) {
             continue;
         }
         let u = e.unit.as_ref().expect("unit");
+        if u.taunt.is_some() {
+            continue;
+        }
         let Some(Order::Construct { target }) = u.order else {
             continue;
         };
@@ -442,7 +445,14 @@ pub fn construction_orders(ctx: &mut Ctx) {
             .get(id)
             .and_then(|e| e.unit.as_ref())
             .expect("unit");
-        if u.work.job.is_some() || cargo_blocks_construction(ctx, id) || u.retry_at > tick {
+        if u.work.job.is_some()
+            || cargo_blocks_construction(ctx, id)
+            || u.retry_at > tick
+            || crate::abilities::statuses::stunned(
+                ctx.catalog,
+                ctx.state.entities.get(id).expect("unit"),
+            )
+        {
             continue;
         }
         let site = ctx.state.entities.get(target).expect("site");
@@ -554,9 +564,17 @@ pub fn advance_repair(ctx: &mut Ctx, id: u32) {
     }
 }
 
+/// Ticks before idle workers look again for a way to a damaged building none of them
+/// could reach. The old game retried every tick, each worker running a full path search.
+pub const REPAIR_RETRY_TICKS: u32 = 40;
+
 /// Step 4: each damaged completed building without a repairer gets the first idle worker
-/// that can reach it (old repair loop of `assign`).
+/// that can reach it (old repair loop of `assign`). A building nobody could reach waits
+/// [`REPAIR_RETRY_TICKS`] before the next attempt.
 pub fn assign_repairs(ctx: &mut Ctx, buildings: &[EntityId]) {
+    let tick = ctx.state.tick;
+    let retry = &mut ctx.state.economy.repair_retry;
+    retry.retain(|b, until| *until > tick && buildings.contains(b));
     for &b in buildings {
         let Some(e) = ctx.state.entities.get(b) else {
             continue;
@@ -572,15 +590,28 @@ pub fn assign_repairs(ctx: &mut Ctx, buildings: &[EntityId]) {
                 (Some(hp), Some(max)) => hp < max,
                 _ => false,
             };
-        if !damaged || ctx.state.economy.jobs.occupied(JobKind::Repair, b) {
+        if !damaged
+            || ctx.state.economy.jobs.occupied(JobKind::Repair, b)
+            || ctx.state.economy.repair_retry.contains_key(&b)
+        {
             continue;
         }
         let owner = e.owner;
+        let mut tried = false;
+        let mut assigned = false;
         for w in workers(ctx, owner, true) {
+            tried = true;
             if sites::work_point(ctx, b, w).is_some() {
                 jobs::create(ctx, JobKind::Repair, w, b, Spec::default());
+                assigned = true;
                 break;
             }
+        }
+        if tried && !assigned {
+            ctx.state
+                .economy
+                .repair_retry
+                .insert(b, tick + REPAIR_RETRY_TICKS);
         }
     }
 }

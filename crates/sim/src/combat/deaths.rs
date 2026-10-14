@@ -8,7 +8,6 @@ use crate::{
     camps,
     entity::{EntityId, Place},
     heroes,
-    spatial::Spatial,
     state::{FactKind, State},
 };
 use canopy_content::{conditions::UnitNature, placement::Owner};
@@ -23,74 +22,100 @@ pub fn expire_corpses(combat: &mut CombatState, tick: u32) {
     combat.corpses.retain(|c| c.expires > tick);
 }
 
-/// Processes the deaths of one resolution, in id order. `credit` is the owner of each
-/// lethal hit. Vision sensors must already exclude the dead (`Vision::sync`).
-pub fn process(
-    senses: &Senses,
-    spatial: &mut Spatial,
-    state: &mut State,
-    economy: &mut crate::economy::Economy,
-    limits: heroes::Limits,
-    dead: &[(EntityId, Option<Owner>)],
-) {
+/// Who struck a lethal blow: the source entity and the owner credited with the kill.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Lethal {
+    pub source: EntityId,
+    pub owner: Owner,
+}
+
+/// A death to process.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Dead {
+    pub id: EntityId,
+    pub lethal: Option<Lethal>,
+}
+
+/// Processes the deaths of one resolution, in id order: kill reactions, witnessed pursuits,
+/// experience, then each death. Vision sensors should already exclude the dead
+/// (`Vision::sync`).
+pub fn process(ctx: &mut crate::abilities::Ctx, state: &mut State, dead: &[Dead]) {
     let _span = tracing::trace_span!("deaths").entered();
-    // M2.6: lethal-hit reactions run here.
-    for &(id, _) in dead {
-        finish_witnessed(senses, state, id);
+    for d in dead {
+        if let Some(l) = d.lethal {
+            crate::abilities::reactions::kill(ctx, state, l.source, d.id, Some(l.owner));
+        }
     }
-    for &(id, credit) in dead {
-        let Some(owner) = credit.filter(|&o| o != Owner::Nobody) else {
+    let senses = ctx.senses;
+    for d in dead {
+        finish_witnessed(&senses, state, d.id);
+    }
+    for d in dead {
+        let Some(owner) = d.lethal.map(|l| l.owner).filter(|&o| o != Owner::Nobody) else {
             continue;
         };
-        let target = state.entities.get(id).expect("dead");
+        let Some(target) = state.entities.get(d.id) else {
+            continue;
+        };
         let camp = target
             .unit
             .as_ref()
             .and_then(|u| u.camp.as_ref())
             .map(|c| c.id.as_str());
         if senses.opponents(owner, None, target.owner, camp) {
-            heroes::award(state, senses.catalog, senses.teams, limits, id, owner);
+            heroes::award(state, senses.catalog, senses.teams, ctx.limits, d.id, owner);
         }
     }
-    for &(id, _) in dead {
-        die(senses, spatial, state, economy, id);
+    for d in dead {
+        die(ctx, state, d.id);
     }
 }
 
 /// One death (old `Game.onCombatDeath`).
-pub fn die(
-    senses: &Senses,
-    spatial: &mut Spatial,
-    state: &mut State,
-    economy: &mut crate::economy::Economy,
-    id: EntityId,
-) {
+pub fn die(ctx: &mut crate::abilities::Ctx, state: &mut State, id: EntityId) {
     let Some(e) = state.entities.get(id) else {
         return;
     };
     if e.fallen || e.hp.is_none_or(|hp| hp > 0) {
         return;
     }
-    // M2.6: abilities hear of the death and the caster's casts end; non-hero units drop
-    // carried items.
-    camps::on_death(state, senses.catalog, spatial, senses.camps, id);
-    capture_corpse(senses, state, id);
+    // Abilities hear of the death and its casts end; units other than heroes drop items.
+    crate::abilities::reactions::death(ctx, state, id);
+    crate::abilities::cast::cancel(ctx, state, id, "Caster died");
+    let senses = ctx.senses;
+    camps::on_death(state, senses.catalog, ctx.spatial, senses.camps, id);
+    crate::items::inventory::on_death(ctx, state, id);
+    capture_corpse(&senses, state, id);
     senses
         .vision
         .record_death(state, senses.catalog, senses.terrain, senses.rules, id);
-    let e = state.entities.get(id).expect("dead");
+    let e = state.entities.get_mut(id).expect("dead");
+    e.statuses.clear();
     let (owner, hero) = (e.owner, senses.combat.profile(e.definition).hero);
     state.fact(owner, FactKind::Death, "Entity destroyed");
+    // Split forms and carriers let go of what they hold (old `onRemoving`).
+    crate::abilities::world_ops::removing(ctx, state, id);
+    crate::abilities::world_ops::release_hosted(ctx, state, id);
     // Jobs, employment, carried goods and paid tasks of the dead (old `Economy.remove`).
     {
-        let mut ctx = economy.ctx(state, senses.catalog, spatial);
-        crate::economy::work::release_references(&mut ctx, id, false);
+        let mut ectx = ctx.economy.ctx(state, senses.catalog, ctx.spatial);
+        crate::economy::work::release_references(&mut ectx, id, false);
     }
-    crate::garrisons::evict(state, spatial, id);
+    crate::garrisons::evict(state, ctx.spatial, id);
     let held = state.entities.get(id).expect("dead").clone();
     crate::economy::work::record_losses(state, senses.catalog, &held, false);
     if hero {
-        heroes::retain(state.entities.get_mut(id).expect("dead"));
+        let e = state.entities.get_mut(id).expect("dead");
+        heroes::retain(e);
+        if let Some(q) = &mut e.equipment {
+            q.statuses.clear();
+            q.hits.clear();
+        }
+        crate::items::tidy(e);
+        if let Some(c) = &mut e.caster {
+            c.pending = None;
+            c.weapon_order = None;
+        }
     } else {
         state.entities.remove(id);
     }
@@ -103,8 +128,8 @@ fn capture_corpse(senses: &Senses, state: &mut State, id: EntityId) {
     let Some(u) = &e.unit else {
         return;
     };
-    // M2.6: summoned units leave no corpse either.
     if d.is_hero()
+        || crate::abilities::actor::summoned(e)
         || d.unit_nature == Some(UnitNature::Mechanical)
         || u.contained.is_some()
         || u.garrison.is_some()
@@ -129,6 +154,15 @@ fn capture_corpse(senses: &Senses, state: &mut State, id: EntityId) {
         expires: state.tick + CORPSE_TICKS,
         camp: u.camp.as_ref().map(|c| c.id.clone()),
         progression: e.progression.clone(),
+        caster: e.caster.as_ref().map(|c| {
+            Box::new(crate::abilities::Caster {
+                mana: 0,
+                regeneration: 0,
+                pending: None,
+                weapon_order: None,
+                ..(**c).clone()
+            })
+        }),
     };
     let tick = state.tick;
     expire_corpses(&mut state.combat, tick);

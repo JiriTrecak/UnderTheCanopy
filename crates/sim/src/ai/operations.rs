@@ -165,7 +165,7 @@ fn mission(f: &Frame, s: &mut Memory, kind: MissionKind, key: String, point: Pt,
 /// An enemy player's building, seen or remembered.
 fn enemy_building(f: &Frame, e: &Known) -> bool {
     e.owner != Owner::Nobody
-        && f.input.senses.teams.relation(f.me, e.owner) == Relation::Enemy
+        && f.input.senses().teams.relation(f.me, e.owner) == Relation::Enemy
         && f.def(e).kind == Kind::Building
 }
 

@@ -450,7 +450,7 @@ impl Brains {
 
     /// Builds each AI's known blockers and navigation from its knowledge (match start and
     /// after a restore), as the old `prepareNavigation` did.
-    pub fn prepare(&mut self, input: &Input, tick: u32) {
+    pub fn prepare(&self, input: &Input, tick: u32) {
         let Some(geo) = self.geography.clone() else {
             return;
         };
@@ -529,12 +529,7 @@ impl Brains {
 
     /// Step 12: the AIs due this tick decide (old `World.tick` brains loop). Returns each
     /// command with its player, to be queued for the next tick.
-    pub fn decide(
-        &mut self,
-        input: &Input,
-        memories: &mut [Memory],
-        tick: u32,
-    ) -> Vec<(u8, Command)> {
+    pub fn decide(&self, input: &Input, memories: &mut [Memory], tick: u32) -> Vec<(u8, Command)> {
         let Some(geo) = self.geography.clone() else {
             return Vec::new();
         };

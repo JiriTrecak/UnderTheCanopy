@@ -17,6 +17,10 @@ pub struct Def(pub u16);
 #[derive(Debug)]
 pub struct Catalog {
     pub content: Arc<Content>,
+    /// The ability library, compiled (`abilities`).
+    pub spells: crate::abilities::Spells,
+    /// Item effects by definition (`items`).
+    pub items: crate::items::Items,
 }
 
 impl Catalog {
@@ -25,7 +29,11 @@ impl Catalog {
             content.definitions.len() <= usize::from(u16::MAX),
             "too many definitions"
         );
-        Self { content }
+        Self {
+            spells: crate::abilities::Spells::new(&content),
+            items: crate::items::Items::new(&content),
+            content,
+        }
     }
 
     pub fn find(&self, id: &str) -> Option<Def> {

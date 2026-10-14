@@ -39,6 +39,8 @@ pub struct EntityView {
     pub work: Option<PublicWork>,
     /// Stats, swing, charge and lookout of a seen body (`combat`).
     pub combat: Option<crate::combat::CombatView>,
+    /// Statuses, casting, mana, ranks and items of a seen unit (`abilities`).
+    pub magic: Option<crate::abilities::view::MagicView>,
 }
 
 /// Movement a renderer animates.
@@ -178,6 +180,8 @@ pub struct View {
     pub battle: crate::combat::Battle,
     /// What each AI player is doing (observers only, for the debug overlay).
     pub ai: Vec<crate::ai::Summary>,
+    /// Ability events, deliveries in flight and hero returns (`abilities`).
+    pub spells: crate::abilities::view::Spellcraft,
 }
 
 impl View {
@@ -223,6 +227,7 @@ impl View {
                     crate::economy::view::at_goal(terrain, e),
                 ),
                 combat: None,
+                magic: None,
             })
             .peekable();
         // Remembered structures stand in where nothing with their id is seen.
@@ -293,6 +298,7 @@ impl View {
                 .collect(),
             battle: crate::combat::Battle::default(),
             ai: Vec::new(),
+            spells: crate::abilities::view::Spellcraft::default(),
         }
     }
 
@@ -328,6 +334,7 @@ impl View {
                     crate::economy::view::at_goal(terrain, e),
                 ),
                 combat: None,
+                magic: None,
             })
             .collect();
         Self {
@@ -345,6 +352,7 @@ impl View {
             deliveries: economy.deliveries.clone(),
             battle: crate::combat::Battle::default(),
             ai: Vec::new(),
+            spells: crate::abilities::view::Spellcraft::default(),
         }
     }
 
@@ -385,6 +393,7 @@ fn remembered_view(sighting: &Sighting, relation: Relation) -> EntityView {
         motion: None,
         work: None,
         combat: None,
+        magic: None,
     }
 }
 

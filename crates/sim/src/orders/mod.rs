@@ -46,6 +46,16 @@ pub enum Order {
     Gather { target: EntityId },
     /// Build or finish an owned construction site (economy).
     Construct { target: EntityId },
+    /// Walk into range and cast (abilities); `owner` and `control` are who ordered it.
+    #[serde(rename_all = "camelCase")]
+    CastAbility {
+        binding: String,
+        target: crate::action::CastTarget,
+        owner: canopy_content::placement::Owner,
+        control: canopy_content::abilities::Control,
+    },
+    /// Walk to an item and take it (items).
+    Pickup { target: EntityId },
 }
 
 impl Order {
@@ -54,7 +64,10 @@ impl Order {
     pub fn stands_down(&self) -> bool {
         matches!(
             self,
-            Self::Garrison { .. } | Self::Gather { .. } | Self::Construct { .. }
+            Self::Garrison { .. }
+                | Self::Gather { .. }
+                | Self::Construct { .. }
+                | Self::Pickup { .. }
         )
     }
 }
@@ -123,7 +136,7 @@ pub fn busy(e: &Entity) -> bool {
 pub fn can_issue(e: &Entity, append: bool) -> bool {
     e.unit
         .as_ref()
-        .is_some_and(|u| !append || u.order_queue.len() < MAX_QUEUED_ORDERS)
+        .is_some_and(|u| u.taunt.is_none() && (!append || u.order_queue.len() < MAX_QUEUED_ORDERS))
 }
 
 /// Cancels current activity: queue, engagement, detours and navigation (the movement part

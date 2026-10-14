@@ -3,7 +3,8 @@
 //! the smaller queue id goes first.
 //!
 //! Heroes fall in combat and are kept as fallen entities ([`crate::heroes::retain`]);
-//! revival brings the same entity back. Ability returns (`spellReturn`) join with M2.6.
+//! revival brings the same entity back; ability returns (`spellReturn`) live in
+//! [`crate::abilities::world_ops`].
 
 use super::{
     Ctx, RevivalEntry, alive, production, ready, stock,
@@ -38,11 +39,7 @@ pub fn restore(ctx: &mut Ctx, hero: EntityId, spot: Spot) {
     e.unit = Some(Box::<Unit>::default());
     e.fallen = false;
     e.ready_tick = tick + 1;
-    // M2.6: mana refills and regeneration restarts too.
-    let e = ctx.state.entities.get(hero).expect("hero");
-    let research = crate::stats::research(ctx.state, e.owner);
-    let max_hp = Stats::of(ctx.catalog, e, research).max_hp;
-    ctx.state.entities.get_mut(hero).expect("hero").hp = Some(max_hp.max(1));
+    crate::abilities::world_ops::restore_pools(ctx.catalog, ctx.state, hero, 1000, 1000);
 }
 
 /// The price and time of reviving a hero of `level` (old `revivalTerms`): the base, plus
@@ -104,6 +101,9 @@ pub fn enqueue(ctx: &mut Ctx, b: EntityId, hero: EntityId) -> Result<(), String>
         .get(hero)
         .filter(|h| fallen(h) && h.owner == owner)
         .ok_or("Choose one of your fallen heroes")?;
+    if crate::abilities::world_ops::returning(h) {
+        return Err("Hero is already returning through an ability".into());
+    }
     if queued(ctx, hero) {
         return Err("Hero is already being revived".into());
     }

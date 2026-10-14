@@ -55,7 +55,7 @@ pub fn stale_goal(
         state.entities.get(actor).expect("actor"),
         state.entities.get(target).expect("target"),
     );
-    let weapon = senses.combat.weapon(e.definition).expect("weapon");
+    let weapon = senses.weapon(e).expect("weapon");
     let body = spatial.body_of(e);
     let (x, y) = (f64::from(goal.x), f64::from(goal.y));
     !spatial.free(goal, Some(actor), Some(&body), None)
@@ -76,7 +76,7 @@ pub fn route_to_attack(
         state.entities.get(actor).expect("actor"),
         state.entities.get(target).expect("target"),
     );
-    let weapon = senses.combat.weapon(e.definition).expect("weapon");
+    let weapon = senses.weapon(e).expect("weapon");
     let body = spatial.body_of(e);
     let range = weapon.range
         + body.radius

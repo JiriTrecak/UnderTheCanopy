@@ -91,7 +91,9 @@ pub fn colony(state: &State, catalog: &Catalog, index: &super::Index, owner: Own
         }
     }
     for e in members() {
-        if revival::fallen(e) && reviving.contains(&e.id) {
+        if revival::fallen(e)
+            && (reviving.contains(&e.id) || crate::abilities::world_ops::returning(e))
+        {
             s.reserved += cost(catalog, e.definition);
             s.queued_units += 1;
         }

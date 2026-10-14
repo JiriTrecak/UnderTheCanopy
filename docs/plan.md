@@ -57,4 +57,3 @@ The editors stay in the old repository, so it remains the place where data is au
 | Signing, notarization, installers, distribution | Nothing is distributed yet; CI already builds unsigned packages. |
 | Steam integration | Purely additive. |
 | Updater and the in-game release notes screen | Distribution, not game. |
-| Seasons and tree colour variants | New content, not parity. |
