@@ -1,4 +1,4 @@
-//! The spectator camera over a loaded map (no simulation yet).
+//! The spectator camera over a loaded map.
 
 use crate::options::CameraSpec;
 use canopy_render::{

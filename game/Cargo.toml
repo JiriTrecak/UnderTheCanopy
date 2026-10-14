@@ -19,8 +19,10 @@ profile = ["dep:tracing-tracy"]
 anyhow.workspace = true
 canopy-assets = { path = "../crates/assets" }
 canopy-content = { path = "../crates/content" }
+canopy-net = { path = "../crates/net" }
 canopy-render = { path = "../crates/render" }
 canopy-scene = { path = "../crates/scene" }
+canopy-sim = { path = "../crates/sim" }
 directories.workspace = true
 image.workspace = true
 tracing.workspace = true

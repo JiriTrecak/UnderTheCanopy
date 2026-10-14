@@ -472,7 +472,7 @@ impl StaticsGpu {
         let item_buffer = storage_init(
             "static cull items",
             bytemuck::cast_slice(&items),
-            wgpu::BufferUsages::empty(),
+            wgpu::BufferUsages::COPY_DST,
         );
         let regions: Vec<[u32; 4]> = models
             .iter()

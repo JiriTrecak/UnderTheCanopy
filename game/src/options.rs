@@ -1,10 +1,16 @@
 //! Command-line options.
 //!
 //! ```text
-//! canopy [--data <folder>] [--no-vsync] [--map <id>] [--camera <x,z,zoom[,yaw]>] [--hour <h>]
-//! canopy shot --map <id> --camera <x,z,zoom[,yaw]> --out <png> [--size <w>x<h>] [--hour <h>]
-//!             [--time <s>] [--frames <n>] [--no-shadows] [--data <folder>]
+//! canopy [--data <folder>] [--no-vsync] [--map <id> | --spectate <id>] [--players <n>]
+//!        [--tick <n>] [--camera <x,z,zoom[,yaw]>] [--hour <h>]
+//! canopy shot --map <id> --camera <x,z,zoom[,yaw] | battle[,zoom]> --out <png>
+//!             [--tick <n>] [--players <n>] [--size <w>x<h>] [--hour <h>] [--time <s>]
+//!             [--frames <n>] [--no-shadows] [--data <folder>]
 //! ```
+//!
+//! `--map` shows a match's start, `--spectate` plays it (computer players on every start,
+//! or the first `--players`); `--tick` fast-forwards the match first. A shot's `battle`
+//! camera looks at the largest fight of that tick.
 
 use anyhow::{Context, Result, bail};
 use std::path::PathBuf;
@@ -39,6 +45,35 @@ impl CameraSpec {
     }
 }
 
+/// Where a shot looks.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CameraChoice {
+    Pose(CameraSpec),
+    /// The largest fight at the shot's tick, at this zoom.
+    Battle(f32),
+}
+
+impl CameraChoice {
+    pub fn parse(text: &str) -> Result<Self> {
+        if let Some(rest) = text.strip_prefix("battle") {
+            let zoom = match rest.strip_prefix(',') {
+                Some(z) => z.trim().parse().context("--camera battle,<zoom>")?,
+                None if rest.is_empty() => 1.0,
+                None => bail!("--camera {text}: expected battle[,zoom]"),
+            };
+            return Ok(Self::Battle(zoom));
+        }
+        CameraSpec::parse(text).map(Self::Pose)
+    }
+
+    pub fn pose(self) -> Option<CameraSpec> {
+        match self {
+            Self::Pose(p) => Some(p),
+            Self::Battle(_) => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Command {
     /// Open a window.
@@ -56,7 +91,13 @@ pub struct Options {
     pub vsync: bool,
     /// Map id (file name without extension).
     pub map: Option<String>,
-    pub camera: Option<CameraSpec>,
+    /// Run the match (AI players) instead of showing its start.
+    pub spectate: bool,
+    /// Computer players on the map's first starts (all by default).
+    pub players: Option<usize>,
+    /// Simulate to this tick before showing anything.
+    pub tick: u32,
+    pub camera: Option<CameraChoice>,
     /// Hour of the day; the map's own when absent.
     pub hour: Option<f32>,
     /// Animation time of a shot, seconds (wind, canopy drift).
@@ -73,6 +114,9 @@ impl Options {
             data: None,
             vsync: true,
             map: None,
+            spectate: false,
+            players: None,
+            tick: 0,
             camera: None,
             hour: None,
             time: 12.0,
@@ -92,7 +136,19 @@ impl Options {
                 "--data" => options.data = Some(value("--data")?.into()),
                 "--no-vsync" => options.vsync = false,
                 "--map" => options.map = Some(value("--map")?),
-                "--camera" => options.camera = Some(CameraSpec::parse(&value("--camera")?)?),
+                "--spectate" => {
+                    options.map = Some(value("--spectate")?);
+                    options.spectate = true;
+                }
+                "--players" => {
+                    let n: usize = value("--players")?.parse().context("--players")?;
+                    if n == 0 {
+                        bail!("--players needs at least one player");
+                    }
+                    options.players = Some(n);
+                }
+                "--tick" => options.tick = value("--tick")?.parse().context("--tick")?,
+                "--camera" => options.camera = Some(CameraChoice::parse(&value("--camera")?)?),
                 "--hour" => options.hour = Some(value("--hour")?.parse().context("--hour")?),
                 "--time" => options.time = value("--time")?.parse().context("--time")?,
                 "--frames" => options.frames = value("--frames")?.parse().context("--frames")?,
@@ -104,7 +160,7 @@ impl Options {
                     size = [w.parse().context("--size")?, h.parse().context("--size")?];
                 }
                 other => bail!(
-                    "unknown option {other} (expected --data, --no-vsync, --map, --camera, --hour; shot: --out, --size, --time, --frames, --no-shadows)"
+                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --tick, --camera, --hour; shot: --out, --size, --time, --frames, --no-shadows)"
                 ),
             }
             first = false;
@@ -176,18 +232,36 @@ mod tests {
         );
         assert_eq!(
             options.camera,
-            Some(CameraSpec {
+            Some(CameraChoice::Pose(CameraSpec {
                 x: 117.5,
                 z: 225.5,
                 zoom: 1.0,
                 yaw: 0.0
-            })
+            }))
         );
+        assert_eq!(
+            CameraChoice::parse("battle").unwrap(),
+            CameraChoice::Battle(1.0)
+        );
+        assert_eq!(
+            CameraChoice::parse("battle,0.6").unwrap(),
+            CameraChoice::Battle(0.6)
+        );
+        assert!(CameraChoice::parse("battlefield").is_err());
         assert_eq!(CameraSpec::parse("1,2,3,45").unwrap().yaw, 45.0);
         assert!(parse(&["shot", "--map", "m"]).is_err());
         assert!(parse(&["shot", "--out", "a.png"]).is_err());
         assert!(parse(&["--out", "a.png"]).is_err());
         assert!(CameraSpec::parse("1,2").is_err());
+    }
+
+    #[test]
+    fn spectating_names_the_map_and_players() {
+        let options = parse(&["--spectate", "m", "--players", "2", "--tick", "400"]).unwrap();
+        assert_eq!(options.map.as_deref(), Some("m"));
+        assert!(options.spectate);
+        assert_eq!((options.players, options.tick), (Some(2), 400));
+        assert!(parse(&["--spectate", "m", "--players", "0"]).is_err());
     }
 
     #[test]
