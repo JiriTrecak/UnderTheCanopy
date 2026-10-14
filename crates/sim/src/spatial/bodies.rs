@@ -134,6 +134,13 @@ impl Bodies {
         }
     }
 
+    /// Drops a unit's record at once (it left the world mid-tick).
+    pub fn remove(&mut self, id: EntityId) {
+        if let Some(slot) = self.slot(id) {
+            self.remove_slot(slot);
+        }
+    }
+
     fn remove_slot(&mut self, slot: usize) {
         self.unbucket(slot);
         self.unreserve(slot);

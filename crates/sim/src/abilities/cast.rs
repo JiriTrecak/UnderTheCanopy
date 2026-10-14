@@ -740,6 +740,8 @@ pub fn resolve_casters(ctx: &mut Ctx, state: &mut State) {
         };
         let tick = state.tick;
         let spell = ctx.ability(p.ability);
+        // The event target is fixed for the whole pass (old `target`).
+        let mark = mark_of(ctx, state, &p, &access.actor);
         let aim = match p.point {
             Some(point) => Aim::Point(point),
             None => Aim::Unit(p.target.unwrap_or(id)),
@@ -839,7 +841,6 @@ pub fn resolve_casters(ctx: &mut Ctx, state: &mut State) {
                 set_pending(state, id, p.clone());
                 if still(state) {
                     let access = self::access(ctx, state, id).expect("caster");
-                    let mark = mark_of(ctx, state, &p, &access.actor);
                     super::emit(
                         ctx,
                         state,
@@ -859,7 +860,6 @@ pub fn resolve_casters(ctx: &mut Ctx, state: &mut State) {
                 c.pending = None;
             }
             let access = self::access(ctx, state, id).unwrap_or(access);
-            let mark = mark_of(ctx, state, &p, &access.actor);
             super::emit(
                 ctx,
                 state,

@@ -506,7 +506,7 @@ fn hold(
     };
     let (host_position, host_surface, host_owner) = {
         let h = state.entities.get(host).expect("host");
-        (h.position, h.surface.clone(), h.owner)
+        (anchor_cell(h), h.surface.clone(), h.owner)
     };
     let e = state.entities.get_mut(victim).expect("victim");
     let old = e.unit.take().expect("unit");
@@ -615,7 +615,7 @@ pub fn release_unit(
 
 fn release(ctx: &mut Ctx, state: &mut State, victim: EntityId, record: &Containment) {
     if let Some(h) = state.entities.get(record.host) {
-        let (p, s) = (h.position, h.surface.clone());
+        let (p, s) = (anchor_cell(h), h.surface.clone());
         let e = state.entities.get_mut(victim).expect("victim");
         e.position = p;
         e.surface = s;
@@ -727,7 +727,7 @@ pub fn tick_containment(ctx: &mut Ctx, state: &mut State) {
         let op = op.expect("contain");
         let (p, s) = {
             let h = state.entities.get(record.host).expect("host");
-            (h.position, h.surface.clone())
+            (anchor_cell(h), h.surface.clone())
         };
         let e = state.entities.get_mut(id).expect("victim");
         e.position = p;
@@ -949,11 +949,18 @@ fn enter_split(
     members.len() as i64
 }
 
+/// The cell a held body follows: the old game copied the anchor's whole-cell position, not
+/// its precise point between cells.
+fn anchor_cell(anchor: &crate::entity::Entity) -> Milli {
+    let (x, y) = anchor.position.cell();
+    crate::items::inventory::cell_point(x, y)
+}
+
 fn follow(state: &mut State, parent: EntityId, anchor: EntityId) {
     let Some(a) = state.entities.get(anchor) else {
         return;
     };
-    let (p, s) = (a.position, a.surface.clone());
+    let (p, s) = (anchor_cell(a), a.surface.clone());
     let e = state.entities.get_mut(parent).expect("parent");
     e.position = p;
     e.surface = s;

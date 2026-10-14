@@ -447,11 +447,17 @@ impl World {
                     limits: self.combat.limits,
                     suppress: 0,
                 };
-                if crate::items::inventory::handles(action) {
+                // Commands act between ticks: like the old game, they see the last completed
+                // tick (casts accepted now release on the same tick as there).
+                let tick = self.state.tick;
+                self.state.tick = tick.saturating_sub(1);
+                let result = if crate::items::inventory::handles(action) {
                     crate::items::inventory::apply(&mut ctx, &mut self.state, owner, action)
                 } else {
                     abilities::orders::apply(&mut ctx, &mut self.state, owner, action, control)
-                }
+                };
+                self.state.tick = tick;
+                result
             }
             _ if economy::command::handles(action) => {
                 self.motion.spatial.sync_static(&self.state);
