@@ -26,15 +26,13 @@ pub const ABILITY_ABI: &str = "abilities-1";
 
 const FILE: &str = crate::ABILITIES_FILE;
 
-/// Reads the published library, checks its envelope and the format's rules, and checks
-/// that every resource its presentations use is published.
+/// Reads the published library and checks its envelope and the format's rules.
 pub(crate) fn load(data: &Path, errors: &mut Vec<Error>) -> Option<AbilityLibrary> {
     let publication = crate::error::read_json(data, FILE)
         .map_err(|error| errors.push(error))
         .ok()?;
     let library = read_publication(publication, errors)?;
     rules::check(&library, errors);
-    publication::check_resources(data, &library, errors);
     Some(library)
 }
 
@@ -92,4 +90,10 @@ fn read_publication(
 /// Ability rules that need the whole content: bindings, damage types, summons, icons.
 pub(crate) fn validate(content: &Content, errors: &mut Vec<Error>) {
     references::check(content, errors);
+    publication::check_resources(
+        &content.abilities,
+        &content.effects,
+        &content.manifest,
+        errors,
+    );
 }

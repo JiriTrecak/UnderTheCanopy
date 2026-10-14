@@ -3,38 +3,13 @@
 
 use super::{AbilityLibrary, Presentation};
 use crate::{
+    assets::Manifest,
     effects::{VisualEffect, VisualLayer},
-    error::{Error, parse, read_json},
+    error::Error,
 };
-use serde::Deserialize;
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    path::Path,
-};
+use std::collections::{BTreeMap, BTreeSet};
 
 const FILE: &str = crate::ABILITIES_FILE;
-
-/// The part of `assets/manifest.json` this check reads. Deliberately lenient (no
-/// `deny_unknown_fields`): the assets module owns and strictly checks that format.
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct PublishedRecords {
-    records: Vec<PublishedRecord>,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct PublishedRecord {
-    id: String,
-    #[serde(default)]
-    outputs: Vec<PublishedOutput>,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct PublishedOutput {
-    path: String,
-}
 
 /// A published output of an asset, by role and one-based index: `image`, `audio` or
 /// `geometry`, stored as `<role>.<ext>` for index 1 and `<role>_<index>.<ext>` after that.
@@ -45,32 +20,28 @@ pub(crate) struct ResourceRef<'a> {
     pub index: u32,
 }
 
-/// Reads the effect library and asset manifest (whose own problems their loaders report)
-/// and checks every presentation's resources.
-pub(crate) fn check_resources(data: &Path, library: &AbilityLibrary, errors: &mut Vec<Error>) {
-    let Ok(effects) = crate::effects::read(data) else {
-        return;
-    };
-    let published = read_json(data, crate::MANIFEST_FILE)
-        .and_then(|value| parse::<PublishedRecords>(value, crate::MANIFEST_FILE, ""))
-        .ok();
-    let outputs: Option<BTreeMap<&str, Vec<&str>>> = published.as_ref().map(|published| {
-        published
-            .records
-            .iter()
-            .map(|record| {
-                let files = record
-                    .outputs
-                    .iter()
-                    .map(|o| o.path.rsplit('/').next().unwrap_or_default())
-                    .collect();
-                (record.id.as_str(), files)
-            })
-            .collect()
-    });
+/// Checks that every resource each presentation plays is a published output.
+pub(crate) fn check_resources(
+    library: &AbilityLibrary,
+    effects: &[VisualEffect],
+    manifest: &Manifest,
+    errors: &mut Vec<Error>,
+) {
+    let outputs: BTreeMap<&str, Vec<&str>> = manifest
+        .records
+        .iter()
+        .map(|record| {
+            let files = record
+                .outputs
+                .iter()
+                .map(|o| o.path.rsplit('/').next().unwrap_or_default())
+                .collect();
+            (record.id.as_str(), files)
+        })
+        .collect();
     for presentation in &library.presentations {
         let at = presentation.id.as_str();
-        let refs = match presentation_resources(presentation, &effects.effects) {
+        let refs = match presentation_resources(presentation, effects) {
             Ok(refs) => refs,
             Err(unknown) => {
                 errors.push(Error::new(
@@ -80,9 +51,6 @@ pub(crate) fn check_resources(data: &Path, library: &AbilityLibrary, errors: &mu
                 ));
                 continue;
             }
-        };
-        let Some(outputs) = &outputs else {
-            continue;
         };
         for resource in refs.into_iter().collect::<BTreeSet<_>>() {
             let name = match resource.index {

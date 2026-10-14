@@ -13,19 +13,33 @@ struct World {
 }
 
 fn record(id: &str, role: &str, file: &str, render: Value) -> Value {
-    json!({"id": id, "name": id, "kind": "test", "tags": [], "revision": 1, "profile": "test",
+    json!({"id": id, "name": id, "kind": "model", "tags": [], "revision": 1, "profile": "test",
         "outputs": [{"role": role, "path": format!("assets/library/{id}/{file}"), "sha256": "0".repeat(64), "bytes": 1}],
         "render": render, "scenery": []})
+}
+
+fn statue() -> Value {
+    let id = "asset.test.statue";
+    let mut statue = record(
+        id,
+        "image",
+        "image.png",
+        json!([{"id": id, "file": format!("assets/library/{id}/geometry.glb")}]),
+    );
+    statue["outputs"].as_array_mut().unwrap().push(
+        json!({"role": "model", "path": format!("assets/library/{id}/geometry.glb"), "sha256": "0".repeat(64), "bytes": 1}),
+    );
+    statue
 }
 
 fn world() -> World {
     let icon = "asset.test.icon";
     let manifest = json!({"version": 1, "records": [
         record(icon, "image", "image.png", json!([{"id": icon, "image": "assets/library/asset.test.icon/image.png"}])),
-        record("asset.test.model", "geometry", "geometry.glb", json!([{"id": "asset.test.model", "file": "assets/library/asset.test.model/geometry.glb"}])),
+        record("asset.test.model", "model", "geometry.glb", json!([{"id": "asset.test.model", "file": "assets/library/asset.test.model/geometry.glb"}])),
         record("asset.test.spark", "image", "image.png", json!([])),
-        // Publishes an image file but renders as a model.
-        record("asset.test.statue", "image", "image.png", json!([{"id": "asset.test.statue", "file": "assets/library/asset.test.statue/geometry.glb"}])),
+        // Publishes an image file but renders as a model, so it is no icon.
+        statue(),
     ]});
     let meta = json!({"name": "Do", "description": "", "icon": icon, "priority": 0});
     let actions: serde_json::Map<String, Value> = [
@@ -127,6 +141,17 @@ fn load(world: &World, name: &str) -> Result<Content, Errors> {
         let path = root.join(file);
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(path, serde_json::to_string_pretty(value).unwrap()).unwrap();
+    }
+    let catalogue = root.join("assets/authoring/catalogue.json");
+    std::fs::create_dir_all(catalogue.parent().unwrap()).unwrap();
+    std::fs::write(catalogue, "[]").unwrap();
+    // Published outputs must exist on disk.
+    for record in world.manifest["records"].as_array().into_iter().flatten() {
+        for output in record["outputs"].as_array().into_iter().flatten() {
+            let path = root.join(output["path"].as_str().unwrap());
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(path, [0]).unwrap();
+        }
     }
     Content::load(&root)
 }
