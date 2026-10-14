@@ -7,6 +7,7 @@ use crate::{
     setup::MatchSetup,
     spawn,
     state::{FactKind, State},
+    terrain::Terrain,
     view::View,
 };
 use canopy_content::{Content, map::UtcMap, placement::Owner};
@@ -41,6 +42,8 @@ pub struct SetupError(pub String);
 
 pub struct World {
     catalog: Arc<Catalog>,
+    /// Compiled once from the map; immutable and shared with every system.
+    terrain: Arc<Terrain>,
     setup: MatchSetup,
     state: State,
     pending: Vec<Queued>,
@@ -50,8 +53,11 @@ impl World {
     /// Starts a match on `map`.
     pub fn new(content: Arc<Content>, map: &UtcMap, setup: MatchSetup) -> Result<Self, SetupError> {
         let catalog = Arc::new(Catalog::new(content));
+        let terrain = Arc::new(compile(map, &catalog)?);
         let mut state = State::new(setup.seed);
-        let placements = spawn::placements(map, &catalog, &setup).map_err(SetupError)?;
+        let placements = spawn::placements(map, &catalog, &terrain, &setup).map_err(SetupError)?;
+        spawn::validate(&catalog, &terrain, &setup, &placements).map_err(SetupError)?;
+        spawn::playable(map, &catalog, &terrain).map_err(SetupError)?;
         for placement in placements.iter().filter(|p| p.activation.is_none()) {
             spawn::create(&mut state, &catalog, placement).map_err(SetupError)?;
         }
@@ -60,6 +66,7 @@ impl World {
         }
         Ok(Self {
             catalog,
+            terrain,
             setup,
             state,
             pending: Vec::new(),
@@ -76,6 +83,11 @@ impl World {
 
     pub fn catalog(&self) -> &Catalog {
         &self.catalog
+    }
+
+    /// The match terrain, shared read-only.
+    pub fn terrain(&self) -> &Arc<Terrain> {
+        &self.terrain
     }
 
     pub fn setup(&self) -> &MatchSetup {
@@ -147,21 +159,29 @@ impl World {
         }
     }
 
-    /// Resumes a saved match on the same content and map.
-    pub fn restore(content: Arc<Content>, save: Save) -> Result<Self, SetupError> {
+    /// Resumes a saved match on the same content and map. The terrain is rebuilt from the
+    /// map, never saved.
+    pub fn restore(content: Arc<Content>, map: &UtcMap, save: Save) -> Result<Self, SetupError> {
         if save.version != SAVE_VERSION {
             return Err(SetupError(format!(
                 "unsupported save version {}",
                 save.version
             )));
         }
+        let catalog = Arc::new(Catalog::new(content));
+        let terrain = Arc::new(compile(map, &catalog)?);
         Ok(Self {
-            catalog: Arc::new(Catalog::new(content)),
+            catalog,
+            terrain,
             setup: save.setup,
             state: save.state,
             pending: save.pending,
         })
     }
+}
+
+fn compile(map: &UtcMap, catalog: &Catalog) -> Result<Terrain, SetupError> {
+    Terrain::compile(map, &catalog.content).map_err(|e| SetupError(e.to_string()))
 }
 
 pub const SAVE_VERSION: u32 = 1;

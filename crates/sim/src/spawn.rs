@@ -1,89 +1,103 @@
-//! Turning a map into initial placements and placements into entities.
+//! Turning a map into initial placements, checking them against the terrain, and turning
+//! placements into entities (old `expandMap`/`validatePlacements`/`placementOccupancyError`/
+//! `startingResourceClearanceError` in `src/content/map.ts`, `src/content/startingHero.ts`,
+//! and the terrain rules of `playableMapError` in `src/shared/map/playable.ts`).
 
 use crate::{
     catalog::{Catalog, Def},
     entity::{Construction, Entity, EntityId, LooseItem, Milli, Resource, Unit},
-    setup::MatchSetup,
+    setup::{MatchSetup, Slot},
     state::State,
+    terrain::{
+        CellBounds, Terrain,
+        footprint::{
+            Bounds, Extent, body_overlaps_bounds, footprint_cells, half_extents,
+            placement_geometry_error, resource_center_separation,
+        },
+        round_half_up,
+    },
 };
 use canopy_content::{
-    game::Kind,
-    map::UtcMap,
-    placement::{InitialConstruction, InitialState, Owner, Placement, Point},
+    Content, Id,
+    conditions::Locomotion,
+    game::{Creation, Definition, Kind, Rules, StartingSetup},
+    map::{PlayerStart, UtcMap},
+    placement::{Activation, InitialConstruction, InitialState, Owner, Placement, Point},
 };
+use std::collections::{BTreeMap, BTreeSet};
 
-/// Every placement the match starts with, in placement-id order: the map's own entities
-/// plus each player's starting setup (fort and starting units).
+/// Every placement the match starts with, in placement-id order: the map's own entities,
+/// each player's starting setup (fort and starting units) on skirmish maps, and the
+/// resources projected from the map's scenery.
 pub fn placements(
     map: &UtcMap,
     catalog: &Catalog,
+    terrain: &Terrain,
     setup: &MatchSetup,
 ) -> Result<Vec<Placement>, String> {
-    let rules = &catalog.content.rules;
+    expand(map, &catalog.content, terrain, &setup.slots)
+}
+
+fn expand(
+    map: &UtcMap,
+    content: &Content,
+    terrain: &Terrain,
+    slots: &[Slot],
+) -> Result<Vec<Placement>, String> {
+    let rules = &content.rules;
+    for slot in slots {
+        race_setup(rules, slot.race.as_deref())?;
+    }
     let mut result = map.entities.clone();
-    if map.mission.is_none() && !map.sandbox {
+    if skirmish(map) {
+        let resources = resources(map, terrain);
         for start in &map.player_starts {
-            let slot = setup
-                .slots
+            let slot = slots
                 .iter()
                 .find(|s| u32::from(s.player) + 1 == u32::from(start.player));
-            let setup_rules = if rules.races.is_empty() {
-                &rules.starting_setup
-            } else {
-                let race = slot
-                    .and_then(|s| s.race.as_deref())
-                    .unwrap_or(&rules.default_race);
-                rules
-                    .race(race)
-                    .ok_or_else(|| format!("unknown race {race}"))?
-                    .starting_setup
-            };
-            let owner = Owner::Player(start.player - 1);
+            let setup = race_setup(rules, slot.and_then(|s| s.race.as_deref()))?;
+            let known = rules.starting_setup.id.as_str() == start.setup
+                || rules.races.values().any(|r| {
+                    r.starting_setup
+                        .as_ref()
+                        .is_some_and(|s| s.id.as_str() == start.setup)
+                });
+            if !known {
+                return Err(format!(
+                    "Player {}: unknown setup {}",
+                    start.player, start.setup
+                ));
+            }
+            let owner = start.owner();
             let prefix = format!("start.player.{}", start.player);
-            let rotation = f64::from(start.rotation.unwrap_or(0));
             result.push(Placement {
                 activation: None,
                 id: format!("{prefix}/main-fort"),
                 map_knowledge: None,
-                definition: setup_rules.fort.clone(),
+                definition: setup.fort.clone(),
                 position: Point {
                     x: start.x,
                     y: start.z,
                     surface: None,
                 },
-                rotation,
+                rotation: f64::from(start.rotation.unwrap_or(0)),
                 owner,
                 initial_state: Some(InitialState {
                     construction: Some(InitialConstruction::Complete),
-                    inventory: Some(setup_rules.inventory.clone()),
+                    inventory: Some(setup.inventory.clone()),
                     ..InitialState::default()
                 }),
                 appearance: None,
             });
-            let hero = match (&setup_rules.hero, slot.and_then(|s| s.hero.as_ref())) {
-                (Some(policy), selected) => {
-                    let id = selected.map_or(policy.default.as_str(), String::as_str);
-                    if !policy.choices.iter().any(|c| c == id) {
-                        return Err(format!("unavailable starting hero {id}"));
-                    }
-                    Some((id.to_string(), policy.offset.clone()))
-                }
-                (None, Some(_)) => return Err("this setup has no starting hero choice".into()),
-                (None, None) => None,
-            };
-            let units = setup_rules
-                .units
-                .iter()
-                .map(|u| (u.definition.to_string(), u.offset.clone()))
-                .chain(hero);
-            for (index, (definition, offset)) in units.enumerate() {
-                let (x, y) =
-                    starting_unit_position(start.x, start.z, rotation, offset.x, offset.y)?;
+            let rotation = formation_rotation(start, setup, &resources, content);
+            let hero = slot.and_then(|s| s.hero.as_deref());
+            for (index, (definition, (ox, oy))) in starting_units(setup, hero)?.enumerate() {
+                let (x, y) = starting_unit_position(start.x, start.z, rotation, ox, oy)?;
                 result.push(Placement {
                     activation: None,
                     id: format!("{prefix}/unit-{:03}", index + 1),
                     map_knowledge: None,
-                    definition: definition.parse_id()?,
+                    definition: definition.clone(),
                     position: Point {
                         x,
                         y,
@@ -97,18 +111,59 @@ pub fn placements(
             }
         }
     }
+    result.extend(terrain.scene().resources.iter().cloned());
     result.sort_by(|a, b| a.id.cmp(&b.id));
     Ok(result)
 }
 
-trait ParseId {
-    fn parse_id(&self) -> Result<canopy_content::Id, String>;
+fn skirmish(map: &UtcMap) -> bool {
+    map.mission.is_none() && !map.sandbox
 }
 
-impl ParseId for String {
-    fn parse_id(&self) -> Result<canopy_content::Id, String> {
-        canopy_content::Id::new(self.clone())
+/// The map's entities and its projected resources: what starting formations face.
+fn resources<'a>(map: &'a UtcMap, terrain: &'a Terrain) -> Vec<&'a Placement> {
+    map.entities
+        .iter()
+        .chain(&terrain.scene().resources)
+        .collect()
+}
+
+/// A race's starting setup; the default race when `race` is `None` (old `raceDefinition`).
+fn race_setup<'r>(rules: &'r Rules, race: Option<&str>) -> Result<&'r StartingSetup, String> {
+    let key = race.unwrap_or(&rules.default_race);
+    match rules.races.get(key) {
+        Some(race) => Ok(race
+            .starting_setup
+            .as_ref()
+            .unwrap_or(&rules.starting_setup)),
+        None if key == rules.default_race && rules.races.is_empty() => Ok(&rules.starting_setup),
+        None => Err(format!("Unknown race: {key}")),
     }
+}
+
+/// The setup's starting units followed by the chosen (or default) hero, with offsets.
+fn starting_units<'s>(
+    setup: &'s StartingSetup,
+    selected: Option<&str>,
+) -> Result<impl Iterator<Item = (&'s Id, (i32, i32))>, String> {
+    let hero = match (&setup.hero, selected) {
+        (None, Some(_)) => return Err("This setup has no starting hero choice".into()),
+        (None, None) => None,
+        (Some(policy), selected) => {
+            let id = selected.unwrap_or(policy.default.as_str());
+            let choice = policy
+                .choices
+                .iter()
+                .find(|c| c.as_str() == id)
+                .ok_or_else(|| format!("Unavailable starting hero: {id}"))?;
+            Some((choice, (policy.offset.x, policy.offset.y)))
+        }
+    };
+    Ok(setup
+        .units
+        .iter()
+        .map(|u| (&u.definition, (u.offset.x, u.offset.y)))
+        .chain(hero))
 }
 
 /// A starting unit's cell: the offset rotated in quarter turns around the start, with the
@@ -122,11 +177,10 @@ fn starting_unit_position(
 ) -> Result<(f64, f64), String> {
     let quarter = rotation / 90.0;
     if quarter.fract() != 0.0 {
-        return Err("starting formations rotate in 90-degree steps".into());
+        return Err("Starting formations rotate in 90-degree steps".into());
     }
-    let round = |v: f64| (v + 0.5).floor();
-    let dx = f64::from(ox) + round(x) - x;
-    let dy = f64::from(oy) + round(z) - z;
+    let dx = f64::from(ox) + round_half_up(x) - x;
+    let dy = f64::from(oy) + round_half_up(z) - z;
     let (rx, ry) = match (quarter as i64).rem_euclid(4) {
         0 => (dx, dy),
         1 => (dy, -dx),
@@ -134,6 +188,436 @@ fn starting_unit_position(
         _ => (-dy, dx),
     };
     Ok((x + rx, z + ry))
+}
+
+/// The formation's rotation: facing the nearest source of the setup's first gathered item
+/// within the gathering radius, in quarter turns (old `startingFormationRotation`). Ties
+/// go to the lower placement id; without such a source the start's own rotation stands.
+fn formation_rotation(
+    start: &PlayerStart,
+    setup: &StartingSetup,
+    resources: &[&Placement],
+    content: &Content,
+) -> f64 {
+    let rotation = f64::from(start.rotation.unwrap_or(0));
+    let base = content
+        .definition(setup.fort.as_str())
+        .and_then(|fort| fort.behaviors.storage.as_ref()?.gathering.as_ref())
+        .map(|g| (&g.item, g.radius));
+    let gathering = base.or_else(|| {
+        let first = setup.gathering.as_ref()?.first()?;
+        Some((&first.item, f64::from(first.radius)))
+    });
+    let Some((item, radius)) = gathering else {
+        return rotation;
+    };
+    let Some(Creation::Harvest { source, .. }) = content
+        .definition(item.as_str())
+        .and_then(|d| d.creation.as_ref())
+    else {
+        return rotation;
+    };
+    let distance = |p: &Placement| {
+        let (dx, dz) = (p.position.x - start.x, p.position.y - start.z);
+        dx * dx + dz * dz
+    };
+    let nearest = resources
+        .iter()
+        .filter(|p| {
+            p.definition == *source
+                && p.owner == Owner::Nobody
+                && p.activation.is_none()
+                && initial_amount(p, content) > 0
+                && distance(p) <= radius * radius
+        })
+        .min_by(|a, b| {
+            distance(a)
+                .total_cmp(&distance(b))
+                .then_with(|| a.id.cmp(&b.id))
+        });
+    let Some(source) = nearest else {
+        return rotation;
+    };
+    let (dx, dz) = (source.position.x - start.x, source.position.y - start.z);
+    if dx == 0.0 && dz == 0.0 {
+        rotation
+    } else if dx.abs() > dz.abs() {
+        if dx > 0.0 { 90.0 } else { 270.0 }
+    } else if dz > 0.0 {
+        0.0
+    } else {
+        180.0
+    }
+}
+
+/// A placement's starting yield: its own amount, else its definition's.
+fn initial_amount(p: &Placement, content: &Content) -> u32 {
+    p.initial_state
+        .as_ref()
+        .and_then(|s| s.amount)
+        .or_else(|| content.definition(p.definition.as_str())?.resource_yield)
+        .unwrap_or(0)
+}
+
+fn definition<'c>(content: &'c Content, p: &Placement) -> Result<&'c Definition, String> {
+    content
+        .definition(p.definition.as_str())
+        .ok_or_else(|| format!("{}: unknown definition {}", p.id, p.definition))
+}
+
+/// The placement rules that need geometry, on the match's actual placements: cell
+/// centres and the building lattice, unique ids (projected resources included), map
+/// bounds, building footprints on the map, known walk surfaces, and owners with a slot.
+pub fn validate(
+    catalog: &Catalog,
+    terrain: &Terrain,
+    setup: &MatchSetup,
+    placements: &[Placement],
+) -> Result<(), String> {
+    let content = &catalog.content;
+    let size = f64::from(terrain.size());
+    let mut ids = BTreeSet::new();
+    for p in placements {
+        let d = definition(content, p)?;
+        let (x, y) = (p.position.x, p.position.y);
+        if let Some(error) = placement_geometry_error(d, x, y, p.rotation) {
+            return Err(format!("{}: {error}", p.id));
+        }
+        if !ids.insert(p.id.as_str()) {
+            return Err(format!("Duplicate placement {}", p.id));
+        }
+        if !(x >= 0.0 && y >= 0.0 && x < size && y < size) {
+            return Err(format!("{}: outside map bounds", p.id));
+        }
+        if d.kind == Kind::Building
+            && !footprint_cells(x, y, Extent::of(d.footprint.as_ref()), p.rotation)
+                .inside(terrain.size())
+        {
+            return Err(format!(
+                "{}: building footprint is outside map bounds",
+                p.id
+            ));
+        }
+        if let Some(surface) = &p.position.surface
+            && terrain.floor(x, y, Some(surface)).is_none()
+        {
+            return Err(format!("{}: unknown or out-of-bounds walk surface", p.id));
+        }
+        if let Owner::Player(slot) = p.owner
+            && p.activation.is_none()
+            && !setup.slots.iter().any(|s| s.player == slot)
+        {
+            return Err(format!(
+                "Placement owner player.{} has no match slot",
+                u32::from(slot) + 1
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Whether the map can be played on its terrain: each start on the building lattice with
+/// room, dry and gentle ground for every race's fort and formation; starting halls clear
+/// of resources; nothing overlapping at the start. Checked for the default setups, as
+/// the map is authored.
+pub fn playable(map: &UtcMap, catalog: &Catalog, terrain: &Terrain) -> Result<(), String> {
+    let content = &catalog.content;
+    let rules = &content.rules;
+    let resources = resources(map, terrain);
+    let fort = content
+        .definition(rules.starting_setup.fort.as_str())
+        .ok_or("unknown starting fort")?;
+    let size = f64::from(terrain.size());
+    let field = terrain.field();
+    for s in &map.player_starts {
+        let player = s.player;
+        let rotation = f64::from(s.rotation.unwrap_or(0));
+        if placement_geometry_error(fort, s.x, s.z, rotation).is_some()
+            || s.x < 8.0
+            || s.z < 8.0
+            || s.x > size - 9.0
+            || s.z > size - 9.0
+        {
+            return Err(format!(
+                "Player {player} needs a building-grid-aligned start at least 8 navigation cells inside the map."
+            ));
+        }
+        let area = starting_area(s, &resources, content)?;
+        if !area.inside(terrain.size()) {
+            return Err(format!(
+                "Player {player} needs room for the complete fort and worker formation."
+            ));
+        }
+        let dry = area.cells().all(|(x, z)| {
+            let (x, z) = (x as f64, z as f64);
+            field.sample(x, z) > field.water_at(x, z) + 0.1
+        });
+        if !dry {
+            return Err(format!(
+                "Player {player} needs dry ground for the fort and workers."
+            ));
+        }
+        if !terrain.foundation_fits(area) {
+            return Err(format!(
+                "Player {player} needs flatter ground for the fort and workers."
+            ));
+        }
+    }
+    resource_clearance(map, content, &resources)?;
+    occupancy(map, content, terrain)
+}
+
+/// Cells a start needs for its fort and the formation of every race and selectable hero
+/// (old `startingArea`).
+fn starting_area(
+    start: &PlayerStart,
+    resources: &[&Placement],
+    content: &Content,
+) -> Result<CellBounds, String> {
+    let rules = &content.rules;
+    let setups: Vec<&StartingSetup> = if rules.races.is_empty() {
+        vec![&rules.starting_setup]
+    } else {
+        rules
+            .races
+            .values()
+            .map(|r| r.starting_setup.as_ref().unwrap_or(&rules.starting_setup))
+            .collect()
+    };
+    let rotation = f64::from(start.rotation.unwrap_or(0));
+    let (mut lo_x, mut hi_x, mut lo_z, mut hi_z) = (
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+    );
+    for setup in setups {
+        let fort = content
+            .definition(setup.fort.as_str())
+            .ok_or_else(|| format!("unknown fort {}", setup.fort))?;
+        let half = half_extents(Extent::of(fort.footprint.as_ref()), rotation);
+        lo_x = lo_x.min(start.x - half.0);
+        hi_x = hi_x.max(start.x + half.0);
+        lo_z = lo_z.min(start.z - half.1);
+        hi_z = hi_z.max(start.z + half.1);
+        let facing = formation_rotation(start, setup, resources, content);
+        let heroes = setup.hero.iter().flat_map(|h| {
+            h.choices
+                .iter()
+                .map(move |id| (id, (h.offset.x, h.offset.y)))
+        });
+        let formation = setup
+            .units
+            .iter()
+            .map(|u| (&u.definition, (u.offset.x, u.offset.y)))
+            .chain(heroes);
+        for (id, (ox, oy)) in formation {
+            let (x, y) = starting_unit_position(start.x, start.z, facing, ox, oy)?;
+            let radius = content
+                .definition(id.as_str())
+                .and_then(|d| d.dimensions.as_ref())
+                .map_or(0.0, |d| d.radius);
+            lo_x = lo_x.min(x - radius);
+            hi_x = hi_x.max(x + radius);
+            lo_z = lo_z.min(y - radius);
+            hi_z = hi_z.max(y + radius);
+        }
+    }
+    Ok(CellBounds {
+        min_x: lo_x.floor() as i64,
+        min_y: lo_z.floor() as i64,
+        max_x: hi_x.ceil() as i64,
+        max_y: hi_z.ceil() as i64,
+    })
+}
+
+/// Starting halls keep the same resource access lane construction requires (old
+/// `startingResourceClearanceError`).
+fn resource_clearance(
+    map: &UtcMap,
+    content: &Content,
+    resources: &[&Placement],
+) -> Result<(), String> {
+    if !skirmish(map) {
+        return Ok(());
+    }
+    let hall = content
+        .definition(content.rules.starting_setup.fort.as_str())
+        .ok_or("unknown starting fort")?;
+    for s in &map.player_starts {
+        for resource in resources {
+            let d = definition(content, resource)?;
+            let Some(clearance) = d.construction_clearance else {
+                continue;
+            };
+            if resource.activation == Some(Activation::Script)
+                || initial_amount(resource, content) == 0
+            {
+                continue;
+            }
+            let (min_x, min_y) = resource_center_separation(
+                Extent::of(hall.footprint.as_ref()),
+                Extent::of(d.footprint.as_ref()),
+                f64::from(clearance),
+                f64::from(s.rotation.unwrap_or(0)),
+                resource.rotation,
+            );
+            if (s.x - resource.position.x).abs() < min_x
+                && (s.z - resource.position.y).abs() < min_y
+            {
+                return Err(format!(
+                    "Player {}: {} is too close to {}; leave at least {min_x} cells horizontally or {min_y} cells vertically between centers.",
+                    s.player, hall.name, d.name
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// A standing unit body at the start.
+struct Body<'a> {
+    id: &'a str,
+    x: f64,
+    y: f64,
+    radius: f64,
+    height: f64,
+    floor: f64,
+    air: bool,
+}
+
+/// Nothing overlaps at the start (old `placementOccupancyError`): footprints of buildings
+/// and standing resources share no cell on the same floor; unit bodies stay on the map,
+/// off static footprints, and apart from each other.
+fn occupancy(map: &UtcMap, content: &Content, terrain: &Terrain) -> Result<(), String> {
+    let placements = expand(map, content, terrain, &[])?;
+    let size = terrain.size();
+    let limit = f64::from(size) - 0.5;
+    let layered = placements.iter().any(|p| p.position.surface.is_some());
+    let floor = |x: f64, y: f64, surface: Option<&str>| {
+        if layered {
+            terrain.floor(x, y, surface).unwrap_or(0.0)
+        } else {
+            0.0
+        }
+    };
+    let cell_index = |x: i64, y: i64| (y * i64::from(size) + x) as usize;
+    let mut occupied: BTreeMap<usize, Vec<(&str, f64)>> = BTreeMap::new();
+    let mut units: Vec<Body> = Vec::new();
+    let mut unit_cells: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
+    let mut max_radius = 0.0f64;
+    for p in &placements {
+        let d = definition(content, p)?;
+        let amount = p.initial_state.as_ref().and_then(|s| s.amount);
+        if d.kind == Kind::Item || (d.kind == Kind::Resource && amount == Some(0)) {
+            continue;
+        }
+        let scripted = p.activation == Some(Activation::Script);
+        let (x, y) = (p.position.x, p.position.y);
+        let surface = p.position.surface.as_deref();
+        if d.kind == Kind::Unit {
+            let dimensions = d
+                .dimensions
+                .as_ref()
+                .ok_or_else(|| format!("{}: unit without dimensions", p.id))?;
+            let radius = dimensions.radius;
+            if x - radius < -0.5 || y - radius < -0.5 || x + radius > limit || y + radius > limit {
+                return Err(format!("{}: body is outside the playable map", p.id));
+            }
+            // Deferred units may emerge from an occupied cage.
+            if scripted {
+                continue;
+            }
+            let air =
+                d.behaviors.movement.as_ref().and_then(|m| m.locomotion) == Some(Locomotion::Air);
+            max_radius = max_radius.max(radius);
+            let cell = cell_index(round_half_up(x) as i64, round_half_up(y) as i64);
+            unit_cells.entry(cell).or_default().push(units.len());
+            units.push(Body {
+                id: &p.id,
+                x,
+                y,
+                radius,
+                height: dimensions.height,
+                floor: floor(x, y, surface),
+                air,
+            });
+            continue;
+        }
+        let bounds = footprint_cells(x, y, Extent::of(d.footprint.as_ref()), p.rotation);
+        for (cx, cy) in bounds.cells() {
+            if terrain.cell(cx, cy).is_none() {
+                return Err(format!("{}: footprint is outside the playable map", p.id));
+            }
+            // Deferred scenery may replace a destroyed object.
+            if scripted {
+                continue;
+            }
+            let height = floor(cx as f64, cy as f64, surface);
+            let column = occupied.entry(cell_index(cx, cy)).or_default();
+            if let Some((other, _)) = column.iter().find(|(_, h)| (h - height).abs() < 2.0) {
+                return Err(format!("{}: overlaps {other}", p.id));
+            }
+            column.push((&p.id, height));
+        }
+    }
+    let last = i64::from(size) - 1;
+    let milli = |v: f64| round_half_up(v * 1000.0) as i64;
+    for unit in &units {
+        // Static footprints meet the square navigation body; units meet as circles.
+        if !unit.air {
+            let y0 = ((unit.y - unit.radius + 0.5).floor() as i64).max(0);
+            let y1 = ((unit.y + unit.radius + 0.5).floor() as i64).min(last);
+            let x0 = ((unit.x - unit.radius + 0.5).floor() as i64).max(0);
+            let x1 = ((unit.x + unit.radius + 0.5).floor() as i64).min(last);
+            for cy in y0..=y1 {
+                for cx in x0..=x1 {
+                    let cell = Bounds {
+                        min_x: cx as f64 - 0.5,
+                        min_y: cy as f64 - 0.5,
+                        max_x: cx as f64 + 0.5,
+                        max_y: cy as f64 + 0.5,
+                    };
+                    let column = occupied.get(&cell_index(cx, cy)).into_iter().flatten();
+                    for (other, height) in column {
+                        if (height - unit.floor).abs() < 2.0
+                            && body_overlaps_bounds(unit.x, unit.y, unit.radius, cell)
+                        {
+                            return Err(format!("{}: body overlaps {other}", unit.id));
+                        }
+                    }
+                }
+            }
+        }
+        let reach = unit.radius + max_radius;
+        let y0 = ((unit.y - reach).floor() as i64).max(0);
+        let y1 = ((unit.y + reach).ceil() as i64).min(last);
+        let x0 = ((unit.x - reach).floor() as i64).max(0);
+        let x1 = ((unit.x + reach).ceil() as i64).min(last);
+        for cy in y0..=y1 {
+            for cx in x0..=x1 {
+                for &index in unit_cells.get(&cell_index(cx, cy)).into_iter().flatten() {
+                    let other = &units[index];
+                    if other.id >= unit.id || other.air != unit.air {
+                        continue;
+                    }
+                    if layered
+                        && (unit.floor >= other.floor + other.height
+                            || other.floor >= unit.floor + unit.height)
+                    {
+                        continue;
+                    }
+                    let dx = milli(unit.x) - milli(other.x);
+                    let dy = milli(unit.y) - milli(other.y);
+                    let separation = milli(unit.radius) + milli(other.radius);
+                    if dx * dx + dy * dy < separation * separation {
+                        return Err(format!("{}: overlaps {}", unit.id, other.id));
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Creates the entity for a placement and adds it to the state.
