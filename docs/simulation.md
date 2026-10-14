@@ -49,6 +49,14 @@ One function per system, called in a fixed order (from the old game, `Game.tick`
 
 ## Lua
 
+Differences from the old Lua 5.3 (fengari) runtime that scripts can notice:
+- Arithmetic on strings fails (`"10" + 1`), because there is no string library to coerce them.
+- Integers are 64-bit (fengari wrapped at 2^31). Whole numbers reach scripts as integers, so `"t" .. mission.tick()` reads `t4`, not `t4.0`.
+- `<const>`/`<close>` locals are valid; a `for` loop with step 0 is an error.
+- Loops count up to about a third more instructions against the 20,000 limit.
+- Some error messages are worded differently.
+- `mission.tick()` starts at 0 (one lower than the old game).
+
 Vendored Lua 5.4 through `mlua`, no standard libraries, a fresh state per run, an instruction limit (20,000) and string limit (64 KiB), scalar arguments only, ≤256 API calls per run, transactional effects (applied only when the run succeeds). `on_start` once, `on_tick` every 4 ticks. The 34-function `mission` API from the old game.
 
 ## Saves and hashing

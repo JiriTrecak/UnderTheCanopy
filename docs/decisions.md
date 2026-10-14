@@ -20,7 +20,7 @@ Simulation math uses deterministic functions (`libm` or fixed point), never plat
 
 ## D5. Lua 5.4 through mlua for scenario scripting (2026-10-14)
 
-Map and campaign scripts run on vendored Lua 5.4 via `mlua` with no standard libraries opened, exactly like the old sandbox: scripts reach only the `mission` API, so platform maths and Lua's own randomness are unreachable, and the unfixed string-hash seed only affects table iteration, which scripts cannot observe. Why: today's scripts target Lua 5.3 (fengari) and run on 5.4 nearly unchanged; Luau would break integer and bitwise semantics. Differences scripts can notice are listed in `crates/sim/src/mission/sandbox.rs`.
+Map and campaign scripts run on vendored Lua 5.4 via `mlua` with no standard libraries opened, exactly like the old sandbox: scripts reach only the `mission` API, so platform maths and Lua's own randomness are unreachable, and the unfixed string-hash seed only affects table iteration, which scripts cannot observe. Why: today's scripts target Lua 5.3 (fengari) and run on 5.4 nearly unchanged; Luau would break integer and bitwise semantics. Differences scripts can notice are listed in [simulation](simulation.md#lua).
 
 ## D6. Platform layer owns every path (2026-10-14)
 
