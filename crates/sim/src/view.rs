@@ -10,20 +10,12 @@ use crate::{
     entity::{Entity, EntityId, Stock},
     mission::state::{Dialogue, ObjectiveState, Scene},
     state::{Fact, Outcome, State},
+    teams::Relation,
     terrain::Terrain,
     vision::{DeathCue, FogStep, Scenery, Sight, SightRules, Sighting, VISIBLE, Vision},
 };
 use canopy_content::placement::Owner;
 use std::{collections::BTreeMap, sync::Arc};
-
-/// How the viewer stands toward an entity's owner.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Relation {
-    Own,
-    Ally,
-    Enemy,
-    Neutral,
-}
 
 /// An entity as the viewer knows it.
 #[derive(Debug, Clone, PartialEq)]
@@ -163,17 +155,7 @@ impl View {
             rules,
         };
         let teams = vision.teams();
-        let relation = |other: Owner| {
-            if other == owner {
-                Relation::Own
-            } else if other == Owner::Nobody {
-                Relation::Neutral
-            } else if teams.allied(owner, other) {
-                Relation::Ally
-            } else {
-                Relation::Enemy
-            }
-        };
+        let relation = |other: Owner| teams.relation(owner, other);
         let knowledge = sight.knowledge(owner);
         let mut live = vision
             .actors()

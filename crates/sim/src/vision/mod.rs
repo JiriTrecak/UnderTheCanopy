@@ -46,6 +46,7 @@ pub use rules::{Current, SightRules};
 pub use scenery::Scenery;
 pub use sight::Sight;
 
+pub use crate::teams::Teams;
 use crate::{
     catalog::Catalog,
     entity::{EntityId, Milli},
@@ -60,73 +61,6 @@ use scenery::Chunks;
 use sensor::{Sensor, SensorKey, Spans, Spec};
 use statics::{StaticRecord, Statics};
 use std::{collections::BTreeSet, iter::Peekable, sync::Arc, vec::IntoIter};
-
-/// Who shares sight: the teams of the match (a slot's `team`, or its player index without
-/// one, as the old hostility rule compared them).
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Teams {
-    /// `(player, team)` by player.
-    slots: Vec<(u8, u8)>,
-    /// Distinct teams of the slots, ascending: knowledge index order.
-    teams: Vec<u8>,
-    /// Slot owners, ascending.
-    owners: Vec<Owner>,
-}
-
-impl Teams {
-    pub fn new(setup: &MatchSetup) -> Self {
-        let mut slots: Vec<(u8, u8)> = setup
-            .slots
-            .iter()
-            .map(|s| (s.player, s.team.unwrap_or(s.player)))
-            .collect();
-        slots.sort_unstable();
-        let mut teams: Vec<u8> = slots.iter().map(|s| s.1).collect();
-        teams.sort_unstable();
-        teams.dedup();
-        let owners = slots.iter().map(|s| Owner::Player(s.0)).collect();
-        Self {
-            slots,
-            teams,
-            owners,
-        }
-    }
-
-    pub fn team_of(&self, owner: Owner) -> Option<u8> {
-        let Owner::Player(player) = owner else {
-            return None;
-        };
-        Some(
-            self.slots
-                .binary_search_by_key(&player, |s| s.0)
-                .map_or(player, |i| self.slots[i].1),
-        )
-    }
-
-    /// Index of the owner's team among [`Teams::teams`].
-    pub fn index(&self, owner: Owner) -> Option<usize> {
-        let team = self.team_of(owner)?;
-        self.teams.binary_search(&team).ok()
-    }
-
-    pub fn teams(&self) -> &[u8] {
-        &self.teams
-    }
-
-    /// The players of the match.
-    pub fn owners(&self) -> &[Owner] {
-        &self.owners
-    }
-
-    /// Same owner, or players on one team: they share all ordinary sight.
-    pub fn allied(&self, a: Owner, b: Owner) -> bool {
-        a == b || (a != Owner::Nobody && b != Owner::Nobody && self.team_of(a) == self.team_of(b))
-    }
-
-    fn bit(&self, owner: Owner) -> u16 {
-        self.index(owner).map_or(0, |i| 1 << i)
-    }
-}
 
 /// The derived side of vision; see the module documentation.
 #[derive(Debug, Clone)]
@@ -451,8 +385,8 @@ impl Vision {
             if let Some(flight) = rules.flight_cm(catalog, e) {
                 elevation += flight + air_gap_cm(terrain, origin, deck);
             }
-            let mut teams = self.teams.bit(e.owner);
-            rules.lends_sight(e, &mut |owner| teams |= self.teams.bit(owner));
+            let mut teams = team_bit(&self.teams, e.owner);
+            rules.lends_sight(e, &mut |owner| teams |= team_bit(&self.teams, owner));
             let spec = Spec {
                 owner: e.owner,
                 origin,
@@ -477,7 +411,7 @@ impl Vision {
                 elevation: v.elevation,
                 radius: v.radius,
                 ignore_terrain: v.ignore_terrain,
-                teams: self.teams.bit(v.owner),
+                teams: team_bit(&self.teams, v.owner),
             };
             self.follow(SensorKey::Spell(v.id), spec, &mut old, &mut next, terrain);
         }
@@ -1004,4 +938,9 @@ pub fn add_spell_vision(state: &mut State, mut spell: SpellVision) -> Option<u32
 /// Ends the sight sources that end with `caster` (it died or was removed).
 pub fn end_spell_visions(state: &mut State, caster: EntityId) {
     state.knowledge.spells.retain(|v| v.caster != Some(caster));
+}
+
+/// The owner's team as a bit in a sensor's team mask.
+fn team_bit(teams: &Teams, owner: Owner) -> u16 {
+    teams.index(owner).map_or(0, |i| 1 << i)
 }

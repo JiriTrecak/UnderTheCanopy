@@ -7,7 +7,7 @@ mod vision_fixture;
 use canopy_content::placement::Owner;
 use canopy_sim::{
     catalog::Catalog,
-    view::Relation,
+    teams::Relation,
     vision::{self, Current, EXPLORED, SpellVision, UNEXPLORED, VISIBLE},
 };
 use vision_fixture::*;

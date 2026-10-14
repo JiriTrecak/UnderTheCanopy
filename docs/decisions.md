@@ -77,3 +77,7 @@ No automated behaviour comparison against the old game. Correctness comes from s
 ## D19. Vision: knowledge per team, followed by comparison (2026-10-14)
 
 Fog and remembered entities are kept once per team (allies share sight) and saved compactly (fog as runs, memories as snapshots of the entity as last seen). Sensors read the one exact `entity.position`; vision compares each sensor's position, height, radius and team with the previous pass every tick and updates only what changed, so any system that moves an entity is followed without notifying vision. Derived coverage is rebuilt on load and verified against the incremental data in tests.
+
+## D20. Every player has a team (2026-10-14)
+
+Teams are the only source of "ally": `canopy_sim::teams::Teams` resolves the match's slots so that every player has a team; a slot without a chosen team gets its own (the smallest number no other slot uses). Sight sharing, spells and auras that affect allies, AI and views all ask `Teams::relation` (own, ally, enemy, neutral) and never compare owners or special-case solo players. The UI need not show teams in free-for-all. Fixes the old quirk where team numbers and player indices shared one numbering.

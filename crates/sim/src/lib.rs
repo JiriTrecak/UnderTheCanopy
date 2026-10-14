@@ -12,6 +12,7 @@ pub mod mission;
 pub mod setup;
 pub mod spawn;
 pub mod state;
+pub mod teams;
 pub mod terrain;
 pub mod view;
 pub mod vision;

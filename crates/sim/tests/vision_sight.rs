@@ -6,7 +6,7 @@ mod vision_fixture;
 use canopy_content::placement::Owner;
 use canopy_sim::{
     entity::Milli,
-    view::Relation,
+    teams::Relation,
     vision::{EXPLORED, UNEXPLORED, VISIBLE},
 };
 use vision_fixture::*;
