@@ -114,6 +114,7 @@ struct Candidate {
 
 /// Who should yield to whom this tick, among `units` (the movement pass's eligible units).
 pub fn requests(
+    catalog: &crate::catalog::Catalog,
     spatial: &Spatial,
     teams: &crate::teams::Teams,
     state: &State,
@@ -138,6 +139,9 @@ pub fn requests(
             || e.ready_tick > tick
             || speed <= 0.0
             || ignores
+            || e.caster.as_ref().is_some_and(|c| c.pending.is_some())
+            || crate::abilities::statuses::stunned(catalog, e)
+            || crate::abilities::statuses::rooted(catalog, e)
         {
             continue;
         }

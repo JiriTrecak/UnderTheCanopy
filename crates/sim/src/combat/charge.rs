@@ -2,7 +2,7 @@
 //! minimum and maximum range, moving faster until the first blow, which hits harder.
 //! Charging changes the movement budget only, never pathfinding or collision.
 
-use super::{Charge, rules::Rules};
+use super::{Charge, senses::Senses};
 use crate::{
     entity::{Entity, EntityId},
     orders::Order,
@@ -11,7 +11,8 @@ use crate::{
 };
 
 /// Ends a charge that no longer applies (old `maintainCharge`).
-pub fn maintain(state: &mut State, id: EntityId) {
+pub fn maintain(senses: &Senses, state: &mut State, id: EntityId) {
+    crate::abilities::forms::reconcile_weapon(senses.catalog, state, id);
     let tick = state.tick;
     let Some(e) = state.entities.get(id) else {
         return;
@@ -27,8 +28,11 @@ pub fn maintain(state: &mut State, id: EntityId) {
         .entities
         .get(target)
         .is_some_and(|t| t.hp.is_none_or(|hp| hp > 0));
-    // M2.6: stuns, casts and roots also end a charge.
+    let catalog = senses.catalog;
     let ends = charge.expires <= tick
+        || crate::abilities::statuses::stunned(catalog, e)
+        || e.caster.as_ref().is_some_and(|c| c.pending.is_some())
+        || crate::abilities::statuses::rooted(catalog, e)
         || !victim_alive
         || u.target != Some(target)
         || u.work.job.is_some()
@@ -58,7 +62,7 @@ pub fn maintain(state: &mut State, id: EntityId) {
 /// `startCharge`).
 pub fn start(
     state: &mut State,
-    rules: &Rules,
+    senses: &Senses,
     spatial: &Spatial,
     id: EntityId,
     target: EntityId,
@@ -68,7 +72,8 @@ pub fn start(
     let (Some(e), Some(t)) = (state.entities.get(id), state.entities.get(target)) else {
         return;
     };
-    let Some(policy) = rules.weapon(e.definition).and_then(|w| w.charge) else {
+    let profile = senses.weapon_def(e);
+    let Some(policy) = senses.combat.weapon(profile).and_then(|w| w.charge) else {
         return;
     };
     let u = e.unit.as_ref().expect("unit");
@@ -76,6 +81,7 @@ pub fn start(
         || u.combat.charge.as_ref().is_some_and(|c| c.target.is_some())
         || u.combat.charge.as_ref().map_or(0, |c| c.ready_tick) > tick
         || u.route.is_empty()
+        || crate::abilities::statuses::rooted(senses.catalog, e)
     {
         return;
     }
@@ -99,6 +105,7 @@ pub fn start(
         cooldown =
             (super::round_ratio(u64::from(cooldown), u64::from(permille), 1000) as u32).max(1);
     }
+    let own = state.entities.get(id).expect("unit").definition;
     let u = state
         .entities
         .get_mut(id)
@@ -111,6 +118,7 @@ pub fn start(
         expires: tick + policy.duration,
         ready_tick: tick + cooldown,
         speed_permille: policy.speed_permille,
+        profile: (profile != own).then_some(profile),
     });
 }
 
@@ -140,14 +148,14 @@ pub fn charging(e: &Entity, tick: u32) -> bool {
 /// ends it (old `chargeDamage`). In thousandths.
 pub fn damage(
     state: &mut State,
-    rules: &Rules,
+    senses: &Senses,
     id: EntityId,
     target: EntityId,
     base_milli: u64,
 ) -> u64 {
     let tick = state.tick;
+    let def = senses.weapon_def(state.entities.get(id).expect("unit"));
     let e = state.entities.get_mut(id).expect("unit");
-    let def = e.definition;
     let u = e.unit.as_mut().expect("unit");
     let Some(charge) = u.combat.charge.as_mut() else {
         return base_milli;
@@ -156,7 +164,8 @@ pub fn damage(
         return base_milli;
     }
     charge.target = None;
-    let permille = rules
+    let permille = senses
+        .combat
         .weapon(def)
         .and_then(|w| w.charge)
         .map_or(1000, |c| c.damage_permille);

@@ -121,6 +121,8 @@ fn scale(a: i64, b: i64, c: i64) -> i64 {
 /// reusable scratch of the movement passes.
 pub struct Motion {
     pub spatial: Spatial,
+    /// Statuses and items decide stuns, roots and speed.
+    catalog: Arc<Catalog>,
     /// Who cooperates in traffic: same-team units negotiate and yield to each other.
     teams: Teams,
     units: Vec<EntityId>,
@@ -133,7 +135,7 @@ pub struct Motion {
 impl Motion {
     pub fn new(
         terrain: Arc<crate::terrain::Terrain>,
-        catalog: &Catalog,
+        catalog: &Arc<Catalog>,
         state: &State,
         teams: Teams,
         scales: BTreeMap<String, f64>,
@@ -142,6 +144,7 @@ impl Motion {
         let n = spatial.node_count() as usize;
         Self {
             spatial,
+            catalog: catalog.clone(),
             teams,
             units: Vec::new(),
             ground: CellSet::new(n),
@@ -208,6 +211,17 @@ impl Motion {
         requests: &mut Option<BTreeMap<EntityId, Request>>,
     ) {
         let tick = state.tick;
+        let catalog = &*self.catalog;
+        // An ability charge moves the unit elsewhere; a caster only turns to its aim.
+        let charging = crate::abilities::deliveries::charging(catalog, state, id);
+        let cast_aim = state.entities.get(id).and_then(|e| {
+            let p = e.caster.as_ref()?.pending.as_ref()?;
+            Some(p.point.or_else(|| {
+                p.target
+                    .and_then(|t| state.entities.get(t))
+                    .map(|t| t.position)
+            }))
+        });
         let spatial = &mut self.spatial;
         let Some(e) = state.entities.get_mut(id) else {
             return;
@@ -247,12 +261,29 @@ impl Motion {
             }
             return;
         }
-        if !ready(e, tick) || e.unit.as_ref().is_some_and(|u| u.contained.is_some()) {
+        if !ready(e, tick)
+            || e.unit.as_ref().is_some_and(|u| u.contained.is_some())
+            || crate::abilities::statuses::stunned(catalog, e)
+        {
             return;
         }
         let profile = spatial.profiles.get(e.definition);
         let motion = profile.motion;
         let step = turn_step(motion.map_or(720, |m| m.turn_rate));
+        if charging {
+            return;
+        }
+        if let Some(aim) = cast_aim {
+            if let Some(aim) = aim {
+                let from = (
+                    f64::from(e.position.x) / 1000.0,
+                    f64::from(e.position.y) / 1000.0,
+                );
+                let to = (f64::from(aim.x) / 1000.0, f64::from(aim.y) / 1000.0);
+                turn_toward(&mut e.rotation, from, to, step);
+            }
+            return;
+        }
         let mover = Mover::of(spatial, e);
         let here = (
             f64::from(e.position.x) / 1000.0,
@@ -284,7 +315,7 @@ impl Motion {
             Some(m) => m.speed,
             None => 0.0,
         };
-        if speed <= 0.0 || u.route.is_empty() {
+        if speed <= 0.0 || u.route.is_empty() || crate::abilities::statuses::rooted(catalog, e) {
             return;
         }
         let ignores = spatial.bodies.get(id).is_some_and(|b| b.ignores);
@@ -302,7 +333,7 @@ impl Motion {
                 }
             }
         }
-        let (pace, charge) = crate::combat::speed_factors(e, tick);
+        let (pace, charge) = crate::combat::speed_factors(catalog, e, tick);
         let budget =
             ((speed * 1000.0 * f64::from(pace) * f64::from(charge)) / 40_000_000.0).floor() as i64;
         if e.unit.as_ref().is_some_and(|u| u.detour.is_some()) {
@@ -483,6 +514,7 @@ impl Motion {
         if requests.is_none() {
             let _span = tracing::trace_span!("traffic requests").entered();
             *requests = Some(traffic::requests(
+                &self.catalog,
                 &self.spatial,
                 &self.teams,
                 state,
@@ -845,6 +877,10 @@ impl Motion {
                 || idle.garrison.is_some()
                 || idle.target.is_some()
                 || idle.combat.attack.is_some()
+                || idle.taunt.is_some()
+                || ally.caster.as_ref().is_some_and(|c| c.pending.is_some())
+                || crate::abilities::statuses::stunned(&self.catalog, ally)
+                || crate::abilities::statuses::rooted(&self.catalog, ally)
                 || !moves
             {
                 continue;

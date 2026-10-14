@@ -51,6 +51,39 @@ impl Systems for Current {
     }
 }
 
+/// The systems of the full simulation: hero item slots come from `items`.
+pub struct Live<'a> {
+    pub catalog: &'a Catalog,
+}
+
+impl Systems for Live<'_> {
+    fn has_order(&self, entity: &Entity) -> bool {
+        Current.has_order(entity)
+    }
+
+    fn equipment(&self, entity: &Entity) -> Option<Vec<Option<Id>>> {
+        let slots = crate::items::slots(self.catalog, entity)?;
+        Some(
+            slots
+                .into_iter()
+                .map(|s| s.map(|d| self.catalog.id(d).clone()))
+                .collect(),
+        )
+    }
+
+    fn contained(&self, entity: &Entity) -> bool {
+        Current.contained(entity)
+    }
+
+    fn fallen(&self, entity: &Entity) -> bool {
+        Current.fallen(entity)
+    }
+
+    fn max_hp(&self, catalog: &Catalog, entity: &Entity) -> u32 {
+        Current.max_hp(catalog, entity)
+    }
+}
+
 /// Degrees per second when a definition does not say.
 pub const DEFAULT_TURN_RATE: u32 = 720;
 

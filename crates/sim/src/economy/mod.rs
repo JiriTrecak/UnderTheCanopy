@@ -444,6 +444,16 @@ pub(crate) fn active(e: &Entity, tick: u32) -> bool {
             .is_some_and(|u| u.contained.is_none() && u.release.is_none())
 }
 
+/// A taunt holds the unit on its challenger: no work, no hauling (old `u.taunt`).
+pub(crate) fn taunted(e: &Entity) -> bool {
+    e.unit.as_ref().is_some_and(|u| u.taunt.is_some())
+}
+
+/// Taunted or stunned: the worker neither starts nor advances a job.
+pub(crate) fn held(catalog: &Catalog, e: &Entity) -> bool {
+    taunted(e) || crate::abilities::statuses::stunned(catalog, e)
+}
+
 /// Squared distance in milli-cells² between the coarse positions the old game compared:
 /// a unit's cell, everything else's placement point.
 pub(crate) fn distance2(a: (i64, i64), b: (i64, i64)) -> i64 {

@@ -55,6 +55,9 @@ pub struct Resource {
 #[serde(rename_all = "camelCase")]
 pub struct LooseItem {
     pub quantity: u32,
+    /// Charges and cooldown a dropped hero item keeps (`items`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub runtime: Option<crate::items::ItemRuntime>,
 }
 
 /// A route leg in progress: from a fixed point towards a route node.
@@ -156,6 +159,17 @@ pub struct Unit {
     pub camp: Option<crate::camps::Member>,
     /// Standing in a lookout (`garrisons`).
     pub garrison: Option<crate::garrisons::Lookout>,
+    /// Health regeneration accumulator: 40,000 units make a point (`items`).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub regeneration: u32,
+    /// Flying by a form, or landed against its definition (`abilities::forms`).
+    pub flight: Option<crate::abilities::Flight>,
+    /// Forced to fight a taunting unit (`abilities::taunt`).
+    pub taunt: Option<crate::abilities::Taunt>,
+}
+
+fn is_zero(v: &u32) -> bool {
+    *v == 0
 }
 
 #[skip_serializing_none]
@@ -192,6 +206,15 @@ pub struct Entity {
     /// A hero that died and waits for revival, kept with its identity (`heroes`).
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub fallen: bool,
+    /// Mana, learned ranks, cooldowns and the cast in progress (`abilities`).
+    pub caster: Option<Box<crate::abilities::Caster>>,
+    /// Spell statuses (`abilities::statuses`).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub statuses: Vec<crate::abilities::Status>,
+    /// Summon, split, containment and trigger links (`abilities`).
+    pub links: Option<Box<crate::abilities::Links>>,
+    /// Hero item slots and item effects (`items`).
+    pub equipment: Option<Box<crate::items::Equipment>>,
 }
 
 /// Entities ordered by id with O(1) lookup. Removal leaves a hole that later compaction
@@ -323,6 +346,10 @@ mod tests {
             revival: None,
             progression: None,
             fallen: false,
+            caster: None,
+            statuses: Vec::new(),
+            links: None,
+            equipment: None,
         }
     }
 

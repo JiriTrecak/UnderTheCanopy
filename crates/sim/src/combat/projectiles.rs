@@ -87,6 +87,12 @@ pub struct Missile {
     /// Owners that saw both ends at launch.
     pub viewers: Vec<Owner>,
     pub resolved: bool,
+    /// The critical strike it carries (abilities).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub critical: Option<crate::abilities::AbilityId>,
+    /// A weapon cast or attack bonus it carries (abilities).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enhancement: Option<Box<crate::abilities::weapons::Enhancement>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -124,21 +130,23 @@ fn viewers(senses: &Senses, state: &State, a: &Entity, b: &Entity) -> Vec<Owner>
         .collect()
 }
 
-/// Fires a missile from `a` at `b` (old `Missiles.launch`).
+/// Fires a missile from `a` at `b` (old `Missiles.launch`); returns its flight time.
 pub fn launch_missile(
     senses: &Senses,
     state: &mut State,
     a: EntityId,
     b: EntityId,
     damage_milli: u64,
-) {
+    critical: Option<crate::abilities::AbilityId>,
+    enhancement: Option<Box<crate::abilities::weapons::Enhancement>>,
+) -> u32 {
     let (ea, eb) = (
         state.entities.get(a).expect("shooter"),
         state.entities.get(b).expect("target"),
     );
-    let weapon = senses.combat.weapon(ea.definition).expect("weapon");
+    let weapon = senses.weapon(ea).expect("weapon");
     let Delivery::Missile { speed } = weapon.delivery else {
-        return;
+        return 0;
     };
     let origin = senses.eye(state, ea);
     let destination = senses.eye(state, eb);
@@ -151,7 +159,7 @@ pub fn launch_missile(
         id: state.counters.missile,
         source: a,
         target: b,
-        definition: ea.definition,
+        definition: senses.weapon_def(ea),
         owner: ea.owner,
         origin: Aim::of(origin, ea.surface.clone()),
         destination: Aim::of(destination, eb.surface.clone()),
@@ -161,9 +169,12 @@ pub fn launch_missile(
         damage_type: weapon.damage_type.0,
         viewers: viewers(senses, state, ea, eb),
         resolved: false,
+        critical,
+        enhancement,
     };
     state.counters.missile += 1;
     state.combat.missiles.push(missile);
+    flight
 }
 
 /// Lobs a shell from `a` at where `b` stands (old `ShellCombat.launch`).
@@ -178,7 +189,7 @@ pub fn launch_shell(
         state.entities.get(a).expect("shooter"),
         state.entities.get(b).expect("target"),
     );
-    let weapon = senses.combat.weapon(ea.definition).expect("weapon");
+    let weapon = senses.weapon(ea).expect("weapon");
     let Delivery::Shell {
         flight,
         mut radius_milli,
@@ -234,7 +245,7 @@ pub fn launch_shell(
     let shell = Shell {
         id: state.counters.shell,
         source: a,
-        definition: ea.definition,
+        definition: senses.weapon_def(ea),
         owner: ea.owner,
         origin: Aim::of(origin, ea.surface.clone()),
         target,
@@ -288,7 +299,12 @@ pub fn land_shells(senses: &Senses, state: &mut State, hits: &mut Vec<Hit>) {
                 u.contained.is_none() && u.release.is_none() && u.garrison.is_none()
             });
             if !e.hp.is_some_and(|hp| hp > 0)
-                || !senses.combat.reaches(shell.definition, e.definition)
+                || !senses
+                    .combat
+                    .weapon(shell.definition)
+                    .is_some_and(|w| w.reaches(senses.air(e)))
+                || (shell.damage_type != senses.combat.spell.0
+                    && crate::abilities::statuses::ethereal(senses.catalog, e))
                 || !exposed
                 || !shell.victims.contains(&e.owner)
             {
@@ -319,10 +335,18 @@ pub fn land_shells(senses: &Senses, state: &mut State, hits: &mut Vec<Hit>) {
                 target: e.id,
                 damage_milli: shell.damage_milli,
                 damage_type: DamageType(shell.damage_type),
-                weapon: false,
+                ..Hit::default()
             });
-            // M2.6: slow immunity and invulnerability.
-            if e.unit.is_some() && shell.slow_permille > 0 {
+            let catalog = senses.catalog;
+            if e.unit.is_some()
+                && shell.slow_permille > 0
+                && !crate::abilities::statuses::control_immune(
+                    catalog,
+                    e,
+                    crate::abilities::library::control::MOVE_SLOW,
+                )
+                && !crate::abilities::statuses::invulnerable(catalog, e)
+            {
                 slowed.push(e.id);
             }
         }
@@ -385,13 +409,16 @@ pub fn land_missiles(senses: &Senses, state: &mut State, hits: &mut Vec<Hit>) {
             && senses
                 .terrain
                 .shot_clear(m.origin.point(senses), m.destination.point(senses));
-        let hit = clear.then_some(Hit {
+        let hit = clear.then(|| Hit {
             source: m.source,
             owner: m.owner,
             target,
             damage_milli: m.damage_milli,
             damage_type: DamageType(m.damage_type),
             weapon: true,
+            critical: m.critical,
+            cleave: None,
+            enhancement: m.enhancement.clone(),
         });
         state.combat.missiles[index].resolved = true;
         hits.extend(hit);

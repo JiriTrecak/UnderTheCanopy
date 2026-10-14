@@ -409,7 +409,10 @@ impl<'a> Check<'a> {
             self.fail("Unit aims require visibility; remote scouting uses a point aim");
         }
         let no_radius = matches!(t.radius, None | Some(Amount::Fixed(0)));
-        if t.kind == TargetingKind::Point && no_radius {
+        // A line runs its own length and width; its aim needs no area (the old rule asked
+        // for one it never used).
+        let line = matches!(a.delivery, Some(Delivery::Line { .. }));
+        if t.kind == TargetingKind::Point && no_radius && !line {
             self.fail("Ground targeting requires an area radius");
         }
         if t.kind != TargetingKind::Point && t.radius.is_some() {
@@ -856,27 +859,32 @@ impl<'a> Check<'a> {
 
     fn activation(&mut self) {
         let a = self.ability;
-        let effects = a.all_effects();
+        // An aura applies its release program only; triggers and status templates may do
+        // anything (the old rule also scanned trigger operations, so an aura could not
+        // carry a damage trigger).
         let aura_breaks = a.aura.is_some()
-            && effects.iter().any(|entry| match entry.status() {
-                None => true,
-                Some(e) => {
-                    e.periodic.is_some()
-                        || [
-                            e.taunt,
-                            e.stun,
-                            e.disarm,
-                            e.silence,
-                            e.item_blocked,
-                            e.break_on_damage,
-                        ]
-                        .contains(&Some(true))
-                        || e.shield.is_some()
-                        || e.immunity.is_some()
-                        || e.spell_immunity.is_some()
-                        || e.mana_shield.is_some()
-                }
-            });
+            && a.on_release
+                .iter()
+                .flat_map(Operation::effects)
+                .any(|effect| match effect {
+                    Effect::Status(e) => {
+                        e.periodic.is_some()
+                            || [
+                                e.taunt,
+                                e.stun,
+                                e.disarm,
+                                e.silence,
+                                e.item_blocked,
+                                e.break_on_damage,
+                            ]
+                            .contains(&Some(true))
+                            || e.shield.is_some()
+                            || e.immunity.is_some()
+                            || e.spell_immunity.is_some()
+                            || e.mana_shield.is_some()
+                    }
+                    _ => true,
+                });
         let has_triggers = a.triggers.as_ref().is_some_and(|t| !t.is_empty());
         if a.activation == Activation::Passive
             && (a.targeting.kind != TargetingKind::Caster

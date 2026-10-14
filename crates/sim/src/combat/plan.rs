@@ -89,9 +89,9 @@ fn plan_unit(
     id: EntityId,
 ) {
     let tick = state.tick;
-    charge::maintain(state, id);
+    charge::maintain(senses, state, id);
     let e = state.entities.get(id).expect("unit");
-    let weapon = senses.combat.weapon(e.definition).copied();
+    let weapon = senses.weapon(e).copied();
     // A swing in progress holds the unit until it is released.
     if let Some(attack) = &unit(state, id).combat.attack {
         let target = attack.target;
@@ -104,10 +104,10 @@ fn plan_unit(
         let u = unit(state, id);
         let attack = u.combat.attack.as_ref().expect("attack");
         let e = state.entities.get(id).expect("unit");
-        // M2.6: stuns, disarms, ethereal forms, casting and ability charges end it.
         let ends = tick >= attack.ends
             || victim.is_none_or(|v| !senses.weapon_eligible(e, v))
             || u.target != Some(attack.target)
+            || super::resolve::standing_down(senses, state, e)
             || !seen;
         let u = unit_mut(state, id);
         if ends {
@@ -119,8 +119,38 @@ fn plan_unit(
             return;
         }
     }
-    // M2.6: pending casts, cast orders, ability charges, stuns, taunts and disarms.
     let order = unit(state, id).order.clone();
+    // Casting, walking to cast, charging by an ability and stunned units plan nothing.
+    {
+        let e = state.entities.get(id).expect("unit");
+        if e.caster.as_ref().is_some_and(|c| c.pending.is_some())
+            || matches!(order, Some(Order::CastAbility { .. }))
+            || crate::abilities::deliveries::charging(senses.catalog, state, id)
+            || crate::abilities::statuses::stunned(senses.catalog, e)
+        {
+            return;
+        }
+    }
+    // A taunted unit fights its taunter (old taunt branch of `planUnits`).
+    if let Some(taunt) = unit(state, id).taunt {
+        taunted(senses, spatial, state, id, taunt.source, weapon);
+        return;
+    }
+    {
+        let e = state.entities.get(id).expect("unit");
+        if crate::abilities::statuses::disarmed(senses.catalog, e)
+            || crate::abilities::statuses::ethereal(senses.catalog, e)
+        {
+            crate::orders::suspend_combat(unit_mut(state, id), tick);
+            if !matches!(
+                order,
+                Some(Order::Move { .. } | Order::Patrol { .. } | Order::Follow { .. })
+            ) {
+                spatial.update_body(state.entities.get(id).expect("unit"));
+                return;
+            }
+        }
+    }
     // Workers on a job, and work, pickup and garrison orders, move as their system plans.
     if unit(state, id).work.job.is_some() || order.as_ref().is_some_and(Order::stands_down) {
         release_combat(unit_mut(state, id));
@@ -319,7 +349,7 @@ fn plan_unit(
         }
         remember(state, id, t);
         unit_mut(state, id).target = Some(t);
-        charge::maintain(state, id);
+        charge::maintain(senses, state, id);
         let (e, te) = (
             state.entities.get(id).expect("unit"),
             state.entities.get(t).expect("target"),
@@ -353,7 +383,7 @@ fn plan_unit(
         }
         let research =
             charge::cooldown_research(state, senses.catalog, state.entities.get(id).expect("unit"));
-        charge::start(state, senses.combat, spatial, id, t, &research);
+        charge::start(state, senses, spatial, id, t, &research);
         spatial.update_body(state.entities.get(id).expect("unit"));
         return;
     }
@@ -367,6 +397,54 @@ fn plan_unit(
         }) => orders::patrol(spatial, state, senses, id, destination, origin),
         _ => spatial.update_body(state.entities.get(id).expect("unit")),
     }
+}
+
+/// The taunted unit's plan (old taunt branch): engage the taunter when in reach, else
+/// approach it.
+fn taunted(
+    senses: &Senses,
+    spatial: &mut Spatial,
+    state: &mut State,
+    id: EntityId,
+    source: EntityId,
+    weapon: Option<super::rules::Weapon>,
+) {
+    let tick = state.tick;
+    {
+        let u = unit_mut(state, id);
+        u.combat.cooldown = u.combat.cooldown.saturating_sub(1);
+    }
+    let e = state.entities.get(id).expect("unit");
+    let target = state.entities.get(source).filter(|t| alive(t));
+    let usable = weapon.is_some()
+        && target.is_some_and(|t| senses.weapon_eligible(e, t) && senses.perceives(state, e, t))
+        && !crate::abilities::statuses::disarmed(senses.catalog, e)
+        && !crate::abilities::statuses::ethereal(senses.catalog, e);
+    if !usable {
+        let u = unit_mut(state, id);
+        discard_navigation(u);
+        release_combat(u);
+        spatial.update_body(state.entities.get(id).expect("unit"));
+        return;
+    }
+    let w = weapon.expect("weapon");
+    unit_mut(state, id).target = Some(source);
+    remember(state, id, source);
+    let (e, t) = (
+        state.entities.get(id).expect("unit"),
+        state.entities.get(source).expect("taunter"),
+    );
+    if spatial.body_range(e, t) <= w.range * w.range && senses.terrain_clear(state, e, t) {
+        let u = unit_mut(state, id);
+        discard_navigation(u);
+        if u.combat.attack.is_none() && u.combat.cooldown == 0 {
+            begin_attack(senses, state, id, source);
+        }
+    } else if unit(state, id).retry_at <= tick {
+        approach::route_to_attack(senses, spatial, state, id, source);
+        unit_mut(state, id).retry_at = tick + APPROACH_RETRY_TICKS;
+    }
+    spatial.update_body(state.entities.get(id).expect("unit"));
 }
 
 /// Records where `target` is seen now (old `rememberTarget`).

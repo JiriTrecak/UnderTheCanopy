@@ -138,10 +138,36 @@ impl<'a> Senses<'a> {
             && self.opponents(a.owner, camp(a), b.owner, camp(b))
     }
 
-    /// Whether `a`'s weapon can hit `b` (old `weaponEligible`; M2.6 adds ethereal forms
-    /// and damage immunities).
+    /// The definition whose weapon `e` uses: its form's combat profile or its own.
+    pub fn weapon_def(&self, e: &Entity) -> crate::catalog::Def {
+        crate::abilities::forms::weapon_def(self.catalog, e)
+    }
+
+    /// `e`'s weapon (its form's, if a form gives one).
+    pub fn weapon(&self, e: &Entity) -> Option<&super::rules::Weapon> {
+        self.combat.weapon(self.weapon_def(e))
+    }
+
+    /// Whether `e` flies now.
+    pub fn air(&self, e: &Entity) -> bool {
+        crate::abilities::forms::airborne(self.catalog, e)
+    }
+
+    /// Whether `a`'s weapon can hit `b`'s locomotion (old `weaponTargets`).
+    pub fn reaches(&self, a: &Entity, b: &Entity) -> bool {
+        self.weapon(a).is_some_and(|w| w.reaches(self.air(b)))
+    }
+
+    /// Whether `a`'s weapon can hit `b` (old `weaponEligible`): locomotion, and neither an
+    /// ethereal attacker nor an ethereal target of a non-spell weapon.
     pub fn weapon_eligible(&self, a: &Entity, b: &Entity) -> bool {
-        self.combat.reaches(a.definition, b.definition)
+        let Some(w) = self.weapon(a) else {
+            return false;
+        };
+        w.reaches(self.air(b))
+            && !crate::abilities::statuses::ethereal(self.catalog, a)
+            && (w.damage_type == self.combat.spell
+                || !crate::abilities::statuses::ethereal(self.catalog, b))
     }
 
     /// Whether `a` perceives `b` (old `perceives`): detection, then the owner's exact
@@ -157,7 +183,7 @@ impl<'a> Senses<'a> {
                 .camps
                 .of(a)
                 .map(|c| c.aggro_range)
-                .or_else(|| self.combat.weapon(a.definition).map(|w| w.aggro))
+                .or_else(|| self.weapon(a).map(|w| w.aggro))
                 .or(self.catalog.get(a.definition).vision)
                 .unwrap_or(0);
             return crate::camps::neutral_sees(&sight, a, b, radius);
@@ -227,7 +253,7 @@ impl<'a> Senses<'a> {
                 .and_then(|s| self.terrain.deck_id(s)),
             elevation: 0.0,
         };
-        if self.combat.profile(target.definition).air {
+        if self.air(target) {
             end.elevation = self.eye(state, target).elevation;
         }
         if ranged {
@@ -239,7 +265,7 @@ impl<'a> Senses<'a> {
 
     /// Whether `a` can hit `b` from where it stands (old `terrainClear`).
     pub fn terrain_clear(&self, state: &State, a: &Entity, b: &Entity) -> bool {
-        let ranged = self.combat.weapon(a.definition).is_some_and(|w| w.ranged());
+        let ranged = self.weapon(a).is_some_and(|w| w.ranged());
         self.attack_clear(state, self.eye(state, a), b, ranged)
     }
 }

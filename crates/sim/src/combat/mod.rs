@@ -17,6 +17,7 @@
 
 pub mod approach;
 pub mod charge;
+pub mod damage;
 pub mod deaths;
 pub mod plan;
 pub mod projectiles;
@@ -53,6 +54,9 @@ pub struct Attack {
     pub ends: u32,
     /// The blow landed or the shot left.
     pub released: bool,
+    /// The form combat profile it was begun with, when not the unit's own.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profile: Option<crate::catalog::Def>,
 }
 
 /// Where a target was last seen, so a unit can search for it.
@@ -77,6 +81,8 @@ pub struct Charge {
     pub ready_tick: u32,
     /// Movement speed while charging, permille.
     pub speed_permille: u32,
+    /// The form combat profile it was begun with, when not the unit's own.
+    pub profile: Option<crate::catalog::Def>,
 }
 
 /// A movement slow from a shell splash.
@@ -129,6 +135,8 @@ pub struct Corpse {
     pub expires: u32,
     pub camp: Option<String>,
     pub progression: Option<crate::heroes::Progression>,
+    /// Learned ranks, cooldowns and autocast, kept for resurrection (no mana, no cast).
+    pub caster: Option<Box<crate::abilities::Caster>>,
 }
 
 /// Damage a mission script dealt, applied by the next combat resolution.
@@ -177,12 +185,16 @@ pub fn round(x: f64) -> f64 {
 
 /// Movement speed factors of a unit, permille each (old movement budget): its stats'
 /// move speed (slows, M2.6 items) and its charge.
-pub fn speed_factors(e: &crate::entity::Entity, tick: u32) -> (u32, u32) {
+pub fn speed_factors(
+    catalog: &crate::catalog::Catalog,
+    e: &crate::entity::Entity,
+    tick: u32,
+) -> (u32, u32) {
     let charge = match e.unit.as_ref().and_then(|u| u.combat.charge.as_ref()) {
         Some(c) if charge::charging(e, tick) => c.speed_permille,
         _ => 1000,
     };
-    (crate::stats::move_speed_permille(e), charge)
+    (crate::stats::move_speed_permille(catalog, e), charge)
 }
 
 /// Combat's derived side, rebuilt from content, map and setup (never saved).

@@ -109,6 +109,12 @@ pub struct State {
     /// Projectiles in flight, corpses and scripted damage (`combat`).
     #[serde(default)]
     pub combat: crate::combat::CombatState,
+    /// Deliveries, persistent instances and queued reactions (`abilities`).
+    #[serde(
+        default,
+        skip_serializing_if = "crate::abilities::AbilityWorld::is_empty"
+    )]
+    pub abilities: crate::abilities::AbilityWorld,
 }
 
 impl State {
@@ -128,6 +134,7 @@ impl State {
             knowledge: Knowledge::default(),
             economy: crate::economy::EconomyState::default(),
             combat: crate::combat::CombatState::default(),
+            abilities: crate::abilities::AbilityWorld::default(),
         }
     }
 

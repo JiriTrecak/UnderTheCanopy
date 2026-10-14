@@ -147,7 +147,7 @@ fn shells_splash_and_slow_only_the_enemies_they_were_aimed_at() {
     assert_eq!(slows(&world, "s3")[0].permille, 300);
     // A slowed unit walks at 70 %.
     assert_eq!(
-        canopy_sim::stats::move_speed_permille(entity(&world, "s3")),
+        canopy_sim::stats::move_speed_permille(world.catalog(), entity(&world, "s3")),
         700
     );
     let shell = world.state().combat.shells[0].clone();
