@@ -164,7 +164,13 @@ impl GridNavigation {
             .is_some_and(|(s, cells)| *s == start && !cells[goal as usize])
     }
 
-    fn edge(&mut self, from: u32, to: u32, bit: u8, step: &mut impl FnMut(u32, u32) -> bool) -> bool {
+    fn edge(
+        &mut self,
+        from: u32,
+        to: u32,
+        bit: u8,
+        step: &mut impl FnMut(u32, u32) -> bool,
+    ) -> bool {
         let f = from as usize;
         if self.known[f] & bit == 0 {
             let clear = if bit < 16 {
@@ -255,7 +261,9 @@ impl GridNavigation {
         let mut open_start = false;
         for (dx, dy) in DIRECTIONS {
             let (x, y) = (sx + dx, sy + dy);
-            if in_map(x, y) && self.traverse(start, y as u32 * size + x as u32, dx, dy, blocked, step) {
+            if in_map(x, y)
+                && self.traverse(start, y as u32 * size + x as u32, dx, dy, blocked, step)
+            {
                 open_start = true;
                 break;
             }
@@ -272,7 +280,9 @@ impl GridNavigation {
                 continue;
             }
             let from = y as u32 * size + x as u32;
-            if (from == start || !obstacle(from)) && self.traverse(from, goal, -dx, -dy, blocked, step) {
+            if (from == start || !obstacle(from))
+                && self.traverse(from, goal, -dx, -dy, blocked, step)
+            {
                 enterable = true;
                 break;
             }
@@ -393,7 +403,9 @@ impl GridNavigation {
                         || (dx != 0
                             && dy != 0
                             && (blocked.contains((i64::from(id) + i64::from(dx)) as u32)
-                                || blocked.contains((i64::from(id) + i64::from(dy) * i64::from(size)) as u32))))
+                                || blocked.contains(
+                                    (i64::from(id) + i64::from(dy) * i64::from(size)) as u32,
+                                ))))
                 {
                     continue;
                 }
@@ -411,7 +423,8 @@ impl GridNavigation {
             }
         }
         // Only an exhaustive unrestricted search proves the whole reachable region.
-        if q.remember_origin && q.corridor.is_none() && blocked.is_none() && q.max_cost == i64::MAX {
+        if q.remember_origin && q.corridor.is_none() && blocked.is_none() && q.max_cost == i64::MAX
+        {
             let cells = (0..n as usize).map(|i| s.closed[i] == epoch).collect();
             self.origin = Some((start, cells));
         }
@@ -437,7 +450,14 @@ mod tests {
         let mut scratch = Scratch::default();
         let mut step = walls(size, &wall);
         let path = nav
-            .path(&mut scratch, &mut step, |_, _| true, 1, 6, Search::default())
+            .path(
+                &mut scratch,
+                &mut step,
+                |_, _| true,
+                1,
+                6,
+                Search::default(),
+            )
             .expect("path");
         assert_eq!(path.last(), Some(&6));
         // Passes below the wall's end (y ≥ 6), never through it or diagonally past its tip.
@@ -446,7 +466,10 @@ mod tests {
         // No diagonal squeezes past a wall corner.
         let cells: Vec<u32> = std::iter::once(1).chain(path.iter().copied()).collect();
         for w in cells.windows(2) {
-            let (dx, dy) = ((w[1] % size) as i32 - (w[0] % size) as i32, (w[1] / size) as i32 - (w[0] / size) as i32);
+            let (dx, dy) = (
+                (w[1] % size) as i32 - (w[0] % size) as i32,
+                (w[1] / size) as i32 - (w[0] / size) as i32,
+            );
             if dx != 0 && dy != 0 {
                 assert!(!wall.contains(&((w[0] as i32 + dx) as u32)));
                 assert!(!wall.contains(&((w[0] as i32 + dy * size as i32) as u32)));
@@ -461,9 +484,17 @@ mod tests {
         let mut nav = GridNavigation::new(size);
         let mut scratch = Scratch::default();
         let mut step = walls(size, &ring);
-        assert!(nav
-            .path(&mut scratch, &mut step, |_, _| true, 0, 18, Search::default())
-            .is_none());
+        assert!(
+            nav.path(
+                &mut scratch,
+                &mut step,
+                |_, _| true,
+                0,
+                18,
+                Search::default()
+            )
+            .is_none()
+        );
         let mut set = CellSet::new(64);
         set.insert(40);
         let mut open = |_, _| true;
@@ -471,7 +502,10 @@ mod tests {
             blocked: Some(&set),
             ..Search::default()
         };
-        assert!(nav.path(&mut scratch, &mut open, |_, _| true, 0, 40, q).is_none());
+        assert!(
+            nav.path(&mut scratch, &mut open, |_, _| true, 0, 40, q)
+                .is_none()
+        );
         // Unreachable regions are remembered by exhaustive searches.
         let mut nav = GridNavigation::new(size);
         let q = Search {
@@ -479,6 +513,9 @@ mod tests {
             probe_limit: 1,
             ..Search::default()
         };
-        assert!(nav.path(&mut scratch, &mut step, |_, _| true, 0, 18, q).is_none());
+        assert!(
+            nav.path(&mut scratch, &mut step, |_, _| true, 0, 18, q)
+                .is_none()
+        );
     }
 }

@@ -38,7 +38,14 @@ pub fn separate(motion: &mut Motion, state: &mut State) {
             continue;
         }
         let body = motion.spatial.body_of(e);
-        let spot = motion.spatial.nearest(Spot::new(at.cell.x, at.cell.y, at.cell.deck), 3, Some(id), Some(&body), None, None);
+        let spot = motion.spatial.nearest(
+            Spot::new(at.cell.x, at.cell.y, at.cell.deck),
+            3,
+            Some(id),
+            Some(&body),
+            None,
+            None,
+        );
         if let Some(spot) = spot {
             let e = state.entities.get_mut(id).expect("unit");
             motion.spatial.route(e, spot, false);

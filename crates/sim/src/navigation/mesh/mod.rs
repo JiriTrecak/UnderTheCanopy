@@ -52,8 +52,11 @@ impl GroundMesh {
         let halo = self.radius.ceil() as i64 + 1;
         for &cell in cells {
             let (x, z) = (i64::from(cell) % size, i64::from(cell) / size);
-            for tz in ((z - halo).div_euclid(tile)).max(0)..=((z + halo).div_euclid(tile)).min(width - 1) {
-                for tx in ((x - halo).div_euclid(tile)).max(0)..=((x + halo).div_euclid(tile)).min(width - 1)
+            for tz in
+                ((z - halo).div_euclid(tile)).max(0)..=((z + halo).div_euclid(tile)).min(width - 1)
+            {
+                for tx in ((x - halo).div_euclid(tile)).max(0)
+                    ..=((x + halo).div_euclid(tile)).min(width - 1)
                 {
                     self.dirty.insert((tz * width + tx) as u32);
                 }

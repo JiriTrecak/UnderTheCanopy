@@ -76,17 +76,30 @@ impl Clearance {
             let a = fx + fdx * enter;
             let b = fx + fdx * leave;
             let x0 = (((a.min(b) - fr + 500.0 - 1e-7) / 1000.0).floor() as i64).max(0);
-            let x1 = (((a.max(b) + fr + 500.0 + 1e-7) / 1000.0).floor() as i64).min(self.size as i64 - 1);
+            let x1 = (((a.max(b) + fr + 500.0 + 1e-7) / 1000.0).floor() as i64)
+                .min(self.size as i64 - 1);
             if x1 < x0 {
                 continue;
             }
             let (first, last) = ((x0 >> 5) as usize, (x1 >> 5) as usize);
             let row = y as usize * self.words;
             for word in first..=last {
-                let low = if word == first { u32::MAX << (x0 & 31) } else { u32::MAX };
-                let high = if word == last { u32::MAX >> (31 - (x1 & 31)) } else { u32::MAX };
+                let low = if word == first {
+                    u32::MAX << (x0 & 31)
+                } else {
+                    u32::MAX
+                };
+                let high = if word == last {
+                    u32::MAX >> (31 - (x1 & 31))
+                } else {
+                    u32::MAX
+                };
                 let index = row + word;
-                if (self.closed[index] | horizontal[index] | vertical[index] | diagonal[index]) & low & high != 0 {
+                if (self.closed[index] | horizontal[index] | vertical[index] | diagonal[index])
+                    & low
+                    & high
+                    != 0
+                {
                     return false;
                 }
             }

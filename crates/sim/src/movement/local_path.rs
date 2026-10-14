@@ -9,7 +9,16 @@ use std::{cmp::Reverse, collections::BinaryHeap};
 const RADIUS: i32 = 16;
 const WIDTH: i32 = RADIUS * 2 + 1;
 const MAX_VISITS: u32 = 256;
-const OFFSETS: [(i32, i32); 8] = [(-1, 0), (0, -1), (1, 0), (0, 1), (-1, -1), (1, -1), (-1, 1), (1, 1)];
+const OFFSETS: [(i32, i32); 8] = [
+    (-1, 0),
+    (0, -1),
+    (1, 0),
+    (0, 1),
+    (-1, -1),
+    (1, -1),
+    (-1, 1),
+    (1, 1),
+];
 
 /// Reusable search state.
 #[derive(Debug, Clone)]
@@ -64,7 +73,11 @@ pub fn local_path(
             return from;
         }
         let (gx, gy) = (id as i32 % WIDTH, id as i32 / WIDTH);
-        Fixed::on(origin_x + (gx - RADIUS) * spacing, origin_y + (gy - RADIUS) * spacing, from.deck)
+        Fixed::on(
+            origin_x + (gx - RADIUS) * spacing,
+            origin_y + (gy - RADIUS) * spacing,
+            from.deck,
+        )
     };
     scratch.epoch = scratch.epoch.wrapping_add(1);
     if scratch.epoch == 0 {

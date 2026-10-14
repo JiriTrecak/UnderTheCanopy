@@ -14,7 +14,7 @@ pub mod occupancy;
 pub mod profile;
 mod routing;
 
-pub use bodies::{BodyRecord, Bodies};
+pub use bodies::{Bodies, BodyRecord};
 pub use geometry::Fixed;
 pub use profile::{Body, Motion, Profile, Profiles};
 pub use routing::Stats;
@@ -33,8 +33,7 @@ use crate::{
     state::State,
     terrain::{
         DeckId, MAX_GROUND_STEP_CM, SurfaceNode, SurfacePoint, Terrain, WalkSurfaces,
-        footprint::footprint_cells,
-        round_half_up,
+        footprint::footprint_cells, round_half_up,
     },
 };
 use adjacent::AdjacentSweep;
@@ -42,11 +41,7 @@ use canopy_content::game::Kind;
 use clearance::Clearance;
 use geometry::{clear_ray, clear_sweep, sweep_pattern};
 use occupancy::{Cover, Occupancy};
-use std::{
-    borrow::Cow,
-    collections::BTreeMap,
-    sync::Arc,
-};
+use std::{borrow::Cow, collections::BTreeMap, sync::Arc};
 
 /// A cell on the ground or on a deck.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -143,6 +138,10 @@ impl Topology for Topo<'_> {
     }
 }
 
+/// What decides a static blocker's cells: definition, position, rotation, standing flags
+/// and floor.
+type Signature = (crate::catalog::Def, i32, i32, i32, u64, Option<String>);
+
 pub struct Spatial {
     terrain: Arc<Terrain>,
     size: u32,
@@ -151,7 +150,7 @@ pub struct Spatial {
     walk: Vec<bool>,
     occupancy: Occupancy,
     /// Static blocker signatures by entity, to detect changes.
-    statics: BTreeMap<EntityId, (crate::catalog::Def, i32, i32, i32, u64, Option<String>)>,
+    statics: BTreeMap<EntityId, Signature>,
     clearance: Option<Clearance>,
     patterns: BTreeMap<i32, Vec<(i32, i32)>>,
     adjacent: BTreeMap<i32, AdjacentSweep>,
@@ -172,11 +171,18 @@ pub struct Spatial {
 impl Spatial {
     /// Builds the spatial model for `state` on `terrain`. `scales` gives the appearance
     /// scale of placements that declare one (resource collision discs scale with it).
-    pub fn new(terrain: Arc<Terrain>, catalog: &Catalog, state: &State, scales: BTreeMap<String, f64>) -> Self {
+    pub fn new(
+        terrain: Arc<Terrain>,
+        catalog: &Catalog,
+        state: &State,
+        scales: BTreeMap<String, f64>,
+    ) -> Self {
         let size = terrain.size();
         let profiles = Profiles::new(catalog);
         let layered = terrain.surfaces().is_some();
-        let nodes = terrain.surfaces().map_or((size * size) as usize, |s| s.node_count() as usize);
+        let nodes = terrain
+            .surfaces()
+            .map_or((size * size) as usize, |s| s.node_count() as usize);
         let walk: Vec<bool> = (0..nodes as u32)
             .map(|n| match terrain.surfaces() {
                 Some(s) => s.walkable(n),
@@ -287,7 +293,10 @@ impl Spatial {
     pub fn node(&self, spot: Spot) -> Option<u32> {
         match self.terrain.surfaces() {
             Some(s) => s.node_at(i64::from(spot.x), i64::from(spot.y), spot.deck),
-            None => (spot.x >= 0 && spot.y >= 0 && spot.x < self.size as i32 && spot.y < self.size as i32)
+            None => (spot.x >= 0
+                && spot.y >= 0
+                && spot.x < self.size as i32
+                && spot.y < self.size as i32)
                 .then(|| spot.y as u32 * self.size + spot.x as u32),
         }
     }
@@ -355,7 +364,10 @@ impl Spatial {
         let last = self.size as i64 - 1;
         let cx = (round_half_up(x) as i64).clamp(0, last);
         let cy = (round_half_up(y) as i64).clamp(0, last);
-        f64::from(self.terrain.height_cm((cy * self.size as i64 + cx) as usize)) / 100.0
+        f64::from(
+            self.terrain
+                .height_cm((cy * self.size as i64 + cx) as usize),
+        ) / 100.0
     }
 
     fn pattern(&self, radius: i32) -> Cow<'_, [(i32, i32)]> {
@@ -377,17 +389,28 @@ impl Spatial {
         if !building && !resource {
             return cover;
         }
-        let (x, y) = (f64::from(e.position.x) / 1000.0, f64::from(e.position.y) / 1000.0);
+        let (x, y) = (
+            f64::from(e.position.x) / 1000.0,
+            f64::from(e.position.y) / 1000.0,
+        );
         let rotation = f64::from(e.rotation) / 1000.0;
         let size = i64::from(self.size);
         let bounds = footprint_cells(x, y, profile.footprint, rotation);
-        let in_map = |cx: i64, cy: i64| (cx >= 0 && cy >= 0 && cx < size && cy < size).then(|| (cy * size + cx) as u32);
+        let in_map = |cx: i64, cy: i64| {
+            (cx >= 0 && cy >= 0 && cx < size && cy < size).then(|| (cy * size + cx) as u32)
+        };
         if building {
-            cover.building = bounds.cells().filter_map(|(cx, cy)| in_map(cx, cy)).collect();
+            cover.building = bounds
+                .cells()
+                .filter_map(|(cx, cy)| in_map(cx, cy))
+                .collect();
         }
         if resource {
             cover.resource = match profile.collision_radius {
-                None => bounds.cells().filter_map(|(cx, cy)| in_map(cx, cy)).collect(),
+                None => bounds
+                    .cells()
+                    .filter_map(|(cx, cy)| in_map(cx, cy))
+                    .collect(),
                 Some(radius) => {
                     let scale = e
                         .placement
@@ -397,8 +420,14 @@ impl Spatial {
                         .unwrap_or(1.0);
                     let r = radius * scale;
                     let mut cells = Vec::new();
-                    let (y0, y1) = (bounds.min_y.min((y - r).ceil() as i64), bounds.max_y.max((y + r).floor() as i64));
-                    let (x0, x1) = (bounds.min_x.min((x - r).ceil() as i64), bounds.max_x.max((x + r).floor() as i64));
+                    let (y0, y1) = (
+                        bounds.min_y.min((y - r).ceil() as i64),
+                        bounds.max_y.max((y + r).floor() as i64),
+                    );
+                    let (x0, x1) = (
+                        bounds.min_x.min((x - r).ceil() as i64),
+                        bounds.max_x.max((x + r).floor() as i64),
+                    );
                     for cy in y0..=y1 {
                         for cx in x0..=x1 {
                             let (fx, fy) = (cx as f64 - x, cy as f64 - y);
@@ -512,7 +541,11 @@ impl Spatial {
             radius: profile.body.radius_milli(),
             height: profile.body.height,
             floor: if self.layered() {
-                self.height(f64::from(e.position.x) / 1000.0, f64::from(e.position.y) / 1000.0, deck)
+                self.height(
+                    f64::from(e.position.x) / 1000.0,
+                    f64::from(e.position.y) / 1000.0,
+                    deck,
+                )
             } else {
                 0.0
             },
@@ -559,7 +592,13 @@ impl Spatial {
 
     /// Whether `body` can sweep from `from` to `to` over terrain and static blockers, its
     /// centre line also avoiding `blocked` nodes (old `clearSegment`).
-    pub fn clear_segment(&self, from: Fixed, to: Fixed, blocked: Option<&dyn Reserved>, body: &Body) -> bool {
+    pub fn clear_segment(
+        &self,
+        from: Fixed,
+        to: Fixed,
+        blocked: Option<&dyn Reserved>,
+        body: &Body,
+    ) -> bool {
         let radius = body.radius_milli();
         let pattern = self.pattern(radius);
         if body.air {
@@ -594,7 +633,14 @@ impl Spatial {
         self.ground_sweep(from, to, radius, &pattern, &ground)
     }
 
-    fn ground_sweep(&self, from: Fixed, to: Fixed, radius: i32, pattern: &[(i32, i32)], ground: &Ground) -> bool {
+    fn ground_sweep(
+        &self,
+        from: Fixed,
+        to: Fixed,
+        radius: i32,
+        pattern: &[(i32, i32)],
+        ground: &Ground,
+    ) -> bool {
         let span = (to.x - from.x).abs().max((to.y - from.y).abs());
         if (span >= 16000 || (span >= 2000 && radius >= 500))
             && let Some(clearance) = &self.clearance
@@ -631,7 +677,13 @@ impl Spatial {
 
     /// A local-search edge: live reservations along the centre line, exact terrain sweep
     /// (old `clearLocalSegment`).
-    pub fn clear_local_segment(&self, from: Fixed, to: Fixed, blocked: &dyn Reserved, body: &Body) -> bool {
+    pub fn clear_local_segment(
+        &self,
+        from: Fixed,
+        to: Fixed,
+        blocked: &dyn Reserved,
+        body: &Body,
+    ) -> bool {
         if self.layered() || body.air {
             return self.clear_segment(from, to, Some(blocked), body);
         }
@@ -684,10 +736,20 @@ impl Spatial {
         let (dx, dy) = (i64::from(to.x - from.x), i64::from(to.y - from.y));
         let square = dx * dx + dy * dy;
         let reach = i64::from(radius + self.profiles.max_radius);
-        let (lo_x, hi_x) = (i64::from(from.x.min(to.x)) - reach, i64::from(from.x.max(to.x)) + reach);
-        let (lo_y, hi_y) = (i64::from(from.y.min(to.y)) - reach, i64::from(from.y.max(to.y)) + reach);
+        let (lo_x, hi_x) = (
+            i64::from(from.x.min(to.x)) - reach,
+            i64::from(from.x.max(to.x)) + reach,
+        );
+        let (lo_y, hi_y) = (
+            i64::from(from.y.min(to.y)) - reach,
+            i64::from(from.y.max(to.y)) + reach,
+        );
         let floor = if self.layered() {
-            self.height(f64::from(from.x) / 1000.0, f64::from(from.y) / 1000.0, from.deck)
+            self.height(
+                f64::from(from.x) / 1000.0,
+                f64::from(from.y) / 1000.0,
+                from.deck,
+            )
         } else {
             0.0
         };
@@ -761,12 +823,14 @@ impl Spatial {
             Some(e.id) != except
                 && e.solid()
                 && e.air == body.air
-                && (e.deck == spot.deck || (layered && (e.floor - spot_floor).abs() < e.height.max(body.height)))
+                && (e.deck == spot.deck
+                    || (layered && (e.floor - spot_floor).abs() < e.height.max(body.height)))
                 && known.is_none_or(|k| k(e))
         };
-        let standing = self.bodies.in_cell(spot.x, spot.y).any(|e| {
-            geometry::grid(e.x) == spot.x && geometry::grid(e.y) == spot.y && occupies(e)
-        });
+        let standing = self
+            .bodies
+            .in_cell(spot.x, spot.y)
+            .any(|e| geometry::grid(e.x) == spot.x && geometry::grid(e.y) == spot.y && occupies(e));
         let reserved = node.is_some_and(|n| self.bodies.reserved_at(n).any(&occupies));
         !standing && !reserved
     }
@@ -828,10 +892,15 @@ impl Spatial {
     /// Point-to-footprint squared distance in cells (old `pointRange`).
     pub fn point_range(&self, x: f64, y: f64, target: &Entity) -> f64 {
         let profile = self.profiles.get(target.definition);
-        let (px, py) = (f64::from(target.position.x) / 1000.0, f64::from(target.position.y) / 1000.0);
+        let (px, py) = (
+            f64::from(target.position.x) / 1000.0,
+            f64::from(target.position.y) / 1000.0,
+        );
         let (mut dx, mut dy) = ((x - px).abs(), (y - py).abs());
         if profile.has_footprint {
-            let f = profile.footprint.rotated(f64::from(target.rotation) / 1000.0);
+            let f = profile
+                .footprint
+                .rotated(f64::from(target.rotation) / 1000.0);
             dx = (dx - f.width / 2.0).max(0.0);
             dy = (dy - f.depth / 2.0).max(0.0);
         }
@@ -841,9 +910,16 @@ impl Spatial {
     /// Squared free space between two bodies in cells (old `bodyRange`): a building's
     /// footprint counts from its edge, a unit's from its body.
     pub fn body_range(&self, a: &Entity, b: &Entity) -> f64 {
-        let (x, y) = (f64::from(a.position.x) / 1000.0, f64::from(a.position.y) / 1000.0);
+        let (x, y) = (
+            f64::from(a.position.x) / 1000.0,
+            f64::from(a.position.y) / 1000.0,
+        );
         let reach = self.profiles.get(a.definition).body.radius
-            + if b.unit.is_some() { self.profiles.get(b.definition).body.radius } else { 0.0 };
+            + if b.unit.is_some() {
+                self.profiles.get(b.definition).body.radius
+            } else {
+                0.0
+            };
         let gap = (self.point_range(x, y, b).sqrt() - reach).max(0.0);
         gap * gap
     }
@@ -851,7 +927,12 @@ impl Spatial {
 
 fn definitions_radii(profiles: &Profiles, catalog: &Catalog) -> Vec<i32> {
     let mut radii: Vec<i32> = (0..catalog.content.definitions.len())
-        .map(|i| profiles.get(crate::catalog::Def(i as u16)).body.radius_milli())
+        .map(|i| {
+            profiles
+                .get(crate::catalog::Def(i as u16))
+                .body
+                .radius_milli()
+        })
         .collect();
     radii.push(profiles.navigation_body.radius_milli());
     radii

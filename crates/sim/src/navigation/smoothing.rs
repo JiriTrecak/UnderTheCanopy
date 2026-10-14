@@ -3,7 +3,11 @@
 /// The farthest waypoint index in `start..=end` that `clear` accepts, probing with
 /// doubling strides and then a binary search. `start` is known clear. Visibility need not
 /// be monotonic: the result is always an explicitly tested index.
-pub fn farthest_clear_waypoint(start: usize, end: usize, mut clear: impl FnMut(usize) -> bool) -> usize {
+pub fn farthest_clear_waypoint(
+    start: usize,
+    end: usize,
+    mut clear: impl FnMut(usize) -> bool,
+) -> usize {
     let mut farthest = start;
     let mut stride = 1;
     while farthest < end {

@@ -172,7 +172,9 @@ impl Sectors {
                     if topology.layered() {
                         topology.neighbors(a, &mut out);
                         for &next in &out {
-                            if self.sector(topology, next) == sector && self.labels[next as usize] == -1 {
+                            if self.sector(topology, next) == sector
+                                && self.labels[next as usize] == -1
+                            {
                                 self.labels[next as usize] = id;
                                 queue.push(next);
                             }
@@ -237,7 +239,9 @@ impl Sectors {
                             continue;
                         }
                         let other = self.labels[to as usize];
-                        if other >= 0 && can_traverse(self.size, from, to, |a, b| topology.step(a, b)) {
+                        if other >= 0
+                            && can_traverse(self.size, from, to, |a, b| topology.step(a, b))
+                        {
                             links.push(other);
                         }
                     }
@@ -264,7 +268,12 @@ impl Sectors {
                 let mut queue = vec![start];
                 let mut at = 0;
                 while at < queue.len() {
-                    let links: Vec<i32> = self.region(queue[at]).links.iter().map(|&l| l as i32).collect();
+                    let links: Vec<i32> = self
+                        .region(queue[at])
+                        .links
+                        .iter()
+                        .map(|&l| l as i32)
+                        .collect();
                     at += 1;
                     for next in links {
                         if self.region(next).network == 0 {
@@ -316,7 +325,12 @@ impl Sectors {
     /// sector around it. `Err(())` when disconnected; `Ok(None)` asks for an unrestricted
     /// local search (the start is not on a region).
     #[allow(clippy::result_unit_err)]
-    pub fn corridor(&mut self, topology: &impl Topology, start: u32, goal: u32) -> Result<Option<Vec<bool>>, ()> {
+    pub fn corridor(
+        &mut self,
+        topology: &impl Topology,
+        start: u32,
+        goal: u32,
+    ) -> Result<Option<Vec<bool>>, ()> {
         self.prepare(topology);
         self.expanded = 0;
         if !self.connected(topology, start, goal) {
@@ -358,7 +372,10 @@ impl Sectors {
 
     /// Region-level A*: sectors from target back to source.
     fn plan(&mut self, source: i32, target: i32) -> Option<Vec<u32>> {
-        use std::{cmp::Reverse, collections::{BTreeMap, BinaryHeap}};
+        use std::{
+            cmp::Reverse,
+            collections::{BTreeMap, BinaryHeap},
+        };
         let stride = self.stride;
         let width = self.width;
         let sector_of = |id: i32| id as u32 / stride;
@@ -366,7 +383,10 @@ impl Sectors {
         let (gx, gy) = ((goal % width) as i64, (goal / width) as i64);
         let heuristic = |id: i32| {
             let s = sector_of(id);
-            let (dx, dy) = (((s % width) as i64 - gx).abs(), ((s / width) as i64 - gy).abs());
+            let (dx, dy) = (
+                ((s % width) as i64 - gx).abs(),
+                ((s / width) as i64 - gy).abs(),
+            );
             dx.max(dy) * 1000 + dx.min(dy) * 414
         };
         let mut costs: BTreeMap<i32, i64> = BTreeMap::new();

@@ -23,6 +23,7 @@ use crate::{
     orders::Order,
     spatial::{Body, Fixed, Obstruction, Spatial, Spot, geometry::length_ceil},
     state::State,
+    teams::Teams,
     terrain::round_half_up,
 };
 use facing::{turn_step, turn_toward};
@@ -73,17 +74,25 @@ fn ready(e: &Entity, tick: u32) -> bool {
 
 /// Whether `b` claims cells against `e`'s local search (old `localReservations`): moving
 /// bodies and enemies do; stationary friends only collide physically.
-fn local_claim(units: &[EntityId], tick: u32, e: &Mover, owner: canopy_content::placement::Owner, b: &crate::spatial::BodyRecord) -> bool {
+fn local_claim(
+    teams: &Teams,
+    units: &[EntityId],
+    tick: u32,
+    e: &Mover,
+    owner: canopy_content::placement::Owner,
+    b: &crate::spatial::BodyRecord,
+) -> bool {
     b.id != e.id
         && units.binary_search(&b.id).is_ok()
         && b.ready_tick <= tick
         && b.solid()
         && b.air == e.body.air
-        && (b.owner != owner || b.has_route)
+        && (!teams.allied(b.owner, owner) || b.has_route)
 }
 
 /// Live cell claims for a local search: bodies standing in a node or reserving it.
 fn reservations<'a>(
+    teams: &'a Teams,
     spatial: &'a Spatial,
     units: &'a [EntityId],
     tick: u32,
@@ -95,11 +104,11 @@ fn reservations<'a>(
         spatial
             .bodies
             .in_cell(s.x, s.y)
-            .any(|b| b.node == node && local_claim(units, tick, e, owner, b))
+            .any(|b| b.node == node && local_claim(teams, units, tick, e, owner, b))
             || spatial
                 .bodies
                 .reserved_at(node)
-                .any(|b| local_claim(units, tick, e, owner, b))
+                .any(|b| local_claim(teams, units, tick, e, owner, b))
     }
 }
 
@@ -112,6 +121,8 @@ fn scale(a: i64, b: i64, c: i64) -> i64 {
 /// reusable scratch of the movement passes.
 pub struct Motion {
     pub spatial: Spatial,
+    /// Who cooperates in traffic: same-team units negotiate and yield to each other.
+    teams: Teams,
     units: Vec<EntityId>,
     ground: CellSet,
     air: CellSet,
@@ -120,11 +131,18 @@ pub struct Motion {
 }
 
 impl Motion {
-    pub fn new(terrain: Arc<crate::terrain::Terrain>, catalog: &Catalog, state: &State, scales: BTreeMap<String, f64>) -> Self {
+    pub fn new(
+        terrain: Arc<crate::terrain::Terrain>,
+        catalog: &Catalog,
+        state: &State,
+        teams: Teams,
+        scales: BTreeMap<String, f64>,
+    ) -> Self {
         let spatial = Spatial::new(terrain, catalog, state, scales);
         let n = spatial.node_count() as usize;
         Self {
             spatial,
+            teams,
             units: Vec::new(),
             ground: CellSet::new(n),
             air: CellSet::new(n),
@@ -160,7 +178,11 @@ impl Motion {
             if b.ignores {
                 continue;
             }
-            let set = if b.air { &mut self.air } else { &mut self.ground };
+            let set = if b.air {
+                &mut self.air
+            } else {
+                &mut self.ground
+            };
             set.insert(b.node);
             if let Some(w) = b.reservation {
                 set.insert(w);
@@ -178,7 +200,12 @@ impl Motion {
         }
     }
 
-    fn move_unit(&mut self, state: &mut State, id: EntityId, requests: &mut Option<BTreeMap<EntityId, Request>>) {
+    fn move_unit(
+        &mut self,
+        state: &mut State,
+        id: EntityId,
+        requests: &mut Option<BTreeMap<EntityId, Request>>,
+    ) {
         let tick = state.tick;
         let spatial = &mut self.spatial;
         let Some(e) = state.entities.get_mut(id) else {
@@ -196,7 +223,14 @@ impl Motion {
         if let Some(release) = e.unit.as_ref().and_then(|u| u.release.clone()) {
             let deck = release.surface.as_deref().and_then(|s| spatial.deck_id(s));
             let body = spatial.body_of(e);
-            if let Some(p) = spatial.nearest(Spot::new(release.x, release.y, deck), 12, Some(id), Some(&body), None, None) {
+            if let Some(p) = spatial.nearest(
+                Spot::new(release.x, release.y, deck),
+                12,
+                Some(id),
+                Some(&body),
+                None,
+                None,
+            ) {
                 place(spatial, e, p.fixed());
                 let u = e.unit.as_mut().expect("unit");
                 u.segment = None;
@@ -219,20 +253,33 @@ impl Motion {
         let motion = profile.motion;
         let step = turn_step(motion.map_or(720, |m| m.turn_rate));
         let mover = Mover::of(spatial, e);
-        let here = (f64::from(e.position.x) / 1000.0, f64::from(e.position.y) / 1000.0);
+        let here = (
+            f64::from(e.position.x) / 1000.0,
+            f64::from(e.position.y) / 1000.0,
+        );
         // Idle units keep facing their target.
-        let target = e.unit.as_ref().and_then(|u| if u.route.is_empty() { u.target } else { None });
+        let target = e
+            .unit
+            .as_ref()
+            .and_then(|u| if u.route.is_empty() { u.target } else { None });
         let victim = target
             .and_then(|t| state.entities.get(t))
             .filter(|v| alive(v))
-            .map(|v| (f64::from(v.position.x) / 1000.0, f64::from(v.position.y) / 1000.0));
+            .map(|v| {
+                (
+                    f64::from(v.position.x) / 1000.0,
+                    f64::from(v.position.y) / 1000.0,
+                )
+            });
         let e = state.entities.get_mut(id).expect("unit");
         if let Some(victim) = victim {
             turn_toward(&mut e.rotation, here, victim, step);
         }
         let u = e.unit.as_ref().expect("unit");
         let speed = match motion {
-            Some(m) if u.idle.as_ref().is_some_and(|i| i.walking) => m.walk_speed.unwrap_or(m.speed),
+            Some(m) if u.idle.as_ref().is_some_and(|i| i.walking) => {
+                m.walk_speed.unwrap_or(m.speed)
+            }
             Some(m) => m.speed,
             None => 0.0,
         };
@@ -240,7 +287,11 @@ impl Motion {
             return;
         }
         let ignores = spatial.bodies.get(id).is_some_and(|b| b.ignores);
-        let yielding_waypoint = u.detour.as_ref().filter(|d| d.yielding.is_some()).map(|d| d.waypoint);
+        let yielding_waypoint = u
+            .detour
+            .as_ref()
+            .filter(|d| d.yielding.is_some())
+            .map(|d| d.waypoint);
         {
             let set = if air { &mut self.air } else { &mut self.ground };
             if !ignores {
@@ -299,7 +350,10 @@ impl Motion {
             }
         }
         let first = spatial.point(e.unit.as_ref().expect("unit").route[0]);
-        let here = (f64::from(e.position.x) / 1000.0, f64::from(e.position.y) / 1000.0);
+        let here = (
+            f64::from(e.position.x) / 1000.0,
+            f64::from(e.position.y) / 1000.0,
+        );
         if !turn_toward(
             &mut e.rotation,
             here,
@@ -318,7 +372,8 @@ impl Motion {
             };
             let goal = self.spatial.point(next);
             if u.segment.as_ref().is_none_or(|s| s.to != next) {
-                let length = length_ceil(i64::from(goal.x - current.x), i64::from(goal.y - current.y));
+                let length =
+                    length_ceil(i64::from(goal.x - current.x), i64::from(goal.y - current.y));
                 if length == 0 {
                     u.route.remove(0);
                     u.segment = None;
@@ -343,28 +398,47 @@ impl Motion {
                 goal
             } else {
                 Fixed::on(
-                    segment.from.x + scale(i64::from(goal.x - segment.from.x), progress, length) as i32,
-                    segment.from.y + scale(i64::from(goal.y - segment.from.y), progress, length) as i32,
+                    segment.from.x
+                        + scale(i64::from(goal.x - segment.from.x), progress, length) as i32,
+                    segment.from.y
+                        + scale(i64::from(goal.y - segment.from.y), progress, length) as i32,
                     current.deck,
                 )
             };
             self.spatial.adopt_surface(current, &mut proposed, goal);
             let occupied: &CellSet = if air { &self.air } else { &self.ground };
-            let obstruction = self
-                .spatial
-                .movement_blocker(current, proposed, (!ignores).then_some(occupied as &dyn Reserved), &body);
+            let obstruction = self.spatial.movement_blocker(
+                current,
+                proposed,
+                (!ignores).then_some(occupied as &dyn Reserved),
+                &body,
+            );
             if obstruction == Some(Obstruction::Terrain) {
-                let u = state.entities.get_mut(id).expect("unit").unit.as_mut().expect("unit");
+                let u = state
+                    .entities
+                    .get_mut(id)
+                    .expect("unit")
+                    .unit
+                    .as_mut()
+                    .expect("unit");
                 u.route.clear();
                 u.segment = None;
                 u.retry_at = tick + 6;
                 break;
             }
             if obstruction == Some(Obstruction::Reservation)
-                || !self.spatial.unit_segment_clear(current, proposed, Some(id), None, None, None)
+                || !self
+                    .spatial
+                    .unit_segment_clear(current, proposed, Some(id), None, None, None)
             {
                 let (retry_at, goal_node) = {
-                    let u = state.entities.get(id).expect("unit").unit.as_ref().expect("unit");
+                    let u = state
+                        .entities
+                        .get(id)
+                        .expect("unit")
+                        .unit
+                        .as_ref()
+                        .expect("unit");
                     (u.retry_at, u.goal)
                 };
                 if tick >= retry_at && goal_node.is_some() {
@@ -404,7 +478,14 @@ impl Motion {
     ) {
         let tick = state.tick;
         if requests.is_none() {
-            *requests = Some(traffic::requests(&self.spatial, state, &self.units, &mut self.local, &mut self.claims));
+            *requests = Some(traffic::requests(
+                &self.spatial,
+                &self.teams,
+                state,
+                &self.units,
+                &mut self.local,
+                &mut self.claims,
+            ));
         }
         if let Some(&request) = requests.as_ref().and_then(|r| r.get(&id))
             && self.begin_traffic_yield(state, id, request)
@@ -418,7 +499,10 @@ impl Motion {
             (Some(Order::Move { destination, .. }), None) => Spot::new(
                 destination.x,
                 destination.y,
-                destination.surface.as_deref().and_then(|s| self.spatial.deck_id(s)),
+                destination
+                    .surface
+                    .as_deref()
+                    .and_then(|s| self.spatial.deck_id(s)),
             ),
             _ => desired,
         };
@@ -428,7 +512,8 @@ impl Motion {
         );
         let body = self.spatial.body_of(e);
         let target = if (dx * dx + dy * dy).sqrt() <= 7.0 {
-            self.spatial.nearest(arrival, 3, Some(id), Some(&body), None, None)
+            self.spatial
+                .nearest(arrival, 3, Some(id), Some(&body), None, None)
         } else {
             None
         };
@@ -445,7 +530,7 @@ impl Motion {
         let near = self.units.iter().any(|&b| {
             b < id
                 && self.spatial.bodies.get(b).is_some_and(|r| {
-                    r.owner == owner
+                    self.teams.allied(r.owner, owner)
                         && r.has_route
                         && (crate::spatial::geometry::grid(r.x) - cx).abs() <= 1
                         && (crate::spatial::geometry::grid(r.y) - cy).abs() <= 1
@@ -458,15 +543,30 @@ impl Motion {
             for (ax, ay) in [(cx, cy - 1), (cx - 1, cy), (cx + 1, cy), (cx, cy + 1)] {
                 let p = Spot::new(ax, ay, deck);
                 if self.spatial.free(p, Some(id), None, None)
-                    && self.spatial.clear_segment(current, p.fixed(), Some(occupied), &body)
-                    && self.spatial.unit_segment_clear(current, p.fixed(), Some(id), None, None, None)
+                    && self
+                        .spatial
+                        .clear_segment(current, p.fixed(), Some(occupied), &body)
+                    && self.spatial.unit_segment_clear(
+                        current,
+                        p.fixed(),
+                        Some(id),
+                        None,
+                        None,
+                        None,
+                    )
                 {
                     aside_node = self.spatial.node(p);
                     break;
                 }
             }
         }
-        let u = state.entities.get_mut(id).expect("unit").unit.as_mut().expect("unit");
+        let u = state
+            .entities
+            .get_mut(id)
+            .expect("unit")
+            .unit
+            .as_mut()
+            .expect("unit");
         if let Some(node) = aside_node {
             u.route.insert(0, node);
         }
@@ -475,16 +575,34 @@ impl Motion {
 
     fn begin_traffic_yield(&mut self, state: &mut State, id: EntityId, request: Request) -> bool {
         let tick = state.tick;
-        let (Some(e), Some(parent)) = (state.entities.get(id), state.entities.get(request.parent)) else {
+        let (Some(e), Some(parent)) = (state.entities.get(id), state.entities.get(request.parent))
+        else {
             return false;
         };
         let mover = Mover::of(&self.spatial, e);
         let parent = Mover::of(&self.spatial, parent);
-        let occupied: &CellSet = if mover.body.air { &self.air } else { &self.ground };
-        let Some(plan) = traffic::escape(&self.spatial, &mut self.local, &mover, &parent, occupied, None) else {
+        let occupied: &CellSet = if mover.body.air {
+            &self.air
+        } else {
+            &self.ground
+        };
+        let Some(plan) = traffic::escape(
+            &self.spatial,
+            &mut self.local,
+            &mover,
+            &parent,
+            occupied,
+            None,
+        ) else {
             return false;
         };
-        let u = state.entities.get_mut(id).expect("unit").unit.as_mut().expect("unit");
+        let u = state
+            .entities
+            .get_mut(id)
+            .expect("unit")
+            .unit
+            .as_mut()
+            .expect("unit");
         let Some(goal) = u.goal else {
             return false;
         };
@@ -497,14 +615,23 @@ impl Motion {
                 leader: request.leader,
                 until: tick + 120,
             }),
-            points: plan.points.iter().map(|p| Milli { x: p.x, y: p.y }).collect(),
+            points: plan
+                .points
+                .iter()
+                .map(|p| Milli { x: p.x, y: p.y })
+                .collect(),
         });
         true
     }
 
     /// A bounded escape around nearby bodies that rejoins the route (old
     /// `beginLocalDetour`). A distant order never disables clearance at the unit's feet.
-    fn begin_local_detour(&mut self, state: &mut State, id: EntityId, destination: Option<Spot>) -> bool {
+    fn begin_local_detour(
+        &mut self,
+        state: &mut State,
+        id: EntityId,
+        destination: Option<Spot>,
+    ) -> bool {
         let tick = state.tick;
         let e = state.entities.get(id).expect("unit");
         let u = e.unit.as_ref().expect("unit");
@@ -518,7 +645,12 @@ impl Motion {
         }
         let spatial = &self.spatial;
         let local = &mut self.local;
-        let cells = |p: Spot| (f64::from(p.x) - f64::from(current.x) / 1000.0, f64::from(p.y) - f64::from(current.y) / 1000.0);
+        let cells = |p: Spot| {
+            (
+                f64::from(p.x) - f64::from(current.x) / 1000.0,
+                f64::from(p.y) - f64::from(current.y) / 1000.0,
+            )
+        };
         let near_destination = destination.is_some_and(|d| {
             let (dx, dy) = cells(d);
             (dx * dx + dy * dy).sqrt() <= reach
@@ -533,7 +665,8 @@ impl Motion {
             })
         };
         let replace_goal = rejoin.is_none()
-            && destination.is_some_and(|d| spatial.clear_segment(current, d.fixed(), None, &mover.body));
+            && destination
+                .is_some_and(|d| spatial.clear_segment(current, d.fixed(), None, &mover.body));
         if rejoin.is_none() && !replace_goal {
             return false;
         }
@@ -544,20 +677,25 @@ impl Motion {
         };
         let (dx, dy) = cells(next);
         let distance = (dx * dx + dy * dy).sqrt();
-        let reservations = reservations(spatial, &self.units, tick, &mover, owner);
+        let reservations = reservations(&self.teams, spatial, &self.units, tick, &mover, owner);
         let edge = (i64::from(spatial.size()) - 1) * 1000;
         let projected = (
             f64::from(current.x) / 1000.0 + dx / distance * 3.0 * f64::from(probe),
             f64::from(current.y) / 1000.0 + dy / distance * 3.0 * f64::from(probe),
         );
-        let center = (round_half_up(projected.0) as i32, round_half_up(projected.1) as i32);
+        let center = (
+            round_half_up(projected.0) as i32,
+            round_half_up(projected.1) as i32,
+        );
         let deck = mover.cell.deck;
         let by_projection = |a: &Spot, b: &Spot| {
             let d = |p: &Spot| {
                 let (x, y) = (f64::from(p.x) - projected.0, f64::from(p.y) - projected.1);
                 x * x + y * y
             };
-            d(a).total_cmp(&d(b)).then(a.y.cmp(&b.y)).then(a.x.cmp(&b.x))
+            d(a).total_cmp(&d(b))
+                .then(a.y.cmp(&b.y))
+                .then(a.x.cmp(&b.x))
         };
         let usable = |p: &Spot| {
             let (x, y) = cells(*p);
@@ -605,14 +743,24 @@ impl Motion {
         };
         let destination_node = destination.and_then(|d| spatial.node(d));
         drop(reservations);
-        let u = state.entities.get_mut(id).expect("unit").unit.as_mut().expect("unit");
+        let u = state
+            .entities
+            .get_mut(id)
+            .expect("unit")
+            .unit
+            .as_mut()
+            .expect("unit");
         if near_destination {
             u.goal = Some(waypoint);
             u.route = vec![waypoint];
         } else if replace_goal {
             let goal = destination_node.expect("destination node");
             u.goal = Some(goal);
-            u.route = if waypoint == goal { vec![waypoint] } else { vec![waypoint, goal] };
+            u.route = if waypoint == goal {
+                vec![waypoint]
+            } else {
+                vec![waypoint, goal]
+            };
         } else {
             u.route.drain(..rejoin.expect("rejoin"));
             if u.route.first() != Some(&waypoint) {
@@ -631,7 +779,13 @@ impl Motion {
 
     /// A finished formation member may enclose another's route: a truly idle ally steps
     /// aside once ordinary recovery has stalled (old `askIdleAllyToYield`).
-    fn ask_idle_ally_to_yield(&mut self, state: &mut State, id: EntityId, from: Fixed, to: Fixed) -> bool {
+    fn ask_idle_ally_to_yield(
+        &mut self,
+        state: &mut State,
+        id: EntityId,
+        from: Fixed,
+        to: Fixed,
+    ) -> bool {
         let tick = state.tick;
         let e = state.entities.get(id).expect("unit");
         let u = e.unit.as_ref().expect("unit");
@@ -642,7 +796,10 @@ impl Motion {
         let mover = Mover::of(&self.spatial, e);
         let owner = e.owner;
         let waypoint = self.spatial.point(u.route[0]);
-        let (dx, dy) = (f64::from(waypoint.x - from.x), f64::from(waypoint.y - from.y));
+        let (dx, dy) = (
+            f64::from(waypoint.x - from.x),
+            f64::from(waypoint.y - from.y),
+        );
         let length = (dx * dx + dy * dy).sqrt();
         let reach = length.min(4000.0 * mover.body.radius.ceil().max(1.0));
         let ahead = if length > 0.0 {
@@ -665,8 +822,13 @@ impl Motion {
             let Some(idle) = ally.unit.as_ref() else {
                 continue;
             };
-            let moves = self.spatial.profiles.get(ally.definition).motion.is_some_and(|m| m.speed > 0.0);
-            if ally.owner != owner
+            let moves = self
+                .spatial
+                .profiles
+                .get(ally.definition)
+                .motion
+                .is_some_and(|m| m.speed > 0.0);
+            if !self.teams.allied(ally.owner, owner)
                 || !ready(ally, tick)
                 || idle.order.is_some()
                 || !idle.order_queue.is_empty()
@@ -679,7 +841,11 @@ impl Motion {
                 continue;
             }
             let ally_mover = Mover::of(&self.spatial, ally);
-            let occupied: &CellSet = if mover.body.air { &self.air } else { &self.ground };
+            let occupied: &CellSet = if mover.body.air {
+                &self.air
+            } else {
+                &self.ground
+            };
             let claims = Adjusted {
                 base: occupied,
                 without: Some(ally_mover.node),
@@ -690,12 +856,26 @@ impl Motion {
             let square = ax * ax + ay * ay;
             // Never park across the same approach again.
             let accept = |p: Spot| {
-                let (px, py) = (f64::from(p.x * 1000 - from.x), f64::from(p.y * 1000 - from.y));
-                let t = if square != 0.0 { ((px * ax + py * ay) / square).clamp(0.0, 1.0) } else { 0.0 };
+                let (px, py) = (
+                    f64::from(p.x * 1000 - from.x),
+                    f64::from(p.y * 1000 - from.y),
+                );
+                let t = if square != 0.0 {
+                    ((px * ax + py * ay) / square).clamp(0.0, 1.0)
+                } else {
+                    0.0
+                };
                 let (ex, ey) = (px - t * ax, py - t * ay);
                 ex * ex + ey * ey >= separation * separation
             };
-            let Some(plan) = traffic::escape(&self.spatial, &mut self.local, &ally_mover, &mover, &claims, Some(&accept)) else {
+            let Some(plan) = traffic::escape(
+                &self.spatial,
+                &mut self.local,
+                &ally_mover,
+                &mover,
+                &claims,
+                Some(&accept),
+            ) else {
                 continue;
             };
             let ally = state.entities.get_mut(ally_id).expect("ally");
@@ -706,13 +886,30 @@ impl Motion {
             idle.detour = Some(Detour {
                 goal: plan.waypoint,
                 waypoint: plan.waypoint,
-                yielding: Some(Yielding { leader: id, until: tick + 120 }),
-                points: plan.points.iter().map(|p| Milli { x: p.x, y: p.y }).collect(),
+                yielding: Some(Yielding {
+                    leader: id,
+                    until: tick + 120,
+                }),
+                points: plan
+                    .points
+                    .iter()
+                    .map(|p| Milli { x: p.x, y: p.y })
+                    .collect(),
             });
             self.spatial.update_body(ally);
-            let occupied = if mover.body.air { &mut self.air } else { &mut self.ground };
+            let occupied = if mover.body.air {
+                &mut self.air
+            } else {
+                &mut self.ground
+            };
             occupied.insert(plan.waypoint);
-            let u = state.entities.get_mut(id).expect("unit").unit.as_mut().expect("unit");
+            let u = state
+                .entities
+                .get_mut(id)
+                .expect("unit")
+                .unit
+                .as_mut()
+                .expect("unit");
             u.retry_at = tick + 6;
             return true;
         }
@@ -727,7 +924,13 @@ impl Motion {
         let mover = Mover::of(&self.spatial, e);
         let owner = e.owner;
         let current = mover.at;
-        let detour = e.unit.as_ref().expect("unit").detour.clone().expect("detour");
+        let detour = e
+            .unit
+            .as_ref()
+            .expect("unit")
+            .detour
+            .clone()
+            .expect("detour");
         let target = Fixed::on(detour.points[0].x, detour.points[0].y, current.deck);
         let mut finished_yield = false;
         if let Some(yielding) = detour.yielding
@@ -736,7 +939,7 @@ impl Motion {
         {
             let waiting = state.entities.get(yielding.leader).is_some_and(|leader| {
                 alive(leader)
-                    && leader.owner == owner
+                    && self.teams.allied(leader.owner, owner)
                     && leader.unit.as_ref().is_some_and(|l| l.goal.is_some())
                     && self.spatial.point_range(
                         f64::from(current.x) / 1000.0,
@@ -747,7 +950,13 @@ impl Motion {
             if tick < yielding.until && waiting {
                 return;
             }
-            let u = state.entities.get_mut(id).expect("unit").unit.as_mut().expect("unit");
+            let u = state
+                .entities
+                .get_mut(id)
+                .expect("unit")
+                .unit
+                .as_mut()
+                .expect("unit");
             if let Some(d) = u.detour.as_mut() {
                 d.yielding = None;
             }
@@ -763,7 +972,10 @@ impl Motion {
         ) {
             return;
         }
-        let length = length_ceil(i64::from(target.x - current.x), i64::from(target.y - current.y));
+        let length = length_ceil(
+            i64::from(target.x - current.x),
+            i64::from(target.y - current.y),
+        );
         let travel = length.min(budget);
         let proposed = if travel == length {
             target
@@ -775,9 +987,13 @@ impl Motion {
             )
         };
         let clear = {
-            let reservations = reservations(&self.spatial, &self.units, tick, &mover, owner);
-            self.spatial.clear_segment(current, proposed, Some(&reservations), &mover.body)
-                && self.spatial.unit_segment_clear(current, proposed, Some(id), None, None, None)
+            let reservations =
+                reservations(&self.teams, &self.spatial, &self.units, tick, &mover, owner);
+            self.spatial
+                .clear_segment(current, proposed, Some(&reservations), &mover.body)
+                && self
+                    .spatial
+                    .unit_segment_clear(current, proposed, Some(id), None, None, None)
         };
         let e = state.entities.get_mut(id).expect("unit");
         let u = e.unit.as_mut().expect("unit");

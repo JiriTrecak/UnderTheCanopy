@@ -48,7 +48,10 @@ impl BodyRecord {
 
     /// The ground cell of its position.
     pub fn cell(&self, size: u32) -> u32 {
-        let (x, y) = (crate::spatial::geometry::grid(self.x), crate::spatial::geometry::grid(self.y));
+        let (x, y) = (
+            crate::spatial::geometry::grid(self.x),
+            crate::spatial::geometry::grid(self.y),
+        );
         y as u32 * size + x as u32
     }
 }
@@ -176,7 +179,10 @@ impl Bodies {
     }
 
     fn unreserve(&mut self, slot: usize) {
-        let Some(node) = self.records[slot].reservation.filter(|_| self.records[slot].solid()) else {
+        let Some(node) = self.records[slot]
+            .reservation
+            .filter(|_| self.records[slot].solid())
+        else {
             return;
         };
         if let Some(list) = self.reserved.get_mut(&node) {
@@ -270,7 +276,14 @@ impl Bodies {
     }
 
     /// Solid bodies whose cell lies in the fixed-point rectangle, each once.
-    pub fn within(&self, min_x: i64, min_y: i64, max_x: i64, max_y: i64, mut visit: impl FnMut(&BodyRecord) -> bool) -> bool {
+    pub fn within(
+        &self,
+        min_x: i64,
+        min_y: i64,
+        max_x: i64,
+        max_y: i64,
+        mut visit: impl FnMut(&BodyRecord) -> bool,
+    ) -> bool {
         let last = i64::from(self.size) - 1;
         let x0 = ((min_x + 500).div_euclid(1000)).max(0);
         let x1 = ((max_x + 500).div_euclid(1000)).min(last);

@@ -53,14 +53,23 @@ impl Spatial {
     }
 
     fn step_for(&self, radius: i32) -> impl Fn(u32, u32) -> bool + '_ {
-        body_step(self.size, &self.walk, self.terrain.heights(), &self.adjacent, radius)
+        body_step(
+            self.size,
+            &self.walk,
+            self.terrain.heights(),
+            &self.adjacent,
+            radius,
+        )
     }
 
     fn ensure_navigation(&mut self, radius: i32) {
         if radius >= 500 && !self.adjacent.contains_key(&radius) {
-            self.adjacent.insert(radius, super::adjacent::AdjacentSweep::new(radius));
+            self.adjacent
+                .insert(radius, super::adjacent::AdjacentSweep::new(radius));
         }
-        self.grids.entry(radius).or_insert_with(|| GridNavigation::new(self.size));
+        self.grids
+            .entry(radius)
+            .or_insert_with(|| GridNavigation::new(self.size));
     }
 
     /// A cell path from `start` to `goal` for `body` avoiding `blocked` cells and costing at
@@ -90,7 +99,14 @@ impl Spatial {
                 max_cost,
                 ..Search::default()
             };
-            let path = self.air.path(&mut self.scratch, &mut |_, _| true, |_, _| true, start, goal, q);
+            let path = self.air.path(
+                &mut self.scratch,
+                &mut |_, _| true,
+                |_, _| true,
+                start,
+                goal,
+                q,
+            );
             self.stats.searches += 1;
             self.stats.expanded += u64::from(self.scratch.expanded);
             return path;
@@ -127,7 +143,10 @@ impl Spatial {
         asker: Option<Asker>,
         probe_limit: usize,
     ) -> Option<Vec<u32>> {
-        if !self.valid_node(start) || !self.valid_node(goal) || !self.unit_walkable(self.spot(goal), body) {
+        if !self.valid_node(start)
+            || !self.valid_node(goal)
+            || !self.unit_walkable(self.spot(goal), body)
+        {
             return None;
         }
         if body.air {
@@ -166,7 +185,9 @@ impl Spatial {
         if let Some(b) = blocked {
             let (sx, sy) = (i64::from(start % size), i64::from(start / size));
             for cell in b.iter() {
-                if (i64::from(cell % size) - sx).abs() <= 8 && (i64::from(cell / size) - sy).abs() <= 8 {
+                if (i64::from(cell % size) - sx).abs() <= 8
+                    && (i64::from(cell / size) - sy).abs() <= 8
+                {
                     nearby += 1;
                     if nearby > 3 {
                         break;
@@ -177,7 +198,8 @@ impl Spatial {
         let convoy = dx.max(dy) >= 64
             && nearby > 3
             && asker.is_some_and(|a| !self.opposing_traffic(a, self.spot(goal), body.air));
-        let heuristic_permille = if blocked.is_some() && dx.max(dy) >= 64 && (nearby <= 3 || convoy) {
+        let heuristic_permille = if blocked.is_some() && dx.max(dy) >= 64 && (nearby <= 3 || convoy)
+        {
             1200
         } else {
             1000
@@ -200,11 +222,23 @@ impl Spatial {
         self.grid_search(radius, start, goal, search)
     }
 
-    fn grid_search(&mut self, radius: i32, start: u32, goal: u32, search: Search) -> Option<Vec<u32>> {
+    fn grid_search(
+        &mut self,
+        radius: i32,
+        start: u32,
+        goal: u32,
+        search: Search,
+    ) -> Option<Vec<u32>> {
         let mut grid = self.grids.remove(&radius).expect("grid navigation");
         let mut scratch = std::mem::take(&mut self.scratch);
         let result = {
-            let mut step = body_step(self.size, &self.walk, self.terrain.heights(), &self.adjacent, radius);
+            let mut step = body_step(
+                self.size,
+                &self.walk,
+                self.terrain.heights(),
+                &self.adjacent,
+                radius,
+            );
             let topo = Topo {
                 walk: &self.walk,
                 heights: self.terrain.heights(),
@@ -212,7 +246,14 @@ impl Spatial {
                 occupancy: &self.occupancy,
             };
             let sectors = &mut self.sectors;
-            grid.path(&mut scratch, &mut step, |a, b| sectors.connected(&topo, a, b), start, goal, search)
+            grid.path(
+                &mut scratch,
+                &mut step,
+                |a, b| sectors.connected(&topo, a, b),
+                start,
+                goal,
+                search,
+            )
         };
         self.stats.searches += 1;
         self.stats.expanded += u64::from(scratch.expanded);
@@ -246,22 +287,29 @@ impl Spatial {
             None
         };
         let mut scratch = std::mem::take(&mut self.surface_scratch);
-        let search = |this: &Self, scratch: &mut surfaces::SurfaceScratch, corridor: Option<&[bool]>| {
-            let topo = Topo {
-                walk: &this.walk,
-                heights: this.terrain.heights(),
-                surfaces: Some(layers),
-                occupancy: &this.occupancy,
+        let search =
+            |this: &Self, scratch: &mut surfaces::SurfaceScratch, corridor: Option<&[bool]>| {
+                let topo = Topo {
+                    walk: &this.walk,
+                    heights: this.terrain.heights(),
+                    surfaces: Some(layers),
+                    occupancy: &this.occupancy,
+                };
+                let blocked_node = |n: &crate::terrain::SurfaceNode| {
+                    this.occupancy.blocked(n.id)
+                        || blocked.is_some_and(|b| b.contains(n.id))
+                        || corridor.is_some_and(|c| !c[this.sectors.sector(&topo, n.id) as usize])
+                };
+                surfaces::path(
+                    layers,
+                    scratch,
+                    start,
+                    goal,
+                    blocked_node,
+                    max_cost,
+                    |p, q| this.clear_segment(this.point(p), this.point(q), None, body),
+                )
             };
-            let blocked_node = |n: &crate::terrain::SurfaceNode| {
-                this.occupancy.blocked(n.id)
-                    || blocked.is_some_and(|b| b.contains(n.id))
-                    || corridor.is_some_and(|c| !c[this.sectors.sector(&topo, n.id) as usize])
-            };
-            surfaces::path(layers, scratch, start, goal, blocked_node, max_cost, |p, q| {
-                this.clear_segment(this.point(p), this.point(q), None, body)
-            })
-        };
         let route = search(self, &mut scratch, corridor.as_deref());
         self.stats.searches += 1;
         let route = if route.is_some() || corridor.is_none() {
@@ -300,7 +348,10 @@ impl Spatial {
         let mut mesh = self.meshes.remove(&radius).expect("mesh");
         mesh.prepare(self.mesh_input());
         let (a, b) = (self.spot(start), self.spot(goal));
-        let result = mesh.path((f64::from(a.x), f64::from(a.y)), (f64::from(b.x), f64::from(b.y)));
+        let result = mesh.path(
+            (f64::from(a.x), f64::from(a.y)),
+            (f64::from(b.x), f64::from(b.y)),
+        );
         self.meshes.insert(radius, mesh);
         self.stats.mesh_searches += 1;
         let Some(result) = result else {
@@ -323,7 +374,11 @@ impl Spatial {
         let mut cost = 0i64;
         let mut cell = start;
         for &next in &compact {
-            cost += if next % size != cell % size && next / size != cell / size { 1414 } else { 1000 };
+            cost += if next % size != cell % size && next / size != cell / size {
+                1414
+            } else {
+                1000
+            };
             cell = next;
         }
         if cost > max_cost {
@@ -373,7 +428,11 @@ impl Spatial {
         let mut compact: Vec<u32> = Vec::with_capacity(path.len());
         for cell in path {
             while !compact.is_empty() {
-                let before = if compact.len() > 1 { compact[compact.len() - 2] } else { start };
+                let before = if compact.len() > 1 {
+                    compact[compact.len() - 2]
+                } else {
+                    start
+                };
                 if !can_traverse(size, before, cell, step) {
                     break;
                 }
@@ -384,25 +443,13 @@ impl Spatial {
         Some((compact, repaired))
     }
 
-    #[doc(hidden)]
-    pub fn debug_mesh(&mut self, start: u32, goal: u32, body: &Body) -> (Option<Vec<(f64, f64)>>, Option<Vec<u32>>) {
-        let radius = body.radius_milli();
-        if !self.meshes.contains_key(&radius) {
-            let mesh = GroundMesh::new(self.mesh_input(), body.radius);
-            self.meshes.insert(radius, mesh);
-        }
-        let mut mesh = self.meshes.remove(&radius).expect("mesh");
-        mesh.prepare(self.mesh_input());
-        let (a, b) = (self.spot(start), self.spot(goal));
-        let raw = mesh.path((f64::from(a.x), f64::from(a.y)), (f64::from(b.x), f64::from(b.y)));
-        self.meshes.insert(radius, mesh);
-        (raw, self.mesh_path(start, goal, i64::MAX, body))
-    }
-
     /// Whether other units' routes cross this one head-on nearby (old `opposingTraffic`):
     /// such crossings keep exact search so yielding stays stable.
     fn opposing_traffic(&self, asker: Asker, destination: Spot, air: bool) -> bool {
-        let (fx, fy) = (f64::from(asker.position.x) / 1000.0, f64::from(asker.position.y) / 1000.0);
+        let (fx, fy) = (
+            f64::from(asker.position.x) / 1000.0,
+            f64::from(asker.position.y) / 1000.0,
+        );
         let (tx, ty) = (f64::from(destination.x), f64::from(destination.y));
         let (dx, dy) = (tx - fx, ty - fy);
         let (min_x, max_x) = (fx.min(tx) - 8.0, fx.max(tx) + 8.0);
@@ -429,7 +476,13 @@ impl Spatial {
 
     /// The node a mover joins its route from: its own cell centre if reachable, else the
     /// nearest neighbouring centre it can reach (old `routeOrigin`).
-    fn route_origin(&self, cell: Spot, from: Fixed, blocked: Option<&dyn Reserved>, body: &Body) -> Option<u32> {
+    fn route_origin(
+        &self,
+        cell: Spot,
+        from: Fixed,
+        blocked: Option<&dyn Reserved>,
+        body: &Body,
+    ) -> Option<u32> {
         let center = self.node(cell)?;
         if self.clear_segment(from, self.point(center), blocked, body) {
             return Some(center);
@@ -448,7 +501,8 @@ impl Spatial {
                     continue;
                 };
                 let point = p.fixed();
-                let distance = length_ceil(i64::from(point.x - from.x), i64::from(point.y - from.y));
+                let distance =
+                    length_ceil(i64::from(point.x - from.x), i64::from(point.y - from.y));
                 candidates.push((distance, node, point));
             }
         }
@@ -478,7 +532,12 @@ impl Spatial {
 
     fn plan_route(&mut self, e: &mut Entity, destination: Spot, avoid_units: bool) -> bool {
         let size = self.size as i32;
-        if e.unit.is_none() || destination.x < 0 || destination.y < 0 || destination.x > size - 1 || destination.y > size - 1 {
+        if e.unit.is_none()
+            || destination.x < 0
+            || destination.y < 0
+            || destination.x > size - 1
+            || destination.y > size - 1
+        {
             return false;
         }
         self.stats.routes += 1;
@@ -514,22 +573,42 @@ impl Spatial {
         if direct {
             self.stats.direct += 1;
         }
-        let origin = if direct { Some(own) } else { self.route_origin(here, from, reserved, &body) };
+        let origin = if direct {
+            Some(own)
+        } else {
+            self.route_origin(here, from, reserved, &body)
+        };
         let Some(origin) = origin else {
             self.blockers = blockers;
             return false;
         };
-        let moving = matches!(e.unit.as_ref().and_then(|u| u.order.as_ref()), Some(Order::Move { .. }));
+        let moving = matches!(
+            e.unit.as_ref().and_then(|u| u.order.as_ref()),
+            Some(Order::Move { .. })
+        );
         let corridor_key: Option<CorridorKey> = (self.corridors.is_some()
             && !direct
             && !avoid_units
             && !self.layered()
             && !body.air
             && moving)
-            .then(|| (owner_code(e.owner), i64::from(body.radius_milli()), body.height.to_bits()));
+            .then(|| {
+                (
+                    owner_code(e.owner),
+                    i64::from(body.radius_milli()),
+                    body.height.to_bits(),
+                )
+            });
         let shared = corridor_key.and_then(|key| {
             let corridors = self.corridors.as_ref().expect("corridors");
-            corridors.find(key, from, target, goal, |n| self.point(n), |a, b| self.clear_segment(a, b, None, &body))
+            corridors.find(
+                key,
+                from,
+                target,
+                goal,
+                |n| self.point(n),
+                |a, b| self.clear_segment(a, b, None, &body),
+            )
         });
         let reused = shared.is_some();
         if reused {
@@ -637,7 +716,11 @@ fn body_step<'a>(
     radius: i32,
 ) -> impl Fn(u32, u32) -> bool + 'a {
     let ground = Ground { walk, heights };
-    let compiled = if radius >= 500 { adjacent.get(&radius) } else { None };
+    let compiled = if radius >= 500 {
+        adjacent.get(&radius)
+    } else {
+        None
+    };
     move |a, b| match compiled {
         Some(sweep) => sweep.clear(size, a, b, |p, q| ground.step(p, q)),
         None => ground.step(a, b),

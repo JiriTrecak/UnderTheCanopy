@@ -41,7 +41,13 @@ pub fn snapped_mesh_grid_path(
     let choices: Vec<Vec<Fixed>> = points
         .iter()
         .enumerate()
-        .map(|(i, &p)| if i == 0 || i == last { vec![p] } else { nearby(p, size, &mut step) })
+        .map(|(i, &p)| {
+            if i == 0 || i == last {
+                vec![p]
+            } else {
+                nearby(p, size, &mut step)
+            }
+        })
         .collect();
     if let Some(path) = connect(&choices, size, &mut step) {
         return Some(path);
@@ -66,7 +72,11 @@ pub fn snapped_mesh_grid_path(
                     f64::from(from) + f64::from(to - from) * f64::from(j) / f64::from(count),
                 ) as i32
             };
-            samples.push(nearby(Fixed::new(at(a.x, b.x), at(a.y, b.y)), size, &mut step));
+            samples.push(nearby(
+                Fixed::new(at(a.x, b.x), at(a.y, b.y)),
+                size,
+                &mut step,
+            ));
         }
         samples.push(if i == last {
             nearby(b, size, &mut step)
@@ -80,7 +90,11 @@ pub fn snapped_mesh_grid_path(
 
 /// Depth-first choice of one candidate per stage, remembering dead ends so the work stays
 /// linear in the number of stages.
-fn connect(choices: &[Vec<Fixed>], size: u32, step: &mut impl FnMut(u32, u32) -> bool) -> Option<Vec<u32>> {
+fn connect(
+    choices: &[Vec<Fixed>],
+    size: u32,
+    step: &mut impl FnMut(u32, u32) -> bool,
+) -> Option<Vec<u32>> {
     struct Frame {
         index: usize,
         next: usize,

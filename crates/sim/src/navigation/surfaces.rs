@@ -105,7 +105,8 @@ pub fn path(
             let b = surfaces.node(next).expect("node");
             let g2 = g + if a.x != b.x && a.y != b.y { 1414 } else { 1000 };
             let h2 = heuristic(&b);
-            if g2 + h2 > max_cost || (s.seen[next as usize] == epoch && g2 >= s.cost[next as usize]) {
+            if g2 + h2 > max_cost || (s.seen[next as usize] == epoch && g2 >= s.cost[next as usize])
+            {
                 continue;
             }
             s.seen[next as usize] = epoch;
@@ -143,8 +144,9 @@ pub fn clear_layered_sweep(
     };
     let clearance = crate::terrain::round_half_up(height * 100.0) as i32;
     let is_blocked = |id: u32| blocked.is_some_and(|b| b(id));
-    let blocked_node =
-        |n: &SurfaceNode| !walkable(n.id) || !graph.walkable_with(n.id, clearance) || is_blocked(n.id);
+    let blocked_node = |n: &SurfaceNode| {
+        !walkable(n.id) || !graph.walkable_with(n.id, clearance) || is_blocked(n.id)
+    };
     let node = |cell: u32, deck: Option<DeckId>| {
         graph.node_at(i64::from(cell % size), i64::from(cell / size), deck)
     };
@@ -176,7 +178,9 @@ pub fn clear_layered_sweep(
                 let (id, depth) = queue[i];
                 i += 1;
                 if usable(id) {
-                    map.entry(graph.node(id).expect("node").cell).or_default().push(id);
+                    map.entry(graph.node(id).expect("node").cell)
+                        .or_default()
+                        .push(id);
                 }
                 if depth >= limit {
                     continue;
@@ -195,7 +199,10 @@ pub fn clear_layered_sweep(
     };
     let mut candidates = |cell: u32| -> Vec<u32> {
         let mut result = Vec::with_capacity(2);
-        for id in [node(cell, from.deck), node(cell, to.deck)].into_iter().flatten() {
+        for id in [node(cell, from.deck), node(cell, to.deck)]
+            .into_iter()
+            .flatten()
+        {
             if usable(id) && !result.contains(&id) {
                 result.push(id);
             }

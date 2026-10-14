@@ -67,7 +67,8 @@ impl Profiles {
         let ground = || {
             definitions.iter().filter(|d| {
                 d.kind == Kind::Unit
-                    && d.behaviors.movement.as_ref().and_then(|m| m.locomotion) != Some(Locomotion::Air)
+                    && d.behaviors.movement.as_ref().and_then(|m| m.locomotion)
+                        != Some(Locomotion::Air)
             })
         };
         let navigation_body = if ground().next().is_some() {

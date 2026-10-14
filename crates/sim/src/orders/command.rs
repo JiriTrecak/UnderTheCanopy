@@ -16,7 +16,11 @@ use std::collections::BTreeMap;
 pub fn handles(action: &Action) -> bool {
     matches!(
         action,
-        Action::Move { .. } | Action::Stop { .. } | Action::Hold { .. } | Action::Patrol { .. } | Action::Follow { .. }
+        Action::Move { .. }
+            | Action::Stop { .. }
+            | Action::Hold { .. }
+            | Action::Patrol { .. }
+            | Action::Follow { .. }
     )
 }
 
@@ -50,12 +54,19 @@ fn place(point: &CellPoint) -> Place {
 }
 
 /// Applies a movement command for `owner`. Errors are the old rejection messages.
-pub fn apply(state: &mut State, spatial: &mut Spatial, owner: Owner, action: &Action) -> Result<Vec<EntityId>, String> {
+pub fn apply(
+    state: &mut State,
+    spatial: &mut Spatial,
+    owner: Owner,
+    action: &Action,
+) -> Result<Vec<EntityId>, String> {
     if state.outcome.is_some() {
         return Err("Match has ended".into());
     }
     let destination = match action {
-        Action::Move { destination, .. } | Action::Patrol { destination, .. } => Some(spot(spatial, destination)?),
+        Action::Move { destination, .. } | Action::Patrol { destination, .. } => {
+            Some(spot(spatial, destination)?)
+        }
         _ => None,
     };
     let (actors, append): (&[Actor], bool) = match action {
@@ -91,10 +102,9 @@ pub fn apply(state: &mut State, spatial: &mut Spatial, owner: Owner, action: &Ac
     }
     let tick = state.tick;
     let movable = |state: &State, id: EntityId| {
-        state
-            .entities
-            .get(id)
-            .is_some_and(|e| e.unit.is_some() && spatial.profiles.get(e.definition).motion.is_some())
+        state.entities.get(id).is_some_and(|e| {
+            e.unit.is_some() && spatial.profiles.get(e.definition).motion.is_some()
+        })
     };
     let mut applied = Vec::new();
     match action {
@@ -212,7 +222,9 @@ pub fn apply(state: &mut State, spatial: &mut Spatial, owner: Owner, action: &Ac
                     continue;
                 }
                 let e = state.entities.get_mut(id).expect("eligible");
-                if !can_issue(e, append) || (attack_move && !spatial.profiles.get(e.definition).combat) {
+                if !can_issue(e, append)
+                    || (attack_move && !spatial.profiles.get(e.definition).combat)
+                {
                     continue;
                 }
                 let Some(slot) = slots.get(&id) else {

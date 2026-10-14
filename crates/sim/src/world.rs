@@ -83,7 +83,13 @@ impl World {
             map.exploration(),
             &SIGHT,
         );
-        let motion = Motion::new(terrain.clone(), &catalog, &state, appearance_scales(map, &terrain));
+        let motion = Motion::new(
+            terrain.clone(),
+            &catalog,
+            &state,
+            crate::teams::Teams::new(&setup),
+            appearance_scales(map, &terrain),
+        );
         Ok(Self {
             catalog,
             terrain,
@@ -162,7 +168,13 @@ impl World {
         // movement.
         self.motion.spatial.sync_static(&self.state);
         orders::plan::advance(&mut self.motion, &mut self.state);
-        orders::plan::plan(&mut self.motion, &mut self.state);
+        let perception = orders::plan::Perception {
+            vision: &self.vision,
+            catalog: &self.catalog,
+            terrain: &self.terrain,
+            rules: &SIGHT,
+        };
+        orders::plan::plan(&mut self.motion, &mut self.state, perception);
         self.motion.separate(&mut self.state);
         self.motion.idle(&mut self.state);
         self.motion.move_units(&mut self.state);
@@ -204,7 +216,8 @@ impl World {
             Action::Noop | Action::Ping => Ok(()),
             _ if orders::command::handles(action) => {
                 self.motion.spatial.sync_static(&self.state);
-                orders::command::apply(&mut self.state, &mut self.motion.spatial, owner, action).map(|_| ())
+                orders::command::apply(&mut self.state, &mut self.motion.spatial, owner, action)
+                    .map(|_| ())
             }
             _ => Err("not available yet".into()),
         }
@@ -285,7 +298,13 @@ impl World {
         let mut state = save.state;
         let vision = Vision::restore(&mut state, &catalog, &terrain, &save.setup, &SIGHT)
             .map_err(SetupError)?;
-        let motion = Motion::new(terrain.clone(), &catalog, &state, appearance_scales(map, &terrain));
+        let motion = Motion::new(
+            terrain.clone(),
+            &catalog,
+            &state,
+            crate::teams::Teams::new(&save.setup),
+            appearance_scales(map, &terrain),
+        );
         Ok(Self {
             catalog,
             terrain,

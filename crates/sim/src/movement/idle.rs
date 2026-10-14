@@ -58,7 +58,12 @@ pub fn idle(motion: &mut Motion, state: &mut State) {
             None,
         );
         let size = motion.spatial.size() as i32;
-        if target.x < 0 || target.y < 0 || target.x >= size || target.y >= size || (target.x == cx && target.y == cy) {
+        if target.x < 0
+            || target.y < 0
+            || target.x >= size
+            || target.y >= size
+            || (target.x == cx && target.y == cy)
+        {
             continue;
         }
         if !synced {
@@ -89,7 +94,9 @@ pub fn idle(motion: &mut Motion, state: &mut State) {
         let had = set.remove(own);
         let from = Fixed::on(e.position.x, e.position.y, motion.spatial.deck_of(e));
         let body = motion.spatial.body_of(e);
-        let clear = motion.spatial.clear_segment(from, target.fixed(), Some(&*set), &body);
+        let clear = motion
+            .spatial
+            .clear_segment(from, target.fixed(), Some(&*set), &body);
         if had {
             set.insert(own);
         }

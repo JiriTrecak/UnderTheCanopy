@@ -303,14 +303,29 @@ mod tests {
         assert_eq!(cells(Fixed::new(0, 0), Fixed::new(2000, 1000)), [1, 17, 18]);
         // An exact diagonal checks both side cells of each corner.
         let mut edges = Vec::new();
-        assert!(clear_ray(Fixed::new(0, 0), Fixed::new(1000, 1000), 16, |a, b| {
-            edges.push((a, b));
-            true
-        }));
+        assert!(clear_ray(
+            Fixed::new(0, 0),
+            Fixed::new(1000, 1000),
+            16,
+            |a, b| {
+                edges.push((a, b));
+                true
+            }
+        ));
         assert_eq!(edges, [(0, 0), (0, 17), (0, 1), (0, 16), (1, 17), (16, 17)]);
         // Off the map fails; a blocked side cell blocks the diagonal.
-        assert!(!clear_ray(Fixed::new(0, 0), Fixed::new(-600, 0), 16, |_, _| true));
-        assert!(!clear_ray(Fixed::new(0, 0), Fixed::new(1000, 1000), 16, |_, b| b != 1));
+        assert!(!clear_ray(
+            Fixed::new(0, 0),
+            Fixed::new(-600, 0),
+            16,
+            |_, _| true
+        ));
+        assert!(!clear_ray(
+            Fixed::new(0, 0),
+            Fixed::new(1000, 1000),
+            16,
+            |_, b| b != 1
+        ));
     }
 
     #[test]
@@ -319,7 +334,13 @@ mod tests {
         let mut forward = Vec::new();
         let mut backward = Vec::new();
         assert!(append_ray_cells(from, to, 16, |_, _| true, &mut forward));
-        assert!(append_ray_cells_from_end(from, to, 16, |_, _| true, &mut backward));
+        assert!(append_ray_cells_from_end(
+            from,
+            to,
+            16,
+            |_, _| true,
+            &mut backward
+        ));
         assert_eq!(forward, backward);
     }
 

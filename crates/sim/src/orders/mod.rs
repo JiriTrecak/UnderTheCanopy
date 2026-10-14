@@ -19,7 +19,10 @@ pub const MAX_QUEUED_ORDERS: usize = 16;
 pub enum Order {
     /// Walk to a cell; an attack-move engages enemies met on the way (combat).
     #[serde(rename_all = "camelCase")]
-    Move { destination: Place, attack_move: bool },
+    Move {
+        destination: Place,
+        attack_move: bool,
+    },
     /// Stay put and only fight what comes within reach.
     Hold,
     /// Walk back and forth between `origin` (set on the first plan) and `destination`.

@@ -50,7 +50,12 @@ mod tests {
     fn turns_the_short_way_at_the_turn_rate() {
         // Facing +Z (0°), target to the east (+X): 90°, turned 18° per tick at 720°/s.
         let mut rotation = 0;
-        assert!(!turn_toward(&mut rotation, (0.0, 0.0), (5.0, 0.0), turn_step(720)));
+        assert!(!turn_toward(
+            &mut rotation,
+            (0.0, 0.0),
+            (5.0, 0.0),
+            turn_step(720)
+        ));
         assert_eq!(rotation, 18_000);
         for _ in 0..3 {
             turn_toward(&mut rotation, (0.0, 0.0), (5.0, 0.0), 18.0);

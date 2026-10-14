@@ -63,7 +63,15 @@ struct QueryTile {
     boundary: Vec<u32>,
 }
 
-fn link(polygons: &mut [Polygon], first: &Edge, last: &Edge, a: P, b: P, first_ref: Ref, last_ref: Ref) {
+fn link(
+    polygons: &mut [Polygon],
+    first: &Edge,
+    last: &Edge,
+    a: P,
+    b: P,
+    first_ref: Ref,
+    last_ref: Ref,
+) {
     let midpoint = ((a.0 + b.0) / 2.0, (a.1 + b.1) / 2.0);
     polygons[first.node as usize].portals.push(Portal {
         to: last_ref,
@@ -149,7 +157,9 @@ fn funnel(start: P, goal: P, portals: &[(P, P)]) -> Vec<P> {
         }
         while compact.len() >= 2 {
             let (a, b) = (compact[compact.len() - 2], compact[compact.len() - 1]);
-            if cross(a, b, p).abs() > 1e-8 || (b.0 - a.0) * (p.0 - b.0) + (b.1 - a.1) * (p.1 - b.1) < 0.0 {
+            if cross(a, b, p).abs() > 1e-8
+                || (b.0 - a.0) * (p.0 - b.0) + (b.1 - a.1) * (p.1 - b.1) < 0.0
+            {
                 break;
             }
             compact.pop();
@@ -194,7 +204,13 @@ impl Frontier {
             let mut i = 0;
             while i * 2 + 1 < end {
                 let mut child = i * 2 + 1;
-                if child + 1 < end && self.less(self.entries[child + 1].2, self.entries[child + 1].0.id(), child) {
+                if child + 1 < end
+                    && self.less(
+                        self.entries[child + 1].2,
+                        self.entries[child + 1].0.id(),
+                        child,
+                    )
+                {
                     child += 1;
                 }
                 let c = &self.entries[child];
@@ -325,8 +341,14 @@ impl MeshQuery {
             }
             for (edge, other_edge, pa, pb) in links {
                 let midpoint = ((pa.0 + pb.0) / 2.0, (pa.1 + pb.1) / 2.0);
-                let first_ref = Ref { tile: id, index: edge.node };
-                let last_ref = Ref { tile: other, index: other_edge.node };
+                let first_ref = Ref {
+                    tile: id,
+                    index: edge.node,
+                };
+                let last_ref = Ref {
+                    tile: other,
+                    index: other_edge.node,
+                };
                 self.node_mut(first_ref).portals.push(Portal {
                     to: last_ref,
                     a: pb,
@@ -410,8 +432,12 @@ impl MeshQuery {
                 let mut queue = vec![(t as u32, r as u32)];
                 let mut at = 0;
                 while at < queue.len() {
-                    let links: Vec<(u32, u32)> =
-                        self.region(queue[at].0, queue[at].1).links.iter().copied().collect();
+                    let links: Vec<(u32, u32)> = self
+                        .region(queue[at].0, queue[at].1)
+                        .links
+                        .iter()
+                        .copied()
+                        .collect();
                     at += 1;
                     for (lt, lr) in links {
                         if self.region(lt, lr).component == 0 {
@@ -442,7 +468,9 @@ impl MeshQuery {
             if !seen.insert(node) {
                 continue;
             }
-            tile.nodes[node as usize].portals.retain(|p| p.to.tile != other);
+            tile.nodes[node as usize]
+                .portals
+                .retain(|p| p.to.tile != other);
         }
     }
 
@@ -507,7 +535,12 @@ impl MeshQuery {
         }
         self.epoch += 1;
         if self.epoch == u32::MAX {
-            for node in self.tiles.iter_mut().flatten().flat_map(|t| t.nodes.iter_mut()) {
+            for node in self
+                .tiles
+                .iter_mut()
+                .flatten()
+                .flat_map(|t| t.nodes.iter_mut())
+            {
                 node.seen = 0;
                 node.closed = 0;
             }
@@ -521,7 +554,8 @@ impl MeshQuery {
             node.previous = None;
         }
         self.frontier.entries.clear();
-        self.frontier.push(from, 0, distance(start, goal) as f64, start);
+        self.frontier
+            .push(from, 0, distance(start, goal) as f64, start);
         while !self.frontier.entries.is_empty() {
             let (current, point, cost) = self.frontier.pop();
             {
@@ -570,12 +604,18 @@ impl MeshQuery {
     }
 }
 
+/// An undirected edge by its rounded endpoints.
+type EdgeKey = ((i64, i64), (i64, i64));
+
 fn build_tile(id: u32, geometry: &TileGeometry) -> QueryTile {
     let polygons = convex_polygons(geometry);
-    assert!(polygons.len() < 65536, "navigation tile polygon limit exceeded");
+    assert!(
+        polygons.len() < 65536,
+        "navigation tile polygon limit exceeded"
+    );
     let mut nodes: Vec<Polygon> = Vec::with_capacity(polygons.len());
     let mut buckets: BTreeMap<(i64, i64), Vec<u32>> = BTreeMap::new();
-    let mut open: BTreeMap<((i64, i64), (i64, i64)), Edge> = BTreeMap::new();
+    let mut open: BTreeMap<EdgeKey, Edge> = BTreeMap::new();
     for (i, points) in polygons.into_iter().enumerate() {
         let index = i as u32;
         let floor8 = |v: f64| (v / 8.0).floor() as i64;
@@ -610,7 +650,10 @@ fn build_tile(id: u32, geometry: &TileGeometry) -> QueryTile {
                     &edge,
                     oa,
                     ob,
-                    Ref { tile: id, index: other.node },
+                    Ref {
+                        tile: id,
+                        index: other.node,
+                    },
                     Ref { tile: id, index },
                 );
             } else {
@@ -642,8 +685,14 @@ fn build_tile(id: u32, geometry: &TileGeometry) -> QueryTile {
     }
     let mut borders: [Vec<Edge>; 4] = Default::default();
     let mut boundary: BTreeSet<u32> = BTreeSet::new();
-    let (min_x, max_x) = (f64::from(geometry.min_x) / 1000.0, f64::from(geometry.max_x) / 1000.0);
-    let (min_z, max_z) = (f64::from(geometry.min_z) / 1000.0, f64::from(geometry.max_z) / 1000.0);
+    let (min_x, max_x) = (
+        f64::from(geometry.min_x) / 1000.0,
+        f64::from(geometry.max_x) / 1000.0,
+    );
+    let (min_z, max_z) = (
+        f64::from(geometry.min_z) / 1000.0,
+        f64::from(geometry.max_z) / 1000.0,
+    );
     // Border lists are sorted below by a total key (a convex polygon has at most one edge on
     // a seam line), so the order unmatched edges are visited in does not matter.
     for edge in open.values() {

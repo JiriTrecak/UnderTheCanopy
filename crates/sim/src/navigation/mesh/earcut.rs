@@ -214,8 +214,7 @@ impl Earcut<'_> {
         loop {
             let mut again = false;
             let (prev, next) = (self.nodes[p].prev, self.nodes[p].next);
-            if !self.nodes[p].steiner && (self.equals(p, next) || self.area(prev, p, next) == 0.0)
-            {
+            if !self.nodes[p].steiner && (self.equals(p, next) || self.area(prev, p, next) == 0.0) {
                 self.remove(p);
                 p = self.nodes[p].prev;
                 end = p;
@@ -435,7 +434,9 @@ impl Earcut<'_> {
                 }
             }
             // JavaScript treats a NaN comparison as equal.
-            result.partial_cmp(&0.0).unwrap_or(std::cmp::Ordering::Equal)
+            result
+                .partial_cmp(&0.0)
+                .unwrap_or(std::cmp::Ordering::Equal)
         });
         let mut outer = outer;
         for hole in queue {
@@ -574,7 +575,8 @@ impl Earcut<'_> {
                 let mut q_size = in_size;
                 while p_size > 0 || (q_size > 0 && q != NIL) {
                     let e;
-                    if p_size != 0 && (q_size == 0 || q == NIL || self.nodes[p].z <= self.nodes[q].z)
+                    if p_size != 0
+                        && (q_size == 0 || q == NIL || self.nodes[p].z <= self.nodes[q].z)
                     {
                         e = p;
                         p = self.nodes[p].next_z;
@@ -743,7 +745,16 @@ fn sign(v: f64) -> i8 {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn point_in_triangle(ax: f64, ay: f64, bx: f64, by: f64, cx: f64, cy: f64, px: f64, py: f64) -> bool {
+fn point_in_triangle(
+    ax: f64,
+    ay: f64,
+    bx: f64,
+    by: f64,
+    cx: f64,
+    cy: f64,
+    px: f64,
+    py: f64,
+) -> bool {
     (cx - px) * (ay - py) >= (ax - px) * (cy - py)
         && (ax - px) * (by - py) >= (bx - px) * (ay - py)
         && (bx - px) * (cy - py) >= (cx - px) * (by - py)
@@ -807,12 +818,13 @@ mod tests {
             46, 0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 7, 7, 8, 9, 9, 10, 11, 11, 12, 13, 13, 14, 15, 15,
             16, 17, 17, 18, 19, 19, 20, 21, 21, 22, 23, 23, 24, 25, 25, 26, 27, 27, 28, 29, 29, 30,
             31, 31, 32, 33, 33, 34, 35, 35, 36, 37, 37, 38, 39, 39, 40, 41, 41, 42, 43, 43, 44, 45,
-            45, 46, 1, 41, 43, 45, 45, 1, 3, 39, 41, 45, 45, 3, 5, 37, 39, 45, 45, 5, 7, 35, 37, 45,
-            45, 7, 9, 33, 35, 45, 45, 9, 11, 31, 33, 45, 45, 11, 13, 29, 31, 45, 45, 13, 15, 27,
-            29, 45, 45, 15, 17, 25, 27, 45, 45, 17, 19, 23, 25, 45, 45, 19, 21, 21, 23, 45,
+            45, 46, 1, 41, 43, 45, 45, 1, 3, 39, 41, 45, 45, 3, 5, 37, 39, 45, 45, 5, 7, 35, 37,
+            45, 45, 7, 9, 33, 35, 45, 45, 9, 11, 31, 33, 45, 45, 11, 13, 29, 31, 45, 45, 13, 15,
+            27, 29, 45, 45, 15, 17, 25, 27, 45, 45, 17, 19, 23, 25, 45, 45, 19, 21, 21, 23, 45,
         ];
         assert_eq!(triangles, reference);
-        let square = |x: f64, y: f64, w: f64, h: f64| vec![(x, y), (x, y + h), (x + w, y + h), (x + w, y)];
+        let square =
+            |x: f64, y: f64, w: f64, h: f64| vec![(x, y), (x, y + h), (x + w, y + h), (x + w, y)];
         let outer = [(0.0, 0.0), (20.0, 0.0), (20.0, 20.0), (0.0, 20.0)];
         let holes = [
             square(4.0, 4.0, 4.0, 4.0),

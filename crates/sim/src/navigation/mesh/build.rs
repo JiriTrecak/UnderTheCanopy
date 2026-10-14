@@ -133,8 +133,8 @@ impl Builder {
         if slot.as_ref() == Some(&mask) {
             return None;
         }
-        let geometry = geometry(&mask, &sx.cuts, &sz.cuts).map(|(vertices, triangles)| {
-            TileGeometry {
+        let geometry =
+            geometry(&mask, &sx.cuts, &sz.cuts).map(|(vertices, triangles)| TileGeometry {
                 x: tx,
                 z: tz,
                 min_x,
@@ -143,13 +143,19 @@ impl Builder {
                 max_z,
                 vertices,
                 triangles,
-            }
-        });
+            });
         *slot = Some(mask);
         Some(geometry)
     }
 
-    fn mask(&self, input: MeshInput, tx: i32, tz: i32, sx: &SampleAxis, sz: &SampleAxis) -> Vec<u8> {
+    fn mask(
+        &self,
+        input: MeshInput,
+        tx: i32,
+        tz: i32,
+        sx: &SampleAxis,
+        sz: &SampleAxis,
+    ) -> Vec<u8> {
         let size = input.size as i32;
         let (ox, oz) = (tx * TILE - self.halo, tz * TILE - self.halo);
         let span = TILE + 2 * self.halo;
@@ -167,7 +173,9 @@ impl Builder {
                     cell_blocked = u32::from(!input.walkable[i]);
                     let h = i32::from(input.heights[i]);
                     if wx < size - 1 {
-                        cell_x = u32::from((h - i32::from(input.heights[i + 1])).abs() > MAX_GROUND_STEP_CM);
+                        cell_x = u32::from(
+                            (h - i32::from(input.heights[i + 1])).abs() > MAX_GROUND_STEP_CM,
+                        );
                     }
                     if wz < size - 1 {
                         cell_z = u32::from(
@@ -261,7 +269,12 @@ fn contours(mask: &[u8], xs: &[i32], zs: &[i32]) -> Vec<Loop> {
             }
         }
     }
-    let rank = |q: usize, e: usize| [1, 0, 3, 2].iter().position(|&r| r == (q + 4 - e) % 4).unwrap_or(4);
+    let rank = |q: usize, e: usize| {
+        [1, 0, 3, 2]
+            .iter()
+            .position(|&r| r == (q + 4 - e) % 4)
+            .unwrap_or(4)
+    };
     let mut loops = Vec::new();
     for first in 0..edges.len() {
         if edges[first].used {
@@ -296,7 +309,8 @@ fn contours(mask: &[u8], xs: &[i32], zs: &[i32]) -> Vec<Loop> {
         let simplified: Loop = (0..n)
             .filter(|&i| {
                 let (a, p, b) = (points[(i + n - 1) % n], points[i], points[(i + 1) % n]);
-                i64::from(p.0 - a.0) * i64::from(b.1 - p.1) != i64::from(p.1 - a.1) * i64::from(b.0 - p.0)
+                i64::from(p.0 - a.0) * i64::from(b.1 - p.1)
+                    != i64::from(p.1 - a.1) * i64::from(b.0 - p.0)
             })
             .map(|i| points[i])
             .collect();
@@ -323,7 +337,12 @@ fn contains(ring: &[(i32, i32)], p: (i32, i32)) -> bool {
     let mut j = ring.len() - 1;
     for i in 0..ring.len() {
         let (a, b) = (ring[i], ring[j]);
-        let (ax, ay, bx, by) = (f64::from(a.0), f64::from(a.1), f64::from(b.0), f64::from(b.1));
+        let (ax, ay, bx, by) = (
+            f64::from(a.0),
+            f64::from(a.1),
+            f64::from(b.0),
+            f64::from(b.1),
+        );
         if (ay > py) != (by > py) && px < (bx - ax) * (py - ay) / (by - ay) + ax {
             inside = !inside;
         }
@@ -382,7 +401,11 @@ fn geometry(mask: &[u8], xs: &[i32], zs: &[i32]) -> Option<Triangles> {
             .collect();
         for face in faces.chunks(3) {
             let (a, b, c) = (index[face[0]], index[face[1]], index[face[2]]);
-            let (va, vb, vc) = (vertices[a as usize], vertices[b as usize], vertices[c as usize]);
+            let (va, vb, vc) = (
+                vertices[a as usize],
+                vertices[b as usize],
+                vertices[c as usize],
+            );
             let cross = i64::from(vb.0 - va.0) * i64::from(vc.1 - va.1)
                 - i64::from(vb.1 - va.1) * i64::from(vc.0 - va.0);
             if cross < 0 {
@@ -422,13 +445,22 @@ mod tests {
             heights: &heights,
         };
         let mut builder = Builder::new(size, 0.4);
-        let tile = builder.rebuild(input, 0).expect("first build").expect("area");
+        let tile = builder
+            .rebuild(input, 0)
+            .expect("first build")
+            .expect("area");
         let area: i64 = tile
             .triangles
             .iter()
             .map(|t| {
-                let (a, b, c) = (tile.vertices[t[0] as usize], tile.vertices[t[1] as usize], tile.vertices[t[2] as usize]);
-                (i64::from(b.0 - a.0) * i64::from(c.1 - a.1) - i64::from(b.1 - a.1) * i64::from(c.0 - a.0)).abs()
+                let (a, b, c) = (
+                    tile.vertices[t[0] as usize],
+                    tile.vertices[t[1] as usize],
+                    tile.vertices[t[2] as usize],
+                );
+                (i64::from(b.0 - a.0) * i64::from(c.1 - a.1)
+                    - i64::from(b.1 - a.1) * i64::from(c.0 - a.0))
+                .abs()
             })
             .sum();
         // Clear area: the inset map minus the blocked cell grown by the body.

@@ -58,7 +58,13 @@ impl AdjacentSweep {
     }
 
     /// Whether the sweep from cell `from` to the neighbouring (or same) cell `to` passes.
-    pub fn clear(&self, size: u32, from: u32, to: u32, mut step: impl FnMut(u32, u32) -> bool) -> bool {
+    pub fn clear(
+        &self,
+        size: u32,
+        from: u32,
+        to: u32,
+        mut step: impl FnMut(u32, u32) -> bool,
+    ) -> bool {
         let n = size * size;
         if from >= n || to >= n {
             return false;

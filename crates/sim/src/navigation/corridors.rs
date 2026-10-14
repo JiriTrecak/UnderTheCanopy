@@ -20,7 +20,10 @@ pub struct RouteCorridors {
 }
 
 fn distance(a: Fixed, b: Fixed) -> f64 {
-    length(i64::from(a.x) - i64::from(b.x), i64::from(a.y) - i64::from(b.y))
+    length(
+        i64::from(a.x) - i64::from(b.x),
+        i64::from(a.y) - i64::from(b.y),
+    )
 }
 
 impl RouteCorridors {

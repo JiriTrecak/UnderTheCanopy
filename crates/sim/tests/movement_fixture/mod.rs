@@ -33,8 +33,23 @@ fn game() -> Value {
     let body = json!({"maxHp": 100, "armor": 0, "armorType": "armor.plain"});
     let meta = json!({"name": "Command", "description": "", "icon": "asset.icon", "priority": 0});
     let actions: serde_json::Map<String, Value> = [
-        "move", "attack", "stop", "hold", "patrol", "follow", "garrison", "unload", "build", "produce",
-        "cancel", "rally", "pause", "upgrade", "cancelUpgrade", "research", "cancelResearch",
+        "move",
+        "attack",
+        "stop",
+        "hold",
+        "patrol",
+        "follow",
+        "garrison",
+        "unload",
+        "build",
+        "produce",
+        "cancel",
+        "rally",
+        "pause",
+        "upgrade",
+        "cancelUpgrade",
+        "research",
+        "cancelResearch",
     ]
     .into_iter()
     .map(|name| (name.to_string(), meta.clone()))
@@ -263,7 +278,10 @@ pub fn run(world: &mut World, ticks: u32) {
 /// Position in cells.
 pub fn at(world: &World, placement: &str) -> (f64, f64) {
     let e = entity(world, placement);
-    (f64::from(e.position.x) / 1000.0, f64::from(e.position.y) / 1000.0)
+    (
+        f64::from(e.position.x) / 1000.0,
+        f64::from(e.position.y) / 1000.0,
+    )
 }
 
 pub fn distance(a: (f64, f64), b: (f64, f64)) -> f64 {
@@ -284,5 +302,6 @@ pub fn errors(world: &World) -> Vec<String> {
 /// A save round trip through JSON on the same map.
 pub fn reload(world: &World, map: &UtcMap) -> World {
     let text = serde_json::to_string(&world.save()).unwrap();
-    World::restore(content(), map, serde_json::from_str(&text).unwrap()).unwrap_or_else(|e| panic!("{e}"))
+    World::restore(content(), map, serde_json::from_str(&text).unwrap())
+        .unwrap_or_else(|e| panic!("{e}"))
 }

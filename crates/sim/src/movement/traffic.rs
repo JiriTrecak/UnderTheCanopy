@@ -7,7 +7,10 @@
 //! lower-priority member is asked to yield to a parent ahead of it. At a terrain
 //! constriction the request goes to a cycle member that can actually step aside.
 
-use super::{Mover, local_path::{LocalScratch, local_path}};
+use super::{
+    Mover,
+    local_path::{LocalScratch, local_path},
+};
 use crate::{
     entity::EntityId,
     movement::facing::{heading, turn_difference},
@@ -59,7 +62,10 @@ pub fn escape(
     for y in -3..=3 {
         for x in -3..=3 {
             let p = Spot::new(e.cell.x + x * step, e.cell.y + y * step, e.cell.deck);
-            let (qx, qy) = (f64::from(p.x * 1000 - from.x), f64::from(p.y * 1000 - from.y));
+            let (qx, qy) = (
+                f64::from(p.x * 1000 - from.x),
+                f64::from(p.y * 1000 - from.y),
+            );
             if (qx * qx + qy * qy).sqrt() > 3500.0 * f64::from(step)
                 || (qx * dy - qy * dx).abs() / length < 1000.0 * f64::from(step)
                 || qx * dx + qy * dy < 0.0
@@ -109,6 +115,7 @@ struct Candidate {
 /// Who should yield to whom this tick, among `units` (the movement pass's eligible units).
 pub fn requests(
     spatial: &Spatial,
+    teams: &crate::teams::Teams,
     state: &State,
     units: &[EntityId],
     local: &mut LocalScratch,
@@ -126,20 +133,31 @@ pub fn requests(
         let profile = spatial.profiles.get(e.definition);
         let speed = profile.motion.map_or(0.0, |m| m.speed);
         let ignores = spatial.bodies.get(id).is_some_and(|b| b.ignores);
-        if u.route.is_empty() || u.detour.is_some() || e.ready_tick > tick || speed <= 0.0 || ignores {
+        if u.route.is_empty()
+            || u.detour.is_some()
+            || e.ready_tick > tick
+            || speed <= 0.0
+            || ignores
+        {
             continue;
         }
         moving.push(Candidate {
             mover: Mover::of(spatial, e),
             owner: e.owner,
-            stalled: u.last_moved_tick.is_some_and(|t| tick.saturating_sub(t) >= STALL_TICKS),
+            stalled: u
+                .last_moved_tick
+                .is_some_and(|t| tick.saturating_sub(t) >= STALL_TICKS),
         });
     }
     let mut out = BTreeMap::new();
     if !moving.iter().any(|c| c.stalled) {
         return out;
     }
-    let index: BTreeMap<EntityId, usize> = moving.iter().enumerate().map(|(i, c)| (c.mover.id, i)).collect();
+    let index: BTreeMap<EntityId, usize> = moving
+        .iter()
+        .enumerate()
+        .map(|(i, c)| (c.mover.id, i))
+        .collect();
     // Waits-for edges along each mover's next attempted step.
     let mut edges: BTreeMap<EntityId, Vec<EntityId>> = BTreeMap::new();
     for c in &moving {
@@ -157,13 +175,21 @@ pub fn requests(
         let profile = spatial.profiles.get(e.definition);
         let motion = profile.motion.expect("moving units move");
         let position = (f64::from(from.x) / 1000.0, f64::from(from.y) / 1000.0);
-        let target = (f64::from(waypoint.x) / 1000.0, f64::from(waypoint.y) / 1000.0);
+        let target = (
+            f64::from(waypoint.x) / 1000.0,
+            f64::from(waypoint.y) / 1000.0,
+        );
         let rotation = f64::from(e.rotation) / 1000.0;
         // A unit still turning cannot attempt this leg this tick.
-        if turn_difference(rotation, heading(position, target, rotation)).abs() > f64::from(motion.turn_rate) / 40.0 + 1.0 {
+        if turn_difference(rotation, heading(position, target, rotation)).abs()
+            > f64::from(motion.turn_rate) / 40.0 + 1.0
+        {
             continue;
         }
-        let (dx, dy) = (f64::from(waypoint.x - from.x), f64::from(waypoint.y - from.y));
+        let (dx, dy) = (
+            f64::from(waypoint.x - from.x),
+            f64::from(waypoint.y - from.y),
+        );
         let length = (dx * dx + dy * dy).sqrt();
         if length == 0.0 {
             continue;
@@ -182,17 +208,26 @@ pub fn requests(
         let mut blocked: Vec<EntityId> = Vec::new();
         for other in &moving {
             let b = &other.mover;
-            if b.id == c.mover.id || other.owner != c.owner || b.body.air != c.mover.body.air {
+            if b.id == c.mover.id
+                || !teams.allied(other.owner, c.owner)
+                || b.body.air != c.mover.body.air
+            {
                 continue;
             }
             // The broad phase of the old body index: cells within 1.5 cells of the start.
             let (bx, by) = (b.cell.x, b.cell.y);
             let lo = |v: i32| crate::spatial::geometry::grid(v - 1500);
             let hi = |v: i32| crate::spatial::geometry::grid(v + 1500);
-            if bx < lo(from.x).max(0) || bx > hi(from.x) || by < lo(from.y).max(0) || by > hi(from.y) {
+            if bx < lo(from.x).max(0)
+                || bx > hi(from.x)
+                || by < lo(from.y).max(0)
+                || by > hi(from.y)
+            {
                 continue;
             }
-            if b.node != c.mover.node && !spatial.clear_segment(from, to, Some(&Single(b.node)), &c.mover.body) {
+            if b.node != c.mover.node
+                && !spatial.clear_segment(from, to, Some(&Single(b.node)), &c.mover.body)
+            {
                 blocked.push(b.id);
             }
         }
@@ -200,7 +235,7 @@ pub fn requests(
         spatial.unit_segment_clear(from, to, Some(c.mover.id), None, None, Some(&mut physical));
         for id in physical {
             if let Some(&i) = index.get(&id)
-                && moving[i].owner == c.owner
+                && teams.allied(moving[i].owner, c.owner)
                 && !blocked.contains(&id)
             {
                 blocked.push(id);
@@ -209,9 +244,15 @@ pub fn requests(
         blocked.sort_unstable();
         edges.insert(c.mover.id, blocked);
     }
-    let components = cycles(&moving.iter().map(|c| c.mover.id).collect::<Vec<_>>(), &edges);
+    let components = cycles(
+        &moving.iter().map(|c| c.mover.id).collect::<Vec<_>>(),
+        &edges,
+    );
     // Priority inheritance from the lowest stalled id along the waits.
-    let mut ranks: BTreeMap<EntityId, (EntityId, u32)> = moving.iter().map(|c| (c.mover.id, (c.mover.id, 0))).collect();
+    let mut ranks: BTreeMap<EntityId, (EntityId, u32)> = moving
+        .iter()
+        .map(|c| (c.mover.id, (c.mover.id, 0)))
+        .collect();
     for c in &moving {
         let id = c.mover.id;
         if ranks[&id].0 < id || !c.stalled {
@@ -347,23 +388,30 @@ pub fn requests(
         }
         let alternatives: Vec<EntityId> = moving
             .iter()
-            .filter(|c| components.get(&c.mover.id) == Some(&component) && !out.contains_key(&c.mover.id) && c.stalled)
+            .filter(|c| {
+                components.get(&c.mover.id) == Some(&component)
+                    && !out.contains_key(&c.mover.id)
+                    && c.stalled
+            })
             .map(|c| c.mover.id)
             .collect();
         for id in alternatives {
-            let parent = edges
-                .get(&id)
-                .into_iter()
-                .flatten()
-                .copied()
-                .find(|&b| components.get(&b) == Some(&component) && can_escape(mover(id), mover(b), local));
+            let parent = edges.get(&id).into_iter().flatten().copied().find(|&b| {
+                components.get(&b) == Some(&component) && can_escape(mover(id), mover(b), local)
+            });
             let Some(parent) = parent else {
                 continue;
             };
             for (candidate, _) in &candidates {
                 out.remove(candidate);
             }
-            out.insert(id, Request { leader: parent, parent });
+            out.insert(
+                id,
+                Request {
+                    leader: parent,
+                    parent,
+                },
+            );
             break;
         }
     }
@@ -371,7 +419,10 @@ pub fn requests(
 }
 
 /// Members of non-trivial strongly connected components, mapped to their lowest id.
-fn cycles(nodes: &[EntityId], edges: &BTreeMap<EntityId, Vec<EntityId>>) -> BTreeMap<EntityId, EntityId> {
+fn cycles(
+    nodes: &[EntityId],
+    edges: &BTreeMap<EntityId, Vec<EntityId>>,
+) -> BTreeMap<EntityId, EntityId> {
     // Iterative Tarjan.
     let mut seen: BTreeMap<EntityId, u32> = BTreeMap::new();
     let mut low: BTreeMap<EntityId, u32> = BTreeMap::new();
@@ -395,8 +446,8 @@ fn cycles(nodes: &[EntityId], edges: &BTreeMap<EntityId, Vec<EntityId>>) -> BTre
             if *next < out.len() {
                 let to = out[*next];
                 *next += 1;
-                if !seen.contains_key(&to) {
-                    seen.insert(to, sequence);
+                if let std::collections::btree_map::Entry::Vacant(slot) = seen.entry(to) {
+                    slot.insert(sequence);
                     low.insert(to, sequence);
                     sequence += 1;
                     stack.push(to);
