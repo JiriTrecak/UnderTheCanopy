@@ -1,0 +1,29 @@
+[package]
+name = "canopy-net"
+description = "Client for the existing match server: lobby over HTTP, lockstep over WebSocket"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+canopy-sim = { path = "../sim" }
+futures-util.workspace = true
+reqwest.workspace = true
+rustls.workspace = true
+rustls-platform-verifier.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tokio-rustls.workspace = true
+tokio-tungstenite.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+canopy-content = { path = "../content", features = ["testing"] }
+
+[lints]
+workspace = true
