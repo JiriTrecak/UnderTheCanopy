@@ -2,56 +2,47 @@
 //! `content/revival.ts`). Revival shares the training lane of its workplace: the entry with
 //! the smaller queue id goes first.
 //!
-//! What revival needs from heroes lives in the functions at the top of this module:
-//! [`fallen`], [`level`], [`summoned`] and [`restore`]. Combat (M2.4) owns heroes and how
-//! they fall; until it lands they read the fields that exist (a fallen hero is a hero kept
-//! in the table at zero health with its unit part). Ability returns (`spellReturn`) join
-//! with M2.6.
+//! Heroes fall in combat and are kept as fallen entities ([`crate::heroes::retain`]);
+//! revival brings the same entity back. Ability returns (`spellReturn`) join with M2.6.
 
 use super::{
-    Ctx, RevivalEntry, alive, production, ready, research, stock,
+    Ctx, RevivalEntry, alive, production, ready, stock,
     supply::{self, colony},
 };
 use crate::{
-    catalog::Catalog,
     entity::{Entity, EntityId, Milli, Unit},
     spatial::Spot,
     state::FactKind,
+    stats::Stats,
 };
 use canopy_content::{Id, game::Revival};
 
 /// A hero that fell and waits to be revived.
-pub fn fallen(catalog: &Catalog, e: &Entity) -> bool {
-    e.unit.is_some() && e.hp == Some(0) && catalog.get(e.definition).is_hero()
-}
-
-/// A summoned copy, never part of the hero roster (abilities, M2.6).
-pub fn summoned(_e: &Entity) -> bool {
-    false
-}
-
-/// A hero's level for its revival price (combat's progression, M2.4).
-pub fn level(_catalog: &Catalog, _e: &Entity) -> u32 {
-    1
+pub fn fallen(e: &Entity) -> bool {
+    crate::heroes::fallen(e)
 }
 
 /// Brings a fallen hero back at `spot` with full health (old `returnAt`): a fresh unit,
 /// part of the simulation from the next tick.
 pub fn restore(ctx: &mut Ctx, hero: EntityId, spot: Spot) {
     let tick = ctx.state.tick;
-    let Some(e) = ctx.state.entities.get(hero) else {
+    let surface = spot.deck.map(|d| ctx.spatial.deck_name(d));
+    let Some(e) = ctx.state.entities.get_mut(hero) else {
         return;
     };
-    let max_hp = research::fresh_max_hp(ctx.catalog, ctx.state, e.owner, e.definition);
-    let e = ctx.state.entities.get_mut(hero).expect("hero");
     e.position = Milli {
         x: spot.x * 1000,
         y: spot.y * 1000,
     };
-    e.surface = spot.deck.map(|d| ctx.spatial.deck_name(d));
+    e.surface = surface;
     e.unit = Some(Box::<Unit>::default());
-    e.hp = Some(max_hp.unwrap_or(1).max(1));
+    e.fallen = false;
     e.ready_tick = tick + 1;
+    // M2.6: mana refills and regeneration restarts too.
+    let e = ctx.state.entities.get(hero).expect("hero");
+    let research = crate::stats::research(ctx.state, e.owner);
+    let max_hp = Stats::of(ctx.catalog, e, research).max_hp;
+    ctx.state.entities.get_mut(hero).expect("hero").hp = Some(max_hp.max(1));
 }
 
 /// The price and time of reviving a hero of `level` (old `revivalTerms`): the base, plus
@@ -111,7 +102,7 @@ pub fn enqueue(ctx: &mut Ctx, b: EntityId, hero: EntityId) -> Result<(), String>
         .state
         .entities
         .get(hero)
-        .filter(|h| fallen(ctx.catalog, h) && h.owner == owner)
+        .filter(|h| fallen(h) && h.owner == owner)
         .ok_or("Choose one of your fallen heroes")?;
     if queued(ctx, hero) {
         return Err("Hero is already being revived".into());
@@ -125,7 +116,7 @@ pub fn enqueue(ctx: &mut Ctx, b: EntityId, hero: EntityId) -> Result<(), String>
     if let Some(reason) = supply::admission(&supply, cost, hint) {
         return Err(reason);
     }
-    let level = level(ctx.catalog, h);
+    let level = Stats::of(ctx.catalog, h, crate::stats::research(ctx.state, owner)).level;
     let (bill, _) = terms(policy, level);
     let Some(payment) = stock::reserve(ctx.state, ctx.catalog, ctx.index, owner, &costs(&bill))
     else {
@@ -167,7 +158,12 @@ pub fn cancel(ctx: &mut Ctx, b: EntityId, hero: EntityId) -> Result<(), String> 
         .map(|p| terms(p, level).0)
         .unwrap_or_default();
     stock::refund_cost(ctx, b, &costs(&bill));
-    if let Some(r) = ctx.state.entities.get_mut(b).and_then(|e| e.revival.as_mut()) {
+    if let Some(r) = ctx
+        .state
+        .entities
+        .get_mut(b)
+        .and_then(|e| e.revival.as_mut())
+    {
         r.queue.remove(index);
     }
     Ok(())
@@ -201,7 +197,7 @@ pub fn advance(ctx: &mut Ctx) {
             .state
             .entities
             .get(entry.hero)
-            .filter(|h| fallen(ctx.catalog, h) && h.owner == owner);
+            .filter(|h| fallen(h) && h.owner == owner);
         let Some(hero) = hero else {
             let _ = cancel(ctx, b, entry.hero);
             continue;
@@ -254,10 +250,21 @@ pub fn advance(ctx: &mut Ctx) {
                 Some((item, *amount)),
             );
         }
-        if let Some(r) = ctx.state.entities.get_mut(b).and_then(|e| e.revival.as_mut()) {
+        if let Some(r) = ctx
+            .state
+            .entities
+            .get_mut(b)
+            .and_then(|e| e.revival.as_mut())
+        {
             r.queue.remove(0);
         }
         let name = ctx.catalog.get(hero_def).name.clone();
-        stock::record(ctx.state, owner, FactKind::Command, format!("{name} has returned"), None);
+        stock::record(
+            ctx.state,
+            owner,
+            FactKind::Command,
+            format!("{name} has returned"),
+            None,
+        );
     }
 }

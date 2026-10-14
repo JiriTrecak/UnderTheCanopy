@@ -63,7 +63,12 @@ pub fn perimeter(
         Extent::of(catalog.get(def).footprint.as_ref()),
         f64::from(rotation) / 1000.0,
     );
-    let (x0, x1, y0, y1) = (b.min_x - ring, b.max_x + ring, b.min_y - ring, b.max_y + ring);
+    let (x0, x1, y0, y1) = (
+        b.min_x - ring,
+        b.max_x + ring,
+        b.min_y - ring,
+        b.max_y + ring,
+    );
     let size = i64::from(size);
     let mut out = Vec::new();
     for y in y0..=y1 {
@@ -81,7 +86,12 @@ pub fn perimeter(
 
 /// Whether a melee blow from `from` reaches the target's footprint across the terrain
 /// (old `attackClear(..., false)`).
-pub fn melee_clear(catalog: &Catalog, spatial: &Spatial, from: (i32, i32), target: &Entity) -> bool {
+pub fn melee_clear(
+    catalog: &Catalog,
+    spatial: &Spatial,
+    from: (i32, i32),
+    target: &Entity,
+) -> bool {
     let (cx, cy) = (
         f64::from(target.position.x) / 1000.0,
         f64::from(target.position.y) / 1000.0,

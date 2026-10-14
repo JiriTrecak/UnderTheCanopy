@@ -30,8 +30,8 @@ pub trait SightRules {
     fn lends_sight(&self, entity: &Entity, lend: &mut dyn FnMut(Owner));
 }
 
-/// The systems as built so far: sight radius and flight straight from the definition, no
-/// garrisons, containment, concealment or detection yet.
+/// The systems as built so far: sight radius and flight straight from the definition,
+/// lookout heights and held units; no forms, concealment or detection yet.
 pub struct Current;
 
 impl SightRules for Current {
@@ -47,12 +47,16 @@ impl SightRules for Current {
         })
     }
 
-    fn lift_cm(&self, _: &Entity) -> i32 {
-        0
+    fn lift_cm(&self, entity: &Entity) -> i32 {
+        crate::garrisons::lift_cm(entity)
     }
 
-    fn blind(&self, _: &Entity) -> bool {
-        false
+    fn blind(&self, entity: &Entity) -> bool {
+        // A lookout's archer still sees (from its height); a held unit does not.
+        entity
+            .unit
+            .as_ref()
+            .is_some_and(|u| u.contained.is_some() || u.release.is_some())
     }
 
     fn hidden(&self, _: &Entity, _: u32) -> bool {

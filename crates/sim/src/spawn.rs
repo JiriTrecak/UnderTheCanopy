@@ -696,18 +696,15 @@ pub fn insert(state: &mut State, catalog: &Catalog, spawn: Spawn) -> EntityId {
     state.counters.entity += 1;
     let site = definition.kind == Kind::Building && !spawn.complete;
     let site_hp = definition.body.as_ref().map(|b| {
-        (u64::from(b.max_hp)
-            * u64::from(catalog.content.rules.construction_hp_permille)
-            / 1000)
+        (u64::from(b.max_hp) * u64::from(catalog.content.rules.construction_hp_permille) / 1000)
             .max(1) as u32
     });
     let hp = if site {
         site_hp
     } else {
-        initial.health.or_else(|| {
-            definition.body.as_ref()?;
-            crate::economy::research::fresh_max_hp(catalog, state, spawn.owner, spawn.definition)
-        })
+        initial
+            .health
+            .or(definition.body.as_ref().map(|b| b.max_hp))
     };
     let behaviors = &definition.behaviors;
     let mut entity = Entity {
@@ -751,7 +748,15 @@ pub fn insert(state: &mut State, catalog: &Catalog, spawn: Spawn) -> EntityId {
             .revival
             .as_ref()
             .map(|_| crate::economy::RevivalQueue::default()),
+        progression: crate::heroes::initial(definition, initial.experience),
+        fallen: false,
     };
+    // A complete body starts at full health for its level and its owner's research,
+    // unless the placement says otherwise.
+    if !site && initial.health.is_none() && entity.hp.is_some() {
+        let research = crate::stats::research(state, entity.owner);
+        entity.hp = Some(crate::stats::Stats::of(catalog, &entity, research).max_hp);
+    }
     let dropoff = behaviors
         .storage
         .as_ref()

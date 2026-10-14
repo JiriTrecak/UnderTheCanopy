@@ -73,7 +73,11 @@ fn valid_foundation(ctx: &Ctx, p: &FoundationPoint) -> bool {
         None => true,
         Some(name) => ctx.spatial.deck_id(name).is_some_and(|deck| {
             // A half cell rounds up to the next cell, as the old `Math.round` did.
-            let spot = Spot::new(p.x.0.div_ceil(2) as i32, p.y.0.div_ceil(2) as i32, Some(deck));
+            let spot = Spot::new(
+                p.x.0.div_ceil(2) as i32,
+                p.y.0.div_ceil(2) as i32,
+                Some(deck),
+            );
             ctx.spatial.valid_spot(spot)
         }),
     }
@@ -285,8 +289,7 @@ fn workplace(
         return Ok(());
     }
     let policy = ctx.catalog.get(e.definition).behaviors.production.as_ref();
-    let Some(policy) = policy.filter(|_| e.construction.is_none() && e.production.is_some())
-    else {
+    let Some(policy) = policy.filter(|_| e.construction.is_none() && e.production.is_some()) else {
         return Err("No completed production capability".into());
     };
     match action {

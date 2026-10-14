@@ -37,6 +37,8 @@ pub struct EntityView {
     /// Carried goods, the work pose and a harvest site's workforce; `None` when there is
     /// none or the entity is remembered.
     pub work: Option<PublicWork>,
+    /// Stats, swing, charge and lookout of a seen body (`combat`).
+    pub combat: Option<crate::combat::CombatView>,
 }
 
 /// Movement a renderer animates.
@@ -172,6 +174,8 @@ pub struct View {
     pub colony: Option<Colony>,
     /// Goods delivered to the viewer's drop-offs this tick (all of them for observers).
     pub deliveries: Vec<Delivery>,
+    /// Projectiles in flight, corpses and fallen heroes (`combat`).
+    pub battle: crate::combat::Battle,
 }
 
 impl View {
@@ -216,6 +220,7 @@ impl View {
                     e,
                     crate::economy::view::at_goal(terrain, e),
                 ),
+                combat: None,
             })
             .peekable();
         // Remembered structures stand in where nothing with their id is seen.
@@ -284,6 +289,7 @@ impl View {
                 .filter(|d| d.owner == owner)
                 .cloned()
                 .collect(),
+            battle: crate::combat::Battle::default(),
         }
     }
 
@@ -318,6 +324,7 @@ impl View {
                     e,
                     crate::economy::view::at_goal(terrain, e),
                 ),
+                combat: None,
             })
             .collect();
         Self {
@@ -333,6 +340,7 @@ impl View {
             outcome: state.outcome.clone(),
             colony: None,
             deliveries: economy.deliveries.clone(),
+            battle: crate::combat::Battle::default(),
         }
     }
 
@@ -372,6 +380,7 @@ fn remembered_view(sighting: &Sighting, relation: Relation) -> EntityView {
         private: None,
         motion: None,
         work: None,
+        combat: None,
     }
 }
 

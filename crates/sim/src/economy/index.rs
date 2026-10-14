@@ -11,7 +11,6 @@ use crate::{catalog::Catalog, entity::EntityId, state::State};
 use canopy_content::game::Kind;
 use std::collections::{BTreeMap, BTreeSet};
 
-
 /// Cells per resource bucket side.
 const BUCKET: i64 = 16;
 

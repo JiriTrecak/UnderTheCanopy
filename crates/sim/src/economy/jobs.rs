@@ -220,7 +220,9 @@ impl<'de> Deserialize<'de> for Jobs {
         let mut jobs = Self::default();
         for job in list {
             if jobs.list.last().is_some_and(|j| j.id >= job.id) {
-                return Err(serde::de::Error::custom("jobs must be in increasing id order"));
+                return Err(serde::de::Error::custom(
+                    "jobs must be in increasing id order",
+                ));
             }
             jobs.push(job);
         }

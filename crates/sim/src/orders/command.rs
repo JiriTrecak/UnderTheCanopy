@@ -1,9 +1,11 @@
-//! Movement commands from players (the move/stop/hold/patrol/follow branches of the old
-//! `Game.command`, `src/sim/game/game.ts`), with the old validation.
+//! Unit commands from players (the move/attack/stop/hold/patrol/follow and
+//! garrison/unload branches of the old `Game.command`, `src/sim/game/game.ts`), with the
+//! old validation.
 
 use super::{Order, can_issue, issue};
 use crate::{
     action::{Action, Actor, CellPoint},
+    combat::Senses,
     entity::{EntityId, Place},
     movement::formation::{Member, formation_destinations},
     spatial::{Body, Spatial, Spot},
@@ -17,10 +19,13 @@ pub fn handles(action: &Action) -> bool {
     matches!(
         action,
         Action::Move { .. }
+            | Action::Attack { .. }
             | Action::Stop { .. }
             | Action::Hold { .. }
             | Action::Patrol { .. }
             | Action::Follow { .. }
+            | Action::Garrison { .. }
+            | Action::Unload { .. }
     )
 }
 
@@ -53,10 +58,11 @@ fn place(point: &CellPoint) -> Place {
     }
 }
 
-/// Applies a movement command for `owner`. Errors are the old rejection messages.
+/// Applies a unit command for `owner`. Errors are the old rejection messages.
 pub fn apply(
     state: &mut State,
     spatial: &mut Spatial,
+    senses: &Senses,
     owner: Owner,
     action: &Action,
 ) -> Result<Vec<EntityId>, String> {
@@ -73,8 +79,11 @@ pub fn apply(
         Action::Move { actors, append, .. }
         | Action::Hold { actors, append }
         | Action::Patrol { actors, append, .. }
-        | Action::Follow { actors, append, .. } => (actors, append.unwrap_or(false)),
+        | Action::Follow { actors, append, .. }
+        | Action::Attack { actors, append, .. }
+        | Action::Garrison { actors, append, .. } => (actors, append.unwrap_or(false)),
         Action::Stop { actors } => (actors, false),
+        Action::Unload { actor } => (std::slice::from_ref(actor), false),
         _ => return Err("Invalid request".into()),
     };
     let mut ids: Vec<EntityId> = actors.iter().map(|&a| EntityId(a)).collect();
@@ -100,7 +109,11 @@ pub fn apply(
     if eligible.is_empty() {
         return Err("No eligible controlled actors".into());
     }
-    let movable = |state: &State, id: EntityId| {
+    if matches!(action, Action::Garrison { .. } | Action::Unload { .. }) {
+        let seen = |state: &State, e: &crate::entity::Entity| senses.sight(state).seen(owner, e);
+        return crate::garrisons::command(state, senses.catalog, spatial, &eligible, action, &seen);
+    }
+    let movable = |state: &State, spatial: &Spatial, id: EntityId| {
         state.entities.get(id).is_some_and(|e| {
             e.unit.is_some() && spatial.profiles.get(e.definition).motion.is_some()
         })
@@ -126,7 +139,7 @@ pub fn apply(
                 _ => None,
             };
             for &id in &eligible {
-                if !movable(state, id) || Some(id) == target {
+                if !movable(state, spatial, id) || Some(id) == target {
                     continue;
                 }
                 if !can_issue(state.entities.get(id).expect("eligible"), append) {
@@ -145,12 +158,46 @@ pub fn apply(
                     _ => unreachable!(),
                 };
                 issue(state, id, order, append);
+                // A unit ordered out of a lookout steps outside at once.
+                crate::garrisons::settle(spatial, state.entities.get_mut(id).expect("eligible"));
+                applied.push(id);
+            }
+        }
+        Action::Attack { target, force, .. } => {
+            let force = force.unwrap_or(false);
+            let target = EntityId(*target);
+            let valid = state.entities.get(target).is_some_and(|t| {
+                t.hp.is_some_and(|hp| hp > 0)
+                    && senses.sight(state).seen(owner, t)
+                    && t.unit.as_ref().is_none_or(|u| {
+                        u.contained.is_none() && u.release.is_none() && u.garrison.is_none()
+                    })
+            });
+            if !valid {
+                return Err("Target is not visible and damageable".into());
+            }
+            for &id in &eligible {
+                if !movable(state, spatial, id) {
+                    continue;
+                }
+                let (e, t) = (
+                    state.entities.get(id).expect("eligible"),
+                    state.entities.get(target).expect("target"),
+                );
+                if !can_issue(e, append)
+                    || !senses.combat.reaches(e.definition, t.definition)
+                    || id == target
+                    || (!force && !senses.hostile(e, t))
+                {
+                    continue;
+                }
+                issue(state, id, Order::Attack { target, force }, append);
                 applied.push(id);
             }
         }
         Action::Stop { .. } => {
             for &id in &eligible {
-                if !movable(state, id) {
+                if !movable(state, spatial, id) {
                     continue;
                 }
                 crate::economy::interrupt(state, id, None);
@@ -169,7 +216,7 @@ pub fn apply(
                         let e = state.entities.get(id).expect("eligible");
                         let profile = spatial.profiles.get(e.definition);
                         profile.body.air == air
-                            && movable(state, id)
+                            && movable(state, spatial, id)
                             && can_issue(e, append)
                             && (!attack_move || profile.combat)
                     })
@@ -216,7 +263,7 @@ pub fn apply(
                 slots.extend(found);
             }
             for &id in &eligible {
-                if !movable(state, id) {
+                if !movable(state, spatial, id) {
                     continue;
                 }
                 let e = state.entities.get(id).expect("eligible");
@@ -242,6 +289,7 @@ pub fn apply(
                     },
                     append,
                 );
+                crate::garrisons::settle(spatial, state.entities.get_mut(id).expect("eligible"));
                 applied.push(id);
             }
         }

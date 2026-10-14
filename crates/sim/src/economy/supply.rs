@@ -59,7 +59,7 @@ pub fn colony(state: &State, catalog: &Catalog, index: &super::Index, owner: Own
             .filter(|e| e.owner == owner)
     };
     for e in members() {
-        if !alive(e) || revival::fallen(catalog, e) {
+        if !alive(e) || revival::fallen(e) {
             continue;
         }
         let d = catalog.get(e.definition);
@@ -84,14 +84,14 @@ pub fn colony(state: &State, catalog: &Catalog, index: &super::Index, owner: Own
             if q.progress > 0
                 && let Some(hero) = state.entities.get(q.hero)
                 && hero.owner == owner
-                && revival::fallen(catalog, hero)
+                && revival::fallen(hero)
             {
                 s.training += cost(catalog, hero.definition);
             }
         }
     }
     for e in members() {
-        if revival::fallen(catalog, e) && reviving.contains(&e.id) {
+        if revival::fallen(e) && reviving.contains(&e.id) {
             s.reserved += cost(catalog, e.definition);
             s.queued_units += 1;
         }
@@ -156,7 +156,12 @@ pub struct Population {
     pub available: u32,
 }
 
-pub fn population(state: &State, catalog: &Catalog, index: &super::Index, owner: Owner) -> Population {
+pub fn population(
+    state: &State,
+    catalog: &Catalog,
+    index: &super::Index,
+    owner: Owner,
+) -> Population {
     let mut p = Population::default();
     for e in index.units.iter().filter_map(|&id| state.entities.get(id)) {
         if e.owner != owner || !alive(e) || catalog.get(e.definition).behaviors.work.is_none() {
@@ -238,17 +243,34 @@ pub fn fulfils(catalog: &Catalog) -> Vec<Vec<Def>> {
 
 /// Why `owner` may not buy something that requires `requires` (old
 /// `prerequisiteReason`): each must be a completed living building, or one upgraded from it.
-pub fn prerequisite(ctx: &Ctx, owner: Owner, requires: Option<&[canopy_content::Id]>) -> Option<String> {
+pub fn prerequisite(
+    ctx: &Ctx,
+    owner: Owner,
+    requires: Option<&[canopy_content::Id]>,
+) -> Option<String> {
     let requires = requires?;
     let mut complete = BTreeSet::new();
-    for e in ctx.index.buildings.iter().filter_map(|&id| ctx.state.entities.get(id)) {
+    for e in ctx
+        .index
+        .buildings
+        .iter()
+        .filter_map(|&id| ctx.state.entities.get(id))
+    {
         if e.owner == owner && e.construction.is_none() && alive(e) {
-            complete.extend(ctx.tables.fulfils[usize::from(e.definition.0)].iter().copied());
+            complete.extend(
+                ctx.tables.fulfils[usize::from(e.definition.0)]
+                    .iter()
+                    .copied(),
+            );
         }
     }
     let missing: Vec<&str> = requires
         .iter()
-        .filter(|id| ctx.catalog.find(id.as_str()).is_none_or(|d| !complete.contains(&d)))
+        .filter(|id| {
+            ctx.catalog
+                .find(id.as_str())
+                .is_none_or(|d| !complete.contains(&d))
+        })
         .map(|id| {
             ctx.catalog
                 .content
@@ -259,54 +281,26 @@ pub fn prerequisite(ctx: &Ctx, owner: Owner, requires: Option<&[canopy_content::
     (!missing.is_empty()).then(|| format!("Requires {}", missing.join(", ")))
 }
 
-/// An owner's heroes: capacity from its best completed hall, and every hero definition it
-/// has alive, fallen or queued (old `heroRoster`).
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct Roster {
-    pub capacity: u32,
-    pub definitions: BTreeSet<Def>,
-}
-
-pub fn roster(ctx: &Ctx, owner: Owner) -> Roster {
-    let mut r = Roster::default();
-    let members = ctx
-        .index
-        .units
-        .iter()
-        .chain(&ctx.index.buildings)
-        .filter_map(|&id| ctx.state.entities.get(id))
-        .filter(|e| e.owner == owner);
-    for e in members {
-        let d = ctx.catalog.get(e.definition);
-        if d.is_hero() && !revival::summoned(e) {
-            r.definitions.insert(e.definition);
-        }
-        if !alive(e) {
-            continue;
-        }
-        if e.construction.is_none() {
-            r.capacity = r.capacity.max(d.hero_capacity.unwrap_or(0));
-        }
-        for q in e.production.iter().flat_map(|p| &p.queue) {
-            if ctx.catalog.get(q.definition).is_hero() {
-                r.definitions.insert(q.definition);
-            }
-        }
-    }
-    r
-}
-
 /// Why `def` cannot join the roster (old `heroAdmission`).
-pub fn hero_admission(catalog: &Catalog, def: Def, roster: &Roster) -> Option<String> {
-    if !catalog.get(def).is_hero() {
+pub fn hero_admission(
+    catalog: &Catalog,
+    def: Def,
+    roster: &crate::heroes::Roster,
+) -> Option<String> {
+    let d = catalog.get(def);
+    if !d.is_hero() {
         return None;
     }
-    if roster.definitions.contains(&def) {
+    if roster.definitions.contains(&d.id) {
         return Some("This hero already belongs to your roster. Revive fallen heroes.".into());
     }
-    let used = roster.definitions.len() as u32;
-    (used >= roster.capacity)
-        .then(|| format!("Hero roster full ({used}/{}). Upgrade a Hall.", roster.capacity))
+    let used = roster.used();
+    (used >= roster.capacity as usize).then(|| {
+        format!(
+            "Hero roster full ({used}/{}). Upgrade a Hall.",
+            roster.capacity
+        )
+    })
 }
 
 /// Living units of `owner` (old `liveUnits().filter(owner).length`).

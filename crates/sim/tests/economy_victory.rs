@@ -22,8 +22,17 @@ fn a_colony_without_buildings_is_defeated_and_the_last_team_wins() {
     world.step();
     let outcome = world.state().outcome.clone().expect("decided");
     assert_eq!((outcome.winner, outcome.defeated), (Some(P1), vec![P2]));
-    assert!(world.state().entities.iter().all(|e| e.owner != P2), "the defeated colony leaves");
-    assert!(world.state().facts.iter().any(|f| f.owner == P2 && f.kind == FactKind::Death && f.message == "Colony defeated"));
+    assert!(
+        world.state().entities.iter().all(|e| e.owner != P2),
+        "the defeated colony leaves"
+    );
+    assert!(
+        world
+            .state()
+            .facts
+            .iter()
+            .any(|f| f.owner == P2 && f.kind == FactKind::Death && f.message == "Colony defeated")
+    );
     let tick = world.state().tick;
     let fingerprint = world.fingerprint();
     run(&mut world, 3);
@@ -42,8 +51,12 @@ fn an_unfinished_site_keeps_a_colony_alive() {
     fund(&mut world, P2, AMBER, 100);
     fund(&mut world, P2, WOOD, 100);
     let worker = all_of(&world, P2, WORKER)[2];
-    command_for(&mut world, 1, json!({"type": "build", "actors": [worker], "definition": HOUSE,
-        "position": {"x": 193.5, "y": 193.5}}));
+    command_for(
+        &mut world,
+        1,
+        json!({"type": "build", "actors": [worker], "definition": HOUSE,
+        "position": {"x": 193.5, "y": 193.5}}),
+    );
     world.step();
     assert_eq!(all_of(&world, P2, HOUSE).len(), 1, "{:?}", errors(&world));
     for hall in halls(&world, P2) {
@@ -74,16 +87,22 @@ fn allies_win_together_and_a_defeated_player_is_refused() {
     let worker = all_of(&world, P1, WORKER)[0];
     command_for(&mut world, 1, json!({"type": "stop", "actors": [worker]}));
     world.step();
-    assert!(world
-        .state()
-        .facts
-        .iter()
-        .any(|f| f.owner == P2 && f.message == "Your colony has been defeated"));
+    assert!(
+        world
+            .state()
+            .facts
+            .iter()
+            .any(|f| f.owner == P2 && f.message == "Your colony has been defeated")
+    );
     for hall in halls(&world, p3) {
         world.remove_entity(EntityId(hall));
     }
     world.step();
     let outcome = world.state().outcome.clone().expect("decided");
-    assert_eq!(outcome.winner, Some(P1), "the first remaining player of the winning team");
+    assert_eq!(
+        outcome.winner,
+        Some(P1),
+        "the first remaining player of the winning team"
+    );
     assert_eq!(outcome.defeated, vec![P2, p3]);
 }

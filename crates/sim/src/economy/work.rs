@@ -96,7 +96,11 @@ pub fn interrupt(state: &mut State, id: EntityId, destination: Option<Place>) ->
         }
     }
     if carrying {
-        let u = state.entities.get_mut(id).and_then(|e| e.unit.as_mut()).expect("unit");
+        let u = state
+            .entities
+            .get_mut(id)
+            .and_then(|e| e.unit.as_mut())
+            .expect("unit");
         u.order = None;
         u.work.pending_move = destination;
         return true;
@@ -112,7 +116,11 @@ pub fn interrupt(state: &mut State, id: EntityId, destination: Option<Place>) ->
         }
         jobs::remove(state, job.id);
     }
-    let u = state.entities.get_mut(id).and_then(|e| e.unit.as_mut()).expect("unit");
+    let u = state
+        .entities
+        .get_mut(id)
+        .and_then(|e| e.unit.as_mut())
+        .expect("unit");
     u.order = destination.map(|destination| Order::Move {
         destination,
         attack_move: false,
@@ -288,7 +296,13 @@ pub fn reroute(ctx: &mut Ctx, id: EntityId) {
         return;
     }
     let constructing = matches!(u.order, Some(Order::Construct { .. }));
-    let stores = stores(ctx, e.owner, cargo.item.as_str(), cargo.amount, super::coarse(e));
+    let stores = stores(
+        ctx,
+        e.owner,
+        cargo.item.as_str(),
+        cargo.amount,
+        super::coarse(e),
+    );
     for &b in &stores {
         if sites::work_point(ctx, b, id).is_some() {
             jobs::create(
@@ -346,7 +360,11 @@ pub fn deposit(ctx: &mut Ctx, worker: EntityId, store: EntityId) {
         .is_some_and(|s| s.dropoff == Some(true));
     let store_owner = store_entity.owner;
     if stock::currency(ctx.catalog, cargo.item.as_str()) {
-        stock::add(ctx.state.wallets.entry(owner).or_default(), &cargo.item, cargo.amount);
+        stock::add(
+            ctx.state.wallets.entry(owner).or_default(),
+            &cargo.item,
+            cargo.amount,
+        );
     } else if let Some(s) = ctx.state.entities.get_mut(store) {
         stock::add(&mut s.inventory, &cargo.item, cargo.amount);
     }
@@ -406,7 +424,8 @@ fn deliver(ctx: &mut Ctx, id: u32, worker: EntityId, store: EntityId) {
             .is_some_and(|s| s.dropoff == Some(true))
             && stock::accepts(ctx.catalog, b, item)
             && b.owner == w.owner
-            && stock::room(ctx.catalog, &ctx.state.economy.jobs, b, Some(item)).saturating_add(job_amount)
+            && stock::room(ctx.catalog, &ctx.state.economy.jobs, b, Some(item))
+                .saturating_add(job_amount)
                 >= cargo.amount
     });
     if !valid {
@@ -624,26 +643,44 @@ pub fn release_references(ctx: &mut Ctx, id: EntityId, cancel: bool) {
 
 /// Removes an entity from the match with its economic consequences (old `Economy.remove`):
 /// see [`release_references`]; then whatever it still holds is lost. `cancel` refunds a
-/// project. The death pass of combat calls this for every entity that dies.
+/// project.
 pub fn remove(ctx: &mut Ctx, id: EntityId, cancel: bool) {
     release_references(ctx, id, cancel);
+    crate::garrisons::evict(ctx.state, ctx.spatial, id);
     let Some(e) = ctx.state.entities.remove(id) else {
         return;
     };
     ctx.index.sync(ctx.state, ctx.catalog);
     ctx.spatial.sync_entity(ctx.state, id);
+    record_losses(ctx.state, ctx.catalog, &e, cancel);
+}
+
+/// Facts for the goods an entity leaving the match still holds (the end of old
+/// `Economy.remove`).
+pub fn record_losses(
+    state: &mut State,
+    catalog: &crate::catalog::Catalog,
+    e: &crate::entity::Entity,
+    cancel: bool,
+) {
     let message = if cancel {
         "Unrefunded project resources"
     } else {
         "Stored resources lost"
     };
     for (item, &amount) in &e.inventory {
-        stock::record(ctx.state, e.owner, FactKind::Lost, message, Some((item, amount)));
+        stock::record(
+            state,
+            e.owner,
+            FactKind::Lost,
+            message,
+            Some((item, amount)),
+        );
     }
     if let Some(item) = &e.item {
-        let id = ctx.catalog.id(e.definition).clone();
+        let id = catalog.id(e.definition).clone();
         stock::record(
-            ctx.state,
+            state,
             e.owner,
             FactKind::Lost,
             "Ground goods lost",

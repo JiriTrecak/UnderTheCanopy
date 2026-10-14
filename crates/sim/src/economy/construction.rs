@@ -17,7 +17,9 @@ use crate::{
     catalog::Def,
     entity::{EntityId, Milli},
     orders::Order,
-    terrain::footprint::{Extent, body_overlaps_bounds, footprint_bounds, footprint_cells, placement_geometry_error},
+    terrain::footprint::{
+        Extent, body_overlaps_bounds, footprint_bounds, footprint_cells, placement_geometry_error,
+    },
     vision::Sight,
 };
 use canopy_content::{
@@ -76,21 +78,22 @@ pub fn can_build(
     if point.surface.is_some() {
         return Some("Buildings require ground foundations".into());
     }
-    let eligible = builder.and_then(|b| ctx.state.entities.get(b)).is_some_and(|w| {
-        let wd = ctx.catalog.get(w.definition);
-        w.owner == owner
-            && alive(w)
-            && wd.behaviors.player_control.is_some()
-            && wd
-                .behaviors
-                .work
-                .as_ref()
-                .is_some_and(|work| work.builds.iter().any(|b| b.as_str() == definition))
-            && w
-                .unit
-                .as_ref()
-                .is_some_and(|u| u.contained.is_none() && u.release.is_none())
-    });
+    let eligible = builder
+        .and_then(|b| ctx.state.entities.get(b))
+        .is_some_and(|w| {
+            let wd = ctx.catalog.get(w.definition);
+            w.owner == owner
+                && alive(w)
+                && wd.behaviors.player_control.is_some()
+                && wd
+                    .behaviors
+                    .work
+                    .as_ref()
+                    .is_some_and(|work| work.builds.iter().any(|b| b.as_str() == definition))
+                && w.unit
+                    .as_ref()
+                    .is_some_and(|u| u.contained.is_none() && u.release.is_none())
+        });
     if !eligible {
         return Some("Select an eligible worker".into());
     }
@@ -145,9 +148,9 @@ pub fn can_build(
     }
     let edges = footprint_bounds(x, y, extent, f64::from(rotation));
     let decks = ctx.spatial.terrain().surfaces();
-    let blocked_cell = on_map.iter().any(|&c| {
-        !ctx.spatial.walkable(c) || decks.is_some_and(|s| s.has_deck(c))
-    });
+    let blocked_cell = on_map
+        .iter()
+        .any(|&c| !ctx.spatial.walkable(c) || decks.is_some_and(|s| s.has_deck(c)));
     let tick = ctx.state.tick;
     let blocked_body = ctx.index.units.iter().any(|&id| {
         ctx.state.entities.get(id).is_some_and(|e| {
@@ -169,27 +172,24 @@ pub fn can_build(
         return Some("Leave access around the resource deposit".into());
     }
     let terrain = ctx.spatial.terrain();
-    let wet = on_map
-        .iter()
-        .any(|&c| i32::from(terrain.height_cm(c as usize)) <= i32::from(terrain.water_cm(c as usize)) + 10);
+    let wet = on_map.iter().any(|&c| {
+        i32::from(terrain.height_cm(c as usize)) <= i32::from(terrain.water_cm(c as usize)) + 10
+    });
     if wet {
         return Some("Build on dry ground".into());
     }
     if !terrain.foundation_fits(bounds) {
         return Some("Choose flatter ground".into());
     }
-    let door = sites::entrance(
-        ctx.catalog,
-        def,
-        Milli { x: f.x, y: f.y },
-        rotation * 1000,
-    );
+    let door = sites::entrance(ctx.catalog, def, Milli { x: f.x, y: f.y }, rotation * 1000);
     let (dx, dy) = door.cell();
     let door_open = dx >= 0
         && dy >= 0
         && i64::from(dx) < size
         && i64::from(dy) < size
-        && ctx.spatial.walkable((i64::from(dy) * size + i64::from(dx)) as u32);
+        && ctx
+            .spatial
+            .walkable((i64::from(dy) * size + i64::from(dx)) as u32);
     if !door_open {
         return Some("Entrance blocked".into());
     }
@@ -304,7 +304,15 @@ pub fn check_build(
     if !crate::orders::can_issue(ctx.state.entities.get(builder).expect("builder"), append) {
         return Err("Order queue is full".into());
     }
-    if let Some(reason) = can_build(ctx, sight, owner, definition, point, Some(builder), rotation) {
+    if let Some(reason) = can_build(
+        ctx,
+        sight,
+        owner,
+        definition,
+        point,
+        Some(builder),
+        rotation,
+    ) {
         return Err(reason);
     }
     Ok(builder)
@@ -347,7 +355,12 @@ pub fn place_site(ctx: &mut Ctx, owner: Owner, builder: EntityId, request: &Requ
     );
     ctx.index.sync(ctx.state, ctx.catalog);
     stock::admit(ctx.state, site, &reservation);
-    crate::orders::issue(ctx.state, builder, Order::Construct { target: site }, append);
+    crate::orders::issue(
+        ctx.state,
+        builder,
+        Order::Construct { target: site },
+        append,
+    );
     ctx.spatial.sync_entity(ctx.state, site);
     site
 }
@@ -358,12 +371,10 @@ fn constructing(ctx: &Ctx, worker: EntityId) -> bool {
         return false;
     };
     matches!(u.order, Some(Order::Construct { .. }))
-        || u
-            .order_queue
+        || u.order_queue
             .iter()
             .any(|o| matches!(o, Order::Construct { .. }))
-        || u
-            .work
+        || u.work
             .job
             .and_then(|j| ctx.state.economy.job(j))
             .is_some_and(|j| j.kind == JobKind::Construct)
@@ -425,7 +436,12 @@ pub fn construction_orders(ctx: &mut Ctx) {
         if ctx.state.economy.jobs.occupied(JobKind::Construct, target) {
             continue;
         }
-        let u = ctx.state.entities.get(id).and_then(|e| e.unit.as_ref()).expect("unit");
+        let u = ctx
+            .state
+            .entities
+            .get(id)
+            .and_then(|e| e.unit.as_ref())
+            .expect("unit");
         if u.work.job.is_some() || cargo_blocks_construction(ctx, id) || u.retry_at > tick {
             continue;
         }
@@ -468,8 +484,9 @@ pub fn advance_construct(ctx: &mut Ctx, id: u32) {
     let c = b.construction.as_mut().expect("construction");
     c.progress += 1;
     let supported = max_hp.min(
-        start + (u64::from(max_hp - start.min(max_hp)) * u64::from(c.progress) / u64::from(work_ticks.max(1)))
-            as u32,
+        start
+            + (u64::from(max_hp - start.min(max_hp)) * u64::from(c.progress)
+                / u64::from(work_ticks.max(1))) as u32,
     );
     let gained = supported.saturating_sub(c.supported_hp);
     c.supported_hp = supported;
@@ -497,7 +514,11 @@ pub fn advance_construct(ctx: &mut Ctx, id: u32) {
     let b = ctx.state.entities.get_mut(site).expect("site");
     b.construction = None;
     b.ready_tick = tick + 1;
-    if let Some(u) = ctx.state.entities.get_mut(worker).and_then(|e| e.unit.as_mut())
+    if let Some(u) = ctx
+        .state
+        .entities
+        .get_mut(worker)
+        .and_then(|e| e.unit.as_mut())
         && u.order == Some(Order::Construct { target: site })
     {
         u.order = None;
@@ -512,7 +533,12 @@ pub fn advance_repair(ctx: &mut Ctx, id: u32) {
     let job = ctx.state.economy.job(id).expect("job").clone();
     let repair_ticks = ctx.catalog.content.rules.repair_ticks;
     let b = ctx.state.entities.get(job.target).expect("building");
-    let max_hp = ctx.catalog.get(b.definition).body.as_ref().map_or(0, |b| b.max_hp);
+    let max_hp = ctx
+        .catalog
+        .get(b.definition)
+        .body
+        .as_ref()
+        .map_or(0, |b| b.max_hp);
     let mut progress = job.progress + 1;
     let mut hp = b.hp.unwrap_or(0);
     if progress >= repair_ticks {
@@ -535,7 +561,12 @@ pub fn assign_repairs(ctx: &mut Ctx, buildings: &[EntityId]) {
         let Some(e) = ctx.state.entities.get(b) else {
             continue;
         };
-        let max_hp = ctx.catalog.get(e.definition).body.as_ref().map(|b| b.max_hp);
+        let max_hp = ctx
+            .catalog
+            .get(e.definition)
+            .body
+            .as_ref()
+            .map(|b| b.max_hp);
         let damaged = e.construction.is_none()
             && match (e.hp, max_hp) {
                 (Some(hp), Some(max)) => hp < max,

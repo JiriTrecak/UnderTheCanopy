@@ -72,8 +72,11 @@ pub enum Obstruction {
 
 /// Whether a unit ghosts through other bodies (old `GameContext` `ignoresUnits`): workers
 /// delivering goods, or on harvest traffic to a source that does not opt back into
-/// collision. Garrisoned archers join with the combat step.
+/// collision, and archers in lookouts.
 pub fn ignores_units(state: &State, profiles: &Profiles, e: &Entity) -> bool {
+    if crate::garrisons::ghost(e) {
+        return true;
+    }
     let Some(u) = e.unit.as_ref() else {
         return false;
     };

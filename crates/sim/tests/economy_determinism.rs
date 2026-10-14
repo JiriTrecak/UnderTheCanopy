@@ -9,9 +9,15 @@ use serde_json::json;
 
 fn map() -> canopy_content::map::UtcMap {
     let mut extra = Vec::new();
-    for (i, (x, y)) in [(36.0, 46.0), (35.0, 49.0), (33.0, 47.0), (212.0, 206.0), (213.0, 209.0)]
-        .into_iter()
-        .enumerate()
+    for (i, (x, y)) in [
+        (36.0, 46.0),
+        (35.0, 49.0),
+        (33.0, 47.0),
+        (212.0, 206.0),
+        (213.0, 209.0),
+    ]
+    .into_iter()
+    .enumerate()
     {
         extra.push(resource(&format!("tree-{i}"), TREE, x, y));
     }
@@ -27,14 +33,35 @@ fn script(world: &mut World, t: u32) {
     let tree = id(world, "tree-0");
     match t {
         2 => {
-            command(world, json!({"type": "gather", "actors": [p1[2]], "target": tree}));
-            command_for(world, 1, json!({"type": "produce", "actor": hall2, "definition": WORKER}));
-            command_for(world, 1, json!({"type": "rally", "actor": hall2, "destination": null, "target": id(world, "tree-3")}));
+            command(
+                world,
+                json!({"type": "gather", "actors": [p1[2]], "target": tree}),
+            );
+            command_for(
+                world,
+                1,
+                json!({"type": "produce", "actor": hall2, "definition": WORKER}),
+            );
+            command_for(
+                world,
+                1,
+                json!({"type": "rally", "actor": hall2, "destination": null, "target": id(world, "tree-3")}),
+            );
         }
-        40 => command(world, json!({"type": "build", "actors": [p1[0]], "definition": HOUSE,
-            "position": {"x": 57.5, "y": 41.5}})),
-        90 => command(world, json!({"type": "produce", "actor": hall1, "definition": WORKER})),
-        200 => command_for(world, 1, json!({"type": "move", "actors": [p2[0]], "destination": {"x": 190, "y": 190}})),
+        40 => command(
+            world,
+            json!({"type": "build", "actors": [p1[0]], "definition": HOUSE,
+            "position": {"x": 57.5, "y": 41.5}}),
+        ),
+        90 => command(
+            world,
+            json!({"type": "produce", "actor": hall1, "definition": WORKER}),
+        ),
+        200 => command_for(
+            world,
+            1,
+            json!({"type": "move", "actors": [p2[0]], "destination": {"x": 190, "y": 190}}),
+        ),
         _ => {}
     }
 }
@@ -58,7 +85,13 @@ fn the_economy_is_deterministic_and_survives_save_and_restore() {
     let second = run_scripted(&mut b, 0, 900);
     assert_eq!(first, second);
     assert_eq!(a.state(), b.state());
-    assert!(!errors(&a).iter().any(|e| e != "Move destination is unreachable"), "{:?}", errors(&a));
+    assert!(
+        !errors(&a)
+            .iter()
+            .any(|e| e != "Move destination is unreachable"),
+        "{:?}",
+        errors(&a)
+    );
     assert!(all_of(&a, P1, HOUSE).len() == 1 && all_of(&a, P1, WORKER).len() == 4);
     assert!(wallet(&a, P1, WOOD) > 50);
 

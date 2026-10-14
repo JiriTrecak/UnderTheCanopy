@@ -24,7 +24,9 @@ pub fn idle(motion: &mut Motion, state: &mut State) {
         let busy = u.order.is_some()
             || !u.order_queue.is_empty()
             || !u.work.is_idle()
-            || u.target.is_some();
+            || u.target.is_some()
+            || u.combat.cooldown > 0
+            || u.camp.is_some();
         if !wanders || busy {
             if u.idle.as_ref().is_some_and(|i| i.walking) {
                 u.route.clear();

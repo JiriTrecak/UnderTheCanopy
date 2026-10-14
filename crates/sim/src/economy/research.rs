@@ -3,7 +3,7 @@
 
 use super::{Ctx, ResearchEntry, alive, ready, stock, supply};
 use crate::{catalog::Catalog, entity::EntityId, state::FactKind};
-use canopy_content::{Id, placement::Owner};
+use canopy_content::Id;
 
 /// The `research` command (old `Research.enqueue`).
 pub fn enqueue(ctx: &mut Ctx, b: EntityId, id: &Id) -> Result<(), String> {
@@ -24,7 +24,9 @@ pub fn enqueue(ctx: &mut Ctx, b: EntityId, id: &Id) -> Result<(), String> {
         ctx.state.entities.get(other).is_some_and(|o| {
             o.owner == owner
                 && alive(o)
-                && o.research.as_ref().is_some_and(|r| r.queue.iter().any(|q| &q.id == id))
+                && o.research
+                    .as_ref()
+                    .is_some_and(|r| r.queue.iter().any(|q| &q.id == id))
         })
     });
     if queued {
@@ -73,7 +75,12 @@ pub fn cancel(ctx: &mut Ctx, b: EntityId, id: &Id) -> Result<(), String> {
         .map(|r| r.items.clone())
         .unwrap_or_default();
     stock::refund_cost(ctx, b, &items);
-    if let Some(r) = ctx.state.entities.get_mut(b).and_then(|e| e.research.as_mut()) {
+    if let Some(r) = ctx
+        .state
+        .entities
+        .get_mut(b)
+        .and_then(|e| e.research.as_mut())
+    {
         r.queue.remove(index);
     }
     Ok(())
@@ -93,31 +100,6 @@ fn hp_bonus(catalog: &Catalog, research: &Id, unit: &Id) -> u32 {
                 .map(|e| e.max_hp.unwrap_or(0))
                 .sum()
         })
-}
-
-/// Maximum health completed research adds to units of `def` owned by `owner`. Combat's
-/// stats (levels, items) add theirs on top.
-pub fn max_hp_bonus(catalog: &Catalog, researched: &[Id], unit: &Id) -> u32 {
-    researched.iter().map(|r| hp_bonus(catalog, r, unit)).sum()
-}
-
-/// Full health of a fresh unit of `def` for `owner`: its first level's or its body's,
-/// with research.
-pub fn fresh_max_hp(
-    catalog: &Catalog,
-    state: &crate::state::State,
-    owner: Owner,
-    def: crate::catalog::Def,
-) -> Option<u32> {
-    let d = catalog.get(def);
-    let base = d
-        .behaviors
-        .progression
-        .as_ref()
-        .and_then(|p| p.levels.first())
-        .map(|l| l.max_hp)
-        .or(d.body.as_ref().map(|b| b.max_hp))?;
-    Some(base + max_hp_bonus(catalog, state.economy.researched(owner), &d.id))
 }
 
 /// Step 9 (old `Research.tick`): each building's first research advances; on completion
@@ -177,7 +159,12 @@ pub fn advance(ctx: &mut Ctx) {
                 *hp += bonus;
             }
         }
-        if let Some(r) = ctx.state.entities.get_mut(b).and_then(|e| e.research.as_mut()) {
+        if let Some(r) = ctx
+            .state
+            .entities
+            .get_mut(b)
+            .and_then(|e| e.research.as_mut())
+        {
             r.queue.remove(0);
         }
         stock::record(

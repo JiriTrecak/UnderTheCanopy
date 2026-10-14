@@ -28,26 +28,44 @@ pub enum Lane {
 }
 
 pub fn lane(e: &crate::entity::Entity) -> Option<Lane> {
-    let production = e.production.as_ref().and_then(|p| p.queue.first()).map(|q| q.id);
-    let revival = e.revival.as_ref().and_then(|r| r.queue.first()).map(|q| q.id);
+    let production = e
+        .production
+        .as_ref()
+        .and_then(|p| p.queue.first())
+        .map(|q| q.id);
+    let revival = e
+        .revival
+        .as_ref()
+        .and_then(|r| r.queue.first())
+        .map(|q| q.id);
     match (production, revival) {
         (None, None) => None,
         (None, Some(_)) => Some(Lane::Revival),
         (Some(_), None) => Some(Lane::Production),
-        (Some(p), Some(r)) => Some(if p < r { Lane::Production } else { Lane::Revival }),
+        (Some(p), Some(r)) => Some(if p < r {
+            Lane::Production
+        } else {
+            Lane::Revival
+        }),
     }
 }
 
 /// Entries in the shared lane (old `workplaceQueueSize`).
 pub fn lane_size(e: &crate::entity::Entity) -> usize {
-    e.production.as_ref().map_or(0, |p| p.queue.len()) + e.revival.as_ref().map_or(0, |r| r.queue.len())
+    e.production.as_ref().map_or(0, |p| p.queue.len())
+        + e.revival.as_ref().map_or(0, |r| r.queue.len())
 }
 
 /// The cycle a workplace works on next (old `head`).
 pub fn head(ctx: &Ctx, id: EntityId) -> Option<(Def, Option<u32>)> {
     let e = ctx.state.entities.get(id)?;
     let p = e.production.as_ref()?;
-    let policy = ctx.catalog.get(e.definition).behaviors.production.as_ref()?;
+    let policy = ctx
+        .catalog
+        .get(e.definition)
+        .behaviors
+        .production
+        .as_ref()?;
     if e.construction.is_some() {
         return None;
     }
@@ -80,7 +98,9 @@ pub fn request_inputs(ctx: &mut Ctx, id: EntityId) {
         .iter()
         .map(|c| canopy_content::game::Cost {
             item: c.item.clone(),
-            amount: c.amount.saturating_sub(stock::quantity(&e.inventory, c.item.as_str())),
+            amount: c
+                .amount
+                .saturating_sub(stock::quantity(&e.inventory, c.item.as_str())),
         })
         .collect();
     let missing: u32 = short.iter().map(|c| c.amount).sum();
@@ -94,13 +114,23 @@ pub fn request_inputs(ctx: &mut Ctx, id: EntityId) {
 }
 
 fn set_status(ctx: &mut Ctx, id: EntityId, status: Status) {
-    if let Some(p) = ctx.state.entities.get_mut(id).and_then(|e| e.production.as_mut()) {
+    if let Some(p) = ctx
+        .state
+        .entities
+        .get_mut(id)
+        .and_then(|e| e.production.as_mut())
+    {
         p.status = status;
     }
 }
 
 fn employ(ctx: &mut Ctx, b: EntityId, w: EntityId) {
-    if let Some(p) = ctx.state.entities.get_mut(b).and_then(|e| e.production.as_mut()) {
+    if let Some(p) = ctx
+        .state
+        .entities
+        .get_mut(b)
+        .and_then(|e| e.production.as_mut())
+    {
         p.staff = Some(w);
     }
     if let Some(u) = ctx.state.entities.get_mut(w).and_then(|e| e.unit.as_mut()) {
@@ -234,8 +264,7 @@ fn plant(ctx: &mut Ctx, b: EntityId, def: Def, worker: EntityId) {
         .filter(|r| {
             alive(r)
                 && r.definition == def
-                && r
-                    .resource
+                && r.resource
                     .as_ref()
                     .is_some_and(|res| res.amount == 0 && res.growing_until.is_none())
                 && distance2(coarse(r), here) <= (radius * 1000).pow(2)
@@ -293,9 +322,12 @@ pub fn advance_plant(ctx: &mut Ctx, id: u32) {
         abandon(ctx, id);
         return;
     };
-    let resource = job
-        .source
-        .filter(|&s| ctx.state.entities.get(s).is_some_and(|r| r.resource.is_some()));
+    let resource = job.source.filter(|&s| {
+        ctx.state
+            .entities
+            .get(s)
+            .is_some_and(|r| r.resource.is_some())
+    });
     let Some(resource) = resource else {
         abandon(ctx, id);
         return;
@@ -317,7 +349,12 @@ pub fn advance_plant(ctx: &mut Ctx, id: u32) {
 
 /// Closes a workplace's cycle (old `finishCycle`).
 pub fn finish_cycle(ctx: &mut Ctx, b: EntityId) {
-    let Some(p) = ctx.state.entities.get_mut(b).and_then(|e| e.production.as_mut()) else {
+    let Some(p) = ctx
+        .state
+        .entities
+        .get_mut(b)
+        .and_then(|e| e.production.as_mut())
+    else {
         return;
     };
     let Some(active) = p.active.take() else {
@@ -335,7 +372,12 @@ pub fn finish_cycle(ctx: &mut Ctx, b: EntityId) {
 
 /// Takes a cycle's inputs from the workplace's stock (old `inputConsume`).
 fn consume_inputs(ctx: &mut Ctx, b: EntityId, def: Def) {
-    let owner = ctx.state.entities.get(b).map(|e| e.owner).expect("workplace");
+    let owner = ctx
+        .state
+        .entities
+        .get(b)
+        .map(|e| e.owner)
+        .expect("workplace");
     for cost in stock::price(ctx.catalog, def) {
         if let Some(e) = ctx.state.entities.get_mut(b) {
             stock::take(&mut e.inventory, cost.item.as_str(), cost.amount);
@@ -478,7 +520,12 @@ fn complete_unit(ctx: &mut Ctx, b: EntityId) -> bool {
             }),
         }
     };
-    if let Some(u) = ctx.state.entities.get_mut(unit).and_then(|e| e.unit.as_mut()) {
+    if let Some(u) = ctx
+        .state
+        .entities
+        .get_mut(unit)
+        .and_then(|e| e.unit.as_mut())
+    {
         u.order = order;
     }
     consume_inputs(ctx, b, def);
@@ -509,7 +556,10 @@ fn enqueue(ctx: &mut Ctx, b: EntityId, def: Def) -> bool {
         .and_then(|e| e.production.as_mut())
         .expect("production")
         .queue
-        .push(QueueEntry { id, definition: def });
+        .push(QueueEntry {
+            id,
+            definition: def,
+        });
     true
 }
 
@@ -538,7 +588,7 @@ pub fn produce(ctx: &mut Ctx, b: EntityId, definition: &str) -> Result<(), Strin
     if let Some(reason) = supply::prerequisite(ctx, owner, target.requires.as_deref()) {
         return Err(reason);
     }
-    let roster = supply::roster(ctx, owner);
+    let roster = crate::heroes::Roster::of(ctx.state, ctx.catalog, owner);
     if let Some(reason) = supply::hero_admission(ctx.catalog, def, &roster) {
         return Err(reason);
     }
@@ -555,7 +605,12 @@ pub fn produce(ctx: &mut Ctx, b: EntityId, definition: &str) -> Result<(), Strin
 
 /// Cancels a queued unit and refunds its bill (old `cancelEntry`).
 pub fn cancel_entry(ctx: &mut Ctx, b: EntityId, entry: u32) -> bool {
-    let Some(p) = ctx.state.entities.get(b).and_then(|e| e.production.as_ref()) else {
+    let Some(p) = ctx
+        .state
+        .entities
+        .get(b)
+        .and_then(|e| e.production.as_ref())
+    else {
         return false;
     };
     let Some(def) = p.queue.iter().find(|q| q.id == entry).map(|q| q.definition) else {
@@ -570,11 +625,21 @@ pub fn cancel_entry(ctx: &mut Ctx, b: EntityId, entry: u32) -> bool {
         if let Some(job) = job {
             abandon(ctx, job);
         }
-        if let Some(p) = ctx.state.entities.get_mut(b).and_then(|e| e.production.as_mut()) {
+        if let Some(p) = ctx
+            .state
+            .entities
+            .get_mut(b)
+            .and_then(|e| e.production.as_mut())
+        {
             p.active = None;
         }
     }
-    if let Some(p) = ctx.state.entities.get_mut(b).and_then(|e| e.production.as_mut()) {
+    if let Some(p) = ctx
+        .state
+        .entities
+        .get_mut(b)
+        .and_then(|e| e.production.as_mut())
+    {
         p.queue.retain(|q| q.id != entry);
     }
     let bill = stock::bill(stock::price(ctx.catalog, def));
@@ -584,7 +649,12 @@ pub fn cancel_entry(ctx: &mut Ctx, b: EntityId, entry: u32) -> bool {
 
 /// Pauses or resumes a workplace (old `pause`).
 pub fn pause(ctx: &mut Ctx, b: EntityId, paused: bool) {
-    let Some(p) = ctx.state.entities.get_mut(b).and_then(|e| e.production.as_mut()) else {
+    let Some(p) = ctx
+        .state
+        .entities
+        .get_mut(b)
+        .and_then(|e| e.production.as_mut())
+    else {
         return;
     };
     p.paused = paused;
@@ -596,7 +666,12 @@ pub fn pause(ctx: &mut Ctx, b: EntityId, paused: bool) {
 /// Sets the rally: onto a target entity (its position, tracked live when it moves), a
 /// point, or none.
 pub fn set_rally(ctx: &mut Ctx, b: EntityId, rally: Option<Rally>) {
-    if let Some(p) = ctx.state.entities.get_mut(b).and_then(|e| e.production.as_mut()) {
+    if let Some(p) = ctx
+        .state
+        .entities
+        .get_mut(b)
+        .and_then(|e| e.production.as_mut())
+    {
         p.rally = rally;
     }
 }

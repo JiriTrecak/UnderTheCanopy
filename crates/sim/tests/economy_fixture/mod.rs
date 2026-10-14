@@ -100,14 +100,14 @@ fn game() -> Value {
                     "effects": [{"units": [WORKER], "maxHp": 50}]},
             },
             "lootPools": {}, "armorCoefficient": 0.06,
-            "damageTypes": {"damage.plain": {"name": "Plain", "appliesArmor": true}},
+            "damageTypes": {"damage.plain": {"name": "Plain", "appliesArmor": true}, "spell": {"name": "Spell", "appliesArmor": false}},
             "heroStunDurationPermille": 500,
             "experience": {
                 "unitRewards": [1], "heroRewards": [1], "neutralLevelCap": 2,
                 "neutralMultipliersPermille": [500], "summonMultiplierPermille": 500,
                 "globalFallback": false, "soloHeroTierBonusPermille": [0],
             },
-            "damageMultipliers": {"damage.plain": {"armor.plain": 1000}},
+            "damageMultipliers": {"damage.plain": {"armor.plain": 1000}, "spell": {"armor.plain": 1000}},
             "startingSetup": {
                 "id": "setup.test", "fort": HALL, "inventory": {AMBER: 100, WOOD: 50},
                 "units": [
@@ -163,7 +163,9 @@ fn game() -> Value {
             definition(SOLDIER, "unit", json!({
                 "body": body(150), "supplyCost": 2, "vision": 10, "dimensions": dimensions,
                 "creation": {"method": "train", "items": [cost(AMBER, 15)], "workTicks": 30},
-                "behaviors": {"playerControl": {}, "movement": {"speed": 4}},
+                "behaviors": {"playerControl": {}, "movement": {"speed": 4},
+                    "combat": {"damage": 400, "damageType": "damage.plain", "range": 1,
+                        "cooldownTicks": 10, "aggroRange": 3}},
             })),
             definition(HERO, "unit", json!({
                 "hero": true, "body": body(300), "supplyCost": 3, "vision": 10, "dimensions": dimensions,

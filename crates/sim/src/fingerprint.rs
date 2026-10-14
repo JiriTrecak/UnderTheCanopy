@@ -126,7 +126,10 @@ pub fn fingerprint(state: &State) -> u32 {
         let p = e.production.as_ref();
         h.option(p.map(|p| p.queue.len() as i64));
         h.option(p.and_then(|p| p.queue.first()).map(|q| i64::from(q.id)));
-        h.option(p.and_then(|p| p.active.as_ref()).map(|a| i64::from(a.progress)));
+        h.option(
+            p.and_then(|p| p.active.as_ref())
+                .map(|a| i64::from(a.progress)),
+        );
         h.option(p.map(|p| i64::from(p.produced)));
         for q in e.revival.iter().flat_map(|r| &r.queue) {
             h.word(q.id);

@@ -4,10 +4,14 @@
 //! same results on every machine.
 
 pub mod action;
+pub mod camps;
 pub mod catalog;
+pub mod combat;
 pub mod economy;
 pub mod entity;
 pub mod fingerprint;
+pub mod garrisons;
+pub mod heroes;
 pub mod math;
 pub mod mission;
 pub mod movement;
@@ -17,6 +21,7 @@ pub mod setup;
 pub mod spatial;
 pub mod spawn;
 pub mod state;
+pub mod stats;
 pub mod teams;
 pub mod terrain;
 pub mod victory;

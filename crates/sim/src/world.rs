@@ -3,6 +3,7 @@
 use crate::{
     action::Action,
     catalog::Catalog,
+    combat,
     economy::{self, Economy},
     entity::EntityId,
     fingerprint, mission,
@@ -58,6 +59,8 @@ pub struct World {
     vision: Vision,
     /// Derived spatial model and movement scratch; rebuilt on restore, never saved.
     motion: Motion,
+    /// Derived combat rules, camps and planning scratch; rebuilt on restore.
+    combat: combat::Runtime,
     /// Derived economy indexes and tables; rebuilt on restore, never saved.
     economy: Economy,
     /// How the match ends.
@@ -69,6 +72,7 @@ impl World {
     pub fn new(content: Arc<Content>, map: &UtcMap, setup: MatchSetup) -> Result<Self, SetupError> {
         let catalog = Arc::new(Catalog::new(content));
         let terrain = Arc::new(compile(map, &catalog)?);
+        let combat = combat::Runtime::new(&catalog, map, &setup).map_err(SetupError)?;
         let mut state = State::new(setup.seed);
         let mission = mission_runtime(map)?;
         if mission.is_some() {
@@ -79,6 +83,7 @@ impl World {
         let mut starting = std::collections::BTreeSet::new();
         for placement in placements.list.iter().filter(|p| p.activation.is_none()) {
             let id = spawn::create(&mut state, &catalog, placement).map_err(SetupError)?;
+            crate::camps::enlist(&mut state, &combat.camps, id, None);
             if placements.starting_units.contains(&placement.id) {
                 starting.insert(id);
             }
@@ -126,6 +131,7 @@ impl World {
             mission,
             vision,
             motion,
+            combat,
             economy,
             rules,
         })
@@ -193,6 +199,20 @@ impl World {
             self.observe();
             return;
         }
+        macro_rules! senses {
+            () => {
+                combat::Senses {
+                    catalog: &self.catalog,
+                    terrain: &self.terrain,
+                    vision: &self.vision,
+                    rules: &SIGHT,
+                    combat: &self.combat.rules,
+                    camps: &self.combat.camps,
+                    teams: &self.combat.teams,
+                    cache: None,
+                }
+            };
+        }
         // A decided match stands still.
         if self.state.outcome.is_some() {
             self.observe();
@@ -204,6 +224,7 @@ impl World {
         orders::plan::advance(
             &mut self.motion,
             &mut self.state,
+            &senses!(),
             orders::plan::Work {
                 economy: &mut self.economy,
                 catalog: &self.catalog,
@@ -215,27 +236,44 @@ impl World {
             },
         );
         {
-            let mut ctx = self
-                .economy
-                .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
+            let mut ctx =
+                self.economy
+                    .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
             economy::assign(&mut ctx);
         }
-        // Step 5: order planning, separation, idle motion and movement.
-        let perception = orders::plan::Perception {
-            vision: &self.vision,
-            catalog: &self.catalog,
-            terrain: &self.terrain,
-            rules: &SIGHT,
-        };
-        orders::plan::plan(&mut self.motion, &mut self.state, perception);
+        // Step 5: garrisons, combat and order planning, separation, idle motion, movement.
+        crate::garrisons::tick(&mut self.state, &self.catalog, &mut self.motion.spatial);
+        combat::plan::plan(
+            &senses!(),
+            &mut self.motion.spatial,
+            &mut self.state,
+            &mut self.combat.scratch,
+        );
         self.motion.separate(&mut self.state);
         self.motion.idle(&mut self.state);
         self.motion.move_units(&mut self.state);
+        // Step 7: combat resolution on current sight, then deaths.
+        self.vision
+            .sync(&self.state, &self.catalog, &self.terrain, &SIGHT);
+        let outcome = combat::resolve::resolve(&senses!(), &self.motion.spatial, &mut self.state);
+        if !outcome.dead.is_empty() {
+            // The dead no longer see.
+            self.vision
+                .sync(&self.state, &self.catalog, &self.terrain, &SIGHT);
+            combat::deaths::process(
+                &senses!(),
+                &mut self.motion.spatial,
+                &mut self.state,
+                &mut self.economy,
+                self.combat.limits,
+                &outcome.dead,
+            );
+        }
         // Step 9: revival, jobs, training, regrowth, upgrades and research.
         {
-            let mut ctx = self
-                .economy
-                .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
+            let mut ctx =
+                self.economy
+                    .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
             economy::advance(&mut ctx);
         }
         // Step 10: the mission script.
@@ -247,9 +285,9 @@ impl World {
         self.observe();
         if self.rules == victory::Rules::Skirmish {
             let teams = self.vision.teams().clone();
-            let mut ctx = self
-                .economy
-                .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
+            let mut ctx =
+                self.economy
+                    .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
             if victory::advance(&mut ctx, &teams) {
                 self.motion.spatial.sync_static(&self.state);
                 self.observe();
@@ -293,8 +331,24 @@ impl World {
             Action::Noop | Action::Ping => Ok(()),
             _ if orders::command::handles(action) => {
                 self.motion.spatial.sync_static(&self.state);
-                orders::command::apply(&mut self.state, &mut self.motion.spatial, owner, action)
-                    .map(|_| ())
+                let senses = combat::Senses {
+                    catalog: &self.catalog,
+                    terrain: &self.terrain,
+                    vision: &self.vision,
+                    rules: &SIGHT,
+                    combat: &self.combat.rules,
+                    camps: &self.combat.camps,
+                    teams: &self.combat.teams,
+                    cache: None,
+                };
+                orders::command::apply(
+                    &mut self.state,
+                    &mut self.motion.spatial,
+                    &senses,
+                    owner,
+                    action,
+                )
+                .map(|_| ())
             }
             _ if economy::command::handles(action) => {
                 self.motion.spatial.sync_static(&self.state);
@@ -304,9 +358,9 @@ impl World {
                     terrain: &self.terrain,
                     rules: &SIGHT,
                 };
-                let mut ctx = self
-                    .economy
-                    .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
+                let mut ctx =
+                    self.economy
+                        .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
                 economy::command::apply(&mut ctx, senses, owner, action).map(|_| ())
             }
             _ => Err("not available yet".into()),
@@ -348,7 +402,7 @@ impl World {
     }
 
     /// Runs `f` with the economy context, for tests and tools that set up economic state
-    /// directly (as a death pass or a mission would).
+    /// directly (as a mission would).
     pub fn with_economy<T>(&mut self, f: impl FnOnce(&mut economy::Ctx) -> T) -> T {
         let mut ctx = self
             .economy
@@ -362,8 +416,8 @@ impl World {
         self.economy.verify(&self.state, &self.catalog)
     }
 
-    /// Removes an entity with its economic consequences (old `Economy.remove`); combat's
-    /// death pass calls this.
+    /// Removes an entity with its economic consequences but without a death (old
+    /// `Economy.remove`): what a cancelled project or a defeated colony does.
     pub fn remove_entity(&mut self, id: EntityId) {
         self.with_economy(|ctx| economy::work::remove(ctx, id, false));
     }
@@ -375,7 +429,7 @@ impl World {
 
     /// What `owner` sees.
     pub fn view(&self, owner: Owner) -> View {
-        View::build(
+        let mut view = View::build(
             &self.state,
             &self.catalog,
             &self.terrain,
@@ -383,18 +437,53 @@ impl World {
             &SIGHT,
             &self.economy,
             owner,
-        )
+        );
+        self.add_combat(&mut view, Some(owner));
+        view
     }
 
     /// Everything, for spectators.
     pub fn observer_view(&self) -> View {
-        View::observe(
+        let mut view = View::observe(
             &self.state,
             &self.catalog,
             &self.terrain,
             &self.vision,
             &self.economy,
-        )
+        );
+        self.add_combat(&mut view, None);
+        view
+    }
+
+    /// Combat state of the view's live entities and the viewer's battle.
+    fn add_combat(&self, view: &mut View, viewer: Option<Owner>) {
+        let senses = self.senses();
+        for entity in view.entities.iter_mut().filter(|e| !e.remembered) {
+            if let Some(e) = self.state.entities.get(entity.id()) {
+                entity.combat = combat::CombatView::of(
+                    &senses,
+                    &self.state,
+                    e,
+                    viewer,
+                    entity.private.is_some(),
+                );
+            }
+        }
+        view.battle = combat::Battle::of(&senses, &self.state, viewer);
+    }
+
+    /// Combat's perception and allegiance answers.
+    pub fn senses(&self) -> combat::Senses<'_> {
+        combat::Senses {
+            catalog: &self.catalog,
+            terrain: &self.terrain,
+            vision: &self.vision,
+            rules: &SIGHT,
+            combat: &self.combat.rules,
+            camps: &self.combat.camps,
+            teams: &self.combat.teams,
+            cache: None,
+        }
     }
 
     /// Sight questions (what an owner sees, knows or detects) without building a view:
@@ -441,6 +530,7 @@ impl World {
         }
         let catalog = Arc::new(Catalog::new(content));
         let terrain = Arc::new(compile(map, &catalog)?);
+        let combat = combat::Runtime::new(&catalog, map, &save.setup).map_err(SetupError)?;
         let mission = mission_runtime(map)?;
         if mission.is_some() != save.state.mission.is_some() {
             return Err(SetupError(
@@ -467,6 +557,7 @@ impl World {
             mission,
             vision,
             motion,
+            combat,
             economy,
             rules: match_rules(map),
         })

@@ -96,10 +96,7 @@ pub fn available(catalog: &Catalog, e: &Entity, item: &str) -> u32 {
 /// What `owner` can spend of `item` (old `balance`).
 pub fn balance(state: &State, catalog: &Catalog, index: &Index, owner: Owner, item: &str) -> u32 {
     if currency(catalog, item) {
-        return state
-            .wallets
-            .get(&owner)
-            .map_or(0, |w| quantity(w, item));
+        return state.wallets.get(&owner).map_or(0, |w| quantity(w, item));
     }
     index
         .buildings

@@ -30,7 +30,11 @@ use canopy_content::{
 use std::collections::{BTreeMap, BTreeSet};
 
 /// The item a worker harvests from `resource`, if it can (old `harvestItem`).
-pub fn harvest_item<'c>(catalog: &'c Catalog, worker: &Entity, resource: &Entity) -> Option<&'c Id> {
+pub fn harvest_item<'c>(
+    catalog: &'c Catalog,
+    worker: &Entity,
+    resource: &Entity,
+) -> Option<&'c Id> {
     let source = catalog.id(resource.definition);
     catalog
         .get(worker.definition)
@@ -129,7 +133,12 @@ fn active_workers(catalog: &Catalog, e: &Entity) -> i64 {
 
 /// Living resources of `def` within `radius` cells of `around` with something left, in id
 /// order.
-fn standing_near(ctx: &Ctx, around: (i64, i64), radius: i64, def: crate::catalog::Def) -> Vec<EntityId> {
+fn standing_near(
+    ctx: &Ctx,
+    around: (i64, i64),
+    radius: i64,
+    def: crate::catalog::Def,
+) -> Vec<EntityId> {
     ctx.index
         .resources
         .near(around.0, around.1, radius * 1000)
@@ -166,7 +175,9 @@ pub fn gather_orders(ctx: &mut Ctx) {
             continue;
         }
         let origin = ctx.state.entities.get(target);
-        let item = origin.and_then(|o| harvest_item(ctx.catalog, w, o)).cloned();
+        let item = origin
+            .and_then(|o| harvest_item(ctx.catalog, w, o))
+            .cloned();
         let (Some(origin), Some(item)) = (origin, item) else {
             let u = ctx
                 .state
@@ -294,10 +305,12 @@ fn start_harvest(
         .work
         .as_ref()
         .map_or(0, |work| work.carry_capacity);
-    let amount = recipe
-        .amount
-        .min(carry)
-        .min(stock::room(ctx.catalog, &ctx.state.economy.jobs, h, Some(item.as_str())));
+    let amount = recipe.amount.min(carry).min(stock::room(
+        ctx.catalog,
+        &ctx.state.economy.jobs,
+        h,
+        Some(item.as_str()),
+    ));
     if amount == 0 || sites::work_point(ctx, resource, worker).is_none() {
         return false;
     }
@@ -336,9 +349,11 @@ pub fn admit_harvesters(ctx: &mut Ctx) {
             .get(job.worker)
             .is_some_and(|w| w.unit.is_some() && alive(w))
             && ctx.state.entities.get(job.target).is_some_and(alive)
-            && ctx.state.entities.get(source).is_some_and(|s| {
-                alive(s) && s.resource.as_ref().is_some_and(|r| r.amount > 0)
-            });
+            && ctx
+                .state
+                .entities
+                .get(source)
+                .is_some_and(|s| alive(s) && s.resource.as_ref().is_some_and(|r| r.amount > 0));
         if !valid {
             continue;
         }
@@ -352,7 +367,12 @@ pub fn admit_harvesters(ctx: &mut Ctx) {
         if phase == Phase::Work {
             *working.entry(source).or_default() += 1;
         } else if phase == Phase::Wait {
-            let arrived = ctx.state.economy.job(id).and_then(|j| j.arrived_tick).unwrap_or(0);
+            let arrived = ctx
+                .state
+                .economy
+                .job(id)
+                .and_then(|j| j.arrived_tick)
+                .unwrap_or(0);
             waiting.push((arrived, id, source));
         }
     }
@@ -407,8 +427,13 @@ pub fn advance_harvest(ctx: &mut Ctx, id: u32) {
             let cargo = w.unit.as_ref().and_then(|u| u.work.cargo.clone());
             let fits = cargo.as_ref().is_some_and(|c| {
                 stock::accepts(ctx.catalog, h, c.item.as_str())
-                    && stock::room(ctx.catalog, &ctx.state.economy.jobs, h, Some(c.item.as_str()))
-                        .saturating_add(job.amount)
+                    && stock::room(
+                        ctx.catalog,
+                        &ctx.state.economy.jobs,
+                        h,
+                        Some(c.item.as_str()),
+                    )
+                    .saturating_add(job.amount)
                         >= c.amount
             });
             if fits {
@@ -423,7 +448,10 @@ pub fn advance_harvest(ctx: &mut Ctx, id: u32) {
             let source = job.source.and_then(|s| ctx.state.entities.get(s));
             let fallen = source.and_then(|s| {
                 let at = s.resource.as_ref()?.felling.as_ref()?.fall_tick?;
-                Some((at, ctx.catalog.get(s.definition).felling.as_ref()?.fall_ticks))
+                Some((
+                    at,
+                    ctx.catalog.get(s.definition).felling.as_ref()?.fall_ticks,
+                ))
             });
             let Some((fallen_at, fall_ticks)) = fallen else {
                 abandon(ctx, id);
@@ -489,7 +517,10 @@ pub fn advance_harvest(ctx: &mut Ctx, id: u32) {
         .get(source)
         .and_then(|s| s.resource.as_ref())
         .map_or(0, |r| r.amount);
-    let amount = recipe.amount.min(job.amount.saturating_sub(carried)).min(left);
+    let amount = recipe
+        .amount
+        .min(job.amount.saturating_sub(carried))
+        .min(left);
     let remaining = left - amount;
     let s = ctx.state.entities.get_mut(source).expect("source");
     s.resource.as_mut().expect("resource").amount = remaining;
@@ -511,7 +542,9 @@ pub fn advance_harvest(ctx: &mut Ctx, id: u32) {
         Some((&item, amount)),
     );
     if felled {
-        let def = ctx.catalog.get(ctx.state.entities.get(source).expect("source").definition);
+        let def = ctx
+            .catalog
+            .get(ctx.state.entities.get(source).expect("source").definition);
         let max_hp = def.felling.as_ref().map_or(0, |f| f.max_hp);
         let full = def.resource_yield.unwrap_or(1).max(1);
         let hp = (u64::from(max_hp) * u64::from(remaining)).div_ceil(u64::from(full)) as u32;
@@ -578,7 +611,11 @@ fn finish_harvest(ctx: &mut Ctx, id: u32, worker: EntityId) {
         }
     }
     apply_pending(ctx, worker);
-    if let Some(u) = ctx.state.entities.get_mut(worker).and_then(|w| w.unit.as_mut())
+    if let Some(u) = ctx
+        .state
+        .entities
+        .get_mut(worker)
+        .and_then(|w| w.unit.as_mut())
         && matches!(u.order, Some(Order::Gather { .. }))
         && !u.order_queue.is_empty()
     {
@@ -668,7 +705,11 @@ fn can_regrow(ctx: &mut Ctx, id: EntityId) -> bool {
         return false;
     }
     let contains = |cells: &[u32], x: i64, y: i64| {
-        x >= 0 && y >= 0 && x < size && y < size && cells.binary_search(&((y * size + x) as u32)).is_ok()
+        x >= 0
+            && y >= 0
+            && x < size
+            && y < size
+            && cells.binary_search(&((y * size + x) as u32)).is_ok()
     };
     for &b in &ctx.index.buildings {
         let Some(building) = ctx.state.entities.get(b) else {
@@ -740,7 +781,13 @@ fn can_regrow(ctx: &mut Ctx, id: EntityId) -> bool {
 }
 
 /// The nearest free cell just outside the disc's bounding ring (old `regrowthExit`).
-fn regrowth_exit(ctx: &Ctx, resource: EntityId, reach: i64, cells: &[u32], unit: EntityId) -> Option<Spot> {
+fn regrowth_exit(
+    ctx: &Ctx,
+    resource: EntityId,
+    reach: i64,
+    cells: &[u32],
+    unit: EntityId,
+) -> Option<Spot> {
     let r = ctx.state.entities.get(resource)?;
     let e = ctx.state.entities.get(unit)?;
     let origin = precise(e);
@@ -758,7 +805,11 @@ fn regrowth_exit(ctx: &Ctx, resource: EntityId, reach: i64, cells: &[u32], unit:
             }
         }
         around.sort_by_key(|&(x, y)| {
-            (distance2((i64::from(x) * 1000, i64::from(y) * 1000), origin), y, x)
+            (
+                distance2((i64::from(x) * 1000, i64::from(y) * 1000), origin),
+                y,
+                x,
+            )
         });
         for (x, y) in around {
             if x < 0 || y < 0 || x >= size || y >= size {
@@ -780,7 +831,8 @@ fn regrowth_exit(ctx: &Ctx, resource: EntityId, reach: i64, cells: &[u32], unit:
 /// sources (old `startGathering`). `starting` lists the units each player started with:
 /// only they are sent.
 pub fn start_gathering(ctx: &mut Ctx, setup: &MatchSetup, starting: &BTreeSet<EntityId>) {
-    let objectives: Vec<(Owner, u32)> = ctx.state.objectives.iter().map(|(&o, &f)| (o, f)).collect();
+    let objectives: Vec<(Owner, u32)> =
+        ctx.state.objectives.iter().map(|(&o, &f)| (o, f)).collect();
     for (owner, fort) in objectives {
         let Some(hall) = ctx.state.entities.get(EntityId(fort)) else {
             continue;
@@ -792,7 +844,11 @@ pub fn start_gathering(ctx: &mut Ctx, setup: &MatchSetup, starting: &BTreeSet<En
             .collect();
         let mut used = BTreeSet::new();
         let race = match owner {
-            Owner::Player(p) => setup.slots.iter().find(|s| s.player == p).and_then(|s| s.race.clone()),
+            Owner::Player(p) => setup
+                .slots
+                .iter()
+                .find(|s| s.player == p)
+                .and_then(|s| s.race.clone()),
             Owner::Nobody => None,
         };
         let rules = &ctx.catalog.content.rules;
@@ -847,7 +903,11 @@ pub fn start_gathering(ctx: &mut Ctx, setup: &MatchSetup, starting: &BTreeSet<En
                     .iter()
                     .copied()
                     .filter(|&r| {
-                        can_assign_gather(ctx.catalog, worker, ctx.state.entities.get(r).expect("resource"))
+                        can_assign_gather(
+                            ctx.catalog,
+                            worker,
+                            ctx.state.entities.get(r).expect("resource"),
+                        )
                     })
                     .min_by_key(|&r| {
                         let e = ctx.state.entities.get(r).expect("resource");

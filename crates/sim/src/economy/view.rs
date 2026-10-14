@@ -226,7 +226,10 @@ fn base_gathering(
                 result.entry(base).or_default().recommended += policy.recommended_workers;
             }
         }
-        sites.insert(source.id, owners.into_iter().map(|(o, (_, b))| (o, b)).collect());
+        sites.insert(
+            source.id,
+            owners.into_iter().map(|(o, (_, b))| (o, b)).collect(),
+        );
     }
     for (&worker, &source) in assignments {
         let owner = state.entities.get(worker).map(|w| w.owner);
@@ -240,7 +243,13 @@ fn base_gathering(
 
 /// The work animation of a unit at its work site (old `describeActor` work pose). `tick`
 /// is the latest simulated tick.
-fn pose(state: &State, catalog: &Catalog, e: &Entity, tick: u32, at_goal: bool) -> Option<WorkPose> {
+fn pose(
+    state: &State,
+    catalog: &Catalog,
+    e: &Entity,
+    tick: u32,
+    at_goal: bool,
+) -> Option<WorkPose> {
     let u = e.unit.as_ref()?;
     if !u.route.is_empty() || u.contained.is_some() || u.release.is_some() || !at_goal {
         return None;
@@ -248,7 +257,9 @@ fn pose(state: &State, catalog: &Catalog, e: &Entity, tick: u32, at_goal: bool) 
     let job = state.economy.job(u.work.job?)?;
     let workplace = state.entities.get(job.target);
     let creation = match job.kind {
-        JobKind::Construct | JobKind::Repair => workplace.and_then(|w| catalog.get(w.definition).creation.as_ref()),
+        JobKind::Construct | JobKind::Repair => {
+            workplace.and_then(|w| catalog.get(w.definition).creation.as_ref())
+        }
         JobKind::Harvest if matches!(job.phase, Phase::Work | Phase::Fall) => job
             .item
             .as_ref()
@@ -272,7 +283,11 @@ fn pose(state: &State, catalog: &Catalog, e: &Entity, tick: u32, at_goal: bool) 
             animation_ticks,
             work_ticks,
             ..
-        } => (*work_animation, *impact_tick, animation_ticks.unwrap_or(*work_ticks)),
+        } => (
+            *work_animation,
+            *impact_tick,
+            animation_ticks.unwrap_or(*work_ticks),
+        ),
         _ => return None,
     };
     let animation = animation?;
@@ -311,7 +326,11 @@ pub fn public(
     });
     let cargo = e.unit.as_ref().and_then(|u| u.work.cargo.clone());
     let pose = pose(state, catalog, e, tick, at_goal);
-    (cargo.is_some() || pose.is_some() || site.is_some()).then_some(PublicWork { cargo, pose, site })
+    (cargo.is_some() || pose.is_some() || site.is_some()).then_some(PublicWork {
+        cargo,
+        pose,
+        site,
+    })
 }
 
 fn progress(done: u32, total: u32) -> Progress {
@@ -319,7 +338,13 @@ fn progress(done: u32, total: u32) -> Progress {
 }
 
 /// The owner-only economy state of an entity.
-pub fn private(state: &State, catalog: &Catalog, economy: &Economy, views: &WorkViews, e: &Entity) -> PrivateWork {
+pub fn private(
+    state: &State,
+    catalog: &Catalog,
+    economy: &Economy,
+    views: &WorkViews,
+    e: &Entity,
+) -> PrivateWork {
     let d = catalog.get(e.definition);
     let mut out = PrivateWork {
         base: views.bases.get(&e.id).copied(),
@@ -340,7 +365,15 @@ pub fn private(state: &State, catalog: &Catalog, economy: &Economy, views: &Work
             .work
             .employment
             .and_then(|w| state.entities.get(w))
-            .and_then(|w| catalog.get(w.definition).behaviors.production.as_ref()?.job_name.clone());
+            .and_then(|w| {
+                catalog
+                    .get(w.definition)
+                    .behaviors
+                    .production
+                    .as_ref()?
+                    .job_name
+                    .clone()
+            });
         out.label = if u.work.pending_move.is_some() {
             "Delivering before move".into()
         } else if u.release.is_some() {
@@ -406,9 +439,11 @@ pub fn private(state: &State, catalog: &Catalog, economy: &Economy, views: &Work
         out.upgrade = Some(u.clone());
     }
     if let Some(r) = &e.revival {
-        out.revival_progress = r.queue.first().zip(d.behaviors.revival.as_ref()).map(|(q, policy)| {
-            progress(q.progress, super::revival::terms(policy, q.level).1)
-        });
+        out.revival_progress = r
+            .queue
+            .first()
+            .zip(d.behaviors.revival.as_ref())
+            .map(|(q, policy)| progress(q.progress, super::revival::terms(policy, q.level).1));
         out.revival = Some(r.clone());
     }
     out
@@ -513,7 +548,12 @@ pub fn at_goal(terrain: &crate::terrain::Terrain, e: &Entity) -> bool {
     };
     let size = terrain.size();
     let (x, y, deck) = match terrain.surfaces().and_then(|s| s.node(goal)) {
-        Some(n) => (n.x as i32, n.y as i32, n.deck.map(|d| terrain.surfaces().expect("decks").deck(d).id.clone())),
+        Some(n) => (
+            n.x as i32,
+            n.y as i32,
+            n.deck
+                .map(|d| terrain.surfaces().expect("decks").deck(d).id.clone()),
+        ),
         None => ((goal % size) as i32, (goal / size) as i32, None),
     };
     e.surface == deck && e.position.x == x * 1000 && e.position.y == y * 1000

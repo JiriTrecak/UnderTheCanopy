@@ -22,8 +22,8 @@ pub trait Systems {
     fn max_hp(&self, catalog: &Catalog, entity: &Entity) -> u32;
 }
 
-/// The systems as built so far: orders (movement and work), no equipment, containment or
-/// fallen heroes yet, and maximum health straight from the definition.
+/// The systems as built so far: orders, lookouts and held units, fallen heroes and
+/// levelled health; no equipment yet (M2.6).
 pub struct Current;
 
 impl Systems for Current {
@@ -35,20 +35,19 @@ impl Systems for Current {
         None
     }
 
-    fn contained(&self, _: &Entity) -> bool {
-        false
+    fn contained(&self, entity: &Entity) -> bool {
+        entity
+            .unit
+            .as_ref()
+            .is_some_and(|u| u.contained.is_some() || u.release.is_some())
     }
 
-    fn fallen(&self, _: &Entity) -> bool {
-        false
+    fn fallen(&self, entity: &Entity) -> bool {
+        crate::heroes::fallen(entity)
     }
 
     fn max_hp(&self, catalog: &Catalog, entity: &Entity) -> u32 {
-        catalog
-            .get(entity.definition)
-            .body
-            .as_ref()
-            .map_or(0, |b| b.max_hp)
+        crate::stats::max_hp(catalog, entity)
     }
 }
 

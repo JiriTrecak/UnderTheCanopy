@@ -74,14 +74,14 @@ fn game() -> Value {
             "research": {},
             "lootPools": {},
             "armorCoefficient": 0.06,
-            "damageTypes": {"damage.plain": {"name": "Plain", "appliesArmor": true}},
+            "damageTypes": {"damage.plain": {"name": "Plain", "appliesArmor": true}, "spell": {"name": "Spell", "appliesArmor": false}},
             "heroStunDurationPermille": 500,
             "experience": {
                 "unitRewards": [1], "heroRewards": [1], "neutralLevelCap": 2,
                 "neutralMultipliersPermille": [500], "summonMultiplierPermille": 500,
                 "globalFallback": false, "soloHeroTierBonusPermille": [0],
             },
-            "damageMultipliers": {"damage.plain": {"armor.plain": 1000}},
+            "damageMultipliers": {"damage.plain": {"armor.plain": 1000}, "spell": {"armor.plain": 1000}},
             "startingSetup": {
                 "id": "setup.test", "fort": "building.hall", "inventory": {"item.amber": 10},
                 "units": [{"definition": "unit.settler", "offset": {"x": 0, "y": 4}}],

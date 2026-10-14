@@ -36,7 +36,7 @@ One function per system, called in a fixed order (from the old game, `Game.tick`
 4. Order advance → economy assignment.
 5. Garrisons → inventory → combat planning → separation → idle motion → movement.
 6. Cast orders (second pass) → item effects.
-7. Combat resolution (projectiles first), deaths.
+7. Combat resolution (sight sensors brought up to date after movement; shells, then missiles, then swings), deaths.
 8. Ability delivery → taunts.
 9. Revival → economy → inventory → upgrades → research.
 10. Mission script.
