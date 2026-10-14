@@ -29,15 +29,15 @@ use std::collections::BTreeMap;
 /// One known blocker's cells and what decided them.
 #[derive(Debug, Clone, PartialEq)]
 struct Record {
-    signature: (u16, i32, i32, i32, bool, u64),
+    signature: (u16, i32, i32, i32, bool),
     cells: Vec<u32>,
 }
 
 /// A known building or standing resource, as the blocker index needs it.
 pub struct Blocker {
     pub id: u32,
-    /// Definition, position (milli), rotation (millidegrees), building, scale bits.
-    pub signature: (u16, i32, i32, i32, bool, u64),
+    /// Definition, position (milli), rotation (millidegrees), building.
+    pub signature: (u16, i32, i32, i32, bool),
     pub cells: Vec<u32>,
 }
 
@@ -65,7 +65,7 @@ impl ObservedBlockers {
     }
 
     /// Whether a known blocker with this signature is recorded for `id`.
-    pub fn current(&self, id: u32, signature: &(u16, i32, i32, i32, bool, u64)) -> bool {
+    pub fn current(&self, id: u32, signature: &(u16, i32, i32, i32, bool)) -> bool {
         self.records
             .get(&id)
             .is_some_and(|r| &r.signature == signature)

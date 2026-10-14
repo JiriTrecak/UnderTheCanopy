@@ -84,8 +84,6 @@ pub struct Known<'a> {
     pub moving: bool,
     /// Inside a building or waiting to be released.
     pub contained: bool,
-    /// Appearance scale (resource collision discs).
-    pub scale: f64,
     /// The live entity: public data for others, everything for the player's own.
     live: Option<&'a Entity>,
 }
@@ -150,16 +148,8 @@ impl<'a> Frame<'a> {
         let knowledge = sight.knowledge(me);
         let cells = knowledge.map(|k| &k.cells);
         let deck = |name: Option<&String>| name.and_then(|n| geo.terrain.deck_id(n));
-        // Appearance is public: a resource's collision disc scales with it. The old
-        // observation boundary dropped it, so the AI saw every tree at full size
-        // (docs/decisions.md D26).
-        let scale = |e: Option<&Entity>| {
-            e.and_then(|e| e.placement.as_ref())
-                .and_then(|p| geo.scales.get(p))
-                .copied()
-                .unwrap_or(1.0)
-        };
         let mut live: Vec<Known<'a>> = Vec::new();
+        let span = tracing::trace_span!("ai frame actors").entered();
         for &id in input.senses().vision.actors() {
             let Some(e) = state.entities.get(id) else {
                 continue;
@@ -185,33 +175,30 @@ impl<'a> Frame<'a> {
                 unit: u.is_some(),
                 moving: u.is_some_and(|u| u.last_moved_tick.is_some_and(|t| t + 1 == state.tick)),
                 contained: u.is_some_and(|u| u.contained.is_some() || u.release.is_some()),
-                scale: scale(Some(e)),
                 live: Some(e),
             });
         }
+        drop(span);
+        let span = tracing::trace_span!("ai frame memory").entered();
         let mut all: Vec<Known<'a>> = Vec::with_capacity(live.len() + 64);
         let mut live = live.into_iter().peekable();
-        let remembered_known = |s: &'a crate::vision::Sighting, visible: bool| {
-            let e = state.entities.get(s.id);
-            Known {
-                id: s.id.0,
-                def: s.definition,
-                owner: s.owner,
-                p: Pt::of(s.position, deck(s.surface.as_ref())),
-                pos: s.position,
-                rotation: s.rotation,
-                hp: s.hp,
-                remembered: !visible,
-                hostile: visible.then_some(false),
-                construction: s.construction.is_some(),
-                resource: s.resource.as_ref(),
-                item: s.item.is_some(),
-                unit: false,
-                moving: false,
-                contained: false,
-                scale: scale(e),
-                live: None,
-            }
+        let remembered_known = |s: &'a crate::vision::Sighting, visible: bool| Known {
+            id: s.id.0,
+            def: s.definition,
+            owner: s.owner,
+            p: Pt::of(s.position, deck(s.surface.as_ref())),
+            pos: s.position,
+            rotation: s.rotation,
+            hp: s.hp,
+            remembered: !visible,
+            hostile: visible.then_some(false),
+            construction: s.construction.is_some(),
+            resource: s.resource.as_ref(),
+            item: s.item.is_some(),
+            unit: false,
+            moving: false,
+            contained: false,
+            live: None,
         };
         // Remembered structures stand in where nothing with their id is seen; known
         // scenery is live where in sight.
@@ -220,8 +207,16 @@ impl<'a> Frame<'a> {
             for s in k.structures.values() {
                 memory.push(remembered_known(s, false));
             }
+            // Scenery is never concealed: in sight when any of its fog nodes is.
+            let terrain = &*geo.terrain;
             for s in k.scenery.values() {
-                let visible = state.entities.get(s.id).is_some_and(|e| sight.seen(me, e));
+                let visible = state.entities.get(s.id).is_some_and(|e| {
+                    let mut seen = false;
+                    crate::vision::statics::Place::of(e).nodes(terrain, input.catalog, |n| {
+                        seen |= k.cells.get(n) == VISIBLE;
+                    });
+                    seen
+                });
                 memory.push(remembered_known(s, visible));
             }
             memory.sort_unstable_by_key(|k| k.id);
@@ -239,6 +234,7 @@ impl<'a> Frame<'a> {
                 _ => all.extend(memory.next()),
             }
         }
+        drop(span);
         let catalog = input.catalog;
         let def = |k: &Known| catalog.get(k.def);
         let mut own = Vec::new();
@@ -299,12 +295,14 @@ impl<'a> Frame<'a> {
                 .unwrap_or_default()
                 .rounded(),
         };
+        let span = tracing::trace_span!("ai frame colony").entered();
         let colony = crate::economy::view::colony(state, catalog, input.economy(), me);
         let bank = colony
             .goods
             .iter()
             .map(|g| (g.item.clone(), g.available))
             .collect();
+        drop(span);
         let fallen = state
             .entities
             .iter()
@@ -693,14 +691,7 @@ impl<'a> Frame<'a> {
                 continue;
             }
             present.push(k.id);
-            let signature = (
-                k.def.0,
-                k.pos.x,
-                k.pos.y,
-                k.rotation,
-                building,
-                k.scale.to_bits(),
-            );
+            let signature = (k.def.0, k.pos.x, k.pos.y, k.rotation, building);
             if blockers.current(k.id, &signature) {
                 continue;
             }
@@ -713,7 +704,19 @@ impl<'a> Frame<'a> {
             let cells: Vec<u32> = if building {
                 bounds.cells().filter_map(|(x, y)| in_map(x, y)).collect()
             } else {
-                let r = d.collision_radius.unwrap_or(0.0) * k.scale;
+                // Appearance is public: a resource's collision disc scales with it. The
+                // old observation boundary dropped it, so the AI saw every tree at full
+                // size (docs/decisions.md D26). A placement's scale never changes.
+                let scale = self
+                    .input
+                    .state
+                    .entities
+                    .get(crate::entity::EntityId(k.id))
+                    .and_then(|e| e.placement.as_ref())
+                    .and_then(|p| self.geo.scales.get(p))
+                    .copied()
+                    .unwrap_or(1.0);
+                let r = d.collision_radius.unwrap_or(0.0) * scale;
                 let (px, py) = (k.p.x, k.p.y);
                 let mut out = Vec::new();
                 let y0 = bounds.min_y.min((py - r).ceil() as i64);
