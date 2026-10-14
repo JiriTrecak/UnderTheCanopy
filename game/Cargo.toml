@@ -17,8 +17,12 @@ profile = ["dep:tracing-tracy"]
 
 [dependencies]
 anyhow.workspace = true
+canopy-assets = { path = "../crates/assets" }
+canopy-content = { path = "../crates/content" }
+canopy-render = { path = "../crates/render" }
+canopy-scene = { path = "../crates/scene" }
 directories.workspace = true
-pollster.workspace = true
+image.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 tracing-tracy = { workspace = true, optional = true }
@@ -45,6 +49,7 @@ resources = [
     { src = "../assets/authoring/catalogue.json", target = "data/assets/authoring/catalogue.json" },
     { src = "../assets/authoring/models.json", target = "data/assets/authoring/models.json" },
     { src = "../assets/maps", target = "data/assets/maps" },
+    { src = "../config", target = "data/config" },
     { src = "../target/cooked/canopy.pack", target = "data/canopy.pack" },
 ]
 

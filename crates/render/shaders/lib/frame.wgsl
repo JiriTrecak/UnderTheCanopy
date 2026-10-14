@@ -1,0 +1,53 @@
+// Per-frame values every pass sees (group 0). Mirrors `FrameUniform` in frame.rs.
+
+struct Frame {
+    view_proj: mat4x4f,
+    shadow_matrix: mat4x4f,
+    // xyz: camera position; w: seconds (wind, canopy drift)
+    eye: vec4f,
+    // width, height, 1/width, 1/height
+    viewport: vec4f,
+    // xyz towards the sun; w: shadows enabled (0/1)
+    sun_direction: vec4f,
+    // rgb: linear sun irradiance (after canopy clouds)
+    sun: vec4f,
+    ambient: vec4f,
+    sky: vec4f,
+    ground: vec4f,
+    probe_up: vec4f,
+    probe_side: vec4f,
+    probe_down: vec4f,
+    // environment radiance, order-2 spherical harmonics (y up), times its intensity
+    environment: array<vec4f, 9>,
+    // x: 1/scale, y: height, z: strength, w: enabled
+    canopy: vec4f,
+    // xy: drift offset in pattern units
+    canopy_offset: vec4f,
+    // x: 1/resolution, y: filter radius (texels), z: normal offset (world), w: depth bias
+    shadow: vec4f,
+    // rgb: background; w: unused
+    background: vec4f,
+    // rgb: haze colour; z/w unused; x of haze_range: start, y: end
+    haze: vec4f,
+    haze_range: vec4f,
+    // x: point light count
+    counts: vec4u,
+}
+
+struct PointLight {
+    // xyz position, w range
+    position: vec4f,
+    // rgb linear colour × intensity
+    color: vec4f,
+}
+
+@group(0) @binding(0) var<uniform> frame: Frame;
+@group(0) @binding(1) var shadow_map: texture_depth_2d;
+@group(0) @binding(2) var shadow_sampler: sampler_comparison;
+@group(0) @binding(3) var canopy_pattern: texture_2d<f32>;
+@group(0) @binding(4) var repeat_sampler: sampler;
+@group(0) @binding(5) var<storage, read> point_lights: array<PointLight>;
+
+fn time_seconds() -> f32 {
+    return frame.eye.w;
+}

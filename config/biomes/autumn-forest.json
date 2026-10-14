@@ -1,0 +1,115 @@
+{
+  "name": "Amberleaf Forest",
+  "daylight": "temperate",
+  "light": {
+    "sunTint": "#ffffff",
+    "sunStrength": 1,
+    "sunDirection": 0,
+    "sunHeight": 60,
+    "ambientTint": "#ffffff",
+    "ambientStrength": 1,
+    "skyTint": "#ffffff",
+    "bounceTint": "#ffffff",
+    "fillStrength": 1,
+    "shadowSoftness": 3
+  },
+  "canopy": {
+    "height": 140,
+    "scale": 280,
+    "coverage": 0.62,
+    "softness": 0.17,
+    "strength": 0.58,
+    "sway": 1.2,
+    "speed": 0.35,
+    "cloudShadow": 0.08,
+    "seed": 731
+  },
+  "grade": {
+    "exposure": 1.04,
+    "contrast": 1,
+    "saturation": 1.045,
+    "highlightShoulder": 0,
+    "shadowTint": "#ba8cc4",
+    "highlightTint": "#ffdfba",
+    "splitStrength": 0.76,
+    "shadowLift": 0.12,
+    "vignette": 0.18,
+    "daytimeLut": "assets/library/asset.texture.woodland-daytime-grades/data.json#day",
+    "daytimeLutStrength": 0
+  },
+  "bloom": {
+    "strength": 0.3,
+    "threshold": 1,
+    "knee": 0.3,
+    "radius": 4
+  },
+  "contact": {
+    "strength": 0.4,
+    "radius": 1.2,
+    "bias": 0.07
+  },
+  "atmosphere": {
+    "enabled": true,
+    "color": "#c4adc8",
+    "density": 0,
+    "shaftDensity": 0.0014,
+    "baseHeight": 1,
+    "heightFalloff": 18,
+    "sunStrength": 2.2,
+    "noiseScale": 0.05,
+    "noiseStrength": 0.8,
+    "driftSpeed": 0.35,
+    "sunTint": "#ffda9e"
+  },
+  "terrain": {
+    "soil": {
+      "albedo": "asset.terrain.woodland-soil",
+      "normal": "asset.terrain.woodland-soil-normal",
+      "tiling": 0.25,
+      "blend": -1
+    },
+    "grass": {
+      "albedo": "asset.terrain.autumn-leaf-litter",
+      "normal": "asset.terrain.autumn-leaf-normal",
+      "tiling": 0.6,
+      "blend": 0.7
+    },
+    "dirt": {
+      "albedo": "asset.terrain.woodland-dirt",
+      "normal": "asset.terrain.woodland-dirt-normal",
+      "tiling": 0.2,
+      "blend": 0.5
+    },
+    "waterbed": {
+      "albedo": "asset.terrain.woodland-riverbed",
+      "normal": "asset.terrain.woodland-riverbed-normal",
+      "tiling": 0.05,
+      "blend": -1
+    },
+    "stones": {
+      "albedo": "asset.terrain.pebble-trail",
+      "normal": "asset.terrain.pebble-normal",
+      "tiling": 0.4,
+      "blend": 0.25
+    },
+    "rock": {
+      "albedo": "asset.terrain.woodland-rock",
+      "normal": "asset.terrain.woodland-rock-normal",
+      "tiling": 0.16,
+      "blend": -1,
+      "edge": 1
+    }
+  },
+  "water": "water.clear-forest",
+  "surroundings": {
+    "floorTexture": "asset.terrain.woodland-grass",
+    "floorColor": "#667747",
+    "hazeColor": "#d7c3a2",
+    "hazeStart": 170,
+    "hazeEnd": 850
+  },
+  "groundCover": {
+    "radius": 2.6,
+    "strength": 0.8
+  }
+}

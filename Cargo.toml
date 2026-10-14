@@ -18,6 +18,7 @@ block_compression = { version = "0.10", default-features = false, features = ["b
 bytemuck = { version = "1", features = ["derive", "extern_crate_alloc"] }
 directories = "6"
 flate2 = "1"
+glam = { version = "0.30", features = ["bytemuck"] }
 gltf = { version = "1.4", default-features = false, features = ["utils", "names", "extras", "KHR_materials_specular", "KHR_materials_unlit", "KHR_materials_emissive_strength", "KHR_texture_transform"] }
 hound = "3"
 intel_tex_2 = "0.5"

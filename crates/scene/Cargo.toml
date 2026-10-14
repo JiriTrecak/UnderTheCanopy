@@ -1,0 +1,25 @@
+[package]
+name = "canopy-scene"
+description = "The bridge from simulation and maps to the renderer's world description"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+canopy-assets = { path = "../assets" }
+canopy-content = { path = "../content" }
+canopy-render = { path = "../render" }
+canopy-sim = { path = "../sim" }
+glam.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+canopy-content = { path = "../content", features = ["testing"] }
+
+[lints]
+workspace = true

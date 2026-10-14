@@ -341,8 +341,12 @@ name = "canopy"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "canopy-assets",
+ "canopy-content",
+ "canopy-render",
+ "canopy-scene",
  "directories",
- "pollster",
+ "image",
  "tracing",
  "tracing-subscriber",
  "tracing-tracy",
@@ -411,6 +415,39 @@ dependencies = [
  "serde_json",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "canopy-render"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bytemuck",
+ "canopy-assets",
+ "glam 0.30.10",
+ "image",
+ "naga",
+ "pollster",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tracing",
+ "wgpu",
+]
+
+[[package]]
+name = "canopy-scene"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "canopy-assets",
+ "canopy-content",
+ "canopy-render",
+ "canopy-sim",
+ "glam 0.30.10",
+ "serde",
+ "serde_json",
+ "tracing",
 ]
 
 [[package]]
@@ -1017,6 +1054,15 @@ dependencies = [
 
 [[package]]
 name = "glam"
+version = "0.30.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "19fc433e8437a212d1b6f1e68c7824af3aed907da60afa994e7f542d18d12aa9"
+dependencies = [
+ "bytemuck",
+]
+
+[[package]]
+name = "glam"
 version = "0.33.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37bfe73dc8ec21f54d181e5a60554327ec3f1c600c455a75ccbfc65d2106a6c4"
@@ -1428,7 +1474,7 @@ checksum = "aae7115ef1161313b8f71f49487702a662ab333bd2a47bf69af410b69112a519"
 dependencies = [
  "atomic-arena",
  "cpal",
- "glam",
+ "glam 0.33.12",
  "mint",
  "pastey",
  "rtrb",

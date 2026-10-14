@@ -195,3 +195,78 @@ Decided 2026-10-14 (D24): every recommendation in **bold** is accepted.
 ## 8. Delivery plan
 
 Superseded by [the plan](plan.md): the renderer is milestone M3, after the Rust simulation (M2), so there is no snapshot recorder for the old game and no TypeScript bridge. Each step is still measured on the reference machine (base M1) with fixed scenes, and reference screenshots from the old game are captured before work starts.
+
+## 9. Implementation status (M3.2)
+
+What exists, in `crates/render` (`canopy-render`), `crates/scene` (`canopy-scene`), `config/` and `game/`:
+
+- **Device** (`device.rs`): WebGPU default limits; optional WebGPU features `texture-compression-bc` (D26, CPU decode without it) and `timestamp-query` (pass timings, none without it). Nothing native-only.
+- **Frame graph** (`graph.rs`): ordered passes with named inputs and outputs, checked when built (no read before write, no dead writes, one output); the renderer records exactly that list, with a tracing span and a GPU timestamp pair per pass.
+
+  | Pass | Kind | Reads | Writes |
+  |---|---|---|---|
+  | `cull` | compute | — | visible statics (camera and sun lists, indirect counts) |
+  | `shadow` | render | visible statics | sun shadow map (2048², depth) |
+  | `forward` | render, MSAA 4× HDR | visible statics, shadow map | scene colour (resolved in the pass), depth |
+  | `post` | render | scene colour | output (surface or capture) |
+
+  MSAA colour and depth are transient attachments (memoryless on Apple GPUs), cleared and discarded inside the forward pass. No depth prepass: with MSAA resolving in tile memory it would double vertex work for no fragment saving on these scenes.
+- **Shared WGSL library** (`shaders/lib/`, `shader.rs`): `frame` (group 0: frame uniform, shadow map, canopy pattern, samplers, point lights), `lighting` (`surface_light`), `team`, `wind`, `dither`, `packing`, `color`. A shader is library modules followed by its own source; every shader is validated by naga in the tests.
+- **One lighting model** (`lighting.wgsl`). `surface_light` with two ambient models: *standard* (units, buildings, props, foliage: Lambert + GGX sun, flat ambient + sky/ground hemisphere over π, environment irradiance from 9 SH coefficients, split-sum reflections) and *ground* (terrain: the old ground lighting, energy-conserving GGX, ambient tinted by the ground probe). Both take the 8-tap rotated Vogel PCF sun shadow and the canopy shade. Painted materials drop specular; foliage wraps light (`backside`). Point lights come from a buffer with a count; light count never changes pipelines.
+- **Post** (`post.wgsl`): resolve → display encoding → the one tone mapper → baked grade volume → vignette. The tone mapper is the old hue-preserving highlight shoulder; every current biome has knee 0, so values clip at 1 exactly as today's outdoor frames (D24: today's look first). The grade volume (32³) is baked on the CPU from the biome finish and, when a biome asks for it, the pack's daytime lookup.
+- **Terrain** (`terrain/`): one vertex per unit over map and halo, 32-cell chunks with 4 geometric mip levels chosen by projected height error (≤ 1 px), heights pulled from a texture, edges stitched to coarser neighbours in the vertex shader (no cracks), frustum-culled on the CPU (≤ 1089 chunks on a 1024 map); one draw per level. Layers (old `authoredTerrain`): six built-in biome layers, the map's atlas grounds (corner tiles per texture cell, full-tile variants) and biplanar cliffs; each one-unit cell lists at most 4 layers starting from the lowest that covers it completely (Q7). Masks, atlas codes and layer lists are computed once at load (`canopy-scene` + `terrain::select_layers`). Tile textures are 2D arrays of the packed runtime tiles. Bridge decks need nothing special: terrain under them renders as everywhere (the deck is a model).
+- **Placeholder water**: flat quads over wet cells at the water level, tinted by the water column with the biome's water profile colours (no waves, reflections, ripples).
+- **Surroundings floor**: the old three-row floor around the map with the biome floor texture and haze.
+- **Statics** (`statics.rs`): every scenery object, standing tree, deposit and building in one instance buffer; a compute pass culls them against the camera and the sun and builds per-model visible lists and indirect counts; one indirect draw per model section (+ depth-stream and alpha-tested shadow draws). Without `indirect-first-instance` each list is reached through a dynamic storage offset. Foliage is alpha-tested with alpha-to-coverage under MSAA and sways (old "source" trunk sway + leaf flutter, same in the shadow pass). Team colour is the old masked formula; owner colours come from `config/players.json`. Data-driven deposit glow (`config/glow.json`). Static poses only.
+- **Camera** (`camera.rs`): the old play camera as a pure controller (see "Reference captures"); `game/` adds input: arrow keys and edge scrolling (28 units/s), wheel and PageUp/PageDown zoom with the old momentum, middle-drag grab pan; as a spectator also Q/E to turn and zoom out to 6×.
+- **Configuration** (`config/`, D30): `lighting.json` (daylight palettes, phases, probes, shadow fitting), `biomes/<id>.json` (light, canopy, grade, built-in ground layers, water profile, surroundings, ground cover; bloom, contact shadows and atmosphere carried but not rendered yet), `players.json`, `glow.json`.
+
+### Not yet (later M3 steps)
+
+Units and skinned animation, felled trees, construction scaffolds, effects, fog of war, world UI, the real water (waves, ripples, shore), forest-surroundings trunks and leaf canopy, contact shadows (old screen-space AO, strength 0.4), bloom and volumetric atmosphere (deep and amberleaf forests), terrain displacement (no shipped map uses rock coverage), ground decals (none shipped), render scale, egui tuning, hot reload of `config/`.
+
+## 10. Reference captures
+
+`just shot --map <id> --camera <x,z,zoom[,yaw]> --out <png> [--size 1920x1080] [--hour 12] [--time 12] [--frames n] [--no-shadows]` renders one view offscreen (no window) and writes a PNG, printing draws, terrain triangles, memory, CPU recording time and GPU time per pass (from `--frames` frames).
+
+### Camera parameters
+
+They are the old game's play camera (`src/render/camera/camera.ts`):
+
+| Parameter | Meaning | Old game |
+|---|---|---|
+| `x`, `z` | focus on the ground, in cells (world units; +x east, +z south) | `camera.lookAt(x, z)` |
+| `zoom` | eye distance / 116.591 (zoom 1 shows 128 units across at 16:9) | `gameZoom`, `pose({gameZoom})` |
+| `yaw` | degrees, 0 looks north (eye due south of the focus) | `yaw` (play keeps 0) |
+| pitch | fixed 56° below the horizon | `GAME_PITCH` |
+| field of view | 34.318° vertical at 16:9, widened for narrower windows | `GAME_FOV` |
+| near / far | 1 / 2 · distance + 32 | `applyTo` |
+
+The rig follows the ground at the focus and keeps 4 units above the ground under the eye and 12 above water, and the view's ground footprint is kept inside the map (`[0, size − 1]` on the plane `min(0, water level)`), shrinking the distance when needed — both exactly as the old camera, so the same pose frames the same ground. Players use zoom 0.515–1.25; a spectator may go to 6 (the map fit still applies).
+
+### Reproducing a view in the old game
+
+1. In the old repository: `npm run dev` (Vite on `http://127.0.0.1:5173`).
+2. Open the reference stage with the same pose and hour, at a 16:9 window (1920×1080 CSS px, any device pixel ratio):
+
+   `http://127.0.0.1:5173/reference-stage.html?map=<id>&x=<x>&z=<z>&zoom=<zoom>&yaw=<yaw>&pitch=56&hour=12`
+
+   Pass `yaw` and `pitch=56` explicitly: the stage defaults to yaw −45°, pitch 45°. It accepts zoom 0.5–2 and then applies the game's 0.515–1.25 clamp. It draws the map's authored entities (units included) with no simulation, fog or UI. Wait for `document.body.dataset.ready === "true"`.
+3. Click **Save scene PNG**: it renders 1920×1080 offscreen at animation time 12 s, like `just shot`'s defaults (`--size 1920x1080 --time 12`).
+
+Live match alternative: `http://127.0.0.1:5173/?map=<id>` starts at the first player's start at zoom 1; `utcPerformance.match.lookAt(x, z, distance)` in the console moves the camera (distance = zoom × 116.591), `utcPerformance.match.onReveal(true)` lifts the fog, Ctrl+Shift+H hides the HUD. The match runs its day cycle from 9.5 h, so use the reference stage for lighting comparisons.
+
+### Captures
+
+`target/shots/` holds both shipped maps from three views, with the old game's captures of the same poses in `target/shots/old/` and side by side (old left) in `target/shots/compare/`:
+
+| File | Map | `--camera` |
+|---|---|---|
+| `echo-isles-a.png` | echo-isles | `117.5,225.5,1` (player 1 start) |
+| `echo-isles-b.png` | echo-isles | `320,320,1.25` (centre, farthest player zoom) |
+| `echo-isles-c.png` | echo-isles | `501.5,225.5,1,45` (player 2 start, turned 45°) |
+| `turtle-rock-a.png` | turtle-rock | `529.5,401.5,1` |
+| `turtle-rock-b.png` | turtle-rock | `320,320,1.25` |
+| `turtle-rock-c.png` | turtle-rock | `113.5,257.5,1,30` |
+
+Mean colours of matching regions agree within 1–3 of 255 on open ground, forest and dirt (for example 64,131,55 on echo-isles grass in both; whole frames within 4). Visible differences: units (next step), the placeholder water (the old water is lighter and textured), the old contact shadows and softer VSM shadow edges, slightly brighter old deposit crystals.

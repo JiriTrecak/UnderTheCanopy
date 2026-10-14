@@ -11,6 +11,10 @@ default:
 play *args: cook
     cargo run -p canopy -- --data "{{justfile_directory()}}" {{args}}
 
+# Render one view offscreen to a PNG: `just shot --map <id> --camera <x,z,zoom[,yaw]> --out <png>` (see docs/renderer.md, "Reference captures")
+shot *args: cook
+    cargo run -q --release -p canopy -- shot --data "{{justfile_directory()}}" {{args}}
+
 # Run an optimised build with Tracy profiling (connect the Tracy app)
 profile *args: cook
     cargo run -p canopy --profile profiling --features profile -- --data "{{justfile_directory()}}" --no-vsync {{args}}
