@@ -37,3 +37,9 @@ parity old="../Settlers 3 Web":
     mkdir -p target/parity
     cd "{{old}}" && node_modules/.bin/tsx "{{justfile_directory()}}/tools/parity/dump-ts.mts" "$PWD" "{{justfile_directory()}}/target/parity/content.json"
     cargo run -q -p canopy-content --example parity -- "{{old}}" target/parity/content.json
+
+# Compare the Rust map reader with the old TypeScript parser on every map in the old repository
+parity-maps old="../Settlers 3 Web":
+    mkdir -p target/parity
+    cd "{{old}}" && node_modules/.bin/tsx "{{justfile_directory()}}/tools/parity/maps-ts.mts" "$PWD" "{{justfile_directory()}}/target/parity/maps.json"
+    cargo run -q --release -p canopy-content --example map_parity -- "{{old}}" target/parity/maps.json
