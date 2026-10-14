@@ -19,6 +19,7 @@ UnderTheCanopy/
 ├─ content/            gameplay data (mirrored, see below)
 ├─ assets/             published asset outputs, registry, manifest and maps (mirrored)
 ├─ art/                editable masters and exported outputs, Git LFS (mirrored)
+├─ config/             presentation settings owned here: lighting, biomes, player colours (D27)
 ├─ docs/               plan, decisions, design; reference/ describes the old game
 └─ tools/              repository scripts
 ```
@@ -41,6 +42,8 @@ Phase 2 adds `editors/{map,assets,spells,shared}` (one Tauri app each) and possi
 | `assets/manifest.json`, `assets/authoring/` | runtime manifest, publication registry, model and catalogue indexes | old repository, mirrored |
 | `assets/maps/` | `.utcmap` maps and their previews | old repository, mirrored |
 | `art/` | masters (`.blend`, source images) and exported outputs per asset | old repository, mirrored |
+
+`config/` is not mirrored: it is this repository's own data (lighting, biome looks, player colours; D27), read at start and shipped in packages.
 
 `just sync-data` copies exactly the files the old repository tracks (minus the Warcraft importer settings) and removes ones it no longer tracks; review the result with `git status`. `just cook` turns `assets/` into the runtime pack `target/cooked/canopy.pack` ([D26](decisions.md)); cooked output is never committed.
 
