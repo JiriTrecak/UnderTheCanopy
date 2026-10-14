@@ -10,7 +10,9 @@
 //!
 //! `--map` shows a match's start, `--spectate` plays it (computer players on every start,
 //! or the first `--players`); `--tick` fast-forwards the match first. A shot's `battle`
-//! camera looks at the largest fight of that tick.
+//! camera looks at the largest fight of that tick. `--crowd <n>` replaces the match by a
+//! measured battle of eight players with `n` soldiers each; `--colors i,j,…` gives slot
+//! `k` the `k`-th listed player colour (to review every colour).
 
 use anyhow::{Context, Result, bail};
 use std::path::PathBuf;
@@ -97,6 +99,10 @@ pub struct Options {
     pub players: Option<usize>,
     /// Simulate to this tick before showing anything.
     pub tick: u32,
+    /// A measured battle: this many soldiers for each of eight players.
+    pub crowd: Option<u32>,
+    /// Player colour index of each slot (`config/players.json`).
+    pub colors: Option<Vec<usize>>,
     pub camera: Option<CameraChoice>,
     /// Hour of the day; the map's own when absent.
     pub hour: Option<f32>,
@@ -117,6 +123,8 @@ impl Options {
             spectate: false,
             players: None,
             tick: 0,
+            crowd: None,
+            colors: None,
             camera: None,
             hour: None,
             time: 12.0,
@@ -148,6 +156,16 @@ impl Options {
                     options.players = Some(n);
                 }
                 "--tick" => options.tick = value("--tick")?.parse().context("--tick")?,
+                "--crowd" => options.crowd = Some(value("--crowd")?.parse().context("--crowd")?),
+                "--colors" => {
+                    let text = value("--colors")?;
+                    let colors = text
+                        .split(',')
+                        .map(|c| c.trim().parse::<usize>())
+                        .collect::<Result<_, _>>()
+                        .context("--colors i,j,…: player colour indices")?;
+                    options.colors = Some(colors);
+                }
                 "--camera" => options.camera = Some(CameraChoice::parse(&value("--camera")?)?),
                 "--hour" => options.hour = Some(value("--hour")?.parse().context("--hour")?),
                 "--time" => options.time = value("--time")?.parse().context("--time")?,
@@ -160,7 +178,7 @@ impl Options {
                     size = [w.parse().context("--size")?, h.parse().context("--size")?];
                 }
                 other => bail!(
-                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --tick, --camera, --hour; shot: --out, --size, --time, --frames, --no-shadows)"
+                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --tick, --crowd, --colors, --camera, --hour; shot: --out, --size, --time, --frames, --no-shadows)"
                 ),
             }
             first = false;

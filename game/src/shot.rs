@@ -26,6 +26,8 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
             map,
             hour: options.hour,
             players: options.players,
+            crowd: options.crowd,
+            colors: options.colors.clone(),
         },
     )?;
 

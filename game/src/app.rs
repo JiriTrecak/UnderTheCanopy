@@ -52,6 +52,7 @@ struct Stats {
     cpu_max: f32,
     dt_ms: f32,
     dt_max: f32,
+    live_ms: f32,
     held: u32,
 }
 
@@ -111,6 +112,8 @@ impl App {
                         map,
                         hour: self.options.hour,
                         players: self.options.players,
+                        crowd: self.options.crowd,
+                        colors: self.options.colors.clone(),
                     },
                 )?;
                 let environment = loaded.0.environment.clone();
@@ -237,6 +240,7 @@ impl App {
         session.renderer.resize(&session.display.gpu, size);
         let aspect = size[0] as f32 / size[1].max(1) as f32;
         if let (Some(sim), Some(loaded)) = (&session.sim, &session.loaded) {
+            let started = Instant::now();
             session.live.poll(sim.mailbox());
             session.live.frame(
                 &mut session.renderer,
@@ -244,6 +248,7 @@ impl App {
                 &loaded.pack,
                 now,
             );
+            self.stats.live_ms += started.elapsed().as_secs_f32() * 1000.0;
         }
         let camera_view = match (&mut session.camera, &session.loaded) {
             (Some(camera), Some(loaded)) => view::frame(camera, aspect, &loaded.scene),
@@ -270,6 +275,7 @@ impl App {
                 fps = (1000.0 * frames / st.dt_ms.max(1.0)).round(),
                 frame_max_ms = st.dt_max.round(),
                 cpu_ms = st.cpu_ms / frames,
+                live_ms = st.live_ms / frames,
                 cpu_max_ms = st.cpu_max,
                 gpu_ms = gpu,
                 draws = report.draws,

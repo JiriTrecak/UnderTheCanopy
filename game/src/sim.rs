@@ -290,6 +290,11 @@ impl Drop for SimThread {
 }
 
 #[cfg(test)]
+#[path = "../../crates/sim/tests/ai_fixture/mod.rs"]
+#[allow(clippy::all)]
+mod ai_fixture;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -378,5 +383,62 @@ mod tests {
         assert!((at(250) - 109.0).abs() < 1e-9);
         assert!((at(262) - 109.48).abs() < 1e-9);
         assert_eq!(at(0), 99.0);
+    }
+
+    /// A headless AI-versus-AI match on test-owned content runs on the simulation thread
+    /// at full speed and every published tick is presented in order.
+    #[test]
+    fn a_spectated_ai_match_runs_and_presents_every_tick() {
+        use canopy_scene::live::Setup;
+        let map = super::ai_fixture::skirmish(vec![], vec![]);
+        let setup = super::ai_fixture::setup(true);
+        let session = Session::local(setup.clone(), None);
+        let world = World::new(super::ai_fixture::content(), &map, setup).unwrap();
+        let units = world.state().entities.len();
+        let presenter = Presenter::new(
+            &world,
+            &map,
+            None,
+            Setup {
+                colors: vec![[1.0, 0.0, 0.0], [0.0, 0.0, 1.0]],
+                tree_slots: Default::default(),
+                statics: 0,
+            },
+        );
+        let thread = SimThread::spawn(world, session, presenter, Duration::ZERO, 100);
+        let started = Instant::now();
+        let mut seen: Vec<u32> = Vec::new();
+        let mut out = Vec::new();
+        while seen.last().is_none_or(|&t| t < 400) {
+            assert!(
+                started.elapsed() < Duration::from_secs(120),
+                "stalled at {seen:?}"
+            );
+            assert!(!thread.finished(), "the simulation thread stopped");
+            if thread.mailbox().take(&mut out) {
+                for s in &out {
+                    if seen.last().is_none_or(|&t| s.tick() > t) {
+                        seen.push(s.tick());
+                        assert_eq!(s.presentation.tick, s.tick());
+                        assert!(!s.presentation.actors.is_empty());
+                        assert!(
+                            s.presentation
+                                .actors
+                                .windows(2)
+                                .all(|w| w[0].key < w[1].key)
+                        );
+                    }
+                }
+            }
+            std::thread::sleep(Duration::from_millis(1));
+        }
+        // Fast-forwarded to tick 100, then every tick in order (the reader may miss some
+        // between polls, but never sees one out of order).
+        assert!((100..110).contains(&seen[0]), "{seen:?}");
+        assert!(seen.windows(2).all(|w| w[0] < w[1]));
+        let newest = thread.mailbox().latest().unwrap();
+        assert!(newest >= 400);
+        assert!(units > 0);
+        drop(thread);
     }
 }
