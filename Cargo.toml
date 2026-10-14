@@ -14,7 +14,10 @@ anyhow = "1"
 blake3 = "1"
 block_compression = { version = "0.10", default-features = false, features = ["bc7"] }
 bytemuck = { version = "1", features = ["derive", "extern_crate_alloc"] }
+# UI text: shaping, layout and rasterising (swash); no fontconfig, fonts are passed in.
+cosmic-text = { version = "0.19", default-features = false, features = ["std", "swash"] }
 directories = "6"
+etagere = "0.3"
 flate2 = "1"
 gltf = { version = "1.4", default-features = false, features = ["utils", "names", "extras", "KHR_materials_specular", "KHR_materials_unlit", "KHR_materials_emissive_strength", "KHR_texture_transform"] }
 hound = "3"
@@ -30,6 +33,8 @@ serde_json = "1"
 serde_path_to_error = "0.1"
 serde_with = "3"
 sha2 = "0.11"
+# UI layout (flexbox and grid); `parse` reads CSS values from the layout files.
+taffy = { version = "0.15", features = ["parse"] }
 thiserror = "2"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }

@@ -1,0 +1,39 @@
+[package]
+name = "canopy-ui"
+description = "Game HUD and menu toolkit: data-driven layouts, taffy layout, cosmic-text, one batched quad draw list"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[features]
+# The reference wgpu pass (`canopy_ui::gpu`) that draws a frame's draw list.
+wgpu = ["dep:wgpu", "dep:pollster"]
+# Translation of winit window events into UI input (`canopy_ui::winit`).
+winit = ["dep:winit"]
+
+[dependencies]
+bytemuck.workspace = true
+cosmic-text.workspace = true
+etagere.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_path_to_error.workspace = true
+taffy.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+pollster = { workspace = true, optional = true }
+wgpu = { workspace = true, optional = true }
+winit = { workspace = true, optional = true }
+
+[dev-dependencies]
+canopy-ui = { path = ".", features = ["wgpu", "winit"] }
+image.workspace = true
+
+[[example]]
+name = "gallery"
+required-features = ["wgpu"]
+
+[lints]
+workspace = true
