@@ -1,0 +1,19 @@
+[package]
+name = "canopy-assets"
+description = "Runtime asset pack: format, loader and typed zero-copy views"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+block_compression.workspace = true
+bytemuck.workspace = true
+postcard.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[lints]
+workspace = true

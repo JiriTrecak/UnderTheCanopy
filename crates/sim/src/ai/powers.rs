@@ -8,7 +8,7 @@
 //! the earlier operations left them; the old scorer did that only for operations with a
 //! query and chose everyone else from the units as they were when the cast began, so a
 //! later operation was judged against a world the earlier ones had already changed
-//! (docs/decisions.md D26).
+//! (docs/decisions.md D27).
 
 use super::{
     Beat,

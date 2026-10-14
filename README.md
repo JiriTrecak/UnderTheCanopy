@@ -3,7 +3,8 @@
 A real-time strategy game on the forest floor, in Rust.
 
 ```bash
-just play       # run the game
+just play       # run the game (cooks assets first)
+just cook       # cook assets into target/cooked/canopy.pack
 just check      # format, lint, test
 just package    # build the .app (macOS) or installer (Windows)
 ```

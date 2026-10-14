@@ -1081,7 +1081,7 @@ fn harvesting(p: &mut Planner, workers: &[&Known]) {
         |r: &Known| workforce(r).is_none_or(|(workers, recommended)| workers < recommended);
     let hostile_near = |r: &Known, d: f64| f.hostiles.iter().any(|&h| dist(f.at(h).p, r.p) < d);
     // Gathering needs the resource in sight; the old AI also chose remembered ones, which
-    // the simulation refuses, wasting the decision (docs/decisions.md D26).
+    // the simulation refuses, wasting the decision (docs/decisions.md D27).
     let orderable = |r: &Known| !r.remembered;
     for w in workers {
         let Some(target) = gathering_target(w) else {
@@ -1263,7 +1263,7 @@ fn harvesting(p: &mut Planner, workers: &[&Known]) {
 
 /// Workers assigned to each seen harvest building against its recommendation (the
 /// public `gathering` of a view). The old observation boundary dropped it for neutral
-/// deposits, so the AI never respected the recommendation (docs/decisions.md D26).
+/// deposits, so the AI never respected the recommendation (docs/decisions.md D27).
 fn gathering<'a>(f: &'a super::frame::Frame) -> impl Fn(&Known) -> Option<(u32, u32)> + 'a {
     let state = f.input.state;
     let catalog = f.catalog();

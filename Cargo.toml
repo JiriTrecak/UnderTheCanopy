@@ -11,10 +11,20 @@ publish = false
 
 [workspace.dependencies]
 anyhow = "1"
+blake3 = "1"
+block_compression = { version = "0.10", default-features = false, features = ["bc7"] }
+bytemuck = { version = "1", features = ["derive", "extern_crate_alloc"] }
 directories = "6"
+flate2 = "1"
+gltf = { version = "1.4", default-features = false, features = ["utils", "names", "extras", "KHR_materials_specular", "KHR_materials_unlit", "KHR_materials_emissive_strength", "KHR_texture_transform"] }
+hound = "3"
+intel_tex_2 = "0.5"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
 libm = "0.2"
 mlua = { version = "0.12", features = ["lua54", "vendored"] }
 pollster = "1"
+postcard = { version = "1", default-features = false, features = ["use-std"] }
+rayon = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_path_to_error = "0.1"
@@ -35,6 +45,10 @@ all = { level = "warn", priority = -1 }
 
 [profile.dev.package."*"]
 # Dependencies (wgpu, naga, winit) are slow when unoptimised; our own code stays debuggable.
+opt-level = 2
+
+[profile.dev.package.canopy-cook]
+# The cooker's own loops (mips, quantisation, baking) run over hundreds of megapixels.
 opt-level = 2
 
 [profile.release]

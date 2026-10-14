@@ -706,7 +706,7 @@ impl<'a> Frame<'a> {
             } else {
                 // Appearance is public: a resource's collision disc scales with it. The
                 // old observation boundary dropped it, so the AI saw every tree at full
-                // size (docs/decisions.md D26). A placement's scale never changes.
+                // size (docs/decisions.md D27). A placement's scale never changes.
                 let scale = self
                     .input
                     .state

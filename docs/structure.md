@@ -3,7 +3,7 @@
 ```
 UnderTheCanopy/
 ├─ Cargo.toml          Rust workspace
-├─ justfile            every command: just play | profile | check | test | package | sync-data
+├─ justfile            every command: just play | profile | cook | check | test | package | sync-data
 ├─ AGENTS.md           rules for anyone changing this repository
 ├─ crates/             libraries, named canopy-*; added when a milestone needs them
 │  ├─ content/         data model, loading, validation (M1)
@@ -42,7 +42,7 @@ Phase 2 adds `editors/{map,assets,spells,shared}` (one Tauri app each) and possi
 | `assets/maps/` | `.utcmap` maps and their previews | old repository, mirrored |
 | `art/` | masters (`.blend`, source images) and exported outputs per asset | old repository, mirrored |
 
-`just sync-data` copies exactly the files the old repository tracks (minus the Warcraft importer settings) and removes ones it no longer tracks; review the result with `git status`. Cooked output goes to `target/` and is never committed.
+`just sync-data` copies exactly the files the old repository tracks (minus the Warcraft importer settings) and removes ones it no longer tracks; review the result with `git status`. `just cook` turns `assets/` into the runtime pack `target/cooked/canopy.pack` ([D26](decisions.md)); cooked output is never committed.
 
 ## Tests
 

@@ -8,7 +8,7 @@ Design of `canopy-sim` (milestone M2). Behaviour comes from the old game ([surve
 - `World::new(content, map, setup)` → `world.tick(commands)` → `world.view(owner)` / `world.hash()` / `world.save()`.
 - Input is the frozen protocol's `Action` (same JSON shape as the TypeScript `actionSchema`, so `canopy-net` sends it unchanged), stamped with `(tick, player, seq)`.
 - Output is a per-owner `View`: everything the renderer and HUD may know, already fog-filtered, plus the events of the tick. The renderer never reads simulation state directly.
-- AI players run inside the simulation on every peer, deterministically, from their own player's knowledge (the entities its view lists, read through `Sight` without building a `View`); their commands are ordinary `Action`s queued for the next tick (`ai`, D26).
+- AI players run inside the simulation on every peer, deterministically, from their own player's knowledge (the entities its view lists, read through `Sight` without building a `View`); their commands are ordinary `Action`s queued for the next tick (`ai`, D27).
 
 ## Numbers
 

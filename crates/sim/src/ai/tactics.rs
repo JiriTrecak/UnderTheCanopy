@@ -304,7 +304,7 @@ pub fn reactions(b: &mut Beat) {
         let target_combat = combat_of(target).expect("combat");
         // Limited archer spacing: only after a shot and only when a melee threat is close.
         // The old check compared the remaining cooldown with the match tick, so it never
-        // held after the first seconds (docs/decisions.md D26).
+        // held after the first seconds (docs/decisions.md D27).
         let reloading = f.own_unit(soldier).is_some_and(|u| u.combat.cooldown > 0);
         if combat.projectile.is_some()
             && reloading
