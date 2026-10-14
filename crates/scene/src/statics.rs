@@ -18,7 +18,7 @@ use canopy_content::{
     map::{Stamp, UtcMap},
     placement::{Owner, Placement},
 };
-use canopy_render::statics::StaticInstance;
+use canopy_render::{frame::PointLight, statics::StaticInstance};
 use canopy_sim::{entity::Milli, terrain::HeightField, world::World};
 use glam::{EulerRot, Mat4, Quat, Vec3};
 use std::collections::BTreeMap;
@@ -78,8 +78,22 @@ pub fn standing_transform(
     )
 }
 
-/// Pack entry of a scenery prototype's model.
-pub type SceneryModels = BTreeMap<String, String>;
+/// Scenery prototypes by id: model entry and light.
+pub type SceneryModels = BTreeMap<String, canopy_assets::SceneryPrototype>;
+
+/// A prototype's light placed with its instance (old `sceneryLights`: the light offset
+/// turns and scales with the stamp).
+pub fn placed_light(light: &canopy_assets::PointLight, transform: &Mat4) -> PointLight {
+    let scale = transform.x_axis.truncate().length();
+    PointLight {
+        position: transform
+            .transform_point3(Vec3::from_array(light.position))
+            .to_array(),
+        range: light.range * scale,
+        color: (Vec3::from_array(light.color) * light.intensity).to_array(),
+        pad: 0.0,
+    }
+}
 
 /// Every static instance of a freshly started match. `colors` are the player colours
 /// (linear), indexed by player slot.
@@ -89,9 +103,10 @@ pub fn build(
     map: &UtcMap,
     scenery: &SceneryModels,
     colors: &[[f32; 3]],
-) -> (Vec<StaticInstance>, Vec<String>) {
+) -> (Vec<StaticInstance>, Vec<PointLight>, Vec<String>) {
     let _span = tracing::info_span!("scene_statics").entered();
     let mut out = Vec::new();
+    let mut lights = Vec::new();
     let mut missing = Vec::new();
     let terrain = world.terrain();
     let field: &HeightField = terrain.field();
@@ -101,11 +116,18 @@ pub fn build(
         .collect();
     for stamp in &terrain.scene().stamps {
         match scenery.get(&stamp.asset) {
-            Some(model) => out.push(StaticInstance {
-                model: model.clone(),
-                transform: stamp_transform(stamp, ground, decks.get(stamp.asset.as_str()).copied()),
-                owner_color: None,
-            }),
+            Some(prototype) => {
+                let transform =
+                    stamp_transform(stamp, ground, decks.get(stamp.asset.as_str()).copied());
+                if let Some(light) = &prototype.light {
+                    lights.push(placed_light(light, &transform));
+                }
+                out.push(StaticInstance {
+                    model: prototype.model.clone(),
+                    transform,
+                    owner_color: None,
+                });
+            }
             None => missing.push(format!("scenery {}", stamp.asset)),
         }
     }
@@ -167,8 +189,8 @@ pub fn build(
                 continue;
             }
             match scenery.get(scenery_id) {
-                Some(model) => out.push(StaticInstance {
-                    model: model.clone(),
+                Some(prototype) => out.push(StaticInstance {
+                    model: prototype.model.clone(),
                     transform: standing_transform(
                         entity.position,
                         degrees,
@@ -193,7 +215,7 @@ pub fn build(
             owner_color,
         });
     }
-    (out, missing)
+    (out, lights, missing)
 }
 
 #[cfg(test)]

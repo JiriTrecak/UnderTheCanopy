@@ -1,5 +1,6 @@
 //! Renders a tiny test-owned world offscreen and checks the picture's basic invariants.
-//! Skipped (passes) on machines without a GPU adapter.
+//! Skipped (passes) on machines without a GPU adapter, and on software adapters (WARP,
+//! llvmpipe on CI runners), whose results say nothing about real GPUs.
 
 use canopy_assets::{
     Aabb, AlphaMode, BlobBuilder, DepthStream, EntryKind, GroundContact, IndexFormat, Material,
@@ -261,6 +262,10 @@ fn a_tiny_world_renders_without_holes() {
         eprintln!("no GPU adapter: skipped");
         return;
     };
+    if gpu.adapter.get_info().device_type == wgpu::DeviceType::Cpu {
+        eprintln!("software adapter {}: skipped", gpu.name());
+        return;
+    }
     let lighting: LightingConfig = serde_json::from_str(LIGHTING).unwrap();
     let biome: BiomeConfig = serde_json::from_str(BIOME).unwrap();
     biome.validate(&lighting).unwrap();
@@ -276,6 +281,7 @@ fn a_tiny_world_renders_without_holes() {
             transform: Mat4::from_translation(Vec3::new(0.0, 2.0, 0.0)),
             owner_color: None,
         }],
+        glows: Default::default(),
         point_lights: Vec::new(),
     };
     renderer.load_world(&gpu, &pack, &world).unwrap();

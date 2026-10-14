@@ -59,6 +59,8 @@ impl Environment {
 pub struct World {
     pub terrain: Option<TerrainDesc>,
     pub statics: Vec<StaticInstance>,
+    /// Glows by model entry.
+    pub glows: std::collections::BTreeMap<String, crate::statics::Glow>,
     pub point_lights: Vec<PointLight>,
 }
 
@@ -508,6 +510,7 @@ impl Renderer {
             gpu.features,
             pack,
             &world.statics,
+            &world.glows,
             &self.frame_layout,
         )?;
         self.world_bytes += statics.bytes;

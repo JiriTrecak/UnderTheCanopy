@@ -10,11 +10,12 @@ use canopy_content::{Content, map::UtcMap};
 use canopy_render::{
     World,
     environment::{BiomeConfig, CONFIG_FOLDER, Hex, LightingConfig},
+    statics::Glow,
     terrain::TerrainDesc,
 };
 use canopy_sim::{MatchSetup, Slot, SlotKind};
 use serde::Deserialize;
-use std::{path::Path, sync::Arc};
+use std::{collections::BTreeMap, path::Path, sync::Arc};
 
 /// `config/players.json`: player colours by slot.
 pub const PLAYERS_FILE: &str = "players.json";
@@ -42,11 +43,79 @@ impl Players {
     }
 }
 
+/// `config/glow.json`: models that glow by their colour (old deposit glow).
+pub const GLOW_FILE: &str = "glow.json";
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GlowEntry {
+    /// Render assets whose models glow.
+    pub assets: Vec<String>,
+    pub color: [f32; 3],
+    pub strength: f32,
+    pub terms: [canopy_render::statics::GlowTerm; 3],
+}
+
+impl GlowEntry {
+    pub fn glow(&self) -> Glow {
+        Glow {
+            color: self.color,
+            strength: self.strength,
+            terms: self.terms,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Glows {
+    pub glows: Vec<GlowEntry>,
+}
+
+impl Glows {
+    pub fn load(data: &Path) -> Result<Self> {
+        let path = data.join(CONFIG_FOLDER).join(GLOW_FILE);
+        let glows: Self = serde_json::from_slice(
+            &std::fs::read(&path).with_context(|| path.display().to_string())?,
+        )
+        .with_context(|| path.display().to_string())?;
+        for entry in &glows.glows {
+            let g = entry.glow();
+            if !(0.0..=8.0).contains(&g.strength) || g.terms.iter().any(|t| t.to <= t.from) {
+                bail!(
+                    "{}: glow strengths are 0–8 and every term ends after it starts",
+                    path.display()
+                );
+            }
+        }
+        Ok(glows)
+    }
+
+    /// Glows by model entry, through the content's render assets.
+    pub fn by_model(&self, content: &Content) -> Result<BTreeMap<String, Glow>> {
+        let mut out = BTreeMap::new();
+        for entry in &self.glows {
+            for id in &entry.assets {
+                let asset = content
+                    .asset(id)
+                    .with_context(|| format!("glow: unknown render asset {id}"))?;
+                let file = asset
+                    .file
+                    .as_ref()
+                    .with_context(|| format!("glow: {id} has no model"))?;
+                out.insert(file.clone(), entry.glow());
+            }
+        }
+        Ok(out)
+    }
+}
+
 /// The configuration a map's look needs.
 pub struct Look {
     pub lighting: LightingConfig,
     pub biome: BiomeConfig,
     pub players: Players,
+    pub glows: Glows,
 }
 
 impl Look {
@@ -58,6 +127,7 @@ impl Look {
             lighting,
             biome,
             players: Players::load(data)?,
+            glows: Glows::load(data)?,
         })
     }
 }
@@ -123,7 +193,7 @@ pub fn build(
         .scenery()?
         .prototypes
         .into_iter()
-        .map(|p| (p.id, p.model))
+        .map(|p| (p.id.clone(), p))
         .collect();
     let colors: Vec<[f32; 3]> = look
         .players
@@ -131,7 +201,7 @@ pub fn build(
         .iter()
         .map(|c| c.linear().to_array())
         .collect();
-    let (instances, missing) = statics::build(&world, &content, map, &scenery, &colors);
+    let (instances, lights, missing) = statics::build(&world, &content, map, &scenery, &colors);
     for m in &missing {
         tracing::warn!(what = %m, "not shown");
     }
@@ -143,7 +213,8 @@ pub fn build(
         world: World {
             terrain: Some(terrain),
             statics: instances,
-            point_lights: Vec::new(),
+            glows: look.glows.by_model(&content)?,
+            point_lights: lights,
         },
         hour,
         size: map.size,

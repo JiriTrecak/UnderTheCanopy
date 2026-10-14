@@ -43,6 +43,150 @@ fn round_u8(v: f32) -> u8 {
     (v.clamp(0.0, 1.0) * 255.0).round() as u8
 }
 
+/// The vertex grids weights are computed from (`vertices²` each).
+pub struct Grids<'a> {
+    pub vertices: usize,
+    pub heights: &'a [f32],
+    pub water: &'a [f32],
+    pub grass: &'a [f32],
+    pub rock: &'a [f32],
+}
+
+/// Which layer a paint layer feeds.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Channel {
+    /// A built-in layer (grass, dirt, waterbed, stones, rock).
+    Fixed(usize),
+    /// A catalogue material: index into the custom layers.
+    Custom(usize),
+    /// Not drawn.
+    Ignored,
+}
+
+pub struct PaintWeights<'a> {
+    pub channel: Channel,
+    pub weights: &'a [f32],
+}
+
+/// Vertex weights (0–255) of the six built-in layers followed by the custom ones
+/// (`cliffs[k]` says whether custom layer `k` is a cliff), from the paint layers in order.
+pub fn vertex_weights(g: &Grids<'_>, paints: &[PaintWeights<'_>], cliffs: &[bool]) -> Vec<Vec<u8>> {
+    let w = g.vertices;
+    let n = w * w;
+    let mut masks = vec![vec![0u8; n]; FIXED + cliffs.len()];
+    let height = |x: i64, z: i64| {
+        g.heights[(z.clamp(0, w as i64 - 1) as usize) * w + x.clamp(0, w as i64 - 1) as usize]
+    };
+    let mut custom = vec![0f32; cliffs.len()];
+    // One vertex index addresses every grid and mask.
+    #[allow(clippy::needless_range_loop)]
+    for i in 0..n {
+        let (x, z) = ((i % w) as i64, (i / w) as i64);
+        let mut grass = g.grass[i];
+        let mut rock = g.rock[i];
+        let (mut road, mut stones, mut bed) = (0.0f32, 0.0f32, 0.0f32);
+        custom.iter_mut().for_each(|c| *c = 0.0);
+        for paint in paints {
+            let weight = paint.weights[i];
+            if weight <= 0.0 || paint.channel == Channel::Ignored {
+                continue;
+            }
+            let slot = match paint.channel {
+                Channel::Custom(k) => Some(k),
+                _ => None,
+            };
+            let cliff = slot.is_some_and(|k| cliffs[k]);
+            if !cliff {
+                let own = |c: usize| {
+                    if paint.channel == Channel::Fixed(c) {
+                        weight
+                    } else {
+                        0.0
+                    }
+                };
+                grass = grass * (1.0 - weight) + own(GRASS);
+                road = road * (1.0 - weight) + own(DIRT);
+                stones = stones * (1.0 - weight) + own(STONES);
+                rock = rock * (1.0 - weight) + own(ROCK);
+                bed = bed * (1.0 - weight) + own(WATERBED);
+            }
+            for (k, value) in custom.iter_mut().enumerate() {
+                if cliffs[k] != cliff {
+                    continue;
+                }
+                let target = if Some(k) == slot { 255.0 * weight } else { 0.0 };
+                *value = (*value * (1.0 - weight) + target).round();
+            }
+        }
+        let ground = g.heights[i];
+        let water = g.water[i];
+        let slope = ((height(x + 1, z) - height(x - 1, z)) * 0.5)
+            .hypot((height(x, z + 1) - height(x, z - 1)) * 0.5);
+        masks[SOIL][i] = 255;
+        masks[GRASS][i] = round_u8(grass * ((ground - water) / 0.2).clamp(0.0, 1.0));
+        masks[DIRT][i] = round_u8(road);
+        masks[WATERBED][i] = round_u8(((water - ground + 0.1) * 5.0).max(bed).clamp(0.0, 1.0));
+        masks[STONES][i] = round_u8(stones);
+        masks[ROCK][i] = round_u8(rock.max((slope - 0.7).clamp(0.0, 1.0)));
+        for (k, value) in custom.iter().enumerate() {
+            masks[FIXED + k][i] = value.clamp(0.0, 255.0) as u8;
+        }
+    }
+    masks
+}
+
+/// Corner codes of each texture cell for every non-cliff custom layer: bit `c` when the
+/// weight at corner `c` (NW, NE, SW, SE) reaches half, and 16 on the lowest layer
+/// present when the layers together cover the whole cell.
+pub fn atlas_codes(
+    custom: &[Vec<u8>],
+    cliffs: &[bool],
+    w: usize,
+    layout: &canopy_content::map::TextureLayout,
+    origin: f32,
+) -> Vec<Vec<u8>> {
+    let cells = [layout.cells[0] as usize, layout.cells[1] as usize];
+    let bilinear = |mask: &[u8], mx: f64, mz: f64| -> f32 {
+        let fx = mx.clamp(0.0, (w - 1) as f64);
+        let fz = mz.clamp(0.0, (w - 1) as f64);
+        let (x0, z0) = (fx.floor() as usize, fz.floor() as usize);
+        let (x1, z1) = ((x0 + 1).min(w - 1), (z0 + 1).min(w - 1));
+        let (tx, tz) = ((fx - x0 as f64) as f32, (fz - z0 as f64) as f32);
+        let at = |x: usize, z: usize| f32::from(mask[z * w + x]);
+        let top = at(x0, z0) + (at(x1, z0) - at(x0, z0)) * tx;
+        let bottom = at(x0, z1) + (at(x1, z1) - at(x0, z1)) * tx;
+        top + (bottom - top) * tz
+    };
+    let atlas_layers: Vec<usize> = (0..cliffs.len()).filter(|&k| !cliffs[k]).collect();
+    let mut codes = vec![vec![0u8; cells[0] * cells[1]]; cliffs.len()];
+    let mask_origin = f64::from(origin);
+    for cz in 0..cells[1] {
+        for cx in 0..cells[0] {
+            let cell = cz * cells[0] + cx;
+            let mut totals = [0f32; 4];
+            for &k in &atlas_layers {
+                let mut bits = 0u8;
+                for (c, total) in totals.iter_mut().enumerate() {
+                    let mx = layout.start[0] - mask_origin + (cx + c % 2) as f64 * layout.cell_size;
+                    let mz = layout.start[1] - mask_origin + (cz + c / 2) as f64 * layout.cell_size;
+                    let v = bilinear(&custom[k], mx, mz);
+                    *total += v;
+                    if v >= 127.5 {
+                        bits |= 1 << c;
+                    }
+                }
+                codes[k][cell] = bits;
+            }
+            if totals.iter().all(|&t| t >= 254.0)
+                && let Some(&k) = atlas_layers.iter().find(|&&k| codes[k][cell] != 0)
+            {
+                codes[k][cell] |= 16;
+            }
+        }
+    }
+    codes
+}
+
 /// What a painted material becomes.
 struct Painted<'a> {
     asset: &'a LandscapeAsset,
@@ -61,7 +205,6 @@ pub fn build(
     let decoded = data.decode().map_err(|e| e.to_string())?;
     let span = decoded.span;
     let w = decoded.vertices as usize;
-    let n = w * w;
     let origin = -(MAP_HALO as f32);
     let catalogue: BTreeMap<&str, &LandscapeAsset> =
         landscape.iter().map(|a| (a.id.as_str(), a)).collect();
@@ -157,101 +300,30 @@ pub fn build(
         }
     }
 
-    // Vertex weights.
-    let mut masks = vec![vec![0u8; n]; FIXED + customs.len()];
-    let height = |x: i64, z: i64| {
-        decoded.heights[(z.clamp(0, w as i64 - 1) as usize) * w + x.clamp(0, w as i64 - 1) as usize]
+    let paints: Vec<PaintWeights> = decoded
+        .paint
+        .iter()
+        .enumerate()
+        .map(|(p, paint)| PaintWeights {
+            channel: match channel_of[p] {
+                Some(usize::MAX) => Channel::Ignored,
+                Some(c) => Channel::Fixed(c),
+                None => Channel::Custom(custom_slot[p]),
+            },
+            weights: &paint.weights,
+        })
+        .collect();
+    let cliffs: Vec<bool> = customs.iter().map(|c| c.cliff).collect();
+    let grids = Grids {
+        vertices: w,
+        heights: &decoded.heights,
+        water: &decoded.water_heights,
+        grass: &grass_cover,
+        rock: &decoded.rock,
     };
-    let mut custom = vec![0f32; customs.len()];
-    for i in 0..n {
-        let (x, z) = ((i % w) as i64, (i / w) as i64);
-        let mut grass = grass_cover[i];
-        let mut rock = decoded.rock[i];
-        let (mut road, mut stones, mut bed) = (0.0f32, 0.0f32, 0.0f32);
-        custom.iter_mut().for_each(|c| *c = 0.0);
-        for (p, paint) in decoded.paint.iter().enumerate() {
-            let weight = paint.weights[i];
-            if weight <= 0.0 {
-                continue;
-            }
-            let channel = channel_of[p];
-            if channel == Some(usize::MAX) {
-                continue;
-            }
-            let slot = custom_slot[p];
-            let cliff = slot != usize::MAX && customs[slot].cliff;
-            if !cliff {
-                let own = |c: usize| if channel == Some(c) { weight } else { 0.0 };
-                grass = grass * (1.0 - weight) + own(GRASS);
-                road = road * (1.0 - weight) + own(DIRT);
-                stones = stones * (1.0 - weight) + own(STONES);
-                rock = rock * (1.0 - weight) + own(ROCK);
-                bed = bed * (1.0 - weight) + own(WATERBED);
-            }
-            for (k, value) in custom.iter_mut().enumerate() {
-                if customs[k].cliff != cliff {
-                    continue;
-                }
-                let target = if k == slot { 255.0 * weight } else { 0.0 };
-                *value = (*value * (1.0 - weight) + target).round();
-            }
-        }
-        let ground = decoded.heights[i];
-        let water = decoded.water_heights[i];
-        let slope = ((height(x + 1, z) - height(x - 1, z)) * 0.5)
-            .hypot((height(x, z + 1) - height(x, z - 1)) * 0.5);
-        masks[SOIL][i] = 255;
-        masks[GRASS][i] = round_u8(grass * ((ground - water) / 0.2).clamp(0.0, 1.0));
-        masks[DIRT][i] = round_u8(road);
-        masks[WATERBED][i] = round_u8(((water - ground + 0.1) * 5.0).max(bed).clamp(0.0, 1.0));
-        masks[STONES][i] = round_u8(stones);
-        masks[ROCK][i] = round_u8(rock.max((slope - 0.7).clamp(0.0, 1.0)));
-        for (k, value) in custom.iter().enumerate() {
-            masks[FIXED + k][i] = value.clamp(0.0, 255.0) as u8;
-        }
-    }
-
-    // Atlas corner codes per texture cell.
+    let mut masks = vertex_weights(&grids, &paints, &cliffs);
     let layout = decoded.texture;
-    let cells = [layout.cells[0] as usize, layout.cells[1] as usize];
-    let bilinear = |mask: &[u8], mx: f64, mz: f64| -> f32 {
-        let fx = mx.clamp(0.0, (w - 1) as f64);
-        let fz = mz.clamp(0.0, (w - 1) as f64);
-        let (x0, z0) = (fx.floor() as usize, fz.floor() as usize);
-        let (x1, z1) = ((x0 + 1).min(w - 1), (z0 + 1).min(w - 1));
-        let (tx, tz) = ((fx - x0 as f64) as f32, (fz - z0 as f64) as f32);
-        let at = |x: usize, z: usize| f32::from(mask[z * w + x]);
-        let top = at(x0, z0) + (at(x1, z0) - at(x0, z0)) * tx;
-        let bottom = at(x0, z1) + (at(x1, z1) - at(x0, z1)) * tx;
-        top + (bottom - top) * tz
-    };
-    let atlas_layers: Vec<usize> = (0..customs.len()).filter(|&k| !customs[k].cliff).collect();
-    let mut codes = vec![vec![0u8; cells[0] * cells[1]]; customs.len()];
-    let mask_origin = f64::from(origin);
-    for cz in 0..cells[1] {
-        for cx in 0..cells[0] {
-            let cell = cz * cells[0] + cx;
-            let mut totals = [0f32; 4];
-            for &k in &atlas_layers {
-                let mut bits = 0u8;
-                for (c, total) in totals.iter_mut().enumerate() {
-                    let mx = layout.start[0] - mask_origin + (cx + c % 2) as f64 * layout.cell_size;
-                    let mz = layout.start[1] - mask_origin + (cz + c / 2) as f64 * layout.cell_size;
-                    let v = bilinear(&masks[FIXED + k], mx, mz);
-                    *total += v;
-                    if v >= 127.5 {
-                        bits |= 1 << c;
-                    }
-                }
-                codes[k][cell] = bits;
-            }
-            if totals.iter().all(|&t| t >= 254.0)
-                && let Some(&k) = atlas_layers.iter().find(|&&k| codes[k][cell] != 0)
-            {
-                codes[k][cell] |= 16;
-            }
-        }
-    }
+    let codes = atlas_codes(&masks[FIXED..], &cliffs, w, &layout, origin);
 
     let mut layers = Vec::with_capacity(FIXED + customs.len());
     for (c, layer) in fixed.iter().enumerate() {
@@ -384,4 +456,121 @@ pub fn build(
             haze: [s.haze_start, s.haze_end],
         }),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use canopy_content::map::TextureLayout;
+
+    const W: usize = 9;
+
+    fn grids<'a>(heights: &'a [f32], water: &'a [f32], zero: &'a [f32]) -> Grids<'a> {
+        Grids {
+            vertices: W,
+            heights,
+            water,
+            grass: zero,
+            rock: zero,
+        }
+    }
+
+    #[test]
+    fn later_paint_erases_earlier_paint_and_cliffs_stay_apart() {
+        let heights = vec![1.0; W * W];
+        let water = vec![-17.0; W * W];
+        let zero = vec![0.0; W * W];
+        let a = vec![1.0; W * W];
+        let b: Vec<f32> = (0..W * W)
+            .map(|i| if i % W >= 4 { 1.0 } else { 0.0 })
+            .collect();
+        let half = vec![0.5; W * W];
+        let cliff = vec![1.0; W * W];
+        let paints = [
+            PaintWeights {
+                channel: Channel::Custom(0),
+                weights: &a,
+            },
+            PaintWeights {
+                channel: Channel::Custom(1),
+                weights: &b,
+            },
+            PaintWeights {
+                channel: Channel::Fixed(DIRT),
+                weights: &half,
+            },
+            PaintWeights {
+                channel: Channel::Custom(2),
+                weights: &cliff,
+            },
+        ];
+        let masks = vertex_weights(
+            &grids(&heights, &water, &zero),
+            &paints,
+            &[false, false, true],
+        );
+        assert!(masks[SOIL].iter().all(|&v| v == 255));
+        // Left: a, halved by dirt. Right: b, halved by dirt.
+        assert_eq!(masks[FIXED][0], 128);
+        assert_eq!(masks[FIXED + 1][0], 0);
+        assert_eq!(masks[FIXED][8], 0);
+        assert_eq!(masks[FIXED + 1][8], 128);
+        assert_eq!(masks[DIRT][8], 128);
+        // The cliff paint does not erase the grounds.
+        assert_eq!(masks[FIXED + 2][8], 255);
+    }
+
+    #[test]
+    fn water_slopes_and_coverage_drive_the_built_in_layers() {
+        let heights: Vec<f32> = (0..W * W).map(|i| (i % W) as f32 * 1.5).collect();
+        let water = vec![2.0; W * W];
+        let grass = vec![1.0; W * W];
+        let zero = vec![0.0; W * W];
+        let g = Grids {
+            vertices: W,
+            heights: &heights,
+            water: &water,
+            grass: &grass,
+            rock: &zero,
+        };
+        let masks = vertex_weights(&g, &[], &[]);
+        // x = 0: under water (waterbed, no grass); x = 4: dry, grass.
+        assert_eq!(masks[WATERBED][W * 4], 255);
+        assert_eq!(masks[GRASS][W * 4], 0);
+        assert_eq!(masks[GRASS][W * 4 + 4], 255);
+        assert_eq!(masks[WATERBED][W * 4 + 4], 0);
+        // A gradient of 1.5 is past the rock threshold (0.7 → full at 1.7).
+        assert_eq!(masks[ROCK][W * 4 + 4], round_u8(0.8));
+    }
+
+    #[test]
+    fn atlas_corners_and_full_cells() {
+        // Two grounds split between vertex columns 4 and 5, cells of 4 units from −0.5.
+        let left: Vec<u8> = (0..W * W)
+            .map(|i| if i % W < 5 { 255 } else { 0 })
+            .collect();
+        let right: Vec<u8> = left.iter().map(|&v| 255 - v).collect();
+        let layout = TextureLayout {
+            cell_size: 4.0,
+            origin: [-0.5, -0.5],
+            start: [-0.5, -0.5],
+            cells: [2, 2],
+            count: 4,
+        };
+        let codes = atlas_codes(&[left, right], &[false, false], W, &layout, 0.0);
+        // Cell 0 spans x −0.5…3.5: all left; full.
+        assert_eq!(codes[0][0], 15 | 16);
+        assert_eq!(codes[1][0], 0);
+        // Cell 1 spans x 3.5…7.5: west corners left, east corners right.
+        assert_eq!(codes[0][1] & 15, 0b0101);
+        assert_eq!(codes[1][1] & 15, 0b1010);
+        // The lowest layer present takes the full tile.
+        assert_eq!(codes[0][1] & 16, 16);
+        assert_eq!(codes[1][1] & 16, 0);
+        assert_eq!(tile_entry("asset.x", 1), "assets/library/asset.x/data.bin");
+        assert_eq!(
+            tile_entry("asset.x", 3),
+            "assets/library/asset.x/data_3.bin"
+        );
+    }
 }

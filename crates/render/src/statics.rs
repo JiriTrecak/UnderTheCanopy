@@ -33,6 +33,24 @@ pub struct StaticInstance {
     pub owner_color: Option<[f32; 3]>,
 }
 
+/// A colour-keyed glow added to a model's emission (old deposit glow): `color ·
+/// strength · Π smoothstep(from, to, weights · albedo)` over three terms.
+#[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Glow {
+    pub color: [f32; 3],
+    pub strength: f32,
+    pub terms: [GlowTerm; 3],
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GlowTerm {
+    pub weights: [f32; 3],
+    pub from: f32,
+    pub to: f32,
+}
+
 /// Visible-list slots are aligned so a dynamic offset can reach them.
 const SLOT_ALIGN: u32 = 64;
 const MODEL_STRIDE: u64 = 256;
@@ -58,6 +76,9 @@ struct MaterialUniform {
     light: [f32; 4],
     team_default: [f32; 4],
     flags: [u32; 4],
+    glow: [f32; 4],
+    glow_terms: [[f32; 4]; 3],
+    glow_to: [f32; 4],
 }
 
 #[repr(C)]
@@ -244,6 +265,7 @@ impl StaticsGpu {
         features: GpuFeatures,
         pack: &Pack,
         instances: &[StaticInstance],
+        glows: &BTreeMap<String, Glow>,
         frame_layout: &wgpu::BindGroupLayout,
     ) -> Result<Self> {
         let _span = tracing::info_span!("statics_upload").entered();
@@ -406,6 +428,7 @@ impl StaticsGpu {
                 )
             });
 
+            let glow = glows.get(*name);
             let mut materials = Vec::with_capacity(meta.materials.len());
             for material in &meta.materials {
                 let t = &material.textures;
@@ -474,6 +497,16 @@ impl StaticsGpu {
                         0,
                         0,
                     ],
+                    glow: glow.map_or([0.0; 4], |g| {
+                        [g.color[0], g.color[1], g.color[2], g.strength]
+                    }),
+                    glow_terms: glow.map_or([[0.0; 4]; 3], |g| {
+                        g.terms
+                            .map(|t| [t.weights[0], t.weights[1], t.weights[2], t.from])
+                    }),
+                    glow_to: glow.map_or([1.0; 4], |g| {
+                        [g.terms[0].to, g.terms[1].to, g.terms[2].to, 0.0]
+                    }),
                 };
                 let uniform_buffer = buffer(
                     "material",

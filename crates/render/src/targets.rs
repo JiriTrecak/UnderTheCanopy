@@ -74,22 +74,26 @@ impl Targets {
                 .create_view(&wgpu::TextureViewDescriptor::default())
         };
         let attachment = wgpu::TextureUsages::RENDER_ATTACHMENT;
+        // Multisampled colour and depth live only inside the forward pass: transient
+        // attachments stay in tile memory on Apple GPUs (memoryless).
+        let transient = attachment | wgpu::TextureUsages::TRANSIENT_ATTACHMENT;
         let pixels = u64::from(extent.width) * u64::from(extent.height);
         Self {
             size,
-            color: make("scene colour", HDR_FORMAT, SAMPLES, attachment),
+            color: make("scene colour", HDR_FORMAT, SAMPLES, transient),
             resolved: make(
                 "scene resolved",
                 HDR_FORMAT,
                 1,
                 attachment | wgpu::TextureUsages::TEXTURE_BINDING,
             ),
-            depth: make("scene depth", DEPTH_FORMAT, SAMPLES, attachment),
-            bytes: pixels * (8 * u64::from(SAMPLES) + 8 + 4 * u64::from(SAMPLES)),
+            depth: make("scene depth", DEPTH_FORMAT, SAMPLES, transient),
+            // Transient attachments take no memory where they are memoryless.
+            bytes: pixels * 8,
         }
     }
 
-    /// Memory of the targets (an estimate: tile GPUs may keep MSAA in tile memory).
+    /// Memory of the targets that must exist in memory (the resolved colour).
     pub fn bytes(&self) -> u64 {
         self.bytes
     }

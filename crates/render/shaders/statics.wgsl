@@ -25,6 +25,12 @@ struct Material {
     team_default: vec4f,
     // x: vertex colour use, y: flags
     flags: vec4u,
+    // rgb colour, a strength (0: none)
+    glow: vec4f,
+    // per term: albedo weights xyz, w: smoothstep start
+    glow_terms: array<vec4f, 3>,
+    // smoothstep ends per term
+    glow_to: vec4f,
 }
 
 struct ModelInfo {
@@ -143,7 +149,10 @@ fn vs_main(in: VertexIn, @builtin(instance_index) slot: u32) -> VsOut {
 }
 
 fn albedo_of(uv: vec2f, color: vec4f, instance: u32) -> vec4f {
-    var base = material.base_color * textureSample(base_texture, material_sampler, uv);
+    let texel = textureSample(base_texture, material_sampler, uv);
+    // Team-coloured materials keep the authored texture outside the mask: the factor is
+    // the colour without an owner (old `maskedTeamColor` replaces the map lookup).
+    var base = select(material.base_color * texel, vec4f(texel.rgb, material.base_color.a * texel.a), has(HAS_TEAM));
     if (material.flags.x == VERTEX_TINT) {
         base = vec4f(base.rgb * color.rgb, base.a);
     }
@@ -218,7 +227,16 @@ fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> @location(0) vec4f 
     surface.specular = select(1.0, 0.0, has(PAINTED));
     surface.model = LIGHT_STANDARD;
     let view = normalize(frame.eye.xyz - in.world);
-    let color = surface_light(surface, view, frag.xy) + emissive;
+    var glow = vec3f(0.0);
+    if (material.glow.a > 0.0) {
+        var amount = material.glow.a;
+        for (var i = 0; i < 3; i++) {
+            let term = material.glow_terms[i];
+            amount *= smoothstep(term.w, material.glow_to[i], dot(base.rgb, term.xyz));
+        }
+        glow = material.glow.rgb * amount;
+    }
+    let color = surface_light(surface, view, frag.xy) + emissive + glow;
     return vec4f(color, alpha);
 }
 
