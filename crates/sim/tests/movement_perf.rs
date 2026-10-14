@@ -109,7 +109,13 @@ fn four_hundred_units_cross_the_largest_shipped_map() {
             })
             .collect(),
     };
+    let created = Instant::now();
     let mut world = World::new(content.clone(), &map, setup).unwrap_or_else(|e| panic!("{e}"));
+    println!(
+        "{}-cell map: world created in {:.1} ms (spatial model and meshes included)",
+        map.size,
+        created.elapsed().as_secs_f64() * 1000.0
+    );
     let catalog = Catalog::new(content.clone());
     // The body of the default starting units.
     let walker = content
