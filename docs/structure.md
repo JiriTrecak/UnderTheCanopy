@@ -13,7 +13,7 @@ UnderTheCanopy/
 │  ├─ render/          wgpu renderer; knows nothing about the simulation (M3)
 │  ├─ scene/           simulation snapshots → render world, interpolation (M3)
 │  ├─ ui/              HUD toolkit: taffy layout, cosmic-text (M4)
-│  ├─ audio/           (M4)
+│  ├─ audio/           playback, voice limiting, effect sounds, music (M4)
 │  └─ net/             client for the existing match server protocol (M5)
 ├─ game/               the executable: window, input, platform paths, screens, packaging
 ├─ content/            gameplay data (mirrored, see below)

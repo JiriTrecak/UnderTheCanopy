@@ -11,6 +11,8 @@ publish = false
 
 [workspace.dependencies]
 anyhow = "1"
+# Tests that the mixer never allocates while rendering.
+assert_no_alloc = { version = "1.1", features = ["warn_debug"] }
 blake3 = "1"
 block_compression = { version = "0.10", default-features = false, features = ["bc7"] }
 bytemuck = { version = "1", features = ["derive", "extern_crate_alloc"] }
@@ -20,6 +22,8 @@ gltf = { version = "1.4", default-features = false, features = ["utils", "names"
 hound = "3"
 intel_tex_2 = "0.5"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
+# Audio playback (cpal backend only: sounds arrive as PCM from the pack, nothing is decoded).
+kira = { version = "0.12", default-features = false, features = ["cpal"] }
 libm = "0.2"
 mlua = { version = "0.12", features = ["lua54", "vendored"] }
 pollster = "1"
