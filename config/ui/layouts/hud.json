@@ -1,0 +1,62 @@
+{
+  "visible": false,
+  "root": {
+    "class": "hud",
+    "children": [
+      {
+        "id": "heroes",
+        "class": "hero-bar",
+        "repeat": "hero"
+      },
+      { "id": "error", "kind": "label", "class": "error" },
+      {
+        "id": "dock",
+        "class": "dock",
+        "children": [
+          {
+            "class": "map-frame",
+            "children": [{ "id": "minimap", "kind": "image", "class": "minimap", "drag": true, "action": "minimap" }]
+          },
+          {
+            "id": "selection",
+            "class": "selection",
+            "children": [
+              { "id": "portrait", "kind": "image", "class": "portrait" },
+              { "id": "experience", "kind": "sweep", "class": "experience" },
+              { "id": "level", "kind": "label", "class": "level" },
+              {
+                "class": "selection-copy",
+                "children": [
+                  { "id": "name", "kind": "label", "class": "selection-name" },
+                  { "id": "stats", "class": "stats", "repeat": "stat" },
+                  {
+                    "class": "vitals",
+                    "children": [
+                      {
+                        "id": "health", "kind": "bar", "class": "vital health",
+                        "children": [{ "id": "value", "kind": "label", "class": "vital-value" }]
+                      },
+                      {
+                        "id": "mana", "kind": "bar", "class": "vital mana",
+                        "children": [{ "id": "value", "kind": "label", "class": "vital-value" }]
+                      }
+                    ]
+                  }
+                ]
+              },
+              { "id": "inventory", "class": "inventory", "repeat": "slot" }
+            ]
+          },
+          {
+            "id": "actions",
+            "class": "actions",
+            "children": [
+              { "id": "commands", "class": "command-grid", "repeat": "command", "count": 12 },
+              { "id": "resources", "class": "resources", "repeat": "resource" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

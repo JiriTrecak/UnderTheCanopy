@@ -16,7 +16,10 @@ assert_no_alloc = { version = "1.1", features = ["warn_debug"] }
 blake3 = "1"
 block_compression = { version = "0.10", default-features = false, features = ["bc7"] }
 bytemuck = { version = "1", features = ["derive", "extern_crate_alloc"] }
+# UI text: shaping, layout and rasterising (swash); no fontconfig, fonts are passed in.
+cosmic-text = { version = "0.19", default-features = false, features = ["std", "swash"] }
 directories = "6"
+etagere = "0.3"
 flate2 = "1"
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
 glam = { version = "0.30", features = ["bytemuck"] }
@@ -39,6 +42,8 @@ serde_json = "1"
 serde_path_to_error = "0.1"
 serde_with = "3"
 sha2 = "0.11"
+# UI layout (flexbox and grid); `parse` reads CSS values from the layout files.
+taffy = { version = "0.15", features = ["parse"] }
 thiserror = "2"
 tokio = { version = "1", default-features = false, features = ["rt", "net", "sync", "time", "macros"] }
 tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }

@@ -1,0 +1,78 @@
+{
+  "templates": {
+    "tooltip": {
+      "class": "tooltip",
+      "children": [
+        { "id": "title", "kind": "label", "class": "tooltip-title" },
+        { "id": "costs", "class": "tooltip-costs", "repeat": "tooltip-cost" },
+        { "id": "body", "kind": "label", "class": "tooltip-body" },
+        { "id": "note", "kind": "label", "class": "tooltip-note" }
+      ]
+    },
+    "tooltip-cost": {
+      "class": "tooltip-cost",
+      "children": [
+        { "id": "icon", "kind": "image", "class": "tooltip-cost-icon" },
+        { "id": "amount", "kind": "label" }
+      ]
+    },
+    "command": {
+      "kind": "button",
+      "class": "command",
+      "action": "command",
+      "tooltip_anchor": "actions",
+      "children": [
+        { "id": "icon", "kind": "image", "class": "command-icon" },
+        {
+          "id": "cooldown", "kind": "sweep", "class": "cooldown", "visible": false,
+          "children": [{ "id": "seconds", "kind": "label", "class": "cooldown-text" }]
+        },
+        { "class": "slot-rim" },
+        { "id": "key", "kind": "label", "class": "kbd" }
+      ]
+    },
+    "slot": {
+      "kind": "button",
+      "class": "slot",
+      "action": "item",
+      "children": [
+        { "id": "icon", "kind": "image", "class": "slot-icon" },
+        { "class": "slot-rim" },
+        { "id": "count", "kind": "label", "class": "slot-count", "visible": false }
+      ]
+    },
+    "hero": {
+      "kind": "button",
+      "class": "hero",
+      "action": "hero",
+      "children": [
+        { "id": "portrait", "kind": "image", "class": "hero-portrait" },
+        { "id": "health", "kind": "bar", "class": "hero-health", "value": 1 },
+        { "id": "key", "kind": "label", "class": "hero-key" }
+      ]
+    },
+    "resource": {
+      "class": "resource",
+      "tooltip": { "title": "" },
+      "children": [
+        { "id": "icon", "kind": "image", "class": "resource-icon" },
+        { "id": "value", "kind": "label", "class": "resource-value" }
+      ]
+    },
+    "stat": {
+      "class": "stat",
+      "tooltip": { "title": "" },
+      "children": [
+        { "id": "icon", "kind": "image", "class": "stat-icon" },
+        {
+          "class": "stat-text",
+          "children": [
+            { "id": "label", "kind": "label", "class": "stat-label" },
+            { "id": "value", "kind": "label", "class": "stat-value" }
+          ]
+        }
+      ]
+    },
+    "log-line": { "kind": "label", "class": "log-line" }
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "visible": false,
+  "root": {
+    "class": "gallery",
+    "style": { "display": "flex", "flex-direction": "row", "gap": "28px", "padding": "28px 28px 0 120px", "align-items": "flex-start" },
+    "children": [
+      {
+        "class": "card",
+        "children": [
+          { "kind": "label", "class": "panel-title", "text": "Main menu" },
+          {
+            "class": "menu-rig",
+            "children": [
+              { "kind": "image", "class": "menu-logo", "image": "menu-logo" },
+              {
+                "class": "menu-actions",
+                "children": [
+                  { "id": "campaign", "kind": "button", "class": "menu-action", "text": "Campaign", "action": "menu.campaign" },
+                  { "id": "skirmish", "kind": "button", "class": "menu-action", "text": "Skirmish", "action": "menu.skirmish" },
+                  { "kind": "button", "class": "menu-action", "text": "Multiplayer", "action": "menu.multiplayer" },
+                  { "kind": "button", "class": "menu-action", "text": "Settings", "action": "menu.settings" },
+                  { "kind": "button", "class": "menu-action", "text": "Map Editor", "enabled": false },
+                  { "kind": "button", "class": "menu-action", "text": "Quit", "action": "menu.quit" }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "class": "card",
+        "children": [
+          { "kind": "label", "class": "panel-title", "text": "Settings" },
+          {
+            "class": "settings",
+            "children": [
+              { "kind": "label", "class": "settings-title", "text": "Settings" },
+              {
+                "class": "settings-row",
+                "children": [
+                  { "kind": "label", "class": "settings-label", "text": "Player name" },
+                  { "id": "name", "kind": "text_field", "class": "field", "text": "Jiří of the Canopy", "placeholder": "Your name", "max_length": 24 }
+                ]
+              },
+              {
+                "class": "settings-row",
+                "children": [
+                  { "kind": "label", "class": "settings-label", "text": "Spell effect volume" },
+                  { "id": "volume", "kind": "slider", "class": "slider", "min": 0, "max": 100, "step": 1, "value": 70 }
+                ]
+              },
+              { "id": "bars", "kind": "checkbox", "class": "check", "text": "Always show health bars", "checked": true },
+              { "kind": "checkbox", "class": "check", "text": "Edge scrolling" },
+              {
+                "class": "settings-row",
+                "children": [
+                  { "kind": "label", "class": "settings-label", "text": "Shadows" },
+                  { "id": "shadows", "kind": "dropdown", "class": "select", "options": ["Soft · original", "Filtered · faster", "Off"], "selected": 0 }
+                ]
+              },
+              { "kind": "label", "class": "settings-note", "text": "Saved on this device and applied immediately. Interface text stays at native resolution." },
+              {
+                "class": "settings-actions",
+                "children": [
+                  { "kind": "button", "class": "settings-button", "text": "Apply", "action": "settings.apply", "hotkey": "Enter" },
+                  { "kind": "button", "class": "settings-button", "text": "Cancel", "action": "settings.cancel" }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "class": "card",
+        "style": { "width": "460px" },
+        "children": [
+          { "kind": "label", "class": "panel-title", "text": "Scroll list · rich text" },
+          { "id": "log", "class": "log", "style": { "height": "300px" }, "repeat": "log-line" },
+          { "kind": "label", "class": "panel-title", "text": "Ellipsis · wrapping" },
+          { "kind": "label", "style": { "white-space": "nowrap", "text-overflow": "ellipsis", "width": "300px", "color": "#c8bd88" }, "text": "A very long unit name that does not fit into the card and ends with an ellipsis" },
+          { "kind": "label", "style": { "font": "15px/1.5 serif", "color": "#aab3ab" }, "text": "Brood mothers [i]rally[/i] nearby workers. Press [key]R[/key] to [b]rally[/b], [color=#ff8a65]costs 2 food[/color]." },
+          { "kind": "label", "class": "panel-title", "text": "Loading" },
+          {
+            "class": "loading",
+            "children": [
+              { "kind": "label", "class": "loading-label", "text": "Loading" },
+              { "id": "progress", "kind": "bar", "class": "progress", "value": 0.62 },
+              { "kind": "label", "class": "loading-stage", "text": "Raising the canopy…" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
