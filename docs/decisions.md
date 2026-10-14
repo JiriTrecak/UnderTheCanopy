@@ -73,3 +73,7 @@ No automated behaviour comparison against the old game. Correctness comes from s
 ## D18. One unsafe exception: the Lua instruction hook (2026-10-14)
 
 `crates/sim/src/mission/hook.rs` uses about 15 lines of `unsafe` to install a raw Lua count hook that counts instructions and inspects the running function's registers for strings over 64 KiB, as the old sandbox did. mlua's safe hook cannot see registers and is several times slower per instruction. The rest of the workspace keeps `unsafe_code = "deny"`; any further exception needs a decision here.
+
+## D19. Vision: knowledge per team, followed by comparison (2026-10-14)
+
+Fog and remembered entities are kept once per team (allies share sight) and saved compactly (fog as runs, memories as snapshots of the entity as last seen). Sensors read the one exact `entity.position`; vision compares each sensor's position, height, radius and team with the previous pass every tick and updates only what changed, so any system that moves an entity is followed without notifying vision. Derived coverage is rebuilt on load and verified against the incremental data in tests.
