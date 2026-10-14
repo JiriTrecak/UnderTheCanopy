@@ -109,6 +109,9 @@ pub struct State {
     /// Projectiles in flight, corpses and scripted damage (`combat`).
     #[serde(default)]
     pub combat: crate::combat::CombatState,
+    /// What each AI player remembers, by player (`ai`).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub ai: Vec<crate::ai::Memory>,
     /// Deliveries, persistent instances and queued reactions (`abilities`).
     #[serde(
         default,
@@ -134,6 +137,7 @@ impl State {
             knowledge: Knowledge::default(),
             economy: crate::economy::EconomyState::default(),
             combat: crate::combat::CombatState::default(),
+            ai: Vec::new(),
             abilities: crate::abilities::AbilityWorld::default(),
         }
     }

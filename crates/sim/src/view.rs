@@ -178,6 +178,8 @@ pub struct View {
     pub deliveries: Vec<Delivery>,
     /// Projectiles in flight, corpses and fallen heroes (`combat`).
     pub battle: crate::combat::Battle,
+    /// What each AI player is doing (observers only, for the debug overlay).
+    pub ai: Vec<crate::ai::Summary>,
     /// Ability events, deliveries in flight and hero returns (`abilities`).
     pub spells: crate::abilities::view::Spellcraft,
 }
@@ -295,6 +297,7 @@ impl View {
                 .cloned()
                 .collect(),
             battle: crate::combat::Battle::default(),
+            ai: Vec::new(),
             spells: crate::abilities::view::Spellcraft::default(),
         }
     }
@@ -348,6 +351,7 @@ impl View {
             colony: None,
             deliveries: economy.deliveries.clone(),
             battle: crate::combat::Battle::default(),
+            ai: Vec::new(),
             spells: crate::abilities::view::Spellcraft::default(),
         }
     }

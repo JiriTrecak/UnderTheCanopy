@@ -3,6 +3,7 @@
 use crate::abilities::{self, sight::SpellSight};
 use crate::{
     action::Action,
+    ai,
     catalog::Catalog,
     combat,
     economy::{self, Economy},
@@ -70,6 +71,8 @@ pub struct World {
     sight: SpellSight,
     /// Recent ability events for views (cosmetic, never saved).
     events: abilities::Events,
+    /// The AI players' derived side; their memories are in the state.
+    ai: ai::Brains,
 }
 
 impl World {
@@ -130,7 +133,15 @@ impl World {
             let mut ctx = economy.ctx(&mut state, &catalog, &mut motion.spatial);
             economy::harvest::start_gathering(&mut ctx, &setup, &starting);
         }
-        Ok(Self {
+        let brains = ai::Brains::new(
+            &catalog,
+            map,
+            terrain.clone(),
+            &setup,
+            appearance_scales(map, &terrain),
+        );
+        state.ai = brains.memories(setup.seed);
+        let mut world = Self {
             catalog,
             terrain,
             setup,
@@ -144,7 +155,97 @@ impl World {
             rules,
             sight,
             events: abilities::Events::default(),
-        })
+            ai: brains,
+        };
+        world.prepare_ai();
+        Ok(world)
+    }
+
+    /// Builds the AI players' known blockers and navigation from their knowledge.
+    fn prepare_ai(&mut self) {
+        if self.ai.is_empty() {
+            return;
+        }
+        self.economy.index(&self.state, &self.catalog);
+        let tick = mission::clock(&self.state);
+        let spells = abilities::Ctx {
+            senses: combat::Senses {
+                catalog: &self.catalog,
+                terrain: &self.terrain,
+                vision: &self.vision,
+                rules: &self.sight,
+                combat: &self.combat.rules,
+                camps: &self.combat.camps,
+                teams: &self.combat.teams,
+                cache: None,
+            },
+            spatial: &mut self.motion.spatial,
+            events: &mut self.events,
+            economy: &mut self.economy,
+            limits: self.combat.limits,
+            suppress: 0,
+        };
+        let input = ai::frame::Input {
+            state: &self.state,
+            catalog: &self.catalog,
+            spells: &spells,
+        };
+        self.ai.prepare(&input, tick);
+    }
+
+    /// Step 12: the AI players due this tick decide; their commands are queued for the
+    /// next tick on every peer.
+    fn think(&mut self, clock: u32) {
+        if self.ai.is_empty() {
+            return;
+        }
+        let _span = tracing::trace_span!("ai").entered();
+        self.economy.index(&self.state, &self.catalog);
+        let mut memories = std::mem::take(&mut self.state.ai);
+        let commands = {
+            let spells = abilities::Ctx {
+                senses: combat::Senses {
+                    catalog: &self.catalog,
+                    terrain: &self.terrain,
+                    vision: &self.vision,
+                    rules: &self.sight,
+                    combat: &self.combat.rules,
+                    camps: &self.combat.camps,
+                    teams: &self.combat.teams,
+                    cache: None,
+                },
+                spatial: &mut self.motion.spatial,
+                events: &mut self.events,
+                economy: &mut self.economy,
+                limits: self.combat.limits,
+                suppress: 0,
+            };
+            let input = ai::frame::Input {
+                state: &self.state,
+                catalog: &self.catalog,
+                spells: &spells,
+            };
+            self.ai.decide(&input, &mut memories, clock)
+        };
+        self.state.ai = memories;
+        for (player, command) in commands {
+            let queued = Queued {
+                tick: clock + 1,
+                player,
+                seq: command.seq,
+                action: command.action,
+            };
+            // The AI only issues well-formed commands; a malformed one is dropped as the
+            // old queue did, and its pending entry expires with the memory bound.
+            if queued.action.problem().is_none() {
+                self.pending.push(queued);
+            }
+        }
+    }
+
+    /// What each AI player is doing, for the debug overlay.
+    pub fn ai_summaries(&self) -> Vec<ai::Summary> {
+        ai::Brains::summaries(&self.state.ai)
     }
 
     /// The lockstep clock commands are scheduled on. It runs on while cinematic dialogue
@@ -201,8 +302,20 @@ impl World {
         Ok(())
     }
 
+    /// Commands scheduled and not yet applied, in the order they were queued.
+    pub fn pending(&self) -> &[Queued] {
+        &self.pending
+    }
+
     /// Simulates one tick.
     pub fn step(&mut self) {
+        let clock = self.tick();
+        self.advance();
+        self.think(clock);
+    }
+
+    /// Steps 1 to 11 of a tick.
+    fn advance(&mut self) {
         self.apply_due();
         // Step 2: cinematic dialogue pauses the game; only the clock advances.
         if mission::pause(&mut self.state) {
@@ -359,9 +472,18 @@ impl World {
         due.sort_by_key(|c| (c.tick, c.player, c.seq));
         for command in due {
             let owner = Owner::Player(command.player);
-            if let Err(reason) = self.apply(owner, &command.action) {
+            let result = self.apply(owner, &command.action);
+            let accepted = result.is_ok();
+            if let Err(reason) = result {
                 self.state.fact(owner, FactKind::Error, reason);
             }
+            ai::Brains::receipt(
+                &mut self.state.ai,
+                command.player,
+                command.seq,
+                tick,
+                accepted,
+            );
         }
     }
 
@@ -561,6 +683,7 @@ impl World {
             &self.economy,
         );
         self.add_combat(&mut view, None);
+        view.ai = self.ai_summaries();
         view
     }
 
@@ -677,7 +800,15 @@ impl World {
             appearance_scales(map, &terrain),
         );
         let economy = Economy::new(&state, &catalog, &save.setup);
-        Ok(Self {
+        let brains = ai::Brains::new(
+            &catalog,
+            map,
+            terrain.clone(),
+            &save.setup,
+            appearance_scales(map, &terrain),
+        );
+        brains.check(&state.ai, &save.pending).map_err(SetupError)?;
+        let mut world = Self {
             catalog,
             terrain,
             setup: save.setup,
@@ -691,7 +822,10 @@ impl World {
             rules: match_rules(map),
             sight,
             events: abilities::Events::default(),
-        })
+            ai: brains,
+        };
+        world.prepare_ai();
+        Ok(world)
     }
 }
 

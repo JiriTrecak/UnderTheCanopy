@@ -5,6 +5,7 @@
 
 pub mod abilities;
 pub mod action;
+pub mod ai;
 pub mod camps;
 pub mod catalog;
 pub mod combat;

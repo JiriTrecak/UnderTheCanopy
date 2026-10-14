@@ -318,7 +318,8 @@ fn eight_colonies_run_a_full_economy() {
         slots: (0..players)
             .map(|player| Slot {
                 player,
-                kind: SlotKind::Ai,
+                // Scripted players: AI players would add their own commands.
+                kind: SlotKind::Human,
                 name: None,
                 team: None,
                 hero: None,

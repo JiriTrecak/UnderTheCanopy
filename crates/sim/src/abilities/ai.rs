@@ -34,6 +34,11 @@ struct World<'a> {
     caster: &'a Actor,
     ability: AbilityId,
     corpses: &'a [CorpseView],
+    /// Every operation chooses its recipients from the units as the earlier operations
+    /// left them (the player AI); otherwise operations without a query choose from the
+    /// units as they were when the cast began, as the old scorer did (autocast and camps,
+    /// D25).
+    sequential: bool,
 }
 
 impl World<'_> {
@@ -228,7 +233,7 @@ fn score(
                     .find(|(id, _)| *id == t.id)
                     .map_or_else(|| w.side(t), |(_, s)| *s)
             };
-            let pool = if effect.query().is_some() {
+            let pool = if effect.query().is_some() || w.sequential {
                 &actors
             } else {
                 &defaults
@@ -564,6 +569,7 @@ impl Recipient {
 
 /// Tactical destinations for escape, reinforce and scout intents (old
 /// `strategicAbilityAims`).
+#[allow(clippy::too_many_arguments)]
 fn strategic(
     ctx: &Ctx,
     state: &State,
@@ -572,6 +578,7 @@ fn strategic(
     rank: u8,
     caster: &Actor,
     observed: &[Actor],
+    usable: &dyn Fn(i32, i32) -> bool,
 ) -> Vec<Aim> {
     let range = library::value(spell, rank, &spell.targeting.range) as f64;
     let side = |t: &Actor| actor::relation(&ctx.senses, caster, t);
@@ -613,7 +620,7 @@ fn strategic(
         return Vec::new();
     }
     let size = ctx.spatial.size() as i32;
-    let valid = |x: i32, y: i32| x >= 0 && y >= 0 && x < size && y < size;
+    let valid = |x: i32, y: i32| x >= 0 && y >= 0 && x < size && y < size && usable(x, y);
     let visible = |x: i32, y: i32| {
         super::visible_point(
             ctx,
@@ -799,7 +806,16 @@ pub fn ambient(ctx: &mut Ctx, state: &mut State) {
                     .and_then(|a| a.intent)
                     .filter(|&i| i != AiIntent::Utility)
             {
-                let aims = strategic(ctx, state, intent, spell, rank, &caster, &observed);
+                let aims = strategic(
+                    ctx,
+                    state,
+                    intent,
+                    spell,
+                    rank,
+                    &caster,
+                    &observed,
+                    &|_, _| true,
+                );
                 let chosen = aims.into_iter().find(|&aim| {
                     cast::reason(ctx, state, id, &binding, aim, Control::Ai, false).is_ok()
                 });
@@ -842,6 +858,7 @@ pub fn ambient(ctx: &mut Ctx, state: &mut State) {
                     caster: &caster,
                     ability: b.ability,
                     corpses: &visible_corpses,
+                    sequential: false,
                 };
                 candidates.push((
                     t.id,
@@ -860,6 +877,7 @@ pub fn ambient(ctx: &mut Ctx, state: &mut State) {
                     caster: &caster,
                     ability: b.ability,
                     corpses: &visible_corpses,
+                    sequential: false,
                 };
                 candidates.push((
                     key,
@@ -882,4 +900,61 @@ pub fn ambient(ctx: &mut Ctx, state: &mut State) {
             }
         }
     }
+}
+
+/// How the player AI (M2.8) values casting `ability` at `rank` from `caster` at `aim`,
+/// given the units its player observes: the release program predicted in order on copies
+/// of them. Unlike autocast, every operation chooses its recipients from the units as the
+/// earlier operations left them.
+#[allow(clippy::too_many_arguments)]
+pub fn player_score(
+    ctx: &Ctx,
+    state: &State,
+    caster: &Actor,
+    ability: AbilityId,
+    rank: u8,
+    aim: &program::Aim,
+    observed: &[Actor],
+    preference: AiPreference,
+    corpses: &[CorpseView],
+) -> f64 {
+    let w = World {
+        ctx,
+        state,
+        caster,
+        ability,
+        corpses,
+        sequential: true,
+    };
+    score(&w, ctx.ability(ability), rank, aim, observed, preference)
+}
+
+/// Tactical destinations for the player AI's escape, reinforce and scout intents, best
+/// first; `usable` rejects cells the player knows it cannot use.
+#[allow(clippy::too_many_arguments)]
+pub fn player_strategic(
+    ctx: &Ctx,
+    state: &State,
+    intent: AiIntent,
+    ability: AbilityId,
+    rank: u8,
+    caster: &Actor,
+    observed: &[Actor],
+    usable: &dyn Fn(i32, i32) -> bool,
+) -> Vec<Aim> {
+    strategic(
+        ctx,
+        state,
+        intent,
+        ctx.ability(ability),
+        rank,
+        caster,
+        observed,
+        usable,
+    )
+}
+
+/// Corpse points a resurrection or corpse summon may aim at, by corpse id.
+pub fn corpse_points(ability: &Ability, corpses: &[CorpseView]) -> Vec<(EntityId, Milli)> {
+    corpse_aims(ability, corpses)
 }
