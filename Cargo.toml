@@ -60,12 +60,11 @@ serde_json = "1"
 serde_path_to_error = "0.1"
 serde_with = "3"
 sha2 = "0.11"
-# Update packages (`.app.tar.gz`, the old Tauri updater format) in the release tool.
-tar = "0.4"
 # UI layout (flexbox and grid); `parse` reads CSS values from the layout files.
 taffy = { version = "0.15", features = ["parse"] }
-# Unpacks update packages (`.app.tar.gz`, the old Tauri updater's format).
-tar = { version = "0.4", default-features = false }
+# Update packages (`.app.tar.gz`, the old Tauri updater's format): the release tool packs
+# them, the game unpacks them.
+tar = "0.4"
 thiserror = "2"
 tokio = { version = "1", default-features = false, features = ["rt", "net", "sync", "time", "macros"] }
 tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
