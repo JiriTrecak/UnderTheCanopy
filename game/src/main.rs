@@ -1,6 +1,7 @@
 //! Under the Canopy: the game executable.
 
 mod app;
+mod bench;
 mod clipboard;
 mod data;
 mod files;
@@ -24,6 +25,9 @@ use winit::event_loop::EventLoop;
 
 fn main() -> Result<()> {
     telemetry::init();
+    if std::env::args().nth(1).as_deref() == Some("bench-render") {
+        return bench::run(std::env::args().skip(2));
+    }
     let options = options::Options::parse(std::env::args().skip(1))?;
     let paths = paths::Paths::resolve(options.data.clone())?;
     tracing::info!(data = %paths.data.display(), user = %paths.user.display(), "starting");

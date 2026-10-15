@@ -38,6 +38,14 @@
               {
                 "class": "settings-row",
                 "children": [
+                  { "kind": "label", "class": "settings-label", "text": "Graphics quality" },
+                  { "id": "preset", "kind": "dropdown", "class": "select", "action": "settings.preset", "options": ["Auto", "Low", "Medium", "High", "Ultra", "Custom"] },
+                  { "kind": "label", "class": "settings-note", "text": "Auto picks what this Mac's graphics handle at 60 fps. Changing a setting below makes it Custom." }
+                ]
+              },
+              {
+                "class": "settings-row",
+                "children": [
                   { "kind": "label", "class": "settings-label", "text": "Game resolution" },
                   { "id": "resolution", "kind": "dropdown", "class": "select", "action": "settings.resolution", "options": ["Native"] },
                   { "kind": "label", "class": "settings-note", "text": "The battlefield renders at most at this size; the interface stays at native resolution." }

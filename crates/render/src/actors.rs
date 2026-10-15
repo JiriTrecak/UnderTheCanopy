@@ -29,6 +29,35 @@ use wgpu::util::DeviceExt;
 pub const MAX_POSES: usize = 3;
 const MODEL_STRIDE: u64 = 256;
 const SKIN_GROUP: u32 = 64;
+/// Levels of detail a model may have: the full mesh and the cooker's coarser ones.
+pub const MAX_LODS: usize = 5;
+/// Shadow-map texels a shadow caster's level of detail may deviate by (the PCF filter
+/// spreads every edge over several texels).
+const SHADOW_LOD_TEXELS: f32 = 1.0;
+
+/// How the frame chooses levels of detail: the coarsest level whose deviation, projected
+/// at the instance's view depth, stays within `max_pixels`.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct LodView {
+    /// World → view (looks down −z).
+    pub view: Mat4,
+    /// Pixels a world unit covers at view depth 1 (`height / (2 tan(fov_y / 2))`).
+    pub pixels_per_unit: f32,
+    /// Largest projected deviation allowed, pixels; 0 draws every model in full.
+    pub max_pixels: f32,
+    /// World units per shadow-map texel.
+    pub shadow_texel: f32,
+}
+
+/// One level of detail of a loaded model: index ranges over the full mesh's vertices.
+struct ModelLod {
+    /// Largest deviation from the full mesh, model units (0 for the full mesh).
+    error: f32,
+    /// First index and count per section.
+    sections: Vec<(u32, u32)>,
+    /// First index and count in the depth stream.
+    depth: (u32, u32),
+}
 
 /// One sampled clip of a posed instance.
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -128,6 +157,8 @@ struct GpuModel {
     index_format: wgpu::IndexFormat,
     depth: Option<DepthBuffers>,
     sections: Vec<canopy_assets::Section>,
+    /// Level 0 is the full mesh.
+    lods: Vec<ModelLod>,
     materials: Vec<GpuMaterial>,
     masked_shadow_sections: Vec<usize>,
     joints: u32,
@@ -147,7 +178,6 @@ struct DepthBuffers {
     skin: wgpu::Buffer,
     indices: wgpu::Buffer,
     format: wgpu::IndexFormat,
-    count: u32,
 }
 
 /// A loaded model or one that could not be loaded.
@@ -164,6 +194,13 @@ struct Range {
     camera: u32,
     all: u32,
     translucent: u32,
+    /// Camera-visible opaque instances per level of detail, in order (they partition
+    /// `camera`).
+    lods: [u32; MAX_LODS],
+    /// The level the shadow map draws every caster of the model at.
+    shadow_lod: u8,
+    /// Largest scale of the model's shadow casters.
+    shadow_scale: f32,
 }
 
 /// Counts of the live scene in the latest frame.
@@ -175,6 +212,9 @@ pub struct ActorStats {
     pub shadow_casters: u32,
     pub joints: u32,
     pub draws: u32,
+    /// Triangles drawn for the camera (opaque and translucent) and into the shadow map.
+    pub triangles: u64,
+    pub shadow_triangles: u64,
 }
 
 /// A growable GPU buffer.
@@ -691,7 +731,6 @@ impl ActorsGpu {
                     wgpu::BufferUsages::INDEX,
                 ),
                 format: wgpu_index(meta.depth.index_format),
-                count: meta.depth.index_count,
             }
         });
         let glow = self.glows.get(name).copied();
@@ -722,6 +761,20 @@ impl ActorsGpu {
         let min = Vec3::from_array(meta.bounds.min);
         let max = Vec3::from_array(meta.bounds.max);
         self.max_joints = self.max_joints.max(joints);
+        let mut lods = vec![ModelLod {
+            error: 0.0,
+            sections: meta
+                .sections
+                .iter()
+                .map(|s| (s.first_index, s.index_count))
+                .collect(),
+            depth: (0, meta.depth.index_count),
+        }];
+        lods.extend(meta.lods.iter().take(MAX_LODS - 1).map(|lod| ModelLod {
+            error: lod.error,
+            sections: lod.sections.iter().map(|r| (r[0], r[1])).collect(),
+            depth: (lod.depth[0], lod.depth[1]),
+        }));
         Ok(GpuModel {
             name: name.to_owned(),
             vertices: buffer(
@@ -740,6 +793,7 @@ impl ActorsGpu {
             index_format: wgpu_index(meta.index_format),
             depth,
             sections: meta.sections.clone(),
+            lods,
             casts: materials.iter().any(|m| m.casts_shadow),
             materials,
             masked_shadow_sections: meta
@@ -774,12 +828,15 @@ impl ActorsGpu {
         queue: &wgpu::Queue,
         camera: Mat4,
         sun: Option<Mat4>,
+        lod: Option<&LodView>,
     ) {
         let _span = tracing::trace_span!("actors_prepare").entered();
         let camera_planes = frustum_planes(camera);
         let sun_planes = sun.map(frustum_planes);
-        // (model, 0 camera-visible / 1 sun only / 2 translucent, input index)
-        let mut order: Vec<(u32, u8, u32)> = Vec::with_capacity(self.instances.len());
+        self.ranges.clear();
+        self.ranges.resize(self.slots.len(), Range::default());
+        // (model, 0 camera-visible / 1 sun only / 2 translucent, level of detail, input)
+        let mut order: Vec<(u32, u8, u8, u32)> = Vec::with_capacity(self.instances.len());
         let mut casters = 0;
         for (i, instance) in self.instances.iter().enumerate() {
             let Some(Slot::Ready(model)) = self.slots.get(instance.model as usize) else {
@@ -790,7 +847,7 @@ impl ActorsGpu {
             let in_camera = sphere_visible(&camera_planes, sphere);
             if instance.translucent() {
                 if in_camera && instance.tint[3] > 0.0 {
-                    order.push((instance.model, 2, i as u32));
+                    order.push((instance.model, 2, 0, i as u32));
                 }
                 continue;
             }
@@ -802,19 +859,30 @@ impl ActorsGpu {
                     .as_ref()
                     .is_some_and(|p| sphere_visible(p, sphere));
             casters += u32::from(in_sun);
+            let scale = max_scale(&instance.transform);
+            if in_sun {
+                let range = &mut self.ranges[instance.model as usize];
+                range.shadow_scale = range.shadow_scale.max(scale);
+            }
             if in_camera {
-                order.push((instance.model, 0, i as u32));
+                let level = lod.map_or(0, |view| {
+                    let depth = -view.view.transform_point3(sphere.truncate()).z;
+                    // World units per pixel at the instance; the allowed deviation in
+                    // model units.
+                    let allowed = view.max_pixels * depth.max(1e-3)
+                        / (view.pixels_per_unit * scale.max(1e-6));
+                    choose_lod(&model.lods, allowed)
+                });
+                order.push((instance.model, 0, level, i as u32));
             } else if in_sun {
-                order.push((instance.model, 1, i as u32));
+                order.push((instance.model, 1, 0, i as u32));
             }
         }
         order.sort_unstable();
-        self.ranges.clear();
-        self.ranges.resize(self.slots.len(), Range::default());
         self.staging_actors.clear();
         self.staging_jobs.clear();
         let mut palette_len = 0u32;
-        for &(m, view, i) in &order {
+        for &(m, view, level, i) in &order {
             let instance = &self.instances[i as usize];
             let Slot::Ready(model) = &self.slots[m as usize] else {
                 continue;
@@ -827,6 +895,7 @@ impl ActorsGpu {
                 0 => {
                     range.camera += 1;
                     range.all += 1;
+                    range.lods[usize::from(level)] += 1;
                 }
                 1 => range.all += 1,
                 _ => range.translucent += 1,
@@ -838,6 +907,17 @@ impl ActorsGpu {
                 model,
                 instance,
             );
+        }
+        // Shadow casters: one level per model, from the shadow map's texel (orthographic,
+        // so the same everywhere).
+        for (slot, range) in self.slots.iter().zip(self.ranges.iter_mut()) {
+            if let (Slot::Ready(model), Some(view)) = (slot, lod)
+                && range.all > 0
+                && view.max_pixels > 0.0
+            {
+                let allowed = SHADOW_LOD_TEXELS * view.shadow_texel / range.shadow_scale.max(1e-6);
+                range.shadow_lod = choose_lod(&model.lods, allowed);
+            }
         }
         // The portrait's model, after everything the views draw.
         self.portrait_slot = None;
@@ -935,7 +1015,31 @@ impl ActorsGpu {
             shadow_casters: casters,
             joints: palette_len,
             draws: 0,
+            triangles: 0,
+            shadow_triangles: 0,
         };
+        for (slot, range) in self.slots.iter().zip(&self.ranges) {
+            let Slot::Ready(model) = slot else { continue };
+            let indices = |lod: &ModelLod| lod.sections.iter().map(|s| u64::from(s.1)).sum::<u64>();
+            for (lod, &count) in model.lods.iter().zip(&range.lods) {
+                self.stats.triangles += u64::from(count) * indices(lod) / 3;
+            }
+            self.stats.triangles += u64::from(range.translucent) * indices(&model.lods[0]) / 3;
+            if model.casts {
+                let lod = &model.lods[usize::from(range.shadow_lod)];
+                let depth = if model.depth.is_some() {
+                    u64::from(lod.depth.1)
+                } else {
+                    0
+                };
+                let masked: u64 = model
+                    .masked_shadow_sections
+                    .iter()
+                    .map(|&s| u64::from(lod.sections[s].1))
+                    .sum();
+                self.stats.shadow_triangles += u64::from(range.all) * (depth + masked) / 3;
+            }
+        }
     }
 
     /// Records the palette blend (inside a compute pass).
@@ -962,9 +1066,10 @@ impl ActorsGpu {
     }
 
     fn draw_sections(&self, pass: &mut wgpu::RenderPass<'_>, blend: bool) -> u32 {
-        // (pipeline, model, section, instances): opaque instances draw each section with
-        // its own variant; translucent ones draw every section blended.
-        let mut draws: Vec<(Variant, usize, usize, std::ops::Range<u32>)> = Vec::new();
+        // (pipeline, model, section, level, instances): opaque instances draw each section
+        // with its own variant, a draw per level of detail; translucent ones draw every
+        // section of the full mesh blended.
+        let mut draws: Vec<(Variant, usize, usize, usize, std::ops::Range<u32>)> = Vec::new();
         for (m, slot) in self.slots.iter().enumerate() {
             let Slot::Ready(model) = slot else { continue };
             let Some(range) = self.ranges.get(m).copied() else {
@@ -973,18 +1078,24 @@ impl ActorsGpu {
             for (s, section) in model.sections.iter().enumerate() {
                 let variant = model.materials[section.material as usize].variant;
                 if range.camera > 0 && variant.is_blend() == blend {
-                    draws.push((variant, m, s, range.first..range.first + range.camera));
+                    let mut first = range.first;
+                    for (level, &count) in range.lods.iter().enumerate() {
+                        if count > 0 {
+                            draws.push((variant, m, s, level, first..first + count));
+                        }
+                        first += count;
+                    }
                 }
                 if blend && range.translucent > 0 {
                     let first = range.first + range.all;
-                    draws.push((variant.blended(), m, s, first..first + range.translucent));
+                    draws.push((variant.blended(), m, s, 0, first..first + range.translucent));
                 }
             }
         }
-        draws.sort_unstable_by_key(|d| (d.0, d.1, d.2, d.3.start));
+        draws.sort_unstable_by_key(|d| (d.0, d.1, d.2, d.3, d.4.start));
         let mut current = None;
         let mut bound = usize::MAX;
-        for (variant, m, s, instances) in &draws {
+        for (variant, m, s, level, instances) in &draws {
             let Slot::Ready(model) = &self.slots[*m] else {
                 continue;
             };
@@ -997,13 +1108,14 @@ impl ActorsGpu {
                 bound = *m;
             }
             let section = model.sections[*s];
+            let (first, count) = model.lods[*level].sections[*s];
             pass.set_bind_group(
                 1,
                 &model.materials[section.material as usize].bind_group,
                 &[],
             );
             pass.draw_indexed(
-                section.first_index..section.first_index + section.index_count,
+                first..first + count,
                 section.base_vertex as i32,
                 instances.clone(),
             );
@@ -1046,6 +1158,7 @@ impl ActorsGpu {
                 continue;
             }
             let instances = range.first..range.first + range.all;
+            let lod = &model.lods[usize::from(range.shadow_lod)];
             if let Some(depth) = &model.depth {
                 pass.set_pipeline(&self.depth_pipeline);
                 pass.set_bind_group(1, &model.materials[0].bind_group, &[]);
@@ -1053,7 +1166,8 @@ impl ActorsGpu {
                 pass.set_vertex_buffer(0, depth.positions.slice(..));
                 pass.set_vertex_buffer(1, depth.skin.slice(..));
                 pass.set_index_buffer(depth.indices.slice(..), depth.format);
-                pass.draw_indexed(0..depth.count, 0, instances.clone());
+                let (first, n) = lod.depth;
+                pass.draw_indexed(first..first + n, 0, instances.clone());
                 count += 1;
             }
             if !model.masked_shadow_sections.is_empty() {
@@ -1061,13 +1175,14 @@ impl ActorsGpu {
                 self.bind_model(pass, m, model);
                 for &s in &model.masked_shadow_sections {
                     let section = model.sections[s];
+                    let (first, n) = lod.sections[s];
                     pass.set_bind_group(
                         1,
                         &model.materials[section.material as usize].bind_group,
                         &[],
                     );
                     pass.draw_indexed(
-                        section.first_index..section.first_index + section.index_count,
+                        first..first + n,
                         section.base_vertex as i32,
                         instances.clone(),
                     );
@@ -1093,6 +1208,23 @@ impl ActorsGpu {
     pub fn is_ready(&self, index: usize) -> bool {
         matches!(self.slots.get(index), Some(Slot::Ready(_)))
     }
+}
+
+/// The largest axis scale of an affine transform.
+fn max_scale(transform: &Mat4) -> f32 {
+    transform
+        .x_axis
+        .truncate()
+        .length()
+        .max(transform.y_axis.truncate().length())
+        .max(transform.z_axis.truncate().length())
+}
+
+/// The coarsest level whose deviation is within `allowed` model units.
+fn choose_lod(lods: &[ModelLod], allowed: f32) -> u8 {
+    lods.iter()
+        .rposition(|lod| lod.error <= allowed)
+        .unwrap_or(0) as u8
 }
 
 /// Adds one instance's GPU record and skinning job.

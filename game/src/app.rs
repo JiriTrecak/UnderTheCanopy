@@ -101,7 +101,7 @@ impl App {
     }
 
     fn open(&mut self, event_loop: &ActiveEventLoop) -> Result<()> {
-        let (settings, note) = Settings::load(&self.paths.user);
+        let (mut settings, note) = Settings::load(&self.paths.user);
         if let Some(error) = note.error {
             tracing::warn!(%error, moved = ?note.moved_aside, "settings could not be read; defaults used");
         }
@@ -120,6 +120,9 @@ impl App {
         let environment = canopy_render::Environment::new(&look.lighting, &look.biome, 12.0, None);
         let mut renderer =
             Renderer::new(&display.gpu, display.format(), display.size(), environment);
+        // `Auto` (the default) takes the adapter's preset (D42).
+        settings.graphics.detect(display.gpu.preset());
+        tracing::info!(preset = ?settings.graphics.active_preset(), "graphics");
         renderer.set_quality(&display.gpu, settings.graphics.quality(display.size()));
         renderer.shadows = settings.graphics.shadows;
         let game = Game::new(self.paths.clone(), settings, &display.gpu, self.dev_start())?;
@@ -168,6 +171,10 @@ impl App {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
         let ui_view = session.display.ui_view(&frame);
+        // The frame logged below measures its GPU time from submit to idle (pass
+        // timestamps are not trustworthy on Apple GPUs, D34).
+        let log_due = (now - self.stats_since).as_secs_f32() >= 2.0;
+        session.renderer.sample_gpu_time |= log_due;
         let report = session.game.render(
             &mut Ctx {
                 gpu: &session.display.gpu,
@@ -192,7 +199,8 @@ impl App {
         if (now - self.stats_since).as_secs_f32() >= 2.0 {
             let frames = st.frames.max(1) as f32;
             if let Some(report) = report {
-                let gpu: Option<f32> = report.gpu_ms.as_ref().map(|g| g.iter().sum());
+                // Submit to idle of this (sampled) frame; `None` outside a match.
+                let gpu = report.gpu_frame_ms;
                 let a = report.actors;
                 tracing::info!(
                     fps = (1000.0 * frames / st.dt_ms.max(1.0)).round(),

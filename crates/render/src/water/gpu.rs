@@ -793,6 +793,15 @@ impl WaterGpu {
 
     /// The water surface, after every opaque surface of the forward pass: the
     /// absorption over the bed, then the surface.
+    /// Triangles of the latest prepared frame (both draws).
+    pub fn triangles(&self) -> u64 {
+        2 * self
+            .draws
+            .iter()
+            .map(|&(_, n)| u64::from(n / 3))
+            .sum::<u64>()
+    }
+
     pub fn draw<'a>(&'a self, pass: &mut wgpu::RenderPass<'a>, frame: &'a wgpu::BindGroup) -> u32 {
         if self.draws.is_empty() {
             return 0;

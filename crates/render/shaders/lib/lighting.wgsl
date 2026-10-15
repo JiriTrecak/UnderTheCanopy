@@ -64,6 +64,20 @@ fn environment_brdf(f0: vec3f, roughness: f32, nv: f32) -> vec3f {
 
 const VOGEL_TAPS: i32 = 8;
 
+// The Vogel disk, unrotated: tap i at radius sqrt((i + 0.5) / 8) and angle i · 2.3999632
+// (the golden angle). Each pixel rotates it by one angle, so a pixel evaluates one sine
+// and one cosine instead of one per tap.
+const VOGEL_DISK = array<vec2f, 8>(
+    vec2f(0.250000000, 0.000000000),
+    vec2f(-0.319290081, 0.292495887),
+    vec2f(0.048872433, -0.556876544),
+    vec2f(0.402444525, 0.524917521),
+    vec2f(-0.738535130, -0.130636375),
+    vec2f(0.699604866, -0.445031495),
+    vec2f(-0.234004003, 0.870483846),
+    vec2f(-0.446271487, -0.859268154),
+);
+
 // Fraction of sunlight reaching `world`: an 8-tap rotated Vogel disk of hardware PCF
 // lookups in the view-fitted sun map.
 fn sun_visibility(world: vec3f, normal: vec3f, frag: vec2f) -> f32 {
@@ -79,11 +93,12 @@ fn sun_visibility(world: vec3f, normal: vec3f, frag: vec2f) -> f32 {
     }
     let angle = interleaved_gradient(frag) * 6.2831853;
     let radius = max(frame.shadow.y, 0.5) * frame.shadow.x;
+    let c = cos(angle) * radius;
+    let s = sin(angle) * radius;
     var lit = 0.0;
     for (var i = 0; i < VOGEL_TAPS; i++) {
-        let r = sqrt((f32(i) + 0.5) / f32(VOGEL_TAPS)) * radius;
-        let theta = f32(i) * 2.3999632 + angle;
-        let offset = vec2f(cos(theta), sin(theta)) * r;
+        let d = VOGEL_DISK[i];
+        let offset = vec2f(d.x * c - d.y * s, d.x * s + d.y * c);
         lit += textureSampleCompareLevel(shadow_map, shadow_sampler, uv + offset, depth);
     }
     return lit / f32(VOGEL_TAPS);
@@ -137,7 +152,12 @@ fn surface_light(s: Surface, view: vec3f, frag: vec2f) -> vec3f {
     let fresnel = f0 + (1.0 - f0) * pow(1.0 - hv, 5.0);
     let specular = distribution * visibility * fresnel * nl / (4.0 * nv * nl + 1e-5) * s.specular;
     let diffuse = s.albedo * (1.0 - s.metalness);
-    let sun = frame.sun.rgb * sun_visibility(s.position, n, frag);
+    // Surfaces facing away from the sun receive no direct light: skip the shadow taps.
+    var shadowed = 0.0;
+    if (nl > 0.0) {
+        shadowed = sun_visibility(s.position, n, frag);
+    }
+    let sun = frame.sun.rgb * shadowed;
     let reflection = environment_irradiance(reflect(-view, n)) * environment_brdf(f0, r, nv) * s.specular;
 
     var direct: vec3f;

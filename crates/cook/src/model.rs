@@ -10,9 +10,9 @@ use crate::{
 };
 use canopy_assets::{
     Aabb, AlphaMode, AnimationEvent, AnimationState, BlobBuilder, Blocker, BlockerShape,
-    CLIP_FRAME_RATE, Clip, DepthStream, EntryKind, GroundContact, IndexFormat, Joint, Material,
-    MaterialModel, MaterialTextures, ModelMeta, Prototype, Section, Skeleton, SkinVertex, Socket,
-    TeamColor, Vertex, VertexColor, Wind, WindMode,
+    CLIP_FRAME_RATE, Clip, DepthStream, EntryKind, GroundContact, IndexFormat, Joint, Lod,
+    Material, MaterialModel, MaterialTextures, ModelMeta, Prototype, Section, Skeleton, SkinVertex,
+    Socket, TeamColor, Vertex, VertexColor, Wind, WindMode,
 };
 use canopy_content::assets::models::{self, PublishedModel};
 use serde_json::Value;
@@ -396,6 +396,23 @@ pub fn cook(source: &ModelSource, glb: &[u8], diags: &mut Diagnostics) -> Option
     } else {
         IndexFormat::U32
     };
+    // Levels of detail: coarser index lists over the same vertices, after the full ones.
+    let mut lods = Vec::new();
+    for (error, lists) in simplify_levels(&stream, &sections, rest_bounds) {
+        let ranges = lists
+            .iter()
+            .map(|list| {
+                let first = stream.indices.len() as u32;
+                stream.indices.extend_from_slice(list);
+                [first, list.len() as u32]
+            })
+            .collect();
+        lods.push(Lod {
+            error,
+            sections: ranges,
+            depth: [0, 0],
+        });
+    }
     let indices_span = push_indices(&mut builder, index_format, &stream.indices);
 
     let depth = depth_stream(
@@ -404,6 +421,7 @@ pub fn cook(source: &ModelSource, glb: &[u8], diags: &mut Diagnostics) -> Option
         &stream.indices,
         &sections,
         &materials,
+        &mut lods,
     );
     let depth_positions = builder.push(&depth.positions);
     let depth_skin = depth.skin.as_ref().map(|s| builder.push(s));
@@ -450,10 +468,11 @@ pub fn cook(source: &ModelSource, glb: &[u8], diags: &mut Diagnostics) -> Option
             positions: depth_positions,
             skin: depth_skin,
             index_format: depth_format,
-            index_count: depth.indices.len() as u32,
+            index_count: depth.full,
             indices: depth_indices,
             masked: depth.masked,
         },
+        lods,
         materials,
         skeleton: animated.then_some(Skeleton { joints }),
         clips,
@@ -915,37 +934,46 @@ fn push_indices(
 struct Depth {
     positions: Vec<[u16; 4]>,
     skin: Option<Vec<SkinVertex>>,
+    /// The full mesh's indices, then every level of detail's.
     indices: Vec<u32>,
+    /// Indices of the full mesh.
+    full: u32,
     masked: Vec<u32>,
 }
 
-/// Welds the opaque shadow casters into one position (and skin) stream.
+/// Welds the opaque shadow casters into one position (and skin) stream, and gives every
+/// level of detail its depth index range over the same welded vertices.
 fn depth_stream(
     vertices: &[Vertex],
     skin: Option<&[SkinVertex]>,
     indices: &[u32],
     sections: &[Section],
     materials: &[Material],
+    lods: &mut [Lod],
 ) -> Depth {
     let mut depth = Depth {
         positions: Vec::new(),
         skin: skin.map(|_| Vec::new()),
         indices: Vec::new(),
+        full: 0,
         masked: Vec::new(),
     };
     let mut welded: HashMap<([u16; 4], SkinVertex), u32> = HashMap::new();
-    for (s, section) in sections.iter().enumerate() {
-        let material = &materials[section.material as usize];
-        if !material.casts_shadow || material.alpha == AlphaMode::Blend {
-            continue;
-        }
-        if material.alpha == AlphaMode::Mask {
-            depth.masked.push(s as u32);
-            continue;
-        }
-        let range =
-            section.first_index as usize..(section.first_index + section.index_count) as usize;
-        for &local in &indices[range] {
+    let casters: Vec<usize> = (0..sections.len())
+        .filter(|&s| {
+            let material = &materials[sections[s].material as usize];
+            material.casts_shadow && material.alpha == AlphaMode::Opaque
+        })
+        .collect();
+    depth.masked = (0..sections.len())
+        .filter(|&s| {
+            let material = &materials[sections[s].material as usize];
+            material.casts_shadow && material.alpha == AlphaMode::Mask
+        })
+        .map(|s| s as u32)
+        .collect();
+    let mut weld = |depth: &mut Depth, section: &Section, first: u32, count: u32| {
+        for &local in &indices[first as usize..(first + count) as usize] {
             let v = (section.base_vertex + local) as usize;
             let skin_vertex = skin.map_or(SkinVertex::default(), |s| s[v]);
             let key = (vertices[v].position, skin_vertex);
@@ -958,8 +986,94 @@ fn depth_stream(
             });
             depth.indices.push(index);
         }
+    };
+    for &s in &casters {
+        let section = &sections[s];
+        weld(
+            &mut depth,
+            section,
+            section.first_index,
+            section.index_count,
+        );
+    }
+    depth.full = depth.indices.len() as u32;
+    for lod in lods {
+        let first = depth.indices.len() as u32;
+        for &s in &casters {
+            let [first_index, count] = lod.sections[s];
+            weld(&mut depth, &sections[s], first_index, count);
+        }
+        lod.depth = [first, depth.indices.len() as u32 - first];
     }
     depth
+}
+
+/// Fewest triangles a model needs before it gets levels of detail.
+const LOD_MIN_TRIANGLES: usize = 1024;
+/// The deviation each level of detail may have, as a share of the model's size: each
+/// level is the smallest mesh within it.
+const LOD_ERRORS: [f64; 4] = [0.004, 0.012, 0.03, 0.07];
+
+/// Simplified index lists (section-local, per section) for each level of detail with the
+/// largest deviation of any section in model units, finest first. Levels that shrink the
+/// previous one by less than a fifth are left out. Topology is kept: no piece vanishes
+/// and seams stay closed, which bounds how far a level can shrink. Positions only: seams
+/// (split UVs and normals) stay closed, as meshoptimizer keeps vertices sharing a
+/// position together.
+fn simplify_levels(
+    stream: &Stream,
+    sections: &[Section],
+    rest: (Vec3, Vec3),
+) -> Vec<(f32, Vec<Vec<u32>>)> {
+    let total: usize = sections.iter().map(|s| s.index_count as usize / 3).sum();
+    if total < LOD_MIN_TRIANGLES {
+        return Vec::new();
+    }
+    let size = (0..3)
+        .map(|i| (rest.1[i] - rest.0[i]).powi(2))
+        .sum::<f64>()
+        .sqrt();
+    let mut levels: Vec<(f32, Vec<Vec<u32>>)> = Vec::new();
+    let mut previous = total;
+    for share in LOD_ERRORS {
+        let limit = (share * size) as f32;
+        let options = meshopt::SimplifyOptions::ErrorAbsolute;
+        let mut error = 0.0f32;
+        let mut lists = Vec::with_capacity(sections.len());
+        for section in sections {
+            let base = section.base_vertex as usize;
+            let positions: Vec<[f32; 3]> = stream.positions
+                [base..base + section.vertex_count as usize]
+                .iter()
+                .map(|p| p.map(|v| v as f32))
+                .collect();
+            let first = section.first_index as usize;
+            let indices = &stream.indices[first..first + section.index_count as usize];
+            if indices.is_empty() {
+                lists.push(Vec::new());
+                continue;
+            }
+            let target = 3;
+            let mut section_error = 0.0f32;
+            let list = meshopt::simplify_decoder(
+                indices,
+                &positions,
+                target,
+                limit,
+                options,
+                Some(&mut section_error),
+            );
+            error = error.max(section_error);
+            lists.push(list);
+        }
+        let triangles: usize = lists.iter().map(|l| l.len() / 3).sum();
+        if triangles * 5 > previous * 4 {
+            continue;
+        }
+        previous = triangles;
+        levels.push((error, lists));
+    }
+    levels
 }
 
 fn bounds(points: impl Iterator<Item = Vec3>) -> (Vec3, Vec3) {

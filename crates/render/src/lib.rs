@@ -2,6 +2,7 @@
 //! simulation: callers describe the world with plain data and drive a camera.
 
 pub mod actors;
+pub mod bench;
 pub mod camera;
 pub mod capture;
 pub mod device;
@@ -30,5 +31,5 @@ pub mod world_ui;
 
 pub use camera::{CameraView, RtsCamera};
 pub use device::{DeviceOptions, Gpu, GpuFeatures};
-pub use quality::{HazeQuality, Quality};
-pub use renderer::{Environment, FrameReport, PortraitSubject, Renderer, World};
+pub use quality::{HazeQuality, Preset, Quality};
+pub use renderer::{Environment, FrameReport, PortraitSubject, Renderer, Triangles, World};

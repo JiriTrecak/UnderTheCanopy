@@ -222,6 +222,7 @@ fn model_blob() -> Vec<u8> {
             indices: depth_indices,
             masked: Vec::new(),
         },
+        lods: Vec::new(),
         materials: vec![material],
         skeleton: Some(Skeleton {
             joints: vec![

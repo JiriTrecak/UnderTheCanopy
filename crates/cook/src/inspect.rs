@@ -82,6 +82,16 @@ fn describe(pack: &Pack, entry: &IndexEntry, out: &mut String) -> Result<()> {
                     format!(", alpha-tested sections {:?}", m.depth.masked)
                 }
             )?;
+            for (i, lod) in m.lods.iter().enumerate() {
+                writeln!(
+                    out,
+                    "  lod {}: {} triangles, depth {}, error {:.4}",
+                    i + 1,
+                    lod.sections.iter().map(|r| r[1] / 3).sum::<u32>(),
+                    lod.depth[1] / 3,
+                    lod.error
+                )?;
+            }
             writeln!(
                 out,
                 "  bounds {:?} – {:?} (rest {:?} – {:?})",

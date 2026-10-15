@@ -11,7 +11,10 @@
 //!             [--select all|player:<slot>|<id,…>] [--health damaged|always|selected]
 //!             [--data <folder>] [graphics]
 //!             [--play | --observe] [--input <script>] (the HUD; see `play::capture`)
-//! graphics: [--render-scale <0.5–1>] [--no-contact] [--no-bloom] [--haze off|low|medium|high]
+//! graphics: [--preset low|medium|high|ultra] (first; later options adjust it)
+//!           [--render-scale <0.5–1>] [--no-contact] [--no-bloom] [--haze off|low|medium|high]
+//!           [--lod-pixels <px>] (live models' level-of-detail deviation; 0: full detail)
+//!           [--shadow-map <256–4096>]
 //!           [--biome <id>] (preview the map in another biome's look)
 //! ```
 //!
@@ -291,6 +294,20 @@ impl Options {
                     options.quality.render_scale = scale;
                 }
                 "--no-contact" => options.quality.contact_shadows = false,
+                "--preset" => {
+                    let text = value("--preset")?;
+                    options.quality = canopy_render::Preset::parse(&text)
+                        .with_context(|| format!("--preset {text}: low, medium, high or ultra"))?
+                        .quality();
+                }
+                "--shadow-map" => {
+                    options.quality.shadow_map =
+                        value("--shadow-map")?.parse().context("--shadow-map")?
+                }
+                "--lod-pixels" => {
+                    options.quality.lod_pixels =
+                        value("--lod-pixels")?.parse().context("--lod-pixels")?
+                }
                 "--no-bloom" => options.quality.bloom = false,
                 "--haze" => {
                     let text = value("--haze")?;
@@ -332,7 +349,7 @@ impl Options {
                     size = [w.parse().context("--size")?, h.parse().context("--size")?];
                 }
                 other => bail!(
-                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --tick, --crowd, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --effect, --viewer, --select, --health, --play, --observe, --input)"
+                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --tick, --crowd, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --preset, --lod-pixels, --shadow-map, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --effect, --viewer, --select, --health, --play, --observe, --input)"
                 ),
             }
             first = false;

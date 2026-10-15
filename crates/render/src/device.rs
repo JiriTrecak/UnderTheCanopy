@@ -124,6 +124,15 @@ impl Gpu {
     }
 
     /// The adapter's name, for reports.
+    /// The graphics preset for this adapter on first run ([`crate::Preset::for_adapter`]).
+    pub fn preset(&self) -> crate::Preset {
+        let info = self.adapter.get_info();
+        crate::Preset::for_adapter(
+            &info.name,
+            info.device_type == wgpu::DeviceType::DiscreteGpu,
+        )
+    }
+
     pub fn name(&self) -> String {
         let info = self.adapter.get_info();
         format!("{} ({:?})", info.name, info.backend)

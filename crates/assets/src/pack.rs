@@ -455,12 +455,21 @@ impl Model<'_> {
             sized(span, 8, d.vertex_count as usize, "depth skin")?;
         }
         check_indices(data, d.index_format, d.indices, name)?;
-        sized(
-            d.indices,
-            d.index_format.size(),
-            d.index_count as usize,
-            "depth indices",
-        )?;
+        let depth_count = d.indices.len as usize / d.index_format.size();
+        if d.index_count as usize > depth_count {
+            return Err(Error::corrupt(format!("{name}: depth indices length")));
+        }
+        let within = |[first, count]: [u32; 2], total: usize| (first + count) as usize <= total;
+        for lod in &m.lods {
+            if lod.sections.len() != m.sections.len()
+                || !lod.sections.iter().all(|&r| within(r, index_count))
+                || !within(lod.depth, depth_count)
+            {
+                return Err(Error::corrupt(format!(
+                    "{name}: level of detail out of range"
+                )));
+            }
+        }
         let joints = m.skeleton.as_ref().map_or(0, |s| s.joints.len());
         for clip in &m.clips {
             let frames = clip.frame_count as usize;

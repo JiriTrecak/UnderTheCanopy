@@ -492,7 +492,7 @@ impl StaticsGpu {
         let args_buffer = storage_init(
             "static draw arguments",
             &arg_bytes,
-            wgpu::BufferUsages::INDIRECT,
+            wgpu::BufferUsages::INDIRECT | wgpu::BufferUsages::COPY_SRC,
         );
         let counters = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("static counters"),
@@ -924,6 +924,37 @@ impl StaticsGpu {
         // `CullItem.info` follows the 16-byte sphere.
         let offset = u64::from(slot) * std::mem::size_of::<CullItem>() as u64 + 16;
         queue.write_buffer(&self.item_buffer, offset, bytemuck::bytes_of(info));
+    }
+
+    /// Triangles the latest culled frame drew for the camera and into the shadow map,
+    /// read back from the indirect arguments (benchmarks; waits for the GPU).
+    pub fn read_triangles(&self, device: &wgpu::Device, queue: &wgpu::Queue) -> (u64, u64) {
+        let size = self.args.size();
+        let readback = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("static draw arguments readback"),
+            size,
+            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let mut encoder = device.create_command_encoder(&Default::default());
+        encoder.copy_buffer_to_buffer(&self.args, 0, &readback, 0, size);
+        queue.submit([encoder.finish()]);
+        readback.map_async(wgpu::MapMode::Read, .., |_| {});
+        if device.poll(wgpu::PollType::wait_indefinitely()).is_err() {
+            return (0, 0);
+        }
+        let Ok(view) = readback.get_mapped_range(..) else {
+            return (0, 0);
+        };
+        let args: &[u32] = bytemuck::cast_slice(&view);
+        let sum = |draws: &[DrawRecord]| -> u64 {
+            draws
+                .iter()
+                .map(|d| u64::from(args[d.args * 5]) * u64::from(args[d.args * 5 + 1]) / 3)
+                .sum()
+        };
+        let camera = sum(&self.forward_draws) + sum(&self.blend_draws);
+        (camera, sum(&self.shadow_draws))
     }
 
     /// Instances of each model, for reports.

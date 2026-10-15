@@ -112,7 +112,13 @@ pub struct FrameReport {
     /// CPU time recording each pass, ms.
     pub cpu_ms: Vec<f32>,
     /// GPU time of each pass from the latest measured frame, ms.
+    /// Pass timestamps attribute work to neighbouring passes on Apple GPUs (D34): use
+    /// these for relative hints only, and [`FrameReport::gpu_frame_ms`] for budgets.
     pub gpu_ms: Option<Vec<f32>>,
+    /// The frame's GPU time from submit to idle, ms, when this frame was sampled
+    /// ([`Renderer::sample_gpu_time`]): the queue is drained first, then the frame is
+    /// submitted and waited for. Trustworthy on every GPU; costs one stall.
+    pub gpu_frame_ms: Option<f32>,
     /// CPU time of the whole `render` call, ms.
     pub cpu_total_ms: f32,
     pub draws: u32,
@@ -123,6 +129,52 @@ pub struct FrameReport {
     /// Effects of the frame.
     pub effects: crate::effects::EffectStats,
     pub water: WaterStats,
+    /// Triangles submitted, by kind (statics only when read back by a benchmark).
+    pub triangles: Triangles,
+    /// Submit-to-idle time of each pass recorded alone ([`Renderer::isolate_passes`]),
+    /// ms; empty otherwise.
+    pub isolated_ms: Vec<f32>,
+}
+
+/// Triangles a frame submits. Statics are culled on the GPU, so their counts are known
+/// only when a benchmark reads the indirect arguments back.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize)]
+pub struct Triangles {
+    pub terrain: u64,
+    pub statics: u64,
+    pub actors: u64,
+    pub water: u64,
+    /// Particles and ribbons (two per quad).
+    pub effects: u64,
+    /// Everything drawn into the sun's shadow map.
+    pub shadow: u64,
+}
+
+impl Triangles {
+    /// Triangles of the camera view (the forward pass).
+    pub fn forward(&self) -> u64 {
+        self.terrain + self.statics + self.actors + self.water + self.effects
+    }
+}
+
+/// A square depth map the sun's shadow renders into and the lit passes sample.
+fn shadow_map(device: &wgpu::Device, label: &str, size: u32) -> wgpu::TextureView {
+    device
+        .create_texture(&wgpu::TextureDescriptor {
+            label: Some(label),
+            size: wgpu::Extent3d {
+                width: size,
+                height: size,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: SHADOW_FORMAT,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        })
+        .create_view(&Default::default())
 }
 
 /// What the frame bind groups hold besides the per-frame buffers.
@@ -229,6 +281,13 @@ pub struct Renderer {
     ui: Option<crate::ui::UiLayer>,
     timer: Option<GpuTimer>,
     timestamps: bool,
+    /// Submit every pass alone and wait for it (benchmarks: per-pass submit-to-idle
+    /// times where Apple GPUs' timestamps attribute work to neighbouring passes).
+    pub isolate_passes: bool,
+    /// Measure the next frame's GPU time from submit to idle
+    /// ([`FrameReport::gpu_frame_ms`]); cleared by `render`. The frame stalls the CPU
+    /// until the GPU is done, so sample rarely (the game: once per stats interval).
+    pub sample_gpu_time: bool,
     /// Shadows on (a setting).
     pub shadows: bool,
     /// Bytes of GPU memory the world uses.
@@ -264,27 +323,9 @@ impl Renderer {
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
-        let shadow_resolution = environment.shadow.resolution;
-        let depth_texture = |label, size: u32| {
-            device.create_texture(&wgpu::TextureDescriptor {
-                label: Some(label),
-                size: wgpu::Extent3d {
-                    width: size,
-                    height: size,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: SHADOW_FORMAT,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                    | wgpu::TextureUsages::TEXTURE_BINDING,
-                view_formats: &[],
-            })
-        };
-        let shadow_view =
-            depth_texture("sun shadow", shadow_resolution).create_view(&Default::default());
-        let dummy_shadow = depth_texture("no shadow", 1).create_view(&Default::default());
+        let shadow_resolution = quality.shadow_resolution(&environment.shadow);
+        let shadow_view = shadow_map(device, "sun shadow", shadow_resolution);
+        let dummy_shadow = shadow_map(device, "no shadow", 1);
         let canopy_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("canopy"),
             size: wgpu::Extent3d {
@@ -399,6 +440,8 @@ impl Renderer {
             ui: None,
             timer: None,
             timestamps: gpu.features.timestamps,
+            isolate_passes: false,
+            sample_gpu_time: false,
             shadows: true,
             world_bytes: 0,
         };
@@ -446,12 +489,27 @@ impl Renderer {
         self.quality
     }
 
-    /// Changes the quality settings: render scale and post effects.
+    /// Changes the quality settings: render scale, shadow map, levels of detail and post
+    /// effects.
     pub fn set_quality(&mut self, gpu: &Gpu, quality: Quality) {
         self.quality = quality;
         let scene = quality.scene_size(self.output_size);
         if scene != self.targets.size {
             self.targets = Targets::new(&gpu.device, scene);
+        }
+        let resolution = quality.shadow_resolution(&self.environment.shadow);
+        if resolution != self.shadow_resolution {
+            self.shadow_resolution = resolution;
+            self.shadow_view = shadow_map(&gpu.device, "sun shadow", resolution);
+            self.frame_group = self.bindings.group(
+                &gpu.device,
+                &self.frame_layout,
+                "frame",
+                &self.frame_buffer,
+                &self.light_buffer,
+                &self.shadow_view,
+                &self.fog.view,
+            );
         }
         self.rebuild(gpu);
     }
@@ -843,12 +901,16 @@ impl Renderer {
         let lighting = &self.environment.lighting;
         let ShadowView {
             view_projection: shadow_matrix,
+            texel: shadow_texel,
             ..
         } = shadow::fit(
             camera,
             camera.target.y,
             lighting.sun_direction,
-            &self.environment.shadow,
+            &crate::environment::ShadowConfig {
+                resolution: self.shadow_resolution,
+                ..self.environment.shadow
+            },
         );
         if self.lights_dirty {
             let mut lights = self.map_lights.clone();
@@ -903,6 +965,8 @@ impl Renderer {
             );
             report.terrain_triangles = stats.triangles;
             report.terrain_chunks = stats.chunks;
+            report.triangles.terrain = stats.triangles;
+            report.triangles.shadow += stats.shadow_triangles;
         }
         if let Some(statics) = &self.statics {
             statics.prepare(queue, camera.view_projection, shadow_matrix);
@@ -938,13 +1002,26 @@ impl Renderer {
             if let (Some((_, camera)), Some((gpu_portrait, _))) = (&portrait, &self.portrait) {
                 gpu_portrait.prepare(queue, camera, &self.environment.lighting);
             }
+            let lod = crate::actors::LodView {
+                view: camera.view,
+                pixels_per_unit: self.targets.size[1] as f32 / (2.0 * (camera.fov_y * 0.5).tan()),
+                max_pixels: if self.baking {
+                    0.0
+                } else {
+                    self.quality.lod_pixels
+                },
+                shadow_texel,
+            };
             actors.prepare(
                 device,
                 queue,
                 camera.view_projection,
                 self.shadows.then_some(shadow_matrix),
+                Some(&lod),
             );
             report.actors = actors.stats;
+            report.triangles.actors = actors.stats.triangles;
+            report.triangles.shadow += actors.stats.shadow_triangles;
         }
         self.effects.prepare(queue, &self.effect_frame, camera);
         if let Some(minimap) = &mut self.minimap {
@@ -957,6 +1034,8 @@ impl Renderer {
             self.output_format.is_srgb(),
         );
         report.effects = self.effects.stats;
+        report.triangles.effects =
+            2 * u64::from(self.effects.stats.parts + self.effects.stats.ribbons);
         if let Some(water) = &mut self.water {
             report.water = water.prepare(
                 queue,
@@ -965,6 +1044,7 @@ impl Renderer {
                 &self.ripples,
                 lighting.daylight_ambient,
             );
+            report.triangles.water = water.triangles();
         }
         let sun = (lighting.sun_color, lighting.sun_intensity);
         if let Some(forest) = &mut self.forest {
@@ -1207,6 +1287,20 @@ impl Renderer {
             report
                 .cpu_ms
                 .push(pass_start.elapsed().as_secs_f32() * 1000.0);
+            if self.isolate_passes {
+                let recorded = std::mem::replace(
+                    &mut encoder,
+                    device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                        label: Some("frame"),
+                    }),
+                );
+                let submitted = Instant::now();
+                queue.submit([recorded.finish()]);
+                let _ = device.poll(wgpu::PollType::wait_indefinitely());
+                report
+                    .isolated_ms
+                    .push(submitted.elapsed().as_secs_f32() * 1000.0);
+            }
         }
         if let Some(timer) = &self.timer {
             timer.resolve(&mut encoder);
@@ -1214,15 +1308,27 @@ impl Renderer {
         if let Some(extra) = before_submit {
             extra(&mut encoder);
         }
+        let sample = std::mem::take(&mut self.sample_gpu_time);
+        if sample {
+            // Drain earlier frames, so the wait below measures this frame alone.
+            let _ = device.poll(wgpu::PollType::wait_indefinitely());
+        }
+        let submitted = Instant::now();
         {
             let _span = tracing::trace_span!("submit").entered();
             queue.submit([encoder.finish()]);
+        }
+        let recorded = start.elapsed();
+        if sample {
+            let _ = device.poll(wgpu::PollType::wait_indefinitely());
+            report.gpu_frame_ms = Some(submitted.elapsed().as_secs_f32() * 1000.0);
         }
         if let Some(timer) = &mut self.timer {
             timer.end_frame();
             report.gpu_ms = timer.latest().map(<[f32]>::to_vec);
         }
-        report.cpu_total_ms = start.elapsed().as_secs_f32() * 1000.0;
+        // Recording and submitting, without a sampled frame's waits.
+        report.cpu_total_ms = recorded.as_secs_f32() * 1000.0;
         report
     }
 }

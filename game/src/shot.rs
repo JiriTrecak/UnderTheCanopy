@@ -455,5 +455,24 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
             .collect();
         println!("  gpu {total:.2} ms: {}", passes.join(", "));
     }
+    // `canopy bench-render` runs shots with `CANOPY_SHOT_BENCH=<frames>` and reads this
+    // line: whole frames and isolated passes, submit to idle (canopy_render::bench).
+    if let Some(frames) = std::env::var("CANOPY_SHOT_BENCH")
+        .ok()
+        .and_then(|v| v.parse::<u32>().ok())
+    {
+        let bench = renderer.benchmark(&gpu, &camera_view, options.time, &capture.view, frames);
+        let line = serde_json::json!({
+            "bench": bench,
+            "live_ms": live_ms,
+            "visible_models": last.actors.visible,
+            "shadow_casters": last.actors.shadow_casters,
+            "joints": last.actors.joints,
+            "particles": last.effects.parts,
+            "scene": renderer.scene_size(),
+            "gpu": gpu.name(),
+        });
+        println!("bench-json {line}");
+    }
     Ok(())
 }

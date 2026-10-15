@@ -174,6 +174,7 @@ pub struct TerrainStats {
     pub chunks: u32,
     pub shadow_chunks: u32,
     pub triangles: u64,
+    pub shadow_triangles: u64,
     pub draws: u32,
 }
 
@@ -902,6 +903,8 @@ impl TerrainGpu {
             chunks: self.draws.len() as u32,
             shadow_chunks: self.shadow_count,
             triangles,
+            shadow_triangles: u64::from(self.shadow_count)
+                * u64::from(self.ranges[SHADOW_LOD as usize].1 / 3),
             draws: self.main_counts.iter().filter(|c| c.1 > 0).count() as u32,
         }
     }
