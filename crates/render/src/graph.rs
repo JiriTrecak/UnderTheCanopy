@@ -13,6 +13,8 @@ use std::fmt;
 pub enum Resource {
     /// Per-view lists of visible static instances and their indirect draw arguments.
     VisibleStatics,
+    /// Joint palettes of the frame's posed live models.
+    Palettes,
     /// The sun's depth map.
     ShadowMap,
     /// HDR scene colour (multisampled) and its single-sample resolve.
@@ -156,6 +158,7 @@ impl FrameGraph {
 /// Pass names of the world frame, in order.
 pub mod passes {
     pub const CULL: &str = "cull";
+    pub const SKIN: &str = "skin";
     pub const SHADOW: &str = "shadow";
     pub const RIPPLES: &str = "ripples";
     pub const CAUSTICS: &str = "caustics";
@@ -177,9 +180,9 @@ pub struct FrameFeatures {
     pub haze: bool,
 }
 
-/// The world frame (renderer §4.1): GPU culling of statics for both views, the sun
-/// shadow map, the water's ripple field and caustics, the forward HDR pass (terrain,
-/// statics, water; MSAA resolved in the pass, with linear depth), the post effects the
+/// The world frame (renderer §4.1): GPU culling of statics for both views, the joint
+/// palettes of the live models, the sun shadow map, the water's ripple field and caustics, the forward HDR pass (terrain,
+/// statics, live models, water; MSAA resolved in the pass, with linear depth), the post effects the
 /// biome uses (contact shading, bloom, volumetric haze) and the final pass (upscale,
 /// effects, tone map, grade) into the output.
 pub fn world_frame(features: FrameFeatures) -> FrameGraph {
@@ -187,11 +190,12 @@ pub fn world_frame(features: FrameFeatures) -> FrameGraph {
     use Resource::*;
     let mut list = vec![
         Pass::new(passes::CULL, Compute).writes(&[VisibleStatics]),
+        Pass::new(passes::SKIN, Compute).writes(&[Palettes]),
         Pass::new(passes::SHADOW, Render)
-            .reads(&[VisibleStatics])
+            .reads(&[VisibleStatics, Palettes])
             .writes(&[ShadowMap]),
     ];
-    let mut forward_reads = vec![VisibleStatics, ShadowMap];
+    let mut forward_reads = vec![VisibleStatics, Palettes, ShadowMap];
     if features.water {
         list.push(Pass::new(passes::RIPPLES, Render).writes(&[RippleField]));
         list.push(Pass::new(passes::CAUSTICS, Render).writes(&[Caustics]));
@@ -244,9 +248,10 @@ mod tests {
     #[test]
     fn the_world_frame_is_well_formed() {
         let graph = world_frame(FrameFeatures::default());
-        assert_eq!(graph.passes().len(), 4);
+        assert_eq!(graph.passes().len(), 5);
         assert_eq!(graph.last_use(ShadowMap), Some(passes::FORWARD));
-        assert_eq!(graph.index(passes::POST), Some(3));
+        assert_eq!(graph.last_use(Palettes), Some(passes::FORWARD));
+        assert_eq!(graph.index(passes::POST), Some(4));
         let all = world_frame(FrameFeatures {
             water: true,
             contact: true,
@@ -257,8 +262,8 @@ mod tests {
         assert_eq!(
             names,
             [
-                "cull", "shadow", "ripples", "caustics", "forward", "contact", "bloom", "haze",
-                "post"
+                "cull", "skin", "shadow", "ripples", "caustics", "forward", "contact", "bloom",
+                "haze", "post"
             ]
         );
         // The haze marches through the sun's shadow map after the scene is drawn.

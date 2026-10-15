@@ -1,7 +1,13 @@
 //! `canopy-scene`: the only bridge between the simulation (and maps) and the renderer
 //! (docs/structure.md). It turns a map and a match's state into the renderer's plain
-//! world description; later it will follow simulation snapshots every tick.
+//! world description (terrain and the static scene), presents every simulation tick as
+//! posed live models ([`live`], [`animation`]) and interpolates between ticks
+//! ([`interpolate`]).
 
+pub mod animation;
+pub mod interpolate;
+pub mod live;
+pub mod models;
 pub mod statics;
 pub mod terrain;
 
@@ -136,13 +142,15 @@ impl Look {
     }
 }
 
-/// Every start of the map as a computer player: what a spectator watches.
-pub fn spectator_setup(map: &UtcMap) -> MatchSetup {
+/// Computer players on the map's starts (the first `players` of them, all by default):
+/// what a spectator watches.
+pub fn spectator_setup(map: &UtcMap, players: Option<usize>) -> MatchSetup {
     MatchSetup {
         seed: 1,
         slots: map
             .player_starts
             .iter()
+            .take(players.unwrap_or(usize::MAX))
             .map(|start| Slot {
                 player: start.player.saturating_sub(1),
                 kind: SlotKind::Ai,
@@ -166,6 +174,22 @@ pub struct MapScene {
     pub starts: Vec<[f32; 2]>,
     /// What could not be shown (missing models), for warnings.
     pub missing: Vec<String>,
+    /// Player colours (linear) by slot.
+    pub colors: Vec<[f32; 3]>,
+    /// Static instance of each tree entity.
+    pub tree_slots: BTreeMap<canopy_sim::entity::EntityId, usize>,
+    /// The simulation's terrain (bridge decks for the water's wakes).
+    pub sim_terrain: Arc<canopy_sim::terrain::Terrain>,
+}
+
+impl MapScene {
+    /// Water and walking heights for the ripple emitter.
+    pub fn water_field(&self) -> live::SceneWater<'_> {
+        live::SceneWater {
+            desc: self.terrain(),
+            terrain: &self.sim_terrain,
+        }
+    }
 }
 
 impl MapScene {
@@ -175,12 +199,34 @@ impl MapScene {
             .as_ref()
             .expect("map scenes have terrain")
     }
+
+    /// The live scene's presenter for the match `world` starts (built from the same
+    /// world as this scene); the renderer's `actor_models` take its preloaded models.
+    pub fn presenter(
+        &mut self,
+        world: &canopy_sim::World,
+        map: &UtcMap,
+        pack: Arc<canopy_assets::Pack>,
+    ) -> live::Presenter {
+        let presenter = live::Presenter::new(
+            world,
+            map,
+            Some(pack),
+            live::Setup {
+                colors: self.colors.clone(),
+                tree_slots: self.tree_slots.clone(),
+                statics: self.world.statics.len(),
+            },
+        );
+        self.world.actor_models = presenter.catalog.names().to_vec();
+        presenter
+    }
 }
 
-/// Builds the scene of `map` at match start: compiles the match like the simulation
-/// (starting setups included) and describes terrain and static models.
+/// Builds the scene of `map` at the start of the match `world` begins: terrain and the
+/// static models.
 pub fn build(
-    content: Arc<Content>,
+    world: &canopy_sim::World,
     map: &UtcMap,
     pack: &canopy_assets::Pack,
     look: &Look,
@@ -189,8 +235,7 @@ pub fn build(
     if map.size > 1024 {
         bail!("maps larger than 1024 cells are not supported (D24)");
     }
-    let world = canopy_sim::World::new(content.clone(), map, spectator_setup(map))
-        .map_err(|e| anyhow::anyhow!("cannot start the match: {}", e.0))?;
+    let content: &Content = &world.catalog().content;
     let (terrain, water) =
         terrain::build(map, &content.landscape, &look.biome).map_err(anyhow::Error::msg)?;
     let forest = look
@@ -212,8 +257,8 @@ pub fn build(
         .iter()
         .map(|c| c.linear().to_array())
         .collect();
-    let (instances, lights, missing) = statics::build(&world, &content, map, &scenery, &colors);
-    for m in &missing {
+    let scene = statics::build(world, content, map, &scenery);
+    for m in &scene.missing {
         tracing::warn!(what = %m, "not shown");
     }
     let hour = map
@@ -223,9 +268,10 @@ pub fn build(
     Ok(MapScene {
         world: World {
             terrain: Some(terrain),
-            statics: instances,
-            glows: look.glows.by_model(&content)?,
-            point_lights: lights,
+            statics: scene.instances,
+            glows: look.glows.by_model(content)?,
+            point_lights: scene.lights,
+            actor_models: Vec::new(),
             water: Some(water),
             water_textures: look.water.textures(),
             forest,
@@ -237,7 +283,10 @@ pub fn build(
             .iter()
             .map(|s| [s.x as f32, s.z as f32])
             .collect(),
-        missing,
+        missing: scene.missing,
+        colors,
+        tree_slots: scene.tree_slots,
+        sim_terrain: world.terrain().clone(),
     })
 }
 

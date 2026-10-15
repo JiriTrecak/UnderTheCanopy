@@ -2,9 +2,11 @@
 
 mod app;
 mod gpu;
+mod live;
 mod options;
 mod paths;
 mod shot;
+mod sim;
 mod telemetry;
 mod view;
 mod world;

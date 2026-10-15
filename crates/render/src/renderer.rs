@@ -1,6 +1,7 @@
 //! The renderer: owns the frame graph's resources and records its passes in order.
 
 use crate::{
+    actors::{ActorInstance, ActorsGpu},
     camera::{CameraView, frustum_planes},
     device::Gpu,
     environment::{BiomeConfig, DaytimeLut, Lighting, LightingConfig},
@@ -79,6 +80,8 @@ pub struct World {
     /// Glows by model entry.
     pub glows: std::collections::BTreeMap<String, crate::statics::Glow>,
     pub point_lights: Vec<PointLight>,
+    /// Live models to load up front (pack entries; their order gives their indices).
+    pub actor_models: Vec<String>,
     /// Water over the terrain's wet cells (needs `terrain`).
     pub water: Option<WaterDesc>,
     /// Pack textures the water samples.
@@ -101,6 +104,8 @@ pub struct FrameReport {
     pub draws: u32,
     pub terrain_triangles: u64,
     pub terrain_chunks: u32,
+    /// Live models of the frame.
+    pub actors: crate::actors::ActorStats,
     pub water: WaterStats,
 }
 
@@ -124,6 +129,7 @@ pub struct Renderer {
     environment: Environment,
     terrain: Option<TerrainGpu>,
     statics: Option<StaticsGpu>,
+    actors: Option<ActorsGpu>,
     water: Option<WaterGpu>,
     forest: Option<ForestGpu>,
     ripples: Ripples,
@@ -279,6 +285,7 @@ impl Renderer {
             environment,
             terrain: None,
             statics: None,
+            actors: None,
             water: None,
             forest: None,
             ripples: Ripples::new(),
@@ -422,6 +429,15 @@ impl Renderer {
         )?;
         self.world_bytes += statics.bytes;
         self.statics = Some(statics);
+        let mut actors = ActorsGpu::new(
+            &gpu.device,
+            &gpu.queue,
+            gpu.features,
+            &self.frame_layout,
+            world.glows.clone(),
+        );
+        actors.sync_models(&gpu.device, &gpu.queue, pack, &world.actor_models);
+        self.actors = Some(actors);
         let lights = &world.point_lights[..world.point_lights.len().min(MAX_POINT_LIGHTS)];
         if !lights.is_empty() {
             gpu.queue
@@ -442,6 +458,30 @@ impl Renderer {
 
     pub fn statics(&self) -> Option<&StaticsGpu> {
         self.statics.as_ref()
+    }
+
+    pub fn statics_mut(&mut self) -> Option<&mut StaticsGpu> {
+        self.statics.as_mut()
+    }
+
+    pub fn actors(&self) -> Option<&ActorsGpu> {
+        self.actors.as_ref()
+    }
+
+    /// Loads live models listed after those already loaded (the list only grows).
+    pub fn sync_actor_models(&mut self, gpu: &Gpu, pack: &canopy_assets::Pack, names: &[String]) {
+        if let Some(actors) = &mut self.actors {
+            let before = actors.bytes;
+            actors.sync_models(&gpu.device, &gpu.queue, pack, names);
+            self.world_bytes = self.world_bytes + actors.bytes - before.min(actors.bytes);
+        }
+    }
+
+    /// The live models of the next frame.
+    pub fn set_actors(&mut self, instances: &[ActorInstance]) {
+        if let Some(actors) = &mut self.actors {
+            actors.set_instances(instances);
+        }
     }
 
     pub fn terrain(&self) -> Option<&TerrainGpu> {
@@ -540,6 +580,15 @@ impl Renderer {
         if let Some(statics) = &self.statics {
             statics.prepare(queue, camera.view_projection, shadow_matrix);
         }
+        if let Some(actors) = &mut self.actors {
+            actors.prepare(
+                device,
+                queue,
+                camera.view_projection,
+                self.shadows.then_some(shadow_matrix),
+            );
+            report.actors = actors.stats;
+        }
         if let Some(water) = &mut self.water {
             report.water = water.prepare(
                 queue,
@@ -591,6 +640,15 @@ impl Renderer {
                         statics.cull(&mut compute);
                     }
                 }
+                (passes::SKIN, PassKind::Compute) => {
+                    let mut compute = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                        label: Some(passes::SKIN),
+                        timestamp_writes: timestamps.and_then(|t| t.compute_writes(index)),
+                    });
+                    if let Some(actors) = &self.actors {
+                        actors.skin(&mut compute);
+                    }
+                }
                 (passes::SHADOW, PassKind::Render) => {
                     let mut rp = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: Some(passes::SHADOW),
@@ -613,6 +671,9 @@ impl Renderer {
                         }
                         if let Some(statics) = &self.statics {
                             report.draws += statics.draw_shadow(&mut rp, &self.shadow_frame_group);
+                        }
+                        if let Some(actors) = &self.actors {
+                            report.draws += actors.draw_shadow(&mut rp, &self.shadow_frame_group);
                         }
                     }
                 }
@@ -687,6 +748,9 @@ impl Renderer {
                     if let Some(statics) = &self.statics {
                         report.draws += statics.draw_forward(&mut rp, &self.frame_group);
                     }
+                    if let Some(actors) = &self.actors {
+                        report.draws += actors.draw_forward(&mut rp, &self.frame_group);
+                    }
                     if let Some(forest) = &self.forest {
                         report.draws += forest.draw(&mut rp, &self.frame_group);
                     }
@@ -695,6 +759,9 @@ impl Renderer {
                     }
                     if let Some(statics) = &self.statics {
                         report.draws += statics.draw_transparent(&mut rp, &self.frame_group);
+                    }
+                    if let Some(actors) = &self.actors {
+                        report.draws += actors.draw_transparent(&mut rp, &self.frame_group);
                     }
                 }
                 (passes::CONTACT, PassKind::Render) => {

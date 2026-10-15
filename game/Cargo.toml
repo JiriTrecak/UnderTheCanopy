@@ -19,8 +19,10 @@ profile = ["dep:tracing-tracy"]
 anyhow.workspace = true
 canopy-assets = { path = "../crates/assets" }
 canopy-content = { path = "../crates/content" }
+canopy-net = { path = "../crates/net" }
 canopy-render = { path = "../crates/render" }
 canopy-scene = { path = "../crates/scene" }
+canopy-sim = { path = "../crates/sim" }
 directories.workspace = true
 image.workspace = true
 tracing.workspace = true
@@ -28,6 +30,11 @@ tracing-subscriber.workspace = true
 tracing-tracy = { workspace = true, optional = true }
 wgpu.workspace = true
 winit.workspace = true
+
+[dev-dependencies]
+# The spectate smoke test borrows the simulation's test-owned AI fixture.
+canopy-content = { path = "../crates/content", features = ["testing"] }
+serde_json.workspace = true
 
 [lints]
 workspace = true

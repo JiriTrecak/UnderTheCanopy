@@ -68,6 +68,14 @@ opt-level = 2
 # The cooker's own loops (mips, quantisation, baking) run over hundreds of megapixels.
 opt-level = 2
 
+[profile.dev.package.canopy-sim]
+# `just play --spectate` runs the simulation in real time: 25 ms ticks need it optimised.
+opt-level = 2
+
+[profile.dev.package.canopy-scene]
+# Presents every simulation tick on the simulation thread.
+opt-level = 2
+
 [profile.release]
 lto = "thin"
 codegen-units = 1

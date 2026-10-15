@@ -198,7 +198,7 @@ Decided 2026-10-14 (D24): every recommendation in **bold** is accepted.
 
 Superseded by [the plan](plan.md): the renderer is milestone M3, after the Rust simulation (M2), so there is no snapshot recorder for the old game and no TypeScript bridge. Each step is still measured on the reference machine (base M1) with fixed scenes, and reference screenshots from the old game are captured before work starts.
 
-## 9. Implementation status (M3.4)
+## 9. Implementation status (M3.4 water and post, M3.3 live world)
 
 What exists, in `crates/render` (`canopy-render`), `crates/scene` (`canopy-scene`), `config/` and `game/`:
 
@@ -208,17 +208,18 @@ What exists, in `crates/render` (`canopy-render`), `crates/scene` (`canopy-scene
   | Pass | Kind | Reads | Writes | When |
   |---|---|---|---|---|
   | `cull` | compute | — | visible statics (camera and sun lists, indirect counts) | always |
-  | `shadow` | render | visible statics | sun shadow map (2048², depth) | always |
+  | `skin` | compute | — | joint palettes of the visible live models | always |
+  | `shadow` | render | visible statics, palettes | sun shadow map (2048², depth) | always |
   | `ripples` | render | — | ripple field (768² RGBA16F, 160 m around the focus) | the world has water |
   | `caustics` | render | — | caustics (256² R16F) | the world has water |
-  | `forward` | render, MSAA 4× HDR | visible statics, shadow map, ripples, caustics | scene colour and linear depth (resolved in the pass), depth | always |
+  | `forward` | render, MSAA 4× HDR | visible statics, palettes, shadow map, ripples, caustics | scene colour and linear depth (resolved in the pass), depth | always |
   | `contact` | render | linear depth | contact shade (R8, effect size) | biome contact strength > 0 and the setting on |
   | `bloom` | render ×3 | scene colour | three bloom levels (effect size, ½, ¼) | biome bloom strength > 0 and the setting on |
   | `haze` | render ×2 | linear depth, shadow map | haze (march, then depth-aware filter) | biome atmosphere on and the haze quality not off |
   | `post` | render | everything above | output (surface or capture) | always |
 
   MSAA colour, depth and linear depth are transient attachments (memoryless on Apple GPUs), cleared and discarded inside the forward pass. No depth prepass. **Linear depth** is a second colour target of the forward pass (`targets::LINEAR_DEPTH_FORMAT`, RG16F holding the view depth rounded to 11 significant bits and the remainder, so interior pixels keep full precision through the averaging resolve; WebGPU cannot resolve depth or R32F). Every pipeline drawn in the forward pass declares `targets::forward_targets(blend, writes_depth)` and opaque shaders return `scene_out(colour, world)` (`frame.wgsl`); transparent ones mask the depth target. The water writes its surface, so post effects stop at the water as the old ones did.
-- **Shared WGSL library** (`shaders/lib/`, `shader.rs`): `frame` (group 0: frame uniform, shadow map, canopy pattern, samplers, point lights, `SceneOut`), `lighting` (`surface_light`), `team`, `wind`, `dither`, `packing`, `color`, `view` (post passes: view uniform, linear depth, surface reconstruction, full-screen vertex). A shader is library modules followed by its own source; every shader is validated by naga in the tests.
+- **Shared WGSL library** (`shaders/lib/`, `shader.rs`): `frame` (group 0: frame uniform, shadow map, canopy pattern, samplers, point lights, `SceneOut`), `lighting` (`surface_light`), `material` (group 1: cooked materials and `shade_material`, shared by statics and live models; `material.rs` builds the bind groups and caches textures), `team`, `wind`, `dither`, `packing`, `color`, `view` (post passes: view uniform, linear depth, surface reconstruction, full-screen vertex). A shader is library modules followed by its own source; every shader is validated by naga in the tests.
 - **One lighting model** (`lighting.wgsl`). `surface_light` with two ambient models: *standard* (units, buildings, props, foliage: Lambert + GGX sun, flat ambient + sky/ground hemisphere over π, environment irradiance from 9 SH coefficients, split-sum reflections) and *ground* (terrain: the old ground lighting, energy-conserving GGX, ambient tinted by the ground probe). Both take the 8-tap rotated Vogel PCF sun shadow and the canopy shade. Painted materials drop specular; foliage wraps light (`backside`). Point lights come from a buffer with a count; light count never changes pipelines.
 - **Final pass** (`post.rs`, `post.wgsl`): upscale from the render scale (bilinear with a light unsharp mask; one texel at native scale), contact shade (bilinear × surface-similarity upsampling, old `contactShade`), bloom (levels weighted 0.2/0.3/0.5, times the canopy shade at the surface), haze (`colour · transmission + scattered`, depth-aware upsampling), then display encoding → the one tone mapper → baked grade volume → vignette. The tone mapper is the old hue-preserving highlight shoulder; every current biome has knee 0, so values clip at 1 exactly as today's outdoor frames (D24: today's look first). The grade volume (32³) is baked on the CPU from the biome finish and, when a biome asks for it, the pack's daytime lookup.
 - **Post effects** (`post.rs`; old `BeautyPass` and `AtmospherePass`, data from `config/biomes/*.json` `contact`, `bloom`, `atmosphere`):
@@ -235,7 +236,9 @@ What exists, in `crates/render` (`canopy-render`), `crates/scene` (`canopy-scene
   - *Blending without a scene copy*: two draws over identical fragments in the forward pass, after every opaque surface, depth-tested without depth writes: `fs_absorb` multiplies the bed by the absorption's hue (luminance 1), `fs_main` blends the surface with premultiplied alpha carrying the rest of the bed's dimming. The result is the old per-channel transmittance exactly (measured on echo-isles shallows: within 1–2 of 255 of the old frame). Left out: refraction (≈ 2 px at RTS zoom) and screen-space reflections (2–4 % of the colour at the 56° pitch).
   - *Ripples* (`water/ripples.rs`): the emitter above, one-to-one, with an API the live world feeds every frame: `Renderer::ripples_mut().update(&movers, &field, seconds, focus)`, where a `Mover` is an id, position, walking surface and elevation, and `WaterField` answers water and walking heights (`TerrainDesc` implements it for the ground; the scene wraps it for bridge decks). The caller passes only bodies that may wake water (visible, alive ground units not contained, garrisoned or flying). `canopy shot --movers <n>` walks synthetic bodies through the view.
 - **Surroundings** (`surroundings.rs`, `surroundings.wgsl`; old `ForestSurroundingsLayer`, data in `config/biomes/*.json` `surroundings.forest`): the floor (three rows to 420 units, with the terrain) and the forest: trunks on square rings around the map (the old seeded LCG and `forestAnchors`, so placement matches), forked limbs (centripetal Catmull-Rom tubes with the bark texture), giant mushrooms and fallen logs, and the overhead sheet of broad leaves (44k on a 640 map). Trunks, mushrooms and logs are pack models, CPU-culled per instance, one draw per model section; limbs and leaves only draw when the camera looks towards the horizon. As in the old game, the tall parts of trunks beyond the border dissolve at RTS pitches, everything hazes towards the biome's haze colour with a glow towards the sun, and the background turns towards the haze as the view rises. At the play pitch the camera's map fit keeps all of it out of view; it shows in free views (`canopy shot --pitch`).
-- **Statics** (`statics.rs`): every scenery object, standing tree, deposit and building in one instance buffer; a compute pass culls them against the camera and the sun and builds per-model visible lists and indirect counts; one indirect draw per model section (+ depth-stream and alpha-tested shadow draws). Without `indirect-first-instance` each list is reached through a dynamic storage offset. Foliage is alpha-tested with alpha-to-coverage under MSAA and sways (old "source" trunk sway + leaf flutter, same in the shadow pass). Team colour is the old masked formula; owner colours come from `config/players.json`. Data-driven deposit glow (`config/glow.json`). Static poses only.
+- **Statics** (`statics.rs`): every scenery stamp and every tree of the map in one instance buffer (the live scene hides struck and gone trees with a 16-byte write each, `set_hidden`); a compute pass culls them against the camera and the sun and builds per-model visible lists and indirect counts; one indirect draw per model section (+ depth-stream and alpha-tested shadow draws). Without `indirect-first-instance` each list is reached through a dynamic storage offset. Foliage is alpha-tested with alpha-to-coverage under MSAA and sways (old "source" trunk sway + leaf flutter, same in the shadow pass). Team colour is the old masked formula; owner colours come from `config/players.json`. Data-driven deposit glow (`config/glow.json`). Static poses only.
+- **Live models** (`actors.rs`, `shaders/actors.wgsl`, `shaders/skin.wgsl`; D35): units, buildings, deposits, items, construction scaffolds, carried goods, corpses, felled trees, missiles and shells. The caller hands over posed instances (model, affine transform, owner colour, opacity, up to three clip poses); each frame they are culled on the CPU against the camera and the sun, sorted by model with the camera-visible ones first, and uploaded with one skinning job each; the `skin` pass blends each instance's joint palette from the baked 30 Hz model-space clips (two frames per pose, three poses); one instanced draw per model section (one depth-stream draw and the alpha-tested sections for shadows) reads its contiguous range. Rigid models skin with one identity joint. Draw calls follow the models in view, never the instance count. Models load when first listed (the scene preloads the match's rosters).
+- **Live scene** (`canopy-scene`: `live.rs`, `animation.rs`, `interpolate.rs`, `models.rs`; D35): every simulation tick the presenter turns the view into posed models on the simulation thread, with the old game's animation state choice and clocks advanced per tick; the render thread interpolates the two presentations around its clock, one tick behind the simulation (Q15).
 - **Camera** (`camera.rs`): the old play camera as a pure controller (see "Reference captures"); `game/` adds input: arrow keys and edge scrolling (28 units/s), wheel and PageUp/PageDown zoom with the old momentum, middle-drag grab pan; as a spectator also Q/E to turn and zoom out to 6×.
 - **Configuration** (`config/`, D30): `lighting.json` (daylight palettes, phases, probes, shadow fitting), `biomes/<id>.json` (light, canopy, grade, built-in ground layers, water profile, surroundings with the forest, ground cover, bloom, contact shading and atmosphere), `water.json` (reflection cube and caustics), `players.json`, `glow.json`.
 
@@ -257,11 +260,15 @@ What it costs: the water with its two draws, ripple field and caustics about 0.1
 
 ### Not yet (later M3 steps)
 
-Units and skinned animation, felled trees, construction scaffolds, effects, fog of war (the post effects and water take no visibility mask yet), world UI, terrain displacement (no shipped map uses rock coverage), ground decals (none shipped), egui tuning, hot reload of `config/`. Mist regions (`atmosphere.regions`, used by no biome), rain and the close-camera depth of field and shaft density of the old surroundings (no camera uses them) are not carried.
+Effects (spell effects, deliveries, construction dust, shell impacts, hit sparks, melee trails), fog of war (the post effects and water take no visibility mask yet), world UI (health bars, selection circles, rally markers, mine labels), terrain displacement (no shipped map uses rock coverage), ground decals (none shipped), egui tuning, hot reload of `config/`. Mist regions (`atmosphere.regions`, used by no biome), rain and the close-camera depth of field and shaft density of the old surroundings (no camera uses them) are not carried.
 
 ## 10. Reference captures
 
 `just shot --map <id> --camera <x,z,zoom[,yaw]> --out <png> [--size 1920x1080] [--hour 12] [--time 12] [--frames n] [--no-shadows] [--pitch <deg>] [--movers <n>] [--biome <id>] [--render-scale <0.5–1>] [--no-contact] [--no-bloom] [--haze off|low|medium|high]` renders one view offscreen (no window) and writes a PNG, printing draws, terrain triangles, water and forest counts, memory, CPU recording time, the median submit-to-idle time of a frame and GPU time per pass (from `--frames` frames). `--pitch` frees the camera from the map fit (views past the border), `--movers` walks synthetic bodies through the view for wakes, `--biome` previews the map in another biome's look.
+
+The view is a match's start: computer players on every start (or the first `--players n`). `--tick N` first simulates the match to tick N on the same thread, presenting every tick, so the picture of a tick is always the same; `--camera battle[,zoom]` looks at the densest group of swinging units at that tick; `--crowd N` replaces the match by eight players with N animated soldiers each around the middle of the starts (the stress view); `--colors i,j,…` gives slot k the k-th listed player colour. The output adds the simulation's cost per tick, the live scene's counts and where corpses, felled trees, missiles and scaffolds are. `CANOPY_SHOT_MODELS=1` lists the live models in view.
+
+`just play --spectate <map> [--players n] [--tick N]` watches the match in a window (B jumps to the largest fight); every two seconds the log has a `frame` line (fps, slowest frame, CPU and GPU time, live models in view) and a `simulation` line (tick, the tick shown, step, view and presentation cost per tick, frames that had to hold the newest tick, schedule slowdowns, counts).
 
 ### Camera parameters
 
@@ -305,15 +312,16 @@ Live match alternative: `http://127.0.0.1:5173/?map=<id>` starts at the first pl
 
 Mean colours of matching regions agree within 1–3 of 255 on open ground, forest and dirt (for example 64,131,55 on echo-isles grass in both; whole frames within 4). Visible differences: units (next step), the placeholder water (the old water is lighter and textured), the old contact shadows and softer VSM shadow edges, slightly brighter old deposit crystals.
 
-Water and border views (M3.4) live in `target/shots/m3-water/` (`new/`, `old/`, `compare/` with the old game left) and in `docs/captures/m3-water/`:
+Live captures (M3.3, D35) are in `target/shots/` (new), `target/shots/old/` and `target/shots/compare/`, and the review set in `docs/captures/m3-live/`:
 
-| File | Map | `--camera` |
-|---|---|---|
-| `echo-isles-water.png` | echo-isles | `200,360,1` (shallow channels between islands) |
-| `echo-isles-coast.png` | echo-isles | `560,250,1` (east coast, deep water) |
-| `echo-isles-border.png` | echo-isles | `620,620,1.25,45` (south-east corner, turned 45°) |
-| `echo-isles-a.png` | echo-isles | `117.5,225.5,1` (player 1 start) |
-| `turtle-rock-water.png` | turtle-rock | `240,230,1` |
-| `turtle-rock-border.png` | turtle-rock | `20,320,1.25` (west edge) |
+| File | View |
+|---|---|
+| `live-echo-p1-t800.png` | echo-isles `--tick 886 --hour 9.5 --camera 117.5,225.5,1` (old tick 887) |
+| `live-echo-p2-t2400.png` | echo-isles `--tick 2487 --hour 9.5 --camera 501.5,225.5,1` (old tick 2488) |
+| `live-echo-battle-t16000.png` | echo-isles `--tick 16000 --camera battle,0.8` |
+| `live-crowd-battle.png`, `compare/battle-lab-vs-crowd.png` | turtle-rock `--crowd 50 --tick 400 --camera 350,343,0.52`; old: combat lab, 24 vs 24 mixed army |
+| `live/crowd-400-t120.png` | turtle-rock `--crowd 50 --tick 120 --camera 325.5,331.5,1.6` (the 8 × 50 stress view) |
+| `live/crowd-white.png`, `live/crowd-purple.png` | the white and purple players close up |
+| `live/fall-5740.png`, `live/tree-*.png` | felled trees (echo-isles, ticks 2400–5900) |
 
-Region means agree within 1–2 of 255 on shallow water (echo-isles channels: 98,114,89 new against 97,113,89 old) and on deep water (echo-isles coast: 41,74,70 in both). Visible differences: the old deep water has a few more and brighter crest flecks; at the map edges the framing differs by a few units (the camera's map fit, not the water); units are not drawn yet. Old captures of edge views need the reference stage at a 1920×1080 viewport: its map fit uses the window's aspect.
+The old live match was captured headless: Chrome with `--remote-debugging-port`, `/?map=<id>`, then `utcPerformance.match.onReveal(true)`, `onSpeed(4)`, Ctrl+Shift+H, polling `utcPerformance.match.snapshot()` (`world.tick`, `world.game.state.entities`) until the tick and `lookAt(x, z, zoom · 116.591)` before `Page.captureScreenshot`. The old game's ticks are ours + 1 (D21).

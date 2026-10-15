@@ -1,25 +1,30 @@
-//! Placed models of a match as static render instances (old `PropField.place`,
-//! `presentation/scenery` and `settlementLayer`).
+//! The static scene of a match: what never moves (old `PropField.place` and
+//! `presentation/scenery`). Everything else is the live scene ([`crate::live`]).
 //!
 //! - **Stamps** (the map's stamps and scenery objects that are not resources) stand at
 //!   the cell's centre `(x + 0.5, y + 0.5)` on the bilinear ground plus their elevation, or
 //!   at an absolute height; rotation is `Rz(roll)·Rx(pitch)·Ry(yaw)` (or the authored
 //!   quaternion), scale per local axis.
 //! - **Standing trees** (resources with a scenery model) stand at their cell, turned by
-//!   their rotation and scaled by their appearance.
-//! - **Buildings and deposits** stand at their footprint centre on the ground, turned by
-//!   their rotation, scaled by the render asset × appearance × definition scale. Deposits
-//!   show their depletion stage.
+//!   their rotation and scaled by their appearance. Every tree of the map gets an instance;
+//!   the live scene hides it once it is struck or gone ([`StaticScene::tree_slots`]).
+//!
+//! Buildings, deposits, units and items are live: they are built, deplete, change owner
+//! and move.
 
 use canopy_content::{
     Content,
     assets::{self, Deck},
     game::Kind,
     map::{Stamp, UtcMap},
-    placement::{Owner, Placement},
+    placement::Placement,
 };
 use canopy_render::{frame::PointLight, statics::StaticInstance};
-use canopy_sim::{entity::Milli, terrain::HeightField, world::World};
+use canopy_sim::{
+    entity::{EntityId, Milli},
+    terrain::HeightField,
+    world::World,
+};
 use glam::{EulerRot, Mat4, Quat, Vec3};
 use std::collections::BTreeMap;
 
@@ -95,19 +100,26 @@ pub fn placed_light(light: &canopy_assets::PointLight, transform: &Mat4) -> Poin
     }
 }
 
-/// Every static instance of a freshly started match. `colors` are the player colours
-/// (linear), indexed by player slot.
+/// The static scene of a match.
+#[derive(Debug, Clone, Default)]
+pub struct StaticScene {
+    pub instances: Vec<StaticInstance>,
+    pub lights: Vec<PointLight>,
+    /// What could not be shown (missing models), for warnings.
+    pub missing: Vec<String>,
+    /// The instance index of each tree entity, for hiding felled ones.
+    pub tree_slots: BTreeMap<EntityId, usize>,
+}
+
+/// Every static instance of a freshly started match.
 pub fn build(
     world: &World,
     content: &Content,
     map: &UtcMap,
     scenery: &SceneryModels,
-    colors: &[[f32; 3]],
-) -> (Vec<StaticInstance>, Vec<PointLight>, Vec<String>) {
+) -> StaticScene {
     let _span = tracing::info_span!("scene_statics").entered();
-    let mut out = Vec::new();
-    let mut lights = Vec::new();
-    let mut missing = Vec::new();
+    let mut scene = StaticScene::default();
     let terrain = world.terrain();
     let field: &HeightField = terrain.field();
     let ground = |x: f64, z: f64| field.sample(x, z);
@@ -120,15 +132,15 @@ pub fn build(
                 let transform =
                     stamp_transform(stamp, ground, decks.get(stamp.asset.as_str()).copied());
                 if let Some(light) = &prototype.light {
-                    lights.push(placed_light(light, &transform));
+                    scene.lights.push(placed_light(light, &transform));
                 }
-                out.push(StaticInstance {
+                scene.instances.push(StaticInstance {
                     model: prototype.model.clone(),
                     transform,
                     owner_color: None,
                 });
             }
-            None => missing.push(format!("scenery {}", stamp.asset)),
+            None => scene.missing.push(format!("scenery {}", stamp.asset)),
         }
     }
 
@@ -141,7 +153,7 @@ pub fn build(
     let catalog = world.catalog();
     for entity in world.state().entities.iter() {
         let definition = catalog.get(entity.definition);
-        if matches!(definition.kind, Kind::Unit | Kind::Item) || entity.fallen {
+        if definition.kind != Kind::Resource || entity.resource.is_none() {
             continue;
         }
         let appearance = entity
@@ -150,46 +162,29 @@ pub fn build(
             .and_then(|id| placements.get(id))
             .and_then(|p| p.appearance.as_ref());
         let appearance_scale = appearance.and_then(|a| a.scale).unwrap_or(1.0);
-        let full = appearance
+        let asset_id = appearance
             .and_then(|a| a.asset.as_ref())
             .unwrap_or(&definition.asset);
-        // Depletion stages replace the full model (old `resourceDepositVisual`).
-        let mut asset_id = full.as_str();
-        if let (Some(visuals), Some(resource)) = (&definition.resource_visuals, &entity.resource) {
-            let initial = resource
-                .initial_amount
-                .or(definition.resource_yield)
-                .unwrap_or(0);
-            let fraction = if resource.amount == 0 {
-                0.0
-            } else if initial > 0 {
-                f64::from(resource.amount) / f64::from(initial)
-            } else {
-                1.0
-            };
-            if let Some(stage) = visuals.stages.iter().find(|s| fraction <= s.remaining) {
-                asset_id = stage.asset.as_str();
-            }
-        }
-        let Some(asset) = content.asset(asset_id) else {
-            missing.push(format!("render asset {asset_id}"));
+        let Some(asset) = content.asset(asset_id.as_str()) else {
+            scene.missing.push(format!("render asset {asset_id}"));
+            continue;
+        };
+        let Some(scenery_id) = &asset.scenery_asset else {
             continue;
         };
         let degrees = f64::from(entity.rotation) / 1000.0;
-        let owner_color = match entity.owner {
-            Owner::Player(slot) => colors.get(usize::from(slot) % colors.len().max(1)).copied(),
-            Owner::Nobody => None,
-        };
-        if let Some(scenery_id) = &asset.scenery_asset {
-            // A tree: standing ones only (felled ones animate, next step).
-            let standing = entity.resource.as_ref().is_some_and(|r| {
-                r.amount > 0 && r.felling.as_ref().is_none_or(|f| f.last_hit_tick.is_none())
-            });
-            if !standing {
-                continue;
-            }
-            match scenery.get(scenery_id) {
-                Some(prototype) => out.push(StaticInstance {
+        match scenery.get(scenery_id) {
+            Some(prototype) => {
+                let standing = entity.resource.as_ref().is_some_and(|r| {
+                    r.amount > 0 && r.felling.as_ref().is_none_or(|f| f.last_hit_tick.is_none())
+                });
+                scene.tree_slots.insert(entity.id, scene.instances.len());
+                if !standing {
+                    scene
+                        .missing
+                        .push(format!("tree {} starts felled", entity.id.0));
+                }
+                scene.instances.push(StaticInstance {
                     model: prototype.model.clone(),
                     transform: standing_transform(
                         entity.position,
@@ -197,25 +192,13 @@ pub fn build(
                         appearance_scale,
                         ground,
                     ),
-                    owner_color,
-                }),
-                None => missing.push(format!("scenery {scenery_id}")),
+                    owner_color: None,
+                });
             }
-            continue;
+            None => scene.missing.push(format!("scenery {scenery_id}")),
         }
-        let Some(file) = &asset.file else {
-            missing.push(format!("render asset {asset_id} has no model"));
-            continue;
-        };
-        let scale =
-            asset.scale.unwrap_or(1.0) * appearance_scale * definition.model_scale.unwrap_or(1.0);
-        out.push(StaticInstance {
-            model: file.clone(),
-            transform: standing_transform(entity.position, degrees, scale, ground),
-            owner_color,
-        });
     }
-    (out, lights, missing)
+    scene
 }
 
 #[cfg(test)]
