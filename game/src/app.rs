@@ -168,6 +168,10 @@ impl App {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
         let ui_view = session.display.ui_view(&frame);
+        // The frame logged below measures its GPU time from submit to idle (pass
+        // timestamps are not trustworthy on Apple GPUs, D34).
+        let log_due = (now - self.stats_since).as_secs_f32() >= 2.0;
+        session.renderer.sample_gpu_time |= log_due;
         let report = session.game.render(
             &mut Ctx {
                 gpu: &session.display.gpu,
@@ -192,7 +196,8 @@ impl App {
         if (now - self.stats_since).as_secs_f32() >= 2.0 {
             let frames = st.frames.max(1) as f32;
             if let Some(report) = report {
-                let gpu: Option<f32> = report.gpu_ms.as_ref().map(|g| g.iter().sum());
+                // Submit to idle of this (sampled) frame; `None` outside a match.
+                let gpu = report.gpu_frame_ms;
                 let a = report.actors;
                 tracing::info!(
                     fps = (1000.0 * frames / st.dt_ms.max(1.0)).round(),

@@ -112,7 +112,13 @@ pub struct FrameReport {
     /// CPU time recording each pass, ms.
     pub cpu_ms: Vec<f32>,
     /// GPU time of each pass from the latest measured frame, ms.
+    /// Pass timestamps attribute work to neighbouring passes on Apple GPUs (D34): use
+    /// these for relative hints only, and [`FrameReport::gpu_frame_ms`] for budgets.
     pub gpu_ms: Option<Vec<f32>>,
+    /// The frame's GPU time from submit to idle, ms, when this frame was sampled
+    /// ([`Renderer::sample_gpu_time`]): the queue is drained first, then the frame is
+    /// submitted and waited for. Trustworthy on every GPU; costs one stall.
+    pub gpu_frame_ms: Option<f32>,
     /// CPU time of the whole `render` call, ms.
     pub cpu_total_ms: f32,
     pub draws: u32,
@@ -258,6 +264,10 @@ pub struct Renderer {
     /// Submit every pass alone and wait for it (benchmarks: per-pass submit-to-idle
     /// times where Apple GPUs' timestamps attribute work to neighbouring passes).
     pub isolate_passes: bool,
+    /// Measure the next frame's GPU time from submit to idle
+    /// ([`FrameReport::gpu_frame_ms`]); cleared by `render`. The frame stalls the CPU
+    /// until the GPU is done, so sample rarely (the game: once per stats interval).
+    pub sample_gpu_time: bool,
     /// Shadows on (a setting).
     pub shadows: bool,
     /// Bytes of GPU memory the world uses.
@@ -429,6 +439,7 @@ impl Renderer {
             timer: None,
             timestamps: gpu.features.timestamps,
             isolate_passes: false,
+            sample_gpu_time: false,
             shadows: true,
             world_bytes: 0,
         };
@@ -1281,15 +1292,27 @@ impl Renderer {
         if let Some(extra) = before_submit {
             extra(&mut encoder);
         }
+        let sample = std::mem::take(&mut self.sample_gpu_time);
+        if sample {
+            // Drain earlier frames, so the wait below measures this frame alone.
+            let _ = device.poll(wgpu::PollType::wait_indefinitely());
+        }
+        let submitted = Instant::now();
         {
             let _span = tracing::trace_span!("submit").entered();
             queue.submit([encoder.finish()]);
+        }
+        let recorded = start.elapsed();
+        if sample {
+            let _ = device.poll(wgpu::PollType::wait_indefinitely());
+            report.gpu_frame_ms = Some(submitted.elapsed().as_secs_f32() * 1000.0);
         }
         if let Some(timer) = &mut self.timer {
             timer.end_frame();
             report.gpu_ms = timer.latest().map(<[f32]>::to_vec);
         }
-        report.cpu_total_ms = start.elapsed().as_secs_f32() * 1000.0;
+        // Recording and submitting, without a sampled frame's waits.
+        report.cpu_total_ms = recorded.as_secs_f32() * 1000.0;
         report
     }
 }

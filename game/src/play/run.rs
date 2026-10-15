@@ -126,6 +126,8 @@ pub struct InMatch {
     frame_sum: f32,
     frame_max: f32,
     stats_since: Instant,
+    /// When the overlay last sampled the GPU time.
+    gpu_sampled: Instant,
     held_before: u32,
 }
 
@@ -263,6 +265,7 @@ impl InMatch {
             frame_sum: 0.0,
             frame_max: 0.0,
             stats_since: now,
+            gpu_sampled: now,
             held_before: 0,
         };
         // The HUD shows the minimap and the live portrait.
@@ -862,6 +865,14 @@ impl InMatch {
             }
             self.sim.want_ai_summaries(wants_ai);
         }
+        // While the overlay shows, sample the frame's GPU time (submit to idle) twice a
+        // second; pass timestamps are only hints on Apple GPUs (D34).
+        if self.debug.as_ref().is_some_and(|d| d.open)
+            && self.gpu_sampled.elapsed() >= Duration::from_millis(500)
+        {
+            host.renderer.sample_gpu_time = true;
+            self.gpu_sampled = Instant::now();
+        }
         let debug = &self.debug;
         let paint = |encoder: &mut wgpu::CommandEncoder| {
             if let Some(debug) = debug {
@@ -872,6 +883,9 @@ impl InMatch {
             .renderer
             .render(gpu, &camera_view, seconds, output, Some(&paint));
         self.stats.report = report.clone();
+        if report.gpu_frame_ms.is_some() {
+            self.stats.gpu_frame_ms = report.gpu_frame_ms;
+        }
         report
     }
 }

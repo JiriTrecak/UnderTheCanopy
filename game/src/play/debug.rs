@@ -14,6 +14,8 @@ pub struct Stats {
     pub frame_ms: f32,
     pub frame_max_ms: f32,
     pub report: FrameReport,
+    /// The latest sampled frame's GPU time, submit to idle (trustworthy; D34).
+    pub gpu_frame_ms: Option<f32>,
     pub live_ms: f32,
     pub ui_ms: f32,
     pub tick: u32,
@@ -96,6 +98,10 @@ impl Debug {
                 .default_width(360.0)
                 .show(&ctx, |ui| {
                     ui.heading(format!("{:.0} fps", stats.fps));
+                    ui.label(match stats.gpu_frame_ms {
+                        Some(ms) => format!("GPU {ms:.2} ms a frame (submit to idle, sampled)"),
+                        None => "GPU –".to_owned(),
+                    });
                     ui.label(format!(
                         "frame {:.2} ms (max {:.1}) · render CPU {:.2} ms · live {:.2} ms · ui {:.2} ms",
                         stats.frame_ms, stats.frame_max_ms, stats.report.cpu_total_ms, stats.live_ms, stats.ui_ms
@@ -111,7 +117,10 @@ impl Debug {
                         egui::Grid::new("passes").striped(true).show(ui, |ui| {
                             ui.label("pass");
                             ui.label("CPU ms");
-                            ui.label("GPU ms");
+                            // Pass timestamps attribute work to neighbouring passes on
+                            // Apple GPUs (D34): hints only; `just bench-render` isolates
+                            // passes properly.
+                            ui.label("GPU ms (hint)");
                             ui.end_row();
                             for (i, name) in stats.report.passes.iter().enumerate() {
                                 ui.label(*name);
