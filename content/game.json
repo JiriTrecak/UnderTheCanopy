@@ -1179,7 +1179,7 @@
       ],
       "behaviors": {
         "combat": {
-          "damage": 9,
+          "damage": 14,
           "damageType": "melee",
           "range": 0.6,
           "cooldownTicks": 54,

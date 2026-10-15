@@ -3,7 +3,8 @@
   "unreleased": {
     "added": [],
     "improved": [
-      "Damaged buildings show their health bars, as damaged units do."
+      "Damaged buildings show their health bars, as damaged units do.",
+      "Ant Warriors deal 14 damage instead of 9."
     ],
     "fixed": [],
     "knownIssues": []
