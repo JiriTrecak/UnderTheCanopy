@@ -1,0 +1,3053 @@
+{
+  "units": {
+    "Hamg": {
+      "level": 5,
+      "name": "HeroArchMage"
+    },
+    "Hblm": {
+      "level": 5,
+      "name": "HeroBloodMage"
+    },
+    "Hmkg": {
+      "level": 5,
+      "name": "HeroMountainKing"
+    },
+    "Hpal": {
+      "level": 5,
+      "name": "HeroPaladin"
+    },
+    "hbot": {
+      "level": 2,
+      "name": "transport ship"
+    },
+    "hbsh": {
+      "level": 6,
+      "name": "human battleship"
+    },
+    "hdes": {
+      "level": 4,
+      "name": "human frigate"
+    },
+    "hdhw": {
+      "level": 3,
+      "name": "blood elf dragon hawk"
+    },
+    "hfoo": {
+      "level": 2,
+      "name": "Footman"
+    },
+    "hgry": {
+      "level": 5,
+      "name": "GryphonRider"
+    },
+    "hgyr": {
+      "level": 1,
+      "name": "Flying Machine"
+    },
+    "hkni": {
+      "level": 4,
+      "name": "Knight"
+    },
+    "hmil": {
+      "level": 1,
+      "name": "Militia"
+    },
+    "hmpr": {
+      "level": 2,
+      "name": "Priest"
+    },
+    "hmtm": {
+      "level": 2,
+      "name": "MortarTeam"
+    },
+    "hmtt": {
+      "level": 4,
+      "name": "Siege Engine"
+    },
+    "hpea": {
+      "level": 1,
+      "name": "Peasant"
+    },
+    "hpxe": {
+      "level": 6,
+      "name": "Phoenix Egg"
+    },
+    "hrif": {
+      "level": 3,
+      "name": "Rifleman"
+    },
+    "hrtt": {
+      "level": 4,
+      "name": "siege engine upgraded"
+    },
+    "hsor": {
+      "level": 2,
+      "name": "Sorceress"
+    },
+    "hspt": {
+      "level": 3,
+      "name": "Blood Elf Spell Breaker"
+    },
+    "hwat": {
+      "level": 4,
+      "name": "WaterElemental"
+    },
+    "hwt2": {
+      "level": 5,
+      "name": "WaterElemental level 2"
+    },
+    "hwt3": {
+      "level": 6,
+      "name": "WaterElemental level 3"
+    },
+    "nlv1": {
+      "level": 4,
+      "name": "LavaSpawn"
+    },
+    "nlv2": {
+      "level": 5,
+      "name": "LavaSpawn2"
+    },
+    "nlv3": {
+      "level": 6,
+      "name": "LavaSpawn3"
+    },
+    "hatw": {
+      "level": 1,
+      "name": "Arcane Tower"
+    },
+    "hctw": {
+      "level": 1,
+      "name": "CannonTower"
+    },
+    "hgtw": {
+      "level": 1,
+      "name": "GuardTower"
+    },
+    "Obla": {
+      "level": 5,
+      "name": "HeroBladeMaster"
+    },
+    "Ofar": {
+      "level": 5,
+      "name": "HeroFarSeer"
+    },
+    "Oshd": {
+      "level": 5,
+      "name": "HeroShadowHunter"
+    },
+    "Otch": {
+      "level": 5,
+      "name": "HeroTaurenChieftain"
+    },
+    "ncat": {
+      "level": 2,
+      "name": "Demolisher(Draenei)"
+    },
+    "nsw1": {
+      "level": 2,
+      "name": "spirit beast level 1"
+    },
+    "nsw2": {
+      "level": 3,
+      "name": "spirit beast level 2"
+    },
+    "nsw3": {
+      "level": 4,
+      "name": "spirit beast level 3"
+    },
+    "obot": {
+      "level": 2,
+      "name": "orcish transport"
+    },
+    "ocat": {
+      "level": 2,
+      "name": "Demolisher"
+    },
+    "odes": {
+      "level": 4,
+      "name": "orcish destroyer"
+    },
+    "odoc": {
+      "level": 2,
+      "name": "WitchDoctor"
+    },
+    "ogru": {
+      "level": 3,
+      "name": "Grunt"
+    },
+    "ohun": {
+      "level": 2,
+      "name": "HeadHunter"
+    },
+    "okod": {
+      "level": 4,
+      "name": "KodoBeast"
+    },
+    "opeo": {
+      "level": 1,
+      "name": "Peon"
+    },
+    "orai": {
+      "level": 3,
+      "name": "Raider"
+    },
+    "oshm": {
+      "level": 2,
+      "name": "Shaman"
+    },
+    "osp1": {
+      "level": 1,
+      "name": "serpent ward 1"
+    },
+    "osp2": {
+      "level": 3,
+      "name": "serpent ward 2"
+    },
+    "osp3": {
+      "level": 4,
+      "name": "serpent ward 3"
+    },
+    "osp4": {
+      "level": 4,
+      "name": "serpent ward 4"
+    },
+    "ospm": {
+      "level": 3,
+      "name": "SpiritwalkerMorph"
+    },
+    "ospw": {
+      "level": 3,
+      "name": "Spiritwalker"
+    },
+    "osw1": {
+      "level": 2,
+      "name": "spirit wolf level 1"
+    },
+    "osw2": {
+      "level": 3,
+      "name": "spirit wolf level 2"
+    },
+    "osw3": {
+      "level": 4,
+      "name": "spirit wolf level 3"
+    },
+    "otau": {
+      "level": 5,
+      "name": "Tauren"
+    },
+    "otbk": {
+      "level": 2,
+      "name": "Berserker"
+    },
+    "otbr": {
+      "level": 2,
+      "name": "Troll Batrider"
+    },
+    "owyv": {
+      "level": 3,
+      "name": "Wind Rider"
+    },
+    "otrb": {
+      "level": 1,
+      "name": "OrcBurrow"
+    },
+    "owtw": {
+      "level": 1,
+      "name": "WatchTower"
+    },
+    "Edem": {
+      "level": 5,
+      "name": "HeroDemonHunter"
+    },
+    "Edmm": {
+      "level": 5,
+      "name": "HeroDemonHunterMorph"
+    },
+    "Ekee": {
+      "level": 5,
+      "name": "HeroKeeperoftheGrove"
+    },
+    "Emoo": {
+      "level": 5,
+      "name": "HeroMoonPriestess"
+    },
+    "Ewar": {
+      "level": 5,
+      "name": "HeroWarden"
+    },
+    "earc": {
+      "level": 2,
+      "name": "Archer"
+    },
+    "ebal": {
+      "level": 2,
+      "name": "Glaive Thrower"
+    },
+    "ebsh": {
+      "level": 6,
+      "name": "night elf battleship"
+    },
+    "echm": {
+      "level": 5,
+      "name": "Chimaera"
+    },
+    "edcm": {
+      "level": 4,
+      "name": "DruidoftheClawMorph"
+    },
+    "edes": {
+      "level": 4,
+      "name": "night elf destroyer"
+    },
+    "edoc": {
+      "level": 4,
+      "name": "DruidoftheClaw"
+    },
+    "edot": {
+      "level": 2,
+      "name": "DruidoftheTalon"
+    },
+    "edry": {
+      "level": 3,
+      "name": "Dryad"
+    },
+    "edtm": {
+      "level": 2,
+      "name": "DruidoftheTalonMorph"
+    },
+    "efdr": {
+      "level": 3,
+      "name": "faerie dragon"
+    },
+    "efon": {
+      "level": 2,
+      "name": "Treant"
+    },
+    "ehip": {
+      "level": 2,
+      "name": "Hippogryph"
+    },
+    "ehpr": {
+      "level": 4,
+      "name": "Hippogryph Rider"
+    },
+    "emtg": {
+      "level": 6,
+      "name": "Mountain Giant"
+    },
+    "esen": {
+      "level": 3,
+      "name": "Huntress"
+    },
+    "espv": {
+      "level": 7,
+      "name": "spirit of vengeance"
+    },
+    "even": {
+      "level": 2,
+      "name": "vengeance"
+    },
+    "ewsp": {
+      "level": 1,
+      "name": "Wisp"
+    },
+    "eaoe": {
+      "level": 1,
+      "name": "AncientofLore"
+    },
+    "eaom": {
+      "level": 1,
+      "name": "AncientofWar"
+    },
+    "eaow": {
+      "level": 1,
+      "name": "AncientofWind"
+    },
+    "eden": {
+      "level": 1,
+      "name": "Ancient of Wonders"
+    },
+    "etoa": {
+      "level": 2,
+      "name": "TreeofAges"
+    },
+    "etoe": {
+      "level": 3,
+      "name": "TreeofEternity"
+    },
+    "etol": {
+      "level": 1,
+      "name": "TreeofLife"
+    },
+    "etrp": {
+      "level": 3,
+      "name": "Ancient Protector"
+    },
+    "Ucrl": {
+      "level": 5,
+      "name": "HeroCryptLord"
+    },
+    "Udea": {
+      "level": 5,
+      "name": "HeroDeathKnight"
+    },
+    "Udre": {
+      "level": 5,
+      "name": "HeroDreadLord"
+    },
+    "Ulic": {
+      "level": 5,
+      "name": "HeroLich"
+    },
+    "uabo": {
+      "level": 4,
+      "name": "Abomination"
+    },
+    "uaco": {
+      "level": 1,
+      "name": "Acolyte"
+    },
+    "uban": {
+      "level": 2,
+      "name": "Banshee"
+    },
+    "ubsp": {
+      "level": 5,
+      "name": "destroyer"
+    },
+    "ucrm": {
+      "level": 3,
+      "name": "CryptFiendMorph"
+    },
+    "ucry": {
+      "level": 3,
+      "name": "CryptFiend"
+    },
+    "ucs1": {
+      "level": 1,
+      "name": "carrion scarab level 1"
+    },
+    "ucs2": {
+      "level": 2,
+      "name": "carrion scarab level 2"
+    },
+    "ucs3": {
+      "level": 3,
+      "name": "carrion scarab level 3"
+    },
+    "ucsB": {
+      "level": 2,
+      "name": "carrion scarab level 2 -burrowed"
+    },
+    "ucsC": {
+      "level": 3,
+      "name": "carrion scarab level 3 -burrowed"
+    },
+    "ufro": {
+      "level": 6,
+      "name": "FrostWyrm"
+    },
+    "ugar": {
+      "level": 2,
+      "name": "Gargoyle"
+    },
+    "ugho": {
+      "level": 2,
+      "name": "Ghoul"
+    },
+    "ugrm": {
+      "level": 2,
+      "name": "GargoyleMorphed"
+    },
+    "umtw": {
+      "level": 2,
+      "name": "MeatWagon"
+    },
+    "unec": {
+      "level": 2,
+      "name": "Necromancer"
+    },
+    "uobs": {
+      "level": 3,
+      "name": "Obsidian Statue"
+    },
+    "ushd": {
+      "level": 1,
+      "name": "Shade"
+    },
+    "uske": {
+      "level": 1,
+      "name": "SkeletonWarrior"
+    },
+    "uskm": {
+      "level": 1,
+      "name": "Skeletal Mage"
+    },
+    "uubs": {
+      "level": 6,
+      "name": "undead battleship"
+    },
+    "unp1": {
+      "level": 2,
+      "name": "Halls of the Dead"
+    },
+    "unp2": {
+      "level": 3,
+      "name": "Black Citadel"
+    },
+    "uzg1": {
+      "level": 1,
+      "name": "Spirit Tower"
+    },
+    "uzg2": {
+      "level": 1,
+      "name": "Frost Tower"
+    },
+    "Nal2": {
+      "level": 5,
+      "name": "HeroAlchemistMorph2"
+    },
+    "Nal3": {
+      "level": 5,
+      "name": "HeroAlchemistMorph3"
+    },
+    "Nalc": {
+      "level": 5,
+      "name": "HeroAlchemist"
+    },
+    "Nalm": {
+      "level": 5,
+      "name": "HeroAlchemistMorph"
+    },
+    "Nbrn": {
+      "level": 5,
+      "name": "HeroBansheeRanger"
+    },
+    "Nbst": {
+      "level": 5,
+      "name": "Beastmaster"
+    },
+    "Nfir": {
+      "level": 5,
+      "name": "FireLord"
+    },
+    "Nngs": {
+      "level": 5,
+      "name": "HeroNagaSeaWitch"
+    },
+    "Npbm": {
+      "level": 5,
+      "name": "HeroPandarenBrewmaster"
+    },
+    "Nplh": {
+      "level": 5,
+      "name": "neutral pit lord"
+    },
+    "Nrob": {
+      "level": 5,
+      "name": "HeroTinkerMorph"
+    },
+    "Ntin": {
+      "level": 5,
+      "name": "HeroTinker"
+    },
+    "ndr1": {
+      "level": 2,
+      "name": "DarkMinion1"
+    },
+    "ndr2": {
+      "level": 3,
+      "name": "DarkMinion2"
+    },
+    "ndr3": {
+      "level": 4,
+      "name": "DarkMinion3"
+    },
+    "nfac": {
+      "level": 4,
+      "name": "pocket factory"
+    },
+    "nfa1": {
+      "level": 5,
+      "name": "pocket factory"
+    },
+    "nfa2": {
+      "level": 6,
+      "name": "pocket factory"
+    },
+    "ngz1": {
+      "level": 4,
+      "name": "grizzly bear 1"
+    },
+    "ngz2": {
+      "level": 5,
+      "name": "grizzly bear 2"
+    },
+    "ngz3": {
+      "level": 6,
+      "name": "grizzly bear 3"
+    },
+    "ngz4": {
+      "level": 7,
+      "name": "misha 4"
+    },
+    "ngzc": {
+      "level": 4,
+      "name": "misha 1"
+    },
+    "ngzd": {
+      "level": 5,
+      "name": "misha 2"
+    },
+    "npn1": {
+      "level": 6,
+      "name": "Fire pandaren split"
+    },
+    "npn2": {
+      "level": 6,
+      "name": "Wind pandaren split"
+    },
+    "npn3": {
+      "level": 6,
+      "name": "Earth pandaren split"
+    },
+    "npn4": {
+      "level": 8,
+      "name": "Fire pandaren split2"
+    },
+    "npn5": {
+      "level": 8,
+      "name": "Wind pandaren split2"
+    },
+    "npn6": {
+      "level": 8,
+      "name": "Earth pandaren split2"
+    },
+    "nqb1": {
+      "level": 3,
+      "name": "quillbeast 1"
+    },
+    "nqb2": {
+      "level": 4,
+      "name": "quillbeast 2"
+    },
+    "nqb3": {
+      "level": 5,
+      "name": "quillbeast 3"
+    },
+    "nqb4": {
+      "level": 6,
+      "name": "quillbeast 4"
+    },
+    "nwe1": {
+      "level": 2,
+      "name": "war eagle 1"
+    },
+    "nwe2": {
+      "level": 5,
+      "name": "war eagle 2"
+    },
+    "nwe3": {
+      "level": 6,
+      "name": "war eagle 3"
+    },
+    "nadk": {
+      "level": 6,
+      "name": "blue drake"
+    },
+    "nadr": {
+      "level": 10,
+      "name": "blue dragon"
+    },
+    "nadw": {
+      "level": 3,
+      "name": "blue dragon whelp"
+    },
+    "nahy": {
+      "level": 10,
+      "name": "ancient hydra"
+    },
+    "nanb": {
+      "level": 1,
+      "name": "barbed arachnathid"
+    },
+    "nanc": {
+      "level": 1,
+      "name": "crystal arachnathid"
+    },
+    "nane": {
+      "level": 4,
+      "name": "arachanthid earth-borer"
+    },
+    "nanm": {
+      "level": 1,
+      "name": "barbed arachnathid(merc)"
+    },
+    "nano": {
+      "level": 5,
+      "name": "arachnathid overlord"
+    },
+    "nanw": {
+      "level": 3,
+      "name": "arachnathid warrior"
+    },
+    "narg": {
+      "level": 3,
+      "name": "battle golem"
+    },
+    "nass": {
+      "level": 4,
+      "name": "assassin"
+    },
+    "nba2": {
+      "level": 8,
+      "name": "doom guard (summoned)"
+    },
+    "nbal": {
+      "level": 8,
+      "name": "doom guard"
+    },
+    "nban": {
+      "level": 1,
+      "name": "bandit"
+    },
+    "nbda": {
+      "level": 4,
+      "name": "blue dragonspawn apprentice"
+    },
+    "nbdk": {
+      "level": 6,
+      "name": "black drake"
+    },
+    "nbdm": {
+      "level": 3,
+      "name": "blue dragonspawn meddler"
+    },
+    "nbdo": {
+      "level": 8,
+      "name": "blue dragonspawn overseer"
+    },
+    "nbdr": {
+      "level": 3,
+      "name": "black dragon whelp"
+    },
+    "nbds": {
+      "level": 6,
+      "name": "blue dragonspawn sorceror"
+    },
+    "nbdw": {
+      "level": 5,
+      "name": "blue dragonspawn warrior"
+    },
+    "nbld": {
+      "level": 7,
+      "name": "bandit lord"
+    },
+    "nbnb": {
+      "level": 1,
+      "name": "barbed arachnathid burrowed"
+    },
+    "nbot": {
+      "level": 1,
+      "name": "transport ship"
+    },
+    "nbrg": {
+      "level": 2,
+      "name": "brigand"
+    },
+    "nbwm": {
+      "level": 10,
+      "name": "black dragon"
+    },
+    "nbzd": {
+      "level": 10,
+      "name": "bronze dragon"
+    },
+    "nbzk": {
+      "level": 6,
+      "name": "bronze drake"
+    },
+    "nbzw": {
+      "level": 3,
+      "name": "bronze dragon whelp"
+    },
+    "ncea": {
+      "level": 2,
+      "name": "CentaurArcher"
+    },
+    "ncen": {
+      "level": 4,
+      "name": "Centaur outrunner"
+    },
+    "ncer": {
+      "level": 2,
+      "name": "centaur drudge"
+    },
+    "ncfs": {
+      "level": 2,
+      "name": "watery minion cliffrunner"
+    },
+    "nchp": {
+      "level": 2,
+      "name": "Chaplain"
+    },
+    "ncim": {
+      "level": 4,
+      "name": "Centaur impaler"
+    },
+    "ncks": {
+      "level": 5,
+      "name": "centaur sorceror"
+    },
+    "ncnk": {
+      "level": 8,
+      "name": "centaur khan"
+    },
+    "ndqn": {
+      "level": 3,
+      "name": "succubus"
+    },
+    "ndqp": {
+      "level": 8,
+      "name": "maiden of pain"
+    },
+    "ndqs": {
+      "level": 10,
+      "name": "queen of suffering"
+    },
+    "ndqt": {
+      "level": 6,
+      "name": "vile temptress"
+    },
+    "ndqv": {
+      "level": 5,
+      "name": "vile tormentor"
+    },
+    "ndrv": {
+      "level": 8,
+      "name": "revenant of the depths"
+    },
+    "ndtb": {
+      "level": 4,
+      "name": "dark troll berserker"
+    },
+    "ndth": {
+      "level": 4,
+      "name": "dark troll high priest"
+    },
+    "ndtp": {
+      "level": 2,
+      "name": "dark troll shadow priest"
+    },
+    "ndtr": {
+      "level": 2,
+      "name": "darkTroll"
+    },
+    "ndtt": {
+      "level": 3,
+      "name": "darkTrollTrapper"
+    },
+    "ndtw": {
+      "level": 6,
+      "name": "darkTrollwarlord"
+    },
+    "nehy": {
+      "level": 7,
+      "name": "elder hydra"
+    },
+    "nelb": {
+      "level": 8,
+      "name": "berserk elemental"
+    },
+    "nele": {
+      "level": 4,
+      "name": "enraged elemental"
+    },
+    "nenc": {
+      "level": 1,
+      "name": "corrupted treant"
+    },
+    "nenf": {
+      "level": 5,
+      "name": "enforcer"
+    },
+    "nenp": {
+      "level": 3,
+      "name": "poison treant"
+    },
+    "nepl": {
+      "level": 5,
+      "name": "plague treant"
+    },
+    "nerd": {
+      "level": 6,
+      "name": "eredar diabolist"
+    },
+    "ners": {
+      "level": 4,
+      "name": "eredar sorceror"
+    },
+    "nerw": {
+      "level": 9,
+      "name": "eredar warlock"
+    },
+    "nfel": {
+      "level": 5,
+      "name": "fel stalker"
+    },
+    "nfgb": {
+      "level": 4,
+      "name": "bloodfiend (felguard)"
+    },
+    "nfgo": {
+      "level": 15,
+      "name": "Forgotten One"
+    },
+    "nfgt": {
+      "level": 1,
+      "name": "forgotten one tentacle"
+    },
+    "nfgu": {
+      "level": 2,
+      "name": "felguard"
+    },
+    "nfod": {
+      "level": 10,
+      "name": "faceless one deathbringer"
+    },
+    "nfor": {
+      "level": 6,
+      "name": "faceless one trickster"
+    },
+    "nfot": {
+      "level": 8,
+      "name": "faceless one terror"
+    },
+    "nfov": {
+      "level": 6,
+      "name": "overlord (felguard)"
+    },
+    "nfpc": {
+      "level": 7,
+      "name": "Polar Furbolg Champion"
+    },
+    "nfpe": {
+      "level": 8,
+      "name": "Polar Furbolg Elder Shaman"
+    },
+    "nfpl": {
+      "level": 4,
+      "name": "Polar Furbolg"
+    },
+    "nfps": {
+      "level": 4,
+      "name": "Polar Furbolg Shaman"
+    },
+    "nfpt": {
+      "level": 6,
+      "name": "Polar Furbolg Tracker"
+    },
+    "nfpu": {
+      "level": 8,
+      "name": "Polar Furbolg Ursa Warrior"
+    },
+    "nfra": {
+      "level": 8,
+      "name": "Furbolg Ursa Warrior"
+    },
+    "nfrb": {
+      "level": 6,
+      "name": "Furbolg Tracker"
+    },
+    "nfre": {
+      "level": 7,
+      "name": "Furbolg Elder Shaman"
+    },
+    "nfrg": {
+      "level": 7,
+      "name": "Furbolg Champion"
+    },
+    "nfrl": {
+      "level": 4,
+      "name": "Furbolg"
+    },
+    "nfrp": {
+      "level": 4,
+      "name": "Furbolg Panda"
+    },
+    "nfrs": {
+      "level": 4,
+      "name": "Furbolg Shaman"
+    },
+    "nfsh": {
+      "level": 4,
+      "name": "forest troll high priest"
+    },
+    "nfsp": {
+      "level": 2,
+      "name": "forest troll shadow priest"
+    },
+    "nftb": {
+      "level": 4,
+      "name": "forest troll berserker"
+    },
+    "nftk": {
+      "level": 6,
+      "name": "Forest Troll Warlord"
+    },
+    "nftr": {
+      "level": 2,
+      "name": "ForestTroll"
+    },
+    "nftt": {
+      "level": 3,
+      "name": "ForestTrollTrapper"
+    },
+    "ngdk": {
+      "level": 6,
+      "name": "Green Drake"
+    },
+    "nggr": {
+      "level": 9,
+      "name": "granite golem"
+    },
+    "ngh1": {
+      "level": 3,
+      "name": "ghost"
+    },
+    "ngh2": {
+      "level": 6,
+      "name": "wraith"
+    },
+    "ngir": {
+      "level": 4,
+      "name": "goblin shredder"
+    },
+    "ngna": {
+      "level": 1,
+      "name": "Gnoll Poacher"
+    },
+    "ngnb": {
+      "level": 3,
+      "name": "gnoll brute"
+    },
+    "ngno": {
+      "level": 1,
+      "name": "Gnoll Robber"
+    },
+    "ngns": {
+      "level": 3,
+      "name": "Gnoll Assassin"
+    },
+    "ngnv": {
+      "level": 5,
+      "name": "Gnoll Overseer"
+    },
+    "ngnw": {
+      "level": 3,
+      "name": "gnoll warden"
+    },
+    "ngrd": {
+      "level": 10,
+      "name": "green dragon"
+    },
+    "ngrk": {
+      "level": 2,
+      "name": "mud golem"
+    },
+    "ngrw": {
+      "level": 3,
+      "name": "Green Dragon Whelp"
+    },
+    "ngsp": {
+      "level": 4,
+      "name": "GoblinSapper"
+    },
+    "ngst": {
+      "level": 6,
+      "name": "rock golem"
+    },
+    "ngza": {
+      "level": 6,
+      "name": "misha 3"
+    },
+    "nhar": {
+      "level": 1,
+      "name": "Harpy Scout"
+    },
+    "nhdc": {
+      "level": 3,
+      "name": "deceiver"
+    },
+    "nhfp": {
+      "level": 1,
+      "name": "fallen priest"
+    },
+    "nhhr": {
+      "level": 5,
+      "name": "heretic"
+    },
+    "nhrh": {
+      "level": 5,
+      "name": "harpy hag"
+    },
+    "nhrq": {
+      "level": 7,
+      "name": "harpy queen"
+    },
+    "nhrr": {
+      "level": 3,
+      "name": "harpy rogue"
+    },
+    "nhrw": {
+      "level": 3,
+      "name": "harpy witch"
+    },
+    "nhyc": {
+      "level": 5,
+      "name": "Naga Dragon Turtle"
+    },
+    "nhyd": {
+      "level": 6,
+      "name": "hydra"
+    },
+    "nhyh": {
+      "level": 3,
+      "name": "hydra hatchling"
+    },
+    "nhym": {
+      "level": 2,
+      "name": "hydromancer"
+    },
+    "nina": {
+      "level": 10,
+      "name": "infernal automaton"
+    },
+    "ninc": {
+      "level": 5,
+      "name": "infernal contraption"
+    },
+    "ninf": {
+      "level": 8,
+      "name": "Infernal"
+    },
+    "ninm": {
+      "level": 8,
+      "name": "infernal machine"
+    },
+    "nith": {
+      "level": 4,
+      "name": "ice troll high priest"
+    },
+    "nitp": {
+      "level": 2,
+      "name": "ice troll priest"
+    },
+    "nitr": {
+      "level": 2,
+      "name": "IceTroll"
+    },
+    "nits": {
+      "level": 4,
+      "name": "ice troll berserker"
+    },
+    "nitt": {
+      "level": 3,
+      "name": "ice troll trapper"
+    },
+    "nitw": {
+      "level": 6,
+      "name": "ice troll warlord"
+    },
+    "njg1": {
+      "level": 3,
+      "name": "Jungle Stalker"
+    },
+    "njga": {
+      "level": 6,
+      "name": "Elder Jungle Stalker"
+    },
+    "njgb": {
+      "level": 9,
+      "name": "Enranged Jungle Stalker"
+    },
+    "nkob": {
+      "level": 1,
+      "name": "Kobold"
+    },
+    "nkog": {
+      "level": 3,
+      "name": "Kobold Geomancer"
+    },
+    "nkol": {
+      "level": 5,
+      "name": "kobold taskmaster"
+    },
+    "nkot": {
+      "level": 3,
+      "name": "kobold tunneler"
+    },
+    "nlds": {
+      "level": 5,
+      "name": "makrura deep seer"
+    },
+    "nlkl": {
+      "level": 7,
+      "name": "makrura tidal lord"
+    },
+    "nlpd": {
+      "level": 2,
+      "name": "makrura pool dweller"
+    },
+    "nlpr": {
+      "level": 1,
+      "name": "makrura prawn"
+    },
+    "nlps": {
+      "level": 1,
+      "name": "makrura prawn summoned"
+    },
+    "nlrv": {
+      "level": 10,
+      "name": "deeplord revenant"
+    },
+    "nlsn": {
+      "level": 5,
+      "name": "makrura snapper"
+    },
+    "nltc": {
+      "level": 2,
+      "name": "makrura tide caller"
+    },
+    "nltl": {
+      "level": 2,
+      "name": "lightning lizard"
+    },
+    "nmam": {
+      "level": 3,
+      "name": "Mammoth"
+    },
+    "nmbg": {
+      "level": 2,
+      "name": "mur'gul blood-gill"
+    },
+    "nmcf": {
+      "level": 1,
+      "name": "mur'gul cliffrunner"
+    },
+    "nmdr": {
+      "level": 8,
+      "name": "Dire Mammoth"
+    },
+    "nmfs": {
+      "level": 3,
+      "name": "murloc flesheater"
+    },
+    "nmgd": {
+      "level": 10,
+      "name": "magnataur destroyer"
+    },
+    "nmgr": {
+      "level": 8,
+      "name": "magnataur reaver"
+    },
+    "nmgw": {
+      "level": 5,
+      "name": "magnataur warrior"
+    },
+    "nmit": {
+      "level": 5,
+      "name": "Icetusk Mammoth"
+    },
+    "nmmu": {
+      "level": 6,
+      "name": "murloc mutant"
+    },
+    "nmpg": {
+      "level": 2,
+      "name": "murloc plaguebearer"
+    },
+    "nmrl": {
+      "level": 1,
+      "name": "murloc tiderunner"
+    },
+    "nmrm": {
+      "level": 3,
+      "name": "murloc nightcrawler"
+    },
+    "nmrr": {
+      "level": 2,
+      "name": "murloc huntsman"
+    },
+    "nmrv": {
+      "level": 6,
+      "name": "mur'gul reaver"
+    },
+    "nmsc": {
+      "level": 7,
+      "name": "mur'gul shadowcaster"
+    },
+    "nmsn": {
+      "level": 4,
+      "name": "mur'gul snarecaster"
+    },
+    "nmtw": {
+      "level": 3,
+      "name": "mur'gul tidewarrior"
+    },
+    "nmyr": {
+      "level": 4,
+      "name": "naga myrmidon"
+    },
+    "nmys": {
+      "level": 4,
+      "name": "naga myrmidon submerged"
+    },
+    "nndk": {
+      "level": 6,
+      "name": "nether drake"
+    },
+    "nndr": {
+      "level": 10,
+      "name": "nether dragon"
+    },
+    "nnht": {
+      "level": 3,
+      "name": "nether dragon hatchling"
+    },
+    "nnmg": {
+      "level": 2,
+      "name": "naga mur'gul reaver"
+    },
+    "nnrg": {
+      "level": 6,
+      "name": "naga royal guard"
+    },
+    "nnrs": {
+      "level": 6,
+      "name": "naga royal guard submerged"
+    },
+    "nnsu": {
+      "level": 2,
+      "name": "naga siren"
+    },
+    "nnsw": {
+      "level": 2,
+      "name": "naga siren"
+    },
+    "nnwa": {
+      "level": 3,
+      "name": "nerubian warrior"
+    },
+    "nnwl": {
+      "level": 3,
+      "name": "nerubian webspinner"
+    },
+    "nnwq": {
+      "level": 7,
+      "name": "nerubian queen"
+    },
+    "nnwr": {
+      "level": 5,
+      "name": "nerubian seer"
+    },
+    "nnws": {
+      "level": 5,
+      "name": "nerubian spider lord"
+    },
+    "noga": {
+      "level": 11,
+      "name": "Stonemaul Warchief"
+    },
+    "nogl": {
+      "level": 7,
+      "name": "ogre lord"
+    },
+    "nogm": {
+      "level": 5,
+      "name": "ogre mauler"
+    },
+    "nogn": {
+      "level": 7,
+      "name": "Stonemaul Magi"
+    },
+    "nogo": {
+      "level": 6,
+      "name": "Stonemaul Ogre"
+    },
+    "nogr": {
+      "level": 3,
+      "name": "Ogre Warrior"
+    },
+    "nomg": {
+      "level": 5,
+      "name": "ogre magi"
+    },
+    "nowb": {
+      "level": 4,
+      "name": "wildkin"
+    },
+    "nowe": {
+      "level": 6,
+      "name": "enraged wildkin"
+    },
+    "nowk": {
+      "level": 8,
+      "name": "berserk Wildkin"
+    },
+    "npfl": {
+      "level": 3,
+      "name": "Fel Beast"
+    },
+    "npfm": {
+      "level": 7,
+      "name": "Fel Ravager"
+    },
+    "nplb": {
+      "level": 4,
+      "name": "polar bear"
+    },
+    "nplg": {
+      "level": 6,
+      "name": "giant polar bear"
+    },
+    "nqbh": {
+      "level": 3,
+      "name": "quillboar hunter"
+    },
+    "nrdk": {
+      "level": 3,
+      "name": "Red Dragon Whelp"
+    },
+    "nrdr": {
+      "level": 6,
+      "name": "Red Drake"
+    },
+    "nrel": {
+      "level": 2,
+      "name": "reef elemental"
+    },
+    "nrog": {
+      "level": 3,
+      "name": "rogue"
+    },
+    "nrvd": {
+      "level": 9,
+      "name": "death revenant"
+    },
+    "nrvf": {
+      "level": 3,
+      "name": "fire revenant"
+    },
+    "nrvi": {
+      "level": 8,
+      "name": "ice revenant"
+    },
+    "nrvl": {
+      "level": 6,
+      "name": "lightning revenant"
+    },
+    "nrvs": {
+      "level": 4,
+      "name": "frost revenant"
+    },
+    "nrwm": {
+      "level": 10,
+      "name": "Red Dragon"
+    },
+    "nrzb": {
+      "level": 3,
+      "name": "razormane brute"
+    },
+    "nrzg": {
+      "level": 7,
+      "name": "razormane chieftain"
+    },
+    "nrzm": {
+      "level": 5,
+      "name": "razormane medicine man"
+    },
+    "nrzs": {
+      "level": 1,
+      "name": "razormane scout"
+    },
+    "nrzt": {
+      "level": 1,
+      "name": "quillboar"
+    },
+    "nsat": {
+      "level": 1,
+      "name": "Satyr Trickster"
+    },
+    "nsbm": {
+      "level": 6,
+      "name": "brood mother"
+    },
+    "nsbs": {
+      "level": 3,
+      "name": "naga snap dragon submerged"
+    },
+    "nsc2": {
+      "level": 3,
+      "name": "spider crab 2"
+    },
+    "nsc3": {
+      "level": 5,
+      "name": "spider crab 3"
+    },
+    "nsca": {
+      "level": 1,
+      "name": "skeletal archer(summoned)"
+    },
+    "nscb": {
+      "level": 1,
+      "name": "spider crab"
+    },
+    "nsce": {
+      "level": 1,
+      "name": "SkeletonWarrior(summoned)"
+    },
+    "nsel": {
+      "level": 5,
+      "name": "sea elemental"
+    },
+    "nsgb": {
+      "level": 8,
+      "name": "sea giant behemoth"
+    },
+    "nsgg": {
+      "level": 9,
+      "name": "siege golem"
+    },
+    "nsgh": {
+      "level": 5,
+      "name": "sea giant hunter"
+    },
+    "nsgn": {
+      "level": 3,
+      "name": "sea giant"
+    },
+    "nsgt": {
+      "level": 4,
+      "name": "giant spider"
+    },
+    "nska": {
+      "level": 1,
+      "name": "skeletal archer"
+    },
+    "nske": {
+      "level": 1,
+      "name": "SkeletonWarrior"
+    },
+    "nskf": {
+      "level": 3,
+      "name": "burning archer"
+    },
+    "nskg": {
+      "level": 3,
+      "name": "giant SkeletonWarrior"
+    },
+    "nskm": {
+      "level": 3,
+      "name": "skeletal marksman"
+    },
+    "nsko": {
+      "level": 3,
+      "name": "skeletal orc"
+    },
+    "nslf": {
+      "level": 3,
+      "name": "sludge flinger"
+    },
+    "nslh": {
+      "level": 3,
+      "name": "salamander hatchling"
+    },
+    "nsll": {
+      "level": 10,
+      "name": "salamander lord"
+    },
+    "nslm": {
+      "level": 1,
+      "name": "sludge minion"
+    },
+    "nsln": {
+      "level": 5,
+      "name": "sludge monstrosity"
+    },
+    "nslr": {
+      "level": 5,
+      "name": "salamander"
+    },
+    "nslv": {
+      "level": 7,
+      "name": "salamander vizier"
+    },
+    "nsnp": {
+      "level": 3,
+      "name": "naga snap dragon"
+    },
+    "nsns": {
+      "level": 3,
+      "name": "watery minion snarecaster"
+    },
+    "nsoc": {
+      "level": 8,
+      "name": "skeletal orc champion"
+    },
+    "nsog": {
+      "level": 5,
+      "name": "skeletal orc grunt"
+    },
+    "nspb": {
+      "level": 1,
+      "name": "black spider"
+    },
+    "nspd": {
+      "level": 1,
+      "name": "spiderling"
+    },
+    "nspg": {
+      "level": 1,
+      "name": "green spider"
+    },
+    "nspp": {
+      "level": 2,
+      "name": "spirit pig"
+    },
+    "nspr": {
+      "level": 1,
+      "name": "spider"
+    },
+    "nsqa": {
+      "level": 9,
+      "name": "ancient sasquatch"
+    },
+    "nsqe": {
+      "level": 6,
+      "name": "elder sasquatch"
+    },
+    "nsqo": {
+      "level": 7,
+      "name": "sasquatch oracle"
+    },
+    "nsqt": {
+      "level": 5,
+      "name": "sasquatch"
+    },
+    "nsra": {
+      "level": 1,
+      "name": "stormreaver apprentice"
+    },
+    "nsrh": {
+      "level": 3,
+      "name": "stormreaver hermit"
+    },
+    "nsrn": {
+      "level": 6,
+      "name": "stormreaver necrolyte"
+    },
+    "nsrv": {
+      "level": 5,
+      "name": "revenant of the seas"
+    },
+    "nsrw": {
+      "level": 9,
+      "name": "stormreaver warlock"
+    },
+    "nssp": {
+      "level": 3,
+      "name": "spitting spider"
+    },
+    "nsth": {
+      "level": 8,
+      "name": "satyr hellcaller"
+    },
+    "nstl": {
+      "level": 5,
+      "name": "satyr soulstealer"
+    },
+    "nsts": {
+      "level": 3,
+      "name": "satyr shadowdancer"
+    },
+    "nstw": {
+      "level": 9,
+      "name": "storm wyrm"
+    },
+    "nsty": {
+      "level": 1,
+      "name": "Satyr"
+    },
+    "nthl": {
+      "level": 6,
+      "name": "thunder lizard"
+    },
+    "ntka": {
+      "level": 2,
+      "name": "tuskarr spearman"
+    },
+    "ntkc": {
+      "level": 7,
+      "name": "tuskarr chieftain"
+    },
+    "ntkf": {
+      "level": 2,
+      "name": "tuskarr fighter"
+    },
+    "ntkh": {
+      "level": 3,
+      "name": "tuskarr healer"
+    },
+    "ntks": {
+      "level": 5,
+      "name": "tuskarr sorceror"
+    },
+    "ntkt": {
+      "level": 4,
+      "name": "tuskarr trapper"
+    },
+    "ntkw": {
+      "level": 4,
+      "name": "tuskarr warrior"
+    },
+    "ntor": {
+      "level": 4,
+      "name": "tornado"
+    },
+    "ntrd": {
+      "level": 10,
+      "name": "dragon turtle"
+    },
+    "ntrg": {
+      "level": 7,
+      "name": "gargantuan sea turtle"
+    },
+    "ntrh": {
+      "level": 1,
+      "name": "sea turtle hatchling"
+    },
+    "ntrs": {
+      "level": 2,
+      "name": "sea turtle"
+    },
+    "ntrt": {
+      "level": 4,
+      "name": "giant sea turtle"
+    },
+    "ntrv": {
+      "level": 3,
+      "name": "revenant of the tides"
+    },
+    "ntws": {
+      "level": 2,
+      "name": "watery minion tidewarrior"
+    },
+    "nubk": {
+      "level": 2,
+      "name": "unbroken darkhunter"
+    },
+    "nubr": {
+      "level": 4,
+      "name": "unbroken rager"
+    },
+    "nubw": {
+      "level": 5,
+      "name": "unbroken darkweaver"
+    },
+    "nvde": {
+      "level": 9,
+      "name": "elder voidwalker"
+    },
+    "nvdg": {
+      "level": 6,
+      "name": "greater voidwalker"
+    },
+    "nvdl": {
+      "level": 1,
+      "name": "lesser voidwalker"
+    },
+    "nvdw": {
+      "level": 3,
+      "name": "voidwalker"
+    },
+    "nwen": {
+      "level": 4,
+      "name": "Wendigo"
+    },
+    "nwgs": {
+      "level": 2,
+      "name": "naga coutl"
+    },
+    "nwiz": {
+      "level": 1,
+      "name": "apprentice wizard"
+    },
+    "nwld": {
+      "level": 6,
+      "name": "dire wolf"
+    },
+    "nwlg": {
+      "level": 4,
+      "name": "giant wolf"
+    },
+    "nwlt": {
+      "level": 2,
+      "name": "timber wolf"
+    },
+    "nwna": {
+      "level": 9,
+      "name": "ancient wendigo"
+    },
+    "nwnr": {
+      "level": 6,
+      "name": "elder wendigo"
+    },
+    "nwns": {
+      "level": 7,
+      "name": "Wendigo shaman"
+    },
+    "nwrg": {
+      "level": 6,
+      "name": "war golem"
+    },
+    "nws1": {
+      "level": 5,
+      "name": "dragon hawk"
+    },
+    "nwwd": {
+      "level": 6,
+      "name": "white dire wolf"
+    },
+    "nwwf": {
+      "level": 2,
+      "name": "white wolf"
+    },
+    "nwwg": {
+      "level": 4,
+      "name": "giant white wolf"
+    },
+    "nwzd": {
+      "level": 8,
+      "name": "dark wizard"
+    },
+    "nwzg": {
+      "level": 5,
+      "name": "renegade wizard"
+    },
+    "nwzr": {
+      "level": 3,
+      "name": "rogue wizard"
+    },
+    "nzep": {
+      "level": 1,
+      "name": "GoblinZeppelin"
+    },
+    "nzom": {
+      "level": 1,
+      "name": "Zombie"
+    },
+    "nzof": {
+      "level": 1,
+      "name": "ZombieFemale"
+    },
+    "Ecen": {
+      "level": 5,
+      "name": "cenarius"
+    },
+    "Eevi": {
+      "level": 5,
+      "name": "evil illidan"
+    },
+    "Eevm": {
+      "level": 5,
+      "name": "evil illidan demon form"
+    },
+    "Efur": {
+      "level": 5,
+      "name": "furion"
+    },
+    "Eidm": {
+      "level": 5,
+      "name": "illidan demon form"
+    },
+    "Eill": {
+      "level": 5,
+      "name": "illidan"
+    },
+    "Eilm": {
+      "level": 5,
+      "name": "illidanmorphed"
+    },
+    "Ekgg": {
+      "level": 5,
+      "name": "HeroKeeperoftheGrove ghost"
+    },
+    "Emfr": {
+      "level": 5,
+      "name": "Mal'furion"
+    },
+    "Emns": {
+      "level": 5,
+      "name": "Mal'furion no stag"
+    },
+    "Etyr": {
+      "level": 5,
+      "name": "Tyrande"
+    },
+    "Ewrd": {
+      "level": 5,
+      "name": "Maiev"
+    },
+    "Hant": {
+      "level": 5,
+      "name": "antonidus"
+    },
+    "Hapm": {
+      "level": 5,
+      "name": "Admiral Proudmoore"
+    },
+    "Harf": {
+      "level": 5,
+      "name": "arthas w/ frostmourne"
+    },
+    "Hart": {
+      "level": 5,
+      "name": "arthas"
+    },
+    "Hdgo": {
+      "level": 5,
+      "name": "Dagren the Orcslayer"
+    },
+    "Hgam": {
+      "level": 5,
+      "name": "ghostly archmage"
+    },
+    "Hhkl": {
+      "level": 5,
+      "name": "Halahk the Lifebringer"
+    },
+    "Hjai": {
+      "level": 5,
+      "name": "jaina"
+    },
+    "Hkal": {
+      "level": 5,
+      "name": "Kael"
+    },
+    "Hlgr": {
+      "level": 5,
+      "name": "Lord Garithos"
+    },
+    "Hmbr": {
+      "level": 5,
+      "name": "muradin bronzebeard"
+    },
+    "Hmgd": {
+      "level": 5,
+      "name": "Magroth the Defender"
+    },
+    "Hpb1": {
+      "level": 5,
+      "name": "Paladin Boss 1"
+    },
+    "Hpb2": {
+      "level": 5,
+      "name": "Paladin Boss 2"
+    },
+    "Huth": {
+      "level": 5,
+      "name": "uther"
+    },
+    "Hvsh": {
+      "level": 5,
+      "name": "Lady Vashj"
+    },
+    "Hvwd": {
+      "level": 5,
+      "name": "sylvanus windrunner"
+    },
+    "Naka": {
+      "level": 5,
+      "name": "Akama"
+    },
+    "Nbbc": {
+      "level": 5,
+      "name": "blackrock blademaster"
+    },
+    "Nkjx": {
+      "level": 5,
+      "name": "Kiljaeden - cinematic only"
+    },
+    "Nklj": {
+      "level": 5,
+      "name": "Kiljaeden"
+    },
+    "Nmag": {
+      "level": 5,
+      "name": "Magtheridon"
+    },
+    "Nman": {
+      "level": 5,
+      "name": "mannoroth"
+    },
+    "Npld": {
+      "level": 5,
+      "name": "pit lord"
+    },
+    "Nsjs": {
+      "level": 5,
+      "name": "Sinjo Stormstout"
+    },
+    "Ocb2": {
+      "level": 5,
+      "name": "cairne bloodhoof (war3x)"
+    },
+    "Ocbh": {
+      "level": 5,
+      "name": "cairne bloodhoof"
+    },
+    "Odrt": {
+      "level": 5,
+      "name": "Drek'Thar"
+    },
+    "Ogld": {
+      "level": 5,
+      "name": "Gul'dan"
+    },
+    "Ogrh": {
+      "level": 5,
+      "name": "grom hellscream"
+    },
+    "Opgh": {
+      "level": 5,
+      "name": "possessed grom hellscream"
+    },
+    "Orex": {
+      "level": 5,
+      "name": "Rexxar"
+    },
+    "Orkn": {
+      "level": 5,
+      "name": "Rokhan"
+    },
+    "Osam": {
+      "level": 5,
+      "name": "Samuro"
+    },
+    "Otcc": {
+      "level": 5,
+      "name": "cairne bloodhoof cinematic"
+    },
+    "Othr": {
+      "level": 5,
+      "name": "thrall"
+    },
+    "Oths": {
+      "level": 5,
+      "name": "thrall unmounted"
+    },
+    "Uanb": {
+      "level": 5,
+      "name": "anub'arak"
+    },
+    "Ubal": {
+      "level": 5,
+      "name": "balnazzar"
+    },
+    "Uclc": {
+      "level": 5,
+      "name": "kelthuzadlich cinematic"
+    },
+    "Udth": {
+      "level": 5,
+      "name": "dethecus"
+    },
+    "Uear": {
+      "level": 5,
+      "name": "evil arthas"
+    },
+    "Uktl": {
+      "level": 5,
+      "name": "kelthuzadlich"
+    },
+    "Umal": {
+      "level": 5,
+      "name": "malganis"
+    },
+    "Usyl": {
+      "level": 5,
+      "name": "Evil Sylvanas"
+    },
+    "Utic": {
+      "level": 5,
+      "name": "tichondrius"
+    },
+    "Uvar": {
+      "level": 5,
+      "name": "varimathras"
+    },
+    "Uvng": {
+      "level": 5,
+      "name": "vengyr"
+    },
+    "Uwar": {
+      "level": 5,
+      "name": "archimonde"
+    },
+    "eilw": {
+      "level": 1,
+      "name": "illidan wagon"
+    },
+    "ensh": {
+      "level": 3,
+      "name": "Naisha"
+    },
+    "eshd": {
+      "level": 4,
+      "name": "shandris"
+    },
+    "etrs": {
+      "level": 2,
+      "name": "night elf transport ship"
+    },
+    "hbew": {
+      "level": 1,
+      "name": "blood elf wagon"
+    },
+    "hcth": {
+      "level": 6,
+      "name": "the captain"
+    },
+    "hhdl": {
+      "level": 1,
+      "name": "riderless horse"
+    },
+    "hhes": {
+      "level": 2,
+      "name": "high elven swordsman"
+    },
+    "hrdh": {
+      "level": 1,
+      "name": "pack horse"
+    },
+    "nbee": {
+      "level": 1,
+      "name": "blood elf engineer"
+    },
+    "nbel": {
+      "level": 2,
+      "name": "blood elf lieutenant"
+    },
+    "nbsp": {
+      "level": 1,
+      "name": "battleship"
+    },
+    "nchg": {
+      "level": 4,
+      "name": "chaos grunt"
+    },
+    "nchr": {
+      "level": 5,
+      "name": "ChaosWolfRider"
+    },
+    "nchw": {
+      "level": 2,
+      "name": "ChaosWarlock"
+    },
+    "nckb": {
+      "level": 4,
+      "name": "Chaos Kodo Beast"
+    },
+    "ncpn": {
+      "level": 1,
+      "name": "Chaos Peon"
+    },
+    "ndmu": {
+      "level": 2,
+      "name": "dalaran mutant"
+    },
+    "ndrd": {
+      "level": 5,
+      "name": "draenei darkslayer"
+    },
+    "ndrf": {
+      "level": 1,
+      "name": "draenei guardian"
+    },
+    "ndrh": {
+      "level": 4,
+      "name": "draenei harbinger"
+    },
+    "ndrj": {
+      "level": 1,
+      "name": "dalaran reject"
+    },
+    "ndrl": {
+      "level": 1,
+      "name": "draenei laborer"
+    },
+    "ndrm": {
+      "level": 2,
+      "name": "draenei disciple"
+    },
+    "ndrn": {
+      "level": 5,
+      "name": "Draeni Vindicator"
+    },
+    "ndrp": {
+      "level": 2,
+      "name": "draenei protector"
+    },
+    "ndrs": {
+      "level": 6,
+      "name": "draenei seer"
+    },
+    "ndrt": {
+      "level": 5,
+      "name": "Draeni Stalker"
+    },
+    "ndrw": {
+      "level": 3,
+      "name": "draenei watcher"
+    },
+    "ndsa": {
+      "level": 3,
+      "name": "draenei salamander"
+    },
+    "negz": {
+      "level": 4,
+      "name": "engineer gazlowe"
+    },
+    "nemi": {
+      "level": 2,
+      "name": "emissary"
+    },
+    "nfgl": {
+      "level": 11,
+      "name": "flesh golem"
+    },
+    "ngbl": {
+      "level": 6,
+      "name": "goblin blaster"
+    },
+    "nhea": {
+      "level": 2,
+      "name": "high elven archer"
+    },
+    "nhew": {
+      "level": 1,
+      "name": "blood elf worker"
+    },
+    "njks": {
+      "level": 1,
+      "name": "jailor kassan"
+    },
+    "nmdm": {
+      "level": 2,
+      "name": "medivh morphed"
+    },
+    "nmed": {
+      "level": 2,
+      "name": "medivh"
+    },
+    "nmpe": {
+      "level": 1,
+      "name": "naga peon"
+    },
+    "nmsh": {
+      "level": 4,
+      "name": "misha the bear"
+    },
+    "nser": {
+      "level": 8,
+      "name": "searinox"
+    },
+    "nssn": {
+      "level": 3,
+      "name": "night elf assassin"
+    },
+    "nthr": {
+      "level": 8,
+      "name": "tharifas"
+    },
+    "nw2w": {
+      "level": 2,
+      "name": "War2Warlock"
+    },
+    "nwat": {
+      "level": 2,
+      "name": "watcher"
+    },
+    "odkt": {
+      "level": 6,
+      "name": "Drak'Thul"
+    },
+    "ogrk": {
+      "level": 3,
+      "name": "Gar'thok"
+    },
+    "ojgn": {
+      "level": 6,
+      "name": "actual orc juggernaut unit"
+    },
+    "omtg": {
+      "level": 2,
+      "name": "mathog"
+    },
+    "onzg": {
+      "level": 3,
+      "name": "nazgrel"
+    },
+    "oosc": {
+      "level": 1,
+      "name": "riderless kodo beast"
+    },
+    "oswy": {
+      "level": 5,
+      "name": "spirit wyvern"
+    },
+    "ovlj": {
+      "level": 2,
+      "name": "vol'jin"
+    },
+    "owar": {
+      "level": 2,
+      "name": "orc warchief"
+    },
+    "ownr": {
+      "level": 5,
+      "name": "wyvern"
+    },
+    "uabc": {
+      "level": 4,
+      "name": "Abomination cinematic"
+    },
+    "uarb": {
+      "level": 1,
+      "name": "air barge"
+    },
+    "ubdd": {
+      "level": 6,
+      "name": "undead azurelore"
+    },
+    "ubdr": {
+      "level": 10,
+      "name": "azurelore"
+    },
+    "ubot": {
+      "level": 2,
+      "name": "undead transport ship"
+    },
+    "udes": {
+      "level": 4,
+      "name": "undead frigate"
+    },
+    "uktg": {
+      "level": 2,
+      "name": "kelthuzad ghost"
+    },
+    "uktn": {
+      "level": 2,
+      "name": "kelthuzadnecro"
+    },
+    "uswb": {
+      "level": 3,
+      "name": "sylvanus banshee"
+    },
+    "nbt1": {
+      "level": 1,
+      "name": "boulder tower"
+    },
+    "nbt2": {
+      "level": 1,
+      "name": "boulder tower upgraded"
+    },
+    "ncap": {
+      "level": 3,
+      "name": "corrupted Ancient Protector"
+    },
+    "ncaw": {
+      "level": 1,
+      "name": "AncientofWar"
+    },
+    "ncta": {
+      "level": 1,
+      "name": "corrupted treeofAges"
+    },
+    "ncte": {
+      "level": 1,
+      "name": "corrupted treeofEternity"
+    },
+    "nctl": {
+      "level": 1,
+      "name": "corrupted treeofLife"
+    },
+    "ndgt": {
+      "level": 1,
+      "name": "dalaran guard tower"
+    },
+    "ndt1": {
+      "level": 1,
+      "name": "cold tower"
+    },
+    "ndt2": {
+      "level": 1,
+      "name": "cold tower upgraded"
+    },
+    "negf": {
+      "level": 1,
+      "name": "elven guard fire tower"
+    },
+    "negm": {
+      "level": 1,
+      "name": "elven guard magic tower"
+    },
+    "negt": {
+      "level": 1,
+      "name": "elven guard tower"
+    },
+    "net1": {
+      "level": 1,
+      "name": "energy tower"
+    },
+    "net2": {
+      "level": 1,
+      "name": "energy tower upgraded"
+    },
+    "nft1": {
+      "level": 1,
+      "name": "flame tower"
+    },
+    "nft2": {
+      "level": 1,
+      "name": "flame tower upgraded"
+    },
+    "nntg": {
+      "level": 1,
+      "name": "tidal guardian - naga tower"
+    },
+    "ntt1": {
+      "level": 1,
+      "name": "death tower"
+    },
+    "ntx2": {
+      "level": 1,
+      "name": "death tower upgraded"
+    },
+    "ocbw": {
+      "level": 1,
+      "name": "Chaos OrcBurrow"
+    },
+    "zcso": {
+      "level": 6,
+      "name": "chaos space orc"
+    },
+    "zhyd": {
+      "level": 7,
+      "name": "hydralisk"
+    },
+    "zjug": {
+      "level": 6,
+      "name": "orc juggernaut"
+    },
+    "zmar": {
+      "level": 6,
+      "name": "Marine"
+    },
+    "zshv": {
+      "level": 10,
+      "name": "shoveler"
+    },
+    "zsmc": {
+      "level": 6,
+      "name": "sammy cube"
+    },
+    "zzrg": {
+      "level": 3,
+      "name": "zergling"
+    },
+    "Nmsr": {
+      "level": 5,
+      "name": "Murloc Sorceror"
+    },
+    "Nswt": {
+      "level": 5,
+      "name": "Sea Witch"
+    },
+    "nggm": {
+      "level": 9,
+      "name": "granite golem"
+    },
+    "nggg": {
+      "level": 9,
+      "name": "granite golem"
+    },
+    "nggd": {
+      "level": 6,
+      "name": "rock golem"
+    },
+    "ngow": {
+      "level": 6,
+      "name": "gnoll king"
+    },
+    "nwzw": {
+      "level": 3,
+      "name": "rogue wizard"
+    },
+    "ngos": {
+      "level": 11,
+      "name": "gnoll king"
+    },
+    "nwar": {
+      "level": 3,
+      "name": "Siege Engine"
+    },
+    "nccd": {
+      "level": 3,
+      "name": "Siege Engine"
+    },
+    "ncco": {
+      "level": 3,
+      "name": "Siege Engine"
+    },
+    "nccu": {
+      "level": 3,
+      "name": "Siege Engine"
+    },
+    "nccr": {
+      "level": 3,
+      "name": "Siege Engine"
+    },
+    "Hjnd": {
+      "level": 5,
+      "name": "sylvanus windrunner"
+    },
+    "obai": {
+      "level": 3,
+      "name": "spiritwalker"
+    },
+    "hrrh": {
+      "level": 1,
+      "name": "Peasant"
+    },
+    "Haah": {
+      "level": 5,
+      "name": "HeroArchMage"
+    },
+    "Hssa": {
+      "level": 5,
+      "name": "HeroPaladin"
+    },
+    "Hddt": {
+      "level": 5,
+      "name": "ThalorienDawnseeker"
+    },
+    "owad": {
+      "level": 3,
+      "name": "WolfRider"
+    },
+    "hctg": {
+      "level": 6,
+      "name": "City Guard"
+    },
+    "Hctr": {
+      "level": 5,
+      "name": "Garek"
+    },
+    "Hct1": {
+      "level": 5,
+      "name": "Garek Pre Arthas"
+    },
+    "ublw": {
+      "level": 3,
+      "name": "Cult Blightweaver"
+    },
+    "uass": {
+      "level": 2,
+      "name": "Cult Assassin"
+    },
+    "ucze": {
+      "level": 2,
+      "name": "Cult Zealot"
+    },
+    "Hctl": {
+      "level": 5,
+      "name": "Guard Captain"
+    },
+    "Ubtr": {
+      "level": 5,
+      "name": "Titus Rivendare"
+    },
+    "Hjsm": {
+      "level": 5,
+      "name": "Ilastar"
+    },
+    "ndum": {
+      "level": 1,
+      "name": "dummy"
+    },
+    "Uany": {
+      "level": 5,
+      "name": "Anya"
+    },
+    "Ugrk": {
+      "level": 5,
+      "name": "Undead Garek"
+    },
+    "Uarf": {
+      "level": 5,
+      "name": "undead arthas w/ frostmourne"
+    },
+    "sfoo": {
+      "level": 11,
+      "name": "SC Footman"
+    },
+    "scru": {
+      "level": 14,
+      "name": "SC Crusader"
+    },
+    "sarc": {
+      "level": 11,
+      "name": "SC Huntsman"
+    },
+    "scle": {
+      "level": 12,
+      "name": "SC Cleric"
+    },
+    "sinq": {
+      "level": 13,
+      "name": "SC Inquisitor"
+    },
+    "fdtg": {
+      "level": 2,
+      "name": "Forsaken Deathguard"
+    },
+    "fapo": {
+      "level": 3,
+      "name": "Forsaken Apothecary"
+    },
+    "flab": {
+      "level": 1,
+      "name": "Forsaken Laborer"
+    },
+    "fdkr": {
+      "level": 2,
+      "name": "Forsaken Ranger"
+    },
+    "Hleo": {
+      "level": 5,
+      "name": "Leonid"
+    },
+    "Uctl": {
+      "level": 5,
+      "name": "Landen Undead"
+    },
+    "Ujsm": {
+      "level": 5,
+      "name": "Ilastar Undead"
+    },
+    "Npal": {
+      "level": 5,
+      "name": "HeroPaladin"
+    },
+    "uigh": {
+      "level": 3,
+      "name": "Infectious Ghoul"
+    },
+    "ufr2": {
+      "level": 2,
+      "name": "Banshees Wail Banshee Curse"
+    },
+    "ufrb": {
+      "level": 2,
+      "name": "Banshees Wail Banshee"
+    },
+    "Uput": {
+      "level": 5,
+      "name": "Putress"
+    },
+    "Sswm": {
+      "level": 5,
+      "name": "Sally Whitemane"
+    },
+    "Srmg": {
+      "level": 5,
+      "name": "Renault Mograine"
+    },
+    "Ubru": {
+      "level": 5,
+      "name": "Titus Rivendare (Death Knight)"
+    },
+    "Scth": {
+      "level": 5,
+      "name": "SC captain hero"
+    },
+    "oimd": {
+      "level": 3,
+      "name": "Item Moonglaive Dummy"
+    },
+    "oidb": {
+      "level": 2,
+      "name": "Forsaken Banshee"
+    },
+    "Htmx": {
+      "level": 5,
+      "name": "Tyrosus Maxwell"
+    },
+    "Nglx": {
+      "level": 5,
+      "name": "Glix"
+    },
+    "ugbo": {
+      "level": 4,
+      "name": "Garithos Abomination"
+    },
+    "Uzkm": {
+      "level": 5,
+      "name": "mounted Sir Zeliek"
+    },
+    "Uzrm": {
+      "level": 5,
+      "name": "Sir Zeliek Horse Remorse"
+    },
+    "Uzkf": {
+      "level": 5,
+      "name": "Sir Zeliek Unmounted"
+    },
+    "Ugr2": {
+      "level": 5,
+      "name": "Undead Garek Tier 2"
+    },
+    "Ugr3": {
+      "level": 5,
+      "name": "Undead Garek Lightform"
+    },
+    "Urfm": {
+      "level": 5,
+      "name": "Mounted Ras"
+    },
+    "Urfu": {
+      "level": 5,
+      "name": "Ras Lich"
+    },
+    "Urff": {
+      "level": 5,
+      "name": "Ras on foot"
+    },
+    "oisk": {
+      "level": 1,
+      "name": "Item SkeletonWarrior"
+    },
+    "oisp": {
+      "level": 3,
+      "name": "Item spitting spider"
+    },
+    "oidg": {
+      "level": 2,
+      "name": "Item Forsaken Deathguard"
+    },
+    "oifr": {
+      "level": 2,
+      "name": "Item Forsaken Ranger"
+    },
+    "oism": {
+      "level": 3,
+      "name": "Item skeletal marksman"
+    },
+    "oisg": {
+      "level": 3,
+      "name": "Item giant SkeletonWarrior"
+    }
+  },
+  "trees": [
+    "ATtr",
+    "BTtw",
+    "CTtr",
+    "FTtw",
+    "LTlt",
+    "NTtw",
+    "WTtw",
+    "WTst",
+    "YTct",
+    "YTwt",
+    "YTst",
+    "YTft",
+    "VTlt",
+    "DTsh",
+    "ZTtw",
+    "ITtw",
+    "ATtc",
+    "OTtw",
+    "KTtw",
+    "JTct",
+    "JTtw",
+    "GTsh",
+    "BTtc",
+    "CTtc",
+    "NTtc",
+    "ZTtc",
+    "ITtc",
+    "Yts1",
+    "Ytsc",
+    "NTiw"
+  ],
+  "waterOffsets": {
+    "L": -0.7,
+    "F": -0.7,
+    "W": -0.7,
+    "N": -0.7,
+    "A": -0.6,
+    "D": -0.75,
+    "C": -0.7,
+    "B": -0.7,
+    "Y": -0.7,
+    "X": -0.7,
+    "V": -0.7,
+    "Q": -0.7,
+    "G": -0.6,
+    "Z": -0.7,
+    "I": -0.7,
+    "O": -1.5,
+    "K": -0.7,
+    "J": -0.7,
+    "u": -0.7
+  },
+  "cliffs": {
+    "CLdi": {
+      "groundTile": "Ldrt",
+      "texture": "TerrainArt\\LordaeronSummer\\Lords_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "CLgr": {
+      "groundTile": "Lgrs",
+      "texture": "TerrainArt\\LordaeronSummer\\Lords_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CFdi": {
+      "groundTile": "Fdrt",
+      "texture": "TerrainArt\\LordaeronFall\\Lordf_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "CFgr": {
+      "groundTile": "Fgrs",
+      "texture": "TerrainArt\\LordaeronFall\\Lordf_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CWgr": {
+      "groundTile": "Wgrs",
+      "texture": "TerrainArt\\LordaeronWinter\\Lordw_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "CWsn": {
+      "groundTile": "Wsnw",
+      "texture": "TerrainArt\\LordaeronWinter\\Lordw_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CBde": {
+      "groundTile": "Bdsr",
+      "texture": "TerrainArt\\Barrens\\Barrens_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "CBgr": {
+      "groundTile": "Bgrr",
+      "texture": "TerrainArt\\Barrens\\Barrens_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CNdi": {
+      "groundTile": "Ndrt",
+      "texture": "TerrainArt\\Northrend\\North_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "CNsn": {
+      "groundTile": "Nsnw",
+      "texture": "TerrainArt\\Northrend\\North_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CAgr": {
+      "groundTile": "Agrs",
+      "texture": "TerrainArt\\Ashenvale\\Ashen_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CAdi": {
+      "groundTile": "Adrt",
+      "texture": "TerrainArt\\Ashenvale\\Ashen_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "CCgr": {
+      "groundTile": "Cgrs",
+      "texture": "TerrainArt\\Felwood\\Felwood_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CCdi": {
+      "groundTile": "Cdrt",
+      "texture": "TerrainArt\\Felwood\\Felwood_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "CYdi": {
+      "groundTile": "Ydrt",
+      "texture": "TerrainArt\\CityScape\\City_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "CYsq": {
+      "groundTile": "Ysqd",
+      "texture": "TerrainArt\\CityScape\\City_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CVdi": {
+      "groundTile": "Vdrt",
+      "texture": "TerrainArt\\Village\\Village_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "CVgr": {
+      "groundTile": "Vgrt",
+      "texture": "TerrainArt\\Village\\Village_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CXdi": {
+      "groundTile": "Xdrt",
+      "texture": "TerrainArt\\Dalaran\\Dalaran_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "CXsq": {
+      "groundTile": "Xsqd",
+      "texture": "TerrainArt\\Dalaran\\Dalaran_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CDdi": {
+      "groundTile": "Ddrt",
+      "texture": "TerrainArt\\Dungeon\\Cave_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "CDsq": {
+      "groundTile": "Dsqd",
+      "texture": "TerrainArt\\Dungeon\\Cave_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CQdi": {
+      "groundTile": "Qdrt",
+      "texture": "TerrainArt\\VillageFall\\VillagFall_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "CQgr": {
+      "groundTile": "Qgrt",
+      "texture": "TerrainArt\\VillageFall\\VillagFall_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CGdi": {
+      "groundTile": "Gdrt",
+      "texture": "TerrainArt\\Dungeon2\\GCliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "CGsq": {
+      "groundTile": "Gsqd",
+      "texture": "TerrainArt\\Dungeon2\\GCliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CZdi": {
+      "groundTile": "Zdrt",
+      "texture": "TerrainArt\\Ruins\\Ruins_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "CZlb": {
+      "groundTile": "Zbkl",
+      "texture": "TerrainArt\\Ruins\\Ruins_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CIsn": {
+      "groundTile": "Isnw",
+      "texture": "TerrainArt\\Icecrown\\Ice_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CIrb": {
+      "groundTile": "Irbk",
+      "texture": "TerrainArt\\Icecrown\\Ice_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "COdi": {
+      "groundTile": "Odrt",
+      "texture": "TerrainArt\\Outland\\Outland_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "COrd": {
+      "groundTile": "Oaby",
+      "texture": "TerrainArt\\Outland\\Outland_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CKdi": {
+      "groundTile": "Kdrt",
+      "texture": "TerrainArt\\BlackCitadel\\Citadel_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "CKdt": {
+      "groundTile": "Kdkt",
+      "texture": "TerrainArt\\BlackCitadel\\Citadel_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CJdi": {
+      "groundTile": "Jdrt",
+      "texture": "TerrainArt\\DalaranRuins\\DRuins_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "CJsq": {
+      "groundTile": "Jsqd",
+      "texture": "TerrainArt\\DalaranRuins\\DRuins_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CMap": {
+      "groundTile": "Maph",
+      "texture": "TerrainArt\\Misc\\Alpha_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "Cudi": {
+      "groundTile": "uCc1",
+      "texture": "TerrainArt\\Undercity\\UC_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "Cusq": {
+      "groundTile": "uCc2",
+      "texture": "TerrainArt\\Undercity\\UC_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "Cedi": {
+      "groundTile": "eCt1",
+      "texture": "TerrainArt\\LordaeronCapital\\Lordc_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "Ced2": {
+      "groundTile": "eCt2",
+      "texture": "TerrainArt\\LordaeronCapital\\Lordc_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CPdi": {
+      "groundTile": "Pdrt",
+      "texture": "TerrainArt\\CityscapeRuins\\Cruins_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "CPsq": {
+      "groundTile": "Psqd",
+      "texture": "TerrainArt\\CityscapeRuins\\Cruins_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    },
+    "CRdi": {
+      "groundTile": "RCt1",
+      "texture": "TerrainArt\\LordaeronCapitalRuins\\LordCruins_Cliff0",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff0"
+    },
+    "CRd2": {
+      "groundTile": "RCt2",
+      "texture": "TerrainArt\\LordaeronCapitalRuins\\LordCruins_Cliff1",
+      "overrideTexture": "ReplaceableTextures\\Cliff\\Cliff1"
+    }
+  },
+  "provenance": {
+    "source": "Local Warcraft III installation",
+    "hashes": {
+      "units\\unitbalance.slk": "8746680c3eb0fd1b8055bbf5a28f74bce262158400780217ef9542f5374f9d17",
+      "units\\destructabledata.slk": "374e25d477f3cad25d141d752e9f965c451671a01ca863cee1067ef465e0b817",
+      "terrainart\\water.slk": "8e2a7aef3a10435a96ab1439efbf5ea36a446af63045c15949493359deb80894",
+      "terrainart\\clifftypes.slk": "0b4d3870494f317f9f0a04533e4f2f9b87b580a6394ef0458f98584d723202bb"
+    }
+  }
+}

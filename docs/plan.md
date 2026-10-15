@@ -40,17 +40,17 @@ Phase 1 is done when the parity checklist against the old game is complete.
 
 ## Data during phase 1
 
-The editors stay in the old repository, so it remains the place where data is authored. This repository mirrors it with `just sync-data`, and **the formats stay identical**: no conversion, no reorganisation. New fields or a format redesign wait for phase 2, when the editors move here.
+This repository holds the only copy of the data (D47). The editors still run from the old repository, whose `content/`, `assets/` and `art/` are links to this repository's, so they author here directly. **The formats stay identical**: no conversion, no reorganisation. New fields or a format redesign wait until the editors move here.
 
 ## The old repository
 
-`settlers-web` (`../Settlers 3 Web`) stays runnable and is the reference for behaviour and looks. It keeps hosting the editors and the match server. Nothing is copied from its code; read or run it to answer "what does the game do here".
+`settlers-web` (`../Settlers 3 Web`) stays runnable and is the reference for behaviour and looks. It keeps hosting the editors and the match server until they are ported; it no longer holds data. Nothing is copied from its code; read or run it to answer "what does the game do here".
 
 ## Phase 2: deferred
 
 | Deferred | Why it can wait |
 |---|---|
-| Map, asset and spell editors (and the in-game map editor entry) | They work in the old repository; their output copies over unchanged. Ported one at a time once the game is near 100%, onto the Rust core (Tauri host, WebGPU viewport). |
+| Map, asset and spell editors (and the in-game map editor entry) | They work in the old repository and write into this one through its data links. Ported one at a time once the game is near 100%, onto the Rust core (Tauri host, WebGPU viewport). |
 | Warcraft map importer | Part of the map editor. |
 | Match server in Rust | It works and stays deployed; the protocol is frozen. |
 | Content format redesign (one file per definition, generated TypeScript types) | Happens with the editors. |

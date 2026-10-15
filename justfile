@@ -44,11 +44,7 @@ test *args:
 package:
     cargo packager -p canopy --release --formats {{package_format}}
 
-# Mirror content/, assets/ and art/ from the old TypeScript repository
-sync-data old="../Settlers 3 Web":
-    tools/sync-data.sh "{{old}}"
-
-# Compare every Rust reader with the old TypeScript game on the old repository's data
+# Compare every Rust reader with the old TypeScript game (whose data folders link here, D47)
 parity old="../Settlers 3 Web": (parity-content old) (parity-assets old) (parity-maps old)
 
 # Content (game.json, abilities, effects) against the old TypeScript loader

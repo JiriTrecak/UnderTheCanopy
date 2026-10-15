@@ -1,6 +1,6 @@
 # Art issues found by the cooker
 
-Problems in the published assets that the old editors should fix (the data is mirrored from the old repository, D9). `just cook --verbose` lists the current set. None blocks the game; each is cooked to match what the old game showed.
+Problems in the published assets that the old editors should fix (the old editors write this repository's data, D47). `just cook --verbose` lists the current set. None blocks the game; each is cooked to match what the old game showed.
 
 | Assets | Problem | Effect today | Fix in the old editor |
 |---|---|---|---|

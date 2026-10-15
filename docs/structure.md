@@ -3,7 +3,7 @@
 ```
 UnderTheCanopy/
 ├─ Cargo.toml          Rust workspace
-├─ justfile            every command: just play | profile | cook | check | test | package | sync-data
+├─ justfile            every command: just play | profile | cook | check | test | package
 ├─ AGENTS.md           rules for anyone changing this repository
 ├─ crates/             libraries, named canopy-*; added when a milestone needs them
 │  ├─ content/         data model, loading, validation (M1)
@@ -18,9 +18,9 @@ UnderTheCanopy/
 │  ├─ release/         release log, update feed, package signatures (D43)
 │  └─ release-tool/    `just release-*`: notes, prepare, build, publish (docs/releases.md)
 ├─ game/               the executable: window, input, platform paths, screens, updater, packaging
-├─ content/            gameplay data (mirrored, see below)
-├─ assets/             published asset outputs, registry, manifest and maps (mirrored)
-├─ art/                editable masters and exported outputs, Git LFS (mirrored)
+├─ content/            gameplay data (see below)
+├─ assets/             published asset outputs, registry, manifest and maps
+├─ art/                editable masters and exported outputs, Git LFS
 ├─ config/             presentation settings owned here: lighting, biomes, player colours (D30)
 ├─ releases/           the release log, gallery media and the release host's identifiers (D43)
 ├─ docs/               plan, decisions, design; reference/ describes the old game
@@ -38,17 +38,17 @@ Phase 2 adds `editors/{map,assets,spells,shared}` (one Tauri app each) and possi
 
 ## Data
 
-| Folder | What | Source of truth during phase 1 |
+| Folder | What | Authored by |
 |---|---|---|
-| `content/` | `game.json` (definitions, rules, behaviour sets, actions), ability and effect folders, neutral camps | old repository, mirrored |
-| `assets/library/` | published asset outputs (glb, png, wav, recipe and water definitions) | old repository, mirrored |
-| `assets/manifest.json`, `assets/authoring/` | runtime manifest, publication registry, model and catalogue indexes | old repository, mirrored |
-| `assets/maps/` | `.utcmap` maps and their previews | old repository, mirrored |
-| `art/` | masters (`.blend`, source images) and exported outputs per asset | old repository, mirrored |
+| `content/` | `game.json` (definitions, rules, behaviour sets, actions), ability and effect folders, neutral camps | the old editors, through the links |
+| `assets/library/` | published asset outputs (glb, png, wav, recipe and water definitions) | the old editors, through the links |
+| `assets/manifest.json`, `assets/authoring/` | runtime manifest, publication registry, model and catalogue indexes | the old editors, through the links |
+| `assets/maps/` | `.utcmap` maps and their previews | the old editors, through the links |
+| `art/` | masters (`.blend`, source images) and exported outputs per asset | the old editors, through the links |
 
-`config/` is not mirrored: it is this repository's own data (lighting, biome looks, player colours; D30), read at start and shipped in packages.
+`config/` has no editor: it is edited by hand here (lighting, biome looks, player colours; D30), read at start and shipped in packages.
 
-`just sync-data` copies exactly the files the old repository tracks (minus the Warcraft importer settings) and removes ones it no longer tracks; review the result with `git status`. `just cook` turns `assets/` into the runtime pack `target/cooked/canopy.pack` ([D26](decisions.md)); cooked output is never committed.
+This repository is the only copy of the data (D47). The old repository's `content/`, `assets/` and `art/` are symbolic links to these folders, so its editors and scripts read and write here; review their changes with `git status` in this repository. `content/import/warcraft/` holds the map editor's Warcraft importer settings. Files the editors generate (the map catalogue, original `.map` copies, reconstructed pixels) are ignored. `just cook` turns `assets/` into the runtime pack `target/cooked/canopy.pack` ([D26](decisions.md)); cooked output is never committed.
 
 ## Tests
 

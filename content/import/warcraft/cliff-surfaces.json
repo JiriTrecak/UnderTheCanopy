@@ -1,0 +1,4 @@
+{
+  "CLdi": {"surfaceRect": [0, 0, 0.75, 0.25], "tileWorldSize": 12, "verticalWorldSize": 4, "startSlope": 0.8, "fullSlope": 1.8},
+  "CLgr": {"surfaceRect": [0, 0, 0.75, 0.25], "tileWorldSize": 12, "verticalWorldSize": 4, "startSlope": 0.8, "fullSlope": 1.8}
+}
