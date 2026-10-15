@@ -312,15 +312,16 @@ Live match alternative: `http://127.0.0.1:5173/?map=<id>` starts at the first pl
 
 Mean colours of matching regions agree within 1–3 of 255 on open ground, forest and dirt (for example 64,131,55 on echo-isles grass in both; whole frames within 4). Visible differences: units (next step), the placeholder water (the old water is lighter and textured), the old contact shadows and softer VSM shadow edges, slightly brighter old deposit crystals.
 
-Water and border views (M3.4) live in `target/shots/m3-water/` (`new/`, `old/`, `compare/` with the old game left) and in `docs/captures/m3-water/`:
+Live captures (M3.3, D35) are in `target/shots/` (new), `target/shots/old/` and `target/shots/compare/`, and the review set in `docs/captures/m3-live/`:
 
-| File | Map | `--camera` |
-|---|---|---|
-| `echo-isles-water.png` | echo-isles | `200,360,1` (shallow channels between islands) |
-| `echo-isles-coast.png` | echo-isles | `560,250,1` (east coast, deep water) |
-| `echo-isles-border.png` | echo-isles | `620,620,1.25,45` (south-east corner, turned 45°) |
-| `echo-isles-a.png` | echo-isles | `117.5,225.5,1` (player 1 start) |
-| `turtle-rock-water.png` | turtle-rock | `240,230,1` |
-| `turtle-rock-border.png` | turtle-rock | `20,320,1.25` (west edge) |
+| File | View |
+|---|---|
+| `live-echo-p1-t800.png` | echo-isles `--tick 886 --hour 9.5 --camera 117.5,225.5,1` (old tick 887) |
+| `live-echo-p2-t2400.png` | echo-isles `--tick 2487 --hour 9.5 --camera 501.5,225.5,1` (old tick 2488) |
+| `live-echo-battle-t16000.png` | echo-isles `--tick 16000 --camera battle,0.8` |
+| `live-crowd-battle.png`, `compare/battle-lab-vs-crowd.png` | turtle-rock `--crowd 50 --tick 400 --camera 350,343,0.52`; old: combat lab, 24 vs 24 mixed army |
+| `live/crowd-400-t120.png` | turtle-rock `--crowd 50 --tick 120 --camera 325.5,331.5,1.6` (the 8 × 50 stress view) |
+| `live/crowd-white.png`, `live/crowd-purple.png` | the white and purple players close up |
+| `live/fall-5740.png`, `live/tree-*.png` | felled trees (echo-isles, ticks 2400–5900) |
 
-Region means agree within 1–2 of 255 on shallow water (echo-isles channels: 98,114,89 new against 97,113,89 old) and on deep water (echo-isles coast: 41,74,70 in both). Visible differences: the old deep water has a few more and brighter crest flecks; at the map edges the framing differs by a few units (the camera's map fit, not the water); units are not drawn yet. Old captures of edge views need the reference stage at a 1920×1080 viewport: its map fit uses the window's aspect.
+The old live match was captured headless: Chrome with `--remote-debugging-port`, `/?map=<id>`, then `utcPerformance.match.onReveal(true)`, `onSpeed(4)`, Ctrl+Shift+H, polling `utcPerformance.match.snapshot()` (`world.tick`, `world.game.state.entities`) until the tick and `lookAt(x, z, zoom · 116.591)` before `Page.captureScreenshot`. The old game's ticks are ours + 1 (D21).
