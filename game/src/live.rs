@@ -3,8 +3,10 @@
 //! listed models and hiding felled trees as presentations ask.
 
 use crate::sim::{Mailbox, Snapshot, render_tick};
-use canopy_render::{Gpu, Renderer, actors::ActorInstance, water::ripples::Mover};
-use canopy_scene::{interpolate, live::Presentation};
+use canopy_render::{
+    Gpu, Renderer, actors::ActorInstance, effects::EffectFrame, water::ripples::Mover,
+};
+use canopy_scene::{effects::frame::EffectEvaluator, interpolate, live::Presentation};
 use std::{sync::Arc, time::Instant};
 
 #[derive(Default)]
@@ -19,9 +21,26 @@ pub struct LiveScene {
     pub shown: f64,
     /// Ground units of the latest frame, for the water's wakes.
     movers: Vec<Mover>,
+    effects: Option<EffectEvaluator>,
+    effect_frame: EffectFrame,
+    /// The camera's eye, to order translucent effects back to front.
+    pub eye: Option<glam::Vec3>,
 }
 
 impl LiveScene {
+    /// Shows the presenter's effects: loads the textures their draws refer to.
+    pub fn attach_effects(
+        &mut self,
+        renderer: &mut Renderer,
+        gpu: &Gpu,
+        pack: &canopy_assets::Pack,
+        table: Arc<canopy_assets::EffectTable>,
+    ) {
+        let evaluator = EffectEvaluator::new(table);
+        renderer.load_effect_textures(gpu, pack, evaluator.textures());
+        self.effects = Some(evaluator);
+    }
+
     /// Feeds the frame's ground units to the water's ripples (every frame).
     pub fn feed_ripples(
         &self,
@@ -113,9 +132,26 @@ impl LiveScene {
             self.hidden_revision = Some(b.hidden.revision);
         }
         interpolate::interpolate(a, b, t, &mut self.instances);
+        let actors = self.instances.len();
+        if let Some(evaluator) = &mut self.effects {
+            let tick = match a {
+                Some(a) => f64::from(a.tick) + f64::from(t) * f64::from(b.tick - a.tick),
+                None => f64::from(b.tick),
+            };
+            evaluator.frame(
+                a.map(|a| &a.effects),
+                &b.effects,
+                t,
+                tick,
+                self.eye,
+                &mut self.effect_frame,
+                &mut self.instances,
+            );
+            renderer.set_effects(&mut self.effect_frame);
+        }
         // One instance per presented actor, in order.
         self.movers.clear();
-        for (actor, instance) in b.actors.iter().zip(&self.instances) {
+        for (actor, instance) in b.actors.iter().zip(&self.instances[..actors]) {
             if let Some((surface, elevation)) = actor.walker {
                 let p = instance.transform.w_axis;
                 self.movers.push(Mover {

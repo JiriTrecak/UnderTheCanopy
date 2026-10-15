@@ -4,6 +4,7 @@ use crate::{
     actors::{ActorInstance, ActorsGpu},
     camera::{CameraView, frustum_planes},
     device::Gpu,
+    effects::{EffectFrame, EffectsGpu, MAX_EFFECT_LIGHTS},
     environment::{BiomeConfig, DaytimeLut, Lighting, LightingConfig},
     frame::{self, FrameParams, FrameUniform, MAX_POINT_LIGHTS, PointLight},
     graph::{self, FrameGraph, PassKind, passes},
@@ -106,6 +107,8 @@ pub struct FrameReport {
     pub terrain_chunks: u32,
     /// Live models of the frame.
     pub actors: crate::actors::ActorStats,
+    /// Effects of the frame.
+    pub effects: crate::effects::EffectStats,
     pub water: WaterStats,
 }
 
@@ -118,6 +121,11 @@ pub struct Renderer {
     shadow_frame_group: wgpu::BindGroup,
     light_buffer: wgpu::Buffer,
     point_lights: u32,
+    /// The world's lights; effect lights follow them each frame.
+    map_lights: Vec<PointLight>,
+    lights_dirty: bool,
+    effects: EffectsGpu,
+    effect_frame: EffectFrame,
     shadow_view: wgpu::TextureView,
     shadow_resolution: u32,
     canopy_texture: wgpu::Texture,
@@ -265,6 +273,7 @@ impl Renderer {
             &environment.grade,
             &environment.openings,
         );
+        let effects = EffectsGpu::new(device, queue, gpu.features, &frame_layout);
         let mut renderer = Self {
             graph,
             frame_layout,
@@ -274,6 +283,10 @@ impl Renderer {
             shadow_frame_group,
             light_buffer,
             point_lights: 0,
+            map_lights: Vec::new(),
+            lights_dirty: false,
+            effects,
+            effect_frame: EffectFrame::default(),
             shadow_view,
             shadow_resolution,
             canopy_texture,
@@ -438,14 +451,43 @@ impl Renderer {
         );
         actors.sync_models(&gpu.device, &gpu.queue, pack, &world.actor_models);
         self.actors = Some(actors);
-        let lights = &world.point_lights[..world.point_lights.len().min(MAX_POINT_LIGHTS)];
-        if !lights.is_empty() {
-            gpu.queue
-                .write_buffer(&self.light_buffer, 0, bytemuck::cast_slice(lights));
-        }
-        self.point_lights = lights.len() as u32;
+        // Room for the effect lights after the map's own.
+        let lights = &world.point_lights[..world
+            .point_lights
+            .len()
+            .min(MAX_POINT_LIGHTS - MAX_EFFECT_LIGHTS)];
+        self.map_lights = lights.to_vec();
+        self.lights_dirty = true;
+        self.effect_frame.clear();
         self.rebuild(gpu);
         Ok(())
+    }
+
+    /// Loads the textures effect draws refer to by position (pack entry names).
+    pub fn load_effect_textures(
+        &mut self,
+        gpu: &Gpu,
+        pack: &canopy_assets::Pack,
+        names: &[String],
+    ) {
+        let before = self.effects.bytes;
+        self.effects
+            .load_textures(&gpu.device, &gpu.queue, pack, names);
+        self.world_bytes = self.world_bytes + self.effects.bytes - before.min(self.effects.bytes);
+    }
+
+    /// The effects of the next frame (particles, decals, ribbons, lights). Effect meshes
+    /// are live models with a tint ([`Renderer::set_actors`]).
+    pub fn set_effects(&mut self, frame: &mut EffectFrame) {
+        if !frame.lights.is_empty() || !self.effect_frame.lights.is_empty() {
+            self.lights_dirty = true;
+        }
+        std::mem::swap(&mut self.effect_frame, frame);
+    }
+
+    /// The effects of the latest frame.
+    pub fn effects(&self) -> &EffectsGpu {
+        &self.effects
     }
 
     pub fn water(&self) -> Option<&WaterGpu> {
@@ -544,6 +586,21 @@ impl Renderer {
             lighting.sun_direction,
             &self.environment.shadow,
         );
+        if self.lights_dirty {
+            let mut lights = self.map_lights.clone();
+            lights.extend(
+                self.effect_frame
+                    .lights
+                    .iter()
+                    .take(MAX_EFFECT_LIGHTS)
+                    .copied(),
+            );
+            if !lights.is_empty() {
+                queue.write_buffer(&self.light_buffer, 0, bytemuck::cast_slice(&lights));
+            }
+            self.point_lights = lights.len() as u32;
+            self.lights_dirty = false;
+        }
         let uniform = FrameUniform::new(&FrameParams {
             camera,
             lighting,
@@ -589,6 +646,8 @@ impl Renderer {
             );
             report.actors = actors.stats;
         }
+        self.effects.prepare(queue, &self.effect_frame, camera);
+        report.effects = self.effects.stats;
         if let Some(water) = &mut self.water {
             report.water = water.prepare(
                 queue,
@@ -763,6 +822,7 @@ impl Renderer {
                     if let Some(actors) = &self.actors {
                         report.draws += actors.draw_transparent(&mut rp, &self.frame_group);
                     }
+                    report.draws += self.effects.draw(&mut rp, &self.frame_group);
                 }
                 (passes::CONTACT, PassKind::Render) => {
                     report.draws +=

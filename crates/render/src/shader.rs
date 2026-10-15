@@ -108,6 +108,11 @@ pub fn all() -> Vec<(&'static str, &'static [Module], &'static str)> {
         ("water", LIT, include_str!("../shaders/water.wgsl")),
         ("floor", LIT, include_str!("../shaders/floor.wgsl")),
         ("actors", MODEL, include_str!("../shaders/actors.wgsl")),
+        (
+            "effects",
+            &[Module::Frame],
+            include_str!("../shaders/effects.wgsl"),
+        ),
         ("skin", &[], include_str!("../shaders/skin.wgsl")),
         ("cull", &[], include_str!("../shaders/cull.wgsl")),
         ("ripples", &[], include_str!("../shaders/ripples.wgsl")),

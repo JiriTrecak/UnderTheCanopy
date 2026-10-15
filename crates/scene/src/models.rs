@@ -38,6 +38,8 @@ pub struct ModelInfo {
     pub rest_max: [f32; 3],
     /// Not in the pack: nothing is drawn, but entities using it are still tracked.
     pub missing: bool,
+    /// Triangles of every section.
+    pub triangles: u32,
 }
 
 impl ModelInfo {
@@ -89,6 +91,7 @@ impl ModelInfo {
             rest_min: meta.rest_bounds.min,
             rest_max: meta.rest_bounds.max,
             missing: false,
+            triangles: meta.sections.iter().map(|s| s.index_count / 3).sum(),
         }
     }
 
@@ -176,6 +179,11 @@ impl ModelCatalog {
 
     pub fn get(&self, index: u32) -> &ModelInfo {
         &self.infos[index as usize]
+    }
+
+    /// A shared handle to a model's information.
+    pub fn shared(&self, index: u32) -> Arc<ModelInfo> {
+        self.infos[index as usize].clone()
     }
 
     pub fn find(&self, name: &str) -> Option<u32> {

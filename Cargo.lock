@@ -348,6 +348,7 @@ dependencies = [
  "canopy-scene",
  "canopy-sim",
  "directories",
+ "glam 0.30.10",
  "image",
  "serde_json",
  "tracing",

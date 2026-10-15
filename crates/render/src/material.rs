@@ -71,6 +71,15 @@ impl Variant {
         matches!(self, Self::Blend { .. })
     }
 
+    /// The blended variant with the same faces.
+    pub fn blended(self) -> Self {
+        match self {
+            Self::Opaque { double_sided }
+            | Self::Mask { double_sided }
+            | Self::Blend { double_sided } => Self::Blend { double_sided },
+        }
+    }
+
     /// Back-face culling, alpha-to-coverage and blending of the variant.
     pub fn states(self) -> (Option<wgpu::Face>, bool, Option<wgpu::BlendState>) {
         match self {

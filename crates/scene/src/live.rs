@@ -23,7 +23,10 @@
 //!   floor) to the target along the effect's arc, between launch and impact.
 
 use crate::{
-    animation::{CastTimeline, Poses, TICK_SECONDS, UnitAnimation, UnitInputs},
+    animation::{
+        CONTACT, CastTimeline, Poses, TICK_SECONDS, UnitAnimation, UnitInputs, attack_phase,
+    },
+    effects::{BladeSample, EffectDirector, EffectScene, EffectSnapshot, ModelRef, Play, Spark},
     models::{ModelCatalog, ModelInfo},
 };
 use canopy_assets::{Matrix3x4, Pack};
@@ -194,6 +197,8 @@ pub struct Presentation {
     pub counts: Counts,
     /// The centre (x, z) of the largest fight: units swinging, by 16-cell neighbourhood.
     pub battle: Option<[f32; 2]>,
+    /// Spell and combat effects playing at this tick.
+    pub effects: EffectSnapshot,
 }
 
 /// The centre of the densest group of `points` (16-cell buckets and their neighbours).
@@ -273,6 +278,75 @@ struct Layer {
     offset: Vec3,
 }
 
+/// Construction dust of one building (old `ConstructionScaffold` dust timing).
+#[derive(Debug, Clone, Default)]
+struct Dust {
+    progress: Option<f64>,
+    last: f64,
+    next: f64,
+    cues: Vec<u32>,
+}
+
+/// The blade sockets melee ribbons follow (old convention).
+pub const BLADE_BASE: &str = "socket_blade_base";
+pub const BLADE_TIP: &str = "socket_blade_tip";
+/// The part of a swing that leaves a ribbon (old `MeleeTrails`: phase 0.43–0.69).
+pub const BLADE_PHASE: (f32, f32) = (0.43, 0.69);
+/// Blade samples per tick (the old ribbons sampled every frame).
+const BLADE_SUBSTEPS: u32 = 4;
+
+/// A unit's model and pose this tick, for effect sockets.
+struct Posed {
+    info: Arc<ModelInfo>,
+    clip: Option<(u16, f32)>,
+    position: Vec3,
+    rotation: Quat,
+    scale: Vec3,
+}
+
+/// What effects see of the scene this tick.
+struct EffectWorld<'a> {
+    anchors: &'a BTreeMap<u32, Vec3>,
+    posed: &'a BTreeMap<u32, Posed>,
+    terrain: &'a Terrain,
+    missiles: &'a BTreeMap<u32, (Vec3, Vec3)>,
+}
+
+impl EffectScene for EffectWorld<'_> {
+    fn anchor(&self, entity: u32) -> Option<Vec3> {
+        self.anchors.get(&entity).copied()
+    }
+
+    fn socket(&self, entity: u32, socket: &str) -> Option<(Vec3, Quat)> {
+        let p = self.posed.get(&entity)?;
+        let (clip, time) = p.clip.unwrap_or((0, 0.0));
+        let m = p.info.socket(socket, clip, time)?;
+        Some((
+            p.position + p.rotation * (affine_point(&m, Vec3::ZERO) * p.scale),
+            p.rotation * affine_rotation(&m),
+        ))
+    }
+
+    fn floor(&self, position: Milli, surface: Option<&str>) -> f32 {
+        let (x, y) = cells(position);
+        self.terrain
+            .floor(x, y, surface)
+            .unwrap_or_else(|| self.terrain.field().sample(x, y)) as f32
+    }
+
+    fn missile_pose(&self, cast: u32) -> Option<(Vec3, Vec3)> {
+        self.missiles.get(&cast).copied()
+    }
+}
+
+/// Old dust randomness: a hash of the building and tick, never the simulation's stream.
+fn dust_random(seed: u32, salt: u32) -> f32 {
+    let mut n = seed ^ (salt + 1).wrapping_mul(0x85eb_ca6b);
+    n = (n ^ (n >> 16)).wrapping_mul(0x7feb_352d);
+    n = (n ^ (n >> 15)).wrapping_mul(0x846c_a68b);
+    (f64::from(n ^ (n >> 16)) / 4_294_967_296.0) as f32
+}
+
 pub struct Presenter {
     content: Arc<Content>,
     terrain: Arc<Terrain>,
@@ -291,6 +365,14 @@ pub struct Presenter {
     felling: BTreeMap<EntityId, Sighting>,
     chunks: Option<Arc<[Arc<[Sighting]>]>>,
     previous: BTreeMap<u64, Vec3>,
+    pub effects: EffectDirector,
+    /// Health as last presented, for hit sparks.
+    health: BTreeMap<EntityId, u32>,
+    dust: BTreeMap<EntityId, Dust>,
+    /// Construction dust effect and interval by building definition.
+    dust_effects: BTreeMap<String, (usize, u32)>,
+    /// Weapon missiles carrying an ability cast this tick: position and direction.
+    missile_poses: BTreeMap<u32, (Vec3, Vec3)>,
 }
 
 fn yaw(millidegrees: i32) -> f32 {
@@ -392,11 +474,37 @@ impl Presenter {
             }
         }
         let words = setup.statics.div_ceil(64);
+        let mut catalog = ModelCatalog::default();
+        let table = EffectDirector::table(pack.as_deref());
+        let effects = EffectDirector::new(&content, table.clone(), |name| {
+            let index = catalog.index(pack.as_deref(), name);
+            let info = catalog.get(index);
+            (!info.missing).then(|| ModelRef {
+                index,
+                triangles: info.triangles,
+                clips: info
+                    .clips
+                    .iter()
+                    .enumerate()
+                    .map(|(i, c)| (c.name.clone(), i as u16, c.duration))
+                    .collect(),
+            })
+        });
+        let mut dust_effects = BTreeMap::new();
+        for race in content.rules.races.values() {
+            if let Some(style) = &race.construction
+                && let Some(effect) = table.find(style.dust_effect.as_str())
+            {
+                for id in &race.roster {
+                    dust_effects.insert(id.to_string(), (effect, style.dust_interval_ticks));
+                }
+            }
+        }
         let mut presenter = Self {
             content,
             terrain: world.terrain().clone(),
             pack,
-            catalog: ModelCatalog::default(),
+            catalog,
             colors: setup.colors,
             appearance,
             construction,
@@ -412,6 +520,11 @@ impl Presenter {
             felling: BTreeMap::new(),
             chunks: None,
             previous: BTreeMap::new(),
+            effects,
+            health: BTreeMap::new(),
+            dust: BTreeMap::new(),
+            dust_effects,
+            missile_poses: BTreeMap::new(),
         };
         presenter.preload(world);
         presenter
@@ -592,6 +705,21 @@ impl Presenter {
         let mut fighting: Vec<[f32; 2]> = Vec::new();
         let by_id: BTreeMap<EntityId, &EntityView> =
             view.entities.iter().map(|e| (e.id(), e)).collect();
+        // Who swings at whom (the first released swing), for the direction of hit sparks.
+        let mut attackers: BTreeMap<EntityId, (f64, f64)> = BTreeMap::new();
+        for a in &view.entities {
+            if let Some(attack) = a.combat.as_ref().and_then(|c| c.attack.as_ref())
+                && attack.released
+                && let Some(target) = attack.target
+            {
+                attackers
+                    .entry(target)
+                    .or_insert_with(|| cells(a.public.position));
+            }
+        }
+        let mut posed: BTreeMap<u32, Posed> = BTreeMap::new();
+        let mut health: BTreeMap<EntityId, u32> = BTreeMap::new();
+        let mut building: BTreeSet<EntityId> = BTreeSet::new();
 
         for e in &view.entities {
             let id = e.id();
@@ -633,6 +761,30 @@ impl Presenter {
             );
             actor.color = self.color(e.public.owner);
             actor.opacity = e.magic.as_ref().map_or(1.0, |m| m.opacity as f32);
+            // A confirmed loss of health throws sparks (old `ImpactEffects`).
+            if let Some(hp) = e.public.hp.filter(|_| !e.remembered) {
+                if self.health.get(&id).is_some_and(|&before| hp < before)
+                    && matches!(d.kind, Kind::Unit | Kind::Building)
+                {
+                    let (x, z) = cells(e.public.position);
+                    let angle = attackers.get(&id).map_or(rotation_y, |&(ax, az)| {
+                        ((x - ax) as f32).atan2((z - az) as f32)
+                    });
+                    let lift = if d.kind == Kind::Building {
+                        1.7
+                    } else {
+                        1.1 * visual_scale as f32
+                    };
+                    self.effects.spark(Spark {
+                        entity: id.0,
+                        position: position + Vec3::Y * lift,
+                        tick: f64::from(tick),
+                        angle,
+                        power: if d.is_hero() { 1.4 } else { 1.0 },
+                    });
+                }
+                health.insert(id, hp);
+            }
             match d.kind {
                 Kind::Unit => {
                     counts.units += 1;
@@ -741,6 +893,63 @@ impl Presenter {
                         actor.rotation = Quat::from_rotation_y(rotation_y);
                     }
                     actor.position = position;
+                    if let Some(animation) = &tracked.animation {
+                        posed.insert(
+                            id.0,
+                            Posed {
+                                info: self.catalog.shared(model),
+                                clip: Some(animation.animator.current()),
+                                position,
+                                rotation: actor.rotation,
+                                scale: actor.scale,
+                            },
+                        );
+                        // Melee blade ribbons through the middle of the swing.
+                        if let (Some(attack), Some(state)) = (
+                            combat.and_then(|c| c.attack.as_ref()),
+                            info.state(crate::animation::states::ATTACK),
+                        ) && animation.animator.state() == crate::animation::states::ATTACK
+                            && info.sockets.iter().any(|s| s == BLADE_BASE)
+                            && info.sockets.iter().any(|s| s == BLADE_TIP)
+                        {
+                            let contact = state.contact.unwrap_or(CONTACT);
+                            let duration = info.duration(state.clip);
+                            for k in (0..BLADE_SUBSTEPS).rev() {
+                                let at = tick as f32 - k as f32 / BLADE_SUBSTEPS as f32;
+                                let phase = attack_phase(
+                                    at,
+                                    attack.started,
+                                    attack.impact,
+                                    attack.ends,
+                                    contact,
+                                );
+                                if phase < BLADE_PHASE.0 || phase > BLADE_PHASE.1 {
+                                    continue;
+                                }
+                                let time = phase.min(0.999_999) * duration;
+                                let world = |socket| {
+                                    info.socket(socket, state.clip, time).map(|m| {
+                                        position
+                                            + actor.rotation
+                                                * (affine_point(&m, Vec3::ZERO) * actor.scale)
+                                    })
+                                };
+                                if let (Some(base), Some(tip)) =
+                                    (world(BLADE_BASE), world(BLADE_TIP))
+                                {
+                                    self.effects.blade(
+                                        id.0,
+                                        attack.started,
+                                        BladeSample {
+                                            tick: f64::from(at),
+                                            base,
+                                            tip,
+                                        },
+                                    );
+                                }
+                            }
+                        }
+                    }
                     // Ground bodies wake water (not flyers or lookout occupants).
                     if flight.is_none() && garrison.is_none() {
                         actor.walker =
@@ -815,6 +1024,17 @@ impl Presenter {
                         };
                         let (rise, revealed) = construction_pose(p, &style);
                         show_body = revealed;
+                        building.insert(id);
+                        self.construction_dust(
+                            e,
+                            d.id.as_str(),
+                            &info,
+                            scale,
+                            &style,
+                            (p, rise),
+                            (position, actor.rotation),
+                            tick,
+                        );
                         if rise > 0.0
                             && let Some(scaffold) = self.asset_model(style.scaffold.as_str())
                         {
@@ -921,6 +1141,34 @@ impl Presenter {
         self.trees(catalog, view, &mut actors, &mut counts);
         self.flights(catalog, view, &by_id, &mut actors, &mut counts);
 
+        self.health = health;
+        let effects_dust = std::mem::take(&mut self.dust);
+        self.dust = effects_dust
+            .into_iter()
+            .filter(|(id, dust)| {
+                let keep = building.contains(id);
+                if !keep {
+                    self.effects.stop(&dust.cues);
+                }
+                keep
+            })
+            .collect();
+        let anchors: BTreeMap<u32, Vec3> = actors
+            .iter()
+            .filter(|a| a.key >> 40 == Part::Entity as u64)
+            .map(|a| (a.key as u32, a.position))
+            .collect();
+        let effects = self.effects.update(
+            view,
+            &EffectWorld {
+                anchors: &anchors,
+                posed: &posed,
+                terrain: &self.terrain,
+                missiles: &self.missile_poses,
+            },
+            catalog,
+        );
+
         actors.sort_by_key(|a| a.key);
         // Jumps further than a walk do not interpolate.
         for a in &mut actors {
@@ -938,6 +1186,84 @@ impl Presenter {
             hidden: self.hidden.clone(),
             counts,
             battle: densest(&fighting),
+            effects,
+        }
+    }
+
+    /// Construction dust on a rising scaffold (old `ConstructionScaffold.update`): three
+    /// puffs at once — two on the roof, one on a side — every interval while work advances
+    /// in sight.
+    #[allow(clippy::too_many_arguments)]
+    fn construction_dust(
+        &mut self,
+        e: &EntityView,
+        definition: &str,
+        info: &ModelInfo,
+        scale: f32,
+        style: &ConstructionPresentation,
+        (progress, rise): (f64, f64),
+        (position, rotation): (Vec3, Quat),
+        tick: u32,
+    ) {
+        let Some(&(effect, interval)) = self.dust_effects.get(definition) else {
+            return;
+        };
+        let now = f64::from(tick);
+        let visible = !e.remembered;
+        let dust = self.dust.entry(e.id()).or_default();
+        if !visible || progress >= 1.0 || now < dust.last {
+            let cues = std::mem::take(&mut dust.cues);
+            self.effects.stop(&cues);
+        }
+        let dust = self.dust.get_mut(&e.id()).expect("inserted");
+        if visible
+            && dust.progress.is_some_and(|before| progress > before)
+            && progress < 1.0
+            && now >= dust.next
+        {
+            let bmin = Vec3::from_array(info.rest_min) * scale;
+            let bmax = Vec3::from_array(info.rest_max) * scale;
+            let size = (bmax - bmin) + Vec3::splat(style.padding as f32 * 2.0);
+            let centre = (bmin + bmax) * 0.5;
+            let ground = bmin.y.min(0.0);
+            let buried = size.y * (1.0 - rise as f32);
+            let shown = size.y * rise as f32;
+            let seed = e.id().0.wrapping_mul(0x9e37_79b1) ^ tick;
+            let random = |salt| dust_random(seed, salt);
+            let (x, z) = (size.x * 0.5, size.z * 0.5);
+            let mut cues = Vec::new();
+            for i in 0..3u32 {
+                let mut local = Vec3::new(
+                    (random(i * 5) * 2.0 - 1.0) * x,
+                    size.y + 0.15,
+                    (random(i * 5 + 1) * 2.0 - 1.0) * z,
+                );
+                if i == 2 {
+                    let edge = (random(i * 5 + 2) * 4.0).floor() as u32;
+                    if edge < 2 {
+                        local.x = if edge == 0 { -1.0 } else { 1.0 } * (x + 0.35);
+                    } else {
+                        local.z = if edge == 2 { -1.0 } else { 1.0 } * (z + 0.35);
+                    }
+                    local.y = buried + (shown * random(i * 5 + 3)).max(0.15);
+                }
+                let root = Vec3::new(centre.x, ground - buried, centre.z) + local;
+                cues.extend(self.effects.play(Play {
+                    effect,
+                    tick: now,
+                    seed: seed.wrapping_add((i + 1).wrapping_mul(7919)),
+                    at: position + rotation * root,
+                    from: None,
+                    radius: None,
+                }));
+            }
+            let dust = self.dust.get_mut(&e.id()).expect("inserted");
+            dust.cues.extend(cues);
+            dust.last = now;
+            dust.next = now + f64::from(interval) * f64::from(0.7 + random(31) * 0.6);
+        }
+        if let Some(dust) = self.dust.get_mut(&e.id()) {
+            dust.progress = Some(progress);
         }
     }
 
@@ -1120,9 +1446,11 @@ impl Presenter {
         let tick = view.tick;
         let content = self.content.clone();
         let mut live: BTreeSet<(Part, u32)> = BTreeSet::new();
+        self.missile_poses.clear();
         struct Flight<'a> {
             part: Part,
             id: u32,
+            cast: Option<u32>,
             source: EntityId,
             definition: canopy_sim::catalog::Def,
             origin: &'a canopy_sim::combat::projectiles::Aim,
@@ -1133,6 +1461,7 @@ impl Presenter {
         let missiles = view.battle.missiles.iter().map(|m: &Missile| Flight {
             part: Part::Missile,
             id: m.id,
+            cast: m.enhancement.as_ref().map(|e| e.cast),
             source: m.source,
             definition: m.definition,
             origin: &m.origin,
@@ -1143,6 +1472,7 @@ impl Presenter {
         let shells = view.battle.shells.iter().map(|s: &Shell| Flight {
             part: Part::Shell,
             id: s.id,
+            cast: None,
             source: s.source,
             definition: s.definition,
             origin: &s.origin,
@@ -1216,6 +1546,9 @@ impl Presenter {
             tangent.y += 4.0 * arc * (1.0 - 2.0 * t);
             let tangent = tangent.try_normalize().unwrap_or(Vec3::Y);
             let rotation = Quat::from_rotation_arc(Vec3::Y, tangent);
+            if let Some(cast) = f.cast {
+                self.missile_poses.insert(cast, (position, tangent));
+            }
             let scale = d.model_scale.unwrap_or(1.0) as f32;
             for (i, layer) in layers.iter().enumerate() {
                 actors.push(Actor::new(

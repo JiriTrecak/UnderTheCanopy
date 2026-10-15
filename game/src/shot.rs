@@ -17,6 +17,41 @@ use canopy_render::{
 };
 use std::path::Path;
 
+/// Plays the shot's standalone effects at the camera's focus (in a row, 8 m apart), each
+/// started `age` ticks before the captured tick, travelling layers from 6 m west.
+fn play_effects(options: &Options, loaded: &world::Loaded, game: &mut world::Match) -> Result<()> {
+    use canopy_render::water::ripples::WaterField;
+    if options.effects.is_empty() {
+        return Ok(());
+    }
+    let [fx, fz] = options
+        .camera
+        .and_then(CameraChoice::pose)
+        .map(|p| [p.x, p.z])
+        .or_else(|| loaded.scene.starts.first().copied())
+        .unwrap_or([0.0; 2]);
+    let n = options.effects.len() as f32;
+    let terrain = loaded.scene.terrain();
+    for (i, spec) in options.effects.iter().enumerate() {
+        let effect = game
+            .presenter
+            .effects
+            .find(&spec.id)
+            .with_context(|| format!("--effect {}: no such effect in the pack", spec.id))?;
+        let x = fx + (i as f32 - (n - 1.0) / 2.0) * 8.0;
+        let y = terrain.walk(x, fz, 0);
+        game.presenter.effects.play(canopy_scene::effects::Play {
+            effect,
+            tick: f64::from(options.tick) - f64::from(spec.age),
+            seed: 1 + i as u32,
+            at: glam::Vec3::new(x, y, fz),
+            from: Some(glam::Vec3::new(x - 6.0, y + 1.0, fz)),
+            radius: spec.radius,
+        });
+    }
+    Ok(())
+}
+
 pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Result<()> {
     let gpu = Gpu::headless(DeviceOptions::default())?.context("no GPU adapter")?;
     let map = options.map.as_deref().context("shot needs --map")?;
@@ -33,14 +68,24 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
     )?;
 
     // Simulate to the requested tick, presenting every tick (animation clocks run on ticks).
+    let viewer = options.viewer.map(canopy_content::placement::Owner::Player);
     let started = std::time::Instant::now();
-    let mut newest = sim::present(&game.world, &mut game.presenter);
+    if options.tick == 0 {
+        play_effects(options, &loaded, &mut game)?;
+    }
+    let mut newest = sim::present(&game.world, &mut game.presenter, viewer);
     let mut previous = None;
     let mut costs = Vec::new();
     while game.world.tick() < options.tick {
-        let Some((presentation, cost, _)) =
-            sim::advance(&mut game.world, &mut game.session, &mut game.presenter)
-        else {
+        if game.world.tick() + 1 == options.tick {
+            play_effects(options, &loaded, &mut game)?;
+        }
+        let Some((presentation, cost, _)) = sim::advance(
+            &mut game.world,
+            &mut game.session,
+            &mut game.presenter,
+            viewer,
+        ) else {
             anyhow::bail!("the local session stopped at tick {}", game.world.tick());
         };
         costs.push(cost);
@@ -55,16 +100,6 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
     renderer.load_world(&gpu, &loaded.pack, &loaded.scene.world)?;
     gpu.device.poll(wgpu::PollType::wait_indefinitely())?;
     let upload_ms = started.elapsed().as_secs_f32() * 1000.0;
-    let mut live = LiveScene::default();
-    live.show(
-        &mut renderer,
-        &gpu,
-        &loaded.pack,
-        previous.as_ref(),
-        &newest,
-        1.0,
-    );
-
     let spec = match options.camera {
         Some(CameraChoice::Battle(zoom)) => {
             let [x, z] = newest.battle.unwrap_or_else(|| {
@@ -94,6 +129,23 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
         }
         None => view::frame(&mut camera, aspect, &loaded.scene),
     };
+    let mut live = LiveScene::default();
+    live.eye = Some(camera_view.eye);
+    live.attach_effects(
+        &mut renderer,
+        &gpu,
+        &loaded.pack,
+        game.presenter.effects.effect_table().clone(),
+    );
+    live.show(
+        &mut renderer,
+        &gpu,
+        &loaded.pack,
+        previous.as_ref(),
+        &newest,
+        1.0,
+    );
+
     let capture = Capture::new(&gpu.device, size[0], size[1]);
 
     // Warm-up frames (pipelines, first-use costs), then measured ones.
@@ -135,6 +187,7 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
                 .update(&movers, loaded.scene.terrain(), t, focus);
         }
         let frame_start = std::time::Instant::now();
+        live.eye = Some(camera_view.eye);
         let report = renderer.render(&gpu, &camera_view, options.time, &capture.view, hook);
         gpu.device.poll(wgpu::PollType::wait_indefinitely())?;
         if i > 0 {
@@ -244,6 +297,11 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
         last.terrain_triangles,
         renderer.statics().map(|s| s.stats),
         last.actors,
+    );
+    println!(
+        "  effects: {} cues, {:?}",
+        newest.effects.cues.len(),
+        last.effects
     );
     if std::env::var_os("CANOPY_SHOT_MODELS").is_some()
         && let Some(actors) = renderer.actors()

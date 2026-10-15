@@ -5,6 +5,7 @@
 //! ([`interpolate`]).
 
 pub mod animation;
+pub mod effects;
 pub mod interpolate;
 pub mod live;
 pub mod models;

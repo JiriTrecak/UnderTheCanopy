@@ -144,19 +144,32 @@ pub fn held(world: &World, id: canopy_sim::entity::EntityId) -> bool {
         .is_some_and(|u| u.contained.is_some() || u.release.is_some())
 }
 
-/// Steps `world` once through `session` and presents the tick; `None` while the session
-/// waits for the next beat.
+/// What the viewer of a match sees: everything (observers), or one player's knowledge
+/// with their fog of war.
+pub fn view_of(
+    world: &World,
+    viewer: Option<canopy_content::placement::Owner>,
+) -> canopy_sim::view::View {
+    match viewer {
+        Some(owner) => world.view(owner),
+        None => world.observer_view(),
+    }
+}
+
+/// Steps `world` once through `session` and presents the tick as `viewer` sees it;
+/// `None` while the session waits for the next beat.
 pub fn advance(
     world: &mut World,
     session: &mut Session,
     presenter: &mut Presenter,
+    viewer: Option<canopy_content::placement::Owner>,
 ) -> Option<(Presentation, TickCost, bool)> {
     let started = Instant::now();
     session.advance(world)?;
     let stepped = Instant::now();
     let view = {
-        let _span = tracing::trace_span!("observer_view").entered();
-        world.observer_view()
+        let _span = tracing::trace_span!("view").entered();
+        view_of(world, viewer)
     };
     let viewed = Instant::now();
     let presentation = presenter.update(world, &view, &|id| held(world, id));
@@ -174,8 +187,12 @@ pub fn advance(
 }
 
 /// The presentation of the world as it stands (before its first step, or a shot).
-pub fn present(world: &World, presenter: &mut Presenter) -> Presentation {
-    let view = world.observer_view();
+pub fn present(
+    world: &World,
+    presenter: &mut Presenter,
+    viewer: Option<canopy_content::placement::Owner>,
+) -> Presentation {
+    let view = view_of(world, viewer);
     presenter.update(world, &view, &|id| held(world, id))
 }
 
@@ -188,6 +205,7 @@ impl SimThread {
         mut presenter: Presenter,
         tick_length: Duration,
         start_tick: u32,
+        viewer: Option<canopy_content::placement::Owner>,
     ) -> Self {
         let mailbox = Arc::new(Mailbox::default());
         let stop = Arc::new(AtomicBool::new(false));
@@ -200,7 +218,7 @@ impl SimThread {
                     let _span = tracing::info_span!("simulation_thread").entered();
                     let started = Instant::now();
                     while world.tick() < start_tick && !stop.load(Ordering::Relaxed) {
-                        if advance(&mut world, &mut session, &mut presenter).is_none() {
+                        if advance(&mut world, &mut session, &mut presenter, viewer).is_none() {
                             std::thread::sleep(Duration::from_millis(1));
                         }
                     }
@@ -211,7 +229,7 @@ impl SimThread {
                             "fast-forwarded"
                         );
                     }
-                    let first = present(&world, &mut presenter);
+                    let first = present(&world, &mut presenter, viewer);
                     let tick0 = world.tick();
                     // Schedule: simulation time of tick n is epoch + (n − tick0) · length.
                     let mut epoch = Instant::now();
@@ -243,7 +261,7 @@ impl SimThread {
                             }
                         }
                         let Some((presentation, cost, decided)) =
-                            advance(&mut world, &mut session, &mut presenter)
+                            advance(&mut world, &mut session, &mut presenter, viewer)
                         else {
                             std::thread::sleep(Duration::from_millis(1));
                             continue;
@@ -405,7 +423,7 @@ mod tests {
                 statics: 0,
             },
         );
-        let thread = SimThread::spawn(world, session, presenter, Duration::ZERO, 100);
+        let thread = SimThread::spawn(world, session, presenter, Duration::ZERO, 100, None);
         let started = Instant::now();
         let mut seen: Vec<u32> = Vec::new();
         let mut out = Vec::new();

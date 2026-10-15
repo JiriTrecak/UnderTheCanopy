@@ -136,6 +136,12 @@ impl App {
         let (loaded, camera) = match loaded {
             Some((loaded, mut game)) => {
                 renderer.load_world(&display.gpu, &loaded.pack, &loaded.scene.world)?;
+                live.attach_effects(
+                    &mut renderer,
+                    &display.gpu,
+                    &loaded.pack,
+                    game.presenter.effects.effect_table().clone(),
+                );
                 let camera =
                     view::initial(self.options.camera.and_then(|c| c.pose()), &loaded.scene);
                 if self.options.spectate {
@@ -145,10 +151,19 @@ impl App {
                         game.presenter,
                         sim::TICK,
                         self.options.tick,
+                        self.options
+                            .viewer
+                            .map(canopy_content::placement::Owner::Player),
                     ));
                 } else {
                     // The match's start, still.
-                    let start = sim::present(&game.world, &mut game.presenter);
+                    let start = sim::present(
+                        &game.world,
+                        &mut game.presenter,
+                        self.options
+                            .viewer
+                            .map(canopy_content::placement::Owner::Player),
+                    );
                     live.show(&mut renderer, &display.gpu, &loaded.pack, None, &start, 1.0);
                 }
                 (Some(loaded), Some(camera))
@@ -241,6 +256,12 @@ impl App {
         let size = session.display.size();
         session.renderer.resize(&session.display.gpu, size);
         let aspect = size[0] as f32 / size[1].max(1) as f32;
+        let camera_view = match (&mut session.camera, &session.loaded) {
+            (Some(camera), Some(loaded)) => view::frame(camera, aspect, &loaded.scene),
+            _ => canopy_render::RtsCamera::new([0.0, 0.0], None)
+                .view(aspect, &canopy_render::camera::FlatGround),
+        };
+        session.live.eye = Some(camera_view.eye);
         if let (Some(sim), Some(loaded)) = (&session.sim, &session.loaded) {
             let started = Instant::now();
             session.live.poll(sim.mailbox());
@@ -252,11 +273,6 @@ impl App {
             );
             self.stats.live_ms += started.elapsed().as_secs_f32() * 1000.0;
         }
-        let camera_view = match (&mut session.camera, &session.loaded) {
-            (Some(camera), Some(loaded)) => view::frame(camera, aspect, &loaded.scene),
-            _ => canopy_render::RtsCamera::new([0.0, 0.0], None)
-                .view(aspect, &canopy_render::camera::FlatGround),
-        };
         if let Some(loaded) = &session.loaded {
             let focus = [camera_view.target.x, camera_view.target.z];
             session

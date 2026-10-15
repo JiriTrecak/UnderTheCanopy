@@ -2,11 +2,12 @@
 //!
 //! ```text
 //! canopy [--data <folder>] [--no-vsync] [--map <id> | --spectate <id>] [--players <n>]
-//!        [--tick <n>] [--camera <x,z,zoom[,yaw]>] [--hour <h>] [graphics]
+//!        [--tick <n>] [--camera <x,z,zoom[,yaw]>] [--hour <h>] [--viewer <slot>] [graphics]
 //! canopy shot --map <id> --camera <x,z,zoom[,yaw] | battle[,zoom]> --out <png>
 //!             [--tick <n>] [--players <n>] [--crowd <n>] [--colors <i,j,…>] [--size <w>x<h>]
 //!             [--hour <h>] [--time <s>] [--frames <n>] [--no-shadows] [--pitch <deg>]
-//!             [--movers <n>] [--data <folder>] [graphics]
+//!             [--movers <n>] [--effect <id>[,<age>[,<radius>]]]… [--viewer <slot>]
+//!             [--data <folder>] [graphics]
 //! graphics: [--render-scale <0.5–1>] [--no-contact] [--no-bloom] [--haze off|low|medium|high]
 //!           [--biome <id>] (preview the map in another biome's look)
 //! ```
@@ -79,6 +80,38 @@ impl CameraChoice {
     }
 }
 
+/// A standalone effect a shot plays at the camera's focus: its id, how many ticks before
+/// the captured tick it started, and the radius its sizes take (`sizeFrom: radius`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct EffectSpec {
+    pub id: String,
+    pub age: u32,
+    pub radius: Option<f32>,
+}
+
+impl EffectSpec {
+    pub fn parse(text: &str) -> Result<Self> {
+        let mut parts = text.split(',').map(str::trim);
+        let id = parts
+            .next()
+            .filter(|s| !s.is_empty())
+            .context("--effect <id>")?;
+        let age = match parts.next() {
+            Some(age) => age.parse().context("--effect <id>,<age ticks>")?,
+            None => 10,
+        };
+        let radius = parts
+            .next()
+            .map(|r| r.parse().context("--effect <id>,<age>,<radius>"))
+            .transpose()?;
+        Ok(Self {
+            id: id.to_owned(),
+            age,
+            radius,
+        })
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Command {
     /// Open a window.
@@ -122,6 +155,10 @@ pub struct Options {
     pub movers: u32,
     /// Another biome's look for the map (previews).
     pub biome: Option<String>,
+    /// Standalone effects a shot plays at the camera's focus, in a row.
+    pub effects: Vec<EffectSpec>,
+    /// Watch as this player (0-based slot): their fog of war. Observers see everything.
+    pub viewer: Option<u8>,
 }
 
 impl Options {
@@ -145,6 +182,8 @@ impl Options {
             pitch: None,
             movers: 0,
             biome: None,
+            effects: Vec::new(),
+            viewer: None,
         };
         let mut out = None;
         let mut size = [1920, 1080];
@@ -209,6 +248,12 @@ impl Options {
                 }
                 "--movers" => options.movers = value("--movers")?.parse().context("--movers")?,
                 "--biome" => options.biome = Some(value("--biome")?),
+                "--effect" => options
+                    .effects
+                    .push(EffectSpec::parse(&value("--effect")?)?),
+                "--viewer" => {
+                    options.viewer = Some(value("--viewer")?.parse().context("--viewer <slot>")?)
+                }
                 "--out" => out = Some(PathBuf::from(value("--out")?)),
                 "--size" => {
                     let text = value("--size")?;
@@ -216,7 +261,7 @@ impl Options {
                     size = [w.parse().context("--size")?, h.parse().context("--size")?];
                 }
                 other => bail!(
-                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --tick, --crowd, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers)"
+                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --tick, --crowd, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --effect, --viewer)"
                 ),
             }
             first = false;

@@ -5,6 +5,7 @@ pub mod actors;
 pub mod camera;
 pub mod capture;
 pub mod device;
+pub mod effects;
 pub mod environment;
 pub mod frame;
 pub mod graph;

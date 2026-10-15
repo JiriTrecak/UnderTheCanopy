@@ -24,6 +24,7 @@ canopy-render = { path = "../crates/render" }
 canopy-scene = { path = "../crates/scene" }
 canopy-sim = { path = "../crates/sim" }
 directories.workspace = true
+glam.workspace = true
 image.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
