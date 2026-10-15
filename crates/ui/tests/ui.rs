@@ -529,3 +529,24 @@ fn reloads_changed_files_from_disk() {
     ui.frame(0.1);
     assert_eq!(rect(&ui, "test/grid/0").x, 120.0);
 }
+
+#[test]
+fn a_hidden_button_loses_focus_and_enter_is_left_to_the_game() {
+    let mut ui = ui();
+    let at = center(rect(&ui, "test/grid/0"));
+    click(&mut ui, at);
+    ui.take_actions();
+    // Enter presses the focused button while it is shown.
+    assert!(key(&mut ui, Key::Enter));
+    assert!(
+        ui.take_actions()
+            .iter()
+            .any(|a| matches!(a.kind, ActionKind::Click { .. }))
+    );
+    // Its screen hides (a match starts): Enter no longer reaches it.
+    let grid = ui.find("test/grid").unwrap();
+    ui.set_visible(grid, false);
+    ui.frame(0.0);
+    assert!(!key(&mut ui, Key::Enter), "the key goes to the game");
+    assert!(ui.take_actions().is_empty());
+}

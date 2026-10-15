@@ -714,6 +714,19 @@ impl Ui {
 
     fn key(&mut self, key: Key, repeat: bool) -> bool {
         let m = self.input.modifiers;
+        // Focus left on a node that is no longer shown or enabled (a screen hidden after its
+        // button was pressed) must not take keys: Enter would press that button again.
+        if let Some(f) = self.input.focus
+            && !(self
+                .tree
+                .nodes
+                .get(f)
+                .and_then(Option::as_ref)
+                .is_some_and(|n| n.enabled)
+                && self.hits.iter().any(|h| h.node == f))
+        {
+            self.set_focus(None, false);
+        }
         if let Some(f) = self.focused_field() {
             return self.field_key(f, key, m);
         }

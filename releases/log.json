@@ -9,7 +9,8 @@
       "Fallen heroes can be revived again: the Sanctuary and Ancestor Shrine offer Revive for each fallen hero.",
       "Right-clicking the minimap orders the selection there without the camera jumping to that spot.",
       "Items on the ground are much easier to pick up: they are picked where they are drawn, with the same generous target as units, including items lying in water.",
-      "Workers carry their load to the drop-off nearest the mine or tree they work, so a new Hall by the amber is used straight away instead of the old one across the map."
+      "Workers carry their load to the drop-off nearest the mine or tree they work, so a new Hall by the amber is used straight away instead of the old one across the map.",
+      "Pressing Enter in a match opens the chat again instead of restarting the match."
     ],
     "knownIssues": []
   },
