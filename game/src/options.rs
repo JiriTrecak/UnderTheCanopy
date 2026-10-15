@@ -2,10 +2,13 @@
 //!
 //! ```text
 //! canopy [--data <folder>] [--no-vsync] [--map <id> | --spectate <id>] [--players <n>]
-//!        [--tick <n>] [--camera <x,z,zoom[,yaw]>] [--hour <h>]
+//!        [--tick <n>] [--camera <x,z,zoom[,yaw]>] [--hour <h>] [graphics]
 //! canopy shot --map <id> --camera <x,z,zoom[,yaw] | battle[,zoom]> --out <png>
-//!             [--tick <n>] [--players <n>] [--size <w>x<h>] [--hour <h>] [--time <s>]
-//!             [--frames <n>] [--no-shadows] [--data <folder>]
+//!             [--tick <n>] [--players <n>] [--crowd <n>] [--colors <i,j,…>] [--size <w>x<h>]
+//!             [--hour <h>] [--time <s>] [--frames <n>] [--no-shadows] [--pitch <deg>]
+//!             [--movers <n>] [--data <folder>] [graphics]
+//! graphics: [--render-scale <0.5–1>] [--no-contact] [--no-bloom] [--haze off|low|medium|high]
+//!           [--biome <id>] (preview the map in another biome's look)
 //! ```
 //!
 //! `--map` shows a match's start, `--spectate` plays it (computer players on every start,
@@ -111,6 +114,14 @@ pub struct Options {
     /// Frames a shot renders before the captured one (for timings).
     pub frames: u32,
     pub shadows: bool,
+    /// Graphics quality (render scale, post effects).
+    pub quality: canopy_render::Quality,
+    /// Camera pitch of a shot, degrees below the horizon (the game's 56 by default).
+    pub pitch: Option<f32>,
+    /// Synthetic bodies a shot walks through the view before capturing (ripples).
+    pub movers: u32,
+    /// Another biome's look for the map (previews).
+    pub biome: Option<String>,
 }
 
 impl Options {
@@ -130,6 +141,10 @@ impl Options {
             time: 12.0,
             frames: 1,
             shadows: true,
+            quality: canopy_render::Quality::default(),
+            pitch: None,
+            movers: 0,
+            biome: None,
         };
         let mut out = None;
         let mut size = [1920, 1080];
@@ -171,6 +186,29 @@ impl Options {
                 "--time" => options.time = value("--time")?.parse().context("--time")?,
                 "--frames" => options.frames = value("--frames")?.parse().context("--frames")?,
                 "--no-shadows" => options.shadows = false,
+                "--render-scale" => {
+                    let scale: f32 = value("--render-scale")?.parse().context("--render-scale")?;
+                    if !(canopy_render::quality::MIN_RENDER_SCALE..=1.0).contains(&scale) {
+                        bail!("--render-scale must be within 0.5–1");
+                    }
+                    options.quality.render_scale = scale;
+                }
+                "--no-contact" => options.quality.contact_shadows = false,
+                "--no-bloom" => options.quality.bloom = false,
+                "--haze" => {
+                    let text = value("--haze")?;
+                    options.quality.haze = canopy_render::HazeQuality::parse(&text)
+                        .with_context(|| format!("--haze {text}: off, low, medium or high"))?;
+                }
+                "--pitch" => {
+                    let pitch: f32 = value("--pitch")?.parse().context("--pitch")?;
+                    if !(10.0..=89.0).contains(&pitch) {
+                        bail!("--pitch must be within 10–89 degrees");
+                    }
+                    options.pitch = Some(pitch);
+                }
+                "--movers" => options.movers = value("--movers")?.parse().context("--movers")?,
+                "--biome" => options.biome = Some(value("--biome")?),
                 "--out" => out = Some(PathBuf::from(value("--out")?)),
                 "--size" => {
                     let text = value("--size")?;
@@ -178,7 +216,7 @@ impl Options {
                     size = [w.parse().context("--size")?, h.parse().context("--size")?];
                 }
                 other => bail!(
-                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --tick, --crowd, --colors, --camera, --hour; shot: --out, --size, --time, --frames, --no-shadows)"
+                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --tick, --crowd, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers)"
                 ),
             }
             first = false;
@@ -224,6 +262,12 @@ mod tests {
         assert_eq!(options.map.as_deref(), Some("m"));
         assert_eq!(options.hour, Some(9.5));
         assert_eq!(options.command, Command::Play);
+        let graphics = parse(&["--render-scale", "0.75", "--no-bloom", "--haze", "low"]).unwrap();
+        assert_eq!(graphics.quality.render_scale, 0.75);
+        assert!(!graphics.quality.bloom && graphics.quality.contact_shadows);
+        assert_eq!(graphics.quality.haze, canopy_render::HazeQuality::Low);
+        assert!(parse(&["--render-scale", "2"]).is_err());
+        assert!(parse(&["--haze", "ultra"]).is_err());
         assert_eq!(parse(&[]).unwrap().data, None);
     }
 

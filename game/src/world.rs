@@ -17,6 +17,8 @@ pub struct MatchSpec<'a> {
     pub hour: Option<f32>,
     /// Computer players on the first starts; every start when `None`.
     pub players: Option<usize>,
+    /// Another biome's look, to preview it on this map.
+    pub biome: Option<&'a str>,
     /// A measured battle instead of a match: this many soldiers for each of eight players,
     /// facing each other around the middle of the starts (no computer players).
     pub crowd: Option<u32>,
@@ -182,7 +184,7 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
     let pack_path =
         canopy_assets::find_pack(&paths.data).context("no cooked asset pack (run `just cook`)")?;
     let pack = Arc::new(Pack::open(&pack_path).with_context(|| pack_path.display().to_string())?);
-    let look = Look::load(&paths.data, map.biome())?;
+    let look = Look::load(&paths.data, spec.biome.unwrap_or(map.biome()))?;
     let setup = match spec.crowd {
         Some(n) => crowd(&mut map, &content, n)?,
         None => canopy_scene::spectator_setup(&map, spec.players),

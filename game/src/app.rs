@@ -114,6 +114,7 @@ impl App {
                         players: self.options.players,
                         crowd: self.options.crowd,
                         colors: self.options.colors.clone(),
+                        biome: self.options.biome.as_deref(),
                     },
                 )?;
                 let environment = loaded.0.environment.clone();
@@ -129,6 +130,7 @@ impl App {
         };
         let mut renderer =
             Renderer::new(&display.gpu, display.format(), display.size(), environment);
+        renderer.set_quality(&display.gpu, self.options.quality);
         let mut live = LiveScene::default();
         let mut sim_thread = None;
         let (loaded, camera) = match loaded {
@@ -255,6 +257,12 @@ impl App {
             _ => canopy_render::RtsCamera::new([0.0, 0.0], None)
                 .view(aspect, &canopy_render::camera::FlatGround),
         };
+        if let Some(loaded) = &session.loaded {
+            let focus = [camera_view.target.x, camera_view.target.z];
+            session
+                .live
+                .feed_ripples(&mut session.renderer, &loaded.scene, seconds, focus);
+        }
         let report =
             session
                 .renderer

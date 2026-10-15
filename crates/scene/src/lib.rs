@@ -17,7 +17,9 @@ use canopy_render::{
     World,
     environment::{BiomeConfig, CONFIG_FOLDER, Hex, LightingConfig},
     statics::Glow,
+    surroundings::{ForestDesc, TrunkRing},
     terrain::TerrainDesc,
+    water::WaterConfig,
 };
 use canopy_sim::{MatchSetup, Slot, SlotKind};
 use serde::Deserialize;
@@ -122,6 +124,7 @@ pub struct Look {
     pub biome: BiomeConfig,
     pub players: Players,
     pub glows: Glows,
+    pub water: WaterConfig,
 }
 
 impl Look {
@@ -134,6 +137,7 @@ impl Look {
             biome,
             players: Players::load(data)?,
             glows: Glows::load(data)?,
+            water: WaterConfig::load(data)?,
         })
     }
 }
@@ -174,6 +178,18 @@ pub struct MapScene {
     pub colors: Vec<[f32; 3]>,
     /// Static instance of each tree entity.
     pub tree_slots: BTreeMap<canopy_sim::entity::EntityId, usize>,
+    /// The simulation's terrain (bridge decks for the water's wakes).
+    pub sim_terrain: Arc<canopy_sim::terrain::Terrain>,
+}
+
+impl MapScene {
+    /// Water and walking heights for the ripple emitter.
+    pub fn water_field(&self) -> live::SceneWater<'_> {
+        live::SceneWater {
+            desc: self.terrain(),
+            terrain: &self.sim_terrain,
+        }
+    }
 }
 
 impl MapScene {
@@ -220,8 +236,15 @@ pub fn build(
         bail!("maps larger than 1024 cells are not supported (D24)");
     }
     let content: &Content = &world.catalog().content;
-    let terrain =
+    let (terrain, water) =
         terrain::build(map, &content.landscape, &look.biome).map_err(anyhow::Error::msg)?;
+    let forest = look
+        .biome
+        .surroundings
+        .forest
+        .as_ref()
+        .map(|f| forest(f, &look.biome, map.size, pack))
+        .transpose()?;
     let scenery: statics::SceneryModels = pack
         .scenery()?
         .prototypes
@@ -249,6 +272,9 @@ pub fn build(
             glows: look.glows.by_model(content)?,
             point_lights: scene.lights,
             actor_models: Vec::new(),
+            water: Some(water),
+            water_textures: look.water.textures(),
+            forest,
         },
         hour,
         size: map.size,
@@ -260,5 +286,52 @@ pub fn build(
         missing: scene.missing,
         colors,
         tree_slots: scene.tree_slots,
+        sim_terrain: world.terrain().clone(),
+    })
+}
+
+/// The biome's forest around the map, with its models found in the pack's scenery.
+fn forest(
+    config: &canopy_render::environment::ForestConfig,
+    biome: &BiomeConfig,
+    size: u32,
+    pack: &canopy_assets::Pack,
+) -> Result<ForestDesc> {
+    let scenery = pack.scenery()?;
+    let model = |id: &str| -> Result<String> {
+        scenery
+            .prototypes
+            .iter()
+            .find(|p| p.id == id)
+            .map(|p| p.model.clone())
+            .with_context(|| format!("surroundings: no scenery model {id}"))
+    };
+    Ok(ForestDesc {
+        map_size: size,
+        trunk: model(&config.trunk)?,
+        mushroom: config.mushroom.as_deref().map(model).transpose()?,
+        log: config.log.as_deref().map(model).transpose()?,
+        limb_texture: config
+            .limb_texture
+            .as_ref()
+            .map(|id| format!("assets/library/{id}/albedo.png")),
+        rings: config
+            .rings
+            .iter()
+            .map(|r| TrunkRing {
+                distance: r.distance,
+                spacing: r.spacing,
+                height: r.height,
+            })
+            .collect(),
+        leaf_colors: config
+            .leaf_colors
+            .iter()
+            .map(|c| c.linear().to_array())
+            .collect(),
+        leaf_spacing: config.leaf_spacing,
+        leaf_length: config.leaf_length,
+        seed: biome.canopy.seed,
+        canopy_height: biome.canopy.height,
     })
 }

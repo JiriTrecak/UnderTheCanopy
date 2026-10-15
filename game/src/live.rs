@@ -3,7 +3,7 @@
 //! listed models and hiding felled trees as presentations ask.
 
 use crate::sim::{Mailbox, Snapshot, render_tick};
-use canopy_render::{Gpu, Renderer, actors::ActorInstance};
+use canopy_render::{Gpu, Renderer, actors::ActorInstance, water::ripples::Mover};
 use canopy_scene::{interpolate, live::Presentation};
 use std::{sync::Arc, time::Instant};
 
@@ -17,9 +17,24 @@ pub struct LiveScene {
     pub held: u32,
     /// The tick shown by the latest frame.
     pub shown: f64,
+    /// Ground units of the latest frame, for the water's wakes.
+    movers: Vec<Mover>,
 }
 
 impl LiveScene {
+    /// Feeds the frame's ground units to the water's ripples (every frame).
+    pub fn feed_ripples(
+        &self,
+        renderer: &mut Renderer,
+        scene: &canopy_scene::MapScene,
+        seconds: f32,
+        focus: [f32; 2],
+    ) {
+        renderer
+            .ripples_mut()
+            .update(&self.movers, &scene.water_field(), seconds, focus);
+    }
+
     /// Copies the newest snapshots when the simulation published any.
     pub fn poll(&mut self, mailbox: &Mailbox) {
         let newest = self.snapshots.last().map(|s| s.tick());
@@ -98,6 +113,20 @@ impl LiveScene {
             self.hidden_revision = Some(b.hidden.revision);
         }
         interpolate::interpolate(a, b, t, &mut self.instances);
+        // One instance per presented actor, in order.
+        self.movers.clear();
+        for (actor, instance) in b.actors.iter().zip(&self.instances) {
+            if let Some((surface, elevation)) = actor.walker {
+                let p = instance.transform.w_axis;
+                self.movers.push(Mover {
+                    id: actor.key as u32,
+                    x: p.x,
+                    z: p.z,
+                    surface,
+                    elevation,
+                });
+            }
+        }
         renderer.set_actors(&self.instances);
     }
 }

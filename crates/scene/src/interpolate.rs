@@ -166,6 +166,7 @@ mod tests {
             poses: Poses::single(0, 0.0),
             snap: false,
             body: None,
+            walker: None,
         };
         a.poses.loops[0] = 1.0;
         a

@@ -4,17 +4,24 @@ use crate::{
     actors::{ActorInstance, ActorsGpu},
     camera::{CameraView, frustum_planes},
     device::Gpu,
-    environment::{BiomeConfig, DaytimeLut, GRADE_SIZE, Lighting, LightingConfig},
+    environment::{BiomeConfig, DaytimeLut, Lighting, LightingConfig},
     frame::{self, FrameParams, FrameUniform, MAX_POINT_LIGHTS, PointLight},
     graph::{self, FrameGraph, PassKind, passes},
+    post::{OPENINGS_SIZE, PostLook, PostStack},
+    quality::Quality,
     shadow::{self, ShadowView},
     statics::{StaticInstance, StaticsGpu},
-    targets::{SHADOW_FORMAT, Targets},
+    surroundings::{ForestDesc, ForestGpu},
+    targets::{FAR_DEPTH, SHADOW_FORMAT, Targets},
     terrain::{TerrainDesc, gpu::TerrainGpu},
     timing::GpuTimer,
+    water::{
+        WaterDesc,
+        gpu::{WaterGpu, WaterStats, WaterTextures},
+        ripples::Ripples,
+    },
 };
 use anyhow::Result;
-use bytemuck::{Pod, Zeroable};
 use glam::Vec3;
 use std::time::Instant;
 
@@ -32,6 +39,10 @@ pub struct Environment {
     pub canopy: Vec<u8>,
     /// Linear haze colour and distances (surroundings).
     pub haze: (Vec3, [f32; 2]),
+    /// The biome's post effects.
+    pub post: PostLook,
+    /// R8 canopy openings where shafts scatter, [`OPENINGS_SIZE`]².
+    pub openings: Vec<u8>,
 }
 
 impl Environment {
@@ -49,6 +60,12 @@ impl Environment {
             grade: crate::environment::bake_grade(&biome.grade, daytime),
             canopy: crate::environment::canopy_pattern(&biome.canopy, CANOPY_SIZE),
             haze: (s.haze_color.linear(), [s.haze_start, s.haze_end]),
+            post: PostLook {
+                bloom: biome.bloom,
+                contact: biome.contact,
+                atmosphere: biome.atmosphere,
+            },
+            openings: crate::environment::canopy_openings(&biome.canopy, OPENINGS_SIZE),
             lighting: resolved,
             shadow: lighting.shadow,
         }
@@ -65,6 +82,12 @@ pub struct World {
     pub point_lights: Vec<PointLight>,
     /// Live models to load up front (pack entries; their order gives their indices).
     pub actor_models: Vec<String>,
+    /// Water over the terrain's wet cells (needs `terrain`).
+    pub water: Option<WaterDesc>,
+    /// Pack textures the water samples.
+    pub water_textures: WaterTextures,
+    /// The forest around the map (needs `terrain`).
+    pub forest: Option<ForestDesc>,
 }
 
 /// Measurements of one frame.
@@ -83,21 +106,7 @@ pub struct FrameReport {
     pub terrain_chunks: u32,
     /// Live models of the frame.
     pub actors: crate::actors::ActorStats,
-}
-
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Pod, Zeroable)]
-struct PostUniform {
-    params: [f32; 4],
-}
-
-struct Post {
-    pipeline: wgpu::RenderPipeline,
-    layout: wgpu::BindGroupLayout,
-    group: wgpu::BindGroup,
-    grade: wgpu::TextureView,
-    sampler: wgpu::Sampler,
-    uniform: wgpu::Buffer,
+    pub water: WaterStats,
 }
 
 pub struct Renderer {
@@ -113,46 +122,23 @@ pub struct Renderer {
     shadow_resolution: u32,
     canopy_texture: wgpu::Texture,
     targets: Targets,
-    post: Post,
+    post: PostStack,
     output_format: wgpu::TextureFormat,
+    output_size: [u32; 2],
+    quality: Quality,
     environment: Environment,
     terrain: Option<TerrainGpu>,
     statics: Option<StaticsGpu>,
     actors: Option<ActorsGpu>,
+    water: Option<WaterGpu>,
+    forest: Option<ForestGpu>,
+    ripples: Ripples,
     timer: Option<GpuTimer>,
+    timestamps: bool,
     /// Shadows on (a setting).
     pub shadows: bool,
     /// Bytes of GPU memory the world uses.
     pub world_bytes: u64,
-}
-
-fn grade_texture(device: &wgpu::Device, queue: &wgpu::Queue, volume: &[u8]) -> wgpu::TextureView {
-    let size = wgpu::Extent3d {
-        width: GRADE_SIZE,
-        height: GRADE_SIZE,
-        depth_or_array_layers: GRADE_SIZE,
-    };
-    let texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("grade"),
-        size,
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D3,
-        format: wgpu::TextureFormat::Rgba8Unorm,
-        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-        view_formats: &[],
-    });
-    queue.write_texture(
-        texture.as_image_copy(),
-        volume,
-        wgpu::TexelCopyBufferLayout {
-            offset: 0,
-            bytes_per_row: Some(GRADE_SIZE * 4),
-            rows_per_image: Some(GRADE_SIZE),
-        },
-        size,
-    );
-    texture.create_view(&Default::default())
 }
 
 impl Renderer {
@@ -165,7 +151,8 @@ impl Renderer {
     ) -> Self {
         let device = &gpu.device;
         let queue = &gpu.queue;
-        let graph = graph::world_frame();
+        let quality = Quality::default();
+        let graph = graph::world_frame(environment.post.features(&quality, false));
         let frame_layout = frame::layout(device);
         let uniform = |label| {
             device.create_buffer(&wgpu::BufferDescriptor {
@@ -268,12 +255,16 @@ impl Renderer {
         };
         let frame_group = group("frame", &frame_buffer, &shadow_view);
         let shadow_frame_group = group("shadow frame", &shadow_frame_buffer, &dummy_shadow);
-        let targets = Targets::new(device, size);
-        let post = Self::create_post(device, queue, output_format, &targets, &environment.grade);
-        let timer = gpu
-            .features
-            .timestamps
-            .then(|| GpuTimer::new(device, queue, graph.passes().len()));
+        let targets = Targets::new(device, quality.scene_size(size));
+        let post = PostStack::new(
+            device,
+            queue,
+            output_format,
+            &frame_layout,
+            &targets,
+            &environment.grade,
+            &environment.openings,
+        );
         let mut renderer = Self {
             graph,
             frame_layout,
@@ -289,153 +280,23 @@ impl Renderer {
             targets,
             post,
             output_format,
+            output_size: size,
+            quality,
             environment,
             terrain: None,
             statics: None,
             actors: None,
-            timer,
+            water: None,
+            forest: None,
+            ripples: Ripples::new(),
+            timer: None,
+            timestamps: gpu.features.timestamps,
             shadows: true,
             world_bytes: 0,
         };
         renderer.upload_environment(queue);
+        renderer.rebuild(gpu);
         renderer
-    }
-
-    fn create_post(
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        output_format: wgpu::TextureFormat,
-        targets: &Targets,
-        grade: &[u8],
-    ) -> Post {
-        let frag = wgpu::ShaderStages::FRAGMENT;
-        let layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("post"),
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: frag,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: frag,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        view_dimension: wgpu::TextureViewDimension::D3,
-                        multisampled: false,
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 2,
-                    visibility: frag,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 3,
-                    visibility: frag,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                },
-            ],
-        });
-        let module = crate::shader::module(
-            device,
-            "post",
-            &[crate::shader::Module::Color, crate::shader::Module::Dither],
-            include_str!("../shaders/post.wgsl"),
-        );
-        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("post"),
-            bind_group_layouts: &[Some(&layout)],
-            immediate_size: 0,
-        });
-        let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("post"),
-            layout: Some(&pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: &module,
-                entry_point: Some("vs_main"),
-                compilation_options: Default::default(),
-                buffers: &[],
-            },
-            primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState::default(),
-            fragment: Some(wgpu::FragmentState {
-                module: &module,
-                entry_point: Some("fs_main"),
-                compilation_options: Default::default(),
-                targets: &[Some(output_format.into())],
-            }),
-            multiview_mask: None,
-            cache: None,
-        });
-        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("grade"),
-            mag_filter: wgpu::FilterMode::Linear,
-            min_filter: wgpu::FilterMode::Linear,
-            ..Default::default()
-        });
-        let uniform = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("post"),
-            size: std::mem::size_of::<PostUniform>() as u64,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-        let grade = grade_texture(device, queue, grade);
-        let group = Self::post_group(device, &layout, targets, &grade, &sampler, &uniform);
-        Post {
-            pipeline,
-            layout,
-            group,
-            grade,
-            sampler,
-            uniform,
-        }
-    }
-
-    fn post_group(
-        device: &wgpu::Device,
-        layout: &wgpu::BindGroupLayout,
-        targets: &Targets,
-        grade: &wgpu::TextureView,
-        sampler: &wgpu::Sampler,
-        uniform: &wgpu::Buffer,
-    ) -> wgpu::BindGroup {
-        device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("post"),
-            layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&targets.resolved),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::TextureView(grade),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::Sampler(sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: uniform.as_entire_binding(),
-                },
-            ],
-        })
     }
 
     fn upload_environment(&mut self, queue: &wgpu::Queue) {
@@ -453,35 +314,51 @@ impl Renderer {
                 depth_or_array_layers: 1,
             },
         );
-        let grade = &self.environment.lighting.grade;
-        let post = PostUniform {
-            params: [
-                grade.vignette,
-                grade.highlight_shoulder,
-                if self.output_format.is_srgb() {
-                    1.0
-                } else {
-                    0.0
-                },
-                0.0,
-            ],
-        };
-        queue.write_buffer(&self.post.uniform, 0, bytemuck::bytes_of(&post));
+        self.post.set_openings(queue, &self.environment.openings);
+    }
+
+    /// Rebuilds the frame graph and the post targets for the current world, biome and
+    /// quality.
+    fn rebuild(&mut self, gpu: &Gpu) {
+        let features = self
+            .environment
+            .post
+            .features(&self.quality, self.water.is_some());
+        self.graph = graph::world_frame(features);
+        self.timer = self
+            .timestamps
+            .then(|| GpuTimer::new(&gpu.device, &gpu.queue, self.graph.passes().len()));
+        self.post
+            .configure(&gpu.device, &self.targets, features, self.quality.haze);
+    }
+
+    pub fn quality(&self) -> Quality {
+        self.quality
+    }
+
+    /// Changes the quality settings: render scale and post effects.
+    pub fn set_quality(&mut self, gpu: &Gpu, quality: Quality) {
+        self.quality = quality;
+        let scene = quality.scene_size(self.output_size);
+        if scene != self.targets.size {
+            self.targets = Targets::new(&gpu.device, scene);
+        }
+        self.rebuild(gpu);
+    }
+
+    /// The unit wakes: feed it the bodies that wade every frame
+    /// ([`Ripples::update`]); the renderer draws what it holds.
+    pub fn ripples_mut(&mut self) -> &mut Ripples {
+        &mut self.ripples
     }
 
     /// Replaces the lighting environment (same shadow resolution).
     pub fn set_environment(&mut self, gpu: &Gpu, environment: Environment) {
-        self.post.grade = grade_texture(&gpu.device, &gpu.queue, &environment.grade);
+        self.post
+            .set_grade(&gpu.device, &gpu.queue, &environment.grade);
         self.environment = environment;
-        self.post.group = Self::post_group(
-            &gpu.device,
-            &self.post.layout,
-            &self.targets,
-            &self.post.grade,
-            &self.post.sampler,
-            &self.post.uniform,
-        );
         self.upload_environment(&gpu.queue);
+        self.rebuild(gpu);
     }
 
     pub fn environment(&self) -> &Environment {
@@ -498,6 +375,9 @@ impl Renderer {
         let _span = tracing::info_span!("load_world").entered();
         self.terrain = None;
         self.statics = None;
+        self.water = None;
+        self.forest = None;
+        self.ripples.clear();
         self.world_bytes = 0;
         if let Some(desc) = &world.terrain {
             let terrain = TerrainGpu::new(
@@ -510,6 +390,33 @@ impl Renderer {
             )?;
             self.world_bytes += terrain.bytes;
             self.terrain = Some(terrain);
+            if let Some(water) = &world.water {
+                self.water = WaterGpu::new(
+                    &gpu.device,
+                    &gpu.queue,
+                    gpu.features,
+                    pack,
+                    desc,
+                    water,
+                    &world.water_textures,
+                    &self.frame_layout,
+                )?;
+                self.world_bytes += self.water.as_ref().map_or(0, |w| w.bytes);
+            }
+            if let Some(forest) = &world.forest {
+                let gpu_forest = ForestGpu::new(
+                    &gpu.device,
+                    &gpu.queue,
+                    gpu.features,
+                    pack,
+                    forest,
+                    desc,
+                    (self.environment.haze.0.to_array(), self.environment.haze.1),
+                    &self.frame_layout,
+                )?;
+                self.world_bytes += gpu_forest.bytes;
+                self.forest = Some(gpu_forest);
+            }
         }
         let statics = StaticsGpu::new(
             &gpu.device,
@@ -537,7 +444,16 @@ impl Renderer {
                 .write_buffer(&self.light_buffer, 0, bytemuck::cast_slice(lights));
         }
         self.point_lights = lights.len() as u32;
+        self.rebuild(gpu);
         Ok(())
+    }
+
+    pub fn water(&self) -> Option<&WaterGpu> {
+        self.water.as_ref()
+    }
+
+    pub fn forest(&self) -> Option<&ForestGpu> {
+        self.forest.as_ref()
     }
 
     pub fn statics(&self) -> Option<&StaticsGpu> {
@@ -576,32 +492,33 @@ impl Renderer {
         &self.graph
     }
 
-    /// Bytes of GPU memory in use: world, targets and the shadow map.
+    /// Bytes of GPU memory in use: world, targets, post effects and the shadow map.
     pub fn gpu_bytes(&self) -> u64 {
         let shadow = u64::from(self.shadow_resolution).pow(2) * 4;
-        self.world_bytes + self.targets.bytes() + shadow
+        self.world_bytes + self.targets.bytes() + self.post.bytes + shadow
     }
 
     pub fn resize(&mut self, gpu: &Gpu, size: [u32; 2]) {
-        if size == self.targets.size || size[0] == 0 || size[1] == 0 {
+        if size == self.output_size || size[0] == 0 || size[1] == 0 {
             return;
         }
-        self.targets = Targets::new(&gpu.device, size);
-        self.post.group = Self::post_group(
-            &gpu.device,
-            &self.post.layout,
-            &self.targets,
-            &self.post.grade,
-            &self.post.sampler,
-            &self.post.uniform,
-        );
+        self.output_size = size;
+        self.targets = Targets::new(&gpu.device, self.quality.scene_size(size));
+        self.rebuild(gpu);
     }
 
+    /// The output size.
     pub fn size(&self) -> [u32; 2] {
+        self.output_size
+    }
+
+    /// The size the scene renders at (output × render scale).
+    pub fn scene_size(&self) -> [u32; 2] {
         self.targets.size
     }
 
-    /// Renders one frame of `camera` at `seconds` (wind, canopy drift) into `output`.
+    /// Renders one frame of `camera` at `seconds` (wind, canopy drift, water) into
+    /// `output`.
     pub fn render(
         &mut self,
         gpu: &Gpu,
@@ -672,15 +589,44 @@ impl Renderer {
             );
             report.actors = actors.stats;
         }
+        if let Some(water) = &mut self.water {
+            report.water = water.prepare(
+                queue,
+                camera,
+                seconds,
+                &self.ripples,
+                lighting.daylight_ambient,
+            );
+        }
+        let sun = (lighting.sun_color, lighting.sun_intensity);
+        if let Some(forest) = &mut self.forest {
+            forest.prepare(queue, camera, sun.0, sun.1);
+        }
+        let grade = &lighting.grade;
+        self.post.prepare(
+            queue,
+            camera,
+            seconds,
+            self.targets.size,
+            self.output_size,
+            self.output_format.is_srgb(),
+            &self.environment.post,
+            (grade.vignette, grade.highlight_shoulder),
+            &self.quality,
+            sun,
+        );
 
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("frame"),
         });
-        let background = lighting.background;
+        let background = self.forest.as_ref().map_or(lighting.background, |f| {
+            f.background(lighting.background, sun.1)
+        });
         for (index, pass) in self.graph.passes().iter().enumerate() {
             let pass_start = Instant::now();
             let _span = tracing::trace_span!("pass", name = pass.name).entered();
             let timestamps = self.timer.as_ref();
+            let writes = timestamps.and_then(|t| t.render_writes(index));
             match (pass.name, pass.kind) {
                 (passes::CULL, PassKind::Compute) => {
                     if let Some(statics) = &self.statics {
@@ -715,7 +661,7 @@ impl Renderer {
                             }),
                             stencil_ops: None,
                         }),
-                        timestamp_writes: timestamps.and_then(|t| t.render_writes(index)),
+                        timestamp_writes: writes,
                         occlusion_query_set: None,
                         multiview_mask: None,
                     });
@@ -731,25 +677,59 @@ impl Renderer {
                         }
                     }
                 }
+                (passes::RIPPLES, PassKind::Render) => {
+                    if let Some(water) = &mut self.water {
+                        if water.ripples_pending() {
+                            report.draws += water.encode_ripples(&mut encoder, writes);
+                        } else {
+                            // Nothing to draw or clear: keep the pass measurable.
+                            drop(encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                                label: Some(passes::RIPPLES),
+                                timestamp_writes: timestamps.and_then(|t| t.compute_writes(index)),
+                            }));
+                        }
+                    }
+                }
+                (passes::CAUSTICS, PassKind::Render) => {
+                    if let Some(water) = &self.water {
+                        report.draws += water.encode_caustics(&mut encoder, writes);
+                    }
+                }
                 (passes::FORWARD, PassKind::Render) => {
                     let mut rp = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: Some(passes::FORWARD),
-                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                            view: &self.targets.color,
-                            depth_slice: None,
-                            resolve_target: Some(&self.targets.resolved),
-                            ops: wgpu::Operations {
-                                load: wgpu::LoadOp::Clear(wgpu::Color {
-                                    r: f64::from(background.x),
-                                    g: f64::from(background.y),
-                                    b: f64::from(background.z),
-                                    a: 1.0,
-                                }),
-                                // Multisampled colour is resolved in the pass (in tile memory
-                                // on Apple GPUs) and never stored.
-                                store: wgpu::StoreOp::Discard,
-                            },
-                        })],
+                        color_attachments: &[
+                            Some(wgpu::RenderPassColorAttachment {
+                                view: &self.targets.color,
+                                depth_slice: None,
+                                resolve_target: Some(&self.targets.resolved),
+                                ops: wgpu::Operations {
+                                    load: wgpu::LoadOp::Clear(wgpu::Color {
+                                        r: f64::from(background.x),
+                                        g: f64::from(background.y),
+                                        b: f64::from(background.z),
+                                        a: 1.0,
+                                    }),
+                                    // Multisampled colour is resolved in the pass (in tile
+                                    // memory on Apple GPUs) and never stored.
+                                    store: wgpu::StoreOp::Discard,
+                                },
+                            }),
+                            Some(wgpu::RenderPassColorAttachment {
+                                view: &self.targets.linear,
+                                depth_slice: None,
+                                resolve_target: Some(&self.targets.linear_resolved),
+                                ops: wgpu::Operations {
+                                    load: wgpu::LoadOp::Clear(wgpu::Color {
+                                        r: FAR_DEPTH,
+                                        g: 0.0,
+                                        b: 0.0,
+                                        a: 0.0,
+                                    }),
+                                    store: wgpu::StoreOp::Discard,
+                                },
+                            }),
+                        ],
                         depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
                             view: &self.targets.depth,
                             depth_ops: Some(wgpu::Operations {
@@ -758,7 +738,7 @@ impl Renderer {
                             }),
                             stencil_ops: None,
                         }),
-                        timestamp_writes: timestamps.and_then(|t| t.render_writes(index)),
+                        timestamp_writes: writes,
                         occlusion_query_set: None,
                         multiview_mask: None,
                     });
@@ -771,8 +751,11 @@ impl Renderer {
                     if let Some(actors) = &self.actors {
                         report.draws += actors.draw_forward(&mut rp, &self.frame_group);
                     }
-                    if let Some(terrain) = &self.terrain {
-                        report.draws += terrain.draw_water(&mut rp, &self.frame_group);
+                    if let Some(forest) = &self.forest {
+                        report.draws += forest.draw(&mut rp, &self.frame_group);
+                    }
+                    if let Some(water) = &self.water {
+                        report.draws += water.draw(&mut rp, &self.frame_group);
                     }
                     if let Some(statics) = &self.statics {
                         report.draws += statics.draw_transparent(&mut rp, &self.frame_group);
@@ -781,27 +764,25 @@ impl Renderer {
                         report.draws += actors.draw_transparent(&mut rp, &self.frame_group);
                     }
                 }
+                (passes::CONTACT, PassKind::Render) => {
+                    report.draws +=
+                        self.post
+                            .encode_contact(&mut encoder, &self.frame_group, writes);
+                }
+                (passes::BLOOM, PassKind::Render) => {
+                    report.draws += self
+                        .post
+                        .encode_bloom(&mut encoder, &self.frame_group, writes);
+                }
+                (passes::HAZE, PassKind::Render) => {
+                    report.draws += self
+                        .post
+                        .encode_haze(&mut encoder, &self.frame_group, writes);
+                }
                 (passes::POST, PassKind::Render) => {
-                    let mut rp = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                        label: Some(passes::POST),
-                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                            view: output,
-                            depth_slice: None,
-                            resolve_target: None,
-                            ops: wgpu::Operations {
-                                load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                                store: wgpu::StoreOp::Store,
-                            },
-                        })],
-                        depth_stencil_attachment: None,
-                        timestamp_writes: timestamps.and_then(|t| t.render_writes(index)),
-                        occlusion_query_set: None,
-                        multiview_mask: None,
-                    });
-                    rp.set_pipeline(&self.post.pipeline);
-                    rp.set_bind_group(0, &self.post.group, &[]);
-                    rp.draw(0..3, 0..1);
-                    report.draws += 1;
+                    report.draws +=
+                        self.post
+                            .encode_final(&mut encoder, &self.frame_group, output, writes);
                 }
                 (name, _) => unreachable!("no recorder for pass {name}"),
             }

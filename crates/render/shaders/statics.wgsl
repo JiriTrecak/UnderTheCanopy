@@ -104,7 +104,7 @@ fn vs_main(in: VertexIn, @builtin(instance_index) slot: u32) -> VsOut {
 }
 
 @fragment
-fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> @location(0) vec4f {
+fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
     var f: MaterialFragment;
     f.frag = in.clip;
     f.world = in.world;
@@ -117,7 +117,7 @@ fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> @location(0) vec4f 
     if (has(ALPHA_MASK) && shaded.a <= 0.0) {
         discard;
     }
-    return shaded;
+    return scene_out(shaded, in.world);
 }
 
 // --- Shadows -------------------------------------------------------------------------

@@ -14,7 +14,11 @@ use canopy_render::{
     device::DeviceOptions,
     environment::{BiomeConfig, LightingConfig},
     statics::StaticInstance,
-    terrain::{LayerKind, TerrainDesc, TerrainLayer, TextureGrid, WaterLook},
+    terrain::{LayerKind, TerrainDesc, TerrainLayer, TextureGrid},
+    water::{
+        DEFAULT_WAVES, WaterDesc, WaterProfile,
+        ripples::{Mover, WaterField},
+    },
 };
 use glam::{Mat4, Vec3};
 use std::path::PathBuf;
@@ -196,7 +200,12 @@ fn cube_blob() -> Vec<u8> {
 }
 
 fn write_pack() -> PathBuf {
-    let path = std::env::temp_dir().join(format!("canopy-render-test-{}.pack", std::process::id()));
+    static NEXT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+    let path = std::env::temp_dir().join(format!(
+        "canopy-render-test-{}-{}.pack",
+        std::process::id(),
+        NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    ));
     let file = std::fs::File::create(&path).unwrap();
     let mut writer = PackWriter::new(std::io::BufWriter::new(file)).unwrap();
     for (name, blob) in [
@@ -247,11 +256,6 @@ fn terrain() -> TerrainDesc {
             cell_size: 4.0,
             cells: [9, 9],
         },
-        water_look: WaterLook {
-            shallow: [0.1, 0.3, 0.3],
-            deep: [0.0, 0.1, 0.15],
-            clarity: 0.85,
-        },
         surroundings: None,
     }
 }
@@ -281,9 +285,7 @@ fn a_tiny_world_renders_without_holes() {
             transform: Mat4::from_translation(Vec3::new(0.0, 2.0, 0.0)),
             owner_color: None,
         }],
-        glows: Default::default(),
-        point_lights: Vec::new(),
-        actor_models: Vec::new(),
+        ..Default::default()
     };
     renderer.load_world(&gpu, &pack, &world).unwrap();
     let mut camera = RtsCamera::new([0.0, 0.0], None);
@@ -329,4 +331,176 @@ fn a_tiny_world_renders_without_holes() {
     // The cube stands in the middle: the centre column crosses it.
     let column = (0..height).map(|y| texels[(y * width + width / 2) as usize]);
     assert!(column.filter(|t| t[0] > 200 && t[1] < 80).count() > 10);
+}
+
+/// A basin west of the mound: bed −1 at the far west rising to the shore, water at 0.
+fn lake() -> TerrainDesc {
+    let mut t = terrain();
+    for (i, h) in t.heights.iter_mut().enumerate() {
+        let x = (i % 33) as f32 - 16.0;
+        if x < -2.0 {
+            *h = (-1.0 + (x + 16.0) * 0.08).min(*h);
+        }
+    }
+    t.water = vec![0.0; t.heights.len()];
+    t
+}
+
+fn gpu() -> Option<Gpu> {
+    let gpu = Gpu::headless(DeviceOptions::default()).unwrap()?;
+    if gpu.adapter.get_info().device_type == wgpu::DeviceType::Cpu {
+        eprintln!("software adapter {}: skipped", gpu.name());
+        return None;
+    }
+    Some(gpu)
+}
+
+#[test]
+fn a_tiny_lake_renders_with_wakes_and_every_post_effect() {
+    let Some(gpu) = gpu() else {
+        eprintln!("no GPU: skipped");
+        return;
+    };
+    let lighting: LightingConfig = serde_json::from_str(LIGHTING).unwrap();
+    let mut biome: BiomeConfig = serde_json::from_str(BIOME).unwrap();
+    biome.contact.strength = 0.4;
+    biome.bloom.strength = 0.3;
+    biome.atmosphere.enabled = true;
+    biome.atmosphere.shaft_density = 0.002;
+    biome.atmosphere.density = 0.0002;
+    biome.validate(&lighting).unwrap();
+    let environment = Environment::new(&lighting, &biome, 12.0, None);
+    let (width, height) = (256, 144);
+    let mut renderer = Renderer::new(&gpu, CAPTURE_FORMAT, [width, height], environment);
+    let pack_path = write_pack();
+    let pack = canopy_assets::Pack::load(&pack_path).unwrap();
+    let terrain = lake();
+    let profile = WaterProfile {
+        shallow: [0.024, 0.107, 0.117],
+        deep: [0.008, 0.021, 0.032],
+        clarity: 0.85,
+        ripple_scale: 0.15,
+        ripple_strength: 0.055,
+        foam_strength: 0.02,
+        reflection_strength: 0.5,
+        caustic_strength: 0.18,
+        cloud_strength: 0.03,
+        flow_speed: 1.0,
+        waves: DEFAULT_WAVES,
+    };
+    let world = World {
+        water: Some(WaterDesc::still(profile, terrain.span)),
+        terrain: Some(terrain.clone()),
+        ..Default::default()
+    };
+    renderer.load_world(&gpu, &pack, &world).unwrap();
+    let mut camera = RtsCamera::new([-6.0, 0.0], None);
+    camera.zoom_range = (0.05, 2.0);
+    camera.set_zoom(0.15);
+    let view: CameraView = camera.view(width as f32 / height as f32, &terrain);
+    // Bodies wading west to east through the lake for two seconds.
+    for f in 0..120 {
+        let t = f as f32 / 60.0;
+        let movers: Vec<Mover> = (0..4)
+            .map(|i| Mover {
+                id: i,
+                x: -12.0 + t * 2.0,
+                z: i as f32 * 2.0 - 3.0,
+                surface: 0,
+                elevation: 0.0,
+            })
+            .collect();
+        assert!(terrain.water(movers[0].x, 0.0) > terrain.walk(movers[0].x, 0.0, 0));
+        renderer
+            .ripples_mut()
+            .update(&movers, &terrain, t, [-6.0, 0.0]);
+    }
+    assert!(renderer.ripples_mut().len() >= 8);
+
+    let capture = Capture::new(&gpu.device, width, height);
+    let shoot = |renderer: &mut Renderer| {
+        let report = renderer.render(
+            &gpu,
+            &view,
+            2.0,
+            &capture.view,
+            Some(&|encoder| capture.copy(encoder)),
+        );
+        let pixels: Vec<[u8; 4]> = capture
+            .read(&gpu.device)
+            .unwrap()
+            .chunks_exact(4)
+            .map(|c| [c[0], c[1], c[2], c[3]])
+            .collect();
+        (report, pixels)
+    };
+    let (report, pixels) = shoot(&mut renderer);
+    if let Ok(out) = std::env::var("CANOPY_TEST_LAKE") {
+        let bytes: Vec<u8> = pixels.iter().flatten().copied().collect();
+        image::save_buffer(out, &bytes, width, height, image::ExtendedColorType::Rgba8).unwrap();
+    }
+    assert_eq!(
+        report.passes,
+        [
+            "cull", "skin", "shadow", "ripples", "caustics", "forward", "contact", "bloom", "haze",
+            "post"
+        ]
+    );
+    assert!(
+        report.water.cells > 0 && report.water.rings > 0,
+        "{report:?}"
+    );
+    let black = |p: &[[u8; 4]]| {
+        p.iter()
+            .filter(|t| t[0] < 4 && t[1] < 4 && t[2] < 4)
+            .count()
+    };
+    assert_eq!(black(&pixels), 0);
+    assert!(pixels.iter().all(|t| t[3] == 255));
+    // The west half is water: darker and bluer than the dry ground in the east.
+    let mean = |x0: u32, x1: u32| {
+        let mut sum = [0f32; 3];
+        let mut n = 0.0;
+        for y in height / 3..height * 2 / 3 {
+            for x in x0..x1 {
+                let t = pixels[(y * width + x) as usize];
+                for c in 0..3 {
+                    sum[c] += f32::from(t[c]);
+                }
+                n += 1.0;
+            }
+        }
+        sum.map(|v| v / n)
+    };
+    let water = mean(4, width / 5);
+    let ground = mean(width * 4 / 5, width - 4);
+    assert!(
+        water[2] / water[0].max(1.0) > ground[2] / ground[0].max(1.0),
+        "water {water:?} ground {ground:?}"
+    );
+    assert!(water[1] < ground[1], "water {water:?} ground {ground:?}");
+
+    // Half render scale: the same picture at the output size, no holes.
+    renderer.set_quality(
+        &gpu,
+        canopy_render::Quality {
+            render_scale: 0.5,
+            ..Default::default()
+        },
+    );
+    assert_eq!(renderer.scene_size(), [width / 2, height / 2]);
+    let (_, half) = shoot(&mut renderer);
+    assert_eq!(black(&half), 0);
+    let difference: f32 = pixels
+        .iter()
+        .zip(&half)
+        .map(|(a, b)| {
+            (0..3)
+                .map(|c| (f32::from(a[c]) - f32::from(b[c])).abs())
+                .sum::<f32>()
+        })
+        .sum::<f32>()
+        / (pixels.len() * 3) as f32;
+    assert!(difference < 12.0, "mean difference {difference}");
+    std::fs::remove_file(&pack_path).ok();
 }

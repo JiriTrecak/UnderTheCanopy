@@ -8,6 +8,38 @@ pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 pub const SHADOW_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 /// MSAA samples of the scene (D24, Q2).
 pub const SAMPLES: u32 = 4;
+/// Linear view depth of opaque surfaces, written by every opaque forward pipeline as its
+/// second colour target and resolved with the colour: `rg` = the depth rounded to half
+/// precision and the remainder, so interior pixels keep full precision through the
+/// (averaging) resolve. Read by water-free post passes (contact shadows, haze).
+pub const LINEAR_DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rg16Float;
+/// Linear depth of the background (no surface), metres.
+pub const FAR_DEPTH: f64 = 60000.0;
+
+/// The forward pass's colour targets for a pipeline: HDR colour with `blend`, and the
+/// linear depth, written only by opaque surfaces (`depth`). Every pipeline drawn in the
+/// forward pass uses this list.
+pub fn forward_targets(
+    blend: Option<wgpu::BlendState>,
+    depth: bool,
+) -> [Option<wgpu::ColorTargetState>; 2] {
+    [
+        Some(wgpu::ColorTargetState {
+            format: HDR_FORMAT,
+            blend,
+            write_mask: wgpu::ColorWrites::ALL,
+        }),
+        Some(wgpu::ColorTargetState {
+            format: LINEAR_DEPTH_FORMAT,
+            blend: None,
+            write_mask: if depth {
+                wgpu::ColorWrites::ALL
+            } else {
+                wgpu::ColorWrites::empty()
+            },
+        }),
+    ]
+}
 
 /// Depth state of scene geometry.
 pub fn scene_depth(write: bool) -> wgpu::DepthStencilState {
@@ -43,12 +75,15 @@ pub fn scene_multisample(alpha_to_coverage: bool) -> wgpu::MultisampleState {
     }
 }
 
-/// The scene's colour and depth for one output size.
+/// The scene's colour and depth at the internal resolution (output × render scale).
 pub struct Targets {
     pub size: [u32; 2],
     pub color: wgpu::TextureView,
     pub resolved: wgpu::TextureView,
     pub depth: wgpu::TextureView,
+    /// Multisampled linear depth (transient) and its resolve.
+    pub linear: wgpu::TextureView,
+    pub linear_resolved: wgpu::TextureView,
     bytes: u64,
 }
 
@@ -88,12 +123,19 @@ impl Targets {
                 attachment | wgpu::TextureUsages::TEXTURE_BINDING,
             ),
             depth: make("scene depth", DEPTH_FORMAT, SAMPLES, transient),
+            linear: make("linear depth", LINEAR_DEPTH_FORMAT, SAMPLES, transient),
+            linear_resolved: make(
+                "linear depth resolved",
+                LINEAR_DEPTH_FORMAT,
+                1,
+                attachment | wgpu::TextureUsages::TEXTURE_BINDING,
+            ),
             // Transient attachments take no memory where they are memoryless.
-            bytes: pixels * 8,
+            bytes: pixels * 12,
         }
     }
 
-    /// Memory of the targets that must exist in memory (the resolved colour).
+    /// Memory of the targets that must exist in memory (the resolved colour and depth).
     pub fn bytes(&self) -> u64 {
         self.bytes
     }

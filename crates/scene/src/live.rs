@@ -98,6 +98,43 @@ pub struct Actor {
     pub snap: bool,
     /// Selection body: circle radius and pick height in metres (units and buildings).
     pub body: Option<[f32; 2]>,
+    /// A ground unit that wakes water: its walking surface (0 the ground, `n` the deck
+    /// [`deck_index`] `n − 1`) and height above it.
+    pub walker: Option<(u32, f32)>,
+}
+
+/// The walking surface number of a deck name (0: the ground; unknown decks walk the
+/// ground).
+pub fn deck_index(terrain: &Terrain, surface: Option<&str>) -> u32 {
+    surface
+        .and_then(|name| terrain.deck_id(name))
+        .map_or(0, |id| u32::from(id.0) + 1)
+}
+
+/// Water and walking heights for the ripple emitter: the terrain's water and ground,
+/// and the simulation's bridge decks.
+pub struct SceneWater<'a> {
+    pub desc: &'a canopy_render::terrain::TerrainDesc,
+    pub terrain: &'a Terrain,
+}
+
+impl canopy_render::water::ripples::WaterField for SceneWater<'_> {
+    fn water(&self, x: f32, z: f32) -> f32 {
+        self.desc.water(x, z)
+    }
+
+    fn walk(&self, x: f32, z: f32, surface: u32) -> f32 {
+        let deck = surface
+            .checked_sub(1)
+            .and_then(|i| self.terrain.surfaces()?.decks().get(i as usize));
+        match deck {
+            Some(deck) => self
+                .terrain
+                .floor(f64::from(x), f64::from(z), Some(&deck.id))
+                .map_or_else(|| self.desc.walk(x, z, 0), |h| h as f32),
+            None => self.desc.walk(x, z, 0),
+        }
+    }
 }
 
 impl Actor {
@@ -113,6 +150,7 @@ impl Actor {
             poses: Poses::default(),
             snap: false,
             body: None,
+            walker: None,
         }
     }
 }
@@ -703,6 +741,11 @@ impl Presenter {
                         actor.rotation = Quat::from_rotation_y(rotation_y);
                     }
                     actor.position = position;
+                    // Ground bodies wake water (not flyers or lookout occupants).
+                    if flight.is_none() && garrison.is_none() {
+                        actor.walker =
+                            Some((deck_index(&self.terrain, e.public.surface.as_deref()), 0.0));
+                    }
                     actor.body = Some(Self::body(
                         d,
                         asset.health_height,
@@ -839,6 +882,7 @@ impl Presenter {
             }
             let mut actor = tracked.actor;
             actor.key = key(Part::Corpse, 0, id.0);
+            actor.walker = None;
             actor.snap = false;
             self.corpses.insert(
                 id,
