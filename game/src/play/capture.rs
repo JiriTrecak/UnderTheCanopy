@@ -11,7 +11,7 @@
 //! | `cmd:<id>` | presses the command `<id>` of the card (`build:<definition>`, `attack`) |
 //! | `key:<name>` | presses a key (`R`, `Shift+R`, `Ctrl+1`, `F1`) |
 //! | `move:x,y` · `click:x,y` · `rclick:x,y` · `drag:x0,y0,x1,y1` | the pointer |
-//! | `world:x,z` · `rworld:x,z` | moves the pointer over a ground point (cells), and right-clicks it |
+//! | `world:x,z[,h]` · `rworld:x,z[,h]` | moves the pointer over a ground point (cells), or `h` above it, and right-clicks it |
 //! | `look:x,z` · `look-selection` | the camera |
 //! | `ticks:n` | simulates `n` ticks (commands sent so far apply) |
 //! | `chat:<text>` | says a line |
@@ -137,6 +137,11 @@ pub fn run(
         game.world.terrain().clone(),
         Box::new(commands),
     );
+    play.set_trees(Arc::new(super::picking::Trees::of_scene(
+        &loaded.pack,
+        &loaded.scene.world.statics,
+        &loaded.scene.tree_slots,
+    )));
     let mut now = Duration::from_secs(5);
     let refresh = |play: &mut Play,
                    live: &mut LiveScene,
@@ -265,7 +270,8 @@ pub fn run(
             }
             "world" | "rworld" => {
                 let p = pair(arg)?;
-                let y = canopy_render::camera::Ground::height(terrain, p[0], p[1]);
+                let y = canopy_render::camera::Ground::height(terrain, p[0], p[1])
+                    + p.get(2).copied().unwrap_or(0.0);
                 let (at, _) = screen
                     .project(Vec3::new(p[0], y, p[1]))
                     .context("off screen")?;

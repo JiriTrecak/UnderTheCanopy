@@ -814,6 +814,11 @@ impl Drop for SimThread {
 pub(crate) mod ai_fixture;
 
 #[cfg(test)]
+#[path = "../../crates/sim/tests/economy_fixture/mod.rs"]
+#[allow(clippy::all)]
+pub(crate) mod economy_fixture;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

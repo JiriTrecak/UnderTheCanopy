@@ -37,7 +37,7 @@ use input::{Button, Input, Mods};
 use keys::{Keymap, Shortcut};
 use know::Knowledge;
 use orders::{Marker, Target, Targeting};
-use picking::{Body, Screen};
+use picking::{Body, Screen, Trees};
 use placement::{Ghost, Placement};
 use selection::{Candidate, ControlGroups, DOUBLE_PRESS, Recall, Selection};
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
@@ -55,6 +55,9 @@ pub const ERROR_FACT_TICKS: u32 = 5;
 pub const MAX_ALERTS: usize = 8;
 pub const ALERT_MERGE_TICKS: u32 = 120;
 pub const ALERT_MERGE_CELLS: f32 = 10.0;
+/// How far behind the ground point (metres along the ray) a tree still picks: its
+/// trunk stands on the ground the ray meets.
+pub const TREE_GROUND_SLACK: f32 = 0.5;
 
 /// Where commands go.
 pub trait Sink {
@@ -132,6 +135,15 @@ pub struct WorldUi {
     pub rally: Option<[f32; 2]>,
     /// The spell being aimed at the cursor.
     pub aim: Option<Aim>,
+    /// A hovered tree the selection can gather from: its ground ring.
+    pub tree: Option<Ring>,
+}
+
+/// A ground ring (world units).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Ring {
+    pub position: [f32; 2],
+    pub radius: f32,
 }
 
 /// A spell aimed at the cursor (old `AbilityAim`): the caster, the aimed cell, the area
@@ -184,6 +196,8 @@ pub struct Play {
     pub page: usize,
     screen: Option<Screen>,
     bodies: Vec<Body>,
+    /// The map's standing trees as drawn, for picking.
+    trees: Arc<Trees>,
     pointer: Option<Vec2>,
     press: Option<Press>,
     last_click: Option<(Vec2, Duration)>,
@@ -237,6 +251,7 @@ impl Play {
             page: 0,
             screen: None,
             bodies: Vec::new(),
+            trees: Arc::default(),
             pointer: None,
             press: None,
             last_click: None,
@@ -316,6 +331,11 @@ impl Play {
             .as_ref()?
             .camera
             .as_ref()
+    }
+
+    /// The map's trees as the static scene draws them (picked by their shape).
+    pub fn set_trees(&mut self, trees: Arc<Trees>) {
+        self.trees = trees;
     }
 
     /// Whether the pointer is over the HUD (no world hover there).
@@ -472,8 +492,10 @@ impl Play {
         };
     }
 
-    /// The entity under a pixel: a unit's capsule, else the building, item or resource
-    /// whose footprint holds the ground point (old fallback rule).
+    /// The entity under a pixel: a unit's capsule; else the building, item or resource
+    /// whose footprint holds the ground point (old fallback rule) or the standing tree
+    /// the camera ray enters, whichever the ray meets first; else known scenery without
+    /// a drawn shape by its footprint.
     fn pick(&self, px: Vec2, ground: &dyn Ground) -> Option<Target> {
         let screen = self.screen?;
         let k = &self.know;
@@ -482,34 +504,85 @@ impl Play {
         {
             return Target::of(k, id);
         }
-        let hit = screen.ground(px, ground)?;
+        let (origin, dir) = screen.ray(px);
+        let hit = screen.ground(px, ground);
         let reach = |d: &canopy_content::game::Definition| {
             d.footprint
                 .as_ref()
                 .map_or(0.8, |f| f.width.max(f.depth) as f32 / 2.0)
         };
-        let inside = |p: [f32; 2], r: f32| (p[0] - hit.x).abs() <= r && (p[1] - hit.z).abs() <= r;
-        for e in k.view.entities.iter() {
-            let d = k.def(e);
-            if d.kind == Kind::Unit || !k.selectable(e) {
-                continue;
+        let inside = |p: [f32; 2], r: f32| {
+            hit.is_some_and(|hit| (p[0] - hit.x).abs() <= r && (p[1] - hit.z).abs() <= r)
+        };
+        let footprint = k
+            .view
+            .entities
+            .iter()
+            .find(|e| {
+                let d = k.def(e);
+                d.kind != Kind::Unit && k.selectable(e) && inside(k.position(e), reach(d))
+            })
+            .map(|e| e.id().0);
+        // Trees are picked by their drawn shape, up to just behind the ground point.
+        let far = hit.map_or(screen.camera.far.max(64.0) * 1.5, |h| {
+            h.distance(origin) + TREE_GROUND_SLACK
+        });
+        let tree = self.trees.hit(origin, dir, far, |id| k.standing(id));
+        let id = match (footprint, tree) {
+            (Some(id), Some((tree, t))) => {
+                // Whichever the ray meets first: the building's body or the tree.
+                let depth = self
+                    .bodies
+                    .iter()
+                    .find(|b| b.id == id)
+                    .and_then(|b| b.enter(origin, dir, far))
+                    .or_else(|| hit.map(|h| h.distance(origin)))
+                    .unwrap_or(f32::MAX);
+                Some(if t < depth { tree } else { id })
             }
-            if inside(k.position(e), reach(d)) {
-                return Target::of(k, e.id().0);
-            }
+            (footprint, tree) => footprint.or(tree.map(|(id, _)| id)),
+        };
+        if let Some(id) = id {
+            return Target::of(k, id);
         }
-        // Trees and other known scenery resources.
+        // Other known scenery resources (no drawn shape) by their footprint.
         k.view
             .scenery
             .iter()
             .find(|s| {
-                s.resource.as_ref().is_some_and(|r| r.amount > 0)
+                self.trees.get(s.id.0).is_none()
+                    && s.resource.as_ref().is_some_and(|r| r.amount > 0)
                     && inside(
                         [s.position.x as f32 / 1000.0, s.position.y as f32 / 1000.0],
                         reach(k.catalog.get(s.definition)),
                     )
             })
             .and_then(|s| Target::of(k, s.id.0))
+    }
+
+    /// The ring of the hovered tree when the selection has a unit that could gather it
+    /// (a right-click would): trees show they are clickable like mines do.
+    pub fn tree_ring(&self) -> Option<Ring> {
+        if !matches!(self.mode, Mode::Idle) || self.cinematic().is_some() {
+            return None;
+        }
+        let k = &self.know;
+        let id = self.hovered?;
+        if !k.standing(id) {
+            return None;
+        }
+        let target = Target::of(k, id)?;
+        if !orders::commanded(k, self.selection.ids())
+            .iter()
+            .any(|&a| orders::harvests(k, a, &target))
+        {
+            return None;
+        }
+        let (position, radius) = self
+            .trees
+            .ring(id)
+            .unwrap_or((target.position, orders::GATHER_RADIUS));
+        Some(Ring { position, radius })
     }
 
     /// The ground cell under a pixel, as a command destination.
@@ -663,6 +736,7 @@ impl Play {
             drag,
             rally,
             aim: self.aim(),
+            tree: self.tree_ring(),
         }
     }
 

@@ -87,6 +87,8 @@ pub struct WorldUiInput {
     pub markers: Vec<GroundMarker>,
     pub placement: Option<PlacementMark>,
     pub aim: Option<AimMark>,
+    /// A hovered tree's ring (x, z, radius): the neutral hover ring of a body.
+    pub tree: Option<[f32; 3]>,
 }
 
 impl Default for WorldUiInput {
@@ -101,6 +103,7 @@ impl Default for WorldUiInput {
             markers: Vec::new(),
             placement: None,
             aim: None,
+            tree: None,
         }
     }
 }
@@ -555,13 +558,25 @@ impl WorldUi {
                 };
                 circle(
                     out,
-                    b,
+                    b.radius,
+                    b.surface,
                     at(b),
                     field,
                     circle_color(relation, target),
                     !chosen && !target,
                 );
             }
+        }
+        if let Some([x, z, radius]) = input.tree {
+            circle(
+                out,
+                radius,
+                0,
+                Vec3::new(x, 0.0, z),
+                field,
+                circle_color(Relation::Neutral, false),
+                true,
+            );
         }
         // Rally routes and flags of the viewer's selected producers.
         for b in bodies.iter().filter(|b| selected(b.id)) {
@@ -765,20 +780,22 @@ fn solid(out: &mut WorldUiFrame, [x0, y0, x1, y1]: [f32; 4], color: [f32; 4]) {
 
 /// A selection ring draped on the walking surface (old `SelectionCircles.drape`): one
 /// quad per sector from the inner glow to the rim, its profile drawn per pixel.
+#[allow(clippy::too_many_arguments)]
 fn circle(
     out: &mut WorldUiFrame,
-    b: &Body,
+    radius: f32,
+    surface: u32,
     at: Vec3,
     field: &dyn WaterField,
     hex: u32,
     hover: bool,
 ) {
     let color = linear(hex);
-    let width = (0.07 + b.radius * 0.025).min(0.2) * if hover { 0.7 } else { 1.0 };
+    let width = (0.07 + radius * 0.025).min(0.2) * if hover { 0.7 } else { 1.0 };
     let opacity = if hover { 0.5 } else { 1.0 };
     let (inner, outer) = (PROFILE[0].1, PROFILE[PROFILE.len() - 1].1);
     let corner = |a: f32, across: f32, height: f32| {
-        let radius = b.radius + width * across;
+        let radius = radius + width * across;
         GroundVertex {
             position: [at.x + a.cos() * radius, height, at.z + a.sin() * radius],
             color: [color[0], color[1], color[2], opacity],
@@ -787,13 +804,8 @@ fn circle(
         }
     };
     let angle = |s: usize| s as f32 / SECTORS as f32 * std::f32::consts::TAU;
-    let height = |a: f32| {
-        field.walk(
-            at.x + a.cos() * b.radius,
-            at.z + a.sin() * b.radius,
-            b.surface,
-        ) + 0.07
-    };
+    let height =
+        |a: f32| field.walk(at.x + a.cos() * radius, at.z + a.sin() * radius, surface) + 0.07;
     let mut h0 = height(0.0);
     let first = h0;
     for s in 0..SECTORS {

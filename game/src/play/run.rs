@@ -18,7 +18,7 @@ use super::{
     keys::{Keymap, Shortcut},
     know::Knowledge,
     overlay,
-    picking::{Body, Screen},
+    picking::{Body, Screen, Trees},
 };
 use crate::{
     live::LiveScene,
@@ -215,6 +215,11 @@ impl InMatch {
         );
         let know = Knowledge::new(content.clone(), catalog.clone(), view0, start.me);
         let mut play = Play::new(know, terrain, Box::new(commands));
+        play.set_trees(Arc::new(Trees::of_scene(
+            &loaded.pack,
+            &loaded.scene.world.statics,
+            &loaded.scene.tree_slots,
+        )));
         play.echo_chat = !start.chat_server;
         play.name = start.name;
         for (slot, ids) in start.groups.iter().flatten().enumerate() {
@@ -1068,6 +1073,9 @@ pub(crate) fn world_ui_input(
             valid: g.problem.is_none(),
             entrance: g.entrance,
         }),
+        tree: world_ui
+            .tree
+            .map(|r| [r.position[0], r.position[1], r.radius]),
         ..WorldUiInput::default()
     }
 }
