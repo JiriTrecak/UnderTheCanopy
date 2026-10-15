@@ -450,7 +450,9 @@ impl Vision {
                 );
                 if before != after {
                     self.index.remove(key, before);
-                    self.index.insert(key, after);
+                    self.index.insert(key, spec.teams, after);
+                } else if sensor.spec.teams != spec.teams {
+                    self.index.reteam(key, spec.teams, after);
                 }
                 Sensor {
                     key,
@@ -462,7 +464,7 @@ impl Vision {
                 let footprint = sensor::footprint(terrain, &self.ground, &self.decks, &spec);
                 self.cover(None, Some((spec.teams, &footprint)));
                 self.index
-                    .insert(key, self.index.circle(spec.origin, spec.radius));
+                    .insert(key, spec.teams, self.index.circle(spec.origin, spec.radius));
                 Sensor {
                     key,
                     spec,

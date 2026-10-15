@@ -13,10 +13,19 @@ const SLACK: i64 = 1500;
 /// Inclusive sector range `(x0, y0, x1, y1)`.
 pub type Sectors = (usize, usize, usize, usize);
 
+/// A sensor in a sector: its key, the teams sharing its sight and its own sector range,
+/// so queries skip other teams' sensors and duplicates without looking sensors up.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+struct Entry {
+    key: SensorKey,
+    teams: u16,
+    range: Sectors,
+}
+
 #[derive(Debug, Clone)]
 pub struct SectorIndex {
     side: usize,
-    buckets: Vec<Vec<SensorKey>>,
+    buckets: Vec<Vec<Entry>>,
 }
 
 impl SectorIndex {
@@ -51,10 +60,12 @@ impl SectorIndex {
         )
     }
 
-    pub fn insert(&mut self, key: SensorKey, range: Sectors) {
+    /// Adds `key`, shared by the team bits `teams`, to the sectors of `range`.
+    pub fn insert(&mut self, key: SensorKey, teams: u16, range: Sectors) {
+        let entry = Entry { key, teams, range };
         for y in range.1..=range.3 {
             for x in range.0..=range.2 {
-                self.buckets[y * self.side + x].push(key);
+                self.buckets[y * self.side + x].push(entry);
             }
         }
     }
@@ -63,30 +74,46 @@ impl SectorIndex {
         for y in range.1..=range.3 {
             for x in range.0..=range.2 {
                 let bucket = &mut self.buckets[y * self.side + x];
-                if let Some(i) = bucket.iter().position(|&k| k == key) {
+                if let Some(i) = bucket.iter().position(|e| e.key == key) {
                     bucket.swap_remove(i);
                 }
             }
         }
     }
 
-    /// Calls `visit` once for every key whose range overlaps `query`; `range_of` gives a
-    /// key's own range. Stops early when `visit` returns true, and returns whether it did.
+    /// Changes the teams sharing `key` in place (its range is unchanged).
+    pub fn reteam(&mut self, key: SensorKey, teams: u16, range: Sectors) {
+        for y in range.1..=range.3 {
+            for x in range.0..=range.2 {
+                let bucket = &mut self.buckets[y * self.side + x];
+                if let Some(e) = bucket.iter_mut().find(|e| e.key == key) {
+                    e.teams = teams;
+                }
+            }
+        }
+    }
+
+    /// Calls `visit` once for every key whose range overlaps `query` and whose teams
+    /// include one of `teams` (`None`: every key). Stops early when `visit` returns
+    /// true, and returns whether it did.
     pub fn any(
         &self,
         query: Sectors,
-        range_of: impl Fn(SensorKey) -> Option<Sectors>,
+        teams: Option<u16>,
         mut visit: impl FnMut(SensorKey) -> bool,
     ) -> bool {
         for y in query.1..=query.3 {
             for x in query.0..=query.2 {
-                for &key in &self.buckets[y * self.side + x] {
+                for e in &self.buckets[y * self.side + x] {
+                    if teams.is_some_and(|t| e.teams & t == 0) {
+                        continue;
+                    }
                     // The first sector both ranges share owns the candidate.
-                    let Some(r) = range_of(key) else { continue };
+                    let r = e.range;
                     if x != query.0.max(r.0) || y != query.1.max(r.1) {
                         continue;
                     }
-                    if visit(key) {
+                    if visit(e.key) {
                         return true;
                     }
                 }
@@ -95,13 +122,13 @@ impl SectorIndex {
         false
     }
 
-    /// Every key and the sectors holding it, for comparisons.
-    pub fn contents(&self) -> Vec<(SensorKey, usize)> {
+    /// Every entry (key, teams, range) and the sector holding it, for comparisons.
+    pub fn contents(&self) -> Vec<(SensorKey, u16, Sectors, usize)> {
         let mut out: Vec<_> = self
             .buckets
             .iter()
             .enumerate()
-            .flat_map(|(i, b)| b.iter().map(move |&k| (k, i)))
+            .flat_map(|(i, b)| b.iter().map(move |e| (e.key, e.teams, e.range, i)))
             .collect();
         out.sort_unstable();
         out

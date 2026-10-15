@@ -1,0 +1,129 @@
+//! The measured crowd battle (`canopy shot --crowd N`, `just bench-sim`): eight players
+//! with N soldiers each facing each other around the middle of a map's starts. A stress
+//! scenario for measurements, not a game mode; it picks its soldiers from the content's
+//! rules, never by id.
+
+use crate::{MatchSetup, Slot, SlotKind, math, terrain::footprint::placement_geometry_error};
+use canopy_content::{
+    Content,
+    game::{Definition, Kind},
+    map::UtcMap,
+    placement::{Owner, Placement, Point},
+};
+
+/// Players of a crowd battle.
+pub const PLAYERS: u8 = 8;
+
+/// The building-grid position nearest to (x, z) for `d`'s footprint.
+fn aligned(d: &Definition, x: f64, z: f64) -> Point {
+    let (x, z) = (x.floor(), z.floor());
+    let steps = (0..8).map(|i| f64::from(i) * 0.5);
+    let (dx, dz) = steps
+        .clone()
+        .flat_map(|dx| steps.clone().map(move |dz| (dx, dz)))
+        .find(|(dx, dz)| placement_geometry_error(d, x + dx, z + dz, 0.0).is_none())
+        .unwrap_or_default();
+    Point {
+        x: x + dx,
+        y: z + dz,
+        surface: None,
+    }
+}
+
+/// Adds eight groups of `per_player` soldiers to `map` in a ring around the middle of the
+/// starts, each facing the centre: the default race's animated, trainable, non-hero
+/// fighters in turn. Each player also keeps a small building behind its soldiers, so
+/// skirmish rules keep it in the match. Returns the match setup (eight human slots, no
+/// computer players).
+pub fn crowd(map: &mut UtcMap, content: &Content, per_player: u32) -> Result<MatchSetup, String> {
+    let race = content
+        .rules
+        .races
+        .get(&content.rules.default_race)
+        .ok_or("the default race is missing")?;
+    let fighters: Vec<&canopy_content::Id> = race
+        .roster
+        .iter()
+        .filter(|id| {
+            content.definition(id.as_str()).is_some_and(|d| {
+                d.kind == Kind::Unit
+                    && !d.is_hero()
+                    && d.behaviors.combat.is_some()
+                    && d.behaviors.work.is_none()
+                    && content
+                        .asset(d.asset.as_str())
+                        .is_some_and(|a| a.character.is_some())
+            })
+        })
+        .collect();
+    if fighters.is_empty() {
+        return Err("the default race has no soldiers".into());
+    }
+    // A colony without buildings is defeated at once (skirmish rules).
+    let shelter = race
+        .roster
+        .iter()
+        .filter_map(|id| content.definition(id.as_str()))
+        .filter(|d| d.kind == Kind::Building)
+        .min_by_key(|d| d.footprint.as_ref().map_or(u32::MAX, |f| f.width * f.depth))
+        .ok_or("the default race has no building")?;
+    let n = map.player_starts.len().max(1) as f64;
+    let cx = map.player_starts.iter().map(|s| s.x).sum::<f64>() / n;
+    let cz = map.player_starts.iter().map(|s| s.z).sum::<f64>() / n;
+    let side = (f64::from(per_player)).sqrt().ceil() as u32;
+    for player in 0..PLAYERS {
+        let angle = f64::from(player) / f64::from(PLAYERS) * std::f64::consts::TAU;
+        let (dx, dz) = (math::sin(angle), math::cos(angle));
+        let (gx, gz) = (cx + dx * 24.0, cz + dz * 24.0);
+        let facing = math::atan2(-dx, -dz).to_degrees().rem_euclid(360.0);
+        map.entities.push(Placement {
+            activation: None,
+            id: format!("crowd-{player}-shelter"),
+            map_knowledge: None,
+            definition: shelter.id.clone(),
+            position: aligned(shelter, gx + dx * 22.0, gz + dz * 22.0),
+            rotation: 0.0,
+            owner: Owner::Player(player),
+            initial_state: None,
+            appearance: None,
+        });
+        for i in 0..per_player {
+            let (row, column) = (i / side, i % side);
+            // Rows step away from the centre, columns across.
+            let across = f64::from(column) - f64::from(side - 1) / 2.0;
+            let back = f64::from(row);
+            // One unit per navigation cell, so none waits to be placed.
+            let x = (gx + dz * across * 1.5 + dx * back * 1.5).round();
+            let z = (gz - dx * across * 1.5 + dz * back * 1.5).round();
+            let definition = fighters[(i as usize + player as usize) % fighters.len()].clone();
+            map.entities.push(Placement {
+                activation: None,
+                id: format!("crowd-{player}-{i}"),
+                map_knowledge: None,
+                definition,
+                position: Point {
+                    x,
+                    y: z,
+                    surface: None,
+                },
+                rotation: facing,
+                owner: Owner::Player(player),
+                initial_state: None,
+                appearance: None,
+            });
+        }
+    }
+    Ok(MatchSetup {
+        seed: 1,
+        slots: (0..PLAYERS)
+            .map(|player| Slot {
+                player,
+                kind: SlotKind::Human,
+                name: None,
+                team: None,
+                hero: None,
+                race: None,
+            })
+            .collect(),
+    })
+}
