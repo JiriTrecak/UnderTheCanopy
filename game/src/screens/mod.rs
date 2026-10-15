@@ -169,6 +169,8 @@ pub struct Game {
     play_options: PlayOptions,
     /// The cursor last set on the window.
     cursor: Option<winit::window::CursorIcon>,
+    /// The window's width in logical pixels (the compact HUD's dock scale).
+    hud_width: f32,
     modifiers: ModifiersState,
     started: Instant,
     last_frame: Instant,
@@ -221,6 +223,7 @@ impl Game {
             catalog,
             play_options,
             cursor: None,
+            hud_width: 0.0,
             paths,
             settings,
             settings_dirty: false,
@@ -724,6 +727,12 @@ impl Game {
     /// One frame: boot, network, loading, the match, the UI's actions, then the UI's
     /// models. Returns what the window should do.
     pub fn update(&mut self, ctx: &mut Ctx<'_>) -> Requests {
+        // The compact HUD depends on the window's width.
+        let width = ctx.size[0] as f32 / ctx.scale.max(0.1);
+        if (width - self.hud_width).abs() > 0.5 {
+            self.hud_width = width;
+            self.apply_hud();
+        }
         let now = Instant::now();
         let dt = (now - self.last_frame).as_secs_f32().min(0.25);
         self.last_frame = now;
@@ -1264,6 +1273,13 @@ impl Game {
 
     fn open_saves(&mut self) {
         self.saves_list = self.library.list();
+        // In a match only saves of its mode are listed (old `savesForMode`: campaign and
+        // skirmish saves are kept apart); the main menu lists every save.
+        if self.flow.in_match()
+            && let Some(mode) = self.playing.as_ref().and_then(|p| p.kind.save_mode())
+        {
+            self.saves_list.retain(|s| s.mode == mode);
+        }
         self.saves_status.clear();
         self.apply(Intent::Show(Overlay::Saves));
     }
@@ -1352,12 +1368,13 @@ impl Game {
         }
     }
 
-    /// The HUD size setting on the in-match HUD (`hud.json`'s dock).
+    /// The HUD size and layout settings on the in-match HUD (`hud.json`'s dock).
     fn apply_hud(&mut self) {
+        let width = self.hud_width;
         if let Some(dock) = self.host.ui.find("hud/dock") {
             self.host
                 .ui
-                .set_scale(dock, Some(self.settings.hud.scale()));
+                .set_scale(dock, Some(self.settings.hud.dock_scale(width)));
         }
     }
 

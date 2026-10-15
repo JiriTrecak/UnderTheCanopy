@@ -30,7 +30,7 @@ use crate::{
 use anyhow::Result;
 use canopy_render::{
     CameraView, FrameReport, Gpu, Renderer, RtsCamera,
-    camera::{EDGE_SCROLL_PIXELS, Ground, MAX_STEP_MS},
+    camera::{EDGE_SCROLL_PIXELS, MAX_STEP_MS},
 };
 use canopy_sim::catalog::Catalog;
 use canopy_ui::{DrawList, Ui};
@@ -118,6 +118,8 @@ pub struct InMatch {
     camera_view: Option<CameraView>,
     /// The unit camera's blend between poses.
     follow: follow::Follow,
+    /// The RTS focus before a mission cinematic moved the view.
+    cinematic_focus: Option<[f32; 2]>,
     screen: Option<Screen>,
     stats: DebugStats,
     frames: u32,
@@ -237,6 +239,7 @@ impl InMatch {
             last_tick: None,
             camera_view: None,
             follow: follow::Follow::default(),
+            cinematic_focus: None,
             screen: None,
             stats: DebugStats::default(),
             frames: 0,
@@ -485,20 +488,8 @@ impl InMatch {
             return None;
         }
         let id = self.play.selection.focus()?;
-        let transform = self.live.entity_transform(id)?;
-        let k = self.play.knowledge();
-        let d = k.def_of(id)?;
-        let asset = self.content.asset(d.asset.as_str());
-        let subject = follow::Subject::of(
-            transform,
-            asset.and_then(|a| a.camera_anchor.as_ref()),
-            asset.and_then(|a| a.health_height),
-        );
-        let mut pose = follow::pose(&subject, mode)?;
-        if mode == CameraMode::ThirdPerson {
-            let terrain = self.loaded.scene.terrain();
-            follow::clear_boom(&mut pose, |x, z| terrain.height(x, z));
-        }
+        let subject = follow::subject(&self.live, self.play.knowledge(), id)?;
+        let pose = follow::ground_pose(&subject, mode, self.loaded.scene.terrain())?;
         Some(self.follow.view((mode, id), &pose, dt, aspect))
     }
 
@@ -512,8 +503,29 @@ impl InMatch {
     }
 
     fn update_camera(&mut self, size: [u32; 2], scale: f32, dt_ms: f32, free: bool, typing: bool) {
-        // A unit camera ignores panning and zoom (old `followingUnit`).
-        let steer = free && !typing && self.play.camera_mode == CameraMode::Rts;
+        // A unit camera ignores panning and zoom (old `followingUnit`); so does a
+        // cinematic, which looks at its scene and gives the view back afterwards.
+        let cinematic = self.play.cinematic();
+        match (cinematic, self.cinematic_focus) {
+            (Some(scene), saved) => {
+                if saved.is_none() {
+                    self.cinematic_focus = Some(self.camera.focus);
+                }
+                self.play.camera_mode = CameraMode::Rts;
+                if let Some([x, z]) = scene {
+                    self.camera.look_at(x, z);
+                }
+            }
+            (None, Some([x, z])) => {
+                self.camera.look_at(x, z);
+                self.cinematic_focus = None;
+            }
+            (None, None) => {}
+        }
+        let steer = free
+            && !typing
+            && cinematic.is_none()
+            && self.play.camera_mode == CameraMode::Rts;
         let mut dir = [0.0f32, 0.0];
         if steer {
             if self.held(Shortcut::PanLeft) {

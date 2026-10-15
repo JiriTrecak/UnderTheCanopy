@@ -264,6 +264,26 @@ impl Play {
         self.know.me.is_none()
     }
 
+    /// A mission cinematic holds the match (old `MissionHud.active`): a scene, or a
+    /// cinematic line still playing, before the outcome and without a script error.
+    /// Returns where the scene stands (x, z) when it has a place.
+    pub fn cinematic(&self) -> Option<Option<[f32; 2]>> {
+        let v = &self.know.view;
+        let m = v.mission.as_ref()?;
+        if v.outcome.is_some() || m.error.is_some() {
+            return None;
+        }
+        let line = m.dialogue.as_ref().is_some_and(|d| d.cinematic && d.remaining > 0);
+        match &m.scene {
+            Some(scene) => Some(Some([
+                scene.position.x as f32 / 1000.0,
+                scene.position.y as f32 / 1000.0,
+            ])),
+            None if line => Some(None),
+            None => None,
+        }
+    }
+
     /// Whether the pointer is over the HUD (no world hover there).
     pub fn set_over_ui(&mut self, over: bool) {
         self.over_ui = over;
@@ -584,7 +604,12 @@ impl Play {
             .and_then(|p| p.rally.as_ref())
             .map(|r| [r.point.x as f32 / 1000.0, r.point.y as f32 / 1000.0]);
         WorldUi {
-            selected: self.selection.ids().to_vec(),
+            // No selection rings during a cinematic (old `gameSelect([])`).
+            selected: if self.cinematic().is_some() {
+                Vec::new()
+            } else {
+                self.selection.ids().to_vec()
+            },
             hovered: self.hovered,
             health,
             markers: self
@@ -769,12 +794,34 @@ impl Play {
                 self.held.clear();
                 self.mods = Mods::default();
             }
+            // A cinematic takes no world clicks (old: input reset every frame).
+            Input::Button { pressed: true, .. } if self.cinematic().is_some() => {
+                self.press = None;
+            }
             Input::Button { button, pressed } => self.button(*button, *pressed, ground),
             Input::Key {
                 key,
                 pressed,
                 repeat,
             } => {
+                if *pressed && self.cinematic().is_some() {
+                    // Only the game menu opens during a cinematic (old `blockKey`);
+                    // Escape still reaches it (D39).
+                    let chord = Chord {
+                        code: keys::code_of(key),
+                        ctrl: self.mods.ctrl,
+                        alt: self.mods.alt && *key != "Alt",
+                        shift: self.mods.shift,
+                        meta: self.mods.logo,
+                    };
+                    if !*repeat
+                        && (*key == "Escape"
+                            || self.keymap.pressed(&chord).contains(&Shortcut::GameMenu))
+                    {
+                        self.events.push(Event::OpenMenu);
+                    }
+                    return;
+                }
                 if *pressed {
                     if !self.held.contains(key) {
                         self.held.push(key);

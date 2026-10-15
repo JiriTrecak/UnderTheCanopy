@@ -159,6 +159,37 @@ fn look_rotation(eye: Vec3, target: Vec3) -> Quat {
     Quat::from_rotation_y(yaw) * Quat::from_rotation_x(pitch)
 }
 
+/// The subject of a close camera: the focused unit as the live scene draws it, with its
+/// render asset's anchor.
+pub fn subject(
+    live: &crate::live::LiveScene,
+    know: &super::know::Knowledge,
+    id: u32,
+) -> Option<Subject> {
+    let transform = live.entity_transform(id)?;
+    let d = know.def_of(id)?;
+    let asset = know.content.asset(d.asset.as_str());
+    Some(Subject::of(
+        transform,
+        asset.and_then(|a| a.camera_anchor.as_ref()),
+        asset.and_then(|a| a.health_height),
+    ))
+}
+
+/// The close pose of the focused unit in `mode`, the third-person boom kept in front
+/// of the ground.
+pub fn ground_pose(
+    subject: &Subject,
+    mode: CameraMode,
+    ground: &dyn canopy_render::camera::Ground,
+) -> Option<Pose> {
+    let mut pose = pose(subject, mode)?;
+    if mode == CameraMode::ThirdPerson {
+        clear_boom(&mut pose, |x, z| ground.height(x, z));
+    }
+    Some(pose)
+}
+
 /// What the close camera shows over time.
 #[derive(Debug, Clone, Default)]
 pub struct Follow {

@@ -360,6 +360,38 @@ pub fn run(
         }
     }
 
+    // A unit camera (J) looks from the focused unit, as the window would once its blend
+    // ends; the first-person body is not drawn.
+    let mode = play.camera_mode;
+    if mode != super::follow::CameraMode::Rts {
+        live.hidden_entity = (mode == super::follow::CameraMode::FirstPerson)
+            .then(|| play.selection.focus())
+            .flatten();
+        screen = refresh(
+            &mut play,
+            &mut live,
+            &mut renderer,
+            &mut camera,
+            &newest,
+            previous.as_ref(),
+            &view0,
+            &game.world,
+            now,
+        );
+        if let Some(pose) = play.selection.focus().and_then(|id| {
+            let subject = super::follow::subject(&live, play.knowledge(), id)?;
+            super::follow::ground_pose(&subject, mode, terrain)
+        }) {
+            let aspect = size[0] as f32 / size[1].max(1) as f32;
+            screen.camera = super::follow::Follow::default().view(
+                (mode, 0),
+                &pose,
+                super::follow::TRANSITION_SECONDS,
+                aspect,
+            );
+        }
+    }
+
     // How the simulation judges the ghost's site (it knows everything).
     if let (Some(ghost), super::Mode::Place { placement, .. }) = (play.ghost(), &play.mode) {
         let verdict = game.world.can_build(
