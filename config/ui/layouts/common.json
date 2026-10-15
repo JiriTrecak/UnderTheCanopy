@@ -48,6 +48,7 @@
       "children": [
         { "id": "portrait", "kind": "image", "class": "hero-portrait" },
         { "id": "health", "kind": "bar", "class": "hero-health", "value": 1 },
+        { "id": "timer", "kind": "label", "class": "hero-timer" },
         { "id": "key", "kind": "label", "class": "hero-key" }
       ]
     },

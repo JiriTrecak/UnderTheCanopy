@@ -1123,4 +1123,31 @@ fn the_sanctuary_offers_to_revive_a_fallen_hero() {
         .find(|c| c.id == format!("revive:{hero}"))
         .expect("a revive command");
     assert_eq!(revive.reason, None, "affordable and ready");
+
+    // Its portrait counts down the revival: one second (40 ticks) at level one.
+    let portrait = |world: &World| {
+        let content = world.catalog().content.clone();
+        let know = Knowledge::new(
+            content.clone(),
+            Arc::new(Catalog::new(content)),
+            Arc::new(world.view(ef::P1)),
+            Some(0),
+        );
+        super::hud::revival(&know, hero)
+    };
+    assert_eq!(portrait(&world), None, "fallen, nobody reviving it yet");
+    let refused = ef::try_command(
+        &mut world,
+        serde_json::json!({"type": "revive", "actor": sanctuary, "hero": hero}),
+    );
+    assert_eq!(refused, None);
+    assert_eq!(portrait(&world), Some(Some(1)));
+    for _ in 0..30 {
+        world.step();
+    }
+    assert_eq!(
+        portrait(&world),
+        Some(Some(1)),
+        "a part second shows as a whole"
+    );
 }

@@ -2,7 +2,9 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [],
-    "improved": [],
+    "improved": [
+      "A fallen hero keeps their portrait in the top left, greyed out, and shows the seconds left while they are being revived."
+    ],
     "fixed": [
       "Fallen heroes can be revived again: the Sanctuary and Ancestor Shrine offer Revive for each fallen hero."
     ],

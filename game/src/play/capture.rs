@@ -11,7 +11,10 @@
 //! | `cmd:<id>` | presses the command `<id>` of the card (`build:<definition>`, `attack`) |
 //! | `key:<name>` | presses a key (`R`, `Shift+R`, `Ctrl+1`, `F1`) |
 //! | `move:x,y` · `click:x,y` · `rclick:x,y` · `drag:x0,y0,x1,y1` | the pointer |
-//! | `world:x,z[,h]` · `rworld:x,z[,h]` | moves the pointer over a ground point (cells), or `h` above it, and right-clicks it |
+//! | `world:x,z[,h]` · `rworld:x,z[,h]` · `lworld:x,z[,h]` | moves the pointer over a ground point (cells), or `h` above it, and right- or left-clicks it |
+//! | `fund:<item>,<amount>` | sets the seat's stock of `<item>` |
+//! | `fall:<text>` | the own hero whose definition id contains `<text>` falls (dies) |
+//! | `revive:<text>` | selects the first finished own building that revives and revives that fallen hero |
 //! | `look:x,z` · `look-selection` | the camera |
 //! | `ticks:n` | simulates `n` ticks (commands sent so far apply) |
 //! | `chat:<text>` | says a line |
@@ -268,7 +271,7 @@ pub fn run(
                     );
                 }
             }
-            "world" | "rworld" => {
+            "world" | "rworld" | "lworld" => {
                 let p = pair(arg)?;
                 let y = canopy_render::camera::Ground::height(terrain, p[0], p[1])
                     + p.get(2).copied().unwrap_or(0.0);
@@ -276,15 +279,14 @@ pub fn run(
                     .project(Vec3::new(p[0], y, p[1]))
                     .context("off screen")?;
                 play.input(&Input::PointerMoved(at), terrain);
-                if verb == "rworld" {
+                if verb != "world" {
+                    let button = if verb == "rworld" {
+                        Button::Right
+                    } else {
+                        Button::Left
+                    };
                     for pressed in [true, false] {
-                        play.input(
-                            &Input::Button {
-                                button: Button::Right,
-                                pressed,
-                            },
-                            terrain,
-                        );
+                        play.input(&Input::Button { button, pressed }, terrain);
                     }
                 }
             }
@@ -344,6 +346,63 @@ pub fn run(
                 }
             }
             "chat" => play.say(arg),
+            "fund" => {
+                let (item, amount) = arg.split_once(',').context("fund:<item>,<amount>")?;
+                let id = canopy_content::Id::new(item).map_err(anyhow::Error::msg)?;
+                let amount: u32 = amount.parse().context("an amount")?;
+                let owner = k.owner().context("a seat")?;
+                game.world
+                    .state_mut()
+                    .wallets
+                    .entry(owner)
+                    .or_default()
+                    .insert(id, amount);
+                step(&mut game, &mut newest, &mut view0, &mut previous)?;
+            }
+            "fall" => {
+                let heroes: Vec<u32> = k
+                    .view
+                    .entities
+                    .iter()
+                    .filter(|e| k.own(e) && k.alive(e) && k.def(e).is_hero())
+                    .filter(|e| k.def(e).id.as_str().contains(arg))
+                    .map(|e| e.id().0)
+                    .collect();
+                for id in heroes {
+                    let state = game.world.state_mut();
+                    if let Some(e) = state.entities.get_mut(canopy_sim::entity::EntityId(id)) {
+                        canopy_sim::heroes::retain(e);
+                    }
+                }
+                step(&mut game, &mut newest, &mut view0, &mut previous)?;
+            }
+            "revive" => {
+                let hero = k
+                    .view
+                    .battle
+                    .fallen
+                    .iter()
+                    .map(|id| id.0)
+                    .find(|&id| {
+                        k.entity(id)
+                            .is_some_and(|e| k.def(e).id.as_str().contains(arg))
+                    })
+                    .context("a fallen hero")?;
+                let building = k
+                    .view
+                    .entities
+                    .iter()
+                    .find(|e| {
+                        k.own(e)
+                            && e.public.construction.is_none()
+                            && k.def(e).behaviors.revival.is_some()
+                    })
+                    .context("a finished building that revives")?
+                    .id()
+                    .0;
+                play.select(vec![building], None);
+                play.activate_id(&format!("revive:{hero}"), false);
+            }
             other => bail!("unknown step {other}"),
         }
         now += Duration::from_millis(120);

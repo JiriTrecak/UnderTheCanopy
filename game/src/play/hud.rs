@@ -390,6 +390,15 @@ impl Hud {
             }
             let available = play.hero_available(id);
             let fallen = k.view.battle.fallen.contains(&e.id());
+            let revival = fallen.then(|| revival(k, id)).flatten();
+            if let Some(timer) = ui.find_in(cell, "timer") {
+                let text = match revival {
+                    Some(Some(s)) => s.to_string(),
+                    Some(None) => "…".to_string(),
+                    None => String::new(),
+                };
+                ui.set_text(timer, &text);
+            }
             ui.set_enabled(cell, available);
             ui.set_checked(cell, play.selection.contains(id));
             ui.set_tooltip(
@@ -399,6 +408,10 @@ impl Hud {
                     hotkey: (!label.is_empty()).then_some(label),
                     body: if available {
                         "Click to select. Double-click to center the camera.".into()
+                    } else if let Some(Some(s)) = revival {
+                        format!("Reviving: back in {s} s.")
+                    } else if revival.is_some() {
+                        "Waiting to be revived.".into()
                     } else if fallen {
                         "Fallen. Revive this hero at a Sanctuary.".into()
                     } else {
@@ -1714,4 +1727,20 @@ fn thousands(value: u32) -> String {
         out.push(c);
     }
     out
+}
+
+/// A fallen hero's revival: the whole seconds left while a building works on it, `None`
+/// while it waits in a revival queue; `None` outside when nobody revives it.
+pub(super) fn revival(k: &Knowledge, hero: u32) -> Option<Option<u32>> {
+    k.view.entities.iter().find_map(|e| {
+        let queue = e.private.as_ref()?.economy.revival.as_ref()?;
+        let policy = k.def(e).behaviors.revival.as_ref()?;
+        let entry = queue.queue.iter().find(|r| r.hero.0 == hero)?;
+        if entry.progress == 0 {
+            return Some(None);
+        }
+        let total = policy.work_ticks + policy.work_ticks_per_level * entry.level.saturating_sub(1);
+        let left = total.saturating_sub(entry.progress);
+        Some(Some((f64::from(left) * 0.025).ceil() as u32))
+    })
 }
