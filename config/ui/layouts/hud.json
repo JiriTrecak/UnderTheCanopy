@@ -17,6 +17,14 @@
         "children": [
           { "id": "groups", "class": "control-groups", "repeat": "group-button", "count": 10 },
           {
+            "id": "idle", "kind": "button", "class": "idle-workers", "action": "idle", "visible": false,
+            "tooltip": { "title": "Idle workers", "hotkey": "F8", "body": "Select the next worker with nothing to do, and look at it." },
+            "children": [
+              { "id": "icon", "kind": "image", "class": "idle-icon" },
+              { "id": "count", "kind": "label", "class": "idle-count" }
+            ]
+          },
+          {
             "class": "map-frame",
             "children": [{ "id": "minimap", "kind": "image", "class": "minimap", "drag": true, "action": "minimap" }]
           },

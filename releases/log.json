@@ -1,7 +1,9 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [],
+    "added": [
+      "An idle worker button above the minimap shows how many workers have nothing to do; click it to select the next one."
+    ],
     "improved": [
       "A fallen hero keeps their portrait in the top left, greyed out, and shows the seconds left while they are being revived."
     ],

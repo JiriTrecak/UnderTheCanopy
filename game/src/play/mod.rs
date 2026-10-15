@@ -1343,7 +1343,8 @@ impl Play {
             .collect()
     }
 
-    fn next_idle_worker(&mut self) {
+    /// Selects the next idle worker and looks at it (F8, the idle worker button).
+    pub fn next_idle_worker(&mut self) {
         let idle = self.idle_workers();
         if idle.is_empty() {
             return;

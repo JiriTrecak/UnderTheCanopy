@@ -88,6 +88,9 @@ struct Nodes {
     resources: NodeId,
     chat_log: NodeId,
     chat_input: NodeId,
+    idle: NodeId,
+    idle_icon: NodeId,
+    idle_count: NodeId,
     observer: NodeId,
     observer_columns: NodeId,
     observer_rows: NodeId,
@@ -131,6 +134,9 @@ impl Nodes {
             resources: find(ui, "hud/dock/actions/resources")?,
             chat_log: find(ui, "hud/chat/log")?,
             chat_input: find(ui, "hud/chat/input")?,
+            idle: find(ui, "hud/dock/idle")?,
+            idle_icon: find(ui, "hud/dock/idle/icon")?,
+            idle_count: find(ui, "hud/dock/idle/count")?,
             observer: find(ui, "hud/observer")?,
             observer_columns: find(ui, "hud/observer/columns")?,
             observer_rows: find(ui, "hud/observer/rows")?,
@@ -243,6 +249,7 @@ impl Hud {
         self.selection(ui, &n, play, &k);
         self.card(ui, &n, play, &k);
         self.groups(ui, &n, play);
+        self.idle(ui, &n, play, &k);
         self.chat(ui, &n, play);
         self.observer(ui, &n, play, &k);
         if self.minimap {
@@ -250,6 +257,18 @@ impl Hud {
             ui.set_image(n.minimap, Some(key));
         }
         self.nodes = Some(n);
+    }
+
+    /// The idle worker button above the minimap: a worker's icon and how many idle.
+    fn idle(&mut self, ui: &mut Ui, n: &Nodes, play: &Play, k: &Knowledge) {
+        let idle = play.idle_workers();
+        ui.set_visible(n.idle, !idle.is_empty());
+        let Some(first) = idle.first().and_then(|&id| k.entity(id)) else {
+            return;
+        };
+        let key = self.image(ui, k, k.def(first).icon.as_str());
+        ui.set_image(n.idle_icon, key);
+        ui.set_text(n.idle_count, &idle.len().to_string());
     }
 
     fn messages(&mut self, ui: &mut Ui, n: &Nodes, play: &Play, k: &Knowledge) {
@@ -1517,6 +1536,7 @@ impl Hud {
                     events.push(Event::LookAt([at.x * self.map_size, at.y * self.map_size]));
                 }
                 ("menu", ActionKind::Click { .. }) => events.push(Event::OpenMenu),
+                ("idle", ActionKind::Click { .. }) => play.next_idle_worker(),
                 ("debug", ActionKind::Click { .. }) => events.push(Event::ToggleDebug),
                 (_, ActionKind::Submitted(text)) => {
                     play.say(text);

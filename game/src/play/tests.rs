@@ -1280,3 +1280,31 @@ fn items_are_picked_by_their_drawn_body() {
     h.advance(16);
     assert_eq!(h.play.hovered, Some(charm));
 }
+
+#[test]
+fn the_idle_worker_button_selects_an_idle_worker() {
+    use canopy_ui::{ActionKind, Modifiers, PointerButton};
+    let mut h = Harness::new(vec![]);
+    let idle = h.play.idle_workers();
+    assert!(!idle.is_empty(), "the fixture's workers start idle");
+    let mut ui = shipped_ui();
+    let mut hud = super::hud::Hud::new();
+    hud.act(
+        &mut ui,
+        &mut h.play,
+        vec![canopy_ui::Action {
+            node: None,
+            path: Some("hud/dock/idle".into()),
+            name: Some("idle".into()),
+            index: None,
+            kind: ActionKind::Click {
+                button: PointerButton::Primary,
+                modifiers: Modifiers::default(),
+                count: 1,
+            },
+        }],
+    );
+    let selected = h.play.selection.ids();
+    assert_eq!(selected.len(), 1);
+    assert!(idle.contains(&selected[0]));
+}
