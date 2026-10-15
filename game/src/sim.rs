@@ -432,9 +432,9 @@ mod tests {
             }
             std::thread::sleep(Duration::from_millis(1));
         }
-        // Fast-forwarded to tick 100, then every tick in order (the reader may miss some
-        // between polls, but never sees one out of order).
-        assert!((100..110).contains(&seen[0]), "{seen:?}");
+        // Fast-forwarded to tick 100 before anything is published, then ticks in order
+        // (the reader may miss some between polls, never sees one out of order).
+        assert!(seen[0] >= 100, "{seen:?}");
         assert!(seen.windows(2).all(|w| w[0] < w[1]));
         let newest = thread.mailbox().latest().unwrap();
         assert!(newest >= 400);

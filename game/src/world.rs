@@ -89,11 +89,7 @@ fn crowd(
         .iter()
         .filter_map(|id| content.definition(id.as_str()))
         .filter(|d| d.kind == Kind::Building)
-        .min_by_key(|d| {
-            d.footprint
-                .as_ref()
-                .map_or(u32::MAX, |f| (f.width * f.depth) as u32)
-        })
+        .min_by_key(|d| d.footprint.as_ref().map_or(u32::MAX, |f| f.width * f.depth))
         .context("the default race has no building")?;
     let n = map.player_starts.len().max(1) as f64;
     let cx = map.player_starts.iter().map(|s| s.x).sum::<f64>() / n;
