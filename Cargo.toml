@@ -16,6 +16,8 @@ base64 = "0.23"
 minisign-verify = "0.2"
 # Signs update packages with the updater key (the release tool; tests).
 minisign = "0.7"
+# Opens updater keys that older minisign versions encrypted with an empty password.
+scrypt = { version = "0.11", default-features = false }
 # The system clipboard for text fields (copy, cut, paste).
 arboard = { version = "3", default-features = false }
 # Tests that the mixer never allocates while rendering.

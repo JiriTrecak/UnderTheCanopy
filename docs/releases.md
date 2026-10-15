@@ -80,8 +80,9 @@ just release-publish --artifact build/releases/0.3.1/darwin-aarch64/artifact.jso
 2. **Build** requires the log to have a release for the app version. It verifies the
    galleries, loads the signing key (before the long build), runs the same packaging as
    `just package` (`cargo packager`), and checks the bundle's `Info.plist`: the version must
-   be the release's and the identifier the old app's `com.jiritrecak.settlers`. It then
-   archives the bundle as `Under the Canopy.app.tar.gz` (top-level entry
+   be the release's and the identifier the old app's `com.jiritrecak.settlers`. It seals
+   the bundle with an ad-hoc code signature, as the old Tauri packages were (unless the
+   packager signed it with an identity), then archives the bundle as `Under the Canopy.app.tar.gz` (top-level entry
    `Under the Canopy.app/`, modes and symlinks kept, as the Tauri updater unpacks it) and
    signs it as the Tauri CLI did: minisign prehashed Ed25519 with the trusted comment
    `timestamp:<unix seconds>\tfile:Under the Canopy.app.tar.gz\tversion:<version>`. The
@@ -128,7 +129,9 @@ advertise; report only what you actually built and tested.
 The updater's secret key is `~/.config/under-the-canopy/updater.key` (mode 0600; base64 of a
 minisign secret key, as Tauri stores it). CI or another machine can instead set
 `TAURI_SIGNING_PRIVATE_KEY` (the key or a path to it) and
-`TAURI_SIGNING_PRIVATE_KEY_PASSWORD` (empty when unset). Its public half is
+`TAURI_SIGNING_PRIVATE_KEY_PASSWORD` (empty when unset). The current key has an empty
+password, which the old Tauri CLI's minisign still ran through scrypt; the tool opens such
+keys as well as unencrypted and password-protected ones. Its public half is
 `canopy_release::PUBLIC_KEY`, which every installed copy trusts.
 
 **Never display, log, commit or upload the secret key, and never regenerate it**: installed

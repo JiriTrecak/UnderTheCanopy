@@ -514,6 +514,7 @@ dependencies = [
  "reqwest",
  "rustls",
  "rustls-platform-verifier",
+ "scrypt",
  "serde",
  "serde_json",
  "sha2 0.11.1",

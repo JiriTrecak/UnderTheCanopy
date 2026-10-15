@@ -185,6 +185,30 @@ fn build_package(repo: &Repo, release: &Path, version: Version) -> Result<Built>
         );
     }
     let executable = read("CFBundleExecutable")?;
+    // Seal the bundle as the old packages were: an ad-hoc signature over the whole bundle
+    // (binding Info.plist and the resources), unless the packager signed it with an identity.
+    let codesign = |args: &[&str]| -> Result<std::process::Output> {
+        Ok(Command::new("codesign").args(args).arg(&app).output()?)
+    };
+    let shown = codesign(&["-dv"])?;
+    if !shown.status.success() || String::from_utf8_lossy(&shown.stderr).contains("Signature=adhoc")
+    {
+        println!("Signing the bundle ad hoc…");
+        let signed = codesign(&["--force", "--sign", "-"])?;
+        if !signed.status.success() {
+            bail!(
+                "ad-hoc signing the bundle failed: {}",
+                String::from_utf8_lossy(&signed.stderr).trim()
+            );
+        }
+    }
+    let verified = codesign(&["--verify", "--strict"])?;
+    if !verified.status.success() {
+        bail!(
+            "the bundle's code signature does not verify: {}",
+            String::from_utf8_lossy(&verified.stderr).trim()
+        );
+    }
     let signed_name = format!("{PRODUCT}.app.tar.gz");
     let path = release.join(&signed_name);
     println!("Archiving {}…", app.display());

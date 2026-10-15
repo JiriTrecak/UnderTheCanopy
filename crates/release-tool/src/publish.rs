@@ -48,7 +48,7 @@ pub struct AwsError {
 
 impl std::fmt::Display for AwsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "aws: {}", self.stderr.trim())
+        write!(f, "{}", self.stderr.trim())
     }
 }
 

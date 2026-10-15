@@ -53,11 +53,77 @@ pub fn secret_key_from_tauri(text: &str, password: String) -> Result<minisign::S
         .map_err(|_| anyhow!("the signing key is not base64 of a minisign key"))?;
     let key_box = minisign::SecretKeyBox::from_string(&text)
         .map_err(|_| anyhow!("the signing key is not a minisign secret key"))?;
-    key_box.into_secret_key(Some(password)).map_err(|_| {
-        anyhow!(
-            "the signing key cannot be decrypted; set TAURI_SIGNING_PRIVATE_KEY_PASSWORD if it has a password"
-        )
-    })
+    if let Ok(key) = key_box.into_secret_key(Some(password.clone())) {
+        return Ok(key);
+    }
+    // Older minisign versions (the Tauri CLI's) encrypted keys even with an empty password;
+    // current ones skip the empty password's scrypt step, so do it here.
+    if password.is_empty()
+        && let Some(key) = scrypt_with_empty_password(&text)
+    {
+        return Ok(key);
+    }
+    bail!(
+        "the signing key cannot be decrypted; set TAURI_SIGNING_PRIVATE_KEY_PASSWORD if it has a password"
+    )
+}
+
+/// Minisign's secret key layout: algorithms, salt, scrypt limits, then the encrypted key
+/// number, key and checksum.
+const KEY_BYTES: usize = 158;
+const SALT: std::ops::Range<usize> = 6..38;
+const ENCRYPTED: std::ops::Range<usize> = 54..158;
+
+/// XORs the key's encrypted part with scrypt of the empty password (as minisign derives it
+/// from the key's limits), returning the key if its checksum then matches.
+fn scrypt_with_empty_password(key_box: &str) -> Option<minisign::SecretKey> {
+    let encoded = key_box.lines().nth(1)?;
+    let mut bytes = base64::engine::general_purpose::STANDARD
+        .decode(encoded.trim())
+        .ok()?;
+    if bytes.len() != KEY_BYTES || &bytes[2..4] != b"Sc" {
+        return None;
+    }
+    xor_scrypt_stream(&mut bytes, b"")?;
+    let decrypted = format!(
+        "untrusted comment: decrypted\n{}\n",
+        base64::engine::general_purpose::STANDARD.encode(&bytes)
+    );
+    // An empty password skips decryption and verifies the checksum.
+    minisign::SecretKeyBox::from_string(&decrypted)
+        .ok()?
+        .into_secret_key(Some(String::new()))
+        .ok()
+}
+
+/// Minisign's key encryption (its own inverse): the scrypt stream of `password` over the
+/// key's salt, with N, r and p picked from its ops and memory limits as libsodium does.
+fn xor_scrypt_stream(key: &mut [u8], password: &[u8]) -> Option<()> {
+    let u64le = |r: std::ops::Range<usize>| u64::from_le_bytes(key[r].try_into().unwrap());
+    let opslimit = u64le(38..46).max(32_768);
+    let memlimit = u64le(46..54);
+    if memlimit > 1 << 30 {
+        return None;
+    }
+    let r = 8u32;
+    let n_log2 = |max_n: u64| (1u8..63).find(|&n| 1u64 << n > max_n / 2).unwrap_or(63);
+    let (n_log2, p) = if opslimit < memlimit / 32 {
+        (n_log2(opslimit / (u64::from(r) * 4)), 1)
+    } else {
+        let n = n_log2(memlimit / (u64::from(r) * 128));
+        let max_rp = ((opslimit / 4) / (1u64 << n)).min(0x3fff_ffff) as u32;
+        (n, max_rp / r)
+    };
+    if n_log2 > 20 {
+        return None;
+    }
+    let params = scrypt::Params::new(n_log2, r, p, scrypt::Params::RECOMMENDED_LEN).ok()?;
+    let mut stream = [0u8; ENCRYPTED.end - ENCRYPTED.start];
+    scrypt::scrypt(password, &key[SALT], &params, &mut stream).ok()?;
+    for (byte, s) in key[ENCRYPTED].iter_mut().zip(stream) {
+        *byte ^= s;
+    }
+    Some(())
 }
 
 /// Signs `package` as the Tauri CLI does: the trusted comment names the time, the file
@@ -156,6 +222,7 @@ pub fn digest_file(path: &Path) -> Result<(String, u64)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use base64::engine::general_purpose::STANDARD;
     use std::fs;
 
     #[test]
@@ -236,6 +303,31 @@ mod tests {
             text.contains("trusted comment: timestamp:1\tfile:Game.app.tar.gz\tversion:0.3.0\n")
         );
         assert!(secret_key_from_tauri("not a key", String::new()).is_err());
+
+        // A key an older minisign encrypted with the empty password opens and signs alike.
+        let text = String::from_utf8(STANDARD.decode(&secret).unwrap()).unwrap();
+        let lines: Vec<&str> = text.lines().collect();
+        let mut raw = STANDARD.decode(lines[1]).unwrap();
+        xor_scrypt_stream(&mut raw, b"").unwrap();
+        let legacy = b64(format!("{}\n{}\n", lines[0], STANDARD.encode(&raw)));
+        assert!(
+            minisign::SecretKeyBox::from_string(
+                std::str::from_utf8(&STANDARD.decode(&legacy).unwrap()).unwrap()
+            )
+            .unwrap()
+            .into_secret_key(Some(String::new()))
+            .is_err()
+        );
+        let key = secret_key_from_tauri(&legacy, String::new()).unwrap();
+        let signature = sign_package(&key, &package, "Game.app.tar.gz", "0.3.0", 2).unwrap();
+        canopy_release::verify_package(
+            &public,
+            &signature,
+            "0.3.0",
+            File::open(&package).unwrap(),
+            |_| {},
+        )
+        .unwrap();
 
         let (sha, bytes) = digest_file(&package).unwrap();
         assert_eq!(bytes, fs::metadata(&package).unwrap().len());
