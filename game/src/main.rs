@@ -16,6 +16,7 @@ mod settings;
 mod shot;
 mod sim;
 mod telemetry;
+mod update;
 mod view;
 mod world;
 
@@ -33,9 +34,12 @@ fn main() -> Result<()> {
     tracing::info!(data = %paths.data.display(), user = %paths.user.display(), "starting");
     match &options.command {
         Command::Shot { out, size } => shot::run(&options, &paths, out, *size),
-        Command::CaptureScreens { out, size, scale } => {
-            screens::capture::run(&paths, out, *size, *scale)
-        }
+        Command::CaptureScreens {
+            out,
+            size,
+            scale,
+            only,
+        } => screens::capture::run(&paths, out, *size, *scale, only.as_deref()),
         Command::Play => {
             let event_loop = EventLoop::new()?;
             let mut app = app::App::new(options, paths);

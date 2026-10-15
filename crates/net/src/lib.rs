@@ -24,7 +24,8 @@ pub mod mailbox;
 mod net;
 pub mod server;
 pub mod session;
-mod tls;
+/// The TLS client configuration (the platform's verifier); the game's updater shares it.
+pub mod tls;
 pub mod wire;
 
 pub use net::{Net, NetError, Pending};

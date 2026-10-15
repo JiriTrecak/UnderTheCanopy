@@ -1,7 +1,8 @@
 //! Where the game finds its data and keeps the player's files.
 //!
 //! Nothing else in the game builds file paths from the working directory or the
-//! executable location; everything goes through [`Paths`].
+//! executable location; everything goes through [`Paths`] (the updater finds the bundle
+//! it replaces from the executable, `update/install.rs`).
 
 use anyhow::{Context, Result, bail};
 use std::path::{Path, PathBuf};
@@ -15,19 +16,26 @@ pub struct Paths {
     pub data: PathBuf,
     /// Writable per-user folder for settings and saves.
     pub user: PathBuf,
+    /// Per-user cache (downloaded update packages); may be emptied by the system.
+    pub cache: PathBuf,
 }
 
 impl Paths {
     pub fn resolve(data_override: Option<PathBuf>) -> Result<Self> {
         let exe = std::env::current_exe().context("cannot locate the game executable")?;
         let data = data_dir(data_override, &exe)?;
-        let user = directories::ProjectDirs::from("com", "jt", "canopy")
-            .context("cannot locate the user data folder")?
-            .data_dir()
-            .to_path_buf();
+        // The user folder keeps its name across the bundle identifier change to the old
+        // app's (D43): the old app's files were its web view's, which this game never read.
+        let dirs = directories::ProjectDirs::from("com", "jt", "canopy")
+            .context("cannot locate the user data folder")?;
+        let user = dirs.data_dir().to_path_buf();
         std::fs::create_dir_all(&user)
             .with_context(|| format!("cannot create {}", user.display()))?;
-        Ok(Self { data, user })
+        Ok(Self {
+            data,
+            user,
+            cache: dirs.cache_dir().to_path_buf(),
+        })
     }
 }
 

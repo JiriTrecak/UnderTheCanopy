@@ -1085,6 +1085,14 @@ impl Ui {
         });
     }
 
+    /// Scrolls a box with `overflow: scroll` back to its start (new content in a reused
+    /// box).
+    pub fn scroll_to_top(&mut self, id: NodeId) {
+        if let Some(n) = self.tree.node_of(id) {
+            self.tree.node_mut(n).scroll = Vec2::ZERO;
+        }
+    }
+
     /// Resizes a list (a node with `repeat`): entries are built from its template or
     /// removed from the end. Entries keep their handles while they exist.
     pub fn set_count(&mut self, id: NodeId, count: usize) {

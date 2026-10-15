@@ -3,7 +3,8 @@
 //! ```text
 //! canopy [--data <folder>] [--no-vsync] [--map <id> | --spectate <id>] [--players <n>]
 //!        [--tick <n>] [--camera <x,z,zoom[,yaw]>] [--hour <h>] [graphics]
-//! canopy capture-screens --out <folder> [--size <w>x<h>] [--scale <s>] [--data <folder>]
+//! canopy capture-screens --out <folder> [--size <w>x<h>] [--scale <s>] [--only releases]
+//!                         [--data <folder>]
 //! canopy shot --map <id> --camera <x,z,zoom[,yaw] | battle[,zoom]> --out <png>
 //!             [--tick <n>] [--players <n>] [--crowd <n>] [--colors <i,j,…>] [--size <w>x<h>]
 //!             [--hour <h>] [--time <s>] [--frames <n>] [--no-shadows] [--pitch <deg>]
@@ -130,6 +131,8 @@ pub enum Command {
         out: PathBuf,
         size: [u32; 2],
         scale: f32,
+        /// One group of captures only (`releases`).
+        only: Option<String>,
     },
 }
 
@@ -247,6 +250,7 @@ impl Options {
         let mut shot = false;
         let mut capture = false;
         let mut scale = 1.0f32;
+        let mut only = None;
         let mut first = true;
         while let Some(arg) = args.next() {
             let mut value =
@@ -255,6 +259,7 @@ impl Options {
                 "shot" if first => shot = true,
                 "capture-screens" if first => capture = true,
                 "--scale" => scale = value("--scale")?.parse().context("--scale")?,
+                "--only" if capture => only = Some(value("--only")?),
                 "play" if first => {}
                 "--data" => options.data = Some(value("--data")?.into()),
                 "--no-vsync" => options.vsync = false,
@@ -359,7 +364,12 @@ impl Options {
             if !(0.5..=4.0).contains(&scale) {
                 bail!("--scale must be within 0.5–4");
             }
-            options.command = Command::CaptureScreens { out, size, scale };
+            options.command = Command::CaptureScreens {
+                out,
+                size,
+                scale,
+                only,
+            };
         } else if shot {
             let out = out.context("shot needs --out <png>")?;
             if options.map.is_none() {

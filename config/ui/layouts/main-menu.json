@@ -39,7 +39,19 @@
           }
         ]
       },
-      { "id": "version", "kind": "label", "class": "mm-version", "text": "v0.1.0" }
+      {
+        "id": "release", "class": "mm-release",
+        "children": [
+          {
+            "id": "version", "kind": "button", "class": "mm-release-button mm-release-version", "action": "releases.updates",
+            "children": [
+              { "id": "number", "kind": "label", "class": "mm-release-number" },
+              { "id": "status", "kind": "label", "class": "mm-release-status" }
+            ]
+          },
+          { "id": "notes", "kind": "button", "class": "mm-release-button", "text": "What’s new", "action": "releases.notes" }
+        ]
+      }
     ]
   }
 }

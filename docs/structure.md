@@ -15,7 +15,7 @@ UnderTheCanopy/
 │  ├─ ui/              HUD toolkit: taffy layout, cosmic-text (M4)
 │  ├─ audio/           playback, voice limiting, effect sounds, music (M4)
 │  └─ net/             client for the existing match server protocol (M5)
-├─ game/               the executable: window, input, platform paths, screens, packaging
+├─ game/               the executable: window, input, platform paths, screens, updater, packaging
 ├─ content/            gameplay data (mirrored, see below)
 ├─ assets/             published asset outputs, registry, manifest and maps (mirrored)
 ├─ art/                editable masters and exported outputs, Git LFS (mirrored)

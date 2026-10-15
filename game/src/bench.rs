@@ -258,6 +258,7 @@ fn menu(paths: &Paths, size: [u32; 2], frames: u32) -> Result<Value> {
     let paths = Paths {
         data: paths.data.clone(),
         user: user.clone(),
+        cache: user.join("cache"),
     };
     let look = canopy_scene::Look::load(&paths.data, canopy_content::map::BIOMES[0])?;
     let environment = canopy_render::Environment::new(&look.lighting, &look.biome, 12.0, None);
@@ -268,6 +269,7 @@ fn menu(paths: &Paths, size: [u32; 2], frames: u32) -> Result<Value> {
         environment,
     );
     let mut game = screens::Game::new(paths, Settings::default(), &gpu, None)?;
+    game.offline_updates();
     let target = Capture::new(&gpu.device, size[0], size[1]);
     let frame = |game: &mut screens::Game, renderer: &mut Renderer| {
         let mut ctx = screens::Ctx {
