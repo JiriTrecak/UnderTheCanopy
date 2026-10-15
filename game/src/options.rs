@@ -7,7 +7,9 @@
 //! canopy shot --map <id> --camera <x,z,zoom[,yaw] | battle[,zoom]> --out <png>
 //!             [--tick <n>] [--players <n>] [--crowd <n>] [--colors <i,j,…>] [--size <w>x<h>]
 //!             [--hour <h>] [--time <s>] [--frames <n>] [--no-shadows] [--pitch <deg>]
-//!             [--movers <n>] [--data <folder>] [graphics]
+//!             [--movers <n>] [--effect <id>[,<age>[,<radius>]]]… [--viewer <slot>]
+//!             [--select all|player:<slot>|<id,…>] [--health damaged|always|selected]
+//!             [--data <folder>] [graphics]
 //!             [--play | --observe] [--input <script>] (the HUD; see `play::capture`)
 //! graphics: [--render-scale <0.5–1>] [--no-contact] [--no-bloom] [--haze off|low|medium|high]
 //!           [--biome <id>] (preview the map in another biome's look)
@@ -82,6 +84,38 @@ impl CameraChoice {
     }
 }
 
+/// A standalone effect a shot plays at the camera's focus: its id, how many ticks before
+/// the captured tick it started, and the radius its sizes take (`sizeFrom: radius`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct EffectSpec {
+    pub id: String,
+    pub age: u32,
+    pub radius: Option<f32>,
+}
+
+impl EffectSpec {
+    pub fn parse(text: &str) -> Result<Self> {
+        let mut parts = text.split(',').map(str::trim);
+        let id = parts
+            .next()
+            .filter(|s| !s.is_empty())
+            .context("--effect <id>")?;
+        let age = match parts.next() {
+            Some(age) => age.parse().context("--effect <id>,<age ticks>")?,
+            None => 10,
+        };
+        let radius = parts
+            .next()
+            .map(|r| r.parse().context("--effect <id>,<age>,<radius>"))
+            .transpose()?;
+        Ok(Self {
+            id: id.to_owned(),
+            age,
+            radius,
+        })
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Command {
     /// Open a window.
@@ -131,11 +165,49 @@ pub struct Options {
     pub movers: u32,
     /// Another biome's look for the map (previews).
     pub biome: Option<String>,
+    /// Standalone effects a shot plays at the camera's focus, in a row.
+    pub effects: Vec<EffectSpec>,
+    /// Watch as this player (0-based slot): their fog of war. Observers see everything.
+    pub viewer: Option<u8>,
+    /// What a shot selects for the world UI.
+    pub select: Selection,
+    /// Which health bars show.
+    pub health: canopy_scene::world_ui::HealthBars,
     /// A shot of the match with the HUD from player 1's seat (`--play`) or the
     /// spectator's (`--observe`), after the `--input` script (`play::capture`).
     pub play: bool,
     pub observe: bool,
     pub input: String,
+}
+
+/// What a shot selects (world UI reviews).
+#[derive(Debug, Clone, PartialEq, Default)]
+pub enum Selection {
+    #[default]
+    None,
+    /// Everything in the presentation.
+    All,
+    /// The units and buildings of one player slot.
+    Player(u8),
+    Ids(Vec<u32>),
+}
+
+impl Selection {
+    pub fn parse(text: &str) -> Result<Self> {
+        Ok(match text {
+            "none" => Self::None,
+            "all" => Self::All,
+            _ => match text.strip_prefix("player:") {
+                Some(slot) => Self::Player(slot.parse().context("--select player:<slot>")?),
+                None => Self::Ids(
+                    text.split(',')
+                        .map(|id| id.trim().parse::<u32>())
+                        .collect::<Result<_, _>>()
+                        .context("--select all | player:<slot> | <id,id,…>")?,
+                ),
+            },
+        })
+    }
 }
 
 impl Options {
@@ -159,6 +231,10 @@ impl Options {
             pitch: None,
             movers: 0,
             biome: None,
+            effects: Vec::new(),
+            viewer: None,
+            select: Selection::None,
+            health: canopy_scene::world_ui::HealthBars::Damaged,
             play: false,
             observe: false,
             input: String::new(),
@@ -230,6 +306,22 @@ impl Options {
                 }
                 "--movers" => options.movers = value("--movers")?.parse().context("--movers")?,
                 "--biome" => options.biome = Some(value("--biome")?),
+                "--effect" => options
+                    .effects
+                    .push(EffectSpec::parse(&value("--effect")?)?),
+                "--viewer" => {
+                    options.viewer = Some(value("--viewer")?.parse().context("--viewer <slot>")?)
+                }
+                "--select" => options.select = Selection::parse(&value("--select")?)?,
+                "--health" => {
+                    use canopy_scene::world_ui::HealthBars;
+                    options.health = match value("--health")?.as_str() {
+                        "damaged" => HealthBars::Damaged,
+                        "always" => HealthBars::Always,
+                        "selected" => HealthBars::Selected,
+                        other => bail!("--health {other}: damaged, always or selected"),
+                    };
+                }
                 "--play" => options.play = true,
                 "--observe" => options.observe = true,
                 "--input" => options.input = value("--input")?,
@@ -240,7 +332,7 @@ impl Options {
                     size = [w.parse().context("--size")?, h.parse().context("--size")?];
                 }
                 other => bail!(
-                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --tick, --crowd, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers)"
+                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --tick, --crowd, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --effect, --viewer, --select, --health, --play, --observe, --input)"
                 ),
             }
             first = false;

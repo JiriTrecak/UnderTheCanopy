@@ -58,6 +58,8 @@ pub enum EntryKind {
     Sound = 3,
     Data = 4,
     Scenery = 5,
+    /// The runtime effect table ([`crate::EffectTable`]).
+    Effects = 6,
 }
 
 impl EntryKind {
@@ -68,6 +70,7 @@ impl EntryKind {
             3 => Self::Sound,
             4 => Self::Data,
             5 => Self::Scenery,
+            6 => Self::Effects,
             _ => return None,
         })
     }

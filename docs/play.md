@@ -18,7 +18,7 @@ Everything lives in `game/src/play/`:
 | `placement.rs` | Building placement: lattice snap, quarter turns, validity from knowledge. |
 | `picking.rs` | CPU picking: unit capsules, the ground under the cursor, box tests. |
 | `hud.rs` | Binds `Play` to `config/ui/layouts/hud.json` and maps UI interactions back. |
-| `overlay.rs` | A screen-space stand-in for the world UI (rings, markers, footprint, drag box). |
+| `overlay.rs` | The drag box (everything else in the world is the renderer's world UI pass). |
 | `debug.rs` | The egui debug overlay. |
 | `capture.rs` | `canopy shot --play`: offscreen captures with the HUD after a scripted input. |
 | `tests.rs` | The headless input harness. |
@@ -83,7 +83,7 @@ The ghost model is the building's live model at 0.48 opacity in the owner's colo
 
 ## World UI contract
 
-`WorldUi` (from `Play::world_ui`, `InMatch::world_ui`) is the plain input the renderer's world UI pass reads: selected and hovered ids, the health bar mode, order markers with their ages (white move ×1, red attack ×2, green gather ×2; 0.4 s pulses, 0.15 s gaps, at most 24), the placement ghost (centre, rotation, cells, entrance, problem) and definition, the drag box and the focused producer's rally point. Until that pass draws them, `overlay.rs` draws rings, markers, footprint and drag box as screen-space UI quads under the HUD.
+`WorldUi` (from `Play::world_ui`, `InMatch::world_ui`) is the plain input the renderer's world UI pass reads: selected and hovered ids, the health bar mode, order markers with their ages (white move ×1, red attack ×2, green gather ×2; 0.4 s pulses, 0.15 s gaps, at most 24), the placement ghost (centre, rotation, cells, entrance, problem) and definition, the drag box and the focused producer's rally point. `run.rs` converts it each frame (`world_ui_input`) for the world UI pass (D40), which draws the rings, markers, placement grid, rally points and health bars; `overlay.rs` draws only the drag box. The minimap and the live portrait plug into the HUD as render targets.
 
 ## Debug overlay
 
@@ -101,7 +101,6 @@ The old game had no interface or acknowledgement sounds; the match feeds every n
 
 ## Not yet
 
-- Health bars, terrain-draped rings and the placement grid in the world UI pass (the effects work); the overlay stands in.
 - Minimap and live portrait textures (plug in through `plug_render_target`).
 - Key rebinding (settings, the screens work), saves of control groups, the unit camera modes, chat over the network (M5).
 - Range preview while aiming spells (old hover check of range and fog).

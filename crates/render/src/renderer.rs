@@ -4,9 +4,13 @@ use crate::{
     actors::{ActorInstance, ActorsGpu},
     camera::{CameraView, frustum_planes},
     device::Gpu,
+    effects::{EffectFrame, EffectsGpu, MAX_EFFECT_LIGHTS},
     environment::{BiomeConfig, DaytimeLut, Lighting, LightingConfig},
+    fog::FogGpu,
     frame::{self, FrameParams, FrameUniform, MAX_POINT_LIGHTS, PointLight},
     graph::{self, FrameGraph, PassKind, passes},
+    minimap::{MinimapFrame, MinimapGpu},
+    portrait::PortraitGpu,
     post::{OPENINGS_SIZE, PostLook, PostStack},
     quality::Quality,
     shadow::{self, ShadowView},
@@ -20,9 +24,10 @@ use crate::{
         gpu::{WaterGpu, WaterStats, WaterTextures},
         ripples::Ripples,
     },
+    world_ui::{AtlasImage, WorldUiFrame, WorldUiGpu},
 };
 use anyhow::Result;
-use glam::Vec3;
+use glam::{Mat4, Vec3};
 use std::time::Instant;
 
 /// Size of the canopy pattern texture.
@@ -72,6 +77,15 @@ impl Environment {
     }
 }
 
+/// The model the selection portrait shows: a posed live model (its transform's scale
+/// and pose are kept; the portrait places and frames it) and whether it is a building
+/// (framed from higher up).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PortraitSubject {
+    pub instance: ActorInstance,
+    pub building: bool,
+}
+
 /// What is drawn.
 #[derive(Debug, Clone, Default)]
 pub struct World {
@@ -106,7 +120,71 @@ pub struct FrameReport {
     pub terrain_chunks: u32,
     /// Live models of the frame.
     pub actors: crate::actors::ActorStats,
+    /// Effects of the frame.
+    pub effects: crate::effects::EffectStats,
     pub water: WaterStats,
+}
+
+/// What the frame bind groups hold besides the per-frame buffers.
+struct FrameBindings {
+    shadow_sampler: wgpu::Sampler,
+    repeat_sampler: wgpu::Sampler,
+    clamp_sampler: wgpu::Sampler,
+    canopy_view: wgpu::TextureView,
+    dummy_shadow: wgpu::TextureView,
+}
+
+impl FrameBindings {
+    #[allow(clippy::too_many_arguments)]
+    fn group(
+        &self,
+        device: &wgpu::Device,
+        layout: &wgpu::BindGroupLayout,
+        label: &str,
+        buffer: &wgpu::Buffer,
+        lights: &wgpu::Buffer,
+        shadow: &wgpu::TextureView,
+        fog: &wgpu::TextureView,
+    ) -> wgpu::BindGroup {
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some(label),
+            layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(shadow),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Sampler(&self.shadow_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::TextureView(&self.canopy_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: wgpu::BindingResource::Sampler(&self.repeat_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: lights.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 6,
+                    resource: wgpu::BindingResource::TextureView(fog),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 7,
+                    resource: wgpu::BindingResource::Sampler(&self.clamp_sampler),
+                },
+            ],
+        })
+    }
 }
 
 pub struct Renderer {
@@ -118,6 +196,21 @@ pub struct Renderer {
     shadow_frame_group: wgpu::BindGroup,
     light_buffer: wgpu::Buffer,
     point_lights: u32,
+    /// The world's lights; effect lights follow them each frame.
+    map_lights: Vec<PointLight>,
+    lights_dirty: bool,
+    effects: EffectsGpu,
+    effect_frame: EffectFrame,
+    fog: FogGpu,
+    bindings: FrameBindings,
+    world_ui: WorldUiGpu,
+    world_ui_frame: WorldUiFrame,
+    minimap: Option<MinimapGpu>,
+    minimap_frame: MinimapFrame,
+    portrait: Option<(PortraitGpu, wgpu::BindGroup)>,
+    portrait_subject: Option<PortraitSubject>,
+    /// Rendering the minimap's background: no fog, vignette or shadows.
+    baking: bool,
     shadow_view: wgpu::TextureView,
     shadow_resolution: u32,
     canopy_texture: wgpu::Texture,
@@ -222,40 +315,38 @@ impl Renderer {
             ..Default::default()
         });
         let canopy_view = canopy_texture.create_view(&Default::default());
-        let group = |label, buffer: &wgpu::Buffer, shadow: &wgpu::TextureView| {
-            device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some(label),
-                layout: &frame_layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: buffer.as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: wgpu::BindingResource::TextureView(shadow),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 2,
-                        resource: wgpu::BindingResource::Sampler(&shadow_sampler),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 3,
-                        resource: wgpu::BindingResource::TextureView(&canopy_view),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 4,
-                        resource: wgpu::BindingResource::Sampler(&repeat_sampler),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 5,
-                        resource: light_buffer.as_entire_binding(),
-                    },
-                ],
-            })
+        let clamp_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("clamp"),
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            ..Default::default()
+        });
+        let fog = FogGpu::new(device, queue);
+        let bindings = FrameBindings {
+            shadow_sampler,
+            repeat_sampler,
+            clamp_sampler,
+            canopy_view,
+            dummy_shadow,
         };
-        let frame_group = group("frame", &frame_buffer, &shadow_view);
-        let shadow_frame_group = group("shadow frame", &shadow_frame_buffer, &dummy_shadow);
+        let frame_group = bindings.group(
+            device,
+            &frame_layout,
+            "frame",
+            &frame_buffer,
+            &light_buffer,
+            &shadow_view,
+            &fog.view,
+        );
+        let shadow_frame_group = bindings.group(
+            device,
+            &frame_layout,
+            "shadow frame",
+            &shadow_frame_buffer,
+            &light_buffer,
+            &bindings.dummy_shadow,
+            &fog.view,
+        );
         let targets = Targets::new(device, quality.scene_size(size));
         let post = PostStack::new(
             device,
@@ -266,6 +357,8 @@ impl Renderer {
             &environment.grade,
             &environment.openings,
         );
+        let effects = EffectsGpu::new(device, queue, gpu.features, &frame_layout);
+        let world_ui = WorldUiGpu::new(device, queue, &frame_layout);
         let mut renderer = Self {
             graph,
             frame_layout,
@@ -275,6 +368,19 @@ impl Renderer {
             shadow_frame_group,
             light_buffer,
             point_lights: 0,
+            map_lights: Vec::new(),
+            lights_dirty: false,
+            effects,
+            effect_frame: EffectFrame::default(),
+            fog,
+            bindings,
+            world_ui,
+            world_ui_frame: WorldUiFrame::default(),
+            minimap: None,
+            minimap_frame: MinimapFrame::default(),
+            portrait: None,
+            portrait_subject: None,
+            baking: false,
             shadow_view,
             shadow_resolution,
             canopy_texture,
@@ -322,10 +428,12 @@ impl Renderer {
     /// Rebuilds the frame graph and the post targets for the current world, biome and
     /// quality.
     fn rebuild(&mut self, gpu: &Gpu) {
-        let features = self
+        let mut features = self
             .environment
             .post
             .features(&self.quality, self.water.is_some());
+        features.minimap = self.minimap.is_some() && !self.baking;
+        features.portrait = self.portrait.is_some() && !self.baking;
         self.graph = graph::world_frame(features);
         self.timer = self
             .timestamps
@@ -447,14 +555,198 @@ impl Renderer {
         );
         actors.sync_models(&gpu.device, &gpu.queue, pack, &world.actor_models);
         self.actors = Some(actors);
-        let lights = &world.point_lights[..world.point_lights.len().min(MAX_POINT_LIGHTS)];
-        if !lights.is_empty() {
-            gpu.queue
-                .write_buffer(&self.light_buffer, 0, bytemuck::cast_slice(lights));
-        }
-        self.point_lights = lights.len() as u32;
+        // Room for the effect lights after the map's own.
+        let lights = &world.point_lights[..world
+            .point_lights
+            .len()
+            .min(MAX_POINT_LIGHTS - MAX_EFFECT_LIGHTS)];
+        self.map_lights = lights.to_vec();
+        self.lights_dirty = true;
+        self.effect_frame.clear();
         self.rebuild(gpu);
         Ok(())
+    }
+
+    /// Loads the textures effect draws refer to by position (pack entry names).
+    pub fn load_effect_textures(
+        &mut self,
+        gpu: &Gpu,
+        pack: &canopy_assets::Pack,
+        names: &[String],
+    ) {
+        let before = self.effects.bytes;
+        self.effects
+            .load_textures(&gpu.device, &gpu.queue, pack, names);
+        self.world_bytes = self.world_bytes + self.effects.bytes - before.min(self.effects.bytes);
+    }
+
+    /// The effects of the next frame (particles, decals, ribbons, lights). Effect meshes
+    /// are live models with a tint ([`Renderer::set_actors`]).
+    pub fn set_effects(&mut self, frame: &mut EffectFrame) {
+        if !frame.lights.is_empty() || !self.effect_frame.lights.is_empty() {
+            self.lights_dirty = true;
+        }
+        std::mem::swap(&mut self.effect_frame, frame);
+    }
+
+    /// The effects of the latest frame.
+    pub fn effects(&self) -> &EffectsGpu {
+        &self.effects
+    }
+
+    /// The viewer's fog of war: `size²` cells (0 unexplored, 1 explored, 2 in sight) and,
+    /// when known, the cells that changed since the previous call; `None` shows
+    /// everything (observers).
+    pub fn set_fog(&mut self, gpu: &Gpu, fog: Option<crate::fog::FogCells<'_>>) {
+        let _span = tracing::trace_span!("fog_upload").entered();
+        if self.fog.update(&gpu.device, &gpu.queue, fog) {
+            self.frame_group = self.bindings.group(
+                &gpu.device,
+                &self.frame_layout,
+                "frame",
+                &self.frame_buffer,
+                &self.light_buffer,
+                &self.shadow_view,
+                &self.fog.view,
+            );
+            self.shadow_frame_group = self.bindings.group(
+                &gpu.device,
+                &self.frame_layout,
+                "shadow frame",
+                &self.shadow_frame_buffer,
+                &self.light_buffer,
+                &self.bindings.dummy_shadow,
+                &self.fog.view,
+            );
+            if let Some(minimap) = &mut self.minimap {
+                minimap.rebind(&gpu.device, &self.fog.view);
+            }
+            if let Some((portrait, group)) = &mut self.portrait {
+                *group = self.bindings.group(
+                    &gpu.device,
+                    &self.frame_layout,
+                    "portrait frame",
+                    &portrait.frame_buffer,
+                    &self.light_buffer,
+                    &self.bindings.dummy_shadow,
+                    &self.fog.view,
+                );
+            }
+        }
+    }
+
+    /// The fog of war on the GPU.
+    pub fn fog(&self) -> &FogGpu {
+        &self.fog
+    }
+
+    /// Renders the minimap's background: the world seen straight down over `map_size`
+    /// cells into a `pixels`-square image. Call after `load_world`, before any live models
+    /// or effects are set (they would be baked in). The HUD then shows
+    /// [`Renderer::minimap_view`].
+    pub fn bake_minimap(&mut self, gpu: &Gpu, map_size: u32, pixels: u32) {
+        let _span = tracing::info_span!("bake_minimap").entered();
+        let (quality, size, shadows) = (self.quality, self.output_size, self.shadows);
+        self.baking = true;
+        self.shadows = false;
+        self.set_quality(
+            gpu,
+            Quality {
+                render_scale: 1.0,
+                contact_shadows: false,
+                bloom: false,
+                haze: crate::HazeQuality::Off,
+                ..quality
+            },
+        );
+        self.resize(gpu, [pixels, pixels]);
+        let base = gpu.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("minimap base"),
+            size: wgpu::Extent3d {
+                width: pixels,
+                height: pixels,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: self.output_format,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        });
+        let view = base.create_view(&Default::default());
+        let half = map_size as f32 * 0.5;
+        let centre = Vec3::new(half, 0.0, half);
+        let camera = crate::portrait::orthographic(
+            centre + Vec3::Y * 2000.0,
+            centre,
+            Vec3::NEG_Z,
+            half,
+            half,
+            4000.0,
+        );
+        self.render(gpu, &camera, 12.0, &view, None);
+        self.shadows = shadows;
+        self.baking = false;
+        self.resize(gpu, size);
+        self.minimap = Some(MinimapGpu::new(&gpu.device, pixels, view, &self.fog.view));
+        self.world_bytes += u64::from(pixels) * u64::from(pixels) * 8;
+        self.set_quality(gpu, quality);
+    }
+
+    /// The minimap's markers and camera footprint of the next frame.
+    pub fn set_minimap(&mut self, frame: &mut MinimapFrame) {
+        std::mem::swap(&mut self.minimap_frame, frame);
+    }
+
+    /// The minimap image (sRGB, premultiplied alpha) once baked.
+    pub fn minimap_view(&self) -> Option<&wgpu::TextureView> {
+        self.minimap.as_ref().map(|m| &m.view)
+    }
+
+    pub fn minimap_texture(&self) -> Option<&wgpu::Texture> {
+        self.minimap.as_ref().map(MinimapGpu::texture)
+    }
+
+    /// The model the portrait shows from the next frame (`None`: no portrait drawn; the
+    /// image keeps its last picture). The portrait image is `pixels` square and exists
+    /// from the first call.
+    pub fn set_portrait(&mut self, gpu: &Gpu, subject: Option<PortraitSubject>, pixels: u32) {
+        if self.portrait.as_ref().is_none_or(|(p, _)| p.size != pixels) {
+            let portrait = PortraitGpu::new(&gpu.device, pixels);
+            let group = self.bindings.group(
+                &gpu.device,
+                &self.frame_layout,
+                "portrait frame",
+                &portrait.frame_buffer,
+                &self.light_buffer,
+                &self.bindings.dummy_shadow,
+                &self.fog.view,
+            );
+            self.portrait = Some((portrait, group));
+            self.rebuild(gpu);
+        }
+        self.portrait_subject = subject;
+    }
+
+    /// The portrait image (sRGB, premultiplied alpha) once a subject was set.
+    pub fn portrait_view(&self) -> Option<&wgpu::TextureView> {
+        self.portrait.as_ref().map(|(p, _)| &p.view)
+    }
+
+    pub fn portrait_texture(&self) -> Option<&wgpu::Texture> {
+        self.portrait.as_ref().map(|(p, _)| p.texture())
+    }
+
+    /// The world UI of the next frame (ground marks and the overlay).
+    pub fn set_world_ui(&mut self, frame: &mut WorldUiFrame) {
+        std::mem::swap(&mut self.world_ui_frame, frame);
+    }
+
+    /// The world UI's label glyphs (R8) and badge icons (sRGB RGBA8).
+    pub fn set_world_ui_atlases(&mut self, gpu: &Gpu, glyphs: &AtlasImage, icons: &AtlasImage) {
+        self.world_ui
+            .set_atlases(&gpu.device, &gpu.queue, glyphs, icons);
     }
 
     pub fn water(&self) -> Option<&WaterGpu> {
@@ -553,6 +845,21 @@ impl Renderer {
             lighting.sun_direction,
             &self.environment.shadow,
         );
+        if self.lights_dirty {
+            let mut lights = self.map_lights.clone();
+            lights.extend(
+                self.effect_frame
+                    .lights
+                    .iter()
+                    .take(MAX_EFFECT_LIGHTS)
+                    .copied(),
+            );
+            if !lights.is_empty() {
+                queue.write_buffer(&self.light_buffer, 0, bytemuck::cast_slice(&lights));
+            }
+            self.point_lights = lights.len() as u32;
+            self.lights_dirty = false;
+        }
         let uniform = FrameUniform::new(&FrameParams {
             camera,
             lighting,
@@ -564,6 +871,12 @@ impl Renderer {
             haze: self.environment.haze.0,
             haze_range: self.environment.haze.1,
             point_lights: self.point_lights,
+            fog: self
+                .fog
+                .raster
+                .as_ref()
+                .filter(|_| !self.baking)
+                .map(|r| r.size()),
         });
         queue.write_buffer(&self.frame_buffer, 0, bytemuck::bytes_of(&uniform));
         queue.write_buffer(
@@ -590,6 +903,36 @@ impl Renderer {
             statics.prepare(queue, camera.view_projection, shadow_matrix);
         }
         if let Some(actors) = &mut self.actors {
+            let subject = self
+                .portrait_subject
+                .as_ref()
+                .filter(|_| self.portrait.is_some());
+            let portrait = subject.and_then(|s| {
+                let (min, max) = actors.rest_bounds(s.instance.model)?;
+                let transform = Mat4::from_rotation_y(-0.32) * s.instance.transform;
+                let corners = (0..8).map(|i| {
+                    transform.transform_point3(Vec3::new(
+                        if i & 1 == 0 { min.x } else { max.x },
+                        if i & 2 == 0 { min.y } else { max.y },
+                        if i & 4 == 0 { min.z } else { max.z },
+                    ))
+                });
+                let (lo, hi) = corners.fold(
+                    (Vec3::splat(f32::MAX), Vec3::splat(f32::MIN)),
+                    |(lo, hi), c| (lo.min(c), hi.max(c)),
+                );
+                Some((
+                    crate::actors::ActorInstance {
+                        transform,
+                        ..s.instance
+                    },
+                    crate::portrait::frame(lo, hi, s.building, 1.0),
+                ))
+            });
+            actors.set_portrait(portrait.as_ref().map(|p| p.0));
+            if let (Some((_, camera)), Some((gpu_portrait, _))) = (&portrait, &self.portrait) {
+                gpu_portrait.prepare(queue, camera, &self.environment.lighting);
+            }
             actors.prepare(
                 device,
                 queue,
@@ -598,6 +941,17 @@ impl Renderer {
             );
             report.actors = actors.stats;
         }
+        self.effects.prepare(queue, &self.effect_frame, camera);
+        if let Some(minimap) = &mut self.minimap {
+            minimap.prepare(queue, &self.minimap_frame, self.fog.enabled());
+        }
+        self.world_ui.prepare(
+            queue,
+            &self.world_ui_frame,
+            self.output_size,
+            self.output_format.is_srgb(),
+        );
+        report.effects = self.effects.stats;
         if let Some(water) = &mut self.water {
             report.water = water.prepare(
                 queue,
@@ -620,7 +974,10 @@ impl Renderer {
             self.output_size,
             self.output_format.is_srgb(),
             &self.environment.post,
-            (grade.vignette, grade.highlight_shoulder),
+            (
+                if self.baking { 0.0 } else { grade.vignette },
+                grade.highlight_shoulder,
+            ),
             &self.quality,
             sun,
         );
@@ -772,6 +1129,8 @@ impl Renderer {
                     if let Some(actors) = &self.actors {
                         report.draws += actors.draw_transparent(&mut rp, &self.frame_group);
                     }
+                    report.draws += self.world_ui.draw_ground(&mut rp, &self.frame_group);
+                    report.draws += self.effects.draw(&mut rp, &self.frame_group);
                 }
                 (passes::CONTACT, PassKind::Render) => {
                     report.draws +=
@@ -793,7 +1152,33 @@ impl Renderer {
                         self.post
                             .encode_final(&mut encoder, &self.frame_group, output, writes);
                 }
-                (passes::UI, PassKind::Render) => match &mut self.ui {
+                (passes::MINIMAP, PassKind::Render) => {
+                    if let Some(minimap) = &self.minimap {
+                        report.draws += minimap.encode(&mut encoder, writes);
+                    }
+                }
+                (passes::PORTRAIT, PassKind::Render) => {
+                    if let (Some((portrait, group)), Some(actors)) = (&self.portrait, &self.actors)
+                        && actors.has_portrait()
+                    {
+                        report.draws += portrait
+                            .encode(&mut encoder, writes, |rp| actors.draw_portrait(rp, group));
+                    }
+                }
+                (passes::WORLD_UI, PassKind::Render) => {
+                    // The minimap bake shows the world alone.
+                    if !self.baking && (self.world_ui.has_overlay() || writes.is_some()) {
+                        report.draws += self.world_ui.encode_overlay(
+                            device,
+                            &mut encoder,
+                            output,
+                            self.output_format,
+                            writes,
+                        );
+                    }
+                }
+                // The minimap bake leaves the UI's list and target for the next frame.
+                (passes::UI, PassKind::Render) => match self.ui.as_mut().filter(|_| !self.baking) {
                     Some(ui) => report.draws += ui.encode(&mut encoder, output, writes),
                     None => drop(encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: Some(passes::UI),

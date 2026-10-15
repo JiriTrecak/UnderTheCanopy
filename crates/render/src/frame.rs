@@ -28,9 +28,11 @@ pub struct FrameUniform {
     pub haze: [f32; 4],
     pub haze_range: [f32; 4],
     pub counts: [u32; 4],
+    /// x: 1 / fog size, y: fog on (0/1), z: fog size.
+    pub fog: [f32; 4],
 }
 
-const _: () = assert!(std::mem::size_of::<FrameUniform>() == 544);
+const _: () = assert!(std::mem::size_of::<FrameUniform>() == 560);
 
 /// Most point lights the frame buffer holds.
 pub const MAX_POINT_LIGHTS: usize = 64;
@@ -61,6 +63,8 @@ pub struct FrameParams<'a> {
     pub haze: glam::Vec3,
     pub haze_range: [f32; 2],
     pub point_lights: u32,
+    /// Cells per side of the viewer's fog of war; `None` without fog.
+    pub fog: Option<u32>,
 }
 
 impl FrameUniform {
@@ -104,6 +108,9 @@ impl FrameUniform {
             haze: v4(p.haze, 0.0),
             haze_range: [p.haze_range[0], p.haze_range[1], 0.0, 0.0],
             counts: [p.point_lights, 0, 0, 0],
+            fog: p.fog.map_or([0.0; 4], |size| {
+                [1.0 / size.max(1) as f32, 1.0, size as f32, 0.0]
+            }),
         }
     }
 
@@ -167,6 +174,13 @@ pub fn layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
                     has_dynamic_offset: false,
                     min_binding_size: None,
                 },
+                count: None,
+            },
+            texture(6, wgpu::TextureSampleType::Float { filterable: true }),
+            wgpu::BindGroupLayoutEntry {
+                binding: 7,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                 count: None,
             },
         ],

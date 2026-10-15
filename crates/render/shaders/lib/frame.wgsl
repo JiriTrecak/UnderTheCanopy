@@ -32,6 +32,8 @@ struct Frame {
     haze_range: vec4f,
     // x: point light count
     counts: vec4u,
+    // x: 1 / fog size, y: fog on (0/1), z: fog size
+    fog: vec4f,
 }
 
 struct PointLight {
@@ -47,6 +49,8 @@ struct PointLight {
 @group(0) @binding(3) var canopy_pattern: texture_2d<f32>;
 @group(0) @binding(4) var repeat_sampler: sampler;
 @group(0) @binding(5) var<storage, read> point_lights: array<PointLight>;
+@group(0) @binding(6) var fog_map: texture_2d<f32>;
+@group(0) @binding(7) var fog_sampler: sampler;
 
 fn time_seconds() -> f32 {
     return frame.eye.w;
@@ -70,9 +74,32 @@ fn view_depth(world: vec3f) -> f32 {
     return (frame.view_proj * vec4f(world, 1.0)).w;
 }
 
+// The fog of war's light at a world position: 1 in sight, about 0.35 explored, 0
+// unexplored or outside the map (old `FogOfWar`); 1 everywhere without fog.
+fn fog_light(world: vec3f) -> f32 {
+    if (frame.fog.y < 0.5) {
+        return 1.0;
+    }
+    let uv = (world.xz + 0.5) * frame.fog.x;
+    if (any(uv < vec2f(0.0)) || any(uv > vec2f(1.0))) {
+        return 0.0;
+    }
+    return textureSampleLevel(fog_map, fog_sampler, uv, 0.0).r;
+}
+
+// The old fog look: explored ground desaturates and cools, unexplored goes black.
+fn apply_fog(world: vec3f, color: vec3f) -> vec3f {
+    if (frame.fog.y < 0.5) {
+        return color;
+    }
+    let light = fog_light(world);
+    let gray = dot(color, vec3f(0.2126, 0.7152, 0.0722));
+    return mix(vec3f(gray) * vec3f(0.82, 0.91, 1.0), color, smoothstep(0.25, 0.85, light)) * light;
+}
+
 fn scene_out(color: vec4f, world: vec3f) -> SceneOut {
     var out: SceneOut;
-    out.color = color;
+    out.color = vec4f(apply_fog(world, color.rgb), color.a);
     out.depth = encode_depth(view_depth(world));
     return out;
 }

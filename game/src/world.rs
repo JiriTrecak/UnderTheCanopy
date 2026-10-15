@@ -34,6 +34,8 @@ pub struct Loaded {
     pub scene: MapScene,
     pub environment: Environment,
     pub pack: Arc<Pack>,
+    /// The data folder (the world UI's label font).
+    pub data: std::path::PathBuf,
 }
 
 /// A match: the world, its session and its presenter (they move to the simulation
@@ -91,7 +93,7 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
         .clone();
     let world = canopy_sim::World::new(content, &map, setup)
         .map_err(|e| anyhow!("cannot start the match: {}", e.0))?;
-    let (loaded, game) = assemble(
+    let (mut loaded, game) = assemble(
         &map,
         pack,
         &look,
@@ -100,6 +102,7 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
         spec.colors.as_deref(),
         spec.hour,
     )?;
+    loaded.data = paths.data.clone();
     tracing::info!(
         map = id,
         biome = map.biome(),
@@ -153,6 +156,8 @@ fn assemble(
             scene,
             environment,
             pack,
+            // Set by the caller.
+            data: std::path::PathBuf::new(),
         },
         Match {
             world,
@@ -247,7 +252,8 @@ pub fn prepare(
         }
     };
     progress(Stage::Scene, 0.6);
-    let (loaded, game) = assemble(&map, data.pack.clone(), &look, world, session, None, None)?;
+    let (mut loaded, game) = assemble(&map, data.pack.clone(), &look, world, session, None, None)?;
+    loaded.data = paths.data.clone();
     progress(Stage::Gpu, 0.85);
     tracing::info!(
         map = %request.map,

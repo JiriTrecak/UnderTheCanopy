@@ -22,12 +22,14 @@
 //! [`Pack::load`] reads the whole file with one read; [`Pack::open`] reads only the index
 //! and fetches entries on demand.
 
+mod effects;
 mod error;
 mod format;
 mod pack;
 mod texture;
 mod write;
 
+pub use effects::*;
 pub use error::Error;
 pub use format::*;
 pub use pack::{Blob, Indices, Model, Pack, Sound, Texture};

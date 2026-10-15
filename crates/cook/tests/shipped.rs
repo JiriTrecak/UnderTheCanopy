@@ -112,6 +112,29 @@ fn the_shipped_data_cooks_cleanly() {
                     );
                 }
             }
+            EntryKind::Effects => {
+                // Every converted layer samples cooked textures and draws cooked models.
+                for layer in blob
+                    .effects()
+                    .unwrap()
+                    .effects
+                    .iter()
+                    .flat_map(|e| &e.layers)
+                {
+                    if let Some(texture) = &layer.texture {
+                        assert_eq!(
+                            pack.entry(texture).map(|e| e.kind),
+                            Some(EntryKind::Texture)
+                        );
+                    }
+                    if let Some(model) = &layer.model {
+                        assert_eq!(
+                            pack.entry(&model.model).map(|e| e.kind),
+                            Some(EntryKind::Model)
+                        );
+                    }
+                }
+            }
         }
     }
 

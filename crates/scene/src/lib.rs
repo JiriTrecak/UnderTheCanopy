@@ -5,11 +5,14 @@
 //! ([`interpolate`]).
 
 pub mod animation;
+pub mod effects;
+pub mod fog;
 pub mod interpolate;
 pub mod live;
 pub mod models;
 pub mod statics;
 pub mod terrain;
+pub mod world_ui;
 
 use anyhow::{Context, Result, bail};
 use canopy_content::{Content, map::UtcMap};

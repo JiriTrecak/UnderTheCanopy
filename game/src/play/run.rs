@@ -154,6 +154,24 @@ impl InMatch {
                 camera.look_at(focus[0], focus[1]);
             }
         }
+        // Effects, world UI, the minimap's background and the portrait image, before the
+        // world moves to the simulation thread and before any live model is drawn.
+        let mut live = LiveScene::default();
+        live.attach_effects(
+            renderer,
+            gpu,
+            &loaded.pack,
+            game.presenter.effects.effect_table().clone(),
+        );
+        live.attach_world_ui(
+            &loaded.data,
+            &loaded.pack,
+            &content,
+            loaded.scene.colors.clone(),
+        );
+        live.world_ui_input.viewer = start.me;
+        renderer.bake_minimap(gpu, loaded.scene.size, MINIMAP_PIXELS);
+        renderer.set_portrait(gpu, None, PORTRAIT_PIXELS);
         let sim = SimThread::start(
             game.world,
             game.session,
@@ -188,10 +206,10 @@ impl InMatch {
         audio.clear_game();
         audio.bind(&content);
         let now = Instant::now();
-        Ok(Self {
+        let mut this = Self {
             loaded,
             sim,
-            live: LiveScene::default(),
+            live,
             camera,
             play,
             hud,
@@ -220,7 +238,35 @@ impl InMatch {
             frame_max: 0.0,
             stats_since: now,
             held_before: 0,
-        })
+        };
+        // The HUD shows the minimap and the live portrait.
+        let targets = [
+            (
+                "@minimap",
+                MINIMAP_TEXTURE,
+                MINIMAP_PIXELS,
+                renderer.minimap_view().cloned(),
+            ),
+            (
+                "@portrait",
+                PORTRAIT_TEXTURE,
+                PORTRAIT_PIXELS,
+                renderer.portrait_view().cloned(),
+            ),
+        ];
+        for (name, id, pixels, view) in targets {
+            if let Some(view) = view {
+                this.plug_render_target(
+                    gpu,
+                    renderer,
+                    name,
+                    canopy_ui::TextureId(id),
+                    &view,
+                    [pixels; 2],
+                );
+            }
+        }
+        Ok(this)
     }
 
     /// Follows the player's settings (shortcuts, health bars).
@@ -233,7 +279,6 @@ impl InMatch {
     /// `"@portrait"` (the image names `hud.json` shows), `id` a texture id below
     /// [`canopy_render::ui::FIRST_PACK_TEXTURE`], `size` its pixel size. The HUD shows
     /// it from the next frame.
-    #[allow(dead_code, reason = "the minimap and portrait renderers plug in here")]
     pub fn plug_render_target(
         &mut self,
         gpu: &canopy_render::Gpu,
@@ -245,7 +290,9 @@ impl InMatch {
     ) {
         renderer.ui_mut(gpu).set_texture(gpu, id, view);
         let mut desc = canopy_ui::ImageDesc::new(id, size[0] as f32, size[1] as f32);
-        desc.premultiplied = false;
+        // The renderer's images are sRGB textures with premultiplied alpha.
+        desc.premultiplied = true;
+        desc.srgb_view = true;
         self.targets.push((name.to_owned(), desc));
         match name {
             "@minimap" => self.hud.minimap = true,
@@ -571,6 +618,28 @@ impl InMatch {
             }
             host.renderer.set_actors(&instances);
         }
+        // The world UI pass, the minimap and the portrait from what play shows.
+        self.live.world_ui_input = world_ui_input(&world_ui, scale, self.me);
+        let seconds = since_start.as_secs_f32();
+        self.live.eye = Some(camera_view.eye);
+        self.live.draw_world_ui(
+            host.renderer,
+            gpu,
+            &camera_view,
+            &self.loaded.scene,
+            seconds,
+        );
+        self.live.draw_minimap(
+            host.renderer,
+            &camera_view,
+            &self.loaded.scene,
+            MINIMAP_PIXELS,
+        );
+        let subject = world_ui
+            .selected
+            .first()
+            .and_then(|&id| self.live.portrait(id, seconds));
+        host.renderer.set_portrait(gpu, subject, PORTRAIT_PIXELS);
         let focus = [camera_view.target.x, camera_view.target.z];
         self.live.feed_ripples(
             host.renderer,
@@ -679,32 +748,13 @@ impl InMatch {
         events
     }
 
-    /// Adds the world UI stand-in (rings, markers, footprint cells, drag box) under the
-    /// HUD in the UI's draw list, until the renderer's world UI pass draws them.
+    /// Adds the drag box under the HUD in the UI's draw list (everything else in the
+    /// world is the renderer's world UI pass).
     pub fn decorate(&self, list: &mut DrawList) {
         let Some(screen) = &self.screen else {
             return;
         };
-        let bodies: Vec<Body> = self
-            .live
-            .bodies()
-            .iter()
-            .map(|&(id, [radius, height], foot)| Body {
-                id,
-                foot,
-                height,
-                radius: (radius - 0.32).max(0.2),
-                unit: true,
-            })
-            .collect();
-        overlay::draw(
-            list,
-            screen,
-            &self.play.world_ui(),
-            self.play.knowledge(),
-            &bodies,
-            self.loaded.scene.terrain(),
-        );
+        overlay::draw(list, screen.scale, &self.play.world_ui());
     }
 
     /// Renders the frame into `output` with the UI (already submitted to the renderer's
@@ -744,6 +794,53 @@ impl InMatch {
     }
 }
 
+/// The minimap and portrait images and their UI texture ids (render targets sit below
+/// `canopy_render::ui::FIRST_PACK_TEXTURE`).
+pub(crate) const MINIMAP_PIXELS: u32 = 256;
+pub(crate) const PORTRAIT_PIXELS: u32 = 256;
+const MINIMAP_TEXTURE: u32 = 1;
+const PORTRAIT_TEXTURE: u32 = 2;
+
+/// What the renderer's world UI pass draws from what play shows.
+pub(crate) fn world_ui_input(
+    world_ui: &super::WorldUi,
+    scale: f32,
+    viewer: Option<u8>,
+) -> canopy_scene::world_ui::WorldUiInput {
+    use canopy_scene::world_ui::{GroundMarker, HealthBars, PlacementMark, WorldUiInput, linear};
+    WorldUiInput {
+        selected: world_ui.selected.clone(),
+        hovered: world_ui.hovered,
+        health: match world_ui.health {
+            super::HealthBars::Default => HealthBars::Damaged,
+            super::HealthBars::All => HealthBars::Always,
+            super::HealthBars::Friendly => HealthBars::Friendly,
+            super::HealthBars::Hostile => HealthBars::Hostile,
+        },
+        viewer,
+        scale,
+        markers: world_ui
+            .markers
+            .iter()
+            .map(|(m, age)| {
+                let [r, g, b] = m.kind.color();
+                GroundMarker {
+                    position: m.position,
+                    radius: m.radius,
+                    color: linear(u32::from_be_bytes([0, r, g, b])),
+                    opacity: m.opacity(*age),
+                }
+            })
+            .collect(),
+        placement: world_ui.ghost.as_ref().map(|g| PlacementMark {
+            cells: [g.cells.min_x, g.cells.min_y, g.cells.max_x, g.cells.max_y],
+            valid: g.problem.is_none(),
+            entrance: g.entrance,
+        }),
+        ..WorldUiInput::default()
+    }
+}
+
 /// Linear → sRGB for a channel.
 pub(crate) fn srgb(v: f32) -> f32 {
     if v <= 0.003_130_8 {
@@ -780,7 +877,8 @@ pub(crate) fn ghost_instance(
         glam::Vec3::new(x, y, z),
     );
     let mut instance = canopy_render::actors::ActorInstance::rest(model, transform);
-    instance.opacity = 0.48;
+    // Translucent like the old ghost (0.48 opacity), not screen-doored.
+    instance.tint = [1.0, 1.0, 1.0, 0.48];
     let own = me
         .and_then(|p| colors.get(usize::from(p)).copied())
         .unwrap_or([1.0; 3]);

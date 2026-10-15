@@ -34,6 +34,17 @@ pub enum Resource {
     Haze,
     /// The presented (or captured) image.
     Output,
+    /// The minimap image the HUD shows.
+    Minimap,
+    /// The selection portrait image the HUD shows.
+    Portrait,
+}
+
+impl Resource {
+    /// Images the frame hands out rather than reads itself.
+    pub fn is_output(self) -> bool {
+        matches!(self, Self::Output | Self::Minimap | Self::Portrait)
+    }
 }
 
 impl fmt::Display for Resource {
@@ -122,7 +133,7 @@ impl FrameGraph {
         for (i, pass) in passes.iter().enumerate() {
             for &resource in &pass.writes {
                 let read_later = passes[i + 1..].iter().any(|p| p.reads.contains(&resource));
-                if resource != Resource::Output && !read_later {
+                if !resource.is_output() && !read_later {
                     return Err(GraphError::Unused {
                         pass: pass.name,
                         resource,
@@ -167,6 +178,9 @@ pub mod passes {
     pub const BLOOM: &str = "bloom";
     pub const HAZE: &str = "haze";
     pub const POST: &str = "post";
+    pub const WORLD_UI: &str = "world_ui";
+    pub const MINIMAP: &str = "minimap";
+    pub const PORTRAIT: &str = "portrait";
     /// The game UI (HUD, menus, tooltips) over the finished frame.
     pub const UI: &str = "ui";
 }
@@ -180,13 +194,19 @@ pub struct FrameFeatures {
     pub contact: bool,
     pub bloom: bool,
     pub haze: bool,
+    /// The HUD's minimap image.
+    pub minimap: bool,
+    /// The HUD's selection portrait image.
+    pub portrait: bool,
 }
 
 /// The world frame (renderer §4.1): GPU culling of statics for both views, the joint
-/// palettes of the live models, the sun shadow map, the water's ripple field and caustics, the forward HDR pass (terrain,
-/// statics, live models, water; MSAA resolved in the pass, with linear depth), the post effects the
-/// biome uses (contact shading, bloom, volumetric haze) and the final pass (upscale,
-/// effects, tone map, grade) into the output, then the game UI over it.
+/// palettes of the live models, the sun shadow map, the water's ripple field and caustics,
+/// the forward HDR pass (terrain, statics, live models, water, world UI on the ground,
+/// effects; MSAA resolved in the pass, with linear depth), the post effects the biome
+/// uses (contact shading, bloom, volumetric haze), the final pass (upscale, effects, tone
+/// map, grade) into the output, the world UI overlay on it, the HUD's minimap and
+/// portrait images, then the game UI over everything.
 pub fn world_frame(features: FrameFeatures) -> FrameGraph {
     use PassKind::*;
     use Resource::*;
@@ -239,6 +259,21 @@ pub fn world_frame(features: FrameFeatures) -> FrameGraph {
             .writes(&[Output]),
     );
     list.push(
+        Pass::new(passes::WORLD_UI, Render)
+            .reads(&[Output])
+            .writes(&[Output]),
+    );
+    if features.minimap {
+        list.push(Pass::new(passes::MINIMAP, Render).writes(&[Minimap]));
+    }
+    if features.portrait {
+        list.push(
+            Pass::new(passes::PORTRAIT, Render)
+                .reads(&[Palettes])
+                .writes(&[Portrait]),
+        );
+    }
+    list.push(
         Pass::new(passes::UI, Render)
             .reads(&[Output])
             .writes(&[Output]),
@@ -255,25 +290,29 @@ mod tests {
     #[test]
     fn the_world_frame_is_well_formed() {
         let graph = world_frame(FrameFeatures::default());
-        assert_eq!(graph.passes().len(), 6);
+        assert_eq!(graph.passes().len(), 7);
         assert_eq!(graph.last_use(ShadowMap), Some(passes::FORWARD));
         assert_eq!(graph.last_use(Palettes), Some(passes::FORWARD));
         assert_eq!(graph.index(passes::POST), Some(4));
-        assert_eq!(graph.index(passes::UI), Some(5));
+        assert_eq!(graph.index(passes::WORLD_UI), Some(5));
+        assert_eq!(graph.index(passes::UI), Some(6));
         let all = world_frame(FrameFeatures {
             water: true,
             contact: true,
             bloom: true,
             haze: true,
+            minimap: true,
+            portrait: true,
         });
         let names: Vec<&str> = all.passes().iter().map(|p| p.name).collect();
         assert_eq!(
             names,
             [
                 "cull", "skin", "shadow", "ripples", "caustics", "forward", "contact", "bloom",
-                "haze", "post", "ui"
+                "haze", "post", "world_ui", "minimap", "portrait", "ui"
             ]
         );
+        assert_eq!(all.last_use(Palettes), Some(passes::PORTRAIT));
         // The haze marches through the sun's shadow map after the scene is drawn.
         assert_eq!(all.last_use(ShadowMap), Some(passes::HAZE));
         assert_eq!(all.last_use(RippleField), Some(passes::FORWARD));
