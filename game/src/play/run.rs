@@ -12,6 +12,7 @@
 use super::{
     Event, Play,
     debug::{Debug, Stats as DebugStats},
+    follow::{self, CameraMode},
     hud::Hud,
     input::{self, Input},
     keys::{Keymap, Shortcut},
@@ -44,6 +45,8 @@ use winit::{
     window::Window,
 };
 
+/// Seconds per simulation tick (D3).
+const TICK_SECONDS: f32 = 0.025;
 /// PageUp/PageDown wheel pixels per millisecond (old `camera.zoomIn`).
 const KEY_ZOOM: f32 = 0.7;
 /// Radians per second a spectator turns with Q and E.
@@ -113,6 +116,10 @@ pub struct InMatch {
     hud_hidden: bool,
     last_tick: Option<u32>,
     camera_view: Option<CameraView>,
+    /// The unit camera's blend between poses.
+    follow: follow::Follow,
+    /// The RTS focus before a mission cinematic moved the view.
+    cinematic_focus: Option<[f32; 2]>,
     screen: Option<Screen>,
     stats: DebugStats,
     frames: u32,
@@ -138,6 +145,22 @@ impl InMatch {
         renderer.set_actors(&[]);
         let content = game.world.catalog().content.clone();
         let catalog = Arc::new(Catalog::new(content.clone()));
+        // Names and controllers for the observer panel.
+        let players: Vec<(u8, String, bool)> = game
+            .world
+            .setup()
+            .slots
+            .iter()
+            .map(|s| {
+                (
+                    s.player,
+                    s.name
+                        .clone()
+                        .unwrap_or_else(|| format!("Player {}", s.player + 1)),
+                    s.kind == canopy_sim::SlotKind::Ai,
+                )
+            })
+            .collect();
         let terrain = game.world.terrain().clone();
         let seat = start.me.map_or(Seat::Observer, Seat::Player);
         let view0 = Arc::new(seat.view(&game.world));
@@ -190,6 +213,7 @@ impl InMatch {
         }
         let mut hud = Hud::new();
         hud.map_size = loaded.scene.size as f32;
+        hud.players = players;
         hud.palette = loaded
             .scene
             .colors
@@ -231,6 +255,8 @@ impl InMatch {
             hud_hidden: false,
             last_tick: None,
             camera_view: None,
+            follow: follow::Follow::default(),
+            cinematic_focus: None,
             screen: None,
             stats: DebugStats::default(),
             frames: 0,
@@ -362,7 +388,10 @@ impl InMatch {
                 self.debug_open = !self.debug_open;
                 return;
             }
-            if shortcuts.contains(&Shortcut::ToggleHud) {
+            // Escape also brings a hidden HUD back (old `enableHudToggle`).
+            if shortcuts.contains(&Shortcut::ToggleHud)
+                || (self.hud_hidden && code == KeyCode::Escape)
+            {
                 self.hud_hidden = !self.hud_hidden;
                 return;
             }
@@ -425,11 +454,15 @@ impl InMatch {
                 button: MouseButton::Middle,
                 ..
             } => {
-                self.drag = (*state == ElementState::Pressed && !consumed)
+                self.drag = (*state == ElementState::Pressed
+                    && !consumed
+                    && self.play.camera_mode == CameraMode::Rts)
                     .then_some(self.cursor)
                     .flatten();
             }
-            WindowEvent::MouseWheel { delta, .. } if !consumed => {
+            WindowEvent::MouseWheel { delta, .. }
+                if !consumed && self.play.camera_mode == CameraMode::Rts =>
+            {
                 let pixels = match delta {
                     MouseScrollDelta::LineDelta(_, y) => -y * 16.0 * 6.25,
                     MouseScrollDelta::PixelDelta(p) => -p.y as f32,
@@ -468,6 +501,18 @@ impl InMatch {
         self.play.input(&input, terrain);
     }
 
+    /// The unit camera's view of the focused unit, or `None` for the RTS view.
+    fn close_view(&mut self, aspect: f32, dt: f32) -> Option<CameraView> {
+        let mode = self.play.camera_mode;
+        if mode == CameraMode::Rts {
+            return None;
+        }
+        let id = self.play.selection.focus()?;
+        let subject = follow::subject(&self.live, self.play.knowledge(), id)?;
+        let pose = follow::ground_pose(&subject, mode, self.loaded.scene.terrain())?;
+        Some(self.follow.view((mode, id), &pose, dt, aspect))
+    }
+
     /// Whether a held key holds `shortcut` (camera keys from the player's bindings).
     fn held(&self, shortcut: Shortcut) -> bool {
         self.play
@@ -478,7 +523,27 @@ impl InMatch {
     }
 
     fn update_camera(&mut self, size: [u32; 2], scale: f32, dt_ms: f32, free: bool, typing: bool) {
-        let steer = free && !typing;
+        // A unit camera ignores panning and zoom (old `followingUnit`); so does a
+        // cinematic, which looks at its scene and gives the view back afterwards.
+        let cinematic = self.play.cinematic();
+        match (cinematic, self.cinematic_focus) {
+            (Some(scene), saved) => {
+                if saved.is_none() {
+                    self.cinematic_focus = Some(self.camera.focus);
+                }
+                self.play.camera_mode = CameraMode::Rts;
+                if let Some([x, z]) = scene {
+                    self.camera.look_at(x, z);
+                }
+            }
+            (None, Some([x, z])) => {
+                self.camera.look_at(x, z);
+                self.cinematic_focus = None;
+            }
+            (None, None) => {}
+        }
+        let steer =
+            free && !typing && cinematic.is_none() && self.play.camera_mode == CameraMode::Rts;
         let mut dir = [0.0f32, 0.0];
         if steer {
             if self.held(Shortcut::PanLeft) {
@@ -554,6 +619,10 @@ impl InMatch {
 
         // The newest view and the interpolated scene.
         let live_started = Instant::now();
+        // The first-person camera does not draw its own body (old `hideCameraBody`).
+        self.live.hidden_entity = (self.play.camera_mode == CameraMode::FirstPerson)
+            .then(|| self.play.selection.focus())
+            .flatten();
         self.live.poll(self.sim.mailbox());
         self.live.frame(host.renderer, gpu, &self.loaded.pack, now);
         let newest = self.live.newest().cloned();
@@ -564,11 +633,22 @@ impl InMatch {
                     host.audio.observe(&snap.view);
                 }
             }
+            if self.last_tick != Some(s.tick())
+                && let Some(day) = &self.loaded.day
+            {
+                // The old sky's day cycle, on match time (it stops while paused).
+                host.renderer
+                    .set_lighting(day.lighting(s.tick() as f32 * TICK_SECONDS));
+            }
             self.last_tick = Some(s.tick());
             self.hud.colonies = s.colonies.clone();
         }
         let live_ms = live_started.elapsed().as_secs_f32() * 1000.0;
-        let camera_view = view::frame(&mut self.camera, aspect, &self.loaded.scene);
+        let rts_view = view::frame(&mut self.camera, aspect, &self.loaded.scene);
+        let camera_view = self.close_view(aspect, dt_ms / 1000.0).unwrap_or_else(|| {
+            self.follow.shown(&rts_view);
+            rts_view
+        });
         let screen = Screen {
             camera: camera_view,
             size: [size[0] as f32, size[1] as f32],
@@ -740,6 +820,8 @@ impl InMatch {
         events.extend(self.play.take_events());
         events.retain(|e| match e {
             Event::LookAt([x, z]) => {
+                // A camera jump returns to the RTS view (old `lookAt` hook).
+                self.play.camera_mode = CameraMode::Rts;
                 self.camera.look_at(*x, *z);
                 false
             }
@@ -819,19 +901,60 @@ pub(crate) fn world_ui_input(
         },
         viewer,
         scale,
-        markers: world_ui
-            .markers
-            .iter()
-            .map(|(m, age)| {
-                let [r, g, b] = m.kind.color();
-                GroundMarker {
-                    position: m.position,
-                    radius: m.radius,
-                    color: linear(u32::from_be_bytes([0, r, g, b])),
-                    opacity: m.opacity(*age),
+        // The spell aim as ground rings until the world UI draws the old outline: the
+        // area (a disc, or discs along a line) in the old valid/invalid edge colour and
+        // the dashed range ring as a faint ring around the caster.
+        markers: {
+            let mut out: Vec<GroundMarker> = world_ui
+                .markers
+                .iter()
+                .map(|(m, age)| {
+                    let [r, g, b] = m.kind.color();
+                    GroundMarker {
+                        position: m.position,
+                        radius: m.radius,
+                        color: linear(u32::from_be_bytes([0, r, g, b])),
+                        opacity: m.opacity(*age),
+                    }
+                })
+                .collect();
+            if let Some(aim) = &world_ui.aim {
+                let edge = linear(if aim.valid { 0xbefff0 } else { 0xff7770 });
+                match aim.line {
+                    Some((length, width)) => {
+                        let (dx, dz) = (aim.point[0] - aim.origin[0], aim.point[1] - aim.origin[1]);
+                        let n = dx.hypot(dz).max(1e-3);
+                        let step = (width * 1.5).max(0.5);
+                        let mut along = 0.0;
+                        while along <= length {
+                            out.push(GroundMarker {
+                                position: [
+                                    aim.origin[0] + dx / n * along,
+                                    aim.origin[1] + dz / n * along,
+                                ],
+                                radius: width,
+                                color: edge,
+                                opacity: 0.9,
+                            });
+                            along += step;
+                        }
+                    }
+                    None => out.push(GroundMarker {
+                        position: aim.point,
+                        radius: aim.radius,
+                        color: edge,
+                        opacity: 0.9,
+                    }),
                 }
-            })
-            .collect(),
+                out.push(GroundMarker {
+                    position: aim.origin,
+                    radius: aim.range,
+                    color: linear(0xe8dfb0),
+                    opacity: 0.35,
+                });
+            }
+            out
+        },
         placement: world_ui.ghost.as_ref().map(|g| PlacementMark {
             cells: [g.cells.min_x, g.cells.min_y, g.cells.max_x, g.cells.max_y],
             valid: g.problem.is_none(),

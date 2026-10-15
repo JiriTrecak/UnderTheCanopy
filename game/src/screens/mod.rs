@@ -167,6 +167,10 @@ pub struct Game {
     pub audio: canopy_audio::Audio,
     /// What the match follows of the settings (shortcuts, health bars).
     play_options: PlayOptions,
+    /// The cursor last set on the window.
+    cursor: Option<winit::window::CursorIcon>,
+    /// The window's width in logical pixels (the compact HUD's dock scale).
+    hud_width: f32,
     modifiers: ModifiersState,
     started: Instant,
     last_frame: Instant,
@@ -218,6 +222,8 @@ impl Game {
             progress: Progress::load(&paths.user),
             catalog,
             play_options,
+            cursor: None,
+            hud_width: 0.0,
             paths,
             settings,
             settings_dirty: false,
@@ -497,8 +503,9 @@ impl Game {
             groups: None,
             start_tick: 0,
         };
-        let mut setup = rerun.setup.clone();
-        setup.seed = seed();
+        // A restart plays the same scenario again: map, players, teams and seed (old
+        // "Restart scenario"); new matches bring their own seed.
+        let setup = rerun.setup.clone();
         let job = Job::Match(Box::new(MatchRequest {
             map: rerun.map.clone(),
             setup: setup.clone(),
@@ -721,6 +728,12 @@ impl Game {
     /// One frame: boot, network, loading, the match, the UI's actions, then the UI's
     /// models. Returns what the window should do.
     pub fn update(&mut self, ctx: &mut Ctx<'_>) -> Requests {
+        // The compact HUD depends on the window's width.
+        let width = ctx.size[0] as f32 / ctx.scale.max(0.1);
+        if (width - self.hud_width).abs() > 0.5 {
+            self.hud_width = width;
+            self.apply_hud();
+        }
         let now = Instant::now();
         let dt = (now - self.last_frame).as_secs_f32().min(0.25);
         self.last_frame = now;
@@ -758,11 +771,23 @@ impl Game {
         self.poll_boot();
         self.poll_network();
         self.finish_loading(ctx);
+        // Text fields reach the system clipboard (copy, cut, paste) for every screen.
+        let mut taken = self.host.ui.take_actions();
+        taken.retain(|a| match &a.kind {
+            ActionKind::Copy(text) => {
+                crate::clipboard::set(text);
+                false
+            }
+            ActionKind::PasteRequest => {
+                if let Some(text) = crate::clipboard::get() {
+                    self.host.ui.paste(&text);
+                }
+                false
+            }
+            _ => true,
+        });
         // The HUD's actions go to the match, the rest to the screens.
-        let (hud, actions): (Vec<Action>, Vec<Action>) = self
-            .host
-            .ui
-            .take_actions()
+        let (hud, actions): (Vec<Action>, Vec<Action>) = taken
             .into_iter()
             .partition(|a| a.path.as_deref().is_some_and(|p| p.starts_with("hud/")));
         self.update_match(ctx, hud);
@@ -773,6 +798,7 @@ impl Game {
         }
         self.update_fade(dt);
         self.sync(ctx);
+        self.update_cursor(ctx);
         if self.playing.is_none() {
             // A match updates the audio itself (its listener and effect sounds).
             self.audio.update(&canopy_audio::Frame {
@@ -785,6 +811,37 @@ impl Game {
         let time = (now - self.started).as_secs_f64();
         self.prepare_ui(ctx.gpu, ctx.renderer, time);
         std::mem::take(&mut self.requests)
+    }
+
+    /// The mouse cursor: the UI's (pointer over controls, text over fields), else the
+    /// old canvas cursor (a crosshair while choosing an attack target).
+    fn update_cursor(&mut self, ctx: &Ctx<'_>) {
+        use winit::window::CursorIcon;
+        let Some(window) = ctx.window else {
+            return;
+        };
+        let attack = self.flow.in_match()
+            && self.playing.as_ref().is_some_and(|p| {
+                matches!(
+                    &p.game.play.mode,
+                    crate::play::Mode::Target {
+                        targeting: crate::play::orders::Targeting::Attack { .. },
+                        ..
+                    }
+                )
+            });
+        let icon = match self.host.ui.cursor() {
+            canopy_ui::Cursor::Pointer => CursorIcon::Pointer,
+            canopy_ui::Cursor::Text => CursorIcon::Text,
+            canopy_ui::Cursor::Grab => CursorIcon::Grab,
+            canopy_ui::Cursor::Grabbing => CursorIcon::Grabbing,
+            canopy_ui::Cursor::Default if attack => CursorIcon::Crosshair,
+            canopy_ui::Cursor::Default => CursorIcon::Default,
+        };
+        if self.cursor != Some(icon) {
+            window.set_cursor(icon);
+            self.cursor = Some(icon);
+        }
     }
 
     /// Lays out and paints the UI (with the match's world UI stand-in under the HUD) and
@@ -816,6 +873,9 @@ impl Game {
         match done {
             Some(Ok(data)) => {
                 self.boot = None;
+                // The content's command shortcuts join the rebindable catalogue.
+                self.catalog = keys::full_catalog(Some(&data.content));
+                self.play_options = play_options(&self.settings, &self.catalog);
                 self.data = Some(Arc::new(data));
                 self.apply(Intent::Booted);
                 if let Some(dev) = self.dev.take() {
@@ -1216,6 +1276,13 @@ impl Game {
 
     fn open_saves(&mut self) {
         self.saves_list = self.library.list();
+        // In a match only saves of its mode are listed (old `savesForMode`: campaign and
+        // skirmish saves are kept apart); the main menu lists every save.
+        if self.flow.in_match()
+            && let Some(mode) = self.playing.as_ref().and_then(|p| p.kind.save_mode())
+        {
+            self.saves_list.retain(|s| s.mode == mode);
+        }
         self.saves_status.clear();
         self.apply(Intent::Show(Overlay::Saves));
     }
@@ -1304,12 +1371,13 @@ impl Game {
         }
     }
 
-    /// The HUD size setting on the in-match HUD (`hud.json`'s dock).
+    /// The HUD size and layout settings on the in-match HUD (`hud.json`'s dock).
     fn apply_hud(&mut self) {
+        let width = self.hud_width;
         if let Some(dock) = self.host.ui.find("hud/dock") {
             self.host
                 .ui
-                .set_scale(dock, Some(self.settings.hud.scale()));
+                .set_scale(dock, Some(self.settings.hud.dock_scale(width)));
         }
     }
 

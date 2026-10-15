@@ -12,6 +12,7 @@ use super::{
     know::Knowledge,
     orders::{Targeting, commanded},
 };
+use crate::settings::Chord;
 use canopy_content::{
     Id,
     abilities::{Activation, TargetingKind},
@@ -33,6 +34,8 @@ pub enum Activate {
     },
     /// Opens a category (`None`: the root card).
     Menu(Option<String>),
+    /// Cycles the unit camera (RTS, third person, first person).
+    Camera,
 }
 
 /// One cost row: the icon id and the amount.
@@ -50,7 +53,11 @@ pub struct Command {
     pub name: String,
     pub description: String,
     pub icon: Id,
+    /// The authored hotkey (content).
     pub hotkey: Option<String>,
+    /// The key that presses it: the player's binding of `command.<id>`, else the
+    /// authored hotkey (set by the controller from its keymap).
+    pub chord: Option<Chord>,
     pub costs: Vec<CostView>,
     pub reason: Option<String>,
     pub priority: i64,
@@ -86,6 +93,7 @@ impl Command {
             description: description.to_owned(),
             icon: icon.clone(),
             hotkey: None,
+            chord: None,
             costs: Vec::new(),
             reason: None,
             priority,
@@ -941,6 +949,32 @@ fn spells(
     }
 }
 
+/// The camera command (old `unitCameraCommand`): offered while the focus is a visible,
+/// living unit outside any building, for players and observers alike.
+pub fn camera(
+    k: &Knowledge,
+    selection: &[u32],
+    mode: super::follow::CameraMode,
+) -> Option<Command> {
+    let meta = k.content.actions.navigation.camera.as_ref()?;
+    let focus = selection.first().and_then(|&id| k.entity(id))?;
+    if !k.is_unit(focus) || focus.remembered || k.held(focus.id().0) || !k.alive(focus) {
+        return None;
+    }
+    let mut c = Command::new(
+        "camera",
+        &format!("Camera: {}", mode.name()),
+        &format!("{}\nNext: {}.", meta.description, mode.next().name()),
+        &meta.icon,
+        meta.priority,
+        Activate::Camera,
+    );
+    c.hotkey = meta.hotkey.clone();
+    c.placement = meta.placement;
+    c.actors = vec![focus.id().0];
+    Some(c)
+}
+
 /// Every command is unavailable once the match is decided.
 fn finish(mut out: Vec<Command>, ended: bool) -> Vec<Command> {
     if ended {
@@ -1118,11 +1152,11 @@ pub fn layout(entries: &[Command], page: usize) -> Layout {
 /// The command a key chord selects (old `commandShortcut`): an exact match among the
 /// page's entries and the always-available basic orders first; otherwise, with Shift,
 /// the unshifted chord (Shift queues). Returns the entry and whether Shift queues.
+/// Matches each command's [`Command::chord`].
 pub fn shortcut<'a>(
     visible: &'a [Command],
     all: &'a [Command],
-    key: &str,
-    shift: bool,
+    pressed: &Chord,
 ) -> Option<(&'a Command, bool)> {
     const ALWAYS: [&str; 5] = ["move", "attack", "stop", "hold", "patrol"];
     let candidates = || {
@@ -1130,21 +1164,17 @@ pub fn shortcut<'a>(
             .iter()
             .chain(all.iter().filter(|c| ALWAYS.contains(&c.id.as_str())))
     };
-    let chord = if shift {
-        format!("Shift+{key}")
-    } else {
-        key.to_owned()
-    };
-    let matches = |c: &Command, chord: &str| {
-        c.hotkey
-            .as_deref()
-            .is_some_and(|h| h.eq_ignore_ascii_case(chord))
-    };
-    if let Some(c) = candidates().find(|c| matches(c, &chord)) {
+    if let Some(c) = candidates().find(|c| c.chord.as_ref() == Some(pressed)) {
         return Some((c, false));
     }
-    if shift {
-        return candidates().find(|c| matches(c, key)).map(|c| (c, true));
+    if pressed.shift {
+        let plain = Chord {
+            shift: false,
+            ..pressed.clone()
+        };
+        return candidates()
+            .find(|c| c.chord.as_ref() == Some(&plain))
+            .map(|c| (c, true));
     }
     None
 }
@@ -1213,27 +1243,28 @@ mod tests {
 
     #[test]
     fn shortcuts_match_exactly_then_queue_with_shift() {
+        let key = |t: &str| Chord::parse(t).unwrap();
         let mut attack = cmd("attack", 190, None, None);
-        attack.hotkey = Some("A".into());
+        attack.chord = Some(key("KeyA"));
         let mut hold = cmd("hold", 170, None, None);
-        hold.hotkey = Some("Shift+A".into());
+        hold.chord = Some(key("Shift+KeyA"));
         let mut build = cmd("category:build", 60, None, None);
-        build.hotkey = Some("B".into());
+        build.chord = Some(key("KeyB"));
         let all = vec![attack.clone(), hold.clone(), build.clone()];
         // Inside a submenu only Back and the basic orders are reachable.
         let visible = vec![cmd("back", 0, None, None)];
         assert_eq!(
-            shortcut(&visible, &all, "A", false).map(|(c, q)| (c.id.as_str(), q)),
+            shortcut(&visible, &all, &key("KeyA")).map(|(c, q)| (c.id.as_str(), q)),
             Some(("attack", false))
         );
         assert_eq!(
-            shortcut(&visible, &all, "A", true).map(|(c, q)| (c.id.as_str(), q)),
+            shortcut(&visible, &all, &key("Shift+KeyA")).map(|(c, q)| (c.id.as_str(), q)),
             Some(("hold", false))
         );
-        assert!(shortcut(&visible, &all, "B", false).is_none());
+        assert!(shortcut(&visible, &all, &key("KeyB")).is_none());
         let root = vec![attack, build];
         assert_eq!(
-            shortcut(&root, &all, "B", true).map(|(c, q)| (c.id.as_str(), q)),
+            shortcut(&root, &all, &key("Shift+KeyB")).map(|(c, q)| (c.id.as_str(), q)),
             Some(("category:build", true))
         );
     }

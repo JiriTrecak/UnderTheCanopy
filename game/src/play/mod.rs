@@ -14,6 +14,7 @@
 pub mod capture;
 pub mod card;
 pub mod debug;
+pub mod follow;
 pub mod hud;
 pub mod input;
 pub mod keys;
@@ -128,6 +129,23 @@ pub struct WorldUi {
     pub drag: Option<[Vec2; 2]>,
     /// The focused producer's rally point (x, z).
     pub rally: Option<[f32; 2]>,
+    /// The spell being aimed at the cursor.
+    pub aim: Option<Aim>,
+}
+
+/// A spell aimed at the cursor (old `AbilityAim`): the caster, the aimed cell, the area
+/// (a disc, or a line from the caster), the cast range and whether the aim is in range
+/// and on ground in sight.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Aim {
+    pub origin: [f32; 2],
+    pub point: [f32; 2],
+    /// Disc radius at the point (0.8 for unit spells, as the old outline).
+    pub radius: f32,
+    /// A line delivery's length and half width, from the caster towards the point.
+    pub line: Option<(f32, f32)>,
+    pub range: f32,
+    pub valid: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -201,6 +219,8 @@ pub struct Play {
     pub always_health_bars: bool,
     /// Commands sent, newest last (debug overlay).
     pub sent: Vec<(Duration, Action)>,
+    /// The unit camera (J cycles it; Escape and camera jumps return to RTS).
+    pub camera_mode: follow::CameraMode,
 }
 
 impl Play {
@@ -245,6 +265,7 @@ impl Play {
             keymap: Keymap::default(),
             always_health_bars: false,
             sent: Vec::new(),
+            camera_mode: follow::CameraMode::Rts,
         };
         // Facts from before the match was shown are not news.
         play.seen_fact = play.know.view.facts.last().map(|f| f.id);
@@ -258,6 +279,29 @@ impl Play {
 
     pub fn observer(&self) -> bool {
         self.know.me.is_none()
+    }
+
+    /// A mission cinematic holds the match (old `MissionHud.active`): a scene, or a
+    /// cinematic line still playing, before the outcome and without a script error.
+    /// Returns where the scene stands (x, z) when it has a place.
+    pub fn cinematic(&self) -> Option<Option<[f32; 2]>> {
+        let v = &self.know.view;
+        let m = v.mission.as_ref()?;
+        if v.outcome.is_some() || m.error.is_some() {
+            return None;
+        }
+        let line = m
+            .dialogue
+            .as_ref()
+            .is_some_and(|d| d.cinematic && d.remaining > 0);
+        match &m.scene {
+            Some(scene) => Some(Some([
+                scene.position.x as f32 / 1000.0,
+                scene.position.y as f32 / 1000.0,
+            ])),
+            None if line => Some(None),
+            None => None,
+        }
     }
 
     /// Whether the pointer is over the HUD (no world hover there).
@@ -316,7 +360,15 @@ impl Play {
     /// went away or changed.
     fn refresh(&mut self) {
         self.commands = card::commands(&self.know, self.selection.ids());
+        match card::camera(&self.know, self.selection.ids(), self.camera_mode) {
+            Some(c) => self.commands.push(c),
+            // The followed unit died, left sight or entered a building.
+            None => self.camera_mode = follow::CameraMode::Rts,
+        }
         self.entries = card::menu(&self.know, &self.commands, self.menu.as_deref());
+        for c in self.commands.iter_mut().chain(self.entries.iter_mut()) {
+            c.chord = self.keymap.command(&c.id, c.hotkey.as_deref());
+        }
         if self.menu.is_some() && !self.entries.iter().any(|c| c.id == "back") {
             self.menu = None;
         }
@@ -497,14 +549,20 @@ impl Play {
         Some((text, fade))
     }
 
-    /// The targeting hint above the HUD (old hint text).
+    /// The targeting hint above the HUD (old hint text, with the player's keys).
     pub fn hint(&self) -> Option<String> {
+        let cancel = self.keymap.label(Shortcut::Cancel);
+        let cancel = if cancel.is_empty() {
+            "Esc".to_owned()
+        } else {
+            cancel
+        };
         match &self.mode {
             Mode::Idle => None,
             Mode::Target {
                 targeting, name, ..
             } => Some(format!(
-                "{name}: choose a {}. Esc cancels.",
+                "{name}: choose a {}. {cancel} cancels.",
                 targeting.wants()
             )),
             Mode::Place {
@@ -512,10 +570,12 @@ impl Play {
             } => {
                 let problem = self.ghost().and_then(|g| g.problem);
                 Some(format!(
-                    "{name}: {} R / Shift+R: rotate ({}°). Esc cancels.",
+                    "{name}: {} {} / {}: rotate ({}°). {cancel} cancels.",
                     problem.map_or("Click to order construction.".to_owned(), |p| format!(
                         "{p}."
                     )),
+                    self.keymap.label(Shortcut::RotateClockwise),
+                    self.keymap.label(Shortcut::RotateCounterclockwise),
                     placement.rotation
                 ))
             }
@@ -568,7 +628,12 @@ impl Play {
             .and_then(|p| p.rally.as_ref())
             .map(|r| [r.point.x as f32 / 1000.0, r.point.y as f32 / 1000.0]);
         WorldUi {
-            selected: self.selection.ids().to_vec(),
+            // No selection rings during a cinematic (old `gameSelect([])`).
+            selected: if self.cinematic().is_some() {
+                Vec::new()
+            } else {
+                self.selection.ids().to_vec()
+            },
             hovered: self.hovered,
             health,
             markers: self
@@ -583,7 +648,69 @@ impl Play {
             },
             drag,
             rally,
+            aim: self.aim(),
         }
+    }
+
+    /// The spell aimed at the cursor (old `onHover` → `gameAbilityTarget`).
+    pub fn aim(&self) -> Option<Aim> {
+        let Mode::Target {
+            targeting: orders::Targeting::Cast { actor, binding, .. },
+            ..
+        } = &self.mode
+        else {
+            return None;
+        };
+        let k = &self.know;
+        let hit = self.ground_point?;
+        let caster = k.entity(*actor)?;
+        let policy = k.catalog.spells.caster(caster.definition())?;
+        let index = policy.bindings.iter().position(|b| &b.id == binding)?;
+        let rank = caster
+            .magic
+            .as_ref()
+            .and_then(|m| m.caster.as_ref())
+            .and_then(|c| c.ranks.get(index).copied())
+            .unwrap_or(0);
+        if rank == 0 {
+            return None;
+        }
+        let ability = &k.content.abilities.abilities[usize::from(policy.bindings[index].ability.0)];
+        let value = |a: &canopy_content::abilities::Amount| {
+            canopy_sim::abilities::library::value(ability, rank, a) as f32
+        };
+        let origin = k.position(caster);
+        let point = [hit.x.round(), hit.z.round()];
+        let range = value(&ability.targeting.range);
+        let radius = match (&ability.targeting.kind, &ability.targeting.radius) {
+            (canopy_content::abilities::TargetingKind::Point, Some(r)) => value(r),
+            _ => 0.8,
+        };
+        let line = match &ability.delivery {
+            Some(canopy_content::abilities::Delivery::Line { length, width, .. }) => {
+                Some((*length as f32, *width as f32))
+            }
+            _ => None,
+        };
+        let size = self.terrain.size() as f32;
+        let in_sight = point[0] >= 0.0
+            && point[1] >= 0.0
+            && point[0] < size
+            && point[1] < size
+            && k.view.fog.as_ref().is_none_or(|f| {
+                f.cells
+                    .get((point[1] * size + point[0]) as usize)
+                    .is_some_and(|&c| c == 2)
+            });
+        let valid = (point[0] - origin[0]).hypot(point[1] - origin[1]) <= range && in_sight;
+        Some(Aim {
+            origin,
+            point,
+            radius,
+            line,
+            range,
+            valid,
+        })
     }
 
     // --- Selection ---------------------------------------------------------------
@@ -753,12 +880,34 @@ impl Play {
                 self.held.clear();
                 self.mods = Mods::default();
             }
+            // A cinematic takes no world clicks (old: input reset every frame).
+            Input::Button { pressed: true, .. } if self.cinematic().is_some() => {
+                self.press = None;
+            }
             Input::Button { button, pressed } => self.button(*button, *pressed, ground),
             Input::Key {
                 key,
                 pressed,
                 repeat,
             } => {
+                if *pressed && self.cinematic().is_some() {
+                    // Only the game menu opens during a cinematic (old `blockKey`);
+                    // Escape still reaches it (D39).
+                    let chord = Chord {
+                        code: keys::code_of(key),
+                        ctrl: self.mods.ctrl,
+                        alt: self.mods.alt && *key != "Alt",
+                        shift: self.mods.shift,
+                        meta: self.mods.logo,
+                    };
+                    if !*repeat
+                        && (*key == "Escape"
+                            || self.keymap.pressed(&chord).contains(&Shortcut::GameMenu))
+                    {
+                        self.events.push(Event::OpenMenu);
+                    }
+                    return;
+                }
                 if *pressed {
                     if !self.held.contains(key) {
                         self.held.push(key);
@@ -963,6 +1112,9 @@ impl Play {
             Shortcut::Cancel => {
                 if self.mode != Mode::Idle {
                     self.mode = Mode::Idle;
+                } else if self.camera_mode != follow::CameraMode::Rts {
+                    self.camera_mode = follow::CameraMode::Rts;
+                    self.refresh();
                 } else if self.menu.is_some() {
                     self.activate_id("back", false);
                 } else {
@@ -1014,7 +1166,14 @@ impl Play {
             .map(|&i| self.entries[i].clone())
             .collect();
         let all = self.commands.clone();
-        if let Some((c, queue)) = card::shortcut(&visible, &all, key, shift) {
+        let pressed = Chord {
+            code: keys::code_of(key),
+            ctrl: self.mods.ctrl,
+            alt: self.mods.alt,
+            shift,
+            meta: self.mods.logo,
+        };
+        if let Some((c, queue)) = card::shortcut(&visible, &all, &pressed) {
             let id = c.id.clone();
             self.activate_id(&id, queue);
         }
@@ -1212,6 +1371,10 @@ impl Play {
                     source: (c.id.clone(), c.actors.clone()),
                     name: c.name.clone(),
                 };
+            }
+            Activate::Camera => {
+                self.mode = Mode::Idle;
+                self.camera_mode = self.camera_mode.next();
             }
             Activate::Menu(_) => {}
         }

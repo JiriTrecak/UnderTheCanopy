@@ -1,7 +1,9 @@
 # Documentation
 
+- [Status](status.md): where the rebuild stands, how to try it, decisions to review.
 - [Plan](plan.md): phase 1 milestones, targets, what is deferred.
 - [Decisions](decisions.md): the decision log.
+- [Parity](parity.md): the phase 1 checklist against the old game, with evidence and what remains.
 - [Structure](structure.md): repository layout, dependency rules, data.
 - [Renderer](renderer.md): renderer design and its open questions.
 - [Audio](audio.md): playback, positional sound, voice limiting, effect sounds and music.

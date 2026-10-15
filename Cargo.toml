@@ -11,6 +11,8 @@ publish = false
 
 [workspace.dependencies]
 anyhow = "1"
+# The system clipboard for text fields (copy, cut, paste).
+arboard = { version = "3", default-features = false }
 # Tests that the mixer never allocates while rendering.
 assert_no_alloc = { version = "1.1", features = ["warn_debug"] }
 blake3 = "1"

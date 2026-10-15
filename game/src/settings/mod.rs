@@ -138,6 +138,8 @@ impl Graphics {
 pub struct Hud {
     /// HUD size in percent, 30–100 (old default 65).
     pub scale: u32,
+    /// Spread along the screen's width, or compact (at most 1240 px wide, centred).
+    pub layout: HudLayout,
     /// Health bars over every unit, not only hovered, selected and damaged ones.
     pub always_show_health_bars: bool,
     pub tooltips: bool,
@@ -147,15 +149,41 @@ impl Default for Hud {
     fn default() -> Self {
         Self {
             scale: 65,
+            layout: HudLayout::Spread,
             always_show_health_bars: false,
             tooltips: true,
         }
     }
 }
 
+/// The old "HUD layout" setting.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub enum HudLayout {
+    /// Screen edges: the dock spans the window (old default).
+    #[default]
+    Spread,
+    /// Centred: the dock is at most [`COMPACT_HUD_WIDTH`] logical pixels wide.
+    Compact,
+}
+
+/// The compact dock's widest (old `min(100vw - 12px, 1240px)`).
+pub const COMPACT_HUD_WIDTH: f32 = 1240.0;
+
 impl Hud {
     pub fn scale(&self) -> f32 {
         self.scale.clamp(30, 100) as f32 / 100.0
+    }
+
+    /// The dock's scale in a window `width` logical pixels wide: the HUD size, and in
+    /// the compact layout the narrower dock (the dock keeps its 3:1 shape and scales
+    /// about its bottom centre, so a narrower dock is the same dock scaled down).
+    pub fn dock_scale(&self, width: f32) -> f32 {
+        let full = (width - 12.0).max(1.0);
+        match self.layout {
+            HudLayout::Spread => self.scale(),
+            HudLayout::Compact => self.scale() * (COMPACT_HUD_WIDTH / full).min(1.0),
+        }
     }
 }
 
@@ -325,6 +353,16 @@ mod tests {
         assert!(note.error.is_some());
         assert!(note.moved_aside.unwrap().is_file());
         assert!(!Settings::path(&user).exists());
+    }
+
+    #[test]
+    fn the_compact_hud_is_at_most_1240_pixels_wide() {
+        let mut hud = Hud::default();
+        assert_eq!(hud.dock_scale(2560.0), 0.65);
+        hud.layout = HudLayout::Compact;
+        assert!((hud.dock_scale(2492.0) - 0.65 * 0.5).abs() < 1e-6);
+        // Narrow windows keep the spread width.
+        assert_eq!(hud.dock_scale(1000.0), 0.65);
     }
 
     #[test]

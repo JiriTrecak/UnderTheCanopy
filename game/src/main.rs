@@ -2,6 +2,7 @@
 
 mod app;
 mod bench;
+mod clipboard;
 mod data;
 mod gpu;
 mod live;

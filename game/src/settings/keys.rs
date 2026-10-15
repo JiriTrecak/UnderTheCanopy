@@ -9,8 +9,9 @@
 //! Enter is reserved for chat; only listed keys may be bound; a bare modifier only for the
 //! health bar holds. Defaults may share keys; only edited collisions are blocked.
 //!
-//! Content-derived command shortcuts (command card, build menus, abilities) take their
-//! defaults from authored hotkeys and are added by the in-match command card.
+//! Content-derived command shortcuts (command card, build menus, abilities; old
+//! `catalog.ts`) are entries too, with ids `command.<command id>` and their authored
+//! hotkeys as defaults ([`commands`]). Defaults may share keys across cards.
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::BTreeMap;
@@ -377,6 +378,130 @@ pub fn catalog() -> Vec<Entry> {
     out
 }
 
+/// Group of the content-derived command entries.
+pub const COMMANDS: &str = "Commands";
+
+/// An authored content hotkey as a chord (old `authoredKey`: `"A"` → `KeyA`,
+/// `"ESC"` → `Escape`).
+pub fn authored(key: &str) -> Option<Chord> {
+    let key = key.trim();
+    if key.is_empty() {
+        return None;
+    }
+    let mut chars = key.chars();
+    let code = match (chars.next(), chars.next()) {
+        (Some(c), None) if c.is_ascii_alphabetic() => format!("Key{}", c.to_ascii_uppercase()),
+        (Some(c), None) if c.is_ascii_digit() => format!("Digit{c}"),
+        _ if key.eq_ignore_ascii_case("esc") => "Escape".into(),
+        _ => key.into(),
+    };
+    Chord::parse(&code)
+}
+
+/// The catalogue id of a command card entry (`command.<id>`; Back is the old
+/// `navigation:back`).
+pub fn command_id(id: &str) -> String {
+    match id {
+        "back" => "command.navigation:back".into(),
+        other => format!("command.{other}"),
+    }
+}
+
+/// The content's command shortcuts (old `shortcutCatalog`): basic actions (not the
+/// per-definition verbs), categories, camera and Back navigation, visible overrides,
+/// every constructable and trainable definition, ability commands and research.
+pub fn commands(content: &canopy_content::Content) -> Vec<Entry> {
+    use canopy_content::game::Creation;
+    let actions = &content.actions;
+    let mut out: Vec<Entry> = Vec::new();
+    let mut add = |id: String, label: &str, key: Option<&str>| {
+        let id = format!("command.{id}");
+        if let Some(e) = out.iter_mut().find(|e| e.id == id) {
+            // Old `Map.set`: a later entry with the same id replaces the earlier one.
+            e.label = label.into();
+            e.default = key.and_then(authored);
+        } else {
+            out.push(Entry {
+                id,
+                group: COMMANDS,
+                label: label.into(),
+                default: key.and_then(authored),
+            });
+        }
+    };
+    for (id, a) in &actions.actions {
+        if !["build", "produce", "research", "cancelResearch"].contains(&id.as_str()) {
+            add(id.clone(), &a.name, a.hotkey.as_deref());
+        }
+    }
+    for (id, a) in &actions.categories {
+        add(format!("category:{id}"), &a.name, a.hotkey.as_deref());
+    }
+    if let Some(camera) = &actions.navigation.camera {
+        add("camera".into(), &camera.name, camera.hotkey.as_deref());
+    }
+    let back = &actions.navigation.back;
+    add("navigation:back".into(), &back.name, back.hotkey.as_deref());
+    for (id, o) in &actions.overrides {
+        if o.hidden == Some(true) {
+            continue;
+        }
+        let (verb, target) = id.split_once(':').unwrap_or((id.as_str(), ""));
+        let name = content
+            .definition(target)
+            .map_or(id.as_str(), |d| d.name.as_str());
+        let key = o
+            .hotkey
+            .as_deref()
+            .or_else(|| actions.actions.get(verb).and_then(|a| a.hotkey.as_deref()));
+        add(id.clone(), name, key);
+    }
+    for d in &content.definitions {
+        let verb = match d.creation {
+            Some(Creation::Construct { .. }) => "build",
+            Some(Creation::Train { .. }) => "produce",
+            _ => continue,
+        };
+        let id = format!("{verb}:{}", d.id);
+        // An override (visible or hidden) already decided this entry.
+        if actions.overrides.contains_key(&id) {
+            continue;
+        }
+        let key = actions.actions.get(verb).and_then(|a| a.hotkey.clone());
+        add(id, &d.name, key.as_deref());
+    }
+    for d in &content.definitions {
+        let Some(policy) = &d.behaviors.abilities else {
+            continue;
+        };
+        for b in &policy.bindings {
+            let Some(command) = &b.command else {
+                continue;
+            };
+            let name = content
+                .abilities
+                .abilities
+                .iter()
+                .find(|a| a.id == b.ability)
+                .map_or(b.ability.as_str(), |a| a.name.as_str());
+            add(format!("cast:{}", b.id), name, Some(&command.hotkey));
+        }
+    }
+    for (id, r) in &content.rules.research {
+        add(format!("research:{id}"), &r.name, None);
+    }
+    out
+}
+
+/// The whole rebindable catalogue: the engine's shortcuts, then the content's commands.
+pub fn full_catalog(content: Option<&canopy_content::Content>) -> Vec<Entry> {
+    let mut out = catalog();
+    if let Some(c) = content {
+        out.extend(commands(c));
+    }
+    out
+}
+
 /// Why a key cannot be bound.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum BindError {
@@ -448,7 +573,9 @@ impl KeyBindings {
         self.overrides.clear();
     }
 
-    /// Pairs of entries sharing a chord (defaults may; the settings screen marks them).
+    /// Pairs of entries sharing a chord where at least one was changed by the player
+    /// (defaults may share keys, as the old game's command cards did); the settings
+    /// screen marks them.
     pub fn conflicts<'a>(&'a self, catalog: &'a [Entry]) -> Vec<(&'a Entry, &'a Entry)> {
         let mut by_chord: BTreeMap<&Chord, Vec<&Entry>> = BTreeMap::new();
         for e in catalog {
@@ -464,13 +591,17 @@ impl KeyBindings {
                     .enumerate()
                     .flat_map(move |(i, a)| entries[i + 1..].iter().map(move |b| (*a, *b)))
             })
+            .filter(|(a, b)| {
+                self.overrides.contains_key(&a.id) || self.overrides.contains_key(&b.id)
+            })
             .collect()
     }
 
     /// Drops overrides of entries the catalog no longer has (old files after a change).
+    /// Command entries (`command.*`) depend on the content and are kept.
     pub fn prune(&mut self, catalog: &[Entry]) {
         self.overrides
-            .retain(|id, _| catalog.iter().any(|e| &e.id == id));
+            .retain(|id, _| id.starts_with("command.") || catalog.iter().any(|e| &e.id == id));
     }
 }
 
@@ -542,6 +673,17 @@ mod tests {
         assert!(!keys.overrides.contains_key(menu));
         keys.restore_defaults();
         assert!(keys.overrides.is_empty());
+    }
+
+    #[test]
+    fn authored_hotkeys_read_like_the_old_authored_key() {
+        assert_eq!(authored("q"), Some(Chord::key("KeyQ")));
+        assert_eq!(authored("ESC"), Some(Chord::key("Escape")));
+        assert_eq!(authored("Escape"), Some(Chord::key("Escape")));
+        assert_eq!(authored("F2"), Some(Chord::key("F2")));
+        assert_eq!(authored(""), None);
+        assert_eq!(command_id("back"), "command.navigation:back");
+        assert_eq!(command_id("cast:bolt"), "command.cast:bolt");
     }
 
     #[test]

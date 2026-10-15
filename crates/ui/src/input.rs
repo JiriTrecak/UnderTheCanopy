@@ -161,6 +161,10 @@ pub enum Cursor {
     Default,
     Pointer,
     Text,
+    /// Over a draggable node (`drag: true`, the minimap).
+    Grab,
+    /// Dragging such a node.
+    Grabbing,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -379,12 +383,18 @@ impl Ui {
     }
 
     pub fn cursor(&self) -> Cursor {
+        if let Some(pr) = &self.input.pressed
+            && pr.drag
+        {
+            return Cursor::Grabbing;
+        }
         let Some(h) = self.input.hover else {
             return Cursor::Default;
         };
         if let Some(t) = target(&self.tree, h) {
             return match self.tree.node(t).kind() {
                 Kind::TextField => Cursor::Text,
+                _ if self.tree.node(t).spec.drag => Cursor::Grab,
                 _ => Cursor::Pointer,
             };
         }
