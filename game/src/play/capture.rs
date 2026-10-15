@@ -113,6 +113,8 @@ pub fn run(
         &content,
         loaded.scene.colors.clone(),
     );
+    renderer.bake_minimap(&gpu, loaded.scene.size, super::run::MINIMAP_PIXELS);
+    renderer.set_portrait(&gpu, None, super::run::PORTRAIT_PIXELS);
     let mut camera = view::initial(options.camera.and_then(|c| c.pose()), &loaded.scene);
     if me.is_some() {
         camera.zoom_range = canopy_render::camera::game_zoom();
@@ -396,6 +398,7 @@ pub fn run(
         hud.colonies = Some(Arc::new(sim::colonies(&game.world)));
     }
     hud.attach(&mut ui);
+    super::run::plug_images(&gpu, &mut renderer, &mut ui, &mut hud);
     let layer = renderer.ui_mut(&gpu);
     for (name, asset) in ui
         .theme_images()
@@ -446,6 +449,17 @@ pub fn run(
     live.world_ui_input = super::run::world_ui_input(&world_ui, screen.scale, me);
     live.eye = Some(screen.camera.eye);
     live.draw_world_ui(&mut renderer, &gpu, &screen.camera, &loaded.scene, 12.0);
+    live.draw_minimap(
+        &mut renderer,
+        &screen.camera,
+        &loaded.scene,
+        super::run::MINIMAP_PIXELS,
+    );
+    let subject = world_ui
+        .selected
+        .first()
+        .and_then(|&id| live.portrait(id, 12.0));
+    renderer.set_portrait(&gpu, subject, super::run::PORTRAIT_PIXELS);
     if let (Some(ghost), Some(def)) = (&world_ui.ghost, &world_ui.ghost_definition) {
         let mut instances = live.instances().to_vec();
         if let Some(i) = super::run::ghost_instance(
@@ -475,6 +489,22 @@ pub fn run(
     );
     gpu.device.poll(wgpu::PollType::wait_indefinitely())?;
     let pixels = capture.read(&gpu.device)?;
+    if std::env::var_os("CANOPY_SHOT_HUD").is_some()
+        && let Some(texture) = renderer.minimap_texture()
+    {
+        let image = Capture::new(&gpu.device, 256, 256);
+        let mut encoder = gpu.device.create_command_encoder(&Default::default());
+        image.copy_from(&mut encoder, texture);
+        gpu.queue.submit([encoder.finish()]);
+        let rgba = image.read(&gpu.device)?;
+        image::save_buffer(
+            out.with_extension("minimap.png"),
+            &rgba,
+            256,
+            256,
+            image::ExtendedColorType::Rgba8,
+        )?;
+    }
     if let Some(dir) = out.parent() {
         std::fs::create_dir_all(dir)?;
     }

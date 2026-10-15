@@ -75,6 +75,27 @@ impl Capture {
         );
     }
 
+    /// Copies another texture of the same size and format (with `COPY_SRC`) into the
+    /// read-back buffer.
+    pub fn copy_from(&self, encoder: &mut wgpu::CommandEncoder, texture: &wgpu::Texture) {
+        encoder.copy_texture_to_buffer(
+            texture.as_image_copy(),
+            wgpu::TexelCopyBufferInfo {
+                buffer: &self.buffer,
+                layout: wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(self.padded_row),
+                    rows_per_image: Some(self.height),
+                },
+            },
+            wgpu::Extent3d {
+                width: self.width,
+                height: self.height,
+                depth_or_array_layers: 1,
+            },
+        );
+    }
+
     /// Waits for the GPU and returns tightly packed RGBA8 rows (sRGB encoded).
     pub fn read(&self, device: &wgpu::Device) -> anyhow::Result<Vec<u8>> {
         let (sender, receiver) = std::sync::mpsc::channel();

@@ -47,10 +47,48 @@ const KEY_ZOOM: f32 = 0.7;
 const TURN_SPEED: f32 = 1.2;
 /// The minimap and portrait images and their UI texture ids (below
 /// `canopy_render::ui::FIRST_PACK_TEXTURE`).
-const MINIMAP_PIXELS: u32 = 256;
-const PORTRAIT_PIXELS: u32 = 256;
+pub(crate) const MINIMAP_PIXELS: u32 = 256;
+pub(crate) const PORTRAIT_PIXELS: u32 = 256;
 const MINIMAP_TEXTURE: u32 = 1;
 const PORTRAIT_TEXTURE: u32 = 2;
+
+/// Shows the renderer's minimap and portrait images in the HUD (`@minimap`,
+/// `@portrait`).
+pub(crate) fn plug_images(
+    gpu: &canopy_render::Gpu,
+    renderer: &mut Renderer,
+    ui: &mut Ui,
+    hud: &mut Hud,
+) {
+    let targets = [
+        (
+            "@minimap",
+            MINIMAP_TEXTURE,
+            MINIMAP_PIXELS,
+            renderer.minimap_view().cloned(),
+        ),
+        (
+            "@portrait",
+            PORTRAIT_TEXTURE,
+            PORTRAIT_PIXELS,
+            renderer.portrait_view().cloned(),
+        ),
+    ];
+    for (name, id, pixels, view) in targets {
+        let Some(view) = view else { continue };
+        let id = canopy_ui::TextureId(id);
+        renderer.ui_mut(gpu).set_texture(gpu, id, &view);
+        let mut desc = canopy_ui::ImageDesc::new(id, pixels as f32, pixels as f32);
+        // The renderer's images are sRGB textures with premultiplied alpha.
+        desc.premultiplied = true;
+        desc.srgb_view = true;
+        ui.register_image(name, desc);
+        match name {
+            "@minimap" => hud.minimap = true,
+            _ => hud.live_portrait = true,
+        }
+    }
+}
 
 /// How a match starts.
 pub struct Start {
@@ -211,26 +249,7 @@ impl InMatch {
             stats_since: now,
             held_before: 0,
         };
-        if let Some(view) = renderer.minimap_view().cloned() {
-            this.plug_render_target(
-                &display.gpu,
-                renderer,
-                "@minimap",
-                canopy_ui::TextureId(MINIMAP_TEXTURE),
-                &view,
-                [MINIMAP_PIXELS; 2],
-            );
-        }
-        if let Some(view) = renderer.portrait_view().cloned() {
-            this.plug_render_target(
-                &display.gpu,
-                renderer,
-                "@portrait",
-                canopy_ui::TextureId(PORTRAIT_TEXTURE),
-                &view,
-                [PORTRAIT_PIXELS; 2],
-            );
-        }
+        plug_images(&display.gpu, renderer, &mut this.ui, &mut this.hud);
         Ok(this)
     }
 
@@ -238,6 +257,7 @@ impl InMatch {
     /// `"@portrait"` (the image names `hud.json` shows), `id` a texture id below
     /// [`canopy_render::ui::FIRST_PACK_TEXTURE`], `size` its pixel size. The HUD shows
     /// it from the next frame.
+    #[allow(dead_code, reason = "other render targets plug in here")]
     pub fn plug_render_target(
         &mut self,
         gpu: &canopy_render::Gpu,

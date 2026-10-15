@@ -180,7 +180,7 @@ impl PortraitGpu {
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: targets::UI_IMAGE_FORMAT,
-            usage: sampled,
+            usage: sampled | wgpu::TextureUsages::COPY_SRC,
             view_formats: &[],
         });
         let view = texture.create_view(&Default::default());

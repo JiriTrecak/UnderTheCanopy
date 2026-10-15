@@ -111,6 +111,12 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
     renderer.set_quality(&gpu, options.quality);
     let started = std::time::Instant::now();
     renderer.load_world(&gpu, &loaded.pack, &loaded.scene.world)?;
+    // The HUD's images, written next to the shot (`<out>-minimap.png`, `-portrait.png`).
+    let hud_images = std::env::var_os("CANOPY_SHOT_HUD").is_some();
+    if hud_images {
+        renderer.bake_minimap(&gpu, loaded.scene.size, 256);
+        renderer.set_portrait(&gpu, None, 256);
+    }
     gpu.device.poll(wgpu::PollType::wait_indefinitely())?;
     let upload_ms = started.elapsed().as_secs_f32() * 1000.0;
     let spec = match options.camera {
@@ -227,6 +233,15 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
             &loaded.scene,
             options.time - (frames - 1 - i) as f32 / 60.0,
         );
+        if hud_images {
+            live.draw_minimap(&mut renderer, &camera_view, &loaded.scene, 256);
+            let subject = live
+                .world_ui_input
+                .selected
+                .first()
+                .and_then(|&id| live.portrait(id, options.time));
+            renderer.set_portrait(&gpu, subject, 256);
+        }
         let report = renderer.render(&gpu, &camera_view, options.time, &capture.view, hook);
         gpu.device.poll(wgpu::PollType::wait_indefinitely())?;
         if i > 0 {
@@ -236,6 +251,24 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
     }
     // One more frame lets the last timestamps arrive.
     let pixels = capture.read(&gpu.device)?;
+    if hud_images {
+        for (name, texture) in [
+            ("minimap", renderer.minimap_texture()),
+            ("portrait", renderer.portrait_texture()),
+        ] {
+            let Some(texture) = texture else { continue };
+            let image = Capture::new(&gpu.device, 256, 256);
+            let mut encoder = gpu.device.create_command_encoder(&Default::default());
+            image.copy_from(&mut encoder, texture);
+            gpu.queue.submit([encoder.finish()]);
+            let rgba = image.read(&gpu.device)?;
+            let path = out.with_file_name(format!(
+                "{}-{name}.png",
+                out.file_stem().and_then(|s| s.to_str()).unwrap_or("shot")
+            ));
+            image::save_buffer(&path, &rgba, 256, 256, image::ExtendedColorType::Rgba8)?;
+        }
+    }
     let late = renderer.render(&gpu, &camera_view, options.time, &capture.view, None);
     gpu.device.poll(wgpu::PollType::wait_indefinitely())?;
     if let Some(dir) = out.parent() {
