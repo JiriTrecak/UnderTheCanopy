@@ -1499,6 +1499,7 @@ impl Hud {
                     events.push(Event::LookAt([at.x * self.map_size, at.y * self.map_size]));
                 }
                 ("menu", ActionKind::Click { .. }) => events.push(Event::OpenMenu),
+                ("debug", ActionKind::Click { .. }) => events.push(Event::ToggleDebug),
                 (_, ActionKind::Submitted(text)) => {
                     play.say(text);
                     if let Some(n) = &self.nodes {

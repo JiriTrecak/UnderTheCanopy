@@ -219,7 +219,7 @@ impl Playing {
                         self.chat(&text);
                     }
                 }
-                play::Event::LookAt(_) => {}
+                play::Event::LookAt(_) | play::Event::ToggleDebug => {}
             }
         }
     }

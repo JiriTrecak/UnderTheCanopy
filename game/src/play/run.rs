@@ -947,6 +947,10 @@ impl InMatch {
                 self.camera.look_at(*x, *z);
                 false
             }
+            Event::ToggleDebug => {
+                self.debug_open = !self.debug_open;
+                false
+            }
             _ => true,
         });
         events

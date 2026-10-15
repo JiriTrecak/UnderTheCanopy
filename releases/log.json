@@ -1,7 +1,9 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [],
+    "added": [
+      "A small graph button next to Menu opens the debug overlay (frame rate, timings and match tools), so it no longer needs F9."
+    ],
     "improved": [],
     "fixed": [],
     "knownIssues": []

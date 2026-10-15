@@ -85,6 +85,8 @@ pub enum Event {
     LookAt([f32; 2]),
     /// Open the game menu (pause menu; the screens own it).
     OpenMenu,
+    /// Show or hide the debug overlay (the HUD's debug button).
+    ToggleDebug,
     /// The player sent a chat line.
     Chat(String),
 }

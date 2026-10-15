@@ -122,9 +122,23 @@
         ]
       },
       {
-        "id": "menu", "kind": "button", "class": "menu-button", "action": "menu",
-        "tooltip": { "title": "Menu", "hotkey": "F10", "body": "Open the game menu." },
-        "children": [{ "kind": "label", "text": "Menu" }]
+        "class": "corner-buttons",
+        "children": [
+          {
+            "id": "debug", "kind": "button", "class": "debug-button", "action": "debug",
+            "tooltip": { "title": "Debug", "hotkey": "F9", "body": "Frame rate, timings and match tools." },
+            "children": [
+              { "class": "debug-bar debug-bar-low" },
+              { "class": "debug-bar debug-bar-high" },
+              { "class": "debug-bar debug-bar-mid" }
+            ]
+          },
+          {
+            "id": "menu", "kind": "button", "class": "menu-button", "action": "menu",
+            "tooltip": { "title": "Menu", "hotkey": "F10", "body": "Open the game menu." },
+            "children": [{ "kind": "label", "text": "Menu" }]
+          }
+        ]
       }
     ]
   }
