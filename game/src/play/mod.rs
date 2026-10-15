@@ -1229,7 +1229,8 @@ impl Play {
         }
     }
 
-    /// Own workers with nothing to do (old idle rule).
+    /// Own workers with nothing to do (old idle rule: no order, queue, job, workplace or
+    /// pending move, no cargo, not held, not being released, not stunned).
     pub fn idle_workers(&self) -> Vec<u32> {
         let k = &self.know;
         k.view
@@ -1243,6 +1244,9 @@ impl Play {
                         && p.economy.job.is_none()
                         && p.economy.employment.is_none()
                         && p.economy.pending_move.is_none()
+                        && !p.contained
+                        && !p.releasing
+                        && !p.stunned
                 }) && e.work.as_ref().is_none_or(|w| w.cargo.is_none())
             })
             .map(|e| e.id().0)

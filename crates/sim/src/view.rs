@@ -83,6 +83,12 @@ pub struct Private {
     pub queued: Vec<crate::orders::Order>,
     /// Job, workplace, production, research, upgrade and revival state.
     pub economy: Box<PrivateWork>,
+    /// A unit held inside another entity (a training building, a lookout, a cage).
+    pub contained: bool,
+    /// A unit waiting to be placed back on the map after leaving its container.
+    pub releasing: bool,
+    /// A unit under a stun.
+    pub stunned: bool,
 }
 
 /// The viewer's fog of war.
@@ -381,6 +387,9 @@ fn private(
         economy: Box::new(crate::economy::view::private(
             state, catalog, economy, works, entity,
         )),
+        contained: entity.unit.as_ref().is_some_and(|u| u.contained.is_some()),
+        releasing: entity.unit.as_ref().is_some_and(|u| u.release.is_some()),
+        stunned: entity.unit.is_some() && crate::abilities::statuses::stunned(catalog, entity),
     }
 }
 

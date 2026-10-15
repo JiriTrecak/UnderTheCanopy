@@ -87,8 +87,8 @@ pub struct Snapshot {
     /// What the computer players are doing (debug overlay), when asked for: refreshed
     /// every [`AI_SUMMARY_TICKS`].
     pub ai: Option<Arc<Vec<canopy_sim::ai::Summary>>>,
-    /// The seat's own units held inside another entity (sorted ids): the view does not
-    /// carry it yet (D35).
+    /// The seat's own units held inside another entity or waiting to be placed back
+    /// (sorted ids, from the view's private flags).
     pub held: Arc<Vec<u32>>,
     /// Every player's colony, for the observer panel (observers only; refreshed every
     /// [`AI_SUMMARY_TICKS`]).
@@ -221,7 +221,8 @@ pub fn wire_outcome(outcome: &canopy_sim::state::Outcome) -> canopy_net::wire::W
     }
 }
 
-/// Whether a unit is held inside another entity (the view does not carry it yet).
+/// Whether a unit is held inside another entity or waiting to be placed back (the
+/// presenter asks for every entity; a view carries it for owned ones only).
 pub fn held(world: &World, id: canopy_sim::entity::EntityId) -> bool {
     world
         .state()
@@ -240,14 +241,18 @@ pub struct Advanced {
     pub decided: bool,
 }
 
-/// The view's own units that are held inside another entity, sorted.
-pub fn held_units(world: &World, view: &View) -> Vec<u32> {
+/// The view's own units that are held inside another entity or waiting to be placed
+/// back, sorted.
+pub fn held_units(view: &View) -> Vec<u32> {
     view.entities
         .iter()
-        .filter(|e| e.private.is_some() && e.motion.is_some())
-        .map(|e| e.id())
-        .filter(|&id| held(world, id))
-        .map(|id| id.0)
+        .filter(|e| e.motion.is_some())
+        .filter(|e| {
+            e.private
+                .as_ref()
+                .is_some_and(|p| p.contained || p.releasing)
+        })
+        .map(|e| e.id().0)
         .collect()
 }
 
@@ -291,7 +296,7 @@ pub fn advance(
     let presented = Instant::now();
     let ms = |a: Instant, b: Instant| (b - a).as_secs_f32() * 1000.0;
     Some(Advanced {
-        held: Arc::new(held_units(world, &view)),
+        held: Arc::new(held_units(&view)),
         presentation,
         decided: view.outcome.is_some(),
         view: Arc::new(view),
@@ -361,7 +366,7 @@ impl SimThread {
                         );
                     }
                     let (first, first_view) = present(&world, &mut presenter, seat);
-                    let first_held = Arc::new(held_units(&world, &first_view));
+                    let first_held = Arc::new(held_units(&first_view));
                     let tick0 = world.tick();
                     let mut ai: Option<Arc<Vec<canopy_sim::ai::Summary>>> = None;
                     let observing = seat == Seat::Observer;

@@ -24,7 +24,7 @@ Everything lives in `game/src/play/`:
 | `capture.rs` | `canopy shot --play`: offscreen captures with the HUD after a scripted input. |
 | `tests.rs` | The headless input harness. |
 
-Commands are only `Action`s sent through the session (D10); the HUD never touches simulation state. The simulation thread presents the seat's view (`sim::Seat`), so the player sees through fog and the observer sees everything. Snapshots carry the view (`Arc<View>`), the seat's held units (the view does not say, D35), AI summaries when the debug overlay asks, and every colony for the observer panel.
+Commands are only `Action`s sent through the session (D10); the HUD never touches simulation state. The simulation thread presents the seat's view (`sim::Seat`), so the player sees through fog and the observer sees everything. Snapshots carry the view (`Arc<View>`), the seat's held units (from the view's private `contained` and `releasing` flags), AI summaries when the debug overlay asks, and every colony for the observer panel.
 
 ## Controls
 

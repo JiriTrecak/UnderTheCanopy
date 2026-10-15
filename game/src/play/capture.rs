@@ -126,13 +126,13 @@ pub fn run(
     }
     let aspect = size[0] as f32 / size[1] as f32;
     let terrain = loaded.scene.terrain();
-    let know = |view: &Arc<canopy_sim::view::View>, world: &canopy_sim::World| {
+    let know = |view: &Arc<canopy_sim::view::View>| {
         let mut k = Knowledge::new(content.clone(), catalog.clone(), view.clone(), me);
-        k.held = Arc::new(sim::held_units(world, view));
+        k.held = Arc::new(sim::held_units(view));
         k
     };
     let mut play = Play::new(
-        know(&view0, &game.world),
+        know(&view0),
         game.world.terrain().clone(),
         Box::new(commands),
     );
@@ -144,7 +144,6 @@ pub fn run(
                    newest: &canopy_scene::live::Presentation,
                    previous: Option<&canopy_scene::live::Presentation>,
                    view: &Arc<canopy_sim::view::View>,
-                   world: &canopy_sim::World,
                    now: Duration|
      -> Screen {
         live.show(renderer, &gpu, &loaded.pack, previous, newest, 1.0);
@@ -154,7 +153,7 @@ pub fn run(
             size: [size[0] as f32, size[1] as f32],
             scale: 1.0,
         };
-        let k = know(view, world);
+        let k = know(view);
         let bodies: Vec<Body> = live
             .bodies()
             .iter()
@@ -177,7 +176,6 @@ pub fn run(
         &newest,
         previous.as_ref(),
         &view0,
-        &game.world,
         now,
     );
     let mut mods = Mods::default();
@@ -339,7 +337,6 @@ pub fn run(
             &newest,
             previous.as_ref(),
             &view0,
-            &game.world,
             now,
         );
         for e in play.take_events() {
@@ -353,7 +350,6 @@ pub fn run(
                     &newest,
                     previous.as_ref(),
                     &view0,
-                    &game.world,
                     now,
                 );
             }
@@ -375,7 +371,6 @@ pub fn run(
             &newest,
             previous.as_ref(),
             &view0,
-            &game.world,
             now,
         );
         if let Some(pose) = play.selection.focus().and_then(|id| {

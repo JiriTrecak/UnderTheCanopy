@@ -58,6 +58,15 @@ fn stuns_halt_units_and_heroes_resist_longer_stuns() {
     let stunned_at = b[0].tick;
     let b_unit = played.entity("b").unit.as_ref().unwrap();
     assert!(b_unit.combat.attack.is_none() || stunned_at + 80 <= played.world.tick());
+    // The owner's view says so (the idle-worker key skips stunned workers).
+    let b_entity = played.entity("b");
+    let view = played.world.view(b_entity.owner);
+    let seen = view
+        .entity(b_entity.id)
+        .and_then(|e| e.private.as_ref())
+        .expect("own unit");
+    assert!(seen.stunned);
+    assert!(!seen.contained && !seen.releasing);
 }
 
 #[test]
