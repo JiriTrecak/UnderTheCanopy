@@ -191,6 +191,10 @@ pub struct MatchConfig {
     pub checksum_every: u32,
     pub tick_ms: u32,
     pub slots: Vec<Slot>,
+    /// Palette colour (index into `config/players.json`) of each slot, in slot order; from
+    /// servers with lobby seats. Outside `Slot`, which 0.3.1 and earlier read strictly.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub colors: Option<Vec<u8>>,
     /// Campaign carry-over of the old game; never set by the match server.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub company: Option<Value>,

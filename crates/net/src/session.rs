@@ -812,6 +812,7 @@ mod tests {
             checksum_every: 0,
             tick_ms: TICK_MS,
             slots: setup(2).slots,
+            colors: None,
             company: None,
         };
         let send = |message: ServerMsg| from.send(FromIo::Message(Box::new(message))).unwrap();

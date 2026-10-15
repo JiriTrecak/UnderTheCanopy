@@ -22,8 +22,12 @@ export class Room {
   private readonly dropped = new Set<number>();
   private readonly listeners: Array<(msg: ServerMsg) => void> = [];
 
+  /** Seats that send commands; computers run inside every player's game and never do. */
+  private readonly humans: MatchConfig["slots"];
+
   constructor(readonly config: MatchConfig,private acceptingCommits=true) {
-    for (const slot of config.slots) {
+    this.humans = config.slots.filter((s) => s.kind === "human");
+    for (const slot of this.humans) {
       this.through.set(slot.player, 0);
       this.held.set(slot.player, new Map());
     }
@@ -54,10 +58,10 @@ export class Room {
   resume(snap: Pick<PipelineSnap, "committed" | "through" | "held">): void {
     this.committed = snap.committed;
     this.through.clear();
-    for (const slot of this.config.slots) this.through.set(slot.player, 0);
+    for (const slot of this.humans) this.through.set(slot.player, 0);
     for (const t of snap.through) this.through.set(t.player, t.through);
     this.held.clear();
-    for (const slot of this.config.slots) this.held.set(slot.player, new Map());
+    for (const slot of this.humans) this.held.set(slot.player, new Map());
     for (const h of snap.held) {
       const map = this.held.get(h.player) ?? new Map();
       this.held.set(h.player, map);
@@ -129,10 +133,10 @@ export class Room {
   }
 
   private ready(tick: number): boolean {
-    for (const slot of this.config.slots) {
+    for (const slot of this.humans) {
       if (this.dropped.has(slot.player)) continue;
       if ((this.through.get(slot.player) ?? 0) < tick) return false;
     }
-    return this.config.slots.some((s) => !this.dropped.has(s.player));
+    return this.humans.some((s) => !this.dropped.has(s.player));
   }
 }

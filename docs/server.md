@@ -24,6 +24,18 @@ just server          # installs node_modules and serves 127.0.0.1:8787 (PORT, BI
 
 The server reads `content/game.json` once at start for the races and starting heroes it accepts. A new race or hero needs a redeploy; new action types need `protocol.ts` changed (and the protocol is frozen, D10).
 
+## Lobby seats
+
+Each seat is **Open** (a human may join), **Closed** (locked by the host) or **Computer**; a joined human's seat shows their name. Every seat has a team (1–8, by default its own number: free for all) and a palette colour (0–7, by default its own), unique among the seats taking part.
+
+| Message | Who | Does |
+|---|---|---|
+| `setSeat {player, seat}` | host | opens, closes or hands a seat to the computer; never a joined human's |
+| `selectRace {race, player?}`, `selectHero {hero, player?}` | a player for their own seat, the host also for a computer's | race and starting hero |
+| `selectTeam {team, player?}`, `selectColor {color, player?}` | as above | team, colour (refused with `INVALID_COLOR` when taken) |
+
+The room view gives each seat `kind` (`open`, `closed`, `ai` or `human`), `team` and `color`; computer seats are named "Computer" so older games show them as taken. At start only seats someone plays enter the match: open seats nobody joined and closed seats are left out, and the game builds no base at their starts. Computer seats are `kind: "ai"` slots: every player's game runs them inside the deterministic simulation, so they send nothing and the relay never waits for them. Colours travel in the config's `colors` list (one per slot, in slot order), not on the slots, which game versions up to 0.3.1 read strictly; those versions still play on this server, without colours.
+
 ## Differences from the old server
 
 - **Abandoned rooms go.** Once a second the server discards rooms nobody can come back to: a finished or desynced match as soon as no player is connected, and a lobby or match whose players have all been disconnected for 2 minutes (`ABANDONED_AFTER_MS`; room for a crashed player to reconnect). Before, rooms stayed until the server restarted: closing the game or finishing a match never removed them. Clients need no change.

@@ -19,6 +19,13 @@ export type Slot = {
   race?: string;
 };
 
+/** Teams and palette colours a lobby offers. */
+export const TEAMS = 8;
+export const COLORS = 8;
+
+/** What a lobby seat holds: open for a human to join, locked by the host, or a computer. */
+export type Seat = "open" | "closed" | "ai";
+
 export type MatchConfig = {
   v: 1;
   roomId: string;
@@ -29,6 +36,9 @@ export type MatchConfig = {
   checksumEvery: number;
   tickMs: typeof TICK_MS;
   slots: Slot[];
+  /** Palette colour of each slot, in slot order (presentation only). Kept out of `Slot`,
+   * which game versions up to 0.3.1 read strictly. */
+  colors?: number[];
   /** A campaign company; opaque to the server. */
   company?: unknown[];
 };
@@ -117,7 +127,17 @@ export type RoomView = {
   name: string;
   mapId: string;
   host: string;
-  slots: { player: number; name: string | null; roundTripMs?: number; hero?: string; race?: string }[];
+  slots: {
+    player: number;
+    name: string | null;
+    roundTripMs?: number;
+    hero?: string;
+    race?: string;
+    /** `human` once someone joined; absent from servers before seats existed. */
+    kind?: Seat | "human";
+    team?: number;
+    color?: number;
+  }[];
   heroes?: HeroChoice;
   races?: Record<string, { name: string; heroes?: HeroChoice }>;
   spectators: number;
@@ -132,8 +152,11 @@ export type ChatMessage = { name: string; player: number | null; text: string };
 export type ClientMsg =
   | { type: "latencyReply"; id: string }
   | { type: "chat"; text: string }
-  | { type: "selectHero"; hero: string }
-  | { type: "selectRace"; race: string }
+  | { type: "selectHero"; hero: string; player?: number }
+  | { type: "selectRace"; race: string; player?: number }
+  | { type: "setSeat"; player: number; seat: Seat }
+  | { type: "selectTeam"; team: number; player?: number }
+  | { type: "selectColor"; color: number; player?: number }
   | { type: "startMatch" }
   | { type: "hello"; token: string }
   | { type: "ready"; content: { abi: string; sha256: string }; build: string }
@@ -225,6 +248,9 @@ function parseMatchConfig(raw: unknown): MatchConfig | null {
     checksumEvery: o.checksumEvery,
     tickMs: o.tickMs as MatchConfig["tickMs"],
     slots,
+    ...(Array.isArray(o.colors) && o.colors.length === slots.length && o.colors.every((c) => Number.isInteger(c) && c >= 0 && c < COLORS)
+      ? { colors: o.colors as number[] }
+      : {}),
     ...(company !== undefined ? { company: company as unknown[] } : {}),
   };
 }

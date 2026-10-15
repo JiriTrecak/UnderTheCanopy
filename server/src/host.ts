@@ -6,7 +6,10 @@ import {chosenHero,loadRules,race} from './rules';
 import {ConnectionLatency,connectionDelay} from './latency';
 import {
   CHECKSUM_EVERY,
+  COLORS,
+  TEAMS,
   TICK_MS,
+  type Seat,
   chatText,
   namedMatch,
   parseSaveForHost,
@@ -37,6 +40,15 @@ type Member = {
   latency: ConnectionLatency;
 };
 
+/** A lobby seat: what holds it, its team and colour, and a computer's race and hero. */
+type SeatState = {
+  seat: Seat;
+  team: number;
+  color: number;
+  race?: string;
+  hero?: string;
+};
+
 export class HostedMatch {
   readonly id: string;
   readonly name: string;
@@ -57,6 +69,7 @@ export class HostedMatch {
   private replayId: string | null = null;
   private lastSave: unknown = null;
   private chatTimes = new Map<string, number>();
+  private readonly seats: SeatState[];
 
   constructor(draft: CreateRoom, id: string = crypto.randomUUID(), private readonly now=()=>performance.now(), private readonly heroes:HeroChoice|undefined=hostRules.startingSetup.hero) {
     this.id = id;
@@ -64,6 +77,8 @@ export class HostedMatch {
     this.mapId = draft.mapId;
     this.mapRevision = draft.mapRevision;
     this.slotCount = Math.min(8, Math.max(2, draft.slotCount | 0));
+    // Free for all by default: every seat its own team and its own colour.
+    this.seats = Array.from({ length: this.slotCount }, (_, i) => ({ seat: "open" as Seat, team: i + 1, color: i % COLORS }));
     this.hostToken = token();
     // The host creates the room over HTTP before opening its socket.
     this.emptySince = now();
@@ -79,12 +94,40 @@ export class HostedMatch {
 
   private raceId(m:Member){return m.race??hostRules.defaultRace;}
   private heroPolicy(m:Member){return race(hostRules,this.raceId(m),this.heroes).heroes;}
+  private aiRace(s:SeatState){return s.race??hostRules.defaultRace;}
+  private aiHeroes(s:SeatState){return race(hostRules,this.aiRace(s),this.heroes).heroes;}
+  /** The human in seat `i`, if any. */
+  private seated(i:number){return [...this.members.values()].find((x) => x.role === "player" && x.player === i);}
+  /** Whether seat `i` takes part: a human sits there or a computer plays it. */
+  private occupied(i:number){return !!this.seated(i)||this.seats[i]?.seat==='ai';}
+  private colorFree(color:number,except:number){return !this.seats.some((s,j)=>j!==except&&this.occupied(j)&&s.color===color);}
+  /** Seat `i` keeps its colour when nobody taking part has it, else gets the first free one. */
+  private claimColor(i:number){
+    const s=this.seats[i]!;
+    if(this.colorFree(s.color,i))return;
+    for(let c=0;c<COLORS;c++)if(this.colorFree(c,i)){s.color=c;return;}
+  }
+  /** The seat `msg.player` names (else the sender's own) if the sender may change it: their
+   * own seat, or a computer's when they host. */
+  private editable(m:Member,player:unknown):number|null{
+    if(this.state!=='waiting'||m.role!=='player'||m.player==null)return null;
+    const target=player===undefined?m.player:player;
+    if(typeof target!=='number'||!Number.isInteger(target)||target<0||target>=this.slotCount)return null;
+    if(target===m.player)return target;
+    return m.token===this.hostToken&&!this.seated(target)&&this.seats[target]!.seat==='ai'?target:null;
+  }
   view(): RoomView {
     const seats: RoomView['slots'] = [];
     for (let i = 0; i < this.slotCount; i++) {
-      const m = [...this.members.values()].find((x) => x.player === i);
+      const m = this.seated(i);
+      const s = this.seats[i]!;
       const rtt=m?.latency.roundTrip(this.now());
-      seats.push({ player: i, name: m?.name ?? null, ...(m?{race:this.raceId(m),...(this.heroPolicy(m)?{hero:m.hero??this.heroPolicy(m)!.default}:{})}:{}), ...(rtt!=null?{roundTripMs:rtt}:{}) });
+      const shown = { team: s.team, color: s.color };
+      if (m) seats.push({ player: i, name: m.name, kind: "human", ...(m?{race:this.raceId(m),...(this.heroPolicy(m)?{hero:m.hero??this.heroPolicy(m)!.default}:{})}:{}), ...shown, ...(rtt!=null?{roundTripMs:rtt}:{}) });
+      else if (s.seat === "ai") {
+        const policy = this.aiHeroes(s);
+        seats.push({ player: i, name: "Computer", kind: "ai", race: this.aiRace(s), ...(policy ? { hero: s.hero ?? policy.default } : {}), ...shown });
+      } else seats.push({ player: i, name: null, kind: s.seat, ...shown });
     }
     return {
       id: this.id,
@@ -137,7 +180,7 @@ export class HostedMatch {
         .map((m) => m.player),
     );
     let player = 0;
-    while (taken.has(player) && player < this.slotCount) player++;
+    while (player < this.slotCount && (taken.has(player) || this.seats[player]!.seat !== "open")) player++;
     if (player >= this.slotCount) return { error: "full" };
     const t = token();
     this.members.set(t, {
@@ -148,6 +191,7 @@ export class HostedMatch {
       send: null,
       latency: new ConnectionLatency(),
     });
+    this.claimColor(player);
     this.fanout({ type: "room", room: this.view() });
     return { token: t, you: { role: "player", player, name: guestName } };
   }
@@ -176,13 +220,15 @@ export class HostedMatch {
       .filter((m) => m.role === "player" && m.player != null)
       .sort((a, b) => (a.player ?? 0) - (b.player ?? 0));
     if (players.length < 1) return { error: "empty" };
-    const slots: Slot[] = players.map((m) => ({
-      player: m.player!,
-      kind: "human" as const,
-      name: m.name,
-      race:this.raceId(m),
-      ...(this.heroPolicy(m)?{hero:chosenHero(this.heroPolicy(m),m.hero)}:{}),
-    }));
+    // Seats nobody joined, and closed ones, stay out of the match: no base is built there.
+    const slots: Slot[] = [], colors: number[] = [];
+    for (let i = 0; i < this.slotCount; i++) {
+      const m = this.seated(i), s = this.seats[i]!;
+      if (m) slots.push({ player: i, kind: "human", name: m.name, race: this.raceId(m), ...(this.heroPolicy(m) ? { hero: chosenHero(this.heroPolicy(m), m.hero) } : {}), team: s.team });
+      else if (s.seat === "ai") slots.push({ player: i, kind: "ai", name: "Computer", race: this.aiRace(s), ...(this.aiHeroes(s) ? { hero: chosenHero(this.aiHeroes(s), s.hero) } : {}), team: s.team });
+      else continue;
+      colors.push(s.color);
+    }
     const config: MatchConfig = {
       v: 1,
       roomId: this.id,
@@ -193,6 +239,7 @@ export class HostedMatch {
       checksumEvery: CHECKSUM_EVERY,
       tickMs: TICK_MS,
       slots,
+      colors,
     };
     this.config = config;
     this.mailbox = new Room(config,false);
@@ -231,7 +278,7 @@ export class HostedMatch {
     );
     if (
       this.state === "waiting" &&
-      players.length !== parsed.match.slots.length
+      players.length !== parsed.match.slots.filter((s) => s.kind === "human").length
     )
       return { error: "slots" };
     const live = this.state === "playing";
@@ -323,16 +370,48 @@ export class HostedMatch {
       return;
     }
     if(msg.type==='selectRace') {
-      if(this.state!=='waiting'||m.role!=='player')return;
+      const seat=this.editable(m,msg.player);
+      if(seat===null)return;
       if(typeof msg.race!=='string'||!Object.hasOwn(hostRules.races,msg.race)){m.send?.({type:'error',code:'INVALID_RACE',message:'Choose an available race.'});return;}
-      m.race=msg.race;m.hero=this.heroPolicy(m)?.default;this.fanout({type:'room',room:this.view()});return;
+      if(seat===m.player){m.race=msg.race;m.hero=this.heroPolicy(m)?.default;}
+      else{const s=this.seats[seat]!;s.race=msg.race;s.hero=undefined;}
+      this.fanout({type:'room',room:this.view()});return;
     }
     if(msg.type==='selectHero') {
-      if(this.state!=='waiting'||m.role!=='player')return;
-      if(typeof msg.hero!=='string'||!this.heroPolicy(m)?.choices.includes(msg.hero)){
+      const seat=this.editable(m,msg.player);
+      if(seat===null)return;
+      const own=seat===m.player,s=this.seats[seat]!;
+      if(typeof msg.hero!=='string'||!(own?this.heroPolicy(m):this.aiHeroes(s))?.choices.includes(msg.hero)){
         m.send?.({type:'error',code:'INVALID_HERO',message:'Choose an available starting hero.'});return;
       }
-      m.hero=msg.hero;this.fanout({type:'room',room:this.view()});return;
+      if(own)m.hero=msg.hero;else s.hero=msg.hero;
+      this.fanout({type:'room',room:this.view()});return;
+    }
+    if(msg.type==='selectTeam') {
+      const seat=this.editable(m,msg.player);
+      if(seat===null)return;
+      if(!Number.isInteger(msg.team)||msg.team<1||msg.team>TEAMS){m.send?.({type:'error',code:'INVALID_TEAM',message:'Choose a team.'});return;}
+      this.seats[seat]!.team=msg.team;this.fanout({type:'room',room:this.view()});return;
+    }
+    if(msg.type==='selectColor') {
+      const seat=this.editable(m,msg.player);
+      if(seat===null)return;
+      if(!Number.isInteger(msg.color)||msg.color<0||msg.color>=COLORS||!this.colorFree(msg.color,seat)){
+        m.send?.({type:'error',code:'INVALID_COLOR',message:'That colour is taken.'});return;
+      }
+      this.seats[seat]!.color=msg.color;this.fanout({type:'room',room:this.view()});return;
+    }
+    if(msg.type==='setSeat') {
+      // The host opens, closes or hands a seat to the computer; a joined human keeps theirs.
+      if(this.state!=='waiting'||m.token!==this.hostToken)return;
+      const seat=msg.player;
+      if(!Number.isInteger(seat)||seat<0||seat>=this.slotCount||this.seated(seat)||!['open','closed','ai'].includes(msg.seat)){
+        m.send?.({type:'error',code:'INVALID_SEAT',message:'That seat cannot change.'});return;
+      }
+      const s=this.seats[seat]!;
+      s.seat=msg.seat;s.race=undefined;s.hero=undefined;
+      if(s.seat==='ai')this.claimColor(seat);
+      this.fanout({type:'room',room:this.view()});return;
     }
     if(msg.type==='latencyReply'){
       if(m.send&&typeof msg.id==='string'&&m.latency.reply(msg.id,this.now())){
