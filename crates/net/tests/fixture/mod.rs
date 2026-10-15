@@ -1,5 +1,5 @@
 //! Test-owned content and a two-player map for driving `canopy_sim::World` from the match
-//! server's commits, and a local copy of the old TypeScript match server. No shipped
+//! server's commits, and this repository's match server (`server/`) run locally. No shipped
 //! content.
 #![allow(dead_code)]
 
@@ -242,7 +242,8 @@ pub fn wait_for<T>(
     }
 }
 
-/// The old repository, if it is checked out beside this one with its dependencies.
+/// The old repository, if it is checked out beside this one with its dependencies: its
+/// TypeScript client still plays against our server in `old_client.rs` and `old_lockstep.rs`.
 pub fn old_repository() -> Option<PathBuf> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     std::env::var_os("CANOPY_OLD_REPO")
@@ -252,28 +253,37 @@ pub fn old_repository() -> Option<PathBuf> {
             root.join("../Settlers 3 Web"),
             root.join("../../Settlers 3 Web"),
         ])
-        .find(|candidate| candidate.join("server/index.ts").is_file() && tsx(candidate).is_file())
+        .find(|candidate| candidate.join("src/net/lobby.ts").is_file() && tsx(candidate).is_file())
 }
 
 pub fn tsx(repository: &Path) -> PathBuf {
     repository.join("node_modules/tsx/package.json")
 }
 
-/// The old TypeScript match server, run locally on a free port; killed on drop.
-pub struct OldServer {
-    child: Child,
-    pub address: ServerAddress,
-    pub repository: PathBuf,
+/// This repository's match server (`server/`, docs/server.md), from `crates/net` or `game/`.
+pub fn server_folder() -> PathBuf {
+    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
+    [manifest.join("../../server"), manifest.join("../server")]
+        .into_iter()
+        .find(|folder| folder.join("src/index.ts").is_file())
+        .unwrap_or_else(|| manifest.join("../../server"))
 }
 
-impl OldServer {
-    /// Starts the server, or `None` (with a note) when the old repository or node is not
-    /// available, as on CI.
+/// The match server, run locally on a free port; killed on drop.
+pub struct MatchServer {
+    child: Child,
+    pub address: ServerAddress,
+}
+
+impl MatchServer {
+    /// Starts the server, or `None` (with a note) when node or the server's
+    /// `node_modules` (`npm ci` in `server/`) are not available.
     pub fn start() -> Option<Self> {
-        let Some(repository) = old_repository() else {
-            eprintln!("skipped: the old repository (CANOPY_OLD_REPO) or its tsx is not available");
+        let folder = server_folder();
+        if !tsx(&folder).is_file() {
+            eprintln!("skipped: run `npm ci` in server/ to test against the match server");
             return None;
-        };
+        }
         if Command::new("node").arg("--version").output().is_err() {
             eprintln!("skipped: node is not available");
             return None;
@@ -286,14 +296,14 @@ impl OldServer {
             // `node --import tsx` keeps the server in this one process (the tsx command
             // runs it in a child that a kill would orphan).
             let mut child = Command::new("node")
-                .args(["--import", "tsx", "server/index.ts"])
-                .current_dir(&repository)
+                .args(["--import", "tsx", "src/index.ts"])
+                .current_dir(&folder)
                 .env("PORT", port.to_string())
                 .env("BIND", "127.0.0.1")
                 .stdout(Stdio::piped())
                 .stderr(Stdio::inherit())
                 .spawn()
-                .expect("start the old match server");
+                .expect("start the match server");
             // The server prints `matchhost <version> <bind>:<port>` once listening.
             let stdout = child.stdout.take().expect("stdout");
             let (tx, rx) = std::sync::mpsc::channel();
@@ -313,16 +323,12 @@ impl OldServer {
                     .wait()
                     .is_ok_and(|h| h.ok);
             if healthy {
-                return Some(Self {
-                    child,
-                    address,
-                    repository,
-                });
+                return Some(Self { child, address });
             }
             let _ = child.kill();
             let _ = child.wait();
         }
-        panic!("the old match server did not start");
+        panic!("the match server did not start");
     }
 
     pub fn net(&self) -> Net {
@@ -330,7 +336,7 @@ impl OldServer {
     }
 }
 
-impl Drop for OldServer {
+impl Drop for MatchServer {
     fn drop(&mut self) {
         let _ = self.child.kill();
         let _ = self.child.wait();

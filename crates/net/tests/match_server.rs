@@ -1,16 +1,15 @@
-//! Rust clients against the old TypeScript match server (`server/index.ts`), run locally:
+//! Rust clients against the match server (`server/`, docs/server.md), run locally:
 //! lobby, start, lockstep with simulations driven from the server's commits, desync
 //! hashes, chat, spectators, disconnects and the end of a match.
 //!
-//! Needs the old repository beside this one (or `CANOPY_OLD_REPO`) with its `node_modules`,
-//! and node; skipped otherwise (CI).
+//! Needs node and the server's `node_modules` (`npm ci` in `server/`); skipped otherwise.
 
 mod fixture;
 
 use canopy_net::wire::{CreateRoom, JoinRoom, Joined, Role, WireOutcome};
 use canopy_net::{ContentIdentity, Event, Net, Phase, Session};
 use canopy_sim::{Queued, World};
-use fixture::{OldServer, march, positions, wait_for};
+use fixture::{MatchServer, march, positions, wait_for};
 use std::collections::BTreeMap;
 use std::time::{Duration, Instant};
 
@@ -171,7 +170,7 @@ fn start(peers: &mut [&mut Peer]) {
 
 #[test]
 fn two_players_and_a_spectator_play_in_lockstep() {
-    let Some(server) = OldServer::start() else {
+    let Some(server) = MatchServer::start() else {
         return;
     };
     let net = server.net();
@@ -348,7 +347,7 @@ fn two_players_and_a_spectator_play_in_lockstep() {
 
 #[test]
 fn a_dropped_player_no_longer_holds_the_match() {
-    let Some(server) = OldServer::start() else {
+    let Some(server) = MatchServer::start() else {
         return;
     };
     let net = server.net();
@@ -381,7 +380,7 @@ fn a_dropped_player_no_longer_holds_the_match() {
 
 #[test]
 fn a_spectator_joining_a_running_match_cannot_catch_up() {
-    let Some(server) = OldServer::start() else {
+    let Some(server) = MatchServer::start() else {
         return;
     };
     let net = server.net();
@@ -411,7 +410,7 @@ fn a_spectator_joining_a_running_match_cannot_catch_up() {
 
 #[test]
 fn players_with_different_content_are_refused() {
-    let Some(server) = OldServer::start() else {
+    let Some(server) = MatchServer::start() else {
         return;
     };
     let net = server.net();

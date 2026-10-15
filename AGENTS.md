@@ -6,7 +6,7 @@ A Warcraft III–style RTS on the forest floor, being rebuilt natively in Rust. 
 
 - **Behaviour comes from the old game, code does not.** The old TypeScript repository (`../Settlers 3 Web`, `settlers-web`) is the specification for what the game does and how it looks. Read or run it to answer questions; never translate its code line by line.
 - **Ask before deciding anything visible or felt**: lighting, water, fog, colour grading, camera and input feel, performance-versus-quality trade-offs. Bring options with a recommendation, and side-by-side captures for visuals. Record agreed and purely technical decisions in [docs/decisions.md](docs/decisions.md).
-- **Stay inside phase 1.** Editors, the match server, Steam, signing and distribution are phase 2 ([plan](docs/plan.md)).
+- **Stay inside phase 1.** Editors, Steam, signing and distribution are phase 2 ([plan](docs/plan.md)). The match server lives in `server/` ([docs/server.md](docs/server.md)); its protocol is frozen (D10), so leave it alone unless asked.
 - **Data lives here; the old editors write it.** `content/`, `assets/` and `art/` are the only copy ([D47](docs/decisions.md)). The old repository's same folders are links to these, so its editors author straight into this repository. Keep the formats exactly: the old editors and TypeScript loaders still read them. Don't reorganise or extend them until the editors are ported.
 - **Content is input.** No code names a shipped content id. Tests define their own units, abilities and effects.
 - **Test what matters.** Broad scenario tests, replay-hash determinism tests, generic content validation, and unit tests for real algorithms. No tests of incidental numbers or duplicates.

@@ -37,6 +37,17 @@ jobs:
         run: cargo fmt --all --check
       - name: Lint
         run: cargo clippy --workspace --all-targets -- -D warnings
+      # The match server (server/): its type check, and the network tests play against it.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Match server
+        working-directory: server
+        run: |
+          npm ci --no-audit --no-fund
+          npm run check
       - name: Test
         run: cargo test --workspace
       # Gallery images are LFS pointers here: their hashes and sizes are checked locally.

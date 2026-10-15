@@ -40,7 +40,7 @@ Superseded in part by D47: the data now lives only here. `content/`, `assets/` a
 
 ## D10. Match server and protocol frozen (2026-10-14)
 
-The TypeScript match server stays in the old repository and stays deployed. `canopy-net` implements the client side of its protocol exactly. The server embeds `content/game.json` (races, starting heroes) and action-shape validation, so new races or heroes need the server redeployed with the new content, and new action types need a server change. Why: it works, and porting it adds nothing to the game.
+Superseded in part by D48: the server now lives in `server/`; the protocol stays frozen. The TypeScript match server stays in the old repository and stays deployed. `canopy-net` implements the client side of its protocol exactly. The server embeds `content/game.json` (races, starting heroes) and action-shape validation, so new races or heroes need the server redeployed with the new content, and new action types need a server change. Why: it works, and porting it adds nothing to the game.
 
 ## D11. Profiling built in (2026-10-14)
 
@@ -410,3 +410,11 @@ New, not in the old game. Both are presentation only: the presenter reads the vi
 ## D47. This repository holds the data; the old editors write through links (2026-10-15, agreed with Jiri)
 
 `content/`, `assets/` and `art/` exist only here. In the old repository those three folders are relative symbolic links (`../UnderTheCanopy/content` and so on), so its map editor, Asset Studio, spell editor and asset scripts read and write this repository directly with no code changes; the two checkouts must stay side by side. Asset Studio's workspace guard and the map MCP's save guard trust exactly those three linked folders. `just sync-data` is gone. The Warcraft importer settings moved to `content/import/warcraft/`, and the editors' generated files (map catalogue, `.map` copies, reconstructed pixels) are ignored as in the old repository. `just parity` still runs the old TypeScript loaders, now on this data. Why: the first step of retiring the old repository; the editors keep working until they are ported, and there is only one copy to keep right.
+
+## D48. The match server moves here as TypeScript (2026-10-15, agreed with Jiri)
+
+The old game's match server lives in `server/` as a small standalone node project ([server](server.md)): its own code (`index.ts`, `host.ts`, `room.ts`, `latency.ts`) copied with only its imports changed, plus `protocol.ts` (wire types, match config, action shapes, chat clean-up and save parsing, copied from the old `src/shared`) and `rules.ts` (races and starting heroes read from `content/game.json`, in place of the game's whole content schema). Nothing else of the old game comes along, so the server no longer needs the old repository. Not a Rust port: it works, the protocol is frozen (D10), development needs no scale, and a port would only add effort and deploy risk; port it when it has to change.
+
+- Same behaviour: responses are byte-identical to the old server's for the lobby routes, and every network test plays against it (in CI too, which installs `server/` with node 22). Two leniencies, both harmless: a save's campaign company is carried without validating its members (the game validates it), and `game.json` rules are read only for races and heroes, so an unrelated content error no longer stops the server.
+- One fix: `POST /api/rooms/clear` (ends every session) only answers requests from the host itself, not ones forwarded by Nginx; anyone on the internet could call it before.
+- Deployment: `just server-deploy` installs it beside the old server as the `canopy-matchhost` service and stops `settlers-matchhost`, which stays installed for `just server-deploy rollback`. The SSH key moves out of the old repository to `~/.config/under-the-canopy/matchhost.pem`.

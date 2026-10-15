@@ -44,7 +44,7 @@ This repository holds the only copy of the data (D47). The editors still run fro
 
 ## The old repository
 
-`settlers-web` (`../Settlers 3 Web`) stays runnable and is the reference for behaviour and looks. It keeps hosting the editors and the match server until they are ported; it no longer holds data. Nothing is copied from its code; read or run it to answer "what does the game do here".
+`settlers-web` (`../Settlers 3 Web`) stays runnable and is the reference for behaviour and looks. It keeps hosting the editors until they are ported; it no longer holds data, and the match server moved to `server/` (D48). Nothing is copied from its code; read or run it to answer "what does the game do here".
 
 ## Phase 2: deferred
 
@@ -52,6 +52,6 @@ This repository holds the only copy of the data (D47). The editors still run fro
 |---|---|
 | Map, asset and spell editors (and the in-game map editor entry) | They work in the old repository and write into this one through its data links. Ported one at a time once the game is near 100%, onto the Rust core (Tauri host, WebGPU viewport). |
 | Warcraft map importer | Part of the map editor. |
-| Match server in Rust | It works and stays deployed; the protocol is frozen. |
+| Match server in Rust | It works as TypeScript in `server/` (D48); the protocol is frozen. |
 | Content format redesign (one file per definition, generated TypeScript types) | Happens with the editors. |
 | Steam integration | Purely additive. |

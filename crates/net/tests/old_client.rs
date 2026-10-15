@@ -1,15 +1,15 @@
 //! A Rust client and the old TypeScript client (its own lobby and socket code, run by
-//! `tests/ts/lobby_peer.mts`) in one room of the old match server. They share the lobby;
+//! `tests/ts/lobby_peer.mts`) in one room of the match server. They share the lobby;
 //! their simulations differ, so the server refuses to start them together
 //! (`CONTENT_MISMATCH`, docs/decisions.md D10, D32).
 //!
-//! Skipped without the old repository, its `node_modules` and node (CI).
+//! Skipped without the old repository and its `node_modules`, or without the server's.
 
 mod fixture;
 
 use canopy_net::wire::{CreateRoom, Role};
 use canopy_net::{ContentIdentity, Event, Phase};
-use fixture::{OldServer, wait_for};
+use fixture::{MatchServer, wait_for};
 use serde_json::Value;
 use std::io::{BufRead, BufReader};
 use std::process::{Command, Stdio};
@@ -18,7 +18,11 @@ use std::time::Duration;
 
 #[test]
 fn shares_a_lobby_with_the_typescript_client() {
-    let Some(server) = OldServer::start() else {
+    let Some(repository) = fixture::old_repository() else {
+        eprintln!("skipped: the old repository (CANOPY_OLD_REPO) or its tsx is not available");
+        return;
+    };
+    let Some(server) = MatchServer::start() else {
         return;
     };
     let net = server.net();
@@ -38,10 +42,10 @@ fn shares_a_lobby_with_the_typescript_client() {
     let script = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/ts/lobby_peer.mts");
     let mut peer = Command::new("node")
         .args(["--import", "tsx", script])
-        .arg(&server.repository)
+        .arg(&repository)
         .arg(server.address.http(""))
         .arg(&host.room.id)
-        .current_dir(&server.repository)
+        .current_dir(&repository)
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit())
         .spawn()

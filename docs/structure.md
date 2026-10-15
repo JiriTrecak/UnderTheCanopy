@@ -3,7 +3,7 @@
 ```
 UnderTheCanopy/
 ├─ Cargo.toml          Rust workspace
-├─ justfile            every command: just play | profile | cook | check | test | package
+├─ justfile            every command: just play | profile | cook | check | test | package | server
 ├─ AGENTS.md           rules for anyone changing this repository
 ├─ crates/             libraries, named canopy-*; added when a milestone needs them
 │  ├─ content/         data model, loading, validation (M1)
@@ -23,11 +23,12 @@ UnderTheCanopy/
 ├─ art/                editable masters and exported outputs, Git LFS
 ├─ config/             presentation settings owned here: lighting, biomes, player colours (D30)
 ├─ releases/           the release log, gallery media and the release host's identifiers (D43)
+├─ server/             the match server, TypeScript on node: lobby and lockstep relay (docs/server.md)
 ├─ docs/               plan, decisions, design; reference/ describes the old game
 └─ tools/              repository scripts
 ```
 
-Phase 2 adds `editors/{map,assets,spells,shared}` (one Tauri app each) and possibly `server/`.
+Phase 2 adds `editors/{map,assets,spells,shared}` (one Tauri app each).
 
 ## Dependency rules
 

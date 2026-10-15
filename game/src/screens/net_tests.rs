@@ -1,8 +1,8 @@
-//! The multiplayer screens against the old TypeScript match server, run locally (the
+//! The multiplayer screens against the match server (`server/`), run locally (the
 //! `canopy-net` test fixture): the lobby list finds a room, joining enters it, the host
 //! starts, and both seats play the match on simulation threads driven by their network
 //! sessions, chat included; the joining seat's orders come from the real play module
-//! over its own view. Skipped without the old repository or node (CI).
+//! over its own view. Skipped without node or the server's `node_modules`.
 
 #[path = "../../../crates/net/tests/fixture/mod.rs"]
 #[allow(clippy::all, dead_code)]
@@ -83,7 +83,7 @@ fn spread(snapshot: &Snapshot, player: u8, to: [f32; 2]) -> f32 {
 
 #[test]
 fn a_lobby_joined_from_the_screen_plays_a_networked_match() {
-    let Some(server) = net_fixture::OldServer::start() else {
+    let Some(server) = net_fixture::MatchServer::start() else {
         return;
     };
     let net = server.net();

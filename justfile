@@ -35,6 +35,7 @@ cook *args:
 check:
     cargo fmt --all --check
     cargo clippy --workspace --all-targets -- -D warnings
+    if [ -d server/node_modules ]; then cd server && npm run -s check; fi
     cargo test --workspace
 
 test *args:
@@ -43,6 +44,14 @@ test *args:
 # Build the platform package (.app on macOS, NSIS installer on Windows)
 package:
     cargo packager -p canopy --release --formats {{package_format}}
+
+# Run the match server locally on 127.0.0.1:8787 (docs/server.md)
+server:
+    cd server && npm ci --prefer-offline --no-audit --no-fund && npm start
+
+# Deploy server/ and content/game.json to the match host; `just server-deploy rollback` returns to the old server
+server-deploy *args:
+    server/deploy/deploy.sh {{args}}
 
 # Compare every Rust reader with the old TypeScript game (whose data folders link here, D47)
 parity old="../Settlers 3 Web": (parity-content old) (parity-assets old) (parity-maps old)
