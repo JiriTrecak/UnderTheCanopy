@@ -283,7 +283,7 @@ Speed-ups in `canopy-sim` must not change a single simulated value: every tick f
 - The measured crowd battle (`canopy shot --crowd N`) lives in `canopy_sim::crowd`, so the shot tool and the benchmark run the same scenario. `World::step` marks its steps with `tick: …` spans for Tracy and the benchmark.
 - Numbers and the remaining hot spots are in [simulation § Performance](simulation.md#performance).
 
-## D37. Effects, fog of war, world UI, minimap and portrait (2026-10-15, decided while Jiri was away — review)
+## D38. Effects, fog of war, world UI, minimap and portrait (2026-10-15, decided while Jiri was away — review)
 
 [Renderer §9](renderer.md) describes the result; [captures](captures/README.md) (`m3-effects/`) compare every kind of shipped effect with the old game.
 
