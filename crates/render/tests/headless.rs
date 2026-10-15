@@ -572,3 +572,186 @@ fn the_ui_pass_composites_the_hud_in_srgb_space() {
     // Without a new HUD frame the pass draws nothing.
     assert_eq!(at(&shoot(&mut renderer), 16, 16), at(&background, 16, 16));
 }
+
+/// Effects, the fog of war, the world UI and the HUD images on the tiny world: each
+/// changes the picture where it should.
+#[test]
+fn effects_fog_world_ui_and_hud_images_render() {
+    use canopy_render::{
+        PortraitSubject,
+        actors::ActorInstance,
+        effects::{Blend, EffectDraw, EffectFrame, Emitter, Geometry, RibbonQuad, kind},
+        fog::FogCells,
+        world_ui::{OverlayVertex, WorldUiFrame, overlay},
+    };
+    let Some(gpu) = gpu() else { return };
+    let lighting: LightingConfig = serde_json::from_str(LIGHTING).unwrap();
+    let biome: BiomeConfig = serde_json::from_str(BIOME).unwrap();
+    let environment = Environment::new(&lighting, &biome, 12.0, None);
+    let (width, height) = (256, 144);
+    let mut renderer = Renderer::new(&gpu, CAPTURE_FORMAT, [width, height], environment);
+    let pack_path = write_pack();
+    let pack = canopy_assets::Pack::load(&pack_path).unwrap();
+    let world = World {
+        terrain: Some(terrain()),
+        actor_models: vec!["cube".into()],
+        ..Default::default()
+    };
+    renderer.load_world(&gpu, &pack, &world).unwrap();
+    renderer.bake_minimap(&gpu, 32, 64);
+    renderer.set_portrait(
+        &gpu,
+        Some(PortraitSubject {
+            instance: ActorInstance::rest(0, Mat4::IDENTITY),
+            building: false,
+        }),
+        64,
+    );
+    let mut camera = RtsCamera::new([0.0, 0.0], None);
+    camera.zoom_range = (0.05, 2.0);
+    camera.set_zoom(0.15);
+    let view = camera.view(
+        width as f32 / height as f32,
+        &canopy_render::camera::FlatGround,
+    );
+    let capture = Capture::new(&gpu.device, width, height);
+    let mut shoot = |renderer: &mut Renderer| {
+        let report = renderer.render(
+            &gpu,
+            &view,
+            1.0,
+            &capture.view,
+            Some(&|encoder| capture.copy(encoder)),
+        );
+        (report, capture.read(&gpu.device).unwrap())
+    };
+    let luminance = |pixels: &[u8], x0: u32, y0: u32, x1: u32, y1: u32| {
+        let mut sum = 0.0;
+        for y in y0..y1 {
+            for x in x0..x1 {
+                let i = ((y * width + x) * 4) as usize;
+                sum += f64::from(pixels[i]) + f64::from(pixels[i + 1]) + f64::from(pixels[i + 2]);
+            }
+        }
+        sum / f64::from((x1 - x0) * (y1 - y0) * 3)
+    };
+    let (report, plain) = shoot(&mut renderer);
+    assert!(report.passes.contains(&"minimap") && report.passes.contains(&"portrait"));
+    let centre = (
+        width / 2 - 10,
+        height / 2 - 10,
+        width / 2 + 10,
+        height / 2 + 10,
+    );
+    let before = luminance(&plain, centre.0, centre.1, centre.2, centre.3);
+
+    // A white soft sphere over the middle and a ribbon brighten it.
+    let mut effects = EffectFrame {
+        emitters: vec![Emitter {
+            position: [0.0, 3.0, 0.0, 0.0],
+            rotation: [0.0, 0.0, 0.0, 1.0],
+            color: [1.0, 1.0, 1.0, 1.0],
+            accent: [1.0, 1.0, 1.0, 2.0],
+            shape: [0.5, 0.0, 1.0, 1.0],
+            motion: [1.0, 0.0, 0.0, 0.0],
+            ints: [kind::BILLBOARD, 0, 1, 0],
+            ..Emitter::default()
+        }],
+        parts: vec![0],
+        draws: vec![EffectDraw {
+            geometry: Geometry::Quad,
+            blend: Blend::Additive,
+            texture: None,
+            first: 0,
+            count: 1,
+        }],
+        ribbons: vec![RibbonQuad::segment(
+            [-6.0, 3.0, 0.0],
+            1.0,
+            [6.0, 3.0, 0.0],
+            1.0,
+            1.0,
+        )],
+        lights: Vec::new(),
+    };
+    renderer.set_effects(&mut effects);
+    let (report, lit) = shoot(&mut renderer);
+    assert!(report.effects.draws >= 2, "{:?}", report.effects);
+    let after = luminance(&lit, centre.0, centre.1, centre.2, centre.3);
+    assert!(after > before + 20.0, "effects {before} → {after}");
+    renderer.set_effects(&mut EffectFrame::default());
+
+    // A red overlay quad lands where it says, over everything.
+    let mut ui = WorldUiFrame::default();
+    let v = |x: f32, y: f32| OverlayVertex {
+        position: [x, y],
+        color: [1.0, 0.0, 0.0, 1.0],
+        kind: [overlay::SOLID, 0, 0, 0],
+        ..Default::default()
+    };
+    ui.quad([v(10.0, 10.0), v(30.0, 10.0), v(30.0, 30.0), v(10.0, 30.0)]);
+    renderer.set_world_ui(&mut ui);
+    let (_, marked) = shoot(&mut renderer);
+    let i = ((20 * width + 20) * 4) as usize;
+    assert!(
+        marked[i] > 240 && marked[i + 1] < 20,
+        "{:?}",
+        &marked[i..i + 4]
+    );
+    renderer.set_world_ui(&mut WorldUiFrame::default());
+
+    // Unexplored everywhere: the ground goes black; in sight everywhere it is as before
+    // where the map is (the map covers x, z ≥ 0 here).
+    let cells = vec![0u8; 64 * 64];
+    renderer.set_fog(
+        &gpu,
+        Some(FogCells {
+            size: 64,
+            cells: &cells,
+            changed: None,
+        }),
+    );
+    let (_, dark) = shoot(&mut renderer);
+    let black = |p: &[u8]| {
+        p.chunks_exact(4)
+            .filter(|t| t[0] < 6 && t[1] < 6 && t[2] < 6)
+            .count()
+    };
+    assert!(
+        black(&dark) > (width * height / 3) as usize,
+        "{}",
+        black(&dark)
+    );
+    let seen = vec![2u8; 64 * 64];
+    renderer.set_fog(
+        &gpu,
+        Some(FogCells {
+            size: 64,
+            cells: &seen,
+            changed: None,
+        }),
+    );
+    let (_, bright) = shoot(&mut renderer);
+    assert!(black(&bright) < black(&dark));
+    renderer.set_fog(&gpu, None);
+
+    // The HUD images.
+    let read = |texture: &wgpu::Texture| {
+        let image = Capture::new(&gpu.device, 64, 64);
+        let mut encoder = gpu.device.create_command_encoder(&Default::default());
+        image.copy_from(&mut encoder, texture);
+        gpu.queue.submit([encoder.finish()]);
+        image.read(&gpu.device).unwrap()
+    };
+    let minimap = read(renderer.minimap_texture().unwrap());
+    let lit = minimap
+        .chunks_exact(4)
+        .filter(|t| t[0] > 20 || t[1] > 20 || t[2] > 20)
+        .count();
+    assert!(lit > 1000, "minimap {lit}");
+    let portrait = read(renderer.portrait_texture().unwrap());
+    let covered = portrait.chunks_exact(4).filter(|t| t[3] > 200).count();
+    assert!(covered > 200, "portrait coverage {covered}");
+    assert_eq!(portrait[3], 0, "the portrait's corner is transparent");
+    std::fs::remove_file(&pack_path).ok();
+}
