@@ -1,19 +1,29 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [
-      "A small graph button next to Menu opens the debug overlay (frame rate, timings and match tools), so it no longer needs F9.",
-      "Multiplayer lobbies work like Warcraft III: the host sets each seat to Open, Closed or Computer, and every seat picks its race, hero, team and colour. Play 2v2 with a friend against the computer, or lock seats to play a 4-player map with two."
-    ],
-    "improved": [
-      "The lobby map shows each seat's chosen colour and hides starts nobody will play."
-    ],
-    "fixed": [
-      "Multiplayer matches can start with fewer players than the map has starts: unused starts stay empty instead of the match failing to load."
-    ],
+    "added": [],
+    "improved": [],
+    "fixed": [],
     "knownIssues": []
   },
   "releases": [
+    {
+      "added": [
+        "A small graph button next to Menu opens the debug overlay (frame rate, timings and match tools), so it no longer needs F9.",
+        "Multiplayer lobbies work like Warcraft III: the host sets each seat to Open, Closed or Computer, and every seat picks its race, hero, team and colour. Play 2v2 with a friend against the computer, or lock seats to play a 4-player map with two."
+      ],
+      "improved": [
+        "The lobby map shows each seat's chosen colour and hides starts nobody will play.",
+        "The multiplayer lobby list shows only lobbies you can join: started matches are hidden, and finished or abandoned ones disappear on their own."
+      ],
+      "fixed": [
+        "Multiplayer matches can start with fewer players than the map has starts: unused starts stay empty instead of the match failing to load."
+      ],
+      "knownIssues": [],
+      "version": "0.3.2",
+      "publishedAt": "2026-10-15T19:11:54.982Z",
+      "title": "Team up against the computer"
+    },
     {
       "added": [
         "With a worker selected, hovering a tree shows a ring around it, so you can tell trees can be clicked to gather wood.",
