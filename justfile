@@ -35,7 +35,7 @@ cook *args:
 check:
     cargo fmt --all --check
     cargo clippy --workspace --all-targets -- -D warnings
-    if [ -d server/node_modules ]; then cd server && npm run -s check; fi
+    if [ -d server/node_modules ]; then cd server && npm run -s check && npm test --silent; fi
     cargo test --workspace
 
 test *args:

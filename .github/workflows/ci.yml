@@ -48,6 +48,7 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           npm run check
+          npm test
       - name: Test
         run: cargo test --workspace
       # Gallery images are LFS pointers here: their hashes and sizes are checked locally.

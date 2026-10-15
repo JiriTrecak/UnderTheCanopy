@@ -49,6 +49,8 @@ export class HostedMatch {
   private readonly ready = new Set<number>();
   private contentAgreement:string|null=null;
   private started=false;
+  /** When the last player connection closed (`now()`), or null while one is open. */
+  private emptySince:number|null;
   private readonly hashes = new Map<number, Map<number, number>>();
   private mailbox: Room | null = null;
   private config: MatchConfig | null = null;
@@ -63,6 +65,8 @@ export class HostedMatch {
     this.mapRevision = draft.mapRevision;
     this.slotCount = Math.min(8, Math.max(2, draft.slotCount | 0));
     this.hostToken = token();
+    // The host creates the room over HTTP before opening its socket.
+    this.emptySince = now();
     this.members.set(this.hostToken, {
       token: this.hostToken,
       name: draft.guestName,
@@ -447,8 +451,19 @@ export class HostedMatch {
 
   /** Transport maintenance only; never advances the game or changes a live delay. */
   pulse():void {
+    const connected=[...this.members.values()].some(m=>m.role==='player'&&m.send);
+    if(connected)this.emptySince=null;
+    else this.emptySince??=this.now();
     if(this.state!=='waiting'&&this.state!=='playing')return;
     for(const m of this.members.values())this.probeMember(m);
+  }
+
+  /** Whether nobody can come back to this room any more: a finished or desynced match no
+   * player is connected to, or a lobby or match without players for `grace` ms. */
+  abandoned(grace:number):boolean {
+    if(this.emptySince===null)return false;
+    const finished=this.state==='ended'||this.state==='desynced';
+    return finished||this.now()-this.emptySince>=grace;
   }
   private probeMember(m:Member){
     if(m.role!=='player'||!m.send)return;
@@ -479,18 +494,27 @@ export class HostedMatch {
   }
 }
 
+/** How long a lobby or match without any connected player waits for one to come back. */
+export const ABANDONED_AFTER_MS=120_000;
+
 export class MatchHost {
   private readonly rooms = new Map<string, HostedMatch>();
   private nextId = 1;
-  constructor(private readonly heroes:HeroChoice|undefined=hostRules.startingSetup.hero) {}
-  pulse(){for(const room of this.rooms.values())room.pulse();}
+  constructor(private readonly heroes:HeroChoice|undefined=hostRules.startingSetup.hero, private readonly now=()=>performance.now()) {}
+  /** Every second: latency probes, and rooms nobody can come back to are discarded. */
+  pulse(){
+    for(const room of [...this.rooms.values()]){
+      room.pulse();
+      if(room.abandoned(ABANDONED_AFTER_MS))this.discard(room.id);
+    }
+  }
 
   create(draft: CreateRoom): {
     token: string;
     room: RoomView;
     you: ClientIdentity;
   } {
-    const match = new HostedMatch(draft, String(this.nextId++),undefined,this.heroes);
+    const match = new HostedMatch(draft, String(this.nextId++),this.now,this.heroes);
     this.rooms.set(match.id, match);
     const you = match.you(match.hostToken)!;
     return { token: match.hostToken, room: match.view(), you };
@@ -500,10 +524,11 @@ export class MatchHost {
     return this.rooms.get(id);
   }
 
+  /** Lobbies open to join; matches under way are not listed (nobody can join them). */
   list(): RoomView[] {
     return [...this.rooms.values()]
       .map((r) => r.view())
-      .filter((v) => v.state === "waiting" || v.state === "playing");
+      .filter((v) => v.state === "waiting");
   }
 
   /** End every session, including ended/desynced rooms hidden from discovery. */

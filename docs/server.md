@@ -20,11 +20,17 @@ It is the old game's TypeScript server moved here in the smallest form (D48): it
 just server          # installs node_modules and serves 127.0.0.1:8787 (PORT, BIND, GAME_JSON override)
 ```
 
-`CANOPY_MATCH_SERVER=http://127.0.0.1:8787 just play` points the game at it. `npm run check` in `server/` type-checks it; `just check` does too once `node_modules` exists. The network tests (`crates/net/tests/match_server.rs`, the game's `screens/net_tests.rs`) start this server and play matches against it, in CI too. `old_client.rs` and `old_lockstep.rs` also run the old game's TypeScript client against it when the old repository is checked out beside this one.
+`CANOPY_MATCH_SERVER=http://127.0.0.1:8787 just play` points the game at it. `npm run check` in `server/` type-checks it and `npm test` runs its tests; `just check` does both once `node_modules` exists. The network tests (`crates/net/tests/match_server.rs`, the game's `screens/net_tests.rs`) start this server and play matches against it, in CI too. `old_client.rs` and `old_lockstep.rs` also run the old game's TypeScript client against it when the old repository is checked out beside this one.
 
 The server reads `content/game.json` once at start for the races and starting heroes it accepts. A new race or hero needs a redeploy; new action types need `protocol.ts` changed (and the protocol is frozen, D10).
 
-**One difference from the old server:** `POST /api/rooms/clear` (ends every session) answers 403 unless it comes from the host itself: loopback, and not forwarded by Nginx. Before, anyone on the internet could call it. Use it on the host with `curl -X POST http://127.0.0.1:8787/api/rooms/clear`.
+## Differences from the old server
+
+- **Abandoned rooms go.** Once a second the server discards rooms nobody can come back to: a finished or desynced match as soon as no player is connected, and a lobby or match whose players have all been disconnected for 2 minutes (`ABANDONED_AFTER_MS`; room for a crashed player to reconnect). Before, rooms stayed until the server restarted: closing the game or finishing a match never removed them. Clients need no change.
+- **Only open lobbies are listed.** `GET /api/rooms` no longer shows matches under way; nobody could join them. `GET /api/rooms/:id` still finds them.
+- **Maintenance is local.** `POST /api/rooms/clear` (ends every session) answers 403 unless it comes from the host itself: loopback, and not forwarded by Nginx. Before, anyone on the internet could call it. Use it on the host with `curl -X POST http://127.0.0.1:8787/api/rooms/clear`.
+
+`npm test` in `server/` covers these (`test/`).
 
 ## Deployment
 

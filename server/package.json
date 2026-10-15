@@ -5,7 +5,8 @@
   "description": "Under the Canopy match server: lobby and lockstep relay (docs/server.md)",
   "scripts": {
     "start": "tsx src/index.ts",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts"
   },
   "dependencies": {
     "tsx": "^4.23.12",
