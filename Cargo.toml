@@ -11,6 +11,11 @@ publish = false
 
 [workspace.dependencies]
 anyhow = "1"
+base64 = "0.23"
+# Verifies update packages' minisign signatures (the old Tauri updater's format).
+minisign-verify = "0.2"
+# Signs update packages with the updater key (the release tool; tests).
+minisign = "0.7"
 # The system clipboard for text fields (copy, cut, paste).
 arboard = { version = "3", default-features = false }
 # Tests that the mixer never allocates while rendering.

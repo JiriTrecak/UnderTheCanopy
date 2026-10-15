@@ -54,6 +54,4 @@ The editors stay in the old repository, so it remains the place where data is au
 | Warcraft map importer | Part of the map editor. |
 | Match server in Rust | It works and stays deployed; the protocol is frozen. |
 | Content format redesign (one file per definition, generated TypeScript types) | Happens with the editors. |
-| Signing, notarization, installers, distribution | Nothing is distributed yet; CI already builds unsigned packages. |
 | Steam integration | Purely additive. |
-| Updater and the in-game release notes screen | Distribution, not game. |
