@@ -113,6 +113,68 @@ impl UiHost {
         self.bind(gpu, pack, entry, entry)
     }
 
+    /// Binds decoded sRGB pixels (straight alpha, RGBA8, `width × height`) under `name`:
+    /// images from outside the pack (release gallery screenshots). A bound name keeps its
+    /// first image.
+    pub fn rgba_image(
+        &mut self,
+        gpu: &Gpu,
+        name: &str,
+        width: u32,
+        height: u32,
+        rgba: &[u8],
+    ) -> Option<ImageKey> {
+        if let Some(key) = self.images.get(name) {
+            return *key;
+        }
+        if width == 0 || height == 0 || rgba.len() != (width * height * 4) as usize {
+            return None;
+        }
+        let size = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        };
+        // A plain (non-sRGB) texture: the pass samples the stored sRGB values as they are
+        // and blends in sRGB space (D33).
+        let texture = gpu.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some(name),
+            size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        gpu.queue.write_texture(
+            texture.as_image_copy(),
+            rgba,
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(width * 4),
+                rows_per_image: Some(height),
+            },
+            size,
+        );
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let id = self.next_id();
+        self.pending.push((id, view));
+        self.textures.push(texture);
+        let key = self.ui.register_image(
+            name,
+            ImageDesc {
+                texture: id,
+                size: [width as f32, height as f32],
+                uv: [0.0, 0.0, 1.0, 1.0],
+                premultiplied: false,
+                srgb_view: false,
+            },
+        );
+        self.images.insert(name.to_owned(), Some(key));
+        Some(key)
+    }
+
     /// Binds the images uploaded since the last frame in the renderer's UI pass (before
     /// submitting a draw list that uses them).
     pub fn flush(&mut self, gpu: &Gpu, layer: &mut UiLayer) {
@@ -160,7 +222,14 @@ mod tests {
         )
         .expect("config/ui compiles");
         ui.set_viewport(1600, 900, 1.0);
-        for screen in ["main-menu", "saves", "hud", "loading", "mission-hud"] {
+        for screen in [
+            "main-menu",
+            "saves",
+            "hud",
+            "loading",
+            "mission-hud",
+            "releases",
+        ] {
             ui.show(screen, true);
             ui.frame(0.0);
             assert!(ui.find(screen).is_some(), "{screen}");

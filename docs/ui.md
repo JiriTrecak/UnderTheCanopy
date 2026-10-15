@@ -147,7 +147,7 @@ The game's menus are layout documents in `config/ui/layouts/`, one per screen, d
 
 | Document | Screen | Code |
 |---|---|---|
-| `main-menu` | logo panel, six actions, animated forest art | `screens/menu.rs` (effects) |
+| `main-menu` | logo panel, six actions, animated forest art, the release plaque | `screens/menu.rs` (effects), `screens/releases.rs` (plaque) |
 | `campaign`, `missions` | faction cards; mission list with art, chapter, briefing | `screens/campaign.rs` |
 | `skirmish` | battlefields, preview with start markers, players (controller, team, race, hero) | `screens/skirmish.rs` |
 | `multiplayer`, `lobby` | server status, lobbies, create and join; the room's seats, races, heroes, round trips | `screens/multiplayer.rs` |
@@ -155,11 +155,20 @@ The game's menus are layout documents in `config/ui/layouts/`, one per screen, d
 | `hud` (with `play.json`) | the in-match HUD, chat included (the play module) | `play/hud.rs` |
 | `match-overlay`, `mission-hud` | waiting for players, connection problems; objectives, dialogue, letterbox | `screens/match_ui.rs` |
 | `game-menu`, `result`, `saves`, `settings`, `dialog` | overlays | `match_ui.rs`, `settings_ui.rs`, `mod.rs` |
+| `releases` | What's new and the update details, with the gallery viewer | `screens/releases.rs`, `update/` |
 | `fade`, `backdrop` | screen-change fade; the 3D frame behind captures | |
 
 Paths include every ancestor with an id (`settings/graphics/shadows`); a path the code asks for that no layout has is logged once. Theme images (`config/ui/theme.json`) and on-demand images (map previews, crests, portraits) are bound from the cooked pack (`screens/ui_host.rs`); pack textures are straight alpha, sRGB ones bound through their sRGB views. The one `Ui` (menus, overlays and the HUD) draws through the renderer's `ui` pass into a non-sRGB view of the swapchain (its `view_formats`): after the scene in a match, or alone onto a cleared target on menu screens (no 3D frame is rendered there, `UiLayer::encode_alone`).
 
-`canopy capture-screens --out <folder> [--size 1600x900] [--scale 1]` renders every screen offscreen through the real game (headless, a temporary user folder); with `CANOPY_MATCH_SERVER` naming a local copy of the old server it also captures a real lobby.
+`canopy capture-screens --out <folder> [--size 1600x900] [--scale 1] [--only releases]` renders every screen offscreen through the real game (headless, a temporary user folder, updates never reach the network); with `CANOPY_MATCH_SERVER` naming a local copy of the old server it also captures a real lobby. `--only releases` captures just the release plaque in each update state, What's new (this copy's history, the whole log, a release with its gallery, the notes scrolled, the enlarged image) and the update details (checking, current, failed, offered with structured and with plain notes, downloading, ready); scripted update states are marked `-sample`.
+
+### Release plaque, What's new and updates
+
+[D43](decisions.md). The plaque at the bottom right of the main menu is the old zinc version indicator: the installed version (the workspace version, `CARGO_PKG_VERSION`) and the update check's state — **Checking…**, **Latest ✓**, **Update available ↓** (green) or **Check unavailable** (a failed check never says latest) — beside **What's new**. The game checks the feed each time the main menu comes up, unless an update is already on offer (an offer, a download or a verified package stays).
+
+- **What's new** (a new design, review): a timeline of every release up to the installed one, newest first, beside the selected release — version badge, date, the installed tag, the title as a headline, counts by kind, the gallery and the notes grouped as New, Improved, Fixed and Known issues, each with its colour and glyph. The history is `releases/log.json` built into the executable, so it reads offline. Gallery images come from `releases/media/` in the data folder (shipped as `data/releases/media`; Git LFS, so a checkout without them shows "Image unavailable"), else from the release host; clicking one enlarges it (Left and Right step, Escape returns).
+- **Update details** (clicking the version, which also retries a failed check): a status card with the old messages, download progress and errors, the offered release's notes (its versioned `changelog.json`, else the feed's plain notes read back by kind, else the plain text) or, without an offer, the installed release's. The one action is the old one for the state: Download update, Install and restart, Restart now, Check again, Try again. Close and Escape do nothing while checking, downloading, installing or restarting.
+- The flow (`update/mod.rs`, a polled state machine) and its backend (`update/remote.rs`: the feed over HTTPS on its own thread, the download into the user cache folder, signature and version verification, the install over the running `.app` and the relaunch) are described in their modules. A copy that cannot install (a development build not running from an `.app`, a quarantined copy run from Downloads, a platform without packages) still shows the update and says why instead of offering the download.
 
 ## Gallery
 

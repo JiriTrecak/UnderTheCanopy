@@ -22,6 +22,7 @@ canopy-assets = { path = "../crates/assets" }
 canopy-audio = { path = "../crates/audio" }
 canopy-content = { path = "../crates/content" }
 canopy-net = { path = "../crates/net" }
+canopy-release = { path = "../crates/release" }
 canopy-render = { path = "../crates/render" }
 canopy-scene = { path = "../crates/scene" }
 canopy-sim = { path = "../crates/sim" }
@@ -33,11 +34,14 @@ egui-winit.workspace = true
 flate2.workspace = true
 glam.workspace = true
 image.workspace = true
+reqwest.workspace = true
 rfd.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
+tar.workspace = true
 thiserror.workspace = true
+tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 tracing-tracy = { workspace = true, optional = true }
@@ -53,7 +57,8 @@ workspace = true
 
 [package.metadata.packager]
 product-name = "Under the Canopy"
-# The old desktop app's identifier: updates replace it in place and keep its identity (D43).
+# The old desktop app's identifier: an update replaces it in place and keeps its identity
+# (D43). The user folder keeps its own name (`paths.rs`).
 identifier = "com.jiritrecak.settlers"
 category = "StrategyGame"
 # Cooks the asset pack first. CI checkouts have no Git LFS art, so sources that are LFS
@@ -70,6 +75,8 @@ resources = [
     { src = "../assets/authoring/models.json", target = "data/assets/authoring/models.json" },
     { src = "../assets/maps", target = "data/assets/maps" },
     { src = "../config", target = "data/config" },
+    # Release gallery images for What's new (Git LFS; pointers in CI show as unavailable).
+    { src = "../releases/media", target = "data/releases/media" },
     { src = "../target/cooked/canopy.pack", target = "data/canopy.pack" },
 ]
 

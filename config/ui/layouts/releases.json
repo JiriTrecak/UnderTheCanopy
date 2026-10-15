@@ -1,0 +1,183 @@
+{
+  "templates": {
+    "rl-stop": {
+      "kind": "button", "class": "rl-stop", "action": "releases.select",
+      "children": [
+        {
+          "class": "rl-rail",
+          "children": [
+            { "id": "up", "class": "rl-line rl-line-up" },
+            { "id": "down", "class": "rl-line rl-line-down" },
+            { "class": "rl-dot" }
+          ]
+        },
+        {
+          "class": "rl-stop-copy",
+          "children": [
+            {
+              "class": "rl-stop-meta",
+              "children": [
+                { "id": "version", "kind": "label", "class": "rl-stop-version" },
+                { "id": "installed", "kind": "label", "class": "rl-tag", "text": "Installed" }
+              ]
+            },
+            { "id": "title", "kind": "label", "class": "rl-stop-title" },
+            { "id": "date", "kind": "label", "class": "rl-stop-date" }
+          ]
+        }
+      ]
+    },
+    "rl-chip": {
+      "class": "rl-chip",
+      "children": [
+        { "id": "dot", "class": "rl-chip-dot" },
+        { "id": "text", "kind": "label", "class": "rl-chip-text" }
+      ]
+    },
+    "rl-figure": {
+      "class": "rl-figure",
+      "children": [
+        {
+          "id": "frame", "kind": "button", "class": "rl-frame", "action": "releases.image",
+          "children": [
+            { "id": "missing", "kind": "label", "class": "rl-missing", "text": "Loading image…" },
+            { "id": "image", "kind": "image", "class": "rl-image" }
+          ]
+        },
+        { "id": "caption", "kind": "label", "class": "rl-caption" }
+      ]
+    },
+    "rl-note": {
+      "class": "rl-note",
+      "children": [
+        { "id": "bullet", "class": "rl-bullet" },
+        { "id": "text", "kind": "label", "class": "rl-note-text" }
+      ]
+    },
+    "rl-group": {
+      "class": "rl-group",
+      "children": [
+        {
+          "class": "rl-group-head",
+          "children": [
+            { "id": "icon", "kind": "label", "class": "rl-icon" },
+            { "id": "label", "kind": "label", "class": "rl-group-label" },
+            { "id": "count", "kind": "label", "class": "rl-group-count" },
+            { "class": "rl-rule" }
+          ]
+        },
+        { "id": "notes", "class": "rl-notes", "repeat": "rl-note" }
+      ]
+    }
+  },
+  "root": {
+    "class": "scrim rl-scrim",
+    "children": [
+      {
+        "class": "rl",
+        "children": [
+          {
+            "class": "rl-head",
+            "children": [
+              { "id": "crest", "kind": "label", "class": "rl-crest", "text": "✦" },
+              {
+                "class": "rl-heading",
+                "children": [
+                  { "kind": "label", "class": "rl-kicker", "text": "Under the Canopy" },
+                  { "id": "title", "kind": "label", "class": "rl-title", "text": "What’s new" },
+                  { "id": "subtitle", "kind": "label", "class": "rl-subtitle" }
+                ]
+              },
+              { "id": "close", "kind": "button", "class": "rl-close", "text": "✕", "action": "releases.close", "tooltip": { "title": "Close" } }
+            ]
+          },
+          {
+            "class": "rl-body",
+            "children": [
+              { "id": "side", "class": "rl-side", "repeat": "rl-stop" },
+              {
+                "id": "main", "class": "rl-main",
+                "children": [
+                  {
+                    "class": "rl-article",
+                    "children": [
+                      {
+                        "id": "status", "class": "rl-status",
+                        "children": [
+                          { "id": "emblem", "kind": "label", "class": "rl-emblem" },
+                          {
+                            "class": "rl-status-copy",
+                            "children": [
+                              { "id": "headline", "kind": "label", "class": "rl-status-title" },
+                              { "id": "detail", "kind": "label", "class": "rl-status-detail" },
+                              { "id": "progress", "kind": "bar", "class": "rl-progress", "value": 0 },
+                              { "id": "error", "kind": "label", "class": "rl-status-error" }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "id": "release", "class": "rl-release",
+                        "children": [
+                          {
+                            "class": "rl-meta",
+                            "children": [
+                              { "id": "badge", "kind": "label", "class": "rl-badge" },
+                              { "id": "date", "kind": "label", "class": "rl-date" },
+                              { "id": "installed", "kind": "label", "class": "rl-tag", "text": "Installed" }
+                            ]
+                          },
+                          { "id": "headline", "kind": "label", "class": "rl-headline" },
+                          { "id": "summary", "class": "rl-summary", "repeat": "rl-chip" },
+                          { "id": "plain", "kind": "label", "class": "rl-plain" },
+                          { "id": "gallery", "class": "rl-gallery", "repeat": "rl-figure" },
+                          { "id": "wide", "class": "rl-gallery-wide", "repeat": "rl-figure" },
+                          { "id": "groups", "class": "rl-groups", "repeat": "rl-group" }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "class": "rl-foot",
+            "children": [
+              { "id": "hint", "kind": "label", "class": "rl-hint" },
+              { "id": "primary", "kind": "button", "class": "rl-button rl-primary", "text": "Download update", "action": "releases.primary" },
+              { "id": "done", "kind": "button", "class": "rl-button", "text": "Close", "action": "releases.close" }
+            ]
+          },
+          {
+            "id": "viewer", "class": "rl-viewer", "visible": false,
+            "children": [
+              {
+                "class": "rl-viewer-stage",
+                "children": [
+                  { "id": "missing", "kind": "label", "class": "rl-missing", "text": "Image unavailable. You can still read the release notes." },
+                  { "id": "image", "kind": "image", "class": "rl-viewer-image" }
+                ]
+              },
+              {
+                "class": "rl-viewer-foot",
+                "children": [
+                  {
+                    "class": "rl-viewer-copy",
+                    "children": [
+                      { "id": "caption", "kind": "label", "class": "rl-viewer-caption" },
+                      { "id": "counter", "kind": "label", "class": "rl-viewer-counter" }
+                    ]
+                  },
+                  { "id": "previous", "kind": "button", "class": "rl-button", "text": "Previous", "action": "releases.previous", "hotkey": "Left" },
+                  { "id": "next", "kind": "button", "class": "rl-button", "text": "Next", "action": "releases.next", "hotkey": "Right" },
+                  { "id": "back", "kind": "button", "class": "rl-button", "text": "Back to the notes", "action": "releases.viewer-close" }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

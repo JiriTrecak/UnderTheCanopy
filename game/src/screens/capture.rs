@@ -253,8 +253,14 @@ fn objective(
     }
 }
 
-/// Renders every screen to PNGs in `out`.
-pub fn run(paths: &Paths, out: &Path, size: [u32; 2], scale: f32) -> Result<()> {
+/// Renders every screen to PNGs in `out` (`only`: one group, `releases`).
+pub fn run(
+    paths: &Paths,
+    out: &Path,
+    size: [u32; 2],
+    scale: f32,
+    only: Option<&str>,
+) -> Result<()> {
     std::fs::create_dir_all(out)?;
     let gpu = Gpu::headless(DeviceOptions::default())?.context("no GPU adapter")?;
     let user = std::env::temp_dir().join(format!("canopy-capture-{}", std::process::id()));
@@ -263,6 +269,7 @@ pub fn run(paths: &Paths, out: &Path, size: [u32; 2], scale: f32) -> Result<()> 
     let paths = Paths {
         data: paths.data.clone(),
         user: user.clone(),
+        cache: user.join("cache"),
     };
     let look = canopy_scene::Look::load(&paths.data, canopy_content::map::BIOMES[0])?;
     let environment = canopy_render::Environment::new(&look.lighting, &look.biome, 12.0, None);
@@ -271,7 +278,8 @@ pub fn run(paths: &Paths, out: &Path, size: [u32; 2], scale: f32) -> Result<()> 
         player_name: "Jiri".into(),
         ..Settings::default()
     };
-    let game = Game::new(paths.clone(), settings, &gpu, None)?;
+    let mut game = Game::new(paths.clone(), settings, &gpu, None)?;
+    game.offline_updates();
     let target = Target::new(&gpu, size);
     let mut rig = Rig {
         gpu,
@@ -287,7 +295,14 @@ pub fn run(paths: &Paths, out: &Path, size: [u32; 2], scale: f32) -> Result<()> 
     rig.shoot("boot")?;
     rig.until("boot", Duration::from_secs(60), Game::booted)?;
     rig.settle(1.2);
+    if only == Some("releases") {
+        releases(&mut rig)?;
+        let _ = std::fs::remove_dir_all(&user);
+        println!("{} captures", rig.written.len());
+        return Ok(());
+    }
     rig.shoot("main-menu")?;
+    releases(&mut rig)?;
     settings_tabs(&mut rig)?;
 
     // Campaign and missions.
@@ -318,6 +333,149 @@ pub fn run(paths: &Paths, out: &Path, size: [u32; 2], scale: f32) -> Result<()> 
     let _ = std::fs::remove_dir_all(&user);
     println!("{} captures", rig.written.len());
     Ok(())
+}
+
+/// Answers the updater's requests from a script (the captures never reach the network).
+struct Scripted(std::rc::Rc<std::cell::RefCell<std::collections::VecDeque<crate::update::Event>>>);
+
+impl crate::update::Backend for Scripted {
+    fn check(&mut self) {}
+    fn changelog(&mut self, _: canopy_release::Version) {}
+    fn download(&mut self, _: &crate::update::Offer) {}
+    fn install(&mut self, _: &Path) {}
+    fn relaunch(&mut self) -> Result<(), String> {
+        Err("captures do not restart".into())
+    }
+    fn blocker(&self, _: &crate::update::Offer) -> Option<String> {
+        None
+    }
+    fn poll(&mut self) -> Option<crate::update::Event> {
+        self.0.borrow_mut().pop_front()
+    }
+}
+
+/// The release plaque in each update state, What's new with a short and a long history
+/// (the whole bundled log, as an installed copy of its newest release shows it), its
+/// gallery, and the update details. Updates are scripted (`-sample`: an offered version
+/// one patch above the installed one, with the newest logged release's notes).
+fn releases(rig: &mut Rig) -> Result<()> {
+    use super::releases::View;
+    use crate::update::{Event, Offer, Updater, history};
+    let queue = std::rc::Rc::new(std::cell::RefCell::new(std::collections::VecDeque::new()));
+    rig.game.updater = Updater::new(Box::new(Scripted(queue.clone())));
+    let send = |rig: &mut Rig, event: Event| {
+        queue.borrow_mut().push_back(event);
+        rig.settle(0.1);
+    };
+    // The plaque: checking, latest, check unavailable.
+    rig.game.updater.check();
+    rig.settle(0.1);
+    rig.shoot("main-menu-checking")?;
+    send(rig, Event::Checked(Ok(None)));
+    rig.shoot("main-menu-latest")?;
+    rig.game.updater.check();
+    send(rig, Event::Checked(Err("offline".into())));
+    rig.shoot("main-menu-check-unavailable")?;
+
+    // What's new: this copy's history.
+    rig.game.open_releases(View::Notes);
+    rig.settle(0.3);
+    rig.shoot("whats-new")?;
+    rig.game.close_releases();
+    // The whole log as its newest release's copy shows it, then the release with images.
+    let log = history::log();
+    let newest = log.releases.iter().map(|r| r.version).max();
+    if let Some(newest) = newest {
+        rig.game.releases.set_history(log.history(newest), newest);
+        rig.game.open_releases(View::Notes);
+        rig.settle(0.3);
+        rig.shoot("whats-new-history")?;
+        let illustrated = log
+            .history(newest)
+            .iter()
+            .position(|r| r.changes.images.as_ref().is_some_and(|i| !i.is_empty()));
+        if let Some(i) = illustrated {
+            rig.game.releases.select(i);
+            rig.settle(1.5);
+            rig.shoot("whats-new-gallery")?;
+            // Scrolled into the notes.
+            wheel(rig, "releases/main", -12.0);
+            rig.shoot("whats-new-notes")?;
+            rig.game.releases.open_viewer(&rig.game.updater, 0);
+            rig.settle(0.3);
+            rig.shoot("whats-new-image")?;
+        }
+        rig.game.close_releases();
+        rig.game.close_releases();
+        rig.game
+            .releases
+            .set_history(history::installed_history(), history::installed());
+    }
+
+    // Updates: the details while checking, up to date, failed, offered, downloading and
+    // ready; the plaque with an update.
+    rig.game.updater.check();
+    rig.game.open_releases(View::Updates);
+    rig.settle(0.2);
+    rig.shoot("updates-checking")?;
+    send(rig, Event::Checked(Ok(None)));
+    rig.shoot("updates-current")?;
+    rig.game.updater.check();
+    send(rig, Event::Checked(Err("offline".into())));
+    rig.shoot("updates-check-unavailable")?;
+    let installed = history::installed();
+    let offered = canopy_release::Version {
+        patch: installed.patch + 1,
+        ..installed
+    };
+    let offer = Offer {
+        version: offered,
+        notes: log
+            .releases
+            .first()
+            .map(|r| r.plain_notes())
+            .unwrap_or_default(),
+        package: None,
+    };
+    rig.game.updater.check();
+    send(rig, Event::Checked(Ok(Some(offer.clone()))));
+    rig.shoot("updates-available-plain-sample")?;
+    if let Some(entry) = log.releases.first() {
+        let mut entry = entry.clone();
+        entry.version = offered;
+        entry.title = format!("Sample update: {}", entry.title);
+        send(rig, Event::Changelog(offered, Some(entry)));
+        rig.settle(0.3);
+        rig.shoot("updates-available-sample")?;
+    }
+    rig.game.updater.download();
+    send(rig, Event::Started(Some(412 * 1024 * 1024)));
+    send(rig, Event::Received(157 * 1024 * 1024));
+    rig.shoot("updates-downloading-sample")?;
+    send(
+        rig,
+        Event::Downloaded(Ok(PathBuf::from("/nonexistent/sample.tar.gz"))),
+    );
+    rig.shoot("updates-ready-sample")?;
+    rig.game.close_releases();
+    rig.settle(0.1);
+    rig.shoot("main-menu-update-available-sample")?;
+    // Back to a quiet updater for the remaining captures.
+    rig.game.offline_updates();
+    Ok(())
+}
+
+/// Turns the wheel over a node's centre.
+fn wheel(rig: &mut Rig, path: &str, lines: f32) {
+    let ui = &mut rig.game.host.ui;
+    if let Some(r) = ui.find(path).and_then(|id| ui.rect(id)) {
+        ui.input(&canopy_ui::InputEvent::PointerMoved {
+            x: r.x + r.w * 0.5,
+            y: r.y + r.h * 0.5,
+        });
+        ui.input(&canopy_ui::InputEvent::Wheel { x: 0.0, y: lines });
+    }
+    rig.settle(0.1);
 }
 
 fn settings_tabs(rig: &mut Rig) -> Result<()> {

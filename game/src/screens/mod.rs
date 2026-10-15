@@ -18,6 +18,7 @@ pub mod menu;
 pub mod multiplayer;
 #[cfg(test)]
 mod net_tests;
+pub mod releases;
 pub mod settings_ui;
 pub mod skirmish;
 pub mod ui_host;
@@ -169,6 +170,10 @@ pub struct Game {
     play_options: PlayOptions,
     /// The cursor last set on the window.
     cursor: Option<winit::window::CursorIcon>,
+    /// Desktop updates (D43): checked when the main menu comes up.
+    updater: crate::update::Updater,
+    /// What's new and the update details.
+    releases: releases::Releases,
     /// The window's width in logical pixels (the compact HUD's dock scale).
     hud_width: f32,
     modifiers: ModifiersState,
@@ -216,7 +221,14 @@ impl Game {
         let catalog = keys::catalog();
         let play_options = play_options(&settings, &catalog);
         let now = Instant::now();
-        let mut game = Self {
+        let updater = crate::update::Updater::new(Box::new(crate::update::remote::Remote::new(
+            crate::update::history::installed(),
+            paths.cache.join("updates"),
+        )));
+        let releases = releases::Releases::new(&paths.data);
+        let game = Self {
+            updater,
+            releases,
             palette: Palette::load(&paths.data),
             library: SaveLibrary::new(&paths.user),
             progress: Progress::load(&paths.user),
@@ -263,12 +275,13 @@ impl Game {
             apply_all: true,
             clear_actors: false,
         };
-        widgets::text(
-            &mut game.host.ui,
-            "main-menu/version",
-            &format!("v{}", env!("CARGO_PKG_VERSION")),
-        );
         Ok(game)
+    }
+
+    /// Updates never reach the network (benchmarks, captures).
+    pub fn offline_updates(&mut self) {
+        self.updater = crate::update::Updater::new(Box::new(crate::update::remote::Offline));
+        self.releases.gallery.offline = true;
     }
 
     /// Whether the game is ready for the menus (data loaded).
@@ -338,6 +351,7 @@ impl Game {
                 self.apply(Intent::Back);
             }
             Some(Overlay::Settings) => self.close_settings(),
+            Some(Overlay::Releases) => self.close_releases(),
             Some(Overlay::GameMenu) if self.menu_page != MenuPage::Main => {
                 self.menu_page = MenuPage::Main;
             }
@@ -448,6 +462,8 @@ impl Game {
             return;
         };
         match screen {
+            // Desktop apps check for updates on entering the main menu (old behaviour).
+            Screen::MainMenu => self.updater.menu_entered(),
             Screen::Skirmish => {
                 if self.skirmish.map_index(&data).is_none() {
                     self.skirmish.choose_map(&data, 0);
@@ -770,6 +786,7 @@ impl Game {
         }
         self.poll_boot();
         self.poll_network();
+        self.poll_updates();
         self.finish_loading(ctx);
         // Text fields reach the system clipboard (copy, cut, paste) for every screen.
         let mut taken = self.host.ui.take_actions();
@@ -1087,6 +1104,42 @@ impl Game {
             "menu.load" if clicked => self.open_saves(),
             "menu.settings" if clicked => self.open_settings(),
             "menu.exit" if clicked => self.apply(Intent::Quit),
+            // The release plaque and dialog.
+            "releases.notes" if clicked => self.open_releases(releases::View::Notes),
+            "releases.updates" if clicked => {
+                self.open_releases(releases::View::Updates);
+                // Opening the details retries a failed check (old behaviour).
+                if matches!(
+                    self.updater.state().phase,
+                    crate::update::Phase::Idle | crate::update::Phase::Error
+                ) {
+                    self.updater.check();
+                }
+            }
+            "releases.select" if clicked => {
+                if let Some(i) = action.index {
+                    self.releases.select(i);
+                }
+            }
+            "releases.primary" if clicked => {
+                use crate::update::Phase;
+                match self.updater.state().phase {
+                    Phase::Available => self.updater.download(),
+                    Phase::Ready => self.updater.install(),
+                    Phase::Restart => self.updater.request_restart(),
+                    Phase::Current | Phase::Error => self.updater.check(),
+                    _ => {}
+                }
+            }
+            "releases.close" if clicked => self.close_releases(),
+            "releases.image" if clicked => {
+                if let Some(i) = action.index {
+                    self.releases.open_viewer(&self.updater, i);
+                }
+            }
+            "releases.previous" if clicked => self.releases.step_viewer(&self.updater, -1),
+            "releases.next" if clicked => self.releases.step_viewer(&self.updater, 1),
+            "releases.viewer-close" if clicked => self.releases.viewer = None,
             // Campaign.
             "campaign.play" if clicked => {
                 if let Some(id) = action.index.and_then(|i| campaign::card_id(&data, i)) {
@@ -1264,6 +1317,37 @@ impl Game {
                 }
             }
             _ => {}
+        }
+    }
+
+    fn open_releases(&mut self, view: releases::View) {
+        self.releases.open(view);
+        self.apply(Intent::Show(Overlay::Releases));
+    }
+
+    /// Escape or Close: the enlarged image first, then the dialog unless the update is
+    /// busy or restarting (old behaviour).
+    fn close_releases(&mut self) {
+        if self.releases.viewer.take().is_some() {
+            return;
+        }
+        if releases::Releases::closable(&self.updater) && self.flow.top() == Some(Overlay::Releases)
+        {
+            self.apply(Intent::Back);
+        }
+    }
+
+    /// The update's outcomes; a finished install restarts into the new version once the
+    /// settings are written.
+    fn poll_updates(&mut self) {
+        self.updater.poll();
+        if self.updater.restart_due() {
+            self.save_settings();
+            self.updater.restart();
+            if self.updater.relaunched() {
+                tracing::info!("restarting into the update");
+                self.apply(Intent::Quit);
+            }
         }
     }
 
@@ -1470,6 +1554,7 @@ impl Game {
             ("settings", top == Some(Overlay::Settings)),
             ("saves", top == Some(Overlay::Saves)),
             ("dialog", top == Some(Overlay::Confirm)),
+            ("releases", top == Some(Overlay::Releases)),
             ("fade", true),
         ];
         for (name, show) in shows {
@@ -1492,7 +1577,10 @@ impl Game {
         let t = (Instant::now() - self.started).as_secs_f32();
         match &screen {
             Screen::Boot => self.show_boot(),
-            Screen::MainMenu => menu::animate(&mut self.host, t, self.view),
+            Screen::MainMenu => {
+                menu::animate(&mut self.host, t, self.view);
+                self.releases.show_plaque(&mut self.host.ui, &self.updater);
+            }
             Screen::Campaign => {
                 if let Some(data) = &data {
                     campaign::show_cards(&mut self.host, gpu, data, &self.progress);
@@ -1576,6 +1664,7 @@ impl Game {
             }
             Some(Overlay::Saves) => self.show_saves(),
             Some(Overlay::Confirm) => self.show_dialog(),
+            Some(Overlay::Releases) => self.releases.show(&mut self.host, gpu, &self.updater),
             _ => {}
         }
     }

@@ -7,6 +7,7 @@
 //!                   ├▶ Multiplayer ─▶ Lobby ─┘      │         │
 //!                   ├▶ Load (overlay) ─────────────▶┘         └▶ GameMenu (overlay) ─▶ (origin)
 //!                   ├▶ Settings (overlay)
+//!                   ├▶ Releases (overlay: What's new, updates)
 //!                   └▶ Exit
 //! ```
 //!
@@ -45,6 +46,9 @@ pub enum Overlay {
     Result,
     /// A yes/no question (its content is the caller's).
     Confirm,
+    /// What's new and the update details: only over the main menu, so an update is
+    /// never installed during a match (D43).
+    Releases,
 }
 
 /// Where a match returns to when it is left.
@@ -229,6 +233,7 @@ impl Flow {
                         self.screen == Screen::MainMenu || self.has(Overlay::GameMenu)
                     }
                     Overlay::Settings | Overlay::Confirm => self.screen != Screen::Boot,
+                    Overlay::Releases => self.screen == Screen::MainMenu,
                 };
                 if fits {
                     if overlay == Overlay::Result {
@@ -370,6 +375,21 @@ mod tests {
             campaign: "c".into(),
         }));
         assert_eq!(flow.apply(Intent::Back), vec![Effect::EndMatch]);
+    }
+
+    #[test]
+    fn release_notes_and_updates_open_only_over_the_main_menu() {
+        let mut flow = booted();
+        flow.apply(Intent::Show(Overlay::Releases));
+        assert_eq!(flow.top(), Some(Overlay::Releases));
+        flow.apply(Intent::Back);
+        assert!(flow.overlays().is_empty());
+        flow.apply(Intent::Open(Screen::Skirmish));
+        flow.apply(Intent::StartMatch(Origin::Skirmish));
+        flow.apply(Intent::Loaded);
+        flow.apply(Intent::Back);
+        flow.apply(Intent::Show(Overlay::Releases));
+        assert_eq!(flow.top(), Some(Overlay::GameMenu));
     }
 
     #[test]

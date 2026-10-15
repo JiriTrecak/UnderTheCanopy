@@ -17,7 +17,7 @@ UnderTheCanopy/
 │  ├─ net/             client for the existing match server protocol (M5)
 │  ├─ release/         release log, update feed, package signatures (D43)
 │  └─ release-tool/    `just release-*`: notes, prepare, build, publish (docs/releases.md)
-├─ game/               the executable: window, input, platform paths, screens, packaging
+├─ game/               the executable: window, input, platform paths, screens, updater, packaging
 ├─ content/            gameplay data (mirrored, see below)
 ├─ assets/             published asset outputs, registry, manifest and maps (mirrored)
 ├─ art/                editable masters and exported outputs, Git LFS (mirrored)
