@@ -17,27 +17,27 @@ Evidence names a test (`play::tests::…`, module tests), a capture (`docs/captu
 | Group | done | partial | missing | dropped | new |
 |---|---|---|---|---|---|
 | Match flow | 9 | 1 | 0 | 0 | 1 |
-| Camera | 7 | 2 | 0 | 0 | 1 |
+| Camera | 8 | 1 | 0 | 0 | 1 |
 | Selection | 11 | 0 | 0 | 0 | 0 |
 | Orders and command card | 17 | 0 | 0 | 0 | 0 |
 | Building | 6 | 0 | 0 | 0 | 0 |
-| Economy feedback | 9 | 1 | 0 | 0 | 0 |
+| Economy feedback | 10 | 0 | 0 | 0 | 0 |
 | Heroes, items and spells UI | 12 | 1 | 0 | 0 | 0 |
 | Combat feedback | 7 | 0 | 0 | 0 | 0 |
 | Fog and minimap | 8 | 1 | 0 | 0 | 0 |
-| HUD panels and tooltips | 13 | 2 | 0 | 0 | 1 |
+| HUD panels and tooltips | 15 | 0 | 0 | 0 | 1 |
 | Chat, messages and alerts | 7 | 0 | 0 | 0 | 0 |
-| Menus and screens | 21 | 2 | 0 | 3 | 1 |
+| Menus and screens | 22 | 1 | 0 | 3 | 1 |
 | Settings | 12 | 1 | 0 | 0 | 0 |
-| Saves | 7 | 0 | 1 | 0 | 2 |
+| Saves | 8 | 0 | 0 | 0 | 2 |
 | Multiplayer | 10 | 0 | 0 | 2 | 1 |
-| Campaign and missions | 6 | 3 | 0 | 0 | 1 |
+| Campaign and missions | 8 | 0 | 0 | 0 | 1 |
 | Audio | 4 | 0 | 0 | 0 | 0 |
 | Visuals | 18 | 1 | 1 | 4 | 0 |
 | Debug tools | 2 | 1 | 0 | 0 | 0 |
-| **Total** | **186** | **16** | **2** | **9** | **8** |
+| **Total** | **194** | **8** | **1** | **9** | **8** |
 
-What a player notices first that is still open: the scenery cutaway (canopy trees do not open around your units), the mission cinematic camera (no mission maps are mirrored, so nobody can see it yet) and save export/import. The rest are small. Owners and next steps are in [What remains](#what-remains).
+What a player notices first that is still open: the scenery cutaway (canopy trees do not open around your units) and spell aim drawn as rings instead of the old filled outline. The rest are small. Owners and next steps are in [What remains](#what-remains).
 
 ## Match flow
 
@@ -63,7 +63,7 @@ What a player notices first that is still open: the scenery cutaway (canopy tree
 | View kept inside the map | `clamp` | done | `RtsCamera::clamp`, `view::frame` |
 | Smooth wheel zoom, PageUp/PageDown | `zoomMomentum.ts` | done | `run.rs` `wheel`, `KEY_ZOOM` |
 | Arrow pan 28 u/s, edge scroll 20 px | `PAN_SPEED`, `EDGE_PX` | done | `run.rs` `update_camera` |
-| Middle-drag pan | `panPersp` | partial | `run.rs`: uniform ground scale per pixel rather than the old ray through the cursor (feels slightly faster at the top of the screen) |
+| Middle-drag pan | `panPersp` | done | `run.rs`: pans from the centre ray as the old `panPersp` |
 | Centre selection / main building (Home), alerts (Space), next drop-off (Backspace), double-press groups and heroes | `settlementHud.onKey` | done | `idle_workers_menu_keys_tab_and_chat`, `control_groups_assign_recall_and_centre_on_a_double_press` |
 | **Unit cameras: RTS → third person → first person (J, "Camera: …" command), Esc and camera jumps return to RTS, pan/zoom ignored while following, smooth 350 ms blend, first-person body hidden** | `unitCamera.ts`, `renderer.unitCamera`, `unitCameraCommand` | done (added in this audit) | `play/follow.rs` and its tests, `the_camera_command_cycles_unit_cameras_and_escape_returns_to_rts`; `canopy shot --play --input "focus:marshal;key:J"` (captures `m4-play/camera-third-person.png`, `camera-first-person.png`) |
 | Third-person boom stops at terrain | `updateUnitCamera` | done | `follow::clear_boom`, `the_boom_stops_in_front_of_rising_ground` |
@@ -131,7 +131,7 @@ What a player notices first that is still open: the scenery cutaway (canopy tree
 | Mine and workplace status ("n workers · m recommended · k remaining", production status) | `workplace.ts` | done | `Hud::workplace`; world label (D40) |
 | Mine "Workers n/m" label over the building | `mineLabels.ts` | done | world UI (D40), capture `m3-effects/ui-observer-all-bars.png` |
 | Construction scaffold and dust | `constructionScaffold.ts` | done | live scene (D35), effects (D40) |
-| Next idle worker (F8, `) selects and centres | `selection.worker` | partial | `idle_workers_menu_keys_tab_and_chat`; stunned workers and workers releasing cargo count as idle (the view does not carry those two flags) |
+| Next idle worker (F8, `) selects and centres | `selection.worker` | done | `idle_workers_menu_keys_tab_and_chat`; the view carries stunned, held and releasing flags, which the key skips |
 | Next drop-off (Backspace) | `camera.hall` | done | `Play::next_dropoff` |
 
 ## Heroes, items and spells UI
@@ -191,9 +191,9 @@ What a player notices first that is still open: the scenery cutaway (canopy tree
 | Queued orders of the focus with tooltips | `unitOrderCard` | done | `Hud::order_queue` |
 | Tooltips: title with key, cost rows in display order, description, reason, eligible actors, autocast note | `CommandTooltips` | done | `Hud::tooltip` |
 | Command tooltip placed above the grid at its width | `render` | done | `tooltip_anchor` |
-| Portrait tooltip with the definition's costs | `portrait` data-tip | partial | name and description only |
+| Portrait tooltip with the definition's costs | `portrait` data-tip | done | `Hud` portrait tooltip with name, description and costs |
 | Pager ‹ › n / m | `pages` | done | `hud.json` |
-| Observer panel: colour, name, "Player n · Computer/Human/Defeated", stock and income per minute, units, workers, every hero with level and fallen | `ObserverPanel` | partial (names, controllers and all heroes added) | `Hud::observer`; gaps: resource and hero icons, "Reviving", the cells' tooltips |
+| Observer panel: colour, name, "Player n · Computer/Human/Defeated", stock and income per minute, units, workers, every hero with level and fallen | `ObserverPanel` | done | `Hud::observer`: names, controllers, every hero, resource and hero icons, "Reviving", cell tooltips |
 | Cursor: crosshair while aiming an attack; pointer and text cursors over the UI | `canvas.style.cursor` | done (added) | `Game::update_cursor` |
 | Menu button | `Hud` | done | `hud.json` `menu` |
 | Settings button in a match | `Hud` | done (through the game menu) | |
@@ -227,7 +227,7 @@ What a player notices first that is still open: the scenery cutaway (canopy tree
 | Campaign: faction cards, crest | `campaign.ts` | done (from `rules.campaigns`, D38) | capture `m4-screens/campaign.png` |
 | Mission list: number, title, art, chapter, briefing, Begin, "More chapters to come" | `campaign.ts` | done (missions unlock in order) | `progress_round_trips_and_opens_missions_in_order` |
 | Loading: plain panel, stage, progress, error, back | `loadingScreen.ts` | done | capture `m4-screens/loading.png` |
-| Loading for missions: art, chapter, title, briefing, rotating tips | `loadingScreen.ts` | partial | the crest stays hidden after the boot screen |
+| Loading for missions: art, chapter, title, briefing, rotating tips | `loadingScreen.ts` | done | `show_loading`: crest and chapter on mission loads |
 | Game menu: title by mode and map, Resume, Save, Load, Restart, Settings, Exit | `gameMenu.ts` | done | captures `m4-screens/game-menu*.png` |
 | Save page with a name field | `savePage` | done | capture `game-menu-save.png` |
 | Exit page: Save and exit / Exit without saving / Cancel | `main` | done | capture `game-menu-leave.png` |
@@ -273,7 +273,7 @@ What a player notices first that is still open: the scenery cutaway (canopy tree
 | Save before leaving / before restarting | game menu | done | `gm.save-exit`, `gm.save-restart` |
 | Autosave when the window closes | none | new | D38 |
 | Delete a save | none | new | capture `confirm-delete.png` |
-| Export a save to a file, import one | `export`, `Import save…` | missing | saves are files in the user folder (`saves/<id>.json` + `.save.gz`) and can be copied by hand; next step: Export/Import buttons with a native file dialog |
+| Export a save to a file, import one | `export`, `Import save…` | done | Export/Import through native file dialogs (`rfd`, `game/src/files.rs`), imported saves checked as loading checks them |
 | No multiplayer saves | `gameMenu` hooks | done | D32 |
 
 ## Multiplayer
@@ -301,15 +301,14 @@ No mission maps are mirrored, so missions cannot be played yet; the HUD is shown
 | Feature | Old | Status | Evidence |
 |---|---|---|---|
 | Current objective, script error | `MissionHud` | done | `match_ui.rs` |
-| Objectives history (collapsible "Objectives completed: n"; active objectives with descriptions) | `MissionHud` | partial | a flat ✓/✕ list; descriptions of active objectives not shown |
 | Dialogue: speaker, portrait, text; lifted clear of a large HUD | `MissionHud` | done | D39 |
 | Letterbox in cinematics | `mission-letterbox` | done | capture `mission-cinematic-sample.png` |
 | Keys and clicks held during cinematics (game menu still opens), selection rings hidden | `blockKey`, `gameSelect([])` | done (added) | `Play::cinematic` |
-| Cinematic camera: jumps to the scene and returns after | `session.tick` | partial (added) | `run.rs` `update_camera`; gaps: scripted unit shots (`scene.camera`) and the −8 % lens |
+| Cinematic camera: jumps to the scene and returns after | `session.tick` | done | `play/cinematic.rs`: jumps to the scene and returns; scripted unit shots (`scene.camera`) through their unit with boom, height, lens and blend; the −8 % lens; the scene's set revealed. Unit shots are tested with fixtures; no shipped mission map uses them yet |
 | Mission result: "Mission complete" / "Mission failed", next chapter, return to campaign | `MissionHud.result` | done (wording restored in this audit) | `ResultModel::build` |
 | Company carried to the next chapter | `onMissionContinue` | done | D38 |
 | Campaign progress, missions unlock in order | none (old list had no locks) | new | `Progress` |
-| Mission loading screen | `loadingScreen.ts` | partial | see Menus |
+| Mission loading screen | `loadingScreen.ts` | done | see Menus |
 
 ## Audio
 
@@ -357,22 +356,14 @@ The old game showed its performance window in the HUD unless the profiler was sw
 |---|---|---|---|
 | Timings, frame and simulation costs, AI summaries | `performanceWindow.tsx` | done | egui overlay (F9), `play/debug.rs` |
 | Render feature switches | same | done | `play/debug.rs` |
-| Match speed 1–4×, reveal map, fog perspective, navigation overlays | same | partial | not in the egui overlay; next step for whoever needs them |
+| Match speed 1–4×, reveal map, fog perspective, navigation overlays | same | partial | `play/debug.rs` match tools: speed 0.5–4× paced on the simulation thread, reveal map, fog perspective; gap: navigation overlays |
 
 ## What remains
 
 | Gap | Owner / next step |
 |---|---|
 | Scenery cutaway around units under the canopy | renderer: a coverage mask from visible own units and a dither in the statics shader (`dither_discard` exists) |
-| Mission cinematic unit shots and lens | game (`play/follow.rs` already poses unit cameras): map `scene.camera` placement ids to entities; needs a mirrored mission map to test |
-| Save export / import | screens: two buttons and a native file dialog (`rfd`), copying the save pair |
 | Third-person boom against scenery and buildings; first-person body shadow | game + renderer: a ray test against static instances; an actor flag "no camera draw" that keeps the shadow |
 | Spell aim drawn as the old filled outline | world UI: an aim primitive in `WorldUiInput` (the game already computes `Aim`) |
-| Observer panel icons, "Reviving", cell tooltips | game HUD (`Hud::observer`, `play.json` observer row) |
-| Objectives history and active descriptions | screens (`MissionHud::show`) |
-| Mission loading crest | screens (`show_loading`) |
-| Portrait tooltip costs | game HUD |
-| Idle-worker rule: stunned and releasing workers | sim view: expose the two flags; then `Play::idle_workers` |
-| Middle-drag through the cursor ray | game (`run.rs`) |
-| Debug overlay: speed, reveal, fog perspective | game (`sim::Control` for speed, a seat switch for vision) |
+| Debug overlay: navigation overlays | game (`play/debug.rs`) |
 | Shadows "filtered" mode | Jiri (D41) |

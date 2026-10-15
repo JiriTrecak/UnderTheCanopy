@@ -272,6 +272,22 @@ What it costs: the water with its two draws, ripple field and caustics about 0.1
 - **Frame graph**: `cull`, `skin`, `shadow`, [`ripples`, `caustics`], `forward` (… water, world UI ground, effects), [`contact`, `bloom`, `haze`], `post`, `world_ui`, [`minimap`, `portrait`], `ui`.
 - **Measured** (M4 Max, 1080p, `--frames 120`, median submit-to-idle): an open echo-isles view at zoom 0.6, 1.49–1.55 ms without effects and 1.81–1.85 ms with Holy Light, Crownfall and Faultline's impact filling the middle (149 parts, 2 lights, 6 draws); twelve Crownfall impacts at zoom 1.25 (72 emitters, 1,260 parts, 4 lights, 5 draws) 2.19–2.23 ms against 2.08–2.11 ms; the 8 × 50 crowd battle with 256 cues 2.27 ms. CPU on the render thread (interpolation, effect evaluation, world UI): 0.05–0.1 ms a frame, 0.5 ms with all 450 units of the crowd selected. Scaled to the base M1 (about 7× less GPU) effects-heavy views add 1–2 ms; within budget.
 
+### Performance and presets (D42)
+
+`just bench-render` measures fixed scenes at 1920×1080 and 2560×1600 (wall time from recording to idle, and every pass alone in its own submit minus the submit floor; the fastest fifth of 60 frames) and writes a table to `target/bench-render/latest`; `--preset`, `--scenes` and `--label` select and name runs. Live models draw cooked levels of detail chosen by on-screen error (`Quality::lod_pixels`); the shadow taps rotate a fixed Vogel disk once per pixel and are skipped on surfaces facing away from the sun. Presets (`Preset`, Low/Medium/High/Ultra) set render scale budget, contact shading, bloom, haze, LOD error and shadow map size; the adapter picks one on first run (base Apple chips Medium).
+
+M4 Max, frame ms (GPU ms):
+
+| Scene | High 1080p | High 2560×1600 | Medium 1080p | Medium 2560×1600 |
+|---|---|---|---|---|
+| player base (echo-isles, zoom 1) | 2.08 (1.74) | 2.87 (2.56) | 1.43 (1.17) | 1.51 (1.26) |
+| spectator (zoom 3) | 3.47 (3.07) | 4.81 (4.36) | 2.60 (2.26) | 2.67 (2.33) |
+| 8 × 50 crowd battle, 256 cues | 3.03 (2.59) | 4.13 (3.64) | 2.00 (1.62) | 2.19 (1.80) |
+| deep water | 1.80 (1.56) | 2.95 (2.69) | 1.43 (1.19) | 1.50 (1.27) |
+| deep forest (bloom, haze) | 2.34 (2.04) | 3.38 (3.07) | 1.69 (1.40) | 1.87 (1.55) |
+
+A base M1 has about a seventh of this GPU: Medium's worst view (spectator) lands near 16 ms, player views near 10 ms. The spectator view is vertex-bound (about 1 M forward and 1 M shadow triangles). Unmeasured on a base M1.
+
 ### Not yet (later M3 steps)
 
 Terrain displacement (no shipped map uses rock coverage), egui tuning, hot reload of `config/`. Mist regions (`atmosphere.regions`, used by no biome), rain and the close-camera depth of field and shaft density of the old surroundings (no camera uses them) are not carried. Rain and beam effect layers (no shipped effect uses them) are not drawn. Fog of war on stacked floors: bridge decks fold into the ground cell under them (in sight when any floor is) rather than keeping the old per-floor atlas. The portrait has no rim light (one sun light in the lighting model).
