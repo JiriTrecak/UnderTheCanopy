@@ -39,16 +39,18 @@ pub fn research(state: &State, owner: Owner) -> &[Id] {
 impl Stats {
     /// The entity's statistics with `research` (its owner's) applied.
     pub fn of(catalog: &Catalog, e: &Entity, research: &[Id]) -> Self {
+        Self::of_with(
+            catalog,
+            e,
+            research,
+            crate::abilities::statuses::control_immunities(catalog, e),
+        )
+    }
+
+    /// [`Stats::of`] with the entity's control immunities already known.
+    pub fn of_with(catalog: &Catalog, e: &Entity, research: &[Id], immune: u8) -> Self {
         let d = catalog.get(e.definition);
-        let levels = d.behaviors.progression.as_ref().map(|p| &p.levels);
-        let experience = e.progression.as_ref().map_or(0, |p| p.experience);
-        let (level, row) = match levels {
-            Some(levels) if !levels.is_empty() => {
-                let reached = levels.iter().filter(|l| l.experience <= experience).count();
-                (reached as u32, Some(&levels[reached.saturating_sub(1)]))
-            }
-            _ => (d.level.unwrap_or(1), None),
-        };
+        let (level, row) = level_row(d, e);
         // A form's combat profile supplies the weapon (old `formDefinition`).
         let profile = crate::abilities::forms::weapon_def(catalog, e);
         let combat = catalog.get(profile).behaviors.combat.as_ref();
@@ -95,12 +97,11 @@ impl Stats {
         let mut reflection: i64 = 0;
         if !e.statuses.is_empty() || e.equipment.is_some() {
             use crate::abilities::library::control;
-            let immune = crate::abilities::statuses::control_immunities(catalog, e);
             let (immune_move, immune_attack) = (
                 immune & control::MOVE_SLOW != 0,
                 immune & control::ATTACK_SLOW != 0,
             );
-            crate::abilities::statuses::for_each_modifier(catalog, e, &mut |m| {
+            let mut add = |m: &crate::abilities::library::Modifiers| {
                 max_hp += m.max_hp;
                 max_mana += m.max_mana;
                 damage += m.damage;
@@ -121,7 +122,10 @@ impl Stats {
                     m.attack_speed_permille
                 };
                 damage_bonus += m.damage_permille;
-            });
+            };
+            // Every modifier in the old order (`statuses::for_each_modifier`).
+            crate::abilities::statuses::spell_modifiers_with(catalog, e, immune, &mut add);
+            crate::items::non_spell_modifiers(catalog, e, &mut add);
         }
         Self {
             level,
@@ -135,7 +139,7 @@ impl Stats {
             ) as u32)
                 .max(1),
             max_mana: max_mana.clamp(0, i64::from(u32::MAX)) as u32,
-            move_speed_permille: slowed(catalog, e, move_speed),
+            move_speed_permille: slowed(e, immune, move_speed),
             cooldown_reduction_permille: cooldown_reduction.clamp(0, MAX_COOLDOWN_REDUCTION) as u32,
             lifesteal_permille: lifesteal.clamp(0, MAX_LIFESTEAL) as u32,
             melee_reflection_permille: reflection.clamp(0, MAX_MELEE_REFLECTION) as u32,
@@ -150,6 +154,27 @@ impl Stats {
     }
 }
 
+/// The level reached by experience and its row of the progression table, if any.
+fn level_row<'a>(
+    d: &'a canopy_content::game::Definition,
+    e: &Entity,
+) -> (u32, Option<&'a canopy_content::game::Level>) {
+    let levels = d.behaviors.progression.as_ref().map(|p| &p.levels);
+    let experience = e.progression.as_ref().map_or(0, |p| p.experience);
+    match levels {
+        Some(levels) if !levels.is_empty() => {
+            let reached = levels.iter().filter(|l| l.experience <= experience).count();
+            (reached as u32, Some(&levels[reached.saturating_sub(1)]))
+        }
+        _ => (d.level.unwrap_or(1), None),
+    }
+}
+
+/// The entity's level (`Stats::of(..).level` without the rest).
+pub fn level(catalog: &Catalog, e: &Entity) -> u32 {
+    level_row(catalog.get(e.definition), e).0
+}
+
 /// Maximum health without research (definition, level, items and statuses).
 pub fn max_hp(catalog: &Catalog, e: &Entity) -> u32 {
     Stats::of(catalog, e, &[]).max_hp
@@ -159,31 +184,25 @@ pub fn max_hp(catalog: &Catalog, e: &Entity) -> u32 {
 /// slow unless immune, clamped to [`MOVE_SPEED_RANGE`] (old `entityStats`).
 pub fn move_speed_permille(catalog: &Catalog, e: &Entity) -> u32 {
     if e.statuses.is_empty() && e.equipment.is_none() {
-        return slowed(catalog, e, 1000);
+        return slowed(e, 0, 1000);
     }
-    let immune = crate::abilities::statuses::control_immune(
-        catalog,
-        e,
-        crate::abilities::library::control::MOVE_SLOW,
-    );
+    let immunities = crate::abilities::statuses::control_immunities(catalog, e);
+    let immune = immunities & crate::abilities::library::control::MOVE_SLOW != 0;
     let mut speed: i64 = 1000;
-    crate::abilities::statuses::for_each_modifier(catalog, e, &mut |m| {
+    let mut add = |m: &crate::abilities::library::Modifiers| {
         speed += if immune {
             m.move_speed_permille.max(0)
         } else {
             m.move_speed_permille
         };
-    });
-    slowed(catalog, e, speed)
+    };
+    crate::abilities::statuses::spell_modifiers_with(catalog, e, immunities, &mut add);
+    crate::items::non_spell_modifiers(catalog, e, &mut add);
+    slowed(e, immunities, speed)
 }
 
-fn slowed(catalog: &Catalog, e: &Entity, speed: i64) -> u32 {
-    let immune = (!e.statuses.is_empty() || e.equipment.is_some())
-        && crate::abilities::statuses::control_immune(
-            catalog,
-            e,
-            crate::abilities::library::control::MOVE_SLOW,
-        );
+fn slowed(e: &Entity, immunities: u8, speed: i64) -> u32 {
+    let immune = immunities & crate::abilities::library::control::MOVE_SLOW != 0;
     let slow = if immune {
         0
     } else {

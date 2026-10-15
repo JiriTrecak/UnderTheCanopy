@@ -611,7 +611,7 @@ impl Presenter {
                 continue;
             };
             let model = self.catalog.index(self.pack.as_deref(), &file);
-            let info = self.catalog.get(model).clone();
+            let info = self.catalog.shared(model);
             let visual_scale = d.model_scale.unwrap_or(1.0);
             let scale = (asset.scale.unwrap_or(1.0) * appearance_scale * visual_scale) as f32;
             let mut position = {
@@ -818,7 +818,7 @@ impl Presenter {
                         if rise > 0.0
                             && let Some(scaffold) = self.asset_model(style.scaffold.as_str())
                         {
-                            let sinfo = self.catalog.get(scaffold).clone();
+                            let sinfo = self.catalog.shared(scaffold);
                             let bmin = Vec3::from_array(info.rest_min) * scale;
                             let bmax = Vec3::from_array(info.rest_max) * scale;
                             let pad = style.padding as f32 * 2.0;
@@ -899,7 +899,7 @@ impl Presenter {
         for id in corpse_ids {
             let model_info = {
                 let c = &self.corpses[&id];
-                self.catalog.get(c.actor.model).clone()
+                self.catalog.shared(c.actor.model)
             };
             let c = self.corpses.get_mut(&id).expect("listed");
             if tick > c.died

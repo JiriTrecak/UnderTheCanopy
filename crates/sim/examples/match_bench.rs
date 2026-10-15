@@ -172,7 +172,8 @@ fn main() -> Result<(), String> {
     let mut ticks: Vec<f64> = Vec::new();
     let mut views: Vec<f64> = Vec::new();
     let mut per_step: BTreeMap<&'static str, Vec<f64>> = BTreeMap::new();
-    let mut worst = (0.0, 0);
+    // (cost, tick number, index of the tick in this run)
+    let mut worst = (0.0, 0, 0);
     let mut digest = 0xcbf2_9ce4_8422_2325;
     let ms = |d: Duration| d.as_secs_f64() * 1000.0;
     for i in 0..args.ticks {
@@ -186,7 +187,7 @@ fn main() -> Result<(), String> {
         digest = fnv(digest, &world.fingerprint().to_le_bytes());
         let tick = ms(stepped - started);
         if tick > worst.0 {
-            worst = (tick, world.tick());
+            worst = (tick, world.tick(), i as usize);
         }
         ticks.push(tick);
         views.push(ms(viewed - stepped));
@@ -233,7 +234,23 @@ fn main() -> Result<(), String> {
     println!("whole tick (ms):");
     report("step", &ticks);
     report("observer view", &views);
-    println!("  worst step at tick {} ({:.2} ms)", worst.1, worst.0);
+    let mut at_worst: Vec<(f64, &str)> = per_step
+        .iter()
+        .filter(|(k, _)| k.starts_with("tick: "))
+        .filter_map(|(k, v)| v.get(worst.2).map(|&c| (c, &k["tick: ".len()..])))
+        .filter(|(c, _)| *c >= 0.05)
+        .collect();
+    at_worst.sort_by(|a, b| b.0.total_cmp(&a.0));
+    let at_worst: Vec<String> = at_worst
+        .iter()
+        .map(|(c, k)| format!("{k} {c:.2}"))
+        .collect();
+    println!(
+        "  worst step at tick {} ({:.2} ms): {}",
+        worst.1,
+        worst.0,
+        at_worst.join(", ")
+    );
     println!("tick steps (ms per tick):");
     for (name, costs) in per_step.iter().filter(|(k, _)| k.starts_with("tick: ")) {
         report(&name["tick: ".len()..], costs);

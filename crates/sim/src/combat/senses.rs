@@ -131,11 +131,16 @@ impl<'a> Senses<'a> {
     /// Whether `a` would fight `b` unprompted (old `hostile`): a living, exposed opponent
     /// with a body.
     pub fn hostile(&self, a: &Entity, b: &Entity) -> bool {
+        self.hostile_as(a, a.owner, b)
+    }
+
+    /// [`Senses::hostile`] with `a` fighting for `owner`.
+    pub fn hostile_as(&self, a: &Entity, owner: Owner, b: &Entity) -> bool {
         a.id != b.id
             && b.hp.is_some()
             && alive(b)
             && exposed(b)
-            && self.opponents(a.owner, camp(a), b.owner, camp(b))
+            && self.opponents(owner, camp(a), b.owner, camp(b))
     }
 
     /// The definition whose weapon `e` uses: its form's combat profile or its own.
