@@ -207,3 +207,22 @@ fn the_roster_keeps_a_fallen_hero_and_refuses_a_second_copy() {
     );
     let _ = EntityId(other);
 }
+
+#[test]
+fn a_fallen_hero_stays_in_its_owners_view_to_be_revived() {
+    let mut world = sanctuary_world();
+    world.step();
+    let fallen = EntityId(id(&world, "fallen"));
+    let mine = world.view(P1);
+    assert_eq!(mine.battle.fallen, [fallen]);
+    let hero = mine
+        .entities
+        .iter()
+        .find(|e| e.id() == fallen)
+        .expect("the card revives it from the view");
+    assert_eq!(hero.combat.as_ref().map(|c| c.stats.level), Some(1));
+    assert!(
+        !world.view(P2).entities.iter().any(|e| e.id() == fallen),
+        "rivals do not see it"
+    );
+}

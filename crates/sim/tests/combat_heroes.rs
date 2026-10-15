@@ -158,11 +158,13 @@ fn a_dead_hero_is_kept_as_fallen() {
     assert!(u.order.is_none() && u.target.is_none() && u.route.is_empty());
     assert!(world.state().combat.corpses.iter().all(|c| c.id != hero.id));
     assert!(canopy_sim::mission::Current.fallen(hero));
-    // Only its owner lists it; nobody sees it on the field.
+    // Only its owner lists it, and keeps it in its view (to revive it, for its portrait);
+    // rivals do not see it, and the scene draws no fallen hero.
     let id = hero.id;
     assert_eq!(world.view(player(1)).battle.fallen, [id]);
     assert!(world.view(player(2)).battle.fallen.is_empty());
-    assert!(world.view(player(1)).entity(id).is_none());
+    assert!(world.view(player(1)).entity(id).is_some());
+    assert!(world.view(player(2)).entity(id).is_none());
     // Enemies stop fighting it and the knights earn nothing (no levels).
     run(&mut world, 10);
     assert!(

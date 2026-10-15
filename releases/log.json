@@ -3,7 +3,9 @@
   "unreleased": {
     "added": [],
     "improved": [],
-    "fixed": [],
+    "fixed": [
+      "Fallen heroes can be revived again: the Sanctuary and Ancestor Shrine offer Revive for each fallen hero."
+    ],
     "knownIssues": []
   },
   "releases": [

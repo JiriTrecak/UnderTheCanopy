@@ -1091,3 +1091,36 @@ mod trees {
         assert_eq!(h.play.world_ui().tree, None);
     }
 }
+
+/// A fallen hero is revived at a building with revival: the card offers it.
+#[test]
+fn the_sanctuary_offers_to_revive_a_fallen_hero() {
+    use crate::sim::economy_fixture as ef;
+    let mut world = ef::world(&ef::sandbox(vec![
+        ef::place("hall", ef::HALL, 19.5, 19.5),
+        ef::place("sanctuary", ef::SANCTUARY, 35.5, 19.5),
+        ef::place("hero", ef::HERO, 30.0, 40.0),
+    ]));
+    let hero = ef::id(&world, "hero");
+    let entity = world
+        .state_mut()
+        .entities
+        .get_mut(canopy_sim::entity::EntityId(hero))
+        .unwrap();
+    canopy_sim::heroes::retain(entity);
+    ef::fund(&mut world, ef::P1, ef::AMBER, 200);
+    world.step();
+    let content = world.catalog().content.clone();
+    let know = Knowledge::new(
+        content.clone(),
+        Arc::new(Catalog::new(content)),
+        Arc::new(world.view(ef::P1)),
+        Some(0),
+    );
+    let sanctuary = ef::id(&world, "sanctuary");
+    let revive = super::card::commands(&know, &[sanctuary])
+        .into_iter()
+        .find(|c| c.id == format!("revive:{hero}"))
+        .expect("a revive command");
+    assert_eq!(revive.reason, None, "affordable and ready");
+}

@@ -272,6 +272,32 @@ impl View {
                 }
             }
         }
+        // Fallen heroes leave the world but stay the owner's: the card revives them, the
+        // portraits and the roster count them (old roster). Vision no longer tracks them.
+        let missing: Vec<EntityView> = state
+            .entities
+            .iter()
+            .filter(|e| e.fallen && e.owner == owner)
+            .filter(|e| {
+                entities
+                    .binary_search_by_key(&e.id, EntityView::id)
+                    .is_err()
+            })
+            .map(|e| EntityView {
+                public: Sighting::of(e),
+                relation: relation(e.owner),
+                remembered: false,
+                private: Some(private(state, catalog, economy, &works, e)),
+                motion: MotionView::of(e, state.tick),
+                work: None,
+                combat: None,
+                magic: None,
+            })
+            .collect();
+        if !missing.is_empty() {
+            entities.extend(missing);
+            entities.sort_by_key(EntityView::id);
+        }
         let fog = knowledge.and_then(|k| {
             let (revision, history) = vision.fog_history(owner)?;
             Some(FogView {
