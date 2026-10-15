@@ -92,7 +92,7 @@ pub struct Snapshot {
     pub held: Arc<Vec<u32>>,
     /// Every player's colony, for the observer panel (observers only; refreshed every
     /// [`AI_SUMMARY_TICKS`]).
-    pub colonies: Option<Arc<Vec<(u8, canopy_sim::economy::view::Colony)>>>,
+    pub colonies: Option<Arc<Vec<ColonyStats>>>,
     /// Simulation time of tick `origin` under the schedule this tick was computed on.
     pub epoch: Instant,
     pub origin: u32,
@@ -256,24 +256,121 @@ pub fn held_units(view: &View) -> Vec<u32> {
         .collect()
 }
 
-/// Every slot's colony (observer panel).
-pub fn colonies(world: &World) -> Vec<(u8, canopy_sim::economy::view::Colony)> {
-    world
+/// A hero in the observer panel (old `ObserverPlayerStats.heroes`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct HeroStats {
+    pub id: u32,
+    pub definition: canopy_sim::catalog::Def,
+    pub level: u32,
+    pub status: HeroStatus,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HeroStatus {
+    Alive,
+    Fallen,
+    /// Fallen and queued for revival at a building.
+    Reviving,
+}
+
+impl HeroStatus {
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Alive => "alive",
+            Self::Fallen => "fallen",
+            Self::Reviving => "reviving",
+        }
+    }
+}
+
+/// One player's row of the observer panel (old `observerStats`): the colony's goods,
+/// supply and population, and the counts the old panel made from the whole state
+/// (units inside buildings included, fallen heroes excluded).
+#[derive(Debug, Clone, PartialEq)]
+pub struct ColonyStats {
+    pub player: u8,
+    pub colony: canopy_sim::economy::view::Colony,
+    pub units: u32,
+    pub workers: u32,
+    pub army: u32,
+    /// By id.
+    pub heroes: Vec<HeroStats>,
+}
+
+/// Every slot's row of the observer panel (observers only: it reads the whole state).
+pub fn colonies(world: &World) -> Vec<ColonyStats> {
+    use canopy_content::game::SelectionClass;
+    let state = world.state();
+    let catalog = world.catalog();
+    let reviving: std::collections::BTreeSet<canopy_sim::entity::EntityId> = state
+        .entities
+        .iter()
+        .filter(|e| canopy_sim::abilities::actor::alive(e))
+        .flat_map(|e| {
+            e.revival
+                .iter()
+                .flat_map(|r| r.queue.iter().map(|q| q.hero))
+        })
+        .collect();
+    let mut rows: Vec<ColonyStats> = world
         .setup()
         .slots
         .iter()
-        .map(|s| {
-            (
-                s.player,
-                canopy_sim::economy::view::colony(
-                    world.state(),
-                    world.catalog(),
-                    world.economy(),
-                    Owner::Player(s.player),
-                ),
-            )
+        .map(|s| ColonyStats {
+            player: s.player,
+            colony: canopy_sim::economy::view::colony(
+                state,
+                catalog,
+                world.economy(),
+                Owner::Player(s.player),
+            ),
+            units: 0,
+            workers: 0,
+            army: 0,
+            heroes: Vec::new(),
         })
-        .collect()
+        .collect();
+    rows.sort_by_key(|r| r.player);
+    for e in state.entities.iter() {
+        let Owner::Player(player) = e.owner else {
+            continue;
+        };
+        let Some(row) = rows.iter_mut().find(|r| r.player == player) else {
+            continue;
+        };
+        if e.unit.is_none() {
+            continue;
+        }
+        let d = catalog.get(e.definition);
+        let living = canopy_sim::abilities::actor::alive(e);
+        if living {
+            row.units += 1;
+            if d.behaviors.work.is_some() {
+                row.workers += 1;
+            }
+            if d.selection_class == Some(SelectionClass::Army) {
+                row.army += 1;
+            }
+        }
+        if d.is_hero() && (living || e.fallen) {
+            row.heroes.push(HeroStats {
+                id: e.id.0,
+                definition: e.definition,
+                level: canopy_sim::stats::level(catalog, e),
+                status: if living {
+                    HeroStatus::Alive
+                } else if reviving.contains(&e.id) {
+                    HeroStatus::Reviving
+                } else {
+                    HeroStatus::Fallen
+                },
+            });
+        }
+    }
+    for row in &mut rows {
+        row.heroes.sort_by_key(|h| h.id);
+    }
+    rows
 }
 
 /// Steps `world` once through `session` and presents the tick for `seat`; `None` while
@@ -599,6 +696,54 @@ mod tests {
             slowdowns: 0,
             decided: false,
         })
+    }
+
+    #[test]
+    fn observer_rows_count_units_and_tell_fallen_and_reviving_heroes() {
+        use canopy_sim::{economy::RevivalEntry, economy::RevivalQueue, entity::EntityId};
+        let map = ai_fixture::skirmish(vec![], vec![]);
+        let mut world = ai_fixture::world(&map, false);
+        ai_fixture::run(&mut world, 2);
+        let owner = Owner::Player(1);
+        let workers = ai_fixture::all_of(&world, owner, ai_fixture::WORKER).len() as u32;
+        let hero = ai_fixture::all_of(&world, owner, ai_fixture::HERO)[0];
+        let rows = colonies(&world);
+        let row = rows.iter().find(|r| r.player == 1).unwrap();
+        assert_eq!(row.workers, workers);
+        assert_eq!(row.units, workers + 1, "the workers and the hero");
+        assert_eq!(row.heroes.len(), 1);
+        assert_eq!(row.heroes[0].status, HeroStatus::Alive);
+
+        // Fallen heroes stay listed and leave the unit count.
+        let state = world.state_mut();
+        canopy_sim::heroes::retain(state.entities.get_mut(EntityId(hero)).unwrap());
+        let row = colonies(&world)
+            .into_iter()
+            .find(|r| r.player == 1)
+            .unwrap();
+        assert_eq!(row.units, workers);
+        assert_eq!(row.heroes[0].status, HeroStatus::Fallen);
+
+        // Queued for revival at a building: reviving.
+        let hall = ai_fixture::all_of(&world, owner, ai_fixture::HALL)[0];
+        world
+            .state_mut()
+            .entities
+            .get_mut(EntityId(hall))
+            .unwrap()
+            .revival = Some(RevivalQueue {
+            queue: vec![RevivalEntry {
+                id: 1,
+                hero: EntityId(hero),
+                level: 1,
+                progress: 0,
+            }],
+        });
+        let row = colonies(&world)
+            .into_iter()
+            .find(|r| r.player == 1)
+            .unwrap();
+        assert_eq!(row.heroes[0].status, HeroStatus::Reviving);
     }
 
     #[test]

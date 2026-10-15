@@ -749,6 +749,20 @@ fn the_idle_worker_key_skips_stunned_held_and_releasing_workers() {
 }
 
 #[test]
+fn the_portrait_tooltip_prices_the_definition_with_its_supply() {
+    let h = Harness::new(vec![]);
+    let k = h.play.knowledge();
+    let hero = k.content.definition(fx::HERO).expect("hero");
+    let costs = super::card::definition_costs(k, hero);
+    let amounts: Vec<u32> = costs.iter().map(|c| c.amount).collect();
+    assert_eq!(amounts.last(), Some(&4), "supply comes last: {amounts:?}");
+    assert_eq!(costs.last().unwrap().icon, k.content.rules.supply_icon);
+    assert!(costs.len() >= 2, "a price and the supply");
+    let hall = k.content.definition(fx::HALL).expect("hall");
+    assert!(!super::card::definition_costs(k, hall).is_empty());
+}
+
+#[test]
 fn an_observer_selects_but_never_commands() {
     let mut h = Harness::new(vec![]);
     let view = Arc::new(h.world.observer_view());

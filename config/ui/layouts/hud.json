@@ -111,14 +111,14 @@
             "children": [
               { "class": "observer-color" },
               { "kind": "label", "class": "observer-player", "text": "Player" },
-              { "id": "goods", "kind": "label", "class": "observer-cell observer-goods" },
-              { "kind": "label", "class": "observer-cell", "text": "Units" },
-              { "kind": "label", "class": "observer-cell", "text": "Workers" },
-              { "kind": "label", "class": "observer-cell", "text": "Hero" }
+              { "id": "goods", "class": "observer-goods", "repeat": "observer-head" },
+              { "kind": "label", "class": "observer-count observer-head", "text": "Units" },
+              { "kind": "label", "class": "observer-count observer-head", "text": "Workers" },
+              { "kind": "label", "class": "observer-heroes", "text": "Hero" }
             ]
           },
           { "id": "rows", "class": "observer-rows", "repeat": "observer-row" },
-          { "id": "footer", "kind": "label", "class": "observer-footer" }
+          { "id": "footer", "kind": "label", "class": "observer-footer", "tooltip": { "title": "" } }
         ]
       },
       {
