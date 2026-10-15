@@ -10,6 +10,7 @@
 pub mod anim;
 mod cache;
 pub mod diag;
+pub mod effects;
 mod inspect;
 pub mod math;
 pub mod model;
@@ -434,6 +435,44 @@ fn run(job: &Job, data: &Path, cache: &Cache, force: bool) -> Result<JobRecord> 
             entries.push(store(
                 canopy_assets::SCENERY_ENTRY.to_owned(),
                 EntryKind::Scenery,
+                blob,
+            )?);
+        }
+        Job::Effects {
+            table,
+            images,
+            warnings,
+        } => {
+            for warning in warnings {
+                diags.warn(warning.clone());
+            }
+            let mut resident = 0;
+            for path in images {
+                let bytes = read_source(data, path)?;
+                let size = image::ImageReader::new(std::io::Cursor::new(&bytes))
+                    .with_guessed_format()
+                    .ok()
+                    .and_then(|r| r.into_dimensions().ok());
+                match size {
+                    Some((w, h)) => {
+                        if let Some(problem) = effects::image_problem(w, h, bytes.len() as u64) {
+                            diags.error(format!("{path}: {problem}"));
+                        }
+                        resident += effects::resident_bytes(w, h);
+                    }
+                    None => diags.error(format!("{path}: undecodable effect image")),
+                }
+            }
+            if resident > effects::MAX_RESIDENT_BYTES {
+                diags.error(format!(
+                    "effect images need {resident} resident bytes (at most {})",
+                    effects::MAX_RESIDENT_BYTES
+                ));
+            }
+            let blob = BlobBuilder::new().finish(EntryKind::Effects, table);
+            entries.push(store(
+                canopy_assets::EFFECTS_ENTRY.to_owned(),
+                EntryKind::Effects,
                 blob,
             )?);
         }

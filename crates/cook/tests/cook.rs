@@ -6,7 +6,7 @@ mod fixture;
 
 use canopy_assets::{AlphaMode, GroundContact, Pack, TextureFormat};
 use canopy_cook::{Options, PACK_FILE, cook, diag::Severity};
-use fixture::{BUILDING, CREATURE, ICON, SOUND};
+use fixture::{BUILDING, CREATURE, ICON, SOUND, SPARK};
 use std::path::Path;
 
 fn options(data: &Path, out: &Path) -> Options {
@@ -218,4 +218,23 @@ fn reports_problems_in_the_art() {
     assert!(has(Severity::Error, "no material can take it"));
     assert!(!data.join("out").join(PACK_FILE).exists());
     std::fs::remove_dir_all(&data).ok();
+}
+
+#[test]
+fn effects_become_runtime_primitives_bound_to_pack_entries() {
+    let data = fixture::data_folder("effects", |_| {});
+    let report = cook(&options(&data, &data.join("out"))).unwrap();
+    assert_eq!(report.errors(), 0, "{:?}", report.diagnostics);
+    let pack = Pack::load(&data.join("out").join(PACK_FILE)).unwrap();
+    let table = pack.effects().unwrap();
+    let effect = &table.effects[table.find("effect.fixture.sigil").unwrap()];
+    assert!((effect.duration - 1.0).abs() < 1e-6);
+    let sigil = &effect.layers[0];
+    assert_eq!(sigil.primitive, canopy_assets::Primitive::Particle);
+    assert_eq!(sigil.texture.as_deref(), Some(SPARK));
+    // The image it samples is cooked.
+    assert!(pack.texture(SPARK).is_ok());
+    let hut = effect.layers[1].model.as_ref().unwrap();
+    assert_eq!(hut.model, BUILDING);
+    assert!((hut.rotation[1] - std::f32::consts::FRAC_PI_2).abs() < 1e-6);
 }

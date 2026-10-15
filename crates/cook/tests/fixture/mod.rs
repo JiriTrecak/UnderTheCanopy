@@ -342,6 +342,7 @@ pub const BUILDING: &str = "assets/library/asset.fixture.building/geometry.glb";
 pub const CREATURE: &str = "assets/library/asset.fixture.creature/geometry.glb";
 pub const ICON: &str = "assets/library/asset.fixture.icon/image.png";
 pub const SOUND: &str = "assets/library/asset.fixture.sound/audio.wav";
+pub const SPARK: &str = "assets/library/asset.fixture.spark/image.png";
 
 fn output(data: &Path, role: &str, path: &str) -> Value {
     let bytes = std::fs::metadata(data.join(path)).unwrap().len();
@@ -364,6 +365,10 @@ pub fn data_folder(name: &str, customise: impl FnOnce(&mut Value)) -> PathBuf {
         &png(16, 16, |x, y| [(x * 16) as u8, (y * 16) as u8, 90, 255]),
     );
     write(SOUND, &wav(&[0, 1000, -1000, 32767, -32768]));
+    write(
+        SPARK,
+        &png(8, 8, |x, y| [255, 200, 90, ((x + y) * 16) as u8]),
+    );
     let record = |id: &str, kind: &str, profile: &str, outputs: Vec<Value>, scenery: Value| {
         json!({"id": id, "name": id, "kind": kind, "tags": [], "revision": 1, "profile": profile,
                "outputs": outputs, "render": [], "scenery": scenery})
@@ -377,6 +382,7 @@ pub fn data_folder(name: &str, customise: impl FnOnce(&mut Value)) -> PathBuf {
         record("asset.fixture.creature", "model", "base", vec![output(&data, "model", CREATURE)], json!([])),
         record("asset.fixture.icon", "icon", "icon", vec![output(&data, "image", ICON)], json!([])),
         record("asset.fixture.sound", "audio", "audio", vec![output(&data, "data", SOUND)], json!([])),
+        record("asset.fixture.spark", "icon", "icon", vec![output(&data, "image", SPARK)], json!([])),
     ]});
     let transform = |forward: &str| json!({"scale": 1.0, "pivot": [0.0, 0.0, 0.0], "up": "Y", "forward": forward});
     let mut models = json!([
@@ -401,5 +407,22 @@ pub fn data_folder(name: &str, customise: impl FnOnce(&mut Value)) -> PathBuf {
     );
     write("assets/authoring/catalogue.json", b"[]");
     write("assets/maps/previews/index.json", b"{}");
+    let layer = |id: &str, shape: &str| {
+        json!({"id": id, "shape": shape, "colour": "#ffffff", "accent": "#000000",
+               "durationTicks": 40, "count": 1, "size": 1.0, "height": 0.0})
+    };
+    let mut sigil = layer("sigil", "billboard");
+    sigil["texture"] = json!({"asset": "asset.fixture.spark", "role": "image", "index": 1});
+    let mut hut = layer("hut", "mesh");
+    hut["model"] = json!({"asset": "asset.fixture.building", "role": "geometry", "index": 1,
+                          "rotation": {"x": 0.0, "y": 90.0, "z": 0.0}});
+    let effects = json!({"schemaVersion": 1, "effects": [
+        {"schemaVersion": 1, "id": "effect.fixture.sigil", "name": "Sigil", "durationTicks": 40,
+         "layers": [sigil, hut]},
+    ]});
+    write(
+        "content/effects/published.json",
+        &serde_json::to_vec_pretty(&effects).unwrap(),
+    );
     data
 }

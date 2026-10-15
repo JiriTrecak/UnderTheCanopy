@@ -167,6 +167,11 @@ impl Pack {
     pub fn scenery(&self) -> Result<SceneryTable, Error> {
         self.get(crate::SCENERY_ENTRY)?.scenery()
     }
+
+    /// The runtime effect table (`@effects`).
+    pub fn effects(&self) -> Result<crate::EffectTable, Error> {
+        self.get(crate::EFFECTS_ENTRY)?.effects()
+    }
 }
 
 fn read_header(bytes: &[u8]) -> Result<Header, Error> {
@@ -327,6 +332,11 @@ impl<'a> Blob<'a> {
 
     pub fn scenery(&self) -> Result<SceneryTable, Error> {
         self.expect(EntryKind::Scenery)?;
+        self.meta()
+    }
+
+    pub fn effects(&self) -> Result<crate::EffectTable, Error> {
+        self.expect(EntryKind::Effects)?;
         self.meta()
     }
 }

@@ -447,6 +447,16 @@ pub(crate) fn read(data: &Path) -> Result<EffectLibrary, Error> {
         .and_then(|value| crate::error::parse(value, crate::EFFECTS_FILE, ""))
 }
 
+/// Reads and checks the published effects on their own, without the rest of the content
+/// (the cooker converts them into runtime primitives).
+pub fn load_published(data: &Path) -> Result<Vec<VisualEffect>, crate::Errors> {
+    let mut errors = Vec::new();
+    match load(data, &mut errors) {
+        Some(effects) if errors.is_empty() => Ok(effects),
+        _ => Err(crate::Errors(errors)),
+    }
+}
+
 /// Reads the published effects and checks the format's rules.
 pub(crate) fn load(data: &Path, errors: &mut Vec<Error>) -> Option<Vec<VisualEffect>> {
     let library = read(data).map_err(|error| errors.push(error)).ok()?;

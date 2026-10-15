@@ -56,6 +56,13 @@ pub enum Job {
     Scenery {
         table: SceneryTable,
     },
+    /// The runtime effect table, converted from the published effects when planning; the
+    /// job checks the images it samples against the effect budgets.
+    Effects {
+        table: canopy_assets::EffectTable,
+        images: Vec<String>,
+        warnings: Vec<String>,
+    },
 }
 
 impl Job {
@@ -69,6 +76,7 @@ impl Job {
             | Self::Sound { path }
             | Self::Grades { path } => vec![path.as_str()],
             Self::Scenery { .. } => Vec::new(),
+            Self::Effects { images, .. } => images.iter().map(String::as_str).collect(),
         }
     }
 
@@ -76,6 +84,7 @@ impl Job {
     pub fn label(&self) -> &str {
         match self {
             Self::Scenery { .. } => canopy_assets::SCENERY_ENTRY,
+            Self::Effects { .. } => canopy_assets::EFFECTS_ENTRY,
             _ => self.sources()[0],
         }
     }
@@ -87,6 +96,7 @@ pub struct Inputs {
     pub models: Vec<PublishedModel>,
     pub catalogue: Vec<LandscapeAsset>,
     pub previews: BTreeMap<String, previews::MapOverview>,
+    pub effects: Vec<canopy_content::effects::VisualEffect>,
 }
 
 impl Inputs {
@@ -103,11 +113,14 @@ impl Inputs {
             let mut model_errors = Vec::new();
             models::validate(&models, &manifest, &mut model_errors);
             if model_errors.is_empty() {
+                let effects =
+                    canopy_content::effects::load_published(data).map_err(|e| e.to_string())?;
                 return Ok(Self {
                     manifest,
                     models,
                     catalogue,
                     previews,
+                    effects,
                 });
             }
             errors = model_errors;
@@ -205,6 +218,12 @@ pub fn plan(data: &Path, inputs: &Inputs) -> Plan {
     }
     jobs.push(Job::Scenery {
         table: scenery(&inputs.manifest),
+    });
+    let effects = crate::effects::convert(&inputs.effects, &inputs.manifest);
+    jobs.push(Job::Effects {
+        table: effects.table,
+        images: effects.images,
+        warnings: effects.warnings,
     });
     Plan {
         jobs,
