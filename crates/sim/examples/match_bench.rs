@@ -2,13 +2,14 @@
 //!
 //! ```text
 //! cargo run --release -p canopy-sim --example match_bench -- --data . --map echo-isles \
-//!     [--crowd 50 | --ai 2] [--ticks 1600] [--warmup 0]
+//!     [--crowd 50 | --ai 2] [--ticks 1600] [--warmup 0] [--no-spans]
 //! ```
 //!
 //! `--crowd N` is the measured battle of `canopy shot --crowd N` (eight players with N
 //! soldiers each, `canopy_sim::crowd`); `--ai N` puts computer players on the first N
 //! starts instead. Reports the whole tick (step and observer view) as mean, p50, p99 and
 //! max, the `tick: …` step spans the world marks, and the costliest inner spans. The
+//! span subscriber costs a little; `--no-spans` times whole ticks without it. The
 //! digest at the end covers every tick's fingerprint and the final saved state: equal
 //! digests mean identical simulations.
 #![allow(clippy::disallowed_methods)] // wall-clock timing of the benchmark itself
@@ -83,6 +84,8 @@ struct Args {
     ai: Option<usize>,
     ticks: u32,
     warmup: u32,
+    /// Time the whole tick only, without the span subscriber's overhead.
+    no_spans: bool,
 }
 
 fn args() -> Result<Args, String> {
@@ -93,6 +96,7 @@ fn args() -> Result<Args, String> {
         ai: None,
         ticks: 1600,
         warmup: 0,
+        no_spans: false,
     };
     let mut it = std::env::args().skip(1);
     while let Some(flag) = it.next() {
@@ -105,6 +109,7 @@ fn args() -> Result<Args, String> {
             "--ai" => out.ai = Some(number(value()?)? as usize),
             "--ticks" => out.ticks = number(value()?)?,
             "--warmup" => out.warmup = number(value()?)?,
+            "--no-spans" => out.no_spans = true,
             other => return Err(format!("unknown option {other}")),
         }
     }
@@ -163,7 +168,7 @@ fn main() -> Result<(), String> {
     let load = started.elapsed();
 
     let spans: &'static Spans = Box::leak(Box::default());
-    let _guard = tracing::subscriber::set_default(spans);
+    let _guard = (!args.no_spans).then(|| tracing::subscriber::set_default(spans));
     for _ in 0..args.warmup {
         world.step();
     }
@@ -264,35 +269,6 @@ fn main() -> Result<(), String> {
     inner.sort_by(|a, b| b.0.total_cmp(&a.0));
     for (_, name, costs) in inner.iter().take(16) {
         report(name, costs);
-    }
-    if std::env::var("BENCH_DEBUG").is_ok() {
-        let st = world.state();
-        let mut hist = BTreeMap::new();
-        for e in st.entities.iter() {
-            *hist.entry(e.statuses.len()).or_insert(0) += 1;
-        }
-        println!("statuses per entity: {hist:?}");
-        use canopy_sim::entity::*;
-        println!(
-            "sizes: entity {} stock {} construction {} resource {} item {} research {} upgrade {} revival {} progression {} option<entity> {}",
-            std::mem::size_of::<Entity>(),
-            std::mem::size_of::<canopy_sim::entity::Stock>(),
-            std::mem::size_of::<Option<canopy_sim::entity::Construction>>(),
-            std::mem::size_of::<Option<canopy_sim::entity::Resource>>(),
-            std::mem::size_of::<Option<canopy_sim::entity::LooseItem>>(),
-            std::mem::size_of::<Option<canopy_sim::economy::ResearchQueue>>(),
-            std::mem::size_of::<Option<canopy_sim::economy::UpgradeTask>>(),
-            std::mem::size_of::<Option<canopy_sim::economy::RevivalQueue>>(),
-            std::mem::size_of::<Option<canopy_sim::heroes::Progression>>(),
-            std::mem::size_of::<Option<Entity>>(),
-        );
-        let mut defs = BTreeMap::new();
-        for e in st.entities.iter().filter(|e| e.unit.is_some()) {
-            *defs
-                .entry(world.catalog().get(e.definition).id.to_string())
-                .or_insert(0) += 1;
-        }
-        println!("units: {defs:?}");
     }
     println!("digest {digest:016x}");
     Ok(())
