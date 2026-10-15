@@ -36,8 +36,6 @@ struct TerrainUniform {
     grid: [f32; 4],
     cells: [f32; 4],
     counts: [u32; 4],
-    /// The layer steep foundation banks show (the map's most used cliff, or `NONE`).
-    foundation: [u32; 4],
     layers: [LayerUniform; MAX_LAYERS],
 }
 
@@ -392,21 +390,12 @@ impl TerrainGpu {
         );
         bytes += u64::from(desc.span * desc.span * 4);
 
-        // Steep foundation banks take the map's most used cliff material.
-        let steep_layer = desc
-            .layers
-            .iter()
-            .enumerate()
-            .filter(|(_, l)| matches!(l.kind, LayerKind::Cliff { .. }))
-            .max_by_key(|(_, l)| l.mask.iter().map(|&w| u64::from(w)).sum::<u64>())
-            .map(|(i, _)| i);
         // Tile arrays: only layers some cell uses are loaded.
         let used: Vec<bool> = (0..desc.layers.len())
             .map(|i| {
-                steep_layer == Some(i)
-                    || selection
-                        .iter()
-                        .any(|s| s.contains(&(i as u8)) && i as u8 != NO_LAYER)
+                selection
+                    .iter()
+                    .any(|s| s.contains(&(i as u8)) && i as u8 != NO_LAYER)
             })
             .collect();
         let mut albedo_names: Vec<String> = Vec::new();
@@ -528,7 +517,6 @@ impl TerrainGpu {
                 super::selection_offset(desc),
             ],
             counts: [cx, cz, layer_count, 0],
-            foundation: [steep_layer.map_or(NONE, |i| i as u32), 0, 0, 0],
             layers: layer_uniforms,
         };
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

@@ -29,8 +29,6 @@ struct TerrainInfo {
     cells: vec4f,
     // texture cells x, z; layer count; mask layers
     counts: vec4u,
-    // the cliff layer steep foundation banks show (NONE without)
-    foundation: vec4u,
     layers: array<Layer, 32>,
 }
 
@@ -428,30 +426,32 @@ struct FoundationRecord {
 
 @group(2) @binding(1) var<storage, read> foundations: array<FoundationRecord>;
 
-const SIDE_SEGMENTS: u32 = 16u;
-const CORNER_STEPS: u32 = 4u;
+// Must match `terrain/foundations.rs`.
+const SIDE_SEGMENTS: u32 = 14u;
+const CORNER_STEPS: u32 = 6u;
 const SIDE_SPOKES: u32 = 20u;
 const SPOKES: u32 = 80u;
-const BANDS: u32 = 4u;
-const BANK_VERTICES: u32 = 1920u;
+const BANDS: u32 = 8u;
+const BANK_VERTICES: u32 = 3840u;
 const HALF_PI: f32 = 1.5707964;
-// The pad and the bank's top lie this far under the base, the toe this far under the
-// ground; a bank is this wide at least, per unit of drop and at most (as on the CPU).
 const LIFT: f32 = 0.05;
-const SINK: f32 = 0.3;
-const MIN_BANK: f32 = 0.3;
-const BATTER: f32 = 2.0;
-const MAX_BANK: f32 = 2.5;
+const TOE_SINK: f32 = 0.02;
+const MIN_BANK: f32 = 0.4;
+const BATTER: f32 = 2.4;
+const MAX_BANK: f32 = 5.0;
+const CORNER_SHARE: f32 = 0.4;
+const MAX_CORNER: f32 = 3.0;
 
-// Banks show the cliff material only where steeper than the layer's own slopes and at
-// least these (a bank on a hillside stays the hillside's ground).
-const CLIFF_SLOPE: vec2f = vec2f(1.4, 2.2);
-
-// How the bank's width varies along the edge (`foundations::ragged`).
+// How the bank's width varies along the rim (`foundations::ragged`).
 fn ragged(edge: vec2f, center: vec2f) -> f32 {
     let s = edge.x + edge.y;
     let phase = center.x * 0.37 + center.y * 0.61;
-    return 1.0 + 0.15 * sin(0.9 * s + phase) + 0.1 * sin(2.3 * s + 1.7 * phase);
+    return 1.0 + 0.2 * sin(0.45 * s + phase) + 0.1 * sin(1.1 * s + 1.7 * phase);
+}
+
+// The radius of the rim's rounded corners.
+fn corner_radius(f: FoundationRecord) -> f32 {
+    return min(CORNER_SHARE * min(f.rect.z, f.rect.w), MAX_CORNER);
 }
 
 struct Spoke {
@@ -459,41 +459,51 @@ struct Spoke {
     out: vec2f,
 }
 
-// Spoke `k` around the footprint: a point on its edge and the outward direction. Each
-// side has its edge samples, then the corner's turn to the next side.
+// Spoke `k` around the rim (the footprint with rounded corners): a point on it and the
+// outward direction. Each side has its straight samples, then the corner's arc.
 fn spoke(f: FoundationRecord, k: u32) -> Spoke {
     let side = (k / SIDE_SPOKES) % 4u;
     let j = k % SIDE_SPOKES;
     var corners = array<vec2f, 4>(vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(1.0, 1.0), vec2f(-1.0, 1.0));
-    let a = f.rect.xy + corners[side] * f.rect.zw;
-    let b = f.rect.xy + corners[(side + 1u) % 4u] * f.rect.zw;
+    let r = corner_radius(f);
+    let inner = f.rect.zw - vec2f(r);
+    let ca = f.rect.xy + corners[side] * inner;
+    let cb = f.rect.xy + corners[(side + 1u) % 4u] * inner;
     var turn = (f32(side) - 1.0) * HALF_PI;
     var s: Spoke;
-    s.edge = b;
     if (j <= SIDE_SEGMENTS) {
-        s.edge = mix(a, b, f32(j) / f32(SIDE_SEGMENTS));
+        s.out = vec2f(cos(turn), sin(turn));
+        s.edge = mix(ca, cb, f32(j) / f32(SIDE_SEGMENTS)) + s.out * r;
     } else {
         turn += HALF_PI * f32(j - SIDE_SEGMENTS) / f32(CORNER_STEPS);
+        s.out = vec2f(cos(turn), sin(turn));
+        s.edge = cb + s.out * r;
     }
-    s.out = vec2f(cos(turn), sin(turn));
     return s;
 }
 
-// A point of the bank: `u` runs from the top (the base) to the toe under the ground.
-fn bank_point(f: FoundationRecord, k: u32, u: f32) -> vec3f {
-    let s = spoke(f, k);
+// The bank's width at a rim point.
+fn bank_width(f: FoundationRecord, edge: vec2f) -> f32 {
+    let drop = max(f.base.x - LIFT - ground_height(edge), 0.0);
+    return clamp(max(MIN_BANK, drop * BATTER) * ragged(edge, f.rect.xy), MIN_BANK, MAX_BANK);
+}
+
+// A point of the pad or bank along spoke `s`: `u` < 0 lies on the pad, 0 is the rim, 1
+// the toe, where the bank meets the ground tangentially.
+fn bank_point(f: FoundationRecord, s: Spoke, width: f32, u: f32) -> vec3f {
     let top = f.base.x - LIFT;
-    let drop = max(top - ground_height(s.edge), 0.0);
-    let width = clamp((MIN_BANK + drop * BATTER) * ragged(s.edge, f.rect.xy), MIN_BANK, MAX_BANK);
     let p = s.edge + s.out * width * u;
-    let toe = ground_height(p) - SINK * u;
-    return vec3f(p.x, mix(top, toe, smoothstep(0.0, 1.0, u)), p.y);
+    if (u <= 0.0) {
+        return vec3f(p.x, top, p.y);
+    }
+    let t = smoothstep(0.0, 1.0, min(u, 1.0));
+    return vec3f(p.x, mix(top, ground_height(p) - TOE_SINK, t), p.y);
 }
 
 struct FoundationVertex {
     world: vec3f,
     normal: vec3f,
-    // 0 on the pad and the bank's top, 1 at its toe
+    // 0 on the pad and at the rim, 1 at the toe
     toe: f32,
 }
 
@@ -501,12 +511,13 @@ fn foundation_vertex(vid: u32, inst: u32) -> FoundationVertex {
     let f = foundations[inst];
     var v: FoundationVertex;
     if (vid >= BANK_VERTICES) {
-        // The pad: two triangles over the footprint.
-        var quad = array<vec2f, 6>(
-            vec2f(-1.0, -1.0), vec2f(-1.0, 1.0), vec2f(1.0, -1.0),
-            vec2f(1.0, -1.0), vec2f(-1.0, 1.0), vec2f(1.0, 1.0),
-        );
-        let p = f.rect.xy + quad[min(vid - BANK_VERTICES, 5u)] * f.rect.zw;
+        // The pad: a fan from the centre to the rim.
+        let i = vid - BANK_VERTICES;
+        let k = (i / 3u + select(0u, 1u, i % 3u == 2u)) % SPOKES;
+        var p = f.rect.xy;
+        if (i % 3u != 0u) {
+            p = spoke(f, k).edge;
+        }
         v.world = vec3f(p.x, f.base.x - LIFT, p.y);
         v.normal = vec3f(0.0, 1.0, 0.0);
         v.toe = 0.0;
@@ -520,18 +531,22 @@ fn foundation_vertex(vid: u32, inst: u32) -> FoundationVertex {
     let o = corners[vid % 6u];
     let k = (quad / BANDS + o.x) % SPOKES;
     let u = f32(quad % BANDS + o.y) / f32(BANDS);
-    v.world = bank_point(f, k, u);
-    v.toe = u;
-    // Smooth normals from the neighbouring spokes and rings.
-    let du = 0.5 / f32(BANDS);
-    let down = bank_point(f, k, min(u + du, 1.0)) - bank_point(f, k, max(u - du, 0.0));
     let s = spoke(f, k);
-    var along = bank_point(f, (k + 1u) % SPOKES, u) - bank_point(f, (k + SPOKES - 1u) % SPOKES, u);
+    let w = bank_width(f, s.edge);
+    v.world = bank_point(f, s, w, u);
+    v.toe = u;
+    // Smooth normals: central differences across the rings (onto the pad at the rim, so
+    // the shoulder is lit as the pad) and the neighbouring spokes.
+    let du = 0.5 / f32(BANDS);
+    let down = bank_point(f, s, w, u + du) - bank_point(f, s, w, u - du);
+    let sa = spoke(f, (k + 1u) % SPOKES);
+    let sb = spoke(f, (k + SPOKES - 1u) % SPOKES);
+    var along = bank_point(f, sa, bank_width(f, sa.edge), u) - bank_point(f, sb, bank_width(f, sb.edge), u);
     if (dot(along.xz, along.xz) < 1e-6) {
         along = vec3f(-s.out.y, 0.0, s.out.x);
     }
     var n = normalize(cross(along, down));
-    if (dot(n, vec3f(s.out.x, 1.0, s.out.y)) < 0.0) {
+    if (n.y < 0.0) {
         n = -n;
     }
     v.normal = n;
@@ -561,28 +576,20 @@ fn vs_foundation_shadow(@builtin(vertex_index) vid: u32, @builtin(instance_index
     return frame.view_proj * vec4f(foundation_vertex(vid, inst).world, 1.0);
 }
 
-// The pad and the bank: the ground the terrain composites at the same place, on the
-// bank's own slope (so cliff layers gate as on the terrain); where the bank is steep, the
-// map's most used cliff material by the same slope rule, fading out towards the toe.
+// The pad and the mound are the ground itself: the terrain's composite at the same place
+// (its layers, world-space mapping and cliff rule exactly as the terrain's there), lit
+// with the mound's normal, which turns into the terrain's towards the toe so the two
+// meet without a seam.
 @fragment
 fn fs_foundation(in: FoundationOut) -> SceneOut {
     let world = in.world;
-    let raw = normalize(in.normal);
-    let n = normalize(vec3f(raw.x, max(raw.y, 0.05), raw.z));
+    let ground_normal = terrain_normal(world.xz);
     let dx = dpdx(world);
     let dy = dpdy(world);
-    var g = ground_at(world, n, dx.xz, dy.xz, dx.y, dy.y);
-    let id = terrain.foundation.x;
-    if (id != NONE) {
-        let layer = terrain.layers[id];
-        let slope = length(n.xz) / n.y;
-        let start = max(layer.params.x, CLIFF_SLOPE.x);
-        let full = max(layer.params.y, CLIFF_SLOPE.y);
-        let alpha = smoothstep(start, full, slope) * (1.0 - smoothstep(0.6, 1.0, in.toe));
-        if (alpha > 0.0) {
-            g = cliff_over(g, layer, world, n, dx.xz, dy.xz, dx.y, dy.y, alpha);
-        }
-    }
+    let g = ground_at(world, ground_normal, dx.xz, dy.xz, dx.y, dy.y);
+    let bank = normalize(in.normal);
+    var n = normalize(mix(bank, ground_normal, smoothstep(0.55, 1.0, in.toe)));
+    n = normalize(vec3f(n.x, max(n.y, 0.05), n.z));
     let tangent = 2.0 * (g.nh.rgb - 0.50196) * vec3f(1.0, 1.0, 0.55);
     var surface: Surface;
     surface.position = world;

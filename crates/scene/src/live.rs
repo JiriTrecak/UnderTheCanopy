@@ -281,8 +281,8 @@ pub fn foundations(
     }));
 }
 
-/// Walking heights with the foundations' banks: ground marks of the world UI (rings,
-/// rally routes) drape over a bank instead of vanishing under it (D44).
+/// Walking heights with the foundations' mounds: ground marks of the world UI (rings,
+/// rally routes) drape over a mound instead of vanishing under it (D44).
 pub struct FoundationGround<'a> {
     pub ground: &'a dyn canopy_render::water::ripples::WaterField,
     pub foundations: &'a [canopy_render::terrain::foundations::Foundation],
