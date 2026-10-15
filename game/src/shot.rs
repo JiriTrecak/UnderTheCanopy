@@ -404,6 +404,19 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
         newest.effects.cues.len(),
         last.effects
     );
+    if std::env::var_os("CANOPY_SHOT_EFFECTS").is_some() {
+        let table = game.presenter.effects.effect_table();
+        let mut counts: std::collections::BTreeMap<String, u32> = Default::default();
+        for cue in &newest.effects.cues {
+            let e = &table.effects[usize::from(cue.effect)];
+            *counts
+                .entry(format!("{}/{}", e.id, e.layers[usize::from(cue.layer)].id))
+                .or_default() += 1;
+        }
+        for (name, n) in counts {
+            println!("    {n:4} {name}");
+        }
+    }
     if std::env::var_os("CANOPY_SHOT_MODELS").is_some()
         && let Some(actors) = renderer.actors()
     {
