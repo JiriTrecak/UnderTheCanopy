@@ -139,6 +139,10 @@ pub struct Unit {
     pub segment: Option<Segment>,
     pub detour: Option<Detour>,
     pub last_moved_tick: Option<u32>,
+    /// Stopped short of its goal beside the group that arrived there (movement): a move
+    /// order counts it as arrived.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub settled: bool,
     /// No blocked-route recovery before this tick.
     #[serde(default)]
     pub retry_at: u32,

@@ -267,7 +267,9 @@ pub(crate) fn move_order(
             .and_then(|s| spatial.deck_id(s)),
     );
     let arrived = u.route.is_empty()
-        && (at(e, target, deck) || u.goal.is_some_and(|g| at(e, spatial.spot(g), deck)));
+        && (u.settled
+            || at(e, target, deck)
+            || u.goal.is_some_and(|g| at(e, spatial.spot(g), deck)));
     if arrived {
         let u = state
             .entities

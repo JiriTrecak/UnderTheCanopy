@@ -38,14 +38,15 @@ fn simultaneous_blows_kill_both_duellists_on_the_same_tick() {
     run(&mut world, 1);
     assert_eq!(target(&world, "b"), Some(EntityId(a)));
     // Blade 10 against light armour 2: 10 / 1.12 = 8.9, rounded to 9 per blow, every 40 ticks
-    // from tick 39; both strike at once, so both fall at tick 479.
+    // from tick 36 (they close in without turning first, D51); both strike at once, so
+    // both fall together.
     let changes = health_changes(&mut world, "a", 497);
-    assert_eq!(&changes[..3], &[(39, 91), (79, 82), (119, 73)]);
-    assert_eq!(changes.last(), Some(&(479, 0)));
+    assert_eq!(&changes[..3], &[(36, 91), (76, 82), (116, 73)]);
+    assert_eq!(changes.last(), Some(&(476, 0)));
     assert!(find(&world, "a").is_none() && find(&world, "b").is_none());
     let corpses = &world.state().combat.corpses;
     assert_eq!(corpses.len(), 2);
-    assert!(corpses.iter().all(|c| c.died == 479));
+    assert!(corpses.iter().all(|c| c.died == 476));
     let deaths = world
         .state()
         .facts
@@ -82,7 +83,7 @@ fn missiles_take_their_flight_time_and_hit_where_the_target_is() {
     assert_eq!(missile.impact - missile.launched, flight);
     // Pierce 8 against unarmoured light bodies (120 %): 9.6, rounded to 10 a shot.
     let changes = health_changes(&mut world, "a", 400);
-    assert_eq!(&changes[..3], &[(60, 60), (110, 50), (160, 40)]);
+    assert_eq!(&changes[..3], &[(56, 60), (106, 50), (156, 40)]);
     assert!(!alive(&world, "a") && !alive(&world, "b"));
     // Landed missiles linger a few ticks for views, then go.
     assert!(world.state().combat.missiles.iter().all(|m| m.resolved));
@@ -174,8 +175,15 @@ fn a_charge_doubles_speed_and_the_first_blow() {
     let mut charged = false;
     let mut fastest = 0;
     let mut last = entity(&world, "l").position;
+    // The charged blow may land while the charge is watched (units set off at once, D51).
+    let mut changes = Vec::new();
+    let mut health = hp(&world, "s");
     for _ in 0..64 {
         world.step();
+        if hp(&world, "s") != health {
+            health = hp(&world, "s");
+            changes.push((world.state().tick, health));
+        }
         let e = entity(&world, "l");
         let step = (e.position.x - last.x)
             .abs()
@@ -188,7 +196,7 @@ fn a_charge_doubles_speed_and_the_first_blow() {
     // Speed 5 cells per second is 125 milli-cells a tick; charging doubles it.
     assert!(fastest > 125, "{fastest}");
     // Blade 12 doubled on light armour 2: 24 / 1.12 = 21.4 → 21; later blows 11.
-    let changes = health_changes(&mut world, "s", 60);
+    changes.extend(health_changes(&mut world, "s", 60));
     assert_eq!(changes[0].1, 79, "{changes:?}");
     assert_eq!(changes[1].1, 68, "{changes:?}");
     // The charge's cooldown stays after the blow.

@@ -719,6 +719,7 @@ impl Spatial {
         unit.route = waypoints;
         unit.detour = None;
         unit.goal = Some(goal);
+        unit.settled = false;
         true
     }
 

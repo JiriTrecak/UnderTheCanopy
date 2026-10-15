@@ -78,6 +78,7 @@ pub fn discard_navigation(u: &mut Unit) {
     u.goal = None;
     u.segment = None;
     u.detour = None;
+    u.settled = false;
 }
 
 /// Drops the engagement without touching another system's movement plan (old
