@@ -8,15 +8,36 @@ struct GroundOut {
     @builtin(position) clip: vec4f,
     @location(0) world: vec3f,
     @location(1) color: vec4f,
+    @location(2) ring: vec2f,
 }
 
 @vertex
-fn vs_ground(@location(0) position: vec3f, @location(1) color: vec4f) -> GroundOut {
+fn vs_ground(
+    @location(0) position: vec3f,
+    @location(1) color: vec4f,
+    @location(2) ring: vec2f,
+) -> GroundOut {
     var out: GroundOut;
     out.clip = frame.view_proj * vec4f(position, 1.0);
     out.world = position;
     out.color = color;
+    out.ring = ring;
     return out;
+}
+
+// The old selection ring's radial profile (line widths from the core → alpha): soft
+// inner glow from −3.5 to −1.2, solid core −0.9…0, feathered rim to +0.45.
+fn ring_alpha(across: f32) -> f32 {
+    if (across < -1.2) {
+        return mix(0.0, 0.25, clamp((across + 3.5) / 2.3, 0.0, 1.0));
+    }
+    if (across < -0.9) {
+        return mix(0.25, 0.95, (across + 1.2) / 0.3);
+    }
+    if (across < 0.0) {
+        return mix(0.95, 1.0, (across + 0.9) / 0.9);
+    }
+    return mix(1.0, 0.0, clamp(across / 0.45, 0.0, 1.0));
 }
 
 @fragment
@@ -24,6 +45,9 @@ fn fs_ground(in: GroundOut) -> SceneOut {
     // Not fogged: the viewer's own markers stay readable (old materials ignored fog).
     var out: SceneOut;
     out.color = in.color;
+    if (in.ring.y > 0.5) {
+        out.color.a *= ring_alpha(in.ring.x);
+    }
     out.depth = vec2f(0.0);
     return out;
 }

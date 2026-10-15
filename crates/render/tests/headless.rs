@@ -615,7 +615,7 @@ fn effects_fog_world_ui_and_hud_images_render() {
         &canopy_render::camera::FlatGround,
     );
     let capture = Capture::new(&gpu.device, width, height);
-    let mut shoot = |renderer: &mut Renderer| {
+    let shoot = |renderer: &mut Renderer| {
         let report = renderer.render(
             &gpu,
             &view,

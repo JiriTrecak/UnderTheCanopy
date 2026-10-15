@@ -157,7 +157,7 @@ fn circle_color(relation: Relation, target: bool) -> u32 {
 }
 
 /// Ring rows: radius factor, line-width offset, alpha (soft inner glow, solid core,
-/// feathered rim).
+/// feathered rim); the shader's `ring_alpha` interpolates them.
 const PROFILE: [(f32, f32, f32); 5] = [
     (1.0, -3.5, 0.0),
     (1.0, -1.2, 0.25),
@@ -165,7 +165,8 @@ const PROFILE: [(f32, f32, f32); 5] = [
     (1.0, 0.0, 1.0),
     (1.0, 0.45, 0.0),
 ];
-const SEGMENTS: usize = 56;
+/// Sectors of a ring (the old ring had 56 segments).
+const SECTORS: usize = 48;
 
 /// A rasterised glyph in the label atlas.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -510,7 +511,8 @@ impl WorldUi {
         let _span = tracing::trace_span!("world_ui").entered();
         out.clear();
         self.ensure_font(input.scale);
-        let selected = |id: u32| input.selected.contains(&id);
+        let chosen: std::collections::BTreeSet<u32> = input.selected.iter().copied().collect();
+        let selected = |id: u32| chosen.contains(&id);
         let find = |id: u32| {
             bodies
                 .binary_search_by_key(&id, |b| b.id)
@@ -742,7 +744,8 @@ fn solid(out: &mut WorldUiFrame, [x0, y0, x1, y1]: [f32; 4], color: [f32; 4]) {
     out.quad([v(x0, y0), v(x1, y0), v(x1, y1), v(x0, y1)]);
 }
 
-/// A selection ring draped on the walking surface (old `SelectionCircles.drape`).
+/// A selection ring draped on the walking surface (old `SelectionCircles.drape`): one
+/// quad per sector from the inner glow to the rim, its profile drawn per pixel.
 fn circle(
     out: &mut WorldUiFrame,
     b: &Body,
@@ -754,24 +757,37 @@ fn circle(
     let color = linear(hex);
     let width = (0.07 + b.radius * 0.025).min(0.2) * if hover { 0.7 } else { 1.0 };
     let opacity = if hover { 0.5 } else { 1.0 };
-    let mut ring = [[GroundVertex::default(); SEGMENTS]; PROFILE.len()];
-    for (r, &(factor, offset, alpha)) in PROFILE.iter().enumerate() {
-        let radius = b.radius * factor + width * offset;
-        for (s, v) in ring[r].iter_mut().enumerate() {
-            let a = s as f32 / SEGMENTS as f32 * std::f32::consts::TAU;
-            let (x, z) = (at.x + a.cos() * radius, at.z + a.sin() * radius);
-            *v = GroundVertex {
-                position: [x, field.walk(x, z, b.surface) + 0.07, z],
-                color: [color[0], color[1], color[2], alpha * opacity],
-            };
+    let (inner, outer) = (PROFILE[0].1, PROFILE[PROFILE.len() - 1].1);
+    let corner = |a: f32, across: f32, height: f32| {
+        let radius = b.radius + width * across;
+        GroundVertex {
+            position: [at.x + a.cos() * radius, height, at.z + a.sin() * radius],
+            color: [color[0], color[1], color[2], opacity],
+            across,
+            ring_profile: 1.0,
         }
-    }
-    for r in 0..PROFILE.len() - 1 {
-        for s in 0..SEGMENTS {
-            let n = (s + 1) % SEGMENTS;
-            let (a, b2, c, d) = (ring[r][s], ring[r][n], ring[r + 1][s], ring[r + 1][n]);
-            out.ground.extend_from_slice(&[a, b2, c, b2, d, c]);
-        }
+    };
+    let angle = |s: usize| s as f32 / SECTORS as f32 * std::f32::consts::TAU;
+    let height = |a: f32| {
+        field.walk(
+            at.x + a.cos() * b.radius,
+            at.z + a.sin() * b.radius,
+            b.surface,
+        ) + 0.07
+    };
+    let mut h0 = height(0.0);
+    let first = h0;
+    for s in 0..SECTORS {
+        let (a0, a1) = (angle(s), angle(s + 1));
+        let h1 = if s + 1 == SECTORS { first } else { height(a1) };
+        let (p, q, r, t) = (
+            corner(a0, inner, h0),
+            corner(a1, inner, h1),
+            corner(a1, outer, h1),
+            corner(a0, outer, h0),
+        );
+        out.ground.extend_from_slice(&[p, q, r, p, r, t]);
+        h0 = h1;
     }
 }
 
@@ -790,6 +806,7 @@ fn placement(
     let fill = |p: Vec3| GroundVertex {
         position: p.to_array(),
         color: [color[0], color[1], color[2], 0.13],
+        ..Default::default()
     };
     let [x0, z0, x1, z1] = mark.cells;
     for cz in z0..=z1 {
@@ -820,6 +837,7 @@ fn placement(
         let v = |p: Vec3| GroundVertex {
             position: p.to_array(),
             color: [color[0], color[1], color[2], 0.65],
+            ..Default::default()
         };
         out.ground.extend_from_slice(&[
             v(a - side),
@@ -851,6 +869,7 @@ fn placement(
     let v = |p: Vec3| GroundVertex {
         position: p.to_array(),
         color: c,
+        ..Default::default()
     };
     let (n, so, w, ea) = (
         e + Vec3::new(0.0, 0.0, -r),
@@ -964,6 +983,7 @@ fn rally_marker(
         let v = |p: Vec3| GroundVertex {
             position: p.to_array(),
             color: c,
+            ..Default::default()
         };
         out.ground.extend_from_slice(&[
             v(a - side),
@@ -988,6 +1008,7 @@ fn rally_marker(
                 tz + a.sin() * r,
             ],
             color: [ring[0], ring[1], ring[2], alpha],
+            ..Default::default()
         };
         out.ground.extend_from_slice(&[
             at(a0, inner),

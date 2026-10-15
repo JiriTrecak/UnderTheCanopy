@@ -270,7 +270,8 @@ pub struct Play {
     pub at: Vec3,
     /// Where travelling layers start (`at` when `None`).
     pub from: Option<Vec3>,
-    /// Sizes and spreads from a radius (`sizeFrom`/`spreadFrom` of standalone plays).
+    /// The radius of the play (shells pass theirs); like the old player's, standalone
+    /// plays bind no `sizeFrom`, so it does not size them.
     pub radius: Option<f32>,
 }
 
@@ -576,9 +577,11 @@ impl EffectDirector {
                         r.spread_from,
                     )
                 }
+                // Standalone plays bind no `sizeFrom`/`spreadFrom` (old `EffectPlayer.play`
+                // ignored its radius, shell impacts included).
                 (None, Some((e, l))) => {
                     let at_source = self.table.effects[e].layers[l].at_source;
-                    (e, l, at_source, false, false, true, true)
+                    (e, l, at_source, false, false, false, false)
                 }
                 (None, None) => return None,
             };

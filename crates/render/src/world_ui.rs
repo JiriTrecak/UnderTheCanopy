@@ -13,12 +13,18 @@ use bytemuck::{Pod, Zeroable};
 pub const MAX_GROUND_VERTICES: usize = 1 << 17;
 pub const MAX_OVERLAY_VERTICES: usize = 1 << 16;
 
-/// A ground vertex: world position and linear, straight-alpha colour.
+/// A ground vertex: world position, linear straight-alpha colour and, for selection
+/// rings, the position across the ring in line widths from its core (`ring`; the old
+/// ring's soft inner glow, solid core and feathered rim come from it per pixel).
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default, PartialEq, Pod, Zeroable)]
 pub struct GroundVertex {
     pub position: [f32; 3],
     pub color: [f32; 4],
+    /// Line widths from the ring's core; ignored unless `ring_profile` is 1.
+    pub across: f32,
+    /// 1 for a selection ring.
+    pub ring_profile: f32,
 }
 
 /// Overlay shapes (`kind[0]`), mirroring `O_*` in world_ui.wgsl.
@@ -217,7 +223,9 @@ impl WorldUiGpu {
                 buffers: &[Some(wgpu::VertexBufferLayout {
                     array_stride: std::mem::size_of::<GroundVertex>() as u64,
                     step_mode: wgpu::VertexStepMode::Vertex,
-                    attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x4],
+                    attributes: &wgpu::vertex_attr_array![
+                        0 => Float32x3, 1 => Float32x4, 2 => Float32x2
+                    ],
                 })],
             },
             primitive: wgpu::PrimitiveState::default(),

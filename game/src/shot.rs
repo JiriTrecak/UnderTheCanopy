@@ -183,6 +183,35 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
         &newest,
         1.0,
     );
+    // The render thread's cost of a frame of the live scene (interpolation, effects,
+    // world UI), measured on the shown pair.
+    let live_started = std::time::Instant::now();
+    for _ in 0..20 {
+        live.show(
+            &mut renderer,
+            &gpu,
+            &loaded.pack,
+            previous.as_ref(),
+            &newest,
+            0.5,
+        );
+        live.draw_world_ui(
+            &mut renderer,
+            &gpu,
+            &camera_view,
+            &loaded.scene,
+            options.time,
+        );
+    }
+    let live_ms = live_started.elapsed().as_secs_f32() * 1000.0 / 20.0;
+    live.show(
+        &mut renderer,
+        &gpu,
+        &loaded.pack,
+        previous.as_ref(),
+        &newest,
+        1.0,
+    );
 
     let capture = Capture::new(&gpu.device, size[0], size[1]);
 
@@ -371,7 +400,7 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
         last.actors,
     );
     println!(
-        "  effects: {} cues, {:?}",
+        "  effects: {} cues, {:?} | live scene {live_ms:.3} ms/frame (interpolation, effects, world UI)",
         newest.effects.cues.len(),
         last.effects
     );
