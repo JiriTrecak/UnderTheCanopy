@@ -152,11 +152,12 @@ The game's menus are layout documents in `config/ui/layouts/`, one per screen, d
 | `skirmish` | battlefields, preview with start markers, players (controller, team, race, hero) | `screens/skirmish.rs` |
 | `multiplayer`, `lobby` | server status, lobbies, create and join; the room's seats, races, heroes, round trips | `screens/multiplayer.rs` |
 | `loading` | plain panel (skirmish, multiplayer) or mission art with progress | `screens/loading.rs`, `mod.rs` |
-| `match-overlay`, `mission-hud` | waiting for players, connection problems, chat; objectives, dialogue, letterbox | `screens/match_ui.rs` |
+| `hud` (with `play.json`) | the in-match HUD, chat included (the play module) | `play/hud.rs` |
+| `match-overlay`, `mission-hud` | waiting for players, connection problems; objectives, dialogue, letterbox | `screens/match_ui.rs` |
 | `game-menu`, `result`, `saves`, `settings`, `dialog` | overlays | `match_ui.rs`, `settings_ui.rs`, `mod.rs` |
 | `fade`, `backdrop` | screen-change fade; the 3D frame behind captures | |
 
-Paths include every ancestor with an id (`settings/graphics/shadows`); a path the code asks for that no layout has is logged once. Theme images (`config/ui/theme.json`) and on-demand images (map previews, crests, portraits) are bound from the cooked pack (`screens/ui_host.rs`); pack textures are straight alpha, sRGB ones bound through their sRGB views. The UI draws into a non-sRGB view of the swapchain (its `view_formats`), after the scene, or onto a cleared target on menu screens (no 3D frame is rendered there).
+Paths include every ancestor with an id (`settings/graphics/shadows`); a path the code asks for that no layout has is logged once. Theme images (`config/ui/theme.json`) and on-demand images (map previews, crests, portraits) are bound from the cooked pack (`screens/ui_host.rs`); pack textures are straight alpha, sRGB ones bound through their sRGB views. The one `Ui` (menus, overlays and the HUD) draws through the renderer's `ui` pass into a non-sRGB view of the swapchain (its `view_formats`): after the scene in a match, or alone onto a cleared target on menu screens (no 3D frame is rendered there, `UiLayer::encode_alone`).
 
 `canopy capture-screens --out <folder> [--size 1600x900] [--scale 1]` renders every screen offscreen through the real game (headless, a temporary user folder); with `CANOPY_MATCH_SERVER` naming a local copy of the old server it also captures a real lobby.
 

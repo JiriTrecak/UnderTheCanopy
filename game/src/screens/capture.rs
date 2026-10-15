@@ -470,6 +470,23 @@ fn a_match(rig: &mut Rig) -> Result<()> {
     rig.until("the match", Duration::from_secs(180), |g| g.flow.in_match())?;
     rig.settle(3.0);
     rig.shoot("match")?;
+    // The play HUD with the player's units selected and kept as control group 1.
+    let mine: Vec<u32> = rig.game.playing.as_ref().map_or_else(Vec::new, |p| {
+        let k = p.game.play.knowledge();
+        k.view
+            .entities
+            .iter()
+            .filter(|e| k.controlled(e) && k.is_unit(e))
+            .map(|e| e.id().0)
+            .collect()
+    });
+    anyhow::ensure!(!mine.is_empty(), "the player has units");
+    if let Some(p) = &mut rig.game.playing {
+        p.game.play.select(mine.clone(), None);
+        p.game.play.groups.assign(0, &mine);
+    }
+    rig.settle(0.3);
+    rig.shoot("match-selection")?;
     if let Some(playing) = &mut rig.game.playing {
         for (player, name, text) in [
             (1, "Bo", "glhf!"),
@@ -503,6 +520,14 @@ fn a_match(rig: &mut Rig) -> Result<()> {
     let mission = sample_mission(hero);
     let view_h = rig.size[1] as f32 / rig.scale;
     rig.frame();
+    let hud_top = rig
+        .game
+        .host
+        .ui
+        .find("hud/dock")
+        .and_then(|d| rig.game.host.ui.rect(d))
+        .map(|r| r.y / rig.scale);
+    hud.hud_top = hud_top;
     rig.game.host.ui.show("mission-hud", true);
     for _ in 0..3 {
         hud.show(
@@ -561,7 +586,31 @@ fn a_match(rig: &mut Rig) -> Result<()> {
     rig.game.open_saves();
     rig.settle(0.1);
     rig.shoot("saves")?;
-    rig.game.apply(Intent::Back);
+    // Loading the save continues the match with its camera and control groups.
+    let saved = rig
+        .game
+        .saves_list
+        .iter()
+        .find(|m| m.name == "Echo Isles opening")
+        .map(|m| m.id.clone())
+        .context("the save is listed")?;
+    rig.game.load_save(&saved);
+    rig.until("the loaded match", Duration::from_secs(180), |g| {
+        g.flow.in_match() && g.playing.is_some()
+    })?;
+    rig.settle(1.5);
+    let groups = rig
+        .game
+        .playing
+        .as_ref()
+        .map(|p| p.game.play.groups.get(0).to_vec());
+    anyhow::ensure!(
+        groups.as_deref() == Some(mine.as_slice()),
+        "control group 1 comes back with the save: {groups:?}"
+    );
+    rig.shoot("match-loaded")?;
+    rig.game.apply(Intent::Show(Overlay::GameMenu));
+    rig.game.menu_page = MenuPage::Main;
     rig.click("gm.exit");
     rig.settle(0.1);
     rig.shoot("game-menu-leave")?;

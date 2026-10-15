@@ -15,12 +15,18 @@ use canopy_sim::{mission::state::ObjectiveState, state::Outcome, view::MissionVi
 
 /// Letterbox slide time (old .65 s).
 const LETTERBOX_SECONDS: f32 = 0.65;
+/// The dialogue's bottom edge over the view's height (old `bottom: 31%`), and the least
+/// gap it keeps above the play HUD, logical pixels.
+const DIALOGUE_BOTTOM: f32 = 0.31;
+const DIALOGUE_GAP: f32 = 12.0;
 
 /// The mission HUD's state between frames.
 #[derive(Default)]
 pub struct MissionHud {
     pub objectives: Vec<Objective>,
     letterbox: f32,
+    /// The top of the play HUD's dock (logical pixels), which the dialogue keeps clear.
+    pub hud_top: Option<f32>,
 }
 
 impl MissionHud {
@@ -28,6 +34,7 @@ impl MissionHud {
         Self {
             objectives,
             letterbox: 0.0,
+            hud_top: None,
         }
     }
 
@@ -108,6 +115,14 @@ impl MissionHud {
             }
         }
         widgets::visible(ui, "mission-hud/dialogue-wrap", m.dialogue.is_some());
+        // The dialogue sits at 31 % from the bottom (old), lifted clear of a larger HUD
+        //
+        let lift = self.hud_top.map_or(0.0, |top| {
+            (view_height * (1.0 - DIALOGUE_BOTTOM) + DIALOGUE_GAP - top).max(0.0)
+        });
+        if let Some(n) = ui.find("mission-hud/dialogue-wrap") {
+            ui.set_shift(n, 0.0, -lift);
+        }
         if let Some(d) = &m.dialogue {
             widgets::text(ui, "mission-hud/dialogue-wrap/speaker", &d.speaker);
             widgets::text(ui, "mission-hud/dialogue-wrap/text", &d.text);

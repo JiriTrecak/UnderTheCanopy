@@ -1353,6 +1353,10 @@ impl Game {
         for (name, show) in shows {
             self.host.ui.show(name, show);
         }
+        // The result dialog says the outcome; the HUD's banner returns when it is hidden.
+        if top == Some(Overlay::Result) && !self.result_hidden {
+            widgets::visible(&mut self.host.ui, "hud/outcome", false);
+        }
         // Tooltips off (a setting) applies to the HUD while it has the input.
         let hud_active = in_match && top.is_none();
         self.host
@@ -1410,6 +1414,13 @@ impl Game {
             if let Some(data) = &data {
                 let mission = playing.newest().and_then(|s| s.view.mission.clone());
                 let dt = 1.0 / 60.0;
+                let hud_top = self
+                    .host
+                    .ui
+                    .find("hud/dock")
+                    .and_then(|d| self.host.ui.rect(d))
+                    .map(|r| r.y / ctx.scale.max(0.1));
+                self.mission_hud.hud_top = hud_top;
                 self.mission_hud.show(
                     &mut self.host,
                     gpu,
