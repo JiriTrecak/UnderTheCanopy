@@ -12,7 +12,7 @@ just package                      # build Under the Canopy.app
 just bench-render                 # GPU benchmark (add --preset medium for the base M1 preset)
 ```
 
-The first run cooks the asset pack (about 30 s), later runs reuse it. F9 opens the debug overlay.
+The first run cooks the asset pack (about 30 s), later runs reuse it. In a match, F9 or Ctrl+F3 opens the debug overlay (hold fn on a MacBook keyboard).
 
 ## Done
 

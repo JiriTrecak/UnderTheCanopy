@@ -1,10 +1,36 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [],
-    "improved": [],
-    "fixed": [],
-    "knownIssues": []
+    "added": [
+      "Under the Canopy is rebuilt as a native game for Apple Silicon Macs. Skirmish, multiplayer, spectating, settings and key bindings work as in 0.2.",
+      "Graphics presets (Low, Medium, High, Ultra) are chosen for your Mac on first start and can be changed in Settings → Graphics.",
+      "A redesigned What's new screen shows every release, and the main menu checks for updates as before.",
+      "Skirmish setup lets you choose each player's team.",
+      "The result screen shows match statistics.",
+      "Optional construction, training and cast bars appear under the health bars of selected units and buildings."
+    ],
+    "improved": [
+      "Large battles with hundreds of units run smoothly: the simulation is several times faster than in 0.2.",
+      "Right-clicking an allied unit with your army moves there instead of attacking it. Use Attack to force an attack.",
+      "Escape cancels the current mode first, then goes back, then opens the game menu.",
+      "On macOS, Cmd works like Ctrl for control groups.",
+      "The minimap shows the world as seen from above.",
+      "The day and night cycle follows match time: it stops while the game is paused, and a loaded save continues at the right hour.",
+      "Computer opponents play better: archers keep their distance from melee units, workers are assigned more sensibly, they no longer send units to resources they have not seen, and they judge spells by their full effect.",
+      "The third-person unit camera stays at the right distance and no longer passes through trees and buildings."
+    ],
+    "fixed": [
+      "Workers that cannot reach a damaged building wait before trying again, instead of slowing the game by retrying constantly.",
+      "Finished multiplayer matches are reported to the server, so they no longer stay listed as playing in the lobby."
+    ],
+    "knownIssues": [
+      "Saves from 0.2 versions cannot be loaded.",
+      "Everyone in a multiplayer match needs version 0.3.0; it cannot play with 0.2 versions.",
+      "The map editor is not included in this version.",
+      "Only Macs with Apple Silicon are supported for now.",
+      "Performance has not yet been measured on base M1 Macs. If matches stutter, choose the Low preset in Settings → Graphics.",
+      "Uproot's spell models look lighter than in 0.2."
+    ]
   },
   "releases": [
     {
