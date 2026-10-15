@@ -435,15 +435,14 @@ impl InMatch {
             WindowEvent::CursorMoved { position, .. } => {
                 let p = (position.x as f32, position.y as f32);
                 if let Some(from) = self.drag {
-                    // Grab panning: the ground under the cursor follows it.
+                    // Grab panning from the centre ray (old `panPersp`), clamped at once.
                     let size = self.screen.map_or([1.0, 1.0], |s| s.size);
                     let aspect = size[0] / size[1].max(1.0);
-                    let per_pixel = self
-                        .camera
-                        .footprint(aspect, 0.0)
-                        .map_or(0.1, |[x0, x1, ..]| (x1 - x0) / size[0].max(1.0));
-                    self.camera
-                        .pan(-(p.0 - from.0) * per_pixel, (p.1 - from.1) * per_pixel);
+                    let rts = view::frame(&mut self.camera, aspect, &self.loaded.scene);
+                    let [mx, mz] = view::grab_pan(&rts, size, p.0 - from.0, p.1 - from.1);
+                    self.camera.focus[0] += mx;
+                    self.camera.focus[1] += mz;
+                    view::frame(&mut self.camera, aspect, &self.loaded.scene);
                     self.drag = Some(p);
                 }
                 self.cursor = Some(p);
