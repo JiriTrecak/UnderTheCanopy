@@ -63,7 +63,7 @@ Vendored Lua 5.4 through `mlua`, no standard libraries, a fresh state per run, a
 
 - A save is the serialized state plus pending commands; AI memories are part of the state (`State::ai`), their derived navigation is rebuilt on load (new format, D16).
 - Desync detection (D13): every 8 ticks a cheap fingerprint of counters, jobs, stocks, outcome and a rotating sample of up to 32 actors.
-- Tests run long AI-versus-AI matches and require identical fingerprints across runs, across save/load, and on macOS and Windows in CI.
+- Tests run long AI-versus-AI matches and require identical fingerprints across runs, across save/load, and (while CI ran, D50) on macOS and Windows.
 
 ## Performance
 

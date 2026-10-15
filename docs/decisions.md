@@ -26,7 +26,7 @@ Map and campaign scripts run on vendored Lua 5.4 via `mlua` with no standard lib
 
 No code depends on the working directory. Game data is found at `Contents/Resources/data` in the macOS bundle, `data/` beside the Windows executable, or `--data <folder>` in development; user files live in the OS user-data folder (`com.jt.canopy`). Why: packaging for any platform then needs no code changes.
 
-## D7. Packaging and CI from M0 (2026-10-14)
+## D7. Packaging and CI from M0 (2026-10-14; CI removed by D50)
 
 CI builds, lints, tests and packages on macOS (Apple Silicon) and Windows on every push: an unsigned `.app` and an NSIS installer through `cargo-packager`. Checkouts skip Git LFS. macOS minimum version 13. Why: portability problems surface immediately; signing and installers are added later without code changes; LFS bandwidth is billed.
 
@@ -415,10 +415,14 @@ New, not in the old game. Both are presentation only: the presenter reads the vi
 
 The old game's match server lives in `server/` as a small standalone node project ([server](server.md)): its own code (`index.ts`, `host.ts`, `room.ts`, `latency.ts`) copied with only its imports changed, plus `protocol.ts` (wire types, match config, action shapes, chat clean-up and save parsing, copied from the old `src/shared`) and `rules.ts` (races and starting heroes read from `content/game.json`, in place of the game's whole content schema). Nothing else of the old game comes along, so the server no longer needs the old repository. Not a Rust port: it works, the protocol is frozen (D10), development needs no scale, and a port would only add effort and deploy risk; port it when it has to change.
 
-- Otherwise the same behaviour: responses are byte-identical to the old server's for the lobby routes, and every network test plays against it (in CI too, which installs `server/` with node 22). Two leniencies, both harmless: a save's campaign company is carried without validating its members (the game validates it), and `game.json` rules are read only for races and heroes, so an unrelated content error no longer stops the server.
+- Otherwise the same behaviour: responses are byte-identical to the old server's for the lobby routes, and every network test plays against it. Two leniencies, both harmless: a save's campaign company is carried without validating its members (the game validates it), and `game.json` rules are read only for races and heroes, so an unrelated content error no longer stops the server.
 - Changes (Jiri): rooms nobody can come back to are discarded (a finished or desynced match once no player is connected, a lobby or match without connected players for 2 minutes), so closed and finished games no longer pile up in the list; the list shows only open lobbies, not matches under way; `POST /api/rooms/clear` (ends every session) only answers requests from the host itself, not ones forwarded by Nginx, as anyone on the internet could call it before.
 - Deployment: `just server-deploy` installs it beside the old server as the `canopy-matchhost` service and stops `settlers-matchhost`, which stays installed for `just server-deploy rollback`. The SSH key moves out of the old repository to `~/.config/under-the-canopy/matchhost.pem`.
 
 ## D49. Lobby seats: open, closed or computer, with team and colour (2026-10-15, agreed with Jiri)
 
 The multiplayer lobby works like Warcraft III's: each seat is Open, Closed (the host locks it, e.g. to force a 2-player match on a 4-player map) or Computer, and each has a race, team and colour; no handicap. The host sets seats and everything on computer seats; each human sets their own race, hero, team and colour; colours are unique. A match can start with any seats filled: seats nobody plays get no base (the simulation leaves skirmish starts without a slot empty; missions and sandboxes still need every owner they place). Computers run inside every player's simulation, so they cost no network traffic. Protocol additions are listed in [server](server.md#lobby-seats); colours ride in `MatchConfig.colors` because `Slot` is read strictly by 0.3.1 and earlier.
+
+## D50. No CI for now (2026-10-15, Jiri)
+
+The GitHub Actions workflow (macOS and Windows: format, lint, test, package) is removed. The game is tested closely between two friends on Macs, and the Windows runner bought nothing yet. `just check` on the Mac is the gate before every commit, the match server's tests included once `server/node_modules` exists. Windows stays a goal (D1, D6): the code keeps going through `paths.rs` and stays portable, but nothing checks it until CI returns. Bring it back (from git history) before advertising Windows or taking outside contributions.

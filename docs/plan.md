@@ -6,7 +6,7 @@ Agreed with Jiri, 2026-10-14.
 
 Rebuild the existing game natively. **Gameplay behaves the same** (rules, numbers, AI, controls, the multiplayer protocol); **nothing is translated 1:1**. Every system is redesigned for the best performance we can reach, rendering above all. The old TypeScript game is the behaviour specification and the visual reference, not a source of code.
 
-Phase 1 runs on Apple Silicon Macs with `just play` and is packaged by CI, but not distributed. The code stays portable: CI builds, tests and packages Windows on every commit.
+Phase 1 runs on Apple Silicon Macs with `just play` and `just package`. The code stays portable, but nothing builds or tests Windows for now (no CI, D50).
 
 ### Targets
 

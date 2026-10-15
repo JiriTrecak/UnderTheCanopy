@@ -18,7 +18,7 @@ The first run cooks the asset pack (about 30 s), later runs reuse it. In a match
 
 | Milestone | State |
 |---|---|
-| M0 repository, CI, packaging | done; CI builds, tests and packages macOS and Windows |
+| M0 repository, packaging | done; CI ran macOS and Windows until it was removed (D50) |
 | M1 content | done; reads today's formats with parity to the TypeScript loaders |
 | M2 simulation | done; every system ported and checked tick by tick against the old game; AI-vs-AI matches play to a winner with stable fingerprints |
 | M3 renderer | done; terrain, scenery, water and ripples, post effects, animated units, effects, fog of war, world UI, minimap and portrait, matched against the old game in side-by-side captures |
@@ -59,5 +59,5 @@ Taken overnight with best judgement and marked "review" in [decisions](decisions
 - Art fixes for the old editors: [art issues](art-issues.md).
 - Remaining parity rows: [parity](parity.md): menu background shafts and smoke, debug navigation overlays, Uproot's models looking lighter than in the old game (cause not found), and deliberate differences (no "filtered" shadow mode, bridge decks share the ground's fog cell, the window keeps drawing when hidden).
 - **Base M1 not measured.** All timings are from an M4 Max (High: worst 4.8 ms a frame; Medium: worst 2.7 ms). Scaled, Medium on a base M1 is about 10 ms in a player view and about 16 ms zoomed out as a spectator, the tight case ([renderer §9](renderer.md), D42). Run `just bench-render --preset medium` on an M1.
-- **Windows** builds and passes tests in CI but nobody has played it.
+- **Windows** built and passed tests in CI until CI was removed (D50); nobody has played it.
 - Phase 2 (editors, server port, Steam, signing, distribution) is unchanged: [plan](plan.md).

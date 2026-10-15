@@ -19,7 +19,7 @@ A Warcraft III–style RTS on the forest floor, being rebuilt natively in Rust. 
 ## Engineering rules
 
 - **Determinism** ([D4](docs/decisions.md)): simulation code uses deterministic math only, fixed iteration order, and the simulation's seeded random generator. No `HashMap` iteration, platform `f32::sin`, wall clocks or thread timing in simulation results.
-- **Portability** ([D1](docs/decisions.md), [D6](docs/decisions.md)): nothing macOS-only. All file locations go through `game/src/paths.rs`. CI must pass on macOS and Windows.
+- **Portability** ([D1](docs/decisions.md), [D6](docs/decisions.md)): nothing macOS-only. All file locations go through `game/src/paths.rs`. There is no CI for now ([D50](docs/decisions.md)): `just check` on the Mac is the gate.
 - **WebGPU baseline** ([D2](docs/decisions.md)): no wgpu features or limits beyond WebGPU's without an agreed exception.
 - **Measure**: add `tracing` spans to anything that costs time; check performance with `just profile` and Tracy, on the reference machine (base M1) when it matters.
 - **Dependencies** ([structure](docs/structure.md)): crates never depend on `game/`; `canopy-render` never sees simulation types.

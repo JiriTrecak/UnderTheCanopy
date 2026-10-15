@@ -31,7 +31,7 @@ bench-sim *args="--map echo-isles --crowd 50 --ticks 1600":
 cook *args:
     cargo run -q -p canopy-cook -- --data "{{justfile_directory()}}" --out "{{justfile_directory()}}/target/cooked" {{args}}
 
-# Everything CI checks: formatting, lints, tests
+# The gate before every commit (no CI, D50): formatting, lints, tests, the match server
 check:
     cargo fmt --all --check
     cargo clippy --workspace --all-targets -- -D warnings

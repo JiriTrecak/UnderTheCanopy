@@ -20,7 +20,7 @@ It is the old game's TypeScript server moved here in the smallest form (D48): it
 just server          # installs node_modules and serves 127.0.0.1:8787 (PORT, BIND, GAME_JSON override)
 ```
 
-`CANOPY_MATCH_SERVER=http://127.0.0.1:8787 just play` points the game at it. `npm run check` in `server/` type-checks it and `npm test` runs its tests; `just check` does both once `node_modules` exists. The network tests (`crates/net/tests/match_server.rs`, the game's `screens/net_tests.rs`) start this server and play matches against it, in CI too. `old_client.rs` and `old_lockstep.rs` also run the old game's TypeScript client against it when the old repository is checked out beside this one.
+`CANOPY_MATCH_SERVER=http://127.0.0.1:8787 just play` points the game at it. `npm run check` in `server/` type-checks it and `npm test` runs its tests; `just check` does both once `node_modules` exists. The network tests (`crates/net/tests/match_server.rs`, the game's `screens/net_tests.rs`) start this server and play matches against it. `old_client.rs` and `old_lockstep.rs` also run the old game's TypeScript client against it when the old repository is checked out beside this one.
 
 The server reads `content/game.json` once at start for the races and starting heroes it accepts. A new race or hero needs a redeploy; new action types need `protocol.ts` changed (and the protocol is frozen, D10).
 
