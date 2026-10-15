@@ -48,15 +48,47 @@
       ]
     },
     "chat-line": { "kind": "label", "class": "chat-line" },
+    "observer-head": { "kind": "label", "class": "observer-good" },
+    "observer-good": {
+      "class": "observer-good",
+      "tooltip": { "title": "" },
+      "children": [
+        {
+          "class": "observer-good-main",
+          "children": [
+            { "id": "icon", "kind": "image", "class": "observer-icon" },
+            { "id": "amount", "kind": "label", "class": "observer-amount" }
+          ]
+        },
+        { "id": "income", "kind": "label", "class": "observer-income" }
+      ]
+    },
+    "observer-hero": {
+      "class": "observer-hero",
+      "tooltip": { "title": "" },
+      "children": [
+        { "id": "icon", "kind": "image", "class": "observer-hero-icon" },
+        {
+          "class": "observer-hero-text",
+          "children": [
+            { "id": "level", "kind": "label", "class": "observer-hero-level" },
+            { "id": "status", "kind": "label", "class": "observer-hero-status" }
+          ]
+        }
+      ]
+    },
     "observer-row": {
       "class": "observer-row",
       "children": [
         { "id": "color", "kind": "bar", "class": "observer-color", "value": 1 },
         { "id": "player", "kind": "label", "class": "observer-player" },
-        { "id": "goods", "kind": "label", "class": "observer-cell observer-goods" },
-        { "id": "units", "kind": "label", "class": "observer-cell" },
-        { "id": "workers", "kind": "label", "class": "observer-cell" },
-        { "id": "hero", "kind": "label", "class": "observer-cell" }
+        { "id": "goods", "class": "observer-goods", "repeat": "observer-good" },
+        { "id": "units", "kind": "label", "class": "observer-count", "tooltip": { "title": "" } },
+        { "id": "workers", "kind": "label", "class": "observer-count", "tooltip": { "title": "" } },
+        {
+          "id": "heroes", "class": "observer-heroes", "repeat": "observer-hero",
+          "children": [{ "id": "none", "kind": "label", "class": "observer-none", "text": "—", "tooltip": { "title": "", "body": "No hero recruited." } }]
+        }
       ]
     }
   }

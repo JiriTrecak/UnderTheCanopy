@@ -31,7 +31,7 @@ pub struct Knowledge {
     pub view: Arc<View>,
     /// The local player's slot; `None` when observing.
     pub me: Option<u8>,
-    /// Own units held inside another entity (sorted): the view does not say (D35).
+    /// Own units held inside another entity or waiting to be placed back (sorted).
     pub held: Arc<Vec<u32>>,
 }
 

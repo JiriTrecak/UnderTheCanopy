@@ -87,7 +87,7 @@ impl Harness {
             view.clone(),
             Some(ME),
         );
-        know.held = Arc::new(crate::sim::held_units(&self.world, &view));
+        know.held = Arc::new(crate::sim::held_units(&view));
         let bodies: Vec<Body> = view
             .entities
             .iter()
@@ -714,6 +714,52 @@ fn idle_workers_menu_keys_tab_and_chat() {
     assert_eq!(h.play.chat.last().map(|l| l.text.as_str()), Some("gl hf"));
     assert_eq!(h.play.take_events(), [Event::Chat("gl hf".into())]);
     assert!(h.take().is_empty());
+}
+
+#[test]
+fn the_idle_worker_key_skips_stunned_held_and_releasing_workers() {
+    let mut h = Harness::new(vec![]);
+    let idle = h.play.idle_workers();
+    assert_eq!(idle.len(), 1, "{idle:?}");
+    let flags: [fn(&mut canopy_sim::view::Private); 3] = [
+        |p| p.stunned = true,
+        |p| p.contained = true,
+        |p| p.releasing = true,
+    ];
+    for flag in flags {
+        let mut view = h.world.view(OWNER);
+        let worker = view
+            .entities
+            .iter_mut()
+            .find(|e| e.id().0 == idle[0])
+            .expect("the idle worker");
+        flag(worker.private.as_mut().expect("own"));
+        let know = Knowledge::new(
+            h.content.clone(),
+            h.catalog.clone(),
+            Arc::new(view),
+            Some(ME),
+        );
+        h.play
+            .update(know, h.screen, Vec::new(), &FlatGround, h.now);
+        assert!(h.play.idle_workers().is_empty());
+    }
+    h.refresh();
+    assert_eq!(h.play.idle_workers(), idle);
+}
+
+#[test]
+fn the_portrait_tooltip_prices_the_definition_with_its_supply() {
+    let h = Harness::new(vec![]);
+    let k = h.play.knowledge();
+    let hero = k.content.definition(fx::HERO).expect("hero");
+    let costs = super::card::definition_costs(k, hero);
+    let amounts: Vec<u32> = costs.iter().map(|c| c.amount).collect();
+    assert_eq!(amounts.last(), Some(&4), "supply comes last: {amounts:?}");
+    assert_eq!(costs.last().unwrap().icon, k.content.rules.supply_icon);
+    assert!(costs.len() >= 2, "a price and the supply");
+    let hall = k.content.definition(fx::HALL).expect("hall");
+    assert!(!super::card::definition_costs(k, hall).is_empty());
 }
 
 #[test]

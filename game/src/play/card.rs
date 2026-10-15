@@ -199,6 +199,15 @@ pub fn item_costs(k: &Knowledge, items: &[canopy_content::game::Cost]) -> Vec<Co
     costs
 }
 
+/// What a definition costs as the portrait tooltip shows it (old `costs`): its price and
+/// supply, nothing for definitions that cannot be created.
+pub fn definition_costs(k: &Knowledge, d: &Definition) -> Vec<CostView> {
+    if d.creation.is_none() {
+        return Vec::new();
+    }
+    creation_costs(k, d)
+}
+
 /// The price of creating `d` plus its supply.
 fn creation_costs(k: &Knowledge, d: &Definition) -> Vec<CostView> {
     let mut costs = d

@@ -98,6 +98,7 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
             &mut game.session,
             &mut game.presenter,
             seat,
+            None,
         ) else {
             anyhow::bail!("the local session stopped at tick {}", game.world.tick());
         };

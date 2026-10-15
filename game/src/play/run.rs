@@ -10,8 +10,8 @@
 //! - [`InMatch::decorate`] on the UI's draw list, then [`InMatch::render`].
 
 use super::{
-    Event, Play,
-    debug::{Debug, Stats as DebugStats},
+    Event, Play, cinematic,
+    debug::{Debug, MatchTools, Stats as DebugStats},
     follow::{self, CameraMode},
     hud::Hud,
     input::{self, Input},
@@ -127,6 +127,12 @@ pub struct InMatch {
     frame_max: f32,
     stats_since: Instant,
     held_before: u32,
+    /// The debug overlay's speed, reveal and fog perspective.
+    tools: MatchTools,
+    /// The cinematic lens and the entities a scene's shot names.
+    lens: cinematic::Lens,
+    scene_targets: Option<sim::SceneTargets>,
+    networked: bool,
 }
 
 impl InMatch {
@@ -143,6 +149,7 @@ impl InMatch {
         renderer.set_environment(gpu, loaded.environment.clone());
         renderer.load_world(gpu, &loaded.pack, &loaded.scene.world)?;
         renderer.set_actors(&[]);
+        let loaded_sandbox = loaded.sandbox;
         let content = game.world.catalog().content.clone();
         let catalog = Arc::new(Catalog::new(content.clone()));
         // Names and controllers for the observer panel.
@@ -264,7 +271,29 @@ impl InMatch {
             frame_max: 0.0,
             stats_since: now,
             held_before: 0,
+            tools: MatchTools {
+                speed: 1.0,
+                reveal: start.me.is_none(),
+                perspective: start.me,
+            },
+            networked: start.chat_server,
+            lens: cinematic::Lens::default(),
+            scene_targets: None,
         };
+        this.stats.networked = start.chat_server;
+        this.stats.players = this
+            .hud
+            .players
+            .iter()
+            .map(|(slot, name, _)| (*slot, name.clone()))
+            .collect();
+        // Sandbox maps start revealed for a local player, as in the old game.
+        if loaded_sandbox && start.me.is_some() && !start.chat_server {
+            this.set_tools(MatchTools {
+                reveal: true,
+                ..this.tools
+            });
+        }
         // The HUD shows the minimap and the live portrait.
         let targets = [
             (
@@ -293,6 +322,39 @@ impl InMatch {
             }
         }
         Ok(this)
+    }
+
+    /// Applies the debug overlay's match tools (single player only, as the old ones):
+    /// the simulation's pace, and whose view the picture shows. A new perspective clears
+    /// the selection (old `onVision`).
+    fn set_tools(&mut self, mut tools: MatchTools) {
+        if self.networked {
+            return;
+        }
+        if !tools.reveal && tools.perspective.is_none() {
+            // An observer leaving the revealed map looks through the first player's fog.
+            tools.perspective = self.stats.players.first().map(|&(slot, _)| slot);
+        }
+        if tools.speed != self.tools.speed {
+            self.sim.control(sim::Control::Speed(tools.speed));
+        }
+        let shown = |t: &MatchTools| {
+            if t.reveal {
+                Some(Seat::Observer)
+            } else {
+                t.perspective.map(Seat::Player)
+            }
+        };
+        let (before, after) = (shown(&self.tools), shown(&tools));
+        if before != after {
+            let own = self.me.map_or(Seat::Observer, Seat::Player);
+            self.sim
+                .control(sim::Control::Shown(after.filter(|&s| s != own)));
+            if tools.perspective != self.tools.perspective {
+                self.play.select(Vec::new(), None);
+            }
+        }
+        self.tools = tools;
     }
 
     /// Follows the player's settings (shortcuts, health bars).
@@ -435,15 +497,14 @@ impl InMatch {
             WindowEvent::CursorMoved { position, .. } => {
                 let p = (position.x as f32, position.y as f32);
                 if let Some(from) = self.drag {
-                    // Grab panning: the ground under the cursor follows it.
+                    // Grab panning from the centre ray (old `panPersp`), clamped at once.
                     let size = self.screen.map_or([1.0, 1.0], |s| s.size);
                     let aspect = size[0] / size[1].max(1.0);
-                    let per_pixel = self
-                        .camera
-                        .footprint(aspect, 0.0)
-                        .map_or(0.1, |[x0, x1, ..]| (x1 - x0) / size[0].max(1.0));
-                    self.camera
-                        .pan(-(p.0 - from.0) * per_pixel, (p.1 - from.1) * per_pixel);
+                    let rts = view::frame(&mut self.camera, aspect, &self.loaded.scene);
+                    let [mx, mz] = view::grab_pan(&rts, size, p.0 - from.0, p.1 - from.1);
+                    self.camera.focus[0] += mx;
+                    self.camera.focus[1] += mz;
+                    view::frame(&mut self.camera, aspect, &self.loaded.scene);
                     self.drag = Some(p);
                 }
                 self.cursor = Some(p);
@@ -501,8 +562,20 @@ impl InMatch {
         self.play.input(&input, terrain);
     }
 
-    /// The unit camera's view of the focused unit, or `None` for the RTS view.
+    /// A close view: a mission scene's unit shot while a cinematic plays, else the unit
+    /// camera on the focused unit; `None` for the RTS view.
     fn close_view(&mut self, aspect: f32, dt: f32) -> Option<CameraView> {
+        if self.play.cinematic().is_some() {
+            let camera = self.play.scene_camera()?.clone();
+            let targets = self.scene_targets?;
+            let (live, content, catalog) = (&self.live, &self.content, &self.catalog);
+            let subject = |t: &sim::SceneTarget| {
+                follow::subject_of(live, content, catalog.get(t.definition), t.id)
+            };
+            let (key, pose) =
+                cinematic::pose(&camera, &targets, subject, self.loaded.scene.terrain())?;
+            return Some(self.follow.view(key, &pose, dt, aspect));
+        }
         let mode = self.play.camera_mode;
         if mode == CameraMode::Rts {
             return None;
@@ -510,7 +583,23 @@ impl InMatch {
         let id = self.play.selection.focus()?;
         let subject = follow::subject(&self.live, self.play.knowledge(), id)?;
         let pose = follow::ground_pose(&subject, mode, self.loaded.scene.terrain())?;
-        Some(self.follow.view((mode, id), &pose, dt, aspect))
+        Some(
+            self.follow
+                .view(follow::Key::unit(mode, id), &pose, dt, aspect),
+        )
+    }
+
+    /// The unit whose eyes the camera looks through (its body is not drawn).
+    fn first_person_body(&self) -> Option<u32> {
+        if self.play.cinematic().is_some() {
+            let camera = self.play.scene_camera()?;
+            return (cinematic::mode(camera) == Some(CameraMode::FirstPerson))
+                .then(|| self.scene_targets.and_then(|t| t.subject).map(|s| s.id))
+                .flatten();
+        }
+        (self.play.camera_mode == CameraMode::FirstPerson)
+            .then(|| self.play.selection.focus())
+            .flatten()
     }
 
     /// Whether a held key holds `shortcut` (camera keys from the player's bindings).
@@ -526,13 +615,18 @@ impl InMatch {
         // A unit camera ignores panning and zoom (old `followingUnit`); so does a
         // cinematic, which looks at its scene and gives the view back afterwards.
         let cinematic = self.play.cinematic();
+        self.lens.update(cinematic.is_some(), dt_ms);
         match (cinematic, self.cinematic_focus) {
             (Some(scene), saved) => {
                 if saved.is_none() {
                     self.cinematic_focus = Some(self.camera.focus);
                 }
-                self.play.camera_mode = CameraMode::Rts;
-                if let Some([x, z]) = scene {
+                // A unit shot looks through its unit; otherwise the RTS view looks at
+                // an RTS shot's unit or the scene.
+                let camera = self.play.scene_camera();
+                let unit_shot = camera.is_some_and(|c| cinematic::mode(c).is_some());
+                if let (Some(scene), false) = (scene, unit_shot) {
+                    let [x, z] = cinematic::focus(scene, camera, self.scene_targets.as_ref());
                     self.camera.look_at(x, z);
                 }
             }
@@ -620,9 +714,7 @@ impl InMatch {
         // The newest view and the interpolated scene.
         let live_started = Instant::now();
         // The first-person camera does not draw its own body (old `hideCameraBody`).
-        self.live.hidden_entity = (self.play.camera_mode == CameraMode::FirstPerson)
-            .then(|| self.play.selection.focus())
-            .flatten();
+        self.live.hidden_entity = self.first_person_body();
         self.live.poll(self.sim.mailbox());
         self.live.frame(host.renderer, gpu, &self.loaded.pack, now);
         let newest = self.live.newest().cloned();
@@ -642,9 +734,12 @@ impl InMatch {
             }
             self.last_tick = Some(s.tick());
             self.hud.colonies = s.colonies.clone();
+            self.scene_targets = s.scene;
         }
         let live_ms = live_started.elapsed().as_secs_f32() * 1000.0;
-        let rts_view = view::frame(&mut self.camera, aspect, &self.loaded.scene);
+        let rts_view = self
+            .lens
+            .apply(view::frame(&mut self.camera, aspect, &self.loaded.scene));
         let camera_view = self.close_view(aspect, dt_ms / 1000.0).unwrap_or_else(|| {
             self.follow.shown(&rts_view);
             rts_view
@@ -851,16 +946,27 @@ impl InMatch {
         let aspect = host.size[0] as f32 / host.size[1].max(1) as f32;
         let camera_view = match self.camera_view {
             Some(v) => v,
-            None => view::frame(&mut self.camera, aspect, &self.loaded.scene),
+            None => self
+                .lens
+                .apply(view::frame(&mut self.camera, aspect, &self.loaded.scene)),
         };
         let seconds = self.started.elapsed().as_secs_f32();
         host.renderer.ui_mut(gpu).set_target(Some(ui_view.clone()));
         if let (Some(debug), Some(window)) = (&mut self.debug, host.window) {
-            let (quality, wants_ai) = debug.run(window, gpu, &self.stats, host.renderer.quality());
-            if let Some(q) = quality {
+            let changes = debug.run(
+                window,
+                gpu,
+                &self.stats,
+                host.renderer.quality(),
+                self.tools,
+            );
+            if let Some(q) = changes.quality {
                 host.renderer.set_quality(gpu, q);
             }
-            self.sim.want_ai_summaries(wants_ai);
+            self.sim.want_ai_summaries(changes.wants_ai);
+            if let Some(tools) = changes.tools {
+                self.set_tools(tools);
+            }
         }
         let debug = &self.debug;
         let paint = |encoder: &mut wgpu::CommandEncoder| {

@@ -40,6 +40,9 @@ mlua = { version = "0.12", features = ["lua54", "vendored"] }
 pollster = "1"
 postcard = { version = "1", default-features = false, features = ["use-std"] }
 rayon = "1"
+# Native open and save dialogs (save export and import): AppKit on macOS, the common
+# dialogs on Windows.
+rfd = "0.17"
 reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider", "json"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 rustls-platform-verifier = "0.7"

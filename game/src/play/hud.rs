@@ -173,7 +173,7 @@ pub struct Hud {
     deliveries: BTreeMap<u32, Vec<(Owner, String, u32)>>,
     first_tick: Option<u32>,
     /// Colonies for the observer panel (from the simulation thread).
-    pub colonies: Option<std::sync::Arc<Vec<(u8, canopy_sim::economy::view::Colony)>>>,
+    pub colonies: Option<std::sync::Arc<Vec<crate::sim::ColonyStats>>>,
 }
 
 impl Default for Hud {
@@ -470,10 +470,13 @@ impl Hud {
             let key = self.image(ui, k, d.icon.as_str());
             ui.set_image(n.portrait, key);
         }
+        // Old portrait tip: name, the definition's price and supply, description.
+        let costs = self.cost_rows(ui, k, &card::definition_costs(k, d));
         ui.set_tooltip(
             n.portrait,
             Some(Tooltip {
                 title: d.name.clone(),
+                costs,
                 body: d.description.clone(),
                 ..Tooltip::default()
             }),
@@ -1055,9 +1058,9 @@ impl Hud {
         );
     }
 
-    fn tooltip(&mut self, ui: &mut Ui, k: &Knowledge, c: &Command) -> Tooltip {
-        let costs = c
-            .costs
+    /// Tooltip cost rows: an icon and the amount, mana as text.
+    fn cost_rows(&mut self, ui: &mut Ui, k: &Knowledge, costs: &[card::CostView]) -> Vec<Cost> {
+        costs
             .iter()
             .map(|cost| {
                 if cost.icon.as_str() == MANA {
@@ -1072,7 +1075,11 @@ impl Hud {
                     }
                 }
             })
-            .collect();
+            .collect()
+    }
+
+    fn tooltip(&mut self, ui: &mut Ui, k: &Knowledge, c: &Command) -> Tooltip {
+        let costs = self.cost_rows(ui, k, &c.costs);
         let mut body = vec![escape(&c.description)];
         if let Some(r) = &c.reason {
             body.push(format!("[color=#ff8a65]{}[/color]", escape(r)));
@@ -1197,28 +1204,29 @@ impl Hud {
             .min(INCOME_TICKS);
         let seconds = sampled as f32 * 0.025;
         let colonies = self.colonies.clone().unwrap_or_default();
-        let currencies: Vec<(String, String)> = colonies
+        // One column per currency (old `observerResources`, in display order).
+        let currencies: Vec<String> = colonies
             .first()
-            .map(|(_, c)| {
-                c.goods
-                    .iter()
-                    .map(|g| (g.item.to_string(), k.name_of(g.item.as_str())))
-                    .collect()
-            })
+            .map(|c| c.colony.goods.iter().map(|g| g.item.to_string()).collect())
             .unwrap_or_default();
         if let Some(goods) = ui.find_in(n.observer_columns, "goods") {
-            let names: Vec<&str> = currencies.iter().map(|(_, name)| name.as_str()).collect();
-            ui.set_text(goods, &names.join(" · "));
+            ui.set_count(goods, currencies.len());
+            for (i, item) in currencies.iter().enumerate() {
+                if let Some(cell) = ui.child(goods, i) {
+                    ui.set_text(cell, &k.name_of(item));
+                }
+            }
         }
         ui.set_count(n.observer_rows, colonies.len());
-        for (i, (player, colony)) in colonies.iter().enumerate() {
+        for (i, stats) in colonies.iter().enumerate() {
             let Some(row) = ui.child(n.observer_rows, i) else {
                 continue;
             };
-            let owner = Owner::Player(*player);
+            let player = stats.player;
+            let owner = Owner::Player(player);
             let color = self
                 .palette
-                .get(usize::from(*player))
+                .get(usize::from(player))
                 .copied()
                 .unwrap_or([200, 200, 200]);
             if let Some(bar) = ui.find_in(row, "color") {
@@ -1229,12 +1237,13 @@ impl Hud {
                 .outcome
                 .as_ref()
                 .is_some_and(|o| o.defeated.contains(&owner));
+            ui.set_opacity(row, if defeated { 0.58 } else { 1.0 });
             if let Some(cell) = ui.find_in(row, "player") {
                 // Old row: the slot badge, the name and "Player N · controller".
                 let (name, ai) = self
                     .players
                     .iter()
-                    .find(|(slot, ..)| slot == player)
+                    .find(|(slot, ..)| *slot == player)
                     .map_or((format!("Player {}", player + 1), true), |(_, n, ai)| {
                         (n.clone(), *ai)
                     });
@@ -1248,7 +1257,7 @@ impl Hud {
                 ui.set_text(
                     cell,
                     &format!(
-                        "[color=#{:02x}{:02x}{:02x}][b]{}[/b][/color]  {}\n[color=#93afb5]Player {} · {role}[/color]",
+                        "[color=#{:02x}{:02x}{:02x}][b]{}[/b][/color]  {}\n[color=#8c9d9b]Player {} · {role}[/color]",
                         color[0],
                         color[1],
                         color[2],
@@ -1257,63 +1266,133 @@ impl Hud {
                         player + 1,
                     ),
                 );
+                ui.set_tooltip(
+                    cell,
+                    Some(Tooltip {
+                        title: name,
+                        ..Tooltip::default()
+                    }),
+                );
             }
-            if let Some(cell) = ui.find_in(row, "goods") {
-                let text: Vec<String> = colony
-                    .goods
-                    .iter()
-                    .map(|g| {
-                        let income: u32 = self
-                            .deliveries
-                            .values()
-                            .flatten()
-                            .filter(|(o, item, _)| *o == owner && item == g.item.as_str())
-                            .map(|(_, _, a)| a)
-                            .sum();
-                        let per_minute = if seconds >= 1.0 {
-                            (income as f32 * 60.0 / seconds).round() as u32
-                        } else {
-                            0
-                        };
-                        format!("{} [color=#93afb5]+{per_minute}/min[/color]", g.stored)
-                    })
-                    .collect();
-                ui.set_text(cell, &text.join("   "));
+            if let Some(goods) = ui.find_in(row, "goods") {
+                ui.set_count(goods, stats.colony.goods.len());
+                for (j, g) in stats.colony.goods.iter().enumerate() {
+                    let Some(cell) = ui.child(goods, j) else {
+                        continue;
+                    };
+                    let income: u32 = self
+                        .deliveries
+                        .values()
+                        .flatten()
+                        .filter(|(o, item, _)| *o == owner && item == g.item.as_str())
+                        .map(|(_, _, a)| a)
+                        .sum();
+                    let per_minute = if seconds >= 1.0 {
+                        (income as f32 * 60.0 / seconds).round() as u32
+                    } else {
+                        0
+                    };
+                    let d = k.content.definition(g.item.as_str());
+                    if let (Some(icon), Some(d)) = (ui.find_in(cell, "icon"), d) {
+                        let key = self.image(ui, k, d.icon.as_str());
+                        ui.set_image(icon, key);
+                    }
+                    if let Some(amount) = ui.find_in(cell, "amount") {
+                        ui.set_text(amount, &thousands(g.stored));
+                    }
+                    if let Some(label) = ui.find_in(cell, "income") {
+                        ui.set_text(label, &format!("+{}/min", thousands(per_minute)));
+                    }
+                    ui.set_tooltip(
+                        cell,
+                        Some(Tooltip {
+                            title: d.map_or_else(|| g.item.to_string(), |d| d.name.clone()),
+                            body: format!(
+                                "{} {} in the colony account. +{per_minute}/min delivered; spending is excluded from income.",
+                                d.map_or("", |d| d.description.as_str()),
+                                g.stored
+                            )
+                            .trim_start()
+                            .to_owned(),
+                            ..Tooltip::default()
+                        }),
+                    );
+                }
             }
-            let units = k
-                .view
-                .entities
-                .iter()
-                .filter(|e| e.public.owner == owner && k.is_unit(e) && k.alive(e))
-                .count();
             if let Some(cell) = ui.find_in(row, "units") {
-                ui.set_text(cell, &units.to_string());
+                ui.set_text(cell, &thousands(stats.units));
+                ui.set_tooltip(
+                    cell,
+                    Some(Tooltip {
+                        title: "Total units".into(),
+                        body: format!(
+                            "{} living units, including {} workers and {} army units. Workers inside buildings are included; fallen heroes are excluded.",
+                            stats.units, stats.workers, stats.army
+                        ),
+                        ..Tooltip::default()
+                    }),
+                );
             }
             if let Some(cell) = ui.find_in(row, "workers") {
-                ui.set_text(cell, &colony.population.workers.to_string());
+                let s = &stats.colony.supply;
+                ui.set_text(cell, &thousands(stats.workers));
+                ui.set_tooltip(
+                    cell,
+                    Some(Tooltip {
+                        title: "Total workers".into(),
+                        body: format!(
+                            "{} available workers. {}/{} supply ({} used, {} reserved).",
+                            stats.colony.population.available,
+                            s.committed,
+                            s.capacity,
+                            s.used,
+                            s.reserved
+                        ),
+                        ..Tooltip::default()
+                    }),
+                );
             }
-            // Every hero (old: one entry each, fallen ones marked).
-            let heroes: Vec<String> = k
-                .view
-                .entities
-                .iter()
-                .filter(|e| e.public.owner == owner && k.def(e).is_hero())
-                .map(|h| {
-                    let level = h.combat.as_ref().map_or(1, |c| c.stats.level);
-                    if k.view.battle.fallen.contains(&h.id()) {
-                        format!("Lv. {level} Fallen")
-                    } else {
-                        format!("Lv. {level}")
+            // Every hero: icon, level and, unless alive, "Fallen" or "Reviving".
+            if let Some(list) = ui.find_in(row, "heroes") {
+                if let Some(none) = ui.find_in(list, "none") {
+                    ui.set_visible(none, stats.heroes.is_empty());
+                }
+                ui.set_count(list, stats.heroes.len());
+                for (j, hero) in stats.heroes.iter().enumerate() {
+                    let Some(cell) = ui.child(list, j) else {
+                        continue;
+                    };
+                    let d = k.catalog.get(hero.definition);
+                    if let Some(icon) = ui.find_in(cell, "icon") {
+                        let key = self.image(ui, k, d.icon.as_str());
+                        ui.set_image(icon, key);
                     }
-                })
-                .collect();
-            if let Some(cell) = ui.find_in(row, "hero") {
-                let text = if heroes.is_empty() {
-                    "—".to_owned()
-                } else {
-                    heroes.join("\n")
-                };
-                ui.set_text(cell, &text);
+                    if let Some(level) = ui.find_in(cell, "level") {
+                        ui.set_text(level, &format!("Lv. {}", hero.level));
+                    }
+                    let status = match hero.status {
+                        crate::sim::HeroStatus::Alive => "",
+                        crate::sim::HeroStatus::Fallen => "Fallen",
+                        crate::sim::HeroStatus::Reviving => "Reviving",
+                    };
+                    if let Some(label) = ui.find_in(cell, "status") {
+                        ui.set_text(label, status);
+                        ui.set_visible(label, !status.is_empty());
+                    }
+                    ui.set_enabled(cell, hero.status == crate::sim::HeroStatus::Alive);
+                    ui.set_tooltip(
+                        cell,
+                        Some(Tooltip {
+                            title: format!(
+                                "{} · Level {} · {}",
+                                d.name,
+                                hero.level,
+                                hero.status.name()
+                            ),
+                            ..Tooltip::default()
+                        }),
+                    );
+                }
             }
         }
         ui.set_text(
@@ -1323,6 +1402,14 @@ impl Hud {
             } else {
                 format!("Income / min · {}s of game time sampled", seconds.floor())
             },
+        );
+        ui.set_tooltip(
+            n.observer_footer,
+            Some(Tooltip {
+                title: "Income".into(),
+                body: "Gross resources delivered to completed drop-offs, normalized to one game minute. Starting stock, spending and refunds do not count. The income window restarts when loading a save.".into(),
+                ..Tooltip::default()
+            }),
         );
     }
 
@@ -1592,4 +1679,17 @@ fn trim(v: f64) -> String {
     } else {
         format!("{r:.1}")
     }
+}
+
+/// A count with thousands separators (old `toLocaleString("en-US")`).
+fn thousands(value: u32) -> String {
+    let digits = value.to_string();
+    let mut out = String::with_capacity(digits.len() + digits.len() / 3);
+    for (i, c) in digits.chars().enumerate() {
+        if i > 0 && (digits.len() - i).is_multiple_of(3) {
+            out.push(',');
+        }
+        out.push(c);
+    }
+    out
 }

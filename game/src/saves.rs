@@ -16,6 +16,12 @@
 //! digest of the content files and of the map file ([`MatchIdentity`]), checked before
 //! the body is read. Saves are unlimited (as in the old game); one `autosave` slot is
 //! overwritten when the window closes during a local match.
+//!
+//! **Export and import** (old `Export`, `Import save…`): a save leaves the library as one
+//! `.utcsave` file, gzip over JSON of its header and body together ([`Exported`]), so a
+//! player shares a single file. Importing checks the file like loading does (format,
+//! the map and content identity, the mode when importing from a match) and adds it to
+//! the library under the file's name with a fresh id.
 
 use crate::settings::write_atomic;
 use anyhow::{Context, Result, bail};
@@ -33,6 +39,10 @@ pub const FOLDER: &str = "saves";
 pub const AUTOSAVE: &str = "autosave";
 /// Longest save name (old limit).
 pub const MAX_NAME: usize = 100;
+/// Extension of an exported save (old `.utcsave`).
+pub const EXPORT_EXTENSION: &str = "utcsave";
+/// The exported file's `format` value.
+pub const EXPORT_FORMAT: &str = "canopy-save-export";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -82,6 +92,16 @@ pub struct SaveBody {
     pub groups: Option<Vec<Vec<u32>>>,
 }
 
+/// An exported save: header and body in one file.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Exported {
+    pub format: String,
+    pub version: u32,
+    pub meta: SaveMeta,
+    pub body: SaveBody,
+}
+
 /// A save about to be written.
 pub struct NewSave<'a> {
     pub name: &'a str,
@@ -106,6 +126,17 @@ pub enum Mismatch {
     MapRevision,
     #[error("this save was made with other game content")]
     Content,
+    #[error("only {0} saves can be loaded here")]
+    Mode(&'static str),
+}
+
+impl Mode {
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Skirmish => "skirmish",
+            Self::Campaign => "campaign",
+        }
+    }
 }
 
 impl MatchIdentity {
@@ -259,6 +290,91 @@ impl SaveLibrary {
         Ok((meta, body))
     }
 
+    /// The file name an export of `meta` is offered under (old: `<mode>-<name>.utcsave`
+    /// with everything but letters, digits and dashes replaced by dashes).
+    pub fn export_name(meta: &SaveMeta) -> String {
+        let name: String = meta
+            .name
+            .chars()
+            .map(|c| {
+                if c.is_ascii_alphanumeric() || c == '-' {
+                    c
+                } else {
+                    '-'
+                }
+            })
+            .collect();
+        format!("{}-{name}.{EXPORT_EXTENSION}", meta.mode.name())
+    }
+
+    /// Writes save `id` to `path` as one exported file.
+    pub fn export(&self, id: &str, path: &Path) -> Result<SaveMeta> {
+        let (meta, body) = self.read(id, None)?;
+        let exported = Exported {
+            format: EXPORT_FORMAT.into(),
+            version: VERSION,
+            meta,
+            body,
+        };
+        let mut gz = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::fast());
+        serde_json::to_writer(&mut gz, &exported)?;
+        write_atomic(path, &gz.finish()?)
+            .with_context(|| format!("cannot write {}", path.display()))?;
+        Ok(exported.meta)
+    }
+
+    /// Adds the exported save at `path` to the library, named after the file. `here`
+    /// gives this game's identity of the save's map (an error when the map is not in
+    /// this game); `mode` restricts the save's mode (importing from a match's menu).
+    pub fn import(
+        &self,
+        path: &Path,
+        mode: Option<Mode>,
+        here: impl FnOnce(&MatchIdentity) -> Result<MatchIdentity>,
+    ) -> Result<SaveMeta> {
+        let file =
+            std::fs::File::open(path).with_context(|| format!("cannot read {}", path.display()))?;
+        let mut json = Vec::new();
+        flate2::read::GzDecoder::new(file)
+            .read_to_end(&mut json)
+            .context("the file is not an exported save")?;
+        let exported: Exported =
+            serde_json::from_slice(&json).context("the file is not an exported save")?;
+        if exported.format != EXPORT_FORMAT
+            || exported.version != VERSION
+            || exported.meta.format != FORMAT
+            || exported.meta.version != VERSION
+        {
+            bail!(
+                "unsupported save format {} {}",
+                exported.format,
+                exported.version
+            );
+        }
+        let meta = &exported.meta;
+        if let Some(mode) = mode
+            && meta.mode != mode
+        {
+            return Err(Mismatch::Mode(mode.name()).into());
+        }
+        meta.identity.check(&here(&meta.identity)?)?;
+        let name = path
+            .file_stem()
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        self.write(
+            &NewSave {
+                name: &name,
+                mode: meta.mode,
+                map_name: &meta.map_name,
+                identity: &meta.identity,
+                player: meta.player,
+                body: &exported.body,
+            },
+            None,
+        )
+    }
+
     pub fn delete(&self, id: &str) -> Result<()> {
         for path in [self.meta_path(id), self.body_path(id)] {
             match std::fs::remove_file(&path) {
@@ -404,6 +520,78 @@ mod tests {
         // A damaged body is an error, not a panic.
         std::fs::write(library.body_path(&second.id), b"garbage").unwrap();
         assert!(library.read(&second.id, None).is_err());
+    }
+
+    #[test]
+    fn an_exported_save_imports_where_its_map_and_content_match() {
+        let user = crate::settings::temp_folder("saves-export");
+        let library = SaveLibrary::new(&user);
+        let map = ai_fixture::skirmish(vec![], vec![]);
+        let mut world = ai_fixture::world(&map, true);
+        ai_fixture::run(&mut world, 50);
+        let body = SaveBody {
+            world: world.save(),
+            camera: Some([1.0, 2.0, 1.0, 0.0]),
+            groups: None,
+        };
+        let meta = library
+            .write(
+                &NewSave {
+                    name: "Ridge: hold!",
+                    mode: Mode::Campaign,
+                    map_name: "Fixture",
+                    identity: &identity(),
+                    player: Some(1),
+                    body: &body,
+                },
+                None,
+            )
+            .unwrap();
+        assert_eq!(
+            SaveLibrary::export_name(&meta),
+            "campaign-Ridge--hold-.utcsave"
+        );
+        let file = user.join("shared").join("Ridge hold.utcsave");
+        std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+        library.export(&meta.id, &file).unwrap();
+
+        // Another player's library takes it under the file's name, checked like a load.
+        let other = SaveLibrary::new(&user.join("other"));
+        let here = |_: &MatchIdentity| Ok(identity());
+        let imported = other.import(&file, None, here).unwrap();
+        assert_eq!(imported.name, "Ridge hold");
+        assert_eq!(imported.mode, Mode::Campaign);
+        assert_eq!(imported.identity, identity());
+        assert_eq!(imported.player, Some(1));
+        let (_, read) = other.read(&imported.id, Some(&identity())).unwrap();
+        assert_eq!(read, body);
+
+        // Refused: another mode from a match, another revision of the map, a missing
+        // map, a file that is not a save.
+        let error = other.import(&file, Some(Mode::Skirmish), here).unwrap_err();
+        assert_eq!(
+            error.downcast_ref::<Mismatch>(),
+            Some(&Mismatch::Mode("skirmish"))
+        );
+        let edited = |_: &MatchIdentity| {
+            let mut i = identity();
+            i.map_digest = digest(b"edited");
+            Ok(i)
+        };
+        let error = other.import(&file, None, edited).unwrap_err();
+        assert_eq!(
+            error.downcast_ref::<Mismatch>(),
+            Some(&Mismatch::MapRevision)
+        );
+        assert!(
+            other
+                .import(&file, None, |_| anyhow::bail!("no such map"))
+                .is_err()
+        );
+        let junk = user.join("junk.utcsave");
+        std::fs::write(&junk, b"not a save").unwrap();
+        assert!(other.import(&junk, None, here).is_err());
+        assert_eq!(other.list().len(), 1);
     }
 
     #[test]

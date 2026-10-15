@@ -83,6 +83,12 @@ pub struct Private {
     pub queued: Vec<crate::orders::Order>,
     /// Job, workplace, production, research, upgrade and revival state.
     pub economy: Box<PrivateWork>,
+    /// A unit held inside another entity (a training building, a lookout, a cage).
+    pub contained: bool,
+    /// A unit waiting to be placed back on the map after leaving its container.
+    pub releasing: bool,
+    /// A unit under a stun.
+    pub stunned: bool,
 }
 
 /// The viewer's fog of war.
@@ -121,6 +127,19 @@ impl FogView {
 
     /// The nodes that changed since `revision`, possibly repeated, in order; `None` when
     /// that revision is too old to patch from (upload everything).
+    /// The same fog with other `cells` under another `revision` and without change
+    /// history, so a consumer that last saw any other revision reloads it whole. For
+    /// presentation only (a mission scene's revealed set); the simulation never sees it.
+    pub fn restaged(&self, cells: Vec<u8>, revision: u32) -> Self {
+        Self {
+            size: self.size,
+            revision,
+            cells: Arc::new(cells),
+            deck_cells: self.deck_cells.clone(),
+            history: Arc::from(Vec::new()),
+        }
+    }
+
     pub fn changes_since(&self, revision: u32) -> Option<Vec<u32>> {
         if revision == self.revision {
             return Some(Vec::new());
@@ -381,6 +400,9 @@ fn private(
         economy: Box::new(crate::economy::view::private(
             state, catalog, economy, works, entity,
         )),
+        contained: entity.unit.as_ref().is_some_and(|u| u.contained.is_some()),
+        releasing: entity.unit.as_ref().is_some_and(|u| u.release.is_some()),
+        stunned: entity.unit.is_some() && crate::abilities::statuses::stunned(catalog, entity),
     }
 }
 

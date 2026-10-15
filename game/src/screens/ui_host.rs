@@ -131,3 +131,30 @@ fn gpu_texture_is_srgb(format: canopy_assets::TextureFormat, bc: bool) -> bool {
     };
     stored.is_srgb()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The shipped theme and layouts read and compile (styles, templates, tooltips), and
+    /// every screen lays out.
+    #[test]
+    fn the_shipped_interface_compiles() {
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../config/ui");
+        let config = UiConfig::load(&dir).expect("config/ui reads");
+        let mut ui = Ui::new(
+            config,
+            FontSources {
+                bundled: Vec::new(),
+                system: false,
+            },
+        )
+        .expect("config/ui compiles");
+        ui.set_viewport(1600, 900, 1.0);
+        for screen in ["main-menu", "saves", "hud", "loading", "mission-hud"] {
+            ui.show(screen, true);
+            ui.frame(0.0);
+            assert!(ui.find(screen).is_some(), "{screen}");
+        }
+    }
+}

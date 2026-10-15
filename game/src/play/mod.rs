@@ -13,6 +13,7 @@
 
 pub mod capture;
 pub mod card;
+pub mod cinematic;
 pub mod debug;
 pub mod follow;
 pub mod hud;
@@ -302,6 +303,19 @@ impl Play {
             None if line => Some(None),
             None => None,
         }
+    }
+
+    /// The camera shot of the scene a cinematic plays, if it has one.
+    pub fn scene_camera(&self) -> Option<&canopy_sim::mission::state::Camera> {
+        self.cinematic()?;
+        self.know
+            .view
+            .mission
+            .as_ref()?
+            .scene
+            .as_ref()?
+            .camera
+            .as_ref()
     }
 
     /// Whether the pointer is over the HUD (no world hover there).
@@ -1229,7 +1243,8 @@ impl Play {
         }
     }
 
-    /// Own workers with nothing to do (old idle rule).
+    /// Own workers with nothing to do (old idle rule: no order, queue, job, workplace or
+    /// pending move, no cargo, not held, not being released, not stunned).
     pub fn idle_workers(&self) -> Vec<u32> {
         let k = &self.know;
         k.view
@@ -1243,6 +1258,9 @@ impl Play {
                         && p.economy.job.is_none()
                         && p.economy.employment.is_none()
                         && p.economy.pending_move.is_none()
+                        && !p.contained
+                        && !p.releasing
+                        && !p.stunned
                 }) && e.work.as_ref().is_none_or(|w| w.cargo.is_none())
             })
             .map(|e| e.id().0)

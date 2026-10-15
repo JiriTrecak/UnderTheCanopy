@@ -82,37 +82,89 @@ impl Subject {
     }
 }
 
-/// A close pose: eye, aim, the followed focus and the vertical field of view.
+/// A close pose: eye, aim, the followed focus, the vertical field of view and how long
+/// a change to it blends.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Pose {
     pub eye: Vec3,
     pub target: Vec3,
     pub focus: Vec3,
     pub fov_degrees: f32,
+    pub transition_seconds: f32,
+}
+
+/// What a mission's camera shot overrides (old `UnitShot`): boom length, eye height,
+/// field of view, all in world units and degrees, and the blend time.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Shot {
+    pub distance: Option<f32>,
+    pub height: Option<f32>,
+    pub fov_degrees: Option<f32>,
+    pub transition_seconds: f32,
+}
+
+impl Default for Shot {
+    /// The player's unit camera: the unit's own anchor, the 350 ms blend.
+    fn default() -> Self {
+        Self {
+            distance: None,
+            height: None,
+            fov_degrees: None,
+            transition_seconds: TRANSITION_SECONDS,
+        }
+    }
+}
+
+/// Which pose a view blends to: a new key starts a blend (old `ClosePose.key`: the mode,
+/// the unit, the unit looked at and the shot's lens).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Key {
+    pub mode: CameraMode,
+    pub entity: u32,
+    pub look_at: Option<u32>,
+    pub lens: [Option<f32>; 3],
+}
+
+impl Key {
+    /// The player's unit camera on `entity`.
+    pub fn unit(mode: CameraMode, entity: u32) -> Self {
+        Self {
+            mode,
+            entity,
+            look_at: None,
+            lens: [None; 3],
+        }
+    }
 }
 
 /// The close pose of `mode` (old `unitCameraPose`); `None` for the RTS view.
+#[cfg(test)]
 pub fn pose(subject: &Subject, mode: CameraMode) -> Option<Pose> {
+    shot_pose(subject, mode, &Shot::default(), None)
+}
+
+/// The close pose of `mode` with a shot's overrides, aimed at `look_at` (the eye point
+/// of the unit looked at) if given (old `unitCameraPose`).
+pub fn shot_pose(
+    subject: &Subject,
+    mode: CameraMode,
+    shot: &Shot,
+    look_at: Option<Vec3>,
+) -> Option<Pose> {
     let forward = Vec3::new(subject.yaw.sin(), 0.0, subject.yaw.cos());
-    let focus = subject.position + Vec3::Y * subject.eye_height;
-    let (eye, mut target, fov) = match mode {
+    let focus = subject.position + Vec3::Y * shot.height.unwrap_or(subject.eye_height);
+    let first = mode == CameraMode::FirstPerson;
+    let eye = match mode {
         CameraMode::Rts => return None,
-        CameraMode::FirstPerson => (
-            focus + forward * subject.eye_forward,
-            focus + forward * 8.0,
-            68.0,
-        ),
+        CameraMode::FirstPerson => focus + forward * subject.eye_forward,
         CameraMode::ThirdPerson => {
-            let d = subject.distance;
-            (
-                focus - forward * d + Vec3::Y * (d * 0.4),
-                focus + forward * 2.0,
-                55.0,
-            )
+            let d = shot.distance.unwrap_or(subject.distance);
+            focus - forward * d + Vec3::Y * (d * 0.4)
         }
     };
-    if mode == CameraMode::ThirdPerson {
-        // Shows more of the canopy without moving the boom.
+    let mut target = look_at.unwrap_or(focus + forward * if first { 8.0 } else { 2.0 });
+    if !first && look_at.is_none() {
+        // Shows more of the canopy without moving the boom or changing authored shots.
         let horizontal = (target.x - eye.x).hypot(target.z - eye.z);
         let pitch = (target.y - eye.y).atan2(horizontal) + THIRD_PERSON_LOOK_UP;
         target.y = eye.y + pitch.tan() * horizontal;
@@ -124,7 +176,8 @@ pub fn pose(subject: &Subject, mode: CameraMode) -> Option<Pose> {
         eye,
         target,
         focus,
-        fov_degrees: fov,
+        fov_degrees: shot.fov_degrees.unwrap_or(if first { 68.0 } else { 55.0 }),
+        transition_seconds: shot.transition_seconds,
     })
 }
 
@@ -166,9 +219,19 @@ pub fn subject(
     know: &super::know::Knowledge,
     id: u32,
 ) -> Option<Subject> {
+    subject_of(live, &know.content, know.def_of(id)?, id)
+}
+
+/// The subject of a close camera: entity `id` of definition `d` as the live scene draws
+/// it (old `cameraSubject`).
+pub fn subject_of(
+    live: &crate::live::LiveScene,
+    content: &canopy_content::Content,
+    d: &canopy_content::game::Definition,
+    id: u32,
+) -> Option<Subject> {
     let transform = live.entity_transform(id)?;
-    let d = know.def_of(id)?;
-    let asset = know.content.asset(d.asset.as_str());
+    let asset = content.asset(d.asset.as_str());
     Some(Subject::of(
         transform,
         asset.and_then(|a| a.camera_anchor.as_ref()),
@@ -183,7 +246,18 @@ pub fn ground_pose(
     mode: CameraMode,
     ground: &dyn canopy_render::camera::Ground,
 ) -> Option<Pose> {
-    let mut pose = pose(subject, mode)?;
+    ground_shot_pose(subject, mode, &Shot::default(), None, ground)
+}
+
+/// [`shot_pose`] with the third-person boom kept in front of the ground.
+pub fn ground_shot_pose(
+    subject: &Subject,
+    mode: CameraMode,
+    shot: &Shot,
+    look_at: Option<Vec3>,
+    ground: &dyn canopy_render::camera::Ground,
+) -> Option<Pose> {
+    let mut pose = shot_pose(subject, mode, shot, look_at)?;
     if mode == CameraMode::ThirdPerson {
         clear_boom(&mut pose, |x, z| ground.height(x, z));
     }
@@ -193,8 +267,8 @@ pub fn ground_pose(
 /// What the close camera shows over time.
 #[derive(Debug, Clone, Default)]
 pub struct Follow {
-    /// The pose being blended to: mode and entity.
-    key: Option<(CameraMode, u32)>,
+    /// The pose being blended to.
+    key: Option<Key>,
     from: Option<(Vec3, Quat, f32)>,
     elapsed: f32,
     /// The last view shown (eye, rotation, vertical fov in radians).
@@ -208,14 +282,8 @@ impl Follow {
         self.last = Some((view.eye, look_rotation(view.eye, view.target), view.fov_y));
     }
 
-    /// The close view for `pose` (keyed by mode and entity) after `dt` seconds.
-    pub fn view(
-        &mut self,
-        key: (CameraMode, u32),
-        pose: &Pose,
-        dt: f32,
-        aspect: f32,
-    ) -> CameraView {
+    /// The close view for `pose` (keyed by `key`) after `dt` seconds.
+    pub fn view(&mut self, key: Key, pose: &Pose, dt: f32, aspect: f32) -> CameraView {
         if self.key != Some(key) {
             self.key = Some(key);
             self.from = self.last;
@@ -224,7 +292,11 @@ impl Follow {
         self.elapsed += dt.max(0.0);
         let to_rotation = look_rotation(pose.eye, pose.target);
         let to_fov = pose.fov_degrees.to_radians();
-        let t = (self.elapsed / TRANSITION_SECONDS).min(1.0);
+        let t = if pose.transition_seconds > 0.0 {
+            (self.elapsed / pose.transition_seconds).min(1.0)
+        } else {
+            1.0
+        };
         let blend = t * t * (3.0 - 2.0 * t);
         let (eye, rotation, fov) = match self.from {
             Some((eye, rotation, fov)) if blend < 1.0 => (
@@ -301,11 +373,12 @@ mod tests {
             500.0,
         );
         f.shown(&rts);
-        let start = f.view((CameraMode::FirstPerson, 1), &p, 0.0, 1.6);
+        let key = Key::unit(CameraMode::FirstPerson, 1);
+        let start = f.view(key, &p, 0.0, 1.6);
         assert!((start.eye - rts.eye).length() < 1e-3);
-        let mid = f.view((CameraMode::FirstPerson, 1), &p, 0.175, 1.6);
+        let mid = f.view(key, &p, 0.175, 1.6);
         assert!(mid.eye.distance(p.eye) < rts.eye.distance(p.eye));
-        let end = f.view((CameraMode::FirstPerson, 1), &p, 1.0, 1.6);
+        let end = f.view(key, &p, 1.0, 1.6);
         assert!((end.eye - p.eye).length() < 1e-4);
         assert!((end.fov_y - 68f32.to_radians()).abs() < 1e-5);
     }

@@ -87,6 +87,7 @@ pub fn run(
             &mut game.session,
             &mut game.presenter,
             seat,
+            None,
         )
         .with_context(|| format!("the local session stopped at tick {}", game.world.tick()))?;
         *previous = Some(std::mem::replace(newest, advanced.presentation));
@@ -126,13 +127,13 @@ pub fn run(
     }
     let aspect = size[0] as f32 / size[1] as f32;
     let terrain = loaded.scene.terrain();
-    let know = |view: &Arc<canopy_sim::view::View>, world: &canopy_sim::World| {
+    let know = |view: &Arc<canopy_sim::view::View>| {
         let mut k = Knowledge::new(content.clone(), catalog.clone(), view.clone(), me);
-        k.held = Arc::new(sim::held_units(world, view));
+        k.held = Arc::new(sim::held_units(view));
         k
     };
     let mut play = Play::new(
-        know(&view0, &game.world),
+        know(&view0),
         game.world.terrain().clone(),
         Box::new(commands),
     );
@@ -144,7 +145,6 @@ pub fn run(
                    newest: &canopy_scene::live::Presentation,
                    previous: Option<&canopy_scene::live::Presentation>,
                    view: &Arc<canopy_sim::view::View>,
-                   world: &canopy_sim::World,
                    now: Duration|
      -> Screen {
         live.show(renderer, &gpu, &loaded.pack, previous, newest, 1.0);
@@ -154,7 +154,7 @@ pub fn run(
             size: [size[0] as f32, size[1] as f32],
             scale: 1.0,
         };
-        let k = know(view, world);
+        let k = know(view);
         let bodies: Vec<Body> = live
             .bodies()
             .iter()
@@ -177,7 +177,6 @@ pub fn run(
         &newest,
         previous.as_ref(),
         &view0,
-        &game.world,
         now,
     );
     let mut mods = Mods::default();
@@ -339,7 +338,6 @@ pub fn run(
             &newest,
             previous.as_ref(),
             &view0,
-            &game.world,
             now,
         );
         for e in play.take_events() {
@@ -353,9 +351,49 @@ pub fn run(
                     &newest,
                     previous.as_ref(),
                     &view0,
-                    &game.world,
                     now,
                 );
+            }
+        }
+    }
+
+    // A mission cinematic looks as the window would once its blends end: a scene's unit
+    // shot through its unit, else at the scene through the narrower lens.
+    if let Some(scene) = play.cinematic() {
+        let targets = sim::scene_targets(&game.world, &view0);
+        let shot = play.scene_camera().cloned();
+        let subject = |t: &sim::SceneTarget| {
+            super::follow::subject_of(&live, &content, catalog.get(t.definition), t.id)
+        };
+        let unit = shot
+            .as_ref()
+            .zip(targets.as_ref())
+            .and_then(|(camera, targets)| {
+                super::cinematic::pose(camera, targets, subject, terrain)
+            });
+        let aspect = size[0] as f32 / size[1].max(1) as f32;
+        match unit {
+            Some((key, pose)) => {
+                if key.mode == super::follow::CameraMode::FirstPerson {
+                    live.hidden_entity = Some(key.entity);
+                    live.show(
+                        &mut renderer,
+                        &gpu,
+                        &loaded.pack,
+                        previous.as_ref(),
+                        &newest,
+                        1.0,
+                    );
+                }
+                screen.camera = super::follow::Follow::default().view(key, &pose, 10.0, aspect);
+            }
+            None => {
+                if let Some(scene) = scene {
+                    let [x, z] = super::cinematic::focus(scene, shot.as_ref(), targets.as_ref());
+                    camera.look_at(x, z);
+                }
+                let lens = super::cinematic::Lens { blend: 1.0 };
+                screen.camera = lens.apply(view::frame(&mut camera, aspect, &loaded.scene));
             }
         }
     }
@@ -363,7 +401,7 @@ pub fn run(
     // A unit camera (J) looks from the focused unit, as the window would once its blend
     // ends; the first-person body is not drawn.
     let mode = play.camera_mode;
-    if mode != super::follow::CameraMode::Rts {
+    if mode != super::follow::CameraMode::Rts && play.cinematic().is_none() {
         live.hidden_entity = (mode == super::follow::CameraMode::FirstPerson)
             .then(|| play.selection.focus())
             .flatten();
@@ -375,7 +413,6 @@ pub fn run(
             &newest,
             previous.as_ref(),
             &view0,
-            &game.world,
             now,
         );
         if let Some(pose) = play.selection.focus().and_then(|id| {
@@ -384,7 +421,7 @@ pub fn run(
         }) {
             let aspect = size[0] as f32 / size[1].max(1) as f32;
             screen.camera = super::follow::Follow::default().view(
-                (mode, 0),
+                super::follow::Key::unit(mode, 0),
                 &pose,
                 super::follow::TRANSITION_SECONDS,
                 aspect,

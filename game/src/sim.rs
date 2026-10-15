@@ -87,15 +87,19 @@ pub struct Snapshot {
     /// What the computer players are doing (debug overlay), when asked for: refreshed
     /// every [`AI_SUMMARY_TICKS`].
     pub ai: Option<Arc<Vec<canopy_sim::ai::Summary>>>,
-    /// The seat's own units held inside another entity (sorted ids): the view does not
-    /// carry it yet (D35).
+    /// The seat's own units held inside another entity or waiting to be placed back
+    /// (sorted ids, from the view's private flags).
     pub held: Arc<Vec<u32>>,
+    /// The entities a mission's camera shot names (old worker `targets`), while a scene
+    /// with a shot plays.
+    pub scene: Option<SceneTargets>,
     /// Every player's colony, for the observer panel (observers only; refreshed every
     /// [`AI_SUMMARY_TICKS`]).
-    pub colonies: Option<Arc<Vec<(u8, canopy_sim::economy::view::Colony)>>>,
+    pub colonies: Option<Arc<Vec<ColonyStats>>>,
     /// Simulation time of tick `origin` under the schedule this tick was computed on.
     pub epoch: Instant,
     pub origin: u32,
+    /// Real time per tick under this schedule: the tick length over the match speed.
     pub tick_length: Duration,
     pub cost: TickCost,
     /// Times the schedule has moved because the simulation fell behind.
@@ -182,7 +186,17 @@ pub enum Control {
     Save(mpsc::Sender<canopy_sim::Save>),
     /// A chat line (networked matches).
     Chat(String),
+    /// Match speed (debug overlay; single player only): simulation ticks per real tick
+    /// length. Only the pacing changes, never the results.
+    Speed(f32),
+    /// Whose view the match presents (debug overlay; single player only): another seat
+    /// (an observer reveals the map), or `None` for the seat's own. The HUD and commands
+    /// keep the seat's view.
+    Shown(Option<Seat>),
 }
+
+/// The match speeds the debug overlay offers (old 1–4×, and half speed).
+pub const SPEEDS: [f32; 5] = [0.5, 1.0, 2.0, 3.0, 4.0];
 
 /// What a running match tells the window thread.
 #[derive(Debug, Clone)]
@@ -221,7 +235,8 @@ pub fn wire_outcome(outcome: &canopy_sim::state::Outcome) -> canopy_net::wire::W
     }
 }
 
-/// Whether a unit is held inside another entity (the view does not carry it yet).
+/// Whether a unit is held inside another entity or waiting to be placed back (the
+/// presenter asks for every entity; a view carries it for owned ones only).
 pub fn held(world: &World, id: canopy_sim::entity::EntityId) -> bool {
     world
         .state()
@@ -236,48 +251,264 @@ pub struct Advanced {
     pub presentation: Presentation,
     pub view: Arc<View>,
     pub held: Arc<Vec<u32>>,
+    pub scene: Option<SceneTargets>,
     pub cost: TickCost,
     pub decided: bool,
 }
 
-/// The view's own units that are held inside another entity, sorted.
-pub fn held_units(world: &World, view: &View) -> Vec<u32> {
+/// An entity a mission's camera shot names, as it stands.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SceneTarget {
+    pub id: u32,
+    pub definition: canopy_sim::catalog::Def,
+    /// Cells (x, z).
+    pub position: [f32; 2],
+}
+
+/// The shot's subject and the unit it looks at, resolved from their placement ids to
+/// the entities they made (old worker `targets`: from the whole state, so a shot can
+/// frame units the player has not seen; the scene reveals its set anyway).
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct SceneTargets {
+    pub subject: Option<SceneTarget>,
+    pub look_at: Option<SceneTarget>,
+}
+
+/// The targets of the camera shot `view`'s mission scene names; `None` without a shot.
+pub fn scene_targets(world: &World, view: &View) -> Option<SceneTargets> {
+    let camera = view.mission.as_ref()?.scene.as_ref()?.camera.as_ref()?;
+    let find = |placement: &str| {
+        world
+            .state()
+            .entities
+            .iter()
+            .find(|e| e.placement.as_deref() == Some(placement))
+            .map(|e| SceneTarget {
+                id: e.id.0,
+                definition: e.definition,
+                position: [e.position.x as f32 / 1000.0, e.position.y as f32 / 1000.0],
+            })
+    };
+    Some(SceneTargets {
+        subject: find(&camera.entity),
+        look_at: camera.look_at.as_deref().and_then(find),
+    })
+}
+
+/// How far around a mission scene the picture reveals (old `PresentationView`: past a
+/// hero's sight, so framing a speaker shows something new), cells.
+pub const SCENE_REVEAL_RADIUS: f64 = 36.0;
+
+/// The view a mission scene is shown with (old `PresentationView`): within
+/// [`SCENE_REVEAL_RADIUS`] of the scene every cell is in sight and every entity shown,
+/// without exploring anything or telling the player's knowledge (the HUD, commands and
+/// the AI keep the plain view). `None` when no scene plays, the match is decided or the
+/// viewer has no fog.
+pub fn stage(world: &World, view: &View) -> Option<View> {
+    let scene = view.mission.as_ref()?.scene.as_ref()?;
+    if view.outcome.is_some() {
+        return None;
+    }
+    let fog = view.fog.as_ref()?;
+    let (sx, sy) = (
+        f64::from(scene.position.x) / 1000.0,
+        f64::from(scene.position.y) / 1000.0,
+    );
+    let r = SCENE_REVEAL_RADIUS;
+    let size = i64::from(fog.size);
+    let near = |x: i64, y: i64| ((x as f64 - sx).hypot(y as f64 - sy)) <= r;
+    let mut cells = (*fog.cells).clone();
+    let (y0, y1) = (
+        ((sy - r).floor() as i64).max(0),
+        ((sy + r) as i64).min(size - 1),
+    );
+    let (x0, x1) = (
+        ((sx - r).floor() as i64).max(0),
+        ((sx + r) as i64).min(size - 1),
+    );
+    for y in y0..=y1 {
+        for x in x0..=x1 {
+            if near(x, y) {
+                cells[(y * size + x) as usize] = canopy_sim::vision::VISIBLE;
+            }
+        }
+    }
+    let ground = (size * size) as usize;
+    for (i, &cell) in fog.deck_cells.iter().enumerate() {
+        let cell = i64::from(cell);
+        if near(cell % size, cell / size)
+            && let Some(node) = cells.get_mut(ground + i)
+        {
+            *node = canopy_sim::vision::VISIBLE;
+        }
+    }
+    // A revision of its own, above any the simulation reaches, for every staged state:
+    // the renderer reloads the staged fog, and the plain one again afterwards.
+    let key = u64::from(fog.revision)
+        ^ (i64::from(scene.position.x) as u64).rotate_left(21)
+        ^ (i64::from(scene.position.y) as u64).rotate_left(42);
+    let revision = 0x8000_0000 | (key.wrapping_mul(0x9e37_79b9_7f4a_7c15) >> 33) as u32;
+    let mut staged = view.clone();
+    staged.fog = Some(fog.restaged(cells, revision));
+    // Every entity on the set, live (old: the full view's entities replace known ones).
+    let all = world.observer_view();
+    let mut entities: std::collections::BTreeMap<_, _> =
+        staged.entities.drain(..).map(|e| (e.id(), e)).collect();
+    for e in all.entities {
+        let (x, y) = (
+            f64::from(e.public.position.x) / 1000.0,
+            f64::from(e.public.position.y) / 1000.0,
+        );
+        if (x - sx).hypot(y - sy) <= r {
+            entities.insert(e.id(), e);
+        }
+    }
+    staged.entities = entities.into_values().collect();
+    Some(staged)
+}
+
+/// The view's own units that are held inside another entity or waiting to be placed
+/// back, sorted.
+pub fn held_units(view: &View) -> Vec<u32> {
     view.entities
         .iter()
-        .filter(|e| e.private.is_some() && e.motion.is_some())
-        .map(|e| e.id())
-        .filter(|&id| held(world, id))
-        .map(|id| id.0)
+        .filter(|e| e.motion.is_some())
+        .filter(|e| {
+            e.private
+                .as_ref()
+                .is_some_and(|p| p.contained || p.releasing)
+        })
+        .map(|e| e.id().0)
         .collect()
 }
 
-/// Every slot's colony (observer panel).
-pub fn colonies(world: &World) -> Vec<(u8, canopy_sim::economy::view::Colony)> {
-    world
+/// A hero in the observer panel (old `ObserverPlayerStats.heroes`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct HeroStats {
+    pub id: u32,
+    pub definition: canopy_sim::catalog::Def,
+    pub level: u32,
+    pub status: HeroStatus,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HeroStatus {
+    Alive,
+    Fallen,
+    /// Fallen and queued for revival at a building.
+    Reviving,
+}
+
+impl HeroStatus {
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Alive => "alive",
+            Self::Fallen => "fallen",
+            Self::Reviving => "reviving",
+        }
+    }
+}
+
+/// One player's row of the observer panel (old `observerStats`): the colony's goods,
+/// supply and population, and the counts the old panel made from the whole state
+/// (units inside buildings included, fallen heroes excluded).
+#[derive(Debug, Clone, PartialEq)]
+pub struct ColonyStats {
+    pub player: u8,
+    pub colony: canopy_sim::economy::view::Colony,
+    pub units: u32,
+    pub workers: u32,
+    pub army: u32,
+    /// By id.
+    pub heroes: Vec<HeroStats>,
+}
+
+/// Every slot's row of the observer panel (observers only: it reads the whole state).
+pub fn colonies(world: &World) -> Vec<ColonyStats> {
+    use canopy_content::game::SelectionClass;
+    let state = world.state();
+    let catalog = world.catalog();
+    let reviving: std::collections::BTreeSet<canopy_sim::entity::EntityId> = state
+        .entities
+        .iter()
+        .filter(|e| canopy_sim::abilities::actor::alive(e))
+        .flat_map(|e| {
+            e.revival
+                .iter()
+                .flat_map(|r| r.queue.iter().map(|q| q.hero))
+        })
+        .collect();
+    let mut rows: Vec<ColonyStats> = world
         .setup()
         .slots
         .iter()
-        .map(|s| {
-            (
-                s.player,
-                canopy_sim::economy::view::colony(
-                    world.state(),
-                    world.catalog(),
-                    world.economy(),
-                    Owner::Player(s.player),
-                ),
-            )
+        .map(|s| ColonyStats {
+            player: s.player,
+            colony: canopy_sim::economy::view::colony(
+                state,
+                catalog,
+                world.economy(),
+                Owner::Player(s.player),
+            ),
+            units: 0,
+            workers: 0,
+            army: 0,
+            heroes: Vec::new(),
         })
-        .collect()
+        .collect();
+    rows.sort_by_key(|r| r.player);
+    for e in state.entities.iter() {
+        let Owner::Player(player) = e.owner else {
+            continue;
+        };
+        let Some(row) = rows.iter_mut().find(|r| r.player == player) else {
+            continue;
+        };
+        if e.unit.is_none() {
+            continue;
+        }
+        let d = catalog.get(e.definition);
+        let living = canopy_sim::abilities::actor::alive(e);
+        if living {
+            row.units += 1;
+            if d.behaviors.work.is_some() {
+                row.workers += 1;
+            }
+            if d.selection_class == Some(SelectionClass::Army) {
+                row.army += 1;
+            }
+        }
+        if d.is_hero() && (living || e.fallen) {
+            row.heroes.push(HeroStats {
+                id: e.id.0,
+                definition: e.definition,
+                level: canopy_sim::stats::level(catalog, e),
+                status: if living {
+                    HeroStatus::Alive
+                } else if reviving.contains(&e.id) {
+                    HeroStatus::Reviving
+                } else {
+                    HeroStatus::Fallen
+                },
+            });
+        }
+    }
+    for row in &mut rows {
+        row.heroes.sort_by_key(|h| h.id);
+    }
+    rows
 }
 
 /// Steps `world` once through `session` and presents the tick for `seat`; `None` while
-/// the session waits for the next beat.
+/// the session waits for the next beat. `shown` presents another seat's view instead
+/// (the debug overlay's reveal and fog perspective, single player only); the HUD keeps
+/// the seat's own view.
 pub fn advance(
     world: &mut World,
     session: &mut Session,
     presenter: &mut Presenter,
     seat: Seat,
+    shown: Option<Seat>,
 ) -> Option<Advanced> {
     let started = Instant::now();
     session.advance(world)?;
@@ -286,12 +517,20 @@ pub fn advance(
         let _span = tracing::trace_span!("seat_view").entered();
         seat.view(world)
     };
+    // Another seat's view (debug), else a mission scene's staging.
+    let other = match shown.filter(|&s| s != seat) {
+        Some(s) => Some(s.view(world)),
+        None => stage(world, &view),
+    };
     let viewed = Instant::now();
-    let presentation = presenter.update(world, &view, &|id| held(world, id));
+    let presentation = presenter.update(world, other.as_ref().unwrap_or(&view), &|id| {
+        held(world, id)
+    });
     let presented = Instant::now();
     let ms = |a: Instant, b: Instant| (b - a).as_secs_f32() * 1000.0;
     Some(Advanced {
-        held: Arc::new(held_units(world, &view)),
+        held: Arc::new(held_units(&view)),
+        scene: scene_targets(world, &view),
         presentation,
         decided: view.outcome.is_some(),
         view: Arc::new(view),
@@ -307,7 +546,10 @@ pub fn advance(
 /// shot), with the view it was made from.
 pub fn present(world: &World, presenter: &mut Presenter, seat: Seat) -> (Presentation, Arc<View>) {
     let view = seat.view(world);
-    let presentation = presenter.update(world, &view, &|id| held(world, id));
+    let staged = stage(world, &view);
+    let presentation = presenter.update(world, staged.as_ref().unwrap_or(&view), &|id| {
+        held(world, id)
+    });
     (presentation, Arc::new(view))
 }
 
@@ -349,7 +591,7 @@ impl SimThread {
                     }
                     let started = Instant::now();
                     while world.tick() < start_tick && !stop.load(Ordering::Relaxed) {
-                        if advance(&mut world, &mut session, &mut presenter, seat).is_none() {
+                        if advance(&mut world, &mut session, &mut presenter, seat, None).is_none() {
                             std::thread::sleep(Duration::from_millis(1));
                         }
                     }
@@ -361,13 +603,19 @@ impl SimThread {
                         );
                     }
                     let (first, first_view) = present(&world, &mut presenter, seat);
-                    let first_held = Arc::new(held_units(&world, &first_view));
+                    let first_held = Arc::new(held_units(&first_view));
+                    let first_scene = scene_targets(&world, &first_view);
                     let tick0 = world.tick();
                     let mut ai: Option<Arc<Vec<canopy_sim::ai::Summary>>> = None;
                     let observing = seat == Seat::Observer;
                     let mut colony_list = observing.then(|| Arc::new(colonies(&world)));
-                    // Schedule: simulation time of tick n is epoch + (n − tick0) · length.
+                    // Schedule: simulation time of tick n is epoch + (n − origin) · pace.
+                    // A speed change moves the origin to the newest tick, so the
+                    // schedule stays continuous.
                     let mut epoch = Instant::now();
+                    let mut origin = tick0;
+                    let mut pace = tick_length;
+                    let mut shown: Option<Seat> = None;
                     let mut slowdowns = 0;
                     let networked = session.room().is_some();
                     let mut paused_at: Option<Instant> = None;
@@ -378,6 +626,7 @@ impl SimThread {
                         view: first_view,
                         ai: None,
                         held: first_held,
+                        scene: first_scene,
                         colonies: colony_list.clone(),
                         epoch,
                         origin: tick0,
@@ -406,6 +655,16 @@ impl SimThread {
                                     let _ = reply.send(world.save());
                                 }
                                 Control::Chat(text) => session.chat(&text),
+                                Control::Speed(speed)
+                                    if !networked && !tick_length.is_zero() && speed > 0.0 =>
+                                {
+                                    let now_tick = world.tick();
+                                    epoch += pace * (now_tick - origin);
+                                    origin = now_tick;
+                                    pace = tick_length.div_f32(speed);
+                                }
+                                Control::Shown(seat) if !networked => shown = seat,
+                                Control::Speed(_) | Control::Shown(_) => {}
                             }
                         }
                         for event in session.poll() {
@@ -421,18 +680,17 @@ impl SimThread {
                             continue;
                         }
                         let next = world.tick() + 1;
-                        let ahead = (next - tick0).saturating_sub(LEAD);
-                        let due = epoch + tick_length * ahead;
+                        let ahead = (next - origin).saturating_sub(LEAD);
+                        let due = epoch + pace * ahead;
                         let now = Instant::now();
                         if now < due {
                             std::thread::sleep((due - now).min(Duration::from_millis(5)));
                             continue;
                         }
-                        if !tick_length.is_zero() {
-                            let behind =
-                                ((now - due).as_secs_f64() / tick_length.as_secs_f64()) as u32;
+                        if !pace.is_zero() {
+                            let behind = ((now - due).as_secs_f64() / pace.as_secs_f64()) as u32;
                             if behind > MAX_BACKLOG {
-                                epoch += tick_length * (behind - MAX_BACKLOG);
+                                epoch += pace * (behind - MAX_BACKLOG);
                                 slowdowns += 1;
                             }
                         }
@@ -440,9 +698,10 @@ impl SimThread {
                             presentation,
                             view,
                             held,
+                            scene,
                             cost,
                             decided,
-                        }) = advance(&mut world, &mut session, &mut presenter, seat)
+                        }) = advance(&mut world, &mut session, &mut presenter, seat, shown)
                         else {
                             std::thread::sleep(Duration::from_millis(1));
                             continue;
@@ -474,10 +733,11 @@ impl SimThread {
                             view,
                             ai: ai.clone(),
                             held,
+                            scene,
                             colonies: colony_list.clone(),
                             epoch,
-                            origin: tick0,
-                            tick_length,
+                            origin,
+                            tick_length: pace,
                             cost,
                             slowdowns,
                             decided,
@@ -586,6 +846,7 @@ mod tests {
             view: Arc::new(empty_view(tick)),
             ai: None,
             held: Arc::default(),
+            scene: None,
             colonies: None,
             epoch: Instant::now(),
             origin: 0,
@@ -594,6 +855,54 @@ mod tests {
             slowdowns: 0,
             decided: false,
         })
+    }
+
+    #[test]
+    fn observer_rows_count_units_and_tell_fallen_and_reviving_heroes() {
+        use canopy_sim::{economy::RevivalEntry, economy::RevivalQueue, entity::EntityId};
+        let map = ai_fixture::skirmish(vec![], vec![]);
+        let mut world = ai_fixture::world(&map, false);
+        ai_fixture::run(&mut world, 2);
+        let owner = Owner::Player(1);
+        let workers = ai_fixture::all_of(&world, owner, ai_fixture::WORKER).len() as u32;
+        let hero = ai_fixture::all_of(&world, owner, ai_fixture::HERO)[0];
+        let rows = colonies(&world);
+        let row = rows.iter().find(|r| r.player == 1).unwrap();
+        assert_eq!(row.workers, workers);
+        assert_eq!(row.units, workers + 1, "the workers and the hero");
+        assert_eq!(row.heroes.len(), 1);
+        assert_eq!(row.heroes[0].status, HeroStatus::Alive);
+
+        // Fallen heroes stay listed and leave the unit count.
+        let state = world.state_mut();
+        canopy_sim::heroes::retain(state.entities.get_mut(EntityId(hero)).unwrap());
+        let row = colonies(&world)
+            .into_iter()
+            .find(|r| r.player == 1)
+            .unwrap();
+        assert_eq!(row.units, workers);
+        assert_eq!(row.heroes[0].status, HeroStatus::Fallen);
+
+        // Queued for revival at a building: reviving.
+        let hall = ai_fixture::all_of(&world, owner, ai_fixture::HALL)[0];
+        world
+            .state_mut()
+            .entities
+            .get_mut(EntityId(hall))
+            .unwrap()
+            .revival = Some(RevivalQueue {
+            queue: vec![RevivalEntry {
+                id: 1,
+                hero: EntityId(hero),
+                level: 1,
+                progress: 0,
+            }],
+        });
+        let row = colonies(&world)
+            .into_iter()
+            .find(|r| r.player == 1)
+            .unwrap();
+        assert_eq!(row.heroes[0].status, HeroStatus::Reviving);
     }
 
     #[test]
@@ -658,6 +967,7 @@ mod tests {
             view: Arc::new(empty_view(0)),
             ai: None,
             held: Arc::default(),
+            scene: None,
             colonies: None,
             epoch,
             origin: 100,
@@ -735,5 +1045,58 @@ mod tests {
         assert!(newest >= 400);
         assert!(units > 0);
         drop(thread);
+    }
+
+    /// The debug overlay's match speed paces the thread without changing a result, and
+    /// the shown view (reveal) changes the presentation, not the HUD's view.
+    #[test]
+    fn match_speed_paces_ticks_and_reveal_changes_only_the_picture() {
+        use canopy_scene::live::Setup;
+        let map = super::ai_fixture::skirmish(vec![], vec![]);
+        let setup = super::ai_fixture::setup(true);
+        let session = Session::local(setup.clone(), None);
+        let world = World::new(super::ai_fixture::content(), &map, setup.clone()).unwrap();
+        let presenter = Presenter::new(
+            &world,
+            &map,
+            None,
+            Setup {
+                colors: vec![[1.0, 0.0, 0.0], [0.0, 0.0, 1.0]],
+                tree_slots: Default::default(),
+                statics: 0,
+            },
+        );
+        let thread = SimThread::start(world, session, presenter, TICK, 0, Seat::Player(0), None);
+        thread.control(Control::Speed(4.0));
+        thread.control(Control::Shown(Some(Seat::Observer)));
+        let started = Instant::now();
+        while thread.mailbox().latest().is_none_or(|t| t < 120) {
+            assert!(started.elapsed() < Duration::from_secs(20), "stalled");
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        // 120 ticks take 3 s at 1×; at 4× about 0.75 s.
+        assert!(
+            started.elapsed() < Duration::from_millis(2000),
+            "{:?}",
+            started.elapsed()
+        );
+        let mut out = Vec::new();
+        while !thread.mailbox().take(&mut out) {}
+        let newest = out.last().unwrap();
+        assert_eq!(newest.tick_length, TICK / 4);
+        assert!(newest.presentation.fog.is_none(), "the observer's picture");
+        assert!(
+            newest.view.fog.is_some(),
+            "the player's own view for the HUD"
+        );
+        // The same ticks as a world stepped on its own.
+        let save = thread.save(Duration::from_secs(5)).unwrap();
+        drop(thread);
+        let mut alone = World::new(super::ai_fixture::content(), &map, setup).unwrap();
+        while alone.tick() < save.state.tick {
+            alone.step();
+        }
+        let resumed = World::restore(super::ai_fixture::content(), &map, save).unwrap();
+        assert_eq!(resumed.fingerprint(), alone.fingerprint());
     }
 }
