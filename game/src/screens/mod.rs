@@ -1231,6 +1231,12 @@ impl Game {
                     });
                 }
             }
+            "saves.export" if clicked => {
+                if let Some(meta) = action.index.and_then(|i| self.saves_list.get(i)).cloned() {
+                    self.export_save(&meta);
+                }
+            }
+            "saves.import" if clicked => self.import_save(),
             "saves.back" if clicked => self.apply(Intent::Back),
             // Dialog.
             "dialog.cancel" if clicked => {
@@ -1269,12 +1275,59 @@ impl Game {
                 if let Err(error) = self.library.delete(&id) {
                     self.saves_status = format!("Cannot delete: {error:#}");
                 }
-                self.saves_list = self.library.list();
+                self.list_saves();
             }
         }
     }
 
+    /// Exports a save to a file the player picks (old `Export`).
+    fn export_save(&mut self, meta: &SaveMeta) {
+        let Some(path) = crate::files::save_as(&SaveLibrary::export_name(meta)) else {
+            return;
+        };
+        self.saves_status = match self.library.export(&meta.id, &path) {
+            Ok(meta) => format!("Exported “{}”.", plain(&meta.name)),
+            Err(error) => format!("Cannot export: {error:#}"),
+        };
+    }
+
+    /// Imports an exported save the player picks (old `Import save…`): checked like a
+    /// load (the map and content here, the match's mode in a match), then listed.
+    fn import_save(&mut self) {
+        let Some(data) = self.data.clone() else {
+            return;
+        };
+        let Some(path) = crate::files::open() else {
+            return;
+        };
+        let mode = if self.flow.in_match() {
+            self.playing.as_ref().and_then(|p| p.kind.save_mode())
+        } else {
+            None
+        };
+        let here = |identity: &MatchIdentity| -> Result<MatchIdentity> {
+            let map = data.map(&identity.map_id).ok_or_else(|| {
+                anyhow::anyhow!("the map {} is not in this game", identity.map_id)
+            })?;
+            let bytes = std::fs::read(&map.file.path)?;
+            Ok(data.match_identity(map, &bytes))
+        };
+        match self.library.import(&path, mode, here) {
+            Ok(meta) => {
+                self.list_saves();
+                self.saves_status = format!("Imported “{}”.", plain(&meta.name));
+            }
+            Err(error) => self.saves_status = format!("Cannot import: {error:#}"),
+        }
+    }
+
     fn open_saves(&mut self) {
+        self.list_saves();
+        self.saves_status.clear();
+        self.apply(Intent::Show(Overlay::Saves));
+    }
+
+    fn list_saves(&mut self) {
         self.saves_list = self.library.list();
         // In a match only saves of its mode are listed (old `savesForMode`: campaign and
         // skirmish saves are kept apart); the main menu lists every save.
@@ -1283,8 +1336,6 @@ impl Game {
         {
             self.saves_list.retain(|s| s.mode == mode);
         }
-        self.saves_status.clear();
-        self.apply(Intent::Show(Overlay::Saves));
     }
 
     fn open_settings(&mut self) {

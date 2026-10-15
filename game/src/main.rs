@@ -3,6 +3,7 @@
 mod app;
 mod clipboard;
 mod data;
+mod files;
 mod gpu;
 mod live;
 mod options;
