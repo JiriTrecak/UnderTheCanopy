@@ -1009,15 +1009,15 @@ fn depth_stream(
 }
 
 /// Fewest triangles a model needs before it gets levels of detail.
-const LOD_MIN_TRIANGLES: usize = 256;
-/// Target triangle ratios of the levels of detail.
-const LOD_RATIOS: [f32; 3] = [0.5, 0.25, 0.12];
-/// The most a level may deviate from the full mesh, as a share of the model's size.
-const LOD_MAX_ERROR: f64 = 0.04;
+const LOD_MIN_TRIANGLES: usize = 1024;
+/// The deviation each level of detail may have, as a share of the model's size: each
+/// level is the smallest mesh within it.
+const LOD_ERRORS: [f64; 4] = [0.004, 0.012, 0.03, 0.07];
 
 /// Simplified index lists (section-local, per section) for each level of detail with the
-/// largest deviation of any section in model units, finest first. Levels that the error
-/// limit keeps from shrinking by at least a fifth are left out. Positions only: seams
+/// largest deviation of any section in model units, finest first. Levels that shrink the
+/// previous one by less than a fifth are left out. Topology is kept: no piece vanishes
+/// and seams stay closed, which bounds how far a level can shrink. Positions only: seams
 /// (split UVs and normals) stay closed, as meshoptimizer keeps vertices sharing a
 /// position together.
 fn simplify_levels(
@@ -1033,10 +1033,11 @@ fn simplify_levels(
         .map(|i| (rest.1[i] - rest.0[i]).powi(2))
         .sum::<f64>()
         .sqrt();
-    let limit = (LOD_MAX_ERROR * size) as f32;
     let mut levels: Vec<(f32, Vec<Vec<u32>>)> = Vec::new();
     let mut previous = total;
-    for ratio in LOD_RATIOS {
+    for share in LOD_ERRORS {
+        let limit = (share * size) as f32;
+        let options = meshopt::SimplifyOptions::ErrorAbsolute;
         let mut error = 0.0f32;
         let mut lists = Vec::with_capacity(sections.len());
         for section in sections {
@@ -1052,14 +1053,14 @@ fn simplify_levels(
                 lists.push(Vec::new());
                 continue;
             }
-            let target = ((indices.len() as f32 * ratio) as usize / 3 * 3).max(3);
+            let target = 3;
             let mut section_error = 0.0f32;
             let list = meshopt::simplify_decoder(
                 indices,
                 &positions,
                 target,
                 limit,
-                meshopt::SimplifyOptions::ErrorAbsolute,
+                options,
                 Some(&mut section_error),
             );
             error = error.max(section_error);
@@ -1067,7 +1068,7 @@ fn simplify_levels(
         }
         let triangles: usize = lists.iter().map(|l| l.len() / 3).sum();
         if triangles * 5 > previous * 4 {
-            break;
+            continue;
         }
         previous = triangles;
         levels.push((error, lists));

@@ -892,8 +892,6 @@ impl Renderer {
         before_submit: Option<&dyn Fn(&mut wgpu::CommandEncoder)>,
     ) -> FrameReport {
         let _span = tracing::trace_span!("render").entered();
-        let skip = std::env::var("CANOPY_SKIP").unwrap_or_default();
-        let on = |name: &str| !skip.split(',').any(|s| s == name);
         let start = Instant::now();
         let device = &gpu.device;
         let queue = &gpu.queue;
@@ -1119,13 +1117,13 @@ impl Renderer {
                         multiview_mask: None,
                     });
                     if self.shadows {
-                        if let Some(terrain) = self.terrain.as_ref().filter(|_| on("sterrain")) {
+                        if let Some(terrain) = &self.terrain {
                             report.draws += terrain.draw_shadow(&mut rp, &self.shadow_frame_group);
                         }
-                        if let Some(statics) = self.statics.as_ref().filter(|_| on("sstatics")) {
+                        if let Some(statics) = &self.statics {
                             report.draws += statics.draw_shadow(&mut rp, &self.shadow_frame_group);
                         }
-                        if let Some(actors) = self.actors.as_ref().filter(|_| on("sactors")) {
+                        if let Some(actors) = &self.actors {
                             report.draws += actors.draw_shadow(&mut rp, &self.shadow_frame_group);
                         }
                     }
@@ -1195,19 +1193,19 @@ impl Renderer {
                         occlusion_query_set: None,
                         multiview_mask: None,
                     });
-                    if let Some(terrain) = self.terrain.as_ref().filter(|_| on("terrain")) {
+                    if let Some(terrain) = &self.terrain {
                         report.draws += terrain.draw_forward(&mut rp, &self.frame_group);
                     }
-                    if let Some(statics) = self.statics.as_ref().filter(|_| on("statics")) {
+                    if let Some(statics) = &self.statics {
                         report.draws += statics.draw_forward(&mut rp, &self.frame_group);
                     }
-                    if let Some(actors) = self.actors.as_ref().filter(|_| on("actors")) {
+                    if let Some(actors) = &self.actors {
                         report.draws += actors.draw_forward(&mut rp, &self.frame_group);
                     }
                     if let Some(forest) = &self.forest {
                         report.draws += forest.draw(&mut rp, &self.frame_group);
                     }
-                    if let Some(water) = self.water.as_ref().filter(|_| on("water")) {
+                    if let Some(water) = &self.water {
                         report.draws += water.draw(&mut rp, &self.frame_group);
                     }
                     if let Some(statics) = &self.statics {
@@ -1217,9 +1215,7 @@ impl Renderer {
                         report.draws += actors.draw_transparent(&mut rp, &self.frame_group);
                     }
                     report.draws += self.world_ui.draw_ground(&mut rp, &self.frame_group);
-                    if on("effects") {
-                        report.draws += self.effects.draw(&mut rp, &self.frame_group);
-                    }
+                    report.draws += self.effects.draw(&mut rp, &self.frame_group);
                 }
                 (passes::CONTACT, PassKind::Render) => {
                     report.draws +=

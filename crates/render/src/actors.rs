@@ -30,7 +30,7 @@ pub const MAX_POSES: usize = 3;
 const MODEL_STRIDE: u64 = 256;
 const SKIN_GROUP: u32 = 64;
 /// Levels of detail a model may have: the full mesh and the cooker's coarser ones.
-pub const MAX_LODS: usize = 4;
+pub const MAX_LODS: usize = 5;
 /// Shadow-map texels a shadow caster's level of detail may deviate by (the PCF filter
 /// spreads every edge over several texels).
 const SHADOW_LOD_TEXELS: f32 = 1.0;

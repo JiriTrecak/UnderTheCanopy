@@ -56,10 +56,13 @@ fn albedo_of(uv: vec2f, color: vec4f, owner: vec4f) -> vec4f {
     if (material.flags.x == VERTEX_TINT) {
         base = vec4f(base.rgb * color.rgb, base.a);
     }
-    let mask = textureSample(team_mask, material_sampler, uv).r;
     if (has(HAS_TEAM)) {
         let player = select(material.team_default.rgb, owner.rgb, owner.a > 0.5);
-        let m = select(1.0, mask, has(HAS_TEAM_MASK));
+        // Maps a material lacks are not sampled (uniform branches on its flags).
+        var m = 1.0;
+        if (has(HAS_TEAM_MASK)) {
+            m = textureSample(team_mask, material_sampler, uv).r;
+        }
         base = vec4f(team_color(base.rgb, m, player, material.light.z), base.a);
     }
     return base;
@@ -92,9 +95,11 @@ fn shade_material(f: MaterialFragment) -> vec4f {
     let uv_dy = dpdy(f.uv);
     let base = albedo_of(f.uv, f.color, f.owner);
     let mr = textureSample(metal_rough_texture, material_sampler, f.uv);
-    let occlusion_map = textureSample(occlusion_texture, material_sampler, f.uv).r;
-    let normal_map = textureSample(normal_texture, material_sampler, f.uv).xyz * 2.0 - 1.0;
-    let emissive = textureSample(emissive_texture, material_sampler, f.uv).rgb * material.emissive.rgb;
+    // Maps a material lacks are not sampled (uniform branches on its parameters).
+    var emissive = vec3f(0.0);
+    if (any(material.emissive.rgb != vec3f(0.0))) {
+        emissive = textureSample(emissive_texture, material_sampler, f.uv).rgb * material.emissive.rgb;
+    }
     var alpha = base.a;
     if (has(ALPHA_MASK)) {
         alpha = coverage(base.a);
@@ -107,6 +112,7 @@ fn shade_material(f: MaterialFragment) -> vec4f {
         n = -n;
     }
     if (has(HAS_NORMAL_MAP)) {
+        let normal_map = textureSample(normal_texture, material_sampler, f.uv).xyz * 2.0 - 1.0;
         // Cotangent frame from screen derivatives (the pack has no tangents).
         let dp2perp = cross(world_dy, n);
         let dp1perp = cross(n, world_dx);
@@ -121,6 +127,7 @@ fn shade_material(f: MaterialFragment) -> vec4f {
         occlusion = f.color.r;
     }
     if (has(HAS_OCCLUSION_MAP)) {
+        let occlusion_map = textureSample(occlusion_texture, material_sampler, f.uv).r;
         occlusion *= mix(1.0, occlusion_map, material.params.w);
     }
     var surface: Surface;
