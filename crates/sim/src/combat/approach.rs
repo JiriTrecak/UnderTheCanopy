@@ -230,11 +230,16 @@ pub fn route_to_attack(
             None => {}
         }
     }
+    // In a crowd most directions are blocked by a body touching the actor.
+    let near = spatial.near_bodies(from, Some(actor), None);
     let mut direct: Vec<Candidate> = heap
         .into_vec()
         .into_iter()
         .map(|Next(c)| c)
-        .filter(|c| spatial.unit_segment_clear(from, c.spot.fixed(), Some(actor), None, None, None))
+        .filter(|c| {
+            let to = c.spot.fixed();
+            !near.blocks(to) && spatial.unit_segment_clear(from, to, Some(actor), None, None, None)
+        })
         .collect();
     direct.sort_unstable_by(Candidate::order);
     for c in &direct {

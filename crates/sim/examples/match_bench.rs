@@ -272,6 +272,20 @@ fn main() -> Result<(), String> {
             *hist.entry(e.statuses.len()).or_insert(0) += 1;
         }
         println!("statuses per entity: {hist:?}");
+        use canopy_sim::entity::*;
+        println!(
+            "sizes: entity {} stock {} construction {} resource {} item {} research {} upgrade {} revival {} progression {} option<entity> {}",
+            std::mem::size_of::<Entity>(),
+            std::mem::size_of::<canopy_sim::entity::Stock>(),
+            std::mem::size_of::<Option<canopy_sim::entity::Construction>>(),
+            std::mem::size_of::<Option<canopy_sim::entity::Resource>>(),
+            std::mem::size_of::<Option<canopy_sim::entity::LooseItem>>(),
+            std::mem::size_of::<Option<canopy_sim::economy::ResearchQueue>>(),
+            std::mem::size_of::<Option<canopy_sim::economy::UpgradeTask>>(),
+            std::mem::size_of::<Option<canopy_sim::economy::RevivalQueue>>(),
+            std::mem::size_of::<Option<canopy_sim::heroes::Progression>>(),
+            std::mem::size_of::<Option<Entity>>(),
+        );
         let mut defs = BTreeMap::new();
         for e in st.entities.iter().filter(|e| e.unit.is_some()) {
             *defs
