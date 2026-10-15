@@ -503,8 +503,9 @@ impl Game {
             groups: None,
             start_tick: 0,
         };
-        let mut setup = rerun.setup.clone();
-        setup.seed = seed();
+        // A restart plays the same scenario again: map, players, teams and seed (old
+        // "Restart scenario"); new matches bring their own seed.
+        let setup = rerun.setup.clone();
         let job = Job::Match(Box::new(MatchRequest {
             map: rerun.map.clone(),
             setup: setup.clone(),

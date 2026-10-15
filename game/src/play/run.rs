@@ -145,6 +145,22 @@ impl InMatch {
         renderer.set_actors(&[]);
         let content = game.world.catalog().content.clone();
         let catalog = Arc::new(Catalog::new(content.clone()));
+        // Names and controllers for the observer panel.
+        let players: Vec<(u8, String, bool)> = game
+            .world
+            .setup()
+            .slots
+            .iter()
+            .map(|s| {
+                (
+                    s.player,
+                    s.name
+                        .clone()
+                        .unwrap_or_else(|| format!("Player {}", s.player + 1)),
+                    s.kind == canopy_sim::SlotKind::Ai,
+                )
+            })
+            .collect();
         let terrain = game.world.terrain().clone();
         let seat = start.me.map_or(Seat::Observer, Seat::Player);
         let view0 = Arc::new(seat.view(&game.world));
@@ -197,6 +213,7 @@ impl InMatch {
         }
         let mut hud = Hud::new();
         hud.map_size = loaded.scene.size as f32;
+        hud.players = players;
         hud.palette = loaded
             .scene
             .colors
@@ -371,7 +388,10 @@ impl InMatch {
                 self.debug_open = !self.debug_open;
                 return;
             }
-            if shortcuts.contains(&Shortcut::ToggleHud) {
+            // Escape also brings a hidden HUD back (old `enableHudToggle`).
+            if shortcuts.contains(&Shortcut::ToggleHud)
+                || (self.hud_hidden && code == KeyCode::Escape)
+            {
                 self.hud_hidden = !self.hud_hidden;
                 return;
             }

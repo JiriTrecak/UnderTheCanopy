@@ -159,6 +159,8 @@ pub struct Hud {
     /// The minimap shows the render target `@minimap`.
     pub minimap: bool,
     pub palette: Palette,
+    /// The match's players: slot, name and whether a computer plays it.
+    pub players: Vec<(u8, String, bool)>,
     /// Map size, for minimap clicks.
     pub map_size: f32,
     /// What the current card's cells and banners hold (command ids).
@@ -188,6 +190,7 @@ impl Hud {
             live_portrait: false,
             minimap: false,
             palette: Vec::new(),
+            players: Vec::new(),
             map_size: 1.0,
             cells: Default::default(),
             banners: Vec::new(),
@@ -1209,19 +1212,31 @@ impl Hud {
                 .as_ref()
                 .is_some_and(|o| o.defeated.contains(&owner));
             if let Some(cell) = ui.find_in(row, "player") {
+                // Old row: the slot badge, the name and "Player N · controller".
+                let (name, ai) = self
+                    .players
+                    .iter()
+                    .find(|(slot, ..)| slot == player)
+                    .map_or((format!("Player {}", player + 1), true), |(_, n, ai)| {
+                        (n.clone(), *ai)
+                    });
+                let role = if defeated {
+                    "Defeated"
+                } else if ai {
+                    "Computer"
+                } else {
+                    "Human"
+                };
                 ui.set_text(
                     cell,
                     &format!(
-                        "[color=#{:02x}{:02x}{:02x}][b]{}[/b][/color]  {}",
+                        "[color=#{:02x}{:02x}{:02x}][b]{}[/b][/color]  {}\n[color=#93afb5]Player {} · {role}[/color]",
                         color[0],
                         color[1],
                         color[2],
                         player + 1,
-                        if defeated {
-                            "Defeated".into()
-                        } else {
-                            format!("Player {}", player + 1)
-                        }
+                        escape(&name),
+                        player + 1,
                     ),
                 );
             }
@@ -1259,20 +1274,27 @@ impl Hud {
             if let Some(cell) = ui.find_in(row, "workers") {
                 ui.set_text(cell, &colony.population.workers.to_string());
             }
-            let hero = k
+            // Every hero (old: one entry each, fallen ones marked).
+            let heroes: Vec<String> = k
                 .view
                 .entities
                 .iter()
-                .find(|e| e.public.owner == owner && k.def(e).is_hero());
-            if let Some(cell) = ui.find_in(row, "hero") {
-                let text = hero.map_or("—".to_owned(), |h| {
+                .filter(|e| e.public.owner == owner && k.def(e).is_hero())
+                .map(|h| {
                     let level = h.combat.as_ref().map_or(1, |c| c.stats.level);
                     if k.view.battle.fallen.contains(&h.id()) {
                         format!("Lv. {level} Fallen")
                     } else {
                         format!("Lv. {level}")
                     }
-                });
+                })
+                .collect();
+            if let Some(cell) = ui.find_in(row, "hero") {
+                let text = if heroes.is_empty() {
+                    "—".to_owned()
+                } else {
+                    heroes.join("\n")
+                };
                 ui.set_text(cell, &text);
             }
         }
