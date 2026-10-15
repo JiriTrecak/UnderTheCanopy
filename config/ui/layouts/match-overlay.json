@@ -1,0 +1,33 @@
+{
+  "templates": { "mo-chat-line": { "kind": "label", "class": "mo-chat-line" } },
+  "root": {
+    "class": "mo",
+    "children": [
+      {
+        "id": "banner", "class": "mo-banner", "visible": false,
+        "children": [ { "id": "text", "kind": "label", "class": "mo-pill" } ]
+      },
+      {
+        "id": "chat", "class": "mo-chat",
+        "children": [
+          { "id": "lines", "style": { "display": "flex", "flex-direction": "column", "gap": "3px" }, "repeat": "mo-chat-line" },
+          { "id": "field", "kind": "text_field", "class": "mp-field mo-chat-field", "placeholder": "Say something to everyone", "max_length": 200, "action": "chat.field", "visible": false }
+        ]
+      },
+      {
+        "id": "problem", "class": "scrim mo-panel", "visible": false,
+        "children": [
+          {
+            "class": "gm",
+            "style": { "width": "480px" },
+            "children": [
+              { "id": "title", "kind": "label", "class": "gm-title" },
+              { "id": "body", "kind": "label", "class": "gm-sub" },
+              { "kind": "button", "class": "gm-button", "text": "Leave the match", "action": "overlay.leave" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

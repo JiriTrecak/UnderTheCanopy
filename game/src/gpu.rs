@@ -40,7 +40,12 @@ impl Display {
             desired_maximum_frame_latency: 2,
             alpha_mode: capabilities.alpha_modes[0],
             color_space: wgpu::SurfaceColorSpace::Auto,
-            view_formats: vec![],
+            // The UI blends in sRGB space through a non-sRGB view (D33).
+            view_formats: if format.is_srgb() {
+                vec![format.remove_srgb_suffix()]
+            } else {
+                vec![]
+            },
         };
         surface.configure(&gpu.device, &config);
         Ok(Self {
@@ -52,6 +57,27 @@ impl Display {
 
     pub fn format(&self) -> wgpu::TextureFormat {
         self.config.format
+    }
+
+    /// Switches between waiting for vertical sync and presenting at once.
+    pub fn set_vsync(&mut self, vsync: bool) {
+        let mode = if vsync {
+            wgpu::PresentMode::AutoVsync
+        } else {
+            wgpu::PresentMode::AutoNoVsync
+        };
+        if self.config.present_mode != mode {
+            self.config.present_mode = mode;
+            self.surface.configure(&self.gpu.device, &self.config);
+        }
+    }
+
+    /// A view of a frame for the UI: the non-sRGB form of the surface format.
+    pub fn ui_view(&self, frame: &wgpu::SurfaceTexture) -> wgpu::TextureView {
+        frame.texture.create_view(&wgpu::TextureViewDescriptor {
+            format: Some(self.config.format.remove_srgb_suffix()),
+            ..Default::default()
+        })
     }
 
     pub fn size(&self) -> [u32; 2] {

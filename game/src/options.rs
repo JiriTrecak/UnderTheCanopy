@@ -3,6 +3,7 @@
 //! ```text
 //! canopy [--data <folder>] [--no-vsync] [--map <id> | --spectate <id>] [--players <n>]
 //!        [--tick <n>] [--camera <x,z,zoom[,yaw]>] [--hour <h>] [graphics]
+//! canopy capture-screens --out <folder> [--size <w>x<h>] [--scale <s>] [--data <folder>]
 //! canopy shot --map <id> --camera <x,z,zoom[,yaw] | battle[,zoom]> --out <png>
 //!             [--tick <n>] [--players <n>] [--crowd <n>] [--colors <i,j,…>] [--size <w>x<h>]
 //!             [--hour <h>] [--time <s>] [--frames <n>] [--no-shadows] [--pitch <deg>]
@@ -85,6 +86,12 @@ pub enum Command {
     Play,
     /// Render offscreen and write a PNG.
     Shot { out: PathBuf, size: [u32; 2] },
+    /// Render every screen offscreen into a folder.
+    CaptureScreens {
+        out: PathBuf,
+        size: [u32; 2],
+        scale: f32,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -149,12 +156,16 @@ impl Options {
         let mut out = None;
         let mut size = [1920, 1080];
         let mut shot = false;
+        let mut capture = false;
+        let mut scale = 1.0f32;
         let mut first = true;
         while let Some(arg) = args.next() {
             let mut value =
                 |name: &str| args.next().with_context(|| format!("{name} needs a value"));
             match arg.as_str() {
                 "shot" if first => shot = true,
+                "capture-screens" if first => capture = true,
+                "--scale" => scale = value("--scale")?.parse().context("--scale")?,
                 "play" if first => {}
                 "--data" => options.data = Some(value("--data")?.into()),
                 "--no-vsync" => options.vsync = false,
@@ -221,7 +232,13 @@ impl Options {
             }
             first = false;
         }
-        if shot {
+        if capture {
+            let out = out.context("capture-screens needs --out <folder>")?;
+            if !(0.5..=4.0).contains(&scale) {
+                bail!("--scale must be within 0.5–4");
+            }
+            options.command = Command::CaptureScreens { out, size, scale };
+        } else if shot {
             let out = out.context("shot needs --out <png>")?;
             if options.map.is_none() {
                 bail!("shot needs --map <id>");

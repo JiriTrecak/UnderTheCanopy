@@ -1,0 +1,568 @@
+//! Rebindable keyboard shortcuts (old `src/shared/input/shortcuts.ts` and `catalog.ts`).
+//!
+//! A binding is a chord: a physical key named like the browser's `KeyboardEvent.code`
+//! (which winit's `KeyCode` follows: `KeyH`, `Digit1`, `ArrowLeft`, `F10`…) and the
+//! modifiers held with it, written `Ctrl+Shift+KeyH`. The player's file stores only the
+//! entries changed from their defaults (`null` for an unbound entry), as the old game did.
+//!
+//! Rules (old game): a key another entry already uses is refused ("Already used by …");
+//! Enter is reserved for chat; only listed keys may be bound; a bare modifier only for the
+//! health bar holds. Defaults may share keys; only edited collisions are blocked.
+//!
+//! Content-derived command shortcuts (command card, build menus, abilities) take their
+//! defaults from authored hotkeys and are added by the in-match command card.
+
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::collections::BTreeMap;
+use std::fmt;
+use winit::keyboard::{KeyCode, ModifiersState};
+
+/// A key and the modifiers held with it.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Chord {
+    /// The `KeyboardEvent.code` name of the key, or `Alt` for the bare Alt hold.
+    pub code: String,
+    pub ctrl: bool,
+    pub alt: bool,
+    pub shift: bool,
+    pub meta: bool,
+}
+
+impl Chord {
+    pub fn key(code: &str) -> Self {
+        Self {
+            code: code.into(),
+            ctrl: false,
+            alt: false,
+            shift: false,
+            meta: false,
+        }
+    }
+
+    pub fn parse(text: &str) -> Option<Self> {
+        let mut chord = Self::key("");
+        let parts: Vec<&str> = text.split('+').map(str::trim).collect();
+        let (code, modifiers) = parts.split_last()?;
+        for m in modifiers {
+            match *m {
+                "Ctrl" => chord.ctrl = true,
+                "Alt" => chord.alt = true,
+                "Shift" => chord.shift = true,
+                "Meta" => chord.meta = true,
+                _ => return None,
+            }
+        }
+        if code.is_empty() {
+            return None;
+        }
+        chord.code = (*code).into();
+        Some(chord)
+    }
+
+    /// The chord of a key press, from winit.
+    pub fn of(code: KeyCode, modifiers: ModifiersState) -> Option<Self> {
+        let name = code_name(code)?;
+        Some(Self {
+            code: name.into(),
+            ctrl: modifiers.control_key(),
+            alt: modifiers.alt_key() && name != "Alt",
+            shift: modifiers.shift_key(),
+            meta: modifiers.super_key(),
+        })
+    }
+
+    /// A bare modifier (only Alt may be bound alone).
+    pub fn is_modifier(&self) -> bool {
+        self.code == "Alt"
+    }
+
+    /// What the settings screen shows (`Ctrl+Shift+H`, `PgUp`, `Num 7`).
+    pub fn label(&self) -> String {
+        let mut out = String::new();
+        for (on, name) in [
+            (self.ctrl, "Ctrl+"),
+            (self.alt, "Alt+"),
+            (self.shift, "Shift+"),
+            (
+                self.meta,
+                if cfg!(target_os = "macos") {
+                    "Cmd+"
+                } else {
+                    "Win+"
+                },
+            ),
+        ] {
+            if on {
+                out.push_str(name);
+            }
+        }
+        let code = self.code.as_str();
+        let key = if let Some(letter) = code.strip_prefix("Key") {
+            letter.to_string()
+        } else if let Some(digit) = code.strip_prefix("Digit") {
+            digit.to_string()
+        } else if let Some(n) = code.strip_prefix("Numpad") {
+            format!("Num {n}")
+        } else if let Some(arrow) = code.strip_prefix("Arrow") {
+            arrow.to_string()
+        } else {
+            match code {
+                "PageUp" => "PgUp".into(),
+                "PageDown" => "PgDn".into(),
+                "Escape" => "Esc".into(),
+                "Backquote" => "`".into(),
+                "BracketLeft" => "[".into(),
+                "BracketRight" => "]".into(),
+                "Backspace" => "Backspace".into(),
+                other => other.into(),
+            }
+        };
+        out.push_str(&key);
+        out
+    }
+}
+
+impl fmt::Display for Chord {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for (on, name) in [
+            (self.ctrl, "Ctrl+"),
+            (self.alt, "Alt+"),
+            (self.shift, "Shift+"),
+            (self.meta, "Meta+"),
+        ] {
+            if on {
+                f.write_str(name)?;
+            }
+        }
+        f.write_str(&self.code)
+    }
+}
+
+impl Serialize for Chord {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.collect_str(self)
+    }
+}
+
+impl<'de> Deserialize<'de> for Chord {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let text = String::deserialize(deserializer)?;
+        Chord::parse(&text).ok_or_else(|| serde::de::Error::custom(format!("bad key {text:?}")))
+    }
+}
+
+/// Key codes a binding may use (old `allowedCodes`), with their winit codes.
+const KEYS: &[(&str, KeyCode)] = {
+    use KeyCode::*;
+    &[
+        ("KeyA", KeyA),
+        ("KeyB", KeyB),
+        ("KeyC", KeyC),
+        ("KeyD", KeyD),
+        ("KeyE", KeyE),
+        ("KeyF", KeyF),
+        ("KeyG", KeyG),
+        ("KeyH", KeyH),
+        ("KeyI", KeyI),
+        ("KeyJ", KeyJ),
+        ("KeyK", KeyK),
+        ("KeyL", KeyL),
+        ("KeyM", KeyM),
+        ("KeyN", KeyN),
+        ("KeyO", KeyO),
+        ("KeyP", KeyP),
+        ("KeyQ", KeyQ),
+        ("KeyR", KeyR),
+        ("KeyS", KeyS),
+        ("KeyT", KeyT),
+        ("KeyU", KeyU),
+        ("KeyV", KeyV),
+        ("KeyW", KeyW),
+        ("KeyX", KeyX),
+        ("KeyY", KeyY),
+        ("KeyZ", KeyZ),
+        ("Digit0", Digit0),
+        ("Digit1", Digit1),
+        ("Digit2", Digit2),
+        ("Digit3", Digit3),
+        ("Digit4", Digit4),
+        ("Digit5", Digit5),
+        ("Digit6", Digit6),
+        ("Digit7", Digit7),
+        ("Digit8", Digit8),
+        ("Digit9", Digit9),
+        ("Numpad0", Numpad0),
+        ("Numpad1", Numpad1),
+        ("Numpad2", Numpad2),
+        ("Numpad3", Numpad3),
+        ("Numpad4", Numpad4),
+        ("Numpad5", Numpad5),
+        ("Numpad6", Numpad6),
+        ("Numpad7", Numpad7),
+        ("Numpad8", Numpad8),
+        ("Numpad9", Numpad9),
+        ("F1", F1),
+        ("F2", F2),
+        ("F3", F3),
+        ("F4", F4),
+        ("F5", F5),
+        ("F6", F6),
+        ("F7", F7),
+        ("F8", F8),
+        ("F9", F9),
+        ("F10", F10),
+        ("F11", F11),
+        ("F12", F12),
+        ("ArrowLeft", ArrowLeft),
+        ("ArrowRight", ArrowRight),
+        ("ArrowUp", ArrowUp),
+        ("ArrowDown", ArrowDown),
+        ("Home", Home),
+        ("End", End),
+        ("PageUp", PageUp),
+        ("PageDown", PageDown),
+        ("Space", Space),
+        ("Tab", Tab),
+        ("Escape", Escape),
+        ("Enter", Enter),
+        ("Backspace", Backspace),
+        ("Backquote", Backquote),
+        ("BracketLeft", BracketLeft),
+        ("BracketRight", BracketRight),
+        ("Delete", Delete),
+        ("Alt", AltLeft),
+        ("Alt", AltRight),
+    ]
+};
+
+/// The `KeyboardEvent.code` name of a winit key, if bindable.
+pub fn code_name(code: KeyCode) -> Option<&'static str> {
+    KEYS.iter().find(|(_, c)| *c == code).map(|(name, _)| *name)
+}
+
+/// The winit key of a binding's code.
+pub fn key_code(name: &str) -> Option<KeyCode> {
+    KEYS.iter().find(|(n, _)| *n == name).map(|(_, c)| *c)
+}
+
+/// One bindable entry.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Entry {
+    pub id: String,
+    pub group: &'static str,
+    pub label: String,
+    pub default: Option<Chord>,
+}
+
+/// The engine's own shortcuts with the old game's defaults.
+pub fn catalog() -> Vec<Entry> {
+    let mut out = Vec::new();
+    let mut add = |id: String, group: &'static str, label: String, default: &str| {
+        out.push(Entry {
+            id,
+            group,
+            label,
+            default: Chord::parse(default),
+        });
+    };
+    for (id, label, key) in [
+        ("camera.zoomIn", "Zoom in", "PageUp"),
+        ("camera.zoomOut", "Zoom out", "PageDown"),
+        ("camera.panLeft", "Pan left", "ArrowLeft"),
+        ("camera.panRight", "Pan right", "ArrowRight"),
+        ("camera.panUp", "Pan up", "ArrowUp"),
+        ("camera.panDown", "Pan down", "ArrowDown"),
+        ("camera.centerSelection", "Center selection", "Home"),
+        ("camera.alerts", "Cycle recent alerts", "Space"),
+        ("camera.nextHall", "Next main building", "Backspace"),
+    ] {
+        add(id.into(), "Camera", label.into(), key);
+    }
+    for n in 1..=3 {
+        add(
+            format!("heroes.select{n}"),
+            "Heroes",
+            format!("Select hero {n} (double press to center)"),
+            &format!("F{n}"),
+        );
+    }
+    for (id, label, key) in [
+        ("selection.idleWorker", "Next idle worker", "F8"),
+        (
+            "selection.idleWorkerAlt",
+            "Next idle worker (alternate)",
+            "Backquote",
+        ),
+        ("selection.nextSubgroup", "Next subgroup", "Tab"),
+        (
+            "selection.previousSubgroup",
+            "Previous subgroup",
+            "Shift+Tab",
+        ),
+    ] {
+        add(id.into(), "Selection", label.into(), key);
+    }
+    for (id, label, key) in [
+        ("interface.gameMenu", "Game menu", "F10"),
+        (
+            "interface.toggleHud",
+            "Show or hide the HUD",
+            "Ctrl+Shift+KeyH",
+        ),
+        ("interface.debug", "Debug overlay", "Ctrl+F3"),
+        ("interface.cancel", "Cancel targeting", "Escape"),
+    ] {
+        add(id.into(), "Interface", label.into(), key);
+    }
+    for (id, label, key) in [
+        (
+            "placement.rotateClockwise",
+            "Rotate building clockwise",
+            "KeyR",
+        ),
+        (
+            "placement.rotateCounterclockwise",
+            "Rotate building counterclockwise",
+            "Shift+KeyR",
+        ),
+    ] {
+        add(id.into(), "Placement", label.into(), key);
+    }
+    for (n, key) in ["Numpad7", "Numpad8", "Numpad4", "Numpad5"]
+        .into_iter()
+        .enumerate()
+    {
+        add(
+            format!("inventory.slot{}", n + 1),
+            "Inventory",
+            format!("Use inventory slot {}", n + 1),
+            key,
+        );
+    }
+    for (id, label, key) in [
+        ("health.all", "Show all health bars (hold)", "Alt"),
+        (
+            "health.friendly",
+            "Show friendly health bars (hold)",
+            "BracketLeft",
+        ),
+        (
+            "health.enemy",
+            "Show enemy health bars (hold)",
+            "BracketRight",
+        ),
+    ] {
+        add(id.into(), "Health bars", label.into(), key);
+    }
+    for n in [1, 2, 3, 4, 5, 6, 7, 8, 9, 0] {
+        add(
+            format!("groups.recall{n}"),
+            "Control groups",
+            format!("Recall group {n}"),
+            &format!("Digit{n}"),
+        );
+        add(
+            format!("groups.assign{n}"),
+            "Control groups",
+            format!("Assign group {n}"),
+            &format!("Ctrl+Digit{n}"),
+        );
+        add(
+            format!("groups.add{n}"),
+            "Control groups",
+            format!("Add to group {n}"),
+            &format!("Shift+Digit{n}"),
+        );
+    }
+    out
+}
+
+/// Why a key cannot be bound.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum BindError {
+    #[error("Already used by {0}. Clear that binding first.")]
+    Conflict(String),
+    #[error("Enter is reserved for chat.")]
+    Reserved,
+    #[error("Unsupported key. Try a letter, number, function key or navigation key.")]
+    Unsupported,
+    #[error("No shortcut {0}.")]
+    Unknown(String),
+}
+
+/// The player's bindings: the catalog's defaults with their overrides.
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct KeyBindings {
+    /// Changed entries: a chord, or `None` for unbound.
+    pub overrides: BTreeMap<String, Option<Chord>>,
+}
+
+impl KeyBindings {
+    /// The current chord of an entry.
+    pub fn chord<'a>(&'a self, catalog: &'a [Entry], id: &str) -> Option<&'a Chord> {
+        match self.overrides.get(id) {
+            Some(chord) => chord.as_ref(),
+            None => catalog.iter().find(|e| e.id == id)?.default.as_ref(),
+        }
+    }
+
+    /// Whether a key press triggers the entry.
+    pub fn pressed(&self, catalog: &[Entry], id: &str, chord: &Chord) -> bool {
+        self.chord(catalog, id) == Some(chord)
+    }
+
+    /// Binds `id` to `chord`, refusing reserved, unsupported and taken keys.
+    pub fn bind(&mut self, catalog: &[Entry], id: &str, chord: Chord) -> Result<(), BindError> {
+        let entry = catalog
+            .iter()
+            .find(|e| e.id == id)
+            .ok_or_else(|| BindError::Unknown(id.into()))?;
+        if chord.code == "Enter" {
+            return Err(BindError::Reserved);
+        }
+        if key_code(&chord.code).is_none()
+            || (chord.is_modifier() && !entry.id.starts_with("health."))
+        {
+            return Err(BindError::Unsupported);
+        }
+        if let Some(other) = catalog
+            .iter()
+            .find(|e| e.id != id && self.chord(catalog, &e.id) == Some(&chord))
+        {
+            return Err(BindError::Conflict(other.label.clone()));
+        }
+        if entry.default.as_ref() == Some(&chord) {
+            self.overrides.remove(id);
+        } else {
+            self.overrides.insert(id.into(), Some(chord));
+        }
+        Ok(())
+    }
+
+    /// Leaves an entry unbound.
+    pub fn clear(&mut self, catalog: &[Entry], id: &str) {
+        if catalog.iter().any(|e| e.id == id && e.default.is_some()) {
+            self.overrides.insert(id.into(), None);
+        } else {
+            self.overrides.remove(id);
+        }
+    }
+
+    pub fn restore_defaults(&mut self) {
+        self.overrides.clear();
+    }
+
+    /// Pairs of entries sharing a chord (defaults may; the settings screen marks them).
+    pub fn conflicts<'a>(&'a self, catalog: &'a [Entry]) -> Vec<(&'a Entry, &'a Entry)> {
+        let mut by_chord: BTreeMap<&Chord, Vec<&Entry>> = BTreeMap::new();
+        for e in catalog {
+            if let Some(chord) = self.chord(catalog, &e.id) {
+                by_chord.entry(chord).or_default().push(e);
+            }
+        }
+        by_chord
+            .values()
+            .flat_map(|entries| {
+                entries
+                    .iter()
+                    .enumerate()
+                    .flat_map(move |(i, a)| entries[i + 1..].iter().map(move |b| (*a, *b)))
+            })
+            .collect()
+    }
+
+    /// Drops overrides of entries the catalog no longer has (old files after a change).
+    pub fn prune(&mut self, catalog: &[Entry]) {
+        self.overrides
+            .retain(|id, _| catalog.iter().any(|e| &e.id == id));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn chords_round_trip_through_text() {
+        let chord = Chord::parse("Ctrl+Shift+KeyH").unwrap();
+        assert!(chord.ctrl && chord.shift && !chord.alt);
+        assert_eq!(chord.to_string(), "Ctrl+Shift+KeyH");
+        assert_eq!(chord.label(), "Ctrl+Shift+H");
+        assert_eq!(Chord::parse("PageUp").unwrap().label(), "PgUp");
+        assert!(Chord::parse("Hyper+KeyA").is_none());
+        assert!(Chord::parse("Ctrl+").is_none());
+        let from_winit = Chord::of(KeyCode::KeyR, ModifiersState::SHIFT).unwrap();
+        assert_eq!(from_winit, Chord::parse("Shift+KeyR").unwrap());
+        assert_eq!(
+            Chord::of(KeyCode::AltLeft, ModifiersState::ALT)
+                .unwrap()
+                .to_string(),
+            "Alt"
+        );
+    }
+
+    #[test]
+    fn every_default_is_bindable_and_unique() {
+        let catalog = catalog();
+        let keys = KeyBindings::default();
+        assert!(keys.conflicts(&catalog).is_empty());
+        for e in &catalog {
+            let chord = e.default.as_ref().expect("a default");
+            assert!(key_code(&chord.code).is_some(), "{}", e.id);
+        }
+        let ids: std::collections::BTreeSet<&str> = catalog.iter().map(|e| e.id.as_str()).collect();
+        assert_eq!(ids.len(), catalog.len());
+    }
+
+    #[test]
+    fn rebinding_refuses_taken_reserved_and_unsupported_keys() {
+        let catalog = catalog();
+        let mut keys = KeyBindings::default();
+        let menu = "interface.gameMenu";
+        // Taken by "Rotate building clockwise".
+        assert_eq!(
+            keys.bind(&catalog, menu, Chord::key("KeyR")),
+            Err(BindError::Conflict("Rotate building clockwise".into()))
+        );
+        assert_eq!(
+            keys.bind(&catalog, menu, Chord::key("Enter")),
+            Err(BindError::Reserved)
+        );
+        assert_eq!(
+            keys.bind(&catalog, menu, Chord::key("Alt")),
+            Err(BindError::Unsupported)
+        );
+        assert_eq!(
+            keys.bind(&catalog, menu, Chord::key("KeyLol")),
+            Err(BindError::Unsupported)
+        );
+        // Clearing the holder frees the key.
+        keys.clear(&catalog, "placement.rotateClockwise");
+        assert_eq!(keys.chord(&catalog, "placement.rotateClockwise"), None);
+        keys.bind(&catalog, menu, Chord::key("KeyR")).unwrap();
+        assert!(keys.pressed(&catalog, menu, &Chord::key("KeyR")));
+        assert!(!keys.pressed(&catalog, menu, &Chord::key("F10")));
+        // Binding back to the default drops the override.
+        keys.bind(&catalog, menu, Chord::key("F10")).unwrap();
+        assert!(!keys.overrides.contains_key(menu));
+        keys.restore_defaults();
+        assert!(keys.overrides.is_empty());
+    }
+
+    #[test]
+    fn hand_edited_files_can_collide_and_are_reported() {
+        let catalog = catalog();
+        let keys: KeyBindings = serde_json::from_str(
+            r#"{"interface.gameMenu": "KeyR", "camera.alerts": null, "gone.entry": "KeyQ"}"#,
+        )
+        .unwrap();
+        let conflicts = keys.conflicts(&catalog);
+        assert_eq!(conflicts.len(), 1);
+        assert_eq!(conflicts[0].0.id, "interface.gameMenu");
+        assert_eq!(keys.chord(&catalog, "camera.alerts"), None);
+        let mut pruned = keys.clone();
+        pruned.prune(&catalog);
+        assert!(!pruned.overrides.contains_key("gone.entry"));
+    }
+}

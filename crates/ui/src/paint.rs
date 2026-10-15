@@ -233,7 +233,8 @@ impl Ctx<'_, '_> {
         let state = self.state(index);
         let style = &n.spec.style;
         let vis = style.visual_for(state);
-        let fx = fx.apply(&vis);
+        let mut fx = fx.apply(&vis);
+        fx.opacity *= n.opacity;
         if fx.opacity <= 0.002 {
             return;
         }

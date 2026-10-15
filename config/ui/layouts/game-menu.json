@@ -1,0 +1,41 @@
+{
+  "root": {
+    "class": "scrim gm-scrim",
+    "children": [
+      {
+        "class": "gm",
+        "children": [
+          { "id": "title", "kind": "label", "class": "gm-title", "text": "Skirmish menu" },
+          { "id": "sub", "kind": "label", "class": "gm-sub" },
+          {
+            "id": "main", "class": "gm-page",
+            "children": [
+              { "id": "resume", "kind": "button", "class": "gm-button", "text": "Resume", "action": "gm.resume" },
+              { "id": "save", "kind": "button", "class": "gm-button", "text": "Save game", "action": "gm.save" },
+              { "id": "load", "kind": "button", "class": "gm-button", "text": "Load game", "action": "gm.load" },
+              { "id": "restart", "kind": "button", "class": "gm-button", "text": "Restart scenario", "action": "gm.restart" },
+              { "id": "settings", "kind": "button", "class": "gm-button", "text": "Settings", "action": "gm.settings" },
+              { "id": "surrender", "kind": "button", "class": "gm-button", "text": "Surrender", "action": "gm.surrender" },
+              { "id": "exit", "kind": "button", "class": "gm-button", "text": "Exit to menu", "action": "gm.exit" }
+            ]
+          },
+          {
+            "id": "save-page", "class": "gm-page", "visible": false,
+            "children": [
+              { "kind": "label", "class": "mp-caption", "text": "Save name" },
+              { "id": "name", "kind": "text_field", "class": "mp-field", "max_length": 100, "action": "gm.save-name" },
+              {
+                "class": "gm-row",
+                "children": [
+                  { "kind": "button", "class": "gm-button st-grow", "text": "Save", "action": "gm.save-confirm" },
+                  { "kind": "button", "class": "gm-button st-grow", "text": "Back", "action": "gm.page-back" }
+                ]
+              }
+            ]
+          },
+          { "id": "status", "kind": "label", "class": "gm-status" }
+        ]
+      }
+    ]
+  }
+}

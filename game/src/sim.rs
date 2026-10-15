@@ -26,6 +26,7 @@ use std::{
     sync::{
         Arc, Mutex,
         atomic::{AtomicBool, AtomicU32, Ordering},
+        mpsc,
     },
     thread::JoinHandle,
     time::{Duration, Instant},
@@ -67,6 +68,8 @@ pub struct Snapshot {
     pub slowdowns: u32,
     /// The match outcome is decided.
     pub decided: bool,
+    /// Campaign presentation (objectives, dialogue, scene) of missions.
+    pub mission: Option<canopy_sim::view::MissionView>,
 }
 
 impl Snapshot {
@@ -132,6 +135,56 @@ pub struct SimThread {
     mailbox: Arc<Mailbox>,
     stop: Arc<AtomicBool>,
     handle: Option<JoinHandle<()>>,
+    controls: mpsc::Sender<Control>,
+    notices: mpsc::Receiver<Notice>,
+    live: Arc<Mutex<LiveStatus>>,
+}
+
+/// What the window thread asks of a running match.
+pub enum Control {
+    /// Holds the match still (single-player; multiplayer has no pause, D32).
+    Pause(bool),
+    /// Replies with the world's save between two ticks.
+    Save(mpsc::Sender<canopy_sim::Save>),
+    /// A chat line (networked matches).
+    Chat(String),
+}
+
+/// What a running match tells the window thread.
+#[derive(Debug, Clone)]
+pub enum Notice {
+    Net(canopy_net::Event),
+    /// The outcome was decided at `tick`.
+    Decided {
+        outcome: canopy_sim::state::Outcome,
+        tick: u32,
+    },
+}
+
+/// The match's connection and pause state, updated every loop of the thread.
+#[derive(Debug, Clone)]
+pub struct LiveStatus {
+    pub status: canopy_net::Status,
+    pub paused: bool,
+    pub tick: u32,
+}
+
+/// What a networked seat reports once its world is built (`ready`).
+pub struct Ready {
+    pub content: canopy_net::ContentIdentity,
+    pub build: String,
+}
+
+/// The wire form of an outcome: zero-based player slots.
+pub fn wire_outcome(outcome: &canopy_sim::state::Outcome) -> canopy_net::wire::WireOutcome {
+    let player = |o: &canopy_content::placement::Owner| match o {
+        canopy_content::placement::Owner::Player(p) => Some(*p),
+        canopy_content::placement::Owner::Nobody => None,
+    };
+    canopy_net::wire::WireOutcome {
+        winner: outcome.winner.as_ref().and_then(player),
+        defeated: outcome.defeated.iter().filter_map(player).collect(),
+    }
 }
 
 /// Whether a unit is held inside another entity (the view does not carry it yet).
@@ -144,13 +197,20 @@ pub fn held(world: &World, id: canopy_sim::entity::EntityId) -> bool {
         .is_some_and(|u| u.contained.is_some() || u.release.is_some())
 }
 
+/// What the game shows of a tick besides the picture.
+#[derive(Debug, Clone, Default)]
+pub struct Facts {
+    pub outcome: Option<canopy_sim::state::Outcome>,
+    pub mission: Option<canopy_sim::view::MissionView>,
+}
+
 /// Steps `world` once through `session` and presents the tick; `None` while the session
 /// waits for the next beat.
 pub fn advance(
     world: &mut World,
     session: &mut Session,
     presenter: &mut Presenter,
-) -> Option<(Presentation, TickCost, bool)> {
+) -> Option<(Presentation, TickCost, Facts)> {
     let started = Instant::now();
     session.advance(world)?;
     let stepped = Instant::now();
@@ -169,7 +229,10 @@ pub fn advance(
             view: ms(stepped, viewed),
             present: ms(viewed, presented),
         },
-        view.outcome.is_some(),
+        Facts {
+            outcome: view.outcome.clone(),
+            mission: view.mission.clone(),
+        },
     ))
 }
 
@@ -180,24 +243,38 @@ pub fn present(world: &World, presenter: &mut Presenter) -> Presentation {
 }
 
 impl SimThread {
-    /// Starts the match: first fast-forwards to `start_tick` (presenting every tick), then
-    /// runs at `tick_length` per tick (zero: as fast as possible).
-    pub fn spawn(
+    /// Starts a match: first fast-forwards to `start_tick` (presenting every tick), then
+    /// runs at `tick_length` per tick (zero: as fast as possible). A networked seat
+    /// reports `ready` once its world is built, and its outcome to the server once
+    /// decided (D32).
+    pub fn start(
         mut world: World,
         mut session: Session,
         mut presenter: Presenter,
         tick_length: Duration,
         start_tick: u32,
+        ready: Option<Ready>,
     ) -> Self {
         let mailbox = Arc::new(Mailbox::default());
         let stop = Arc::new(AtomicBool::new(false));
+        let (control_tx, controls) = mpsc::channel::<Control>();
+        let (notice_tx, notices) = mpsc::channel::<Notice>();
+        let live = Arc::new(Mutex::new(LiveStatus {
+            status: session.status(),
+            paused: false,
+            tick: world.tick(),
+        }));
         let handle = {
             let mailbox = mailbox.clone();
             let stop = stop.clone();
+            let live = live.clone();
             std::thread::Builder::new()
                 .name("simulation".into())
                 .spawn(move || {
                     let _span = tracing::info_span!("simulation_thread").entered();
+                    if let Some(ready) = ready {
+                        session.ready(ready.content, &ready.build, world.tick());
+                    }
                     let started = Instant::now();
                     while world.tick() < start_tick && !stop.load(Ordering::Relaxed) {
                         if advance(&mut world, &mut session, &mut presenter).is_none() {
@@ -216,6 +293,16 @@ impl SimThread {
                     // Schedule: simulation time of tick n is epoch + (n − tick0) · length.
                     let mut epoch = Instant::now();
                     let mut slowdowns = 0;
+                    let networked = session.room().is_some();
+                    let mut paused_at: Option<Instant> = None;
+                    let mut reported = false;
+                    let facts = {
+                        let view = world.observer_view();
+                        Facts {
+                            outcome: view.outcome.clone(),
+                            mission: view.mission.clone(),
+                        }
+                    };
                     mailbox.publish(Arc::new(Snapshot {
                         presentation: first,
                         epoch,
@@ -223,9 +310,43 @@ impl SimThread {
                         tick_length,
                         cost: TickCost::default(),
                         slowdowns,
-                        decided: false,
+                        decided: facts.outcome.is_some(),
+                        mission: facts.mission,
                     }));
                     while !stop.load(Ordering::Relaxed) {
+                        // Controls from the window thread.
+                        while let Ok(control) = controls.try_recv() {
+                            match control {
+                                Control::Pause(pause) if !networked => {
+                                    match (pause, paused_at) {
+                                        (true, None) => paused_at = Some(Instant::now()),
+                                        (false, Some(at)) => {
+                                            // Resume where the match stopped: no catch-up.
+                                            epoch += at.elapsed();
+                                            paused_at = None;
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                                Control::Pause(_) => {}
+                                Control::Save(reply) => {
+                                    let _ = reply.send(world.save());
+                                }
+                                Control::Chat(text) => session.chat(&text),
+                            }
+                        }
+                        for event in session.poll() {
+                            let _ = notice_tx.send(Notice::Net(event));
+                        }
+                        if let Ok(mut l) = live.try_lock() {
+                            l.status = session.status();
+                            l.paused = paused_at.is_some();
+                            l.tick = world.tick();
+                        }
+                        if paused_at.is_some() {
+                            std::thread::sleep(Duration::from_millis(5));
+                            continue;
+                        }
                         let next = world.tick() + 1;
                         let ahead = (next - tick0).saturating_sub(LEAD);
                         let due = epoch + tick_length * ahead;
@@ -242,12 +363,26 @@ impl SimThread {
                                 slowdowns += 1;
                             }
                         }
-                        let Some((presentation, cost, decided)) =
+                        let Some((presentation, cost, facts)) =
                             advance(&mut world, &mut session, &mut presenter)
                         else {
                             std::thread::sleep(Duration::from_millis(1));
                             continue;
                         };
+                        if let (Some(outcome), false) = (&facts.outcome, reported) {
+                            reported = true;
+                            let _ = notice_tx.send(Notice::Decided {
+                                outcome: outcome.clone(),
+                                tick: world.tick(),
+                            });
+                            if networked {
+                                session.report_outcome(
+                                    wire_outcome(outcome),
+                                    world.tick(),
+                                    world.fingerprint(),
+                                );
+                            }
+                        }
                         mailbox.publish(Arc::new(Snapshot {
                             presentation,
                             epoch,
@@ -255,7 +390,8 @@ impl SimThread {
                             tick_length,
                             cost,
                             slowdowns,
-                            decided,
+                            decided: facts.outcome.is_some(),
+                            mission: facts.mission,
                         }));
                     }
                 })
@@ -265,7 +401,35 @@ impl SimThread {
             mailbox,
             stop,
             handle: Some(handle),
+            controls: control_tx,
+            notices,
+            live,
         }
+    }
+
+    /// Sends a control to the simulation thread.
+    pub fn control(&self, control: Control) {
+        let _ = self.controls.send(control);
+    }
+
+    /// What happened since the last call (network events, the decision).
+    pub fn notices(&self) -> Vec<Notice> {
+        self.notices.try_iter().collect()
+    }
+
+    /// The session's status and the pause, as of the thread's last loop.
+    pub fn live(&self) -> LiveStatus {
+        self.live
+            .lock()
+            .map(|l| l.clone())
+            .unwrap_or_else(|e| e.into_inner().clone())
+    }
+
+    /// The world's save, taken between ticks (waits for the thread at most `timeout`).
+    pub fn save(&self, timeout: Duration) -> Option<canopy_sim::Save> {
+        let (tx, rx) = mpsc::channel();
+        self.control(Control::Save(tx));
+        rx.recv_timeout(timeout).ok()
     }
 
     pub fn mailbox(&self) -> &Mailbox {
@@ -292,7 +456,7 @@ impl Drop for SimThread {
 #[cfg(test)]
 #[path = "../../crates/sim/tests/ai_fixture/mod.rs"]
 #[allow(clippy::all)]
-mod ai_fixture;
+pub(crate) mod ai_fixture;
 
 #[cfg(test)]
 mod tests {
@@ -310,6 +474,7 @@ mod tests {
             cost: TickCost::default(),
             slowdowns: 0,
             decided: false,
+            mission: None,
         })
     }
 
@@ -378,6 +543,7 @@ mod tests {
             cost: TickCost::default(),
             slowdowns: 0,
             decided: false,
+            mission: None,
         };
         let at = |ms: u64| render_tick(&s, epoch + Duration::from_millis(ms));
         assert!((at(250) - 109.0).abs() < 1e-9);
@@ -405,7 +571,7 @@ mod tests {
                 statics: 0,
             },
         );
-        let thread = SimThread::spawn(world, session, presenter, Duration::ZERO, 100);
+        let thread = SimThread::start(world, session, presenter, Duration::ZERO, 100, None);
         let started = Instant::now();
         let mut seen: Vec<u32> = Vec::new();
         let mut out = Vec::new();

@@ -1,10 +1,14 @@
 //! Under the Canopy: the game executable.
 
 mod app;
+mod data;
 mod gpu;
 mod live;
 mod options;
 mod paths;
+mod saves;
+mod screens;
+mod settings;
 mod shot;
 mod sim;
 mod telemetry;
@@ -22,6 +26,9 @@ fn main() -> Result<()> {
     tracing::info!(data = %paths.data.display(), user = %paths.user.display(), "starting");
     match &options.command {
         Command::Shot { out, size } => shot::run(&options, &paths, out, *size),
+        Command::CaptureScreens { out, size, scale } => {
+            screens::capture::run(&paths, out, *size, *scale)
+        }
         Command::Play => {
             let event_loop = EventLoop::new()?;
             let mut app = app::App::new(options, paths);

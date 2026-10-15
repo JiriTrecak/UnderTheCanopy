@@ -1,0 +1,29 @@
+{
+  "root": {
+    "class": "ld",
+    "children": [
+      { "id": "art", "kind": "image", "class": "cover", "image": "menu-aftermath" },
+      { "class": "ld-frame" },
+      {
+        "id": "copy", "class": "ld-copy",
+        "children": [
+          { "id": "crest", "kind": "image", "class": "ld-crest", "visible": false },
+          { "id": "chapter", "kind": "label", "class": "ld-chapter" },
+          { "id": "title", "kind": "label", "class": "ld-title", "text": "Preparing the battlefield" },
+          { "id": "briefing", "kind": "label", "class": "ld-briefing" }
+        ]
+      },
+      {
+        "class": "ld-footer",
+        "children": [
+          { "id": "error", "kind": "label", "class": "ld-error", "visible": false },
+          { "id": "stage", "kind": "label", "class": "ld-stage" },
+          { "id": "progress", "kind": "bar", "class": "progress ld-progress", "value": 0 },
+          { "kind": "label", "class": "loading-label", "text": "Loading" },
+          { "id": "tip", "kind": "label", "class": "ld-tip" }
+        ]
+      },
+      { "id": "back", "kind": "button", "class": "ld-back", "text": "Back to menu", "action": "loading.back" }
+    ]
+  }
+}

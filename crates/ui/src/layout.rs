@@ -108,8 +108,8 @@ impl Ui {
         let layout = *self.tree.taffy.layout(taffy_id).expect("layout");
         let node = self.tree.node(index);
         let local = Rect::new(
-            origin.x + layout.location.x + node.offset.x - parent_scroll.x,
-            origin.y + layout.location.y + node.offset.y - parent_scroll.y,
+            origin.x + layout.location.x + node.offset.x + node.shift.x - parent_scroll.x,
+            origin.y + layout.location.y + node.offset.y + node.shift.y - parent_scroll.y,
             layout.size.width,
             layout.size.height,
         );

@@ -248,6 +248,21 @@ impl Session {
         )
     }
 
+    /// A single-player match resumed from a save: like [`Session::local`], with beats up
+    /// to `clock` (`World::tick()` of the restored world) already played.
+    pub fn local_from(setup: MatchSetup, me: Option<u8>, clock: u32) -> Self {
+        let mut session = Self::local(setup, me);
+        if let Transport::Local(local) = &mut session.transport {
+            local.mailbox.resume(clock);
+            for outbox in local.outboxes.values_mut() {
+                outbox.resume(clock);
+            }
+        }
+        session.received = clock;
+        session.clock = clock;
+        session
+    }
+
     pub(crate) fn remote(net: Net, link: Link, joined: &Joined) -> Self {
         let remote = Remote {
             net,
@@ -737,6 +752,23 @@ mod tests {
         assert_eq!(turn.commands[1].action, stop(8));
         assert!(session.next_turn(2).unwrap().commands.is_empty());
         assert_eq!(session.status().delay, 1);
+    }
+
+    #[test]
+    fn a_resumed_local_match_continues_from_its_clock() {
+        // Far beyond how far a confirmation may reach past the last commit.
+        let clock = crate::mailbox::MAX_CONFIRM_AHEAD * 3;
+        let mut session = Session::local_from(setup(2), Some(0), clock);
+        let turn = session
+            .next_turn(clock)
+            .expect("the next beat is committed at once");
+        assert_eq!(turn.beat, clock + 1);
+        assert!(session.send(stop(3)));
+        let turn = session.next_turn(clock + 1).unwrap();
+        assert_eq!(turn.beat, clock + 2);
+        assert_eq!(turn.commands.len(), 1);
+        assert_eq!(turn.commands[0].tick, clock + 1);
+        assert_eq!(session.commits.len(), 0, "no stale commits pile up");
     }
 
     #[test]
