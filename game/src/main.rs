@@ -1,6 +1,7 @@
 //! Under the Canopy: the game executable.
 
 mod app;
+mod clipboard;
 mod data;
 mod gpu;
 mod live;

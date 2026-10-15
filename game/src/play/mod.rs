@@ -14,6 +14,7 @@
 pub mod capture;
 pub mod card;
 pub mod debug;
+pub mod follow;
 pub mod hud;
 pub mod input;
 pub mod keys;
@@ -201,6 +202,8 @@ pub struct Play {
     pub always_health_bars: bool,
     /// Commands sent, newest last (debug overlay).
     pub sent: Vec<(Duration, Action)>,
+    /// The unit camera (J cycles it; Escape and camera jumps return to RTS).
+    pub camera_mode: follow::CameraMode,
 }
 
 impl Play {
@@ -245,6 +248,7 @@ impl Play {
             keymap: Keymap::default(),
             always_health_bars: false,
             sent: Vec::new(),
+            camera_mode: follow::CameraMode::Rts,
         };
         // Facts from before the match was shown are not news.
         play.seen_fact = play.know.view.facts.last().map(|f| f.id);
@@ -316,6 +320,11 @@ impl Play {
     /// went away or changed.
     fn refresh(&mut self) {
         self.commands = card::commands(&self.know, self.selection.ids());
+        match card::camera(&self.know, self.selection.ids(), self.camera_mode) {
+            Some(c) => self.commands.push(c),
+            // The followed unit died, left sight or entered a building.
+            None => self.camera_mode = follow::CameraMode::Rts,
+        }
         self.entries = card::menu(&self.know, &self.commands, self.menu.as_deref());
         for c in self.commands.iter_mut().chain(self.entries.iter_mut()) {
             c.chord = self.keymap.command(&c.id, c.hotkey.as_deref());
@@ -970,6 +979,9 @@ impl Play {
             Shortcut::Cancel => {
                 if self.mode != Mode::Idle {
                     self.mode = Mode::Idle;
+                } else if self.camera_mode != follow::CameraMode::Rts {
+                    self.camera_mode = follow::CameraMode::Rts;
+                    self.refresh();
                 } else if self.menu.is_some() {
                     self.activate_id("back", false);
                 } else {
@@ -1226,6 +1238,10 @@ impl Play {
                     source: (c.id.clone(), c.actors.clone()),
                     name: c.name.clone(),
                 };
+            }
+            Activate::Camera => {
+                self.mode = Mode::Idle;
+                self.camera_mode = self.camera_mode.next();
             }
             Activate::Menu(_) => {}
         }

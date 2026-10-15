@@ -1,0 +1,281 @@
+//! Unit cameras (old `shared/camera/modes.ts`, `render/camera/unitCamera.ts` and the
+//! close pose of `camera.ts`): the RTS view, or a third- or first-person camera locked
+//! to the focused unit, cycled by the content's camera command (J) and left with Escape.
+//!
+//! The pose is a pure function of the unit as the frame draws it (feet, facing, scale)
+//! and its render asset's camera anchor; a pose change (mode or unit) blends from the
+//! last shown view over 350 ms with smoothstep, then the camera tracks the unit hard.
+
+use canopy_render::CameraView;
+use glam::{Mat4, Quat, Vec3};
+
+/// Which camera the player looks through.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum CameraMode {
+    #[default]
+    Rts,
+    ThirdPerson,
+    FirstPerson,
+}
+
+impl CameraMode {
+    /// The next mode (RTS → third person → first person → RTS).
+    pub fn next(self) -> Self {
+        match self {
+            Self::Rts => Self::ThirdPerson,
+            Self::ThirdPerson => Self::FirstPerson,
+            Self::FirstPerson => Self::Rts,
+        }
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Rts => "RTS",
+            Self::ThirdPerson => "Third person",
+            Self::FirstPerson => "First person",
+        }
+    }
+}
+
+/// Upward aim added to the third-person view (old `THIRD_PERSON_LOOK_UP`).
+const THIRD_PERSON_LOOK_UP: f32 = 10.0 * std::f32::consts::PI / 180.0;
+/// Blend from the previous view when the pose changes (old default `transitionMs`).
+pub const TRANSITION_SECONDS: f32 = 0.35;
+/// Close cameras' planes (old near 0.08, far 180).
+pub const NEAR: f32 = 0.08;
+pub const FAR: f32 = 180.0;
+
+/// The unit a close camera follows, as drawn.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Subject {
+    pub position: Vec3,
+    /// Facing about +Y; forward is `(sin yaw, 0, cos yaw)`.
+    pub yaw: f32,
+    pub eye_height: f32,
+    pub eye_forward: f32,
+    pub distance: f32,
+}
+
+impl Subject {
+    /// From the model's transform and the asset's camera anchor (old `cameraSubject`:
+    /// anchor height, else 0.65 × the health bar height (at least 0.65); forward 0;
+    /// distance 7; all × the model's scale).
+    pub fn of(
+        transform: Mat4,
+        anchor: Option<&canopy_content::game::CameraAnchor>,
+        health_height: Option<f64>,
+    ) -> Self {
+        let (scale, rotation, position) = transform.to_scale_rotation_translation();
+        let forward = rotation * Vec3::Z;
+        let s = scale.x.abs().max(1e-3);
+        let height = anchor.map_or_else(
+            || (health_height.unwrap_or(2.5) as f32 * 0.65).max(0.65),
+            |a| a.height as f32,
+        );
+        Self {
+            position,
+            yaw: forward.x.atan2(forward.z),
+            eye_height: height * s,
+            eye_forward: anchor.map_or(0.0, |a| a.forward as f32) * s,
+            distance: anchor.map_or(7.0, |a| a.distance as f32) * s,
+        }
+    }
+}
+
+/// A close pose: eye, aim, the followed focus and the vertical field of view.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Pose {
+    pub eye: Vec3,
+    pub target: Vec3,
+    pub focus: Vec3,
+    pub fov_degrees: f32,
+}
+
+/// The close pose of `mode` (old `unitCameraPose`); `None` for the RTS view.
+pub fn pose(subject: &Subject, mode: CameraMode) -> Option<Pose> {
+    let forward = Vec3::new(subject.yaw.sin(), 0.0, subject.yaw.cos());
+    let focus = subject.position + Vec3::Y * subject.eye_height;
+    let (eye, mut target, fov) = match mode {
+        CameraMode::Rts => return None,
+        CameraMode::FirstPerson => (
+            focus + forward * subject.eye_forward,
+            focus + forward * 8.0,
+            68.0,
+        ),
+        CameraMode::ThirdPerson => {
+            let d = subject.distance;
+            (
+                focus - forward * d + Vec3::Y * (d * 0.4),
+                focus + forward * 2.0,
+                55.0,
+            )
+        }
+    };
+    if mode == CameraMode::ThirdPerson {
+        // Shows more of the canopy without moving the boom.
+        let horizontal = (target.x - eye.x).hypot(target.z - eye.z);
+        let pitch = (target.y - eye.y).atan2(horizontal) + THIRD_PERSON_LOOK_UP;
+        target.y = eye.y + pitch.tan() * horizontal;
+    }
+    if target.distance_squared(eye) < 0.001 {
+        target += forward;
+    }
+    Some(Pose {
+        eye,
+        target,
+        focus,
+        fov_degrees: fov,
+    })
+}
+
+/// Pulls the third-person boom in front of the ground (old renderer: samples every
+/// 0.15 along the boom, 0.2 clearance, the eye 0.25 short of the obstruction and at
+/// least 0.1 from the focus). The old boom also stopped at scenery and buildings.
+pub fn clear_boom(pose: &mut Pose, ground: impl Fn(f32, f32) -> f32) {
+    let offset = pose.eye - pose.focus;
+    let distance = offset.length();
+    if distance <= 0.0 {
+        return;
+    }
+    let direction = offset / distance;
+    let mut allowed = distance;
+    let mut d = 0.15;
+    while d < allowed {
+        let p = pose.focus + direction * d;
+        if p.y < ground(p.x, p.z) + 0.2 {
+            allowed = d;
+            break;
+        }
+        d += 0.15;
+    }
+    pose.eye = pose.focus + direction * (allowed - 0.25).max(0.1);
+}
+
+/// The rotation looking from `eye` at `target` (camera −Z towards the target).
+fn look_rotation(eye: Vec3, target: Vec3) -> Quat {
+    let d = (target - eye).normalize_or(Vec3::NEG_Z);
+    let yaw = (-d.x).atan2(-d.z);
+    let pitch = d.y.clamp(-1.0, 1.0).asin();
+    Quat::from_rotation_y(yaw) * Quat::from_rotation_x(pitch)
+}
+
+/// What the close camera shows over time.
+#[derive(Debug, Clone, Default)]
+pub struct Follow {
+    /// The pose being blended to: mode and entity.
+    key: Option<(CameraMode, u32)>,
+    from: Option<(Vec3, Quat, f32)>,
+    elapsed: f32,
+    /// The last view shown (eye, rotation, vertical fov in radians).
+    last: Option<(Vec3, Quat, f32)>,
+}
+
+impl Follow {
+    /// Remembers the RTS view shown (the start of the next blend).
+    pub fn shown(&mut self, view: &CameraView) {
+        self.key = None;
+        self.last = Some((view.eye, look_rotation(view.eye, view.target), view.fov_y));
+    }
+
+    /// The close view for `pose` (keyed by mode and entity) after `dt` seconds.
+    pub fn view(
+        &mut self,
+        key: (CameraMode, u32),
+        pose: &Pose,
+        dt: f32,
+        aspect: f32,
+    ) -> CameraView {
+        if self.key != Some(key) {
+            self.key = Some(key);
+            self.from = self.last;
+            self.elapsed = 0.0;
+        }
+        self.elapsed += dt.max(0.0);
+        let to_rotation = look_rotation(pose.eye, pose.target);
+        let to_fov = pose.fov_degrees.to_radians();
+        let t = (self.elapsed / TRANSITION_SECONDS).min(1.0);
+        let blend = t * t * (3.0 - 2.0 * t);
+        let (eye, rotation, fov) = match self.from {
+            Some((eye, rotation, fov)) if blend < 1.0 => (
+                eye.lerp(pose.eye, blend),
+                rotation.slerp(to_rotation, blend),
+                fov + (to_fov - fov) * blend,
+            ),
+            _ => (pose.eye, to_rotation, to_fov),
+        };
+        self.last = Some((eye, rotation, fov));
+        let ahead = eye + rotation * Vec3::NEG_Z * pose.eye.distance(pose.target).max(1.0);
+        CameraView::look_at(eye, ahead, fov, aspect, NEAR, FAR)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn subject() -> Subject {
+        Subject {
+            position: Vec3::new(10.0, 0.0, 20.0),
+            yaw: 0.0,
+            eye_height: 1.5,
+            eye_forward: 0.2,
+            distance: 7.0,
+        }
+    }
+
+    #[test]
+    fn modes_cycle_and_poses_follow_the_old_rules() {
+        assert_eq!(CameraMode::Rts.next(), CameraMode::ThirdPerson);
+        assert_eq!(CameraMode::FirstPerson.next(), CameraMode::Rts);
+        let s = subject();
+        assert!(pose(&s, CameraMode::Rts).is_none());
+        let first = pose(&s, CameraMode::FirstPerson).unwrap();
+        assert!((first.eye - Vec3::new(10.0, 1.5, 20.2)).length() < 1e-5);
+        assert!((first.target - Vec3::new(10.0, 1.5, 28.0)).length() < 1e-5);
+        assert_eq!(first.fov_degrees, 68.0);
+        let third = pose(&s, CameraMode::ThirdPerson).unwrap();
+        // Behind (−forward × 7) and above (0.4 × 7) the eye point.
+        assert!((third.eye - Vec3::new(10.0, 1.5 + 2.8, 13.0)).length() < 1e-5);
+        // Aimed 10° above the old trailing view.
+        let old = (1.5 - 4.3f32).atan2(9.0);
+        let now = (third.target.y - third.eye.y).atan2(third.target.z - third.eye.z);
+        assert!((now - old - THIRD_PERSON_LOOK_UP).abs() < 1e-4);
+        assert_eq!(third.fov_degrees, 55.0);
+    }
+
+    #[test]
+    fn the_boom_stops_in_front_of_rising_ground() {
+        let s = subject();
+        let mut p = pose(&s, CameraMode::ThirdPerson).unwrap();
+        let free = p.eye;
+        clear_boom(&mut p, |_, _| -10.0);
+        assert!((p.eye - p.focus).length() < (free - p.focus).length());
+        let mut p = pose(&s, CameraMode::ThirdPerson).unwrap();
+        // A wall of ground behind the unit.
+        clear_boom(&mut p, |_, z| if z < 18.0 { 10.0 } else { 0.0 });
+        assert!(p.eye.z >= 17.5, "{:?}", p.eye);
+    }
+
+    #[test]
+    fn a_new_pose_blends_from_the_last_view_then_tracks() {
+        let s = subject();
+        let p = pose(&s, CameraMode::FirstPerson).unwrap();
+        let mut f = Follow::default();
+        let rts = CameraView::look_at(
+            Vec3::new(10.0, 60.0, -20.0),
+            Vec3::new(10.0, 0.0, 20.0),
+            0.6,
+            1.6,
+            0.5,
+            500.0,
+        );
+        f.shown(&rts);
+        let start = f.view((CameraMode::FirstPerson, 1), &p, 0.0, 1.6);
+        assert!((start.eye - rts.eye).length() < 1e-3);
+        let mid = f.view((CameraMode::FirstPerson, 1), &p, 0.175, 1.6);
+        assert!(mid.eye.distance(p.eye) < rts.eye.distance(p.eye));
+        let end = f.view((CameraMode::FirstPerson, 1), &p, 1.0, 1.6);
+        assert!((end.eye - p.eye).length() < 1e-4);
+        assert!((end.fov_y - 68f32.to_radians()).abs() < 1e-5);
+    }
+}

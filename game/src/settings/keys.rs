@@ -674,6 +674,17 @@ mod tests {
     }
 
     #[test]
+    fn authored_hotkeys_read_like_the_old_authored_key() {
+        assert_eq!(authored("q"), Some(Chord::key("KeyQ")));
+        assert_eq!(authored("ESC"), Some(Chord::key("Escape")));
+        assert_eq!(authored("Escape"), Some(Chord::key("Escape")));
+        assert_eq!(authored("F2"), Some(Chord::key("F2")));
+        assert_eq!(authored(""), None);
+        assert_eq!(command_id("back"), "command.navigation:back");
+        assert_eq!(command_id("cast:bolt"), "command.cast:bolt");
+    }
+
+    #[test]
     fn hand_edited_files_can_collide_and_are_reported() {
         let catalog = catalog();
         let keys: KeyBindings = serde_json::from_str(

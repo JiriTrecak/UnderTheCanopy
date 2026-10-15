@@ -12,6 +12,7 @@
 use super::{
     Event, Play,
     debug::{Debug, Stats as DebugStats},
+    follow::{self, CameraMode},
     hud::Hud,
     input::{self, Input},
     keys::{Keymap, Shortcut},
@@ -29,7 +30,7 @@ use crate::{
 use anyhow::Result;
 use canopy_render::{
     CameraView, FrameReport, Gpu, Renderer, RtsCamera,
-    camera::{EDGE_SCROLL_PIXELS, MAX_STEP_MS},
+    camera::{EDGE_SCROLL_PIXELS, Ground, MAX_STEP_MS},
 };
 use canopy_sim::catalog::Catalog;
 use canopy_ui::{DrawList, Ui};
@@ -44,6 +45,8 @@ use winit::{
     window::Window,
 };
 
+/// Seconds per simulation tick (D3).
+const TICK_SECONDS: f32 = 0.025;
 /// PageUp/PageDown wheel pixels per millisecond (old `camera.zoomIn`).
 const KEY_ZOOM: f32 = 0.7;
 /// Radians per second a spectator turns with Q and E.
@@ -113,6 +116,8 @@ pub struct InMatch {
     hud_hidden: bool,
     last_tick: Option<u32>,
     camera_view: Option<CameraView>,
+    /// The unit camera's blend between poses.
+    follow: follow::Follow,
     screen: Option<Screen>,
     stats: DebugStats,
     frames: u32,
@@ -231,6 +236,7 @@ impl InMatch {
             hud_hidden: false,
             last_tick: None,
             camera_view: None,
+            follow: follow::Follow::default(),
             screen: None,
             stats: DebugStats::default(),
             frames: 0,
@@ -425,11 +431,15 @@ impl InMatch {
                 button: MouseButton::Middle,
                 ..
             } => {
-                self.drag = (*state == ElementState::Pressed && !consumed)
+                self.drag = (*state == ElementState::Pressed
+                    && !consumed
+                    && self.play.camera_mode == CameraMode::Rts)
                     .then_some(self.cursor)
                     .flatten();
             }
-            WindowEvent::MouseWheel { delta, .. } if !consumed => {
+            WindowEvent::MouseWheel { delta, .. }
+                if !consumed && self.play.camera_mode == CameraMode::Rts =>
+            {
                 let pixels = match delta {
                     MouseScrollDelta::LineDelta(_, y) => -y * 16.0 * 6.25,
                     MouseScrollDelta::PixelDelta(p) => -p.y as f32,
@@ -468,6 +478,30 @@ impl InMatch {
         self.play.input(&input, terrain);
     }
 
+    /// The unit camera's view of the focused unit, or `None` for the RTS view.
+    fn close_view(&mut self, aspect: f32, dt: f32) -> Option<CameraView> {
+        let mode = self.play.camera_mode;
+        if mode == CameraMode::Rts {
+            return None;
+        }
+        let id = self.play.selection.focus()?;
+        let transform = self.live.entity_transform(id)?;
+        let k = self.play.knowledge();
+        let d = k.def_of(id)?;
+        let asset = self.content.asset(d.asset.as_str());
+        let subject = follow::Subject::of(
+            transform,
+            asset.and_then(|a| a.camera_anchor.as_ref()),
+            asset.and_then(|a| a.health_height),
+        );
+        let mut pose = follow::pose(&subject, mode)?;
+        if mode == CameraMode::ThirdPerson {
+            let terrain = self.loaded.scene.terrain();
+            follow::clear_boom(&mut pose, |x, z| terrain.height(x, z));
+        }
+        Some(self.follow.view((mode, id), &pose, dt, aspect))
+    }
+
     /// Whether a held key holds `shortcut` (camera keys from the player's bindings).
     fn held(&self, shortcut: Shortcut) -> bool {
         self.play
@@ -478,7 +512,8 @@ impl InMatch {
     }
 
     fn update_camera(&mut self, size: [u32; 2], scale: f32, dt_ms: f32, free: bool, typing: bool) {
-        let steer = free && !typing;
+        // A unit camera ignores panning and zoom (old `followingUnit`).
+        let steer = free && !typing && self.play.camera_mode == CameraMode::Rts;
         let mut dir = [0.0f32, 0.0];
         if steer {
             if self.held(Shortcut::PanLeft) {
@@ -554,6 +589,10 @@ impl InMatch {
 
         // The newest view and the interpolated scene.
         let live_started = Instant::now();
+        // The first-person camera does not draw its own body (old `hideCameraBody`).
+        self.live.hidden_entity = (self.play.camera_mode == CameraMode::FirstPerson)
+            .then(|| self.play.selection.focus())
+            .flatten();
         self.live.poll(self.sim.mailbox());
         self.live.frame(host.renderer, gpu, &self.loaded.pack, now);
         let newest = self.live.newest().cloned();
@@ -564,11 +603,24 @@ impl InMatch {
                     host.audio.observe(&snap.view);
                 }
             }
+            if self.last_tick != Some(s.tick())
+                && let Some(day) = &self.loaded.day
+            {
+                // The old sky's day cycle, on match time (it stops while paused).
+                host.renderer
+                    .set_lighting(day.lighting(s.tick() as f32 * TICK_SECONDS));
+            }
             self.last_tick = Some(s.tick());
             self.hud.colonies = s.colonies.clone();
         }
         let live_ms = live_started.elapsed().as_secs_f32() * 1000.0;
-        let camera_view = view::frame(&mut self.camera, aspect, &self.loaded.scene);
+        let rts_view = view::frame(&mut self.camera, aspect, &self.loaded.scene);
+        let camera_view = self
+            .close_view(aspect, dt_ms / 1000.0)
+            .unwrap_or_else(|| {
+                self.follow.shown(&rts_view);
+                rts_view
+            });
         let screen = Screen {
             camera: camera_view,
             size: [size[0] as f32, size[1] as f32],
@@ -740,6 +792,8 @@ impl InMatch {
         events.extend(self.play.take_events());
         events.retain(|e| match e {
             Event::LookAt([x, z]) => {
+                // A camera jump returns to the RTS view (old `lookAt` hook).
+                self.play.camera_mode = CameraMode::Rts;
                 self.camera.look_at(*x, *z);
                 false
             }

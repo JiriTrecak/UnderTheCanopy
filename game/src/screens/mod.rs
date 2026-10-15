@@ -167,6 +167,8 @@ pub struct Game {
     pub audio: canopy_audio::Audio,
     /// What the match follows of the settings (shortcuts, health bars).
     play_options: PlayOptions,
+    /// The cursor last set on the window.
+    cursor: Option<winit::window::CursorIcon>,
     modifiers: ModifiersState,
     started: Instant,
     last_frame: Instant,
@@ -218,6 +220,7 @@ impl Game {
             progress: Progress::load(&paths.user),
             catalog,
             play_options,
+            cursor: None,
             paths,
             settings,
             settings_dirty: false,
@@ -758,11 +761,23 @@ impl Game {
         self.poll_boot();
         self.poll_network();
         self.finish_loading(ctx);
+        // Text fields reach the system clipboard (copy, cut, paste) for every screen.
+        let mut taken = self.host.ui.take_actions();
+        taken.retain(|a| match &a.kind {
+            ActionKind::Copy(text) => {
+                crate::clipboard::set(text);
+                false
+            }
+            ActionKind::PasteRequest => {
+                if let Some(text) = crate::clipboard::get() {
+                    self.host.ui.paste(&text);
+                }
+                false
+            }
+            _ => true,
+        });
         // The HUD's actions go to the match, the rest to the screens.
-        let (hud, actions): (Vec<Action>, Vec<Action>) = self
-            .host
-            .ui
-            .take_actions()
+        let (hud, actions): (Vec<Action>, Vec<Action>) = taken
             .into_iter()
             .partition(|a| a.path.as_deref().is_some_and(|p| p.starts_with("hud/")));
         self.update_match(ctx, hud);
@@ -773,6 +788,7 @@ impl Game {
         }
         self.update_fade(dt);
         self.sync(ctx);
+        self.update_cursor(ctx);
         if self.playing.is_none() {
             // A match updates the audio itself (its listener and effect sounds).
             self.audio.update(&canopy_audio::Frame {
@@ -785,6 +801,35 @@ impl Game {
         let time = (now - self.started).as_secs_f64();
         self.prepare_ui(ctx.gpu, ctx.renderer, time);
         std::mem::take(&mut self.requests)
+    }
+
+    /// The mouse cursor: the UI's (pointer over controls, text over fields), else the
+    /// old canvas cursor (a crosshair while choosing an attack target).
+    fn update_cursor(&mut self, ctx: &Ctx<'_>) {
+        use winit::window::CursorIcon;
+        let Some(window) = ctx.window else {
+            return;
+        };
+        let attack = self.flow.in_match()
+            && self.playing.as_ref().is_some_and(|p| {
+                matches!(
+                    &p.game.play.mode,
+                    crate::play::Mode::Target {
+                        targeting: crate::play::orders::Targeting::Attack { .. },
+                        ..
+                    }
+                )
+            });
+        let icon = match self.host.ui.cursor() {
+            canopy_ui::Cursor::Pointer => CursorIcon::Pointer,
+            canopy_ui::Cursor::Text => CursorIcon::Text,
+            canopy_ui::Cursor::Default if attack => CursorIcon::Crosshair,
+            canopy_ui::Cursor::Default => CursorIcon::Default,
+        };
+        if self.cursor != Some(icon) {
+            window.set_cursor(icon);
+            self.cursor = Some(icon);
+        }
     }
 
     /// Lays out and paints the UI (with the match's world UI stand-in under the HUD) and

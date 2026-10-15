@@ -34,6 +34,8 @@ pub enum Activate {
     },
     /// Opens a category (`None`: the root card).
     Menu(Option<String>),
+    /// Cycles the unit camera (RTS, third person, first person).
+    Camera,
 }
 
 /// One cost row: the icon id and the amount.
@@ -945,6 +947,32 @@ fn spells(
         c.actors = vec![actor];
         out.push(c);
     }
+}
+
+/// The camera command (old `unitCameraCommand`): offered while the focus is a visible,
+/// living unit outside any building, for players and observers alike.
+pub fn camera(
+    k: &Knowledge,
+    selection: &[u32],
+    mode: super::follow::CameraMode,
+) -> Option<Command> {
+    let meta = k.content.actions.navigation.camera.as_ref()?;
+    let focus = selection.first().and_then(|&id| k.entity(id))?;
+    if !k.is_unit(focus) || focus.remembered || k.held(focus.id().0) || !k.alive(focus) {
+        return None;
+    }
+    let mut c = Command::new(
+        "camera",
+        &format!("Camera: {}", mode.name()),
+        &format!("{}\nNext: {}.", meta.description, mode.next().name()),
+        &meta.icon,
+        meta.priority,
+        Activate::Camera,
+    );
+    c.hotkey = meta.hotkey.clone();
+    c.placement = meta.placement;
+    c.actors = vec![focus.id().0];
+    Some(c)
 }
 
 /// Every command is unavailable once the match is decided.

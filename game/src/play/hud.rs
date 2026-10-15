@@ -1081,7 +1081,12 @@ impl Hud {
         let mut selected = play.selection.ids().to_vec();
         selected.sort_unstable();
         for slot in 0..10 {
-            let Some(cell) = ui.child(n.groups, slot) else {
+            // Each group keeps its column (old grid columns 1–10), so a slot without
+            // members stays as empty, click-through space.
+            let Some(slot_node) = ui.child(n.groups, slot) else {
+                continue;
+            };
+            let Some(cell) = ui.find_in(slot_node, "button") else {
                 continue;
             };
             let members = play.groups.get(slot);
