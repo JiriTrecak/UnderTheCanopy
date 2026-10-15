@@ -41,6 +41,8 @@ pub struct LiveScene {
     /// Entities with a selection body as the latest frame shows them: id, body (circle
     /// radius, pick height) and interpolated position.
     bodies: Vec<(u32, [f32; 2], glam::Vec3)>,
+    /// Building foundations of the latest frame (D44).
+    foundations: Vec<canopy_render::terrain::foundations::Foundation>,
     /// An entity whose model is not drawn (the first-person camera's own body).
     pub hidden_entity: Option<u32>,
 }
@@ -182,13 +184,18 @@ impl LiveScene {
                 .ok()
                 .map(|i| instances[i].transform.w_axis.truncate())
         };
+        let water = scene.water_field();
+        let ground = canopy_scene::live::FoundationGround {
+            ground: &water,
+            foundations: &self.foundations,
+        };
         ui.build(
             &self.ui_bodies,
             &position,
             &self.world_ui_input,
             camera,
             renderer.size(),
-            &scene.water_field(),
+            &ground,
             seconds,
             &mut self.world_ui_frame,
         );
@@ -325,6 +332,8 @@ impl LiveScene {
         self.keys.clear();
         self.keys.extend(b.actors.iter().map(|a| a.key));
         self.ui_bodies.clone_from(&b.bodies);
+        canopy_scene::live::foundations(&b.bodies, &mut self.foundations);
+        renderer.set_foundations(gpu, &self.foundations);
         if let Some(evaluator) = &mut self.effects {
             let tick = match a {
                 Some(a) => f64::from(a.tick) + f64::from(t) * f64::from(b.tick - a.tick),

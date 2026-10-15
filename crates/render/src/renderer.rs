@@ -124,6 +124,8 @@ pub struct FrameReport {
     pub draws: u32,
     pub terrain_triangles: u64,
     pub terrain_chunks: u32,
+    /// Building foundations drawn (D44).
+    pub foundations: u32,
     /// Live models of the frame.
     pub actors: crate::actors::ActorStats,
     /// Effects of the frame.
@@ -872,6 +874,14 @@ impl Renderer {
         }
     }
 
+    /// The building foundations of the live scene (D44); only a changed list costs
+    /// anything.
+    pub fn set_foundations(&mut self, gpu: &Gpu, list: &[crate::terrain::foundations::Foundation]) {
+        if let Some(terrain) = &mut self.terrain {
+            terrain.set_foundations(&gpu.device, list);
+        }
+    }
+
     pub fn terrain(&self) -> Option<&TerrainGpu> {
         self.terrain.as_ref()
     }
@@ -999,6 +1009,7 @@ impl Renderer {
             );
             report.terrain_triangles = stats.triangles;
             report.terrain_chunks = stats.chunks;
+            report.foundations = stats.foundations;
             report.triangles.terrain = stats.triangles;
             report.triangles.shadow += stats.shadow_triangles;
         }

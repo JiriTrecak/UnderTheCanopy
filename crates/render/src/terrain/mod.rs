@@ -10,6 +10,7 @@
 //!   cell lists the at most [`MAX_CELL_LAYERS`] layers that reach it, starting from the
 //!   lowest one that covers it completely, so a pixel blends at most four (D24, Q7).
 
+pub mod foundations;
 pub mod gpu;
 
 use crate::camera::CameraView;

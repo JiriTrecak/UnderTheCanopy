@@ -1,6 +1,7 @@
 // Terrain: vertex-pulled chunks with stitched levels of detail, and the layered ground
 // (old `sourceTerrainShader`: base, tiled height-blended layers, atlas corner tiles,
-// biplanar cliffs), at most four layers per pixel.
+// biplanar cliffs), at most four layers per pixel. Building foundations (D44): the pad
+// and bank under each building, shaded as the ground they stand on.
 
 const CHUNK: u32 = 32u;
 const NO_LAYER: u32 = 255u;
@@ -189,19 +190,72 @@ fn occlusion_of(layer: Layer, uv: vec2f, dx: vec2f, dy: vec2f) -> vec2f {
     return sample_tile(layer.kind.w, 2u, uv, dx, dy).rg;
 }
 
-@fragment
-fn fs_main(in: VsOut) -> SceneOut {
-    let frag = in.clip;
-    let world = in.world;
+// The height field's normal at `xz`.
+fn terrain_normal(xz: vec2f) -> vec3f {
+    let mask_uv = (xz - terrain.grid.x + 0.5) / terrain.grid.z;
+    return normalize(textureSampleLevel(normals, clamp_sampler, mask_uv, 0.0).xyz);
+}
+
+// A cliff layer over `g` by `alpha`: its wall texture projected on the two vertical
+// planes that face `normal` most.
+fn cliff_over(
+    g0: Ground,
+    layer: Layer,
+    world: vec3f,
+    base_normal: vec3f,
+    dx: vec2f,
+    dy: vec2f,
+    height_dx: f32,
+    height_dy: f32,
+    alpha: f32,
+) -> Ground {
+    var g = g0;
     let xz = world.xz;
-    let dx = dpdx(xz);
-    let dy = dpdy(xz);
-    let height_dx = dpdx(world.y);
-    let height_dy = dpdy(world.y);
+    let size = terrain.cells.z;
+    let vertical = layer.params.z;
+    let signs = select(vec2f(-1.0), vec2f(1.0), base_normal.xz >= vec2f(0.0));
+    let blend_x = abs(base_normal.x) / max(abs(base_normal.x) + abs(base_normal.z), 0.0001);
+    let uv_x = vec2f(-xz.y * signs.x / size, world.y / vertical);
+    let uv_z = vec2f(xz.x * signs.y / size, world.y / vertical);
+    let ddx_x = vec2f(-dx.y * signs.x / size, height_dx / vertical);
+    let ddy_x = vec2f(-dy.y * signs.x / size, height_dy / vertical);
+    let ddx_z = vec2f(dx.x * signs.y / size, height_dx / vertical);
+    let ddy_z = vec2f(dy.x * signs.y / size, height_dy / vertical);
+    let ax = sample_tile(layer.kind.y, 0u, uv_x, ddx_x, ddy_x);
+    let az = sample_tile(layer.kind.y, 0u, uv_z, ddx_z, ddy_z);
+    let nx = sample_tile(layer.kind.z, 1u, uv_x, ddx_x, ddy_x).rgb * 2.0 - 1.0;
+    let nz = sample_tile(layer.kind.z, 1u, uv_z, ddx_z, ddy_z).rgb * 2.0 - 1.0;
+    let ox = occlusion_of(layer, uv_x, ddx_x, ddy_x);
+    let oz = occlusion_of(layer, uv_z, ddx_z, ddy_z);
+    let wall_normal = normalize(mix(
+        vec3f(nz.x * signs.y, nz.y, nz.z * signs.y),
+        vec3f(nx.z * signs.x, nx.y, -nx.x * signs.x),
+        blend_x,
+    ));
+    let local_normal = transpose(ground_basis(base_normal)) * wall_normal;
+    var wall = mix(az, ax, blend_x);
+    wall = vec4f(wall.rgb * layer.tint.rgb, wall.a);
+    g.ar = mix(g.ar, wall, alpha);
+    g.nh = mix(g.nh, vec4f(local_normal * 0.5 + 0.5, 0.5), alpha);
+    g.om = mix(g.om, mix(oz, ox, blend_x), alpha);
+    g.painted = mix(g.painted, layer.tint.a, alpha);
+    return g;
+}
+
+// The composited ground at `world` (with the screen derivatives of its position) on a
+// surface facing `base_normal`: the cell's layers in order, cliffs gated by its slope.
+fn ground_at(
+    world: vec3f,
+    base_normal: vec3f,
+    dx: vec2f,
+    dy: vec2f,
+    height_dx: f32,
+    height_dy: f32,
+) -> Ground {
+    let xz = world.xz;
     let origin = terrain.grid.x;
     let vertices = terrain.grid.z;
     let mask_uv = (xz - origin + 0.5) / vertices;
-    let base_normal = normalize(textureSampleLevel(normals, clamp_sampler, mask_uv, 0.0).xyz);
     let slope = length(base_normal.xz) / max(base_normal.y, 0.0001);
     let span = u32(terrain.grid.y);
     let cell = vec2u(clamp(floor(xz - origin - terrain.cells.w), vec2f(0.0), vec2f(f32(span - 1u))));
@@ -314,37 +368,19 @@ fn fs_main(in: VsOut) -> SceneOut {
             if (alpha <= 0.0) {
                 continue;
             }
-            let size = terrain.cells.z;
-            let vertical = layer.params.z;
-            let signs = select(vec2f(-1.0), vec2f(1.0), base_normal.xz >= vec2f(0.0));
-            let blend_x = abs(base_normal.x) / max(abs(base_normal.x) + abs(base_normal.z), 0.0001);
-            let uv_x = vec2f(-xz.y * signs.x / size, world.y / vertical);
-            let uv_z = vec2f(xz.x * signs.y / size, world.y / vertical);
-            let ddx_x = vec2f(-dx.y * signs.x / size, height_dx / vertical);
-            let ddy_x = vec2f(-dy.y * signs.x / size, height_dy / vertical);
-            let ddx_z = vec2f(dx.x * signs.y / size, height_dx / vertical);
-            let ddy_z = vec2f(dy.x * signs.y / size, height_dy / vertical);
-            let ax = sample_tile(layer.kind.y, 0u, uv_x, ddx_x, ddy_x);
-            let az = sample_tile(layer.kind.y, 0u, uv_z, ddx_z, ddy_z);
-            let nx = sample_tile(layer.kind.z, 1u, uv_x, ddx_x, ddy_x).rgb * 2.0 - 1.0;
-            let nz = sample_tile(layer.kind.z, 1u, uv_z, ddx_z, ddy_z).rgb * 2.0 - 1.0;
-            let ox = occlusion_of(layer, uv_x, ddx_x, ddy_x);
-            let oz = occlusion_of(layer, uv_z, ddx_z, ddy_z);
-            let wall_normal = normalize(mix(
-                vec3f(nz.x * signs.y, nz.y, nz.z * signs.y),
-                vec3f(nx.z * signs.x, nx.y, -nx.x * signs.x),
-                blend_x,
-            ));
-            let local_normal = transpose(ground_basis(base_normal)) * wall_normal;
-            var wall = mix(az, ax, blend_x);
-            wall = vec4f(wall.rgb * layer.tint.rgb, wall.a);
-            g.ar = mix(g.ar, wall, alpha);
-            g.nh = mix(g.nh, vec4f(local_normal * 0.5 + 0.5, 0.5), alpha);
-            g.om = mix(g.om, mix(oz, ox, blend_x), alpha);
-            g.painted = mix(g.painted, layer.tint.a, alpha);
+            g = cliff_over(g, layer, world, base_normal, dx, dy, height_dx, height_dy, alpha);
         }
     }
 
+    return g;
+}
+
+@fragment
+fn fs_main(in: VsOut) -> SceneOut {
+    let frag = in.clip;
+    let world = in.world;
+    let base_normal = terrain_normal(world.xz);
+    let g = ground_at(world, base_normal, dpdx(world.xz), dpdy(world.xz), dpdx(world.y), dpdy(world.y));
     let tangent = 2.0 * (g.nh.rgb - 0.50196) * vec3f(1.0, 1.0, 0.55);
     let normal = normalize(ground_basis(base_normal) * tangent);
     var surface: Surface;
@@ -359,5 +395,213 @@ fn fs_main(in: VsOut) -> SceneOut {
     surface.model = LIGHT_GROUND;
     let view = normalize(frame.eye.xyz - world);
     let color = surface_light(surface, view, frag.xy);
+    return scene_out(vec4f(color, 1.0), world);
+}
+
+// --- Building foundations (D44, `terrain/foundations.rs`) -----------------------------
+
+// The terrain surface as its triangles draw it (diagonal from (x + 1, z) to (x, z + 1)).
+fn ground_height(xz: vec2f) -> f32 {
+    let span = terrain.grid.y;
+    let g = clamp(xz - terrain.grid.x, vec2f(0.0), vec2f(span));
+    let cell = min(floor(g), vec2f(span - 1.0));
+    let f = g - cell;
+    let i = vec2u(cell);
+    let b = height_at(i.x + 1u, i.y);
+    let c = height_at(i.x, i.y + 1u);
+    if (f.x + f.y <= 1.0) {
+        let a = height_at(i.x, i.y);
+        return a + (b - a) * f.x + (c - a) * f.y;
+    }
+    let d = height_at(i.x + 1u, i.y + 1u);
+    return d + (c - d) * (1.0 - f.x) + (b - d) * (1.0 - f.y);
+}
+
+struct FoundationRecord {
+    // centre x, z; half width, depth
+    rect: vec4f,
+    // x: base height
+    base: vec4f,
+}
+
+@group(2) @binding(1) var<storage, read> foundations: array<FoundationRecord>;
+
+// Must match `terrain/foundations.rs`.
+const SIDE_SEGMENTS: u32 = 14u;
+const CORNER_STEPS: u32 = 6u;
+const SIDE_SPOKES: u32 = 20u;
+const SPOKES: u32 = 80u;
+const BANDS: u32 = 8u;
+const BANK_VERTICES: u32 = 3840u;
+const HALF_PI: f32 = 1.5707964;
+const LIFT: f32 = 0.05;
+const TOE_SINK: f32 = 0.02;
+const MIN_BANK: f32 = 0.4;
+const BATTER: f32 = 2.4;
+const MAX_BANK: f32 = 5.0;
+const CORNER_SHARE: f32 = 0.4;
+const MAX_CORNER: f32 = 3.0;
+
+// How the bank's width varies along the rim (`foundations::ragged`).
+fn ragged(edge: vec2f, center: vec2f) -> f32 {
+    let s = edge.x + edge.y;
+    let phase = center.x * 0.37 + center.y * 0.61;
+    return 1.0 + 0.2 * sin(0.45 * s + phase) + 0.1 * sin(1.1 * s + 1.7 * phase);
+}
+
+// The radius of the rim's rounded corners.
+fn corner_radius(f: FoundationRecord) -> f32 {
+    return min(CORNER_SHARE * min(f.rect.z, f.rect.w), MAX_CORNER);
+}
+
+struct Spoke {
+    edge: vec2f,
+    out: vec2f,
+}
+
+// Spoke `k` around the rim (the footprint with rounded corners): a point on it and the
+// outward direction. Each side has its straight samples, then the corner's arc.
+fn spoke(f: FoundationRecord, k: u32) -> Spoke {
+    let side = (k / SIDE_SPOKES) % 4u;
+    let j = k % SIDE_SPOKES;
+    var corners = array<vec2f, 4>(vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(1.0, 1.0), vec2f(-1.0, 1.0));
+    let r = corner_radius(f);
+    let inner = f.rect.zw - vec2f(r);
+    let ca = f.rect.xy + corners[side] * inner;
+    let cb = f.rect.xy + corners[(side + 1u) % 4u] * inner;
+    var turn = (f32(side) - 1.0) * HALF_PI;
+    var s: Spoke;
+    if (j <= SIDE_SEGMENTS) {
+        s.out = vec2f(cos(turn), sin(turn));
+        s.edge = mix(ca, cb, f32(j) / f32(SIDE_SEGMENTS)) + s.out * r;
+    } else {
+        turn += HALF_PI * f32(j - SIDE_SEGMENTS) / f32(CORNER_STEPS);
+        s.out = vec2f(cos(turn), sin(turn));
+        s.edge = cb + s.out * r;
+    }
+    return s;
+}
+
+// The bank's width at a rim point.
+fn bank_width(f: FoundationRecord, edge: vec2f) -> f32 {
+    let drop = max(f.base.x - LIFT - ground_height(edge), 0.0);
+    return clamp(max(MIN_BANK, drop * BATTER) * ragged(edge, f.rect.xy), MIN_BANK, MAX_BANK);
+}
+
+// A point of the pad or bank along spoke `s`: `u` < 0 lies on the pad, 0 is the rim, 1
+// the toe, where the bank meets the ground tangentially.
+fn bank_point(f: FoundationRecord, s: Spoke, width: f32, u: f32) -> vec3f {
+    let top = f.base.x - LIFT;
+    let p = s.edge + s.out * width * u;
+    if (u <= 0.0) {
+        return vec3f(p.x, top, p.y);
+    }
+    let t = smoothstep(0.0, 1.0, min(u, 1.0));
+    return vec3f(p.x, mix(top, ground_height(p) - TOE_SINK, t), p.y);
+}
+
+struct FoundationVertex {
+    world: vec3f,
+    normal: vec3f,
+    // 0 on the pad and at the rim, 1 at the toe
+    toe: f32,
+}
+
+fn foundation_vertex(vid: u32, inst: u32) -> FoundationVertex {
+    let f = foundations[inst];
+    var v: FoundationVertex;
+    if (vid >= BANK_VERTICES) {
+        // The pad: a fan from the centre to the rim.
+        let i = vid - BANK_VERTICES;
+        let k = (i / 3u + select(0u, 1u, i % 3u == 2u)) % SPOKES;
+        var p = f.rect.xy;
+        if (i % 3u != 0u) {
+            p = spoke(f, k).edge;
+        }
+        v.world = vec3f(p.x, f.base.x - LIFT, p.y);
+        v.normal = vec3f(0.0, 1.0, 0.0);
+        v.toe = 0.0;
+        return v;
+    }
+    let quad = vid / 6u;
+    var corners = array<vec2u, 6>(
+        vec2u(0u, 0u), vec2u(0u, 1u), vec2u(1u, 0u),
+        vec2u(1u, 0u), vec2u(0u, 1u), vec2u(1u, 1u),
+    );
+    let o = corners[vid % 6u];
+    let k = (quad / BANDS + o.x) % SPOKES;
+    let u = f32(quad % BANDS + o.y) / f32(BANDS);
+    let s = spoke(f, k);
+    let w = bank_width(f, s.edge);
+    v.world = bank_point(f, s, w, u);
+    v.toe = u;
+    // Smooth normals: central differences across the rings (onto the pad at the rim, so
+    // the shoulder is lit as the pad) and the neighbouring spokes.
+    let du = 0.5 / f32(BANDS);
+    let down = bank_point(f, s, w, u + du) - bank_point(f, s, w, u - du);
+    let sa = spoke(f, (k + 1u) % SPOKES);
+    let sb = spoke(f, (k + SPOKES - 1u) % SPOKES);
+    var along = bank_point(f, sa, bank_width(f, sa.edge), u) - bank_point(f, sb, bank_width(f, sb.edge), u);
+    if (dot(along.xz, along.xz) < 1e-6) {
+        along = vec3f(-s.out.y, 0.0, s.out.x);
+    }
+    var n = normalize(cross(along, down));
+    if (n.y < 0.0) {
+        n = -n;
+    }
+    v.normal = n;
+    return v;
+}
+
+struct FoundationOut {
+    @builtin(position) clip: vec4f,
+    @location(0) world: vec3f,
+    @location(1) normal: vec3f,
+    @location(2) toe: f32,
+}
+
+@vertex
+fn vs_foundation(@builtin(vertex_index) vid: u32, @builtin(instance_index) inst: u32) -> FoundationOut {
+    let v = foundation_vertex(vid, inst);
+    var out: FoundationOut;
+    out.world = v.world;
+    out.normal = v.normal;
+    out.toe = v.toe;
+    out.clip = frame.view_proj * vec4f(v.world, 1.0);
+    return out;
+}
+
+@vertex
+fn vs_foundation_shadow(@builtin(vertex_index) vid: u32, @builtin(instance_index) inst: u32) -> @builtin(position) vec4f {
+    return frame.view_proj * vec4f(foundation_vertex(vid, inst).world, 1.0);
+}
+
+// The pad and the mound are the ground itself: the terrain's composite at the same place
+// (its layers, world-space mapping and cliff rule exactly as the terrain's there), lit
+// with the mound's normal, which turns into the terrain's towards the toe so the two
+// meet without a seam.
+@fragment
+fn fs_foundation(in: FoundationOut) -> SceneOut {
+    let world = in.world;
+    let ground_normal = terrain_normal(world.xz);
+    let dx = dpdx(world);
+    let dy = dpdy(world);
+    let g = ground_at(world, ground_normal, dx.xz, dy.xz, dx.y, dy.y);
+    let bank = normalize(in.normal);
+    var n = normalize(mix(bank, ground_normal, smoothstep(0.55, 1.0, in.toe)));
+    n = normalize(vec3f(n.x, max(n.y, 0.05), n.z));
+    let tangent = 2.0 * (g.nh.rgb - 0.50196) * vec3f(1.0, 1.0, 0.55);
+    var surface: Surface;
+    surface.position = world;
+    surface.normal = normalize(ground_basis(n) * tangent);
+    surface.albedo = g.ar.rgb;
+    surface.roughness = g.ar.a;
+    surface.metalness = g.om.y;
+    surface.occlusion = g.om.x;
+    surface.backside = 0.0;
+    surface.specular = 1.0 - g.painted;
+    surface.model = LIGHT_GROUND;
+    let view = normalize(frame.eye.xyz - world);
+    let color = surface_light(surface, view, in.clip.xy);
     return scene_out(vec4f(color, 1.0), world);
 }

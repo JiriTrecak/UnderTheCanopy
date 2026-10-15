@@ -12,10 +12,10 @@ use canopy_content::game::{Definition, Footprint, Kind};
 pub const BUILDING_CELL: f64 = 4.0;
 /// Corner of navigation cell 0.
 pub const GRID_ORIGIN: f64 = -0.5;
-/// Largest height difference a foundation tolerates, in centimetres.
-pub const MAX_FOUNDATION_RELIEF_CM: i32 = 200;
-/// Largest step between neighbouring foundation cells, in centimetres.
-pub const MAX_FOUNDATION_STEP_CM: i32 = 40;
+/// Largest step between neighbouring foundation cells, in centimetres (D44): cliff faces
+/// and ramps rise more, ordinary rolling ground less. There is no limit on the relief
+/// across a footprint; buildings sit at their centre's height on a drawn foundation.
+pub const MAX_FOUNDATION_STEP_CM: i32 = 80;
 
 /// Width (x) and depth (y) in navigation cells.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -169,22 +169,21 @@ pub fn placement_geometry_error(
     None
 }
 
-/// Whether ground within `bounds` is gentle enough for a foundation: limited total relief
-/// and no sharp step between neighbouring cells. `height_cm` gives a cell's height.
+/// Whether ground within `bounds` is buildable (D44, as Warcraft III's buildability): no
+/// cell rises more than [`MAX_FOUNDATION_STEP_CM`] into a 4-neighbour inside the bounds,
+/// which rules out cliff faces and ramps but not hills. `height_cm` gives a cell's height.
 pub fn foundation_fits(bounds: CellBounds, height_cm: impl Fn(i64, i64) -> i32) -> bool {
-    let (mut low, mut high) = (i32::MAX, i32::MIN);
+    let mut any = false;
     for (x, y) in bounds.cells() {
         let h = height_cm(x, y);
-        low = low.min(h);
-        high = high.max(h);
-        if high - low > MAX_FOUNDATION_RELIEF_CM
-            || (x > bounds.min_x && (h - height_cm(x - 1, y)).abs() > MAX_FOUNDATION_STEP_CM)
+        any = true;
+        if (x > bounds.min_x && (h - height_cm(x - 1, y)).abs() > MAX_FOUNDATION_STEP_CM)
             || (y > bounds.min_y && (h - height_cm(x, y - 1)).abs() > MAX_FOUNDATION_STEP_CM)
         {
             return false;
         }
     }
-    low != i32::MAX
+    any
 }
 
 #[cfg(test)]
@@ -276,16 +275,30 @@ mod tests {
     }
 
     #[test]
-    fn foundations_reject_relief_and_steps() {
+    fn foundations_reject_steps_but_not_relief() {
         let bounds = CellBounds {
             min_x: 0,
             min_y: 0,
-            max_x: 3,
-            max_y: 3,
+            max_x: 19,
+            max_y: 19,
         };
-        assert!(foundation_fits(bounds, |x, y| (x * 30 + y * 30) as i32));
-        assert!(!foundation_fits(bounds, |x, _| (x * 41) as i32));
-        assert!(!foundation_fits(bounds, |x, y| (x * 40 + y * 40) as i32));
+        // Rolling ground: 15 m of relief across the footprint in steps of 80 cm.
+        assert!(foundation_fits(bounds, |x, y| (x * 80 - y * 80) as i32));
+        // A ramp and a cliff face.
+        assert!(!foundation_fits(bounds, |x, _| (x * 81) as i32));
+        assert!(!foundation_fits(bounds, |_, y| if y >= 12 {
+            300
+        } else {
+            0
+        }));
+        // Only steps inside the bounds count.
+        let inner = CellBounds {
+            min_x: 0,
+            min_y: 0,
+            max_x: 11,
+            max_y: 11,
+        };
+        assert!(foundation_fits(inner, |_, y| if y >= 12 { 300 } else { 0 }));
         assert!(!foundation_fits(
             CellBounds {
                 min_x: 1,
