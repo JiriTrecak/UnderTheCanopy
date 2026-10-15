@@ -1,6 +1,7 @@
 // Effects (renderer §4.8): GPU particles evaluated in the vertex shader from their emitter,
 // index, seed and age with the old effect player's formulas (billboards, bursts, streaks,
-// emitters, rings, glows, the pillar, travelling missiles and crests, hit sparks), and
+// emitters, rings, glows, the pillar, travelling missiles and crests, hit sparks), the
+// damage effects (D46: flames and smoke of burning buildings, dust of melee hits), and
 // ribbons (trails and melee blade ribbons). Mirrors effects.rs. Needs Frame.
 
 struct Emitter {
@@ -70,6 +71,9 @@ const K_PILLAR: u32 = 6u;
 const K_MISSILE: u32 = 7u;
 const K_WAVEFRONT: u32 = 8u;
 const K_SPARK: u32 = 9u;
+const K_FLAME: u32 = 10u;
+const K_SMOKE: u32 = 11u;
+const K_DUST: u32 = 12u;
 
 const F_TEXTURED: u32 = 1u;
 const F_GROUND: u32 = 2u;
@@ -87,6 +91,8 @@ const M_RING: u32 = 3u;
 const M_GLOW: u32 = 4u;
 const M_SPARK: u32 = 5u;
 const M_PILLAR: u32 = 6u;
+const M_FLAME: u32 = 7u;
+const M_SMOKE: u32 = 8u;
 
 const PI: f32 = 3.141592653589793;
 const TAU: f32 = 6.283185307179586;
@@ -248,6 +254,105 @@ fn evaluate(e: Emitter, i: u32) -> Part {
             p.scale = vec2f((0.04 + f32(i % 3u) * 0.012) * power * (1.0 - t));
             p.color = (1.0 - t) * vec3f(1.0, 0.58 + f32(i % 2u) * 0.2, 0.2);
         }
+        case K_FLAME: {
+            // shape: time (s), heat (0–1); accent.a: flame size (m). Parts 0 and 1 are a
+            // flickering glow at the base; the rest are short licks, each looping on its
+            // own short period and re-seeded every cycle, so no two repeat.
+            let time = e.shape.x;
+            let heat = e.shape.y;
+            let base = e.ints.w + i * 97u;
+            if (i < 2u) {
+                let flicker = 0.75 + 0.15 * sin(time * 13.0 + fi * 2.1 + noise(base) * TAU)
+                    + 0.1 * sin(time * 29.0 + fi);
+                p.local = vec3f(0.0, size * (0.2 + fi * 0.25), 0.0);
+                p.scale = vec2f(size * (1.0 + fi * 0.5) * flicker);
+                p.color = vec3f(1.0, 0.42, 0.08) * (0.9 + heat * 0.4);
+                p.alpha = (0.5 - fi * 0.2) * flicker * e.color.a;
+                p.flip_seed = noise(base);
+                p.flip_age = -1.0;
+                break;
+            }
+            let period = 0.26 + noise(base) * 0.26;
+            let cycles = time / period + fi / f32(count);
+            let life = fract(cycles);
+            let seed = base + u32(floor(cycles)) * 7919u;
+            let angle = noise(seed + 1u) * TAU;
+            let radius = sqrt(noise(seed + 2u)) * size * 0.5 * (1.0 - life * 0.6);
+            let rise = life * size * (0.7 + noise(seed + 3u) * 1.0);
+            let sway = sin(time * 9.0 + noise(seed + 4u) * TAU) * 0.1 * size * life;
+            p.local = vec3f(cos(angle) * radius + sway, rise + size * 0.05, sin(angle) * radius);
+            let s = size * (0.22 + noise(seed + 5u) * 0.36) * (1.0 - life * 0.55);
+            p.scale = vec2f(s * 0.62, s * 1.15);
+            // Yellow at the root, orange, then a dull red as the lick dies (HDR: the
+            // roots bloom).
+            let hot = vec3f(1.0, 0.6, 0.16) * 1.65;
+            let warm = vec3f(1.0, 0.3, 0.035) * 1.35;
+            let dull = vec3f(0.55, 0.07, 0.01);
+            p.color = select(
+                mix(warm, dull, (life - 0.4) / 0.6),
+                mix(hot, warm, life / 0.4),
+                life < 0.4,
+            ) * (0.85 + heat * 0.3);
+            p.alpha = smoothstep(0.0, 0.08, life) * pow(1.0 - life, 1.2) * e.color.a;
+            p.flip_seed = noise(seed + 6u);
+            p.flip_age = life;
+        }
+        case K_SMOKE: {
+            // shape: time (s), density (0–1), wind x, wind z; accent.a: flame size (m).
+            // Thin wisps rising from the flames, leaning downwind, widening as they climb.
+            let time = e.shape.x;
+            let density = e.shape.y;
+            let base = e.ints.w + i * 131u;
+            let period = 2.4 + noise(base) * 1.2;
+            let cycles = time / period + fi / f32(count);
+            let life = fract(cycles);
+            let seed = base + u32(floor(cycles)) * 7919u;
+            let angle = noise(seed + 1u) * TAU;
+            let radius = size * (0.06 + life * 0.3) * sqrt(noise(seed + 2u));
+            let rise = size * 1.1 + life * (2.8 + 3.6 * density) * (0.55 + noise(seed + 3u) * 0.9);
+            let drift = e.shape.zw * life * (1.6 + density * 2.4);
+            p.local = vec3f(cos(angle) * radius + drift.x, rise, sin(angle) * radius + drift.y);
+            p.scale = vec2f(size * (0.3 + life * (0.7 + density * 0.5)) * (0.7 + noise(seed + 4u) * 0.6));
+            p.rotation = noise(seed + 5u) * TAU + life * 1.2 * (noise(seed + 8u) - 0.5);
+            p.alpha = smoothstep(0.0, 0.15, life) * pow(1.0 - life, 1.45) * e.color.a;
+            // Darkest over the fire, greying as it thins.
+            p.color = mix(e.color.rgb, e.accent.rgb, life * life) * (0.8 + noise(seed + 6u) * 0.4);
+            p.flip_seed = noise(seed + 7u);
+            p.flip_age = life;
+        }
+        case K_DUST: {
+            // shape: age (s), lifetime (s), height above the ground; e0: swing direction;
+            // accent.a: the swinging body's size (1 for infantry). Two thirds puff out at
+            // the blow, a third is kicked up from the ground under it; all are thrown along
+            // the swing with a wide fan, slow down and settle.
+            let age = e.shape.x;
+            let life = age / max(e.shape.y, 1e-4);
+            p.visible = life < 1.0;
+            let power = size;
+            let seed = e.ints.w + i * 97u;
+            let dir = e.e0.xyz;
+            let side = vec3f(-dir.z, 0.0, dir.x);
+            let low = i % 3u == 2u;
+            let forward = (0.9 + noise(seed + 1u) * 1.9) * power;
+            let lateral = (noise(seed + 2u) * 2.0 - 1.0) * 1.6 * power;
+            let up = (0.2 + noise(seed + 3u) * 0.9) * power;
+            let velocity = dir * forward + side * lateral + vec3f(0.0, up, 0.0);
+            let drag = 4.0;
+            let travel = (1.0 - exp(-drag * age)) / drag;
+            let jitter = vec3f(noise(seed + 4u) - 0.5, noise(seed + 5u) - 0.5, noise(seed + 6u) - 0.5)
+                * 0.3 * power;
+            let start = select(vec3f(0.0), vec3f(0.0, 0.15 - e.shape.z, 0.0), low);
+            p.local = start + jitter + velocity * travel;
+            // Settles, never below the ground.
+            p.local.y = max(p.local.y - 0.6 * age * age, 0.08 - e.shape.z);
+            let grow = 0.22 + 0.5 * sqrt(clamp(life, 0.0, 1.0));
+            p.scale = vec2f(power * grow * (0.75 + noise(seed + 7u) * 0.5));
+            p.rotation = noise(seed + 8u) * TAU + age * 0.6;
+            p.alpha = min(1.0, life / 0.05) * pow(max(1.0 - life, 0.0), 1.2) * e.color.a;
+            p.color = e.color.rgb * (0.85 + noise(seed + 9u) * 0.3);
+            p.flip_seed = noise(seed + 10u);
+            p.flip_age = life;
+        }
         default: {}
     }
     if (kind <= K_PILLAR && kind != K_EMITTER) {
@@ -270,6 +375,12 @@ fn mask_of(e: Emitter) -> u32 {
     }
     if (kind == K_SPARK) {
         return M_SPARK;
+    }
+    if (kind == K_FLAME) {
+        return M_FLAME;
+    }
+    if (kind == K_SMOKE || kind == K_DUST) {
+        return M_SMOKE;
     }
     if ((flags & F_FRESNEL) != 0u) {
         return M_FRESNEL;
@@ -348,7 +459,12 @@ fn vs_quad(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> 
     out.world = world;
     out.coord = vec4f(c, c.x * 0.5 + 0.5, 0.5 - c.y * 0.5);
     out.color = vec4f(p.color, p.alpha);
-    out.rect = flip_rect(e, p.flip_age, p.flip_seed);
+    if (mask == M_SMOKE || mask == M_FLAME) {
+        // Procedural masks: the part's seed and life instead of a flipbook frame.
+        out.rect = vec4f(p.flip_seed, p.flip_age, 0.0, 0.0);
+    } else {
+        out.rect = flip_rect(e, p.flip_age, p.flip_seed);
+    }
     out.mask = vec2u(mask, flags);
     return out;
 }
@@ -378,6 +494,23 @@ fn vs_pillar(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -
     out.rect = vec4f(1.0, 1.0, 0.0, 0.0);
     out.mask = vec2u(M_PILLAR, e.ints.y);
     return out;
+}
+
+// Smooth value noise for the soft masks.
+fn value_noise(p: vec2f) -> f32 {
+    let i = floor(p);
+    let f = fract(p);
+    let u = f * f * (3.0 - 2.0 * f);
+    let h = vec2u(vec2i(i) + vec2i(4096));
+    let x0 = h.x * 73856093u;
+    let x1 = (h.x + 1u) * 73856093u;
+    let y0 = h.y * 19349663u;
+    let y1 = (h.y + 1u) * 19349663u;
+    let a = noise(x0 ^ y0);
+    let b = noise(x1 ^ y0);
+    let c = noise(x0 ^ y1);
+    let d = noise(x1 ^ y1);
+    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
 }
 
 @fragment
@@ -414,6 +547,39 @@ fn fs_main(in: VsOut) -> SceneOut {
         case M_PILLAR: {
             let y = in.coord.y;
             alpha *= smoothstep(0.0, 0.18, y) * (1.0 - smoothstep(0.55, 1.0, y));
+        }
+        case M_FLAME: {
+            let seed = in.rect.x * 61.0;
+            if (in.rect.y < 0.0) {
+                // The glow at the base.
+                let g = 1.0 - smoothstep(0.0, 1.0, r);
+                alpha *= g * g;
+            } else {
+                // A lick: round at the root, narrowing upwards, its edge torn by noise
+                // that streams upwards as it lives; a hot core, redder tips.
+                let life = in.rect.y;
+                let y = in.coord.y * 0.5 + 0.5;
+                let width = mix(1.0, 0.22, y);
+                let n = value_noise(in.coord.xy * vec2f(2.2, 1.6) + vec2f(seed, seed * 0.7 - life * 5.0))
+                    + 0.5 * value_noise(in.coord.xy * 4.5 + vec2f(seed * 1.9, -life * 9.0));
+                let d = length(vec2f(in.coord.x / width, in.coord.y)) + (n / 1.5 - 0.5) * 0.75;
+                alpha *= 1.0 - smoothstep(0.3, 0.9, d);
+                let core = (1.0 - smoothstep(0.0, 0.55, d)) * (1.0 - y);
+                color = mix(color * mix(vec3f(1.0), vec3f(0.95, 0.55, 0.4), y), vec3f(1.0, 0.78, 0.4) * 1.7, core * 0.5);
+            }
+        }
+        case M_SMOKE: {
+            // A soft billow with a ragged edge that churns as it rises.
+            let seed = in.rect.x * 97.0;
+            let churn = in.rect.y * 1.5;
+            let n = value_noise(in.coord.xy * 1.8 + vec2f(seed, seed * 1.7 - churn))
+                + 0.5 * value_noise(in.coord.xy * 3.9 + vec2f(seed * 2.3 + churn, seed))
+                + 0.25 * value_noise(in.coord.xy * 8.1 + vec2f(seed * 0.7, seed * 3.1 + churn));
+            let d = r + (n / 1.75 - 0.5) * 0.55;
+            let soft = 1.0 - smoothstep(0.15, 1.0, d);
+            alpha *= soft;
+            // Lit from above: the lower edge darker, the billows' tops lighter.
+            color *= 0.7 + 0.3 * (in.coord.y * 0.5 + 0.5) + (n / 1.75 - 0.5) * 0.5;
         }
         default: {}
     }

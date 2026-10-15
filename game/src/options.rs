@@ -10,7 +10,7 @@
 //!             [--hour <h>] [--time <s>] [--frames <n>] [--no-shadows] [--pitch <deg>]
 //!             [--movers <n>] [--effect <id>[,<age>[,<radius>]]]… [--viewer <slot>]
 //!             [--select all|player:<slot>|<id,…>] [--health damaged|always|selected]
-//!             [--data <folder>] [graphics]
+//!             [--damage <percent>[,<percent>…]] [--data <folder>] [graphics]
 //!             [--play | --observe] [--input <script>] (the HUD; see `play::capture`)
 //! graphics: [--preset low|medium|high|ultra] (first; later options adjust it)
 //!           [--render-scale <0.5–1>] [--no-contact] [--no-bloom] [--haze off|low|medium|high]
@@ -179,6 +179,9 @@ pub struct Options {
     pub select: Selection,
     /// Which health bars show.
     pub health: canopy_scene::world_ui::HealthBars,
+    /// A dev tool for reviewing damage effects: before a shot's tick, every built building
+    /// is set to these shares of its health (percent, in turn by entity id).
+    pub damage: Vec<f32>,
     /// A shot of the match with the HUD from player 1's seat (`--play`) or the
     /// spectator's (`--observe`), after the `--input` script (`play::capture`).
     pub play: bool,
@@ -238,6 +241,7 @@ impl Options {
             movers: 0,
             biome: None,
             effects: Vec::new(),
+            damage: Vec::new(),
             viewer: None,
             select: Selection::None,
             health: canopy_scene::world_ui::HealthBars::Damaged,
@@ -335,6 +339,16 @@ impl Options {
                     options.viewer = Some(value("--viewer")?.parse().context("--viewer <slot>")?)
                 }
                 "--select" => options.select = Selection::parse(&value("--select")?)?,
+                "--damage" => {
+                    options.damage = value("--damage")?
+                        .split(',')
+                        .map(|p| p.trim().parse::<f32>())
+                        .collect::<Result<_, _>>()
+                        .context("--damage <percent>[,<percent>…]")?;
+                    if options.damage.iter().any(|p| !(1.0..=100.0).contains(p)) {
+                        bail!("--damage takes health shares of 1–100 percent");
+                    }
+                }
                 "--health" => {
                     use canopy_scene::world_ui::HealthBars;
                     options.health = match value("--health")?.as_str() {
@@ -354,7 +368,7 @@ impl Options {
                     size = [w.parse().context("--size")?, h.parse().context("--size")?];
                 }
                 other => bail!(
-                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --tick, --crowd, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --preset, --lod-pixels, --shadow-map, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --effect, --viewer, --select, --health, --play, --observe, --input)"
+                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --tick, --crowd, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --preset, --lod-pixels, --shadow-map, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --effect, --viewer, --select, --health, --damage, --play, --observe, --input)"
                 ),
             }
             first = false;

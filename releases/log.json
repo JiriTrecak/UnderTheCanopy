@@ -2,7 +2,9 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [
-      "With a worker selected, hovering a tree shows a ring around it, so you can tell trees can be clicked to gather wood."
+      "With a worker selected, hovering a tree shows a ring around it, so you can tell trees can be clicked to gather wood.",
+      "Damaged buildings catch fire: flames and smoke grow as their health falls and die down when they are repaired.",
+      "Melee hits throw up a puff of dust along the swing."
     ],
     "improved": [
       "Damaged buildings show their health bars, as damaged units do.",
