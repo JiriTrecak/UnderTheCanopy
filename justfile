@@ -19,6 +19,10 @@ shot *args: cook
 profile *args: cook
     cargo run -p canopy --profile profiling --features profile -- --data "{{justfile_directory()}}" --no-vsync {{args}}
 
+# Simulation cost of a real match per tick and per step: `just bench-sim` (8 × 50 crowd battle on echo-isles), or e.g. `just bench-sim --map turtle-rock --ai 4 --ticks 4000`
+bench-sim *args="--map echo-isles --crowd 50 --ticks 1600":
+    cargo run -q --release -p canopy-sim --example match_bench -- --data "{{justfile_directory()}}" {{args}}
+
 # Cook published assets into target/cooked/canopy.pack; `just cook --inspect <asset id>` shows one, `--stats` the whole pack
 cook *args:
     cargo run -q -p canopy-cook -- --data "{{justfile_directory()}}" --out "{{justfile_directory()}}/target/cooked" {{args}}

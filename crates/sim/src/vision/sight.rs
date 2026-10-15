@@ -108,48 +108,42 @@ impl<'a> Sight<'a> {
             },
         );
         let size = i64::from(self.terrain.size());
-        self.vision.index.any(
-            query,
-            |key| {
-                self.vision
-                    .sensor(key)
-                    .map(|s| self.vision.index.circle(s.spec.origin, s.spec.radius))
-            },
-            |key| {
-                let (Some(sensor), SensorKey::Entity(id)) = (self.vision.sensor(key), key) else {
-                    return false;
-                };
-                let Some(eye_entity) = self.state.entities.get(id) else {
-                    return false;
-                };
-                if !self.shares(owner, sensor) {
-                    return false;
-                }
-                let eye = self.eye(eye_entity);
-                let radius = i64::from(sensor.spec.radius);
-                if airborne || layered {
-                    point_range(eye_entity.position, entity.position, hx, hy) <= radius * radius
-                        && self.terrain_visible(eye, target, airborne)
-                } else {
-                    let (sx, sy) = (
-                        i64::from(sensor.spec.origin.x),
-                        i64::from(sensor.spec.origin.y),
-                    );
-                    cells.iter().any(|&cell| {
-                        let (cx, cy) =
-                            (i64::from(cell) % size * 1000, i64::from(cell) / size * 1000);
-                        (cx - sx).pow(2) + (cy - sy).pow(2) <= radius * radius
-                            && self.terrain.tactical().visible(
-                                ground(eye),
-                                crate::terrain::TerrainPoint::new(
-                                    (cx / 1000) as f64,
-                                    (cy / 1000) as f64,
-                                ),
-                            )
-                    })
-                }
-            },
-        )
+        // Sensors that do not share their sight with `owner` cannot answer; with a team,
+        // that is exactly those without its bit (a sensor's teams include its owner's).
+        let shared = self.vision.teams().index(owner).map(|t| 1u16 << t);
+        self.vision.index.any(query, shared, |key| {
+            let (Some(sensor), SensorKey::Entity(id)) = (self.vision.sensor(key), key) else {
+                return false;
+            };
+            let Some(eye_entity) = self.state.entities.get(id) else {
+                return false;
+            };
+            if !self.shares(owner, sensor) {
+                return false;
+            }
+            let eye = self.eye(eye_entity);
+            let radius = i64::from(sensor.spec.radius);
+            if airborne || layered {
+                point_range(eye_entity.position, entity.position, hx, hy) <= radius * radius
+                    && self.terrain_visible(eye, target, airborne)
+            } else {
+                let (sx, sy) = (
+                    i64::from(sensor.spec.origin.x),
+                    i64::from(sensor.spec.origin.y),
+                );
+                cells.iter().any(|&cell| {
+                    let (cx, cy) = (i64::from(cell) % size * 1000, i64::from(cell) / size * 1000);
+                    (cx - sx).pow(2) + (cy - sy).pow(2) <= radius * radius
+                        && self.terrain.tactical().visible(
+                            ground(eye),
+                            crate::terrain::TerrainPoint::new(
+                                (cx / 1000) as f64,
+                                (cy / 1000) as f64,
+                            ),
+                        )
+                })
+            }
+        })
     }
 
     /// Whether `owner` may perceive `entity` at all: concealed units need a detector in

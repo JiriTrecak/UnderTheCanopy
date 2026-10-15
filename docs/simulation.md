@@ -65,6 +65,43 @@ Vendored Lua 5.4 through `mlua`, no standard libraries, a fresh state per run, a
 - Desync detection (D13): every 8 ticks a cheap fingerprint of counters, jobs, stocks, outcome and a rotating sample of up to 32 actors.
 - Tests run long AI-versus-AI matches and require identical fingerprints across runs, across save/load, and on macOS and Windows in CI.
 
+## Performance
+
+Budget: a tick must finish well inside 25 ms (D3) on the base M1 while the render thread keeps 60 fps; the worst case is eight players with about 50 units each fighting at once (plan).
+
+**Benchmark.** `just bench-sim` runs the `match_bench` example of `canopy-sim`: the measured crowd battle (`canopy_sim::crowd`, the same scenario as `canopy shot --crowd 50`: eight players with 50 soldiers each in a ring on echo-isles, every soldier type of the default race, armies meeting from tick ~120 to a melee that leaves ~350 alive at tick 1600). It prints the whole tick (step, and the observer view) as mean, p50, p99 and max, the worst tick with its steps, every `tick: …` step span of `World::step` and the costliest inner spans, and a digest of every tick's fingerprint plus the final save: equal digests mean identical simulations (D37). Other scenarios: `just bench-sim --map turtle-rock --crowd 50`, `--ai 4 --ticks 12000` (computer players), `--no-spans` (no span subscriber overhead). The observer view and the live presenter are timed by `canopy shot --tick N` (`step + view + present`).
+
+**Measured** (M4 Max, release, `just bench-sim`, ms per tick, best of three runs while other builds were running):
+
+| | mean | p50 | p99 | max |
+|---|---|---|---|---|
+| before (2026-10-15, `35af425`) | 7.31 | 7.05 | 17.1 | 27.3 |
+| after | 2.13 | 2.11 | 3.4 | 5.1 |
+
+| step (mean / max) | before | after |
+|---|---|---|
+| abilities (lifecycle, auras, autocast) | 5.17 / 25.7 | 1.18 / 3.9 |
+| — autocast | 3.97 / 24.3 | 0.37 / 2.9 |
+| — auras | 1.05 / 7.6 | 0.71 / 1.1 |
+| combat plan (attack approach) | 0.85 / 3.4 | 0.43 / 1.1 |
+| combat resolve | 0.83 / 2.6 | 0.11 / 0.3 |
+| ability resolve | 0.31 / 14.7 | 0.09 / 1.8 |
+| movement, separation, idle | 0.14 / 4.0 | 0.12 / 0.5 |
+| everything else | < 0.3 | < 0.3 |
+
+turtle-rock with the same crowd: 7.69 → 1.92 mean, 32.6 → 5.2 max. AI matches are cheap (after: four AIs on turtle-rock, 0.37 ms mean and 1.9 ms max over 12,000 ticks). Outside the simulation, `canopy shot --crowd 50 --tick 801`: observer view 0.16 ms, presenter 1.13 → 0.18 ms per tick.
+
+**What it was.**
+- *Exact sight* (`Sight::visible`) walked every sensor in the target's sectors, looking each up twice by binary search before checking whether it even shared its sight with the asking team. In an eight-player crowd seven of eight sensors were someone else's. The sector index now stores each sensor's team mask and sector range, so other teams' sensors are skipped without a lookup (autocast, combat perception, projectile witnesses and events all ask this).
+- *Autocast* asked that sight question for every unit in reach of every caster due this tick, and snapshotted (with full stats) each unit again per caster, and the caster again for every aim it checked. Sight answers and snapshots are now remembered per pass and forgotten after each cast (the only thing in the pass that changes the state).
+- *Attack approach* sorted every candidate cell in range (~260) and, in a crowd, almost always tried all of them (99.6% end on a detour), each with a swept-body test. It now pops a heap until eight detours exist, proves most remaining directions blocked by the bodies touching the actor, and sorts only the candidates that pass.
+- *Unit snapshots* (`actor::of`, `Stats::of`) computed control immunities up to five times, `actor::plain` built full stats for a level, and status checks cloned the whole source entity to swap its owner.
+- *The presenter* deep-copied each model's metadata (clips, states, names) for every unit every tick; it now shares it.
+
+**Where the time goes now** (crowd, after): auras 0.7 ms (each aura holder re-applies its one-tick statuses to every unit in radius through the ability program, with unit snapshots, and scans all ~2,500 entities, mostly trees, for candidates), autocast 0.4 ms, attack approach 0.3 ms, everything else under 0.15 ms each. The worst tick is the first autocast wave (ticks 1–8, ~3–4 ms autocast: every cast forgets what the pass learned).
+
+**Base M1** (not measured; Firestorm cores run single-threaded code about 1.7× slower than the M4 Max): about 3.6 ms mean, 6 ms p99 and 9 ms at the opening autocast wave for the simulation, plus about 0.6 ms for view and presentation, well inside 25 ms. Dev builds (opt-level 2, no LTO) are slower still. Next candidates if needed: a candidate index for auras (entities with health by position), finer forgetting in autocast, and a lazily built corpse list.
+
 ## Build order
 
 | Step | Contents |
