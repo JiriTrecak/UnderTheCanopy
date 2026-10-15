@@ -5,8 +5,8 @@
 //! the window, driven through its intents and actions; matches really load and run on
 //! the simulation thread and their frame renders behind the UI. Saves go to a temporary
 //! user folder. Multiplayer shows a real server when `CANOPY_MATCH_SERVER` names one (a
-//! local copy of the old server): the capture opens a second client's lobby so the list
-//! has a room, then joins it. No shipped map is a mission, so the mission HUD captures
+//! local match server, `just server`): the capture opens a second client's lobby so the
+//! list has a room, joins it, then hosts a lobby with computer and closed seats. No shipped map is a mission, so the mission HUD captures
 //! feed a sample mission state (marked `-sample` in their names).
 
 use super::{
@@ -253,7 +253,7 @@ fn objective(
     }
 }
 
-/// Renders every screen to PNGs in `out` (`only`: one group, `releases`).
+/// Renders every screen to PNGs in `out` (`only`: one group, `releases` or `multiplayer`).
 pub fn run(
     paths: &Paths,
     out: &Path,
@@ -295,8 +295,12 @@ pub fn run(
     rig.shoot("boot")?;
     rig.until("boot", Duration::from_secs(60), Game::booted)?;
     rig.settle(1.2);
-    if only == Some("releases") {
-        releases(&mut rig)?;
+    if let Some(group) = only {
+        match group {
+            "releases" => releases(&mut rig)?,
+            "multiplayer" => multiplayer(&mut rig)?,
+            other => anyhow::bail!("unknown capture group {other} (releases, multiplayer)"),
+        }
         let _ = std::fs::remove_dir_all(&user);
         println!("{} captures", rig.written.len());
         return Ok(());
@@ -610,11 +614,53 @@ fn multiplayer(rig: &mut Rig) -> Result<()> {
         rig.game.apply(Intent::Back);
         rig.settle(0.3);
     }
-    if let Some((_net, mut session)) = other {
+    if let Some((net, mut session)) = other {
         session.close();
+        lobby_host(rig, &net)?;
     }
     rig.game.apply(Intent::Back);
     rig.settle(0.2);
+    Ok(())
+}
+
+/// The host's lobby on the largest map: a computer seat on team 1 with the host, a
+/// closed seat, and a second player who joined.
+fn lobby_host(rig: &mut Rig, net: &canopy_net::Net) -> Result<()> {
+    use canopy_net::wire::{JoinRoom, Role};
+    let data = rig.game.data.clone().context("booted")?;
+    let maps: Vec<_> = data.skirmish_maps().collect();
+    let (index, map) = maps
+        .iter()
+        .enumerate()
+        .max_by_key(|(_, m)| m.starts.len())
+        .context("a map")?;
+    rig.game.mp.tab = super::multiplayer::Tab::Create;
+    rig.game.mp.selected_map = index;
+    rig.game.mp.seats = map.starts.len().saturating_sub(2);
+    rig.game.mp.go(&maps, "Jiri");
+    rig.until("the hosted lobby", Duration::from_secs(20), |g| {
+        *g.flow.screen() == Screen::Lobby && g.mp.room().is_some()
+    })?;
+    let id = rig.game.mp.room().context("a room")?.id.clone();
+    rig.game.mp.choose("seat", 1, 2);
+    rig.game.mp.choose("seat", 3, 1);
+    rig.settle(0.5);
+    rig.game.mp.choose("team", 1, 0);
+    let joined = net
+        .join_room(
+            &id,
+            &JoinRoom {
+                guest_name: "Bo".into(),
+                role: Role::Player,
+            },
+        )
+        .wait()?;
+    let mut guest = net.enter(&joined);
+    rig.settle(2.5);
+    rig.shoot("lobby-host")?;
+    guest.close();
+    rig.game.apply(Intent::Back);
+    rig.settle(0.3);
     Ok(())
 }
 

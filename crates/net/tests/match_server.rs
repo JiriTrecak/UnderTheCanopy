@@ -6,7 +6,7 @@
 
 mod fixture;
 
-use canopy_net::wire::{CreateRoom, JoinRoom, Joined, Role, WireOutcome};
+use canopy_net::wire::{CreateRoom, JoinRoom, Joined, Role, SeatKind, WireOutcome};
 use canopy_net::{ContentIdentity, Event, Net, Phase, Session};
 use canopy_sim::{Queued, World};
 use fixture::{MatchServer, march, positions, wait_for};
@@ -169,6 +169,104 @@ fn start(peers: &mut [&mut Peer]) {
 }
 
 #[test]
+fn two_players_and_two_computers_play_a_team_match() {
+    let Some(server) = MatchServer::start() else {
+        return;
+    };
+    let net = server.net();
+    let host = net
+        .create_room(&CreateRoom {
+            name: "Ann's room".into(),
+            map_id: "lockstep-fixture".into(),
+            map_revision: "1".into(),
+            slot_count: 4,
+            guest_name: "Ann".into(),
+        })
+        .wait()
+        .unwrap();
+    let id = host.room.id.clone();
+    let mut a = Peer::new("Ann", &net, &host);
+    // Seats 1 and 2 go to the computer before Bo arrives, so Bo takes seat 3.
+    a.session.set_seat(1, SeatKind::Ai);
+    a.session.set_seat(2, SeatKind::Ai);
+    wait_for(
+        &mut a.session,
+        &mut a.events,
+        "computer seats",
+        |e| match e {
+            Event::Room(room) => (room
+                .slots
+                .iter()
+                .filter(|s| s.kind == Some(SeatKind::Ai))
+                .count()
+                == 2)
+                .then_some(()),
+            _ => None,
+        },
+    );
+    let guest = join(&net, &id, "Bo", Role::Player);
+    assert_eq!(guest.you.player, Some(3));
+    let mut b = Peer::new("Bo", &net, &guest);
+    // Ann and Bo against the computers.
+    a.session.select_team(None, 1);
+    b.session.select_team(None, 1);
+    a.session.select_team(Some(1), 2);
+    a.session.select_team(Some(2), 2);
+    wait_for(&mut a.session, &mut a.events, "teams", |e| match e {
+        Event::Room(room) => {
+            let teams: Vec<Option<u8>> = room.slots.iter().map(|s| s.team).collect();
+            (teams == [Some(1), Some(2), Some(2), Some(1)]).then_some(())
+        }
+        _ => None,
+    });
+
+    start(&mut [&mut a, &mut b]);
+    let config = a.session.config().unwrap().clone();
+    assert_eq!(b.session.config(), Some(&config));
+    let seats: Vec<(u8, canopy_sim::SlotKind, Option<u8>)> = config
+        .slots
+        .iter()
+        .map(|s| (s.player, s.kind, s.team))
+        .collect();
+    use canopy_sim::SlotKind::{Ai, Human};
+    assert_eq!(
+        seats,
+        [
+            (0, Human, Some(1)),
+            (1, Ai, Some(2)),
+            (2, Ai, Some(2)),
+            (3, Human, Some(1))
+        ]
+    );
+    assert_eq!(config.colors.as_deref(), Some(&[0, 1, 2, 3][..]));
+
+    // The computers play inside both simulations, so nothing waits for them and nothing
+    // diverges. (This fixture gives an AI nothing to do; the simulation's AI matches test
+    // what it does and that it is deterministic.)
+    run(&mut [&mut a, &mut b], 400, |_| {});
+    for peer in [&a, &b] {
+        peer.assert_no_trouble();
+    }
+    assert_eq!(a.fingerprints, b.fingerprints);
+    assert!(!a.hash_oks().is_empty());
+    for peer in [&a, &b] {
+        let computers: Vec<u8> = peer
+            .world()
+            .setup()
+            .slots
+            .iter()
+            .filter(|s| s.kind == Ai)
+            .map(|s| s.player)
+            .collect();
+        assert_eq!(computers, [1, 2], "{}", peer.name);
+        assert!(
+            !positions(peer.world(), 2).is_empty(),
+            "computer bases are built"
+        );
+    }
+}
+
+#[test]
 fn two_players_and_a_spectator_play_in_lockstep() {
     let Some(server) = MatchServer::start() else {
         return;
@@ -197,7 +295,7 @@ fn two_players_and_a_spectator_play_in_lockstep() {
         .map(|r| r.into_keys().collect())
         .unwrap_or_default();
     if let Some(race) = races.last().cloned() {
-        b.session.select_race(&race);
+        b.session.select_race(None, &race);
         wait_for(
             &mut a.session,
             &mut a.events,

@@ -37,6 +37,9 @@ pub const PLAYERS_FILE: &str = "players.json";
 #[serde(deny_unknown_fields)]
 pub struct Players {
     pub colors: Vec<Hex>,
+    /// What the lobby calls each colour.
+    #[serde(default)]
+    pub names: Vec<String>,
 }
 
 impl Players {

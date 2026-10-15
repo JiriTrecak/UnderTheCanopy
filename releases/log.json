@@ -2,9 +2,12 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [
-      "A small graph button next to Menu opens the debug overlay (frame rate, timings and match tools), so it no longer needs F9."
+      "A small graph button next to Menu opens the debug overlay (frame rate, timings and match tools), so it no longer needs F9.",
+      "Multiplayer lobbies work like Warcraft III: the host sets each seat to Open, Closed or Computer, and every seat picks its race, hero, team and colour. Play 2v2 with a friend against the computer, or lock seats to play a 4-player map with two."
     ],
-    "improved": [],
+    "improved": [
+      "The lobby map shows each seat's chosen colour and hides starts nobody will play."
+    ],
     "fixed": [
       "Multiplayer matches can start with fewer players than the map has starts: unused starts stay empty instead of the match failing to load."
     ],

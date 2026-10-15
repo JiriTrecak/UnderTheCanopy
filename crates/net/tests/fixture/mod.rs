@@ -146,7 +146,7 @@ fn grid(value: f32) -> String {
     base64(&bytes)
 }
 
-/// A flat two-player skirmish map.
+/// A flat four-start skirmish map (two-player matches leave starts 3 and 4 empty).
 pub fn map() -> &'static UtcMap {
     static MAP: OnceLock<UtcMap> = OnceLock::new();
     MAP.get_or_init(build_map)
@@ -167,6 +167,8 @@ fn build_map() -> UtcMap {
         "playerStarts": [
             {"player": 1, "x": 17.5, "z": 17.5, "setup": "setup.test", "mainFort": "start.player.1/main-fort"},
             {"player": 2, "x": 49.5, "z": 49.5, "setup": "setup.test", "mainFort": "start.player.2/main-fort"},
+            {"player": 3, "x": 17.5, "z": 49.5, "setup": "setup.test", "mainFort": "start.player.3/main-fort"},
+            {"player": 4, "x": 49.5, "z": 17.5, "setup": "setup.test", "mainFort": "start.player.4/main-fort"},
         ],
         "entities": [], "camps": [],
         "authoring": {"version": 1, "terrain": terrain, "objects": []},

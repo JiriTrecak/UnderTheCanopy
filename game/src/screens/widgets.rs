@@ -6,27 +6,44 @@ use crate::data::{GameData, MapEntry};
 use canopy_render::Gpu;
 use canopy_ui::{Color, Ui};
 
-/// Player colours by slot (`config/players.json`), sRGB.
+/// Player colours by slot (`config/players.json`), sRGB, and their names.
 #[derive(Debug, Clone)]
-pub struct Palette(pub Vec<[u8; 3]>);
+pub struct Palette(pub Vec<[u8; 3]>, pub Vec<String>);
 
 impl Palette {
     pub fn load(data: &std::path::Path) -> Self {
         #[derive(serde::Deserialize)]
         struct File {
             colors: Vec<String>,
+            #[serde(default)]
+            names: Vec<String>,
         }
-        let colors = std::fs::read(data.join("config/players.json"))
+        let file = std::fs::read(data.join("config/players.json"))
             .ok()
-            .and_then(|b| serde_json::from_slice::<File>(&b).ok())
+            .and_then(|b| serde_json::from_slice::<File>(&b).ok());
+        let colors = file
+            .as_ref()
             .map(|f| f.colors.iter().filter_map(|c| hex(c)).collect::<Vec<_>>())
             .filter(|c| !c.is_empty())
             .unwrap_or_else(|| vec![[0xff, 0x30, 0x38], [0x33, 0x8d, 0xff]]);
-        Self(colors)
+        Self(colors, file.map(|f| f.names).unwrap_or_default())
     }
 
     pub fn color(&self, slot: u8) -> [u8; 3] {
         self.0[usize::from(slot) % self.0.len()]
+    }
+
+    /// How many colours a lobby offers.
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// The lobby's name for colour `index`.
+    pub fn name(&self, index: u8) -> String {
+        self.1
+            .get(usize::from(index))
+            .cloned()
+            .unwrap_or_else(|| format!("Colour {}", index + 1))
     }
 
     /// The marker colour: the player colour mixed 55 % with the panel (old badge).

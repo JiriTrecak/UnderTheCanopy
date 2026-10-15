@@ -1,3 +1,4 @@
 {
-  "colors": ["#ff3038", "#338dff", "#35de53", "#f2cf35", "#ed842a", "#9656cf", "#36cbd0", "#ffffff"]
+  "colors": ["#ff3038", "#338dff", "#35de53", "#f2cf35", "#ed842a", "#9656cf", "#36cbd0", "#ffffff"],
+  "names": ["Red", "Blue", "Green", "Yellow", "Orange", "Purple", "Teal", "White"]
 }

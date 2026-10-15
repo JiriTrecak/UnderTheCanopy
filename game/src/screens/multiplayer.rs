@@ -11,7 +11,10 @@ use super::{ui_host::UiHost, widgets, widgets::Palette};
 use crate::data::{GameData, MapEntry};
 use canopy_net::{
     Event, Net, Pending, Phase, ServerAddress, Session,
-    wire::{CreateRoom, Health, JoinRoom, Joined, MatchConfig, Role, RoomState, RoomView},
+    wire::{
+        CreateRoom, Health, JoinRoom, Joined, MatchConfig, Role, RoomState, RoomView, Seat,
+        SeatKind,
+    },
 };
 use canopy_render::Gpu;
 use std::time::{Duration, Instant};
@@ -470,6 +473,30 @@ impl Multiplayer {
         let host_seat = self.is_host();
         let map = room.and_then(|r| data.map(&r.map_id));
         widgets::map_preview(host, gpu, data, palette, "lobby", map, me);
+        // Markers follow the seats: their colours, and none where nobody will play.
+        if let (Some(r), Some(m), Some(list)) = (room, map, host.ui.find("lobby/preview/markers")) {
+            for (i, &player) in m.starts.iter().enumerate() {
+                let Some(node) = host.ui.child(list, i) else {
+                    continue;
+                };
+                let seat = r.slots.iter().find(|s| s.player + 1 == player);
+                let plays =
+                    seat.is_some_and(|s| matches!(seat_kind(s), SeatKind::Human | SeatKind::Ai));
+                if let Some(s) = seat.filter(|_| plays) {
+                    let color = s.color.unwrap_or(s.player);
+                    let shade = if me == Some(s.player) {
+                        palette.solid(color)
+                    } else {
+                        palette.badge(color)
+                    };
+                    host.ui.set_color(node, Some(shade));
+                }
+                host.ui.set_visible(
+                    node,
+                    plays || seat.is_some_and(|s| seat_kind(s) == SeatKind::Open),
+                );
+            }
+        }
         let ui = &mut host.ui;
         widgets::text(
             ui,
@@ -480,15 +507,28 @@ impl Multiplayer {
             ),
         );
         if let Some(r) = room {
-            let joined = r.slots.iter().filter(|s| s.name.is_some()).count();
+            let count = |kind: SeatKind| r.slots.iter().filter(|s| seat_kind(s) == kind).count();
+            let (humans, computers, open) = (
+                count(SeatKind::Human),
+                count(SeatKind::Ai),
+                count(SeatKind::Open),
+            );
             widgets::text(ui, "lobby/name", &r.name);
             widgets::text(ui, "lobby/host", &format!("Hosted by {}", r.host));
+            let plural = |n: usize, one: &str, many: &str| {
+                format!("{n} {}", if n == 1 { one } else { many })
+            };
+            let mut parts = vec![plural(humans, "player", "players")];
+            if computers > 0 {
+                parts.push(plural(computers, "computer", "computers"));
+            }
+            parts.push(format!("{open} open"));
             widgets::text(
                 ui,
                 "lobby/room-meta",
                 &format!(
-                    "{joined} / {} players joined · Input buffer {} ms",
-                    r.slots.len(),
+                    "{} · Input buffer {} ms",
+                    parts.join(" · "),
                     r.input_delay_ms.unwrap_or(0)
                 ),
             );
@@ -506,63 +546,76 @@ impl Multiplayer {
             ui,
             "lobby/copy",
             if host_seat {
-                "Gather your players, then start the match when everyone has arrived."
+                "Set each seat open, closed or to the computer, and the teams. Start whenever you are ready: open seats nobody took stay empty."
             } else {
-                "Choose your race and hero. The host starts the match."
+                "Choose your race, hero, team and colour. The host starts the match."
             },
         );
-        let races: Vec<(String, String)> = room
-            .and_then(|r| r.races.as_ref())
-            .map(|m| {
-                m.iter()
-                    .map(|(id, r)| (id.clone(), r.name.clone()))
-                    .collect()
-            })
-            .unwrap_or_default();
+        let races = race_list(room);
+        let race_names: Vec<String> = races.iter().map(|r| r.1.clone()).collect();
         let seats = room.map_or(&[][..], |r| &r.slots[..]);
         if let Some(list) = ui.find("lobby/seats") {
             ui.set_count(list, seats.len());
         }
         let waiting = room.is_some_and(|r| r.state == RoomState::Waiting);
+        let teams: Vec<String> = (1..=TEAMS).map(|t| format!("Team {t}")).collect();
         for (i, seat) in seats.iter().enumerate() {
             let base = format!("lobby/seats/{i}");
+            let kind = seat_kind(seat);
+            let mine = me == Some(seat.player);
+            let plays = matches!(kind, SeatKind::Human | SeatKind::Ai);
+            // Your own seat, or a computer's when you host.
+            let editable = waiting && (mine || (host_seat && kind == SeatKind::Ai));
+            let color = seat.color.unwrap_or(seat.player);
             if let Some(badge) = ui.find(&format!("{base}/badge")) {
                 ui.set_text(badge, &(seat.player + 1).to_string());
-                ui.set_color(badge, Some(palette.badge(seat.player)));
+                ui.set_color(badge, Some(palette.badge(color)));
             }
-            let mine = me == Some(seat.player);
-            let name = match (&seat.name, mine) {
-                (Some(n), true) => format!("{n} (you)"),
-                (Some(n), false) => n.clone(),
-                (None, _) => "Open slot".into(),
+            let (name, sub) = match kind {
+                SeatKind::Human => {
+                    let n = seat.name.clone().unwrap_or_default();
+                    (
+                        if mine { format!("{n} (you)") } else { n },
+                        seat.round_trip_ms.map_or_else(
+                            || "Connected".to_string(),
+                            |ms| format!("Connected · {ms} ms RTT"),
+                        ),
+                    )
+                }
+                SeatKind::Ai => ("Computer".into(), "Played by the computer".into()),
+                SeatKind::Open => ("Open".into(), "Waiting for a player".into()),
+                SeatKind::Closed => ("Closed".into(), "Nobody plays here".into()),
             };
             widgets::text(ui, &format!("{base}/name"), &name);
-            let sub = match (&seat.name, seat.round_trip_ms) {
-                (Some(_), Some(ms)) => format!("Connected · {ms} ms RTT"),
-                (Some(_), None) => "Connected".into(),
-                (None, _) => "Waiting for a player".into(),
-            };
             widgets::text(ui, &format!("{base}/sub"), &sub);
-            widgets::visible(ui, &format!("{base}/choices"), seat.name.is_some());
-            let race_names: Vec<String> = races.iter().map(|r| r.1.clone()).collect();
+            // The seat: a joined player's name, locked; otherwise open, closed or computer.
+            let field = |f: &str| format!("{base}/choices/{f}");
+            match kind {
+                SeatKind::Human => {
+                    widgets::options(ui, &field("seat"), std::slice::from_ref(&name), 0)
+                }
+                _ => widgets::options(ui, &field("seat"), &seat_options(), seat_option(kind)),
+            }
+            widgets::enabled(
+                ui,
+                &field("seat"),
+                host_seat && waiting && kind != SeatKind::Human,
+            );
+            for f in ["team", "race", "hero", "color"] {
+                widgets::visible(ui, &field(f), plays);
+            }
+            if !plays {
+                continue;
+            }
+            let team = seat.team.unwrap_or(seat.player + 1).clamp(1, TEAMS);
+            widgets::options(ui, &field("team"), &teams, usize::from(team - 1));
             let race = seat
                 .race
                 .as_ref()
                 .and_then(|id| races.iter().position(|r| &r.0 == id))
                 .unwrap_or(0);
-            widgets::options(ui, &format!("{base}/choices/race"), &race_names, race);
-            let heroes = room.and_then(|r| {
-                let race_id = seat
-                    .race
-                    .as_deref()
-                    .or(races.first().map(|r| r.0.as_str()))?;
-                r.races
-                    .as_ref()
-                    .and_then(|m| m.get(race_id))
-                    .and_then(|c| c.heroes.clone())
-                    .or_else(|| r.heroes.clone())
-            });
-            let hero_ids: Vec<String> = heroes.as_ref().map_or(Vec::new(), |h| h.choices.clone());
+            widgets::options(ui, &field("race"), &race_names, race);
+            let hero_ids = hero_list(room, seat, &races);
             let hero_names: Vec<String> = hero_ids
                 .iter()
                 .map(|id| {
@@ -576,17 +629,15 @@ impl Multiplayer {
                 .as_ref()
                 .and_then(|h| hero_ids.iter().position(|x| x == h))
                 .unwrap_or(0);
-            widgets::options(ui, &format!("{base}/choices/hero"), &hero_names, hero);
-            widgets::enabled(
-                ui,
-                &format!("{base}/choices/race"),
-                mine && waiting && race_names.len() > 1,
-            );
-            widgets::enabled(
-                ui,
-                &format!("{base}/choices/hero"),
-                mine && waiting && hero_names.len() > 1,
-            );
+            widgets::options(ui, &field("hero"), &hero_names, hero);
+            let colors = free_colors(seats, i, palette.len());
+            let color_names: Vec<String> = colors.iter().map(|&c| palette.name(c)).collect();
+            let selected = colors.iter().position(|&c| c == color).unwrap_or(0);
+            widgets::options(ui, &field("color"), &color_names, selected);
+            widgets::enabled(ui, &field("team"), editable);
+            widgets::enabled(ui, &field("race"), editable && race_names.len() > 1);
+            widgets::enabled(ui, &field("hero"), editable && hero_names.len() > 1);
+            widgets::enabled(ui, &field("color"), editable && color_names.len() > 1);
         }
         widgets::text(ui, "lobby/status", &self.status);
         widgets::visible(ui, "lobby/status", !self.status.is_empty());
@@ -604,34 +655,42 @@ impl Multiplayer {
         );
     }
 
-    /// A race or hero choice in the lobby (own seat).
-    pub fn choose(&mut self, field: &str, option: usize) {
+    /// A lobby choice on seat row `row`: the host's seat dropdown, or a race, hero, team or
+    /// colour for your own seat (or, hosting, a computer's).
+    pub fn choose(&mut self, field: &str, row: usize, option: usize) {
         let Some(session) = &self.session else {
             return;
         };
         let Some(room) = session.room() else {
             return;
         };
-        let me = session.player();
-        let seat = room.slots.iter().find(|s| Some(s.player) == me);
-        let races: Vec<String> = room
-            .races
-            .as_ref()
-            .map(|m| m.keys().cloned().collect())
-            .unwrap_or_default();
+        let Some(seat) = room.slots.get(row) else {
+            return;
+        };
+        // `None` addresses this connection's own seat.
+        let target = (session.player() != Some(seat.player)).then_some(seat.player);
+        let races = race_list(Some(room));
         match field {
+            "seat" if seat_kind(seat) != SeatKind::Human => {
+                if let Some(&kind) = SEAT_OPTIONS.get(option) {
+                    session.set_seat(seat.player, kind);
+                }
+            }
+            "team" => session.select_team(target, option.min(usize::from(TEAMS) - 1) as u8 + 1),
             "race" => {
-                if let Some(race) = races.get(option) {
-                    session.select_race(race);
+                if let Some((race, _)) = races.get(option) {
+                    session.select_race(target, race);
                 }
             }
             "hero" => {
-                let race = seat.and_then(|s| s.race.clone()).or(races.first().cloned());
-                let heroes = race
-                    .and_then(|r| room.races.as_ref()?.get(&r)?.heroes.clone())
-                    .or_else(|| room.heroes.clone());
-                if let Some(hero) = heroes.and_then(|h| h.choices.get(option).cloned()) {
-                    session.select_hero(&hero);
+                if let Some(hero) = hero_list(Some(room), seat, &races).get(option) {
+                    session.select_hero(target, hero);
+                }
+            }
+            "color" => {
+                let colors = free_colors(&room.slots, row, COLORS);
+                if let Some(&color) = colors.get(option) {
+                    session.select_color(target, color);
                 }
             }
             _ => {}
@@ -643,4 +702,68 @@ impl Multiplayer {
             session.start_match();
         }
     }
+}
+
+/// Teams and colours a lobby offers (the server's `TEAMS`, `COLORS`).
+const TEAMS: u8 = 8;
+const COLORS: usize = 8;
+
+/// The host's seat dropdown, in order.
+const SEAT_OPTIONS: [SeatKind; 3] = [SeatKind::Open, SeatKind::Closed, SeatKind::Ai];
+
+fn seat_options() -> Vec<String> {
+    vec!["Open".into(), "Closed".into(), "Computer".into()]
+}
+
+fn seat_option(kind: SeatKind) -> usize {
+    SEAT_OPTIONS.iter().position(|&k| k == kind).unwrap_or(0)
+}
+
+/// What holds a seat; servers before lobby seats only name the joined ones.
+fn seat_kind(seat: &Seat) -> SeatKind {
+    seat.kind.unwrap_or(if seat.name.is_some() {
+        SeatKind::Human
+    } else {
+        SeatKind::Open
+    })
+}
+
+/// The room's races: id and name.
+fn race_list(room: Option<&RoomView>) -> Vec<(String, String)> {
+    room.and_then(|r| r.races.as_ref())
+        .map(|m| {
+            m.iter()
+                .map(|(id, r)| (id.clone(), r.name.clone()))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// The starting heroes `seat`'s race offers.
+fn hero_list(room: Option<&RoomView>, seat: &Seat, races: &[(String, String)]) -> Vec<String> {
+    room.and_then(|r| {
+        let race_id = seat
+            .race
+            .as_deref()
+            .or(races.first().map(|r| r.0.as_str()))?;
+        r.races
+            .as_ref()
+            .and_then(|m| m.get(race_id))
+            .and_then(|c| c.heroes.clone())
+            .or_else(|| r.heroes.clone())
+    })
+    .map_or(Vec::new(), |h| h.choices)
+}
+
+/// Colours seat `row` may take: its own and those no other seat taking part has.
+fn free_colors(seats: &[Seat], row: usize, count: usize) -> Vec<u8> {
+    let taken: Vec<u8> = seats
+        .iter()
+        .enumerate()
+        .filter(|&(i, s)| i != row && matches!(seat_kind(s), SeatKind::Human | SeatKind::Ai))
+        .map(|(_, s)| s.color.unwrap_or(s.player))
+        .collect();
+    (0..count.min(usize::from(u8::MAX)) as u8)
+        .filter(|c| !taken.contains(c))
+        .collect()
 }

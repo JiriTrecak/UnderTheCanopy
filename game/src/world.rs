@@ -256,6 +256,8 @@ pub struct MatchRequest {
     pub resume: Option<canopy_sim::Save>,
     /// A networked seat (multiplayer); a local session is made otherwise.
     pub session: Option<Session>,
+    /// Palette colour of each player by player number (the lobby's), when not its own.
+    pub colors: Option<Vec<usize>>,
 }
 
 /// A prepared match and what the game needs to know about it.
@@ -290,6 +292,7 @@ pub fn prepare(
         .map_err(|e| anyhow!("{}: {e}", entry.file.file))?;
     let look = Look::load(&paths.data, map.biome())?;
     progress(Stage::World, 0.25);
+    let colors = request.colors.clone();
     let (world, session) = match request.resume {
         Some(save) => {
             let setup = save.setup.clone();
@@ -311,7 +314,15 @@ pub fn prepare(
         }
     };
     progress(Stage::Scene, 0.6);
-    let (mut loaded, game) = assemble(&map, data.pack.clone(), &look, world, session, None, None)?;
+    let (mut loaded, game) = assemble(
+        &map,
+        data.pack.clone(),
+        &look,
+        world,
+        session,
+        colors.as_deref(),
+        None,
+    )?;
     loaded.data = paths.data.clone();
     progress(Stage::Gpu, 0.85);
     tracing::info!(

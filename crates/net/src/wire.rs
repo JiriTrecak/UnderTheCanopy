@@ -123,12 +123,35 @@ pub enum RoomState {
     Desynced,
 }
 
+/// What holds a lobby seat (docs/server.md, "Lobby seats").
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SeatKind {
+    /// A human may join.
+    Open,
+    /// Locked by the host: nobody plays it.
+    Closed,
+    /// The computer plays it.
+    Ai,
+    /// A human has joined.
+    Human,
+}
+
 /// A seat in a room view. `name` is `null` for an empty seat.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Seat {
     pub player: u8,
     pub name: Option<String>,
+    /// Absent from servers before lobby seats: then a named seat is a human's.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<SeatKind>,
+    /// 1 to 8; every seat its own team by default.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub team: Option<u8>,
+    /// Palette colour (index into `config/players.json`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub color: Option<u8>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub race: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -303,11 +326,31 @@ pub enum ClientMsg {
     Chat {
         text: String,
     },
+    /// The sender's own seat's hero, or the host's for computer seat `player`.
     SelectHero {
         hero: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        player: Option<u8>,
     },
     SelectRace {
         race: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        player: Option<u8>,
+    },
+    SelectTeam {
+        team: u8,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        player: Option<u8>,
+    },
+    SelectColor {
+        color: u8,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        player: Option<u8>,
+    },
+    /// Host: open, close or hand a seat to the computer (never `Human`).
+    SetSeat {
+        player: u8,
+        seat: SeatKind,
     },
     StartMatch,
     /// Declared by the protocol; the server ignores it and the old client never sends it.
@@ -480,14 +523,44 @@ mod tests {
             (
                 ClientMsg::SelectHero {
                     hero: "unit.h".into(),
+                    player: None,
                 },
                 r#"{"type":"selectHero","hero":"unit.h"}"#,
             ),
             (
                 ClientMsg::SelectRace {
                     race: "race.r".into(),
+                    player: None,
                 },
                 r#"{"type":"selectRace","race":"race.r"}"#,
+            ),
+            (
+                ClientMsg::SelectRace {
+                    race: "race.r".into(),
+                    player: Some(2),
+                },
+                r#"{"type":"selectRace","race":"race.r","player":2}"#,
+            ),
+            (
+                ClientMsg::SelectTeam {
+                    team: 2,
+                    player: None,
+                },
+                r#"{"type":"selectTeam","team":2}"#,
+            ),
+            (
+                ClientMsg::SelectColor {
+                    color: 5,
+                    player: Some(3),
+                },
+                r#"{"type":"selectColor","color":5,"player":3}"#,
+            ),
+            (
+                ClientMsg::SetSeat {
+                    player: 1,
+                    seat: SeatKind::Ai,
+                },
+                r#"{"type":"setSeat","player":1,"seat":"ai"}"#,
             ),
             (ClientMsg::StartMatch, r#"{"type":"startMatch"}"#),
             (

@@ -528,6 +528,7 @@ impl Game {
             me: rerun.me,
             resume: None,
             session: None,
+            colors: None,
         }));
         self.last_match = Some(Rerun {
             setup,
@@ -641,6 +642,7 @@ impl Game {
             me: meta.player,
             resume: Some(body.world),
             session: None,
+            colors: None,
         }));
         self.saves_status.clear();
         self.start_loading(job, start, origin);
@@ -939,12 +941,23 @@ impl Game {
                     start_tick: 0,
                 };
                 self.last_match = None;
+                // The lobby's colours, by player number; the others keep their own.
+                let colors = config.colors.as_ref().map(|colors| {
+                    let mut by_player: Vec<usize> = (0..8).collect();
+                    for (slot, &color) in config.slots.iter().zip(colors) {
+                        if let Some(c) = by_player.get_mut(usize::from(slot.player)) {
+                            *c = usize::from(color);
+                        }
+                    }
+                    by_player
+                });
                 let job = Job::Match(Box::new(MatchRequest {
                     map: config.map_id.clone(),
                     setup: config.setup(),
                     me,
                     resume: None,
                     session: Some(*session),
+                    colors,
                 }));
                 self.start_loading(job, start, Origin::Multiplayer);
             }
@@ -1209,9 +1222,10 @@ impl Game {
                 self.mp.go(&maps, &name);
             }
             "lobby.leave" if clicked => self.navigate(Intent::Back),
-            "lobby.race" | "lobby.hero" => {
-                if let Some(option) = selected {
-                    self.mp.choose(name.trim_start_matches("lobby."), option);
+            "lobby.seat" | "lobby.team" | "lobby.race" | "lobby.hero" | "lobby.color" => {
+                if let (Some(row), Some(option)) = (action.index, selected) {
+                    self.mp
+                        .choose(name.trim_start_matches("lobby."), row, option);
                 }
             }
             "lobby.start" if clicked => self.mp.start(),

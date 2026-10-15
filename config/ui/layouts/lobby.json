@@ -19,8 +19,11 @@
         {
           "id": "choices", "class": "sk-selects",
           "children": [
+            { "id": "seat", "kind": "dropdown", "class": "sk-select", "action": "lobby.seat", "options": ["Open", "Closed", "Computer"] },
+            { "id": "team", "kind": "dropdown", "class": "sk-select", "action": "lobby.team", "options": [] },
             { "id": "race", "kind": "dropdown", "class": "sk-select", "action": "lobby.race", "options": [] },
-            { "id": "hero", "kind": "dropdown", "class": "sk-select", "action": "lobby.hero", "options": [] }
+            { "id": "hero", "kind": "dropdown", "class": "sk-select", "action": "lobby.hero", "options": [] },
+            { "id": "color", "kind": "dropdown", "class": "sk-select", "action": "lobby.color", "options": [] }
           ]
         }
       ]

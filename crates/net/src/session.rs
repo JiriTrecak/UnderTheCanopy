@@ -28,7 +28,7 @@ use crate::mailbox::Mailbox;
 use crate::net::Net;
 use crate::wire::{
     ChatMessage, ClientIdentity, ClientMsg, Commit, ContentIdentity, Joined, MatchConfig,
-    PlayerHash, Role, RoomView, ServerMsg, TICK_MS, WireAction, WireOutcome,
+    PlayerHash, Role, RoomView, SeatKind, ServerMsg, TICK_MS, WireAction, WireOutcome,
 };
 use canopy_sim::{Action, MatchSetup, Queued, World};
 use std::collections::BTreeMap;
@@ -366,14 +366,40 @@ impl Session {
 
     // Lobby.
 
-    /// `selectHero`: this seat's starting hero (while the room waits).
-    pub fn select_hero(&self, hero: &str) {
-        self.message(ClientMsg::SelectHero { hero: hero.into() });
+    // `seat` is `None` for this connection's own seat, or a computer seat the host sets up.
+
+    /// `selectHero`: a seat's starting hero (while the room waits).
+    pub fn select_hero(&self, seat: Option<u8>, hero: &str) {
+        self.message(ClientMsg::SelectHero {
+            hero: hero.into(),
+            player: seat,
+        });
     }
 
-    /// `selectRace`: this seat's race; the hero resets to the race's default.
-    pub fn select_race(&self, race: &str) {
-        self.message(ClientMsg::SelectRace { race: race.into() });
+    /// `selectRace`: a seat's race; the hero resets to the race's default.
+    pub fn select_race(&self, seat: Option<u8>, race: &str) {
+        self.message(ClientMsg::SelectRace {
+            race: race.into(),
+            player: seat,
+        });
+    }
+
+    /// `selectTeam`: a seat's team, 1 to 8.
+    pub fn select_team(&self, seat: Option<u8>, team: u8) {
+        self.message(ClientMsg::SelectTeam { team, player: seat });
+    }
+
+    /// `selectColor`: a seat's palette colour; refused when another seat has it.
+    pub fn select_color(&self, seat: Option<u8>, color: u8) {
+        self.message(ClientMsg::SelectColor {
+            color,
+            player: seat,
+        });
+    }
+
+    /// `setSeat` (host): opens, closes or hands seat `player` to the computer.
+    pub fn set_seat(&self, player: u8, seat: SeatKind) {
+        self.message(ClientMsg::SetSeat { player, seat });
     }
 
     /// `startMatch` (host): over the socket, behind this seat's last selection.
