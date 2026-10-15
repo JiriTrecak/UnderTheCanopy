@@ -24,6 +24,9 @@ pub struct MatchSpec<'a> {
     pub crowd: Option<u32>,
     /// Player colour (index into `config/players.json`) of each slot, when not its own.
     pub colors: Option<Vec<usize>>,
+    /// The local player's slot (a human on that start); `None` spectates computer
+    /// players.
+    pub human: Option<u8>,
 }
 
 /// The building-grid position nearest to (x, z) for `d`'s footprint.
@@ -187,9 +190,23 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
     let look = Look::load(&paths.data, spec.biome.unwrap_or(map.biome()))?;
     let setup = match spec.crowd {
         Some(n) => crowd(&mut map, &content, n)?,
-        None => canopy_scene::spectator_setup(&map, spec.players),
+        None => {
+            let mut setup = canopy_scene::spectator_setup(&map, spec.players);
+            if let Some(slot) = setup
+                .slots
+                .iter_mut()
+                .find(|s| Some(s.player) == spec.human)
+            {
+                slot.kind = canopy_sim::SlotKind::Human;
+                slot.name = Some("You".into());
+            }
+            setup
+        }
     };
-    let session = Session::local(setup, None);
+    let human = spec
+        .human
+        .filter(|p| spec.crowd.is_none() && setup.slots.iter().any(|s| s.player == *p));
+    let session = Session::local(setup, human);
     let setup = session
         .setup()
         .context("a local session has its setup")?

@@ -53,6 +53,16 @@ fn play_effects(options: &Options, loaded: &world::Loaded, game: &mut world::Mat
 }
 
 pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Result<()> {
+    if options.play || options.observe {
+        return crate::play::capture::run(
+            options,
+            paths,
+            out,
+            size,
+            options.observe,
+            &options.input,
+        );
+    }
     let gpu = Gpu::headless(DeviceOptions::default())?.context("no GPU adapter")?;
     let map = options.map.as_deref().context("shot needs --map")?;
     let (loaded, mut game) = world::load(
@@ -64,32 +74,35 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
             crowd: options.crowd,
             colors: options.colors.clone(),
             biome: options.biome.as_deref(),
+            human: None,
         },
     )?;
 
     // Simulate to the requested tick, presenting every tick (animation clocks run on ticks).
-    let viewer = options.viewer.map(canopy_content::placement::Owner::Player);
     let started = std::time::Instant::now();
+    let seat = options
+        .viewer
+        .map_or(sim::Seat::Observer, sim::Seat::Player);
     if options.tick == 0 {
         play_effects(options, &loaded, &mut game)?;
     }
-    let mut newest = sim::present(&game.world, &mut game.presenter, viewer);
+    let (mut newest, _) = sim::present(&game.world, &mut game.presenter, seat);
     let mut previous = None;
     let mut costs = Vec::new();
     while game.world.tick() < options.tick {
         if game.world.tick() + 1 == options.tick {
             play_effects(options, &loaded, &mut game)?;
         }
-        let Some((presentation, cost, _)) = sim::advance(
+        let Some(advanced) = sim::advance(
             &mut game.world,
             &mut game.session,
             &mut game.presenter,
-            viewer,
+            seat,
         ) else {
             anyhow::bail!("the local session stopped at tick {}", game.world.tick());
         };
-        costs.push(cost);
-        previous = Some(std::mem::replace(&mut newest, presentation));
+        costs.push(advanced.cost);
+        previous = Some(std::mem::replace(&mut newest, advanced.presentation));
     }
     let simulate_ms = started.elapsed().as_secs_f32() * 1000.0;
 

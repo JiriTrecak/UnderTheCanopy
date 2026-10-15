@@ -181,6 +181,8 @@ pub mod passes {
     pub const WORLD_UI: &str = "world_ui";
     pub const MINIMAP: &str = "minimap";
     pub const PORTRAIT: &str = "portrait";
+    /// The game UI (HUD, menus, tooltips) over the finished frame.
+    pub const UI: &str = "ui";
 }
 
 /// Optional parts of the world frame: what the world has, what the biome uses and what
@@ -203,7 +205,8 @@ pub struct FrameFeatures {
 /// the forward HDR pass (terrain, statics, live models, water, world UI on the ground,
 /// effects; MSAA resolved in the pass, with linear depth), the post effects the biome
 /// uses (contact shading, bloom, volumetric haze), the final pass (upscale, effects, tone
-/// map, grade) into the output and the world UI overlay on it.
+/// map, grade) into the output, the world UI overlay on it, the HUD's minimap and
+/// portrait images, then the game UI over everything.
 pub fn world_frame(features: FrameFeatures) -> FrameGraph {
     use PassKind::*;
     use Resource::*;
@@ -270,6 +273,11 @@ pub fn world_frame(features: FrameFeatures) -> FrameGraph {
                 .writes(&[Portrait]),
         );
     }
+    list.push(
+        Pass::new(passes::UI, Render)
+            .reads(&[Output])
+            .writes(&[Output]),
+    );
     FrameGraph::new(list, &[]).expect("the world frame graph is well formed")
 }
 
@@ -282,10 +290,12 @@ mod tests {
     #[test]
     fn the_world_frame_is_well_formed() {
         let graph = world_frame(FrameFeatures::default());
-        assert_eq!(graph.passes().len(), 6);
+        assert_eq!(graph.passes().len(), 7);
         assert_eq!(graph.last_use(ShadowMap), Some(passes::FORWARD));
         assert_eq!(graph.last_use(Palettes), Some(passes::FORWARD));
         assert_eq!(graph.index(passes::POST), Some(4));
+        assert_eq!(graph.index(passes::WORLD_UI), Some(5));
+        assert_eq!(graph.index(passes::UI), Some(6));
         let all = world_frame(FrameFeatures {
             water: true,
             contact: true,
@@ -299,7 +309,7 @@ mod tests {
             names,
             [
                 "cull", "skin", "shadow", "ripples", "caustics", "forward", "contact", "bloom",
-                "haze", "post", "world_ui", "minimap", "portrait"
+                "haze", "post", "world_ui", "minimap", "portrait", "ui"
             ]
         );
         assert_eq!(all.last_use(Palettes), Some(passes::PORTRAIT));

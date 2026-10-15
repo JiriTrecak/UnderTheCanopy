@@ -24,10 +24,35 @@ pub enum HealthBars {
     /// Selected entities and damaged units (the old default).
     #[default]
     Damaged,
-    /// Every unit and building with health.
+    /// Every unit and building with health (old Alt held).
     Always,
-    /// Selected entities only.
+    /// Selected entities only (a setting).
     Selected,
+    /// The default, and every friendly owned body (old `]` held).
+    Friendly,
+    /// The default, and every hostile body (old `[` held).
+    Hostile,
+}
+
+/// An order marker the player's command left on the ground (old command feedback ring:
+/// `radius` to `radius + 0.12`, drawn over everything).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct GroundMarker {
+    pub position: [f32; 2],
+    pub radius: f32,
+    /// Linear RGB.
+    pub color: [f32; 3],
+    pub opacity: f32,
+}
+
+/// The placement grid under a building being placed (old `placementGrid`): its cells
+/// (inclusive bounds, cells centred on integers), whether the site looks buildable and
+/// its entrance.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PlacementMark {
+    pub cells: [i64; 4],
+    pub valid: bool,
+    pub entrance: [f32; 2],
 }
 
 /// What the player has selected and how the world UI is set; the game fills it.
@@ -45,6 +70,8 @@ pub struct WorldUiInput {
     /// Thin construction, training and cast bars under the health bar of selected
     /// entities. (review: the old game showed these only in the HUD)
     pub progress_bars: bool,
+    pub markers: Vec<GroundMarker>,
+    pub placement: Option<PlacementMark>,
 }
 
 impl Default for WorldUiInput {
@@ -56,6 +83,8 @@ impl Default for WorldUiInput {
             viewer: None,
             scale: 1.0,
             progress_bars: true,
+            markers: Vec::new(),
+            placement: None,
         }
     }
 }
@@ -103,10 +132,13 @@ pub fn health_bar_visible(body: &Body, selected: bool, mode: HealthBars) -> bool
     if hp == 0 || body.remembered || body.max_hp == 0 {
         return false;
     }
+    let default = selected || (!body.building && hp < body.max_hp);
     match mode {
         HealthBars::Always => true,
         HealthBars::Selected => selected,
-        HealthBars::Damaged => selected || (!body.building && hp < body.max_hp),
+        HealthBars::Damaged => default,
+        HealthBars::Friendly => default || (body.hostile == Some(false) && body.owner.is_some()),
+        HealthBars::Hostile => default || body.hostile == Some(true),
     }
 }
 
@@ -554,6 +586,12 @@ impl WorldUi {
                 b.id,
             );
         }
+        if let Some(mark) = &input.placement {
+            placement(out, mark, field, camera, size, input.scale);
+        }
+        for m in &input.markers {
+            marker(out, m, field, camera, size);
+        }
         // Bars, badges and labels, farthest first so nearer ones draw on top.
         let mut order: Vec<(f32, usize)> = bodies
             .iter()
@@ -737,6 +775,134 @@ fn circle(
     }
 }
 
+/// The placement grid: faint cell fills and their outlines, draped on the ground, and a
+/// marker at the entrance (white, or `#f26960` where the site is refused).
+fn placement(
+    out: &mut WorldUiFrame,
+    mark: &PlacementMark,
+    field: &dyn WaterField,
+    camera: &CameraView,
+    size: [u32; 2],
+    scale: f32,
+) {
+    let color = linear(if mark.valid { 0xffffff } else { 0xf26960 });
+    let point = |x: f32, z: f32| Vec3::new(x, field.walk(x, z, 0) + 0.08, z);
+    let fill = |p: Vec3| GroundVertex {
+        position: p.to_array(),
+        color: [color[0], color[1], color[2], 0.13],
+    };
+    let [x0, z0, x1, z1] = mark.cells;
+    for cz in z0..=z1 {
+        for cx in x0..=x1 {
+            let (l, t) = (cx as f32 - 0.5, cz as f32 - 0.5);
+            let (a, b, c, d) = (
+                point(l, t),
+                point(l + 1.0, t),
+                point(l + 1.0, t + 1.0),
+                point(l, t + 1.0),
+            );
+            out.ground
+                .extend_from_slice(&[fill(a), fill(d), fill(b), fill(b), fill(d), fill(c)]);
+        }
+    }
+    // Grid lines, about a pixel wide.
+    let line = |out: &mut WorldUiFrame, a: Vec3, b: Vec3| {
+        let mid = (a + b) * 0.5;
+        let Some(p) = project(camera, size, mid) else {
+            return;
+        };
+        let half = 0.6 * scale / p.pixels_per_metre.max(1e-3);
+        let side = (b - a)
+            .normalize_or_zero()
+            .cross(camera.eye - mid)
+            .normalize_or_zero()
+            * half;
+        let v = |p: Vec3| GroundVertex {
+            position: p.to_array(),
+            color: [color[0], color[1], color[2], 0.65],
+        };
+        out.ground.extend_from_slice(&[
+            v(a - side),
+            v(a + side),
+            v(b + side),
+            v(a - side),
+            v(b + side),
+            v(b - side),
+        ]);
+    };
+    for cx in x0..=x1 + 1 {
+        let x = cx as f32 - 0.5;
+        for cz in z0..=z1 {
+            let z = cz as f32 - 0.5;
+            line(out, point(x, z), point(x, z + 1.0));
+        }
+    }
+    for cz in z0..=z1 + 1 {
+        let z = cz as f32 - 0.5;
+        for cx in x0..=x1 {
+            let x = cx as f32 - 0.5;
+            line(out, point(x, z), point(x + 1.0, z));
+        }
+    }
+    // The entrance: a small diamond lying on the ground.
+    let e = point(mark.entrance[0], mark.entrance[1]) + Vec3::Y * 0.12;
+    let r = 0.35;
+    let c = [1.0, 0.85, 0.34, 0.9];
+    let v = |p: Vec3| GroundVertex {
+        position: p.to_array(),
+        color: c,
+    };
+    let (n, so, w, ea) = (
+        e + Vec3::new(0.0, 0.0, -r),
+        e + Vec3::new(0.0, 0.0, r),
+        e + Vec3::new(-r, 0.0, 0.0),
+        e + Vec3::new(r, 0.0, 0.0),
+    );
+    out.ground
+        .extend_from_slice(&[v(n), v(ea), v(so), v(n), v(so), v(w)]);
+}
+
+/// An order marker: a thin ring on the ground drawn over everything (old command
+/// feedback), projected to pixels.
+fn marker(
+    out: &mut WorldUiFrame,
+    m: &GroundMarker,
+    field: &dyn WaterField,
+    camera: &CameraView,
+    size: [u32; 2],
+) {
+    if m.opacity <= 0.0 {
+        return;
+    }
+    let (x, z) = (m.position[0], m.position[1]);
+    let y = field.walk(x, z, 0) + 0.12;
+    let color = [m.color[0], m.color[1], m.color[2], m.opacity];
+    const SIDES: usize = 48;
+    for s in 0..SIDES {
+        let a0 = s as f32 / SIDES as f32 * std::f32::consts::TAU;
+        let a1 = (s + 1) as f32 / SIDES as f32 * std::f32::consts::TAU;
+        let at = |a: f32, r: f32| {
+            project(camera, size, Vec3::new(x + a.cos() * r, y, z + a.sin() * r)).map(|p| {
+                OverlayVertex {
+                    position: [p.x, p.y],
+                    color,
+                    kind: [overlay::SOLID, 0, 0, 0],
+                    ..Default::default()
+                }
+            })
+        };
+        let (Some(a), Some(b), Some(c), Some(d)) = (
+            at(a0, m.radius),
+            at(a1, m.radius),
+            at(a1, m.radius + 0.12),
+            at(a0, m.radius + 0.12),
+        ) else {
+            continue;
+        };
+        out.quad([a, b, c, d]);
+    }
+}
+
 fn mix(a: [f32; 3], b: [f32; 3], t: f32) -> [f32; 3] {
     [
         a[0] + (b[0] - a[0]) * t,
@@ -897,6 +1063,96 @@ fn rally_marker(
     }
 }
 
+/// Where the camera's view meets the ground plane at its focus height (x, z), corners
+/// from the top left clockwise: the minimap's view quad (old `camera.viewGround`).
+pub fn ground_footprint(camera: &CameraView) -> [[f32; 2]; 4] {
+    let inverse = camera.view_projection.inverse();
+    let height = camera.target.y;
+    [[-1.0, 1.0], [1.0, 1.0], [1.0, -1.0], [-1.0, -1.0]].map(|[x, y]| {
+        let near = inverse.project_point3(Vec3::new(x, y, 1.0));
+        let far = inverse.project_point3(Vec3::new(x, y, 0.0));
+        let d = far - near;
+        // Rays that never reach the ground stop far away along their direction.
+        let t = if d.y.abs() > 1e-6 {
+            ((height - near.y) / d.y).clamp(0.0, 1.0)
+        } else {
+            1.0
+        };
+        let p = near + d * t;
+        [p.x, p.z]
+    })
+}
+
+/// The minimap's markers (old `entityMarker`): units as 2-pixel squares and buildings at
+/// their footprint in player colours lifted by 1.4, deposits yellow, other unowned
+/// buildings sand, remembered ones at half strength; then the camera's view quad with a
+/// dark outline. Map cells span the minimap's `pixels`.
+pub fn minimap_frame(
+    bodies: &[Body],
+    position: &dyn Fn(u64) -> Option<Vec3>,
+    colors: &[[f32; 3]],
+    map_size: u32,
+    pixels: u32,
+    view: [[f32; 2]; 4],
+    out: &mut canopy_render::minimap::MinimapFrame,
+) {
+    out.markers.clear();
+    let scale = pixels as f32 / map_size.max(1) as f32;
+    let srgb = |c: f32| {
+        if c <= 0.0031308 {
+            c * 12.92
+        } else {
+            1.055 * c.powf(1.0 / 2.4) - 0.055
+        }
+    };
+    let lin = |c: f32| {
+        if c <= 0.04045 {
+            c / 12.92
+        } else {
+            ((c + 0.055) / 1.055).powf(2.4)
+        }
+    };
+    for b in bodies {
+        let unowned = b.owner.is_none();
+        if b.hp == Some(0) || (b.building && unowned && !b.deposit && b.footprint.is_none()) {
+            continue;
+        }
+        let p = position(b.key).unwrap_or(b.position);
+        let [w, h] = match (b.building, b.footprint) {
+            (true, Some([w, h])) => [(w * scale).max(1.0), (h * scale).max(1.0)],
+            _ => [2.0, 2.0],
+        };
+        let color = match b.owner {
+            Some(slot) => {
+                let c = colors
+                    .get(usize::from(slot) % colors.len().max(1))
+                    .copied()
+                    .unwrap_or([1.0; 3]);
+                c.map(|v| lin((srgb(v) * 1.4).min(1.0)))
+            }
+            None if b.deposit => linear(0xffd43b),
+            None => linear(0xa99c78),
+        };
+        let alpha = if b.remembered { 0.5 } else { 1.0 };
+        let (x, y) = (p.x * scale, p.z * scale);
+        out.rect(
+            [x - w / 2.0, y - h / 2.0, x + w / 2.0, y + h / 2.0],
+            [color[0], color[1], color[2], alpha],
+        );
+    }
+    let corners = view.map(|[x, z]| [x * scale, z * scale]);
+    let dark = linear(0x10150e);
+    let light = linear(0xf2eee0);
+    for (width, color) in [
+        (3.0, [dark[0], dark[1], dark[2], 0.8]),
+        (1.4, [light[0], light[1], light[2], 1.0]),
+    ] {
+        for i in 0..4 {
+            out.line(corners[i], corners[(i + 1) % 4], width, color);
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -960,6 +1216,25 @@ mod tests {
         assert_eq!(health_color(50, 100), 0xe8bf32);
         assert_eq!(health_color(100, 100), 0x64cc39);
         assert_eq!(health_color(1, 0), 0xdb3935);
+    }
+
+    #[test]
+    fn the_view_footprint_surrounds_the_focus() {
+        let camera = CameraView::look_at(
+            Vec3::new(50.0, 40.0, 80.0),
+            Vec3::new(50.0, 0.0, 50.0),
+            0.6,
+            16.0 / 9.0,
+            1.0,
+            300.0,
+        );
+        let quad = ground_footprint(&camera);
+        // The far edge (top) is wider than the near edge (bottom), and north of it.
+        let top = quad[1][0] - quad[0][0];
+        let bottom = quad[2][0] - quad[3][0];
+        assert!(top > bottom && quad[0][1] < quad[3][1], "{quad:?}");
+        let cx = quad.iter().map(|p| p[0]).sum::<f32>() / 4.0;
+        assert!((cx - 50.0).abs() < 1e-3);
     }
 
     #[test]

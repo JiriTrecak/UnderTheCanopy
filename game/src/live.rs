@@ -36,8 +36,11 @@ pub struct LiveScene {
     /// What the player selected and how the world UI shows (the game fills it).
     pub world_ui_input: WorldUiInput,
     /// The bodies of the latest frame and where their models stand.
-    bodies: Vec<Body>,
+    ui_bodies: Vec<Body>,
     keys: Vec<u64>,
+    /// Entities with a selection body as the latest frame shows them: id, body (circle
+    /// radius, pick height) and interpolated position.
+    bodies: Vec<(u32, [f32; 2], glam::Vec3)>,
 }
 
 impl LiveScene {
@@ -50,6 +53,61 @@ impl LiveScene {
         colors: Vec<[f32; 3]>,
     ) {
         self.world_ui = Some(WorldUi::new(data, Some(pack), content, colors));
+    }
+
+    /// The minimap's markers and the camera's view quad for the latest frame.
+    pub fn draw_minimap(
+        &self,
+        renderer: &mut Renderer,
+        camera: &canopy_render::CameraView,
+        scene: &canopy_scene::MapScene,
+        pixels: u32,
+    ) {
+        let keys = &self.keys;
+        let instances = &self.instances;
+        let position = |key: u64| {
+            keys.binary_search(&key)
+                .ok()
+                .map(|i| instances[i].transform.w_axis.truncate())
+        };
+        let mut frame = canopy_render::minimap::MinimapFrame::default();
+        canopy_scene::world_ui::minimap_frame(
+            &self.ui_bodies,
+            &position,
+            &scene.colors,
+            scene.size,
+            pixels,
+            canopy_scene::world_ui::ground_footprint(camera),
+            &mut frame,
+        );
+        renderer.set_minimap(&mut frame);
+    }
+
+    /// The portrait of body `id` as the latest frame shows it: its model at its scale,
+    /// playing its idle clip (`seconds` of real time).
+    pub fn portrait(&self, id: u32, seconds: f32) -> Option<canopy_render::PortraitSubject> {
+        let i = self.ui_bodies.binary_search_by_key(&id, |b| b.id).ok()?;
+        let b = &self.ui_bodies[i];
+        let colour = self
+            .keys
+            .binary_search(&b.key)
+            .ok()
+            .and_then(|k| self.instances[k].owner_color);
+        let mut instance =
+            ActorInstance::rest(b.model, glam::Mat4::from_scale(glam::Vec3::splat(b.scale)));
+        instance.owner_color = colour;
+        if let Some((clip, duration)) = b.idle.filter(|&(_, d)| d > 0.0) {
+            instance.poses[0] = canopy_render::actors::Pose {
+                clip,
+                time: (seconds * canopy_scene::animation::SPEED) % duration,
+                weight: 1.0,
+            };
+            instance.pose_count = 1;
+        }
+        Some(canopy_render::PortraitSubject {
+            instance,
+            building: b.building,
+        })
     }
 
     /// Builds the world UI of the latest frame for `camera` on an output of `size`.
@@ -77,7 +135,7 @@ impl LiveScene {
                 .map(|i| instances[i].transform.w_axis.truncate())
         };
         ui.build(
-            &self.bodies,
+            &self.ui_bodies,
             &position,
             &self.world_ui_input,
             camera,
@@ -125,6 +183,16 @@ impl LiveScene {
         if mailbox.latest() != newest {
             mailbox.take(&mut self.snapshots);
         }
+    }
+
+    /// The latest frame's selectable bodies: id, (circle radius, pick height), position.
+    pub fn bodies(&self) -> &[(u32, [f32; 2], glam::Vec3)] {
+        &self.bodies
+    }
+
+    /// The latest frame's live model instances.
+    pub fn instances(&self) -> &[ActorInstance] {
+        &self.instances
     }
 
     pub fn newest(&self) -> Option<&Arc<Snapshot>> {
@@ -201,7 +269,7 @@ impl LiveScene {
         let actors = self.instances.len();
         self.keys.clear();
         self.keys.extend(b.actors.iter().map(|a| a.key));
-        self.bodies.clone_from(&b.bodies);
+        self.ui_bodies.clone_from(&b.bodies);
         if let Some(evaluator) = &mut self.effects {
             let tick = match a {
                 Some(a) => f64::from(a.tick) + f64::from(t) * f64::from(b.tick - a.tick),
@@ -220,7 +288,14 @@ impl LiveScene {
         }
         // One instance per presented actor, in order.
         self.movers.clear();
+        self.bodies.clear();
         for (actor, instance) in b.actors.iter().zip(&self.instances[..actors]) {
+            if let Some(body) = actor.body
+                && actor.key >> 40 == canopy_scene::live::Part::Entity as u64
+            {
+                self.bodies
+                    .push((actor.key as u32, body, instance.transform.w_axis.truncate()));
+            }
             if let Some((surface, elevation)) = actor.walker {
                 let p = instance.transform.w_axis;
                 self.movers.push(Mover {

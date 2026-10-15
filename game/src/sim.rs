@@ -18,9 +18,10 @@
 //! **Render clock.** The picture shows simulation time minus one tick (D24, Q15):
 //! [`render_tick`] from the snapshot's epoch, then two-snapshot interpolation.
 
+use canopy_content::placement::Owner;
 use canopy_net::Session;
 use canopy_scene::live::{Presentation, Presenter};
-use canopy_sim::World;
+use canopy_sim::{World, view::View};
 use std::{
     collections::VecDeque,
     sync::{
@@ -54,10 +55,43 @@ impl TickCost {
     }
 }
 
+/// Whose knowledge the thread presents: a player's (fog, private state of its own
+/// entities) or everything (spectators).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Seat {
+    Observer,
+    /// Zero-based player slot.
+    Player(u8),
+}
+
+impl Seat {
+    /// The seat's view of the world as it stands.
+    pub fn view(self, world: &World) -> View {
+        match self {
+            Self::Observer => world.observer_view(),
+            Self::Player(slot) => world.view(Owner::Player(slot)),
+        }
+    }
+}
+
+/// Ticks between AI summaries for the debug overlay.
+pub const AI_SUMMARY_TICKS: u32 = 10;
+
 /// One presented tick.
 #[derive(Debug)]
 pub struct Snapshot {
     pub presentation: Presentation,
+    /// The seat's view the presentation was made from: the HUD's input.
+    pub view: Arc<View>,
+    /// What the computer players are doing (debug overlay), when asked for: refreshed
+    /// every [`AI_SUMMARY_TICKS`].
+    pub ai: Option<Arc<Vec<canopy_sim::ai::Summary>>>,
+    /// The seat's own units held inside another entity (sorted ids): the view does not
+    /// carry it yet (D35).
+    pub held: Arc<Vec<u32>>,
+    /// Every player's colony, for the observer panel (observers only; refreshed every
+    /// [`AI_SUMMARY_TICKS`]).
+    pub colonies: Option<Arc<Vec<(u8, canopy_sim::economy::view::Colony)>>>,
     /// Simulation time of tick `origin` under the schedule this tick was computed on.
     pub epoch: Instant,
     pub origin: u32,
@@ -131,6 +165,8 @@ pub fn render_tick(snapshot: &Snapshot, now: Instant) -> f64 {
 pub struct SimThread {
     mailbox: Arc<Mailbox>,
     stop: Arc<AtomicBool>,
+    /// The debug overlay wants AI summaries.
+    want_ai: Arc<AtomicBool>,
     handle: Option<JoinHandle<()>>,
 }
 
@@ -144,81 +180,111 @@ pub fn held(world: &World, id: canopy_sim::entity::EntityId) -> bool {
         .is_some_and(|u| u.contained.is_some() || u.release.is_some())
 }
 
-/// What the viewer of a match sees: everything (observers), or one player's knowledge
-/// with their fog of war.
-pub fn view_of(
-    world: &World,
-    viewer: Option<canopy_content::placement::Owner>,
-) -> canopy_sim::view::View {
-    match viewer {
-        Some(owner) => world.view(owner),
-        None => world.observer_view(),
-    }
+/// A presented tick before it is published.
+pub struct Advanced {
+    pub presentation: Presentation,
+    pub view: Arc<View>,
+    pub held: Arc<Vec<u32>>,
+    pub cost: TickCost,
+    pub decided: bool,
 }
 
-/// Steps `world` once through `session` and presents the tick as `viewer` sees it;
-/// `None` while the session waits for the next beat.
+/// The view's own units that are held inside another entity, sorted.
+pub fn held_units(world: &World, view: &View) -> Vec<u32> {
+    view.entities
+        .iter()
+        .filter(|e| e.private.is_some() && e.motion.is_some())
+        .map(|e| e.id())
+        .filter(|&id| held(world, id))
+        .map(|id| id.0)
+        .collect()
+}
+
+/// Every slot's colony (observer panel).
+pub fn colonies(world: &World) -> Vec<(u8, canopy_sim::economy::view::Colony)> {
+    world
+        .setup()
+        .slots
+        .iter()
+        .map(|s| {
+            (
+                s.player,
+                canopy_sim::economy::view::colony(
+                    world.state(),
+                    world.catalog(),
+                    world.economy(),
+                    Owner::Player(s.player),
+                ),
+            )
+        })
+        .collect()
+}
+
+/// Steps `world` once through `session` and presents the tick for `seat`; `None` while
+/// the session waits for the next beat.
 pub fn advance(
     world: &mut World,
     session: &mut Session,
     presenter: &mut Presenter,
-    viewer: Option<canopy_content::placement::Owner>,
-) -> Option<(Presentation, TickCost, bool)> {
+    seat: Seat,
+) -> Option<Advanced> {
     let started = Instant::now();
     session.advance(world)?;
     let stepped = Instant::now();
     let view = {
-        let _span = tracing::trace_span!("view").entered();
-        view_of(world, viewer)
+        let _span = tracing::trace_span!("seat_view").entered();
+        seat.view(world)
     };
     let viewed = Instant::now();
     let presentation = presenter.update(world, &view, &|id| held(world, id));
     let presented = Instant::now();
     let ms = |a: Instant, b: Instant| (b - a).as_secs_f32() * 1000.0;
-    Some((
+    Some(Advanced {
+        held: Arc::new(held_units(world, &view)),
         presentation,
-        TickCost {
+        decided: view.outcome.is_some(),
+        view: Arc::new(view),
+        cost: TickCost {
             step: ms(started, stepped),
             view: ms(stepped, viewed),
             present: ms(viewed, presented),
         },
-        view.outcome.is_some(),
-    ))
+    })
 }
 
-/// The presentation of the world as it stands (before its first step, or a shot).
-pub fn present(
-    world: &World,
-    presenter: &mut Presenter,
-    viewer: Option<canopy_content::placement::Owner>,
-) -> Presentation {
-    let view = view_of(world, viewer);
-    presenter.update(world, &view, &|id| held(world, id))
+/// The presentation of the world as it stands for `seat` (before its first step, or a
+/// shot), with the view it was made from.
+pub fn present(world: &World, presenter: &mut Presenter, seat: Seat) -> (Presentation, Arc<View>) {
+    let view = seat.view(world);
+    let presentation = presenter.update(world, &view, &|id| held(world, id));
+    (presentation, Arc::new(view))
 }
 
 impl SimThread {
     /// Starts the match: first fast-forwards to `start_tick` (presenting every tick), then
-    /// runs at `tick_length` per tick (zero: as fast as possible).
+    /// runs at `tick_length` per tick (zero: as fast as possible), presenting for `seat`.
     pub fn spawn(
         mut world: World,
         mut session: Session,
         mut presenter: Presenter,
         tick_length: Duration,
         start_tick: u32,
-        viewer: Option<canopy_content::placement::Owner>,
+        seat: Seat,
     ) -> Self {
         let mailbox = Arc::new(Mailbox::default());
         let stop = Arc::new(AtomicBool::new(false));
+        let want_ai = Arc::new(AtomicBool::new(false));
         let handle = {
             let mailbox = mailbox.clone();
             let stop = stop.clone();
+            let want_ai = want_ai.clone();
             std::thread::Builder::new()
                 .name("simulation".into())
                 .spawn(move || {
                     let _span = tracing::info_span!("simulation_thread").entered();
                     let started = Instant::now();
                     while world.tick() < start_tick && !stop.load(Ordering::Relaxed) {
-                        if advance(&mut world, &mut session, &mut presenter, viewer).is_none() {
+                        if advance(&mut world, &mut session, &mut presenter, seat).is_none() {
                             std::thread::sleep(Duration::from_millis(1));
                         }
                     }
@@ -229,13 +295,21 @@ impl SimThread {
                             "fast-forwarded"
                         );
                     }
-                    let first = present(&world, &mut presenter, viewer);
+                    let (first, first_view) = present(&world, &mut presenter, seat);
+                    let first_held = Arc::new(held_units(&world, &first_view));
                     let tick0 = world.tick();
+                    let mut ai: Option<Arc<Vec<canopy_sim::ai::Summary>>> = None;
+                    let observing = seat == Seat::Observer;
+                    let mut colony_list = observing.then(|| Arc::new(colonies(&world)));
                     // Schedule: simulation time of tick n is epoch + (n − tick0) · length.
                     let mut epoch = Instant::now();
                     let mut slowdowns = 0;
                     mailbox.publish(Arc::new(Snapshot {
                         presentation: first,
+                        view: first_view,
+                        ai: None,
+                        held: first_held,
+                        colonies: colony_list.clone(),
                         epoch,
                         origin: tick0,
                         tick_length,
@@ -260,14 +334,31 @@ impl SimThread {
                                 slowdowns += 1;
                             }
                         }
-                        let Some((presentation, cost, decided)) =
-                            advance(&mut world, &mut session, &mut presenter, viewer)
+                        let Some(Advanced {
+                            presentation,
+                            view,
+                            held,
+                            cost,
+                            decided,
+                        }) = advance(&mut world, &mut session, &mut presenter, seat)
                         else {
                             std::thread::sleep(Duration::from_millis(1));
                             continue;
                         };
+                        if !want_ai.load(Ordering::Relaxed) {
+                            ai = None;
+                        } else if ai.is_none() || world.tick().is_multiple_of(AI_SUMMARY_TICKS) {
+                            ai = Some(Arc::new(world.ai_summaries()));
+                        }
+                        if observing && world.tick().is_multiple_of(AI_SUMMARY_TICKS) {
+                            colony_list = Some(Arc::new(colonies(&world)));
+                        }
                         mailbox.publish(Arc::new(Snapshot {
                             presentation,
+                            view,
+                            ai: ai.clone(),
+                            held,
+                            colonies: colony_list.clone(),
                             epoch,
                             origin: tick0,
                             tick_length,
@@ -282,12 +373,18 @@ impl SimThread {
         Self {
             mailbox,
             stop,
+            want_ai,
             handle: Some(handle),
         }
     }
 
     pub fn mailbox(&self) -> &Mailbox {
         &self.mailbox
+    }
+
+    /// Asks for (or stops) AI summaries in the snapshots.
+    pub fn want_ai_summaries(&self, on: bool) {
+        self.want_ai.store(on, Ordering::Relaxed);
     }
 
     /// Whether the thread has stopped (it only stops when asked, or by panicking).
@@ -310,11 +407,31 @@ impl Drop for SimThread {
 #[cfg(test)]
 #[path = "../../crates/sim/tests/ai_fixture/mod.rs"]
 #[allow(clippy::all)]
-mod ai_fixture;
+pub(crate) mod ai_fixture;
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn empty_view(tick: u32) -> View {
+        View {
+            tick,
+            owner: None,
+            entities: Vec::new(),
+            scenery: Default::default(),
+            fog: None,
+            facts: Vec::new(),
+            deaths: Vec::new(),
+            objectives: Default::default(),
+            mission: None,
+            outcome: None,
+            colony: None,
+            deliveries: Vec::new(),
+            battle: Default::default(),
+            ai: Vec::new(),
+            spells: Default::default(),
+        }
+    }
 
     fn snapshot(tick: u32) -> Arc<Snapshot> {
         Arc::new(Snapshot {
@@ -322,6 +439,10 @@ mod tests {
                 tick,
                 ..Default::default()
             },
+            view: Arc::new(empty_view(tick)),
+            ai: None,
+            held: Arc::default(),
+            colonies: None,
             epoch: Instant::now(),
             origin: 0,
             tick_length: TICK,
@@ -390,6 +511,10 @@ mod tests {
         let epoch = Instant::now();
         let s = Snapshot {
             presentation: Presentation::default(),
+            view: Arc::new(empty_view(0)),
+            ai: None,
+            held: Arc::default(),
+            colonies: None,
             epoch,
             origin: 100,
             tick_length: TICK,
@@ -423,7 +548,14 @@ mod tests {
                 statics: 0,
             },
         );
-        let thread = SimThread::spawn(world, session, presenter, Duration::ZERO, 100, None);
+        let thread = SimThread::spawn(
+            world,
+            session,
+            presenter,
+            Duration::ZERO,
+            100,
+            Seat::Observer,
+        );
         let started = Instant::now();
         let mut seen: Vec<u32> = Vec::new();
         let mut out = Vec::new();
