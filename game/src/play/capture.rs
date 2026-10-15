@@ -101,6 +101,20 @@ pub fn run(
     renderer.set_quality(&gpu, options.quality);
     renderer.load_world(&gpu, &loaded.pack, &loaded.scene.world)?;
     let mut live = LiveScene::default();
+    live.attach_effects(
+        &mut renderer,
+        &gpu,
+        &loaded.pack,
+        game.presenter.effects.effect_table().clone(),
+    );
+    live.attach_world_ui(
+        &paths.data,
+        &loaded.pack,
+        &content,
+        loaded.scene.colors.clone(),
+    );
+    renderer.bake_minimap(&gpu, loaded.scene.size, super::run::MINIMAP_PIXELS);
+    renderer.set_portrait(&gpu, None, super::run::PORTRAIT_PIXELS);
     let mut camera = view::initial(options.camera.and_then(|c| c.pose()), &loaded.scene);
     if me.is_some() {
         camera.zoom_range = canopy_render::camera::game_zoom();
@@ -384,6 +398,23 @@ pub fn run(
         hud.colonies = Some(Arc::new(sim::colonies(&game.world)));
     }
     hud.attach(&mut ui);
+    // The minimap and the live portrait, as the window's HUD shows them.
+    for (name, id, view) in [
+        ("@minimap", 1, renderer.minimap_view().cloned()),
+        ("@portrait", 2, renderer.portrait_view().cloned()),
+    ] {
+        let Some(view) = view else { continue };
+        let id = canopy_ui::TextureId(id);
+        renderer.ui_mut(&gpu).set_texture(&gpu, id, &view);
+        let mut desc = canopy_ui::ImageDesc::new(id, 256.0, 256.0);
+        desc.premultiplied = true;
+        desc.srgb_view = true;
+        ui.register_image(name, desc);
+        match name {
+            "@minimap" => hud.minimap = true,
+            _ => hud.live_portrait = true,
+        }
+    }
     let layer = renderer.ui_mut(&gpu);
     for (name, asset) in ui
         .theme_images()
@@ -430,25 +461,21 @@ pub fn run(
     ui.reset_glyph_atlas();
     let mut list = ui.frame(now.as_secs_f64()).clone();
     let world_ui = play.world_ui();
-    let bodies: Vec<Body> = live
-        .bodies()
-        .iter()
-        .map(|&(id, [radius, height], foot)| Body {
-            id,
-            foot,
-            height,
-            radius: (radius - 0.32).max(0.2),
-            unit: true,
-        })
-        .collect();
-    overlay::draw(
-        &mut list,
-        &screen,
-        &world_ui,
-        play.knowledge(),
-        &bodies,
-        terrain,
+    overlay::draw(&mut list, screen.scale, &world_ui);
+    live.world_ui_input = super::run::world_ui_input(&world_ui, screen.scale, me);
+    live.eye = Some(screen.camera.eye);
+    live.draw_world_ui(&mut renderer, &gpu, &screen.camera, &loaded.scene, 12.0);
+    live.draw_minimap(
+        &mut renderer,
+        &screen.camera,
+        &loaded.scene,
+        super::run::MINIMAP_PIXELS,
     );
+    let subject = world_ui
+        .selected
+        .first()
+        .and_then(|&id| live.portrait(id, 12.0));
+    renderer.set_portrait(&gpu, subject, super::run::PORTRAIT_PIXELS);
     if let (Some(ghost), Some(def)) = (&world_ui.ghost, &world_ui.ghost_definition) {
         let mut instances = live.instances().to_vec();
         if let Some(i) = super::run::ghost_instance(
@@ -478,6 +505,22 @@ pub fn run(
     );
     gpu.device.poll(wgpu::PollType::wait_indefinitely())?;
     let pixels = capture.read(&gpu.device)?;
+    if std::env::var_os("CANOPY_SHOT_HUD").is_some()
+        && let Some(texture) = renderer.minimap_texture()
+    {
+        let image = Capture::new(&gpu.device, 256, 256);
+        let mut encoder = gpu.device.create_command_encoder(&Default::default());
+        image.copy_from(&mut encoder, texture);
+        gpu.queue.submit([encoder.finish()]);
+        let rgba = image.read(&gpu.device)?;
+        image::save_buffer(
+            out.with_extension("minimap.png"),
+            &rgba,
+            256,
+            256,
+            image::ExtendedColorType::Rgba8,
+        )?;
+    }
     if let Some(dir) = out.parent() {
         std::fs::create_dir_all(dir)?;
     }

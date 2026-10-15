@@ -24,6 +24,8 @@ struct Actor {
     palette: vec4u,
     // opacity (screen-door below 1), 0, 0, 0
     look: vec4f,
+    // multiplies the shaded colour (rgb) and coverage (a): effect models
+    tint: vec4f,
 }
 
 @group(2) @binding(0) var<storage, read> actors: array<Actor>;
@@ -111,7 +113,7 @@ fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
     f.color = in.color;
     f.owner = actor.color;
     f.front = front;
-    let shaded = shade_material(f);
+    let shaded = shade_material(f) * actor.tint;
     if ((has(ALPHA_MASK) && shaded.a <= 0.0) || dither_discard(1.0 - actor.look.x, in.clip.xy)) {
         discard;
     }

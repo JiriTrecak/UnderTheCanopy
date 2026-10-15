@@ -236,6 +236,11 @@ fn describe(pack: &Pack, entry: &IndexEntry, out: &mut String) -> Result<()> {
             let table = pack.blob(entry)?.scenery()?;
             writeln!(out, "  {} prototypes", table.prototypes.len())?;
         }
+        EntryKind::Effects => {
+            let table = pack.blob(entry)?.effects()?;
+            let layers: usize = table.effects.iter().map(|e| e.layers.len()).sum();
+            writeln!(out, "  {} effects, {layers} layers", table.effects.len())?;
+        }
     }
     Ok(())
 }
@@ -255,6 +260,7 @@ pub fn stats(pack_path: &Path) -> Result<String> {
             EntryKind::Sound => decoded += blob.into_sound()?.samples().len(),
             EntryKind::Data => decoded += blob.bytes()?.len(),
             EntryKind::Scenery => decoded += blob.scenery()?.prototypes.len(),
+            EntryKind::Effects => decoded += blob.effects()?.effects.len(),
         }
     }
     let views = start.elapsed();
@@ -273,6 +279,7 @@ pub fn stats(pack_path: &Path) -> Result<String> {
         EntryKind::Sound,
         EntryKind::Data,
         EntryKind::Scenery,
+        EntryKind::Effects,
     ] {
         let entries: Vec<&IndexEntry> = pack.entries().iter().filter(|e| e.kind == kind).collect();
         let mut offsets: Vec<u64> = entries.iter().map(|e| e.offset).collect();

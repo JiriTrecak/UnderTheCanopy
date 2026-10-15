@@ -92,16 +92,19 @@ fn fs_march(in: FullscreenOut) -> @location(0) vec4f {
         }
         let flow = vec3f(haze.wind.x, 0.08, haze.wind.y) * time * haze.noise.z;
         let drift = mix(1.0, 0.25 + 1.5 * noise3((p - flow) * haze.noise.x), haze.noise.y);
-        amount *= drift;
+        // No haze or shafts where the viewer has not looked (old `visibleAt`).
+        let seen = fog_light(p);
+        amount *= drift * seen;
         let extinction = 1.0 - exp(-amount * step_size);
         let lit = sunlight(p) * opening(p) * haze.shape.z * phase;
         // Clear-air shafts stay within canopy openings: a source separate from the
         // extinction, so beams show without a uniform veil.
-        let shaft = haze.sun.a * step_size * falling * smoothstep(1.0, 6.0, p.y - base) * drift;
+        let shaft = haze.sun.a * step_size * falling * smoothstep(1.0, 6.0, p.y - base) * drift * seen;
         scattered += transmission * (extinction * haze.fog.rgb * 0.2 + (extinction + shaft) * haze.sun.rgb * lit);
         transmission *= 1.0 - extinction;
     }
-    return vec4f(scattered, transmission);
+    let revealed = fog_light(end);
+    return vec4f(scattered * revealed, mix(1.0, transmission, revealed));
 }
 
 // Denoises the low-resolution haze, keeping depth discontinuities.

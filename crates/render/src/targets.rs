@@ -13,6 +13,9 @@ pub const SAMPLES: u32 = 4;
 /// precision and the remainder, so interior pixels keep full precision through the
 /// (averaging) resolve. Read by water-free post passes (contact shadows, haze).
 pub const LINEAR_DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rg16Float;
+/// Images the renderer makes for the HUD (minimap, portrait): sRGB with premultiplied
+/// alpha, for `canopy-ui` image nodes (`ImageDesc { srgb_view: true, premultiplied: true }`).
+pub const UI_IMAGE_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8UnormSrgb;
 /// Linear depth of the background (no surface), metres.
 pub const FAR_DEPTH: f64 = 60000.0;
 

@@ -55,7 +55,13 @@ pub struct ActorInstance {
     pub poses: [Pose; MAX_POSES],
     /// Poses in use; 0 draws the bind pose.
     pub pose_count: u8,
+    /// Multiplies the shaded colour (rgb) and coverage (a). Effect models below full
+    /// coverage blend over the scene and cast no shadow (old effect model materials).
+    pub tint: [f32; 4],
 }
+
+/// The tint of models drawn as they are.
+pub const NO_TINT: [f32; 4] = [1.0; 4];
 
 impl ActorInstance {
     /// A model in its rest pose.
@@ -67,7 +73,13 @@ impl ActorInstance {
             opacity: 1.0,
             poses: [Pose::default(); MAX_POSES],
             pose_count: 0,
+            tint: NO_TINT,
         }
+    }
+
+    /// Blends over the scene instead of drawing opaque.
+    pub fn translucent(&self) -> bool {
+        self.tint[3] < 0.999
     }
 }
 
@@ -88,6 +100,7 @@ struct ActorGpu {
     color: [f32; 4],
     palette: [u32; 4],
     look: [f32; 4],
+    tint: [f32; 4],
 }
 
 /// Mirrors `Job` in skin.wgsl.
@@ -123,6 +136,8 @@ struct GpuModel {
     sphere: (Vec3, f32),
     /// Rest height, for the shadow height rule of rigid models.
     height: f32,
+    /// Bind-pose bounds.
+    rest: (Vec3, Vec3),
     animated: bool,
     casts: bool,
 }
@@ -141,12 +156,14 @@ enum Slot {
     Missing,
 }
 
-/// The frame's draw range of one model.
+/// The frame's draw range of one model: camera-visible opaque instances, then those only
+/// the sun sees (`all` covers both: the shadow casters), then translucent ones.
 #[derive(Debug, Clone, Copy, Default)]
 struct Range {
     first: u32,
     camera: u32,
     all: u32,
+    translucent: u32,
 }
 
 /// Counts of the live scene in the latest frame.
@@ -229,6 +246,10 @@ pub struct ActorsGpu {
     pub stats: ActorStats,
     staging_actors: Vec<ActorGpu>,
     staging_jobs: Vec<SkinJob>,
+    /// The portrait's model, drawn only by the portrait pass.
+    portrait: Option<ActorInstance>,
+    /// Its model and record index in the latest frame.
+    portrait_slot: Option<(usize, u32)>,
 }
 
 fn wgpu_index(format: IndexFormat) -> wgpu::IndexFormat {
@@ -446,7 +467,62 @@ impl ActorsGpu {
             stats: ActorStats::default(),
             staging_actors: Vec::new(),
             staging_jobs: Vec::new(),
+            portrait: None,
+            portrait_slot: None,
         }
+    }
+
+    /// The model the portrait shows (posed and placed by the caller), or none.
+    pub fn set_portrait(&mut self, instance: Option<ActorInstance>) {
+        self.portrait = instance;
+    }
+
+    /// Whether the latest frame prepared a portrait.
+    pub fn has_portrait(&self) -> bool {
+        self.portrait_slot.is_some()
+    }
+
+    /// A loaded model's bind-pose bounds (model space).
+    pub fn rest_bounds(&self, model: u32) -> Option<(Vec3, Vec3)> {
+        match self.slots.get(model as usize) {
+            Some(Slot::Ready(m)) => Some(m.rest),
+            _ => None,
+        }
+    }
+
+    /// Draws the portrait's model (inside the portrait pass).
+    pub fn draw_portrait(&self, pass: &mut wgpu::RenderPass<'_>, frame: &wgpu::BindGroup) -> u32 {
+        let (Some((m, index)), Some(_)) = (self.portrait_slot, &self.actor_group) else {
+            return 0;
+        };
+        let Slot::Ready(model) = &self.slots[m] else {
+            return 0;
+        };
+        pass.set_bind_group(0, frame, &[]);
+        self.bind_model(pass, m, model);
+        let mut sections: Vec<(Variant, usize)> = model
+            .sections
+            .iter()
+            .enumerate()
+            .map(|(s, section)| (model.materials[section.material as usize].variant, s))
+            .collect();
+        // Opaque first, blended last.
+        sections.sort_by_key(|&(v, s)| (v.is_blend(), v, s));
+        for &(variant, s) in &sections {
+            let section = model.sections[s];
+            pass.set_pipeline(&self.pipelines[&variant]);
+            pass.set_bind_group(
+                1,
+                &model.materials[section.material as usize].bind_group,
+                &[],
+            );
+            pass.draw_indexed(
+                section.first_index..section.first_index + section.index_count,
+                section.base_vertex as i32,
+                index..index + 1,
+            );
+        }
+        sections.len() as u32
     }
 
     /// Model entries by index; models already listed keep their index.
@@ -677,6 +753,10 @@ impl ActorsGpu {
             clips,
             sphere: ((min + max) * 0.5, (max - min).length() * 0.5),
             height: meta.rest_bounds.max[1] - meta.rest_bounds.min[1],
+            rest: (
+                Vec3::from_array(meta.rest_bounds.min),
+                Vec3::from_array(meta.rest_bounds.max),
+            ),
             animated,
         })
     }
@@ -698,7 +778,7 @@ impl ActorsGpu {
         let _span = tracing::trace_span!("actors_prepare").entered();
         let camera_planes = frustum_planes(camera);
         let sun_planes = sun.map(frustum_planes);
-        // (model, 0 camera-visible / 1 sun only, input index)
+        // (model, 0 camera-visible / 1 sun only / 2 translucent, input index)
         let mut order: Vec<(u32, u8, u32)> = Vec::with_capacity(self.instances.len());
         let mut casters = 0;
         for (i, instance) in self.instances.iter().enumerate() {
@@ -707,10 +787,16 @@ impl ActorsGpu {
             };
             let sphere = world_sphere(&instance.transform, model.sphere.0, model.sphere.1);
             let scale_y = instance.transform.y_axis.truncate().length();
+            let in_camera = sphere_visible(&camera_planes, sphere);
+            if instance.translucent() {
+                if in_camera && instance.tint[3] > 0.0 {
+                    order.push((instance.model, 2, i as u32));
+                }
+                continue;
+            }
             let casts = model.casts
                 && (model.animated || model.height * scale_y >= SHADOW_MIN_HEIGHT)
                 && instance.opacity > 0.5;
-            let in_camera = sphere_visible(&camera_planes, sphere);
             let in_sun = casts
                 && sun_planes
                     .as_ref()
@@ -734,57 +820,38 @@ impl ActorsGpu {
                 continue;
             };
             let range = &mut self.ranges[m as usize];
-            if range.all == 0 {
+            if range.all + range.translucent == 0 {
                 range.first = self.staging_actors.len() as u32;
             }
-            range.all += 1;
-            if view == 0 {
-                range.camera += 1;
-            }
-            let rows = instance.transform.transpose();
-            self.staging_actors.push(ActorGpu {
-                rows: [
-                    rows.x_axis.to_array(),
-                    rows.y_axis.to_array(),
-                    rows.z_axis.to_array(),
-                ],
-                color: instance
-                    .owner_color
-                    .map_or([0.0; 4], |c| [c[0], c[1], c[2], 1.0]),
-                palette: [palette_len, model.joints, 0, 0],
-                look: [instance.opacity, 0.0, 0.0, 0.0],
-            });
-            let mut job = SkinJob {
-                header: [palette_len, model.joints, 0, 0],
-                poses: [[0; 4]; MAX_POSES],
-            };
-            if model.animated {
-                let used = usize::from(instance.pose_count).min(MAX_POSES);
-                let total: f32 = instance.poses[..used]
-                    .iter()
-                    .map(|p| p.weight.max(0.0))
-                    .sum();
-                let mut count = 0;
-                for pose in &instance.poses[..used] {
-                    let Some(clip) = model.clips.get(usize::from(pose.clip)) else {
-                        continue;
-                    };
-                    if pose.weight <= 0.0 || total <= 0.0 {
-                        continue;
-                    }
-                    let (a, b, t) = clip_frames(clip.frames, clip.duration, pose.time);
-                    job.poses[count] = [
-                        clip.base + a * model.joints,
-                        clip.base + b * model.joints,
-                        t.to_bits(),
-                        (pose.weight / total).to_bits(),
-                    ];
-                    count += 1;
+            match view {
+                0 => {
+                    range.camera += 1;
+                    range.all += 1;
                 }
-                job.header[2] = count as u32;
+                1 => range.all += 1,
+                _ => range.translucent += 1,
             }
-            self.staging_jobs.push(job);
-            palette_len += model.joints;
+            stage(
+                &mut self.staging_actors,
+                &mut self.staging_jobs,
+                &mut palette_len,
+                model,
+                instance,
+            );
+        }
+        // The portrait's model, after everything the views draw.
+        self.portrait_slot = None;
+        if let Some(instance) = &self.portrait
+            && let Some(Slot::Ready(model)) = self.slots.get(instance.model as usize)
+        {
+            self.portrait_slot = Some((instance.model as usize, self.staging_actors.len() as u32));
+            stage(
+                &mut self.staging_actors,
+                &mut self.staging_jobs,
+                &mut palette_len,
+                model,
+                instance,
+            );
         }
         self.job_count = self.staging_jobs.len() as u32;
         let mut rebind = false;
@@ -858,9 +925,13 @@ impl ActorsGpu {
             }));
         }
         self.stats = ActorStats {
-            models: self.ranges.iter().filter(|r| r.camera > 0).count() as u32,
+            models: self
+                .ranges
+                .iter()
+                .filter(|r| r.camera + r.translucent > 0)
+                .count() as u32,
             instances: self.instances.len() as u32,
-            visible: self.ranges.iter().map(|r| r.camera).sum(),
+            visible: self.ranges.iter().map(|r| r.camera + r.translucent).sum(),
             shadow_casters: casters,
             joints: palette_len,
             draws: 0,
@@ -891,37 +962,41 @@ impl ActorsGpu {
     }
 
     fn draw_sections(&self, pass: &mut wgpu::RenderPass<'_>, blend: bool) -> u32 {
-        // Group by pipeline, then model.
-        let mut draws: Vec<(Variant, usize, usize)> = Vec::new();
+        // (pipeline, model, section, instances): opaque instances draw each section with
+        // its own variant; translucent ones draw every section blended.
+        let mut draws: Vec<(Variant, usize, usize, std::ops::Range<u32>)> = Vec::new();
         for (m, slot) in self.slots.iter().enumerate() {
             let Slot::Ready(model) = slot else { continue };
-            if self.ranges.get(m).is_none_or(|r| r.camera == 0) {
+            let Some(range) = self.ranges.get(m).copied() else {
                 continue;
-            }
+            };
             for (s, section) in model.sections.iter().enumerate() {
                 let variant = model.materials[section.material as usize].variant;
-                if variant.is_blend() == blend {
-                    draws.push((variant, m, s));
+                if range.camera > 0 && variant.is_blend() == blend {
+                    draws.push((variant, m, s, range.first..range.first + range.camera));
+                }
+                if blend && range.translucent > 0 {
+                    let first = range.first + range.all;
+                    draws.push((variant.blended(), m, s, first..first + range.translucent));
                 }
             }
         }
-        draws.sort_unstable();
+        draws.sort_unstable_by_key(|d| (d.0, d.1, d.2, d.3.start));
         let mut current = None;
         let mut bound = usize::MAX;
-        for &(variant, m, s) in &draws {
-            let Slot::Ready(model) = &self.slots[m] else {
+        for (variant, m, s, instances) in &draws {
+            let Slot::Ready(model) = &self.slots[*m] else {
                 continue;
             };
-            if current != Some(variant) {
-                pass.set_pipeline(&self.pipelines[&variant]);
-                current = Some(variant);
+            if current != Some(*variant) {
+                pass.set_pipeline(&self.pipelines[variant]);
+                current = Some(*variant);
             }
-            if bound != m {
-                self.bind_model(pass, m, model);
-                bound = m;
+            if bound != *m {
+                self.bind_model(pass, *m, model);
+                bound = *m;
             }
-            let section = model.sections[s];
-            let range = self.ranges[m];
+            let section = model.sections[*s];
             pass.set_bind_group(
                 1,
                 &model.materials[section.material as usize].bind_group,
@@ -930,7 +1005,7 @@ impl ActorsGpu {
             pass.draw_indexed(
                 section.first_index..section.first_index + section.index_count,
                 section.base_vertex as i32,
-                range.first..range.first + range.camera,
+                instances.clone(),
             );
         }
         draws.len() as u32
@@ -1009,7 +1084,7 @@ impl ActorsGpu {
             .iter()
             .zip(&self.ranges)
             .filter_map(|(slot, range)| match slot {
-                Slot::Ready(m) => Some((m.name.as_str(), range.camera)),
+                Slot::Ready(m) => Some((m.name.as_str(), range.camera + range.translucent)),
                 Slot::Missing => None,
             })
     }
@@ -1018,6 +1093,61 @@ impl ActorsGpu {
     pub fn is_ready(&self, index: usize) -> bool {
         matches!(self.slots.get(index), Some(Slot::Ready(_)))
     }
+}
+
+/// Adds one instance's GPU record and skinning job.
+fn stage(
+    actors: &mut Vec<ActorGpu>,
+    jobs: &mut Vec<SkinJob>,
+    palette_len: &mut u32,
+    model: &GpuModel,
+    instance: &ActorInstance,
+) {
+    let rows = instance.transform.transpose();
+    actors.push(ActorGpu {
+        rows: [
+            rows.x_axis.to_array(),
+            rows.y_axis.to_array(),
+            rows.z_axis.to_array(),
+        ],
+        color: instance
+            .owner_color
+            .map_or([0.0; 4], |c| [c[0], c[1], c[2], 1.0]),
+        palette: [*palette_len, model.joints, 0, 0],
+        look: [instance.opacity, 0.0, 0.0, 0.0],
+        tint: instance.tint,
+    });
+    let mut job = SkinJob {
+        header: [*palette_len, model.joints, 0, 0],
+        poses: [[0; 4]; MAX_POSES],
+    };
+    if model.animated {
+        let used = usize::from(instance.pose_count).min(MAX_POSES);
+        let total: f32 = instance.poses[..used]
+            .iter()
+            .map(|p| p.weight.max(0.0))
+            .sum();
+        let mut count = 0;
+        for pose in &instance.poses[..used] {
+            let Some(clip) = model.clips.get(usize::from(pose.clip)) else {
+                continue;
+            };
+            if pose.weight <= 0.0 || total <= 0.0 {
+                continue;
+            }
+            let (a, b, t) = clip_frames(clip.frames, clip.duration, pose.time);
+            job.poses[count] = [
+                clip.base + a * model.joints,
+                clip.base + b * model.joints,
+                t.to_bits(),
+                (pose.weight / total).to_bits(),
+            ];
+            count += 1;
+        }
+        job.header[2] = count as u32;
+    }
+    jobs.push(job);
+    *palette_len += model.joints;
 }
 
 /// The two baked frames around `time` and the mix between them (frame `f` is time

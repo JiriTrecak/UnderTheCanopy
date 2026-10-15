@@ -42,6 +42,8 @@ impl PostLook {
             haze: quality.haze != HazeQuality::Off
                 && self.atmosphere.enabled
                 && (self.atmosphere.density > 0.0 || self.atmosphere.shaft_density > 0.0),
+            minimap: false,
+            portrait: false,
         }
     }
 }
