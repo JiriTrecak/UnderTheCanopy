@@ -139,13 +139,8 @@ fn placement_rules_reject_with_the_old_messages() {
     let mut entities = base();
     entities.push(place("blocker", HOUSE, 29.5, 37.5));
     entities.push(place("soldier", SOLDIER, 50.0, 50.0));
-    let slope = |x: i32, _: i32| {
-        if (60..100).contains(&x) {
-            0.3 * (x - 60) as f32
-        } else {
-            0.0
-        }
-    };
+    // A ridge of ramps (1 m per cell) between x = 60 and 100.
+    let slope = |x: i32, _: i32| (20 - (x - 80).abs()).max(0) as f32;
     let mut world = world(&sandbox_on(entities, terrain(slope, |_, _| -5.0)));
     fund(&mut world, P1, AMBER, 1000);
     fund(&mut world, P1, WOOD, 1000);

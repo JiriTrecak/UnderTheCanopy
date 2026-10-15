@@ -264,6 +264,24 @@ pub struct Body {
     pub deposit: bool,
 }
 
+/// The foundations drawn under the buildings of `bodies` (D44): each footprint on the
+/// ground at its building's base height; resource deposits get only the earth.
+pub fn foundations(
+    bodies: &[Body],
+    out: &mut Vec<canopy_render::terrain::foundations::Foundation>,
+) {
+    out.clear();
+    out.extend(bodies.iter().filter(|b| b.surface == 0).filter_map(|b| {
+        let [w, d] = b.footprint?;
+        Some(canopy_render::terrain::foundations::Foundation {
+            center: [b.position.x, b.position.z],
+            half: [w / 2.0, d / 2.0],
+            base: b.position.y,
+            bank: !b.deposit,
+        })
+    }));
+}
+
 /// The centre of the densest group of `points` (16-cell buckets and their neighbours).
 pub fn densest(points: &[[f32; 2]]) -> Option<[f32; 2]> {
     let bucket = |p: &[f32; 2]| ((p[0] / 16.0).floor() as i32, (p[1] / 16.0).floor() as i32);

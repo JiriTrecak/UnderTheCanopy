@@ -1,6 +1,9 @@
 //! Terrain on the GPU: textures, chunk lists and the floor around the map.
 
-use super::{CHUNK, ChunkDraw, ChunkGrid, LODS, LayerKind, MAX_LAYERS, NO_LAYER, TerrainDesc};
+use super::{
+    CHUNK, ChunkDraw, ChunkGrid, LODS, LayerKind, MAX_LAYERS, NO_LAYER, TerrainDesc, box_visible,
+    foundations::{self, Foundation},
+};
 use crate::{camera::CameraView, device::GpuFeatures, targets, texture};
 use anyhow::{Context, Result};
 use bytemuck::{Pod, Zeroable};
@@ -33,7 +36,73 @@ struct TerrainUniform {
     grid: [f32; 4],
     cells: [f32; 4],
     counts: [u32; 4],
+    /// Foundation layer (or `NONE`), mask texels per unit.
+    foundation: [u32; 4],
     layers: [LayerUniform; MAX_LAYERS],
+}
+
+/// One foundation in view (`foundations.rs`), as the vertex shader reads it.
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Pod, Zeroable)]
+struct FoundationRecord {
+    /// Centre x, z and half width, depth.
+    rect: [f32; 4],
+    /// Base height.
+    base: [f32; 4],
+}
+
+impl FoundationRecord {
+    fn of(f: &Foundation) -> Self {
+        Self {
+            rect: [f.center[0], f.center[1], f.half[0], f.half[1]],
+            base: [f.base, 0.0, 0.0, 0.0],
+        }
+    }
+}
+
+/// The foundations' GPU side: the earth mask, the records in view and their pipelines.
+struct FoundationsGpu {
+    mask: wgpu::Texture,
+    /// Mask texels per side.
+    mask_size: u32,
+    origin: f32,
+    shown: Vec<Foundation>,
+    layout: wgpu::BindGroupLayout,
+    main: (wgpu::Buffer, wgpu::BindGroup),
+    shadow: (wgpu::Buffer, wgpu::BindGroup),
+    capacity: usize,
+    main_count: u32,
+    shadow_count: u32,
+    forward: wgpu::RenderPipeline,
+    depth: wgpu::RenderPipeline,
+    scratch: Vec<u8>,
+    records: Vec<FoundationRecord>,
+}
+
+impl FoundationsGpu {
+    fn buffers(
+        device: &wgpu::Device,
+        layout: &wgpu::BindGroupLayout,
+        capacity: usize,
+    ) -> [(wgpu::Buffer, wgpu::BindGroup); 2] {
+        ["foundations", "foundation shadows"].map(|label| {
+            let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some(label),
+                size: (capacity * std::mem::size_of::<FoundationRecord>()) as u64,
+                usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            let group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some(label),
+                layout,
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: buffer.as_entire_binding(),
+                }],
+            });
+            (buffer, group)
+        })
+    }
 }
 
 #[repr(C)]
@@ -155,6 +224,7 @@ pub struct TerrainGpu {
     shadow: wgpu::RenderPipeline,
     floor: Option<(wgpu::Buffer, u32, wgpu::RenderPipeline)>,
     aux_group: wgpu::BindGroup,
+    foundations: FoundationsGpu,
     // Scratch, reused every frame.
     draws: Vec<ChunkDraw>,
     shadow_draws: Vec<ChunkDraw>,
@@ -176,6 +246,8 @@ pub struct TerrainStats {
     pub triangles: u64,
     pub shadow_triangles: u64,
     pub draws: u32,
+    /// Building foundations in view.
+    pub foundations: u32,
 }
 
 impl TerrainGpu {
@@ -328,9 +400,10 @@ impl TerrainGpu {
         // Tile arrays: only layers some cell uses are loaded.
         let used: Vec<bool> = (0..desc.layers.len())
             .map(|i| {
-                selection
-                    .iter()
-                    .any(|s| s.contains(&(i as u8)) && i as u8 != NO_LAYER)
+                desc.foundation_layer == Some(i)
+                    || selection
+                        .iter()
+                        .any(|s| s.contains(&(i as u8)) && i as u8 != NO_LAYER)
             })
             .collect();
         let mut albedo_names: Vec<String> = Vec::new();
@@ -452,6 +525,14 @@ impl TerrainGpu {
                 super::selection_offset(desc),
             ],
             counts: [cx, cz, layer_count, 0],
+            foundation: [
+                desc.foundation_layer
+                    .filter(|&i| i < desc.layers.len())
+                    .map_or(NONE, |i| i as u32),
+                foundations::MASK_TEXELS,
+                0,
+                0,
+            ],
             layers: layer_uniforms,
         };
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -476,6 +557,17 @@ impl TerrainGpu {
             anisotropy_clamp: 8,
             ..Default::default()
         });
+
+        // Earth around building foundations, filled as buildings come and go.
+        let mask_size = desc.span * foundations::MASK_TEXELS;
+        let foundation_mask = tex2d(
+            "foundation earth",
+            wgpu::TextureFormat::R8Unorm,
+            mask_size,
+            mask_size,
+            1,
+        );
+        bytes += u64::from(mask_size * mask_size);
 
         let vf = wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT;
         let tex_entry = |binding, visibility, sample_type, dim| wgpu::BindGroupLayoutEntry {
@@ -530,6 +622,7 @@ impl TerrainGpu {
                     },
                     count: None,
                 },
+                tex_entry(11, frag, filterable, d2),
             ],
         });
         let array_view = |t: &wgpu::Texture| {
@@ -568,6 +661,11 @@ impl TerrainGpu {
         entries.push(wgpu::BindGroupEntry {
             binding: 10,
             resource: uniform_buffer.as_entire_binding(),
+        });
+        let mask_view = plain(&foundation_mask);
+        entries.push(wgpu::BindGroupEntry {
+            binding: 11,
+            resource: wgpu::BindingResource::TextureView(&mask_view),
         });
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("terrain"),
@@ -677,6 +775,88 @@ impl TerrainGpu {
             multiview_mask: None,
             cache: None,
         });
+
+        let foundation_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("foundations"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 1,
+                visibility: wgpu::ShaderStages::VERTEX,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage { read_only: true },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+        });
+        let foundation_pipeline_layout =
+            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: Some("foundations"),
+                bind_group_layouts: &[Some(frame_layout), Some(&layout), Some(&foundation_layout)],
+                immediate_size: 0,
+            });
+        let foundation_forward = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("foundations"),
+            layout: Some(&foundation_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some("vs_foundation"),
+                compilation_options: Default::default(),
+                buffers: &[],
+            },
+            primitive: wgpu::PrimitiveState {
+                cull_mode: None,
+                ..Default::default()
+            },
+            depth_stencil: Some(targets::scene_depth(true)),
+            multisample: targets::scene_multisample(false),
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: Some("fs_foundation"),
+                compilation_options: Default::default(),
+                targets: &targets::forward_targets(None, true),
+            }),
+            multiview_mask: None,
+            cache: None,
+        });
+        let foundation_depth = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("foundation shadows"),
+            layout: Some(&foundation_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some("vs_foundation_shadow"),
+                compilation_options: Default::default(),
+                buffers: &[],
+            },
+            primitive: wgpu::PrimitiveState {
+                cull_mode: None,
+                ..Default::default()
+            },
+            depth_stencil: Some(targets::shadow_depth()),
+            multisample: wgpu::MultisampleState::default(),
+            fragment: None,
+            multiview_mask: None,
+            cache: None,
+        });
+        let capacity = 64;
+        let [foundation_main, foundation_shadow] =
+            FoundationsGpu::buffers(device, &foundation_layout, capacity);
+        let foundations = FoundationsGpu {
+            mask: foundation_mask,
+            mask_size,
+            origin: desc.origin,
+            shown: Vec::new(),
+            layout: foundation_layout,
+            main: foundation_main,
+            shadow: foundation_shadow,
+            capacity,
+            main_count: 0,
+            shadow_count: 0,
+            forward: foundation_forward,
+            depth: foundation_depth,
+            scratch: Vec::new(),
+            records: Vec::new(),
+        };
 
         let simple = |label: &str,
                       source: &str,
@@ -846,6 +1026,7 @@ impl TerrainGpu {
             shadow,
             floor,
             aux_group: floor_group,
+            foundations,
             main_counts: [(0, 0); LODS],
             shadow_count: 0,
             bytes,
@@ -893,6 +1074,7 @@ impl TerrainGpu {
             }
             self.shadow_count = self.records.len() as u32;
         }
+        self.prepare_foundations(queue, camera, shadow_planes);
         let triangles = self
             .main_counts
             .iter()
@@ -906,7 +1088,84 @@ impl TerrainGpu {
             shadow_triangles: u64::from(self.shadow_count)
                 * u64::from(self.ranges[SHADOW_LOD as usize].1 / 3),
             draws: self.main_counts.iter().filter(|c| c.1 > 0).count() as u32,
+            foundations: self.foundations.main_count,
         }
+    }
+
+    /// The building foundations to draw (D44): when the list differs from the shown one,
+    /// redraws the earth mask where footprints appeared or went. Cheap when unchanged.
+    pub fn set_foundations(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        list: &[Foundation],
+    ) {
+        let f = &mut self.foundations;
+        if f.shown == list {
+            return;
+        }
+        let _span = tracing::trace_span!("foundation_mask").entered();
+        let rects = foundations::changed_rects(&f.shown, list, f.origin, f.mask_size);
+        for rect in rects {
+            foundations::rasterise(list, f.origin, rect, &mut f.scratch);
+            let [x0, z0, x1, z1] = rect;
+            queue.write_texture(
+                wgpu::TexelCopyTextureInfo {
+                    texture: &f.mask,
+                    mip_level: 0,
+                    origin: wgpu::Origin3d { x: x0, y: z0, z: 0 },
+                    aspect: wgpu::TextureAspect::All,
+                },
+                &f.scratch,
+                wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(x1 - x0),
+                    rows_per_image: Some(z1 - z0),
+                },
+                wgpu::Extent3d {
+                    width: x1 - x0,
+                    height: z1 - z0,
+                    depth_or_array_layers: 1,
+                },
+            );
+        }
+        if list.len() > f.capacity {
+            f.capacity = list.len().next_power_of_two();
+            [f.main, f.shadow] = FoundationsGpu::buffers(device, &f.layout, f.capacity);
+        }
+        f.shown.clear();
+        f.shown.extend_from_slice(list);
+    }
+
+    /// Culls the foundations against the camera and the sun's view and uploads them.
+    fn prepare_foundations(
+        &mut self,
+        queue: &wgpu::Queue,
+        camera: &CameraView,
+        shadow_planes: Option<&[Vec4; 6]>,
+    ) {
+        let f = &mut self.foundations;
+        let mut upload = |planes: &[Vec4; 6], buffer: &wgpu::Buffer| -> u32 {
+            f.records.clear();
+            f.records.extend(
+                f.shown
+                    .iter()
+                    .filter(|x| {
+                        let (min, max) = x.bounds();
+                        x.bank && box_visible(planes, min, max)
+                    })
+                    .map(FoundationRecord::of),
+            );
+            if !f.records.is_empty() {
+                queue.write_buffer(buffer, 0, bytemuck::cast_slice(&f.records));
+            }
+            f.records.len() as u32
+        };
+        f.main_count = upload(&camera.frustum(), &f.main.0);
+        f.shadow_count = match shadow_planes {
+            Some(planes) => upload(planes, &f.shadow.0),
+            None => 0,
+        };
     }
 
     pub fn draw_forward<'a>(
@@ -928,6 +1187,13 @@ impl TerrainGpu {
             pass.draw_indexed(first..first + n, 0, start..start + count);
             draws += 1;
         }
+        let f = &self.foundations;
+        if f.main_count > 0 {
+            pass.set_pipeline(&f.forward);
+            pass.set_bind_group(2, &f.main.1, &[]);
+            pass.draw(0..foundations::VERTICES, 0..f.main_count);
+            draws += 1;
+        }
         if let Some((buffer, n, pipeline)) = &self.floor {
             pass.set_pipeline(pipeline);
             pass.set_bind_group(1, &self.aux_group, &[]);
@@ -943,17 +1209,25 @@ impl TerrainGpu {
         pass: &mut wgpu::RenderPass<'a>,
         frame: &'a wgpu::BindGroup,
     ) -> u32 {
-        if self.shadow_count == 0 {
-            return 0;
-        }
-        pass.set_pipeline(&self.shadow);
+        let mut draws = 0;
         pass.set_bind_group(0, frame, &[]);
         pass.set_bind_group(1, &self.bind_group, &[]);
-        pass.set_bind_group(2, &self.shadow_group, &[]);
-        pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
-        let (first, n) = self.ranges[SHADOW_LOD as usize];
-        pass.draw_indexed(first..first + n, 0, 0..self.shadow_count);
-        1
+        if self.shadow_count > 0 {
+            pass.set_pipeline(&self.shadow);
+            pass.set_bind_group(2, &self.shadow_group, &[]);
+            pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+            let (first, n) = self.ranges[SHADOW_LOD as usize];
+            pass.draw_indexed(first..first + n, 0, 0..self.shadow_count);
+            draws += 1;
+        }
+        let f = &self.foundations;
+        if f.shadow_count > 0 {
+            pass.set_pipeline(&f.depth);
+            pass.set_bind_group(2, &f.shadow.1, &[]);
+            pass.draw(0..foundations::VERTICES, 0..f.shadow_count);
+            draws += 1;
+        }
+        draws
     }
 
     /// The focus ground height and terrain queries for cameras.

@@ -288,6 +288,10 @@ M4 Max, frame ms (GPU ms):
 
 A base M1 has about a seventh of this GPU: Medium's worst view (spectator) lands near 16 ms, player views near 10 ms. The spectator view is vertex-bound (about 1 M forward and 1 M shadow triangles). Unmeasured on a base M1.
 
+### Building foundations (D44)
+
+Buildings stand at their centre's ground height; `terrain/foundations.rs` keeps them from floating. The game passes the presentation's footprints each frame (`canopy_scene::live::foundations` → `Renderer::set_foundations`; equal lists cost a comparison). The terrain owns everything: an R8 *earth mask* (2 texels per unit, binding 11 of the terrain group) redrawn on the CPU only where footprints came or went, which `ground_at` in `terrain.wgsl` turns into the biome's dirt layer (`TerrainDesc::foundation_layer`) with a ragged edge; and the *pad and bank*, vertex-pulled from the height texture (`vs_foundation`, 80 spokes × 4 bands + the pad = 1,926 vertices per footprint), shaded with the terrain's composited ground where they face up and the dirt layer projected from the sides where steep, in one instanced forward draw and one shadow draw for the footprints in view (CPU-culled). `canopy shot` prints the count.
+
 ### Not yet (later M3 steps)
 
 Terrain displacement (no shipped map uses rock coverage), egui tuning, hot reload of `config/`. Mist regions (`atmosphere.regions`, used by no biome), rain and the close-camera depth of field and shaft density of the old surroundings (no camera uses them) are not carried. Rain and beam effect layers (no shipped effect uses them) are not drawn. Fog of war on stacked floors: bridge decks fold into the ground cell under them (in sight when any floor is) rather than keeping the old per-floor atlas. The portrait has no rim light (one sun light in the lighting model).

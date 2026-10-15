@@ -394,10 +394,11 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
         renderer.gpu_bytes() as f64 / (1024.0 * 1024.0)
     );
     println!(
-        "  draws {} | terrain chunks {} triangles {} | statics {:?} | actors {:?}",
+        "  draws {} | terrain chunks {} triangles {} | foundations {} | statics {:?} | actors {:?}",
         last.draws,
         last.terrain_chunks,
         last.terrain_triangles,
+        last.foundations,
         renderer.statics().map(|s| s.stats),
         last.actors,
     );

@@ -258,6 +258,7 @@ fn terrain() -> TerrainDesc {
             cells: [9, 9],
         },
         surroundings: None,
+        foundation_layer: None,
     }
 }
 
@@ -337,6 +338,33 @@ fn a_tiny_world_renders_without_holes() {
     // The cube stands in the middle: the centre column crosses it.
     let column = (0..height).map(|y| texels[(y * width + width / 2) as usize]);
     assert!(column.filter(|t| t[0] > 200 && t[1] < 80).count() > 10);
+
+    // A building foundation on the mound's flank, its base above the falling ground:
+    // the pad and bank draw (and cast a shadow) without holes.
+    renderer.set_foundations(
+        &gpu,
+        &[canopy_render::terrain::foundations::Foundation {
+            center: [6.0, 4.0],
+            half: [3.0, 2.0],
+            base: 1.2,
+            bank: true,
+        }],
+    );
+    let with = renderer.render(
+        &gpu,
+        &view,
+        1.0,
+        &capture.view,
+        Some(&|encoder| capture.copy(encoder)),
+    );
+    let pixels = capture.read(&gpu.device).unwrap();
+    assert_eq!(with.foundations, 1);
+    assert_eq!(with.draws, report.draws + 2, "{with:?}");
+    let black = pixels
+        .chunks_exact(4)
+        .filter(|t| t[0] < 4 && t[1] < 4 && t[2] < 4)
+        .count();
+    assert_eq!(black, 0, "{black} black pixels with a foundation");
 }
 
 /// A basin west of the mound: bed −1 at the far west rising to the shore, water at 0.

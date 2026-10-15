@@ -492,6 +492,8 @@ pub fn build(
             haze_color: s.haze_color.linear().to_array(),
             haze: [s.haze_start, s.haze_end],
         }),
+        // Building foundations show the biome's bare earth (D44).
+        foundation_layer: Some(DIRT),
     };
     Ok((terrain, water))
 }
