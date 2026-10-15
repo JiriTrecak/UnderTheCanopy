@@ -141,12 +141,21 @@ mod tests {
     #[test]
     fn the_shipped_interface_compiles() {
         let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../config/ui");
-        let config = UiConfig::load(&dir).expect("config/ui reads");
+        let mut config = UiConfig::load(&dir).expect("config/ui reads");
+        // CI checkouts have Git LFS pointers for the bundled fonts: lay out with the
+        // system's fonts there.
+        let pointers = config
+            .font_data
+            .iter()
+            .any(|f| f.starts_with(b"version https://git-lfs"));
+        if pointers {
+            config.font_data.clear();
+        }
         let mut ui = Ui::new(
             config,
             FontSources {
                 bundled: Vec::new(),
-                system: false,
+                system: pointers,
             },
         )
         .expect("config/ui compiles");
