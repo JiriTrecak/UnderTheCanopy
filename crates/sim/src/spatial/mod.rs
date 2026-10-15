@@ -987,6 +987,54 @@ impl Spatial {
         clear
     }
 
+    /// The bodies touching the mover at `from` that [`Spatial::unit_segment_clear`] from
+    /// there would test (same filters), for answering many segments from one origin:
+    /// [`NearBodies::blocks`] proves a segment blocked without the full query.
+    pub fn near_bodies(
+        &self,
+        from: Fixed,
+        except: Option<EntityId>,
+        actor: Option<&Body>,
+    ) -> NearBodies {
+        let mover = except.and_then(|id| self.bodies.get(id));
+        let mut near = NearBodies {
+            from,
+            bodies: Vec::new(),
+        };
+        if mover.is_some_and(|m| m.ignores) {
+            return near;
+        }
+        let (radius, height, air) = self.query_body(actor, mover);
+        let reach = i64::from(radius + self.profiles.max_radius);
+        let (x, y) = (i64::from(from.x), i64::from(from.y));
+        let layered = self.layered();
+        let floor = if layered {
+            self.height(
+                f64::from(from.x) / 1000.0,
+                f64::from(from.y) / 1000.0,
+                from.deck,
+            )
+        } else {
+            0.0
+        };
+        self.bodies
+            .within(x - reach, y - reach, x + reach, y + reach, |unit| {
+                if Some(unit.id) == except || !unit.solid() || unit.air != air {
+                    return true;
+                }
+                if layered && (floor >= unit.floor + unit.height || unit.floor >= floor + height) {
+                    return true;
+                }
+                let (ux, uy) = (i64::from(unit.x), i64::from(unit.y));
+                let separation = i64::from(radius + unit.radius);
+                if (ux - x).pow(2) + (uy - y).pow(2) < separation * separation {
+                    near.bodies.push((ux, uy, separation * separation));
+                }
+                true
+            });
+        near
+    }
+
     /// Whether a body may stop at `spot`: it fits, touches no body, and no other body
     /// stands in or has reserved the cell (old `free`).
     pub fn free(
@@ -1141,4 +1189,24 @@ fn definitions_radii(profiles: &Profiles, catalog: &Catalog) -> Vec<i32> {
         .collect();
     radii.push(profiles.navigation_body.radius_milli());
     radii
+}
+
+/// Bodies touching a mover, from [`Spatial::near_bodies`].
+pub struct NearBodies {
+    from: Fixed,
+    /// Position and squared separation from the mover, milli-cells.
+    bodies: Vec<(i64, i64, i64)>,
+}
+
+impl NearBodies {
+    /// True when one of these bodies blocks `from → to`, so
+    /// [`Spatial::unit_segment_clear`] would say it is not clear (it tests the same
+    /// bodies with the same geometry). False proves nothing.
+    pub fn blocks(&self, to: Fixed) -> bool {
+        let (dx, dy) = (i64::from(to.x - self.from.x), i64::from(to.y - self.from.y));
+        let square = dx * dx + dy * dy;
+        self.bodies.iter().any(|&(x, y, separation_squared)| {
+            geometry::body_blocks_segment(self.from, dx, dy, square, x, y, separation_squared)
+        })
+    }
 }

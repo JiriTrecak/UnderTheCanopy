@@ -240,6 +240,30 @@ pub fn reason(
     control: Control,
     ignore_range: bool,
 ) -> Result<(), &'static str> {
+    reason_as(
+        ctx,
+        state,
+        caster,
+        None,
+        binding,
+        aim,
+        control,
+        ignore_range,
+    )
+}
+
+/// [`reason`] with the caster's snapshot already taken from this state (`None`: take it).
+#[allow(clippy::too_many_arguments)]
+pub fn reason_as(
+    ctx: &mut Ctx,
+    state: &State,
+    caster: EntityId,
+    snapshot: Option<&Actor>,
+    binding: &str,
+    aim: Aim,
+    control: Control,
+    ignore_range: bool,
+) -> Result<(), &'static str> {
     let Some(e) = state.entities.get(caster) else {
         return Err("Cannot cast this ability");
     };
@@ -261,8 +285,14 @@ pub fn reason(
         return Err("Learn this ability first");
     }
     let ability = b.ability;
-    let Some(access) = access(ctx, state, caster) else {
-        return Err("Cannot cast this ability");
+    // The caster's snapshot (its stats are not needed here).
+    let taken;
+    let actor = match snapshot {
+        Some(a) => a,
+        None => {
+            taken = actor::of(&ctx.senses, state, e);
+            &taken
+        }
     };
     if spell.persistent.as_ref().is_some_and(|p| p.toggle)
         && state
@@ -271,7 +301,7 @@ pub fn reason(
             .iter()
             .any(|i| i.source == caster && i.ability == ability)
     {
-        return if access.actor.alive {
+        return if actor.alive {
             Ok(())
         } else {
             Err("Caster is unable to cast")
@@ -287,16 +317,7 @@ pub fn reason(
     if state_caster.mana < cost {
         return Err("Not enough mana");
     }
-    eligibility(
-        ctx,
-        state,
-        &access.actor,
-        aim,
-        ability,
-        rank,
-        true,
-        ignore_range,
-    )?;
+    eligibility(ctx, state, actor, aim, ability, rank, true, ignore_range)?;
     if spell.weapon_cast.is_some()
         && let Aim::Unit(target) = aim
     {

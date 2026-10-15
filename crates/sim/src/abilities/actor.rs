@@ -125,7 +125,8 @@ pub fn camp(e: &Entity) -> Option<&str> {
 /// The snapshot of a live entity (old `gameHost.get`).
 pub fn of(senses: &Senses, state: &State, e: &Entity) -> Actor {
     let catalog = senses.catalog;
-    let stats = Stats::of(catalog, e, crate::stats::research(state, e.owner));
+    let immune = super::statuses::control_immunities(catalog, e);
+    let stats = Stats::of_with(catalog, e, crate::stats::research(state, e.owner), immune);
     let d = catalog.get(e.definition);
     let profile = super::forms::weapon_def(catalog, e);
     let combat = catalog.get(profile).behaviors.combat.as_ref();
@@ -133,8 +134,13 @@ pub fn of(senses: &Senses, state: &State, e: &Entity) -> Actor {
     let held =
         u.is_some_and(|u| u.contained.is_some() || u.garrison.is_some() || u.release.is_some());
     let blocked = u.is_some_and(|u| u.taunt.is_some())
-        || super::statuses::stunned(catalog, e)
-        || super::statuses::silenced(catalog, e)
+        || super::statuses::spell_control_with(catalog, e, immune, super::library::control::STUN)
+        || super::statuses::spell_control_with(
+            catalog,
+            e,
+            immune,
+            super::library::control::SILENCE,
+        )
         || held;
     let sight = senses.sight(state);
     let point = sight.sight_point(e);
@@ -158,7 +164,7 @@ pub fn of(senses: &Senses, state: &State, e: &Entity) -> Actor {
         air: super::forms::airborne(catalog, e),
         nature: nature(catalog, e.definition),
         spell_immunity: super::statuses::spell_immunity(catalog, e, None),
-        control_immunity: super::statuses::control_immunities(catalog, e),
+        control_immunity: immune,
         melee: combat.is_some_and(|c| c.projectile.is_none() && c.shell.is_none()),
         blocked,
         targetable: !held,
@@ -432,7 +438,7 @@ pub fn plain(catalog: &Catalog, e: &Entity) -> Plain {
     Plain {
         hero: d.is_hero(),
         summoned: summoned(e),
-        level: Stats::of(catalog, e, &[]).level,
+        level: crate::stats::level(catalog, e),
         nature: nature(catalog, e.definition),
         locomotion: Some(if super::forms::airborne(catalog, e) {
             Locomotion::Air

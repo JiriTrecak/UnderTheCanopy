@@ -37,7 +37,15 @@ pub fn control_immune(catalog: &Catalog, e: &Entity, kind: u8) -> bool {
 /// Whether a spell status imposes a control kind the unit is not immune to (old
 /// `spellControl`).
 pub fn spell_control(catalog: &Catalog, e: &Entity, kind: u8) -> bool {
-    if e.statuses.is_empty() || control_immune(catalog, e, kind) {
+    if e.statuses.is_empty() {
+        return false;
+    }
+    spell_control_with(catalog, e, control_immunities(catalog, e), kind)
+}
+
+/// [`spell_control`] with the unit's [`control_immunities`] already known.
+pub fn spell_control_with(catalog: &Catalog, e: &Entity, immune: u8, kind: u8) -> bool {
+    if e.statuses.is_empty() || immune & kind != 0 {
         return false;
     }
     e.statuses
@@ -110,7 +118,19 @@ pub fn spell_modifiers(catalog: &Catalog, e: &Entity, f: &mut dyn FnMut(&Modifie
     if e.statuses.is_empty() {
         return;
     }
-    let immune = control_immunities(catalog, e);
+    spell_modifiers_with(catalog, e, control_immunities(catalog, e), f);
+}
+
+/// [`spell_modifiers`] with the unit's [`control_immunities`] already known.
+pub fn spell_modifiers_with(
+    catalog: &Catalog,
+    e: &Entity,
+    immune: u8,
+    f: &mut dyn FnMut(&Modifiers),
+) {
+    if e.statuses.is_empty() {
+        return;
+    }
     let mut groups: Vec<(super::library::StatusKey, Modifiers)> = Vec::new();
     for s in &e.statuses {
         let d = decl(catalog, s);

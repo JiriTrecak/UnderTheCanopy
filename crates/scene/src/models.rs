@@ -178,6 +178,11 @@ impl ModelCatalog {
         &self.infos[index as usize]
     }
 
+    /// A shared handle to model `index` (no copy of its clips and states).
+    pub fn shared(&self, index: u32) -> Arc<ModelInfo> {
+        self.infos[index as usize].clone()
+    }
+
     pub fn find(&self, name: &str) -> Option<u32> {
         self.by_name.get(name).copied()
     }

@@ -29,134 +29,6 @@ pub struct MatchSpec<'a> {
     pub human: Option<u8>,
 }
 
-/// The building-grid position nearest to (x, z) for `d`'s footprint.
-fn aligned(
-    d: &canopy_content::game::Definition,
-    x: f64,
-    z: f64,
-) -> canopy_content::placement::Point {
-    let (x, z) = (x.floor(), z.floor());
-    let steps = (0..8).map(|i| f64::from(i) * 0.5);
-    let (dx, dz) = steps
-        .clone()
-        .flat_map(|dx| steps.clone().map(move |dz| (dx, dz)))
-        .find(|(dx, dz)| {
-            canopy_sim::terrain::footprint::placement_geometry_error(d, x + dx, z + dz, 0.0)
-                .is_none()
-        })
-        .unwrap_or_default();
-    canopy_content::placement::Point {
-        x: x + dx,
-        y: z + dz,
-        surface: None,
-    }
-}
-
-/// Players of a crowd battle.
-pub const CROWD_PLAYERS: u8 = 8;
-
-/// Eight groups of `per_player` soldiers in a ring around the middle of the starts, each
-/// facing the centre: the race's animated, trainable, non-hero fighters in turn.
-fn crowd(
-    map: &mut map::UtcMap,
-    content: &Content,
-    per_player: u32,
-) -> Result<canopy_sim::MatchSetup> {
-    use canopy_content::{
-        game::Kind,
-        placement::{Owner, Placement, Point},
-    };
-    let race = content
-        .rules
-        .races
-        .get(&content.rules.default_race)
-        .context("the default race")?;
-    let fighters: Vec<&canopy_content::Id> = race
-        .roster
-        .iter()
-        .filter(|id| {
-            content.definition(id.as_str()).is_some_and(|d| {
-                d.kind == Kind::Unit
-                    && !d.is_hero()
-                    && d.behaviors.combat.is_some()
-                    && d.behaviors.work.is_none()
-                    && content
-                        .asset(d.asset.as_str())
-                        .is_some_and(|a| a.character.is_some())
-            })
-        })
-        .collect();
-    anyhow::ensure!(!fighters.is_empty(), "the default race has no soldiers");
-    // A colony without buildings is defeated at once (skirmish rules): each player keeps a
-    // small building behind its soldiers.
-    let shelter = race
-        .roster
-        .iter()
-        .filter_map(|id| content.definition(id.as_str()))
-        .filter(|d| d.kind == Kind::Building)
-        .min_by_key(|d| d.footprint.as_ref().map_or(u32::MAX, |f| f.width * f.depth))
-        .context("the default race has no building")?;
-    let n = map.player_starts.len().max(1) as f64;
-    let cx = map.player_starts.iter().map(|s| s.x).sum::<f64>() / n;
-    let cz = map.player_starts.iter().map(|s| s.z).sum::<f64>() / n;
-    let side = (f64::from(per_player)).sqrt().ceil() as u32;
-    for player in 0..CROWD_PLAYERS {
-        let angle = f64::from(player) / f64::from(CROWD_PLAYERS) * std::f64::consts::TAU;
-        let (dx, dz) = (angle.sin(), angle.cos());
-        let (gx, gz) = (cx + dx * 24.0, cz + dz * 24.0);
-        let facing = (-dx).atan2(-dz).to_degrees().rem_euclid(360.0);
-        map.entities.push(Placement {
-            activation: None,
-            id: format!("crowd-{player}-shelter"),
-            map_knowledge: None,
-            definition: shelter.id.clone(),
-            position: aligned(shelter, gx + dx * 22.0, gz + dz * 22.0),
-            rotation: 0.0,
-            owner: Owner::Player(player),
-            initial_state: None,
-            appearance: None,
-        });
-        for i in 0..per_player {
-            let (row, column) = (i / side, i % side);
-            // Rows step away from the centre, columns across.
-            let across = f64::from(column) - f64::from(side - 1) / 2.0;
-            let back = f64::from(row);
-            // One unit per navigation cell, so none waits to be placed.
-            let x = (gx + dz * across * 1.5 + dx * back * 1.5).round();
-            let z = (gz - dx * across * 1.5 + dz * back * 1.5).round();
-            let definition = fighters[(i as usize + player as usize) % fighters.len()].clone();
-            map.entities.push(Placement {
-                activation: None,
-                id: format!("crowd-{player}-{i}"),
-                map_knowledge: None,
-                definition,
-                position: Point {
-                    x,
-                    y: z,
-                    surface: None,
-                },
-                rotation: facing,
-                owner: Owner::Player(player),
-                initial_state: None,
-                appearance: None,
-            });
-        }
-    }
-    Ok(canopy_sim::MatchSetup {
-        seed: 1,
-        slots: (0..CROWD_PLAYERS)
-            .map(|player| canopy_sim::Slot {
-                player,
-                kind: canopy_sim::SlotKind::Human,
-                name: None,
-                team: None,
-                hero: None,
-                race: None,
-            })
-            .collect(),
-    })
-}
-
 /// What the renderer draws of a map: the scene, its lighting and the asset pack.
 pub struct Loaded {
     pub scene: MapScene,
@@ -189,7 +61,7 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
     let pack = Arc::new(Pack::open(&pack_path).with_context(|| pack_path.display().to_string())?);
     let look = Look::load(&paths.data, spec.biome.unwrap_or(map.biome()))?;
     let setup = match spec.crowd {
-        Some(n) => crowd(&mut map, &content, n)?,
+        Some(n) => canopy_sim::crowd::crowd(&mut map, &content, n).map_err(|e| anyhow!(e))?,
         None => {
             let mut setup = canopy_scene::spectator_setup(&map, spec.players);
             if let Some(slot) = setup
