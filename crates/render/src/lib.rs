@@ -7,6 +7,7 @@ pub mod capture;
 pub mod device;
 pub mod effects;
 pub mod environment;
+pub mod fog;
 pub mod frame;
 pub mod graph;
 pub mod material;
@@ -22,6 +23,7 @@ pub mod terrain;
 pub mod texture;
 pub mod timing;
 pub mod water;
+pub mod world_ui;
 
 pub use camera::{CameraView, RtsCamera};
 pub use device::{DeviceOptions, Gpu, GpuFeatures};

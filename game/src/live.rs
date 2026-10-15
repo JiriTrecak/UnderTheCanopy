@@ -6,7 +6,12 @@ use crate::sim::{Mailbox, Snapshot, render_tick};
 use canopy_render::{
     Gpu, Renderer, actors::ActorInstance, effects::EffectFrame, water::ripples::Mover,
 };
-use canopy_scene::{effects::frame::EffectEvaluator, interpolate, live::Presentation};
+use canopy_scene::{
+    effects::frame::EffectEvaluator,
+    interpolate,
+    live::{Body, Presentation},
+    world_ui::{WorldUi, WorldUiInput},
+};
 use std::{sync::Arc, time::Instant};
 
 #[derive(Default)]
@@ -25,9 +30,69 @@ pub struct LiveScene {
     effect_frame: EffectFrame,
     /// The camera's eye, to order translucent effects back to front.
     pub eye: Option<glam::Vec3>,
+    fog: canopy_scene::fog::FogFeed,
+    world_ui: Option<WorldUi>,
+    world_ui_frame: canopy_render::world_ui::WorldUiFrame,
+    /// What the player selected and how the world UI shows (the game fills it).
+    pub world_ui_input: WorldUiInput,
+    /// The bodies of the latest frame and where their models stand.
+    bodies: Vec<Body>,
+    keys: Vec<u64>,
 }
 
 impl LiveScene {
+    /// Shows health bars, circles, rallies and labels (`data` holds the HUD font).
+    pub fn attach_world_ui(
+        &mut self,
+        data: &std::path::Path,
+        pack: &canopy_assets::Pack,
+        content: &canopy_content::Content,
+        colors: Vec<[f32; 3]>,
+    ) {
+        self.world_ui = Some(WorldUi::new(data, Some(pack), content, colors));
+    }
+
+    /// Builds the world UI of the latest frame for `camera` on an output of `size`.
+    pub fn draw_world_ui(
+        &mut self,
+        renderer: &mut Renderer,
+        gpu: &Gpu,
+        camera: &canopy_render::CameraView,
+        scene: &canopy_scene::MapScene,
+        seconds: f32,
+    ) {
+        let Some(ui) = &mut self.world_ui else {
+            return;
+        };
+        let scale = self.world_ui_input.scale;
+        if ui.atlases_dirty {
+            let (glyphs, icons) = ui.atlases(scale);
+            renderer.set_world_ui_atlases(gpu, glyphs, icons);
+        }
+        let keys = &self.keys;
+        let instances = &self.instances;
+        let position = |key: u64| {
+            keys.binary_search(&key)
+                .ok()
+                .map(|i| instances[i].transform.w_axis.truncate())
+        };
+        ui.build(
+            &self.bodies,
+            &position,
+            &self.world_ui_input,
+            camera,
+            renderer.size(),
+            &scene.water_field(),
+            seconds,
+            &mut self.world_ui_frame,
+        );
+        if ui.atlases_dirty {
+            let (glyphs, icons) = ui.atlases(scale);
+            renderer.set_world_ui_atlases(gpu, glyphs, icons);
+        }
+        renderer.set_world_ui(&mut self.world_ui_frame);
+    }
+
     /// Shows the presenter's effects: loads the textures their draws refer to.
     pub fn attach_effects(
         &mut self,
@@ -112,6 +177,7 @@ impl LiveScene {
         t: f32,
     ) {
         renderer.sync_actor_models(gpu, pack, &b.models);
+        self.fog.feed(renderer, gpu, b.fog.as_ref());
         if self.hidden_revision != Some(b.hidden.revision)
             && let Some(statics) = renderer.statics_mut()
         {
@@ -133,6 +199,9 @@ impl LiveScene {
         }
         interpolate::interpolate(a, b, t, &mut self.instances);
         let actors = self.instances.len();
+        self.keys.clear();
+        self.keys.extend(b.actors.iter().map(|a| a.key));
+        self.bodies.clone_from(&b.bodies);
         if let Some(evaluator) = &mut self.effects {
             let tick = match a {
                 Some(a) => f64::from(a.tick) + f64::from(t) * f64::from(b.tick - a.tick),

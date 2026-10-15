@@ -131,6 +131,25 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
     };
     let mut live = LiveScene::default();
     live.eye = Some(camera_view.eye);
+    live.attach_world_ui(
+        &paths.data,
+        &loaded.pack,
+        &game.world.catalog().content,
+        loaded.scene.colors.clone(),
+    );
+    live.world_ui_input.health = options.health;
+    live.world_ui_input.viewer = options.viewer;
+    live.world_ui_input.selected = match &options.select {
+        crate::options::Selection::None => Vec::new(),
+        crate::options::Selection::All => newest.bodies.iter().map(|b| b.id).collect(),
+        crate::options::Selection::Player(slot) => newest
+            .bodies
+            .iter()
+            .filter(|b| b.owner == Some(*slot))
+            .map(|b| b.id)
+            .collect(),
+        crate::options::Selection::Ids(ids) => ids.clone(),
+    };
     live.attach_effects(
         &mut renderer,
         &gpu,
@@ -188,6 +207,13 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
         }
         let frame_start = std::time::Instant::now();
         live.eye = Some(camera_view.eye);
+        live.draw_world_ui(
+            &mut renderer,
+            &gpu,
+            &camera_view,
+            &loaded.scene,
+            options.time - (frames - 1 - i) as f32 / 60.0,
+        );
         let report = renderer.render(&gpu, &camera_view, options.time, &capture.view, hook);
         gpu.device.poll(wgpu::PollType::wait_indefinitely())?;
         if i > 0 {

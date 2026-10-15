@@ -142,6 +142,14 @@ impl App {
                     &loaded.pack,
                     game.presenter.effects.effect_table().clone(),
                 );
+                live.attach_world_ui(
+                    &self.paths.data,
+                    &loaded.pack,
+                    &game.world.catalog().content,
+                    loaded.scene.colors.clone(),
+                );
+                live.world_ui_input.scale = window.scale_factor() as f32;
+                live.world_ui_input.viewer = self.options.viewer;
                 let camera =
                     view::initial(self.options.camera.and_then(|c| c.pose()), &loaded.scene);
                 if self.options.spectate {
@@ -278,6 +286,13 @@ impl App {
             session
                 .live
                 .feed_ripples(&mut session.renderer, &loaded.scene, seconds, focus);
+            session.live.draw_world_ui(
+                &mut session.renderer,
+                &session.display.gpu,
+                &camera_view,
+                &loaded.scene,
+                seconds,
+            );
         }
         let report =
             session

@@ -309,7 +309,10 @@ fn a_tiny_world_renders_without_holes() {
         image::save_buffer(out, &pixels, width, height, image::ExtendedColorType::Rgba8).unwrap();
     }
 
-    assert_eq!(report.passes, ["cull", "skin", "shadow", "forward", "post"]);
+    assert_eq!(
+        report.passes,
+        ["cull", "skin", "shadow", "forward", "post", "world_ui"]
+    );
     assert!(report.draws >= 4, "{report:?}");
     assert!(report.terrain_chunks == 1);
     let texels: Vec<[u8; 4]> = pixels
@@ -443,7 +446,7 @@ fn a_tiny_lake_renders_with_wakes_and_every_post_effect() {
         report.passes,
         [
             "cull", "skin", "shadow", "ripples", "caustics", "forward", "contact", "bloom", "haze",
-            "post"
+            "post", "world_ui"
         ]
     );
     assert!(

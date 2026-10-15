@@ -468,6 +468,7 @@ dependencies = [
  "canopy-content",
  "canopy-render",
  "canopy-sim",
+ "cosmic-text",
  "glam 0.30.10",
  "serde",
  "serde_json",

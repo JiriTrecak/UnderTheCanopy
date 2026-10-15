@@ -6,6 +6,7 @@ use crate::{
     device::Gpu,
     effects::{EffectFrame, EffectsGpu, MAX_EFFECT_LIGHTS},
     environment::{BiomeConfig, DaytimeLut, Lighting, LightingConfig},
+    fog::FogGpu,
     frame::{self, FrameParams, FrameUniform, MAX_POINT_LIGHTS, PointLight},
     graph::{self, FrameGraph, PassKind, passes},
     post::{OPENINGS_SIZE, PostLook, PostStack},
@@ -21,6 +22,7 @@ use crate::{
         gpu::{WaterGpu, WaterStats, WaterTextures},
         ripples::Ripples,
     },
+    world_ui::{AtlasImage, WorldUiFrame, WorldUiGpu},
 };
 use anyhow::Result;
 use glam::Vec3;
@@ -112,6 +114,68 @@ pub struct FrameReport {
     pub water: WaterStats,
 }
 
+/// What the frame bind groups hold besides the per-frame buffers.
+struct FrameBindings {
+    shadow_sampler: wgpu::Sampler,
+    repeat_sampler: wgpu::Sampler,
+    clamp_sampler: wgpu::Sampler,
+    canopy_view: wgpu::TextureView,
+    dummy_shadow: wgpu::TextureView,
+}
+
+impl FrameBindings {
+    #[allow(clippy::too_many_arguments)]
+    fn group(
+        &self,
+        device: &wgpu::Device,
+        layout: &wgpu::BindGroupLayout,
+        label: &str,
+        buffer: &wgpu::Buffer,
+        lights: &wgpu::Buffer,
+        shadow: &wgpu::TextureView,
+        fog: &wgpu::TextureView,
+    ) -> wgpu::BindGroup {
+        device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some(label),
+            layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(shadow),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Sampler(&self.shadow_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::TextureView(&self.canopy_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: wgpu::BindingResource::Sampler(&self.repeat_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: lights.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 6,
+                    resource: wgpu::BindingResource::TextureView(fog),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 7,
+                    resource: wgpu::BindingResource::Sampler(&self.clamp_sampler),
+                },
+            ],
+        })
+    }
+}
+
 pub struct Renderer {
     graph: FrameGraph,
     frame_layout: wgpu::BindGroupLayout,
@@ -126,6 +190,10 @@ pub struct Renderer {
     lights_dirty: bool,
     effects: EffectsGpu,
     effect_frame: EffectFrame,
+    fog: FogGpu,
+    bindings: FrameBindings,
+    world_ui: WorldUiGpu,
+    world_ui_frame: WorldUiFrame,
     shadow_view: wgpu::TextureView,
     shadow_resolution: u32,
     canopy_texture: wgpu::Texture,
@@ -229,40 +297,38 @@ impl Renderer {
             ..Default::default()
         });
         let canopy_view = canopy_texture.create_view(&Default::default());
-        let group = |label, buffer: &wgpu::Buffer, shadow: &wgpu::TextureView| {
-            device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some(label),
-                layout: &frame_layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: buffer.as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: wgpu::BindingResource::TextureView(shadow),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 2,
-                        resource: wgpu::BindingResource::Sampler(&shadow_sampler),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 3,
-                        resource: wgpu::BindingResource::TextureView(&canopy_view),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 4,
-                        resource: wgpu::BindingResource::Sampler(&repeat_sampler),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 5,
-                        resource: light_buffer.as_entire_binding(),
-                    },
-                ],
-            })
+        let clamp_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("clamp"),
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            ..Default::default()
+        });
+        let fog = FogGpu::new(device, queue);
+        let bindings = FrameBindings {
+            shadow_sampler,
+            repeat_sampler,
+            clamp_sampler,
+            canopy_view,
+            dummy_shadow,
         };
-        let frame_group = group("frame", &frame_buffer, &shadow_view);
-        let shadow_frame_group = group("shadow frame", &shadow_frame_buffer, &dummy_shadow);
+        let frame_group = bindings.group(
+            device,
+            &frame_layout,
+            "frame",
+            &frame_buffer,
+            &light_buffer,
+            &shadow_view,
+            &fog.view,
+        );
+        let shadow_frame_group = bindings.group(
+            device,
+            &frame_layout,
+            "shadow frame",
+            &shadow_frame_buffer,
+            &light_buffer,
+            &bindings.dummy_shadow,
+            &fog.view,
+        );
         let targets = Targets::new(device, quality.scene_size(size));
         let post = PostStack::new(
             device,
@@ -274,6 +340,7 @@ impl Renderer {
             &environment.openings,
         );
         let effects = EffectsGpu::new(device, queue, gpu.features, &frame_layout);
+        let world_ui = WorldUiGpu::new(device, queue, &frame_layout);
         let mut renderer = Self {
             graph,
             frame_layout,
@@ -287,6 +354,10 @@ impl Renderer {
             lights_dirty: false,
             effects,
             effect_frame: EffectFrame::default(),
+            fog,
+            bindings,
+            world_ui,
+            world_ui_frame: WorldUiFrame::default(),
             shadow_view,
             shadow_resolution,
             canopy_texture,
@@ -490,6 +561,49 @@ impl Renderer {
         &self.effects
     }
 
+    /// The viewer's fog of war: `size²` cells (0 unexplored, 1 explored, 2 in sight) and,
+    /// when known, the cells that changed since the previous call; `None` shows
+    /// everything (observers).
+    pub fn set_fog(&mut self, gpu: &Gpu, fog: Option<crate::fog::FogCells<'_>>) {
+        let _span = tracing::trace_span!("fog_upload").entered();
+        if self.fog.update(&gpu.device, &gpu.queue, fog) {
+            self.frame_group = self.bindings.group(
+                &gpu.device,
+                &self.frame_layout,
+                "frame",
+                &self.frame_buffer,
+                &self.light_buffer,
+                &self.shadow_view,
+                &self.fog.view,
+            );
+            self.shadow_frame_group = self.bindings.group(
+                &gpu.device,
+                &self.frame_layout,
+                "shadow frame",
+                &self.shadow_frame_buffer,
+                &self.light_buffer,
+                &self.bindings.dummy_shadow,
+                &self.fog.view,
+            );
+        }
+    }
+
+    /// The fog of war on the GPU.
+    pub fn fog(&self) -> &FogGpu {
+        &self.fog
+    }
+
+    /// The world UI of the next frame (ground marks and the overlay).
+    pub fn set_world_ui(&mut self, frame: &mut WorldUiFrame) {
+        std::mem::swap(&mut self.world_ui_frame, frame);
+    }
+
+    /// The world UI's label glyphs (R8) and badge icons (sRGB RGBA8).
+    pub fn set_world_ui_atlases(&mut self, gpu: &Gpu, glyphs: &AtlasImage, icons: &AtlasImage) {
+        self.world_ui
+            .set_atlases(&gpu.device, &gpu.queue, glyphs, icons);
+    }
+
     pub fn water(&self) -> Option<&WaterGpu> {
         self.water.as_ref()
     }
@@ -612,6 +726,7 @@ impl Renderer {
             haze: self.environment.haze.0,
             haze_range: self.environment.haze.1,
             point_lights: self.point_lights,
+            fog: self.fog.raster.as_ref().map(|r| r.size()),
         });
         queue.write_buffer(&self.frame_buffer, 0, bytemuck::bytes_of(&uniform));
         queue.write_buffer(
@@ -647,6 +762,12 @@ impl Renderer {
             report.actors = actors.stats;
         }
         self.effects.prepare(queue, &self.effect_frame, camera);
+        self.world_ui.prepare(
+            queue,
+            &self.world_ui_frame,
+            self.output_size,
+            self.output_format.is_srgb(),
+        );
         report.effects = self.effects.stats;
         if let Some(water) = &mut self.water {
             report.water = water.prepare(
@@ -822,6 +943,7 @@ impl Renderer {
                     if let Some(actors) = &self.actors {
                         report.draws += actors.draw_transparent(&mut rp, &self.frame_group);
                     }
+                    report.draws += self.world_ui.draw_ground(&mut rp, &self.frame_group);
                     report.draws += self.effects.draw(&mut rp, &self.frame_group);
                 }
                 (passes::CONTACT, PassKind::Render) => {
@@ -843,6 +965,17 @@ impl Renderer {
                     report.draws +=
                         self.post
                             .encode_final(&mut encoder, &self.frame_group, output, writes);
+                }
+                (passes::WORLD_UI, PassKind::Render) => {
+                    if self.world_ui.has_overlay() || writes.is_some() {
+                        report.draws += self.world_ui.encode_overlay(
+                            device,
+                            &mut encoder,
+                            output,
+                            self.output_format,
+                            writes,
+                        );
+                    }
                 }
                 (name, _) => unreachable!("no recorder for pass {name}"),
             }

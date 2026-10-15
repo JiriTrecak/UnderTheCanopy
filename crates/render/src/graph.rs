@@ -167,6 +167,7 @@ pub mod passes {
     pub const BLOOM: &str = "bloom";
     pub const HAZE: &str = "haze";
     pub const POST: &str = "post";
+    pub const WORLD_UI: &str = "world_ui";
 }
 
 /// Optional parts of the world frame: what the world has, what the biome uses and what
@@ -181,10 +182,11 @@ pub struct FrameFeatures {
 }
 
 /// The world frame (renderer §4.1): GPU culling of statics for both views, the joint
-/// palettes of the live models, the sun shadow map, the water's ripple field and caustics, the forward HDR pass (terrain,
-/// statics, live models, water; MSAA resolved in the pass, with linear depth), the post effects the
-/// biome uses (contact shading, bloom, volumetric haze) and the final pass (upscale,
-/// effects, tone map, grade) into the output.
+/// palettes of the live models, the sun shadow map, the water's ripple field and caustics,
+/// the forward HDR pass (terrain, statics, live models, water, world UI on the ground,
+/// effects; MSAA resolved in the pass, with linear depth), the post effects the biome
+/// uses (contact shading, bloom, volumetric haze), the final pass (upscale, effects, tone
+/// map, grade) into the output and the world UI overlay on it.
 pub fn world_frame(features: FrameFeatures) -> FrameGraph {
     use PassKind::*;
     use Resource::*;
@@ -236,6 +238,11 @@ pub fn world_frame(features: FrameFeatures) -> FrameGraph {
             .reads(&post_reads)
             .writes(&[Output]),
     );
+    list.push(
+        Pass::new(passes::WORLD_UI, Render)
+            .reads(&[Output])
+            .writes(&[Output]),
+    );
     FrameGraph::new(list, &[]).expect("the world frame graph is well formed")
 }
 
@@ -248,7 +255,7 @@ mod tests {
     #[test]
     fn the_world_frame_is_well_formed() {
         let graph = world_frame(FrameFeatures::default());
-        assert_eq!(graph.passes().len(), 5);
+        assert_eq!(graph.passes().len(), 6);
         assert_eq!(graph.last_use(ShadowMap), Some(passes::FORWARD));
         assert_eq!(graph.last_use(Palettes), Some(passes::FORWARD));
         assert_eq!(graph.index(passes::POST), Some(4));
@@ -263,7 +270,7 @@ mod tests {
             names,
             [
                 "cull", "skin", "shadow", "ripples", "caustics", "forward", "contact", "bloom",
-                "haze", "post"
+                "haze", "post", "world_ui"
             ]
         );
         // The haze marches through the sun's shadow map after the scene is drawn.

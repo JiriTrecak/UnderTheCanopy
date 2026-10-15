@@ -113,6 +113,11 @@ pub fn all() -> Vec<(&'static str, &'static [Module], &'static str)> {
             &[Module::Frame],
             include_str!("../shaders/effects.wgsl"),
         ),
+        (
+            "world_ui",
+            &[Module::Frame, Module::Color],
+            include_str!("../shaders/world_ui.wgsl"),
+        ),
         ("skin", &[], include_str!("../shaders/skin.wgsl")),
         ("cull", &[], include_str!("../shaders/cull.wgsl")),
         ("ripples", &[], include_str!("../shaders/ripples.wgsl")),

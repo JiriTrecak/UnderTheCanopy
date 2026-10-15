@@ -199,6 +199,61 @@ pub struct Presentation {
     pub battle: Option<[f32; 2]>,
     /// Spell and combat effects playing at this tick.
     pub effects: EffectSnapshot,
+    /// The viewer's fog of war (`None` for observers).
+    pub fog: Option<canopy_sim::view::FogView>,
+    /// Units and buildings the world UI may mark, by id.
+    pub bodies: Vec<Body>,
+}
+
+/// A rally point (cells) of a producer.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct RallyMark {
+    pub x: f32,
+    pub z: f32,
+    pub surface: u32,
+    /// A unit or resource it follows.
+    pub target: Option<u32>,
+}
+
+/// What the world UI shows of a unit or building at a tick (old `SettlementLayer`
+/// overlays: vital bars, circles, rallies, the mine label, badges).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Body {
+    pub id: u32,
+    /// Its model's key in `actors` (absent while a scaffold stands for it).
+    pub key: u64,
+    /// Where it stands at this tick.
+    pub position: Vec3,
+    pub building: bool,
+    pub hero: bool,
+    pub relation: canopy_sim::teams::Relation,
+    pub owner: Option<u8>,
+    pub hp: Option<u32>,
+    pub max_hp: u32,
+    /// Known to its owner (and observers).
+    pub mana: Option<u32>,
+    pub max_mana: u32,
+    /// Selection circle radius and pick height (metres).
+    pub radius: f32,
+    pub height: f32,
+    pub remembered: bool,
+    /// Fights the viewer's side unprompted.
+    pub hostile: Option<bool>,
+    /// Walking surface (0 the ground, `n` the deck `n − 1`).
+    pub surface: u32,
+    /// Workers gathering for a base, and how many it wants.
+    pub workforce: Option<(u32, u32)>,
+    pub rally: Option<RallyMark>,
+    /// Icon assets of its item statuses.
+    pub badges: Vec<String>,
+    /// Construction or training progress, 0–1.
+    pub progress: Option<f32>,
+    /// A building still under construction.
+    pub constructing: bool,
+    /// Cast progress, 0–1 (a channel counts down).
+    pub cast: Option<f32>,
+    /// Its owner's attack order target.
+    pub commanded: Option<u32>,
 }
 
 /// The centre of the densest group of `points` (16-cell buckets and their neighbours).
@@ -373,6 +428,8 @@ pub struct Presenter {
     dust_effects: BTreeMap<String, (usize, u32)>,
     /// Weapon missiles carrying an ability cast this tick: position and direction.
     missile_poses: BTreeMap<u32, (Vec3, Vec3)>,
+    /// Icon assets of item definitions.
+    item_icons: BTreeMap<canopy_sim::catalog::Def, String>,
 }
 
 fn yaw(millidegrees: i32) -> f32 {
@@ -525,6 +582,14 @@ impl Presenter {
             dust: BTreeMap::new(),
             dust_effects,
             missile_poses: BTreeMap::new(),
+            item_icons: world
+                .catalog()
+                .content
+                .definitions
+                .iter()
+                .filter(|d| d.kind == Kind::Item)
+                .filter_map(|d| Some((world.catalog().find(d.id.as_str())?, d.icon.to_string())))
+                .collect(),
         };
         presenter.preload(world);
         presenter
@@ -718,6 +783,7 @@ impl Presenter {
             }
         }
         let mut posed: BTreeMap<u32, Posed> = BTreeMap::new();
+        let mut bodies: Vec<Body> = Vec::new();
         let mut health: BTreeMap<EntityId, u32> = BTreeMap::new();
         let mut building: BTreeSet<EntityId> = BTreeSet::new();
 
@@ -761,6 +827,7 @@ impl Presenter {
             );
             actor.color = self.color(e.public.owner);
             actor.opacity = e.magic.as_ref().map_or(1.0, |m| m.opacity as f32);
+            let mut hide = false;
             // A confirmed loss of health throws sparks (old `ImpactEffects`).
             if let Some(hp) = e.public.hp.filter(|_| !e.remembered) {
                 if self.health.get(&id).is_some_and(|&before| hp < before)
@@ -1074,13 +1141,16 @@ impl Presenter {
                         &info,
                         scale,
                     ));
-                    if !show_body {
-                        continue;
-                    }
+                    hide = !show_body;
                 }
                 _ => {}
             }
-            actors.push(actor);
+            if matches!(d.kind, Kind::Unit | Kind::Building) {
+                bodies.push(self.body_of(e, d, &actor, tick));
+            }
+            if !hide {
+                actors.push(actor);
+            }
         }
 
         // Units that left the view: deaths in sight become corpses; the rest vanish.
@@ -1187,7 +1257,98 @@ impl Presenter {
             counts,
             battle: densest(&fighting),
             effects,
+            fog: view.fog.clone(),
+            bodies,
         }
+    }
+
+    /// What the world UI shows of a unit or building.
+    fn body_of(&self, e: &EntityView, d: &Definition, actor: &Actor, tick: u32) -> Body {
+        let magic = e.magic.as_ref();
+        let combat = e.combat.as_ref();
+        let economy = e.private.as_ref().map(|p| &p.economy);
+        let progress = e
+            .public
+            .construction
+            .and_then(|done| match &d.creation {
+                Some(Creation::Construct { work_ticks, .. }) if *work_ticks > 0 => {
+                    Some(done as f32 / *work_ticks as f32)
+                }
+                _ => None,
+            })
+            .or_else(|| {
+                economy
+                    .and_then(|w| w.training.as_ref())
+                    .filter(|p| p.total > 0)
+                    .map(|p| p.done as f32 / p.total as f32)
+            });
+        let cast = magic.and_then(|m| m.casting.as_ref()).map(|c| {
+            let t = tick as f32;
+            match c.channel_end {
+                Some(end) if tick >= c.resolve_tick => {
+                    1.0 - (t - c.resolve_tick as f32) / (end - c.resolve_tick).max(1) as f32
+                }
+                _ => (t - c.start_tick as f32) / (c.resolve_tick - c.start_tick).max(1) as f32,
+            }
+            .clamp(0.0, 1.0)
+        });
+        let rally = economy
+            .and_then(|w| w.production.as_ref())
+            .and_then(|p| p.rally.as_ref())
+            .map(|r| RallyMark {
+                x: r.point.x as f32,
+                z: r.point.y as f32,
+                surface: deck_index(&self.terrain, r.point.surface.as_deref()),
+                target: r.target.map(|t| t.0),
+            });
+        let badges = magic
+            .map(|m| {
+                m.item_statuses
+                    .iter()
+                    .map(|s| self.icon_of(s.item))
+                    .collect()
+            })
+            .unwrap_or_default();
+        let [radius, height] = actor.body.unwrap_or([0.9, 2.5]);
+        Body {
+            id: e.id().0,
+            key: actor.key,
+            position: actor.position,
+            building: d.kind == Kind::Building,
+            hero: d.is_hero(),
+            relation: e.relation,
+            owner: match e.public.owner {
+                Owner::Player(slot) => Some(slot),
+                Owner::Nobody => None,
+            },
+            hp: e.public.hp,
+            max_hp: combat
+                .map(|c| c.stats.max_hp)
+                .filter(|&m| m > 0)
+                .or_else(|| d.body.as_ref().map(|b| b.max_hp))
+                .unwrap_or(0),
+            mana: magic.and_then(|m| m.caster.as_ref()).map(|c| c.mana),
+            max_mana: magic.map_or(0, |m| m.max_mana),
+            radius,
+            height,
+            remembered: e.remembered,
+            hostile: combat.map(|c| c.hostile),
+            surface: deck_index(&self.terrain, e.public.surface.as_deref()),
+            workforce: economy
+                .and_then(|w| w.base.as_ref())
+                .map(|w| (w.workers, w.recommended)),
+            rally,
+            badges,
+            progress,
+            constructing: e.public.construction.is_some(),
+            cast,
+            commanded: combat.and_then(|c| c.commanded_target).map(|t| t.0),
+        }
+    }
+
+    /// The icon asset of an item definition.
+    fn icon_of(&self, item: canopy_sim::catalog::Def) -> String {
+        self.item_icons.get(&item).cloned().unwrap_or_default()
     }
 
     /// Construction dust on a rising scaffold (old `ConstructionScaffold.update`): three
