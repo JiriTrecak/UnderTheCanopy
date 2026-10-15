@@ -201,6 +201,8 @@ pub struct View {
     pub ai: Vec<crate::ai::Summary>,
     /// Ability events, deliveries in flight and hero returns (`abilities`).
     pub spells: crate::abilities::view::Spellcraft,
+    /// Recent pings of the viewer's team (everyone's for an observer).
+    pub pings: Vec<crate::state::Ping>,
 }
 
 impl View {
@@ -308,7 +310,20 @@ impl View {
                 history: history.clone(),
             })
         });
+        let pings = state
+            .pings
+            .iter()
+            .filter(|p| state.tick.saturating_sub(p.tick) < crate::state::PING_TICKS)
+            .filter(|p| {
+                matches!(
+                    relation(p.owner),
+                    crate::teams::Relation::Own | crate::teams::Relation::Ally
+                )
+            })
+            .copied()
+            .collect();
         Self {
+            pings,
             tick: state.tick,
             owner: Some(owner),
             entities,
@@ -383,6 +398,12 @@ impl View {
             })
             .collect();
         Self {
+            pings: state
+                .pings
+                .iter()
+                .filter(|p| state.tick.saturating_sub(p.tick) < crate::state::PING_TICKS)
+                .copied()
+                .collect(),
             tick: state.tick,
             owner: None,
             entities,

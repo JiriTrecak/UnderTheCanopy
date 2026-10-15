@@ -12,6 +12,7 @@
 //! | `key:<name>` | presses a key (`R`, `Shift+R`, `Ctrl+1`, `F1`) |
 //! | `move:x,y` · `click:x,y` · `rclick:x,y` · `drag:x0,y0,x1,y1` | the pointer |
 //! | `world:x,z[,h]` · `rworld:x,z[,h]` · `lworld:x,z[,h]` | moves the pointer over a ground point (cells), or `h` above it, and right- or left-clicks it |
+//! | `ping:x,z` | pings a ground point (cells) for the seat's team |
 //! | `fund:<item>,<amount>` | sets the seat's stock of `<item>` |
 //! | `fall:<text>` | the own hero whose definition id contains `<text>` falls (dies) |
 //! | `revive:<text>` | selects the first finished own building that revives and revives that fallen hero |
@@ -346,6 +347,10 @@ pub fn run(
                 }
             }
             "chat" => play.say(arg),
+            "ping" => {
+                let p = pair(arg)?;
+                play.ping(p[0], p[1]);
+            }
             "fund" => {
                 let (item, amount) = arg.split_once(',').context("fund:<item>,<amount>")?;
                 let id = canopy_content::Id::new(item).map_err(anyhow::Error::msg)?;
@@ -622,11 +627,13 @@ pub fn run(
             .flatten(),
     );
     live.draw_world_ui(&mut renderer, &gpu, &screen.camera, &loaded.scene, 12.0);
+    let pings = play.minimap_pings(&loaded.scene.colors);
     live.draw_minimap(
         &mut renderer,
         &screen.camera,
         &loaded.scene,
         super::run::MINIMAP_PIXELS,
+        &pings,
     );
     let subject = world_ui
         .selected

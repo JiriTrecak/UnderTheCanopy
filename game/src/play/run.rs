@@ -831,11 +831,13 @@ impl InMatch {
             &self.loaded.scene,
             seconds,
         );
+        let pings = self.play.minimap_pings(&self.loaded.scene.colors);
         self.live.draw_minimap(
             host.renderer,
             &camera_view,
             &self.loaded.scene,
             MINIMAP_PIXELS,
+            &pings,
         );
         let subject = world_ui
             .selected

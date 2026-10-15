@@ -839,6 +839,7 @@ mod tests {
             battle: Default::default(),
             ai: Vec::new(),
             spells: Default::default(),
+            pings: Vec::new(),
         }
     }
 

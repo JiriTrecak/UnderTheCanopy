@@ -96,3 +96,16 @@ test("the relay commits ticks without waiting for computer seats", () => {
   say(hostToken, { type: "turn", through: 3, bundles: [] });
   assert.deepEqual(commits, [1, 2, 3]);
 });
+
+test("pings with a position pass the action check", () => {
+  const { match, hostToken, say } = lobby();
+  const commits: unknown[][] = [];
+  match.bind(hostToken, (msg) => {
+    if (msg.type === "commit") commits.push(msg.slots.flatMap((s) => s.actions));
+  });
+  match.start(hostToken);
+  say(hostToken, { type: "ready", content: { abi: "1", sha256: "a".repeat(64) }, build: "b" });
+  const ping = { type: "ping", position: { x: 12, y: 30 } } as const;
+  say(hostToken, { type: "turn", through: 2, bundles: [{ tick: 2, actions: [ping] }] });
+  assert.deepEqual(commits, [[], [ping]]);
+});

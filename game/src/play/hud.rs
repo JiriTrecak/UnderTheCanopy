@@ -1526,8 +1526,10 @@ impl Hud {
                 }
                 ("minimap", ActionKind::DragStart { button, at }) => {
                     let (x, z) = (at.x * self.map_size, at.y * self.map_size);
-                    self.minimap_look = *button == PointerButton::Primary;
+                    let ping = *button == PointerButton::Primary && play.alt_held();
+                    self.minimap_look = *button == PointerButton::Primary && !ping;
                     match button {
+                        _ if ping => play.ping(x, z),
                         PointerButton::Secondary => play.minimap_command(x, z),
                         _ => events.push(Event::LookAt([x, z])),
                     }

@@ -1335,6 +1335,54 @@ pub fn minimap_frame(
     }
 }
 
+/// A team ping on the minimap: cell, seconds since it was made, the pinging player's
+/// colour (linear).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct MinimapPing {
+    pub x: f32,
+    pub z: f32,
+    pub age: f32,
+    pub color: [f32; 3],
+}
+
+/// Ping marks on top of the minimap: a dot, and a ring that grows out of it each second
+/// and fades, with a dark edge so it reads on any ground.
+pub fn minimap_pings(
+    pings: &[MinimapPing],
+    map_size: u32,
+    pixels: u32,
+    out: &mut canopy_render::minimap::MinimapFrame,
+) {
+    let scale = pixels as f32 / map_size.max(1) as f32;
+    let reach = pixels as f32 * 0.07;
+    let dark = linear(0x10150e);
+    for p in pings.iter().filter(|p| (0.0..4.0).contains(&p.age)) {
+        let (x, y) = (p.x * scale, p.z * scale);
+        let fade = (1.0 - p.age / 4.0).clamp(0.0, 1.0);
+        let pulse = p.age.fract();
+        let radius = 2.0 + reach * pulse;
+        let alpha = fade * (1.0 - pulse * 0.7);
+        const SIDES: usize = 24;
+        let at = |i: usize| {
+            let a = i as f32 / SIDES as f32 * std::f32::consts::TAU;
+            [x + radius * a.cos(), y + radius * a.sin()]
+        };
+        for (width, color) in [
+            (3.2, [dark[0], dark[1], dark[2], alpha * 0.7]),
+            (1.6, [p.color[0], p.color[1], p.color[2], alpha]),
+        ] {
+            for i in 0..SIDES {
+                out.line(at(i), at(i + 1), width, color);
+            }
+        }
+        let d = 2.5;
+        out.rect(
+            [x - d, y - d, x + d, y + d],
+            [p.color[0], p.color[1], p.color[2], fade],
+        );
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

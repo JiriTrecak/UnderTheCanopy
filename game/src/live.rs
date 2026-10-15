@@ -66,6 +66,7 @@ impl LiveScene {
         camera: &canopy_render::CameraView,
         scene: &canopy_scene::MapScene,
         pixels: u32,
+        pings: &[canopy_scene::world_ui::MinimapPing],
     ) {
         let keys = &self.keys;
         let instances = &self.instances;
@@ -84,6 +85,7 @@ impl LiveScene {
             canopy_scene::world_ui::ground_footprint(camera),
             &mut frame,
         );
+        canopy_scene::world_ui::minimap_pings(pings, scene.size, pixels, &mut frame);
         renderer.set_minimap(&mut frame);
     }
 

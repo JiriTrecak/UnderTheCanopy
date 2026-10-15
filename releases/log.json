@@ -2,7 +2,8 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [
-      "An idle worker button above the minimap shows how many workers have nothing to do; click it to select the next one."
+      "An idle worker button above the minimap shows how many workers have nothing to do; click it to select the next one.",
+      "Alt-click the minimap to ping a spot for your team: a ring pulses there on their minimaps for four seconds."
     ],
     "improved": [
       "A fallen hero keeps their portrait in the top left, greyed out, and shows the seconds left while they are being revived."

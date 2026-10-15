@@ -108,7 +108,8 @@ export const actionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("rally"), actor, destination: pointSchema.nullable(), target: actor.optional() }).strict(),
   z.object({ type: z.literal("pause"), actor, paused: z.boolean() }).strict(),
   z.object({ type: z.literal("noop") }).strict(),
-  z.object({ type: z.literal("ping") }).strict(),
+  // A map ping for the sender's team; without a position (older games) it marks nothing.
+  z.object({ type: z.literal("ping"), position: pointSchema.optional() }).strict(),
 ]);
 export type Action = z.infer<typeof actionSchema>;
 export const validAction = (value: unknown): value is Action => actionSchema.safeParse(value).success;

@@ -544,7 +544,24 @@ impl World {
             return Err("Your colony has been defeated".into());
         }
         match action {
-            Action::Noop | Action::Ping => Ok(()),
+            Action::Noop => Ok(()),
+            Action::Ping { position } => {
+                if let Some(p) = position {
+                    let tick = self.state.tick;
+                    let pings = &mut self.state.pings;
+                    pings.retain(|q| tick.saturating_sub(q.tick) < crate::state::PING_TICKS);
+                    if pings.len() >= 32 {
+                        pings.remove(0);
+                    }
+                    pings.push(crate::state::Ping {
+                        owner,
+                        x: p.x,
+                        y: p.y,
+                        tick,
+                    });
+                }
+                Ok(())
+            }
             _ if orders::command::handles(action) => {
                 self.motion.spatial.sync_static(&self.state);
                 let senses = combat::Senses {

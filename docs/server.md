@@ -38,6 +38,8 @@ The room view gives each seat `kind` (`open`, `closed`, `ai` or `human`), `team`
 
 ## Differences from the old server
 
+- **Pings carry a position.** The `ping` action may hold `position` (a cell); the game shows it to the pinging player's team on the minimap for four seconds. Older games send it without one, which marks nothing. Deploy the server before a game version that pings: an older server rejects the whole turn that holds one.
+
 - **Abandoned rooms go.** Once a second the server discards rooms nobody can come back to: a finished or desynced match as soon as no player is connected, and a lobby or match whose players have all been disconnected for 2 minutes (`ABANDONED_AFTER_MS`; room for a crashed player to reconnect). Before, rooms stayed until the server restarted: closing the game or finishing a match never removed them. Clients need no change.
 - **Only open lobbies are listed.** `GET /api/rooms` no longer shows matches under way; nobody could join them. `GET /api/rooms/:id` still finds them.
 - **Maintenance is local.** `POST /api/rooms/clear` (ends every session) answers 403 unless it comes from the host itself: loopback, and not forwarded by Nginx. Before, anyone on the internet could call it. Use it on the host with `curl -X POST http://127.0.0.1:8787/api/rooms/clear`.

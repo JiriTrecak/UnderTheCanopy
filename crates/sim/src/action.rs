@@ -203,7 +203,11 @@ pub enum Action {
         paused: bool,
     },
     Noop,
-    Ping,
+    /// Marks a cell on the map for the player's team (presentation only; `{"type":
+    /// "ping"}` without a position marks nothing, as before).
+    Ping {
+        position: Option<CellPoint>,
+    },
 }
 
 /// Serializes `None` as `null` and requires the key when reading.

@@ -118,7 +118,24 @@ pub struct State {
         skip_serializing_if = "crate::abilities::AbilityWorld::is_empty"
     )]
     pub abilities: crate::abilities::AbilityWorld,
+    /// Map pings of the last few seconds (`Action::Ping`): presentation, outside the
+    /// fingerprint, never read by the rules.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub pings: Vec<Ping>,
 }
+
+/// A player's ping on the map, seen by their team.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Ping {
+    pub owner: Owner,
+    /// Cell.
+    pub x: u32,
+    pub y: u32,
+    pub tick: u32,
+}
+
+/// How long a ping shows: four seconds.
+pub const PING_TICKS: u32 = 160;
 
 impl State {
     pub fn new(seed: u32) -> Self {
@@ -139,6 +156,7 @@ impl State {
             combat: crate::combat::CombatState::default(),
             ai: Vec::new(),
             abilities: crate::abilities::AbilityWorld::default(),
+            pings: Vec::new(),
         }
     }
 

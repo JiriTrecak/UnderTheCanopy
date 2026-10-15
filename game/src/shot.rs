@@ -300,7 +300,7 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
             options.time - (frames - 1 - i) as f32 / 60.0,
         );
         if hud_images {
-            live.draw_minimap(&mut renderer, &camera_view, &loaded.scene, 256);
+            live.draw_minimap(&mut renderer, &camera_view, &loaded.scene, 256, &[]);
             let subject = live
                 .world_ui_input
                 .selected

@@ -1573,6 +1573,51 @@ impl Play {
         }
     }
 
+    /// The team's recent pings for the minimap, in their players' colours (`colors`,
+    /// linear, by slot).
+    pub fn minimap_pings(&self, colors: &[[f32; 3]]) -> Vec<canopy_scene::world_ui::MinimapPing> {
+        let view = &self.know.view;
+        view.pings
+            .iter()
+            .map(|p| canopy_scene::world_ui::MinimapPing {
+                x: p.x as f32 + 0.5,
+                z: p.y as f32 + 0.5,
+                age: view.tick.saturating_sub(p.tick) as f32 * 0.025,
+                color: match p.owner {
+                    canopy_content::placement::Owner::Player(slot) => colors
+                        .get(usize::from(slot) % colors.len().max(1))
+                        .copied()
+                        .unwrap_or([1.0; 3]),
+                    canopy_content::placement::Owner::Nobody => [1.0; 3],
+                },
+            })
+            .collect()
+    }
+
+    /// Whether Alt is held: a minimap click pings instead of looking.
+    pub fn alt_held(&self) -> bool {
+        self.mods.alt
+    }
+
+    /// Pings ground point (x, z) for the player's team (Alt-click on the minimap).
+    pub fn ping(&mut self, x: f32, z: f32) {
+        if self.know.me.is_none() {
+            return;
+        }
+        let size = self.terrain.size() as f32;
+        let position = CellPoint {
+            x: x.floor().clamp(0.0, size - 1.0) as u32,
+            y: z.floor().clamp(0.0, size - 1.0) as u32,
+            surface: None,
+        };
+        self.send(vec![(
+            Action::Ping {
+                position: Some(position),
+            },
+            None,
+        )]);
+    }
+
     /// The minimap: right-click moves the selection (or completes a mode) at a ground
     /// point (x, z).
     pub fn minimap_command(&mut self, x: f32, z: f32) {

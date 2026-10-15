@@ -212,7 +212,7 @@ fn ping(world: &mut World) {
             tick,
             player: 0,
             seq: 0,
-            action: Action::Ping,
+            action: Action::Ping { position: None },
         })
         .unwrap();
 }
