@@ -1,7 +1,7 @@
 //! The engine's in-match shortcuts from the player's rebindable catalogue
 //! (`settings::keys`): camera, menu, control groups, heroes, selection, placement,
-//! inventory and health bar holds. Content-derived command hotkeys (the command card)
-//! stay with the content and are matched after these.
+//! inventory and health bar holds, and the content's command hotkeys (the command card,
+//! `command.*` entries, defaulting to the authored keys), matched after the engine's.
 //!
 //! Key names: the match's input names keys the way the content writes hotkeys (`"A"`,
 //! `"1"`, `"F1"`), the catalogue like `KeyboardEvent.code` (`"KeyA"`, `"Digit1"`,
@@ -106,6 +106,9 @@ pub fn code_of(name: &str) -> String {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Keymap {
     entries: Vec<(Chord, Shortcut)>,
+    /// Command entries of the catalogue (`command.<id>`) and their chords (`None`:
+    /// unbound). A command missing here keeps its authored hotkey.
+    commands: std::collections::BTreeMap<String, Option<Chord>>,
 }
 
 impl Default for Keymap {
@@ -126,7 +129,30 @@ impl Keymap {
                 ))
             })
             .collect();
-        Self { entries }
+        let commands = catalog
+            .iter()
+            .filter(|e| e.group == keys::COMMANDS)
+            .map(|e| (e.id.clone(), bindings.chord(catalog, &e.id).cloned()))
+            .collect();
+        Self { entries, commands }
+    }
+
+    /// The chord of a command card entry: the player's binding of `command.<id>`, else
+    /// the authored hotkey.
+    pub fn command(&self, id: &str, authored: Option<&str>) -> Option<Chord> {
+        match self.commands.get(&keys::command_id(id)) {
+            Some(chord) => chord.clone(),
+            None => authored.and_then(keys::authored),
+        }
+    }
+
+    /// The label of the first chord bound to `shortcut` (`""` when unbound).
+    pub fn label(&self, shortcut: Shortcut) -> String {
+        self.entries
+            .iter()
+            .find(|(_, s)| *s == shortcut)
+            .map(|(k, _)| k.label())
+            .unwrap_or_default()
     }
 
     /// The shortcuts a key press triggers, in catalogue order (defaults may share a

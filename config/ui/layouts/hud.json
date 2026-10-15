@@ -50,6 +50,7 @@
                   {
                     "class": "vitals",
                     "children": [
+                      { "id": "statuses", "class": "statuses", "repeat": "status-badge" },
                       {
                         "id": "health", "kind": "bar", "class": "vital health",
                         "children": [{ "id": "value", "kind": "label", "class": "vital-value" }]

@@ -317,6 +317,9 @@ impl Play {
     fn refresh(&mut self) {
         self.commands = card::commands(&self.know, self.selection.ids());
         self.entries = card::menu(&self.know, &self.commands, self.menu.as_deref());
+        for c in self.commands.iter_mut().chain(self.entries.iter_mut()) {
+            c.chord = self.keymap.command(&c.id, c.hotkey.as_deref());
+        }
         if self.menu.is_some() && !self.entries.iter().any(|c| c.id == "back") {
             self.menu = None;
         }
@@ -497,14 +500,16 @@ impl Play {
         Some((text, fade))
     }
 
-    /// The targeting hint above the HUD (old hint text).
+    /// The targeting hint above the HUD (old hint text, with the player's keys).
     pub fn hint(&self) -> Option<String> {
+        let cancel = self.keymap.label(Shortcut::Cancel);
+        let cancel = if cancel.is_empty() { "Esc".to_owned() } else { cancel };
         match &self.mode {
             Mode::Idle => None,
             Mode::Target {
                 targeting, name, ..
             } => Some(format!(
-                "{name}: choose a {}. Esc cancels.",
+                "{name}: choose a {}. {cancel} cancels.",
                 targeting.wants()
             )),
             Mode::Place {
@@ -512,10 +517,12 @@ impl Play {
             } => {
                 let problem = self.ghost().and_then(|g| g.problem);
                 Some(format!(
-                    "{name}: {} R / Shift+R: rotate ({}°). Esc cancels.",
+                    "{name}: {} {} / {}: rotate ({}°). {cancel} cancels.",
                     problem.map_or("Click to order construction.".to_owned(), |p| format!(
                         "{p}."
                     )),
+                    self.keymap.label(Shortcut::RotateClockwise),
+                    self.keymap.label(Shortcut::RotateCounterclockwise),
                     placement.rotation
                 ))
             }
@@ -1014,7 +1021,14 @@ impl Play {
             .map(|&i| self.entries[i].clone())
             .collect();
         let all = self.commands.clone();
-        if let Some((c, queue)) = card::shortcut(&visible, &all, key, shift) {
+        let pressed = Chord {
+            code: keys::code_of(key),
+            ctrl: self.mods.ctrl,
+            alt: self.mods.alt,
+            shift,
+            meta: self.mods.logo,
+        };
+        if let Some((c, queue)) = card::shortcut(&visible, &all, &pressed) {
             let id = c.id.clone();
             self.activate_id(&id, queue);
         }

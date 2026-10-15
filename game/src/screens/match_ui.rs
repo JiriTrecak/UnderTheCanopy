@@ -234,10 +234,37 @@ impl ResultModel {
             (Some(w), None) => o == w,
             (None, _) => false,
         };
+        let campaign = playing.kind == super::in_match::MatchKind::Campaign;
         let (title, line, won) = if surrendered {
             (
                 "[color=#fca5a5]Defeat[/color]".to_string(),
                 "You surrendered.".to_string(),
+                false,
+            )
+        } else if campaign && outcome.is_some() {
+            // The old mission result.
+            if me.is_some_and(ally_of_winner) {
+                (
+                    "[color=#fcd34d]Mission complete[/color]".into(),
+                    if next.is_some() {
+                        "Your surviving company is ready to continue. Items and learned abilities travel with you.".into()
+                    } else {
+                        "The Vanguard has completed its mission.".into()
+                    },
+                    true,
+                )
+            } else {
+                (
+                    "[color=#fca5a5]Mission failed[/color]".into(),
+                    "The Vanguard could not complete its mission. Rally and try again.".into(),
+                    false,
+                )
+            }
+        } else if outcome.is_some() && winner.is_none() {
+            // Old `matchResult`: no winner is a draw for everyone.
+            (
+                "Draw".into(),
+                "The match ended without a winning side.".into(),
                 false,
             )
         } else {

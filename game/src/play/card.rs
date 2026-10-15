@@ -17,6 +17,7 @@ use canopy_content::{
     abilities::{Activation, TargetingKind},
     game::{ActionPlacement, Creation, Definition, Kind},
 };
+use crate::settings::Chord;
 use canopy_sim::{Action, abilities::library};
 
 /// What pressing a command does.
@@ -50,7 +51,11 @@ pub struct Command {
     pub name: String,
     pub description: String,
     pub icon: Id,
+    /// The authored hotkey (content).
     pub hotkey: Option<String>,
+    /// The key that presses it: the player's binding of `command.<id>`, else the
+    /// authored hotkey (set by the controller from its keymap).
+    pub chord: Option<Chord>,
     pub costs: Vec<CostView>,
     pub reason: Option<String>,
     pub priority: i64,
@@ -86,6 +91,7 @@ impl Command {
             description: description.to_owned(),
             icon: icon.clone(),
             hotkey: None,
+            chord: None,
             costs: Vec::new(),
             reason: None,
             priority,
@@ -1118,11 +1124,11 @@ pub fn layout(entries: &[Command], page: usize) -> Layout {
 /// The command a key chord selects (old `commandShortcut`): an exact match among the
 /// page's entries and the always-available basic orders first; otherwise, with Shift,
 /// the unshifted chord (Shift queues). Returns the entry and whether Shift queues.
+/// Matches each command's [`Command::chord`].
 pub fn shortcut<'a>(
     visible: &'a [Command],
     all: &'a [Command],
-    key: &str,
-    shift: bool,
+    pressed: &Chord,
 ) -> Option<(&'a Command, bool)> {
     const ALWAYS: [&str; 5] = ["move", "attack", "stop", "hold", "patrol"];
     let candidates = || {
@@ -1130,21 +1136,17 @@ pub fn shortcut<'a>(
             .iter()
             .chain(all.iter().filter(|c| ALWAYS.contains(&c.id.as_str())))
     };
-    let chord = if shift {
-        format!("Shift+{key}")
-    } else {
-        key.to_owned()
-    };
-    let matches = |c: &Command, chord: &str| {
-        c.hotkey
-            .as_deref()
-            .is_some_and(|h| h.eq_ignore_ascii_case(chord))
-    };
-    if let Some(c) = candidates().find(|c| matches(c, &chord)) {
+    if let Some(c) = candidates().find(|c| c.chord.as_ref() == Some(pressed)) {
         return Some((c, false));
     }
-    if shift {
-        return candidates().find(|c| matches(c, key)).map(|c| (c, true));
+    if pressed.shift {
+        let plain = Chord {
+            shift: false,
+            ..pressed.clone()
+        };
+        return candidates()
+            .find(|c| c.chord.as_ref() == Some(&plain))
+            .map(|c| (c, true));
     }
     None
 }
@@ -1213,27 +1215,28 @@ mod tests {
 
     #[test]
     fn shortcuts_match_exactly_then_queue_with_shift() {
+        let key = |t: &str| Chord::parse(t).unwrap();
         let mut attack = cmd("attack", 190, None, None);
-        attack.hotkey = Some("A".into());
+        attack.chord = Some(key("KeyA"));
         let mut hold = cmd("hold", 170, None, None);
-        hold.hotkey = Some("Shift+A".into());
+        hold.chord = Some(key("Shift+KeyA"));
         let mut build = cmd("category:build", 60, None, None);
-        build.hotkey = Some("B".into());
+        build.chord = Some(key("KeyB"));
         let all = vec![attack.clone(), hold.clone(), build.clone()];
         // Inside a submenu only Back and the basic orders are reachable.
         let visible = vec![cmd("back", 0, None, None)];
         assert_eq!(
-            shortcut(&visible, &all, "A", false).map(|(c, q)| (c.id.as_str(), q)),
+            shortcut(&visible, &all, &key("KeyA")).map(|(c, q)| (c.id.as_str(), q)),
             Some(("attack", false))
         );
         assert_eq!(
-            shortcut(&visible, &all, "A", true).map(|(c, q)| (c.id.as_str(), q)),
+            shortcut(&visible, &all, &key("Shift+KeyA")).map(|(c, q)| (c.id.as_str(), q)),
             Some(("hold", false))
         );
-        assert!(shortcut(&visible, &all, "B", false).is_none());
+        assert!(shortcut(&visible, &all, &key("KeyB")).is_none());
         let root = vec![attack, build];
         assert_eq!(
-            shortcut(&root, &all, "B", true).map(|(c, q)| (c.id.as_str(), q)),
+            shortcut(&root, &all, &key("Shift+KeyB")).map(|(c, q)| (c.id.as_str(), q)),
             Some(("category:build", true))
         );
     }

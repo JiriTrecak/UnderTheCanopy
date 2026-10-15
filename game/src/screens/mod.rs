@@ -816,6 +816,9 @@ impl Game {
         match done {
             Some(Ok(data)) => {
                 self.boot = None;
+                // The content's command shortcuts join the rebindable catalogue.
+                self.catalog = keys::full_catalog(Some(&data.content));
+                self.play_options = play_options(&self.settings, &self.catalog);
                 self.data = Some(Arc::new(data));
                 self.apply(Intent::Booted);
                 if let Some(dev) = self.dev.take() {
