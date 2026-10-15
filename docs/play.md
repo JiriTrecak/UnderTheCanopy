@@ -17,7 +17,7 @@ Everything lives in `game/src/play/`:
 | `card.rs` | The command card model: commands, costs, reasons, cooldowns, menus, the 4 × 3 layout, hotkey resolution (each command's chord from the player's bindings). |
 | `follow.rs` | Unit cameras (J): third- and first-person poses of the focused unit, the terrain-clear boom, the 350 ms blend. |
 | `placement.rs` | Building placement: lattice snap, quarter turns, validity from knowledge. |
-| `picking.rs` | CPU picking: unit capsules, the ground under the cursor, box tests. |
+| `picking.rs` | CPU picking: unit capsules, the ground under the cursor, standing trees by their drawn shape (`Trees`), box tests. |
 | `hud.rs` | Binds `Play` to `config/ui/layouts/hud.json` and maps UI interactions back. |
 | `overlay.rs` | The drag box (everything else in the world is the renderer's world UI pass). |
 | `debug.rs` | The egui debug overlay. |
@@ -32,10 +32,11 @@ Default keys follow the content (`content/game.json` `actions`, categories and n
 
 | Input | Does | Parity |
 |---|---|---|
-| Left click | Selects the entity under the cursor (unit capsule ≥ 28 px wide, nearest wins; else the building, item or resource whose footprint holds the ground point). Ground clears (Shift keeps). Enemies, neutrals and buildings select alone. | as old |
+| Left click | Selects the entity under the cursor (unit capsule ≥ 28 px wide, nearest wins; else the building, item or resource whose footprint holds the ground point, or the standing tree the camera ray enters, whichever the ray meets first). Ground clears (Shift keeps). Enemies, neutrals and buildings select alone. | as old (trees: D45) |
 | Shift + click | Toggles an own unit in the selection. | as old |
 | Ctrl + click, double click (350 ms, 6 px) | Every own unit of that type on screen (Shift adds). | as old |
 | Left drag (≥ 5 px) | Box: own controlled units; heroes and army first, else workers; observers get every unit. Shift adds. | as old |
+| Hover | The same pick; units, buildings and mines show a faint ring. A tree shows the neutral hover ring around its crown when a selected unit could gather it (D45). | tree ring new |
 | Right click (on press) | Smart order, first rule that applies: resume an own construction site (builders) → enter an own lookout → follow an own unit → gather a resource (harvesters) → pick up an item (first unit with an inventory) → army attacks an enemy or a neutral creature → move. Producers alone: rally (right-click the producer clears it). An enemy in a lookout is attacked through the tower. Any mode: cancels it. | allies are not attacked by right-click (old did; D36) |
 | Shift + order | Appends (`append: true`); Shift keeps placing buildings. | as old |
 | M / A / S / H / P | Move, attack (target: forced attack; ground: attack-move), stop, hold, patrol. Reachable from any submenu. | as old |
@@ -86,7 +87,7 @@ The ghost model is the building's live model at 0.48 opacity in the owner's colo
 
 ## World UI contract
 
-`WorldUi` (from `Play::world_ui`, `InMatch::world_ui`) is the plain input the renderer's world UI pass reads: selected and hovered ids, the health bar mode, order markers with their ages (white move ×1, red attack ×2, green gather ×2; 0.4 s pulses, 0.15 s gaps, at most 24), the placement ghost (centre, rotation, cells, entrance, problem) and definition, the drag box and the focused producer's rally point. `run.rs` converts it each frame (`world_ui_input`) for the world UI pass (D40), which draws the rings, markers, placement grid, rally points and health bars; `overlay.rs` draws only the drag box. The minimap and the live portrait plug into the HUD as render targets.
+`WorldUi` (from `Play::world_ui`, `InMatch::world_ui`) is the plain input the renderer's world UI pass reads: selected and hovered ids, the hovered tree's ring when the selection can gather it, the health bar mode, order markers with their ages (white move ×1, red attack ×2, green gather ×2; 0.4 s pulses, 0.15 s gaps, at most 24), the placement ghost (centre, rotation, cells, entrance, problem) and definition, the drag box and the focused producer's rally point. `run.rs` converts it each frame (`world_ui_input`) for the world UI pass (D40), which draws the rings, markers, placement grid, rally points and health bars; `overlay.rs` draws only the drag box. The minimap and the live portrait plug into the HUD as render targets.
 
 ## Debug overlay
 
@@ -98,7 +99,7 @@ The old game had no interface or acknowledgement sounds; the match feeds every n
 
 ## Tests and captures
 
-- `play::tests`: a real match on the simulation's test fixture, the player's view, a synthetic camera and synthesized window input; asserts the actions produced and that the simulation accepts them (selection, box rules, smart orders, Shift queueing, groups and hero keys, attack-move and modes, placement, training and rally, learning and casting, ghost agreement).
+- `play::tests`: a real match on the simulation's test fixture, the player's view, a synthetic camera and synthesized window input; asserts the actions produced and that the simulation accepts them (selection, box rules, smart orders, Shift queueing, groups and hero keys, attack-move and modes, placement, training and rally, learning and casting, ghost agreement). Tree picking and the tree ring run on the economy fixture's trees with a test-owned pick profile.
 - Unit tests: selection order, box rules, Tab, groups; card layout and shortcut resolution; picking.
 - `canopy shot --map <id> --play --tick N --input "select:settler;key:B;cmd:build:building.ants.house;move:1300,600" --out x.png`: the match from player 1's seat with the HUD after a script (`--observe` for the spectator HUD; steps in `play/capture.rs`). It also prints how the simulation judges the ghost's site. Captures: `docs/captures/m4-play/`.
 

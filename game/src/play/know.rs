@@ -125,6 +125,29 @@ impl Knowledge {
             .map_or_else(|| id.to_owned(), |d| d.name.clone())
     }
 
+    /// Known scenery by id (scenery is listed in id order, in chunks of ids).
+    pub fn sighting(&self, id: u32) -> Option<&canopy_sim::vision::knowledge::Sighting> {
+        let chunk = self
+            .view
+            .scenery
+            .chunks
+            .get((id / canopy_sim::vision::scenery::CHUNK) as usize)?;
+        chunk
+            .binary_search_by_key(&id, |s| s.id.0)
+            .ok()
+            .map(|i| &chunk[i])
+    }
+
+    /// Known scenery that still stands with something to harvest: not depleted, not
+    /// falling (a struck tree stands, and is harvested, until it falls).
+    pub fn standing(&self, id: u32) -> bool {
+        self.sighting(id)
+            .and_then(|s| s.resource.as_ref())
+            .is_some_and(|r| {
+                r.amount > 0 && r.felling.as_ref().is_none_or(|f| f.fall_tick.is_none())
+            })
+    }
+
     /// The tick of the view.
     pub fn tick(&self) -> u32 {
         self.view.tick

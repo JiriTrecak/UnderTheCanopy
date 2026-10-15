@@ -1,12 +1,16 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [],
+    "added": [
+      "With a worker selected, hovering a tree shows a ring around it, so you can tell trees can be clicked to gather wood."
+    ],
     "improved": [
       "Damaged buildings show their health bars, as damaged units do.",
       "Ant Warriors deal 14 damage instead of 9."
     ],
-    "fixed": [],
+    "fixed": [
+      "Right-clicking a tree works anywhere on the tree, trunk or crown, instead of only exactly at its base."
+    ],
     "knownIssues": []
   },
   "releases": [

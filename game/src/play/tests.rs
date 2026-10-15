@@ -32,6 +32,8 @@ impl Sink for Recorder {
 
 struct Harness {
     world: World,
+    /// The human seat.
+    me: u8,
     /// The content the player's knowledge reads (the world's, unless a test adds
     /// presentation-only metadata).
     content: Arc<canopy_content::Content>,
@@ -48,10 +50,15 @@ impl Harness {
         let map = fx::skirmish(extra, vec![]);
         let mut world = fx::world(&map, false);
         fx::run(&mut world, 2);
+        Self::on(world, ME, [fx::AWAY.0 as f32, fx::AWAY.1 as f32 + 2.0])
+    }
+
+    /// Plays seat `me` of `world` with the camera on `focus` (x, z).
+    fn on(world: World, me: u8, focus: [f32; 2]) -> Self {
+        let owner = Owner::Player(me);
         let content = world.catalog().content.clone();
         let catalog = Arc::new(Catalog::new(content.clone()));
-        let camera = RtsCamera::new([fx::AWAY.0 as f32, fx::AWAY.1 as f32 + 2.0], None)
-            .view(16.0 / 9.0, &FlatGround);
+        let camera = RtsCamera::new(focus, None).view(16.0 / 9.0, &FlatGround);
         let screen = Screen {
             camera,
             size: [1600.0, 900.0],
@@ -61,13 +68,14 @@ impl Harness {
         let know = Knowledge::new(
             content,
             catalog.clone(),
-            Arc::new(world.view(OWNER)),
-            Some(ME),
+            Arc::new(world.view(owner)),
+            Some(me),
         );
         let play = Play::new(know, world.terrain().clone(), Box::new(sent.clone()));
         let mut h = Self {
             content: world.catalog().content.clone(),
             world,
+            me,
             play,
             sent,
             screen,
@@ -80,12 +88,12 @@ impl Harness {
     }
 
     fn refresh(&mut self) {
-        let view = Arc::new(self.world.view(OWNER));
+        let view = Arc::new(self.world.view(Owner::Player(self.me)));
         let mut know = Knowledge::new(
             self.content.clone(),
             self.catalog.clone(),
             view.clone(),
-            Some(ME),
+            Some(self.me),
         );
         know.held = Arc::new(crate::sim::held_units(&view));
         let bodies: Vec<Body> = view
@@ -220,7 +228,7 @@ impl Harness {
             self.world
                 .enqueue(Queued {
                     tick,
-                    player: ME,
+                    player: self.me,
                     seq: self.seq,
                     action: action.clone(),
                 })
@@ -232,12 +240,12 @@ impl Harness {
     }
 
     fn mine(&self, definition: &str) -> Vec<u32> {
-        fx::all_of(&self.world, OWNER, definition)
+        fx::all_of(&self.world, Owner::Player(self.me), definition)
     }
 
     fn errors(&self) -> Vec<String> {
         self.world
-            .view(OWNER)
+            .view(Owner::Player(self.me))
             .facts
             .iter()
             .filter(|f| f.kind == canopy_sim::state::FactKind::Error)
@@ -884,4 +892,202 @@ fn rebound_command_keys_press_their_commands() {
     assert_eq!(label.as_deref(), Some("Z"));
     h.key("Z");
     assert!(matches!(h.take().as_slice(), [Action::Stop { .. }]));
+}
+
+/// Trees: the economy fixture's felled trees on the first start, with a test-owned pick
+/// profile (a trunk under a crown 1.5 wide from 1 m up, 4 m tall).
+mod trees {
+    use super::*;
+    use crate::play::{
+        orders::GATHER_RADIUS,
+        picking::{Tree, TreeProfile, Trees},
+    };
+    use crate::sim::economy_fixture as ex;
+
+    /// Just behind the first start's idle worker (it stands at 46, 50).
+    const BEHIND: (f64, f64) = (46.0, 49.0);
+    const OPEN: (f64, f64) = (52.0, 44.0);
+
+    fn profile() -> TreeProfile {
+        TreeProfile {
+            height: 4.0,
+            radii: [0.4, 0.4, 1.5, 1.5, 1.2, 1.0, 0.6, 0.3],
+        }
+    }
+
+    fn harness() -> (Harness, u32, u32) {
+        let map = ex::skirmish(vec![
+            ex::resource("open", ex::TREE, OPEN.0, OPEN.1),
+            ex::resource("behind", ex::TREE, BEHIND.0, BEHIND.1),
+        ]);
+        let mut world = ex::world(&map);
+        fx::run(&mut world, 2);
+        let (open, behind) = (ex::id(&world, "open"), ex::id(&world, "behind"));
+        let trees: Vec<Tree> = [open, behind]
+            .into_iter()
+            .map(|id| {
+                let p = ex::get(&world, id).position;
+                Tree {
+                    id,
+                    root: Vec3::new(p.x as f32 / 1000.0, 0.0, p.y as f32 / 1000.0),
+                    scale: 1.0,
+                    profile: 0,
+                }
+            })
+            .collect();
+        let mut h = Harness::on(world, 0, [48.0, 47.0]);
+        h.play
+            .set_trees(Arc::new(Trees::new(vec![profile()], trees)));
+        h.refresh();
+        (h, open, behind)
+    }
+
+    /// The pixel of a point `up` metres above `at` and `east` of it.
+    fn crown(h: &Harness, at: (f64, f64), east: f32, up: f32) -> Vec2 {
+        h.screen
+            .project(Vec3::new(at.0 as f32 + east, up, at.1 as f32))
+            .expect("on screen")
+            .0
+    }
+
+    fn hover(h: &mut Harness, p: Vec2) -> Option<u32> {
+        h.input(Input::PointerMoved(p));
+        h.advance(16);
+        h.play.hovered
+    }
+
+    /// The starting worker without a gathering job (it stands at 46, 50).
+    fn idle_worker(h: &Harness) -> u32 {
+        h.mine(ex::WORKER)
+            .into_iter()
+            .find(|&w| {
+                ex::get(&h.world, w)
+                    .unit
+                    .as_ref()
+                    .is_some_and(|u| u.work.job.is_none())
+            })
+            .expect("an idle worker")
+    }
+
+    #[test]
+    fn a_click_anywhere_on_the_drawn_tree_gathers_it_and_empty_ground_moves() {
+        let (mut h, open, _) = harness();
+        let worker = idle_worker(&h);
+        h.click(worker);
+        // The crown's edge, 1.2 m east of the trunk and 2.5 m up: well off the root's
+        // cell (its ground point lies cells away), still the tree.
+        let p = crown(&h, OPEN, 1.2, 2.5);
+        let ground = h
+            .screen
+            .ground(p, &FlatGround)
+            .expect("the ground behind the crown");
+        assert!(
+            (ground.x - OPEN.0 as f32).abs() > 0.8 || (ground.z - OPEN.1 as f32).abs() > 0.8,
+            "off the root cell: {ground}"
+        );
+        assert_eq!(hover(&mut h, p), Some(open));
+        h.click_px(p, Button::Right);
+        let sent = h.take();
+        assert!(
+            matches!(sent.as_slice(), [Action::Gather { actors, target, .. }] if actors == &[worker] && *target == open),
+            "{sent:?}"
+        );
+        h.apply(&sent, 2);
+        assert!(h.errors().is_empty(), "{:?}", h.errors());
+        // The trunk too.
+        let trunk = crown(&h, OPEN, 0.0, 0.5);
+        assert_eq!(hover(&mut h, trunk), Some(open));
+        // Beside the crown is ground.
+        let beside = crown(&h, OPEN, 2.5, 2.5);
+        assert_eq!(hover(&mut h, beside), None);
+        h.click_px(beside, Button::Right);
+        assert!(matches!(h.take().as_slice(), [Action::Move { .. }]));
+    }
+
+    #[test]
+    fn a_unit_in_front_of_a_tree_wins() {
+        let (mut h, _, behind) = harness();
+        let worker = idle_worker(&h);
+        // The worker's head shows over the crown of the tree behind it.
+        let p = h
+            .screen
+            .project(Vec3::new(46.0, 1.4, 50.0))
+            .expect("on screen")
+            .0;
+        let (origin, dir) = h.screen.ray(p);
+        assert_eq!(
+            h.play
+                .trees
+                .hit(origin, dir, f32::MAX, |_| true)
+                .map(|(id, _)| id),
+            Some(behind),
+            "the ray meets the tree too"
+        );
+        assert_eq!(hover(&mut h, p), Some(worker));
+    }
+
+    #[test]
+    fn a_falling_tree_is_not_picked_but_a_struck_one_is() {
+        let (mut h, open, _) = harness();
+        let worker = idle_worker(&h);
+        h.click(worker);
+        let p = crown(&h, OPEN, 1.0, 2.0);
+        h.click_px(p, Button::Right);
+        let sent = h.take();
+        h.apply(&sent, 1);
+        let felling = |h: &Harness| {
+            h.world
+                .state()
+                .entities
+                .get(canopy_sim::entity::EntityId(open))
+                .and_then(|e| e.resource.as_ref()?.felling.clone())
+        };
+        fx::run_until(&mut h.world, 4000, |w| {
+            w.state()
+                .entities
+                .get(canopy_sim::entity::EntityId(open))
+                .and_then(|e| e.resource.as_ref()?.felling.as_ref()?.last_hit_tick)
+                .is_some()
+        });
+        h.refresh();
+        assert!(felling(&h).is_some_and(|f| f.fall_tick.is_none()));
+        assert_eq!(hover(&mut h, p), Some(open), "struck, still standing");
+        fx::run_until(&mut h.world, 8000, |w| {
+            w.state()
+                .entities
+                .get(canopy_sim::entity::EntityId(open))
+                .is_none_or(|e| {
+                    e.resource
+                        .as_ref()
+                        .and_then(|r| r.felling.as_ref())
+                        .is_some_and(|f| f.fall_tick.is_some())
+                })
+        });
+        h.refresh();
+        assert_eq!(hover(&mut h, p), None, "fallen");
+    }
+
+    #[test]
+    fn the_hover_ring_marks_a_tree_only_for_a_selection_that_gathers_it() {
+        let (mut h, open, _) = harness();
+        let p = crown(&h, OPEN, 0.8, 2.0);
+        assert_eq!(hover(&mut h, p), Some(open));
+        assert_eq!(h.play.world_ui().tree, None, "nothing selected");
+        let hall = h.mine(ex::HALL)[0];
+        h.click(hall);
+        assert_eq!(hover(&mut h, p), Some(open));
+        assert_eq!(h.play.world_ui().tree, None, "a hall cannot gather");
+        let worker = idle_worker(&h);
+        h.click(worker);
+        assert_eq!(hover(&mut h, p), Some(open));
+        let ring = h.play.world_ui().tree.expect("a worker can");
+        assert_eq!(ring.position, [OPEN.0 as f32, OPEN.1 as f32]);
+        // Just outside the crown's widest reach.
+        assert!(ring.radius > 1.5 / crate::play::picking::CROWN_SHARE && ring.radius < 2.5);
+        assert!(ring.radius > GATHER_RADIUS);
+        // Not over the ground.
+        let beside = crown(&h, OPEN, 2.5, 2.5);
+        assert_eq!(hover(&mut h, beside), None);
+        assert_eq!(h.play.world_ui().tree, None);
+    }
 }
