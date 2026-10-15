@@ -1231,6 +1231,9 @@ impl Game {
                     });
                 }
             }
+            "mission.history" if clicked => {
+                self.mission_hud.history_open = !self.mission_hud.history_open;
+            }
             "saves.export" if clicked => {
                 if let Some(meta) = action.index.and_then(|i| self.saves_list.get(i)).cloned() {
                     self.export_save(&meta);
@@ -1531,7 +1534,10 @@ impl Game {
         if let (Some(playing), true) = (&self.playing, in_match) {
             match_ui::show_overlay(&mut self.host, playing, self.problem.as_ref());
             if let Some(data) = &data {
-                let mission = playing.newest().and_then(|s| s.view.mission.clone());
+                let newest = playing.newest();
+                let mission = newest.and_then(|s| s.view.mission.clone());
+                let tick = newest.map_or(0, |s| s.view.tick);
+                let decided = newest.is_some_and(|s| s.view.outcome.is_some());
                 let dt = 1.0 / 60.0;
                 let hud_top = self
                     .host
@@ -1545,6 +1551,8 @@ impl Game {
                     gpu,
                     data,
                     mission.as_ref(),
+                    tick,
+                    decided,
                     dt,
                     self.view[1],
                 );
@@ -1632,7 +1640,25 @@ impl Game {
             (Some(path), Some(d)) => self.host.pack_image(gpu, &d.pack, &path),
             _ => None,
         };
+        // The campaign race's crest over the mission's copy (the old screen showed its
+        // one campaign's crest).
+        let mission_entry = entry.and_then(|m| m.mission.as_ref());
+        let crest_key = match (mission_entry, &data) {
+            (Some(m), Some(d)) => d
+                .content
+                .rules
+                .campaigns
+                .get(&m.campaign)
+                .and_then(|c| campaign::crest(d, &c.race))
+                .and_then(|path| self.host.pack_image(gpu, &d.pack, &path)),
+            _ => None,
+        };
+        let chapter_default = mission_entry.map(|m| format!("Chapter {}", m.order));
         let ui = &mut self.host.ui;
+        if let Some(node) = ui.find("loading/art-view/copy/crest") {
+            ui.set_image(node, crest_key);
+        }
+        widgets::visible(ui, "loading/art-view/copy/crest", crest_key.is_some());
         if let Some(node) = ui.find("loading/art-view/art") {
             let key = art_key.or_else(|| Some(ui.image_key("menu-aftermath")));
             ui.set_image(node, key);
@@ -1643,13 +1669,8 @@ impl Game {
             "loading/art-view/copy/chapter",
             &presentation
                 .and_then(|p| p.chapter.clone())
-                .unwrap_or_else(|| {
-                    if mission_title.is_some() {
-                        String::new()
-                    } else {
-                        map_name.clone()
-                    }
-                }),
+                .or(chapter_default)
+                .unwrap_or_else(|| map_name.clone()),
         );
         widgets::text(
             ui,

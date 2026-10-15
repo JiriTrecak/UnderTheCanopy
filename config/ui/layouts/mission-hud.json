@@ -1,5 +1,14 @@
 {
-  "templates": { "mh-line": { "kind": "label", "class": "mh-line" } },
+  "templates": {
+    "mh-line": { "kind": "label", "class": "mh-line" },
+    "mh-active": {
+      "class": "mh-active",
+      "children": [
+        { "id": "title", "kind": "label", "class": "mh-title" },
+        { "id": "description", "kind": "label", "class": "mh-description" }
+      ]
+    }
+  },
   "root": {
     "class": "mh",
     "children": [
@@ -10,7 +19,14 @@
         "children": [
           { "id": "caption", "kind": "label", "class": "mh-caption", "text": "Current objective" },
           { "id": "objective", "kind": "label", "class": "mh-objective" },
-          { "id": "lines", "class": "mh-lines", "repeat": "mh-line" }
+          { "id": "active", "class": "mh-actives", "repeat": "mh-active" },
+          {
+            "id": "history", "class": "mh-history", "visible": false,
+            "children": [
+              { "id": "summary", "kind": "button", "class": "mh-summary", "action": "mission.history" },
+              { "id": "lines", "class": "mh-lines", "repeat": "mh-line", "visible": false }
+            ]
+          }
         ]
       },
       {

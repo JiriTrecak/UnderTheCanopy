@@ -218,6 +218,7 @@ fn sample_mission(portrait: canopy_content::Id) -> canopy_sim::view::MissionView
     objectives.insert("gather".to_string(), ObjectiveState::Completed);
     objectives.insert("scouts".to_string(), ObjectiveState::Active);
     objectives.insert("hollow".to_string(), ObjectiveState::Active);
+    objectives.insert("bridge".to_string(), ObjectiveState::Failed);
     canopy_sim::view::MissionView {
         objective: "Find the lost scouts beyond the river".into(),
         objectives,
@@ -238,11 +239,16 @@ fn sample_mission(portrait: canopy_content::Id) -> canopy_sim::view::MissionView
     }
 }
 
-fn objective(id: &str, title: &str, optional: bool) -> canopy_content::map::Objective {
+fn objective(
+    id: &str,
+    title: &str,
+    description: &str,
+    optional: bool,
+) -> canopy_content::map::Objective {
     canopy_content::map::Objective {
         id: id.into(),
         title: title.into(),
-        description: String::new(),
+        description: description.into(),
         optional,
     }
 }
@@ -504,10 +510,23 @@ fn a_match(rig: &mut Rig) -> Result<()> {
 
     // The mission HUD with a sample mission state.
     let mut hud = MissionHud::new(vec![
-        objective("gather", "Gather 200 amber", false),
-        objective("scouts", "Find the lost scouts", false),
-        objective("hollow", "Clear the beetle hollow", true),
+        objective("gather", "Gather 200 amber", "", false),
+        objective(
+            "scouts",
+            "Find the lost scouts",
+            "They went north at dawn. Follow the river past the old ford.",
+            false,
+        ),
+        objective(
+            "hollow",
+            "Clear the beetle hollow",
+            "A nest east of camp.",
+            true,
+        ),
+        objective("bridge", "Keep the bridge standing", "", false),
     ]);
+    // The finished objectives listed (the old `<details>` opened).
+    hud.history_open = true;
     // The portrait of the content's default starting hero.
     let rules = &data.content.rules;
     let hero = rules
@@ -535,6 +554,8 @@ fn a_match(rig: &mut Rig) -> Result<()> {
             &rig.gpu,
             &data,
             Some(&mission),
+            0,
+            false,
             0.016,
             view_h,
         );
@@ -544,6 +565,7 @@ fn a_match(rig: &mut Rig) -> Result<()> {
     let mut cinematic = mission.clone();
     if let Some(d) = &mut cinematic.dialogue {
         d.cinematic = true;
+        d.remaining = 80;
     }
     for _ in 0..60 {
         hud.show(
@@ -551,6 +573,8 @@ fn a_match(rig: &mut Rig) -> Result<()> {
             &rig.gpu,
             &data,
             Some(&cinematic),
+            0,
+            false,
             0.016,
             view_h,
         );

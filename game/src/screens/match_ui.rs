@@ -27,23 +27,129 @@ pub struct MissionHud {
     letterbox: f32,
     /// The top of the play HUD's dock (logical pixels), which the dialogue keeps clear.
     pub hud_top: Option<f32>,
+    /// The finished objectives are listed (old `<details>`, closed until clicked).
+    pub history_open: bool,
+}
+
+/// The objectives box as the old mission HUD built it.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ObjectivesModel {
+    /// "Current objective" or "Script error".
+    pub caption: &'static str,
+    /// The script's objective line (or the error); `None` once a required objective is
+    /// listed in its place.
+    pub text: Option<String>,
+    /// Active objectives: title (with "Optional: ") and description, in definition order.
+    pub active: Vec<(String, String)>,
+    /// Completed and failed objectives as "✓ title" / "✕ title".
+    pub finished: Vec<String>,
+    /// How many of `finished` were completed.
+    pub completed: usize,
+    /// The box shows at all: the script set an objective line (or failed).
+    pub visible: bool,
+}
+
+impl ObjectivesModel {
+    /// Old `MissionHud.update`: the line, then the active objectives with descriptions
+    /// (a required one replaces the line), then the finished ones in a collapsed list.
+    pub fn build(definitions: &[Objective], m: &MissionView) -> Self {
+        let line = m.error.clone().unwrap_or_else(|| m.objective.clone());
+        let mut model = Self {
+            caption: if m.error.is_some() {
+                "Script error"
+            } else {
+                "Current objective"
+            },
+            visible: !line.is_empty(),
+            text: Some(line),
+            ..Self::default()
+        };
+        if m.error.is_some() {
+            return model;
+        }
+        // Definition order first; ids the map does not define (none should) after.
+        let mut shown: Vec<(&str, &str, &str, bool, ObjectiveState)> = definitions
+            .iter()
+            .filter_map(|o| {
+                let state = *m.objectives.get(&o.id)?;
+                Some((
+                    o.id.as_str(),
+                    o.title.as_str(),
+                    o.description.as_str(),
+                    o.optional,
+                    state,
+                ))
+            })
+            .collect();
+        for (id, state) in &m.objectives {
+            if !definitions.iter().any(|o| &o.id == id) {
+                shown.push((id.as_str(), id.as_str(), "", false, *state));
+            }
+        }
+        for &(_, title, description, optional, state) in &shown {
+            match state {
+                ObjectiveState::Active => {
+                    let prefix = if optional { "Optional: " } else { "" };
+                    model
+                        .active
+                        .push((format!("{prefix}{title}"), description.to_owned()));
+                    if !optional {
+                        model.text = None;
+                    }
+                }
+                ObjectiveState::Completed => {
+                    model.completed += 1;
+                    model.finished.push(format!("✓ {title}"));
+                }
+                ObjectiveState::Failed => model.finished.push(format!("✕ {title}")),
+            }
+        }
+        model
+    }
+}
+
+/// A cinematic holds the match: a scripted scene or a cinematic line still playing, while
+/// the match is undecided and the script is running (old `MissionHud.active`).
+pub fn cinematic(m: &MissionView, decided: bool) -> bool {
+    let line = m
+        .dialogue
+        .as_ref()
+        .is_some_and(|d| d.cinematic && d.remaining > 0);
+    (m.scene.is_some() || line) && !decided && m.error.is_none()
+}
+
+/// Whether the dialogue line shows at `tick`: a cinematic line until its paused time
+/// runs out, another until its end tick; never once the match is decided.
+pub fn dialogue_visible(m: &MissionView, tick: u32, decided: bool) -> bool {
+    m.dialogue.as_ref().is_some_and(|d| {
+        !decided
+            && if d.cinematic {
+                d.remaining > 0
+            } else {
+                tick < d.until
+            }
+    })
 }
 
 impl MissionHud {
     pub fn new(objectives: Vec<Objective>) -> Self {
         Self {
             objectives,
-            letterbox: 0.0,
-            hud_top: None,
+            ..Self::default()
         }
     }
 
+    /// Shows the mission's state at the view's `tick` (`decided`: the match has an
+    /// outcome).
+    #[allow(clippy::too_many_arguments)]
     pub fn show(
         &mut self,
         host: &mut UiHost,
         gpu: &Gpu,
         data: &GameData,
         mission: Option<&MissionView>,
+        tick: u32,
+        decided: bool,
         dt: f32,
         view_height: f32,
     ) {
@@ -54,7 +160,7 @@ impl MissionHud {
             widgets::visible(&mut host.ui, "mission-hud/bottom-bar", false);
             return;
         };
-        let cinematic = m.scene.is_some() || m.dialogue.as_ref().is_some_and(|d| d.cinematic);
+        let cinematic = cinematic(m, decided);
         let target = if cinematic { 1.0 } else { 0.0 };
         let step = dt / LETTERBOX_SECONDS;
         self.letterbox = if self.letterbox < target {
@@ -72,49 +178,59 @@ impl MissionHud {
         if let Some(n) = ui.find("mission-hud/bottom-bar") {
             ui.set_shift(n, 0.0, bar);
         }
-        widgets::visible(ui, "mission-hud/objectives", !cinematic);
+        let model = ObjectivesModel::build(&self.objectives, m);
+        widgets::visible(ui, "mission-hud/objectives", model.visible && !cinematic);
+        widgets::text(ui, "mission-hud/objectives/caption", model.caption);
+        widgets::visible(ui, "mission-hud/objectives/objective", model.text.is_some());
         widgets::text(
             ui,
-            "mission-hud/objectives/caption",
-            if m.error.is_some() {
-                "Script error"
-            } else {
-                "Current objective"
-            },
+            "mission-hud/objectives/objective",
+            model.text.as_deref().unwrap_or(""),
         );
-        let current = m.error.clone().unwrap_or_else(|| m.objective.clone());
-        widgets::text(ui, "mission-hud/objectives/objective", &current);
-        let lines: Vec<String> = m
-            .objectives
-            .iter()
-            .map(|(id, state)| {
-                let objective = self.objectives.iter().find(|o| &o.id == id);
-                let title = objective.map_or(id.as_str(), |o| o.title.as_str());
-                let optional = if objective.is_some_and(|o| o.optional) {
-                    "Optional: "
-                } else {
-                    ""
+        if let Some(list) = ui.find("mission-hud/objectives/active") {
+            ui.set_count(list, model.active.len());
+            for (i, (title, description)) in model.active.iter().enumerate() {
+                let Some(n) = ui.child(list, i) else {
+                    continue;
                 };
-                match state {
-                    ObjectiveState::Active => format!("•  {optional}{title}"),
-                    ObjectiveState::Completed => {
-                        format!("[color=#9fd18b]✓[/color]  {optional}{title}")
-                    }
-                    ObjectiveState::Failed => {
-                        format!("[color=#e28b7a]✕[/color]  {optional}{title}")
-                    }
+                if let Some(t) = ui.find_in(n, "title") {
+                    ui.set_text(t, title);
                 }
-            })
-            .collect();
-        if let Some(list) = ui.find("mission-hud/objectives/lines") {
-            ui.set_count(list, lines.len());
-            for (i, line) in lines.iter().enumerate() {
+                if let Some(d) = ui.find_in(n, "description") {
+                    ui.set_text(d, description);
+                    ui.set_visible(d, !description.is_empty());
+                }
+            }
+        }
+        widgets::visible(
+            ui,
+            "mission-hud/objectives/history",
+            !model.finished.is_empty(),
+        );
+        widgets::text(
+            ui,
+            "mission-hud/objectives/history/summary",
+            &format!(
+                "{} Objectives completed: {}",
+                if self.history_open { "▾" } else { "▸" },
+                model.completed
+            ),
+        );
+        widgets::visible(
+            ui,
+            "mission-hud/objectives/history/lines",
+            self.history_open,
+        );
+        if let Some(list) = ui.find("mission-hud/objectives/history/lines") {
+            ui.set_count(list, model.finished.len());
+            for (i, line) in model.finished.iter().enumerate() {
                 if let Some(n) = ui.child(list, i) {
                     ui.set_text(n, line);
                 }
             }
         }
-        widgets::visible(ui, "mission-hud/dialogue-wrap", m.dialogue.is_some());
+        let speaking = dialogue_visible(m, tick, decided);
+        widgets::visible(ui, "mission-hud/dialogue-wrap", speaking);
         // The dialogue sits at 31 % from the bottom (old), lifted clear of a larger HUD
         //
         let lift = self.hud_top.map_or(0.0, |top| {
@@ -123,7 +239,7 @@ impl MissionHud {
         if let Some(n) = ui.find("mission-hud/dialogue-wrap") {
             ui.set_shift(n, 0.0, -lift);
         }
-        if let Some(d) = &m.dialogue {
+        if let (Some(d), true) = (&m.dialogue, speaking) {
             widgets::text(ui, "mission-hud/dialogue-wrap/speaker", &d.speaker);
             widgets::text(ui, "mission-hud/dialogue-wrap/text", &d.text);
             let portrait = data
@@ -486,4 +602,120 @@ pub fn show_game_menu(host: &mut UiHost, playing: &Playing, page: MenuPage, stat
     );
     widgets::text(ui, "game-menu/status", status);
     widgets::visible(ui, "game-menu/status", !status.is_empty());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use canopy_sim::mission::state::Dialogue;
+    use std::collections::BTreeMap;
+
+    fn objective(id: &str, title: &str, description: &str, optional: bool) -> Objective {
+        Objective {
+            id: id.into(),
+            title: title.into(),
+            description: description.into(),
+            optional,
+        }
+    }
+
+    fn mission(states: &[(&str, ObjectiveState)]) -> MissionView {
+        MissionView {
+            objective: "Hold the ford".into(),
+            objectives: states
+                .iter()
+                .map(|(id, s)| (id.to_string(), *s))
+                .collect::<BTreeMap<_, _>>(),
+            dialogue: None,
+            scene: None,
+            paused: false,
+            error: None,
+        }
+    }
+
+    #[test]
+    fn objectives_read_like_the_old_mission_hud() {
+        let defs = [
+            objective("z-gather", "Gather amber", "200 of it.", false),
+            objective("a-scouts", "Find the scouts", "North of the river.", false),
+            objective("hollow", "Clear the hollow", "", true),
+            objective("bridge", "Keep the bridge", "", false),
+        ];
+        // Only the line until objectives are given.
+        let m = mission(&[]);
+        let model = ObjectivesModel::build(&defs, &m);
+        assert_eq!(model.text.as_deref(), Some("Hold the ford"));
+        assert!(model.visible && model.active.is_empty() && model.finished.is_empty());
+
+        // An optional objective keeps the line; definition order, not id order.
+        let m = mission(&[
+            ("hollow", ObjectiveState::Active),
+            ("z-gather", ObjectiveState::Completed),
+            ("bridge", ObjectiveState::Failed),
+        ]);
+        let model = ObjectivesModel::build(&defs, &m);
+        assert_eq!(model.text.as_deref(), Some("Hold the ford"));
+        assert_eq!(
+            model.active,
+            [("Optional: Clear the hollow".into(), String::new())]
+        );
+        assert_eq!(model.finished, ["✓ Gather amber", "✕ Keep the bridge"]);
+        assert_eq!(model.completed, 1);
+
+        // A required active objective replaces the line with its title and description.
+        let m = mission(&[
+            ("a-scouts", ObjectiveState::Active),
+            ("z-gather", ObjectiveState::Completed),
+        ]);
+        let model = ObjectivesModel::build(&defs, &m);
+        assert_eq!(model.text, None);
+        assert_eq!(
+            model.active,
+            [("Find the scouts".into(), "North of the river.".into())]
+        );
+
+        // A script error shows alone.
+        let mut m = mission(&[("a-scouts", ObjectiveState::Active)]);
+        m.error = Some("attempt to index a nil value".into());
+        let model = ObjectivesModel::build(&defs, &m);
+        assert_eq!(model.caption, "Script error");
+        assert_eq!(model.text.as_deref(), Some("attempt to index a nil value"));
+        assert!(model.active.is_empty());
+        // No line: no box.
+        let mut m = mission(&[]);
+        m.objective.clear();
+        assert!(!ObjectivesModel::build(&defs, &m).visible);
+    }
+
+    #[test]
+    fn lines_end_and_cinematics_hold_only_while_they_play() {
+        let mut m = mission(&[]);
+        m.dialogue = Some(Dialogue {
+            id: 1,
+            actor: None,
+            speaker: "Marshal".into(),
+            portrait: canopy_content::Id::new("unit.test.hero").unwrap(),
+            text: "Forward.".into(),
+            duration_ticks: 100,
+            cinematic: false,
+            remaining: 0,
+            until: 400,
+        });
+        assert!(dialogue_visible(&m, 399, false));
+        assert!(!dialogue_visible(&m, 400, false), "the line has ended");
+        assert!(!dialogue_visible(&m, 10, true), "a decided match hides it");
+        assert!(!cinematic(&m, false));
+        let d = m.dialogue.as_mut().unwrap();
+        d.cinematic = true;
+        d.remaining = 20;
+        assert!(dialogue_visible(&m, 999, false) && cinematic(&m, false));
+        m.dialogue.as_mut().unwrap().remaining = 0;
+        assert!(!dialogue_visible(&m, 0, false) && !cinematic(&m, false));
+        m.scene = Some(canopy_sim::mission::state::Scene {
+            position: canopy_sim::entity::Milli { x: 0, y: 0 },
+            camera: None,
+        });
+        assert!(cinematic(&m, false));
+        assert!(!cinematic(&m, true));
+    }
 }
