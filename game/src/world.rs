@@ -15,8 +15,9 @@ pub struct Loaded {
     pub pack: Pack,
 }
 
-/// Loads map `id` with its biome's look at `hour` (the map's own when `None`).
-pub fn load(paths: &Paths, id: &str, hour: Option<f32>) -> Result<Loaded> {
+/// Loads map `id` with its biome's look (or `biome`'s, to preview another) at `hour`
+/// (the map's own when `None`).
+pub fn load(paths: &Paths, id: &str, hour: Option<f32>, biome: Option<&str>) -> Result<Loaded> {
     let _span = tracing::info_span!("load_map", map = id).entered();
     let started = std::time::Instant::now();
     let content = Content::load(&paths.data).map_err(|e| anyhow!("content: {e}"))?;
@@ -29,7 +30,7 @@ pub fn load(paths: &Paths, id: &str, hour: Option<f32>) -> Result<Loaded> {
     let pack_path =
         canopy_assets::find_pack(&paths.data).context("no cooked asset pack (run `just cook`)")?;
     let pack = Pack::open(&pack_path).with_context(|| pack_path.display().to_string())?;
-    let look = Look::load(&paths.data, map.biome())?;
+    let look = Look::load(&paths.data, biome.unwrap_or(map.biome()))?;
     let scene = canopy_scene::build(Arc::new(content), &map, &pack, &look)?;
     let hour = hour.unwrap_or(scene.hour);
     let grade = &look.biome.grade;

@@ -179,11 +179,11 @@ pub struct BiomeConfig {
     pub light: BiomeLight,
     pub canopy: Canopy,
     pub grade: Grade,
-    /// Not rendered yet (later quality work).
+    /// Bloom of bright highlights (post).
     pub bloom: Bloom,
-    /// Screen-space contact shadows; not rendered yet.
+    /// Screen-space contact shading (post).
     pub contact: Contact,
-    /// Volumetric haze and shafts; not rendered yet (renderer Q4).
+    /// Volumetric haze and light shafts in canopy openings (post).
     pub atmosphere: Atmosphere,
     pub terrain: TerrainLayers,
     /// Catalogue water profile of wet cells without their own.
@@ -277,7 +277,17 @@ pub struct Atmosphere {
     pub noise_scale: f32,
     pub noise_strength: f32,
     pub drift_speed: f32,
+    /// Drift of the mist noise (x, z); the old game's calm-weather wind by default.
+    #[serde(default = "calm_wind")]
+    pub wind: [f32; 2],
 }
+
+fn calm_wind() -> [f32; 2] {
+    [0.4, 0.2]
+}
+
+/// The old game's warm shaft tint when a biome names none.
+pub const DEFAULT_SHAFT_TINT: Hex = Hex([0xff, 0xe3, 0xb8]);
 
 /// The six built-in ground layers. Which grid drives each is the renderer's rule (old
 /// `authoredTerrain`): soil is the base, grass follows the grass coverage, dirt and stones
@@ -333,7 +343,7 @@ pub struct GroundLayer {
     pub tint: Hex,
 }
 
-/// Render-only ground beyond the map's halo.
+/// Render-only ground and forest beyond the map's halo.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Surroundings {
@@ -342,6 +352,33 @@ pub struct Surroundings {
     pub haze_color: Hex,
     pub haze_start: f32,
     pub haze_end: f32,
+    /// Giant trunks, limbs and leaves around the map (old `ForestSurroundings`).
+    pub forest: Option<ForestConfig>,
+}
+
+/// The forest around the map: scenery ids of its models, the bark of the generated
+/// limbs (a texture asset), the trunk rings and the overhead leaves.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ForestConfig {
+    pub trunk: String,
+    pub mushroom: Option<String>,
+    pub log: Option<String>,
+    pub limb_texture: Option<String>,
+    pub rings: Vec<TrunkRingConfig>,
+    pub leaf_colors: Vec<Hex>,
+    pub leaf_spacing: f32,
+    pub leaf_length: f32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TrunkRingConfig {
+    /// World units beyond the map border.
+    pub distance: f32,
+    /// World units between trunks along the ring (at most 32 per side).
+    pub spacing: f32,
+    pub height: f32,
 }
 
 /// Old `groundCover`: foliage within `radius` (× its scale) adds grass coverage up to
@@ -480,6 +517,66 @@ impl BiomeConfig {
         if !(s.haze_start >= 0.0 && s.haze_end > s.haze_start) {
             return Err("surroundings haze must end after it starts".into());
         }
+        if let Some(f) = &s.forest {
+            if f.trunk.is_empty() || f.rings.is_empty() || f.rings.len() > 8 {
+                return Err("surroundings.forest needs a trunk and 1–8 rings".into());
+            }
+            if f.leaf_colors.is_empty() {
+                return Err("surroundings.forest needs leaf colours".into());
+            }
+            for (i, r) in f.rings.iter().enumerate() {
+                range(
+                    &format!("surroundings.forest.rings.{i}.distance"),
+                    r.distance,
+                    0.0,
+                    1024.0,
+                )?;
+                range(
+                    &format!("surroundings.forest.rings.{i}.spacing"),
+                    r.spacing,
+                    8.0,
+                    1024.0,
+                )?;
+                range(
+                    &format!("surroundings.forest.rings.{i}.height"),
+                    r.height,
+                    1.0,
+                    512.0,
+                )?;
+            }
+            range(
+                "surroundings.forest.leafSpacing",
+                f.leaf_spacing,
+                1.0,
+                256.0,
+            )?;
+            range("surroundings.forest.leafLength", f.leaf_length, 0.5, 128.0)?;
+        }
+        let b = &self.bloom;
+        range("bloom.strength", b.strength, 0.0, 2.0)?;
+        range("bloom.threshold", b.threshold, 0.0, 8.0)?;
+        range("bloom.knee", b.knee, 0.0, 2.0)?;
+        range("bloom.radius", b.radius, 0.0, 8.0)?;
+        let c = &self.contact;
+        range("contact.strength", c.strength, 0.0, 1.0)?;
+        range("contact.radius", c.radius, 0.1, 8.0)?;
+        range("contact.bias", c.bias, 0.0, 1.0)?;
+        // The old editor's atmosphere schema.
+        let a = &self.atmosphere;
+        range("atmosphere.density", a.density, 0.0, 0.08)?;
+        range("atmosphere.shaftDensity", a.shaft_density, 0.0, 0.01)?;
+        range("atmosphere.baseHeight", a.base_height, -32.0, 64.0)?;
+        range("atmosphere.heightFalloff", a.height_falloff, 0.5, 24.0)?;
+        range("atmosphere.sunStrength", a.sun_strength, 0.0, 3.0)?;
+        range("atmosphere.noiseScale", a.noise_scale, 0.01, 0.5)?;
+        range("atmosphere.noiseStrength", a.noise_strength, 0.0, 1.0)?;
+        range("atmosphere.driftSpeed", a.drift_speed, 0.0, 3.0)?;
+        range(
+            "atmosphere.wind",
+            a.wind[0].abs().max(a.wind[1].abs()),
+            0.0,
+            10.0,
+        )?;
         range("groundCover.radius", self.ground_cover.radius, 0.0, 32.0)?;
         range("groundCover.strength", self.ground_cover.strength, 0.0, 1.0)?;
         Ok(())
@@ -498,6 +595,12 @@ pub struct Lighting {
     pub sun_direction: Vec3,
     /// Linear irradiance of the sun (colour × intensity) before canopy clouds.
     pub sun: Vec3,
+    /// The sun's colour and intensity separately (`sun = sun_color · sun_intensity`).
+    pub sun_color: Vec3,
+    pub sun_intensity: f32,
+    /// The daylight palette's ambient irradiance, before the biome's ambient tint and
+    /// strength (what the old water was lit with).
+    pub daylight_ambient: Vec3,
     /// Flat ambient irradiance (`ambientLightColor`).
     pub ambient: Vec3,
     /// Hemisphere irradiance from above and below.
@@ -592,6 +695,9 @@ impl Lighting {
         Self {
             sun_direction: sun_direction(hour, l.sun_direction, l.sun_height),
             sun: sun_rgb * l.sun_tint.linear() * sun_m * l.sun_strength,
+            sun_color: sun_rgb * l.sun_tint.linear(),
+            sun_intensity: sun_m * l.sun_strength,
+            daylight_ambient: ambient_rgb * ambient_m,
             ambient: ambient_rgb * l.ambient_tint.linear() * ambient_m * l.ambient_strength,
             sky: sky_rgb * l.sky_tint.linear() * hemisphere,
             ground: l.bounce_tint.linear() * lighting.bounce_strength * hemisphere,
@@ -629,32 +735,14 @@ pub fn canopy_motion(canopy: &Canopy, seconds: f32) -> ([f32; 2], f32) {
 /// crowns shade the ground. Coverage picks the threshold from the sorted noise so the
 /// shaded fraction is exact.
 pub fn canopy_pattern(canopy: &Canopy, size: u32) -> Vec<u8> {
-    let hash = |ix: i64, iy: i64, period: i64, seed: u32| -> f32 {
-        let x = ix.rem_euclid(period) as u32;
-        let y = iy.rem_euclid(period) as u32;
-        let mut n = x.wrapping_add(seed).wrapping_mul(374_761_393) ^ y.wrapping_mul(668_265_263);
-        n = (n ^ (n >> 13)).wrapping_mul(1_274_126_177);
-        (n ^ (n >> 16)) as f32 / u32::MAX as f32
-    };
-    let field = |u: f32, v: f32, period: i64, seed: u32| -> f32 {
-        let (x0, y0) = (u.floor(), v.floor());
-        let (fx, fy) = (u - x0, v - y0);
-        let (sx, sy) = (fx * fx * (3.0 - 2.0 * fx), fy * fy * (3.0 - 2.0 * fy));
-        let (ix, iy) = (x0 as i64, y0 as i64);
-        let a = hash(ix, iy, period, seed);
-        let b = hash(ix + 1, iy, period, seed);
-        let c = hash(ix, iy + 1, period, seed);
-        let d = hash(ix + 1, iy + 1, period, seed);
-        (a + (b - a) * sx) + ((c + (d - c) * sx) - (a + (b - a) * sx)) * sy
-    };
     let n = (size * size) as usize;
     let mut values = Vec::with_capacity(n);
     for y in 0..size {
         for x in 0..size {
             let (u, v) = (x as f32 / size as f32, y as f32 / size as f32);
             values.push(
-                field(u * 4.0, v * 4.0, 4, canopy.seed) * 0.82
-                    + field(u * 12.0, v * 12.0, 12, canopy.seed.wrapping_add(31)) * 0.18,
+                canopy_field(u * 4.0, v * 4.0, 4, canopy.seed) * 0.82
+                    + canopy_field(u * 12.0, v * 12.0, 12, canopy.seed.wrapping_add(31)) * 0.18,
             );
         }
     }
@@ -666,6 +754,47 @@ pub fn canopy_pattern(canopy: &Canopy, size: u32) -> Vec<u8> {
         .map(|&value| {
             let t = (0.5 + (value - threshold) / canopy.softness).clamp(0.0, 1.0);
             (t * t * (3.0 - 2.0 * t) * 255.0).round() as u8
+        })
+        .collect()
+}
+
+/// Periodic value noise of the canopy (old `canopyLayer.field`).
+fn canopy_field(u: f32, v: f32, period: i64, seed: u32) -> f32 {
+    let hash = |ix: i64, iy: i64| -> f32 {
+        let x = ix.rem_euclid(period) as u32;
+        let y = iy.rem_euclid(period) as u32;
+        let mut n = x.wrapping_add(seed).wrapping_mul(374_761_393) ^ y.wrapping_mul(668_265_263);
+        n = (n ^ (n >> 13)).wrapping_mul(1_274_126_177);
+        (n ^ (n >> 16)) as f32 / u32::MAX as f32
+    };
+    let (x0, y0) = (u.floor(), v.floor());
+    let (fx, fy) = (u - x0, v - y0);
+    let (sx, sy) = (fx * fx * (3.0 - 2.0 * fx), fy * fy * (3.0 - 2.0 * fy));
+    let (ix, iy) = (x0 as i64, y0 as i64);
+    let a = hash(ix, iy);
+    let b = hash(ix + 1, iy);
+    let c = hash(ix, iy + 1);
+    let d = hash(ix + 1, iy + 1);
+    (a + (b - a) * sx) + ((c + (d - c) * sx) - (a + (b - a) * sx)) * sy
+}
+
+/// Where sunlight scatters within the canopy's openings (old `canopyMask` green): the
+/// unshaded part of [`canopy_pattern`] feathered by a finer noise, so shafts stay sparse
+/// even in a large clearing. R8, `size`².
+pub fn canopy_openings(canopy: &Canopy, size: u32) -> Vec<u8> {
+    let shade = canopy_pattern(canopy, size);
+    shade
+        .iter()
+        .enumerate()
+        .map(|(i, &alpha)| {
+            let (u, v) = (
+                (i as u32 % size) as f32 / size as f32,
+                (i as u32 / size) as f32 / size as f32,
+            );
+            let gap = ((canopy_field(u * 16.0, v * 16.0, 16, canopy.seed.wrapping_add(91)) - 0.58)
+                / 0.2)
+                .clamp(0.0, 1.0);
+            (f32::from(255 - alpha) * gap * gap * (3.0 - 2.0 * gap)).round() as u8
         })
         .collect()
 }
@@ -913,6 +1042,7 @@ mod tests {
                 noise_scale: 0.09,
                 noise_strength: 0.65,
                 drift_speed: 0.35,
+                wind: calm_wind(),
             },
             terrain: TerrainLayers {
                 soil: layer(),
@@ -929,6 +1059,7 @@ mod tests {
                 haze_color: white(),
                 haze_start: 170.0,
                 haze_end: 850.0,
+                forest: None,
             },
             ground_cover: GroundCover {
                 radius: 1.3,

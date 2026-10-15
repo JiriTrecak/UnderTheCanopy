@@ -1,0 +1,4 @@
+{
+  "reflection": { "asset": "asset.texture.woodland-reflection", "size": 64, "levels": 7 },
+  "caustics": "asset.texture.woodland-caustics"
+}

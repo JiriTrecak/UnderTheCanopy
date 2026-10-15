@@ -2,8 +2,6 @@
 // the floor colour, lit like painted ground, hazed with distance.
 
 struct Look {
-    shallow: vec4f,
-    deep: vec4f,
     // rgb floor colour
     floor_color: vec4f,
 }
@@ -26,7 +24,7 @@ fn vs_main(@location(0) position: vec3f) -> VsOut {
 }
 
 @fragment
-fn fs_main(in: VsOut) -> @location(0) vec4f {
+fn fs_main(in: VsOut) -> SceneOut {
     let frag = in.clip;
     let albedo = textureSample(floor_texture, floor_sampler, in.world.xz * 0.06).rgb * look.floor_color.rgb;
     var surface: Surface;
@@ -41,5 +39,5 @@ fn fs_main(in: VsOut) -> @location(0) vec4f {
     surface.model = LIGHT_STANDARD;
     let view = frame.eye.xyz - in.world;
     let color = surface_light(surface, normalize(view), frag.xy);
-    return vec4f(haze(color, length(view)), 1.0);
+    return scene_out(vec4f(haze(color, length(view)), 1.0), in.world);
 }

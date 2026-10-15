@@ -11,7 +11,9 @@ use canopy_render::{
     World,
     environment::{BiomeConfig, CONFIG_FOLDER, Hex, LightingConfig},
     statics::Glow,
+    surroundings::{ForestDesc, TrunkRing},
     terrain::TerrainDesc,
+    water::WaterConfig,
 };
 use canopy_sim::{MatchSetup, Slot, SlotKind};
 use serde::Deserialize;
@@ -116,6 +118,7 @@ pub struct Look {
     pub biome: BiomeConfig,
     pub players: Players,
     pub glows: Glows,
+    pub water: WaterConfig,
 }
 
 impl Look {
@@ -128,6 +131,7 @@ impl Look {
             biome,
             players: Players::load(data)?,
             glows: Glows::load(data)?,
+            water: WaterConfig::load(data)?,
         })
     }
 }
@@ -187,8 +191,15 @@ pub fn build(
     }
     let world = canopy_sim::World::new(content.clone(), map, spectator_setup(map))
         .map_err(|e| anyhow::anyhow!("cannot start the match: {}", e.0))?;
-    let terrain =
+    let (terrain, water) =
         terrain::build(map, &content.landscape, &look.biome).map_err(anyhow::Error::msg)?;
+    let forest = look
+        .biome
+        .surroundings
+        .forest
+        .as_ref()
+        .map(|f| forest(f, &look.biome, map.size, pack))
+        .transpose()?;
     let scenery: statics::SceneryModels = pack
         .scenery()?
         .prototypes
@@ -215,6 +226,9 @@ pub fn build(
             statics: instances,
             glows: look.glows.by_model(&content)?,
             point_lights: lights,
+            water: Some(water),
+            water_textures: look.water.textures(),
+            forest,
         },
         hour,
         size: map.size,
@@ -224,5 +238,51 @@ pub fn build(
             .map(|s| [s.x as f32, s.z as f32])
             .collect(),
         missing,
+    })
+}
+
+/// The biome's forest around the map, with its models found in the pack's scenery.
+fn forest(
+    config: &canopy_render::environment::ForestConfig,
+    biome: &BiomeConfig,
+    size: u32,
+    pack: &canopy_assets::Pack,
+) -> Result<ForestDesc> {
+    let scenery = pack.scenery()?;
+    let model = |id: &str| -> Result<String> {
+        scenery
+            .prototypes
+            .iter()
+            .find(|p| p.id == id)
+            .map(|p| p.model.clone())
+            .with_context(|| format!("surroundings: no scenery model {id}"))
+    };
+    Ok(ForestDesc {
+        map_size: size,
+        trunk: model(&config.trunk)?,
+        mushroom: config.mushroom.as_deref().map(model).transpose()?,
+        log: config.log.as_deref().map(model).transpose()?,
+        limb_texture: config
+            .limb_texture
+            .as_ref()
+            .map(|id| format!("assets/library/{id}/albedo.png")),
+        rings: config
+            .rings
+            .iter()
+            .map(|r| TrunkRing {
+                distance: r.distance,
+                spacing: r.spacing,
+                height: r.height,
+            })
+            .collect(),
+        leaf_colors: config
+            .leaf_colors
+            .iter()
+            .map(|c| c.linear().to_array())
+            .collect(),
+        leaf_spacing: config.leaf_spacing,
+        leaf_length: config.leaf_length,
+        seed: biome.canopy.seed,
+        canopy_height: biome.canopy.height,
     })
 }

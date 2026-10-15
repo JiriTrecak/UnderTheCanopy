@@ -17,8 +17,19 @@ pub enum Resource {
     ShadowMap,
     /// HDR scene colour (multisampled) and its single-sample resolve.
     SceneColor,
-    /// Scene depth (multisampled).
+    /// Scene depth: multisampled, and the resolved linear depth of opaque surfaces and
+    /// water.
     SceneDepth,
+    /// Unit wakes around the camera focus.
+    RippleField,
+    /// This frame's caustics pattern.
+    Caustics,
+    /// Screen-space contact shading at the post-effect resolution.
+    ContactShade,
+    /// The bloom mip chain.
+    Bloom,
+    /// Volumetric haze and light shafts (scattered light, transmission).
+    Haze,
     /// The presented (or captured) image.
     Output,
 }
@@ -146,32 +157,82 @@ impl FrameGraph {
 pub mod passes {
     pub const CULL: &str = "cull";
     pub const SHADOW: &str = "shadow";
+    pub const RIPPLES: &str = "ripples";
+    pub const CAUSTICS: &str = "caustics";
     pub const FORWARD: &str = "forward";
+    pub const CONTACT: &str = "contact";
+    pub const BLOOM: &str = "bloom";
+    pub const HAZE: &str = "haze";
     pub const POST: &str = "post";
 }
 
-/// The world frame (renderer §4.1, the parts that exist so far): GPU culling of statics
-/// for both views, the sun shadow map, the forward HDR pass (terrain, statics, water;
-/// MSAA resolved in the pass), and resolve + tone map + grade into the output.
-pub fn world_frame() -> FrameGraph {
+/// Optional parts of the world frame: what the world has, what the biome uses and what
+/// the quality settings allow.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct FrameFeatures {
+    /// Water with its ripple field and caustics.
+    pub water: bool,
+    pub contact: bool,
+    pub bloom: bool,
+    pub haze: bool,
+}
+
+/// The world frame (renderer §4.1): GPU culling of statics for both views, the sun
+/// shadow map, the water's ripple field and caustics, the forward HDR pass (terrain,
+/// statics, water; MSAA resolved in the pass, with linear depth), the post effects the
+/// biome uses (contact shading, bloom, volumetric haze) and the final pass (upscale,
+/// effects, tone map, grade) into the output.
+pub fn world_frame(features: FrameFeatures) -> FrameGraph {
     use PassKind::*;
     use Resource::*;
-    FrameGraph::new(
-        vec![
-            Pass::new(passes::CULL, Compute).writes(&[VisibleStatics]),
-            Pass::new(passes::SHADOW, Render)
-                .reads(&[VisibleStatics])
-                .writes(&[ShadowMap]),
-            Pass::new(passes::FORWARD, Render)
-                .reads(&[VisibleStatics, ShadowMap])
-                .writes(&[SceneColor, SceneDepth]),
-            Pass::new(passes::POST, Render)
-                .reads(&[SceneColor, SceneDepth])
-                .writes(&[Output]),
-        ],
-        &[],
-    )
-    .expect("the world frame graph is well formed")
+    let mut list = vec![
+        Pass::new(passes::CULL, Compute).writes(&[VisibleStatics]),
+        Pass::new(passes::SHADOW, Render)
+            .reads(&[VisibleStatics])
+            .writes(&[ShadowMap]),
+    ];
+    let mut forward_reads = vec![VisibleStatics, ShadowMap];
+    if features.water {
+        list.push(Pass::new(passes::RIPPLES, Render).writes(&[RippleField]));
+        list.push(Pass::new(passes::CAUSTICS, Render).writes(&[Caustics]));
+        forward_reads.extend([RippleField, Caustics]);
+    }
+    list.push(
+        Pass::new(passes::FORWARD, Render)
+            .reads(&forward_reads)
+            .writes(&[SceneColor, SceneDepth]),
+    );
+    let mut post_reads = vec![SceneColor, SceneDepth];
+    if features.contact {
+        list.push(
+            Pass::new(passes::CONTACT, Render)
+                .reads(&[SceneDepth])
+                .writes(&[ContactShade]),
+        );
+        post_reads.push(ContactShade);
+    }
+    if features.bloom {
+        list.push(
+            Pass::new(passes::BLOOM, Render)
+                .reads(&[SceneColor])
+                .writes(&[Bloom]),
+        );
+        post_reads.push(Bloom);
+    }
+    if features.haze {
+        list.push(
+            Pass::new(passes::HAZE, Render)
+                .reads(&[SceneDepth, ShadowMap])
+                .writes(&[Haze]),
+        );
+        post_reads.push(Haze);
+    }
+    list.push(
+        Pass::new(passes::POST, Render)
+            .reads(&post_reads)
+            .writes(&[Output]),
+    );
+    FrameGraph::new(list, &[]).expect("the world frame graph is well formed")
 }
 
 #[cfg(test)]
@@ -182,10 +243,27 @@ mod tests {
 
     #[test]
     fn the_world_frame_is_well_formed() {
-        let graph = world_frame();
+        let graph = world_frame(FrameFeatures::default());
         assert_eq!(graph.passes().len(), 4);
         assert_eq!(graph.last_use(ShadowMap), Some(passes::FORWARD));
         assert_eq!(graph.index(passes::POST), Some(3));
+        let all = world_frame(FrameFeatures {
+            water: true,
+            contact: true,
+            bloom: true,
+            haze: true,
+        });
+        let names: Vec<&str> = all.passes().iter().map(|p| p.name).collect();
+        assert_eq!(
+            names,
+            [
+                "cull", "shadow", "ripples", "caustics", "forward", "contact", "bloom", "haze",
+                "post"
+            ]
+        );
+        // The haze marches through the sun's shadow map after the scene is drawn.
+        assert_eq!(all.last_use(ShadowMap), Some(passes::HAZE));
+        assert_eq!(all.last_use(RippleField), Some(passes::FORWARD));
     }
 
     #[test]

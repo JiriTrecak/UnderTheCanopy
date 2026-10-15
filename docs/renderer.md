@@ -133,6 +133,8 @@ Redesigned from scratch as stylized water: depth tint, shore foam, wave displace
 - Depth-dependent wave amplitude without phase change (`water/stylizedWaves.ts:14-17`).
 - **Ripples, ported one-to-one.** The CPU emitter tracks wet, visible units, emits a ring every 1.7 m of travel (at most 3 per unit and 256 per frame), with strength from depth and speed and stretch from speed, into a 1,536-ring buffer that expires after 2.8 s. The GPU pass draws all rings in one instanced additive draw into a 768² RGBA16F texture covering 160×160 m around the camera focus: a derivative-of-Gaussian crest `exp(−2q²)` with antialiased width, encoding slope in RG and water level in BA. The water shader saturates the slope `rg/(1+3|rg|)`, rejects rings from a different water level, fades them in shallows, and adds a sun-facing light term so ripples stay readable.
 
+As built (M3.4, D34): the surface keeps the old shading model term for term (absorption, body colour, caustics, swell bands, the old woodland reflection cube, glints, shore/crest/flow foam, cloud shading) but needs no copy of the scene: it is drawn inside the MSAA forward pass in two draws over the same fragments, a multiplicative one that tints the bed by the hue of the column's absorption and a premultiplied one for everything else. Refraction and screen-space reflections are left out (about 2 px and 2–4 % of the colour at RTS pitch). See §9 for the details.
+
 ### 4.7 Fog of war
 
 The simulation sends fog changes with dirty rectangles. The renderer writes only those rects into an R8 state texture (one layer per stacked floor); smoothing happens on the GPU. Every lit shader calls `apply_fog`. The minimap samples the same texture.
@@ -196,38 +198,70 @@ Decided 2026-10-14 (D24): every recommendation in **bold** is accepted.
 
 Superseded by [the plan](plan.md): the renderer is milestone M3, after the Rust simulation (M2), so there is no snapshot recorder for the old game and no TypeScript bridge. Each step is still measured on the reference machine (base M1) with fixed scenes, and reference screenshots from the old game are captured before work starts.
 
-## 9. Implementation status (M3.2)
+## 9. Implementation status (M3.4)
 
 What exists, in `crates/render` (`canopy-render`), `crates/scene` (`canopy-scene`), `config/` and `game/`:
 
 - **Device** (`device.rs`): WebGPU default limits; optional WebGPU features `texture-compression-bc` (D26, CPU decode without it) and `timestamp-query` (pass timings, none without it). Nothing native-only.
-- **Frame graph** (`graph.rs`): ordered passes with named inputs and outputs, checked when built (no read before write, no dead writes, one output); the renderer records exactly that list, with a tracing span and a GPU timestamp pair per pass.
+- **Frame graph** (`graph.rs`): ordered passes with named inputs and outputs, checked when built (no read before write, no dead writes, one output); the renderer records exactly that list, with a tracing span and a GPU timestamp pair per pass. The graph is rebuilt when the world, the biome or the quality settings change: passes exist only when they run (`FrameFeatures`).
 
-  | Pass | Kind | Reads | Writes |
-  |---|---|---|---|
-  | `cull` | compute | — | visible statics (camera and sun lists, indirect counts) |
-  | `shadow` | render | visible statics | sun shadow map (2048², depth) |
-  | `forward` | render, MSAA 4× HDR | visible statics, shadow map | scene colour (resolved in the pass), depth |
-  | `post` | render | scene colour | output (surface or capture) |
+  | Pass | Kind | Reads | Writes | When |
+  |---|---|---|---|---|
+  | `cull` | compute | — | visible statics (camera and sun lists, indirect counts) | always |
+  | `shadow` | render | visible statics | sun shadow map (2048², depth) | always |
+  | `ripples` | render | — | ripple field (768² RGBA16F, 160 m around the focus) | the world has water |
+  | `caustics` | render | — | caustics (256² R16F) | the world has water |
+  | `forward` | render, MSAA 4× HDR | visible statics, shadow map, ripples, caustics | scene colour and linear depth (resolved in the pass), depth | always |
+  | `contact` | render | linear depth | contact shade (R8, effect size) | biome contact strength > 0 and the setting on |
+  | `bloom` | render ×3 | scene colour | three bloom levels (effect size, ½, ¼) | biome bloom strength > 0 and the setting on |
+  | `haze` | render ×2 | linear depth, shadow map | haze (march, then depth-aware filter) | biome atmosphere on and the haze quality not off |
+  | `post` | render | everything above | output (surface or capture) | always |
 
-  MSAA colour and depth are transient attachments (memoryless on Apple GPUs), cleared and discarded inside the forward pass. No depth prepass: with MSAA resolving in tile memory it would double vertex work for no fragment saving on these scenes.
-- **Shared WGSL library** (`shaders/lib/`, `shader.rs`): `frame` (group 0: frame uniform, shadow map, canopy pattern, samplers, point lights), `lighting` (`surface_light`), `team`, `wind`, `dither`, `packing`, `color`. A shader is library modules followed by its own source; every shader is validated by naga in the tests.
+  MSAA colour, depth and linear depth are transient attachments (memoryless on Apple GPUs), cleared and discarded inside the forward pass. No depth prepass. **Linear depth** is a second colour target of the forward pass (`targets::LINEAR_DEPTH_FORMAT`, RG16F holding the view depth rounded to 11 significant bits and the remainder, so interior pixels keep full precision through the averaging resolve; WebGPU cannot resolve depth or R32F). Every pipeline drawn in the forward pass declares `targets::forward_targets(blend, writes_depth)` and opaque shaders return `scene_out(colour, world)` (`frame.wgsl`); transparent ones mask the depth target. The water writes its surface, so post effects stop at the water as the old ones did.
+- **Shared WGSL library** (`shaders/lib/`, `shader.rs`): `frame` (group 0: frame uniform, shadow map, canopy pattern, samplers, point lights, `SceneOut`), `lighting` (`surface_light`), `team`, `wind`, `dither`, `packing`, `color`, `view` (post passes: view uniform, linear depth, surface reconstruction, full-screen vertex). A shader is library modules followed by its own source; every shader is validated by naga in the tests.
 - **One lighting model** (`lighting.wgsl`). `surface_light` with two ambient models: *standard* (units, buildings, props, foliage: Lambert + GGX sun, flat ambient + sky/ground hemisphere over π, environment irradiance from 9 SH coefficients, split-sum reflections) and *ground* (terrain: the old ground lighting, energy-conserving GGX, ambient tinted by the ground probe). Both take the 8-tap rotated Vogel PCF sun shadow and the canopy shade. Painted materials drop specular; foliage wraps light (`backside`). Point lights come from a buffer with a count; light count never changes pipelines.
-- **Post** (`post.wgsl`): resolve → display encoding → the one tone mapper → baked grade volume → vignette. The tone mapper is the old hue-preserving highlight shoulder; every current biome has knee 0, so values clip at 1 exactly as today's outdoor frames (D24: today's look first). The grade volume (32³) is baked on the CPU from the biome finish and, when a biome asks for it, the pack's daytime lookup.
+- **Final pass** (`post.rs`, `post.wgsl`): upscale from the render scale (bilinear with a light unsharp mask; one texel at native scale), contact shade (bilinear × surface-similarity upsampling, old `contactShade`), bloom (levels weighted 0.2/0.3/0.5, times the canopy shade at the surface), haze (`colour · transmission + scattered`, depth-aware upsampling), then display encoding → the one tone mapper → baked grade volume → vignette. The tone mapper is the old hue-preserving highlight shoulder; every current biome has knee 0, so values clip at 1 exactly as today's outdoor frames (D24: today's look first). The grade volume (32³) is baked on the CPU from the biome finish and, when a biome asks for it, the pack's daytime lookup.
+- **Post effects** (`post.rs`; old `BeautyPass` and `AtmospherePass`, data from `config/biomes/*.json` `contact`, `bloom`, `atmosphere`):
+  - *Contact shading*: at the effect size (half the scene at most, about 180,000 pixels: 565×318 at 1080p), 12 golden-angle taps within the biome's world radius, horizon over the reconstructed tangent plane minus the bias, `clamp(1 − 3·mean, 0.15, 1)`; mixed by the biome strength.
+  - *Bloom*: soft-threshold prefilter, then three 3×3 tents (radius 1, then the biome radius × 2) at the effect size, ½ and ¼.
+  - *Volumetric haze*: a bounded march (the last 96 m before the surface, inside the mist layer `base + 5·falloff`) with height-falling density, a 32³ hashed noise volume drifting with the wind, the sun through one shadow-map tap and the canopy's openings (a second canopy texture: the unshaded part of the pattern feathered by finer noise, old `canopyMask` green), and separate clear-air shafts. Quality low/medium/high = scale 0.33/0.5/0.66, 16/24/40 steps, at most 180k/360k/900k pixels (old `atmosphereQualitySpec`). Then a depth-aware 3×3 filter. Deep forest and amberleaf use it; no shipped map does.
+  - Old quirk not kept: the old composite clipped every surface at a water plane of height `waterLevel − 0.03`, and committed-cell maps never set `waterLevel` (0), so contact shading was off on all ground below y ≈ 0.05. Here the water's own surface stops the effects (D34).
+- **Quality** (`quality.rs`, `Renderer::set_quality`): render scale 0.5–1 (the scene, with MSAA, renders at the scaled size; the final pass upsamples), upscale sharpening, contact shadows on/off, bloom on/off, haze off/low/medium/high. `canopy` and `canopy shot` take `--render-scale`, `--no-contact`, `--no-bloom`, `--haze`.
 - **Terrain** (`terrain/`): one vertex per unit over map and halo, 32-cell chunks with 4 geometric mip levels chosen by projected height error (≤ 1 px), heights pulled from a texture, edges stitched to coarser neighbours in the vertex shader (no cracks), frustum-culled on the CPU (≤ 1089 chunks on a 1024 map); one draw per level. Layers (old `authoredTerrain`): six built-in biome layers, the map's atlas grounds (corner tiles per texture cell, full-tile variants) and biplanar cliffs; each one-unit cell lists at most 4 layers starting from the lowest that covers it completely (Q7). Masks, atlas codes and layer lists are computed once at load (`canopy-scene` + `terrain::select_layers`). Tile textures are 2D arrays of the packed runtime tiles. Bridge decks need nothing special: terrain under them renders as everywhere (the deck is a model).
-- **Placeholder water**: flat quads over wet cells at the water level, tinted by the water column with the biome's water profile colours (no waves, reflections, ripples).
-- **Surroundings floor**: the old three-row floor around the map with the biome floor texture and haze.
+- **Water** (`water/`, `water.wgsl`, `ripples.wgsl`, `caustics.wgsl`; old `waterSurface`, `sourceWaterShaders`, `stylizedWaves`):
+  - *Data*: the terrain's bed and water heights per vertex, the map's flow grid per cell (direction, foam, profile slot) and a profile table: slot 0 the biome's water, slots 1–255 the map's `waterProfiles` (old rule: painting a river never recolours other lakes). Profiles come from the content catalogue (`waves` or the old `DEFAULT_WATER_WAVES`). `config/water.json` names the shared textures: the old woodland reflection cube (a data asset of sRGB cube faces) and the caustics image.
+  - *Surface*: the cells the old water drew (centre or a corner within 0.15 of the water), as one u32 index list over the terrain's vertex grid, split in 32-cell chunks culled on the CPU and merged into contiguous draws. Levels (R32F) and depth (R16F, filtered) are pulled from textures. Swells move vertices with the old field: depth-scaled amplitude `min(0.18·depth, height·mix(shallowStrength, 1, open))·smoothstep(0, 0.16, depth)`, phase advected by the flow, never by depth.
+  - *Shading*, per fragment, the old terms: absorption `exp(−column/clarity·(1.7, 0.9, 0.65))` and the shallow-colour tint on the bed, caustics (generated each frame by the old mirrored-tiling generator into a 256² texture), body colour from shallow to deep by column, ripple light, swell bands by `n·l`, the reflection cube compressed `r/(1+r)·0.45` with Fresnel × reflection strength, sun glints `pow(n·h, 120)`, shore foam from the bank distance (depth / bed slope) with rounded cell islands, crest foam, flow foam, cloud shading, the canopy shade. Normals: forward differences of the displaced height (amplitude evaluated at the neighbours) plus the old fine ripple. Noise uses a 256² hash lattice with one filtered fetch per value-noise sample.
+  - *Blending without a scene copy*: two draws over identical fragments in the forward pass, after every opaque surface, depth-tested without depth writes: `fs_absorb` multiplies the bed by the absorption's hue (luminance 1), `fs_main` blends the surface with premultiplied alpha carrying the rest of the bed's dimming. The result is the old per-channel transmittance exactly (measured on echo-isles shallows: within 1–2 of 255 of the old frame). Left out: refraction (≈ 2 px at RTS zoom) and screen-space reflections (2–4 % of the colour at the 56° pitch).
+  - *Ripples* (`water/ripples.rs`): the emitter above, one-to-one, with an API the live world feeds every frame: `Renderer::ripples_mut().update(&movers, &field, seconds, focus)`, where a `Mover` is an id, position, walking surface and elevation, and `WaterField` answers water and walking heights (`TerrainDesc` implements it for the ground; the scene wraps it for bridge decks). The caller passes only bodies that may wake water (visible, alive ground units not contained, garrisoned or flying). `canopy shot --movers <n>` walks synthetic bodies through the view.
+- **Surroundings** (`surroundings.rs`, `surroundings.wgsl`; old `ForestSurroundingsLayer`, data in `config/biomes/*.json` `surroundings.forest`): the floor (three rows to 420 units, with the terrain) and the forest: trunks on square rings around the map (the old seeded LCG and `forestAnchors`, so placement matches), forked limbs (centripetal Catmull-Rom tubes with the bark texture), giant mushrooms and fallen logs, and the overhead sheet of broad leaves (44k on a 640 map). Trunks, mushrooms and logs are pack models, CPU-culled per instance, one draw per model section; limbs and leaves only draw when the camera looks towards the horizon. As in the old game, the tall parts of trunks beyond the border dissolve at RTS pitches, everything hazes towards the biome's haze colour with a glow towards the sun, and the background turns towards the haze as the view rises. At the play pitch the camera's map fit keeps all of it out of view; it shows in free views (`canopy shot --pitch`).
 - **Statics** (`statics.rs`): every scenery object, standing tree, deposit and building in one instance buffer; a compute pass culls them against the camera and the sun and builds per-model visible lists and indirect counts; one indirect draw per model section (+ depth-stream and alpha-tested shadow draws). Without `indirect-first-instance` each list is reached through a dynamic storage offset. Foliage is alpha-tested with alpha-to-coverage under MSAA and sways (old "source" trunk sway + leaf flutter, same in the shadow pass). Team colour is the old masked formula; owner colours come from `config/players.json`. Data-driven deposit glow (`config/glow.json`). Static poses only.
 - **Camera** (`camera.rs`): the old play camera as a pure controller (see "Reference captures"); `game/` adds input: arrow keys and edge scrolling (28 units/s), wheel and PageUp/PageDown zoom with the old momentum, middle-drag grab pan; as a spectator also Q/E to turn and zoom out to 6×.
-- **Configuration** (`config/`, D30): `lighting.json` (daylight palettes, phases, probes, shadow fitting), `biomes/<id>.json` (light, canopy, grade, built-in ground layers, water profile, surroundings, ground cover; bloom, contact shadows and atmosphere carried but not rendered yet), `players.json`, `glow.json`.
+- **Configuration** (`config/`, D30): `lighting.json` (daylight palettes, phases, probes, shadow fitting), `biomes/<id>.json` (light, canopy, grade, built-in ground layers, water profile, surroundings with the forest, ground cover, bloom, contact shading and atmosphere), `water.json` (reflection cube and caustics), `players.json`, `glow.json`.
+
+### Performance (M3.4)
+
+Measured on the development machine (M4 Max, 40-core GPU; no base M1 was available) with `canopy shot --frames 120`: the median submit-to-idle time of a frame, best of three runs, before this step and after it, on three views (echo-isles player start 117.5,225.5 zoom 1; echo-isles shallow channels 200,360 zoom 1; turtle-rock west edge 20,320 zoom 1.25 over deep water). Submit-to-idle includes about 1 ms of fixed CPU and synchronisation cost; per-pass GPU timestamps on Apple GPUs attribute work to neighbouring passes (the final pass always reads 0 ms), so they are only indicative.
+
+| Setting | Before | After |
+|---|---|---|
+| 1920×1080 | 1.80–1.92 ms | 1.96–2.07 ms |
+| 1920×1080, contact shading off | — | 1.74–1.90 ms |
+| 2560×1600 | 2.42–2.51 ms | 2.78–3.18 ms |
+| 2560×1600, render scale 0.75 | — | 2.25–2.36 ms |
+| 1920×1080, deep forest (bloom and haze medium) | — | 2.42–2.46 ms |
+| 1920×1080, deep forest, haze low | — | 2.22–2.30 ms |
+| 2560×1600, deep forest, render scale 0.75 | — | 2.64–2.89 ms |
+
+What it costs: the water with its two draws, ripple field and caustics about 0.1–0.2 ms in a view that is 60 % water (the full old shading cost 0.75 ms until shore foam was evaluated only where it can show and the water took one shadow tap); the contact pass and its upsampling about 0.15–0.25 ms at 1080p; the forest nothing at play pitch (CPU-culled); the linear depth target nothing measurable. Bloom and medium haze add about 0.4 ms, low haze 0.25 ms. Scaled to the base M1 (about 7× less GPU throughput and 8× less bandwidth), the vibrant forest's additions are roughly 1–2 ms at 1080p and 3–5 ms at 2560×1600 native; at render scale 0.75 a Retina frame costs less than before this step. Budget recommendation (D34): render scale 1 at 1080p, 0.75 on Retina panels, haze low.
 
 ### Not yet (later M3 steps)
 
-Units and skinned animation, felled trees, construction scaffolds, effects, fog of war, world UI, the real water (waves, ripples, shore), forest-surroundings trunks and leaf canopy, contact shadows (old screen-space AO, strength 0.4), bloom and volumetric atmosphere (deep and amberleaf forests), terrain displacement (no shipped map uses rock coverage), ground decals (none shipped), render scale, egui tuning, hot reload of `config/`.
+Units and skinned animation, felled trees, construction scaffolds, effects, fog of war (the post effects and water take no visibility mask yet), world UI, terrain displacement (no shipped map uses rock coverage), ground decals (none shipped), egui tuning, hot reload of `config/`. Mist regions (`atmosphere.regions`, used by no biome), rain and the close-camera depth of field and shaft density of the old surroundings (no camera uses them) are not carried.
 
 ## 10. Reference captures
 
-`just shot --map <id> --camera <x,z,zoom[,yaw]> --out <png> [--size 1920x1080] [--hour 12] [--time 12] [--frames n] [--no-shadows]` renders one view offscreen (no window) and writes a PNG, printing draws, terrain triangles, memory, CPU recording time and GPU time per pass (from `--frames` frames).
+`just shot --map <id> --camera <x,z,zoom[,yaw]> --out <png> [--size 1920x1080] [--hour 12] [--time 12] [--frames n] [--no-shadows] [--pitch <deg>] [--movers <n>] [--biome <id>] [--render-scale <0.5–1>] [--no-contact] [--no-bloom] [--haze off|low|medium|high]` renders one view offscreen (no window) and writes a PNG, printing draws, terrain triangles, water and forest counts, memory, CPU recording time, the median submit-to-idle time of a frame and GPU time per pass (from `--frames` frames). `--pitch` frees the camera from the map fit (views past the border), `--movers` walks synthetic bodies through the view for wakes, `--biome` previews the map in another biome's look.
 
 ### Camera parameters
 
@@ -270,3 +304,16 @@ Live match alternative: `http://127.0.0.1:5173/?map=<id>` starts at the first pl
 | `turtle-rock-c.png` | turtle-rock | `113.5,257.5,1,30` |
 
 Mean colours of matching regions agree within 1–3 of 255 on open ground, forest and dirt (for example 64,131,55 on echo-isles grass in both; whole frames within 4). Visible differences: units (next step), the placeholder water (the old water is lighter and textured), the old contact shadows and softer VSM shadow edges, slightly brighter old deposit crystals.
+
+Water and border views (M3.4) live in `target/shots/m3-water/` (`new/`, `old/`, `compare/` with the old game left) and in `docs/captures/m3-water/`:
+
+| File | Map | `--camera` |
+|---|---|---|
+| `echo-isles-water.png` | echo-isles | `200,360,1` (shallow channels between islands) |
+| `echo-isles-coast.png` | echo-isles | `560,250,1` (east coast, deep water) |
+| `echo-isles-border.png` | echo-isles | `620,620,1.25,45` (south-east corner, turned 45°) |
+| `echo-isles-a.png` | echo-isles | `117.5,225.5,1` (player 1 start) |
+| `turtle-rock-water.png` | turtle-rock | `240,230,1` |
+| `turtle-rock-border.png` | turtle-rock | `20,320,1.25` (west edge) |
+
+Region means agree within 1–2 of 255 on shallow water (echo-isles channels: 98,114,89 new against 97,113,89 old) and on deep water (echo-isles coast: 41,74,70 in both). Visible differences: the old deep water has a few more and brighter crest flecks; at the map edges the framing differs by a few units (the camera's map fit, not the water); units are not drawn yet. Old captures of edge views need the reference stage at a 1920×1080 viewport: its map fit uses the window's aspect.

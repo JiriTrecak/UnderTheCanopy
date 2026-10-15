@@ -1,13 +1,7 @@
-//! Terrain on the GPU: textures, chunk lists, the placeholder water and the floor
-//! around the map.
+//! Terrain on the GPU: textures, chunk lists and the floor around the map.
 
 use super::{CHUNK, ChunkDraw, ChunkGrid, LODS, LayerKind, MAX_LAYERS, NO_LAYER, TerrainDesc};
-use crate::{
-    camera::CameraView,
-    device::GpuFeatures,
-    targets::{self, HDR_FORMAT},
-    texture,
-};
+use crate::{camera::CameraView, device::GpuFeatures, targets, texture};
 use anyhow::{Context, Result};
 use bytemuck::{Pod, Zeroable};
 use glam::Vec4;
@@ -109,44 +103,6 @@ fn normals(desc: &TerrainDesc) -> Vec<[i8; 4]> {
     out
 }
 
-/// Wet cells as flat quads at the highest water of their corners (the placeholder).
-fn water_mesh(desc: &TerrainDesc) -> Vec<[f32; 3]> {
-    let span = desc.span as usize;
-    let w = span + 1;
-    let mut out = Vec::new();
-    for z in 0..span {
-        for x in 0..span {
-            let corners = [
-                z * w + x,
-                z * w + x + 1,
-                (z + 1) * w + x,
-                (z + 1) * w + x + 1,
-            ];
-            let wet = corners
-                .iter()
-                .any(|&i| desc.heights[i] <= desc.water[i] + 0.15);
-            if !wet {
-                continue;
-            }
-            let level = corners
-                .iter()
-                .map(|&i| desc.water[i])
-                .fold(f32::MIN, f32::max);
-            let (x0, z0) = (desc.origin + x as f32, desc.origin + z as f32);
-            let (x1, z1) = (x0 + 1.0, z0 + 1.0);
-            out.extend_from_slice(&[
-                [x0, level, z0],
-                [x0, level, z1],
-                [x1, level, z0],
-                [x1, level, z0],
-                [x0, level, z1],
-                [x1, level, z1],
-            ]);
-        }
-    }
-    out
-}
-
 /// The surroundings floor: three rows around the map at 15.9, 80 and 420 units beyond
 /// the playable edge, sloping gently down (old `ForestSurroundingsLayer.floorGeometry`).
 fn floor_mesh(desc: &TerrainDesc) -> Vec<[f32; 3]> {
@@ -181,9 +137,7 @@ fn floor_mesh(desc: &TerrainDesc) -> Vec<[f32; 3]> {
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
-struct WaterUniform {
-    shallow: [f32; 4],
-    deep: [f32; 4],
+struct FloorUniform {
     floor_color: [f32; 4],
 }
 
@@ -199,7 +153,6 @@ pub struct TerrainGpu {
     shadow_group: wgpu::BindGroup,
     forward: wgpu::RenderPipeline,
     shadow: wgpu::RenderPipeline,
-    water: Option<(wgpu::Buffer, u32, wgpu::RenderPipeline)>,
     floor: Option<(wgpu::Buffer, u32, wgpu::RenderPipeline)>,
     aux_group: wgpu::BindGroup,
     // Scratch, reused every frame.
@@ -699,7 +652,7 @@ impl TerrainGpu {
                 module: &shader,
                 entry_point: Some("fs_main"),
                 compilation_options: Default::default(),
-                targets: &[Some(HDR_FORMAT.into())],
+                targets: &targets::forward_targets(None, true),
             }),
             multiview_mask: None,
             cache: None,
@@ -755,18 +708,14 @@ impl TerrainGpu {
                     module: &module,
                     entry_point: Some("fs_main"),
                     compilation_options: Default::default(),
-                    targets: &[Some(wgpu::ColorTargetState {
-                        format: HDR_FORMAT,
-                        blend,
-                        write_mask: wgpu::ColorWrites::ALL,
-                    })],
+                    targets: &targets::forward_targets(blend, blend.is_none()),
                 }),
                 multiview_mask: None,
                 cache: None,
             })
         };
-        let water_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("water"),
+        let floor_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("floor"),
             entries: &[
                 tex_entry(
                     0,
@@ -803,24 +752,16 @@ impl TerrainGpu {
                 },
             ],
         });
-        let look = desc.water_look;
         let floor_color = desc
             .surroundings
             .as_ref()
             .map_or([1.0; 3], |s| s.floor_color);
-        let water_uniform = WaterUniform {
-            shallow: [
-                look.shallow[0],
-                look.shallow[1],
-                look.shallow[2],
-                look.clarity,
-            ],
-            deep: [look.deep[0], look.deep[1], look.deep[2], 0.0],
+        let floor_uniform = FloorUniform {
             floor_color: [floor_color[0], floor_color[1], floor_color[2], 0.0],
         };
-        let water_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("water look"),
-            contents: bytemuck::bytes_of(&water_uniform),
+        let floor_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("floor look"),
+            contents: bytemuck::bytes_of(&floor_uniform),
             usage: wgpu::BufferUsages::UNIFORM,
         });
         let floor_texture = match &desc.surroundings {
@@ -844,9 +785,9 @@ impl TerrainGpu {
                 [255; 4],
             ))
             .create_view(&Default::default());
-        let water_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("water"),
-            layout: &water_layout,
+        let floor_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("floor"),
+            layout: &floor_layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
@@ -854,7 +795,7 @@ impl TerrainGpu {
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: water_buffer.as_entire_binding(),
+                    resource: floor_buffer.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 2,
@@ -870,23 +811,6 @@ impl TerrainGpu {
                 },
             ],
         });
-        let wet = water_mesh(desc);
-        let water = (!wet.is_empty()).then(|| {
-            let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("water"),
-                contents: bytemuck::cast_slice(&wet),
-                usage: wgpu::BufferUsages::VERTEX,
-            });
-            let pipeline = simple(
-                "water",
-                include_str!("../../shaders/water.wgsl"),
-                Some(wgpu::BlendState::ALPHA_BLENDING),
-                false,
-                &[Some(frame_layout), Some(&water_layout)],
-            );
-            (buffer, wet.len() as u32, pipeline)
-        });
-        bytes += (wet.len() * 12) as u64;
         let floor = desc.surroundings.as_ref().map(|_| {
             let mesh = floor_mesh(desc);
             let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -899,7 +823,7 @@ impl TerrainGpu {
                 include_str!("../../shaders/floor.wgsl"),
                 None,
                 true,
-                &[Some(frame_layout), Some(&water_layout)],
+                &[Some(frame_layout), Some(&floor_layout)],
             );
             (buffer, mesh.len() as u32, pipeline)
         });
@@ -919,9 +843,8 @@ impl TerrainGpu {
             shadow_group,
             forward,
             shadow,
-            water,
             floor,
-            aux_group: water_group,
+            aux_group: floor_group,
             main_counts: [(0, 0); LODS],
             shadow_count: 0,
             bytes,
@@ -1010,23 +933,6 @@ impl TerrainGpu {
             draws += 1;
         }
         draws
-    }
-
-    /// The placeholder water, after every opaque surface.
-    pub fn draw_water<'a>(
-        &'a self,
-        pass: &mut wgpu::RenderPass<'a>,
-        frame: &'a wgpu::BindGroup,
-    ) -> u32 {
-        let Some((buffer, n, pipeline)) = &self.water else {
-            return 0;
-        };
-        pass.set_pipeline(pipeline);
-        pass.set_bind_group(0, frame, &[]);
-        pass.set_bind_group(1, &self.aux_group, &[]);
-        pass.set_vertex_buffer(0, buffer.slice(..));
-        pass.draw(0..*n, 0..1);
-        1
     }
 
     pub fn draw_shadow<'a>(

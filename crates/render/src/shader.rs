@@ -16,6 +16,9 @@ pub enum Module {
     Wind,
     /// `surface_light` and its parts; needs `Frame` and `Dither`.
     Lighting,
+    /// Group 1 of post passes: the view uniform, the resolved linear depth, surface
+    /// reconstruction and the full-screen vertex shader.
+    View,
 }
 
 impl Module {
@@ -28,6 +31,7 @@ impl Module {
             Self::Team => include_str!("../shaders/lib/team.wgsl"),
             Self::Wind => include_str!("../shaders/lib/wind.wgsl"),
             Self::Lighting => include_str!("../shaders/lib/lighting.wgsl"),
+            Self::View => include_str!("../shaders/lib/view.wgsl"),
         }
     }
 }
@@ -42,6 +46,21 @@ pub const LIT: &[Module] = &[
     Module::Wind,
     Module::Lighting,
 ];
+
+/// The modules of the final pass (lit helpers for the canopy shade, and the view).
+pub const POST: &[Module] = &[
+    Module::Frame,
+    Module::Color,
+    Module::Packing,
+    Module::Dither,
+    Module::Team,
+    Module::Wind,
+    Module::Lighting,
+    Module::View,
+];
+
+/// The modules of the haze passes.
+pub const HAZE: &[Module] = &[Module::Frame, Module::Dither, Module::View];
 
 /// Library modules followed by a shader's own source.
 pub fn assemble(modules: &[Module], body: &str) -> String {
@@ -74,10 +93,28 @@ pub fn all() -> Vec<(&'static str, &'static [Module], &'static str)> {
         ("water", LIT, include_str!("../shaders/water.wgsl")),
         ("floor", LIT, include_str!("../shaders/floor.wgsl")),
         ("cull", &[], include_str!("../shaders/cull.wgsl")),
+        ("ripples", &[], include_str!("../shaders/ripples.wgsl")),
         (
-            "post",
-            &[Module::Color, Module::Dither],
-            include_str!("../shaders/post.wgsl"),
+            "caustics",
+            &[Module::Color],
+            include_str!("../shaders/caustics.wgsl"),
+        ),
+        ("post", POST, include_str!("../shaders/post.wgsl")),
+        (
+            "contact",
+            &[Module::View],
+            include_str!("../shaders/contact.wgsl"),
+        ),
+        (
+            "bloom",
+            &[Module::View],
+            include_str!("../shaders/bloom.wgsl"),
+        ),
+        ("haze", HAZE, include_str!("../shaders/haze.wgsl")),
+        (
+            "surroundings",
+            LIT,
+            include_str!("../shaders/surroundings.wgsl"),
         ),
     ]
 }

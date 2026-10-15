@@ -190,7 +190,7 @@ fn occlusion_of(layer: Layer, uv: vec2f, dx: vec2f, dy: vec2f) -> vec2f {
 }
 
 @fragment
-fn fs_main(in: VsOut) -> @location(0) vec4f {
+fn fs_main(in: VsOut) -> SceneOut {
     let frag = in.clip;
     let world = in.world;
     let xz = world.xz;
@@ -359,5 +359,5 @@ fn fs_main(in: VsOut) -> @location(0) vec4f {
     surface.model = LIGHT_GROUND;
     let view = normalize(frame.eye.xyz - world);
     let color = surface_light(surface, view, frag.xy);
-    return vec4f(color, 1.0);
+    return scene_out(vec4f(color, 1.0), world);
 }
