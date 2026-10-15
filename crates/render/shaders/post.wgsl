@@ -51,31 +51,40 @@ fn scene_color(uv: vec2f, frag: vec2f) -> vec3f {
     return max(c + (c - n * 0.25) * post.params.w, vec3f(0.0));
 }
 
-// Contact shade upsampled with bilinear weights times surface similarity (old
-// `contactShade`).
-fn contact_shade(uv: vec2f, surface: vec3f) -> f32 {
+// Contact shade upsampled with bilinear weights times depth similarity (old
+// `contactShade`, which compared reconstructed positions). Most of the screen has no
+// shade: when all four texels are unshaded the weights are skipped.
+fn contact_shade(uv: vec2f, depth: f32) -> f32 {
     let size = post.sizes.xy;
     let pixel = uv * size - 0.5;
     let base = floor(pixel);
     let f = pixel - base;
+    let last = vec2i(size) - 1;
+    var shades: array<f32, 4>;
+    var lowest = 1.0;
+    for (var i = 0; i < 4; i++) {
+        let texel = clamp(vec2i(base) + vec2i(i % 2, i / 2), vec2i(0), last);
+        shades[i] = textureLoad(contact_map, texel, 0).r;
+        lowest = min(lowest, shades[i]);
+    }
+    if (lowest > 0.996) {
+        return 1.0;
+    }
     var sum = 0.0;
     var weight = 0.0;
-    for (var y = 0; y < 2; y++) {
-        for (var x = 0; x < 2; x++) {
-            let offset = vec2f(f32(x), f32(y));
-            let tuv = (base + offset + 0.5) / size;
-            let bilinear = mix(1.0 - f, f, offset);
-            let w = bilinear.x * bilinear.y * exp(-length(surface_at(tuv) - surface) * 2.0) + 0.00001;
-            let texel = clamp(vec2i(base + offset), vec2i(0), vec2i(size) - 1);
-            sum += textureLoad(contact_map, texel, 0).r * w;
-            weight += w;
-        }
+    for (var i = 0; i < 4; i++) {
+        let offset = vec2f(f32(i % 2), f32(i / 2));
+        let tuv = (base + offset + 0.5) / size;
+        let bilinear = mix(1.0 - f, f, offset);
+        let w = bilinear.x * bilinear.y * exp(-abs(depth_at_uv(tuv) - depth) * 2.0) + 0.00001;
+        sum += shades[i] * w;
+        weight += w;
     }
     return sum / weight;
 }
 
 // The haze upsampled the same way.
-fn haze_at(uv: vec2f, surface: vec3f) -> vec4f {
+fn haze_at(uv: vec2f, depth: f32) -> vec4f {
     let size = post.sizes.zw;
     let pixel = uv * size - 0.5;
     let base = floor(pixel);
@@ -87,7 +96,7 @@ fn haze_at(uv: vec2f, surface: vec3f) -> vec4f {
             let offset = vec2f(f32(x), f32(y));
             let tuv = (base + offset + 0.5) / size;
             let bilinear = mix(1.0 - f, f, offset);
-            let w = bilinear.x * bilinear.y * exp(-length(surface_at(tuv) - surface) * 1.5) + 0.00001;
+            let w = bilinear.x * bilinear.y * exp(-abs(depth_at_uv(tuv) - depth) * 1.5) + 0.00001;
             let texel = clamp(vec2i(base + offset), vec2i(0), vec2i(size) - 1);
             sum += textureLoad(haze_map, texel, 0) * w;
             weight += w;
@@ -101,19 +110,19 @@ fn fs_main(in: FullscreenOut) -> @location(0) vec4f {
     var hdr = scene_color(in.uv, in.clip.xy);
     let effects = post.effects;
     if (effects.x > 0.0 || effects.y > 0.0 || effects.z > 0.0) {
-        let surface = surface_at(in.uv);
+        let depth = depth_at_uv(in.uv);
         if (effects.x > 0.0) {
-            hdr *= mix(1.0, contact_shade(in.uv, surface), effects.x);
+            hdr *= mix(1.0, contact_shade(in.uv, depth), effects.x);
         }
         if (effects.y > 0.0) {
             // Bloom carries the canopy shade so highlights cannot light the shade back up.
             let glow = textureSampleLevel(bloom_near, linear_sampler, in.uv, 0.0).rgb * 0.2
                 + textureSampleLevel(bloom_mid, linear_sampler, in.uv, 0.0).rgb * 0.3
                 + textureSampleLevel(bloom_far, linear_sampler, in.uv, 0.0).rgb * 0.5;
-            hdr += glow * effects.y * canopy_light(surface);
+            hdr += glow * effects.y * canopy_light(world_at(in.uv, depth));
         }
         if (effects.z > 0.0) {
-            let fog = haze_at(in.uv, surface);
+            let fog = haze_at(in.uv, depth);
             hdr = hdr * fog.a + fog.rgb;
         }
     }

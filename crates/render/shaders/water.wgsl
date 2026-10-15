@@ -134,6 +134,20 @@ fn vs_main(@builtin(vertex_index) vid: u32) -> VsOut {
 
 // --- Fragment -----------------------------------------------------------------------
 
+// One filtered compare in the sun's map (the old water read one VSM sample); the water
+// softens it further.
+fn water_shadow(world: vec3f) -> f32 {
+    if (frame.sun_direction.w < 0.5) {
+        return 1.0;
+    }
+    let clip = frame.shadow_matrix * vec4f(world, 1.0);
+    let uv = clip.xy * vec2f(0.5, -0.5) + 0.5;
+    if (any(uv < vec2f(0.0)) || any(uv > vec2f(1.0)) || clip.z >= 1.0) {
+        return 1.0;
+    }
+    return textureSampleCompareLevel(shadow_map, shadow_sampler, uv, clip.z - frame.shadow.w);
+}
+
 // Rounded foam islands from a moving cell pattern (distance to the nearest point).
 fn foam_cells(p: vec2f) -> f32 {
     let cell = floor(p);
@@ -226,8 +240,8 @@ fn fs_main(in: VsOut) -> SceneOut {
     let shore_aa = max(fwidth(to_shore), 0.04);
     let noise = water_noise(p * 0.65 + vec2f(t * 0.07, -t * 0.05));
     let foam_uv = p * 0.9 + vec2f(t * 0.035, -t * 0.024) + vec2f(noise, water_noise(p * 0.4 + 7.0)) * 0.5;
-    let cells = foam_cells(foam_uv);
-    let cell_aa = max(fwidth(cells), 0.025);
+    // The cell distance changes by about its uv's rate per pixel.
+    let cell_aa = max(pixel * 1.1, 0.025);
 
     if (column < 0.005) {
         discard;
@@ -236,7 +250,7 @@ fn fs_main(in: VsOut) -> SceneOut {
     // Light: the old water's sun and ambient terms, normalised for the body colour.
     let sun_dir = frame.sun_direction.xyz;
     let direct = frame.sun.rgb / PI;
-    let shadow = sun_visibility(in.world, vec3f(0.0, 1.0, 0.0), in.clip.xy);
+    let shadow = water_shadow(in.world);
     let ambient = water.ambient.rgb * 0.6;
     let light = direct * max(sun_dir.y, 0.0) * mix(0.38, 1.0, shadow) + ambient;
     let full_sun = direct * max(sun_dir.y, 0.0) + ambient;
@@ -281,7 +295,12 @@ fn fs_main(in: VsOut) -> SceneOut {
     // Foam: broken islands along banks, streaks on swell crests, and flow foam.
     let width = pr.shore.z * (0.65 + 0.35 * sin(t * 0.8 + noise * 4.0));
     let shore_mask = (1.0 - smoothstep(width - shore_aa, width + shore_aa, to_shore)) * smoothstep(0.025, 0.14, bank);
-    let islands = 1.0 - smoothstep(0.24 - cell_aa, 0.24 + cell_aa, cells);
+    // Foam islands only where shore or flow foam can show (most water has neither).
+    var islands = 0.0;
+    if (shore_mask * pr.effects.w > 0.0005 || flow.b > 0.0) {
+        let cells = foam_cells(foam_uv);
+        islands = 1.0 - smoothstep(0.24 - cell_aa, 0.24 + cell_aa, cells);
+    }
     let shore_foam = shore_mask * mix(0.18, islands, 0.82) * pr.effects.w;
     let crest_uv = vec2f(dot(p, vec2f(0.93, 0.37)) * 2.2, dot(p, vec2f(-0.37, 0.93)) * 0.55) + vec2f(noise, t * 0.06);
     let streaks = smoothstep(0.36, 0.65, water_noise(crest_uv));

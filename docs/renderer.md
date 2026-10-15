@@ -239,13 +239,29 @@ What exists, in `crates/render` (`canopy-render`), `crates/scene` (`canopy-scene
 - **Camera** (`camera.rs`): the old play camera as a pure controller (see "Reference captures"); `game/` adds input: arrow keys and edge scrolling (28 units/s), wheel and PageUp/PageDown zoom with the old momentum, middle-drag grab pan; as a spectator also Q/E to turn and zoom out to 6×.
 - **Configuration** (`config/`, D30): `lighting.json` (daylight palettes, phases, probes, shadow fitting), `biomes/<id>.json` (light, canopy, grade, built-in ground layers, water profile, surroundings with the forest, ground cover, bloom, contact shading and atmosphere), `water.json` (reflection cube and caustics), `players.json`, `glow.json`.
 
+### Performance (M3.4)
+
+Measured on the development machine (M4 Max, 40-core GPU; no base M1 was available) with `canopy shot --frames 120`: the median submit-to-idle time of a frame, best of three runs, before this step and after it, on three views (echo-isles player start 117.5,225.5 zoom 1; echo-isles shallow channels 200,360 zoom 1; turtle-rock west edge 20,320 zoom 1.25 over deep water). Submit-to-idle includes about 1 ms of fixed CPU and synchronisation cost; per-pass GPU timestamps on Apple GPUs attribute work to neighbouring passes (the final pass always reads 0 ms), so they are only indicative.
+
+| Setting | Before | After |
+|---|---|---|
+| 1920×1080 | 1.80–1.92 ms | 1.96–2.07 ms |
+| 1920×1080, contact shading off | — | 1.74–1.90 ms |
+| 2560×1600 | 2.42–2.51 ms | 2.78–3.18 ms |
+| 2560×1600, render scale 0.75 | — | 2.25–2.36 ms |
+| 1920×1080, deep forest (bloom and haze medium) | — | 2.42–2.46 ms |
+| 1920×1080, deep forest, haze low | — | 2.22–2.30 ms |
+| 2560×1600, deep forest, render scale 0.75 | — | 2.64–2.89 ms |
+
+What it costs: the water with its two draws, ripple field and caustics about 0.1–0.2 ms in a view that is 60 % water (the full old shading cost 0.75 ms until shore foam was evaluated only where it can show and the water took one shadow tap); the contact pass and its upsampling about 0.15–0.25 ms at 1080p; the forest nothing at play pitch (CPU-culled); the linear depth target nothing measurable. Bloom and medium haze add about 0.4 ms, low haze 0.25 ms. Scaled to the base M1 (about 7× less GPU throughput and 8× less bandwidth), the vibrant forest's additions are roughly 1–2 ms at 1080p and 3–5 ms at 2560×1600 native; at render scale 0.75 a Retina frame costs less than before this step. Budget recommendation (D34): render scale 1 at 1080p, 0.75 on Retina panels, haze low.
+
 ### Not yet (later M3 steps)
 
 Units and skinned animation, felled trees, construction scaffolds, effects, fog of war (the post effects and water take no visibility mask yet), world UI, terrain displacement (no shipped map uses rock coverage), ground decals (none shipped), egui tuning, hot reload of `config/`. Mist regions (`atmosphere.regions`, used by no biome), rain and the close-camera depth of field and shaft density of the old surroundings (no camera uses them) are not carried.
 
 ## 10. Reference captures
 
-`just shot --map <id> --camera <x,z,zoom[,yaw]> --out <png> [--size 1920x1080] [--hour 12] [--time 12] [--frames n] [--no-shadows]` renders one view offscreen (no window) and writes a PNG, printing draws, terrain triangles, memory, CPU recording time and GPU time per pass (from `--frames` frames).
+`just shot --map <id> --camera <x,z,zoom[,yaw]> --out <png> [--size 1920x1080] [--hour 12] [--time 12] [--frames n] [--no-shadows] [--pitch <deg>] [--movers <n>] [--biome <id>] [--render-scale <0.5–1>] [--no-contact] [--no-bloom] [--haze off|low|medium|high]` renders one view offscreen (no window) and writes a PNG, printing draws, terrain triangles, water and forest counts, memory, CPU recording time, the median submit-to-idle time of a frame and GPU time per pass (from `--frames` frames). `--pitch` frees the camera from the map fit (views past the border), `--movers` walks synthetic bodies through the view for wakes, `--biome` previews the map in another biome's look.
 
 ### Camera parameters
 
@@ -288,3 +304,16 @@ Live match alternative: `http://127.0.0.1:5173/?map=<id>` starts at the first pl
 | `turtle-rock-c.png` | turtle-rock | `113.5,257.5,1,30` |
 
 Mean colours of matching regions agree within 1–3 of 255 on open ground, forest and dirt (for example 64,131,55 on echo-isles grass in both; whole frames within 4). Visible differences: units (next step), the placeholder water (the old water is lighter and textured), the old contact shadows and softer VSM shadow edges, slightly brighter old deposit crystals.
+
+Water and border views (M3.4) live in `target/shots/m3-water/` (`new/`, `old/`, `compare/` with the old game left) and in `docs/captures/m3-water/`:
+
+| File | Map | `--camera` |
+|---|---|---|
+| `echo-isles-water.png` | echo-isles | `200,360,1` (shallow channels between islands) |
+| `echo-isles-coast.png` | echo-isles | `560,250,1` (east coast, deep water) |
+| `echo-isles-border.png` | echo-isles | `620,620,1.25,45` (south-east corner, turned 45°) |
+| `echo-isles-a.png` | echo-isles | `117.5,225.5,1` (player 1 start) |
+| `turtle-rock-water.png` | turtle-rock | `240,230,1` |
+| `turtle-rock-border.png` | turtle-rock | `20,320,1.25` (west edge) |
+
+Region means agree within 1–2 of 255 on shallow water (echo-isles channels: 98,114,89 new against 97,113,89 old) and on deep water (echo-isles coast: 41,74,70 in both). Visible differences: the old deep water has a few more and brighter crest flecks; at the map edges the framing differs by a few units (the camera's map fit, not the water); units are not drawn yet. Old captures of edge views need the reference stage at a 1920×1080 viewport: its map fit uses the window's aspect.

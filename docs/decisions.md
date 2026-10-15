@@ -228,6 +228,7 @@ The old game defines biome lighting, atmosphere, grading, ground layers and surr
 - Requested font weights snap to a static family's faces as CSS matching does; cosmic-text alone matches exact weights only.
 - Tests use their own theme and layouts; text tests fall back to system fonts when the bundled font is a Git LFS pointer (CI). The gallery render test skips without a GPU adapter.
 - `Ui` is not `Send` (taffy styles hold calc pointers): it lives on the window thread.
+
 ## D34. Water, post effects, surroundings and render scale for M3 (2026-10-15, decided while Jiri was away — review)
 
 [Renderer §4.6 and §9](renderer.md) describe the result; [captures](captures/README.md) compare it with the old game.
