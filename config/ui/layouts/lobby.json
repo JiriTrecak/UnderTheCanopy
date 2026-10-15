@@ -1,0 +1,101 @@
+{
+  "templates": {
+    "lb-seat": {
+      "class": "lb-seat",
+      "children": [
+        {
+          "class": "sk-player-head",
+          "children": [
+            { "id": "badge", "kind": "label", "class": "sk-badge" },
+            {
+              "class": "sk-player-text",
+              "children": [
+                { "id": "name", "kind": "label", "class": "sk-player-name" },
+                { "id": "sub", "kind": "label", "class": "lb-seat-sub" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "choices", "class": "sk-selects",
+          "children": [
+            { "id": "race", "kind": "dropdown", "class": "sk-select", "action": "lobby.race", "options": [] },
+            { "id": "hero", "kind": "dropdown", "class": "sk-select", "action": "lobby.hero", "options": [] }
+          ]
+        }
+      ]
+    }
+  },
+  "root": {
+    "class": "sk",
+    "children": [
+      { "kind": "image", "class": "cover", "image": "menu-art" },
+      { "class": "sk-shade" },
+      {
+        "class": "sk-shell",
+        "children": [
+          {
+            "class": "sk-header",
+            "children": [
+              {
+                "class": "sk-heading",
+                "children": [
+                  { "kind": "label", "class": "eyebrow", "text": "Under the Canopy" },
+                  { "kind": "label", "class": "sk-title", "text": "Match lobby" }
+                ]
+              },
+              { "kind": "button", "class": "sk-ghost", "text": "← Leave lobby", "action": "lobby.leave" }
+            ]
+          },
+          {
+            "class": "sk-layout",
+            "style": { "grid-template-columns": "minmax(260px, 1fr) minmax(260px, 1fr) 320px" },
+            "children": [
+              {
+                "class": "sk-col",
+                "children": [
+                  { "kind": "label", "class": "sk-section", "text": "The gathering" },
+                  { "id": "name", "kind": "label", "class": "lb-name" },
+                  { "id": "host", "kind": "label", "class": "sk-hint" },
+                  { "id": "room-meta", "kind": "label", "class": "sk-meta" },
+                  { "id": "badge", "kind": "label", "class": "lb-badge" },
+                  { "id": "copy", "kind": "label", "class": "sk-desc" }
+                ]
+              },
+              {
+                "class": "sk-col sk-col-mid",
+                "children": [
+                  {
+                    "id": "preview", "class": "sk-preview",
+                    "children": [
+                      { "id": "image", "kind": "image", "class": "sk-preview-image" },
+                      { "id": "empty", "kind": "label", "class": "sk-preview-empty", "text": "Preview not published", "visible": false },
+                      { "id": "markers", "class": "fill", "style": { "pointer-events": "none" }, "repeat": "sk-marker" }
+                    ]
+                  },
+                  { "id": "map", "kind": "label", "class": "sk-map-title" }
+                ]
+              },
+              {
+                "class": "sk-col",
+                "children": [
+                  { "kind": "label", "class": "sk-section", "text": "Players" },
+                  { "id": "seats", "class": "mp-roster", "repeat": "lb-seat" },
+                  { "id": "status", "kind": "label", "class": "mp-status" }
+                ]
+              }
+            ]
+          },
+          {
+            "class": "sk-footer",
+            "children": [
+              { "id": "footnote", "kind": "label", "class": "sk-footnote", "text": "Lobby open · Players can join until the match starts" },
+              { "id": "waiting", "kind": "label", "class": "lb-waiting", "text": "Waiting for the host…" },
+              { "id": "start", "kind": "button", "class": "sk-launch", "text": "Start match", "action": "lobby.start" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

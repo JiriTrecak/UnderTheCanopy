@@ -1,35 +1,38 @@
-//! A running match in the window: the simulation thread, the live scene, the camera,
-//! the in-match controller, the HUD, the debug overlay and effect sounds, behind a small
-//! API for the screens around it:
+//! A running match: the simulation thread, the live scene, the camera, the in-match
+//! controller, the HUD, the debug overlay and effect sounds, behind a small API for the
+//! screens around it (`screens::in_match::Playing`), which own the window, the UI and
+//! the audio:
 //!
 //! - [`InMatch::start`] from a loaded world and its session,
-//! - [`InMatch::window_event`] for every window event,
-//! - [`InMatch::frame`] once per redraw: updates, renders, presents and returns
-//!   [`Event`]s ("open the game menu").
+//! - [`InMatch::window_event`] for every window event (after the UI saw it),
+//! - [`InMatch::update`] once per frame before the UI lays out,
+//! - [`InMatch::act`] with the HUD's UI actions → [`Event`]s ("open the game menu"),
+//! - [`InMatch::decorate`] on the UI's draw list, then [`InMatch::render`].
 
 use super::{
     Event, Play,
     debug::{Debug, Stats as DebugStats},
     hud::Hud,
     input::{self, Input},
+    keys::{Keymap, Shortcut},
     know::Knowledge,
     overlay,
     picking::{Body, Screen},
 };
 use crate::{
-    gpu::Display,
     live::LiveScene,
+    settings::{Chord, keys::key_code},
     sim::{self, Seat, SimThread},
     view,
     world::{Loaded, Match},
 };
 use anyhow::Result;
 use canopy_render::{
-    Renderer, RtsCamera,
+    CameraView, FrameReport, Gpu, Renderer, RtsCamera,
     camera::{EDGE_SCROLL_PIXELS, MAX_STEP_MS},
 };
 use canopy_sim::catalog::Catalog;
-use canopy_ui::{FontSources, Ui, UiConfig};
+use canopy_ui::{DrawList, Ui};
 use std::{
     collections::BTreeSet,
     sync::Arc,
@@ -37,7 +40,7 @@ use std::{
 };
 use winit::{
     event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent},
-    keyboard::{KeyCode, PhysicalKey},
+    keyboard::{KeyCode, ModifiersState, PhysicalKey},
     window::Window,
 };
 
@@ -45,50 +48,6 @@ use winit::{
 const KEY_ZOOM: f32 = 0.7;
 /// Radians per second a spectator turns with Q and E.
 const TURN_SPEED: f32 = 1.2;
-/// The minimap and portrait images and their UI texture ids (below
-/// `canopy_render::ui::FIRST_PACK_TEXTURE`).
-pub(crate) const MINIMAP_PIXELS: u32 = 256;
-pub(crate) const PORTRAIT_PIXELS: u32 = 256;
-const MINIMAP_TEXTURE: u32 = 1;
-const PORTRAIT_TEXTURE: u32 = 2;
-
-/// Shows the renderer's minimap and portrait images in the HUD (`@minimap`,
-/// `@portrait`).
-pub(crate) fn plug_images(
-    gpu: &canopy_render::Gpu,
-    renderer: &mut Renderer,
-    ui: &mut Ui,
-    hud: &mut Hud,
-) {
-    let targets = [
-        (
-            "@minimap",
-            MINIMAP_TEXTURE,
-            MINIMAP_PIXELS,
-            renderer.minimap_view().cloned(),
-        ),
-        (
-            "@portrait",
-            PORTRAIT_TEXTURE,
-            PORTRAIT_PIXELS,
-            renderer.portrait_view().cloned(),
-        ),
-    ];
-    for (name, id, pixels, view) in targets {
-        let Some(view) = view else { continue };
-        let id = canopy_ui::TextureId(id);
-        renderer.ui_mut(gpu).set_texture(gpu, id, &view);
-        let mut desc = canopy_ui::ImageDesc::new(id, pixels as f32, pixels as f32);
-        // The renderer's images are sRGB textures with premultiplied alpha.
-        desc.premultiplied = true;
-        desc.srgb_view = true;
-        ui.register_image(name, desc);
-        match name {
-            "@minimap" => hud.minimap = true,
-            _ => hud.live_portrait = true,
-        }
-    }
-}
 
 /// How a match starts.
 pub struct Start {
@@ -97,6 +56,36 @@ pub struct Start {
     /// Fast-forward to this tick first.
     pub tick: u32,
     pub camera: Option<crate::options::CameraSpec>,
+    /// A networked seat reports its identity once the world is built.
+    pub ready: Option<sim::Ready>,
+    /// Control groups to restore (a loaded save), by slot.
+    pub groups: Option<Vec<Vec<u32>>>,
+    /// The player's name in the chat.
+    pub name: Option<String>,
+    /// A chat server echoes the player's lines (networked); otherwise they show at once.
+    pub chat_server: bool,
+}
+
+/// Player settings the match follows.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct Options {
+    pub keymap: Keymap,
+    /// Health bars over every unit by default.
+    pub always_health_bars: bool,
+}
+
+/// What the match borrows from the game around it each frame.
+pub struct Host<'a> {
+    /// The window (`None` offscreen: no debug overlay).
+    pub window: Option<&'a Window>,
+    pub gpu: &'a Gpu,
+    pub renderer: &'a mut Renderer,
+    pub ui: &'a mut Ui,
+    pub audio: &'a mut canopy_audio::Audio,
+    /// Physical pixels.
+    pub size: [u32; 2],
+    /// Physical pixels per logical pixel.
+    pub scale: f32,
 }
 
 pub struct InMatch {
@@ -106,20 +95,25 @@ pub struct InMatch {
     camera: RtsCamera,
     pub play: Play,
     hud: Hud,
-    ui: Ui,
-    debug: Debug,
-    audio: canopy_audio::Audio,
+    debug: Option<Debug>,
+    debug_open: bool,
     content: Arc<canopy_content::Content>,
     catalog: Arc<Catalog>,
     me: Option<u8>,
     started: Instant,
     last_frame: Instant,
     keys: BTreeSet<KeyCode>,
+    modifiers: ModifiersState,
     images: BTreeSet<String>,
+    /// Render targets plugged in, registered with the UI on the next frame.
+    targets: Vec<(String, canopy_ui::ImageDesc)>,
     cursor: Option<(f32, f32)>,
     drag: Option<(f32, f32)>,
     focused: bool,
+    hud_hidden: bool,
     last_tick: Option<u32>,
+    camera_view: Option<CameraView>,
+    screen: Option<Screen>,
     stats: DebugStats,
     frames: u32,
     frame_sum: f32,
@@ -129,17 +123,19 @@ pub struct InMatch {
 }
 
 impl InMatch {
-    /// Starts `game` (moves it to the simulation thread) over the loaded scene, which
-    /// the renderer has already loaded.
+    /// Uploads the scene, starts `game` on the simulation thread and attaches the HUD.
     pub fn start(
-        window: &Window,
-        display: &Display,
+        gpu: &Gpu,
         renderer: &mut Renderer,
+        ui: &mut Ui,
+        audio: &mut canopy_audio::Audio,
         loaded: Loaded,
         game: Match,
         start: Start,
-        data: &std::path::Path,
     ) -> Result<Self> {
+        renderer.set_environment(gpu, loaded.environment.clone());
+        renderer.load_world(gpu, &loaded.pack, &loaded.scene.world)?;
+        renderer.set_actors(&[]);
         let content = game.world.catalog().content.clone();
         let catalog = Arc::new(Catalog::new(content.clone()));
         let terrain = game.world.terrain().clone();
@@ -163,32 +159,35 @@ impl InMatch {
         let mut live = LiveScene::default();
         live.attach_effects(
             renderer,
-            &display.gpu,
+            gpu,
             &loaded.pack,
             game.presenter.effects.effect_table().clone(),
         );
-        live.attach_world_ui(data, &loaded.pack, &content, loaded.scene.colors.clone());
+        live.attach_world_ui(
+            &loaded.data,
+            &loaded.pack,
+            &content,
+            loaded.scene.colors.clone(),
+        );
         live.world_ui_input.viewer = start.me;
-        renderer.bake_minimap(&display.gpu, loaded.scene.size, MINIMAP_PIXELS);
-        renderer.set_portrait(&display.gpu, None, PORTRAIT_PIXELS);
-        let sim = SimThread::spawn(
+        renderer.bake_minimap(gpu, loaded.scene.size, MINIMAP_PIXELS);
+        renderer.set_portrait(gpu, None, PORTRAIT_PIXELS);
+        let sim = SimThread::start(
             game.world,
             game.session,
             game.presenter,
             sim::TICK,
             start.tick,
             seat,
+            start.ready,
         );
         let know = Knowledge::new(content.clone(), catalog.clone(), view0, start.me);
-        let play = Play::new(know, terrain, Box::new(commands));
-        let config = UiConfig::load(&data.join("config/ui"))?;
-        let mut ui = Ui::new(
-            config,
-            FontSources {
-                bundled: Vec::new(),
-                system: true,
-            },
-        )?;
+        let mut play = Play::new(know, terrain, Box::new(commands));
+        play.echo_chat = !start.chat_server;
+        play.name = start.name;
+        for (slot, ids) in start.groups.iter().flatten().enumerate() {
+            play.groups.assign(slot, ids);
+        }
         let mut hud = Hud::new();
         hud.map_size = loaded.scene.size as f32;
         hud.palette = loaded
@@ -197,28 +196,14 @@ impl InMatch {
             .iter()
             .map(|c| c.map(|v| (srgb(v) * 255.0).round() as u8))
             .collect();
-        hud.attach(&mut ui);
-        let ui_layer = renderer.ui_mut(&display.gpu);
-        for (name, asset) in ui
-            .theme_images()
-            .map(|(n, a)| (n.to_owned(), a.to_owned()))
-            .collect::<Vec<_>>()
+        hud.attach(ui);
+        // Effect sounds: the pack's sounds once, the content's layers per match.
+        if audio.library().is_empty()
+            && let Err(e) = audio.load(&loaded.pack)
         {
-            match ui_layer.load_pack_image(&display.gpu, &loaded.pack, &asset) {
-                Ok(desc) => {
-                    ui.register_image(&name, desc);
-                }
-                Err(e) => tracing::warn!(image = %asset, error = %e, "ui image not in the pack"),
-            }
-        }
-        let format = renderer.ui_mut(&display.gpu).format();
-        let mut debug = Debug::new(window, &display.gpu.device, format);
-        // Opens the overlay at start (smoke tests of the window path).
-        debug.open = std::env::var_os("CANOPY_DEBUG_OVERLAY").is_some();
-        let mut audio = canopy_audio::Audio::new(canopy_audio::AudioSettings::default());
-        if let Err(e) = audio.load(&loaded.pack) {
             tracing::warn!(error = %e, "effect sounds not loaded");
         }
+        audio.clear_game();
         audio.bind(&content);
         let now = Instant::now();
         let mut this = Self {
@@ -228,20 +213,25 @@ impl InMatch {
             camera,
             play,
             hud,
-            ui,
-            debug,
-            audio,
+            debug: None,
+            // Opens the overlay at start (smoke tests of the window path).
+            debug_open: std::env::var_os("CANOPY_DEBUG_OVERLAY").is_some(),
             content,
             catalog,
             me: start.me,
             started: now,
             last_frame: now,
             keys: BTreeSet::new(),
+            modifiers: ModifiersState::empty(),
             images: BTreeSet::new(),
+            targets: Vec::new(),
             cursor: None,
             drag: None,
             focused: true,
+            hud_hidden: false,
             last_tick: None,
+            camera_view: None,
+            screen: None,
             stats: DebugStats::default(),
             frames: 0,
             frame_sum: 0.0,
@@ -249,15 +239,46 @@ impl InMatch {
             stats_since: now,
             held_before: 0,
         };
-        plug_images(&display.gpu, renderer, &mut this.ui, &mut this.hud);
+        // The HUD shows the minimap and the live portrait.
+        let targets = [
+            (
+                "@minimap",
+                MINIMAP_TEXTURE,
+                MINIMAP_PIXELS,
+                renderer.minimap_view().cloned(),
+            ),
+            (
+                "@portrait",
+                PORTRAIT_TEXTURE,
+                PORTRAIT_PIXELS,
+                renderer.portrait_view().cloned(),
+            ),
+        ];
+        for (name, id, pixels, view) in targets {
+            if let Some(view) = view {
+                this.plug_render_target(
+                    gpu,
+                    renderer,
+                    name,
+                    canopy_ui::TextureId(id),
+                    &view,
+                    [pixels; 2],
+                );
+            }
+        }
         Ok(this)
+    }
+
+    /// Follows the player's settings (shortcuts, health bars).
+    pub fn set_options(&mut self, options: &Options) {
+        self.play.keymap = options.keymap.clone();
+        self.play.always_health_bars = options.always_health_bars;
     }
 
     /// Plugs a render target another system draws into the HUD: `"@minimap"` or
     /// `"@portrait"` (the image names `hud.json` shows), `id` a texture id below
     /// [`canopy_render::ui::FIRST_PACK_TEXTURE`], `size` its pixel size. The HUD shows
     /// it from the next frame.
-    #[allow(dead_code, reason = "other render targets plug in here")]
     pub fn plug_render_target(
         &mut self,
         gpu: &canopy_render::Gpu,
@@ -272,7 +293,7 @@ impl InMatch {
         // The renderer's images are sRGB textures with premultiplied alpha.
         desc.premultiplied = true;
         desc.srgb_view = true;
-        self.ui.register_image(name, desc);
+        self.targets.push((name.to_owned(), desc));
         match name {
             "@minimap" => self.hud.minimap = true,
             "@portrait" => self.hud.live_portrait = true,
@@ -288,40 +309,76 @@ impl InMatch {
         self.play.world_ui()
     }
 
+    /// The simulation thread (pause, save, chat, notices).
+    pub fn sim(&self) -> &SimThread {
+        &self.sim
+    }
+
+    /// The presented ticks at hand.
+    pub fn live(&self) -> &LiveScene {
+        &self.live
+    }
+
+    pub fn camera(&self) -> &RtsCamera {
+        &self.camera
+    }
+
     /// Whether the simulation thread has stopped (it only stops when asked, or by
     /// panicking).
     pub fn stopped(&self) -> bool {
         self.sim.finished()
     }
 
-    /// Routes a window event: the debug overlay, then the HUD, then the world.
-    pub fn window_event(&mut self, window: &Window, event: &WindowEvent) {
+    /// Releases held keys and drags (an overlay took the input).
+    pub fn release_input(&mut self) {
+        self.keys.clear();
+        self.drag = None;
+        self.play
+            .input(&Input::FocusLost, self.loaded.scene.terrain());
+    }
+
+    /// Routes a window event the UI has seen (`consumed`: it took it): the debug
+    /// overlay, then the world.
+    pub fn window_event(
+        &mut self,
+        window: Option<&Window>,
+        event: &WindowEvent,
+        ui: &Ui,
+        consumed: bool,
+    ) {
+        if let WindowEvent::ModifiersChanged(m) = event {
+            self.modifiers = m.state();
+        }
         if let WindowEvent::KeyboardInput { event: key, .. } = event
             && key.state == ElementState::Pressed
             && !key.repeat
             && let PhysicalKey::Code(code) = key.physical_key
+            && !ui.wants_keyboard()
         {
-            let ctrl = self.keys.contains(&KeyCode::ControlLeft)
-                || self.keys.contains(&KeyCode::ControlRight);
-            if code == KeyCode::F9 || (code == KeyCode::F3 && ctrl) {
-                self.debug.open = !self.debug.open;
+            let shortcuts = Chord::of(code, self.modifiers)
+                .map(|c| self.play.keymap.pressed(&c))
+                .unwrap_or_default();
+            if code == KeyCode::F9 || shortcuts.contains(&Shortcut::Debug) {
+                self.debug_open = !self.debug_open;
+                return;
+            }
+            if shortcuts.contains(&Shortcut::ToggleHud) {
+                self.hud_hidden = !self.hud_hidden;
                 return;
             }
             // Spectators jump to the largest fight.
             if code == KeyCode::KeyB
                 && self.me.is_none()
-                && !self.ui.wants_keyboard()
+                && !consumed
                 && let Some([x, z]) = self.live.newest().and_then(|s| s.presentation.battle)
             {
                 self.camera.look_at(x, z);
             }
         }
-        if self.debug.event(window, event) {
+        if let (Some(debug), Some(window)) = (&mut self.debug, window)
+            && debug.event(window, event)
+        {
             return;
-        }
-        let mut consumed = false;
-        for e in canopy_ui::winit::translate(event) {
-            consumed |= self.ui.input(&e);
         }
         // The world keeps track of keys and modifiers even when the UI took the event.
         match event {
@@ -336,7 +393,7 @@ impl InMatch {
                         }
                     }
                 }
-                if self.ui.wants_keyboard() {
+                if ui.wants_keyboard() {
                     return;
                 }
             }
@@ -350,12 +407,12 @@ impl InMatch {
                 let p = (position.x as f32, position.y as f32);
                 if let Some(from) = self.drag {
                     // Grab panning: the ground under the cursor follows it.
-                    let size = window.inner_size();
-                    let aspect = size.width as f32 / size.height.max(1) as f32;
+                    let size = self.screen.map_or([1.0, 1.0], |s| s.size);
+                    let aspect = size[0] / size[1].max(1.0);
                     let per_pixel = self
                         .camera
                         .footprint(aspect, 0.0)
-                        .map_or(0.1, |[x0, x1, ..]| (x1 - x0) / size.width.max(1) as f32);
+                        .map_or(0.1, |[x0, x1, ..]| (x1 - x0) / size[0].max(1.0));
                     self.camera
                         .pan(-(p.0 - from.0) * per_pixel, (p.1 - from.1) * per_pixel);
                     self.drag = Some(p);
@@ -368,7 +425,7 @@ impl InMatch {
                 button: MouseButton::Middle,
                 ..
             } => {
-                self.drag = (*state == ElementState::Pressed)
+                self.drag = (*state == ElementState::Pressed && !consumed)
                     .then_some(self.cursor)
                     .flatten();
             }
@@ -398,106 +455,113 @@ impl InMatch {
                 self.play.input(&input, terrain);
                 return;
             }
+            Input::Key { pressed: false, .. } => {
+                self.play.input(&input, terrain);
+                return;
+            }
             Input::Button { .. } if consumed => return,
             _ => {}
         }
         if consumed && !matches!(input, Input::Modifiers(_) | Input::FocusLost) {
             return;
         }
-        self.play.input(&input, self.loaded.scene.terrain());
+        self.play.input(&input, terrain);
     }
 
-    fn update_camera(&mut self, window: &Window, dt_ms: f32) {
-        let pressed = |k| self.keys.contains(&k);
-        let typing = self.ui.wants_keyboard();
+    /// Whether a held key holds `shortcut` (camera keys from the player's bindings).
+    fn held(&self, shortcut: Shortcut) -> bool {
+        self.play
+            .keymap
+            .codes(shortcut)
+            .filter_map(key_code)
+            .any(|k| self.keys.contains(&k))
+    }
+
+    fn update_camera(&mut self, size: [u32; 2], scale: f32, dt_ms: f32, free: bool, typing: bool) {
+        let steer = free && !typing;
         let mut dir = [0.0f32, 0.0];
-        if !typing {
-            if pressed(KeyCode::ArrowLeft) {
+        if steer {
+            if self.held(Shortcut::PanLeft) {
                 dir[0] -= 1.0;
             }
-            if pressed(KeyCode::ArrowRight) {
+            if self.held(Shortcut::PanRight) {
                 dir[0] += 1.0;
             }
-            if pressed(KeyCode::ArrowUp) {
+            if self.held(Shortcut::PanUp) {
                 dir[1] += 1.0;
             }
-            if pressed(KeyCode::ArrowDown) {
+            if self.held(Shortcut::PanDown) {
                 dir[1] -= 1.0;
             }
         }
-        if let (Some((x, y)), true, None, false) = (self.cursor, self.focused, self.drag, typing) {
-            let size = window.inner_size();
-            let edge = EDGE_SCROLL_PIXELS * window.scale_factor() as f32;
+        if let (Some((x, y)), true, None, true) = (self.cursor, self.focused, self.drag, steer) {
+            let edge = EDGE_SCROLL_PIXELS * scale;
             if x <= edge {
                 dir[0] -= 1.0;
-            } else if x >= size.width as f32 - edge {
+            } else if x >= size[0] as f32 - edge {
                 dir[0] += 1.0;
             }
             if y <= edge {
                 dir[1] += 1.0;
-            } else if y >= size.height as f32 - edge {
+            } else if y >= size[1] as f32 - edge {
                 dir[1] -= 1.0;
             }
         }
         let dir = [dir[0].clamp(-1.0, 1.0), dir[1].clamp(-1.0, 1.0)];
         self.camera.pan_for(dir, dt_ms);
         let step = dt_ms.min(MAX_STEP_MS);
-        if self.me.is_none() && !typing {
+        if self.me.is_none() && steer {
             // Spectators may turn the view.
-            if pressed(KeyCode::KeyQ) {
+            if self.keys.contains(&KeyCode::KeyQ) {
                 self.camera.yaw += TURN_SPEED * step / 1000.0;
             }
-            if pressed(KeyCode::KeyE) {
+            if self.keys.contains(&KeyCode::KeyE) {
                 self.camera.yaw -= TURN_SPEED * step / 1000.0;
             }
         }
-        if !typing && pressed(KeyCode::PageUp) {
+        if steer && self.held(Shortcut::ZoomIn) {
             self.camera.wheel(-step * KEY_ZOOM);
         }
-        if !typing && pressed(KeyCode::PageDown) {
+        if steer && self.held(Shortcut::ZoomOut) {
             self.camera.wheel(step * KEY_ZOOM);
         }
         self.camera.update(dt_ms);
     }
 
-    /// Updates, renders and presents one frame.
-    pub fn frame(
-        &mut self,
-        window: &Window,
-        display: &mut Display,
-        renderer: &mut Renderer,
-    ) -> Vec<Event> {
+    /// Advances the frame up to the HUD's contents: the camera (`free`: no overlay holds
+    /// the input), the newest view and the interpolated scene, the controller, the
+    /// placement ghost, the HUD and effect sounds. The UI lays out after this.
+    pub fn update(&mut self, host: &mut Host<'_>, free: bool) {
         let now = Instant::now();
         let dt_ms = (now - self.last_frame).as_secs_f32() * 1000.0;
         self.last_frame = now;
         let since_start = now - self.started;
-        self.update_camera(window, dt_ms);
-        let Some(frame) = display.acquire() else {
-            return Vec::new();
-        };
-        let output = frame
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
-        let ui_view = frame.texture.create_view(&wgpu::TextureViewDescriptor {
-            format: Some(display.format().remove_srgb_suffix()),
-            ..Default::default()
-        });
-        let size = display.size();
-        let gpu = &display.gpu;
-        renderer.resize(gpu, size);
+        let size = host.size;
+        let scale = host.scale;
+        let gpu = host.gpu;
+        if self.debug.is_none()
+            && let Some(window) = host.window
+        {
+            let format = host.renderer.ui_mut(gpu).format();
+            self.debug = Some(Debug::new(window, &gpu.device, format));
+        }
+        if let Some(debug) = &mut self.debug {
+            debug.open = self.debug_open;
+        }
+        let typing = host.ui.wants_keyboard();
+        self.update_camera(size, scale, dt_ms, free, typing);
         let aspect = size[0] as f32 / size[1].max(1) as f32;
-        let scale = window.scale_factor() as f32;
 
         // The newest view and the interpolated scene.
         let live_started = Instant::now();
         self.live.poll(self.sim.mailbox());
-        self.live.frame(renderer, gpu, &self.loaded.pack, now);
+        self.live.frame(host.renderer, gpu, &self.loaded.pack, now);
         let newest = self.live.newest().cloned();
         if let Some(s) = &newest {
             // Effect sounds hear every tick once, in order.
             for snap in self.live.snapshots() {
                 if self.last_tick.is_none_or(|t| snap.tick() > t) {
-                    self.audio.observe(&snap.view);
+                    host.audio.observe(&snap.view);
                 }
             }
             self.last_tick = Some(s.tick());
@@ -510,6 +574,8 @@ impl InMatch {
             size: [size[0] as f32, size[1] as f32],
             scale,
         };
+        self.camera_view = Some(camera_view);
+        self.screen = Some(screen);
         let terrain = self.loaded.scene.terrain();
         if let Some(s) = &newest {
             let mut know = Knowledge::new(
@@ -550,25 +616,33 @@ impl InMatch {
             ) {
                 instances.push(instance);
             }
-            renderer.set_actors(&instances);
+            host.renderer.set_actors(&instances);
         }
         // The world UI pass, the minimap and the portrait from what play shows.
-        let viewer = self.me;
-        self.live.world_ui_input = world_ui_input(&world_ui, scale, viewer);
+        self.live.world_ui_input = world_ui_input(&world_ui, scale, self.me);
         let seconds = since_start.as_secs_f32();
         self.live.eye = Some(camera_view.eye);
-        self.live
-            .draw_world_ui(renderer, gpu, &camera_view, &self.loaded.scene, seconds);
-        self.live
-            .draw_minimap(renderer, &camera_view, &self.loaded.scene, MINIMAP_PIXELS);
+        self.live.draw_world_ui(
+            host.renderer,
+            gpu,
+            &camera_view,
+            &self.loaded.scene,
+            seconds,
+        );
+        self.live.draw_minimap(
+            host.renderer,
+            &camera_view,
+            &self.loaded.scene,
+            MINIMAP_PIXELS,
+        );
         let subject = world_ui
             .selected
             .first()
             .and_then(|&id| self.live.portrait(id, seconds));
-        renderer.set_portrait(gpu, subject, PORTRAIT_PIXELS);
+        host.renderer.set_portrait(gpu, subject, PORTRAIT_PIXELS);
         let focus = [camera_view.target.x, camera_view.target.z];
         self.live.feed_ripples(
-            renderer,
+            host.renderer,
             &self.loaded.scene,
             since_start.as_secs_f32(),
             focus,
@@ -576,37 +650,38 @@ impl InMatch {
 
         // The HUD.
         let ui_started = Instant::now();
-        self.ui.set_viewport(size[0], size[1], scale);
-        self.hud.update(&mut self.ui, &self.play);
-        #[cfg(debug_assertions)]
-        if let Ok(true) = self.ui.reload_if_changed() {
-            self.hud.attach(&mut self.ui);
+        let ui = &mut *host.ui;
+        for (name, desc) in self.targets.drain(..) {
+            ui.register_image(&name, desc);
         }
-        let mut list = self.ui.frame(since_start.as_secs_f64()).clone();
-        overlay::draw(&mut list, scale, &world_ui);
+        self.hud.update(ui, &self.play);
+        ui.show("hud", !self.hud_hidden);
         for name in self.hud.take_image_requests() {
             // Each image is uploaded and registered once (missing ones are not retried).
             if !self.images.insert(name.clone()) {
                 continue;
             }
-            let layer = renderer.ui_mut(gpu);
+            let layer = host.renderer.ui_mut(gpu);
             match layer.load_pack_image(gpu, &self.loaded.pack, &name) {
                 Ok(desc) => {
-                    self.ui.register_image(&name, desc);
+                    ui.register_image(&name, desc);
                 }
                 Err(e) => tracing::debug!(image = %name, error = %e, "hud image not in the pack"),
             }
         }
-        let layer = renderer.ui_mut(gpu);
-        layer.submit(gpu, &list);
-        layer.set_target(Some(ui_view.clone()));
-        let actions = self.ui.take_actions();
-        let mut events = self.hud.act(&mut self.ui, &mut self.play, actions);
-        let ui_ms = ui_started.elapsed().as_secs_f32() * 1000.0;
+        self.stats.ui_ms = ui_started.elapsed().as_secs_f32() * 1000.0;
 
-        // Debug overlay.
+        // Sounds.
+        let right = (camera_view.view.inverse().x_axis.truncate()).normalize_or_zero();
+        host.audio.update(&canopy_audio::Frame {
+            real_dt: dt_ms / 1000.0,
+            render_tick: self.live.shown,
+            speed: 1.0,
+            listener: canopy_audio::Listener::new(focus[0], focus[1], right.x, right.z),
+        });
+
+        // Debug statistics.
         self.stats.live_ms = live_ms;
-        self.stats.ui_ms = ui_ms;
         self.stats.selected = self.play.selection.ids().len();
         if let Some(s) = &newest {
             let n = self.live.snapshots().len().max(1) as f32;
@@ -635,37 +710,34 @@ impl InMatch {
             .iter()
             .map(|(t, a)| format!("{:.1}s {a:?}", t.as_secs_f32()))
             .collect();
-        let (quality, wants_ai) = self.debug.run(window, gpu, &self.stats, renderer.quality());
-        if let Some(q) = quality {
-            renderer.set_quality(gpu, q);
+        self.frames += 1;
+        self.frame_sum += dt_ms;
+        self.frame_max = self.frame_max.max(dt_ms);
+        if (now - self.stats_since) >= Duration::from_millis(500) {
+            let frames = self.frames.max(1) as f32;
+            self.stats.fps = 1000.0 * frames / self.frame_sum.max(1.0);
+            self.stats.frame_ms = self.frame_sum / frames;
+            self.stats.frame_max_ms = self.frame_max;
+            tracing::debug!(
+                fps = self.stats.fps.round(),
+                frame_max_ms = self.frame_max.round(),
+                late = self.live.held - self.held_before,
+                "frame"
+            );
+            self.held_before = self.live.held;
+            self.frames = 0;
+            self.frame_sum = 0.0;
+            self.frame_max = 0.0;
+            self.stats_since = now;
         }
-        self.sim.want_ai_summaries(wants_ai);
+    }
 
-        let debug = &self.debug;
-        let paint = |encoder: &mut wgpu::CommandEncoder| debug.paint(encoder, &ui_view);
-        let report = renderer.render(
-            gpu,
-            &camera_view,
-            since_start.as_secs_f32(),
-            &output,
-            Some(&paint),
-        );
-        display.present(frame);
-
-        // Sounds.
-        let right = (camera_view.view.inverse().x_axis.truncate()).normalize_or_zero();
-        let render_tick = self.live.shown;
-        self.audio.update(&canopy_audio::Frame {
-            real_dt: dt_ms / 1000.0,
-            render_tick,
-            speed: 1.0,
-            listener: canopy_audio::Listener::new(focus[0], focus[1], right.x, right.z),
-        });
-
-        // Camera requests and frame statistics.
-        for e in self.play.take_events() {
-            events.push(e);
-        }
+    /// The HUD's UI actions since the last frame (call every frame: it also closes the
+    /// chat when its field lost focus). Camera requests are handled here; the rest is
+    /// for the screens.
+    pub fn act(&mut self, ui: &mut Ui, actions: Vec<canopy_ui::Action>) -> Vec<Event> {
+        let mut events = self.hud.act(ui, &mut self.play, actions);
+        events.extend(self.play.take_events());
         events.retain(|e| match e {
             Event::LookAt([x, z]) => {
                 self.camera.look_at(*x, *z);
@@ -673,32 +745,61 @@ impl InMatch {
             }
             _ => true,
         });
-        self.frames += 1;
-        self.frame_sum += dt_ms;
-        self.frame_max = self.frame_max.max(dt_ms);
-        self.stats.report = report;
-        if (now - self.stats_since) >= Duration::from_millis(500) {
-            let frames = self.frames.max(1) as f32;
-            self.stats.fps = 1000.0 * frames / self.frame_sum.max(1.0);
-            self.stats.frame_ms = self.frame_sum / frames;
-            self.stats.frame_max_ms = self.frame_max;
-            if (now - self.stats_since) >= Duration::from_secs(2) || self.frames > 0 {
-                tracing::debug!(
-                    fps = self.stats.fps.round(),
-                    frame_max_ms = self.frame_max.round(),
-                    late = self.live.held - self.held_before,
-                    "frame"
-                );
-            }
-            self.held_before = self.live.held;
-            self.frames = 0;
-            self.frame_sum = 0.0;
-            self.frame_max = 0.0;
-            self.stats_since = now;
-        }
         events
     }
+
+    /// Adds the drag box under the HUD in the UI's draw list (everything else in the
+    /// world is the renderer's world UI pass).
+    pub fn decorate(&self, list: &mut DrawList) {
+        let Some(screen) = &self.screen else {
+            return;
+        };
+        overlay::draw(list, screen.scale, &self.play.world_ui());
+    }
+
+    /// Renders the frame into `output` with the UI (already submitted to the renderer's
+    /// UI pass) into `ui_view`, a non-sRGB view of it, and the debug overlay on top.
+    pub fn render(
+        &mut self,
+        host: &mut Host<'_>,
+        output: &wgpu::TextureView,
+        ui_view: &wgpu::TextureView,
+    ) -> FrameReport {
+        let gpu = host.gpu;
+        let aspect = host.size[0] as f32 / host.size[1].max(1) as f32;
+        let camera_view = match self.camera_view {
+            Some(v) => v,
+            None => view::frame(&mut self.camera, aspect, &self.loaded.scene),
+        };
+        let seconds = self.started.elapsed().as_secs_f32();
+        host.renderer.ui_mut(gpu).set_target(Some(ui_view.clone()));
+        if let (Some(debug), Some(window)) = (&mut self.debug, host.window) {
+            let (quality, wants_ai) = debug.run(window, gpu, &self.stats, host.renderer.quality());
+            if let Some(q) = quality {
+                host.renderer.set_quality(gpu, q);
+            }
+            self.sim.want_ai_summaries(wants_ai);
+        }
+        let debug = &self.debug;
+        let paint = |encoder: &mut wgpu::CommandEncoder| {
+            if let Some(debug) = debug {
+                debug.paint(encoder, ui_view);
+            }
+        };
+        let report = host
+            .renderer
+            .render(gpu, &camera_view, seconds, output, Some(&paint));
+        self.stats.report = report.clone();
+        report
+    }
 }
+
+/// The minimap and portrait images and their UI texture ids (render targets sit below
+/// `canopy_render::ui::FIRST_PACK_TEXTURE`).
+pub(crate) const MINIMAP_PIXELS: u32 = 256;
+pub(crate) const PORTRAIT_PIXELS: u32 = 256;
+const MINIMAP_TEXTURE: u32 = 1;
+const PORTRAIT_TEXTURE: u32 = 2;
 
 /// What the renderer's world UI pass draws from what play shows.
 pub(crate) fn world_ui_input(

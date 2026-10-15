@@ -1,0 +1,180 @@
+{
+  "templates": {
+    "st-key-row": {
+      "class": "st-key-row",
+      "children": [
+        { "id": "group", "kind": "label", "class": "st-key-group" },
+        {
+          "class": "st-key-line",
+          "children": [
+            { "id": "name", "kind": "label", "class": "st-key-name" },
+            { "id": "key", "kind": "button", "class": "st-key", "text": "Unbound", "action": "settings.key" },
+            { "id": "clear", "kind": "button", "class": "st-clear", "text": "Clear", "action": "settings.key-clear" }
+          ]
+        }
+      ]
+    }
+  },
+  "root": {
+    "class": "scrim st-scrim",
+    "children": [
+      {
+        "class": "st",
+        "children": [
+          { "kind": "label", "class": "settings-title", "text": "Settings" },
+          {
+            "class": "st-tabs",
+            "children": [
+              { "id": "tab-graphics", "kind": "button", "class": "st-tab", "text": "Graphics", "action": "settings.tab", "checked": true },
+              { "id": "tab-audio", "kind": "button", "class": "st-tab", "text": "Audio", "action": "settings.tab" },
+              { "id": "tab-interface", "kind": "button", "class": "st-tab", "text": "Interface", "action": "settings.tab" },
+              { "id": "tab-keys", "kind": "button", "class": "st-tab", "text": "Keyboard", "action": "settings.tab" },
+              { "id": "tab-network", "kind": "button", "class": "st-tab", "text": "Multiplayer", "action": "settings.tab" }
+            ]
+          },
+          {
+            "id": "graphics", "class": "st-page",
+            "children": [
+              {
+                "class": "settings-row",
+                "children": [
+                  { "kind": "label", "class": "settings-label", "text": "Game resolution" },
+                  { "id": "resolution", "kind": "dropdown", "class": "select", "action": "settings.resolution", "options": ["Native"] },
+                  { "kind": "label", "class": "settings-note", "text": "The battlefield renders at most at this size; the interface stays at native resolution." }
+                ]
+              },
+              {
+                "class": "settings-row",
+                "children": [
+                  { "kind": "label", "class": "settings-label", "text": "Render scale" },
+                  {
+                    "class": "st-inline",
+                    "children": [
+                      { "id": "render-scale", "kind": "slider", "class": "slider st-grow", "min": 50, "max": 100, "step": 5, "value": 100, "action": "settings.render-scale" },
+                      { "id": "render-scale-value", "kind": "label", "class": "st-value", "text": "100%" }
+                    ]
+                  },
+                  { "kind": "label", "class": "settings-note", "text": "Below 100% the scene renders smaller and is sharpened when scaled up. 75% suits Retina displays on a base M1." }
+                ]
+              },
+              {
+                "class": "settings-row",
+                "children": [
+                  { "kind": "label", "class": "settings-label", "text": "Volumetric fog / light shafts" },
+                  { "id": "haze", "kind": "dropdown", "class": "select", "action": "settings.haze", "options": ["Off", "Low", "Medium", "High"], "selected": 2 }
+                ]
+              },
+              { "id": "shadows", "kind": "checkbox", "class": "check", "text": "Shadows", "checked": true, "action": "settings.shadows" },
+              { "id": "contact", "kind": "checkbox", "class": "check", "text": "Contact shading", "checked": true, "action": "settings.contact" },
+              { "id": "bloom", "kind": "checkbox", "class": "check", "text": "Bloom", "checked": true, "action": "settings.bloom" },
+              { "id": "vsync", "kind": "checkbox", "class": "check", "text": "Vertical sync", "checked": true, "action": "settings.vsync" },
+              {
+                "class": "settings-row",
+                "children": [
+                  { "kind": "label", "class": "settings-label", "text": "Display" },
+                  { "id": "window", "kind": "dropdown", "class": "select", "action": "settings.window", "options": ["Window", "Fullscreen"] }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "audio", "class": "st-page", "visible": false,
+            "children": [
+              {
+                "class": "settings-row",
+                "children": [
+                  { "kind": "label", "class": "settings-label", "text": "Master volume" },
+                  { "class": "st-inline", "children": [
+                    { "id": "master", "kind": "slider", "class": "slider st-grow", "min": 0, "max": 100, "step": 1, "action": "settings.volume" },
+                    { "id": "master-value", "kind": "label", "class": "st-value" } ] }
+                ]
+              },
+              {
+                "class": "settings-row",
+                "children": [
+                  { "kind": "label", "class": "settings-label", "text": "Spell effect volume" },
+                  { "class": "st-inline", "children": [
+                    { "id": "effects", "kind": "slider", "class": "slider st-grow", "min": 0, "max": 100, "step": 1, "action": "settings.volume" },
+                    { "id": "effects-value", "kind": "label", "class": "st-value" } ] }
+                ]
+              },
+              {
+                "class": "settings-row",
+                "children": [
+                  { "kind": "label", "class": "settings-label", "text": "Interface volume" },
+                  { "class": "st-inline", "children": [
+                    { "id": "interface", "kind": "slider", "class": "slider st-grow", "min": 0, "max": 100, "step": 1, "action": "settings.volume" },
+                    { "id": "interface-value", "kind": "label", "class": "st-value" } ] }
+                ]
+              },
+              {
+                "class": "settings-row",
+                "children": [
+                  { "kind": "label", "class": "settings-label", "text": "Music volume" },
+                  { "class": "st-inline", "children": [
+                    { "id": "music", "kind": "slider", "class": "slider st-grow", "min": 0, "max": 100, "step": 1, "action": "settings.volume" },
+                    { "id": "music-value", "kind": "label", "class": "st-value" } ] }
+                ]
+              },
+              { "id": "mute", "kind": "checkbox", "class": "check", "text": "Mute while the game is in the background", "action": "settings.mute" }
+            ]
+          },
+          {
+            "id": "interface", "class": "st-page", "visible": false,
+            "children": [
+              {
+                "class": "settings-row",
+                "children": [
+                  { "kind": "label", "class": "settings-label", "text": "Player name" },
+                  { "id": "name", "kind": "text_field", "class": "field", "placeholder": "player", "max_length": 32, "action": "settings.name" }
+                ]
+              },
+              {
+                "class": "settings-row",
+                "children": [
+                  { "kind": "label", "class": "settings-label", "text": "HUD size" },
+                  { "class": "st-inline", "children": [
+                    { "id": "hud-scale", "kind": "slider", "class": "slider st-grow", "min": 30, "max": 100, "step": 1, "action": "settings.hud-scale" },
+                    { "id": "hud-scale-value", "kind": "label", "class": "st-value" } ] },
+                  { "kind": "label", "class": "settings-note", "text": "30–100%. Resizes the minimap, selection panel and commands together. Default: 65%." }
+                ]
+              },
+              { "id": "health-bars", "kind": "checkbox", "class": "check", "text": "Always show health bars", "action": "settings.health-bars" },
+              { "id": "tooltips", "kind": "checkbox", "class": "check", "text": "Show tooltips", "action": "settings.tooltips" }
+            ]
+          },
+          {
+            "id": "keys", "class": "st-page", "visible": false, "style": { "overflow": "hidden" },
+            "children": [
+              { "kind": "label", "class": "settings-note", "text": "Click a shortcut, then press the new key. Escape cancels." },
+              { "id": "list", "class": "st-keys", "repeat": "st-key-row" },
+              { "id": "message", "kind": "label", "class": "st-message" },
+              { "kind": "button", "class": "settings-button", "text": "Restore all default shortcuts", "action": "settings.keys-defaults" }
+            ]
+          },
+          {
+            "id": "network", "class": "st-page", "visible": false,
+            "children": [
+              {
+                "class": "settings-row",
+                "children": [
+                  { "kind": "label", "class": "settings-label", "text": "Match server" },
+                  { "id": "server", "kind": "text_field", "class": "field", "placeholder": "18.134.138.1", "max_length": 200, "action": "settings.server" },
+                  { "id": "server-note", "kind": "label", "class": "settings-note" }
+                ]
+              },
+              { "kind": "button", "class": "settings-button", "text": "Use the default server", "action": "settings.server-default" }
+            ]
+          },
+          {
+            "class": "st-footer",
+            "children": [
+              { "id": "status", "kind": "label", "class": "settings-note st-grow", "text": "Saved on this device and applied immediately." },
+              { "kind": "button", "class": "settings-button", "text": "Done", "action": "settings.done" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

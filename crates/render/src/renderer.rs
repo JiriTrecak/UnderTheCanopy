@@ -1166,7 +1166,8 @@ impl Renderer {
                     }
                 }
                 (passes::WORLD_UI, PassKind::Render) => {
-                    if self.world_ui.has_overlay() || writes.is_some() {
+                    // The minimap bake shows the world alone.
+                    if !self.baking && (self.world_ui.has_overlay() || writes.is_some()) {
                         report.draws += self.world_ui.encode_overlay(
                             device,
                             &mut encoder,
@@ -1176,7 +1177,8 @@ impl Renderer {
                         );
                     }
                 }
-                (passes::UI, PassKind::Render) => match &mut self.ui {
+                // The minimap bake leaves the UI's list and target for the next frame.
+                (passes::UI, PassKind::Render) => match self.ui.as_mut().filter(|_| !self.baking) {
                     Some(ui) => report.draws += ui.encode(&mut encoder, output, writes),
                     None => drop(encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: Some(passes::UI),

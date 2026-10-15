@@ -53,6 +53,11 @@ impl Outbox {
         })
     }
 
+    /// Continues from beat `beat` (a loaded save): it counts as confirmed.
+    pub fn resume(&mut self, beat: u32) {
+        self.sent_through = self.sent_through.max(beat);
+    }
+
     /// The highest beat confirmed so far.
     pub fn sent(&self) -> u32 {
         self.sent_through

@@ -1,0 +1,22 @@
+{
+  "root": {
+    "class": "scrim dg-scrim",
+    "children": [
+      {
+        "class": "dg",
+        "children": [
+          { "id": "title", "kind": "label", "class": "dg-title" },
+          { "id": "body", "kind": "label", "class": "dg-body" },
+          {
+            "class": "dg-actions",
+            "children": [
+              { "id": "cancel", "kind": "button", "class": "dg-button", "text": "Cancel", "action": "dialog.cancel" },
+              { "id": "second", "kind": "button", "class": "dg-button", "text": "Save and exit", "action": "dialog.second", "visible": false },
+              { "id": "confirm", "kind": "button", "class": "dg-button dg-primary", "text": "OK", "action": "dialog.confirm" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

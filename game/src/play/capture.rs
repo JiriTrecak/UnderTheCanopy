@@ -398,7 +398,23 @@ pub fn run(
         hud.colonies = Some(Arc::new(sim::colonies(&game.world)));
     }
     hud.attach(&mut ui);
-    super::run::plug_images(&gpu, &mut renderer, &mut ui, &mut hud);
+    // The minimap and the live portrait, as the window's HUD shows them.
+    for (name, id, view) in [
+        ("@minimap", 1, renderer.minimap_view().cloned()),
+        ("@portrait", 2, renderer.portrait_view().cloned()),
+    ] {
+        let Some(view) = view else { continue };
+        let id = canopy_ui::TextureId(id);
+        renderer.ui_mut(&gpu).set_texture(&gpu, id, &view);
+        let mut desc = canopy_ui::ImageDesc::new(id, 256.0, 256.0);
+        desc.premultiplied = true;
+        desc.srgb_view = true;
+        ui.register_image(name, desc);
+        match name {
+            "@minimap" => hud.minimap = true,
+            _ => hud.live_portrait = true,
+        }
+    }
     let layer = renderer.ui_mut(&gpu);
     for (name, asset) in ui
         .theme_images()

@@ -1,0 +1,117 @@
+{
+  "templates": {
+    "sk-map": {
+      "kind": "button", "class": "sk-map", "action": "skirmish.map",
+      "children": [
+        { "id": "thumb", "kind": "image", "class": "sk-thumb" },
+        {
+          "class": "sk-map-text",
+          "children": [
+            { "id": "name", "kind": "label", "class": "sk-map-name" },
+            { "id": "meta", "kind": "label", "class": "sk-map-meta" }
+          ]
+        }
+      ]
+    },
+    "sk-marker": { "kind": "label", "class": "sk-marker" },
+    "sk-player": {
+      "class": "sk-player",
+      "children": [
+        {
+          "class": "sk-player-head",
+          "children": [
+            { "id": "badge", "kind": "label", "class": "sk-badge" },
+            {
+              "class": "sk-player-text",
+              "children": [
+                { "id": "name", "kind": "label", "class": "sk-player-name" },
+                { "id": "sub", "kind": "label", "class": "sk-player-sub" }
+              ]
+            }
+          ]
+        },
+        {
+          "class": "sk-selects",
+          "children": [
+            { "id": "controller", "kind": "dropdown", "class": "sk-select", "action": "skirmish.controller", "options": ["Human", "AI"] },
+            { "id": "team", "kind": "dropdown", "class": "sk-select", "action": "skirmish.team", "options": ["No team"] },
+            { "id": "race", "kind": "dropdown", "class": "sk-select", "action": "skirmish.race", "options": [] },
+            { "id": "hero", "kind": "dropdown", "class": "sk-select", "action": "skirmish.hero", "options": [] }
+          ]
+        }
+      ]
+    }
+  },
+  "root": {
+    "class": "sk",
+    "children": [
+      { "kind": "image", "class": "cover", "image": "menu-art" },
+      { "class": "sk-shade" },
+      {
+        "class": "sk-shell",
+        "children": [
+          {
+            "class": "sk-header",
+            "children": [
+              {
+                "class": "sk-heading",
+                "children": [
+                  { "kind": "label", "class": "eyebrow", "text": "Under the Canopy" },
+                  { "kind": "label", "class": "sk-title", "text": "Skirmish" }
+                ]
+              },
+              { "kind": "button", "class": "sk-ghost", "text": "← Main menu", "action": "skirmish.back" }
+            ]
+          },
+          {
+            "class": "sk-layout",
+            "children": [
+              {
+                "class": "sk-col",
+                "children": [
+                  { "kind": "label", "class": "sk-section", "text": "Battlefields" },
+                  { "id": "maps", "class": "sk-maps", "repeat": "sk-map" }
+                ]
+              },
+              {
+                "class": "sk-col sk-col-mid",
+                "children": [
+                  {
+                    "id": "preview", "class": "sk-preview",
+                    "children": [
+                      { "id": "image", "kind": "image", "class": "sk-preview-image" },
+                      { "id": "empty", "kind": "label", "class": "sk-preview-empty", "text": "Preview not published", "visible": false },
+                      { "id": "markers", "class": "fill", "style": { "pointer-events": "none" }, "repeat": "sk-marker" }
+                    ]
+                  },
+                  { "kind": "label", "class": "sk-legend", "text": "Numbered rings mark the starting positions" },
+                  { "id": "title", "kind": "label", "class": "sk-map-title" },
+                  { "id": "meta", "kind": "label", "class": "sk-meta" },
+                  { "id": "description", "kind": "label", "class": "sk-desc" }
+                ]
+              },
+              {
+                "class": "sk-col",
+                "children": [
+                  { "kind": "label", "class": "sk-section", "text": "Players" },
+                  { "id": "players", "class": "sk-players", "repeat": "sk-player" },
+                  { "kind": "label", "class": "sk-hint", "text": "Choose your starting position, or set every player to AI to watch the match." },
+                  { "id": "status", "kind": "label", "class": "sk-status" },
+                  { "id": "rules-caption", "kind": "label", "class": "sk-rules-caption", "text": "Victory" },
+                  { "id": "rules", "kind": "label", "class": "sk-rules", "text": "Destroy all rival buildings. The last surviving side wins." }
+                ]
+              }
+            ]
+          },
+          {
+            "class": "sk-footer",
+            "children": [
+              { "id": "footnote", "kind": "label", "class": "sk-footnote", "text": "Local match · All map positions are occupied" },
+              { "id": "start", "kind": "button", "class": "sk-launch", "text": "Start skirmish →", "action": "skirmish.start" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

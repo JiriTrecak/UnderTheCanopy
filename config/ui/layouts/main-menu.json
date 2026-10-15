@@ -1,0 +1,45 @@
+{
+  "templates": {
+    "mm-glow": { "class": "mm-glow" },
+    "mm-core": { "class": "mm-core" },
+    "mm-ray": { "class": "mm-ray" },
+    "mm-mote": { "class": "mm-mote" },
+    "mm-flame": { "class": "mm-flame" },
+    "mm-ember": { "class": "mm-ember" }
+  },
+  "root": {
+    "class": "mm",
+    "children": [
+      { "id": "art", "kind": "image", "class": "cover", "image": "menu-aftermath" },
+      {
+        "id": "effects", "class": "mm-layer",
+        "children": [
+          { "id": "rays", "class": "mm-layer", "repeat": "mm-ray", "count": 5 },
+          { "id": "glows", "class": "mm-layer", "repeat": "mm-glow", "count": 3 },
+          { "id": "cores", "class": "mm-layer", "repeat": "mm-core", "count": 3 },
+          { "id": "flames", "class": "mm-layer", "repeat": "mm-flame", "count": 15 },
+          { "id": "embers", "class": "mm-layer", "repeat": "mm-ember", "count": 24 },
+          { "id": "motes", "class": "mm-layer", "repeat": "mm-mote", "count": 24 }
+        ]
+      },
+      {
+        "class": "mm-rig",
+        "children": [
+          { "kind": "image", "class": "menu-logo", "image": "menu-logo" },
+          {
+            "class": "menu-actions",
+            "children": [
+              { "id": "campaign", "kind": "button", "class": "menu-action mm-action", "text": "Campaign", "action": "menu.campaign" },
+              { "id": "skirmish", "kind": "button", "class": "menu-action mm-action", "text": "Skirmish", "action": "menu.skirmish" },
+              { "id": "multiplayer", "kind": "button", "class": "menu-action mm-action", "text": "Multiplayer", "action": "menu.multiplayer" },
+              { "id": "load", "kind": "button", "class": "menu-action mm-action", "text": "Load Game", "action": "menu.load" },
+              { "id": "settings", "kind": "button", "class": "menu-action mm-action", "text": "Settings", "action": "menu.settings" },
+              { "id": "exit", "kind": "button", "class": "menu-action mm-action", "text": "Exit", "action": "menu.exit" }
+            ]
+          }
+        ]
+      },
+      { "id": "version", "kind": "label", "class": "mm-version", "text": "v0.1.0" }
+    ]
+  }
+}

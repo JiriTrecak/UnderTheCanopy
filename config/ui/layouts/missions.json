@@ -1,0 +1,54 @@
+{
+  "templates": {
+    "ms-row": {
+      "kind": "button", "class": "ms-row", "action": "missions.select",
+      "children": [
+        { "id": "number", "kind": "label", "class": "ms-num" },
+        { "id": "title", "kind": "label" }
+      ]
+    }
+  },
+  "root": {
+    "class": "cp",
+    "children": [
+      { "id": "art", "kind": "image", "class": "ms-art", "image": "menu-aftermath" },
+      { "class": "ms-shade" },
+      {
+        "class": "cp-content",
+        "children": [
+          { "id": "kicker", "kind": "label", "class": "ms-kicker", "text": "The campaign" },
+          { "id": "title", "kind": "label", "class": "ms-title", "text": "Campaign" },
+          {
+            "class": "ms-body",
+            "children": [
+              {
+                "class": "ms-list",
+                "children": [
+                  { "id": "list", "style": { "display": "flex", "flex-direction": "column", "gap": "8px" }, "repeat": "ms-row" },
+                  { "id": "note", "kind": "label", "class": "ms-note", "text": "More chapters to come" }
+                ]
+              },
+              {
+                "id": "detail", "class": "ms-detail",
+                "children": [
+                  { "id": "art", "kind": "image", "class": "ms-detail-art" },
+                  { "id": "chapter", "kind": "label", "class": "ms-chapter" },
+                  { "id": "name", "kind": "label", "class": "ms-name" },
+                  { "id": "briefing", "kind": "label", "class": "ms-briefing" },
+                  { "id": "features", "kind": "label", "class": "ms-features" }
+                ]
+              }
+            ]
+          },
+          {
+            "class": "ms-footer",
+            "children": [
+              { "kind": "button", "class": "menu-action cp-back", "text": "Back", "action": "missions.back" },
+              { "id": "begin", "kind": "button", "class": "menu-action ms-begin", "text": "Begin Mission", "action": "missions.begin" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

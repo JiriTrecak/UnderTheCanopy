@@ -1,0 +1,36 @@
+{
+  "templates": { "mh-line": { "kind": "label", "class": "mh-line" } },
+  "root": {
+    "class": "mh",
+    "children": [
+      { "id": "top-bar", "class": "mh-bar", "style": { "top": "0" }, "visible": false },
+      { "id": "bottom-bar", "class": "mh-bar", "style": { "bottom": "0" }, "visible": false },
+      {
+        "id": "objectives", "class": "mh-objectives",
+        "children": [
+          { "id": "caption", "kind": "label", "class": "mh-caption", "text": "Current objective" },
+          { "id": "objective", "kind": "label", "class": "mh-objective" },
+          { "id": "lines", "class": "mh-lines", "repeat": "mh-line" }
+        ]
+      },
+      {
+        "id": "dialogue-wrap", "class": "mh-dialogue-wrap", "visible": false,
+        "children": [
+          {
+            "class": "mh-dialogue",
+            "children": [
+              { "id": "portrait", "kind": "image", "class": "mh-portrait" },
+              {
+                "class": "mh-copy",
+                "children": [
+                  { "id": "speaker", "kind": "label", "class": "mh-speaker" },
+                  { "id": "text", "kind": "label", "class": "mh-text" }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

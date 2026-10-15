@@ -248,6 +248,21 @@ impl Session {
         )
     }
 
+    /// A single-player match resumed from a save: like [`Session::local`], with beats up
+    /// to `clock` (`World::tick()` of the restored world) already played.
+    pub fn local_from(setup: MatchSetup, me: Option<u8>, clock: u32) -> Self {
+        let mut session = Self::local(setup, me);
+        if let Transport::Local(local) = &mut session.transport {
+            local.mailbox.resume(clock);
+            for outbox in local.outboxes.values_mut() {
+                outbox.resume(clock);
+            }
+        }
+        session.received = clock;
+        session.clock = clock;
+        session
+    }
+
     pub(crate) fn remote(net: Net, link: Link, joined: &Joined) -> Self {
         let remote = Remote {
             net,
@@ -416,7 +431,8 @@ impl Session {
     }
 
     /// The committed commands for the beat after `clock` (`World::tick()`), or `None`
-    /// while it has not arrived (or the match stopped).
+    /// while it has not arrived (or the match stopped). Once the match has ended, only
+    /// the beats committed before the end follow.
     pub fn next_turn(&mut self, clock: u32) -> Option<Turn> {
         self.clock = clock;
         let next = clock + 1;
@@ -442,11 +458,16 @@ impl Session {
         } else {
             self.pump();
         }
-        if !matches!(self.phase, Phase::Starting | Phase::Playing) {
+        // After `ended` the beats already committed still play out: a slower peer reaches
+        // the deciding beat (and every peer the same final state) before it stops.
+        let ended = self.phase == Phase::Ended;
+        if !ended && !matches!(self.phase, Phase::Starting | Phase::Playing) {
             return None;
         }
         let Some(commit) = self.commits.remove(&next) else {
-            self.stalled_since.get_or_insert_with(Instant::now);
+            if !ended {
+                self.stalled_since.get_or_insert_with(Instant::now);
+            }
             return None;
         };
         self.stalled_since = None;
@@ -737,6 +758,102 @@ mod tests {
         assert_eq!(turn.commands[1].action, stop(8));
         assert!(session.next_turn(2).unwrap().commands.is_empty());
         assert_eq!(session.status().delay, 1);
+    }
+
+    #[test]
+    fn a_resumed_local_match_continues_from_its_clock() {
+        // Far beyond how far a confirmation may reach past the last commit.
+        let clock = crate::mailbox::MAX_CONFIRM_AHEAD * 3;
+        let mut session = Session::local_from(setup(2), Some(0), clock);
+        let turn = session
+            .next_turn(clock)
+            .expect("the next beat is committed at once");
+        assert_eq!(turn.beat, clock + 1);
+        assert!(session.send(stop(3)));
+        let turn = session.next_turn(clock + 1).unwrap();
+        assert_eq!(turn.beat, clock + 2);
+        assert_eq!(turn.commands.len(), 1);
+        assert_eq!(turn.commands[0].tick, clock + 1);
+        assert_eq!(session.commits.len(), 0, "no stale commits pile up");
+    }
+
+    #[test]
+    fn committed_beats_play_out_after_the_match_ended() {
+        // A seat that is behind when the server ends the match: beats 1–3 are committed,
+        // it has simulated none of them when `ended` arrives.
+        let net = Net::new(crate::ServerAddress::parse("http://127.0.0.1:9").unwrap()).unwrap();
+        let (to_io, _sent) = tokio::sync::mpsc::unbounded_channel();
+        let (from, from_io) = mpsc::channel();
+        let remote = Remote {
+            net,
+            link: Link { to_io, from_io },
+            room: "room".into(),
+            token: "token".into(),
+        };
+        let you = ClientIdentity {
+            role: Role::Player,
+            player: Some(1),
+            name: "Slow".into(),
+        };
+        let mut session = Session::new(
+            Transport::Remote(remote),
+            Some(you.clone()),
+            None,
+            None,
+            Phase::Connecting,
+        );
+        let config = MatchConfig {
+            v: 1,
+            room_id: "room".into(),
+            map_id: "map".into(),
+            map_revision: "1".into(),
+            seed: 1,
+            delay: 1,
+            checksum_every: 0,
+            tick_ms: TICK_MS,
+            slots: setup(2).slots,
+            company: None,
+        };
+        let send = |message: ServerMsg| from.send(FromIo::Message(Box::new(message))).unwrap();
+        send(ServerMsg::Start {
+            config,
+            you,
+            save: None,
+        });
+        assert!(session.next_turn(0).is_none());
+        session.ready(
+            ContentIdentity::digest("test", [b"x".as_slice()]),
+            "test",
+            0,
+        );
+        send(ServerMsg::Go { tick: 0 });
+        for tick in 1..=3 {
+            send(ServerMsg::Commit {
+                tick,
+                slots: Vec::new(),
+            });
+        }
+        send(ServerMsg::Ended {
+            outcome: WireOutcome {
+                winner: Some(0),
+                defeated: vec![1],
+            },
+            replay_id: String::new(),
+        });
+        let beats: Vec<u32> = (0..5)
+            .map_while(|clock| session.next_turn(clock).map(|t| t.beat))
+            .collect();
+        assert_eq!(session.status().phase, Phase::Ended);
+        assert_eq!(beats, [1, 2, 3]);
+        assert!(session.next_turn(3).is_none());
+        assert!(session.status().stalled.is_none());
+        assert!(
+            session
+                .poll()
+                .iter()
+                .any(|e| matches!(e, Event::Ended { .. })),
+            "the end is still reported"
+        );
     }
 
     #[test]

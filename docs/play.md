@@ -1,6 +1,6 @@
 # Playing a match
 
-Status: M4, in-match part (2026-10-15, [D36](decisions.md)). `just play --map <id> [--players N]` plays a skirmish: you on the map's first start, computer players on the next `N − 1` (all starts by default). `just play --spectate <id>` watches computer players with the observer HUD. The old game (`src/session/session/session.ts`, `src/ui/settlement/*`, `src/presentation/*`) is the behaviour reference.
+Status: M4, in-match part (2026-10-15, [D36](decisions.md), joined with the screens in D39). Matches start from the menus (skirmish, campaign, multiplayer, loaded saves); `just play --map <id> [--players N]` jumps through the flow straight into a skirmish: you on the map's first start, computer players on the next `N − 1` (all starts by default). `just play --spectate <id>` watches computer players with the observer HUD. The old game (`src/session/session/session.ts`, `src/ui/settlement/*`, `src/presentation/*`) is the behaviour reference.
 
 ## Shape
 
@@ -8,7 +8,8 @@ Everything lives in `game/src/play/`:
 
 | Module | What |
 |---|---|
-| `run.rs` | `InMatch`: a running match in the window (simulation thread, live scene, camera, controller, HUD, debug overlay, effect sounds). API: `start(window, display, renderer, loaded, match, Start)`, `window_event`, `frame` → `Vec<Event>` (`OpenMenu`, `Chat`), `world_ui()`, `plug_render_target("@minimap" \| "@portrait", …)`. `app.rs` only opens the window and forwards to it. |
+| `run.rs` | `InMatch`: a running match (simulation thread, live scene, camera, controller, HUD, debug overlay, effect sounds). API for the screens' `Playing` (`screens/in_match.rs`), which own the window, the one `Ui` and the one `Audio` (lent through `Host`): `start(gpu, renderer, ui, audio, loaded, match, Start)`, `set_options` (shortcuts, health bars), `window_event(window, event, ui, consumed)`, `update(host, free)` before the UI lays out, `act(ui, hud actions)` → `Vec<Event>` (`OpenMenu`, `Chat`), `decorate(draw list)`, `render(host, output, ui_view)`, `world_ui()`, `plug_render_target("@minimap" \| "@portrait", …)`. |
+| `keys.rs` | `Keymap`: the engine's shortcuts from the player's rebindable catalogue (`settings/keys.rs`). |
 | `mod.rs` | `Play`: the controller. Gets the seat's newest view, the frame's camera and pickable bodies, and window input; produces protocol `Action`s through a `Sink` (the session's `Commands` handle; a list in tests), camera requests, the HUD's contents and `WorldUi`. Holds no simulation state. |
 | `know.rs` | `Knowledge`: the view plus content, with the questions input asks (own, controlled, selectable, rank). |
 | `selection.rs` | Selection order and focus, box-selection rules, Tab cycling, control groups. |
@@ -26,7 +27,7 @@ Commands are only `Action`s sent through the session (D10); the HUD never touche
 
 ## Controls
 
-Default keys follow the content (`content/game.json` `actions`, categories and navigation) and the old shortcut catalogue. Keys are physical (the old `KeyboardEvent.code`).
+Default keys follow the content (`content/game.json` `actions`, categories and navigation) and the old shortcut catalogue. Keys are physical (the old `KeyboardEvent.code`). The engine's keys below (camera, menu, cancel, heroes, groups, selection, placement, inventory, health holds, debug, hide HUD) follow the player's bindings (Settings → Keyboard, `play/keys.rs`, D39); the table lists the defaults. Command hotkeys come from the content and are matched after them.
 
 | Input | Does | Parity |
 |---|---|---|
@@ -50,8 +51,8 @@ Default keys follow the content (`content/game.json` `actions`, categories and n
 | Home | Centres on the selection, else the main building. | as old |
 | Numpad 7, 8, 4, 5 | Use inventory slots 1–4. | as old |
 | Alt, `[`, `]` (held) | Health bars for all, friendly, hostile (`WorldUi::health`). | as old |
-| Enter | Chat (Enter sends, Escape closes; 300 characters; echoed locally). | as old |
-| F10, Menu button | Opens the game menu (`Event::OpenMenu`). | as old |
+| Enter | Chat (Enter sends, Escape closes; 300 characters). Single player shows the line at once; multiplayer sends it to the match server, which delivers it to every seat (D39). | as old |
+| F10, Menu button | Opens the game menu (`Event::OpenMenu`; the screens pause single player). | as old |
 | F9 (Ctrl+F3) | Debug overlay. | old F3 |
 | Arrows, screen edges, wheel, PageUp/PageDown, middle drag | Camera (unchanged from M3). Spectators: Q/E turn, B jumps to the largest fight. | as old |
 | Minimap | Left click/drag moves the camera; right click moves the selection or completes move, attack, patrol and rally modes. | as old |
@@ -82,7 +83,7 @@ The ghost model is the building's live model at 0.48 opacity in the owner's colo
 
 ## World UI contract
 
-`WorldUi` (from `Play::world_ui`, `InMatch::world_ui`) is the plain input the renderer's world UI pass reads: selected and hovered ids, the health bar mode, order markers with their ages (white move ×1, red attack ×2, green gather ×2; 0.4 s pulses, 0.15 s gaps, at most 24), the placement ghost (centre, rotation, cells, entrance, problem) and definition, the drag box and the focused producer's rally point. `run.rs` converts it each frame (`world_ui_input`) for the world UI pass (D38), which draws the rings, markers, placement grid, rally points and health bars; `overlay.rs` draws only the drag box. The minimap and the live portrait plug into the HUD as render targets.
+`WorldUi` (from `Play::world_ui`, `InMatch::world_ui`) is the plain input the renderer's world UI pass reads: selected and hovered ids, the health bar mode, order markers with their ages (white move ×1, red attack ×2, green gather ×2; 0.4 s pulses, 0.15 s gaps, at most 24), the placement ghost (centre, rotation, cells, entrance, problem) and definition, the drag box and the focused producer's rally point. `run.rs` converts it each frame (`world_ui_input`) for the world UI pass (D40), which draws the rings, markers, placement grid, rally points and health bars; `overlay.rs` draws only the drag box. The minimap and the live portrait plug into the HUD as render targets.
 
 ## Debug overlay
 
