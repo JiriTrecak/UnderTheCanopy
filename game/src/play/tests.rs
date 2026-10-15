@@ -104,6 +104,19 @@ impl Harness {
             .update(know, self.screen, bodies, &FlatGround, self.now);
     }
 
+    /// Like `refresh`, from the observer's view.
+    fn refresh_observer(&mut self) {
+        let view = Arc::new(self.world.observer_view());
+        let know = Knowledge::new(
+            self.world.catalog().content.clone(),
+            self.catalog.clone(),
+            view,
+            None,
+        );
+        self.play
+            .update(know, self.screen, Vec::new(), &FlatGround, self.now);
+    }
+
     fn advance(&mut self, ms: u64) {
         self.now += Duration::from_millis(ms);
         self.refresh();
@@ -644,4 +657,79 @@ fn the_ghost_agrees_with_the_simulation_where_the_player_sees() {
         }
     }
     assert_eq!(checked, 4 * 19 * 19);
+}
+
+#[test]
+fn idle_workers_menu_keys_tab_and_chat() {
+    let mut h = Harness::new(vec![]);
+    // Three of the four starting workers gather; F8 finds the fourth and centres on it.
+    let idle = h.play.idle_workers();
+    assert_eq!(idle.len(), 1, "{idle:?}");
+    h.play.take_events();
+    h.key("F8");
+    assert_eq!(h.play.selection.ids(), idle.as_slice());
+    assert!(matches!(
+        h.play.take_events().as_slice(),
+        [Event::LookAt(_)]
+    ));
+    // Escape with nothing to cancel opens the game menu.
+    h.key("Escape");
+    assert_eq!(h.play.take_events(), [Event::OpenMenu]);
+    // Tab moves the focus between types and keeps the selection.
+    let hero = h.mine(fx::HERO)[0];
+    let mut ids = h.mine(fx::WORKER);
+    ids.push(hero);
+    h.play.select(ids.clone(), None);
+    assert_eq!(h.play.selection.focus(), Some(hero));
+    h.key("Tab");
+    assert_ne!(h.play.selection.focus(), Some(hero));
+    assert_eq!(h.play.selection.ids().len(), ids.len());
+    // Enter opens the chat; a line is echoed and handed to the game.
+    h.key("Enter");
+    assert!(h.play.chat_open);
+    h.play.say("gl hf");
+    assert!(!h.play.chat_open);
+    assert_eq!(h.play.chat.last().map(|l| l.text.as_str()), Some("gl hf"));
+    assert_eq!(h.play.take_events(), [Event::Chat("gl hf".into())]);
+    assert!(h.take().is_empty());
+}
+
+#[test]
+fn an_observer_selects_but_never_commands() {
+    let mut h = Harness::new(vec![]);
+    let view = Arc::new(h.world.observer_view());
+    let know = Knowledge::new(
+        h.world.catalog().content.clone(),
+        h.catalog.clone(),
+        view,
+        None,
+    );
+    h.play = Play::new(know, h.world.terrain().clone(), Box::new(h.sent.clone()));
+    h.refresh_observer();
+    let enemy_worker = fx::all_of(&h.world, Owner::Player(0), fx::WORKER)[0];
+    let mine = h.mine(fx::WORKER)[0];
+    h.play.select(vec![enemy_worker, mine], None);
+    assert!(h.play.commands.is_empty());
+    h.right_click_ground(fx::AWAY.0 as f32 + 5.0, fx::AWAY.1 as f32);
+    assert!(h.take().is_empty());
+}
+
+#[test]
+fn markers_pulse_and_expire_like_the_old_rings() {
+    use super::orders::{Marker, MarkerKind};
+    let attack = Marker {
+        kind: MarkerKind::Attack,
+        position: [0.0, 0.0],
+        radius: 0.85,
+    };
+    assert!((attack.lifetime() - 0.95).abs() < 1e-6);
+    assert!((attack.opacity(0.0) - 0.95).abs() < 1e-6);
+    assert_eq!(attack.opacity(0.45), 0.0, "the gap between pulses");
+    assert!(attack.opacity(0.6) > 0.5, "the second pulse");
+    assert!(attack.opacity(0.951) == 0.0 && attack.opacity(0.949) < 0.01);
+    let point = Marker {
+        kind: MarkerKind::Move,
+        ..attack
+    };
+    assert!((point.lifetime() - 0.4).abs() < 1e-6);
 }

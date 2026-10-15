@@ -168,6 +168,8 @@ pub struct Play {
     mods: Mods,
     held: Vec<&'static str>,
     hovered: Option<u32>,
+    /// The pointer is over the HUD: nothing in the world is hovered.
+    over_ui: bool,
     ground_point: Option<Vec3>,
     markers: Vec<(Marker, Duration)>,
     message: Option<(String, Duration)>,
@@ -209,6 +211,7 @@ impl Play {
             mods: Mods::default(),
             held: Vec::new(),
             hovered: None,
+            over_ui: false,
             ground_point: None,
             markers: Vec::new(),
             message: None,
@@ -240,6 +243,11 @@ impl Play {
 
     pub fn observer(&self) -> bool {
         self.know.me.is_none()
+    }
+
+    /// Whether the pointer is over the HUD (no world hover there).
+    pub fn set_over_ui(&mut self, over: bool) {
+        self.over_ui = over;
     }
 
     /// Events since the last call.
@@ -377,6 +385,7 @@ impl Play {
         };
         self.ground_point = screen.ground(px, ground);
         self.hovered = match self.mode {
+            _ if self.over_ui => None,
             Mode::Place { .. } => None,
             _ => self.pick(px, ground).map(|t| t.id),
         };

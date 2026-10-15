@@ -71,6 +71,7 @@ pub struct InMatch {
     started: Instant,
     last_frame: Instant,
     keys: BTreeSet<KeyCode>,
+    images: BTreeSet<String>,
     cursor: Option<(f32, f32)>,
     drag: Option<(f32, f32)>,
     focused: bool,
@@ -179,6 +180,7 @@ impl InMatch {
             started: now,
             last_frame: now,
             keys: BTreeSet::new(),
+            images: BTreeSet::new(),
             cursor: None,
             drag: None,
             focused: true,
@@ -321,14 +323,22 @@ impl InMatch {
         let Some(input) = input::translate(event) else {
             return;
         };
-        let pointer = matches!(input, Input::Button { .. } | Input::PointerMoved(_));
-        if consumed && pointer {
-            // Over the HUD: the world loses the hover but keeps its press state.
-            if matches!(input, Input::PointerMoved(_)) {
-                self.play
-                    .input(&Input::PointerLeft, self.loaded.scene.terrain());
+        let terrain = self.loaded.scene.terrain();
+        match input {
+            // The world follows the pointer everywhere (a box drag may cross the HUD) but
+            // hovers nothing under the HUD.
+            Input::PointerMoved(_) => {
+                self.play.set_over_ui(consumed);
+                self.play.input(&input, terrain);
+                return;
             }
-            return;
+            // A release always reaches the world: it ends a press that began there.
+            Input::Button { pressed: false, .. } => {
+                self.play.input(&input, terrain);
+                return;
+            }
+            Input::Button { .. } if consumed => return,
+            _ => {}
         }
         if consumed && !matches!(input, Input::Modifiers(_) | Input::FocusLost) {
             return;
@@ -519,6 +529,10 @@ impl InMatch {
             terrain,
         );
         for name in self.hud.take_image_requests() {
+            // Each image is uploaded and registered once (missing ones are not retried).
+            if !self.images.insert(name.clone()) {
+                continue;
+            }
             let layer = renderer.ui_mut(gpu);
             match layer.load_pack_image(gpu, &self.loaded.pack, &name) {
                 Ok(desc) => {

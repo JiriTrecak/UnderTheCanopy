@@ -408,6 +408,23 @@ pub fn run(
             }
         }
     }
+    // What binding and painting the HUD costs per frame (steady state).
+    let started = std::time::Instant::now();
+    for i in 0..100 {
+        play.update(
+            play.knowledge().clone(),
+            screen,
+            Vec::new(),
+            terrain,
+            now + Duration::from_millis(i),
+        );
+        hud.update(&mut ui, &play);
+        ui.frame(now.as_secs_f64());
+    }
+    println!(
+        "  hud: update + bind + paint {:.3} ms per frame",
+        started.elapsed().as_secs_f64() * 10.0
+    );
     hud.update(&mut ui, &play);
     // Atlas uploads are incremental and only this frame reaches the GPU.
     ui.reset_glyph_atlas();
