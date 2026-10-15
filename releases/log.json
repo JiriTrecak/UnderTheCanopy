@@ -3,7 +3,9 @@
   "unreleased": {
     "added": [],
     "improved": [],
-    "fixed": [],
+    "fixed": [
+      "The game no longer eats all memory and freezes the Mac while its window is minimised, hidden or covered."
+    ],
     "knownIssues": []
   },
   "releases": [

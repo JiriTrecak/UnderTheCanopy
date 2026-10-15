@@ -19,7 +19,14 @@ use crate::{
 };
 use anyhow::Result;
 use canopy_render::Renderer;
-use std::{sync::Arc, time::Instant};
+use std::{
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
+/// How often a hidden window's loop runs: the game keeps going (matches, the network)
+/// without drawing.
+const HIDDEN_FRAME: Duration = Duration::from_millis(16);
 use winit::{
     application::ApplicationHandler,
     dpi::LogicalSize,
@@ -165,6 +172,11 @@ impl App {
             session.display.set_vsync(vsync && self.options.vsync);
         }
         let Some(frame) = session.display.acquire() else {
+            // No frame while the window is hidden, minimised or covered. The update still
+            // queued its uploads, which only a submit releases, and nothing paces the loop:
+            // without these two lines it piled up over a gigabyte a second.
+            session.display.gpu.queue.submit([]);
+            std::thread::sleep(HIDDEN_FRAME);
             return;
         };
         let output = frame
