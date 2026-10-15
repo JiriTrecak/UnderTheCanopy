@@ -209,8 +209,28 @@ fn placements_need_cell_centres_unique_ids_and_known_surfaces() {
             "position": {"x": 41.5, "y": 41.5}, "rotation": 45, "owner": "none"}])),
         "hut: Buildings rotate in 90-degree steps",
     );
+}
+
+#[test]
+fn seats_nobody_plays_get_no_base_and_lose_their_placements() {
+    let scout = |owner: &str| {
+        json!({"id": format!("scout.{owner}"), "definition": "unit.worker",
+            "position": {"x": 100, "y": 100}, "owner": owner})
+    };
+    // Skirmish: only player 1 is seated; player 2's start and scout are left out.
+    let world = start(with_entities(json!([scout("player.2")])), 1).unwrap();
+    let ids: Vec<String> = spawned(&world).into_iter().map(|(id, ..)| id).collect();
+    assert!(ids.iter().any(|id| id.starts_with("start.player.1/")));
+    assert!(
+        !ids.iter()
+            .any(|id| id.starts_with("start.player.2/") || id == "scout.player.2")
+    );
+    // A sandbox (like a mission) needs every owner it places seated.
+    let mut sandbox = with_entities(json!([scout("player.2")]));
+    sandbox["sandbox"] = json!(true);
+    sandbox["playerStarts"].as_array_mut().unwrap().truncate(1);
     assert_eq!(
-        start(map(), 1).err().as_deref(),
+        start(sandbox, 1).err().as_deref(),
         Some("Placement owner player.2 has no match slot")
     );
 }

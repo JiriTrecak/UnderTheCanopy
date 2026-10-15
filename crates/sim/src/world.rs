@@ -99,6 +99,13 @@ impl World {
         let rules = match_rules(map);
         if rules == victory::Rules::Skirmish {
             for start in &map.player_starts {
+                let seated = setup
+                    .slots
+                    .iter()
+                    .any(|s| Owner::Player(s.player) == start.owner());
+                if !seated {
+                    continue;
+                }
                 let fort = state
                     .entities
                     .iter()

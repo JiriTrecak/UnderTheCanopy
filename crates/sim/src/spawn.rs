@@ -60,11 +60,21 @@ fn expand(
     let mut result = map.entities.clone();
     let mut started = BTreeSet::new();
     if skirmish(map) {
+        // A seat nobody plays (left open or closed in the lobby) is not in the match: its
+        // start gets no base and the map's own placements for it are left out.
+        let seated = |owner: Owner| match owner {
+            Owner::Player(n) => slots.iter().any(|s| s.player == n),
+            _ => true,
+        };
+        result.retain(|p| seated(p.owner));
         let resources = resources(map, terrain);
         for start in &map.player_starts {
             let slot = slots
                 .iter()
                 .find(|s| u32::from(s.player) + 1 == u32::from(start.player));
+            if !seated(start.owner()) {
+                continue;
+            }
             let setup = race_setup(rules, slot.and_then(|s| s.race.as_deref()))?;
             let known = rules.starting_setup.id.as_str() == start.setup
                 || rules.races.values().any(|r| {
@@ -505,7 +515,20 @@ struct Body<'a> {
 /// and standing resources share no cell on the same floor; unit bodies stay on the map,
 /// off static footprints, and apart from each other.
 fn occupancy(map: &UtcMap, content: &Content, terrain: &Terrain) -> Result<(), String> {
-    let placements = expand(map, content, terrain, &[])?.list;
+    // Every start seated, with the default race.
+    let every: Vec<Slot> = map
+        .player_starts
+        .iter()
+        .map(|s| Slot {
+            player: s.player.saturating_sub(1),
+            kind: crate::setup::SlotKind::Ai,
+            name: None,
+            team: None,
+            hero: None,
+            race: None,
+        })
+        .collect();
+    let placements = expand(map, content, terrain, &every)?.list;
     let size = terrain.size();
     let limit = f64::from(size) - 0.5;
     let layered = placements.iter().any(|p| p.position.surface.is_some());

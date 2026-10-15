@@ -5,7 +5,9 @@
       "A small graph button next to Menu opens the debug overlay (frame rate, timings and match tools), so it no longer needs F9."
     ],
     "improved": [],
-    "fixed": [],
+    "fixed": [
+      "Multiplayer matches can start with fewer players than the map has starts: unused starts stay empty instead of the match failing to load."
+    ],
     "knownIssues": []
   },
   "releases": [
