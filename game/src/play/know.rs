@@ -92,6 +92,12 @@ impl Knowledge {
         self.def(e).kind == Kind::Unit
     }
 
+    /// Whether the pointer picks it by its drawn body (units and items) rather than by
+    /// the ground point under it.
+    pub fn picked_by_body(&self, e: &EntityView) -> bool {
+        self.is_unit(e) || self.def(e).kind == Kind::Item
+    }
+
     pub fn is_building(&self, e: &EntityView) -> bool {
         self.def(e).kind == Kind::Building
     }

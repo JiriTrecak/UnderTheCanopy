@@ -7,7 +7,8 @@
     ],
     "fixed": [
       "Fallen heroes can be revived again: the Sanctuary and Ancestor Shrine offer Revive for each fallen hero.",
-      "Right-clicking the minimap orders the selection there without the camera jumping to that spot."
+      "Right-clicking the minimap orders the selection there without the camera jumping to that spot.",
+      "Items on the ground are much easier to pick up: they are picked where they are drawn, with the same generous target as units, including items lying in water."
     ],
     "knownIssues": []
   },

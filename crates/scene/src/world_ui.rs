@@ -1293,7 +1293,10 @@ pub fn minimap_frame(
     };
     for b in bodies {
         let unowned = b.owner.is_none();
-        if b.hp == Some(0) || (b.building && unowned && !b.deposit && b.footprint.is_none()) {
+        if b.item
+            || b.hp == Some(0)
+            || (b.building && unowned && !b.deposit && b.footprint.is_none())
+        {
             continue;
         }
         let p = position(b.key).unwrap_or(b.position);
@@ -1367,6 +1370,7 @@ mod tests {
             key: 0,
             position: Vec3::ZERO,
             building,
+            item: false,
             hero: false,
             relation: Relation::Own,
             owner: Some(0),

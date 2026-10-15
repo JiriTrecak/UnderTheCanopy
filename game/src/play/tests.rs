@@ -108,7 +108,7 @@ impl Harness {
                     foot: Vec3::new(x, 0.0, z),
                     height: d.dimensions.as_ref().map_or(2.5, |b| b.height as f32),
                     radius: d.dimensions.as_ref().map_or(0.9, |b| b.radius as f32),
-                    unit: know.is_unit(e),
+                    capsule: know.picked_by_body(e),
                 }
             })
             .collect();
@@ -1252,4 +1252,31 @@ fn a_right_click_on_the_minimap_orders_without_moving_the_camera() {
         ],
     );
     assert_eq!(looks(&events), 2);
+}
+
+#[test]
+fn items_are_picked_by_their_drawn_body() {
+    let (x, z) = (fx::AWAY.0.floor() as f32 + 6.0, fx::AWAY.1.floor() as f32);
+    let mut h = Harness::new(vec![serde_json::json!({
+        "id": "charm", "definition": fx::CHARM,
+        "position": {"x": x, "y": z}, "owner": "none",
+    })]);
+    let charm = h
+        .world
+        .state()
+        .entities
+        .iter()
+        .find(|e| e.placement.as_deref() == Some("charm"))
+        .expect("the charm")
+        .id
+        .0;
+    // A metre east and a metre up: on the drawn item, but its ground point lies well
+    // outside the small square the ground rule used to need.
+    let (p, _) = h
+        .screen
+        .project(Vec3::new(x + 1.0, 1.0, z))
+        .expect("on screen");
+    h.input(Input::PointerMoved(p));
+    h.advance(16);
+    assert_eq!(h.play.hovered, Some(charm));
 }

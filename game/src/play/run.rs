@@ -796,7 +796,7 @@ impl InMatch {
                     foot,
                     height,
                     radius: (radius - 0.32).max(0.2),
-                    unit: know.entity(id).is_some_and(|e| know.is_unit(e)),
+                    capsule: know.entity(id).is_some_and(|e| know.picked_by_body(e)),
                 })
                 .collect();
             self.play.update(know, screen, bodies, terrain, since_start);

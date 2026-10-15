@@ -24,8 +24,9 @@ pub struct Body {
     pub height: f32,
     /// Body radius, world units.
     pub radius: f32,
-    /// Units pick by capsule; buildings and the rest by the ground point.
-    pub unit: bool,
+    /// Picked by its drawn capsule (units and items); buildings and the rest by the
+    /// ground point.
+    pub capsule: bool,
 }
 
 impl Body {
@@ -120,11 +121,11 @@ impl Screen {
         None
     }
 
-    /// The unit whose padded capsule contains `px`, nearest by perpendicular distance,
-    /// then depth, then id.
+    /// The unit or item whose padded capsule contains `px`, nearest by perpendicular
+    /// distance, then depth, then id.
     pub fn pick_unit(&self, bodies: &[Body], px: Vec2) -> Option<u32> {
         let mut best: Option<(f32, f32, u32)> = None;
-        for b in bodies.iter().filter(|b| b.unit) {
+        for b in bodies.iter().filter(|b| b.capsule) {
             let Some((foot, depth)) = self.project(b.foot) else {
                 continue;
             };
@@ -536,7 +537,7 @@ mod tests {
             foot: Vec3::new(x, 0.0, 50.0),
             height: 2.0,
             radius: 0.3,
-            unit: true,
+            capsule: true,
         };
         let bodies = [body(1, 50.0), body(2, 51.0)];
         let (foot, _) = s.project(bodies[0].foot).unwrap();
@@ -547,10 +548,28 @@ mod tests {
         // Above the feet, along the body.
         assert_eq!(s.pick_unit(&bodies, foot + Vec2::new(0.0, -20.0)), Some(1));
         let building = Body {
-            unit: false,
+            capsule: false,
             ..body(3, 50.0)
         };
         assert_eq!(s.pick_unit(&[building], foot), None);
+    }
+
+    #[test]
+    fn an_item_on_a_lake_bed_is_picked_where_it_is_drawn() {
+        let s = screen();
+        // Two metres under a water surface at 0, where the ground ray stops.
+        let item = Body {
+            id: 7,
+            foot: Vec3::new(50.0, -2.0, 50.0),
+            height: 0.5,
+            radius: 0.4,
+            capsule: true,
+        };
+        let (drawn, _) = s.project(item.foot + Vec3::Y * 0.25).unwrap();
+        assert_eq!(s.pick_unit(&[item], drawn), Some(7));
+        // The ground ray from that pixel meets the surface well away from the item.
+        let surface = s.ground(drawn, &FlatGround).unwrap();
+        assert!(Vec2::new(surface.x - 50.0, surface.z - 50.0).length() > 0.8);
     }
 
     /// A fixture pine: a trunk ring at the soil and at 3 m, and a cone of branch tips

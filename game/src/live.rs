@@ -121,7 +121,7 @@ impl LiveScene {
     ) -> impl Iterator<Item = canopy_render::cutaway::CutawaySubject> + '_ {
         self.ui_bodies
             .iter()
-            .filter(|b| !b.building && !b.deposit && !b.remembered && b.hp != Some(0))
+            .filter(|b| !b.building && !b.item && !b.deposit && !b.remembered && b.hp != Some(0))
             .filter(|b| self.hidden_entity != Some(b.id))
             .map(|b| canopy_render::cutaway::CutawaySubject {
                 position: self

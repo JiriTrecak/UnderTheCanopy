@@ -171,7 +171,7 @@ pub fn run(
                 foot,
                 height,
                 radius: (radius - 0.32).max(0.2),
-                unit: k.entity(id).is_some_and(|e| k.is_unit(e)),
+                capsule: k.entity(id).is_some_and(|e| k.picked_by_body(e)),
             })
             .collect();
         play.update(k, screen, bodies, terrain, now);

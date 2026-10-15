@@ -232,6 +232,8 @@ pub struct Body {
     /// Where it stands at this tick.
     pub position: Vec3,
     pub building: bool,
+    /// An item on the ground: picked and ringed, but no minimap dot.
+    pub item: bool,
     pub hero: bool,
     pub relation: canopy_sim::teams::Relation,
     pub owner: Option<u8>,
@@ -1305,9 +1307,17 @@ impl Presenter {
                         });
                     }
                 }
+                Kind::Item => {
+                    // Picked by the model as drawn, on a lake bed too: the bounds' height
+                    // and half their widest side.
+                    let w = (info.rest_max[0] - info.rest_min[0])
+                        .max(info.rest_max[2] - info.rest_min[2]);
+                    let h = info.rest_max[1] - info.rest_min[1];
+                    actor.body = Some([(w * 0.5 * scale).max(0.3), (h * scale).max(0.3)]);
+                }
                 _ => {}
             }
-            if matches!(d.kind, Kind::Unit | Kind::Building) {
+            if matches!(d.kind, Kind::Unit | Kind::Building | Kind::Item) {
                 bodies.push(self.body_of(e, d, &actor, tick));
             }
             if !hide {
@@ -1494,6 +1504,7 @@ impl Presenter {
             key: actor.key,
             position: actor.position,
             building: d.kind == Kind::Building,
+            item: d.kind == Kind::Item,
             hero: d.is_hero(),
             relation: e.relation,
             owner: match e.public.owner {
