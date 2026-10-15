@@ -163,6 +163,9 @@ pub struct Hud {
     pub players: Vec<(u8, String, bool)>,
     /// Map size, for minimap clicks.
     pub map_size: f32,
+    /// A left-button drag on the minimap is moving the camera (a right-click's slight
+    /// movement must not).
+    minimap_look: bool,
     /// What the current card's cells and banners hold (command ids).
     cells: [Option<String>; card::SLOTS],
     banners: Vec<String>,
@@ -192,6 +195,7 @@ impl Hud {
             palette: Vec::new(),
             players: Vec::new(),
             map_size: 1.0,
+            minimap_look: false,
             cells: Default::default(),
             banners: Vec::new(),
             queue: Vec::new(),
@@ -1503,12 +1507,13 @@ impl Hud {
                 }
                 ("minimap", ActionKind::DragStart { button, at }) => {
                     let (x, z) = (at.x * self.map_size, at.y * self.map_size);
+                    self.minimap_look = *button == PointerButton::Primary;
                     match button {
                         PointerButton::Secondary => play.minimap_command(x, z),
                         _ => events.push(Event::LookAt([x, z])),
                     }
                 }
-                ("minimap", ActionKind::Drag { at }) => {
+                ("minimap", ActionKind::Drag { at }) if self.minimap_look => {
                     events.push(Event::LookAt([at.x * self.map_size, at.y * self.map_size]));
                 }
                 ("menu", ActionKind::Click { .. }) => events.push(Event::OpenMenu),

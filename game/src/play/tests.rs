@@ -1151,3 +1151,105 @@ fn the_sanctuary_offers_to_revive_a_fallen_hero() {
         "a part second shows as a whole"
     );
 }
+
+#[test]
+fn right_clicking_the_minimap_moves_the_selection_there() {
+    let mut h = Harness::new(vec![]);
+    let workers = h.mine(fx::WORKER);
+    h.click(workers[0]);
+    h.take();
+    let (x, z) = (fx::AWAY.0 as f32 + 20.0, fx::AWAY.1 as f32 + 6.0);
+    h.play.minimap_command(x, z);
+    let sent = h.take();
+    let [
+        Action::Move {
+            actors,
+            destination,
+            ..
+        },
+    ] = sent.as_slice()
+    else {
+        panic!("{sent:?}");
+    };
+    assert_eq!(actors, &[workers[0]]);
+    assert_eq!((destination.x, destination.y), (x as u32, z as u32));
+}
+
+/// The shipped interface, laid out headless (system fonts when the bundled ones are Git
+/// LFS pointers).
+fn shipped_ui() -> canopy_ui::Ui {
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../config/ui");
+    let mut config = canopy_ui::UiConfig::load(&dir).expect("config/ui reads");
+    let pointers = config
+        .font_data
+        .iter()
+        .any(|f| f.starts_with(b"version https://git-lfs"));
+    if pointers {
+        config.font_data.clear();
+    }
+    canopy_ui::Ui::new(
+        config,
+        canopy_ui::FontSources {
+            bundled: Vec::new(),
+            system: pointers,
+        },
+    )
+    .expect("config/ui compiles")
+}
+
+#[test]
+fn a_right_click_on_the_minimap_orders_without_moving_the_camera() {
+    use canopy_ui::{ActionKind, PointerButton};
+    let mut h = Harness::new(vec![]);
+    let workers = h.mine(fx::WORKER);
+    h.click(workers[0]);
+    h.take();
+    let mut ui = shipped_ui();
+    let mut hud = super::hud::Hud::new();
+    hud.map_size = h.world.terrain().size() as f32;
+    let minimap = |kind| canopy_ui::Action {
+        node: None,
+        path: Some("hud/dock/minimap".into()),
+        name: Some("minimap".into()),
+        index: None,
+        kind,
+    };
+    let looks = |events: &[Event]| {
+        events
+            .iter()
+            .filter(|e| matches!(e, Event::LookAt(_)))
+            .count()
+    };
+    // A right-click that moves the pointer a little while held (a trackpad click).
+    let events = hud.act(
+        &mut ui,
+        &mut h.play,
+        vec![
+            minimap(ActionKind::DragStart {
+                button: PointerButton::Secondary,
+                at: canopy_ui::Vec2::new(0.5, 0.5),
+            }),
+            minimap(ActionKind::Drag {
+                at: canopy_ui::Vec2::new(0.51, 0.5),
+            }),
+        ],
+    );
+    assert_eq!(looks(&events), 0, "{events:?}");
+    let sent = h.take();
+    assert!(matches!(sent.as_slice(), [Action::Move { .. }]), "{sent:?}");
+    // A left drag still looks around.
+    let events = hud.act(
+        &mut ui,
+        &mut h.play,
+        vec![
+            minimap(ActionKind::DragStart {
+                button: PointerButton::Primary,
+                at: canopy_ui::Vec2::new(0.5, 0.5),
+            }),
+            minimap(ActionKind::Drag {
+                at: canopy_ui::Vec2::new(0.6, 0.5),
+            }),
+        ],
+    );
+    assert_eq!(looks(&events), 2);
+}
