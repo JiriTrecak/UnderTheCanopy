@@ -3,7 +3,7 @@
   "unreleased": {
     "added": [],
     "improved": [
-      "Buildings on sloping ground stand on an earthen foundation that blends into the terrain instead of floating, with worn earth around every building"
+      "Buildings on sloping ground no longer float: the ground rises to meet them, in the same grass, earth or rock as around it"
     ],
     "fixed": [
       "Buildings can be placed on rolling hills: only cliffs, ramps and water block construction, so \"Choose flatter ground\" no longer refuses most of the map"

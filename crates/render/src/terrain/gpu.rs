@@ -36,7 +36,7 @@ struct TerrainUniform {
     grid: [f32; 4],
     cells: [f32; 4],
     counts: [u32; 4],
-    /// Foundation layer (or `NONE`), mask texels per unit.
+    /// The layer steep foundation banks show (the map's most used cliff, or `NONE`).
     foundation: [u32; 4],
     layers: [LayerUniform; MAX_LAYERS],
 }
@@ -60,12 +60,8 @@ impl FoundationRecord {
     }
 }
 
-/// The foundations' GPU side: the earth mask, the records in view and their pipelines.
+/// The foundations' GPU side: the records in view and their pipelines.
 struct FoundationsGpu {
-    mask: wgpu::Texture,
-    /// Mask texels per side.
-    mask_size: u32,
-    origin: f32,
     shown: Vec<Foundation>,
     layout: wgpu::BindGroupLayout,
     main: (wgpu::Buffer, wgpu::BindGroup),
@@ -75,7 +71,6 @@ struct FoundationsGpu {
     shadow_count: u32,
     forward: wgpu::RenderPipeline,
     depth: wgpu::RenderPipeline,
-    scratch: Vec<u8>,
     records: Vec<FoundationRecord>,
 }
 
@@ -397,10 +392,18 @@ impl TerrainGpu {
         );
         bytes += u64::from(desc.span * desc.span * 4);
 
+        // Steep foundation banks take the map's most used cliff material.
+        let steep_layer = desc
+            .layers
+            .iter()
+            .enumerate()
+            .filter(|(_, l)| matches!(l.kind, LayerKind::Cliff { .. }))
+            .max_by_key(|(_, l)| l.mask.iter().map(|&w| u64::from(w)).sum::<u64>())
+            .map(|(i, _)| i);
         // Tile arrays: only layers some cell uses are loaded.
         let used: Vec<bool> = (0..desc.layers.len())
             .map(|i| {
-                desc.foundation_layer == Some(i)
+                steep_layer == Some(i)
                     || selection
                         .iter()
                         .any(|s| s.contains(&(i as u8)) && i as u8 != NO_LAYER)
@@ -525,14 +528,7 @@ impl TerrainGpu {
                 super::selection_offset(desc),
             ],
             counts: [cx, cz, layer_count, 0],
-            foundation: [
-                desc.foundation_layer
-                    .filter(|&i| i < desc.layers.len())
-                    .map_or(NONE, |i| i as u32),
-                foundations::MASK_TEXELS,
-                0,
-                0,
-            ],
+            foundation: [steep_layer.map_or(NONE, |i| i as u32), 0, 0, 0],
             layers: layer_uniforms,
         };
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -557,17 +553,6 @@ impl TerrainGpu {
             anisotropy_clamp: 8,
             ..Default::default()
         });
-
-        // Earth around building foundations, filled as buildings come and go.
-        let mask_size = desc.span * foundations::MASK_TEXELS;
-        let foundation_mask = tex2d(
-            "foundation earth",
-            wgpu::TextureFormat::R8Unorm,
-            mask_size,
-            mask_size,
-            1,
-        );
-        bytes += u64::from(mask_size * mask_size);
 
         let vf = wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT;
         let tex_entry = |binding, visibility, sample_type, dim| wgpu::BindGroupLayoutEntry {
@@ -622,7 +607,6 @@ impl TerrainGpu {
                     },
                     count: None,
                 },
-                tex_entry(11, frag, filterable, d2),
             ],
         });
         let array_view = |t: &wgpu::Texture| {
@@ -661,11 +645,6 @@ impl TerrainGpu {
         entries.push(wgpu::BindGroupEntry {
             binding: 10,
             resource: uniform_buffer.as_entire_binding(),
-        });
-        let mask_view = plain(&foundation_mask);
-        entries.push(wgpu::BindGroupEntry {
-            binding: 11,
-            resource: wgpu::BindingResource::TextureView(&mask_view),
         });
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("terrain"),
@@ -842,9 +821,6 @@ impl TerrainGpu {
         let [foundation_main, foundation_shadow] =
             FoundationsGpu::buffers(device, &foundation_layout, capacity);
         let foundations = FoundationsGpu {
-            mask: foundation_mask,
-            mask_size,
-            origin: desc.origin,
             shown: Vec::new(),
             layout: foundation_layout,
             main: foundation_main,
@@ -854,7 +830,6 @@ impl TerrainGpu {
             shadow_count: 0,
             forward: foundation_forward,
             depth: foundation_depth,
-            scratch: Vec::new(),
             records: Vec::new(),
         };
 
@@ -1092,42 +1067,11 @@ impl TerrainGpu {
         }
     }
 
-    /// The building foundations to draw (D44): when the list differs from the shown one,
-    /// redraws the earth mask where footprints appeared or went. Cheap when unchanged.
-    pub fn set_foundations(
-        &mut self,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        list: &[Foundation],
-    ) {
+    /// The building foundations to draw (D44); only a changed list costs anything.
+    pub fn set_foundations(&mut self, device: &wgpu::Device, list: &[Foundation]) {
         let f = &mut self.foundations;
         if f.shown == list {
             return;
-        }
-        let _span = tracing::trace_span!("foundation_mask").entered();
-        let rects = foundations::changed_rects(&f.shown, list, f.origin, f.mask_size);
-        for rect in rects {
-            foundations::rasterise(list, f.origin, rect, &mut f.scratch);
-            let [x0, z0, x1, z1] = rect;
-            queue.write_texture(
-                wgpu::TexelCopyTextureInfo {
-                    texture: &f.mask,
-                    mip_level: 0,
-                    origin: wgpu::Origin3d { x: x0, y: z0, z: 0 },
-                    aspect: wgpu::TextureAspect::All,
-                },
-                &f.scratch,
-                wgpu::TexelCopyBufferLayout {
-                    offset: 0,
-                    bytes_per_row: Some(x1 - x0),
-                    rows_per_image: Some(z1 - z0),
-                },
-                wgpu::Extent3d {
-                    width: x1 - x0,
-                    height: z1 - z0,
-                    depth_or_array_layers: 1,
-                },
-            );
         }
         if list.len() > f.capacity {
             f.capacity = list.len().next_power_of_two();
@@ -1152,7 +1096,7 @@ impl TerrainGpu {
                     .iter()
                     .filter(|x| {
                         let (min, max) = x.bounds();
-                        x.bank && box_visible(planes, min, max)
+                        box_visible(planes, min, max)
                     })
                     .map(FoundationRecord::of),
             );

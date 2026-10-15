@@ -184,13 +184,18 @@ impl LiveScene {
                 .ok()
                 .map(|i| instances[i].transform.w_axis.truncate())
         };
+        let water = scene.water_field();
+        let ground = canopy_scene::live::FoundationGround {
+            ground: &water,
+            foundations: &self.foundations,
+        };
         ui.build(
             &self.ui_bodies,
             &position,
             &self.world_ui_input,
             camera,
             renderer.size(),
-            &scene.water_field(),
+            &ground,
             seconds,
             &mut self.world_ui_frame,
         );

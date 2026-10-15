@@ -265,7 +265,7 @@ pub struct Body {
 }
 
 /// The foundations drawn under the buildings of `bodies` (D44): each footprint on the
-/// ground at its building's base height; resource deposits get only the earth.
+/// ground at its building's base height.
 pub fn foundations(
     bodies: &[Body],
     out: &mut Vec<canopy_render::terrain::foundations::Foundation>,
@@ -277,9 +277,37 @@ pub fn foundations(
             center: [b.position.x, b.position.z],
             half: [w / 2.0, d / 2.0],
             base: b.position.y,
-            bank: !b.deposit,
         })
     }));
+}
+
+/// Walking heights with the foundations' banks: ground marks of the world UI (rings,
+/// rally routes) drape over a bank instead of vanishing under it (D44).
+pub struct FoundationGround<'a> {
+    pub ground: &'a dyn canopy_render::water::ripples::WaterField,
+    pub foundations: &'a [canopy_render::terrain::foundations::Foundation],
+}
+
+impl canopy_render::water::ripples::WaterField for FoundationGround<'_> {
+    fn water(&self, x: f32, z: f32) -> f32 {
+        self.ground.water(x, z)
+    }
+
+    fn walk(&self, x: f32, z: f32, surface: u32) -> f32 {
+        let floor = self.ground.walk(x, z, surface);
+        if surface != 0 {
+            return floor;
+        }
+        let ground = |x: f32, z: f32| self.ground.walk(x, z, 0);
+        self.foundations
+            .iter()
+            .filter(|f| {
+                let (min, max) = f.bounds();
+                (min.x..=max.x).contains(&x) && (min.z..=max.z).contains(&z)
+            })
+            .filter_map(|f| f.surface(x, z, &ground))
+            .fold(floor, f32::max)
+    }
 }
 
 /// The centre of the densest group of `points` (16-cell buckets and their neighbours).

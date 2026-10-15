@@ -1173,7 +1173,6 @@ mod tests {
                 cells: [17, 17],
             },
             surroundings: None,
-            foundation_layer: None,
         };
         let desc = ForestDesc {
             map_size: 32,

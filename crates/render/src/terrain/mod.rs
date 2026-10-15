@@ -131,8 +131,6 @@ pub struct TerrainDesc {
     pub layers: Vec<TerrainLayer>,
     pub grid: TextureGrid,
     pub surroundings: Option<Surroundings>,
-    /// The layer building foundations show (bare earth), if any ([`foundations`]).
-    pub foundation_layer: Option<usize>,
 }
 
 impl TerrainDesc {
@@ -544,7 +542,6 @@ mod tests {
                 cells: [(span + 8) / 5, (span + 8) / 5],
             },
             surroundings: None,
-            foundation_layer: None,
         }
     }
 

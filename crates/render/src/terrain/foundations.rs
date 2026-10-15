@@ -1,31 +1,29 @@
 //! Building foundations (D44): buildings stand at their centre's ground height, so on
-//! sloping ground part of a footprint lies above the terrain. Every footprint gets an
-//! earthen foundation drawn from the terrain's own foundation layer (the biome's dirt):
+//! sloping ground part of a footprint lies above the terrain. There the ground itself
+//! rises to meet the building: a **pad** over the footprint just under the base and a
+//! **bank** around it falling to just below the terrain, as wide as a natural fill slope
+//! needs (within limits), rounded and irregular along the edge. Heights are pulled from
+//! the terrain's height texture in the vertex shader, so where the ground is level or
+//! higher than the base the bank stays buried and nothing changes.
 //!
-//! - a **pad** over the footprint just under the building's base, and a **bank** around
-//!   it falling from the base to just below the terrain, steeper where the drop is
-//!   small and wider where it is large, rounded at the shoulder and the toe. Its heights
-//!   are pulled from the terrain's height texture in the vertex shader; one instanced
-//!   draw (and one shadow draw) for every footprint in view;
-//! - a **ground mask** around each footprint (R8, [`MASK_TEXELS`] texels per unit) that
-//!   the terrain shader turns into worn earth under and around the building, so the
-//!   foundation blends into the ground. It is rasterised on the CPU only where
-//!   footprints appeared or went.
+//! They are shaded as the terrain at the same place (`ground_at` in `terrain.wgsl`: the
+//! same layers, world-space mapping, lighting, shadows and fog); steep faces take the
+//! map's own cliff material, gated by slope as terrain cliffs are. One instanced draw
+//! and one shadow draw for the footprints in view.
 //!
-//! Visual only: the simulation does not know about any of it.
+//! [`Foundation::surface`] gives the bank's height on the CPU (the same formula) so ground
+//! marks of the world UI drape over it. Visual only: the simulation knows nothing of it.
 
 use glam::Vec3;
 
-/// Mask texels per world unit.
-pub const MASK_TEXELS: u32 = 2;
-/// Earth reaches this far beyond a footprint's edge fully, in units…
-pub const MASK_SOLID: f32 = 0.3;
-/// …and fades out over this much more.
-pub const MASK_FADE: f32 = 2.7;
-/// Corner radius of the earth, as a share of the shorter half side.
-pub const CORNER: f32 = 0.5;
-/// The widest bank beyond the footprint (units); the vertex shader's limit.
-pub const MAX_BANK: f32 = 4.0;
+/// The pad and the bank's top lie this far under the base (units)…
+pub const LIFT: f32 = 0.05;
+/// …and the toe this far under the ground.
+pub const SINK: f32 = 0.3;
+/// The bank's width: at least, per unit of drop at the edge, and at most (units).
+pub const MIN_BANK: f32 = 0.3;
+pub const BATTER: f32 = 2.0;
+pub const MAX_BANK: f32 = 2.5;
 /// Lowest the bank's toe may lie under the base, for culling (units).
 pub const MAX_DROP: f32 = 24.0;
 /// Vertices of one foundation: the bank (spokes × bands × two triangles) and the pad.
@@ -46,15 +44,25 @@ pub struct Foundation {
     pub half: [f32; 2],
     /// The building's base height (its centre's ground).
     pub base: f32,
-    /// Whether it has a pad and a bank, or only the earth around it (resource deposits,
-    /// whose models carry their own base and which workers crowd around).
-    pub bank: bool,
+}
+
+/// How the bank's width varies along the edge (`edge`: a point on it), 0.75–1.25; the
+/// shader's `ragged` is the same formula.
+pub fn ragged(edge: [f32; 2], center: [f32; 2]) -> f32 {
+    let s = edge[0] + edge[1];
+    let phase = center[0] * 0.37 + center[1] * 0.61;
+    1.0 + 0.15 * (0.9 * s + phase).sin() + 0.1 * (2.3 * s + 1.7 * phase).sin()
+}
+
+/// The bank's profile from its top (0) to its toe (1).
+fn profile(u: f32) -> f32 {
+    u * u * (3.0 - 2.0 * u)
 }
 
 impl Foundation {
     /// The box its drawing may cover (for culling).
     pub fn bounds(&self) -> (Vec3, Vec3) {
-        let reach = |h: f32| h + MAX_BANK + 0.5;
+        let reach = |h: f32| h + MAX_BANK * 1.3;
         (
             Vec3::new(
                 self.center[0] - reach(self.half[0]),
@@ -69,78 +77,33 @@ impl Foundation {
         )
     }
 
-    /// How much earth the ground at `(x, z)` shows for this footprint, 0–1.
-    /// The earth is a rounded rectangle (corner radius [`CORNER`] of the shorter half
-    /// side) reaching [`MASK_SOLID`] beyond the edges, then fading.
-    pub fn mask(&self, x: f32, z: f32) -> f32 {
-        let r = CORNER * self.half[0].min(self.half[1]);
-        let dx = ((x - self.center[0]).abs() - self.half[0] + r).max(0.0);
-        let dz = ((z - self.center[1]).abs() - self.half[1] + r).max(0.0);
-        let d = (dx * dx + dz * dz).sqrt() - r - MASK_SOLID;
-        if d <= 0.0 {
-            return 1.0;
-        }
-        let t = (1.0 - d / MASK_FADE).clamp(0.0, 1.0);
-        t * t * (3.0 - 2.0 * t)
+    /// The bank's width at an edge point.
+    fn width(&self, edge: [f32; 2], ground: &dyn Fn(f32, f32) -> f32) -> f32 {
+        let drop = (self.base - LIFT - ground(edge[0], edge[1])).max(0.0);
+        ((MIN_BANK + drop * BATTER) * ragged(edge, self.center)).clamp(MIN_BANK, MAX_BANK)
     }
-}
 
-/// A rectangle of mask texels, `[x0, z0, x1, z1)`.
-pub type TexelRect = [u32; 4];
-
-/// The mask texels a foundation's earth may touch, on a `size`² mask whose texel 0
-/// starts at world `origin`.
-pub fn texel_rect(f: &Foundation, origin: f32, size: u32) -> Option<TexelRect> {
-    let reach = MASK_SOLID + MASK_FADE;
-    let k = MASK_TEXELS as f32;
-    let lo = |c: f32, h: f32| (((c - h - reach - origin) * k).floor().max(0.0)) as u32;
-    let hi = |c: f32, h: f32| ((((c + h + reach - origin) * k).ceil()).max(0.0) as u32).min(size);
-    let rect = [
-        lo(f.center[0], f.half[0]),
-        lo(f.center[1], f.half[1]),
-        hi(f.center[0], f.half[0]),
-        hi(f.center[1], f.half[1]),
-    ];
-    (rect[0] < rect[2] && rect[1] < rect[3]).then_some(rect)
-}
-
-/// Fills `out` (the rectangle's texels, row by row) with the earth of every foundation:
-/// the strongest one at each texel.
-pub fn rasterise(foundations: &[Foundation], origin: f32, rect: TexelRect, out: &mut Vec<u8>) {
-    let [x0, z0, x1, z1] = rect;
-    let w = (x1 - x0) as usize;
-    out.clear();
-    out.resize(w * (z1 - z0) as usize, 0);
-    let k = MASK_TEXELS as f32;
-    let world = |t: u32| origin + (t as f32 + 0.5) / k;
-    for f in foundations {
-        let Some([fx0, fz0, fx1, fz1]) = texel_rect(f, origin, u32::MAX) else {
-            continue;
-        };
-        let (ax, az, bx, bz) = (fx0.max(x0), fz0.max(z0), fx1.min(x1), fz1.min(z1));
-        for z in az..bz {
-            let row = (z - z0) as usize * w;
-            for x in ax..bx {
-                let v = (f.mask(world(x), world(z)) * 255.0).round() as u8;
-                let texel = &mut out[row + (x - x0) as usize];
-                *texel = (*texel).max(v);
-            }
+    /// Height of the pad or bank at `(x, z)` if it covers that point, whether or not the
+    /// ground hides it there (`ground` gives the terrain's height).
+    pub fn surface(&self, x: f32, z: f32, ground: &dyn Fn(f32, f32) -> f32) -> Option<f32> {
+        let top = self.base - LIFT;
+        let (ox, oz) = (x - self.center[0], z - self.center[1]);
+        let (hx, hz) = (self.half[0], self.half[1]);
+        let edge = [
+            self.center[0] + ox.clamp(-hx, hx),
+            self.center[1] + oz.clamp(-hz, hz),
+        ];
+        let d = ((x - edge[0]).powi(2) + (z - edge[1]).powi(2)).sqrt();
+        if d == 0.0 {
+            return Some(top);
         }
+        let u = d / self.width(edge, ground);
+        if u > 1.0 {
+            return None;
+        }
+        let toe = ground(x, z) - SINK * u;
+        Some(top + (toe - top) * profile(u))
     }
-}
-
-/// What changed between two lists, as mask rectangles to redraw.
-pub fn changed_rects(
-    before: &[Foundation],
-    after: &[Foundation],
-    origin: f32,
-    size: u32,
-) -> Vec<TexelRect> {
-    let gone = before.iter().filter(|f| !after.contains(f));
-    let new = after.iter().filter(|f| !before.contains(f));
-    gone.chain(new)
-        .filter_map(|f| texel_rect(f, origin, size))
-        .collect()
 }
 
 #[cfg(test)]
@@ -151,57 +114,32 @@ mod tests {
         center: [10.0, 10.0],
         half: [4.0, 4.0],
         base: 1.0,
-        bank: true,
     };
 
     #[test]
-    fn earth_covers_the_footprint_and_fades_beyond() {
-        assert_eq!(HOUSE.mask(10.0, 10.0), 1.0);
-        assert_eq!(HOUSE.mask(14.0 + MASK_SOLID, 10.0), 1.0);
-        let fading = HOUSE.mask(14.0 + MASK_SOLID + MASK_FADE / 2.0, 10.0);
-        assert!(fading > 0.3 && fading < 0.7, "{fading}");
-        assert_eq!(HOUSE.mask(14.0 + MASK_SOLID + MASK_FADE, 10.0), 0.0);
-        // Corners round off: the footprint's own corner is already fading, and the earth
-        // ends sooner along the diagonal than along a side.
-        let corner = HOUSE.mask(14.0, 14.0);
-        assert!(corner > 0.0 && corner < 1.0, "{corner}");
-        let d = (MASK_SOLID + MASK_FADE) * 0.8;
-        assert!(HOUSE.mask(14.0 + d, 10.0) > 0.0);
-        assert_eq!(HOUSE.mask(14.0 + d, 14.0 + d), 0.0);
+    fn level_ground_hides_the_foundation() {
+        let flat = |_: f32, _: f32| 1.0;
+        for (x, z) in [(10.0, 10.0), (14.1, 10.0), (14.1, 14.1), (6.0, 5.9)] {
+            if let Some(h) = HOUSE.surface(x, z, &flat) {
+                assert!(h < 1.0, "{x},{z}: {h}");
+            }
+        }
+        // The bank is no wider than its minimum there.
+        assert!(HOUSE.surface(14.0 + MIN_BANK * 1.3, 10.0, &flat).is_none());
     }
 
     #[test]
-    fn the_mask_keeps_the_strongest_earth_and_only_changed_rects_redraw() {
-        let rect = texel_rect(&HOUSE, 0.0, 64).expect("on the mask");
-        let mut out = Vec::new();
-        rasterise(&[HOUSE], 0.0, rect, &mut out);
-        let w = (rect[2] - rect[0]) as usize;
-        let at = |x: u32, z: u32| out[(z - rect[1]) as usize * w + (x - rect[0]) as usize];
-        // Texel 20 is centred on 10.25.
-        assert_eq!(at(20, 20), 255);
-        assert_eq!(at(rect[0], rect[1]), 0);
-        let near = Foundation {
-            center: [16.0, 10.0],
-            ..HOUSE
-        };
-        let mut both = Vec::new();
-        rasterise(&[HOUSE, near], 0.0, rect, &mut both);
-        assert!(both.iter().zip(&out).all(|(b, a)| b >= a));
-        assert!(both.iter().zip(&out).any(|(b, a)| b > a));
-        // A footprint off the mask draws nothing.
-        assert!(
-            texel_rect(
-                &Foundation {
-                    center: [-50.0, 5.0],
-                    ..HOUSE
-                },
-                0.0,
-                64
-            )
-            .is_none()
-        );
-        let rects = changed_rects(&[HOUSE], &[HOUSE, near], 0.0, 64);
-        assert_eq!(rects, vec![texel_rect(&near, 0.0, 64).unwrap()]);
-        assert!(changed_rects(&[HOUSE, near], &[HOUSE, near], 0.0, 64).is_empty());
+    fn the_bank_rises_where_the_ground_falls_away_and_stays_within_its_width() {
+        // Ground falling 0.5 per unit to the east: the east edge is 2 below the base.
+        let slope = |x: f32, _: f32| 1.0 - (x - 10.0) * 0.5;
+        let near = HOUSE.surface(14.3, 10.0, &slope).expect("on the bank");
+        assert!(near > slope(14.3, 10.0) + 1.0, "{near}");
+        // It is gone beyond its widest extent.
+        assert!(HOUSE.surface(14.0 + MAX_BANK * 1.3, 10.0, &slope).is_none());
+        // Uphill (west) it stays under the ground.
+        let west = HOUSE.surface(5.9, 10.0, &slope).expect("minimal bank");
+        assert!(west < slope(5.9, 10.0));
+        // The pad is flat at the base.
+        assert_eq!(HOUSE.surface(12.0, 11.0, &slope), Some(1.0 - LIFT));
     }
 }

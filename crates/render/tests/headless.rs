@@ -258,7 +258,6 @@ fn terrain() -> TerrainDesc {
             cells: [9, 9],
         },
         surroundings: None,
-        foundation_layer: None,
     }
 }
 
@@ -347,7 +346,6 @@ fn a_tiny_world_renders_without_holes() {
             center: [6.0, 4.0],
             half: [3.0, 2.0],
             base: 1.2,
-            bank: true,
         }],
     );
     let with = renderer.render(

@@ -387,7 +387,6 @@ mod tests {
                 cells: [17, 17],
             },
             surroundings: None,
-            foundation_layer: None,
         }
     }
 

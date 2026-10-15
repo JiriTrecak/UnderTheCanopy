@@ -875,10 +875,10 @@ impl Renderer {
     }
 
     /// The building foundations of the live scene (D44); only a changed list costs
-    /// anything (the earth mask is redrawn where footprints came or went).
+    /// anything.
     pub fn set_foundations(&mut self, gpu: &Gpu, list: &[crate::terrain::foundations::Foundation]) {
         if let Some(terrain) = &mut self.terrain {
-            terrain.set_foundations(&gpu.device, &gpu.queue, list);
+            terrain.set_foundations(&gpu.device, list);
         }
     }
 
