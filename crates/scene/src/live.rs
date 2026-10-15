@@ -386,8 +386,26 @@ impl Presenter {
         let content = self.content.clone();
         let mut definitions: BTreeSet<&str> = BTreeSet::new();
         let catalog = world.catalog();
+        let mut felling: BTreeSet<String> = BTreeSet::new();
         for e in world.state().entities.iter() {
             definitions.insert(catalog.id(e.definition).as_str());
+            if e.resource.as_ref().is_some_and(|r| r.felling.is_some()) {
+                let asset = self
+                    .appearance
+                    .get(&e.id)
+                    .and_then(|a| a.0.clone())
+                    .unwrap_or_else(|| catalog.get(e.definition).asset.to_string());
+                if let Some(file) = content
+                    .asset(&asset)
+                    .and_then(|a| a.harvest_animation.clone())
+                {
+                    felling.insert(file);
+                }
+            }
+        }
+        // Trees fall in every match: their felling models too.
+        for file in felling {
+            self.catalog.index(self.pack.as_deref(), &file);
         }
         for slot in &world.setup().slots {
             let race = slot.race.as_deref().unwrap_or(&content.rules.default_race);

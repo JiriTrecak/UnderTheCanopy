@@ -161,6 +161,32 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
         c.shells,
         newest.models.len()
     );
+    for (part, name) in [
+        (canopy_scene::live::Part::Tree, "felling"),
+        (canopy_scene::live::Part::Corpse, "corpse"),
+        (canopy_scene::live::Part::Missile, "missile"),
+        (canopy_scene::live::Part::Scaffold, "scaffold"),
+    ] {
+        let at: Vec<String> = newest
+            .actors
+            .iter()
+            .filter(|a| a.key >> 40 == part as u64)
+            .take(8)
+            .map(|a| {
+                format!(
+                    "{:.0},{:.0},{:.1} clip {} t {:.2}",
+                    a.position.x,
+                    a.position.z,
+                    a.position.y,
+                    a.poses.poses[0].clip,
+                    a.poses.poses[0].time
+                )
+            })
+            .collect();
+        if !at.is_empty() {
+            println!("  {name} at {}", at.join(" "));
+        }
+    }
     println!(
         "  gpu {} | world upload {upload_ms:.0} ms | gpu memory {:.1} MiB",
         gpu.name(),
@@ -174,6 +200,13 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
         renderer.statics().map(|s| s.stats),
         last.actors,
     );
+    if std::env::var_os("CANOPY_SHOT_MODELS").is_some()
+        && let Some(actors) = renderer.actors()
+    {
+        for (name, count) in actors.model_counts().filter(|(_, n)| *n > 0) {
+            println!("    {count:4} {name}");
+        }
+    }
     println!(
         "  cpu record {cpu:.2} ms/frame over {} frames",
         measured.len()
