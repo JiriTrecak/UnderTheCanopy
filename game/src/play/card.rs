@@ -12,12 +12,12 @@ use super::{
     know::Knowledge,
     orders::{Targeting, commanded},
 };
+use crate::settings::Chord;
 use canopy_content::{
     Id,
     abilities::{Activation, TargetingKind},
     game::{ActionPlacement, Creation, Definition, Kind},
 };
-use crate::settings::Chord;
 use canopy_sim::{Action, abilities::library};
 
 /// What pressing a command does.

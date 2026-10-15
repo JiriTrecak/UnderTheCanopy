@@ -383,14 +383,22 @@ impl SettingsUi {
             }
             "settings.key" => {
                 let shown = self.shown(catalog);
-                if let Some(entry) = action.index.and_then(|i| shown.get(i)).map(|&c| &catalog[c]) {
+                if let Some(entry) = action
+                    .index
+                    .and_then(|i| shown.get(i))
+                    .map(|&c| &catalog[c])
+                {
                     self.capturing = Some(entry.id.clone());
                     self.message.clear();
                 }
             }
             "settings.key-clear" => {
                 let shown = self.shown(catalog);
-                if let Some(entry) = action.index.and_then(|i| shown.get(i)).map(|&c| &catalog[c]) {
+                if let Some(entry) = action
+                    .index
+                    .and_then(|i| shown.get(i))
+                    .map(|&c| &catalog[c])
+                {
                     settings.keys.clear(catalog, &entry.id);
                     self.capturing = None;
                 }

@@ -290,7 +290,10 @@ impl Play {
         if v.outcome.is_some() || m.error.is_some() {
             return None;
         }
-        let line = m.dialogue.as_ref().is_some_and(|d| d.cinematic && d.remaining > 0);
+        let line = m
+            .dialogue
+            .as_ref()
+            .is_some_and(|d| d.cinematic && d.remaining > 0);
         match &m.scene {
             Some(scene) => Some(Some([
                 scene.position.x as f32 / 1000.0,
@@ -549,7 +552,11 @@ impl Play {
     /// The targeting hint above the HUD (old hint text, with the player's keys).
     pub fn hint(&self) -> Option<String> {
         let cancel = self.keymap.label(Shortcut::Cancel);
-        let cancel = if cancel.is_empty() { "Esc".to_owned() } else { cancel };
+        let cancel = if cancel.is_empty() {
+            "Esc".to_owned()
+        } else {
+            cancel
+        };
         match &self.mode {
             Mode::Idle => None,
             Mode::Target {
@@ -668,8 +675,7 @@ impl Play {
         if rank == 0 {
             return None;
         }
-        let ability = &k.content.abilities.abilities
-            [usize::from(policy.bindings[index].ability.0)];
+        let ability = &k.content.abilities.abilities[usize::from(policy.bindings[index].ability.0)];
         let value = |a: &canopy_content::abilities::Amount| {
             canopy_sim::abilities::library::value(ability, rank, a) as f32
         };
@@ -696,8 +702,7 @@ impl Play {
                     .get((point[1] * size + point[0]) as usize)
                     .is_some_and(|&c| c == 2)
             });
-        let valid =
-            (point[0] - origin[0]).hypot(point[1] - origin[1]) <= range && in_sight;
+        let valid = (point[0] - origin[0]).hypot(point[1] - origin[1]) <= range && in_sight;
         Some(Aim {
             origin,
             point,

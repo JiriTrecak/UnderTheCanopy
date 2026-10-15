@@ -104,7 +104,7 @@ Font roles map to family stacks; the first family present wins. `system-ui`, `se
 - Clicks fire on release over the pressed node; `count` is 2 for a double click (hero portraits centre the camera). Disabled nodes still block the world.
 - Hotkeys trigger the topmost visible, enabled node with that key; shift held with a plain hotkey still triggers it and is reported (shift-queued commands). A focused text field takes keys instead (`wants_keyboard()`); `ime_area()` gives the caret rectangle for `Window::set_ime_cursor_area`.
 - Tab and Shift-Tab move focus once something has focus (`ui.focus(id)` starts keyboard navigation in menus); Enter and Space activate; arrows drive sliders and dropdowns; Escape closes a dropdown, leaves a field, then hides a tooltip.
-- `cursor()` says which mouse cursor to show.
+- `cursor()` says which mouse cursor to show: pointer over controls, text over fields, grab over draggable nodes and grabbing while dragging one. The game sets it on the window (a crosshair while aiming an attack). Copy, cut and paste reach the system clipboard through the game (`ActionKind::Copy`, `PasteRequest` → `game/src/clipboard.rs`).
 
 ## Hot reload
 

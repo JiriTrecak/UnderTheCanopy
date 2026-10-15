@@ -591,7 +591,9 @@ impl KeyBindings {
                     .enumerate()
                     .flat_map(move |(i, a)| entries[i + 1..].iter().map(move |b| (*a, *b)))
             })
-            .filter(|(a, b)| self.overrides.contains_key(&a.id) || self.overrides.contains_key(&b.id))
+            .filter(|(a, b)| {
+                self.overrides.contains_key(&a.id) || self.overrides.contains_key(&b.id)
+            })
             .collect()
     }
 

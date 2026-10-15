@@ -274,11 +274,13 @@ impl Hud {
             .outcome
             .as_ref()
             .map(|o| match (k.owner(), o.winner) {
-                (Some(me), w) if mission => if w == Some(me) {
-                    "Mission complete".to_owned()
-                } else {
-                    "Mission failed".to_owned()
-                },
+                (Some(me), w) if mission => {
+                    if w == Some(me) {
+                        "Mission complete".to_owned()
+                    } else {
+                        "Mission failed".to_owned()
+                    }
+                }
                 (_, None) => "Draw — both main forts fell.".to_owned(),
                 (None, Some(Owner::Player(p))) => {
                     format!("Player {} wins — the rival Mound fell.", p + 1)
@@ -614,7 +616,14 @@ impl Hud {
         self.statuses(ui, n, k, e);
     }
 
-    fn inventory(&mut self, ui: &mut Ui, n: &Nodes, k: &Knowledge, e: &EntityView, keymap: &Keymap) {
+    fn inventory(
+        &mut self,
+        ui: &mut Ui,
+        n: &Nodes,
+        k: &Knowledge,
+        e: &EntityView,
+        keymap: &Keymap,
+    ) {
         let Some(inv) = e.magic.as_ref().and_then(|m| m.inventory.as_ref()) else {
             ui.set_count(n.inventory, 0);
             ui.set_visible(n.inventory, false);
@@ -914,7 +923,9 @@ impl Hud {
             }
             let (aura, active) = match &d.item_effect {
                 Some(ItemEffect::Equipment { aura, active, .. })
-                | Some(ItemEffect::Consumable { aura, active, .. }) => (aura.as_ref(), active.as_ref()),
+                | Some(ItemEffect::Consumable { aura, active, .. }) => {
+                    (aura.as_ref(), active.as_ref())
+                }
                 None => (None, None),
             };
             let modifiers = match s.kind {
@@ -933,9 +944,16 @@ impl Hud {
                     "While within {} tiles of the bearer. Identical auras do not stack.",
                     a.radius
                 ),
-                _ => format!("{}s remaining", s.expires.saturating_sub(k.tick()).div_ceil(40)),
+                _ => format!(
+                    "{}s remaining",
+                    s.expires.saturating_sub(k.tick()).div_ceil(40)
+                ),
             });
-            let aura_suffix = if s.kind == ItemStatusKind::Aura { " aura" } else { "" };
+            let aura_suffix = if s.kind == ItemStatusKind::Aura {
+                " aura"
+            } else {
+                ""
+            };
             ui.set_tooltip(
                 cell,
                 Some(Tooltip {

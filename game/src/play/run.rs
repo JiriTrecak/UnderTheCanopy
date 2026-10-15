@@ -542,10 +542,8 @@ impl InMatch {
             }
             (None, None) => {}
         }
-        let steer = free
-            && !typing
-            && cinematic.is_none()
-            && self.play.camera_mode == CameraMode::Rts;
+        let steer =
+            free && !typing && cinematic.is_none() && self.play.camera_mode == CameraMode::Rts;
         let mut dir = [0.0f32, 0.0];
         if steer {
             if self.held(Shortcut::PanLeft) {
@@ -647,12 +645,10 @@ impl InMatch {
         }
         let live_ms = live_started.elapsed().as_secs_f32() * 1000.0;
         let rts_view = view::frame(&mut self.camera, aspect, &self.loaded.scene);
-        let camera_view = self
-            .close_view(aspect, dt_ms / 1000.0)
-            .unwrap_or_else(|| {
-                self.follow.shown(&rts_view);
-                rts_view
-            });
+        let camera_view = self.close_view(aspect, dt_ms / 1000.0).unwrap_or_else(|| {
+            self.follow.shown(&rts_view);
+            rts_view
+        });
         let screen = Screen {
             camera: camera_view,
             size: [size[0] as f32, size[1] as f32],

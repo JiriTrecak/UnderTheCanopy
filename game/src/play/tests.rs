@@ -622,7 +622,10 @@ fn the_hero_learns_from_the_banner_menu_and_casts_from_the_bottom_row() {
     assert!(matches!(smite.activate, super::card::Activate::Target(_)));
     {
         h.play.activate(&smite, false);
-        let [hx, hz] = h.play.knowledge().position(h.play.knowledge().entity(hero).unwrap());
+        let [hx, hz] = h
+            .play
+            .knowledge()
+            .position(h.play.knowledge().entity(hero).unwrap());
         let near = h.pixel(hx + 1.0, hz);
         h.input(Input::PointerMoved(near));
         h.advance(50);
@@ -809,7 +812,10 @@ fn rebound_command_keys_press_their_commands() {
         assert!(catalog.iter().any(|e| e.id == id), "{id}");
     }
     let trained = h.content.definitions.iter().find(|d| {
-        matches!(d.creation, Some(canopy_content::game::Creation::Train { .. }))
+        matches!(
+            d.creation,
+            Some(canopy_content::game::Creation::Train { .. })
+        )
     });
     if let Some(d) = trained {
         let id = format!("command.produce:{}", d.id);

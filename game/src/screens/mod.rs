@@ -833,6 +833,8 @@ impl Game {
         let icon = match self.host.ui.cursor() {
             canopy_ui::Cursor::Pointer => CursorIcon::Pointer,
             canopy_ui::Cursor::Text => CursorIcon::Text,
+            canopy_ui::Cursor::Grab => CursorIcon::Grab,
+            canopy_ui::Cursor::Grabbing => CursorIcon::Grabbing,
             canopy_ui::Cursor::Default if attack => CursorIcon::Crosshair,
             canopy_ui::Cursor::Default => CursorIcon::Default,
         };

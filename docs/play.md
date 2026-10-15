@@ -14,7 +14,8 @@ Everything lives in `game/src/play/`:
 | `know.rs` | `Knowledge`: the view plus content, with the questions input asks (own, controlled, selectable, rank). |
 | `selection.rs` | Selection order and focus, box-selection rules, Tab cycling, control groups. |
 | `orders.rs` | Right-click smart orders, targeting modes, rally, acknowledgement markers. |
-| `card.rs` | The command card model: commands, costs, reasons, cooldowns, menus, the 4 × 3 layout, hotkey resolution. |
+| `card.rs` | The command card model: commands, costs, reasons, cooldowns, menus, the 4 × 3 layout, hotkey resolution (each command's chord from the player's bindings). |
+| `follow.rs` | Unit cameras (J): third- and first-person poses of the focused unit, the terrain-clear boom, the 350 ms blend. |
 | `placement.rs` | Building placement: lattice snap, quarter turns, validity from knowledge. |
 | `picking.rs` | CPU picking: unit capsules, the ground under the cursor, box tests. |
 | `hud.rs` | Binds `Play` to `config/ui/layouts/hud.json` and maps UI interactions back. |
@@ -54,12 +55,14 @@ Default keys follow the content (`content/game.json` `actions`, categories and n
 | Enter | Chat (Enter sends, Escape closes; 300 characters). Single player shows the line at once; multiplayer sends it to the match server, which delivers it to every seat (D39). | as old |
 | F10, Menu button | Opens the game menu (`Event::OpenMenu`; the screens pause single player). | as old |
 | F9 (Ctrl+F3) | Debug overlay. | old F3 |
-| Arrows, screen edges, wheel, PageUp/PageDown, middle drag | Camera (unchanged from M3). Spectators: Q/E turn, B jumps to the largest fight. | as old |
+| Arrows, screen edges, wheel, PageUp/PageDown, middle drag | Camera (unchanged from M3). | as old |
+| Q / E, B (spectating) | Turn the view; jump to the largest fight. | new (not in the old game; fixed keys) |
+| J (the content's camera command) | Cycles the unit camera: RTS → third person → first person, locked to the focused unit (offered while it is a visible, living unit outside buildings, for observers too). Pan and zoom are ignored while following; Escape, a camera jump (alerts, double presses, the minimap) or losing the unit returns to RTS. | as old |
 | Minimap | Left click/drag moves the camera; right click moves the selection or completes move, attack, patrol and rally modes. | as old |
 
 Disabled commands show their reason as the red message when pressed by hotkey; the HUD greys them (a disabled button takes no click in `canopy-ui`; the old HUD let the click show the reason).
 
-Not ported: the unit camera modes (J), which belong to the camera work.
+Command hotkeys are entries of the rebindable catalogue too (`command.<id>`, Settings → Keyboard, with search), defaulting to the content's keys; the card, the hints, the group buttons, the hero bar and the inventory show the player's keys. During a mission cinematic the world takes no keys or clicks except the game menu (F10 or Escape), selection rings hide, and the camera looks at the scene, returning afterwards. The cursor is a crosshair while aiming an attack, a hand over the minimap.
 
 ## HUD bindings
 
@@ -67,10 +70,10 @@ Not ported: the unit camera modes (J), which belong to the camera work.
 
 - **Resource ribbon**: each drop-off currency by `displayOrder` with `available`, tooltip available/reserved/stored/carried; supply `committed/capacity` (red over capacity) with the old tooltip.
 - **Hero bar**: own heroes (fallen included) by id: icon, health ramp, F-key, selected state, availability tooltips; click selects, double click centres.
-- **Selection panel**: focus name, portrait (`@portrait` when plugged, else the icon), level badge, experience ring and tooltip, damage and armour stats with the old tooltips, health and mana bars, the 2 × 2 inventory (charges, cooldown seconds, use / right-click drop), status line of workplaces and mines, the active task (upgrade, training, research, revival, construction) with progress and the waiting wells (click cancels), the focused unit's queued orders. Two or more selected: unit cards (icon, health; click focuses, double click isolates, Shift removes).
+- **Selection panel**: focus name, portrait (`@portrait` when plugged, else the icon), level badge, experience ring and tooltip, damage and armour stats with the old tooltips, item status badges above the bars (auras, active item effects, rescue: modifiers and time left), health and mana bars, the 2 × 2 inventory (charges, cooldown seconds, use / right-click drop), status line of workplaces and mines, the active task (upgrade, training, research, revival, construction) with progress and the waiting wells (click cancels), the focused unit's queued orders. Two or more selected: unit cards (icon, health; click focuses, double click isolates, Shift removes).
 - **Command card**: 12 cells (empty ones stay as wells), Back in slot 9, bottom-row spells at their columns, banners below, pager when a menu has more pages, icons, hotkey labels, enabled state, cooldown sweep and seconds, autocast (checked; right-click toggles), tooltips (title and key, costs, description, reason, eligible actor count, autocast note).
 - **Messages**: the targeting hint, error facts (newest unseen, under 5 ticks old) and HUD errors in red for 2.5 s then a 0.3 s fade, the outcome (Victory, Defeat, Draw).
-- **Control groups**: buttons for non-empty groups with counts; click recalls, Ctrl assigns, Shift adds.
+- **Control groups**: one column per group (1–0, as the old grid), a button with the bound key over the count for non-empty groups; click recalls, Ctrl assigns, Shift adds.
 - **Chat log**: lines fade after 10 s; open chat shows the history and the input.
 - **Observer panel** (spectating): per player colour, stored goods with income per minute (gross deliveries over 60 s of game time), units, workers, hero level or fallen.
 - **Plug-in points**: the minimap and portrait are image nodes named `@minimap` and `@portrait`; `InMatch::plug_render_target` binds a texture view to them. The game menu is `Event::OpenMenu`.
@@ -101,6 +104,4 @@ The old game had no interface or acknowledgement sounds; the match feeds every n
 
 ## Not yet
 
-- Minimap and live portrait textures (plug in through `plug_render_target`).
-- Key rebinding (settings, the screens work), saves of control groups, the unit camera modes, chat over the network (M5).
-- Range preview while aiming spells (old hover check of range and fog).
+See [parity](parity.md#what-remains): the third-person boom against scenery, scripted cinematic unit shots, the spell aim as the old filled outline (it shows as ground rings: the area in the old valid or invalid colour and a faint range ring), the observer panel's icons.
