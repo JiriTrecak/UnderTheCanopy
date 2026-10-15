@@ -6,7 +6,7 @@
 
 use super::{ui_host::UiHost, widgets};
 use crate::settings::{
-    Chord, Haze, RESOLUTIONS, Settings, WindowMode,
+    Chord, GraphicsPreset, Haze, RESOLUTIONS, Settings, WindowMode,
     keys::{BindError, Entry},
 };
 use canopy_audio::Bus;
@@ -88,6 +88,22 @@ impl SettingsUi {
             widgets::visible(ui, &format!("settings/{page}"), self.tab == tab);
         }
         let g = &settings.graphics;
+        let presets: Vec<String> = GraphicsPreset::ALL
+            .iter()
+            .map(|p| match p {
+                GraphicsPreset::Auto => format!(
+                    "Auto ({})",
+                    g.detected.unwrap_or(canopy_render::Preset::High).label()
+                ),
+                GraphicsPreset::Custom => "Custom".to_string(),
+                p => format!("{p:?}"),
+            })
+            .collect();
+        let preset = GraphicsPreset::ALL
+            .iter()
+            .position(|p| *p == g.preset)
+            .unwrap_or(0);
+        widgets::options(ui, "settings/graphics/preset", &presets, preset);
         let mut resolutions = vec!["Native".to_string()];
         resolutions.extend(RESOLUTIONS.iter().map(|[w, h]| format!("{w} × {h}")));
         let res = g
@@ -282,14 +298,23 @@ impl SettingsUi {
                     c.graphics = true;
                 }
             }
+            "settings.preset" => {
+                if let Some(p) = selected(&action.kind).and_then(|i| GraphicsPreset::ALL.get(i)) {
+                    settings.graphics.set_preset(*p);
+                    c.graphics = true;
+                }
+            }
+            // Changing what a preset sets makes the settings custom (D42).
             "settings.render-scale" => {
                 if let Some(v) = value(&action.kind) {
+                    settings.graphics.preset = GraphicsPreset::Custom;
                     settings.graphics.render_scale = (v / 100.0).clamp(0.5, 1.0);
                     c.graphics = true;
                 }
             }
             "settings.haze" => {
                 if let Some(h) = selected(&action.kind).and_then(|i| Haze::ALL.get(i)) {
+                    settings.graphics.preset = GraphicsPreset::Custom;
                     settings.graphics.haze = *h;
                     c.graphics = true;
                 }
@@ -297,9 +322,16 @@ impl SettingsUi {
             "settings.shadows" | "settings.contact" | "settings.bloom" => {
                 if let Some(on) = toggled(&action.kind) {
                     match name {
+                        // Shadows are not part of a preset.
                         "settings.shadows" => settings.graphics.shadows = on,
-                        "settings.contact" => settings.graphics.contact_shadows = on,
-                        _ => settings.graphics.bloom = on,
+                        "settings.contact" => {
+                            settings.graphics.preset = GraphicsPreset::Custom;
+                            settings.graphics.contact_shadows = on;
+                        }
+                        _ => {
+                            settings.graphics.preset = GraphicsPreset::Custom;
+                            settings.graphics.bloom = on;
+                        }
                     }
                     c.graphics = true;
                 }

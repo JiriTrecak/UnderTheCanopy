@@ -140,7 +140,9 @@ impl Renderer {
         if let Some(statics) = self.statics() {
             let (camera, shadow) = statics.read_triangles(&gpu.device, &gpu.queue);
             triangles.statics = camera;
-            triangles.shadow += shadow;
+            if self.shadows {
+                triangles.shadow += shadow;
+            }
         }
         let frame_ms = quantile(&mut walls, QUANTILE);
         let frame_median_ms = median(&mut walls);

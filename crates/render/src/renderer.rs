@@ -157,6 +157,26 @@ impl Triangles {
     }
 }
 
+/// A square depth map the sun's shadow renders into and the lit passes sample.
+fn shadow_map(device: &wgpu::Device, label: &str, size: u32) -> wgpu::TextureView {
+    device
+        .create_texture(&wgpu::TextureDescriptor {
+            label: Some(label),
+            size: wgpu::Extent3d {
+                width: size,
+                height: size,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: SHADOW_FORMAT,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        })
+        .create_view(&Default::default())
+}
+
 /// What the frame bind groups hold besides the per-frame buffers.
 struct FrameBindings {
     shadow_sampler: wgpu::Sampler,
@@ -303,27 +323,9 @@ impl Renderer {
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
-        let shadow_resolution = environment.shadow.resolution;
-        let depth_texture = |label, size: u32| {
-            device.create_texture(&wgpu::TextureDescriptor {
-                label: Some(label),
-                size: wgpu::Extent3d {
-                    width: size,
-                    height: size,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: SHADOW_FORMAT,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                    | wgpu::TextureUsages::TEXTURE_BINDING,
-                view_formats: &[],
-            })
-        };
-        let shadow_view =
-            depth_texture("sun shadow", shadow_resolution).create_view(&Default::default());
-        let dummy_shadow = depth_texture("no shadow", 1).create_view(&Default::default());
+        let shadow_resolution = quality.shadow_resolution(&environment.shadow);
+        let shadow_view = shadow_map(device, "sun shadow", shadow_resolution);
+        let dummy_shadow = shadow_map(device, "no shadow", 1);
         let canopy_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("canopy"),
             size: wgpu::Extent3d {
@@ -487,12 +489,27 @@ impl Renderer {
         self.quality
     }
 
-    /// Changes the quality settings: render scale and post effects.
+    /// Changes the quality settings: render scale, shadow map, levels of detail and post
+    /// effects.
     pub fn set_quality(&mut self, gpu: &Gpu, quality: Quality) {
         self.quality = quality;
         let scene = quality.scene_size(self.output_size);
         if scene != self.targets.size {
             self.targets = Targets::new(&gpu.device, scene);
+        }
+        let resolution = quality.shadow_resolution(&self.environment.shadow);
+        if resolution != self.shadow_resolution {
+            self.shadow_resolution = resolution;
+            self.shadow_view = shadow_map(&gpu.device, "sun shadow", resolution);
+            self.frame_group = self.bindings.group(
+                &gpu.device,
+                &self.frame_layout,
+                "frame",
+                &self.frame_buffer,
+                &self.light_buffer,
+                &self.shadow_view,
+                &self.fog.view,
+            );
         }
         self.rebuild(gpu);
     }
@@ -892,7 +909,10 @@ impl Renderer {
             camera,
             camera.target.y,
             lighting.sun_direction,
-            &self.environment.shadow,
+            &crate::environment::ShadowConfig {
+                resolution: self.shadow_resolution,
+                ..self.environment.shadow
+            },
         );
         if self.lights_dirty {
             let mut lights = self.map_lights.clone();

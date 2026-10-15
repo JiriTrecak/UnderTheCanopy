@@ -11,7 +11,7 @@ pub mod keys;
 
 use anyhow::{Context, Result};
 use canopy_audio::AudioSettings;
-use canopy_render::{HazeQuality, Quality};
+use canopy_render::{HazeQuality, Preset, Quality};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -56,6 +56,53 @@ impl Haze {
     }
 }
 
+impl Haze {
+    fn of(quality: HazeQuality) -> Self {
+        match quality {
+            HazeQuality::Off => Self::Off,
+            HazeQuality::Low => Self::Low,
+            HazeQuality::Medium => Self::Medium,
+            HazeQuality::High => Self::High,
+        }
+    }
+}
+
+/// The graphics preset (D42). `Auto` takes the adapter's preset at every start, so a
+/// settings file moved to another machine still fits; `Custom` uses the individual
+/// settings.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub enum GraphicsPreset {
+    #[default]
+    Auto,
+    Low,
+    Medium,
+    High,
+    Ultra,
+    Custom,
+}
+
+impl GraphicsPreset {
+    pub const ALL: [GraphicsPreset; 6] = [
+        Self::Auto,
+        Self::Low,
+        Self::Medium,
+        Self::High,
+        Self::Ultra,
+        Self::Custom,
+    ];
+
+    fn fixed(self) -> Option<Preset> {
+        match self {
+            Self::Low => Some(Preset::Low),
+            Self::Medium => Some(Preset::Medium),
+            Self::High => Some(Preset::High),
+            Self::Ultra => Some(Preset::Ultra),
+            Self::Auto | Self::Custom => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub enum WindowMode {
@@ -81,6 +128,11 @@ pub const RESOLUTIONS: [[u32; 2]; 8] = [
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Graphics {
+    /// The preset; the individual settings below mirror it unless it is `Custom`.
+    pub preset: GraphicsPreset,
+    /// The adapter's preset, found at start (`Graphics::detect`); `Auto` uses it.
+    #[serde(skip)]
+    pub detected: Option<Preset>,
     /// Internal resolution over output resolution, 0.5–1 (D34).
     pub render_scale: f32,
     /// A cap on the scene's resolution (`None`: native).
@@ -97,6 +149,8 @@ impl Default for Graphics {
     fn default() -> Self {
         let q = Quality::default();
         Self {
+            preset: GraphicsPreset::Auto,
+            detected: None,
             render_scale: q.render_scale,
             resolution: None,
             shadows: true,
@@ -110,9 +164,53 @@ impl Default for Graphics {
 }
 
 impl Graphics {
-    /// The renderer's quality for a window of `size` physical pixels: the render scale,
-    /// lowered further when a resolution cap is smaller than the window.
+    /// Notes the adapter's preset (`Gpu::preset`) for `Auto` and mirrors the active
+    /// preset into the individual settings.
+    pub fn detect(&mut self, adapter: Preset) {
+        self.detected = Some(adapter);
+        self.mirror();
+    }
+
+    /// The preset in effect: `None` for custom settings. `Auto` before detection is High.
+    pub fn active_preset(&self) -> Option<Preset> {
+        match self.preset {
+            GraphicsPreset::Auto => Some(self.detected.unwrap_or(Preset::High)),
+            GraphicsPreset::Custom => None,
+            fixed => fixed.fixed(),
+        }
+    }
+
+    /// Chooses a preset; its values show in the individual settings.
+    pub fn set_preset(&mut self, preset: GraphicsPreset) {
+        self.preset = preset;
+        self.mirror();
+    }
+
+    /// The individual settings take the active preset's values (a custom change then
+    /// starts from them).
+    fn mirror(&mut self) {
+        if let Some(preset) = self.active_preset() {
+            let q = preset.quality();
+            self.render_scale = q.render_scale;
+            self.contact_shadows = q.contact_shadows;
+            self.bloom = q.bloom;
+            self.haze = Haze::of(q.haze);
+        }
+    }
+
+    /// The renderer's quality for a window of `size` physical pixels: the preset's (or
+    /// the custom settings), with the render scale lowered further when a resolution
+    /// cap is smaller than the window.
     pub fn quality(&self, size: [u32; 2]) -> Quality {
+        if let Some(preset) = self.active_preset() {
+            let mut q = preset.quality();
+            if let Some([w, h]) = self.resolution {
+                let cap = (w as f32 / size[0].max(1) as f32).min(h as f32 / size[1].max(1) as f32);
+                q.render_scale =
+                    (q.render_scale * cap.min(1.0)).max(canopy_render::quality::MIN_RENDER_SCALE);
+            }
+            return q;
+        }
         let min = canopy_render::quality::MIN_RENDER_SCALE;
         let mut scale = if self.render_scale.is_finite() {
             self.render_scale.clamp(min, 1.0)
@@ -366,8 +464,28 @@ mod tests {
     }
 
     #[test]
-    fn a_resolution_cap_lowers_the_render_scale() {
+    fn presets_set_the_quality_until_a_custom_change() {
         let mut g = Graphics::default();
+        g.detect(Preset::Medium);
+        assert_eq!(g.active_preset(), Some(Preset::Medium));
+        assert_eq!(g.quality([1920, 1080]), Preset::Medium.quality());
+        // The individual settings mirror the preset.
+        assert!(!g.contact_shadows);
+        assert_eq!(g.haze, Haze::Low);
+        g.set_preset(GraphicsPreset::Ultra);
+        assert_eq!(g.quality([1920, 1080]).haze, HazeQuality::High);
+        g.set_preset(GraphicsPreset::Custom);
+        g.bloom = false;
+        assert!(!g.quality([1920, 1080]).bloom);
+        assert_eq!(g.active_preset(), None);
+    }
+
+    #[test]
+    fn a_resolution_cap_lowers_the_render_scale() {
+        let mut g = Graphics {
+            preset: GraphicsPreset::Custom,
+            ..Graphics::default()
+        };
         assert_eq!(g.quality([2560, 1440]).render_scale, 1.0);
         g.resolution = Some([1920, 1080]);
         assert_eq!(g.quality([2560, 1440]).render_scale, 0.75);

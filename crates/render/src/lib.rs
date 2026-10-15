@@ -31,5 +31,5 @@ pub mod world_ui;
 
 pub use camera::{CameraView, RtsCamera};
 pub use device::{DeviceOptions, Gpu, GpuFeatures};
-pub use quality::{HazeQuality, Quality};
+pub use quality::{HazeQuality, Preset, Quality};
 pub use renderer::{Environment, FrameReport, PortraitSubject, Renderer, Triangles, World};

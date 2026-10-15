@@ -101,7 +101,7 @@ impl App {
     }
 
     fn open(&mut self, event_loop: &ActiveEventLoop) -> Result<()> {
-        let (settings, note) = Settings::load(&self.paths.user);
+        let (mut settings, note) = Settings::load(&self.paths.user);
         if let Some(error) = note.error {
             tracing::warn!(%error, moved = ?note.moved_aside, "settings could not be read; defaults used");
         }
@@ -120,6 +120,9 @@ impl App {
         let environment = canopy_render::Environment::new(&look.lighting, &look.biome, 12.0, None);
         let mut renderer =
             Renderer::new(&display.gpu, display.format(), display.size(), environment);
+        // `Auto` (the default) takes the adapter's preset (D42).
+        settings.graphics.detect(display.gpu.preset());
+        tracing::info!(preset = ?settings.graphics.active_preset(), "graphics");
         renderer.set_quality(&display.gpu, settings.graphics.quality(display.size()));
         renderer.shadows = settings.graphics.shadows;
         let game = Game::new(self.paths.clone(), settings, &display.gpu, self.dev_start())?;
