@@ -19,6 +19,9 @@ pub struct LiveScene {
     pub shown: f64,
     /// Ground units of the latest frame, for the water's wakes.
     movers: Vec<Mover>,
+    /// Entities with a selection body as the latest frame shows them: id, body (circle
+    /// radius, pick height) and interpolated position.
+    bodies: Vec<(u32, [f32; 2], glam::Vec3)>,
 }
 
 impl LiveScene {
@@ -41,6 +44,16 @@ impl LiveScene {
         if mailbox.latest() != newest {
             mailbox.take(&mut self.snapshots);
         }
+    }
+
+    /// The latest frame's selectable bodies: id, (circle radius, pick height), position.
+    pub fn bodies(&self) -> &[(u32, [f32; 2], glam::Vec3)] {
+        &self.bodies
+    }
+
+    /// The latest frame's live model instances.
+    pub fn instances(&self) -> &[ActorInstance] {
+        &self.instances
     }
 
     pub fn newest(&self) -> Option<&Arc<Snapshot>> {
@@ -115,7 +128,14 @@ impl LiveScene {
         interpolate::interpolate(a, b, t, &mut self.instances);
         // One instance per presented actor, in order.
         self.movers.clear();
+        self.bodies.clear();
         for (actor, instance) in b.actors.iter().zip(&self.instances) {
+            if let Some(body) = actor.body
+                && actor.key >> 40 == canopy_scene::live::Part::Entity as u64
+            {
+                self.bodies
+                    .push((actor.key as u32, body, instance.transform.w_axis.truncate()));
+            }
             if let Some((surface, elevation)) = actor.walker {
                 let p = instance.transform.w_axis;
                 self.movers.push(Mover {

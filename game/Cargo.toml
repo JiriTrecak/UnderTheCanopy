@@ -18,12 +18,18 @@ profile = ["dep:tracing-tracy"]
 [dependencies]
 anyhow.workspace = true
 canopy-assets = { path = "../crates/assets" }
+canopy-audio = { path = "../crates/audio" }
 canopy-content = { path = "../crates/content" }
 canopy-net = { path = "../crates/net" }
 canopy-render = { path = "../crates/render" }
 canopy-scene = { path = "../crates/scene" }
 canopy-sim = { path = "../crates/sim" }
+canopy-ui = { path = "../crates/ui", features = ["wgpu", "winit"] }
 directories.workspace = true
+egui.workspace = true
+egui-wgpu.workspace = true
+egui-winit.workspace = true
+glam.workspace = true
 image.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true

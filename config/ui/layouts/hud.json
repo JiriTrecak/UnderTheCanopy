@@ -8,11 +8,14 @@
         "class": "hero-bar",
         "repeat": "hero"
       },
+      { "id": "hint", "kind": "label", "class": "hint", "visible": false },
+      { "id": "outcome", "kind": "label", "class": "outcome", "visible": false },
       { "id": "error", "kind": "label", "class": "error" },
       {
         "id": "dock",
         "class": "dock",
         "children": [
+          { "id": "groups", "class": "control-groups", "repeat": "group-button", "count": 10 },
           {
             "class": "map-frame",
             "children": [{ "id": "minimap", "kind": "image", "class": "minimap", "drag": true, "action": "minimap" }]
@@ -25,10 +28,25 @@
               { "id": "experience", "kind": "sweep", "class": "experience" },
               { "id": "level", "kind": "label", "class": "level" },
               {
+                "id": "copy",
                 "class": "selection-copy",
                 "children": [
                   { "id": "name", "kind": "label", "class": "selection-name" },
                   { "id": "stats", "class": "stats", "repeat": "stat" },
+                  {
+                    "id": "task", "class": "task", "visible": false,
+                    "children": [
+                      {
+                        "id": "icon", "kind": "button", "class": "slot task-icon", "action": "task",
+                        "children": [{ "id": "image", "kind": "image", "class": "slot-icon" }, { "class": "slot-rim" }]
+                      },
+                      {
+                        "id": "meter", "kind": "bar", "class": "task-meter",
+                        "children": [{ "id": "label", "kind": "label", "class": "task-label" }]
+                      }
+                    ]
+                  },
+                  { "id": "status", "kind": "label", "class": "workplace-status", "visible": false },
                   {
                     "class": "vitals",
                     "children": [
@@ -44,7 +62,10 @@
                   }
                 ]
               },
-              { "id": "inventory", "class": "inventory", "repeat": "slot" }
+              { "id": "cards", "class": "unit-cards", "repeat": "unit-card" },
+              { "id": "inventory", "class": "inventory", "repeat": "slot" },
+              { "id": "queue", "class": "recruit-queue", "repeat": "queue-tile" },
+              { "id": "orders", "class": "order-queue", "repeat": "order-tile" }
             ]
           },
           {
@@ -52,10 +73,57 @@
             "class": "actions",
             "children": [
               { "id": "commands", "class": "command-grid", "repeat": "command", "count": 12 },
+              { "id": "banners", "class": "banners", "repeat": "banner" },
+              {
+                "id": "pager", "class": "pager", "visible": false,
+                "children": [
+                  { "id": "prev", "kind": "button", "class": "pager-button", "action": "page-prev", "children": [{ "kind": "label", "text": "‹" }] },
+                  { "id": "label", "kind": "label", "class": "pager-label" },
+                  { "id": "next", "kind": "button", "class": "pager-button", "action": "page-next", "children": [{ "kind": "label", "text": "›" }] }
+                ]
+              },
               { "id": "resources", "class": "resources", "repeat": "resource" }
             ]
           }
         ]
+      },
+      {
+        "id": "chat",
+        "class": "chat",
+        "children": [
+          { "id": "log", "class": "chat-log", "repeat": "chat-line" },
+          { "id": "input", "kind": "text_field", "class": "field chat-input", "max_length": 300, "placeholder": "Say something…", "visible": false }
+        ]
+      },
+      {
+        "id": "observer", "class": "observer", "visible": false,
+        "children": [
+          {
+            "class": "observer-header",
+            "children": [
+              { "kind": "label", "class": "observer-title", "text": "Colony overview" },
+              { "kind": "label", "class": "observer-badge", "text": "Observer" }
+            ]
+          },
+          {
+            "id": "columns", "class": "observer-row observer-columns",
+            "children": [
+              { "class": "observer-color" },
+              { "kind": "label", "class": "observer-player", "text": "Player" },
+              { "id": "goods", "kind": "label", "class": "observer-cell observer-goods" },
+              { "kind": "label", "class": "observer-cell", "text": "Units" },
+              { "kind": "label", "class": "observer-cell", "text": "Workers" },
+              { "kind": "label", "class": "observer-cell", "text": "Hero" }
+            ]
+          },
+          { "id": "rows", "class": "observer-rows", "repeat": "observer-row" },
+          { "id": "footer", "kind": "label", "class": "observer-footer" }
+        ]
+      },
+      {
+        "id": "menu", "kind": "button", "class": "menu-button", "action": "menu",
+        "tooltip": { "title": "Menu", "hotkey": "F10", "body": "Open the game menu." },
+        "children": [{ "kind": "label", "text": "Menu" }]
       }
     ]
   }

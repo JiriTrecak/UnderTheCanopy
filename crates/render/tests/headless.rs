@@ -309,7 +309,10 @@ fn a_tiny_world_renders_without_holes() {
         image::save_buffer(out, &pixels, width, height, image::ExtendedColorType::Rgba8).unwrap();
     }
 
-    assert_eq!(report.passes, ["cull", "skin", "shadow", "forward", "post"]);
+    assert_eq!(
+        report.passes,
+        ["cull", "skin", "shadow", "forward", "post", "ui"]
+    );
     assert!(report.draws >= 4, "{report:?}");
     assert!(report.terrain_chunks == 1);
     let texels: Vec<[u8; 4]> = pixels
@@ -443,7 +446,7 @@ fn a_tiny_lake_renders_with_wakes_and_every_post_effect() {
         report.passes,
         [
             "cull", "skin", "shadow", "ripples", "caustics", "forward", "contact", "bloom", "haze",
-            "post"
+            "post", "ui"
         ]
     );
     assert!(
@@ -503,4 +506,67 @@ fn a_tiny_lake_renders_with_wakes_and_every_post_effect() {
         / (pixels.len() * 3) as f32;
     assert!(difference < 12.0, "mean difference {difference}");
     std::fs::remove_file(&pack_path).ok();
+}
+
+/// The game UI pass draws the HUD's quads over the finished frame and blends them in
+/// sRGB space through the capture's non-sRGB view, as the old browser HUD did (D33).
+#[test]
+fn the_ui_pass_composites_the_hud_in_srgb_space() {
+    let Some(gpu) = gpu() else {
+        return;
+    };
+    let lighting: LightingConfig = serde_json::from_str(LIGHTING).unwrap();
+    let biome: BiomeConfig = serde_json::from_str(BIOME).unwrap();
+    let environment = Environment::new(&lighting, &biome, 12.0, None);
+    let (width, height) = (64, 32);
+    let mut renderer = Renderer::new(&gpu, CAPTURE_FORMAT, [width, height], environment);
+    let capture = Capture::new(&gpu.device, width, height);
+    let view: CameraView =
+        RtsCamera::new([0.0, 0.0], None).view(2.0, &canopy_render::camera::FlatGround);
+    let shoot = |renderer: &mut Renderer| {
+        renderer.render(&gpu, &view, 0.0, &capture.view, Some(&|e| capture.copy(e)));
+        capture.read(&gpu.device).unwrap()
+    };
+    let background = shoot(&mut renderer);
+    let mut list = canopy_ui::DrawList {
+        viewport: [width, height],
+        ..Default::default()
+    };
+    let quad = |x: f32, alpha: u8| {
+        canopy_ui::Quad::new(
+            canopy_ui::QuadKind::Shape,
+            canopy_ui::Rect::new(x, 0.0, 32.0, 32.0),
+            canopy_ui::Color::rgba(255, 0, 0, alpha),
+        )
+    };
+    list.quads = vec![quad(0.0, 255), quad(32.0, 128)];
+    list.batches = vec![canopy_ui::Batch {
+        texture: None,
+        scissor: None,
+        quads: 0..2,
+    }];
+    list.atlas.size = 64;
+    let ui = renderer.ui_mut(&gpu);
+    ui.submit(&gpu, &list);
+    ui.set_target(Some(capture.ui_view.clone()));
+    let hud = shoot(&mut renderer);
+    let at = |pixels: &[u8], x: usize, y: usize| {
+        let i = (y * width as usize + x) * 4;
+        [pixels[i], pixels[i + 1], pixels[i + 2]]
+    };
+    assert_eq!(at(&hud, 16, 16), [255, 0, 0]);
+    let under = at(&background, 48, 16);
+    let over = at(&hud, 48, 16);
+    let mix = |c: u8, d: u8| {
+        (f32::from(c) * (1.0 - 128.0 / 255.0) + f32::from(d) * 128.0 / 255.0).round()
+    };
+    let expected = [mix(under[0], 255), mix(under[1], 0), mix(under[2], 0)];
+    for i in 0..3 {
+        assert!(
+            (f32::from(over[i]) - expected[i]).abs() <= 2.0,
+            "{over:?} vs {expected:?} over {under:?}"
+        );
+    }
+    // Without a new HUD frame the pass draws nothing.
+    assert_eq!(at(&shoot(&mut renderer), 16, 16), at(&background, 16, 16));
 }

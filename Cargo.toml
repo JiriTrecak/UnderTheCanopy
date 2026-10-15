@@ -19,6 +19,10 @@ bytemuck = { version = "1", features = ["derive", "extern_crate_alloc"] }
 # UI text: shaping, layout and rasterising (swash); no fontconfig, fonts are passed in.
 cosmic-text = { version = "0.19", default-features = false, features = ["std", "swash"] }
 directories = "6"
+# The debug overlay only (renderer §6): egui with its wgpu pass and winit input.
+egui = "0.36"
+egui-wgpu = { version = "0.36", default-features = false }
+egui-winit = { version = "0.36", default-features = false }
 etagere = "0.3"
 flate2 = "1"
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }

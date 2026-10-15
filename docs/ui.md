@@ -110,7 +110,11 @@ Font roles map to family stacks; the first family present wins. `system-ui`, `se
 
 `UiConfig::load(config/ui)` remembers file times; debug builds call `ui.reload_if_changed()` a few times a second. A reload recompiles everything and rebuilds the tree, keeping every value the game set (texts, values, images, list counts, visibility, focus) for paths that still exist. On error the old UI stays and the error names the file and style.
 
-## Game integration (sketch)
+## Game integration
+
+The match binds the HUD in `game/src/play/hud.rs` and draws it through the renderer's `ui` pass (`canopy_render::ui::UiLayer`, D36); see [play](play.md). The sketch below is the general shape.
+
+### Sketch
 
 ```rust
 let mut ui = Ui::new(UiConfig::load(&paths.config().join("ui"))?, FontSources { bundled: vec![], system: true })?;
