@@ -73,6 +73,9 @@ pub struct Playing {
     pub names: Vec<(u8, String)>,
     /// Player colours by slot (sRGB), for chat names.
     colors: Vec<[u8; 3]>,
+    /// Slots the computer plays, and those that already said "gg" on defeat.
+    computers: Vec<u8>,
+    good_games: Vec<u8>,
     /// The outcome once decided.
     pub outcome: Option<canopy_sim::state::Outcome>,
     events: Vec<MatchEvent>,
@@ -119,12 +122,24 @@ impl Playing {
             .map(|s| {
                 (
                     s.player,
-                    s.name.clone().unwrap_or_else(|| match s.kind {
+                    match s.kind {
+                        // Lobbies name every computer seat "Computer": number them.
                         canopy_sim::SlotKind::Ai => format!("Computer {}", s.player + 1),
-                        canopy_sim::SlotKind::Human => format!("Player {}", s.player + 1),
-                    }),
+                        canopy_sim::SlotKind::Human => s
+                            .name
+                            .clone()
+                            .unwrap_or_else(|| format!("Player {}", s.player + 1)),
+                    },
                 )
             })
+            .collect();
+        let computers = game
+            .world
+            .setup()
+            .slots
+            .iter()
+            .filter(|s| s.kind == canopy_sim::SlotKind::Ai)
+            .map(|s| s.player)
             .collect();
         let colors = loaded
             .scene
@@ -164,10 +179,37 @@ impl Playing {
             networked,
             names,
             colors,
+            computers,
+            good_games: Vec::new(),
             outcome: None,
             events: Vec::new(),
             problem: false,
         })
+    }
+
+    /// A computer player whose colony falls says "gg" in the chat, on every seat (each
+    /// seat's simulation sees the same defeat; nothing crosses the network).
+    fn good_game(&mut self) {
+        let Some(newest) = self.game.live().newest().cloned() else {
+            return;
+        };
+        for owner in &newest.view.defeated {
+            let canopy_content::placement::Owner::Player(slot) = *owner else {
+                continue;
+            };
+            if !self.computers.contains(&slot) || self.good_games.contains(&slot) {
+                continue;
+            }
+            self.good_games.push(slot);
+            const LINES: [&str; 3] = ["gg", "gg wp", "gg, well played!"];
+            let line = LINES[usize::from(slot) % LINES.len()];
+            let color = self
+                .colors
+                .get(usize::from(slot))
+                .copied()
+                .unwrap_or([0xcc, 0xcc, 0xcc]);
+            self.game.play.hear(self.name_of(slot), color, line);
+        }
     }
 
     pub fn name_of(&self, player: u8) -> String {
@@ -200,6 +242,7 @@ impl Playing {
         for notice in self.game.sim().notices() {
             self.notice(notice);
         }
+        self.good_game();
         if self.game.stopped() && !self.problem {
             self.problem = true;
             self.events.push(MatchEvent::Problem {

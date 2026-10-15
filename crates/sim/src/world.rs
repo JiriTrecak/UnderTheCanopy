@@ -733,7 +733,26 @@ impl World {
             owner,
         );
         self.add_combat(&mut view, Some(owner));
+        view.defeated = self.defeated_players();
         view
+    }
+
+    /// The match's players who are out so far (the index is current after every step).
+    fn defeated_players(&self) -> Vec<Owner> {
+        self.setup
+            .slots
+            .iter()
+            .map(|s| Owner::Player(s.player))
+            .filter(|&o| {
+                victory::defeated(
+                    self.rules,
+                    &self.state,
+                    &self.catalog,
+                    &self.economy.index,
+                    o,
+                )
+            })
+            .collect()
     }
 
     /// Everything, for spectators.
@@ -746,6 +765,7 @@ impl World {
             &self.economy,
         );
         self.add_combat(&mut view, None);
+        view.defeated = self.defeated_players();
         view.ai = self.ai_summaries();
         view
     }

@@ -22,6 +22,9 @@ fn a_colony_without_buildings_is_defeated_and_the_last_team_wins() {
     world.step();
     let outcome = world.state().outcome.clone().expect("decided");
     assert_eq!((outcome.winner, outcome.defeated), (Some(P1), vec![P2]));
+    // Everyone's view tells who is out (a defeated computer says "gg" in the chat).
+    assert_eq!(world.view(P1).defeated, [P2]);
+    assert_eq!(world.observer_view().defeated, [P2]);
     assert!(
         world.state().entities.iter().all(|e| e.owner != P2),
         "the defeated colony leaves"

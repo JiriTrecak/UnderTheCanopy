@@ -203,6 +203,8 @@ pub struct View {
     pub spells: crate::abilities::view::Spellcraft,
     /// Recent pings of the viewer's team (everyone's for an observer).
     pub pings: Vec<crate::state::Ping>,
+    /// Players out of the match so far, for everyone (filled by the world).
+    pub defeated: Vec<Owner>,
 }
 
 impl View {
@@ -324,6 +326,7 @@ impl View {
             .collect();
         Self {
             pings,
+            defeated: Vec::new(),
             tick: state.tick,
             owner: Some(owner),
             entities,
@@ -398,6 +401,7 @@ impl View {
             })
             .collect();
         Self {
+            defeated: Vec::new(),
             pings: state
                 .pings
                 .iter()
