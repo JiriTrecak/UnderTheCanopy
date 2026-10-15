@@ -127,6 +127,19 @@ impl FogView {
 
     /// The nodes that changed since `revision`, possibly repeated, in order; `None` when
     /// that revision is too old to patch from (upload everything).
+    /// The same fog with other `cells` under another `revision` and without change
+    /// history, so a consumer that last saw any other revision reloads it whole. For
+    /// presentation only (a mission scene's revealed set); the simulation never sees it.
+    pub fn restaged(&self, cells: Vec<u8>, revision: u32) -> Self {
+        Self {
+            size: self.size,
+            revision,
+            cells: Arc::new(cells),
+            deck_cells: self.deck_cells.clone(),
+            history: Arc::from(Vec::new()),
+        }
+    }
+
     pub fn changes_since(&self, revision: u32) -> Option<Vec<u32>> {
         if revision == self.revision {
             return Some(Vec::new());

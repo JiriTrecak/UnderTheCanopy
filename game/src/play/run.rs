@@ -10,7 +10,7 @@
 //! - [`InMatch::decorate`] on the UI's draw list, then [`InMatch::render`].
 
 use super::{
-    Event, Play,
+    Event, Play, cinematic,
     debug::{Debug, MatchTools, Stats as DebugStats},
     follow::{self, CameraMode},
     hud::Hud,
@@ -129,6 +129,9 @@ pub struct InMatch {
     held_before: u32,
     /// The debug overlay's speed, reveal and fog perspective.
     tools: MatchTools,
+    /// The cinematic lens and the entities a scene's shot names.
+    lens: cinematic::Lens,
+    scene_targets: Option<sim::SceneTargets>,
     networked: bool,
 }
 
@@ -274,6 +277,8 @@ impl InMatch {
                 perspective: start.me,
             },
             networked: start.chat_server,
+            lens: cinematic::Lens::default(),
+            scene_targets: None,
         };
         this.stats.networked = start.chat_server;
         this.stats.players = this
@@ -557,8 +562,20 @@ impl InMatch {
         self.play.input(&input, terrain);
     }
 
-    /// The unit camera's view of the focused unit, or `None` for the RTS view.
+    /// A close view: a mission scene's unit shot while a cinematic plays, else the unit
+    /// camera on the focused unit; `None` for the RTS view.
     fn close_view(&mut self, aspect: f32, dt: f32) -> Option<CameraView> {
+        if self.play.cinematic().is_some() {
+            let camera = self.play.scene_camera()?.clone();
+            let targets = self.scene_targets?;
+            let (live, content, catalog) = (&self.live, &self.content, &self.catalog);
+            let subject = |t: &sim::SceneTarget| {
+                follow::subject_of(live, content, catalog.get(t.definition), t.id)
+            };
+            let (key, pose) =
+                cinematic::pose(&camera, &targets, subject, self.loaded.scene.terrain())?;
+            return Some(self.follow.view(key, &pose, dt, aspect));
+        }
         let mode = self.play.camera_mode;
         if mode == CameraMode::Rts {
             return None;
@@ -566,7 +583,23 @@ impl InMatch {
         let id = self.play.selection.focus()?;
         let subject = follow::subject(&self.live, self.play.knowledge(), id)?;
         let pose = follow::ground_pose(&subject, mode, self.loaded.scene.terrain())?;
-        Some(self.follow.view((mode, id), &pose, dt, aspect))
+        Some(
+            self.follow
+                .view(follow::Key::unit(mode, id), &pose, dt, aspect),
+        )
+    }
+
+    /// The unit whose eyes the camera looks through (its body is not drawn).
+    fn first_person_body(&self) -> Option<u32> {
+        if self.play.cinematic().is_some() {
+            let camera = self.play.scene_camera()?;
+            return (cinematic::mode(camera) == Some(CameraMode::FirstPerson))
+                .then(|| self.scene_targets.and_then(|t| t.subject).map(|s| s.id))
+                .flatten();
+        }
+        (self.play.camera_mode == CameraMode::FirstPerson)
+            .then(|| self.play.selection.focus())
+            .flatten()
     }
 
     /// Whether a held key holds `shortcut` (camera keys from the player's bindings).
@@ -582,13 +615,18 @@ impl InMatch {
         // A unit camera ignores panning and zoom (old `followingUnit`); so does a
         // cinematic, which looks at its scene and gives the view back afterwards.
         let cinematic = self.play.cinematic();
+        self.lens.update(cinematic.is_some(), dt_ms);
         match (cinematic, self.cinematic_focus) {
             (Some(scene), saved) => {
                 if saved.is_none() {
                     self.cinematic_focus = Some(self.camera.focus);
                 }
-                self.play.camera_mode = CameraMode::Rts;
-                if let Some([x, z]) = scene {
+                // A unit shot looks through its unit; otherwise the RTS view looks at
+                // an RTS shot's unit or the scene.
+                let camera = self.play.scene_camera();
+                let unit_shot = camera.is_some_and(|c| cinematic::mode(c).is_some());
+                if let (Some(scene), false) = (scene, unit_shot) {
+                    let [x, z] = cinematic::focus(scene, camera, self.scene_targets.as_ref());
                     self.camera.look_at(x, z);
                 }
             }
@@ -676,9 +714,7 @@ impl InMatch {
         // The newest view and the interpolated scene.
         let live_started = Instant::now();
         // The first-person camera does not draw its own body (old `hideCameraBody`).
-        self.live.hidden_entity = (self.play.camera_mode == CameraMode::FirstPerson)
-            .then(|| self.play.selection.focus())
-            .flatten();
+        self.live.hidden_entity = self.first_person_body();
         self.live.poll(self.sim.mailbox());
         self.live.frame(host.renderer, gpu, &self.loaded.pack, now);
         let newest = self.live.newest().cloned();
@@ -698,9 +734,12 @@ impl InMatch {
             }
             self.last_tick = Some(s.tick());
             self.hud.colonies = s.colonies.clone();
+            self.scene_targets = s.scene;
         }
         let live_ms = live_started.elapsed().as_secs_f32() * 1000.0;
-        let rts_view = view::frame(&mut self.camera, aspect, &self.loaded.scene);
+        let rts_view = self
+            .lens
+            .apply(view::frame(&mut self.camera, aspect, &self.loaded.scene));
         let camera_view = self.close_view(aspect, dt_ms / 1000.0).unwrap_or_else(|| {
             self.follow.shown(&rts_view);
             rts_view
@@ -907,7 +946,9 @@ impl InMatch {
         let aspect = host.size[0] as f32 / host.size[1].max(1) as f32;
         let camera_view = match self.camera_view {
             Some(v) => v,
-            None => view::frame(&mut self.camera, aspect, &self.loaded.scene),
+            None => self
+                .lens
+                .apply(view::frame(&mut self.camera, aspect, &self.loaded.scene)),
         };
         let seconds = self.started.elapsed().as_secs_f32();
         host.renderer.ui_mut(gpu).set_target(Some(ui_view.clone()));

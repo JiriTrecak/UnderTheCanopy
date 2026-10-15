@@ -13,6 +13,7 @@
 
 pub mod capture;
 pub mod card;
+pub mod cinematic;
 pub mod debug;
 pub mod follow;
 pub mod hud;
@@ -302,6 +303,19 @@ impl Play {
             None if line => Some(None),
             None => None,
         }
+    }
+
+    /// The camera shot of the scene a cinematic plays, if it has one.
+    pub fn scene_camera(&self) -> Option<&canopy_sim::mission::state::Camera> {
+        self.cinematic()?;
+        self.know
+            .view
+            .mission
+            .as_ref()?
+            .scene
+            .as_ref()?
+            .camera
+            .as_ref()
     }
 
     /// Whether the pointer is over the HUD (no world hover there).

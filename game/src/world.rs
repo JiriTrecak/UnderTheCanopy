@@ -95,12 +95,19 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
         Content::load(&paths.data)
     };
     let content = Arc::new(content.map_err(|e| anyhow!("content: {e}"))?);
-    let library = map::library(&paths.data).map_err(|e| anyhow!("maps: {e}"))?;
-    let file = library.iter().find(|m| m.id == id).with_context(|| {
-        let ids: Vec<&str> = library.iter().map(|m| m.id.as_str()).collect();
-        format!("no map {id} (maps: {})", ids.join(", "))
-    })?;
-    let mut map = file.load().map_err(|e| anyhow!("{}: {e}", file.file))?;
+    // A `.utcmap` path instead of an id loads that file (tests and captures of maps the
+    // game does not ship).
+    let path = std::path::Path::new(id);
+    let mut map = if path.extension().is_some_and(|e| e == map::UTCMAP_EXTENSION) {
+        map::UtcMap::load(path).map_err(|e| anyhow!("{e}"))?
+    } else {
+        let library = map::library(&paths.data).map_err(|e| anyhow!("maps: {e}"))?;
+        let file = library.iter().find(|m| m.id == id).with_context(|| {
+            let ids: Vec<&str> = library.iter().map(|m| m.id.as_str()).collect();
+            format!("no map {id} (maps: {})", ids.join(", "))
+        })?;
+        file.load().map_err(|e| anyhow!("{}: {e}", file.file))?
+    };
     let pack_path =
         canopy_assets::find_pack(&paths.data).context("no cooked asset pack (run `just cook`)")?;
     let pack = Arc::new(Pack::open(&pack_path).with_context(|| pack_path.display().to_string())?);

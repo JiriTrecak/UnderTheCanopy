@@ -90,6 +90,9 @@ pub struct Snapshot {
     /// The seat's own units held inside another entity or waiting to be placed back
     /// (sorted ids, from the view's private flags).
     pub held: Arc<Vec<u32>>,
+    /// The entities a mission's camera shot names (old worker `targets`), while a scene
+    /// with a shot plays.
+    pub scene: Option<SceneTargets>,
     /// Every player's colony, for the observer panel (observers only; refreshed every
     /// [`AI_SUMMARY_TICKS`]).
     pub colonies: Option<Arc<Vec<ColonyStats>>>,
@@ -248,8 +251,120 @@ pub struct Advanced {
     pub presentation: Presentation,
     pub view: Arc<View>,
     pub held: Arc<Vec<u32>>,
+    pub scene: Option<SceneTargets>,
     pub cost: TickCost,
     pub decided: bool,
+}
+
+/// An entity a mission's camera shot names, as it stands.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SceneTarget {
+    pub id: u32,
+    pub definition: canopy_sim::catalog::Def,
+    /// Cells (x, z).
+    pub position: [f32; 2],
+}
+
+/// The shot's subject and the unit it looks at, resolved from their placement ids to
+/// the entities they made (old worker `targets`: from the whole state, so a shot can
+/// frame units the player has not seen; the scene reveals its set anyway).
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct SceneTargets {
+    pub subject: Option<SceneTarget>,
+    pub look_at: Option<SceneTarget>,
+}
+
+/// The targets of the camera shot `view`'s mission scene names; `None` without a shot.
+pub fn scene_targets(world: &World, view: &View) -> Option<SceneTargets> {
+    let camera = view.mission.as_ref()?.scene.as_ref()?.camera.as_ref()?;
+    let find = |placement: &str| {
+        world
+            .state()
+            .entities
+            .iter()
+            .find(|e| e.placement.as_deref() == Some(placement))
+            .map(|e| SceneTarget {
+                id: e.id.0,
+                definition: e.definition,
+                position: [e.position.x as f32 / 1000.0, e.position.y as f32 / 1000.0],
+            })
+    };
+    Some(SceneTargets {
+        subject: find(&camera.entity),
+        look_at: camera.look_at.as_deref().and_then(find),
+    })
+}
+
+/// How far around a mission scene the picture reveals (old `PresentationView`: past a
+/// hero's sight, so framing a speaker shows something new), cells.
+pub const SCENE_REVEAL_RADIUS: f64 = 36.0;
+
+/// The view a mission scene is shown with (old `PresentationView`): within
+/// [`SCENE_REVEAL_RADIUS`] of the scene every cell is in sight and every entity shown,
+/// without exploring anything or telling the player's knowledge (the HUD, commands and
+/// the AI keep the plain view). `None` when no scene plays, the match is decided or the
+/// viewer has no fog.
+pub fn stage(world: &World, view: &View) -> Option<View> {
+    let scene = view.mission.as_ref()?.scene.as_ref()?;
+    if view.outcome.is_some() {
+        return None;
+    }
+    let fog = view.fog.as_ref()?;
+    let (sx, sy) = (
+        f64::from(scene.position.x) / 1000.0,
+        f64::from(scene.position.y) / 1000.0,
+    );
+    let r = SCENE_REVEAL_RADIUS;
+    let size = i64::from(fog.size);
+    let near = |x: i64, y: i64| ((x as f64 - sx).hypot(y as f64 - sy)) <= r;
+    let mut cells = (*fog.cells).clone();
+    let (y0, y1) = (
+        ((sy - r).floor() as i64).max(0),
+        ((sy + r) as i64).min(size - 1),
+    );
+    let (x0, x1) = (
+        ((sx - r).floor() as i64).max(0),
+        ((sx + r) as i64).min(size - 1),
+    );
+    for y in y0..=y1 {
+        for x in x0..=x1 {
+            if near(x, y) {
+                cells[(y * size + x) as usize] = canopy_sim::vision::VISIBLE;
+            }
+        }
+    }
+    let ground = (size * size) as usize;
+    for (i, &cell) in fog.deck_cells.iter().enumerate() {
+        let cell = i64::from(cell);
+        if near(cell % size, cell / size)
+            && let Some(node) = cells.get_mut(ground + i)
+        {
+            *node = canopy_sim::vision::VISIBLE;
+        }
+    }
+    // A revision of its own, above any the simulation reaches, for every staged state:
+    // the renderer reloads the staged fog, and the plain one again afterwards.
+    let key = u64::from(fog.revision)
+        ^ (i64::from(scene.position.x) as u64).rotate_left(21)
+        ^ (i64::from(scene.position.y) as u64).rotate_left(42);
+    let revision = 0x8000_0000 | (key.wrapping_mul(0x9e37_79b9_7f4a_7c15) >> 33) as u32;
+    let mut staged = view.clone();
+    staged.fog = Some(fog.restaged(cells, revision));
+    // Every entity on the set, live (old: the full view's entities replace known ones).
+    let all = world.observer_view();
+    let mut entities: std::collections::BTreeMap<_, _> =
+        staged.entities.drain(..).map(|e| (e.id(), e)).collect();
+    for e in all.entities {
+        let (x, y) = (
+            f64::from(e.public.position.x) / 1000.0,
+            f64::from(e.public.position.y) / 1000.0,
+        );
+        if (x - sx).hypot(y - sy) <= r {
+            entities.insert(e.id(), e);
+        }
+    }
+    staged.entities = entities.into_values().collect();
+    Some(staged)
 }
 
 /// The view's own units that are held inside another entity or waiting to be placed
@@ -402,7 +517,11 @@ pub fn advance(
         let _span = tracing::trace_span!("seat_view").entered();
         seat.view(world)
     };
-    let other = shown.filter(|&s| s != seat).map(|s| s.view(world));
+    // Another seat's view (debug), else a mission scene's staging.
+    let other = match shown.filter(|&s| s != seat) {
+        Some(s) => Some(s.view(world)),
+        None => stage(world, &view),
+    };
     let viewed = Instant::now();
     let presentation = presenter.update(world, other.as_ref().unwrap_or(&view), &|id| {
         held(world, id)
@@ -411,6 +530,7 @@ pub fn advance(
     let ms = |a: Instant, b: Instant| (b - a).as_secs_f32() * 1000.0;
     Some(Advanced {
         held: Arc::new(held_units(&view)),
+        scene: scene_targets(world, &view),
         presentation,
         decided: view.outcome.is_some(),
         view: Arc::new(view),
@@ -426,7 +546,10 @@ pub fn advance(
 /// shot), with the view it was made from.
 pub fn present(world: &World, presenter: &mut Presenter, seat: Seat) -> (Presentation, Arc<View>) {
     let view = seat.view(world);
-    let presentation = presenter.update(world, &view, &|id| held(world, id));
+    let staged = stage(world, &view);
+    let presentation = presenter.update(world, staged.as_ref().unwrap_or(&view), &|id| {
+        held(world, id)
+    });
     (presentation, Arc::new(view))
 }
 
@@ -481,6 +604,7 @@ impl SimThread {
                     }
                     let (first, first_view) = present(&world, &mut presenter, seat);
                     let first_held = Arc::new(held_units(&first_view));
+                    let first_scene = scene_targets(&world, &first_view);
                     let tick0 = world.tick();
                     let mut ai: Option<Arc<Vec<canopy_sim::ai::Summary>>> = None;
                     let observing = seat == Seat::Observer;
@@ -502,6 +626,7 @@ impl SimThread {
                         view: first_view,
                         ai: None,
                         held: first_held,
+                        scene: first_scene,
                         colonies: colony_list.clone(),
                         epoch,
                         origin: tick0,
@@ -573,6 +698,7 @@ impl SimThread {
                             presentation,
                             view,
                             held,
+                            scene,
                             cost,
                             decided,
                         }) = advance(&mut world, &mut session, &mut presenter, seat, shown)
@@ -607,6 +733,7 @@ impl SimThread {
                             view,
                             ai: ai.clone(),
                             held,
+                            scene,
                             colonies: colony_list.clone(),
                             epoch,
                             origin,
@@ -719,6 +846,7 @@ mod tests {
             view: Arc::new(empty_view(tick)),
             ai: None,
             held: Arc::default(),
+            scene: None,
             colonies: None,
             epoch: Instant::now(),
             origin: 0,
@@ -839,6 +967,7 @@ mod tests {
             view: Arc::new(empty_view(0)),
             ai: None,
             held: Arc::default(),
+            scene: None,
             colonies: None,
             epoch,
             origin: 100,
