@@ -32,9 +32,7 @@ fn a_walker_crosses_open_ground_and_stops_on_the_cell() {
         assert!(e.private.as_ref().unwrap().order == order(world, "a"));
         e.motion.unwrap().moving
     };
-    // It turns towards the destination before walking off.
-    assert!(!motion(&world));
-    run(&mut world, 8);
+    // It walks off at once, turning as it goes (D51).
     assert!(motion(&world));
     // Speed 4 cells/s: 41.2 cells take a little over 10 s.
     run(&mut world, 452);

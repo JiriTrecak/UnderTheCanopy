@@ -73,13 +73,13 @@ fn a_restored_match_continues_identically_mid_move() {
     let mut world = world(&map);
     order(&mut world);
     run(&mut world, 333);
-    // Units are mid-segment, some detouring.
+    // Units are mid-move.
     assert!(
         world
             .state()
             .entities
             .iter()
-            .any(|e| e.unit.as_ref().is_some_and(|u| u.segment.is_some()))
+            .any(|e| e.unit.as_ref().is_some_and(|u| !u.route.is_empty()))
     );
     let mut copy = reload(&world, &map);
     assert_eq!(copy.state(), world.state());

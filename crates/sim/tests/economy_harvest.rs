@@ -49,16 +49,17 @@ fn a_worker_mines_carries_and_delivers_in_cycles() {
     );
     let line = timeline(&mut world, worker, AMBER, 700);
     // The exact cycle: walk to the mine's edge, wait-free admission, eight work ticks, a
-    // load of five carried to the hall's edge, delivery, and straight back.
+    // load of five carried to the hall's edge, delivery, and straight back (turning about at
+    // each end without stopping to face the way first, D51).
     let expect = [
         (0, "walk", 0, 0),
-        (53, "work", 0, 0),
-        (60, "return", 5, 0),
-        (139, "-", 0, 5),
-        (140, "walk", 0, 5),
-        (218, "work", 0, 5),
-        (225, "return", 5, 5),
-        (304, "-", 0, 10),
+        (49, "work", 0, 0),
+        (56, "return", 5, 0),
+        (131, "-", 0, 5),
+        (132, "walk", 0, 5),
+        (206, "work", 0, 5),
+        (213, "return", 5, 5),
+        (288, "-", 0, 10),
     ];
     let first: Vec<(u32, &str, u32, u32)> = line[..8]
         .iter()

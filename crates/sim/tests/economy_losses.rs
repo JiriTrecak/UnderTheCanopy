@@ -12,7 +12,8 @@ fn a_carrier_killed_on_its_way_loses_its_goods() {
     let mut world = world(&sandbox(vec![
         place("hall", HALL, 19.5, 19.5),
         place("carrier", WORKER, 60.0, 60.0),
-        place_for("raider", SOLDIER, "player.2", 61.0, 60.0),
+        // Across its way home: a carrier sets off at once and outruns a raider behind it.
+        place_for("raider", SOLDIER, "player.2", 59.0, 59.0),
     ]));
     let carrier = id(&world, "carrier");
     world

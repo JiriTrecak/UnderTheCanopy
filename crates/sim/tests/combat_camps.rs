@@ -117,7 +117,14 @@ fn a_member_past_its_leash_walks_home_and_fights_again() {
     run_until(&mut world, 400, |w| returning(w, "c1"));
     let c = entity(&world, "c1");
     assert!(c.unit.as_ref().unwrap().target.is_none());
-    assert!(f64::from(c.position.x) / 1000.0 < 90.0);
+    let away = (
+        f64::from(c.position.x) / 1000.0 - 100.0,
+        f64::from(c.position.y) / 1000.0 - 100.0,
+    );
+    assert!(
+        (away.0 * away.0 + away.1 * away.1).sqrt() >= 9.9,
+        "past the leash: {away:?}"
+    );
     run_until(&mut world, 600, |w| !returning(w, "c1"));
     let c = entity(&world, "c1");
     let (dx, dy) = (

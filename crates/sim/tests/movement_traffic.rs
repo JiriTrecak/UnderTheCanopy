@@ -40,7 +40,15 @@ fn run_checked(world: &mut World, ids: &[u32], ticks: u32) {
                         f64::from(o.position.y) / 1000.0,
                     ),
                 );
-                // Sequential movers may close in on space vacated within the tick.
+                // Sequential movers may close in on space vacated within the tick; allies
+                // both on the move may squeeze past each other in a jam (D51), never past a
+                // standing body.
+                let moving = |u: &canopy_sim::entity::Entity| {
+                    u.unit.as_ref().is_some_and(|u| !u.route.is_empty())
+                };
+                if moving(e) && moving(o) {
+                    continue;
+                }
                 assert!(
                     gap >= radius(world, id) + radius(world, other) - 0.01,
                     "{id} and {other} overlap: {gap}"
@@ -144,7 +152,7 @@ fn a_crowd_squeezes_through_a_gap() {
 }
 
 #[test]
-fn a_head_on_deadlock_in_a_doorway_is_negotiated() {
+fn a_head_on_meeting_in_a_doorway_resolves() {
     // A cliff wall at x = 101 with a one-cell doorway at y = 100.
     let wall = |x: i32, y: i32| x == 101 && y != 100;
     let units = vec![
@@ -163,20 +171,7 @@ fn a_head_on_deadlock_in_a_doorway_is_negotiated() {
         &mut world,
         json!({"type": "move", "actors": [b, c], "destination": {"x": 90, "y": 100}}),
     );
-    let mut yielded = false;
-    for _ in 0..1600 {
-        run_checked(&mut world, &[a, b, c], 1);
-        yielded |= [a, b, c].iter().any(|&id| {
-            get(&world, EntityId(id))
-                .unit
-                .as_ref()
-                .unwrap()
-                .detour
-                .as_ref()
-                .is_some_and(|d| d.yielding.is_some())
-        });
-    }
-    assert!(yielded, "someone stepped aside");
+    run_checked(&mut world, &[a, b, c], 1600);
     assert!([a, b, c].iter().all(|&id| idle(&world, id)));
     assert!(get(&world, EntityId(a)).position.x > 105_000);
     assert!(

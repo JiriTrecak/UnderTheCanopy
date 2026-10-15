@@ -2,26 +2,28 @@
 //! `beginTrafficYield`, `askIdleAllyToYield` in `src/sim/game/context.ts`, plus
 //! `separation.ts` and `idleMotion.ts`).
 //!
-//! Each tick every unit with a route turns towards its next waypoint (it must face it
-//! before moving), then advances by its speed budget along the route in fixed point. Every
-//! step must clear the terrain sweep, the cells claimed by other movers, and other bodies
-//! (swept circles; separating motion is always allowed). A blocked mover first asks for
-//! deadlock negotiation, then tries a bounded local detour, then asks an idle ally to step
-//! aside, then waits and retries.
+//! Each tick every unit with a route steers ([`steer`], D51): it moves at once, turning as
+//! it goes, towards the farthest waypoint in sight, keeps a little room from neighbours,
+//! eases around bodies ahead, swerves or pushes idle allies when blocked, and stops beside
+//! its group near the goal. Every step must clear the terrain sweep and other bodies
+//! (swept circles; separating motion is always allowed). A mover held up by bodies for a
+//! moment falls back on the old negotiation: an ally steps into a pocket, a bounded local
+//! detour, or an idle ally asked aside.
 
 pub mod facing;
 pub mod formation;
 pub mod idle;
 pub mod local_path;
 pub mod separation;
+pub mod steer;
 pub mod traffic;
 
 use crate::{
     catalog::Catalog,
-    entity::{Detour, Entity, EntityId, Milli, Segment, Yielding},
-    navigation::cells::{Adjusted, CellSet, Reserved},
+    entity::{Detour, Entity, EntityId, Milli, Yielding},
+    navigation::cells::{Adjusted, CellSet},
     orders::Order,
-    spatial::{Body, Fixed, Obstruction, Spatial, Spot, geometry::length_ceil},
+    spatial::{Body, Fixed, Spatial, Spot, geometry::length_ceil},
     state::State,
     teams::Teams,
     terrain::round_half_up,
@@ -339,7 +341,7 @@ impl Motion {
         if e.unit.as_ref().is_some_and(|u| u.detour.is_some()) {
             self.move_detour(state, id, budget, step);
         } else {
-            self.follow_route(state, id, budget, step, ignores, requests);
+            self.steer(state, id, budget, step, requests);
         }
         // Re-register the body and its claims.
         let e = state.entities.get(id).expect("unit");
@@ -350,153 +352,6 @@ impl Motion {
             set.insert(b.node);
             if let Some(w) = b.reservation {
                 set.insert(w);
-            }
-        }
-    }
-
-    fn follow_route(
-        &mut self,
-        state: &mut State,
-        id: EntityId,
-        mut budget: i64,
-        step: f64,
-        ignores: bool,
-        requests: &mut Option<BTreeMap<EntityId, Request>>,
-    ) {
-        let tick = state.tick;
-        let spatial = &self.spatial;
-        let e = state.entities.get_mut(id).expect("unit");
-        let body = spatial.body_of(e);
-        let deck = spatial.deck_of(e);
-        // Retry and yield routes may begin exactly where the unit stands.
-        {
-            let u = e.unit.as_mut().expect("unit");
-            while let Some(&first) = u.route.first() {
-                let anchor = spatial.point(first);
-                if anchor.x != e.position.x || anchor.y != e.position.y || anchor.deck != deck {
-                    break;
-                }
-                u.route.remove(0);
-                u.segment = None;
-            }
-            if u.route.is_empty() {
-                return;
-            }
-        }
-        let first = spatial.point(e.unit.as_ref().expect("unit").route[0]);
-        let here = (
-            f64::from(e.position.x) / 1000.0,
-            f64::from(e.position.y) / 1000.0,
-        );
-        if !turn_toward(
-            &mut e.rotation,
-            here,
-            (f64::from(first.x) / 1000.0, f64::from(first.y) / 1000.0),
-            step,
-        ) {
-            return;
-        }
-        let air = body.air;
-        while budget > 0 {
-            let e = state.entities.get_mut(id).expect("unit");
-            let current = Fixed::on(e.position.x, e.position.y, self.spatial.deck_of(e));
-            let u = e.unit.as_mut().expect("unit");
-            let Some(&next) = u.route.first() else {
-                break;
-            };
-            let goal = self.spatial.point(next);
-            if u.segment.as_ref().is_none_or(|s| s.to != next) {
-                let length =
-                    length_ceil(i64::from(goal.x - current.x), i64::from(goal.y - current.y));
-                if length == 0 {
-                    u.route.remove(0);
-                    u.segment = None;
-                    continue;
-                }
-                u.segment = Some(Segment {
-                    from: Milli {
-                        x: current.x,
-                        y: current.y,
-                    },
-                    to: next,
-                    length: length as u32,
-                    progress: 0,
-                });
-            }
-            let segment = u.segment.clone().expect("segment");
-            let distance = i64::from(segment.length - segment.progress);
-            let travel = budget.min(distance);
-            let progress = i64::from(segment.progress) + travel;
-            let length = i64::from(segment.length);
-            let mut proposed = if progress == length {
-                goal
-            } else {
-                Fixed::on(
-                    segment.from.x
-                        + scale(i64::from(goal.x - segment.from.x), progress, length) as i32,
-                    segment.from.y
-                        + scale(i64::from(goal.y - segment.from.y), progress, length) as i32,
-                    current.deck,
-                )
-            };
-            self.spatial.adopt_surface(current, &mut proposed, goal);
-            let occupied: &CellSet = if air { &self.air } else { &self.ground };
-            let obstruction = self.spatial.movement_blocker(
-                current,
-                proposed,
-                (!ignores).then_some(occupied as &dyn Reserved),
-                &body,
-            );
-            if obstruction == Some(Obstruction::Terrain) {
-                let u = state
-                    .entities
-                    .get_mut(id)
-                    .expect("unit")
-                    .unit
-                    .as_mut()
-                    .expect("unit");
-                u.route.clear();
-                u.segment = None;
-                u.retry_at = tick + 6;
-                break;
-            }
-            if obstruction == Some(Obstruction::Reservation)
-                || !self
-                    .spatial
-                    .unit_segment_clear(current, proposed, Some(id), None, None, None)
-            {
-                let (retry_at, goal_node) = {
-                    let u = state
-                        .entities
-                        .get(id)
-                        .expect("unit")
-                        .unit
-                        .as_ref()
-                        .expect("unit");
-                    (u.retry_at, u.goal)
-                };
-                if tick >= retry_at && goal_node.is_some() {
-                    self.recover(state, id, current, proposed, requests);
-                }
-                break;
-            }
-            let e = state.entities.get_mut(id).expect("unit");
-            let u = e.unit.as_mut().expect("unit");
-            if proposed.x != current.x || proposed.y != current.y {
-                u.last_moved_tick = Some(tick);
-            }
-            if let Some(s) = u.segment.as_mut() {
-                s.progress = progress as u32;
-            }
-            let arrived = travel == distance;
-            if arrived {
-                u.route.remove(0);
-                u.segment = None;
-            }
-            place(&self.spatial, e, proposed);
-            budget -= travel;
-            if arrived {
-                break;
             }
         }
     }
