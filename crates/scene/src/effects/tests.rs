@@ -359,3 +359,69 @@ fn draws_follow_textures_not_effect_counts() {
         .unwrap();
     assert_eq!(emitter.times[3], 2.0);
 }
+
+#[test]
+fn damage_effects_take_a_capped_share_after_the_cues() {
+    use super::frame::{
+        DAMAGE_PARTS, DRAWN_FIRES, DRAWN_HIT_DUST, FLAME_PARTS, HIT_DUST_PARTS, SMOKE_PARTS,
+    };
+    use canopy_render::effects::kind;
+    let mut d = director(
+        vec![effect(
+            "effect.test.a",
+            false,
+            vec![layer(Motion::Burst, Primitive::Particle)],
+        )],
+        json!([{"id": "a", "effect": "effect.test.a", "event": "released", "anchor": "target"}]),
+    );
+    // Far more burning spots and blows than are drawn, all over the map.
+    for i in 0..200u32 {
+        d.hit_dust(HitDust {
+            position: Vec3::new(i as f32, 1.0, 0.0),
+            tick: 0.0,
+            direction: Vec3::X,
+            lift: 1.0,
+            power: 1.0,
+            seed: i,
+        });
+    }
+    d.burn((0..600u32).map(|i| Fire {
+        entity: i / 4,
+        position: Vec3::new(0.0, 3.0, i as f32),
+        size: 1.0,
+        severity: (i % 10) as f32 / 9.0,
+        seed: i,
+    }));
+    let events = [event(1, 0, EventKind::Released, 1)];
+    let snapshot = step(&mut d, 5, &events);
+    assert_eq!(snapshot.fires.len(), MAX_FIRES);
+    let mut evaluator = EffectEvaluator::new(d.effect_table().clone());
+    let mut frame = EffectFrame::default();
+    let mut models = Vec::new();
+    let eye = Some(Vec3::new(0.0, 30.0, 0.0));
+    evaluator.frame(None, &snapshot, 1.0, 6.0, eye, &mut frame, &mut models);
+    let of = |k: u32| frame.emitters.iter().filter(|e| e.ints[0] == k).count();
+    // The cue's burst is drawn first and whole.
+    assert_eq!(of(kind::BURST), 1);
+    let dust = of(kind::DUST);
+    let flames = of(kind::FLAME);
+    assert_eq!(dust, DRAWN_HIT_DUST);
+    assert_eq!(flames, of(kind::SMOKE));
+    assert!(flames <= DRAWN_FIRES);
+    let damage = dust * HIT_DUST_PARTS as usize + flames * (FLAME_PARTS + SMOKE_PARTS) as usize;
+    assert!(damage <= DAMAGE_PARTS);
+    assert_eq!(frame.parts.len(), damage + 1);
+    // The nearest are drawn: the 64 bursts nearest the eye.
+    assert!(
+        frame
+            .emitters
+            .iter()
+            .filter(|e| e.ints[0] == kind::DUST)
+            .all(|e| e.position[0] < DRAWN_HIT_DUST as f32)
+    );
+    // Flames come last, over the smoke; one fire light at most.
+    let last = frame.draws.last().unwrap();
+    let first = frame.parts[last.first as usize];
+    assert_eq!(frame.emitters[(first >> 8) as usize].ints[0], kind::FLAME);
+    assert!(frame.lights.len() <= 1);
+}

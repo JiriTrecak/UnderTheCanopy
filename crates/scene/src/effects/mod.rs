@@ -1,5 +1,6 @@
 //! Spell and combat effects in the live scene (old `EffectPlayer`, `AbilityEffects`,
-//! `ShellEffects`, `ImpactEffects`, `MeleeTrails` and the construction dust).
+//! `ShellEffects`, `ImpactEffects`, `MeleeTrails` and the construction dust), and the
+//! new damage effects (D46): dust on melee hits and fires on damaged buildings.
 //!
 //! The cooked effect table (`@effects`, converted from the authored effects by the
 //! cooker) is bound to ability presentations as recipes: one per enabled layer of every
@@ -63,6 +64,12 @@ pub const SPARK_TICKS: f64 = 12.0;
 pub const MAX_BLADES: usize = 64;
 pub const BLADE_POINTS: usize = 8;
 pub const BLADE_TICKS: f64 = 3.0;
+/// Hit dust bursts kept at once (the render thread draws the nearest), each lasting
+/// [`HIT_DUST_TICKS`].
+pub const MAX_HIT_DUST: usize = 256;
+pub const HIT_DUST_TICKS: f64 = 22.0;
+/// Fire points of damaged buildings kept at once (the render thread draws the nearest).
+pub const MAX_FIRES: usize = 512;
 /// Ticks of delivery positions kept for trails.
 const TRAIL_HISTORY: usize = 64;
 /// Ticks a delivery's projectile event is remembered after it was last seen.
@@ -219,6 +226,34 @@ pub struct Spark {
     pub power: f32,
 }
 
+/// A puff of dust where a melee swing landed, blown along the swing (new, D46).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct HitDust {
+    /// Where the blow landed.
+    pub position: Vec3,
+    pub tick: f64,
+    /// The swing's direction on the ground (unit).
+    pub direction: Vec3,
+    /// Height of `position` above the ground.
+    pub lift: f32,
+    /// Size of the swinging body (1 for regular infantry).
+    pub power: f32,
+    pub seed: u32,
+}
+
+/// One fire point on a damaged building (new, D46): flames and smoke rising from it.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Fire {
+    pub entity: u32,
+    /// The base of the flames (on the roof or upper body).
+    pub position: Vec3,
+    /// Flame size in metres (0 shows nothing).
+    pub size: f32,
+    /// How badly the building burns, 0–1: denser, darker smoke.
+    pub severity: f32,
+    pub seed: u32,
+}
+
 /// One sample of a blade ribbon.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BladeSample {
@@ -236,6 +271,9 @@ pub struct EffectSnapshot {
     pub sparks: Vec<Spark>,
     /// Blade ribbons by entity.
     pub blades: Vec<(u32, Arc<[BladeSample]>)>,
+    pub hit_dust: Vec<HitDust>,
+    /// Fire points of damaged buildings in sight.
+    pub fires: Vec<Fire>,
 }
 
 #[derive(Debug, Clone)]
@@ -362,6 +400,8 @@ pub struct EffectDirector {
     trails: BTreeMap<u32, VecDeque<TrailPoint>>,
     sparks: VecDeque<Spark>,
     blades: BTreeMap<u32, (u32, Vec<BladeSample>)>,
+    hit_dust: VecDeque<HitDust>,
+    fires: Vec<Fire>,
     /// Effect models by entry name, resolved when the director is made.
     models: BTreeMap<String, ModelRef>,
 }
@@ -490,6 +530,8 @@ impl EffectDirector {
             trails: BTreeMap::new(),
             sparks: VecDeque::new(),
             blades: BTreeMap::new(),
+            hit_dust: VecDeque::new(),
+            fires: Vec::new(),
             models,
         }
     }
@@ -527,6 +569,8 @@ impl EffectDirector {
         self.trails.clear();
         self.sparks.clear();
         self.blades.clear();
+        self.hit_dust.clear();
+        self.fires.clear();
         self.last_event = 0;
         self.last_tick = 0;
     }
@@ -762,6 +806,25 @@ impl EffectDirector {
         });
     }
 
+    /// Dust where a melee blow landed. The oldest burst gives way when the budget is full.
+    pub fn hit_dust(&mut self, dust: HitDust) {
+        if self.hit_dust.len() == MAX_HIT_DUST {
+            self.hit_dust.pop_front();
+        }
+        self.hit_dust.push_back(HitDust {
+            power: dust.power.clamp(0.6, 2.5),
+            ..dust
+        });
+    }
+
+    /// The fire points burning this tick (replacing the previous tick's), at most
+    /// [`MAX_FIRES`].
+    pub fn burn(&mut self, fires: impl IntoIterator<Item = Fire>) {
+        self.fires.clear();
+        self.fires
+            .extend(fires.into_iter().filter(|f| f.size > 0.0).take(MAX_FIRES));
+    }
+
     /// A blade sample of `entity` swinging strike `strike` (old `MeleeTrails.sample`).
     pub fn blade(&mut self, entity: u32, strike: u32, sample: BladeSample) {
         if !self.blades.contains_key(&entity) && self.blades.len() >= MAX_BLADES {
@@ -919,6 +982,8 @@ impl EffectDirector {
             points.retain(|p| now - p.tick < BLADE_TICKS);
             !points.is_empty()
         });
+        self.hit_dust
+            .retain(|d| now >= d.tick && now - d.tick < HIT_DUST_TICKS);
         EffectSnapshot {
             tick,
             cues: self.cues.iter().map(|c| c.view.clone()).collect(),
@@ -928,6 +993,8 @@ impl EffectDirector {
                 .iter()
                 .map(|(&id, (_, points))| (id, Arc::from(points.as_slice())))
                 .collect(),
+            hit_dust: self.hit_dust.iter().copied().collect(),
+            fires: self.fires.clone(),
         }
     }
 

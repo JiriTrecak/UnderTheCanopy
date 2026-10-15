@@ -6,10 +6,15 @@
 //! else is a function of the time since the cue started, so the picture is the same at any
 //! frame rate. Parts are grouped by geometry, blend and texture, so the effects cost one
 //! draw per group in view.
+//!
+//! The damage effects (D46) come after every cue, so spells always have the budgets
+//! first: the nearest [`DRAWN_FIRES`] fire points and [`DRAWN_HIT_DUST`] dust bursts to the
+//! eye, within [`DAMAGE_PARTS`] parts, and one flickering light for the worst fire near the
+//! eye when a light is left.
 
 use super::{
-    BLADE_TICKS, CueView, EffectSnapshot, Flight, SPARK_TICKS, TrailPoint, seconds_ticks,
-    tick_seconds,
+    BLADE_TICKS, CueView, EffectSnapshot, Fire, Flight, HIT_DUST_TICKS, HitDust, SPARK_TICKS,
+    TrailPoint, seconds_ticks, tick_seconds,
 };
 use canopy_assets::{
     CookedCueMotion, CookedPulse, Easing, EffectBlend, EffectLayer, EffectTable, FlipbookPlay,
@@ -25,6 +30,22 @@ use canopy_render::{
 };
 use glam::{EulerRot, Mat4, Quat, Vec3};
 use std::{collections::BTreeMap, f32::consts::TAU, sync::Arc};
+
+/// Fire points drawn at once (the nearest to the eye), each a flame and a smoke emitter.
+pub const DRAWN_FIRES: usize = 40;
+pub const FLAME_PARTS: u32 = 16;
+pub const SMOKE_PARTS: u32 = 12;
+/// Hit dust bursts drawn at once (the nearest to the eye).
+pub const DRAWN_HIT_DUST: usize = 64;
+pub const HIT_DUST_PARTS: u32 = 14;
+/// Parts the damage effects may use together, after every cue.
+pub const DAMAGE_PARTS: usize = 2048;
+/// A fire this bad (and worse) may light its surroundings.
+pub const FIRE_LIGHT_SEVERITY: f32 = 0.6;
+/// Wind that leans smoke (world x, z per second of rise), the same for every fire.
+const SMOKE_WIND: [f32; 2] = [0.55, 0.3];
+/// The repeat of the fires' clock, seconds (keeps `f32` precise; one cycle every hour).
+const FIRE_CLOCK: f64 = 3600.0;
 
 /// Spin, scale and opacity of a cue at `age` seconds (old `sampleCueMotion`).
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -135,6 +156,15 @@ pub fn cue_time(table: &EffectTable, cue: &CueView, tick: f64) -> Option<CueTime
     })
 }
 
+/// Keeps the `n` nearest of `(distance, index)` pairs, nearest first.
+fn keep_nearest(pairs: &mut Vec<(f32, u32)>, n: usize) {
+    if pairs.len() > n {
+        pairs.select_nth_unstable_by(n, |a, b| a.0.total_cmp(&b.0));
+        pairs.truncate(n);
+    }
+    pairs.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+}
+
 /// Visual-only phase of a seed (old `cast · 0.7` radians), wrapped.
 fn phase(seed: u32) -> f32 {
     (f64::from(seed) * 0.7).rem_euclid(std::f64::consts::TAU) as f32
@@ -172,6 +202,12 @@ pub struct EffectEvaluator {
     /// Texture index by effect, then layer.
     layer_textures: Vec<Vec<Option<u32>>>,
     buckets: BTreeMap<(Geometry, Blend, u32), Vec<(f32, u32)>>,
+    /// Parts pushed this frame.
+    pushed: usize,
+    /// Flame parts: drawn after every bucket, so smoke never dims the fire under it.
+    flames: Vec<u32>,
+    /// Scratch: damage effects by distance to the eye.
+    nearest: Vec<(f32, u32)>,
 }
 
 /// Blends a cue's positions between two snapshots.
@@ -219,6 +255,9 @@ impl EffectEvaluator {
             textures,
             layer_textures,
             buckets: BTreeMap::new(),
+            pushed: 0,
+            flames: Vec::new(),
+            nearest: Vec::new(),
         }
     }
 
@@ -248,6 +287,8 @@ impl EffectEvaluator {
     ) {
         let _span = tracing::trace_span!("effects_frame").entered();
         out.clear();
+        self.pushed = 0;
+        self.flames.clear();
         for bucket in self.buckets.values_mut() {
             bucket.clear();
         }
@@ -304,6 +345,7 @@ impl EffectEvaluator {
                 }
             }
         }
+        self.damage(b, tick, eye, out);
         // Buckets become contiguous draws.
         for (&(geometry, blend, texture), parts) in &mut self.buckets {
             if parts.is_empty() {
@@ -327,6 +369,19 @@ impl EffectEvaluator {
                     count,
                 });
             }
+        }
+        let first = out.parts.len() as u32;
+        let room = MAX_PARTS.saturating_sub(out.parts.len());
+        out.parts.extend(self.flames.iter().take(room));
+        let count = out.parts.len() as u32 - first;
+        if count > 0 {
+            out.draws.push(EffectDraw {
+                geometry: Geometry::Quad,
+                blend: Blend::Additive,
+                texture: None,
+                first,
+                count,
+            });
         }
     }
 
@@ -353,12 +408,140 @@ impl EffectEvaluator {
             ))
         });
         out.emitters.push(emitter);
+        self.pushed += count.min(MAX_EMITTER_PARTS) as usize;
         let bucket = self
             .buckets
             .entry((geometry, blend, texture.unwrap_or(u32::MAX)))
             .or_default();
         for part in 0..count.min(MAX_EMITTER_PARTS) {
             bucket.push((depth, (index << 8) | part));
+        }
+    }
+
+    /// Fires of damaged buildings and dust of melee hits (D46), nearest to the eye first,
+    /// within what the cues left of the budgets.
+    fn damage(&mut self, b: &EffectSnapshot, tick: f64, eye: Option<Vec3>, out: &mut EffectFrame) {
+        let _span = tracing::trace_span!("damage_effects").entered();
+        let mut room = DAMAGE_PARTS.min(MAX_PARTS.saturating_sub(self.pushed));
+        let distance = |p: Vec3| eye.map_or(0.0, |eye| eye.distance_squared(p));
+        // Dust first: a burst lasts half a second, fires stay.
+        let dust: Vec<HitDust> = {
+            let nearest = &mut self.nearest;
+            nearest.clear();
+            nearest.extend(b.hit_dust.iter().enumerate().filter_map(|(i, d)| {
+                let age = tick - d.tick;
+                (0.0..HIT_DUST_TICKS)
+                    .contains(&age)
+                    .then(|| (distance(d.position), i as u32))
+            }));
+            keep_nearest(nearest, DRAWN_HIT_DUST);
+            nearest
+                .iter()
+                .map(|&(_, i)| b.hit_dust[i as usize])
+                .collect()
+        };
+        for d in dust {
+            if room < HIT_DUST_PARTS as usize {
+                break;
+            }
+            let age = tick_seconds(tick - d.tick) as f32;
+            let e = Emitter {
+                position: v4(d.position, 0.0),
+                rotation: [0.0, 0.0, 0.0, 1.0],
+                color: [0.5, 0.4, 0.28, 0.8],
+                accent: [0.0, 0.0, 0.0, d.power],
+                shape: [age, tick_seconds(HIT_DUST_TICKS) as f32, d.lift, 0.0],
+                ints: [kind::DUST, flag::NORMAL, HIT_DUST_PARTS, d.seed],
+                e0: v4(d.direction, 0.0),
+                ..Emitter::default()
+            };
+            self.push(
+                out,
+                e,
+                HIT_DUST_PARTS,
+                Geometry::Quad,
+                Blend::Normal,
+                None,
+                eye,
+            );
+            room -= HIT_DUST_PARTS as usize;
+        }
+        let fires: Vec<Fire> = {
+            let nearest = &mut self.nearest;
+            nearest.clear();
+            nearest.extend(
+                b.fires
+                    .iter()
+                    .enumerate()
+                    .map(|(i, f)| (distance(f.position), i as u32)),
+            );
+            keep_nearest(nearest, DRAWN_FIRES);
+            nearest.iter().map(|&(_, i)| b.fires[i as usize]).collect()
+        };
+        let time = (tick_seconds(tick) % FIRE_CLOCK) as f32;
+        let mut light: Option<Fire> = None;
+        for f in fires {
+            if room < (FLAME_PARTS + SMOKE_PARTS) as usize {
+                break;
+            }
+            let base = Emitter {
+                position: v4(f.position, 0.0),
+                rotation: [0.0, 0.0, 0.0, 1.0],
+                ..Emitter::default()
+            };
+            if out.emitters.len() + 2 > MAX_EMITTERS {
+                break;
+            }
+            let index = out.emitters.len() as u32;
+            out.emitters.push(Emitter {
+                color: [1.0, 1.0, 1.0, 0.85 + 0.15 * f.severity],
+                accent: [0.0, 0.0, 0.0, f.size],
+                shape: [time, f.severity, 0.0, 0.0],
+                ints: [kind::FLAME, 0, FLAME_PARTS, f.seed],
+                ..base
+            });
+            self.pushed += FLAME_PARTS as usize;
+            self.flames
+                .extend((0..FLAME_PARTS).map(|part| (index << 8) | part));
+            // Thin grey smoke at first, dense and near black when the building is about
+            // to fall.
+            let dark = 0.14 - 0.11 * f.severity;
+            let thin = dark + 0.1;
+            self.push(
+                out,
+                Emitter {
+                    color: [dark, dark * 0.95, dark * 0.9, 0.5 + 0.5 * f.severity],
+                    accent: [thin, thin, thin, f.size],
+                    shape: [time, f.severity, SMOKE_WIND[0], SMOKE_WIND[1]],
+                    ints: [kind::SMOKE, flag::NORMAL, SMOKE_PARTS, f.seed ^ 0x5bd1_e995],
+                    ..base
+                },
+                SMOKE_PARTS,
+                Geometry::Quad,
+                Blend::Normal,
+                None,
+                eye,
+            );
+            room -= (FLAME_PARTS + SMOKE_PARTS) as usize;
+            if f.severity >= FIRE_LIGHT_SEVERITY && light.is_none_or(|l| f.severity > l.severity) {
+                light = Some(f);
+            }
+        }
+        if let Some(f) = light
+            && out.lights.len() < MAX_EFFECT_LIGHTS
+        {
+            // Two incommensurate waves and the seed: a flicker that never visibly repeats.
+            let phase = (f.seed % 1000) as f32 * 0.01;
+            let flicker = 0.78
+                + 0.14 * (time * 11.0 + phase).sin()
+                + 0.08 * (time * 23.7 + phase * 2.3).sin();
+            let strength = 9.0 * f.severity * flicker;
+            out.lights.push(PointLight {
+                position: (f.position + Vec3::Y * (0.6 + f.size)).to_array(),
+                range: 5.0 + f.size * 4.0,
+                color: [strength, strength * 0.48, strength * 0.16],
+                pad: 0.0,
+            });
         }
     }
 

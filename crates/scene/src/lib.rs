@@ -5,6 +5,7 @@
 //! ([`interpolate`]).
 
 pub mod animation;
+pub mod damage;
 pub mod effects;
 pub mod fog;
 pub mod interpolate;

@@ -21,13 +21,20 @@
 //!   play their hit, fall and decay clips at 1× from the felling ticks, then disappear.
 //! - **Missiles and shells** fly from the shooter's projectile socket (or 1.5 m above its
 //!   floor) to the target along the effect's arc, between launch and impact.
+//!
+//! New (D46): a melee blow that takes health throws a puff of dust along the swing, and
+//! damaged buildings in sight burn ([`crate::damage`]).
 
 use crate::{
     animation::{
         CONTACT, CastTimeline, Poses, TICK_SECONDS, UnitAnimation, UnitInputs, attack_phase,
     },
-    effects::{BladeSample, EffectDirector, EffectScene, EffectSnapshot, ModelRef, Play, Spark},
+    damage::{Damaged, Fires},
+    effects::{
+        BladeSample, EffectDirector, EffectScene, EffectSnapshot, HitDust, ModelRef, Play, Spark,
+    },
     models::{ModelCatalog, ModelInfo},
+    obstruction::Hull,
 };
 use canopy_assets::{Matrix3x4, Pack};
 use canopy_content::map::UtcMap;
@@ -438,6 +445,21 @@ pub struct Presenter {
     missile_poses: BTreeMap<u32, (Vec3, Vec3)>,
     /// Icon assets of item definitions.
     item_icons: BTreeMap<canopy_sim::catalog::Def, String>,
+    /// Fires of damaged buildings.
+    fires: Fires,
+    /// Solid meshes of burning buildings' models, by model (fire spots sit on them).
+    hulls: BTreeMap<u32, Option<Arc<Hull>>>,
+    /// The tick presented last (melee blows landed since then throw dust).
+    last_tick: Option<u32>,
+}
+
+/// A melee blow that lands this tick.
+#[derive(Debug, Clone, Copy)]
+struct Blow {
+    /// The striker's facing on the ground (unit).
+    direction: Vec3,
+    power: f32,
+    seed: u32,
 }
 
 fn yaw(millidegrees: i32) -> f32 {
@@ -598,6 +620,9 @@ impl Presenter {
                 .filter(|d| d.kind == Kind::Item)
                 .filter_map(|d| Some((world.catalog().find(d.id.as_str())?, d.icon.to_string())))
                 .collect(),
+            fires: Fires::default(),
+            hulls: BTreeMap::new(),
+            last_tick: None,
         };
         presenter.preload(world);
         presenter
@@ -790,6 +815,38 @@ impl Presenter {
                     .or_insert_with(|| cells(a.public.position));
             }
         }
+        // Melee blows landed since the last presentation, by target (a view of tick `t`
+        // shows the steps before `t`, so a blow at its impact tick shows one tick later):
+        // each throws dust along the swing when it takes health.
+        let since = self
+            .last_tick
+            .filter(|&t| t < tick)
+            .unwrap_or(tick.saturating_sub(1));
+        let mut blows: BTreeMap<EntityId, Vec<Blow>> = BTreeMap::new();
+        {
+            let senses = world.senses();
+            for a in view.entities.iter().filter(|a| !a.remembered) {
+                if let Some(attack) = a.combat.as_ref().and_then(|c| c.attack.as_ref())
+                    && attack.released
+                    && attack.impact >= since
+                    && attack.impact < tick
+                    && let Some(target) = attack.target
+                    && senses.combat.weapon(a.definition()).is_some_and(|w| {
+                        matches!(w.delivery, canopy_sim::combat::rules::Delivery::Melee)
+                    })
+                {
+                    let d = catalog.get(a.definition());
+                    let facing = yaw(a.public.rotation);
+                    let scale = d.model_scale.unwrap_or(1.0) as f32;
+                    blows.entry(target).or_default().push(Blow {
+                        direction: Vec3::new(facing.sin(), 0.0, facing.cos()),
+                        power: scale * if d.is_hero() { 1.2 } else { 1.0 },
+                        seed: a.id().0.wrapping_mul(0x9e37_79b1) ^ attack.started,
+                    });
+                }
+            }
+        }
+        let mut damaged: Vec<Damaged> = Vec::new();
         let mut posed: BTreeMap<u32, Posed> = BTreeMap::new();
         let mut bodies: Vec<Body> = Vec::new();
         let mut health: BTreeMap<EntityId, u32> = BTreeMap::new();
@@ -857,6 +914,33 @@ impl Presenter {
                         angle,
                         power: if d.is_hero() { 1.4 } else { 1.0 },
                     });
+                    // Dust where each melee blow landed: on the struck body's near side,
+                    // about waist high, blown along the striker's swing.
+                    if let Some(blows) = blows.get(&id) {
+                        let [radius, height] =
+                            Self::body(d, asset.health_height, visual_scale as f32, &info, scale);
+                        let lift = if d.kind == Kind::Building {
+                            0.9
+                        } else {
+                            (height * 0.35).clamp(0.4, 1.6)
+                        };
+                        for blow in blows {
+                            // At the body's edge facing the striker.
+                            let near = if d.kind == Kind::Building {
+                                radius * 0.8
+                            } else {
+                                radius * 0.9
+                            };
+                            self.effects.hit_dust(HitDust {
+                                position: position - blow.direction * near + Vec3::Y * lift,
+                                tick: f64::from(tick),
+                                direction: blow.direction,
+                                lift,
+                                power: blow.power,
+                                seed: blow.seed,
+                            });
+                        }
+                    }
                 }
                 health.insert(id, hp);
             }
@@ -1150,6 +1234,30 @@ impl Presenter {
                         scale,
                     ));
                     hide = !show_body;
+                    // Built buildings in sight burn when damaged (deposits and mines do not).
+                    let max_hp = e
+                        .combat
+                        .as_ref()
+                        .map(|c| c.stats.max_hp)
+                        .filter(|&m| m > 0)
+                        .or_else(|| d.body.as_ref().map(|b| b.max_hp));
+                    if e.public.construction.is_none()
+                        && e.public.resource.is_none()
+                        && !e.remembered
+                        && let (Some(hp), Some(max_hp)) = (e.public.hp, max_hp)
+                        && hp > 0
+                        && max_hp > 0
+                        && !info.missing
+                    {
+                        damaged.push(Damaged {
+                            entity: id.0,
+                            model,
+                            health: hp as f32 / max_hp as f32,
+                            position,
+                            rotation: actor.rotation,
+                            scale,
+                        });
+                    }
                 }
                 _ => {}
             }
@@ -1220,6 +1328,23 @@ impl Presenter {
         self.flights(catalog, view, &by_id, &mut actors, &mut counts);
 
         self.health = health;
+        self.last_tick = Some(tick);
+        let fires = {
+            let (catalog, pack, hulls) = (&self.catalog, self.pack.as_deref(), &mut self.hulls);
+            self.fires.update(&damaged, |model| {
+                let info = catalog.get(model);
+                let hull = hulls
+                    .entry(model)
+                    .or_insert_with(|| pack.and_then(|p| Hull::of(p, &info.name)).map(Arc::new))
+                    .clone();
+                (
+                    Vec3::from_array(info.rest_min),
+                    Vec3::from_array(info.rest_max),
+                    hull,
+                )
+            })
+        };
+        self.effects.burn(fires);
         let effects_dust = std::mem::take(&mut self.dust);
         self.dust = effects_dust
             .into_iter()

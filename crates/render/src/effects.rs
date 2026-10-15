@@ -35,6 +35,12 @@ pub mod kind {
     pub const MISSILE: u32 = 7;
     pub const WAVEFRONT: u32 = 8;
     pub const SPARK: u32 = 9;
+    /// Flames of a burning building (D46).
+    pub const FLAME: u32 = 10;
+    /// Smoke over a burning building (D46).
+    pub const SMOKE: u32 = 11;
+    /// Dust of a melee hit (D46).
+    pub const DUST: u32 = 12;
 }
 
 /// Emitter flags (`ints[1]`), mirroring `F_*` in effects.wgsl.

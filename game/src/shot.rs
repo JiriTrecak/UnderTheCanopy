@@ -52,6 +52,39 @@ fn play_effects(options: &Options, loaded: &world::Loaded, game: &mut world::Mat
     Ok(())
 }
 
+/// `--damage`: sets every built building's health to the listed shares in turn (by entity
+/// id), so fires can be reviewed at chosen levels. A dev tool: it edits the match state.
+fn apply_damage(options: &Options, game: &mut world::Match) {
+    use canopy_content::game::Kind;
+    if options.damage.is_empty() {
+        return;
+    }
+    let world = &mut game.world;
+    let catalog = world.catalog();
+    let state = world.state();
+    let targets: Vec<(canopy_sim::entity::EntityId, u32)> = state
+        .entities
+        .iter()
+        .filter(|e| e.construction.is_none() && e.resource.is_none())
+        .filter(|e| e.hp.is_some_and(|hp| hp > 0))
+        .filter(|e| catalog.get(e.definition).kind == Kind::Building)
+        .map(|e| {
+            let research = canopy_sim::stats::research(state, e.owner);
+            (
+                e.id,
+                canopy_sim::stats::Stats::of(catalog, e, research).max_hp,
+            )
+        })
+        .collect();
+    let state = world.state_mut();
+    for (i, (id, max_hp)) in targets.into_iter().enumerate() {
+        let share = options.damage[i % options.damage.len()] / 100.0;
+        if let Some(e) = state.entities.get_mut(id) {
+            e.hp = Some(((max_hp as f32 * share).round() as u32).max(1));
+        }
+    }
+}
+
 pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Result<()> {
     if options.play || options.observe {
         return crate::play::capture::run(
@@ -85,6 +118,7 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
         .map_or(sim::Seat::Observer, sim::Seat::Player);
     if options.tick == 0 {
         play_effects(options, &loaded, &mut game)?;
+        apply_damage(options, &mut game);
     }
     let (mut newest, _) = sim::present(&game.world, &mut game.presenter, seat);
     let mut previous = None;
@@ -92,6 +126,7 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
     while game.world.tick() < options.tick {
         if game.world.tick() + 1 == options.tick {
             play_effects(options, &loaded, &mut game)?;
+            apply_damage(options, &mut game);
         }
         let Some(advanced) = sim::advance(
             &mut game.world,
