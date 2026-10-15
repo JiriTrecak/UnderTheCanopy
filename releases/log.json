@@ -3,12 +3,21 @@
   "unreleased": {
     "added": [],
     "improved": [],
-    "fixed": [
-      "The game no longer eats all memory and freezes the Mac while its window is minimised, hidden or covered."
-    ],
+    "fixed": [],
     "knownIssues": []
   },
   "releases": [
+    {
+      "added": [],
+      "improved": [],
+      "fixed": [
+        "The game no longer eats all memory and freezes the Mac while its window is minimised, hidden or covered."
+      ],
+      "knownIssues": [],
+      "version": "0.3.3",
+      "publishedAt": "2026-10-15T20:10:14.269Z",
+      "title": "No more runaway memory"
+    },
     {
       "added": [
         "A small graph button next to Menu opens the debug overlay (frame rate, timings and match tools), so it no longer needs F9.",
