@@ -22,7 +22,7 @@ Evidence names a test (`play::tests::…`, module tests), a capture (`docs/captu
 | Orders and command card | 17 | 0 | 0 | 0 | 0 |
 | Building | 6 | 0 | 0 | 0 | 0 |
 | Economy feedback | 10 | 0 | 0 | 0 | 0 |
-| Heroes, items and spells UI | 12 | 1 | 0 | 0 | 0 |
+| Heroes, items and spells UI | 13 | 0 | 0 | 0 | 0 |
 | Combat feedback | 7 | 0 | 0 | 0 | 0 |
 | Fog and minimap | 8 | 1 | 0 | 0 | 0 |
 | HUD panels and tooltips | 15 | 0 | 0 | 0 | 1 |
@@ -35,9 +35,9 @@ Evidence names a test (`play::tests::…`, module tests), a capture (`docs/captu
 | Audio | 4 | 0 | 0 | 0 | 0 |
 | Visuals | 19 | 1 | 0 | 4 | 0 |
 | Debug tools | 2 | 1 | 0 | 0 | 0 |
-| **Total** | **195** | **8** | **0** | **9** | **8** |
+| **Total** | **196** | **7** | **0** | **9** | **8** |
 
-What a player notices first that is still open: spell aim drawn as rings instead of the old filled outline. The rest are small. Owners and next steps are in [What remains](#what-remains).
+Nothing a player notices first is still open; the remaining rows are small. Owners and next steps are in [What remains](#what-remains).
 
 ## Match flow
 
@@ -146,7 +146,7 @@ What a player notices first that is still open: spell aim drawn as rings instead
 | Learn abilities from the "New spell available" banner menu, returns to the root | `learnAbility` | done | `the_hero_learns_from_the_banner_menu_and_casts_from_the_bottom_row` |
 | Cast from the bottom row: mana cost, cooldown sweep and seconds, reasons, rank text | `castAbility` | done | same test |
 | Autocast: highlighted, right-click toggles, tooltip note | `alternate` | done | `Play::alternate` |
-| **Spell aim at the cursor: area, range ring, valid tint** | `abilityTarget.ts` | partial (added in this audit) | `Play::aim`, `world_ui_input` (ground rings; the hero test checks it). Gap: drawn as rings (a line spell as a chain of rings) rather than the old filled outline |
+| **Spell aim at the cursor: area, range ring, valid tint** | `abilityTarget.ts` | done | `Play::aim` → `world_ui::AimMark`: the old filled outline (disc, or a line delivery's rectangle) with its edge and the dashed range ring, drawn over everything in the valid or refused colours; the hero test checks the aim; capture `m4-play/spell-aim-line` |
 | Inventory 2 × 2: charges, cooldown seconds, click use, right-click drop, Numpad keys | `inventoryCard` | done | `Hud::inventory` |
 | Inventory tooltip: tier, charges remaining, cooldown, "Equipped. Right-click to drop." | `inventoryCard` tooltip | done (completed in this audit) | `Hud::inventory` |
 | **Item status badges in the selection panel (aura / active / rescue, modifiers, time left)** | `itemStatusCard` | done (added in this audit) | `Hud::statuses`, `hud::modifier_text`, `hud.json` `statuses` |
@@ -363,6 +363,5 @@ The old game showed its performance window in the HUD unless the profiler was sw
 | Gap | Owner / next step |
 |---|---|
 | Third-person boom against scenery and buildings; first-person body shadow | game + renderer: a ray test against static instances; an actor flag "no camera draw" that keeps the shadow |
-| Spell aim drawn as the old filled outline | world UI: an aim primitive in `WorldUiInput` (the game already computes `Aim`) |
 | Debug overlay: navigation overlays | game (`play/debug.rs`) |
 | Shadows "filtered" mode | Jiri (D41) |

@@ -55,6 +55,20 @@ pub struct PlacementMark {
     pub entrance: [f32; 2],
 }
 
+/// A spell aimed at the cursor (old `AbilityTarget`): its area (a disc at the point, or
+/// a line from the caster towards it), the cast range around the caster and whether the
+/// aim is valid.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct AimMark {
+    pub origin: [f32; 2],
+    pub point: [f32; 2],
+    pub radius: f32,
+    /// A line delivery's length and half width.
+    pub line: Option<(f32, f32)>,
+    pub range: f32,
+    pub valid: bool,
+}
+
 /// What the player has selected and how the world UI is set; the game fills it.
 #[derive(Debug, Clone, PartialEq)]
 pub struct WorldUiInput {
@@ -72,6 +86,7 @@ pub struct WorldUiInput {
     pub progress_bars: bool,
     pub markers: Vec<GroundMarker>,
     pub placement: Option<PlacementMark>,
+    pub aim: Option<AimMark>,
 }
 
 impl Default for WorldUiInput {
@@ -85,6 +100,7 @@ impl Default for WorldUiInput {
             progress_bars: true,
             markers: Vec::new(),
             placement: None,
+            aim: None,
         }
     }
 }
@@ -594,6 +610,9 @@ impl WorldUi {
         for m in &input.markers {
             marker(out, m, field, camera, size);
         }
+        if let Some(a) = &input.aim {
+            aim(out, a, field, camera, size, input.scale);
+        }
         // Bars, badges and labels, farthest first so nearer ones draw on top.
         let mut order: Vec<(f32, usize)> = bodies
             .iter()
@@ -879,6 +898,131 @@ fn placement(
     );
     out.ground
         .extend_from_slice(&[v(n), v(ea), v(so), v(n), v(so), v(w)]);
+}
+
+/// The outline of a spell's area at the cursor (old `abilityOutline`): a line delivery's
+/// rectangle from the caster, else 48 points around the point.
+pub fn aim_outline(a: &AimMark) -> Vec<[f32; 2]> {
+    if let Some((length, width)) = a.line {
+        let (dx, dz) = (a.point[0] - a.origin[0], a.point[1] - a.origin[1]);
+        let n = dx.hypot(dz);
+        let (ux, uz) = if n > 0.0 {
+            (dx / n, dz / n)
+        } else {
+            (1.0, 0.0)
+        };
+        return [
+            (0.0, -width),
+            (length, -width),
+            (length, width),
+            (0.0, width),
+        ]
+        .map(|(along, across)| {
+            [
+                a.origin[0] + ux * along - uz * across,
+                a.origin[1] + uz * along + ux * across,
+            ]
+        })
+        .to_vec();
+    }
+    (0..48)
+        .map(|i| {
+            let t = i as f32 * std::f32::consts::PI / 24.0;
+            [
+                a.point[0] + t.cos() * a.radius,
+                a.point[1] + t.sin() * a.radius,
+            ]
+        })
+        .collect()
+}
+
+/// A spell aimed at the cursor (old `AbilityTarget`), drawn over everything: the area
+/// filled faintly (`#68dac9`, refused `#ef514b`) with a bright edge (`#befff0` /
+/// `#ff7770`), draped on the ground a metre at a time, and the cast range as 48 dashes
+/// around the caster (`#e8dfb0`).
+fn aim(
+    out: &mut WorldUiFrame,
+    a: &AimMark,
+    field: &dyn WaterField,
+    camera: &CameraView,
+    size: [u32; 2],
+    scale: f32,
+) {
+    let ground = |p: [f32; 2]| {
+        project(
+            camera,
+            size,
+            Vec3::new(p[0], field.walk(p[0], p[1], 0) + 0.12, p[1]),
+        )
+        .map(|q| [q.x, q.y])
+    };
+    let solid = |p: [f32; 2], color: [f32; 4]| OverlayVertex {
+        position: p,
+        color,
+        kind: [overlay::SOLID, 0, 0, 0],
+        ..Default::default()
+    };
+    let rgba = |hex: u32, alpha: f32| {
+        let [r, g, b] = linear(hex);
+        [r, g, b, alpha]
+    };
+    let line = |out: &mut WorldUiFrame, p: [f32; 2], q: [f32; 2], color: [f32; 4]| {
+        let (dx, dy) = (q[0] - p[0], q[1] - p[1]);
+        let n = dx.hypot(dy);
+        if n <= 1e-3 {
+            return;
+        }
+        let half = 0.75 * scale;
+        let (sx, sy) = (-dy / n * half, dx / n * half);
+        out.quad([
+            solid([p[0] + sx, p[1] + sy], color),
+            solid([q[0] + sx, q[1] + sy], color),
+            solid([q[0] - sx, q[1] - sy], color),
+            solid([p[0] - sx, p[1] - sy], color),
+        ]);
+    };
+    let (fill, edge) = if a.valid {
+        (rgba(0x68dac9, 0.16), rgba(0xbefff0, 0.9))
+    } else {
+        (rgba(0xef514b, 0.16), rgba(0xff7770, 0.9))
+    };
+    let outline = aim_outline(a);
+    let n = outline.len() as f32;
+    let centre = outline
+        .iter()
+        .fold([0.0, 0.0], |c, p| [c[0] + p[0] / n, c[1] + p[1] / n]);
+    let centre_px = ground(centre);
+    for (i, &p) in outline.iter().enumerate() {
+        let q = outline[(i + 1) % outline.len()];
+        let steps = (q[0] - p[0]).hypot(q[1] - p[1]).ceil().max(1.0) as usize;
+        let at = |j: usize| {
+            let t = j as f32 / steps as f32;
+            [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]
+        };
+        for j in 0..steps {
+            let (Some(u), Some(v)) = (ground(at(j)), ground(at(j + 1))) else {
+                continue;
+            };
+            if let Some(c) = centre_px {
+                out.overlay
+                    .extend_from_slice(&[solid(c, fill), solid(u, fill), solid(v, fill)]);
+            }
+            line(out, u, v, edge);
+        }
+    }
+    let range = rgba(0xe8dfb0, 0.35);
+    for i in (0..96).step_by(2) {
+        let [t0, t1] = [i, i + 1].map(|k| k as f32 * std::f32::consts::PI / 48.0);
+        let around = |t: f32| {
+            [
+                a.origin[0] + t.cos() * a.range,
+                a.origin[1] + t.sin() * a.range,
+            ]
+        };
+        if let (Some(u), Some(v)) = (ground(around(t0)), ground(around(t1))) {
+            line(out, u, v, range);
+        }
+    }
 }
 
 /// An order marker: a thin ring on the ground drawn over everything (old command
@@ -1178,6 +1322,30 @@ pub fn minimap_frame(
 mod tests {
     use super::*;
     use crate::live::Body;
+
+    #[test]
+    fn aim_outlines_follow_the_old_shapes() {
+        let mut aim = AimMark {
+            origin: [10.0, 10.0],
+            point: [14.0, 10.0],
+            radius: 2.0,
+            line: None,
+            range: 8.0,
+            valid: true,
+        };
+        // A disc: 48 points at the radius around the point.
+        let disc = aim_outline(&aim);
+        assert_eq!(disc.len(), 48);
+        for p in &disc {
+            assert!(((p[0] - 14.0).hypot(p[1] - 10.0) - 2.0).abs() < 1e-4);
+        }
+        // A line: the rectangle from the caster towards the point, half width across.
+        aim.line = Some((6.0, 1.0));
+        assert_eq!(
+            aim_outline(&aim),
+            vec![[10.0, 9.0], [16.0, 9.0], [16.0, 11.0], [10.0, 11.0]]
+        );
+    }
 
     fn body(hp: u32, max: u32, building: bool) -> Body {
         Body {
