@@ -39,6 +39,9 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Test
         run: cargo test --workspace
+      # Gallery images are LFS pointers here: their hashes and sizes are checked locally.
+      - name: Release log
+        run: cargo run -q -p canopy-release-tool -- check --allow-lfs-pointers
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-packager
