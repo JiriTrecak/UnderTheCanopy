@@ -879,7 +879,7 @@ impl Hud {
             let Some(cell) = ui.child(n.orders, i) else {
                 continue;
             };
-            let (verb, icon, target) = describe_order(k, order);
+            let (verb, icon, target) = describe_order(k, k.def(e), order);
             if let Some(node) = ui.find_in(cell, "icon") {
                 let key = self.image(ui, k, &icon);
                 ui.set_image(node, key);
@@ -1554,7 +1554,11 @@ fn experience(k: &Knowledge, e: &EntityView) -> Option<(f32, String, String)> {
 }
 
 /// The verb, icon and target of a queued order (old `orderQueue.ts`).
-fn describe_order(k: &Knowledge, order: &canopy_sim::orders::Order) -> (String, String, String) {
+fn describe_order(
+    k: &Knowledge,
+    caster: &canopy_content::game::Definition,
+    order: &canopy_sim::orders::Order,
+) -> (String, String, String) {
     use canopy_sim::orders::Order;
     let meta = |verb: &str| {
         k.content
@@ -1620,7 +1624,24 @@ fn describe_order(k: &Knowledge, order: &canopy_sim::orders::Order) -> (String, 
                 d.map_or("unknown".into(), |d| d.name.clone()),
             )
         }
-        Order::CastAbility { binding, .. } => ("Cast".into(), String::new(), binding.clone()),
+        // Old `orderQueue`: the spell's name and its presentation's icon, else Move's.
+        Order::CastAbility { binding, .. } => {
+            let spell = caster
+                .behaviors
+                .abilities
+                .as_ref()
+                .and_then(|a| a.bindings.iter().find(|b| b.id == *binding))
+                .and_then(|b| k.content.abilities.ability(b.ability.as_str()));
+            let icon = spell
+                .and_then(|s| k.content.abilities.presentation(s.presentation.as_str()))
+                .and_then(|p| p.icon.as_ref())
+                .map_or_else(|| meta("move").1, |i| i.to_string());
+            (
+                "Cast".into(),
+                icon,
+                spell.map_or_else(|| binding.clone(), |s| s.name.clone()),
+            )
+        }
     }
 }
 

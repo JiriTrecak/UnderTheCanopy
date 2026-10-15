@@ -826,7 +826,18 @@ fn spells(
         let ability = &k.content.abilities.abilities[usize::from(binding.ability.0)];
         let rank = cv.ranks.get(i).copied().unwrap_or(0);
         let max = ability.ranks.len() as u8;
-        let icon = command.icon.clone().unwrap_or_else(|| d.icon.clone());
+        // Old `commands`: the command's icon, else the spell's presentation's, else the
+        // caster's.
+        let icon = command
+            .icon
+            .clone()
+            .or_else(|| {
+                k.content
+                    .abilities
+                    .presentation(ability.presentation.as_str())
+                    .and_then(|p| p.icon.clone())
+            })
+            .unwrap_or_else(|| d.icon.clone());
         if let Some(levels) = &binding.learning {
             let mut c = Command::new(
                 format!("learn:{}", binding.id),

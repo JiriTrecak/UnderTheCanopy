@@ -296,7 +296,7 @@ fn library() -> Value {
     let presentations: Vec<Value> = abilities
         .iter()
         .map(|a| {
-            json!({"schemaVersion": 1, "id": a["presentation"],
+            json!({"schemaVersion": 1, "id": a["presentation"], "icon": "asset.spell-icon",
                 "animations": {"prepare": "attack", "release": "attack", "recover": "idle", "fallback": "idle"},
                 "effects": []})
         })
@@ -308,8 +308,14 @@ pub fn content() -> Arc<Content> {
     static CONTENT: OnceLock<Arc<Content>> = OnceLock::new();
     CONTENT
         .get_or_init(|| {
-            let mut folder =
-                DataFolder::new(game(), vec![image("asset.icon"), model("asset.model")]);
+            let mut folder = DataFolder::new(
+                game(),
+                vec![
+                    image("asset.icon"),
+                    image("asset.spell-icon"),
+                    model("asset.model"),
+                ],
+            );
             folder.abilities = library();
             Arc::new(
                 folder

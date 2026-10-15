@@ -618,6 +618,8 @@ fn the_hero_learns_from_the_banner_menu_and_casts_from_the_bottom_row() {
         .unwrap();
     assert_eq!(rush.reason.as_deref(), Some("No skill points available"));
     // Aiming shows the spell's area and range at the cursor (old `gameAbilityTarget`).
+    // Spells show their presentation's icon, not the caster's (old `commands`).
+    assert_eq!(cast.icon.as_str(), "asset.spell-icon");
     let smite = cast.clone();
     assert!(matches!(smite.activate, super::card::Activate::Target(_)));
     {
