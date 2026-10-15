@@ -53,7 +53,8 @@ workspace = true
 
 [package.metadata.packager]
 product-name = "Under the Canopy"
-identifier = "com.jt.canopy"
+# The old desktop app's identifier: updates replace it in place and keep its identity (D43).
+identifier = "com.jiritrecak.settlers"
 category = "StrategyGame"
 # Cooks the asset pack first. CI checkouts have no Git LFS art, so sources that are LFS
 # pointers are left out of the pack (with a warning) instead of failing the package.

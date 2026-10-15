@@ -72,3 +72,36 @@ parity-maps old="../Settlers 3 Web":
 # Which engine features the shipped data uses
 content-report:
     cargo run -q -p canopy-content --example report -- "{{justfile_directory()}}"
+
+# Releases (D43, docs/releases.md). Arguments pass through unchanged, so quoted notes and
+# titles stay whole; on Windows run `cargo run -q -p canopy-release-tool -- <command> …`.
+
+# Note a player-visible change: `just release-note --kind added|improved|fixed|knownIssues --text "…"`
+[positional-arguments]
+[unix]
+release-note *args:
+    cargo run -q -p canopy-release-tool -- note "$@"
+
+# Validate the release log and its gallery images (`--allow-lfs-pointers` where LFS is not checked out)
+[positional-arguments]
+[unix]
+release-check *args:
+    cargo run -q -p canopy-release-tool -- check "$@"
+
+# Freeze Unreleased into a version and set the app version: `just release-prepare 0.3.1 --title "…" [--milestone]`
+[positional-arguments]
+[unix]
+release-prepare *args:
+    cargo run -q -p canopy-release-tool -- prepare "$@"
+
+# Package, sign, verify and stage the prepared version for this platform under build/releases/
+[positional-arguments]
+[unix]
+release-build *args:
+    cargo run -q -p canopy-release-tool -- build "$@"
+
+# Verify a staged release and the AWS account; `--apply` uploads it and advances the feed
+[positional-arguments]
+[unix]
+release-publish *args:
+    cargo run -q -p canopy-release-tool -- publish "$@"

@@ -1,0 +1,10 @@
+{
+  "account": "533797168831",
+  "region": "eu-west-2",
+  "stack": "under-canopy-releases",
+  "ChangelogIndexUrl": "https://d3dte7yaa1v3g8.cloudfront.net/changelog.json",
+  "BucketName": "under-canopy-releases-533797168831-eu-west-2",
+  "DistributionId": "EFZHJ9U1FXOQ3",
+  "BaseUrl": "https://d3dte7yaa1v3g8.cloudfront.net",
+  "UpdateFeedUrl": "https://d3dte7yaa1v3g8.cloudfront.net/stable.json"
+}

@@ -14,12 +14,15 @@ UnderTheCanopy/
 │  ├─ scene/           simulation snapshots → render world, interpolation (M3)
 │  ├─ ui/              HUD toolkit: taffy layout, cosmic-text (M4)
 │  ├─ audio/           playback, voice limiting, effect sounds, music (M4)
-│  └─ net/             client for the existing match server protocol (M5)
+│  ├─ net/             client for the existing match server protocol (M5)
+│  ├─ release/         release log, update feed, package signatures (D43)
+│  └─ release-tool/    `just release-*`: notes, prepare, build, publish (docs/releases.md)
 ├─ game/               the executable: window, input, platform paths, screens, packaging
 ├─ content/            gameplay data (mirrored, see below)
 ├─ assets/             published asset outputs, registry, manifest and maps (mirrored)
 ├─ art/                editable masters and exported outputs, Git LFS (mirrored)
 ├─ config/             presentation settings owned here: lighting, biomes, player colours (D30)
+├─ releases/           the release log, gallery media and the release host's identifiers (D43)
 ├─ docs/               plan, decisions, design; reference/ describes the old game
 └─ tools/              repository scripts
 ```
