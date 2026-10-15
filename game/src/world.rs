@@ -177,7 +177,13 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
     let id = spec.map;
     let _span = tracing::info_span!("load_map", map = id).entered();
     let started = std::time::Instant::now();
-    let content = Arc::new(Content::load(&paths.data).map_err(|e| anyhow!("content: {e}"))?);
+    // A packaged game ships the cooked pack instead of `assets/library` (D26).
+    let content = if crate::data::is_packaged(&paths.data) {
+        Content::load_packaged(&paths.data)
+    } else {
+        Content::load(&paths.data)
+    };
+    let content = Arc::new(content.map_err(|e| anyhow!("content: {e}"))?);
     let library = map::library(&paths.data).map_err(|e| anyhow!("maps: {e}"))?;
     let file = library.iter().find(|m| m.id == id).with_context(|| {
         let ids: Vec<&str> = library.iter().map(|m| m.id.as_str()).collect();
@@ -213,8 +219,39 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
         .clone();
     let world = canopy_sim::World::new(content, &map, setup)
         .map_err(|e| anyhow!("cannot start the match: {}", e.0))?;
-    let mut scene = canopy_scene::build(&world, &map, &pack, &look)?;
-    if let Some(colors) = &spec.colors {
+    let (loaded, game) = assemble(
+        &map,
+        pack,
+        &look,
+        world,
+        session,
+        spec.colors.as_deref(),
+        spec.hour,
+    )?;
+    tracing::info!(
+        map = id,
+        biome = map.biome(),
+        players = game.world.setup().slots.len(),
+        statics = loaded.scene.world.statics.len(),
+        live_models = loaded.scene.world.actor_models.len(),
+        ms = started.elapsed().as_millis() as u64,
+        "match loaded"
+    );
+    Ok((loaded, game))
+}
+
+/// The static scene, presenter and lighting of a built world.
+fn assemble(
+    map: &map::UtcMap,
+    pack: Arc<Pack>,
+    look: &Look,
+    world: canopy_sim::World,
+    session: Session,
+    colors: Option<&[usize]>,
+    hour: Option<f32>,
+) -> Result<(Loaded, Match)> {
+    let mut scene = canopy_scene::build(&world, map, &pack, look)?;
+    if let Some(colors) = colors {
         let palette = scene.colors.clone();
         for (slot, &index) in colors.iter().enumerate() {
             if let (Some(to), Some(&from)) = (scene.colors.get_mut(slot), palette.get(index)) {
@@ -222,8 +259,8 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
             }
         }
     }
-    let presenter = scene.presenter(&world, &map, pack.clone());
-    let hour = spec.hour.unwrap_or(scene.hour);
+    let presenter = scene.presenter(&world, map, pack.clone());
+    let hour = hour.unwrap_or(scene.hour);
     let grade = &look.biome.grade;
     let lut_texture = match (&grade.daytime_lut, grade.daytime_lut_strength > 0.0) {
         (Some(entry), true) => Some(pack.texture(entry).with_context(|| entry.clone())?),
@@ -239,15 +276,6 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
         _ => None,
     };
     let environment = Environment::new(&look.lighting, &look.biome, hour, lut.as_ref());
-    tracing::info!(
-        map = id,
-        biome = map.biome(),
-        players = world.setup().slots.len(),
-        statics = scene.world.statics.len(),
-        live_models = scene.world.actor_models.len(),
-        ms = started.elapsed().as_millis() as u64,
-        "match loaded"
-    );
     Ok((
         Loaded {
             scene,
@@ -260,4 +288,111 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
             presenter,
         },
     ))
+}
+
+/// Loading steps of a match started from the menus, for the loading screen.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Stage {
+    Map,
+    World,
+    Scene,
+    Gpu,
+}
+
+impl Stage {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Map => "Reading the battlefield",
+            Self::World => "Waking the colonies",
+            Self::Scene => "Raising the canopy",
+            Self::Gpu => "Preparing terrain and forest",
+        }
+    }
+}
+
+/// A match the menus ask for.
+pub struct MatchRequest {
+    pub map: String,
+    pub setup: canopy_sim::MatchSetup,
+    /// The local player's slot; `None` to watch.
+    pub me: Option<u8>,
+    /// Continue a saved match instead of starting `setup`.
+    pub resume: Option<canopy_sim::Save>,
+    /// A networked seat (multiplayer); a local session is made otherwise.
+    pub session: Option<Session>,
+}
+
+/// A prepared match and what the game needs to know about it.
+pub struct Prepared {
+    pub loaded: Loaded,
+    pub game: Match,
+    pub map_name: String,
+    /// Bytes of the `.utcmap` file (identities for saves and multiplayer).
+    pub map_bytes: Vec<u8>,
+    /// The mission's objectives (titles for the mission HUD).
+    pub objectives: Vec<canopy_content::map::Objective>,
+}
+
+/// Builds a match on the game's loaded data (any thread): the map, the world (new or
+/// restored), its session, the static scene and the presenter. GPU uploads follow on the
+/// window thread.
+pub fn prepare(
+    paths: &Paths,
+    data: &crate::data::GameData,
+    request: MatchRequest,
+    progress: &dyn Fn(Stage, f32),
+) -> Result<Prepared> {
+    let _span = tracing::info_span!("prepare_match", map = %request.map).entered();
+    let started = std::time::Instant::now();
+    progress(Stage::Map, 0.05);
+    let entry = data
+        .map(&request.map)
+        .with_context(|| format!("no map {}", request.map))?;
+    let map_bytes = std::fs::read(&entry.file.path)
+        .with_context(|| format!("cannot read {}", entry.file.file))?;
+    let map = map::UtcMap::parse(&map_bytes, &entry.file.file)
+        .map_err(|e| anyhow!("{}: {e}", entry.file.file))?;
+    let look = Look::load(&paths.data, map.biome())?;
+    progress(Stage::World, 0.25);
+    let (world, session) = match request.resume {
+        Some(save) => {
+            let setup = save.setup.clone();
+            let world = canopy_sim::World::restore(data.content.clone(), &map, save)
+                .map_err(|e| anyhow!("cannot load the save: {}", e.0))?;
+            let session = request
+                .session
+                .unwrap_or_else(|| Session::local_from(setup, request.me, world.tick()));
+            (world, session)
+        }
+        None => {
+            let session = request
+                .session
+                .unwrap_or_else(|| Session::local(request.setup.clone(), request.me));
+            let setup = session.setup().cloned().unwrap_or(request.setup);
+            let world = canopy_sim::World::new(data.content.clone(), &map, setup)
+                .map_err(|e| anyhow!("cannot start the match: {}", e.0))?;
+            (world, session)
+        }
+    };
+    progress(Stage::Scene, 0.6);
+    let (loaded, game) = assemble(&map, data.pack.clone(), &look, world, session, None, None)?;
+    progress(Stage::Gpu, 0.85);
+    tracing::info!(
+        map = %request.map,
+        players = game.world.setup().slots.len(),
+        tick = game.world.tick(),
+        ms = started.elapsed().as_millis() as u64,
+        "match prepared"
+    );
+    Ok(Prepared {
+        loaded,
+        game,
+        map_name: entry.name.clone(),
+        map_bytes,
+        objectives: map
+            .mission
+            .as_ref()
+            .and_then(|m| m.objectives.clone())
+            .unwrap_or_default(),
+    })
 }

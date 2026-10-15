@@ -975,11 +975,13 @@ impl Ui {
             return;
         };
         let target = self.input.hover_owner.filter(|&o| {
-            self.tree
-                .node(o)
-                .tooltip
-                .as_ref()
-                .is_some_and(|t| !t.title.is_empty() || !t.body.is_empty())
+            self.tooltips
+                && self
+                    .tree
+                    .node(o)
+                    .tooltip
+                    .as_ref()
+                    .is_some_and(|t| !t.title.is_empty() || !t.body.is_empty())
         });
         if target != self.input.tip_target {
             self.input.tip_target = target;

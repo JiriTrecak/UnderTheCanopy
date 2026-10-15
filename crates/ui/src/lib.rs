@@ -65,7 +65,7 @@ pub struct ImageDesc {
     pub size: [f32; 2],
     /// Normalised texture rectangle `u0, v0, u1, v1`.
     pub uv: [f32; 4],
-    /// Texels are premultiplied by alpha (the asset pack's translucent images are).
+    /// Texels are premultiplied by alpha (the asset pack stores straight alpha).
     pub premultiplied: bool,
     /// The renderer binds this texture through an sRGB view (e.g. the pack's
     /// `Bc7RgbaUnormSrgb`), so samples arrive linear; the pass re-encodes them.
@@ -182,6 +182,8 @@ pub struct Ui {
     draw: DrawList,
     hits: Vec<paint::Hit>,
     stats: Stats,
+    /// Tooltips show (a player setting).
+    tooltips: bool,
 }
 
 impl Ui {
@@ -207,6 +209,7 @@ impl Ui {
             draw: DrawList::default(),
             hits: Vec::new(),
             stats: Stats::default(),
+            tooltips: true,
         };
         for name in ui.config.images.keys() {
             ui.images.intern(name);
@@ -317,6 +320,11 @@ impl Ui {
     /// list must reach the renderer.
     pub fn reset_glyph_atlas(&mut self) {
         self.text.atlas.reset(false);
+    }
+
+    /// Turns tooltips on or off (on by default); off hides the one showing.
+    pub fn set_tooltips(&mut self, on: bool) {
+        self.tooltips = on;
     }
 
     /// The last frame's draw list.

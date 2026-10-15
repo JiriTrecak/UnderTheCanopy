@@ -1,0 +1,49 @@
+{
+  "root": {
+    "class": "ld",
+    "children": [
+      {
+        "id": "art-view", "class": "fill",
+        "children": [
+          { "id": "art", "kind": "image", "class": "cover", "image": "menu-aftermath" },
+          { "class": "ld-frame" },
+          {
+            "id": "copy", "class": "ld-copy",
+            "children": [
+              { "id": "crest", "kind": "image", "class": "ld-crest", "visible": false },
+              { "id": "chapter", "kind": "label", "class": "ld-chapter" },
+              { "id": "title", "kind": "label", "class": "ld-title", "text": "Preparing the battlefield" },
+              { "id": "briefing", "kind": "label", "class": "ld-briefing" }
+            ]
+          },
+          {
+            "class": "ld-footer",
+            "children": [
+              { "id": "error", "kind": "label", "class": "ld-error", "visible": false },
+              { "id": "stage", "kind": "label", "class": "ld-stage" },
+              { "id": "progress", "kind": "bar", "class": "progress ld-progress", "value": 0 },
+              { "kind": "label", "class": "loading-label", "text": "Loading" },
+              { "id": "tip", "kind": "label", "class": "ld-tip" }
+            ]
+          },
+          { "id": "back", "kind": "button", "class": "ld-back", "text": "Back to menu", "action": "loading.back" }
+        ]
+      },
+      {
+        "id": "panel-view", "class": "scrim ld-panel-scrim", "visible": false,
+        "children": [
+          {
+            "class": "ld-panel",
+            "children": [
+              { "id": "title", "kind": "label", "class": "ld-panel-title", "text": "Preparing the battlefield" },
+              { "id": "stage", "kind": "label", "class": "ld-panel-stage" },
+              { "id": "progress", "kind": "bar", "class": "ld-panel-bar", "value": 0 },
+              { "id": "detail", "kind": "label", "class": "ld-panel-detail", "text": "The match starts when preparation is complete." },
+              { "id": "back", "kind": "button", "class": "ld-panel-back", "text": "Back to menu", "action": "loading.back" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

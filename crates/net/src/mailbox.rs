@@ -38,6 +38,16 @@ impl Mailbox {
         }
     }
 
+    /// Continues a match from beat `beat` (a loaded save): everything up to it counts as
+    /// committed and confirmed.
+    pub fn resume(&mut self, beat: u32) {
+        self.committed = self.committed.max(beat);
+        for (through, held) in self.slots.values_mut() {
+            *through = (*through).max(beat);
+            held.retain(|&tick, _| tick > beat);
+        }
+    }
+
     /// The last committed beat (0 before the first).
     pub fn tick(&self) -> u32 {
         self.committed

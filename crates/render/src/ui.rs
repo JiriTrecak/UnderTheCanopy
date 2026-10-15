@@ -88,12 +88,26 @@ impl UiLayer {
         self.next_id += 1;
         self.pass.set_texture(&gpu.device, id, &view);
         let mut desc = ImageDesc::new(id, meta.source_width as f32, meta.source_height as f32);
-        // The cooker premultiplies translucent images (D26); others are opaque or cut out.
-        desc.premultiplied = matches!(meta.alpha, canopy_assets::TextureAlpha::Blend);
+        // The cooker filters translucent images premultiplied but stores them straight
+        // (D26), so every pack image draws with straight alpha.
+        desc.premultiplied = false;
         desc.srgb_view = gpu_texture.format().is_srgb();
         self.textures.push(gpu_texture);
         self.images.insert(entry.to_owned(), desc);
         Ok(desc)
+    }
+
+    /// Records the UI alone over `view` (a non-sRGB view of the output), first cleared to
+    /// `clear` when given: screens without a world behind them.
+    pub fn encode_alone(
+        &mut self,
+        encoder: &mut wgpu::CommandEncoder,
+        view: &wgpu::TextureView,
+        clear: Option<wgpu::Color>,
+    ) -> u32 {
+        self.target = None;
+        let load = clear.map_or(wgpu::LoadOp::Load, wgpu::LoadOp::Clear);
+        self.record(encoder, view, load, None)
     }
 
     /// Records the UI over `output` (or the target set for this frame) and forgets the
@@ -104,9 +118,19 @@ impl UiLayer {
         output: &wgpu::TextureView,
         timestamps: Option<wgpu::RenderPassTimestampWrites<'_>>,
     ) -> u32 {
-        let pending = std::mem::take(&mut self.pending);
         let target = self.target.take();
         let view = target.as_ref().unwrap_or(output);
+        self.record(encoder, view, wgpu::LoadOp::Load, timestamps)
+    }
+
+    fn record(
+        &mut self,
+        encoder: &mut wgpu::CommandEncoder,
+        view: &wgpu::TextureView,
+        load: wgpu::LoadOp<wgpu::Color>,
+        timestamps: Option<wgpu::RenderPassTimestampWrites<'_>>,
+    ) -> u32 {
+        let pending = std::mem::take(&mut self.pending);
         let mut rp = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some(crate::graph::passes::UI),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -114,7 +138,7 @@ impl UiLayer {
                 depth_slice: None,
                 resolve_target: None,
                 ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Load,
+                    load,
                     store: wgpu::StoreOp::Store,
                 },
             })],

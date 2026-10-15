@@ -168,6 +168,8 @@ pub(crate) struct Overrides {
     pub selected: Option<usize>,
     pub count: Option<usize>,
     pub scale: Option<Option<f32>>,
+    pub opacity: Option<f32>,
+    pub shift: Option<Vec2>,
 }
 
 /// Editing state of a text field.
@@ -203,6 +205,10 @@ pub(crate) struct Node {
     pub selected: usize,
     pub count: usize,
     pub scale_override: Option<f32>,
+    /// Opacity set by the game, multiplied into the subtree's (fades).
+    pub opacity: f32,
+    /// Translation set by the game, logical pixels (animations).
+    pub shift: Vec2,
 
     pub text: Option<TextBlock>,
     /// A text field's placeholder.
@@ -680,6 +686,8 @@ impl Tree {
             selected: set.selected.unwrap_or(spec.selected),
             count: set.count.unwrap_or(spec.count),
             scale_override: set.scale.unwrap_or(None),
+            opacity: set.opacity.unwrap_or(1.0),
+            shift: set.shift.unwrap_or(Vec2::ZERO),
             text: None,
             placeholder: spec
                 .placeholder
@@ -1045,6 +1053,34 @@ impl Ui {
                 node.scale_override = scale;
                 t.layout_dirty = true;
                 t.viewport_changed = true;
+            }
+        });
+    }
+
+    /// Opacity multiplied into a subtree (0–1), for fades. Paint only.
+    pub fn set_opacity(&mut self, id: NodeId, opacity: f32) {
+        let opacity = if opacity.is_finite() {
+            opacity.clamp(0.0, 1.0)
+        } else {
+            1.0
+        };
+        self.with(id, |t, n| {
+            let node = t.node_mut(n);
+            node.set.opacity = Some(opacity);
+            node.opacity = opacity;
+        });
+    }
+
+    /// Moves a subtree by `(dx, dy)` logical pixels from where layout put it (animations).
+    /// Re-places boxes without re-running flex layout.
+    pub fn set_shift(&mut self, id: NodeId, dx: f32, dy: f32) {
+        let shift = Vec2::new(dx, dy);
+        self.with(id, |t, n| {
+            let node = t.node_mut(n);
+            if node.shift != shift {
+                node.set.shift = Some(shift);
+                node.shift = shift;
+                t.layout_dirty = true;
             }
         });
     }

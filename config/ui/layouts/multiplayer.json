@@ -1,0 +1,119 @@
+{
+  "templates": {
+    "mp-room": {
+      "kind": "button", "class": "mp-room", "action": "mp.room",
+      "children": [
+        { "id": "name", "kind": "label", "class": "sk-map-name" },
+        { "id": "map", "kind": "label", "class": "sk-map-meta" },
+        { "id": "state", "kind": "label", "class": "mp-room-state" }
+      ]
+    },
+    "mp-seat": {
+      "class": "lb-seat",
+      "children": [
+        {
+          "class": "sk-player-head",
+          "children": [
+            { "id": "badge", "kind": "label", "class": "sk-badge" },
+            {
+              "class": "sk-player-text",
+              "children": [
+                { "id": "name", "kind": "label", "class": "sk-player-name" },
+                { "id": "sub", "kind": "label", "class": "lb-seat-sub" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "root": {
+    "class": "sk",
+    "children": [
+      { "kind": "image", "class": "cover", "image": "menu-art" },
+      { "class": "sk-shade" },
+      {
+        "class": "sk-shell",
+        "children": [
+          {
+            "class": "sk-header",
+            "children": [
+              {
+                "class": "sk-heading",
+                "children": [
+                  { "kind": "label", "class": "eyebrow", "text": "Under the Canopy" },
+                  { "kind": "label", "class": "sk-title", "text": "Multiplayer" }
+                ]
+              },
+              { "kind": "button", "class": "sk-ghost", "text": "← Main menu", "action": "mp.back" }
+            ]
+          },
+          {
+            "class": "mp-tabs",
+            "children": [
+              { "id": "find", "kind": "button", "class": "mp-tab", "text": "Find a lobby", "action": "mp.find", "checked": true },
+              { "id": "create", "kind": "button", "class": "mp-tab", "text": "Create a lobby", "action": "mp.create" }
+            ]
+          },
+          {
+            "class": "sk-layout",
+            "children": [
+              {
+                "class": "sk-col",
+                "children": [
+                  {
+                    "class": "sk-section-row",
+                    "children": [
+                      { "id": "list-title", "kind": "label", "class": "sk-section", "text": "Lobbies" },
+                      { "id": "refresh", "kind": "button", "class": "mp-link", "text": "Refresh", "action": "mp.refresh" }
+                    ]
+                  },
+                  { "id": "rooms", "class": "sk-maps", "repeat": "mp-room" },
+                  { "id": "maps", "class": "sk-maps", "repeat": "sk-map", "visible": false },
+                  { "id": "empty", "kind": "label", "class": "sk-hint", "text": "Looking for lobbies…" }
+                ]
+              },
+              {
+                "class": "sk-col sk-col-mid",
+                "children": [
+                  {
+                    "id": "preview", "class": "sk-preview",
+                    "children": [
+                      { "id": "image", "kind": "image", "class": "sk-preview-image" },
+                      { "id": "empty", "kind": "label", "class": "sk-preview-empty", "text": "Choose your battlefield" },
+                      { "id": "markers", "class": "fill", "style": { "pointer-events": "none" }, "repeat": "sk-marker" }
+                    ]
+                  },
+                  { "kind": "label", "class": "sk-legend", "text": "Numbered rings mark the starting positions" },
+                  { "id": "title", "kind": "label", "class": "sk-map-title" },
+                  { "id": "meta", "kind": "label", "class": "sk-meta" }
+                ]
+              },
+              {
+                "class": "sk-col",
+                "children": [
+                  { "kind": "label", "class": "mp-caption", "text": "Your player name" },
+                  { "id": "name", "kind": "text_field", "class": "mp-field", "placeholder": "player", "max_length": 32, "action": "mp.name" },
+                  { "id": "slots-caption", "kind": "label", "class": "mp-caption", "text": "Player slots", "visible": false },
+                  { "id": "slots", "kind": "dropdown", "class": "sk-select", "action": "mp.slots", "options": ["2"], "visible": false },
+                  { "id": "roster-caption", "kind": "label", "class": "mp-caption", "text": "Players" },
+                  { "id": "roster", "class": "mp-roster", "repeat": "mp-seat" },
+                  { "id": "hint", "kind": "label", "class": "sk-hint" },
+                  { "id": "status", "kind": "label", "class": "mp-status" },
+                  { "id": "server", "kind": "label", "class": "mp-server" }
+                ]
+              }
+            ]
+          },
+          {
+            "class": "sk-footer",
+            "children": [
+              { "id": "footnote", "kind": "label", "class": "sk-footnote" },
+              { "id": "go", "kind": "button", "class": "sk-launch", "text": "Join lobby", "action": "mp.go" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

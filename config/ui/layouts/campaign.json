@@ -1,0 +1,38 @@
+{
+  "templates": {
+    "cp-card": {
+      "class": "cp-card",
+      "children": [
+        { "id": "crest", "kind": "image", "class": "cp-crest" },
+        { "id": "chapter", "kind": "label", "class": "cp-chapter" },
+        { "id": "name", "kind": "label", "class": "cp-name" },
+        { "class": "cp-rule" },
+        { "id": "status", "kind": "label", "class": "cp-status" },
+        { "id": "play", "kind": "button", "class": "menu-action cp-play", "text": "Play", "action": "campaign.play" }
+      ]
+    }
+  },
+  "root": {
+    "class": "cp",
+    "children": [
+      { "kind": "image", "class": "cover", "image": "menu-aftermath" },
+      { "class": "cp-shade" },
+      {
+        "class": "cp-content",
+        "children": [
+          { "kind": "label", "class": "kicker cp-kicker", "text": "Under the Canopy" },
+          { "kind": "label", "class": "cp-title", "text": "Choose your campaign" },
+          { "id": "cards", "class": "cp-cards", "repeat": "cp-card" },
+          { "id": "empty", "kind": "label", "class": "cp-hint", "text": "No campaigns are available yet.", "visible": false },
+          {
+            "class": "cp-footer",
+            "children": [
+              { "kind": "button", "class": "menu-action cp-back", "text": "Back", "action": "campaign.back" },
+              { "kind": "label", "class": "cp-hint", "text": "Three peoples. One forest." }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

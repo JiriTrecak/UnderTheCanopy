@@ -1,0 +1,33 @@
+{
+  "templates": {
+    "sv-row": {
+      "class": "sv-row",
+      "children": [
+        {
+          "class": "sv-text",
+          "children": [
+            { "id": "name", "kind": "label", "class": "sv-name" },
+            { "id": "meta", "kind": "label", "class": "sv-meta" }
+          ]
+        },
+        { "id": "load", "kind": "button", "class": "gm-button gm-small", "text": "Load", "action": "saves.load" },
+        { "id": "delete", "kind": "button", "class": "gm-button gm-small", "text": "Delete", "action": "saves.delete" }
+      ]
+    }
+  },
+  "root": {
+    "class": "scrim sv-scrim",
+    "children": [
+      {
+        "class": "gm",
+        "children": [
+          { "kind": "label", "class": "gm-title", "text": "Load game" },
+          { "id": "list", "class": "sv-list", "repeat": "sv-row" },
+          { "id": "empty", "kind": "label", "class": "gm-sub", "text": "No saves yet." },
+          { "id": "status", "kind": "label", "class": "gm-status" },
+          { "kind": "button", "class": "gm-button", "text": "Back", "action": "saves.back" }
+        ]
+      }
+    ]
+  }
+}
