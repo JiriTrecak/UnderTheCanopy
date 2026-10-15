@@ -112,6 +112,27 @@ impl LiveScene {
         })
     }
 
+    /// The units giant canopy models open around (old `cutawaySubjects`): the living
+    /// units the frame draws, where they are drawn, except a hidden camera body.
+    pub fn cutaway_subjects(
+        &self,
+    ) -> impl Iterator<Item = canopy_render::cutaway::CutawaySubject> + '_ {
+        self.ui_bodies
+            .iter()
+            .filter(|b| !b.building && !b.deposit && !b.remembered && b.hp != Some(0))
+            .filter(|b| self.hidden_entity != Some(b.id))
+            .map(|b| canopy_render::cutaway::CutawaySubject {
+                position: self
+                    .keys
+                    .binary_search(&b.key)
+                    .ok()
+                    .map_or(b.position, |i| {
+                        self.instances[i].transform.w_axis.truncate()
+                    }),
+                height: b.height,
+            })
+    }
+
     /// Builds the world UI of the latest frame for `camera` on an output of `size`.
     pub fn draw_world_ui(
         &mut self,

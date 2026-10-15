@@ -213,6 +213,7 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
         &newest,
         1.0,
     );
+    renderer.set_cutaway(live.cutaway_subjects());
 
     let capture = Capture::new(&gpu.device, size[0], size[1]);
 

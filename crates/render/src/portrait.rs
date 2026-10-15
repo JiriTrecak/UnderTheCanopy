@@ -281,6 +281,7 @@ impl PortraitGpu {
             haze_range: [1e6, 1e6 + 1.0],
             point_lights: 0,
             fog: None,
+            cutaway: false,
         });
         queue.write_buffer(&self.frame_buffer, 0, bytemuck::bytes_of(&uniform));
     }

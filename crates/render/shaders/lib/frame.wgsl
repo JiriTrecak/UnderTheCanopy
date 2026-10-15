@@ -34,6 +34,8 @@ struct Frame {
     counts: vec4u,
     // x: 1 / fog size, y: fog on (0/1), z: fog size
     fog: vec4f,
+    // x: scenery cutaway on (0/1)
+    cutaway: vec4f,
 }
 
 struct PointLight {
@@ -51,6 +53,8 @@ struct PointLight {
 @group(0) @binding(5) var<storage, read> point_lights: array<PointLight>;
 @group(0) @binding(6) var fog_map: texture_2d<f32>;
 @group(0) @binding(7) var fog_sampler: sampler;
+// Scenery cutaway mask (cutaway.rs): r the covering unit's view depth, g its weight.
+@group(0) @binding(8) var cutaway_mask: texture_2d<f32>;
 
 fn time_seconds() -> f32 {
     return frame.eye.w;

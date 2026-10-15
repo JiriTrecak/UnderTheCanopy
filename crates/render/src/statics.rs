@@ -319,7 +319,12 @@ impl StaticsGpu {
                 wind: [
                     wind.map_or(0.0, |w| w.amplitude),
                     wind.map_or(0.0, |w| w.speed),
-                    0.0,
+                    // A canopy model's height opens it around units (0: never).
+                    if meta.canopy {
+                        meta.rest_bounds.max[1] - meta.rest_bounds.min[1]
+                    } else {
+                        0.0
+                    },
                     meta.plant_height.unwrap_or(12.0),
                 ],
             };

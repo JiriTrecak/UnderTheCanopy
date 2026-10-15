@@ -8,7 +8,7 @@ struct ModelInfo {
     position_extent: vec4f,
     // uv origin xy, uv extent zw
     uv: vec4f,
-    // leaf flutter amplitude, 0, 0, crown plant height
+    // leaf flutter amplitude, speed, canopy height (0: no cutaway), crown plant height
     wind: vec4f,
 }
 
@@ -113,11 +113,44 @@ fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
     f.color = in.color;
     f.owner = instances[in.instance].color;
     f.front = front;
+    if (cut_away(in.instance, in.clip.xy, in.world)) {
+        discard;
+    }
     let shaded = shade_material(f);
     if (has(ALPHA_MASK) && shaded.a <= 0.0) {
         discard;
     }
     return scene_out(shaded, in.world);
+}
+
+// The scenery cutaway (cutaway.rs, old `sceneryCutaway`): a canopy model at least 7.5 m
+// tall stipples away in front of the viewer's units, never behind them or under their
+// feet; the mask is filtered by hand (its texels are unfilterable floats).
+fn cut_away(id: u32, frag: vec2f, world: vec3f) -> bool {
+    if (model.wind.z <= 0.0 || frame.cutaway.x < 0.5) {
+        return false;
+    }
+    let inst = instances[id];
+    let scale_y = length(vec3f(inst.r0.y, inst.r1.y, inst.r2.y));
+    if (model.wind.z * scale_y < 7.5) {
+        return false;
+    }
+    let size = vec2f(textureDimensions(cutaway_mask));
+    let pixel = frag * frame.viewport.zw * size - 0.5;
+    let base = floor(pixel);
+    let f = pixel - base;
+    let depth = view_depth(world);
+    var amount = 0.0;
+    for (var y = 0; y < 2; y++) {
+        for (var x = 0; x < 2; x++) {
+            let offset = vec2f(f32(x), f32(y));
+            let w = mix(1.0 - f, f, offset);
+            let texel = clamp(vec2i(base + offset), vec2i(0), vec2i(size) - 1);
+            let cut = textureLoad(cutaway_mask, texel, 0).rg;
+            amount += w.x * w.y * cut.g * smoothstep(0.4, 1.2, cut.r - depth);
+        }
+    }
+    return dither_discard(amount, frag);
 }
 
 // --- Shadows -------------------------------------------------------------------------

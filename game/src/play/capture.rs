@@ -357,6 +357,8 @@ pub fn run(
         }
     }
 
+    // A close camera (unit shot, unit camera) keeps the canopies whole.
+    let mut close_camera = false;
     // A mission cinematic looks as the window would once its blends end: a scene's unit
     // shot through its unit, else at the scene through the narrower lens.
     if let Some(scene) = play.cinematic() {
@@ -386,6 +388,7 @@ pub fn run(
                     );
                 }
                 screen.camera = super::follow::Follow::default().view(key, &pose, 10.0, aspect);
+                close_camera = true;
             }
             None => {
                 if let Some(scene) = scene {
@@ -426,6 +429,7 @@ pub fn run(
                 super::follow::TRANSITION_SECONDS,
                 aspect,
             );
+            close_camera = true;
         }
     }
 
@@ -533,6 +537,12 @@ pub fn run(
     overlay::draw(&mut list, screen.scale, &world_ui);
     live.world_ui_input = super::run::world_ui_input(&world_ui, screen.scale, me);
     live.eye = Some(screen.camera.eye);
+    renderer.set_cutaway(
+        (!close_camera)
+            .then(|| live.cutaway_subjects())
+            .into_iter()
+            .flatten(),
+    );
     live.draw_world_ui(&mut renderer, &gpu, &screen.camera, &loaded.scene, 12.0);
     live.draw_minimap(
         &mut renderer,

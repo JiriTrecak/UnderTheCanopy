@@ -33,11 +33,11 @@ Evidence names a test (`play::tests::…`, module tests), a capture (`docs/captu
 | Multiplayer | 10 | 0 | 0 | 2 | 1 |
 | Campaign and missions | 8 | 0 | 0 | 0 | 1 |
 | Audio | 4 | 0 | 0 | 0 | 0 |
-| Visuals | 18 | 1 | 1 | 4 | 0 |
+| Visuals | 19 | 1 | 0 | 4 | 0 |
 | Debug tools | 2 | 1 | 0 | 0 | 0 |
-| **Total** | **194** | **8** | **1** | **9** | **8** |
+| **Total** | **195** | **8** | **0** | **9** | **8** |
 
-What a player notices first that is still open: the scenery cutaway (canopy trees do not open around your units) and spell aim drawn as rings instead of the old filled outline. The rest are small. Owners and next steps are in [What remains](#what-remains).
+What a player notices first that is still open: spell aim drawn as rings instead of the old filled outline. The rest are small. Owners and next steps are in [What remains](#what-remains).
 
 ## Match flow
 
@@ -337,7 +337,7 @@ No mission maps are mirrored, so missions cannot be played yet; the HUD is shown
 | Spell effects (particles, flipbooks, models, lights, ribbons) | `abilities/*` | done | D40, captures `m3-effects/spells-*.png` |
 | Construction dust, shell impacts | `constructionScaffold.ts`, `shellEffects.ts` | done | D40 |
 | Effect model translucency (Uproot looks lighter) | `effectModel.ts` | partial | D40 (review) |
-| **Scenery cutaway: canopy trees open around your units** | `sceneryCutaway.ts` | missing | next step for the renderer (statics shader + a coverage mask) |
+| **Scenery cutaway: canopy trees open around your units** | `sceneryCutaway.ts` | done | `canopy_render::cutaway` (the old 192 × 108 depth and coverage mask, stippled in `statics.wgsl`, never in shadows; none for close cameras); capture `m3-effects/scenery-cutaway`. No shipped map places a canopy model yet |
 | Rain and beam layers, mist regions, close depth of field | old | dropped (nothing shipped uses them, renderer §9) | |
 | Dew, resin shimmer, vivid foliage, snow surface | old | dropped (Q5/Q6) | |
 | Speech jaw movement | `speech.ts` | dropped (Q6) | |
@@ -362,7 +362,6 @@ The old game showed its performance window in the HUD unless the profiler was sw
 
 | Gap | Owner / next step |
 |---|---|
-| Scenery cutaway around units under the canopy | renderer: a coverage mask from visible own units and a dither in the statics shader (`dither_discard` exists) |
 | Third-person boom against scenery and buildings; first-person body shadow | game + renderer: a ray test against static instances; an actor flag "no camera draw" that keeps the shadow |
 | Spell aim drawn as the old filled outline | world UI: an aim primitive in `WorldUiInput` (the game already computes `Aim`) |
 | Debug overlay: navigation overlays | game (`play/debug.rs`) |

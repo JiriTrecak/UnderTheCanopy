@@ -25,7 +25,7 @@ The first run cooks the asset pack (about 30 s), later runs reuse it. F9 opens t
 | M4 playable game | done; controls, HUD, placement, menus, skirmish, campaign screen, mission HUD, settings, key bindings, saves, audio |
 | M5 multiplayer | done; the client speaks the frozen protocol and played full matches through the real old server |
 
-[Parity checklist](parity.md): 194 features done, 8 partial, 1 missing, 9 dropped on purpose (see that page and D41). Late in the night: save export/import (native file dialogs), the old observer panel, mission objectives history, mission cinematics with scripted unit shots, debug speed/reveal/fog perspective, render levels of detail and graphics presets.
+[Parity checklist](parity.md): 195 features done, 8 partial, none missing, 9 dropped on purpose (see that page and D41). Late in the night: save export/import (native file dialogs), the old observer panel, mission objectives history, mission cinematics with scripted unit shots, debug speed/reveal/fog perspective, render levels of detail and graphics presets, and the scenery cutaway (giant canopy models open around your units; `m3-effects/scenery-cutaway`).
 
 ## Review captures
 
@@ -50,7 +50,7 @@ Taken overnight with best judgement and marked "review" in [decisions](decisions
 ## Known gaps and next steps
 
 - Art fixes for the old editors: [art issues](art-issues.md).
-- Remaining parity rows: [parity](parity.md) (scenery cutaway around units, filled spell-aim outlines, menu background effects, third-person boom against scenery, debug navigation overlays).
+- Remaining parity rows: [parity](parity.md) (filled spell-aim outlines, menu background effects, third-person boom against scenery, debug navigation overlays).
 - **Base M1 not measured.** All timings are from an M4 Max (High: worst 4.8 ms a frame; Medium: worst 2.7 ms). Scaled, Medium on a base M1 is about 10 ms in a player view and about 16 ms zoomed out as a spectator, the tight case ([renderer §9](renderer.md), D42). Run `just bench-render --preset medium` on an M1.
 - **Windows** builds and passes tests in CI but nobody has played it.
 - Phase 2 (editors, server port, Steam, signing, distribution) is unchanged: [plan](plan.md).

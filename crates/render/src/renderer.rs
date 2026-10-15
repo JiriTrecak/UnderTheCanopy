@@ -184,6 +184,7 @@ struct FrameBindings {
     clamp_sampler: wgpu::Sampler,
     canopy_view: wgpu::TextureView,
     dummy_shadow: wgpu::TextureView,
+    cutaway_view: wgpu::TextureView,
 }
 
 impl FrameBindings {
@@ -234,6 +235,10 @@ impl FrameBindings {
                     binding: 7,
                     resource: wgpu::BindingResource::Sampler(&self.clamp_sampler),
                 },
+                wgpu::BindGroupEntry {
+                    binding: 8,
+                    resource: wgpu::BindingResource::TextureView(&self.cutaway_view),
+                },
             ],
         })
     }
@@ -254,6 +259,10 @@ pub struct Renderer {
     effects: EffectsGpu,
     effect_frame: EffectFrame,
     fog: FogGpu,
+    /// The scenery cutaway's mask, its texture and this frame's units.
+    cutaway: crate::cutaway::CutawayMask,
+    cutaway_texture: wgpu::Texture,
+    cutaway_subjects: Vec<crate::cutaway::CutawaySubject>,
     bindings: FrameBindings,
     world_ui: WorldUiGpu,
     world_ui_frame: WorldUiFrame,
@@ -363,12 +372,14 @@ impl Renderer {
             ..Default::default()
         });
         let fog = FogGpu::new(device, queue);
+        let cutaway_texture = crate::cutaway::texture(device);
         let bindings = FrameBindings {
             shadow_sampler,
             repeat_sampler,
             clamp_sampler,
             canopy_view,
             dummy_shadow,
+            cutaway_view: cutaway_texture.create_view(&Default::default()),
         };
         let frame_group = bindings.group(
             device,
@@ -414,6 +425,9 @@ impl Renderer {
             effects,
             effect_frame: EffectFrame::default(),
             fog,
+            cutaway: Default::default(),
+            cutaway_texture,
+            cutaway_subjects: Vec::new(),
             bindings,
             world_ui,
             world_ui_frame: WorldUiFrame::default(),
@@ -802,6 +816,16 @@ impl Renderer {
     }
 
     /// The world UI of the next frame (ground marks and the overlay).
+    /// The units giant canopy models open around this frame (old `cutawaySubjects`):
+    /// the viewer's observed, living units; none for a close camera.
+    pub fn set_cutaway(
+        &mut self,
+        subjects: impl IntoIterator<Item = crate::cutaway::CutawaySubject>,
+    ) {
+        self.cutaway_subjects.clear();
+        self.cutaway_subjects.extend(subjects);
+    }
+
     pub fn set_world_ui(&mut self, frame: &mut WorldUiFrame) {
         std::mem::swap(&mut self.world_ui_frame, frame);
     }
@@ -927,6 +951,15 @@ impl Renderer {
             self.point_lights = lights.len() as u32;
             self.lights_dirty = false;
         }
+        // The scenery cutaway follows this frame's units (none while baking the minimap).
+        let subjects: &[_] = if self.baking {
+            &[]
+        } else {
+            &self.cutaway_subjects
+        };
+        if let Some(rows) = self.cutaway.update(camera, subjects) {
+            crate::cutaway::upload(queue, &self.cutaway_texture, &self.cutaway, rows);
+        }
         let uniform = FrameUniform::new(&FrameParams {
             camera,
             lighting,
@@ -944,6 +977,7 @@ impl Renderer {
                 .as_ref()
                 .filter(|_| !self.baking)
                 .map(|r| r.size()),
+            cutaway: self.cutaway.active,
         });
         queue.write_buffer(&self.frame_buffer, 0, bytemuck::bytes_of(&uniform));
         queue.write_buffer(

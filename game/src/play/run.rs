@@ -743,7 +743,17 @@ impl InMatch {
         let rts_view = self
             .lens
             .apply(view::frame(&mut self.camera, aspect, &self.loaded.scene));
-        let camera_view = self.close_view(aspect, dt_ms / 1000.0).unwrap_or_else(|| {
+        let close = self.close_view(aspect, dt_ms / 1000.0);
+        // Giant canopies open around units in the overhead view only (a close camera
+        // would cut holes at eye level).
+        host.renderer.set_cutaway(
+            close
+                .is_none()
+                .then(|| self.live.cutaway_subjects())
+                .into_iter()
+                .flatten(),
+        );
+        let camera_view = close.unwrap_or_else(|| {
             self.follow.shown(&rts_view);
             rts_view
         });

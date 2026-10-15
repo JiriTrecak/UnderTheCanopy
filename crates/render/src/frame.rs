@@ -30,9 +30,11 @@ pub struct FrameUniform {
     pub counts: [u32; 4],
     /// x: 1 / fog size, y: fog on (0/1), z: fog size.
     pub fog: [f32; 4],
+    /// x: scenery cutaway on (0/1) ([`crate::cutaway`]).
+    pub cutaway: [f32; 4],
 }
 
-const _: () = assert!(std::mem::size_of::<FrameUniform>() == 560);
+const _: () = assert!(std::mem::size_of::<FrameUniform>() == 576);
 
 /// Most point lights the frame buffer holds.
 pub const MAX_POINT_LIGHTS: usize = 64;
@@ -65,6 +67,8 @@ pub struct FrameParams<'a> {
     pub point_lights: u32,
     /// Cells per side of the viewer's fog of war; `None` without fog.
     pub fog: Option<u32>,
+    /// Some unit covers the scenery cutaway's mask.
+    pub cutaway: bool,
 }
 
 impl FrameUniform {
@@ -111,6 +115,7 @@ impl FrameUniform {
             fog: p.fog.map_or([0.0; 4], |size| {
                 [1.0 / size.max(1) as f32, 1.0, size as f32, 0.0]
             }),
+            cutaway: [if p.cutaway { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0],
         }
     }
 
@@ -183,6 +188,7 @@ pub fn layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
                 ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                 count: None,
             },
+            texture(8, wgpu::TextureSampleType::Float { filterable: false }),
         ],
     })
 }
