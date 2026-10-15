@@ -239,15 +239,16 @@ pub fn gather_orders(ctx: &mut Ctx) {
                 })
                 .then_with(|| a.cmp(&b))
         });
-        let hall = if candidates.is_empty() {
-            None
-        } else {
-            work::stores(ctx, w.owner, item.as_str(), 0, worker_at)
-                .first()
-                .copied()
-        };
+        let owner = w.owner;
         let mut started = false;
         for &c in &candidates {
+            // The store nearest the source, where the load will be: a worker starts each
+            // trip at the store it last delivered to, so its own position would keep it
+            // on that store after a nearer one is built.
+            let source = coarse(ctx.state.entities.get(c).expect("candidate"));
+            let hall = work::stores(ctx, owner, item.as_str(), 0, source)
+                .first()
+                .copied();
             if start_harvest(ctx, id, c, &item, hall) {
                 if let Some(p) = previous {
                     *counts.entry(p).or_insert(0) -= 1;

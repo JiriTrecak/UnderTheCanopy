@@ -383,3 +383,35 @@ fn gather_command_validation() {
         None
     );
 }
+
+#[test]
+fn loads_go_to_the_store_nearest_the_source() {
+    // The worker stands at the far hall, as after delivering there; a second hall stands
+    // by the mine (a new base): every trip carries to the near one.
+    let mut world = world(&sandbox(vec![
+        place("far-hall", HALL, 19.5, 19.5),
+        place("near-hall", HALL, 71.5, 19.5),
+        resource("mine", MINE, 61.5, 21.5),
+        place("worker", WORKER, 24.0, 20.0),
+    ]));
+    let (worker, mine, near) = (
+        id(&world, "worker"),
+        id(&world, "mine"),
+        id(&world, "near-hall"),
+    );
+    command(
+        &mut world,
+        json!({"type": "gather", "actors": [worker], "target": mine}),
+    );
+    let mut stores = Vec::new();
+    for _ in 0..1200 {
+        world.step();
+        if let Some(j) = job(&world, worker)
+            && stores.last() != Some(&j.target.0)
+        {
+            stores.push(j.target.0);
+        }
+    }
+    assert_eq!(stores, [near], "every trip ends at the hall by the mine");
+    assert!(wallet(&world, P1, AMBER) >= 10, "several loads delivered");
+}
