@@ -1,7 +1,7 @@
 //! The egui debug overlay (renderer §6: egui is for debug and tuning only): frame rate,
 //! CPU and per-pass GPU timings, the simulation's tick cost, what the computer players
-//! are doing, and switches for render features. F9 (or Ctrl+F3, the old binding)
-//! toggles it.
+//! are doing, switches for render features and the old match tools (speed, reveal map,
+//! fog perspective; single player only). F9 (or Ctrl+F3, the old binding) toggles it.
 
 use canopy_render::{FrameReport, HazeQuality, Quality};
 use std::sync::Arc;
@@ -27,6 +27,30 @@ pub struct Stats {
     pub selected: usize,
     pub ai: Option<Arc<Vec<canopy_sim::ai::Summary>>>,
     pub sent: Vec<String>,
+    /// A networked match: speed and vision follow the server (old `remote`).
+    pub networked: bool,
+    /// The match's players (slot, name) for the fog perspective.
+    pub players: Vec<(u8, String)>,
+}
+
+/// The old performance window's match tools: speed, reveal map, fog perspective.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct MatchTools {
+    /// Simulation speed (one of `sim::SPEEDS`).
+    pub speed: f32,
+    /// Show everything (visual only: commands and the HUD keep the player's view).
+    pub reveal: bool,
+    /// Whose fog the picture shows when not revealed; `None` for an observer's own view.
+    pub perspective: Option<u8>,
+}
+
+/// What the overlay changed this frame.
+#[derive(Debug, Default)]
+pub struct Changes {
+    pub quality: Option<Quality>,
+    /// The AI section is open (the simulation then computes summaries).
+    pub wants_ai: bool,
+    pub tools: Option<MatchTools>,
 }
 
 pub struct Debug {
@@ -73,22 +97,23 @@ impl Debug {
         self.state.on_window_event(window, event).consumed
     }
 
-    /// Builds the overlay for this frame; returns new quality settings if a switch
-    /// changed. `ai` asks the simulation for AI summaries while the section is open.
+    /// Builds the overlay for this frame; returns what its switches changed.
     pub fn run(
         &mut self,
         window: &Window,
         gpu: &canopy_render::Gpu,
         stats: &Stats,
         quality: Quality,
-    ) -> (Option<Quality>, bool) {
+        tools: MatchTools,
+    ) -> Changes {
         self.jobs.clear();
         if !self.open {
-            return (None, false);
+            return Changes::default();
         }
         let input = self.state.take_egui_input(window);
         let mut changed = None;
         let mut wants_ai = false;
+        let mut new_tools = None;
         let output = self.ctx.run_ui(input, |ui| {
             let ctx = ui.ctx().clone();
             egui::Window::new("Debug (F9)")
@@ -143,6 +168,50 @@ impl Debug {
                             stats.selected,
                             if stats.decided { " · decided" } else { "" }
                         ));
+                    });
+                    egui::CollapsingHeader::new("Match").default_open(true).show(ui, |ui| {
+                        let mut t = tools;
+                        ui.add_enabled_ui(!stats.networked, |ui| {
+                            egui::ComboBox::from_label("Match speed")
+                                .selected_text(format!("{}×", t.speed))
+                                .show_ui(ui, |ui| {
+                                    for speed in crate::sim::SPEEDS {
+                                        ui.selectable_value(&mut t.speed, speed, format!("{speed}×"));
+                                    }
+                                });
+                            ui.checkbox(&mut t.reveal, "Reveal map (visual only)");
+                            ui.add_enabled_ui(!t.reveal, |ui| {
+                                let name = |p: Option<u8>| match p {
+                                    None => "Observer".to_owned(),
+                                    Some(slot) => stats
+                                        .players
+                                        .iter()
+                                        .find(|(s, _)| *s == slot)
+                                        .map_or(format!("Player {}", slot + 1), |(_, n)| {
+                                            format!("Player {} · {n}", slot + 1)
+                                        }),
+                                };
+                                egui::ComboBox::from_label("Fog perspective")
+                                    .selected_text(name(t.perspective))
+                                    .show_ui(ui, |ui| {
+                                        for &(slot, _) in &stats.players {
+                                            ui.selectable_value(
+                                                &mut t.perspective,
+                                                Some(slot),
+                                                name(Some(slot)),
+                                            );
+                                        }
+                                    });
+                            });
+                        });
+                        ui.small(if stats.networked {
+                            "Network matches use synchronized speed and player vision."
+                        } else {
+                            "AI vision is unchanged. Uncheck Reveal map to use the selected perspective."
+                        });
+                        if t != tools {
+                            new_tools = Some(t);
+                        }
                     });
                     egui::CollapsingHeader::new("Render features").default_open(true).show(ui, |ui| {
                         let mut q = quality;
@@ -242,7 +311,11 @@ impl Debug {
         for id in std::mem::take(&mut textures_delta.free) {
             self.renderer.free_texture(&id);
         }
-        (changed, wants_ai)
+        Changes {
+            quality: changed,
+            wants_ai,
+            tools: new_tools,
+        }
     }
 
     /// Records the overlay into `view` (call after the frame and the HUD).

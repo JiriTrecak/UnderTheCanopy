@@ -38,6 +38,8 @@ pub struct Loaded {
     pub data: std::path::PathBuf,
     /// The match's day cycle (`None` when the hour stays fixed).
     pub day: Option<DayCycle>,
+    /// A sandbox map (no victory; the old game revealed it to a local player).
+    pub sandbox: bool,
 }
 
 /// Seconds of match time per in-game day (old `DAY_CYCLE_SECONDS`).
@@ -199,6 +201,7 @@ fn assemble(
             // Set by the caller.
             data: std::path::PathBuf::new(),
             day,
+            sandbox: map.sandbox,
         },
         Match {
             world,

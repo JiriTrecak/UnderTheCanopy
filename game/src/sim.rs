@@ -96,6 +96,7 @@ pub struct Snapshot {
     /// Simulation time of tick `origin` under the schedule this tick was computed on.
     pub epoch: Instant,
     pub origin: u32,
+    /// Real time per tick under this schedule: the tick length over the match speed.
     pub tick_length: Duration,
     pub cost: TickCost,
     /// Times the schedule has moved because the simulation fell behind.
@@ -182,7 +183,17 @@ pub enum Control {
     Save(mpsc::Sender<canopy_sim::Save>),
     /// A chat line (networked matches).
     Chat(String),
+    /// Match speed (debug overlay; single player only): simulation ticks per real tick
+    /// length. Only the pacing changes, never the results.
+    Speed(f32),
+    /// Whose view the match presents (debug overlay; single player only): another seat
+    /// (an observer reveals the map), or `None` for the seat's own. The HUD and commands
+    /// keep the seat's view.
+    Shown(Option<Seat>),
 }
+
+/// The match speeds the debug overlay offers (old 1–4×, and half speed).
+pub const SPEEDS: [f32; 5] = [0.5, 1.0, 2.0, 3.0, 4.0];
 
 /// What a running match tells the window thread.
 #[derive(Debug, Clone)]
@@ -374,12 +385,15 @@ pub fn colonies(world: &World) -> Vec<ColonyStats> {
 }
 
 /// Steps `world` once through `session` and presents the tick for `seat`; `None` while
-/// the session waits for the next beat.
+/// the session waits for the next beat. `shown` presents another seat's view instead
+/// (the debug overlay's reveal and fog perspective, single player only); the HUD keeps
+/// the seat's own view.
 pub fn advance(
     world: &mut World,
     session: &mut Session,
     presenter: &mut Presenter,
     seat: Seat,
+    shown: Option<Seat>,
 ) -> Option<Advanced> {
     let started = Instant::now();
     session.advance(world)?;
@@ -388,8 +402,11 @@ pub fn advance(
         let _span = tracing::trace_span!("seat_view").entered();
         seat.view(world)
     };
+    let other = shown.filter(|&s| s != seat).map(|s| s.view(world));
     let viewed = Instant::now();
-    let presentation = presenter.update(world, &view, &|id| held(world, id));
+    let presentation = presenter.update(world, other.as_ref().unwrap_or(&view), &|id| {
+        held(world, id)
+    });
     let presented = Instant::now();
     let ms = |a: Instant, b: Instant| (b - a).as_secs_f32() * 1000.0;
     Some(Advanced {
@@ -451,7 +468,7 @@ impl SimThread {
                     }
                     let started = Instant::now();
                     while world.tick() < start_tick && !stop.load(Ordering::Relaxed) {
-                        if advance(&mut world, &mut session, &mut presenter, seat).is_none() {
+                        if advance(&mut world, &mut session, &mut presenter, seat, None).is_none() {
                             std::thread::sleep(Duration::from_millis(1));
                         }
                     }
@@ -468,8 +485,13 @@ impl SimThread {
                     let mut ai: Option<Arc<Vec<canopy_sim::ai::Summary>>> = None;
                     let observing = seat == Seat::Observer;
                     let mut colony_list = observing.then(|| Arc::new(colonies(&world)));
-                    // Schedule: simulation time of tick n is epoch + (n − tick0) · length.
+                    // Schedule: simulation time of tick n is epoch + (n − origin) · pace.
+                    // A speed change moves the origin to the newest tick, so the
+                    // schedule stays continuous.
                     let mut epoch = Instant::now();
+                    let mut origin = tick0;
+                    let mut pace = tick_length;
+                    let mut shown: Option<Seat> = None;
                     let mut slowdowns = 0;
                     let networked = session.room().is_some();
                     let mut paused_at: Option<Instant> = None;
@@ -508,6 +530,16 @@ impl SimThread {
                                     let _ = reply.send(world.save());
                                 }
                                 Control::Chat(text) => session.chat(&text),
+                                Control::Speed(speed)
+                                    if !networked && !tick_length.is_zero() && speed > 0.0 =>
+                                {
+                                    let now_tick = world.tick();
+                                    epoch += pace * (now_tick - origin);
+                                    origin = now_tick;
+                                    pace = tick_length.div_f32(speed);
+                                }
+                                Control::Shown(seat) if !networked => shown = seat,
+                                Control::Speed(_) | Control::Shown(_) => {}
                             }
                         }
                         for event in session.poll() {
@@ -523,18 +555,17 @@ impl SimThread {
                             continue;
                         }
                         let next = world.tick() + 1;
-                        let ahead = (next - tick0).saturating_sub(LEAD);
-                        let due = epoch + tick_length * ahead;
+                        let ahead = (next - origin).saturating_sub(LEAD);
+                        let due = epoch + pace * ahead;
                         let now = Instant::now();
                         if now < due {
                             std::thread::sleep((due - now).min(Duration::from_millis(5)));
                             continue;
                         }
-                        if !tick_length.is_zero() {
-                            let behind =
-                                ((now - due).as_secs_f64() / tick_length.as_secs_f64()) as u32;
+                        if !pace.is_zero() {
+                            let behind = ((now - due).as_secs_f64() / pace.as_secs_f64()) as u32;
                             if behind > MAX_BACKLOG {
-                                epoch += tick_length * (behind - MAX_BACKLOG);
+                                epoch += pace * (behind - MAX_BACKLOG);
                                 slowdowns += 1;
                             }
                         }
@@ -544,7 +575,7 @@ impl SimThread {
                             held,
                             cost,
                             decided,
-                        }) = advance(&mut world, &mut session, &mut presenter, seat)
+                        }) = advance(&mut world, &mut session, &mut presenter, seat, shown)
                         else {
                             std::thread::sleep(Duration::from_millis(1));
                             continue;
@@ -578,8 +609,8 @@ impl SimThread {
                             held,
                             colonies: colony_list.clone(),
                             epoch,
-                            origin: tick0,
-                            tick_length,
+                            origin,
+                            tick_length: pace,
                             cost,
                             slowdowns,
                             decided,
@@ -885,5 +916,58 @@ mod tests {
         assert!(newest >= 400);
         assert!(units > 0);
         drop(thread);
+    }
+
+    /// The debug overlay's match speed paces the thread without changing a result, and
+    /// the shown view (reveal) changes the presentation, not the HUD's view.
+    #[test]
+    fn match_speed_paces_ticks_and_reveal_changes_only_the_picture() {
+        use canopy_scene::live::Setup;
+        let map = super::ai_fixture::skirmish(vec![], vec![]);
+        let setup = super::ai_fixture::setup(true);
+        let session = Session::local(setup.clone(), None);
+        let world = World::new(super::ai_fixture::content(), &map, setup.clone()).unwrap();
+        let presenter = Presenter::new(
+            &world,
+            &map,
+            None,
+            Setup {
+                colors: vec![[1.0, 0.0, 0.0], [0.0, 0.0, 1.0]],
+                tree_slots: Default::default(),
+                statics: 0,
+            },
+        );
+        let thread = SimThread::start(world, session, presenter, TICK, 0, Seat::Player(0), None);
+        thread.control(Control::Speed(4.0));
+        thread.control(Control::Shown(Some(Seat::Observer)));
+        let started = Instant::now();
+        while thread.mailbox().latest().is_none_or(|t| t < 120) {
+            assert!(started.elapsed() < Duration::from_secs(20), "stalled");
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        // 120 ticks take 3 s at 1×; at 4× about 0.75 s.
+        assert!(
+            started.elapsed() < Duration::from_millis(2000),
+            "{:?}",
+            started.elapsed()
+        );
+        let mut out = Vec::new();
+        while !thread.mailbox().take(&mut out) {}
+        let newest = out.last().unwrap();
+        assert_eq!(newest.tick_length, TICK / 4);
+        assert!(newest.presentation.fog.is_none(), "the observer's picture");
+        assert!(
+            newest.view.fog.is_some(),
+            "the player's own view for the HUD"
+        );
+        // The same ticks as a world stepped on its own.
+        let save = thread.save(Duration::from_secs(5)).unwrap();
+        drop(thread);
+        let mut alone = World::new(super::ai_fixture::content(), &map, setup).unwrap();
+        while alone.tick() < save.state.tick {
+            alone.step();
+        }
+        let resumed = World::restore(super::ai_fixture::content(), &map, save).unwrap();
+        assert_eq!(resumed.fingerprint(), alone.fingerprint());
     }
 }

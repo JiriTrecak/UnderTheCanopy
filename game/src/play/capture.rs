@@ -87,6 +87,7 @@ pub fn run(
             &mut game.session,
             &mut game.presenter,
             seat,
+            None,
         )
         .with_context(|| format!("the local session stopped at tick {}", game.world.tick()))?;
         *previous = Some(std::mem::replace(newest, advanced.presentation));

@@ -11,7 +11,7 @@
 
 use super::{
     Event, Play,
-    debug::{Debug, Stats as DebugStats},
+    debug::{Debug, MatchTools, Stats as DebugStats},
     follow::{self, CameraMode},
     hud::Hud,
     input::{self, Input},
@@ -127,6 +127,9 @@ pub struct InMatch {
     frame_max: f32,
     stats_since: Instant,
     held_before: u32,
+    /// The debug overlay's speed, reveal and fog perspective.
+    tools: MatchTools,
+    networked: bool,
 }
 
 impl InMatch {
@@ -143,6 +146,7 @@ impl InMatch {
         renderer.set_environment(gpu, loaded.environment.clone());
         renderer.load_world(gpu, &loaded.pack, &loaded.scene.world)?;
         renderer.set_actors(&[]);
+        let loaded_sandbox = loaded.sandbox;
         let content = game.world.catalog().content.clone();
         let catalog = Arc::new(Catalog::new(content.clone()));
         // Names and controllers for the observer panel.
@@ -264,7 +268,27 @@ impl InMatch {
             frame_max: 0.0,
             stats_since: now,
             held_before: 0,
+            tools: MatchTools {
+                speed: 1.0,
+                reveal: start.me.is_none(),
+                perspective: start.me,
+            },
+            networked: start.chat_server,
         };
+        this.stats.networked = start.chat_server;
+        this.stats.players = this
+            .hud
+            .players
+            .iter()
+            .map(|(slot, name, _)| (*slot, name.clone()))
+            .collect();
+        // Sandbox maps start revealed for a local player, as in the old game.
+        if loaded_sandbox && start.me.is_some() && !start.chat_server {
+            this.set_tools(MatchTools {
+                reveal: true,
+                ..this.tools
+            });
+        }
         // The HUD shows the minimap and the live portrait.
         let targets = [
             (
@@ -293,6 +317,39 @@ impl InMatch {
             }
         }
         Ok(this)
+    }
+
+    /// Applies the debug overlay's match tools (single player only, as the old ones):
+    /// the simulation's pace, and whose view the picture shows. A new perspective clears
+    /// the selection (old `onVision`).
+    fn set_tools(&mut self, mut tools: MatchTools) {
+        if self.networked {
+            return;
+        }
+        if !tools.reveal && tools.perspective.is_none() {
+            // An observer leaving the revealed map looks through the first player's fog.
+            tools.perspective = self.stats.players.first().map(|&(slot, _)| slot);
+        }
+        if tools.speed != self.tools.speed {
+            self.sim.control(sim::Control::Speed(tools.speed));
+        }
+        let shown = |t: &MatchTools| {
+            if t.reveal {
+                Some(Seat::Observer)
+            } else {
+                t.perspective.map(Seat::Player)
+            }
+        };
+        let (before, after) = (shown(&self.tools), shown(&tools));
+        if before != after {
+            let own = self.me.map_or(Seat::Observer, Seat::Player);
+            self.sim
+                .control(sim::Control::Shown(after.filter(|&s| s != own)));
+            if tools.perspective != self.tools.perspective {
+                self.play.select(Vec::new(), None);
+            }
+        }
+        self.tools = tools;
     }
 
     /// Follows the player's settings (shortcuts, health bars).
@@ -855,11 +912,20 @@ impl InMatch {
         let seconds = self.started.elapsed().as_secs_f32();
         host.renderer.ui_mut(gpu).set_target(Some(ui_view.clone()));
         if let (Some(debug), Some(window)) = (&mut self.debug, host.window) {
-            let (quality, wants_ai) = debug.run(window, gpu, &self.stats, host.renderer.quality());
-            if let Some(q) = quality {
+            let changes = debug.run(
+                window,
+                gpu,
+                &self.stats,
+                host.renderer.quality(),
+                self.tools,
+            );
+            if let Some(q) = changes.quality {
                 host.renderer.set_quality(gpu, q);
             }
-            self.sim.want_ai_summaries(wants_ai);
+            self.sim.want_ai_summaries(changes.wants_ai);
+            if let Some(tools) = changes.tools {
+                self.set_tools(tools);
+            }
         }
         let debug = &self.debug;
         let paint = |encoder: &mut wgpu::CommandEncoder| {
