@@ -148,7 +148,9 @@ pub fn health_bar_visible(body: &Body, selected: bool, mode: HealthBars) -> bool
     if hp == 0 || body.remembered || body.max_hp == 0 {
         return false;
     }
-    let default = selected || (!body.building && hp < body.max_hp);
+    // Damaged units and buildings alike (the old game showed buildings' bars only when
+    // selected); a building still being raised is not damaged.
+    let default = selected || (hp < body.max_hp && !body.constructing);
     match mode {
         HealthBars::Always => true,
         HealthBars::Selected => selected,
@@ -1387,9 +1389,14 @@ mod tests {
         let wall = body(50, 100, true);
         assert!(health_bar_visible(&hurt, false, HealthBars::Damaged));
         assert!(!health_bar_visible(&whole, false, HealthBars::Damaged));
-        // Damaged buildings show only when selected (old rule: units only).
-        assert!(!health_bar_visible(&wall, false, HealthBars::Damaged));
-        assert!(health_bar_visible(&wall, true, HealthBars::Damaged));
+        // Damaged buildings show like units; one still being raised does not.
+        assert!(health_bar_visible(&wall, false, HealthBars::Damaged));
+        let raising = Body {
+            constructing: true,
+            ..wall.clone()
+        };
+        assert!(!health_bar_visible(&raising, false, HealthBars::Damaged));
+        assert!(health_bar_visible(&raising, true, HealthBars::Damaged));
         assert!(health_bar_visible(&whole, false, HealthBars::Always));
         assert!(!health_bar_visible(&hurt, false, HealthBars::Selected));
         let mut dead = body(0, 100, false);

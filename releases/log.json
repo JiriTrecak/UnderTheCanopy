@@ -2,7 +2,9 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [],
-    "improved": [],
+    "improved": [
+      "Damaged buildings show their health bars, as damaged units do."
+    ],
     "fixed": [],
     "knownIssues": []
   },
