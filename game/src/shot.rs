@@ -18,6 +18,16 @@ use canopy_render::{
 use std::path::Path;
 
 pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Result<()> {
+    if options.play || options.observe {
+        return crate::play::capture::run(
+            options,
+            paths,
+            out,
+            size,
+            options.observe,
+            &options.input,
+        );
+    }
     let gpu = Gpu::headless(DeviceOptions::default())?.context("no GPU adapter")?;
     let map = options.map.as_deref().context("shot needs --map")?;
     let (loaded, mut game) = world::load(

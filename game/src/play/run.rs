@@ -154,7 +154,9 @@ impl InMatch {
             }
         }
         let format = renderer.ui_mut(&display.gpu).format();
-        let debug = Debug::new(window, &display.gpu.device, format);
+        let mut debug = Debug::new(window, &display.gpu.device, format);
+        // Opens the overlay at start (smoke tests of the window path).
+        debug.open = std::env::var_os("CANOPY_DEBUG_OVERLAY").is_some();
         let mut audio = canopy_audio::Audio::new(canopy_audio::AudioSettings::default());
         if let Err(e) = audio.load(&loaded.pack) {
             tracing::warn!(error = %e, "effect sounds not loaded");
@@ -190,6 +192,39 @@ impl InMatch {
         })
     }
 
+    /// Plugs a render target another system draws into the HUD: `"@minimap"` or
+    /// `"@portrait"` (the image names `hud.json` shows), `id` a texture id below
+    /// [`canopy_render::ui::FIRST_PACK_TEXTURE`], `size` its pixel size. The HUD shows
+    /// it from the next frame.
+    #[allow(dead_code, reason = "the minimap and portrait renderers plug in here")]
+    pub fn plug_render_target(
+        &mut self,
+        gpu: &canopy_render::Gpu,
+        renderer: &mut Renderer,
+        name: &str,
+        id: canopy_ui::TextureId,
+        view: &wgpu::TextureView,
+        size: [u32; 2],
+    ) {
+        renderer.ui_mut(gpu).set_texture(gpu, id, view);
+        let mut desc = canopy_ui::ImageDesc::new(id, size[0] as f32, size[1] as f32);
+        desc.premultiplied = false;
+        self.ui.register_image(name, desc);
+        match name {
+            "@minimap" => self.hud.minimap = true,
+            "@portrait" => self.hud.live_portrait = true,
+            _ => {}
+        }
+    }
+
+    /// What the world UI should draw this frame (selection, hover, health bar mode,
+    /// order markers, placement ghost and grid, rally point): the input the renderer's
+    /// world UI pass reads.
+    #[allow(dead_code, reason = "the world UI pass reads it")]
+    pub fn world_ui(&self) -> super::WorldUi {
+        self.play.world_ui()
+    }
+
     /// Whether the simulation thread has stopped (it only stops when asked, or by
     /// panicking).
     pub fn stopped(&self) -> bool {
@@ -208,6 +243,14 @@ impl InMatch {
             if code == KeyCode::F9 || (code == KeyCode::F3 && ctrl) {
                 self.debug.open = !self.debug.open;
                 return;
+            }
+            // Spectators jump to the largest fight.
+            if code == KeyCode::KeyB
+                && self.me.is_none()
+                && !self.ui.wants_keyboard()
+                && let Some([x, z]) = self.live.newest().and_then(|s| s.presentation.battle)
+            {
+                self.camera.look_at(x, z);
             }
         }
         if self.debug.event(window, event) {
@@ -588,7 +631,7 @@ impl InMatch {
 }
 
 /// Linear → sRGB for a channel.
-fn srgb(v: f32) -> f32 {
+pub(crate) fn srgb(v: f32) -> f32 {
     if v <= 0.003_130_8 {
         v * 12.92
     } else {
@@ -599,7 +642,7 @@ fn srgb(v: f32) -> f32 {
 /// The ghost of the building being placed: its model at the snapped site, translucent,
 /// in the owner's colour, or tinted toward red where the site looks invalid (old 70 %
 /// toward `#f26960` at 0.48 opacity; the tint here reaches the team-coloured parts).
-fn ghost_instance(
+pub(crate) fn ghost_instance(
     content: &canopy_content::Content,
     presentation: &canopy_scene::live::Presentation,
     ghost: &super::placement::Ghost,

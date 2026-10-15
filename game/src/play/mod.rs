@@ -11,6 +11,7 @@
 //! Behaviour follows the old game (`session.ts`, `settlementHud.ts`,
 //! `presentation/*`); see `docs/play.md`.
 
+pub mod capture;
 pub mod card;
 pub mod debug;
 pub mod hud;
@@ -280,11 +281,7 @@ impl Play {
     /// Drops dead, gone and no longer owned entities from the selection and groups.
     fn prune(&mut self) {
         let k = self.know.clone();
-        let observer = self.observer();
-        let keep = |id: u32| {
-            k.entity(id)
-                .is_some_and(|e| k.selectable(e) && (observer || !e.remembered || !k.own(e)))
-        };
+        let keep = |id: u32| k.entity(id).is_some_and(|e| k.selectable(e));
         if self.selection.prune(keep, |id| k.rank_of(id)) {
             self.mode = Mode::Idle;
         }

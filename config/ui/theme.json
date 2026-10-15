@@ -295,7 +295,7 @@
     "observer-header": { "display": "flex", "flex-direction": "row", "justify-content": "space-between", "align-items": "center", "padding": "10px 14px 9px" },
     "observer-title": { "font": "16px serif", "color": "#ded2b7" },
     "observer-badge": { "font": "9px ui", "color": "#93afb5", "letter-spacing": "0.17em", "text-transform": "uppercase" },
-    "observer-columns": { "padding": "6px 14px", "font": "10px ui", "color": "#92a09f", "letter-spacing": "0.09em", "text-transform": "uppercase", "white-space": "nowrap" },
+    "observer-columns": { "font": "10px ui", "color": "#92a09f", "letter-spacing": "0.09em", "text-transform": "uppercase", "white-space": "nowrap" },
     "observer-rows": { "display": "flex", "flex-direction": "column" },
     "observer-row": { "display": "flex", "flex-direction": "row", "align-items": "center", "gap": "6px", "padding": "7px 14px 7px 0" },
     "observer-color": { "width": "4px", "height": "28px", "fill": "#ffffff" },

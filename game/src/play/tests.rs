@@ -601,3 +601,47 @@ fn the_hero_learns_from_the_banner_menu_and_casts_from_the_bottom_row() {
         .unwrap();
     assert_eq!(rush.reason.as_deref(), Some("No skill points available"));
 }
+
+#[test]
+fn the_ghost_agrees_with_the_simulation_where_the_player_sees() {
+    let mut h = Harness::new(vec![]);
+    let worker = h.mine(fx::WORKER)[0];
+    let k = h.play.knowledge().clone();
+    let (cx, cz) = (fx::AWAY.0 as f32, fx::AWAY.1 as f32);
+    let mut checked = 0;
+    for definition in [fx::HOUSE, fx::BARRACKS] {
+        for rotation in [0, 90] {
+            let placement = super::placement::Placement {
+                definition: definition.into(),
+                actors: vec![worker],
+                rotation,
+            };
+            for dz in (-9..=9).map(|i| i as f32 * 1.5) {
+                for dx in (-9..=9).map(|i| i as f32 * 1.5) {
+                    let ghost = super::placement::ghost(
+                        &k,
+                        h.world.terrain(),
+                        &placement,
+                        cx + dx,
+                        cz + dz,
+                    )
+                    .expect("a ghost");
+                    let verdict = h.world.can_build(
+                        OWNER,
+                        definition,
+                        &ghost.point,
+                        Some(canopy_sim::entity::EntityId(worker)),
+                        rotation,
+                    );
+                    assert_eq!(
+                        ghost.problem, verdict,
+                        "{definition} at {:?} turned {rotation}",
+                        ghost.point
+                    );
+                    checked += 1;
+                }
+            }
+        }
+    }
+    assert_eq!(checked, 4 * 19 * 19);
+}

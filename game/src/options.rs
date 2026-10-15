@@ -7,12 +7,14 @@
 //!             [--tick <n>] [--players <n>] [--crowd <n>] [--colors <i,j,…>] [--size <w>x<h>]
 //!             [--hour <h>] [--time <s>] [--frames <n>] [--no-shadows] [--pitch <deg>]
 //!             [--movers <n>] [--data <folder>] [graphics]
+//!             [--play | --observe] [--input <script>] (the HUD; see `play::capture`)
 //! graphics: [--render-scale <0.5–1>] [--no-contact] [--no-bloom] [--haze off|low|medium|high]
 //!           [--biome <id>] (preview the map in another biome's look)
 //! ```
 //!
-//! `--map` shows a match's start, `--spectate` plays it (computer players on every start,
-//! or the first `--players`); `--tick` fast-forwards the match first. A shot's `battle`
+//! `--map` plays a skirmish (you on the first start, computer players on the others, or
+//! on the first `--players` starts); `--spectate` watches computer players on every
+//! start (or the first `--players`); `--tick` fast-forwards the match first. A shot's `battle`
 //! camera looks at the largest fight of that tick. `--crowd <n>` replaces the match by a
 //! measured battle of eight players with `n` soldiers each; `--colors i,j,…` gives slot
 //! `k` the `k`-th listed player colour (to review every colour).
@@ -96,7 +98,7 @@ pub struct Options {
     pub vsync: bool,
     /// Map id (file name without extension).
     pub map: Option<String>,
-    /// Run the match (AI players) instead of showing its start.
+    /// Watch computer players instead of playing.
     pub spectate: bool,
     /// Computer players on the map's first starts (all by default).
     pub players: Option<usize>,
@@ -122,6 +124,11 @@ pub struct Options {
     pub movers: u32,
     /// Another biome's look for the map (previews).
     pub biome: Option<String>,
+    /// A shot of the match with the HUD from player 1's seat (`--play`) or the
+    /// spectator's (`--observe`), after the `--input` script (`play::capture`).
+    pub play: bool,
+    pub observe: bool,
+    pub input: String,
 }
 
 impl Options {
@@ -145,6 +152,9 @@ impl Options {
             pitch: None,
             movers: 0,
             biome: None,
+            play: false,
+            observe: false,
+            input: String::new(),
         };
         let mut out = None;
         let mut size = [1920, 1080];
@@ -209,6 +219,9 @@ impl Options {
                 }
                 "--movers" => options.movers = value("--movers")?.parse().context("--movers")?,
                 "--biome" => options.biome = Some(value("--biome")?),
+                "--play" => options.play = true,
+                "--observe" => options.observe = true,
+                "--input" => options.input = value("--input")?,
                 "--out" => out = Some(PathBuf::from(value("--out")?)),
                 "--size" => {
                     let text = value("--size")?;

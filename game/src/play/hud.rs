@@ -290,6 +290,7 @@ impl Hud {
     }
 
     fn resources(&mut self, ui: &mut Ui, n: &Nodes, k: &Knowledge) {
+        ui.set_visible(n.resources, k.view.colony.is_some());
         let Some(colony) = k.view.colony.as_ref() else {
             ui.set_count(n.resources, 0);
             return;
@@ -439,6 +440,7 @@ impl Hud {
             ui.set_visible(n.level, false);
             ui.set_visible(n.experience, false);
             ui.set_count(n.inventory, 0);
+            ui.set_visible(n.inventory, false);
             ui.set_count(n.queue, 0);
             ui.set_count(n.orders, 0);
             self.queue.clear();
@@ -601,9 +603,11 @@ impl Hud {
     fn inventory(&mut self, ui: &mut Ui, n: &Nodes, k: &Knowledge, e: &EntityView) {
         let Some(inv) = e.magic.as_ref().and_then(|m| m.inventory.as_ref()) else {
             ui.set_count(n.inventory, 0);
+            ui.set_visible(n.inventory, false);
             return;
         };
         let own = k.controlled(e);
+        ui.set_visible(n.inventory, !inv.slots.is_empty());
         ui.set_count(n.inventory, inv.slots.len());
         for (i, slot) in inv.slots.iter().enumerate() {
             let Some(cell) = ui.child(n.inventory, i) else {
@@ -795,6 +799,7 @@ impl Hud {
         } else {
             entries.len().max(5)
         };
+        ui.set_visible(n.queue, wells > 0);
         ui.set_count(n.queue, wells);
         for i in 0..wells {
             let Some(cell) = ui.child(n.queue, i) else {
@@ -862,8 +867,20 @@ impl Hud {
             };
             let entry = play.layout.slots[slot].map(|i| &play.entries[i]);
             self.cells[slot] = entry.map(|c| c.id.clone());
-            ui.set_visible(cell, entry.is_some());
+            // Empty cells stay in the grid as dark wells (old twelve wells).
             let Some(c) = entry else {
+                if let Some(icon) = ui.find_in(cell, "icon") {
+                    ui.set_image(icon, None);
+                }
+                if let Some(key) = ui.find_in(cell, "key") {
+                    ui.set_text(key, "");
+                }
+                if let Some(cd) = ui.find_in(cell, "cooldown") {
+                    ui.set_visible(cd, false);
+                }
+                ui.set_checked(cell, false);
+                ui.set_enabled(cell, false);
+                ui.set_tooltip(cell, None);
                 continue;
             };
             if let Some(icon) = ui.find_in(cell, "icon") {
@@ -1064,17 +1081,10 @@ impl Hud {
                     .collect()
             })
             .unwrap_or_default();
-        ui.set_text(
-            n.observer_columns,
-            &format!(
-                "Player{}{}Units      Workers      Hero",
-                " ".repeat(26),
-                currencies
-                    .iter()
-                    .map(|(_, name)| format!("{name}    "))
-                    .collect::<String>()
-            ),
-        );
+        if let Some(goods) = ui.find_in(n.observer_columns, "goods") {
+            let names: Vec<&str> = currencies.iter().map(|(_, name)| name.as_str()).collect();
+            ui.set_text(goods, &names.join(" · "));
+        }
         ui.set_count(n.observer_rows, colonies.len());
         for (i, (player, colony)) in colonies.iter().enumerate() {
             let Some(row) = ui.child(n.observer_rows, i) else {

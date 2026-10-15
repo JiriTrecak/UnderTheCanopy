@@ -105,7 +105,17 @@
               { "kind": "label", "class": "observer-badge", "text": "Observer" }
             ]
           },
-          { "id": "columns", "kind": "label", "class": "observer-columns" },
+          {
+            "id": "columns", "class": "observer-row observer-columns",
+            "children": [
+              { "class": "observer-color" },
+              { "kind": "label", "class": "observer-player", "text": "Player" },
+              { "id": "goods", "kind": "label", "class": "observer-cell observer-goods" },
+              { "kind": "label", "class": "observer-cell", "text": "Units" },
+              { "kind": "label", "class": "observer-cell", "text": "Workers" },
+              { "kind": "label", "class": "observer-cell", "text": "Hero" }
+            ]
+          },
           { "id": "rows", "class": "observer-rows", "repeat": "observer-row" },
           { "id": "footer", "kind": "label", "class": "observer-footer" }
         ]

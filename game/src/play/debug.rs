@@ -203,15 +203,23 @@ impl Debug {
                     });
                 });
         });
-        self.state
-            .handle_platform_output(window, output.platform_output);
+        let egui::FullOutput {
+            platform_output,
+            mut textures_delta,
+            shapes,
+            pixels_per_point,
+            ..
+        } = output;
+        self.state.handle_platform_output(window, platform_output);
         let size = window.inner_size();
         self.screen = egui_wgpu::ScreenDescriptor {
             size_in_pixels: [size.width.max(1), size.height.max(1)],
-            pixels_per_point: output.pixels_per_point,
+            pixels_per_point,
         };
-        self.jobs = self.ctx.tessellate(output.shapes, output.pixels_per_point);
-        for (id, deltas) in &output.textures_delta.set {
+        self.jobs = self.ctx.tessellate(shapes, pixels_per_point);
+        // Every delta must be taken (epaint checks on drop).
+        let set: Vec<_> = textures_delta.set.drain().collect();
+        for (id, deltas) in &set {
             for delta in deltas {
                 self.renderer
                     .update_texture(&gpu.device, &gpu.queue, *id, delta);
@@ -231,8 +239,8 @@ impl Debug {
         );
         gpu.queue
             .submit(extra.into_iter().chain([encoder.finish()]));
-        for id in &output.textures_delta.free {
-            self.renderer.free_texture(id);
+        for id in std::mem::take(&mut textures_delta.free) {
+            self.renderer.free_texture(&id);
         }
         (changed, wants_ai)
     }
