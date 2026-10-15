@@ -40,7 +40,13 @@ impl Display {
             desired_maximum_frame_latency: 2,
             alpha_mode: capabilities.alpha_modes[0],
             color_space: wgpu::SurfaceColorSpace::Auto,
-            view_formats: vec![],
+            // The UI and the debug overlay draw through a non-sRGB view (they blend in
+            // sRGB space like the old HUD).
+            view_formats: if format.is_srgb() {
+                vec![format.remove_srgb_suffix()]
+            } else {
+                vec![]
+            },
         };
         surface.configure(&gpu.device, &config);
         Ok(Self {

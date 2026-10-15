@@ -29,22 +29,27 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
             crowd: options.crowd,
             colors: options.colors.clone(),
             biome: options.biome.as_deref(),
+            human: None,
         },
     )?;
 
     // Simulate to the requested tick, presenting every tick (animation clocks run on ticks).
     let started = std::time::Instant::now();
-    let mut newest = sim::present(&game.world, &mut game.presenter);
+    let seat = sim::Seat::Observer;
+    let (mut newest, _) = sim::present(&game.world, &mut game.presenter, seat);
     let mut previous = None;
     let mut costs = Vec::new();
     while game.world.tick() < options.tick {
-        let Some((presentation, cost, _)) =
-            sim::advance(&mut game.world, &mut game.session, &mut game.presenter)
-        else {
+        let Some(advanced) = sim::advance(
+            &mut game.world,
+            &mut game.session,
+            &mut game.presenter,
+            seat,
+        ) else {
             anyhow::bail!("the local session stopped at tick {}", game.world.tick());
         };
-        costs.push(cost);
-        previous = Some(std::mem::replace(&mut newest, presentation));
+        costs.push(advanced.cost);
+        previous = Some(std::mem::replace(&mut newest, advanced.presentation));
     }
     let simulate_ms = started.elapsed().as_secs_f32() * 1000.0;
 

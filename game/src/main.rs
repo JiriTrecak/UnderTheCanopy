@@ -5,6 +5,7 @@ mod gpu;
 mod live;
 mod options;
 mod paths;
+mod play;
 mod shot;
 mod sim;
 mod telemetry;
