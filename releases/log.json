@@ -1,23 +1,32 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [
-      "With a worker selected, hovering a tree shows a ring around it, so you can tell trees can be clicked to gather wood.",
-      "Damaged buildings catch fire: flames and smoke grow as their health falls and die down when they are repaired.",
-      "Melee hits throw up a puff of dust along the swing."
-    ],
-    "improved": [
-      "Damaged buildings show their health bars, as damaged units do.",
-      "Ant Warriors deal 14 damage instead of 9.",
-      "Buildings on sloping ground no longer float: the ground rises to meet them, in the same grass, earth or rock as around it."
-    ],
-    "fixed": [
-      "Right-clicking a tree works anywhere on the tree, trunk or crown, instead of only exactly at its base.",
-      "Buildings can be placed on rolling hills: only cliffs, ramps and water block construction, so \"Choose flatter ground\" no longer refuses most of the map."
-    ],
+    "added": [],
+    "improved": [],
+    "fixed": [],
     "knownIssues": []
   },
   "releases": [
+    {
+      "added": [
+        "With a worker selected, hovering a tree shows a ring around it, so you can tell trees can be clicked to gather wood.",
+        "Damaged buildings catch fire: flames and smoke grow as their health falls and die down when they are repaired.",
+        "Melee hits throw up a puff of dust along the swing."
+      ],
+      "improved": [
+        "Damaged buildings show their health bars, as damaged units do.",
+        "Ant Warriors deal 14 damage instead of 9.",
+        "Buildings on sloping ground no longer float: the ground rises to meet them, in the same grass, earth or rock as around it."
+      ],
+      "fixed": [
+        "Right-clicking a tree works anywhere on the tree, trunk or crown, instead of only exactly at its base.",
+        "Buildings can be placed on rolling hills: only cliffs, ramps and water block construction, so \"Choose flatter ground\" no longer refuses most of the map."
+      ],
+      "knownIssues": [],
+      "version": "0.3.1",
+      "publishedAt": "2026-10-15T14:11:56.334Z",
+      "title": "Building on hills, burning buildings"
+    },
     {
       "added": [
         "Under the Canopy is rebuilt as a native game for Apple Silicon Macs. Skirmish, multiplayer, spectating, settings and key bindings work as in 0.2.",
