@@ -4,6 +4,8 @@
 pub struct Capture {
     pub texture: wgpu::Texture,
     pub view: wgpu::TextureView,
+    /// A non-sRGB view of the same texels, for the UI pass (which blends in sRGB space).
+    pub ui_view: wgpu::TextureView,
     buffer: wgpu::Buffer,
     width: u32,
     height: u32,
@@ -27,9 +29,13 @@ impl Capture {
             dimension: wgpu::TextureDimension::D2,
             format: CAPTURE_FORMAT,
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
-            view_formats: &[],
+            view_formats: &[wgpu::TextureFormat::Rgba8Unorm],
         });
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let ui_view = texture.create_view(&wgpu::TextureViewDescriptor {
+            format: Some(wgpu::TextureFormat::Rgba8Unorm),
+            ..Default::default()
+        });
         let padded_row = (width * 4).div_ceil(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT)
             * wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
         let buffer = device.create_buffer(&wgpu::BufferDescriptor {
@@ -41,6 +47,7 @@ impl Capture {
         Self {
             texture,
             view,
+            ui_view,
             buffer,
             width,
             height,

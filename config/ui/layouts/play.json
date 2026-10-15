@@ -1,0 +1,53 @@
+{
+  "templates": {
+    "unit-card": {
+      "kind": "button", "class": "unit-card", "action": "unit-card",
+      "children": [
+        { "id": "icon", "kind": "image", "class": "unit-card-icon" },
+        { "id": "health", "kind": "bar", "class": "unit-card-health", "value": 1 }
+      ]
+    },
+    "queue-tile": {
+      "kind": "button", "class": "slot queue-tile", "action": "queue",
+      "children": [
+        { "id": "icon", "kind": "image", "class": "slot-icon" },
+        { "class": "slot-rim" }
+      ]
+    },
+    "order-tile": {
+      "class": "order-tile",
+      "tooltip": { "title": "" },
+      "children": [
+        { "id": "icon", "kind": "image", "class": "slot-icon" },
+        { "id": "number", "kind": "label", "class": "order-number" }
+      ]
+    },
+    "banner": {
+      "kind": "button", "class": "banner", "action": "banner", "tooltip_anchor": "actions",
+      "children": [
+        { "id": "icon", "kind": "image", "class": "banner-icon" },
+        { "id": "label", "kind": "label", "class": "banner-label" },
+        { "id": "key", "kind": "label", "class": "banner-key" }
+      ]
+    },
+    "group-button": {
+      "kind": "button", "class": "group-button", "action": "group",
+      "children": [
+        { "id": "count", "kind": "label", "class": "group-count" },
+        { "id": "key", "kind": "label", "class": "group-key" }
+      ]
+    },
+    "chat-line": { "kind": "label", "class": "chat-line" },
+    "observer-row": {
+      "class": "observer-row",
+      "children": [
+        { "id": "color", "kind": "bar", "class": "observer-color", "value": 1 },
+        { "id": "player", "kind": "label", "class": "observer-player" },
+        { "id": "goods", "kind": "label", "class": "observer-cell observer-goods" },
+        { "id": "units", "kind": "label", "class": "observer-cell" },
+        { "id": "workers", "kind": "label", "class": "observer-cell" },
+        { "id": "hero", "kind": "label", "class": "observer-cell" }
+      ]
+    }
+  }
+}

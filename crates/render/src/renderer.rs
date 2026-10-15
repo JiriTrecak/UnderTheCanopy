@@ -133,6 +133,7 @@ pub struct Renderer {
     water: Option<WaterGpu>,
     forest: Option<ForestGpu>,
     ripples: Ripples,
+    ui: Option<crate::ui::UiLayer>,
     timer: Option<GpuTimer>,
     timestamps: bool,
     /// Shadows on (a setting).
@@ -289,6 +290,7 @@ impl Renderer {
             water: None,
             forest: None,
             ripples: Ripples::new(),
+            ui: None,
             timer: None,
             timestamps: gpu.features.timestamps,
             shadows: true,
@@ -344,6 +346,13 @@ impl Renderer {
             self.targets = Targets::new(&gpu.device, scene);
         }
         self.rebuild(gpu);
+    }
+
+    /// The game UI pass, created on first use for this renderer's output format.
+    pub fn ui_mut(&mut self, gpu: &Gpu) -> &mut crate::ui::UiLayer {
+        let format = self.output_format;
+        self.ui
+            .get_or_insert_with(|| crate::ui::UiLayer::new(gpu, format))
     }
 
     /// The unit wakes: feed it the bodies that wade every frame
@@ -784,6 +793,25 @@ impl Renderer {
                         self.post
                             .encode_final(&mut encoder, &self.frame_group, output, writes);
                 }
+                (passes::UI, PassKind::Render) => match &mut self.ui {
+                    Some(ui) => report.draws += ui.encode(&mut encoder, output, writes),
+                    None => drop(encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                        label: Some(passes::UI),
+                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                            view: output,
+                            depth_slice: None,
+                            resolve_target: None,
+                            ops: wgpu::Operations {
+                                load: wgpu::LoadOp::Load,
+                                store: wgpu::StoreOp::Store,
+                            },
+                        })],
+                        depth_stencil_attachment: None,
+                        timestamp_writes: writes,
+                        occlusion_query_set: None,
+                        multiview_mask: None,
+                    })),
+                },
                 (name, _) => unreachable!("no recorder for pass {name}"),
             }
             report

@@ -20,6 +20,7 @@ pub mod targets;
 pub mod terrain;
 pub mod texture;
 pub mod timing;
+pub mod ui;
 pub mod water;
 
 pub use camera::{CameraView, RtsCamera};

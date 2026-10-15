@@ -11,6 +11,7 @@ publish.workspace = true
 anyhow.workspace = true
 bytemuck.workspace = true
 canopy-assets = { path = "../assets" }
+canopy-ui = { path = "../ui", features = ["wgpu"] }
 glam.workspace = true
 pollster.workspace = true
 serde.workspace = true
