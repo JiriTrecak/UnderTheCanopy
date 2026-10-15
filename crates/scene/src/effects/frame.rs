@@ -32,9 +32,9 @@ use glam::{EulerRot, Mat4, Quat, Vec3};
 use std::{collections::BTreeMap, f32::consts::TAU, sync::Arc};
 
 /// Fire points drawn at once (the nearest to the eye), each a flame and a smoke emitter.
-pub const DRAWN_FIRES: usize = 40;
-pub const FLAME_PARTS: u32 = 16;
-pub const SMOKE_PARTS: u32 = 12;
+pub const DRAWN_FIRES: usize = 28;
+pub const FLAME_PARTS: u32 = 26;
+pub const SMOKE_PARTS: u32 = 8;
 /// Hit dust bursts drawn at once (the nearest to the eye).
 pub const DRAWN_HIT_DUST: usize = 64;
 pub const HIT_DUST_PARTS: u32 = 14;
@@ -43,7 +43,7 @@ pub const DAMAGE_PARTS: usize = 2048;
 /// A fire this bad (and worse) may light its surroundings.
 pub const FIRE_LIGHT_SEVERITY: f32 = 0.6;
 /// Wind that leans smoke (world x, z per second of rise), the same for every fire.
-const SMOKE_WIND: [f32; 2] = [0.55, 0.3];
+const SMOKE_WIND: [f32; 2] = [0.45, -0.5];
 /// The repeat of the fires' clock, seconds (keeps `f32` precise; one cycle every hour).
 const FIRE_CLOCK: f64 = 3600.0;
 
@@ -494,7 +494,7 @@ impl EffectEvaluator {
             }
             let index = out.emitters.len() as u32;
             out.emitters.push(Emitter {
-                color: [1.0, 1.0, 1.0, 0.85 + 0.15 * f.severity],
+                color: [1.0, 1.0, 1.0, 0.75 + 0.2 * f.severity],
                 accent: [0.0, 0.0, 0.0, f.size],
                 shape: [time, f.severity, 0.0, 0.0],
                 ints: [kind::FLAME, 0, FLAME_PARTS, f.seed],
@@ -503,14 +503,14 @@ impl EffectEvaluator {
             self.pushed += FLAME_PARTS as usize;
             self.flames
                 .extend((0..FLAME_PARTS).map(|part| (index << 8) | part));
-            // Thin grey smoke at first, dense and near black when the building is about
-            // to fall.
-            let dark = 0.14 - 0.11 * f.severity;
-            let thin = dark + 0.1;
+            // Light grey wisps at first, a little denser and darker when the building is
+            // about to fall; never a cloud over it.
+            let dark = 0.3 - 0.14 * f.severity;
+            let thin = dark + 0.12;
             self.push(
                 out,
                 Emitter {
-                    color: [dark, dark * 0.95, dark * 0.9, 0.5 + 0.5 * f.severity],
+                    color: [dark, dark * 0.97, dark * 0.94, 0.22 + 0.2 * f.severity],
                     accent: [thin, thin, thin, f.size],
                     shape: [time, f.severity, SMOKE_WIND[0], SMOKE_WIND[1]],
                     ints: [kind::SMOKE, flag::NORMAL, SMOKE_PARTS, f.seed ^ 0x5bd1_e995],
