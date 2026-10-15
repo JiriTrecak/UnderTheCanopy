@@ -248,6 +248,21 @@ fn main() -> Result<(), String> {
     for (_, name, costs) in inner.iter().take(16) {
         report(name, costs);
     }
+    if std::env::var("BENCH_DEBUG").is_ok() {
+        let st = world.state();
+        let mut hist = BTreeMap::new();
+        for e in st.entities.iter() {
+            *hist.entry(e.statuses.len()).or_insert(0) += 1;
+        }
+        println!("statuses per entity: {hist:?}");
+        let mut defs = BTreeMap::new();
+        for e in st.entities.iter().filter(|e| e.unit.is_some()) {
+            *defs
+                .entry(world.catalog().get(e.definition).id.to_string())
+                .or_insert(0) += 1;
+        }
+        println!("units: {defs:?}");
+    }
     println!("digest {digest:016x}");
     Ok(())
 }

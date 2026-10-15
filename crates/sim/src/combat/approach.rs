@@ -22,6 +22,38 @@ struct Candidate {
     index: usize,
 }
 
+impl Candidate {
+    /// The order candidates are tried in: score, row, column, then generation order, so
+    /// no two compare equal.
+    fn order(&self, other: &Self) -> std::cmp::Ordering {
+        self.score
+            .total_cmp(&other.score)
+            .then(self.spot.y.cmp(&other.spot.y))
+            .then(self.spot.x.cmp(&other.spot.x))
+            .then(self.index.cmp(&other.index))
+    }
+}
+
+/// A candidate in a heap that pops the first one to try.
+struct Next(Candidate);
+
+impl PartialEq for Next {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other).is_eq()
+    }
+}
+impl Eq for Next {}
+impl PartialOrd for Next {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl Ord for Next {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        other.0.order(&self.0)
+    }
+}
+
 /// Squared gap in cells between `actor`'s body standing at `(x, y)` and `target` (old
 /// `bodyRange` from a point).
 fn body_range_from(
@@ -151,46 +183,63 @@ pub fn route_to_attack(
             }
         }
     }
-    candidates.sort_by(|a, b| {
-        a.score
-            .total_cmp(&b.score)
-            .then(a.spot.y.cmp(&b.spot.y))
-            .then(a.spot.x.cmp(&b.spot.x))
-            .then(a.index.cmp(&b.index))
-    });
+    // Candidates are tried in `Candidate::order`. Until eight detours are collected each
+    // one is tried in turn (popped from a heap: usually only a few are needed). After
+    // that a candidate only wins by a direct approach; that test is a pure query of the
+    // other bodies, so it runs over the rest in any order, and only the few that pass are
+    // sorted and tried in turn.
     let ranged = weapon.ranged();
     let mut detours: Vec<Spot> = Vec::new();
-    for c in &candidates {
-        let destination = c.spot.fixed();
-        let e = state.entities.get(actor).expect("actor");
-        // With every alternative collected, a candidate only wins by a direct approach.
-        let direct = (detours.len() >= DETOURS)
-            .then(|| spatial.unit_segment_clear(from, destination, Some(actor), None, None, None));
-        if direct == Some(false) {
-            continue;
-        }
-        let t = state.entities.get(target).expect("target");
-        let valid = spatial.unit_walkable(c.spot, &body)
-            && senses.attack_clear(
-                state,
-                senses.eye_at(e, f64::from(c.spot.x), f64::from(c.spot.y), c.spot.deck),
-                t,
-                ranged,
-            );
-        if !valid || !spatial.free(c.spot, Some(actor), Some(&body), None) {
-            continue;
-        }
-        let straight = direct.unwrap_or_else(|| {
-            spatial.unit_segment_clear(from, destination, Some(actor), None, None, None)
-        }) && spatial.clear_segment(from, destination, None, &body);
-        if straight {
-            let e = state.entities.get_mut(actor).expect("actor");
-            if spatial.route(e, c.spot, false) {
-                return true;
+    let mut heap =
+        std::collections::BinaryHeap::from(candidates.into_iter().map(Next).collect::<Vec<_>>());
+    // Whether `c` is valid and free; with a clear straight approach that routes, the
+    // actor is on its way.
+    let attempt =
+        |spatial: &mut Spatial, state: &mut State, c: &Candidate, direct: Option<bool>| {
+            let destination = c.spot.fixed();
+            let e = state.entities.get(actor).expect("actor");
+            let t = state.entities.get(target).expect("target");
+            let valid = spatial.unit_walkable(c.spot, &body)
+                && senses.attack_clear(
+                    state,
+                    senses.eye_at(e, f64::from(c.spot.x), f64::from(c.spot.y), c.spot.deck),
+                    t,
+                    ranged,
+                );
+            if !valid || !spatial.free(c.spot, Some(actor), Some(&body), None) {
+                return None;
             }
+            let straight = direct.unwrap_or_else(|| {
+                spatial.unit_segment_clear(from, destination, Some(actor), None, None, None)
+            }) && spatial.clear_segment(from, destination, None, &body);
+            if straight {
+                let e = state.entities.get_mut(actor).expect("actor");
+                if spatial.route(e, c.spot, false) {
+                    return Some(true);
+                }
+            }
+            Some(false)
+        };
+    while detours.len() < DETOURS {
+        let Some(Next(c)) = heap.pop() else {
+            break;
+        };
+        match attempt(spatial, state, &c, None) {
+            Some(true) => return true,
+            Some(false) => detours.push(c.spot),
+            None => {}
         }
-        if detours.len() < DETOURS {
-            detours.push(c.spot);
+    }
+    let mut direct: Vec<Candidate> = heap
+        .into_vec()
+        .into_iter()
+        .map(|Next(c)| c)
+        .filter(|c| spatial.unit_segment_clear(from, c.spot.fixed(), Some(actor), None, None, None))
+        .collect();
+    direct.sort_unstable_by(Candidate::order);
+    for c in &direct {
+        if attempt(spatial, state, c, Some(true)) == Some(true) {
+            return true;
         }
     }
     for spot in detours {
