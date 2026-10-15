@@ -2,9 +2,9 @@
 //! `rules.campaigns`, then the missions of one campaign with their presentation, and the
 //! player's progress (`campaign.json` in the user folder).
 //!
-//! Locks follow progress, where the old game hard-coded them: a campaign without missions
-//! is locked ("Coming later"); within a campaign the first mission is open and each next
-//! one opens when the one before it is won.
+//! Locks follow progress, where the old game hard-coded them: every campaign opens (one
+//! without missions says so, as the old screen did); within a campaign the first mission
+//! is open and each next one opens when the one before it is won.
 
 use super::{ui_host::UiHost, widgets};
 use crate::data::{GameData, MapEntry};
@@ -91,10 +91,8 @@ pub fn show_cards(host: &mut UiHost, gpu: &Gpu, data: &GameData, progress: &Prog
     for (i, card) in cards.iter().enumerate() {
         let base = format!("campaign/cards/{i}");
         let crest = crest(data, &card.race).and_then(|e| host.pack_image(gpu, &data.pack, &e));
-        let locked = card.missions == 0;
         if let Some(node) = host.ui.find(&format!("{base}/crest")) {
             host.ui.set_image(node, crest);
-            host.ui.set_opacity(node, if locked { 0.55 } else { 1.0 });
         }
         let race = data
             .content
@@ -102,22 +100,17 @@ pub fn show_cards(host: &mut UiHost, gpu: &Gpu, data: &GameData, progress: &Prog
             .races
             .get(&card.race)
             .map_or(card.race.as_str(), |r| r.name.as_str());
-        widgets::text(&mut host.ui, &format!("{base}/chapter"), race);
-        widgets::text(&mut host.ui, &format!("{base}/name"), &card.name);
-        let status = if locked {
-            "Coming later".to_string()
+        // As the old cards: the campaign's name small above, the people large.
+        widgets::text(&mut host.ui, &format!("{base}/chapter"), &card.name);
+        widgets::text(&mut host.ui, &format!("{base}/name"), race);
+        let status = if card.missions == 0 {
+            "No chapters yet".to_string()
         } else if card.completed == card.missions {
             "Every chapter won".to_string()
         } else {
             format!("{} of {} chapters won", card.completed, card.missions)
         };
         widgets::text(&mut host.ui, &format!("{base}/status"), &status);
-        widgets::text(
-            &mut host.ui,
-            &format!("{base}/play"),
-            if locked { "Locked" } else { "Play" },
-        );
-        widgets::enabled(&mut host.ui, &format!("{base}/play"), !locked);
     }
 }
 

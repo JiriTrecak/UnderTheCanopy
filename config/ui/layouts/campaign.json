@@ -20,7 +20,7 @@
       {
         "class": "cp-content",
         "children": [
-          { "kind": "label", "class": "kicker", "text": "Under the Canopy" },
+          { "kind": "label", "class": "kicker cp-kicker", "text": "Under the Canopy" },
           { "kind": "label", "class": "cp-title", "text": "Choose your campaign" },
           { "id": "cards", "class": "cp-cards", "repeat": "cp-card" },
           { "id": "empty", "kind": "label", "class": "cp-hint", "text": "No campaigns are available yet.", "visible": false },

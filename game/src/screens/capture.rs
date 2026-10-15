@@ -557,9 +557,26 @@ fn a_match(rig: &mut Rig) -> Result<()> {
     rig.game.apply(Intent::Back);
     rig.click("gm.exit");
     rig.settle(0.1);
-    rig.shoot("confirm-leave")?;
-    rig.game.dialog = None;
+    rig.shoot("game-menu-leave")?;
+    rig.click("gm.page-back");
     rig.game.apply(Intent::Back);
+    // The generic confirmation, as deleting a save asks it.
+    rig.game.open_saves();
+    let first = rig.game.saves_list.first().cloned();
+    if let Some(meta) = first {
+        rig.game.ask(super::Dialog {
+            ask: super::Ask::DeleteSave(meta.id.clone()),
+            title: "Delete this save?".into(),
+            body: format!("“{}” is removed for good.", meta.name),
+            confirm: "Delete".into(),
+            danger: true,
+            second: None,
+        });
+        rig.settle(0.1);
+        rig.shoot("confirm-delete")?;
+        rig.game.dialog = None;
+        rig.game.apply(Intent::Back);
+    }
     rig.game.apply(Intent::Back);
 
     // The result: a surrender, then a decided match.

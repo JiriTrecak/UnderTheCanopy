@@ -111,9 +111,6 @@ struct Loading {
 /// A question with up to two answers besides Cancel.
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Ask {
-    LeaveMatch,
-    Restart,
-    Surrender,
     DeleteSave(String),
 }
 
@@ -1111,54 +1108,29 @@ impl Game {
             }
             "gm.page-back" if clicked => self.menu_page = MenuPage::Main,
             "gm.load" if clicked => self.open_saves(),
-            "gm.restart" if clicked => {
-                self.ask(Dialog {
-                    ask: Ask::Restart,
-                    title: "Restart this scenario?".into(),
-                    body: "Unsaved progress will be lost.".into(),
-                    confirm: "Restart".into(),
-                    danger: true,
-                    second: None,
-                });
+            "gm.restart" | "gm.surrender" | "gm.exit" if clicked => {
+                self.menu_status.clear();
+                self.menu_page = match name {
+                    "gm.restart" => MenuPage::Restart,
+                    "gm.surrender" => MenuPage::Surrender,
+                    _ => MenuPage::Exit,
+                };
             }
             "gm.settings" if clicked => self.open_settings(),
-            "gm.surrender" if clicked => {
-                let networked = self.playing.as_ref().is_some_and(|p| p.networked);
-                self.ask(Dialog {
-                    ask: Ask::Surrender,
-                    title: "Surrender?".into(),
-                    body: if networked {
-                        "You leave the match as defeated; the others play on.".into()
-                    } else {
-                        "The match ends as a defeat.".into()
-                    },
-                    confirm: "Surrender".into(),
-                    danger: true,
-                    second: None,
-                });
+            "gm.save-exit" if clicked => {
+                self.save_game_named("Before leaving");
+                self.apply(Intent::LeaveMatch);
             }
-            "gm.exit" if clicked => {
-                let local = self
-                    .playing
-                    .as_ref()
-                    .is_some_and(|p| !p.networked && p.outcome.is_none());
-                self.ask(Dialog {
-                    ask: Ask::LeaveMatch,
-                    title: "Leave this scenario?".into(),
-                    body: if local {
-                        "Unsaved progress will be lost.".into()
-                    } else {
-                        "You leave the match.".into()
-                    },
-                    confirm: if local {
-                        "Exit without saving".into()
-                    } else {
-                        "Leave".into()
-                    },
-                    danger: true,
-                    second: local.then(|| "Save and exit".into()),
-                });
+            "gm.leave" if clicked => self.apply(Intent::LeaveMatch),
+            "gm.save-restart" | "gm.restart-now" if clicked => {
+                if name == "gm.save-restart" {
+                    self.save_game_named("Before restarting");
+                }
+                if let Some(rerun) = self.last_match.clone() {
+                    self.start_rerun(rerun);
+                }
             }
+            "gm.surrender-now" if clicked => self.decided(None, true),
             // Saves.
             "saves.load" if clicked => {
                 if let Some(meta) = action.index.and_then(|i| self.saves_list.get(i)).cloned() {
@@ -1220,20 +1192,8 @@ impl Game {
         self.apply(Intent::Show(Overlay::Confirm));
     }
 
-    fn answer(&mut self, ask: Ask, second: bool) {
+    fn answer(&mut self, ask: Ask, _second: bool) {
         match ask {
-            Ask::LeaveMatch => {
-                if second {
-                    self.save_game_named("Before leaving");
-                }
-                self.apply(Intent::LeaveMatch);
-            }
-            Ask::Restart => {
-                if let Some(rerun) = self.last_match.clone() {
-                    self.start_rerun(rerun);
-                }
-            }
-            Ask::Surrender => self.decided(None, true),
             Ask::DeleteSave(id) => {
                 if let Err(error) = self.library.delete(&id) {
                     self.saves_status = format!("Cannot delete: {error:#}");
@@ -1468,27 +1428,29 @@ impl Game {
 
     fn show_boot(&mut self) {
         let ui = &mut self.host.ui;
-        widgets::visible(ui, "loading/copy", true);
-        widgets::visible(ui, "loading/copy/crest", false);
-        widgets::text(ui, "loading/copy/chapter", "");
-        widgets::text(ui, "loading/copy/title", "Under the Canopy");
-        widgets::text(ui, "loading/copy/briefing", "");
-        widgets::visible(ui, "loading/back", false);
-        widgets::text(ui, "loading/tip", "");
+        widgets::visible(ui, "loading/art-view", true);
+        widgets::visible(ui, "loading/panel-view", false);
+        widgets::visible(ui, "loading/art-view/copy", true);
+        widgets::visible(ui, "loading/art-view/copy/crest", false);
+        widgets::text(ui, "loading/art-view/copy/chapter", "");
+        widgets::text(ui, "loading/art-view/copy/title", "Under the Canopy");
+        widgets::text(ui, "loading/art-view/copy/briefing", "");
+        widgets::visible(ui, "loading/art-view/back", false);
+        widgets::text(ui, "loading/art-view/tip", "");
         match &self.boot_error {
             Some(error) => {
-                widgets::visible(ui, "loading/error", true);
+                widgets::visible(ui, "loading/art-view/error", true);
                 widgets::text(
                     ui,
-                    "loading/error",
+                    "loading/art-view/error",
                     &format!("The game could not start: {}", plain(error)),
                 );
-                widgets::text(ui, "loading/stage", "");
+                widgets::text(ui, "loading/art-view/stage", "");
             }
             None => {
-                widgets::visible(ui, "loading/error", false);
-                widgets::text(ui, "loading/stage", self.boot_stage.0.label());
-                if let Some(bar) = ui.find("loading/progress") {
+                widgets::visible(ui, "loading/art-view/error", false);
+                widgets::text(ui, "loading/art-view/stage", self.boot_stage.0.label());
+                if let Some(bar) = ui.find("loading/art-view/progress") {
                     ui.set_value(bar, self.boot_stage.1);
                 }
             }
@@ -1525,14 +1487,14 @@ impl Game {
             _ => None,
         };
         let ui = &mut self.host.ui;
-        if let Some(node) = ui.find("loading/art") {
+        if let Some(node) = ui.find("loading/art-view/art") {
             let key = art_key.or_else(|| Some(ui.image_key("menu-aftermath")));
             ui.set_image(node, key);
         }
-        widgets::visible(ui, "loading/back", true);
+        widgets::visible(ui, "loading/art-view/back", true);
         widgets::text(
             ui,
-            "loading/copy/chapter",
+            "loading/art-view/copy/chapter",
             &presentation
                 .and_then(|p| p.chapter.clone())
                 .unwrap_or_else(|| {
@@ -1545,14 +1507,14 @@ impl Game {
         );
         widgets::text(
             ui,
-            "loading/copy/title",
+            "loading/art-view/copy/title",
             mission_title
                 .as_deref()
                 .unwrap_or("Preparing the battlefield"),
         );
         widgets::text(
             ui,
-            "loading/copy/briefing",
+            "loading/art-view/copy/briefing",
             &presentation
                 .and_then(|p| p.briefing.clone())
                 .unwrap_or_default(),
@@ -1562,22 +1524,52 @@ impl Game {
         } else {
             tip_list[(elapsed / 9) as usize % tip_list.len()].clone()
         };
-        widgets::text(ui, "loading/tip", &tip);
+        widgets::text(ui, "loading/art-view/tip", &tip);
+        // Missions load over their art; other matches show the old plain panel.
+        let mission = mission_title.is_some();
+        widgets::visible(ui, "loading/art-view", mission);
+        widgets::visible(ui, "loading/panel-view", !mission);
+        let label = stage.map_or("Starting the match", |(s, _)| s.label());
+        widgets::text(
+            ui,
+            "loading/panel-view/title",
+            if error.is_some() {
+                "The battlefield could not be loaded"
+            } else {
+                "Preparing the battlefield"
+            },
+        );
+        widgets::text(
+            ui,
+            "loading/panel-view/stage",
+            if error.is_some() { "" } else { label },
+        );
+        widgets::visible(ui, "loading/panel-view/progress", error.is_none());
+        if let Some(bar) = ui.find("loading/panel-view/progress") {
+            ui.set_value(bar, progress);
+        }
+        widgets::text(
+            ui,
+            "loading/panel-view/detail",
+            &error.as_deref().map_or_else(
+                || "The match starts when preparation is complete.".to_string(),
+                plain,
+            ),
+        );
         match error {
             Some(error) => {
-                widgets::visible(ui, "loading/error", true);
+                widgets::visible(ui, "loading/art-view/error", true);
                 widgets::text(
                     ui,
-                    "loading/error",
+                    "loading/art-view/error",
                     &format!("The battlefield could not be loaded: {}", plain(&error)),
                 );
-                widgets::text(ui, "loading/stage", "");
+                widgets::text(ui, "loading/art-view/stage", "");
             }
             None => {
-                widgets::visible(ui, "loading/error", false);
-                let label = stage.map_or("Starting the match", |(s, _)| s.label());
-                widgets::text(ui, "loading/stage", label);
-                if let Some(bar) = ui.find("loading/progress") {
+                widgets::visible(ui, "loading/art-view/error", false);
+                widgets::text(ui, "loading/art-view/stage", label);
+                if let Some(bar) = ui.find("loading/art-view/progress") {
                     ui.set_value(bar, progress);
                 }
             }

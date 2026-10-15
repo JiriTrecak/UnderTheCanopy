@@ -174,7 +174,13 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
     let id = spec.map;
     let _span = tracing::info_span!("load_map", map = id).entered();
     let started = std::time::Instant::now();
-    let content = Arc::new(Content::load(&paths.data).map_err(|e| anyhow!("content: {e}"))?);
+    // A packaged game ships the cooked pack instead of `assets/library` (D26).
+    let content = if crate::data::is_packaged(&paths.data) {
+        Content::load_packaged(&paths.data)
+    } else {
+        Content::load(&paths.data)
+    };
+    let content = Arc::new(content.map_err(|e| anyhow!("content: {e}"))?);
     let library = map::library(&paths.data).map_err(|e| anyhow!("maps: {e}"))?;
     let file = library.iter().find(|m| m.id == id).with_context(|| {
         let ids: Vec<&str> = library.iter().map(|m| m.id.as_str()).collect();

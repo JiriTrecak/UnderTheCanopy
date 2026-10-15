@@ -33,6 +33,29 @@
               }
             ]
           },
+          {
+            "id": "exit-page", "class": "gm-page", "visible": false,
+            "children": [
+              { "id": "save-exit", "kind": "button", "class": "gm-button", "text": "Save and exit", "action": "gm.save-exit" },
+              { "id": "leave", "kind": "button", "class": "gm-button", "text": "Exit without saving", "action": "gm.leave" },
+              { "kind": "button", "class": "gm-button", "text": "Cancel", "action": "gm.page-back" }
+            ]
+          },
+          {
+            "id": "restart-page", "class": "gm-page", "visible": false,
+            "children": [
+              { "kind": "button", "class": "gm-button", "text": "Save and restart", "action": "gm.save-restart" },
+              { "kind": "button", "class": "gm-button", "text": "Restart without saving", "action": "gm.restart-now" },
+              { "kind": "button", "class": "gm-button", "text": "Cancel", "action": "gm.page-back" }
+            ]
+          },
+          {
+            "id": "surrender-page", "class": "gm-page", "visible": false,
+            "children": [
+              { "kind": "button", "class": "gm-button", "text": "Surrender", "action": "gm.surrender-now" },
+              { "kind": "button", "class": "gm-button", "text": "Cancel", "action": "gm.page-back" }
+            ]
+          },
           { "id": "status", "kind": "label", "class": "gm-status" }
         ]
       }

@@ -104,13 +104,19 @@ pub fn options(ui: &mut Ui, path: &str, options: &[String], selected: usize) {
 }
 
 /// `"{w} × {h} C · {n} players"` (old map meta).
+/// A map's side in building cells, as the menus show sizes (`160 × 160 C`).
+pub fn cells(map: &MapEntry) -> u32 {
+    (f64::from(map.size) / canopy_sim::terrain::footprint::BUILDING_CELL) as u32
+}
+
+/// `"{n} players · {w} × {h} C"` (old map list line).
 pub fn map_meta(map: &MapEntry) -> String {
-    format!(
-        "{} × {} C · {} players",
-        map.size,
-        map.size,
-        map.starts.len()
-    )
+    let c = cells(map);
+    if map.sandbox {
+        format!("Single-player testbed · {c} × {c} C")
+    } else {
+        format!("{} players · {c} × {c} C", map.starts.len())
+    }
 }
 
 /// Fills a map list (`sk-map` entries) under `list`.
@@ -174,13 +180,16 @@ pub fn map_preview(
         quiet(
             &mut host.ui,
             format!("{base}/meta"),
-            &format!(
-                "{} × {} C · {} players · {} neutral camps",
-                map.size,
-                map.size,
-                map.starts.len(),
-                map.camps
-            ),
+            &if map.sandbox {
+                format!("{0} × {0} C · Single-player testbed", cells(map))
+            } else {
+                format!(
+                    "{0} × {0} C · {1} players · {2} neutral camps",
+                    cells(map),
+                    map.starts.len(),
+                    map.camps
+                )
+            },
         );
         quiet(
             &mut host.ui,

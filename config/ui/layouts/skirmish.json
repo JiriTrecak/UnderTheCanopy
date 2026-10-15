@@ -33,7 +33,7 @@
         {
           "class": "sk-selects",
           "children": [
-            { "id": "controller", "kind": "dropdown", "class": "sk-select", "action": "skirmish.controller", "options": ["Human", "Computer"] },
+            { "id": "controller", "kind": "dropdown", "class": "sk-select", "action": "skirmish.controller", "options": ["Human", "AI"] },
             { "id": "team", "kind": "dropdown", "class": "sk-select", "action": "skirmish.team", "options": ["No team"] },
             { "id": "race", "kind": "dropdown", "class": "sk-select", "action": "skirmish.race", "options": [] },
             { "id": "hero", "kind": "dropdown", "class": "sk-select", "action": "skirmish.hero", "options": [] }
@@ -95,7 +95,7 @@
                 "children": [
                   { "kind": "label", "class": "sk-section", "text": "Players" },
                   { "id": "players", "class": "sk-players", "repeat": "sk-player" },
-                  { "kind": "label", "class": "sk-hint", "text": "Choose your starting position, or set every player to Computer to watch the match." },
+                  { "kind": "label", "class": "sk-hint", "text": "Choose your starting position, or set every player to AI to watch the match." },
                   { "id": "status", "kind": "label", "class": "sk-status" },
                   { "id": "rules-caption", "kind": "label", "class": "sk-rules-caption", "text": "Victory" },
                   { "id": "rules", "kind": "label", "class": "sk-rules", "text": "Destroy all rival buildings. The last surviving side wins." }

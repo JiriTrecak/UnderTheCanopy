@@ -436,20 +436,51 @@ pub enum MenuPage {
     #[default]
     Main,
     Save,
+    /// Leave this scenario? (old exit page)
+    Exit,
+    Restart,
+    Surrender,
 }
 
 pub fn show_game_menu(host: &mut UiHost, playing: &Playing, page: MenuPage, status: &str) {
     let ui = &mut host.ui;
-    widgets::text(
-        ui,
-        "game-menu/title",
-        &format!("{} menu", kind_name(playing.kind)),
-    );
-    widgets::text(ui, "game-menu/sub", &playing.map_name);
-    widgets::visible(ui, "game-menu/main", page == MenuPage::Main);
-    widgets::visible(ui, "game-menu/save-page", page == MenuPage::Save);
     let local = !playing.networked;
     let decided = playing.outcome.is_some();
+    let menu = format!("{} menu", kind_name(playing.kind));
+    let (title, sub) = match page {
+        MenuPage::Main | MenuPage::Save => (menu.as_str(), playing.map_name.as_str()),
+        MenuPage::Exit if local && !decided => {
+            ("Leave this scenario?", "Unsaved progress will be lost.")
+        }
+        MenuPage::Exit => ("Leave this match?", "The others play on without you."),
+        MenuPage::Restart => ("Save before restarting?", "Unsaved progress will be lost."),
+        MenuPage::Surrender if local => ("Surrender?", "The match ends as a defeat."),
+        MenuPage::Surrender => (
+            "Surrender?",
+            "You leave the match as defeated; the others play on.",
+        ),
+    };
+    widgets::text(ui, "game-menu/title", title);
+    widgets::text(ui, "game-menu/sub", sub);
+    for (id, shown) in [
+        ("main", MenuPage::Main),
+        ("save-page", MenuPage::Save),
+        ("exit-page", MenuPage::Exit),
+        ("restart-page", MenuPage::Restart),
+        ("surrender-page", MenuPage::Surrender),
+    ] {
+        widgets::visible(ui, &format!("game-menu/{id}"), page == shown);
+    }
+    widgets::visible(ui, "game-menu/exit-page/save-exit", local && !decided);
+    widgets::text(
+        ui,
+        "game-menu/exit-page/leave",
+        if local && !decided {
+            "Exit without saving"
+        } else {
+            "Leave the match"
+        },
+    );
     for id in ["save", "load", "restart"] {
         widgets::enabled(ui, &format!("game-menu/main/{id}"), local);
     }

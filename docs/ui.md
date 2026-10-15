@@ -9,7 +9,7 @@ The old game's DOM HUD (`src/ui/**` and its CSS in the old repository) is the vi
 **A retained tree built from data, updated immediate-style.**
 
 - Screens and widget templates are layout documents (`config/ui/layouts/*.json`) styled by a theme (`config/ui/theme.json`). They are compiled once into a node tree; taffy keeps its layout cache in that tree and every text node keeps its shaped buffer and glyph list.
-- Each frame the game pushes its presentation models into named nodes: `set_text`, `set_value`, `set_image`, `set_enabled`, `set_checked`, `set_tooltip`, `set_count` for lists. Setters compare and invalidate only what changed: a value or colour change repaints, a text change reshapes one block, and only text that sizes its box re-runs layout. Hover and press states change paint only (state blocks may not change layout).
+- Each frame the game pushes its presentation models into named nodes: `set_text`, `set_value`, `set_image`, `set_enabled`, `set_checked`, `set_tooltip`, `set_count` for lists; `set_opacity` (fades) and `set_shift` (an offset in logical pixels for animations) change paint and placement only, never flex layout. Setters compare and invalidate only what changed: a value or colour change repaints, a text change reshapes one block, and only text that sizes its box re-runs layout. Hover and press states change paint only (state blocks may not change layout).
 - `Ui::frame(time)` lays out what is dirty, places tooltips and paints the tree into a `DrawList`. `Ui::input(&event)` returns whether the UI consumed an event; interactions come back from `take_actions()` as `Action`s carrying the node's path, its layout `action` name and the index of the list entry it sits in.
 
 Why not immediate mode: layouts are data (designers edit files while the game runs), taffy and cosmic-text are expensive to recompute from scratch, and a steady HUD should cost almost nothing. Why not a fully retained widget API: the game's models change every tick; pushing values into stable handles is as simple as immediate mode without rebuilding anything.
@@ -136,6 +136,25 @@ for (name, asset) in ui.theme_images().map(|(n, a)| (n.to_owned(), a.to_owned())
 | Worst: all 100 log lines change text every frame | 1.26 ms | 1.38 ms |
 
 Display scale 2 gives the same numbers. Start-up (scanning system fonts, compiling, building) takes about 140 ms. Batches are mostly one per distinct icon texture; an icon atlas or texture array would bring them down to a handful if draw calls ever matter. Measure on the base M1 before setting budgets.
+
+## Screens (the game)
+
+The game's menus are layout documents in `config/ui/layouts/`, one per screen, driven by `game/src/screens/` ([D36](decisions.md)):
+
+| Document | Screen | Code |
+|---|---|---|
+| `main-menu` | logo panel, six actions, animated forest art | `screens/menu.rs` (effects) |
+| `campaign`, `missions` | faction cards; mission list with art, chapter, briefing | `screens/campaign.rs` |
+| `skirmish` | battlefields, preview with start markers, players (controller, team, race, hero) | `screens/skirmish.rs` |
+| `multiplayer`, `lobby` | server status, lobbies, create and join; the room's seats, races, heroes, round trips | `screens/multiplayer.rs` |
+| `loading` | plain panel (skirmish, multiplayer) or mission art with progress | `screens/loading.rs`, `mod.rs` |
+| `match-overlay`, `mission-hud` | waiting for players, connection problems, chat; objectives, dialogue, letterbox | `screens/match_ui.rs` |
+| `game-menu`, `result`, `saves`, `settings`, `dialog` | overlays | `match_ui.rs`, `settings_ui.rs`, `mod.rs` |
+| `fade`, `backdrop` | screen-change fade; the 3D frame behind captures | |
+
+Paths include every ancestor with an id (`settings/graphics/shadows`); a path the code asks for that no layout has is logged once. Theme images (`config/ui/theme.json`) and on-demand images (map previews, crests, portraits) are bound from the cooked pack (`screens/ui_host.rs`); pack textures are straight alpha, sRGB ones bound through their sRGB views. The UI draws into a non-sRGB view of the swapchain (its `view_formats`), after the scene, or onto a cleared target on menu screens (no 3D frame is rendered there).
+
+`canopy capture-screens --out <folder> [--size 1600x900] [--scale 1]` renders every screen offscreen through the real game (headless, a temporary user folder); with `CANOPY_MATCH_SERVER` naming a local copy of the old server it also captures a real lobby.
 
 ## Gallery
 

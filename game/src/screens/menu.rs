@@ -1,8 +1,9 @@
 //! The main menu's living background (old `menuEffects.ts`): glowing fires with rising
 //! embers, drifting dust motes and slow light shafts over the forest art, laid out in the
 //! art's own 1672 × 941 space and mapped through its `cover` fit. Boxes of the UI stand in
-//! for the old canvas drawing: radial glows flicker, small dots drift and fade. The old
-//! bezier flame tongues and smoke sprites are not drawn.
+//! for the old canvas drawing: radial glows flicker, small hot ellipses lick upwards as
+//! flame tongues, dots drift and fade, soft vertical shafts sway. The old shafts were
+//! slanted (the UI cannot rotate boxes) and its smoke sprites are not drawn.
 
 use super::ui_host::UiHost;
 
@@ -12,11 +13,11 @@ const ART: [f32; 2] = [1672.0, 941.0];
 const FIRES: [[f32; 2]; 3] = [[1453.0, 474.0], [1340.0, 599.0], [1116.0, 479.0]];
 /// Light shafts: art x at the top and their sway phase.
 const RAYS: [(f32, f32); 5] = [
-    (560.0, 0.0),
-    (700.0, 1.3),
-    (840.0, 2.1),
-    (980.0, 3.4),
-    (1120.0, 4.2),
+    (700.0, 0.0),
+    (790.0, 1.3),
+    (880.0, 2.1),
+    (1300.0, 3.4),
+    (1420.0, 4.2),
 ];
 const MOTES: usize = 24;
 const EMBERS: usize = 24;
@@ -72,12 +73,32 @@ pub fn animate(host: &mut UiHost, t: f32, view: [f32; 2]) {
             }
         }
     }
+    if let Some(list) = ui.find("main-menu/effects/flames") {
+        for i in 0..FIRES.len() * 5 {
+            let Some(node) = ui.child(list, i) else {
+                continue;
+            };
+            let fire = FIRES[i % FIRES.len()];
+            let k = (i / FIRES.len()) as f32;
+            let period = 0.55 + noise(i as u32, 8) * 0.35;
+            let age = ((t + noise(i as u32, 9) * period) % period) / period;
+            let spread = (noise(i as u32, 10) - 0.5) * 26.0 * scale.min(1.5);
+            let [x, y] = map([fire[0], fire[1]]);
+            let rise = age * 26.0 * scale.min(1.5);
+            ui.set_shift(
+                node,
+                x - 8.0 + spread + (t * 9.0 + k).sin() * 2.0,
+                y - 22.0 - rise,
+            );
+            ui.set_opacity(node, (1.0 - age) * (age * 6.0).min(1.0) * 0.95);
+        }
+    }
     if let Some(list) = ui.find("main-menu/effects/rays") {
         for (i, (x, phase)) in RAYS.iter().enumerate() {
             if let Some(node) = ui.child(list, i) {
                 let sway = (t * 0.17 + phase).sin() * 24.0;
-                let [sx, _] = map([*x + sway, 0.0]);
-                ui.set_shift(node, sx, 0.0);
+                let [sx, sy] = map([*x + sway, -120.0]);
+                ui.set_shift(node, sx - 60.0, sy);
                 ui.set_opacity(node, 0.35 + 0.3 * (t * 0.23 + phase * 1.7).sin().abs());
             }
         }

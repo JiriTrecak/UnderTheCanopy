@@ -178,7 +178,7 @@ impl Skirmish {
             widgets::options(
                 ui,
                 &format!("{base}/controller"),
-                &["Human".to_string(), "Computer".to_string()],
+                &["Human".to_string(), "AI".to_string()],
                 usize::from(!slot.human),
             );
             widgets::options(
