@@ -276,6 +276,13 @@ The match is playable ([play](play.md)): `just play --map <id> [--players N]` pu
 - **No interface sounds**: the old game had none; effect sounds play from every new view as before.
 - **HUD additions** live in `config/ui/layouts/hud.json` and the template file `play.json`, with styles appended to `theme.json`: selection cards, the active task and waiting wells, order tiles, banners, pager, control groups, chat, observer panel, hint and outcome. Ported from the old stylesheet where it had them.
 
+## D37. Simulation performance work keeps results bit-identical (2026-10-15)
+
+Speed-ups in `canopy-sim` must not change a single simulated value: every tick fingerprint and the final saved state stay identical, checked with the digest of `just bench-sim` (crowd battles and AI matches) before and after, besides the determinism tests. Concretely: caches are pure functions of the state they read and are forgotten whenever that state can change (autocast remembers sight answers and unit snapshots only until the next cast); "is there any" queries may test candidates in any order and skip ones that provably cannot answer (the sight index skips sensors not shared with the asking team; attack approach first tries the bodies touching the actor); "the first in order" searches keep their order (attack approach pops a heap and sorts only the candidates that pass the pure tests). A faster rule that would change tie-breaks or outcomes is a gameplay change and goes to Jiri (D14).
+
+- The measured crowd battle (`canopy shot --crowd N`) lives in `canopy_sim::crowd`, so the shot tool and the benchmark run the same scenario. `World::step` marks its steps with `tick: …` spans for Tracy and the benchmark.
+- Numbers and the remaining hot spots are in [simulation § Performance](simulation.md#performance).
+
 ## D38. Screens, app flow, settings and saves for M4/M5 (2026-10-15, decided while Jiri was away — review)
 
 The game opens on the main menu and runs every match through the screens (`game/src/screens/`, [ui §Screens](ui.md#screens-the-game)); `--map`/`--spectate` still jump straight into a match. Captures with the old game side by side: [captures](captures/README.md) (`m4-screens/`).

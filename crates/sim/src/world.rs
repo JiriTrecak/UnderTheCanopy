@@ -311,12 +311,22 @@ impl World {
     pub fn step(&mut self) {
         let clock = self.tick();
         self.advance();
+        let _s = tracing::trace_span!("tick: ai").entered();
         self.think(clock);
     }
 
     /// Steps 1 to 11 of a tick.
     fn advance(&mut self) {
-        self.apply_due();
+        // Spans named `tick: …` mark the steps for profiling and `just bench-sim`.
+        macro_rules! step {
+            ($name:literal) => {
+                tracing::trace_span!(concat!("tick: ", $name)).entered()
+            };
+        }
+        {
+            let _s = step!("commands");
+            self.apply_due();
+        }
         // Step 2: cinematic dialogue pauses the game; only the clock advances.
         if mission::pause(&mut self.state) {
             self.observe();
@@ -355,13 +365,18 @@ impl World {
             return;
         }
         // Step 2: the ability lifecycle, cast orders, autocast and taunts.
+        let s = step!("abilities");
         self.motion.spatial.sync_static(&self.state);
         self.motion.spatial.sync_bodies(&self.state);
         abilities::step::begin(&mut ctx!(), &mut self.state);
+        drop(s);
         // Step 3: item effects and regeneration.
+        let s = step!("items");
         crate::items::effects::tick(&mut ctx!(), &mut self.state);
         crate::items::regeneration::tick(&mut ctx!(), &mut self.state);
+        drop(s);
         // Step 4: order advance, then work assignment.
+        let s = step!("orders");
         self.motion.spatial.sync_static(&self.state);
         let ai = self.ai_owners();
         orders::plan::advance(
@@ -381,7 +396,9 @@ impl World {
                 ai: &ai,
             },
         );
+        drop(s);
         {
+            let _s = step!("economy assign");
             let mut ctx =
                 self.economy
                     .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
@@ -389,21 +406,34 @@ impl World {
         }
         // Step 5: garrisons, pickups, combat and order planning, separation, idle motion,
         // movement.
+        let s = step!("garrisons");
         crate::garrisons::tick(&mut self.state, &self.catalog, &mut self.motion.spatial);
         crate::items::inventory::plan(&mut ctx!(), &mut self.state);
+        drop(s);
+        let s = step!("combat plan");
         combat::plan::plan(
             &senses!(),
             &mut self.motion.spatial,
             &mut self.state,
             &mut self.combat.scratch,
         );
+        drop(s);
+        let s = step!("separation");
         self.motion.separate(&mut self.state);
+        drop(s);
+        let s = step!("idle");
         self.motion.idle(&mut self.state);
+        drop(s);
+        let s = step!("movement");
         self.motion.move_units(&mut self.state);
+        drop(s);
         // Step 6: casters that arrived in range; item effects after movement.
+        let s = step!("cast approach");
         abilities::step::after_movement(&mut ctx!(), &mut self.state);
         crate::items::effects::tick(&mut ctx!(), &mut self.state);
+        drop(s);
         // Step 7: combat resolution on current sight, then deaths.
+        let s = step!("combat resolve");
         self.vision
             .sync(&self.state, &self.catalog, &self.terrain, &self.sight);
         let outcome = combat::resolve::resolve(&mut ctx!(), &mut self.state);
@@ -413,12 +443,16 @@ impl World {
                 .sync(&self.state, &self.catalog, &self.terrain, &self.sight);
             combat::deaths::process(&mut ctx!(), &mut self.state, &outcome.dead);
         }
+        drop(s);
         // Step 8: reactions, persistent effects, deliveries and releases, then taunts.
+        let s = step!("ability resolve");
         self.vision
             .sync(&self.state, &self.catalog, &self.terrain, &self.sight);
         abilities::step::resolve(&mut ctx!(), &mut self.state);
+        drop(s);
         // Step 9: hero returns, revival, jobs, training, regrowth, upgrades, research,
         // and items taken in reach.
+        let s = step!("economy advance");
         abilities::world_ops::tick_returns(&mut ctx!(), &mut self.state);
         {
             let mut ctx =
@@ -427,13 +461,18 @@ impl World {
             economy::advance(&mut ctx);
         }
         crate::items::inventory::advance(&mut ctx!(), &mut self.state);
+        drop(s);
         // Step 10: the mission script.
         if let Some(mission) = &mut self.mission {
+            let _s = step!("mission");
             mission.tick(&mut self.state, &self.catalog);
             self.motion.spatial.sync_static(&self.state);
         }
         // Step 11: fog and knowledge, then defeat and victory.
+        let s = step!("vision");
         self.observe();
+        drop(s);
+        let _s = step!("victory");
         if self.rules == victory::Rules::Skirmish {
             let teams = self.vision.teams().clone();
             let mut ctx =

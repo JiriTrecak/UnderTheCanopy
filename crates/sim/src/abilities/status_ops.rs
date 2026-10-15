@@ -117,11 +117,7 @@ fn accepts(ctx: &Ctx, state: &State, a: &Apply, target: EntityId) -> bool {
     };
     let spell = ctx.ability(a.ability);
     let hostile = match state.entities.get(a.source) {
-        Some(live) => {
-            let mut c = live.clone();
-            c.owner = a.owner;
-            ctx.senses.hostile(&c, e)
-        }
+        Some(live) => ctx.senses.hostile_as(live, a.owner, e),
         None => {
             e.hp.is_some()
                 && actor::alive(e)

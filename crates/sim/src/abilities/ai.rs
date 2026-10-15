@@ -719,10 +719,76 @@ fn corpse_aims(spell: &Ability, corpses: &[CorpseView]) -> Vec<(EntityId, Milli)
     list
 }
 
+/// What autocast learns about the units while the world stands still: sight answers per
+/// player and unit snapshots. Both are pure functions of the state, which only a cast
+/// changes in [`ambient`], so they are forgotten after every cast.
+#[derive(Default)]
+struct Observations {
+    /// Answers carry the epoch they were learnt in; older ones are unknown.
+    epoch: u32,
+    width: usize,
+    /// Per player slot, per entity id: epoch × 2 + visible.
+    sight: Vec<u32>,
+    /// Per entity id: epoch and index into `actors`.
+    snapshot: Vec<(u32, u32)>,
+    actors: Vec<Actor>,
+}
+
+impl Observations {
+    /// Player slots remembered; others are asked every time.
+    const PLAYERS: usize = 16;
+
+    /// Forgets everything; `ids` bounds the entity ids to remember.
+    fn forget(&mut self, ids: usize) {
+        self.epoch += 1;
+        self.actors.clear();
+        if ids > self.width || self.epoch >= u32::MAX / 2 {
+            self.width = ids.next_power_of_two();
+            self.epoch = 1;
+            self.sight = vec![0; self.width * Self::PLAYERS];
+            self.snapshot = vec![(0, 0); self.width];
+        }
+    }
+
+    /// [`super::visible`] for a player's caster: the owner's exact sight of the unit,
+    /// which does not depend on which of its units asks.
+    fn visible(&mut self, ctx: &Ctx, state: &State, caster: &Actor, target: EntityId) -> bool {
+        let id = target.0 as usize;
+        let slot = match caster.owner {
+            Owner::Player(p) if usize::from(p) < Self::PLAYERS && id < self.width => usize::from(p),
+            _ => return super::visible(ctx, state, caster.owner, target, Some(caster)),
+        };
+        let entry = &mut self.sight[slot * self.width + id];
+        if *entry >> 1 == self.epoch {
+            return *entry & 1 == 1;
+        }
+        let seen = super::visible(ctx, state, caster.owner, target, Some(caster));
+        *entry = self.epoch << 1 | u32::from(seen);
+        seen
+    }
+
+    fn actor(&mut self, ctx: &Ctx, state: &State, e: &crate::entity::Entity) -> Actor {
+        let id = e.id.0 as usize;
+        if id >= self.width {
+            return actor::of(&ctx.senses, state, e);
+        }
+        let (epoch, index) = self.snapshot[id];
+        if epoch == self.epoch {
+            return self.actors[index as usize].clone();
+        }
+        let a = actor::of(&ctx.senses, state, e);
+        self.snapshot[id] = (self.epoch, self.actors.len() as u32);
+        self.actors.push(a.clone());
+        a
+    }
+}
+
 /// Autocast and neutral casters (old `ambient`).
 pub fn ambient(ctx: &mut Ctx, state: &mut State) {
     let _span = tracing::trace_span!("autocast").entered();
     let tick = state.tick;
+    let mut known = Observations::default();
+    known.forget(state.counters.entity as usize + 1);
     for id in cast::casters(state) {
         let Some(e) = state.entities.get(id) else {
             continue;
@@ -790,16 +856,17 @@ pub fn ambient(ctx: &mut Ctx, state: &mut State) {
             // Units beyond `reach` cannot change the choice; skipping them saves the exact
             // sight test, the costliest part of autocast.
             let reach = reach(spell, rank) * 1000;
-            let observed: Vec<Actor> = state
-                .entities
-                .iter()
-                .filter(|t| t.hp.is_some() && actor::alive(t))
-                .filter(|t| {
-                    t.owner == caster.owner || actor::within(t.position, caster.position, reach)
-                })
-                .filter(|t| super::visible(ctx, state, caster.owner, t.id, Some(&caster)))
-                .map(|t| actor::of(&ctx.senses, state, t))
-                .collect();
+            let mut observed: Vec<Actor> = Vec::new();
+            for t in state.entities.iter() {
+                if t.hp.is_some()
+                    && actor::alive(t)
+                    && (t.owner == caster.owner
+                        || actor::within(t.position, caster.position, reach))
+                    && known.visible(ctx, state, &caster, t.id)
+                {
+                    observed.push(known.actor(ctx, state, t));
+                }
+            }
             let binding = b.id.clone();
             if let Some(intent) =
                 b.ai.as_ref()
@@ -817,10 +884,21 @@ pub fn ambient(ctx: &mut Ctx, state: &mut State) {
                     &|_, _| true,
                 );
                 let chosen = aims.into_iter().find(|&aim| {
-                    cast::reason(ctx, state, id, &binding, aim, Control::Ai, false).is_ok()
+                    cast::reason_as(
+                        ctx,
+                        state,
+                        id,
+                        Some(&caster),
+                        &binding,
+                        aim,
+                        Control::Ai,
+                        false,
+                    )
+                    .is_ok()
                 });
                 if let Some(aim) = chosen {
                     let _ = cast::cast(ctx, state, id, &binding, aim, Control::Ai);
+                    known.forget(state.counters.entity as usize + 1);
                     break;
                 }
                 continue;
@@ -845,7 +923,18 @@ pub fn ambient(ctx: &mut Ctx, state: &mut State) {
             let mut candidates: Vec<(EntityId, Aim, f64)> = Vec::new();
             for t in &pool {
                 let aim = aim_of(t);
-                if cast::reason(ctx, state, id, &binding, aim, Control::Ai, false).is_err() {
+                if cast::reason_as(
+                    ctx,
+                    state,
+                    id,
+                    Some(&caster),
+                    &binding,
+                    aim,
+                    Control::Ai,
+                    false,
+                )
+                .is_err()
+                {
                     continue;
                 }
                 let program_aim = match aim {
@@ -868,7 +957,18 @@ pub fn ambient(ctx: &mut Ctx, state: &mut State) {
             }
             for (key, point) in corpse_aims(spell, &visible_corpses) {
                 let aim = Aim::Point(point);
-                if cast::reason(ctx, state, id, &binding, aim, Control::Ai, false).is_err() {
+                if cast::reason_as(
+                    ctx,
+                    state,
+                    id,
+                    Some(&caster),
+                    &binding,
+                    aim,
+                    Control::Ai,
+                    false,
+                )
+                .is_err()
+                {
                     continue;
                 }
                 let w = World {
@@ -896,6 +996,7 @@ pub fn ambient(ctx: &mut Ctx, state: &mut State) {
             candidates.sort_by(|a, b| b.2.total_cmp(&a.2).then(a.0.cmp(&b.0)));
             if let Some((_, aim, _)) = candidates.into_iter().next() {
                 let _ = cast::cast(ctx, state, id, &binding, aim, Control::Ai);
+                known.forget(state.counters.entity as usize + 1);
                 break;
             }
         }

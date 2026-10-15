@@ -9,6 +9,7 @@ pub mod ai;
 pub mod camps;
 pub mod catalog;
 pub mod combat;
+pub mod crowd;
 pub mod economy;
 pub mod entity;
 pub mod fingerprint;
