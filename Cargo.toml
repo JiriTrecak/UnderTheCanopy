@@ -34,6 +34,8 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg",
 # Audio playback (cpal backend only: sounds arrive as PCM from the pack, nothing is decoded).
 kira = { version = "0.12", default-features = false, features = ["cpal"] }
 libm = "0.2"
+# Level-of-detail index lists in the cooker (meshoptimizer's simplifier).
+meshopt = "0.6"
 mlua = { version = "0.12", features = ["lua54", "vendored"] }
 pollster = "1"
 postcard = { version = "1", default-features = false, features = ["use-std"] }

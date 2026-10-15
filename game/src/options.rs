@@ -12,6 +12,7 @@
 //!             [--data <folder>] [graphics]
 //!             [--play | --observe] [--input <script>] (the HUD; see `play::capture`)
 //! graphics: [--render-scale <0.5–1>] [--no-contact] [--no-bloom] [--haze off|low|medium|high]
+//!           [--lod-pixels <px>] (live models' level-of-detail deviation; 0: full detail)
 //!           [--biome <id>] (preview the map in another biome's look)
 //! ```
 //!
@@ -291,6 +292,10 @@ impl Options {
                     options.quality.render_scale = scale;
                 }
                 "--no-contact" => options.quality.contact_shadows = false,
+                "--lod-pixels" => {
+                    options.quality.lod_pixels =
+                        value("--lod-pixels")?.parse().context("--lod-pixels")?
+                }
                 "--no-bloom" => options.quality.bloom = false,
                 "--haze" => {
                     let text = value("--haze")?;
@@ -332,7 +337,7 @@ impl Options {
                     size = [w.parse().context("--size")?, h.parse().context("--size")?];
                 }
                 other => bail!(
-                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --tick, --crowd, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --effect, --viewer, --select, --health, --play, --observe, --input)"
+                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --tick, --crowd, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --lod-pixels, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --effect, --viewer, --select, --health, --play, --observe, --input)"
                 ),
             }
             first = false;

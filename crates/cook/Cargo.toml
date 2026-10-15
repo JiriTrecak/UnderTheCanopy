@@ -24,6 +24,7 @@ hound.workspace = true
 image.workspace = true
 intel_tex_2.workspace = true
 libm.workspace = true
+meshopt.workspace = true
 postcard.workspace = true
 rayon.workspace = true
 serde.workspace = true

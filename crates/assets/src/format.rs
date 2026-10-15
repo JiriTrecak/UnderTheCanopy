@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 /// First bytes of every pack.
 pub const MAGIC: [u8; 8] = *b"CANOPYPK";
 /// Version of the pack layout and of every metadata type.
-pub const FORMAT_VERSION: u32 = 1;
+pub const FORMAT_VERSION: u32 = 2;
 /// Alignment of blobs and of every array inside one.
 pub const ALIGN: usize = 16;
 /// Rate at which clips are baked, in frames per second.
@@ -170,6 +170,9 @@ pub struct ModelMeta {
     /// One draw per section, in material order.
     pub sections: Vec<Section>,
     pub depth: DepthStream,
+    /// Coarser index lists over the same vertices, finest first (level 0, the full mesh,
+    /// is `sections` and `depth`).
+    pub lods: Vec<Lod>,
     pub materials: Vec<Material>,
     pub skeleton: Option<Skeleton>,
     pub clips: Vec<Clip>,
@@ -195,6 +198,18 @@ pub struct Section {
     pub index_count: u32,
     pub base_vertex: u32,
     pub vertex_count: u32,
+}
+
+/// A level of detail: index ranges over the full mesh's vertices that deviate from its
+/// rest pose by at most `error`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Lod {
+    /// Largest deviation from the full mesh, model units.
+    pub error: f32,
+    /// `[first_index, index_count]` in the main indices per section (same base vertex).
+    pub sections: Vec<[u32; 2]>,
+    /// `[first_index, index_count]` in the depth stream's indices.
+    pub depth: [u32; 2],
 }
 
 /// Positions (and skin) of every shadow-casting opaque section, welded across UV and

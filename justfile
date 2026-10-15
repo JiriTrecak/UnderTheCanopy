@@ -15,6 +15,10 @@ play *args: cook
 shot *args: cook
     cargo run -q --release -p canopy -- shot --data "{{justfile_directory()}}" {{args}}
 
+# GPU benchmark over fixed scenes at 1080p and 2560×1600 (per-pass submit-to-idle, draws, triangles, CPU): `just bench-render [--label before] [--scenes crowd] [--preset medium]` (docs/renderer.md §9)
+bench-render *args: cook
+    cargo run -q --release -p canopy -- bench-render --data "{{justfile_directory()}}" {{args}}
+
 # Run an optimised build with Tracy profiling (connect the Tracy app)
 profile *args: cook
     cargo run -p canopy --profile profiling --features profile -- --data "{{justfile_directory()}}" --no-vsync {{args}}

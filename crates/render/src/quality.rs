@@ -60,6 +60,9 @@ pub struct Quality {
     pub bloom: bool,
     /// Volumetric haze and shafts where the biome has them.
     pub haze: HazeQuality,
+    /// The largest deviation a live model's level of detail may show, in pixels of the
+    /// scene (0 draws every model in full).
+    pub lod_pixels: f32,
 }
 
 pub const MIN_RENDER_SCALE: f32 = 0.5;
@@ -72,9 +75,14 @@ impl Default for Quality {
             contact_shadows: true,
             bloom: true,
             haze: HazeQuality::Medium,
+            lod_pixels: DEFAULT_LOD_PIXELS,
         }
     }
 }
+
+/// Projected deviation of levels of detail at the default quality: half a pixel, below
+/// what MSAA edges show.
+pub const DEFAULT_LOD_PIXELS: f32 = 0.5;
 
 impl Quality {
     /// The internal (scene) size for an output of `size`.

@@ -123,6 +123,32 @@ pub struct FrameReport {
     /// Effects of the frame.
     pub effects: crate::effects::EffectStats,
     pub water: WaterStats,
+    /// Triangles submitted, by kind (statics only when read back by a benchmark).
+    pub triangles: Triangles,
+    /// Submit-to-idle time of each pass recorded alone ([`Renderer::isolate_passes`]),
+    /// ms; empty otherwise.
+    pub isolated_ms: Vec<f32>,
+}
+
+/// Triangles a frame submits. Statics are culled on the GPU, so their counts are known
+/// only when a benchmark reads the indirect arguments back.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize)]
+pub struct Triangles {
+    pub terrain: u64,
+    pub statics: u64,
+    pub actors: u64,
+    pub water: u64,
+    /// Particles and ribbons (two per quad).
+    pub effects: u64,
+    /// Everything drawn into the sun's shadow map.
+    pub shadow: u64,
+}
+
+impl Triangles {
+    /// Triangles of the camera view (the forward pass).
+    pub fn forward(&self) -> u64 {
+        self.terrain + self.statics + self.actors + self.water + self.effects
+    }
 }
 
 /// What the frame bind groups hold besides the per-frame buffers.
@@ -229,6 +255,9 @@ pub struct Renderer {
     ui: Option<crate::ui::UiLayer>,
     timer: Option<GpuTimer>,
     timestamps: bool,
+    /// Submit every pass alone and wait for it (benchmarks: per-pass submit-to-idle
+    /// times where Apple GPUs' timestamps attribute work to neighbouring passes).
+    pub isolate_passes: bool,
     /// Shadows on (a setting).
     pub shadows: bool,
     /// Bytes of GPU memory the world uses.
@@ -399,6 +428,7 @@ impl Renderer {
             ui: None,
             timer: None,
             timestamps: gpu.features.timestamps,
+            isolate_passes: false,
             shadows: true,
             world_bytes: 0,
         };
@@ -829,6 +859,8 @@ impl Renderer {
         before_submit: Option<&dyn Fn(&mut wgpu::CommandEncoder)>,
     ) -> FrameReport {
         let _span = tracing::trace_span!("render").entered();
+        let skip = std::env::var("CANOPY_SKIP").unwrap_or_default();
+        let on = |name: &str| !skip.split(',').any(|s| s == name);
         let start = Instant::now();
         let device = &gpu.device;
         let queue = &gpu.queue;
@@ -838,6 +870,7 @@ impl Renderer {
         let lighting = &self.environment.lighting;
         let ShadowView {
             view_projection: shadow_matrix,
+            texel: shadow_texel,
             ..
         } = shadow::fit(
             camera,
@@ -898,6 +931,8 @@ impl Renderer {
             );
             report.terrain_triangles = stats.triangles;
             report.terrain_chunks = stats.chunks;
+            report.triangles.terrain = stats.triangles;
+            report.triangles.shadow += stats.shadow_triangles;
         }
         if let Some(statics) = &self.statics {
             statics.prepare(queue, camera.view_projection, shadow_matrix);
@@ -933,13 +968,26 @@ impl Renderer {
             if let (Some((_, camera)), Some((gpu_portrait, _))) = (&portrait, &self.portrait) {
                 gpu_portrait.prepare(queue, camera, &self.environment.lighting);
             }
+            let lod = crate::actors::LodView {
+                view: camera.view,
+                pixels_per_unit: self.targets.size[1] as f32 / (2.0 * (camera.fov_y * 0.5).tan()),
+                max_pixels: if self.baking {
+                    0.0
+                } else {
+                    self.quality.lod_pixels
+                },
+                shadow_texel,
+            };
             actors.prepare(
                 device,
                 queue,
                 camera.view_projection,
                 self.shadows.then_some(shadow_matrix),
+                Some(&lod),
             );
             report.actors = actors.stats;
+            report.triangles.actors = actors.stats.triangles;
+            report.triangles.shadow += actors.stats.shadow_triangles;
         }
         self.effects.prepare(queue, &self.effect_frame, camera);
         if let Some(minimap) = &mut self.minimap {
@@ -952,6 +1000,8 @@ impl Renderer {
             self.output_format.is_srgb(),
         );
         report.effects = self.effects.stats;
+        report.triangles.effects =
+            2 * u64::from(self.effects.stats.parts + self.effects.stats.ribbons);
         if let Some(water) = &mut self.water {
             report.water = water.prepare(
                 queue,
@@ -960,6 +1010,7 @@ impl Renderer {
                 &self.ripples,
                 lighting.daylight_ambient,
             );
+            report.triangles.water = water.triangles();
         }
         let sun = (lighting.sun_color, lighting.sun_intensity);
         if let Some(forest) = &mut self.forest {
@@ -1032,13 +1083,13 @@ impl Renderer {
                         multiview_mask: None,
                     });
                     if self.shadows {
-                        if let Some(terrain) = &self.terrain {
+                        if let Some(terrain) = self.terrain.as_ref().filter(|_| on("sterrain")) {
                             report.draws += terrain.draw_shadow(&mut rp, &self.shadow_frame_group);
                         }
-                        if let Some(statics) = &self.statics {
+                        if let Some(statics) = self.statics.as_ref().filter(|_| on("sstatics")) {
                             report.draws += statics.draw_shadow(&mut rp, &self.shadow_frame_group);
                         }
-                        if let Some(actors) = &self.actors {
+                        if let Some(actors) = self.actors.as_ref().filter(|_| on("sactors")) {
                             report.draws += actors.draw_shadow(&mut rp, &self.shadow_frame_group);
                         }
                     }
@@ -1108,19 +1159,19 @@ impl Renderer {
                         occlusion_query_set: None,
                         multiview_mask: None,
                     });
-                    if let Some(terrain) = &self.terrain {
+                    if let Some(terrain) = self.terrain.as_ref().filter(|_| on("terrain")) {
                         report.draws += terrain.draw_forward(&mut rp, &self.frame_group);
                     }
-                    if let Some(statics) = &self.statics {
+                    if let Some(statics) = self.statics.as_ref().filter(|_| on("statics")) {
                         report.draws += statics.draw_forward(&mut rp, &self.frame_group);
                     }
-                    if let Some(actors) = &self.actors {
+                    if let Some(actors) = self.actors.as_ref().filter(|_| on("actors")) {
                         report.draws += actors.draw_forward(&mut rp, &self.frame_group);
                     }
                     if let Some(forest) = &self.forest {
                         report.draws += forest.draw(&mut rp, &self.frame_group);
                     }
-                    if let Some(water) = &self.water {
+                    if let Some(water) = self.water.as_ref().filter(|_| on("water")) {
                         report.draws += water.draw(&mut rp, &self.frame_group);
                     }
                     if let Some(statics) = &self.statics {
@@ -1130,7 +1181,9 @@ impl Renderer {
                         report.draws += actors.draw_transparent(&mut rp, &self.frame_group);
                     }
                     report.draws += self.world_ui.draw_ground(&mut rp, &self.frame_group);
-                    report.draws += self.effects.draw(&mut rp, &self.frame_group);
+                    if on("effects") {
+                        report.draws += self.effects.draw(&mut rp, &self.frame_group);
+                    }
                 }
                 (passes::CONTACT, PassKind::Render) => {
                     report.draws +=
@@ -1202,6 +1255,20 @@ impl Renderer {
             report
                 .cpu_ms
                 .push(pass_start.elapsed().as_secs_f32() * 1000.0);
+            if self.isolate_passes {
+                let recorded = std::mem::replace(
+                    &mut encoder,
+                    device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                        label: Some("frame"),
+                    }),
+                );
+                let submitted = Instant::now();
+                queue.submit([recorded.finish()]);
+                let _ = device.poll(wgpu::PollType::wait_indefinitely());
+                report
+                    .isolated_ms
+                    .push(submitted.elapsed().as_secs_f32() * 1000.0);
+            }
         }
         if let Some(timer) = &self.timer {
             timer.resolve(&mut encoder);
