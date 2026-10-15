@@ -885,19 +885,60 @@ pub(crate) fn world_ui_input(
         },
         viewer,
         scale,
-        markers: world_ui
-            .markers
-            .iter()
-            .map(|(m, age)| {
-                let [r, g, b] = m.kind.color();
-                GroundMarker {
-                    position: m.position,
-                    radius: m.radius,
-                    color: linear(u32::from_be_bytes([0, r, g, b])),
-                    opacity: m.opacity(*age),
+        // The spell aim as ground rings until the world UI draws the old outline: the
+        // area (a disc, or discs along a line) in the old valid/invalid edge colour and
+        // the dashed range ring as a faint ring around the caster.
+        markers: {
+            let mut out: Vec<GroundMarker> = world_ui
+                .markers
+                .iter()
+                .map(|(m, age)| {
+                    let [r, g, b] = m.kind.color();
+                    GroundMarker {
+                        position: m.position,
+                        radius: m.radius,
+                        color: linear(u32::from_be_bytes([0, r, g, b])),
+                        opacity: m.opacity(*age),
+                    }
+                })
+                .collect();
+            if let Some(aim) = &world_ui.aim {
+                let edge = linear(if aim.valid { 0xbefff0 } else { 0xff7770 });
+                match aim.line {
+                    Some((length, width)) => {
+                        let (dx, dz) = (aim.point[0] - aim.origin[0], aim.point[1] - aim.origin[1]);
+                        let n = dx.hypot(dz).max(1e-3);
+                        let step = (width * 1.5).max(0.5);
+                        let mut along = 0.0;
+                        while along <= length {
+                            out.push(GroundMarker {
+                                position: [
+                                    aim.origin[0] + dx / n * along,
+                                    aim.origin[1] + dz / n * along,
+                                ],
+                                radius: width,
+                                color: edge,
+                                opacity: 0.9,
+                            });
+                            along += step;
+                        }
+                    }
+                    None => out.push(GroundMarker {
+                        position: aim.point,
+                        radius: aim.radius,
+                        color: edge,
+                        opacity: 0.9,
+                    }),
                 }
-            })
-            .collect(),
+                out.push(GroundMarker {
+                    position: aim.origin,
+                    radius: aim.range,
+                    color: linear(0xe8dfb0),
+                    opacity: 0.35,
+                });
+            }
+            out
+        },
         placement: world_ui.ghost.as_ref().map(|g| PlacementMark {
             cells: [g.cells.min_x, g.cells.min_y, g.cells.max_x, g.cells.max_y],
             valid: g.problem.is_none(),

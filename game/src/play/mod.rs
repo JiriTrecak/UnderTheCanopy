@@ -129,6 +129,23 @@ pub struct WorldUi {
     pub drag: Option<[Vec2; 2]>,
     /// The focused producer's rally point (x, z).
     pub rally: Option<[f32; 2]>,
+    /// The spell being aimed at the cursor.
+    pub aim: Option<Aim>,
+}
+
+/// A spell aimed at the cursor (old `AbilityAim`): the caster, the aimed cell, the area
+/// (a disc, or a line from the caster), the cast range and whether the aim is in range
+/// and on ground in sight.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Aim {
+    pub origin: [f32; 2],
+    pub point: [f32; 2],
+    /// Disc radius at the point (0.8 for unit spells, as the old outline).
+    pub radius: f32,
+    /// A line delivery's length and half width, from the caster towards the point.
+    pub line: Option<(f32, f32)>,
+    pub range: f32,
+    pub valid: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -624,7 +641,71 @@ impl Play {
             },
             drag,
             rally,
+            aim: self.aim(),
         }
+    }
+
+    /// The spell aimed at the cursor (old `onHover` → `gameAbilityTarget`).
+    pub fn aim(&self) -> Option<Aim> {
+        let Mode::Target {
+            targeting: orders::Targeting::Cast { actor, binding, .. },
+            ..
+        } = &self.mode
+        else {
+            return None;
+        };
+        let k = &self.know;
+        let hit = self.ground_point?;
+        let caster = k.entity(*actor)?;
+        let policy = k.catalog.spells.caster(caster.definition())?;
+        let index = policy.bindings.iter().position(|b| &b.id == binding)?;
+        let rank = caster
+            .magic
+            .as_ref()
+            .and_then(|m| m.caster.as_ref())
+            .and_then(|c| c.ranks.get(index).copied())
+            .unwrap_or(0);
+        if rank == 0 {
+            return None;
+        }
+        let ability = &k.content.abilities.abilities
+            [usize::from(policy.bindings[index].ability.0)];
+        let value = |a: &canopy_content::abilities::Amount| {
+            canopy_sim::abilities::library::value(ability, rank, a) as f32
+        };
+        let origin = k.position(caster);
+        let point = [hit.x.round(), hit.z.round()];
+        let range = value(&ability.targeting.range);
+        let radius = match (&ability.targeting.kind, &ability.targeting.radius) {
+            (canopy_content::abilities::TargetingKind::Point, Some(r)) => value(r),
+            _ => 0.8,
+        };
+        let line = match &ability.delivery {
+            Some(canopy_content::abilities::Delivery::Line { length, width, .. }) => {
+                Some((*length as f32, *width as f32))
+            }
+            _ => None,
+        };
+        let size = self.terrain.size() as f32;
+        let in_sight = point[0] >= 0.0
+            && point[1] >= 0.0
+            && point[0] < size
+            && point[1] < size
+            && k.view.fog.as_ref().is_none_or(|f| {
+                f.cells
+                    .get((point[1] * size + point[0]) as usize)
+                    .is_some_and(|&c| c == 2)
+            });
+        let valid =
+            (point[0] - origin[0]).hypot(point[1] - origin[1]) <= range && in_sight;
+        Some(Aim {
+            origin,
+            point,
+            radius,
+            line,
+            range,
+            valid,
+        })
     }
 
     // --- Selection ---------------------------------------------------------------

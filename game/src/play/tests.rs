@@ -617,6 +617,21 @@ fn the_hero_learns_from_the_banner_menu_and_casts_from_the_bottom_row() {
         .find(|c| c.id == "learn:rush")
         .unwrap();
     assert_eq!(rush.reason.as_deref(), Some("No skill points available"));
+    // Aiming shows the spell's area and range at the cursor (old `gameAbilityTarget`).
+    let smite = cast.clone();
+    assert!(matches!(smite.activate, super::card::Activate::Target(_)));
+    {
+        h.play.activate(&smite, false);
+        let [hx, hz] = h.play.knowledge().position(h.play.knowledge().entity(hero).unwrap());
+        let near = h.pixel(hx + 1.0, hz);
+        h.input(Input::PointerMoved(near));
+        h.advance(50);
+        let aim = h.play.world_ui().aim.expect("an aim");
+        assert!(aim.range > 0.0 && aim.valid, "{aim:?}");
+        assert_eq!(aim.origin, [hx, hz]);
+        h.key("Escape");
+        assert!(h.play.world_ui().aim.is_none());
+    }
 }
 
 #[test]
