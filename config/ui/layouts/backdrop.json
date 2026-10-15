@@ -1,0 +1,1 @@
+{ "root": { "class": "fill", "style": { "z-index": "-10", "pointer-events": "none" }, "children": [ { "id": "image", "kind": "image", "class": "backdrop" } ] } }

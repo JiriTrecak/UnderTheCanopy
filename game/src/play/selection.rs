@@ -207,15 +207,6 @@ impl ControlGroups {
     }
 }
 
-/// The control group slot of a digit key (1–9 → 0–8, 0 → 9).
-pub fn slot_of_digit(digit: u8) -> Option<usize> {
-    match digit {
-        1..=9 => Some(usize::from(digit - 1)),
-        0 => Some(9),
-        _ => None,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -297,7 +288,5 @@ mod tests {
         assert_eq!(g.recall(0, ms(2100)), Some(Recall::Select(vec![3, 1, 7])));
         g.prune(|id| id != 1);
         assert_eq!(g.get(0), [3, 7]);
-        assert_eq!(slot_of_digit(0), Some(9));
-        assert_eq!(slot_of_digit(1), Some(0));
     }
 }

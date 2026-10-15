@@ -16,6 +16,7 @@ pub mod card;
 pub mod debug;
 pub mod hud;
 pub mod input;
+pub mod keys;
 pub mod know;
 pub mod orders;
 pub mod overlay;
@@ -24,12 +25,14 @@ pub mod placement;
 pub mod run;
 pub mod selection;
 
+use crate::settings::Chord;
 use canopy_content::game::Kind;
 use canopy_render::camera::Ground;
 use canopy_sim::{Action, action::CellPoint, terrain::Terrain};
 use card::{Activate, Command};
 use glam::{Vec2, Vec3};
 use input::{Button, Input, Mods};
+use keys::{Keymap, Shortcut};
 use know::Knowledge;
 use orders::{Marker, Target, Targeting};
 use picking::{Body, Screen};
@@ -188,6 +191,14 @@ pub struct Play {
     pub layout: card::Layout,
     pub chat: Vec<ChatLine>,
     pub chat_open: bool,
+    /// The player's own lines show at once (no chat server echoes them: single player).
+    pub echo_chat: bool,
+    /// The player's name in the chat.
+    pub name: Option<String>,
+    /// The engine's shortcuts as the player bound them.
+    pub keymap: Keymap,
+    /// Health bars over every unit unless a hold narrows them (a setting).
+    pub always_health_bars: bool,
     /// Commands sent, newest last (debug overlay).
     pub sent: Vec<(Duration, Action)>,
 }
@@ -229,6 +240,10 @@ impl Play {
             layout: card::Layout::default(),
             chat: Vec::new(),
             chat_open: false,
+            echo_chat: true,
+            name: None,
+            keymap: Keymap::default(),
+            always_health_bars: false,
             sent: Vec::new(),
         };
         // Facts from before the match was shown are not news.
@@ -517,12 +532,19 @@ impl Play {
     }
 
     pub fn world_ui(&self) -> WorldUi {
-        let health = if self.held.contains(&"Alt") {
+        let held = |shortcut| {
+            self.held
+                .iter()
+                .any(|k| self.keymap.holds(shortcut, &keys::code_of(k)))
+        };
+        let health = if held(Shortcut::HealthAll) {
             HealthBars::All
-        } else if self.held.contains(&"BracketLeft") {
+        } else if held(Shortcut::HealthFriendly) {
             HealthBars::Friendly
-        } else if self.held.contains(&"BracketRight") {
+        } else if held(Shortcut::HealthEnemy) {
             HealthBars::Hostile
+        } else if self.always_health_bars {
+            HealthBars::All
         } else {
             HealthBars::Default
         };
@@ -862,81 +884,83 @@ impl Play {
     }
 
     fn key(&mut self, key: &'static str) {
-        let shift = self.mods.shift;
         if key == "Enter" {
             self.chat_open = true;
             return;
         }
-        // Control groups.
-        if let Some(digit) = key.parse::<u8>().ok().filter(|_| key.len() == 1)
-            && let Some(slot) = selection::slot_of_digit(digit)
-        {
-            if self.mods.command() {
-                let ids = self.groupable();
-                self.groups.assign(slot, &ids);
-            } else if shift {
-                let ids = self.groupable();
-                self.groups.add(slot, &ids);
-            } else if let Some(recall) = self.groups.recall(slot, self.now) {
-                match recall {
-                    Recall::Select(ids) => self.select(ids, None),
-                    Recall::Focus(ids) => {
-                        self.select(ids.clone(), None);
-                        self.look_at(&ids);
+        // The engine's shortcuts from the player's bindings, then the content's command
+        // hotkeys.
+        let chord = Chord {
+            code: keys::code_of(key),
+            ctrl: self.mods.ctrl,
+            alt: self.mods.alt && key != "Alt",
+            shift: self.mods.shift,
+            meta: self.mods.logo,
+        };
+        for shortcut in self.keymap.pressed(&chord) {
+            if self.shortcut(shortcut) {
+                return;
+            }
+        }
+        // Escape always leaves a mode, a menu or reaches the game menu, whatever the
+        // bindings (it cannot be lost to a rebinding).
+        if key == "Escape" {
+            self.shortcut(Shortcut::Cancel);
+            return;
+        }
+        self.content_key(key);
+    }
+
+    /// Runs an engine shortcut; false when it does not apply now (the key then goes on
+    /// to the command card).
+    fn shortcut(&mut self, shortcut: Shortcut) -> bool {
+        match shortcut {
+            Shortcut::Recall(slot) => {
+                if let Some(recall) = self.groups.recall(slot, self.now) {
+                    match recall {
+                        Recall::Select(ids) => self.select(ids, None),
+                        Recall::Focus(ids) => {
+                            self.select(ids.clone(), None);
+                            self.look_at(&ids);
+                        }
                     }
                 }
             }
-            return;
-        }
-        match key {
-            "Space" => {
+            Shortcut::Assign(slot) => {
+                let ids = self.groupable();
+                self.groups.assign(slot, &ids);
+            }
+            Shortcut::Add(slot) => {
+                let ids = self.groupable();
+                self.groups.add(slot, &ids);
+            }
+            Shortcut::Alerts => {
                 if !self.alerts.is_empty() {
                     let a = self.alerts[self.alert_cursor % self.alerts.len()];
                     self.alert_cursor += 1;
                     self.events.push(Event::LookAt(a.position));
                 }
-                return;
             }
-            "F1" | "F2" | "F3" => {
-                let index = usize::from(key.as_bytes()[1] - b'1');
-                self.hero_key(index);
-                return;
-            }
-            "F8" | "Backquote" => {
-                self.next_idle_worker();
-                return;
-            }
-            "Backspace" => {
-                self.next_dropoff();
-                return;
-            }
-            "Tab" => {
+            Shortcut::Hero(index) => self.hero_key(index),
+            Shortcut::IdleWorker => self.next_idle_worker(),
+            Shortcut::NextHall => self.next_dropoff(),
+            Shortcut::NextSubgroup | Shortcut::PreviousSubgroup => {
                 let cands: Vec<Candidate> = self
                     .selection
                     .ids()
                     .iter()
                     .filter_map(|&id| self.candidate(id))
                     .collect();
-                self.selection.cycle(&cands, !shift);
+                self.selection
+                    .cycle(&cands, shortcut == Shortcut::NextSubgroup);
                 self.menu = None;
                 self.page = 0;
                 self.mode = Mode::Idle;
                 self.refresh();
-                return;
             }
-            "Numpad7" | "Numpad8" | "Numpad4" | "Numpad5" => {
-                let slot = ["Numpad7", "Numpad8", "Numpad4", "Numpad5"]
-                    .iter()
-                    .position(|k| *k == key)
-                    .unwrap_or(0);
-                self.use_item(slot);
-                return;
-            }
-            "F10" => {
-                self.events.push(Event::OpenMenu);
-                return;
-            }
-            "Escape" => {
+            Shortcut::Inventory(slot) => self.use_item(slot),
+            Shortcut::GameMenu => self.events.push(Event::OpenMenu),
+            Shortcut::Cancel => {
                 if self.mode != Mode::Idle {
                     self.mode = Mode::Idle;
                 } else if self.menu.is_some() {
@@ -944,15 +968,14 @@ impl Play {
                 } else {
                     self.events.push(Event::OpenMenu);
                 }
-                return;
             }
-            "R" if matches!(self.mode, Mode::Place { .. }) => {
-                if let Mode::Place { placement, .. } = &mut self.mode {
-                    placement.rotate(shift);
-                }
-                return;
+            Shortcut::RotateClockwise | Shortcut::RotateCounterclockwise => {
+                let Mode::Place { placement, .. } = &mut self.mode else {
+                    return false;
+                };
+                placement.rotate(shortcut == Shortcut::RotateCounterclockwise);
             }
-            "Home" => {
+            Shortcut::CenterSelection => {
                 let ids = self.selection.ids().to_vec();
                 if ids.is_empty() {
                     if let Some(hall) = self.home() {
@@ -961,10 +984,27 @@ impl Play {
                 } else {
                     self.look_at(&ids);
                 }
-                return;
             }
-            _ => {}
+            // Held keys (camera, health bars) and window-level switches act elsewhere;
+            // the press is still theirs.
+            Shortcut::ZoomIn
+            | Shortcut::ZoomOut
+            | Shortcut::PanLeft
+            | Shortcut::PanRight
+            | Shortcut::PanUp
+            | Shortcut::PanDown
+            | Shortcut::HealthAll
+            | Shortcut::HealthFriendly
+            | Shortcut::HealthEnemy
+            | Shortcut::ToggleHud
+            | Shortcut::Debug => {}
         }
+        true
+    }
+
+    /// A key no engine shortcut took: the command card's hotkeys.
+    fn content_key(&mut self, key: &'static str) {
+        let shift = self.mods.shift;
         let visible: Vec<Command> = self
             .layout
             .slots
@@ -1321,7 +1361,8 @@ impl Play {
         }
     }
 
-    /// The player's chat line, echoed locally (single-player has no chat server).
+    /// The player's chat line: sent on ([`Event::Chat`]), and shown at once when no
+    /// chat server echoes it ([`Self::echo_chat`]).
     pub fn say(&mut self, text: &str) {
         let text: String = text.chars().filter(|c| !c.is_control()).take(300).collect();
         let text = text.trim().to_owned();
@@ -1329,20 +1370,28 @@ impl Play {
         if text.is_empty() {
             return;
         }
-        let name = self
-            .know
-            .me
-            .map_or("Observer".to_owned(), |p| format!("Player {}", p + 1));
+        if self.echo_chat {
+            let name = self.name.clone().unwrap_or_else(|| {
+                self.know
+                    .me
+                    .map_or("Observer".to_owned(), |p| format!("Player {}", p + 1))
+            });
+            self.hear(name, [0xcc, 0xcc, 0xcc], &text);
+        }
+        self.events.push(Event::Chat(text));
+    }
+
+    /// A chat line from the match server (another seat's, or our own echoed).
+    pub fn hear(&mut self, name: String, color: [u8; 3], text: &str) {
         self.chat.push(ChatLine {
             name,
-            color: [0xcc, 0xcc, 0xcc],
-            text: text.clone(),
+            color,
+            text: text.to_owned(),
             at: self.now.as_secs_f32(),
         });
         if self.chat.len() > 200 {
             self.chat.remove(0);
         }
-        self.events.push(Event::Chat(text));
     }
 
     pub fn now(&self) -> Duration {

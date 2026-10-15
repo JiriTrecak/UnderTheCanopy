@@ -1,0 +1,52 @@
+{
+  "templates": {
+    "rs-row": {
+      "class": "rs-row",
+      "children": [
+        { "id": "swatch", "class": "rs-swatch" },
+        { "id": "name", "kind": "label", "class": "rs-cell-name" },
+        { "id": "result", "kind": "label", "class": "rs-cell" },
+        { "id": "units", "kind": "label", "class": "rs-cell" },
+        { "id": "buildings", "kind": "label", "class": "rs-cell" }
+      ]
+    }
+  },
+  "root": {
+    "class": "scrim rs-scrim",
+    "children": [
+      {
+        "class": "rs",
+        "children": [
+          { "id": "eyebrow", "kind": "label", "class": "rs-eyebrow", "text": "Skirmish · Match complete" },
+          { "id": "title", "kind": "label", "class": "rs-title", "text": "Victory" },
+          { "id": "line", "kind": "label", "class": "rs-line" },
+          {
+            "class": "rs-table",
+            "children": [
+              {
+                "class": "rs-row rs-head",
+                "children": [
+                  { "class": "rs-swatch" },
+                  { "kind": "label", "class": "rs-cell-name", "text": "Player" },
+                  { "kind": "label", "class": "rs-cell", "text": "Result" },
+                  { "kind": "label", "class": "rs-cell", "text": "Units" },
+                  { "kind": "label", "class": "rs-cell", "text": "Buildings" }
+                ]
+              },
+              { "id": "rows", "style": { "display": "flex", "flex-direction": "column", "gap": "5px" }, "repeat": "rs-row" }
+            ]
+          },
+          { "id": "goods", "kind": "label", "class": "rs-goods" },
+          {
+            "class": "rs-actions",
+            "children": [
+              { "id": "watch", "kind": "button", "class": "rs-button rs-ghost", "text": "Keep watching", "action": "result.watch" },
+              { "id": "next", "kind": "button", "class": "rs-button rs-ghost", "text": "Continue to next chapter →", "action": "result.next", "visible": false },
+              { "id": "leave", "kind": "button", "class": "rs-button", "text": "Return to menu", "action": "result.leave" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

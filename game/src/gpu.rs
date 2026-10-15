@@ -60,6 +60,27 @@ impl Display {
         self.config.format
     }
 
+    /// Switches between waiting for vertical sync and presenting at once.
+    pub fn set_vsync(&mut self, vsync: bool) {
+        let mode = if vsync {
+            wgpu::PresentMode::AutoVsync
+        } else {
+            wgpu::PresentMode::AutoNoVsync
+        };
+        if self.config.present_mode != mode {
+            self.config.present_mode = mode;
+            self.surface.configure(&self.gpu.device, &self.config);
+        }
+    }
+
+    /// A view of a frame for the UI: the non-sRGB form of the surface format.
+    pub fn ui_view(&self, frame: &wgpu::SurfaceTexture) -> wgpu::TextureView {
+        frame.texture.create_view(&wgpu::TextureViewDescriptor {
+            format: Some(self.config.format.remove_srgb_suffix()),
+            ..Default::default()
+        })
+    }
+
     pub fn size(&self) -> [u32; 2] {
         [self.config.width, self.config.height]
     }
