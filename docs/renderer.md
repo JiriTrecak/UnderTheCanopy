@@ -232,6 +232,10 @@ Effects (spell effects, deliveries, construction dust, shell impacts, hit sparks
 
 `just shot --map <id> --camera <x,z,zoom[,yaw]> --out <png> [--size 1920x1080] [--hour 12] [--time 12] [--frames n] [--no-shadows]` renders one view offscreen (no window) and writes a PNG, printing draws, terrain triangles, memory, CPU recording time and GPU time per pass (from `--frames` frames).
 
+The view is a match's start: computer players on every start (or the first `--players n`). `--tick N` first simulates the match to tick N on the same thread, presenting every tick, so the picture of a tick is always the same; `--camera battle[,zoom]` looks at the densest group of swinging units at that tick; `--crowd N` replaces the match by eight players with N animated soldiers each around the middle of the starts (the stress view); `--colors i,j,…` gives slot k the k-th listed player colour. The output adds the simulation's cost per tick, the live scene's counts and where corpses, felled trees, missiles and scaffolds are. `CANOPY_SHOT_MODELS=1` lists the live models in view.
+
+`just play --spectate <map> [--players n] [--tick N]` watches the match in a window (B jumps to the largest fight); every two seconds the log has a `frame` line (fps, slowest frame, CPU and GPU time, live models in view) and a `simulation` line (tick, the tick shown, step, view and presentation cost per tick, frames that had to hold the newest tick, schedule slowdowns, counts).
+
 ### Camera parameters
 
 They are the old game's play camera (`src/render/camera/camera.ts`):
