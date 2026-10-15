@@ -57,17 +57,19 @@ pub struct Subject {
 }
 
 impl Subject {
-    /// From the model's transform and the asset's camera anchor (old `cameraSubject`:
-    /// anchor height, else 0.65 × the health bar height (at least 0.65); forward 0;
-    /// distance 7; all × the model's scale).
+    /// From the model's transform, the asset's camera anchor and the definition's visual
+    /// scale (old `cameraSubject`: anchor height, else 0.65 × the health bar height (at
+    /// least 0.65); forward 0; distance 7; all × the definition's `modelScale`, not the
+    /// model's own unit scale).
     pub fn of(
         transform: Mat4,
         anchor: Option<&canopy_content::game::CameraAnchor>,
         health_height: Option<f64>,
+        visual_scale: f32,
     ) -> Self {
-        let (scale, rotation, position) = transform.to_scale_rotation_translation();
+        let (_, rotation, position) = transform.to_scale_rotation_translation();
         let forward = rotation * Vec3::Z;
-        let s = scale.x.abs().max(1e-3);
+        let s = visual_scale.abs().max(1e-3);
         let height = anchor.map_or_else(
             || (health_height.unwrap_or(2.5) as f32 * 0.65).max(0.65),
             |a| a.height as f32,
@@ -181,17 +183,28 @@ pub fn shot_pose(
     })
 }
 
-/// Pulls the third-person boom in front of the ground (old renderer: samples every
-/// 0.15 along the boom, 0.2 clearance, the eye 0.25 short of the obstruction and at
-/// least 0.1 from the focus). The old boom also stopped at scenery and buildings.
-pub fn clear_boom(pose: &mut Pose, ground: impl Fn(f32, f32) -> f32) {
+/// How far a ray from `origin` along a unit direction runs before scenery or a building
+/// stops it, up to `far` ([`crate::live::LiveScene::camera_obstruction`]).
+pub type Obstruction<'a> = &'a dyn Fn(Vec3, Vec3, f32) -> f32;
+
+/// Nothing stops a ray.
+#[cfg(test)]
+pub fn open_air(_: Vec3, _: Vec3, far: f32) -> f32 {
+    far
+}
+
+/// Pulls the third-person boom in front of scenery, buildings (`obstruction`, from 5 cm
+/// off the focus) and the ground (old renderer: samples every 0.15 along the boom, 0.2
+/// clearance, the eye 0.25 short of the obstruction and at least 0.1 from the focus).
+pub fn clear_boom(pose: &mut Pose, ground: impl Fn(f32, f32) -> f32, obstruction: Obstruction) {
     let offset = pose.eye - pose.focus;
     let distance = offset.length();
     if distance <= 0.0 {
         return;
     }
     let direction = offset / distance;
-    let mut allowed = distance;
+    let near = 0.05;
+    let mut allowed = near + obstruction(pose.focus + direction * near, direction, distance - near);
     let mut d = 0.15;
     while d < allowed {
         let p = pose.focus + direction * d;
@@ -236,17 +249,19 @@ pub fn subject_of(
         transform,
         asset.and_then(|a| a.camera_anchor.as_ref()),
         asset.and_then(|a| a.health_height),
+        d.model_scale.unwrap_or(1.0) as f32,
     ))
 }
 
 /// The close pose of the focused unit in `mode`, the third-person boom kept in front
-/// of the ground.
+/// of the ground, scenery and buildings.
 pub fn ground_pose(
     subject: &Subject,
     mode: CameraMode,
     ground: &dyn canopy_render::camera::Ground,
+    obstruction: Obstruction,
 ) -> Option<Pose> {
-    ground_shot_pose(subject, mode, &Shot::default(), None, ground)
+    ground_shot_pose(subject, mode, &Shot::default(), None, ground, obstruction)
 }
 
 /// [`shot_pose`] with the third-person boom kept in front of the ground.
@@ -256,10 +271,11 @@ pub fn ground_shot_pose(
     shot: &Shot,
     look_at: Option<Vec3>,
     ground: &dyn canopy_render::camera::Ground,
+    obstruction: Obstruction,
 ) -> Option<Pose> {
     let mut pose = shot_pose(subject, mode, shot, look_at)?;
     if mode == CameraMode::ThirdPerson {
-        clear_boom(&mut pose, |x, z| ground.height(x, z));
+        clear_boom(&mut pose, |x, z| ground.height(x, z), obstruction);
     }
     Some(pose)
 }
@@ -351,12 +367,20 @@ mod tests {
         let s = subject();
         let mut p = pose(&s, CameraMode::ThirdPerson).unwrap();
         let free = p.eye;
-        clear_boom(&mut p, |_, _| -10.0);
+        clear_boom(&mut p, |_, _| -10.0, &open_air);
         assert!((p.eye - p.focus).length() < (free - p.focus).length());
         let mut p = pose(&s, CameraMode::ThirdPerson).unwrap();
         // A wall of ground behind the unit.
-        clear_boom(&mut p, |_, z| if z < 18.0 { 10.0 } else { 0.0 });
+        clear_boom(&mut p, |_, z| if z < 18.0 { 10.0 } else { 0.0 }, &open_air);
         assert!(p.eye.z >= 17.5, "{:?}", p.eye);
+        // Scenery 1 m behind the focus stops it 0.25 short.
+        let mut p = pose(&s, CameraMode::ThirdPerson).unwrap();
+        clear_boom(&mut p, |_, _| -10.0, &|_, _, far: f32| far.min(0.95));
+        assert!(
+            ((p.eye - p.focus).length() - 0.75).abs() < 1e-4,
+            "{:?}",
+            p.eye
+        );
     }
 
     #[test]

@@ -11,7 +11,7 @@
 //! | `cmd:<id>` | presses the command `<id>` of the card (`build:<definition>`, `attack`) |
 //! | `key:<name>` | presses a key (`R`, `Shift+R`, `Ctrl+1`, `F1`) |
 //! | `move:x,y` · `click:x,y` · `rclick:x,y` · `drag:x0,y0,x1,y1` | the pointer |
-//! | `world:x,z` | moves the pointer over a ground point (cells) |
+//! | `world:x,z` · `rworld:x,z` | moves the pointer over a ground point (cells), and right-clicks it |
 //! | `look:x,z` · `look-selection` | the camera |
 //! | `ticks:n` | simulates `n` ticks (commands sent so far apply) |
 //! | `chat:<text>` | says a line |
@@ -263,13 +263,24 @@ pub fn run(
                     );
                 }
             }
-            "world" => {
+            "world" | "rworld" => {
                 let p = pair(arg)?;
                 let y = canopy_render::camera::Ground::height(terrain, p[0], p[1]);
                 let (at, _) = screen
                     .project(Vec3::new(p[0], y, p[1]))
                     .context("off screen")?;
                 play.input(&Input::PointerMoved(at), terrain);
+                if verb == "rworld" {
+                    for pressed in [true, false] {
+                        play.input(
+                            &Input::Button {
+                                button: Button::Right,
+                                pressed,
+                            },
+                            terrain,
+                        );
+                    }
+                }
             }
             "drag" => {
                 let p = pair(arg)?;
@@ -371,7 +382,8 @@ pub fn run(
             .as_ref()
             .zip(targets.as_ref())
             .and_then(|(camera, targets)| {
-                super::cinematic::pose(camera, targets, subject, terrain)
+                let obstruction = |o, d, far| live.camera_obstruction(&loaded.obstacles, o, d, far);
+                super::cinematic::pose(camera, targets, subject, terrain, &obstruction)
             });
         let aspect = size[0] as f32 / size[1].max(1) as f32;
         match unit {
@@ -420,7 +432,8 @@ pub fn run(
         );
         if let Some(pose) = play.selection.focus().and_then(|id| {
             let subject = super::follow::subject(&live, play.knowledge(), id)?;
-            super::follow::ground_pose(&subject, mode, terrain)
+            let obstruction = |o, d, far| live.camera_obstruction(&loaded.obstacles, o, d, far);
+            super::follow::ground_pose(&subject, mode, terrain, &obstruction)
         }) {
             let aspect = size[0] as f32 / size[1].max(1) as f32;
             screen.camera = super::follow::Follow::default().view(

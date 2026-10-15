@@ -88,6 +88,7 @@ pub fn pose(
     targets: &SceneTargets,
     subject: impl Fn(&SceneTarget) -> Option<Subject>,
     ground: &dyn canopy_render::camera::Ground,
+    obstruction: follow::Obstruction,
 ) -> Option<(Key, Pose)> {
     let mode = mode(camera)?;
     let target = targets.subject?;
@@ -97,7 +98,7 @@ pub fn pose(
         .and_then(&subject)
         .map(|a| a.position + Vec3::Y * a.eye_height);
     let shot = shot(camera);
-    let pose = follow::ground_shot_pose(&s, mode, &shot, look_at, ground)?;
+    let pose = follow::ground_shot_pose(&s, mode, &shot, look_at, ground, obstruction)?;
     let key = Key {
         mode,
         entity: target.id,
@@ -270,7 +271,14 @@ mod tests {
         assert!(staged.entities.windows(2).all(|w| w[0].id() < w[1].id()));
 
         // Behind the hero, the boom and lens of the shot, aimed at the rival's eyes.
-        let (key, pose) = pose(camera, &targets, |t| drawn(&world, t), &FlatGround).unwrap();
+        let (key, pose) = pose(
+            camera,
+            &targets,
+            |t| drawn(&world, t),
+            &FlatGround,
+            &follow::open_air,
+        )
+        .unwrap();
         assert_eq!(key.entity, hero.id);
         assert_eq!(key.look_at, Some(rival.id));
         assert_eq!(pose.fov_degrees, 50.0);

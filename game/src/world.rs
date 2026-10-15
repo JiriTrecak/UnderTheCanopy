@@ -40,6 +40,8 @@ pub struct Loaded {
     pub day: Option<DayCycle>,
     /// A sandbox map (no victory; the old game revealed it to a local player).
     pub sandbox: bool,
+    /// Scenery and live models that stop a close camera's boom.
+    pub obstacles: canopy_scene::obstruction::Obstacles,
 }
 
 /// Seconds of match time per in-game day (old `DAY_CYCLE_SECONDS`).
@@ -200,10 +202,16 @@ fn assemble(
         _ => None,
     };
     let environment = Environment::new(&look.lighting, &look.biome, hour, lut.as_ref());
+    let obstacles = canopy_scene::obstruction::Obstacles::new(
+        &pack,
+        &scene.world.statics,
+        &scene.world.actor_models,
+    );
     Ok((
         Loaded {
             scene,
             environment,
+            obstacles,
             pack,
             // Set by the caller.
             data: std::path::PathBuf::new(),

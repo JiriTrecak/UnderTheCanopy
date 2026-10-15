@@ -10,6 +10,7 @@ pub mod fog;
 pub mod interpolate;
 pub mod live;
 pub mod models;
+pub mod obstruction;
 pub mod statics;
 pub mod terrain;
 pub mod world_ui;

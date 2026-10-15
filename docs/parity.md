@@ -17,7 +17,7 @@ Evidence names a test (`play::tests::…`, module tests), a capture (`docs/captu
 | Group | done | partial | missing | dropped | new |
 |---|---|---|---|---|---|
 | Match flow | 9 | 1 | 0 | 0 | 1 |
-| Camera | 8 | 1 | 0 | 0 | 1 |
+| Camera | 9 | 0 | 0 | 0 | 1 |
 | Selection | 11 | 0 | 0 | 0 | 0 |
 | Orders and command card | 17 | 0 | 0 | 0 | 0 |
 | Building | 6 | 0 | 0 | 0 | 0 |
@@ -35,7 +35,7 @@ Evidence names a test (`play::tests::…`, module tests), a capture (`docs/captu
 | Audio | 4 | 0 | 0 | 0 | 0 |
 | Visuals | 19 | 1 | 0 | 4 | 0 |
 | Debug tools | 2 | 1 | 0 | 0 | 0 |
-| **Total** | **196** | **7** | **0** | **9** | **8** |
+| **Total** | **197** | **6** | **0** | **9** | **8** |
 
 Nothing a player notices first is still open; the remaining rows are small. Owners and next steps are in [What remains](#what-remains).
 
@@ -67,7 +67,7 @@ Nothing a player notices first is still open; the remaining rows are small. Owne
 | Centre selection / main building (Home), alerts (Space), next drop-off (Backspace), double-press groups and heroes | `settlementHud.onKey` | done | `idle_workers_menu_keys_tab_and_chat`, `control_groups_assign_recall_and_centre_on_a_double_press` |
 | **Unit cameras: RTS → third person → first person (J, "Camera: …" command), Esc and camera jumps return to RTS, pan/zoom ignored while following, smooth 350 ms blend, first-person body hidden** | `unitCamera.ts`, `renderer.unitCamera`, `unitCameraCommand` | done (added in this audit) | `play/follow.rs` and its tests, `the_camera_command_cycles_unit_cameras_and_escape_returns_to_rts`; `canopy shot --play --input "focus:marshal;key:J"` (captures `m4-play/camera-third-person.png`, `camera-first-person.png`) |
 | Third-person boom stops at terrain | `updateUnitCamera` | done | `follow::clear_boom`, `the_boom_stops_in_front_of_rising_ground` |
-| Third-person boom stops at scenery and buildings | `cameraObstruction` | partial | terrain only; the first-person body also loses its shadow (opacity 0) where the old kept it |
+| Third-person boom stops at scenery and buildings | `cameraObstruction` | done | `play/follow.rs` `clear_boom` with `canopy_scene::obstruction` (rays against the full meshes of scenery, felled trees excluded, and of buildings and deposits) and the ground; the first-person body is drawn into the shadow only (`ActorInstance::shadow_only`). The boom scales by the definition's `modelScale` as the old one (it had used the model's unit scale, doubling the Marshal's boom) |
 | Spectator Q/E turn, B largest fight | none | new | `run.rs` (fixed keys; `docs/play.md` corrected: they were never in the old game) |
 
 ## Selection
@@ -362,6 +362,5 @@ The old game showed its performance window in the HUD unless the profiler was sw
 
 | Gap | Owner / next step |
 |---|---|
-| Third-person boom against scenery and buildings; first-person body shadow | game + renderer: a ray test against static instances; an actor flag "no camera draw" that keeps the shadow |
 | Debug overlay: navigation overlays | game (`play/debug.rs`) |
 | Shadows "filtered" mode | Jiri (D41) |

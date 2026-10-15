@@ -126,6 +126,7 @@ pub fn interpolate(
             poses: poses.poses,
             pose_count: poses.count,
             tint: canopy_render::actors::NO_TINT,
+            shadow_only: false,
         });
     }
 }

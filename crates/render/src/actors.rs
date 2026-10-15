@@ -87,6 +87,8 @@ pub struct ActorInstance {
     /// Multiplies the shaded colour (rgb) and coverage (a). Effect models below full
     /// coverage blend over the scene and cast no shadow (old effect model materials).
     pub tint: [f32; 4],
+    /// Drawn into the sun's shadow only: the body a first-person camera looks out of.
+    pub shadow_only: bool,
 }
 
 /// The tint of models drawn as they are.
@@ -103,6 +105,7 @@ impl ActorInstance {
             poses: [Pose::default(); MAX_POSES],
             pose_count: 0,
             tint: NO_TINT,
+            shadow_only: false,
         }
     }
 
@@ -844,7 +847,7 @@ impl ActorsGpu {
             };
             let sphere = world_sphere(&instance.transform, model.sphere.0, model.sphere.1);
             let scale_y = instance.transform.y_axis.truncate().length();
-            let in_camera = sphere_visible(&camera_planes, sphere);
+            let in_camera = !instance.shadow_only && sphere_visible(&camera_planes, sphere);
             if instance.translucent() {
                 if in_camera && instance.tint[3] > 0.0 {
                     order.push((instance.model, 2, 0, i as u32));

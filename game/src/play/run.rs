@@ -575,8 +575,15 @@ impl InMatch {
             let subject = |t: &sim::SceneTarget| {
                 follow::subject_of(live, content, catalog.get(t.definition), t.id)
             };
-            let (key, pose) =
-                cinematic::pose(&camera, &targets, subject, self.loaded.scene.terrain())?;
+            let obstruction =
+                |o, d, far| live.camera_obstruction(&self.loaded.obstacles, o, d, far);
+            let (key, pose) = cinematic::pose(
+                &camera,
+                &targets,
+                subject,
+                self.loaded.scene.terrain(),
+                &obstruction,
+            )?;
             return Some(self.follow.view(key, &pose, dt, aspect));
         }
         let mode = self.play.camera_mode;
@@ -585,7 +592,9 @@ impl InMatch {
         }
         let id = self.play.selection.focus()?;
         let subject = follow::subject(&self.live, self.play.knowledge(), id)?;
-        let pose = follow::ground_pose(&subject, mode, self.loaded.scene.terrain())?;
+        let (live, obstacles) = (&self.live, &self.loaded.obstacles);
+        let obstruction = |o, d, far| live.camera_obstruction(obstacles, o, d, far);
+        let pose = follow::ground_pose(&subject, mode, self.loaded.scene.terrain(), &obstruction)?;
         Some(
             self.follow
                 .view(follow::Key::unit(mode, id), &pose, dt, aspect),

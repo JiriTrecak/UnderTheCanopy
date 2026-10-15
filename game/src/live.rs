@@ -133,6 +133,31 @@ impl LiveScene {
             })
     }
 
+    /// How far a camera ray from `origin` along unit `dir` runs before scenery or a
+    /// building stops it, up to `far` (old `cameraObstruction`): felled trees and units
+    /// let it through.
+    pub fn camera_obstruction(
+        &self,
+        obstacles: &canopy_scene::obstruction::Obstacles,
+        origin: glam::Vec3,
+        dir: glam::Vec3,
+        far: f32,
+    ) -> f32 {
+        let hidden = |i: usize| {
+            self.applied
+                .get(i / 64)
+                .is_some_and(|w| w & (1 << (i % 64)) != 0)
+        };
+        let mut nearest = obstacles.scenery(origin, dir, far, &hidden);
+        for b in self.ui_bodies.iter().filter(|b| b.building || b.deposit) {
+            if let Ok(i) = self.keys.binary_search(&b.key) {
+                let x = &self.instances[i];
+                nearest = obstacles.live(x.model, &x.transform, origin, dir, nearest);
+            }
+        }
+        nearest
+    }
+
     /// Builds the world UI of the latest frame for `camera` on an output of `size`.
     pub fn draw_world_ui(
         &mut self,
@@ -342,7 +367,7 @@ impl LiveScene {
             if let Ok(i) = self.keys.binary_search(&key)
                 && let Some(x) = self.instances.get_mut(i)
             {
-                x.opacity = 0.0;
+                x.shadow_only = true;
             }
         }
         renderer.set_actors(&self.instances);
