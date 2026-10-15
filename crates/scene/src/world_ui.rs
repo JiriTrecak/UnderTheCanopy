@@ -927,6 +927,11 @@ mod tests {
             constructing: false,
             cast: None,
             commanded: None,
+            model: 0,
+            scale: 1.0,
+            idle: None,
+            footprint: None,
+            deposit: false,
         }
     }
 

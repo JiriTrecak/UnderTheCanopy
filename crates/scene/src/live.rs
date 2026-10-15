@@ -254,6 +254,14 @@ pub struct Body {
     pub cast: Option<f32>,
     /// Its owner's attack order target.
     pub commanded: Option<u32>,
+    /// Its model, scale and idle clip (index, seconds): the portrait.
+    pub model: u32,
+    pub scale: f32,
+    pub idle: Option<(u16, f32)>,
+    /// A building's footprint on the map (cells, turned by its rotation): the minimap.
+    pub footprint: Option<[f32; 2]>,
+    /// A deposit with something left to harvest.
+    pub deposit: bool,
 }
 
 /// The centre of the densest group of `points` (16-cell buckets and their neighbours).
@@ -1343,6 +1351,25 @@ impl Presenter {
             constructing: e.public.construction.is_some(),
             cast,
             commanded: combat.and_then(|c| c.commanded_target).map(|t| t.0),
+            model: actor.model,
+            scale: actor.scale.x,
+            idle: self
+                .catalog
+                .get(actor.model)
+                .state(crate::animation::states::IDLE)
+                .map(|st| (st.clip, self.catalog.get(actor.model).duration(st.clip))),
+            footprint: d
+                .footprint
+                .as_ref()
+                .filter(|_| d.kind == Kind::Building)
+                .map(|f| {
+                    let quarter = ((f64::from(e.public.rotation) / 1000.0 / 90.0).round() as i64)
+                        .rem_euclid(2)
+                        == 1;
+                    let (w, h) = (f.width as f32, f.depth as f32);
+                    if quarter { [h, w] } else { [w, h] }
+                }),
+            deposit: e.public.resource.as_ref().is_some_and(|r| r.amount > 0),
         }
     }
 

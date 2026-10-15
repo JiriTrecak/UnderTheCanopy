@@ -34,6 +34,17 @@ pub enum Resource {
     Haze,
     /// The presented (or captured) image.
     Output,
+    /// The minimap image the HUD shows.
+    Minimap,
+    /// The selection portrait image the HUD shows.
+    Portrait,
+}
+
+impl Resource {
+    /// Images the frame hands out rather than reads itself.
+    pub fn is_output(self) -> bool {
+        matches!(self, Self::Output | Self::Minimap | Self::Portrait)
+    }
 }
 
 impl fmt::Display for Resource {
@@ -122,7 +133,7 @@ impl FrameGraph {
         for (i, pass) in passes.iter().enumerate() {
             for &resource in &pass.writes {
                 let read_later = passes[i + 1..].iter().any(|p| p.reads.contains(&resource));
-                if resource != Resource::Output && !read_later {
+                if !resource.is_output() && !read_later {
                     return Err(GraphError::Unused {
                         pass: pass.name,
                         resource,
@@ -168,6 +179,8 @@ pub mod passes {
     pub const HAZE: &str = "haze";
     pub const POST: &str = "post";
     pub const WORLD_UI: &str = "world_ui";
+    pub const MINIMAP: &str = "minimap";
+    pub const PORTRAIT: &str = "portrait";
 }
 
 /// Optional parts of the world frame: what the world has, what the biome uses and what
@@ -179,6 +192,10 @@ pub struct FrameFeatures {
     pub contact: bool,
     pub bloom: bool,
     pub haze: bool,
+    /// The HUD's minimap image.
+    pub minimap: bool,
+    /// The HUD's selection portrait image.
+    pub portrait: bool,
 }
 
 /// The world frame (renderer §4.1): GPU culling of statics for both views, the joint
@@ -243,6 +260,16 @@ pub fn world_frame(features: FrameFeatures) -> FrameGraph {
             .reads(&[Output])
             .writes(&[Output]),
     );
+    if features.minimap {
+        list.push(Pass::new(passes::MINIMAP, Render).writes(&[Minimap]));
+    }
+    if features.portrait {
+        list.push(
+            Pass::new(passes::PORTRAIT, Render)
+                .reads(&[Palettes])
+                .writes(&[Portrait]),
+        );
+    }
     FrameGraph::new(list, &[]).expect("the world frame graph is well formed")
 }
 
@@ -264,15 +291,18 @@ mod tests {
             contact: true,
             bloom: true,
             haze: true,
+            minimap: true,
+            portrait: true,
         });
         let names: Vec<&str> = all.passes().iter().map(|p| p.name).collect();
         assert_eq!(
             names,
             [
                 "cull", "skin", "shadow", "ripples", "caustics", "forward", "contact", "bloom",
-                "haze", "post", "world_ui"
+                "haze", "post", "world_ui", "minimap", "portrait"
             ]
         );
+        assert_eq!(all.last_use(Palettes), Some(passes::PORTRAIT));
         // The haze marches through the sun's shadow map after the scene is drawn.
         assert_eq!(all.last_use(ShadowMap), Some(passes::HAZE));
         assert_eq!(all.last_use(RippleField), Some(passes::FORWARD));

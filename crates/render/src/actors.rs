@@ -136,6 +136,8 @@ struct GpuModel {
     sphere: (Vec3, f32),
     /// Rest height, for the shadow height rule of rigid models.
     height: f32,
+    /// Bind-pose bounds.
+    rest: (Vec3, Vec3),
     animated: bool,
     casts: bool,
 }
@@ -244,6 +246,10 @@ pub struct ActorsGpu {
     pub stats: ActorStats,
     staging_actors: Vec<ActorGpu>,
     staging_jobs: Vec<SkinJob>,
+    /// The portrait's model, drawn only by the portrait pass.
+    portrait: Option<ActorInstance>,
+    /// Its model and record index in the latest frame.
+    portrait_slot: Option<(usize, u32)>,
 }
 
 fn wgpu_index(format: IndexFormat) -> wgpu::IndexFormat {
@@ -461,7 +467,62 @@ impl ActorsGpu {
             stats: ActorStats::default(),
             staging_actors: Vec::new(),
             staging_jobs: Vec::new(),
+            portrait: None,
+            portrait_slot: None,
         }
+    }
+
+    /// The model the portrait shows (posed and placed by the caller), or none.
+    pub fn set_portrait(&mut self, instance: Option<ActorInstance>) {
+        self.portrait = instance;
+    }
+
+    /// Whether the latest frame prepared a portrait.
+    pub fn has_portrait(&self) -> bool {
+        self.portrait_slot.is_some()
+    }
+
+    /// A loaded model's bind-pose bounds (model space).
+    pub fn rest_bounds(&self, model: u32) -> Option<(Vec3, Vec3)> {
+        match self.slots.get(model as usize) {
+            Some(Slot::Ready(m)) => Some(m.rest),
+            _ => None,
+        }
+    }
+
+    /// Draws the portrait's model (inside the portrait pass).
+    pub fn draw_portrait(&self, pass: &mut wgpu::RenderPass<'_>, frame: &wgpu::BindGroup) -> u32 {
+        let (Some((m, index)), Some(_)) = (self.portrait_slot, &self.actor_group) else {
+            return 0;
+        };
+        let Slot::Ready(model) = &self.slots[m] else {
+            return 0;
+        };
+        pass.set_bind_group(0, frame, &[]);
+        self.bind_model(pass, m, model);
+        let mut sections: Vec<(Variant, usize)> = model
+            .sections
+            .iter()
+            .enumerate()
+            .map(|(s, section)| (model.materials[section.material as usize].variant, s))
+            .collect();
+        // Opaque first, blended last.
+        sections.sort_by_key(|&(v, s)| (v.is_blend(), v, s));
+        for &(variant, s) in &sections {
+            let section = model.sections[s];
+            pass.set_pipeline(&self.pipelines[&variant]);
+            pass.set_bind_group(
+                1,
+                &model.materials[section.material as usize].bind_group,
+                &[],
+            );
+            pass.draw_indexed(
+                section.first_index..section.first_index + section.index_count,
+                section.base_vertex as i32,
+                index..index + 1,
+            );
+        }
+        sections.len() as u32
     }
 
     /// Model entries by index; models already listed keep their index.
@@ -692,6 +753,10 @@ impl ActorsGpu {
             clips,
             sphere: ((min + max) * 0.5, (max - min).length() * 0.5),
             height: meta.rest_bounds.max[1] - meta.rest_bounds.min[1],
+            rest: (
+                Vec3::from_array(meta.rest_bounds.min),
+                Vec3::from_array(meta.rest_bounds.max),
+            ),
             animated,
         })
     }
@@ -766,51 +831,27 @@ impl ActorsGpu {
                 1 => range.all += 1,
                 _ => range.translucent += 1,
             }
-            let rows = instance.transform.transpose();
-            self.staging_actors.push(ActorGpu {
-                rows: [
-                    rows.x_axis.to_array(),
-                    rows.y_axis.to_array(),
-                    rows.z_axis.to_array(),
-                ],
-                color: instance
-                    .owner_color
-                    .map_or([0.0; 4], |c| [c[0], c[1], c[2], 1.0]),
-                palette: [palette_len, model.joints, 0, 0],
-                look: [instance.opacity, 0.0, 0.0, 0.0],
-                tint: instance.tint,
-            });
-            let mut job = SkinJob {
-                header: [palette_len, model.joints, 0, 0],
-                poses: [[0; 4]; MAX_POSES],
-            };
-            if model.animated {
-                let used = usize::from(instance.pose_count).min(MAX_POSES);
-                let total: f32 = instance.poses[..used]
-                    .iter()
-                    .map(|p| p.weight.max(0.0))
-                    .sum();
-                let mut count = 0;
-                for pose in &instance.poses[..used] {
-                    let Some(clip) = model.clips.get(usize::from(pose.clip)) else {
-                        continue;
-                    };
-                    if pose.weight <= 0.0 || total <= 0.0 {
-                        continue;
-                    }
-                    let (a, b, t) = clip_frames(clip.frames, clip.duration, pose.time);
-                    job.poses[count] = [
-                        clip.base + a * model.joints,
-                        clip.base + b * model.joints,
-                        t.to_bits(),
-                        (pose.weight / total).to_bits(),
-                    ];
-                    count += 1;
-                }
-                job.header[2] = count as u32;
-            }
-            self.staging_jobs.push(job);
-            palette_len += model.joints;
+            stage(
+                &mut self.staging_actors,
+                &mut self.staging_jobs,
+                &mut palette_len,
+                model,
+                instance,
+            );
+        }
+        // The portrait's model, after everything the views draw.
+        self.portrait_slot = None;
+        if let Some(instance) = &self.portrait
+            && let Some(Slot::Ready(model)) = self.slots.get(instance.model as usize)
+        {
+            self.portrait_slot = Some((instance.model as usize, self.staging_actors.len() as u32));
+            stage(
+                &mut self.staging_actors,
+                &mut self.staging_jobs,
+                &mut palette_len,
+                model,
+                instance,
+            );
         }
         self.job_count = self.staging_jobs.len() as u32;
         let mut rebind = false;
@@ -1052,6 +1093,61 @@ impl ActorsGpu {
     pub fn is_ready(&self, index: usize) -> bool {
         matches!(self.slots.get(index), Some(Slot::Ready(_)))
     }
+}
+
+/// Adds one instance's GPU record and skinning job.
+fn stage(
+    actors: &mut Vec<ActorGpu>,
+    jobs: &mut Vec<SkinJob>,
+    palette_len: &mut u32,
+    model: &GpuModel,
+    instance: &ActorInstance,
+) {
+    let rows = instance.transform.transpose();
+    actors.push(ActorGpu {
+        rows: [
+            rows.x_axis.to_array(),
+            rows.y_axis.to_array(),
+            rows.z_axis.to_array(),
+        ],
+        color: instance
+            .owner_color
+            .map_or([0.0; 4], |c| [c[0], c[1], c[2], 1.0]),
+        palette: [*palette_len, model.joints, 0, 0],
+        look: [instance.opacity, 0.0, 0.0, 0.0],
+        tint: instance.tint,
+    });
+    let mut job = SkinJob {
+        header: [*palette_len, model.joints, 0, 0],
+        poses: [[0; 4]; MAX_POSES],
+    };
+    if model.animated {
+        let used = usize::from(instance.pose_count).min(MAX_POSES);
+        let total: f32 = instance.poses[..used]
+            .iter()
+            .map(|p| p.weight.max(0.0))
+            .sum();
+        let mut count = 0;
+        for pose in &instance.poses[..used] {
+            let Some(clip) = model.clips.get(usize::from(pose.clip)) else {
+                continue;
+            };
+            if pose.weight <= 0.0 || total <= 0.0 {
+                continue;
+            }
+            let (a, b, t) = clip_frames(clip.frames, clip.duration, pose.time);
+            job.poses[count] = [
+                clip.base + a * model.joints,
+                clip.base + b * model.joints,
+                t.to_bits(),
+                (pose.weight / total).to_bits(),
+            ];
+            count += 1;
+        }
+        job.header[2] = count as u32;
+    }
+    jobs.push(job);
+    *palette_len += model.joints;
 }
 
 /// The two baked frames around `time` and the mix between them (frame `f` is time
