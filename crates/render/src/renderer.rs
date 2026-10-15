@@ -478,6 +478,11 @@ impl Renderer {
         self.rebuild(gpu);
     }
 
+    /// Replaces only the light (the day cycle): no textures, grade or frame graph change.
+    pub fn set_lighting(&mut self, lighting: crate::environment::Lighting) {
+        self.environment.lighting = lighting;
+    }
+
     pub fn environment(&self) -> &Environment {
         &self.environment
     }

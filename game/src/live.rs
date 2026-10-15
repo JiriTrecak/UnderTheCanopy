@@ -41,6 +41,8 @@ pub struct LiveScene {
     /// Entities with a selection body as the latest frame shows them: id, body (circle
     /// radius, pick height) and interpolated position.
     bodies: Vec<(u32, [f32; 2], glam::Vec3)>,
+    /// An entity whose model is not drawn (the first-person camera's own body).
+    pub hidden_entity: Option<u32>,
 }
 
 impl LiveScene {
@@ -190,6 +192,13 @@ impl LiveScene {
         &self.bodies
     }
 
+    /// Where the latest frame draws an entity's model (model space to world).
+    pub fn entity_transform(&self, id: u32) -> Option<glam::Mat4> {
+        let key = ((canopy_scene::live::Part::Entity as u64) << 40) | u64::from(id);
+        let i = self.keys.binary_search(&key).ok()?;
+        self.instances.get(i).map(|x| x.transform)
+    }
+
     /// The latest frame's live model instances.
     pub fn instances(&self) -> &[ActorInstance] {
         &self.instances
@@ -305,6 +314,14 @@ impl LiveScene {
                     surface,
                     elevation,
                 });
+            }
+        }
+        if let Some(id) = self.hidden_entity {
+            let key = ((canopy_scene::live::Part::Entity as u64) << 40) | u64::from(id);
+            if let Ok(i) = self.keys.binary_search(&key)
+                && let Some(x) = self.instances.get_mut(i)
+            {
+                x.opacity = 0.0;
             }
         }
         renderer.set_actors(&self.instances);

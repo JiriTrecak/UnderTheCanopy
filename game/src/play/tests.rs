@@ -32,6 +32,9 @@ impl Sink for Recorder {
 
 struct Harness {
     world: World,
+    /// The content the player's knowledge reads (the world's, unless a test adds
+    /// presentation-only metadata).
+    content: Arc<canopy_content::Content>,
     play: Play,
     sent: Recorder,
     screen: Screen,
@@ -63,6 +66,7 @@ impl Harness {
         );
         let play = Play::new(know, world.terrain().clone(), Box::new(sent.clone()));
         let mut h = Self {
+            content: world.catalog().content.clone(),
             world,
             play,
             sent,
@@ -78,7 +82,7 @@ impl Harness {
     fn refresh(&mut self) {
         let view = Arc::new(self.world.view(OWNER));
         let mut know = Knowledge::new(
-            self.world.catalog().content.clone(),
+            self.content.clone(),
             self.catalog.clone(),
             view.clone(),
             Some(ME),
@@ -613,6 +617,24 @@ fn the_hero_learns_from_the_banner_menu_and_casts_from_the_bottom_row() {
         .find(|c| c.id == "learn:rush")
         .unwrap();
     assert_eq!(rush.reason.as_deref(), Some("No skill points available"));
+    // Aiming shows the spell's area and range at the cursor (old `gameAbilityTarget`).
+    let smite = cast.clone();
+    assert!(matches!(smite.activate, super::card::Activate::Target(_)));
+    {
+        h.play.activate(&smite, false);
+        let [hx, hz] = h
+            .play
+            .knowledge()
+            .position(h.play.knowledge().entity(hero).unwrap());
+        let near = h.pixel(hx + 1.0, hz);
+        h.input(Input::PointerMoved(near));
+        h.advance(50);
+        let aim = h.play.world_ui().aim.expect("an aim");
+        assert!(aim.range > 0.0 && aim.valid, "{aim:?}");
+        assert_eq!(aim.origin, [hx, hz]);
+        h.key("Escape");
+        assert!(h.play.world_ui().aim.is_none());
+    }
 }
 
 #[test]
@@ -732,4 +754,86 @@ fn markers_pulse_and_expire_like_the_old_rings() {
         ..attack
     };
     assert!((point.lifetime() - 0.4).abs() < 1e-6);
+}
+
+#[test]
+fn the_camera_command_cycles_unit_cameras_and_escape_returns_to_rts() {
+    use super::follow::CameraMode;
+    let mut h = Harness::new(vec![]);
+    // The fixture has no camera metadata; add the content's presentation entry.
+    let mut content = (*h.content).clone();
+    let back = content.actions.navigation.back.clone();
+    content.actions.navigation.camera = Some(canopy_content::game::NavigationMeta {
+        name: "Cycle camera".into(),
+        hotkey: Some("J".into()),
+        priority: 55,
+        ..back
+    });
+    h.content = Arc::new(content);
+    h.refresh();
+    let worker = h.mine(fx::WORKER)[0];
+    h.click(worker);
+    let camera = h.play.commands.iter().find(|c| c.id == "camera").cloned();
+    assert_eq!(camera.map(|c| c.name), Some("Camera: RTS".to_owned()));
+    h.key("J");
+    assert_eq!(h.play.camera_mode, CameraMode::ThirdPerson);
+    assert!(
+        h.play
+            .commands
+            .iter()
+            .any(|c| c.id == "camera" && c.name == "Camera: Third person")
+    );
+    h.key("J");
+    assert_eq!(h.play.camera_mode, CameraMode::FirstPerson);
+    // Escape leaves the unit camera before it opens the game menu.
+    h.key("Escape");
+    assert_eq!(h.play.camera_mode, CameraMode::Rts);
+    assert!(h.play.take_events().is_empty());
+    h.key("J");
+    assert_eq!(h.play.camera_mode, CameraMode::ThirdPerson);
+    // Nothing selected: no unit to follow.
+    h.click_px(Vec2::new(5.0, 5.0), Button::Left);
+    assert_eq!(h.play.camera_mode, CameraMode::Rts);
+    assert!(h.take().is_empty(), "the camera sends no command");
+}
+
+#[test]
+fn rebound_command_keys_press_their_commands() {
+    use crate::settings::{Chord, keys};
+    let mut h = Harness::new(vec![]);
+    let worker = h.mine(fx::WORKER)[0];
+    h.click(worker);
+    // The fixture authors no key for Stop; the player binds one.
+    h.key("Z");
+    assert!(h.take().is_empty());
+    let catalog = keys::full_catalog(Some(&h.content));
+    // The content's commands join the engine's entries (old `shortcutCatalog`).
+    for id in ["command.stop", "command.navigation:back"] {
+        assert!(catalog.iter().any(|e| e.id == id), "{id}");
+    }
+    let trained = h.content.definitions.iter().find(|d| {
+        matches!(
+            d.creation,
+            Some(canopy_content::game::Creation::Train { .. })
+        )
+    });
+    if let Some(d) = trained {
+        let id = format!("command.produce:{}", d.id);
+        assert!(catalog.iter().any(|e| e.id == id), "{id}");
+    }
+    let mut bindings = crate::settings::KeyBindings::default();
+    bindings
+        .bind(&catalog, "command.stop", Chord::key("KeyZ"))
+        .expect("Z is free");
+    h.play.keymap = super::keys::Keymap::new(&bindings, &catalog);
+    h.refresh();
+    let label = h
+        .play
+        .commands
+        .iter()
+        .find(|c| c.id == "stop")
+        .and_then(|c| c.chord.as_ref().map(Chord::label));
+    assert_eq!(label.as_deref(), Some("Z"));
+    h.key("Z");
+    assert!(matches!(h.take().as_slice(), [Action::Stop { .. }]));
 }

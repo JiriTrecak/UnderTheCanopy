@@ -132,6 +132,13 @@
               {
                 "class": "settings-row",
                 "children": [
+                  { "kind": "label", "class": "settings-label", "text": "HUD layout" },
+                  { "id": "hud-layout", "kind": "dropdown", "class": "select", "action": "settings.hud-layout", "options": ["Spread · screen edges", "Compact · centered"], "selected": 0 }
+                ]
+              },
+              {
+                "class": "settings-row",
+                "children": [
                   { "kind": "label", "class": "settings-label", "text": "HUD size" },
                   { "class": "st-inline", "children": [
                     { "id": "hud-scale", "kind": "slider", "class": "slider st-grow", "min": 30, "max": 100, "step": 1, "action": "settings.hud-scale" },
@@ -146,7 +153,8 @@
           {
             "id": "keys", "class": "st-page", "visible": false, "style": { "overflow": "hidden" },
             "children": [
-              { "kind": "label", "class": "settings-note", "text": "Click a shortcut, then press the new key. Escape cancels." },
+              { "kind": "label", "class": "settings-note", "text": "Click a shortcut, then press the new key. Escape cancels; Clear unbinds. Commands may share default keys on different cards. Shift queues orders; Ctrl-click selects matching units; middle mouse drags the camera." },
+              { "id": "search", "kind": "text_field", "class": "field", "placeholder": "Find a shortcut", "max_length": 60, "action": "settings.key-search" },
               { "id": "list", "class": "st-keys", "repeat": "st-key-row" },
               { "id": "message", "kind": "label", "class": "st-message" },
               { "kind": "button", "class": "settings-button", "text": "Restore all default shortcuts", "action": "settings.keys-defaults" }

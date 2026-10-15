@@ -48,8 +48,20 @@ pub struct SettingsUi {
     /// The shortcut waiting for a key.
     pub capturing: Option<String>,
     pub message: String,
+    /// The shortcut search (old "Find a shortcut"): entries whose name contains it.
+    pub filter: String,
     /// Fields need their text pushed (opening the dialog).
     fresh: bool,
+}
+
+impl SettingsUi {
+    /// The catalogue entries the keyboard list shows, by catalogue index.
+    pub fn shown(&self, catalog: &[Entry]) -> Vec<usize> {
+        let needle = self.filter.trim().to_lowercase();
+        (0..catalog.len())
+            .filter(|&i| needle.is_empty() || catalog[i].label.to_lowercase().contains(&needle))
+            .collect()
+    }
 }
 
 fn volume_id(bus: Option<Bus>) -> &'static str {
@@ -66,6 +78,7 @@ impl SettingsUi {
         self.fresh = true;
         self.capturing = None;
         self.message.clear();
+        self.filter.clear();
     }
 
     pub fn show(&mut self, host: &mut UiHost, settings: &Settings, catalog: &[Entry]) {
@@ -129,6 +142,15 @@ impl SettingsUi {
             "settings/interface/hud-scale-value",
             &format!("{}%", settings.hud.scale),
         );
+        widgets::options(
+            ui,
+            "settings/interface/hud-layout",
+            &[
+                "Spread · screen edges".to_string(),
+                "Compact · centered".to_string(),
+            ],
+            usize::from(settings.hud.layout == crate::settings::HudLayout::Compact),
+        );
         widgets::checked(
             ui,
             "settings/interface/health-bars",
@@ -137,6 +159,7 @@ impl SettingsUi {
         widgets::checked(ui, "settings/interface/tooltips", settings.hud.tooltips);
         if self.fresh {
             widgets::text(ui, "settings/interface/name", &settings.player_name);
+            widgets::text(ui, "settings/keys/search", &self.filter);
             widgets::text(
                 ui,
                 "settings/network/server",
@@ -157,9 +180,10 @@ impl SettingsUi {
         // Shortcuts.
         let conflicts = settings.keys.conflicts(catalog);
         if let Some(list) = ui.find("settings/keys/list") {
-            ui.set_count(list, catalog.len());
+            let shown = self.shown(catalog);
+            ui.set_count(list, shown.len());
             let mut group = "";
-            for (i, entry) in catalog.iter().enumerate() {
+            for (i, entry) in shown.iter().map(|&c| &catalog[c]).enumerate() {
                 let base = format!("settings/keys/list/{i}");
                 let first = entry.group != group;
                 group = entry.group;
@@ -212,7 +236,7 @@ impl SettingsUi {
             return true;
         }
         match settings.keys.bind(catalog, &id, chord) {
-            Ok(()) => self.message.clear(),
+            Ok(()) => self.message = "Shortcut saved.".into(),
             Err(e) => self.message = e.to_string(),
         }
         true
@@ -323,6 +347,16 @@ impl SettingsUi {
                     settings.player_name = t.chars().take(crate::settings::MAX_NAME).collect();
                 }
             }
+            "settings.hud-layout" => {
+                if let Some(i) = selected(&action.kind) {
+                    settings.hud.layout = if i == 1 {
+                        crate::settings::HudLayout::Compact
+                    } else {
+                        crate::settings::HudLayout::Spread
+                    };
+                    c.hud = true;
+                }
+            }
             "settings.hud-scale" => {
                 if let Some(v) = value(&action.kind) {
                     settings.hud.scale = v.round().clamp(30.0, 100.0) as u32;
@@ -341,14 +375,30 @@ impl SettingsUi {
                     c.hud = true;
                 }
             }
+            "settings.key-search" => {
+                if let Some(t) = text(&action.kind) {
+                    self.filter = t;
+                }
+                return c;
+            }
             "settings.key" => {
-                if let Some(entry) = action.index.and_then(|i| catalog.get(i)) {
+                let shown = self.shown(catalog);
+                if let Some(entry) = action
+                    .index
+                    .and_then(|i| shown.get(i))
+                    .map(|&c| &catalog[c])
+                {
                     self.capturing = Some(entry.id.clone());
                     self.message.clear();
                 }
             }
             "settings.key-clear" => {
-                if let Some(entry) = action.index.and_then(|i| catalog.get(i)) {
+                let shown = self.shown(catalog);
+                if let Some(entry) = action
+                    .index
+                    .and_then(|i| shown.get(i))
+                    .map(|&c| &catalog[c])
+                {
                     settings.keys.clear(catalog, &entry.id);
                     self.capturing = None;
                 }
@@ -356,7 +406,7 @@ impl SettingsUi {
             "settings.keys-defaults" => {
                 settings.keys.restore_defaults();
                 self.capturing = None;
-                self.message.clear();
+                self.message = "Default shortcuts restored.".into();
             }
             "settings.server" => {
                 if let Some(t) = text(&action.kind) {

@@ -22,6 +22,11 @@
         { "id": "number", "kind": "label", "class": "order-number" }
       ]
     },
+    "status-badge": {
+      "class": "status-badge",
+      "tooltip": { "title": "" },
+      "children": [{ "id": "icon", "kind": "image", "class": "status-icon" }]
+    },
     "banner": {
       "kind": "button", "class": "banner", "action": "banner", "tooltip_anchor": "actions",
       "children": [
@@ -31,10 +36,15 @@
       ]
     },
     "group-button": {
-      "kind": "button", "class": "group-button", "action": "group",
+      "class": "group-slot",
       "children": [
-        { "id": "count", "kind": "label", "class": "group-count" },
-        { "id": "key", "kind": "label", "class": "group-key" }
+        {
+          "id": "button", "kind": "button", "class": "group-button", "action": "group",
+          "children": [
+            { "id": "key", "kind": "label", "class": "group-key" },
+            { "id": "count", "kind": "label", "class": "group-count" }
+          ]
+        }
       ]
     },
     "chat-line": { "kind": "label", "class": "chat-line" },

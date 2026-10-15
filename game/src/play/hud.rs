@@ -12,8 +12,10 @@
 use super::{
     Event, Play,
     card::{self, Command, MANA},
+    keys::{Keymap, Shortcut},
     know::Knowledge,
 };
+use crate::settings::Chord;
 use canopy_content::{game::Kind, placement::Owner};
 use canopy_sim::{Action, view::EntityView};
 use canopy_ui::{ActionKind, Color, Cost, NodeId, PointerButton, Tooltip, Ui};
@@ -51,15 +53,6 @@ pub fn health_color(ratio: f32) -> Color {
     Color::rgba(r8, g8, b8, 255)
 }
 
-/// A key name as the HUD prints it.
-pub fn key_label(key: &str) -> String {
-    match key {
-        "Escape" => "Esc".into(),
-        "Backquote" => "`".into(),
-        other => other.replace("Shift+", "⇧"),
-    }
-}
-
 struct Nodes {
     root: NodeId,
     heroes: NodeId,
@@ -79,6 +72,7 @@ struct Nodes {
     task_meter: NodeId,
     task_label: NodeId,
     status: NodeId,
+    statuses: NodeId,
     health: NodeId,
     health_value: NodeId,
     mana: NodeId,
@@ -121,6 +115,7 @@ impl Nodes {
             task_meter: find(ui, "hud/dock/selection/copy/task/meter")?,
             task_label: find(ui, "hud/dock/selection/copy/task/meter/label")?,
             status: find(ui, "hud/dock/selection/copy/status")?,
+            statuses: find(ui, "hud/dock/selection/copy/statuses")?,
             health: find(ui, "hud/dock/selection/copy/health")?,
             health_value: find(ui, "hud/dock/selection/copy/health/value")?,
             mana: find(ui, "hud/dock/selection/copy/mana")?,
@@ -164,6 +159,8 @@ pub struct Hud {
     /// The minimap shows the render target `@minimap`.
     pub minimap: bool,
     pub palette: Palette,
+    /// The match's players: slot, name and whether a computer plays it.
+    pub players: Vec<(u8, String, bool)>,
     /// Map size, for minimap clicks.
     pub map_size: f32,
     /// What the current card's cells and banners hold (command ids).
@@ -193,6 +190,7 @@ impl Hud {
             live_portrait: false,
             minimap: false,
             palette: Vec::new(),
+            players: Vec::new(),
             map_size: 1.0,
             cells: Default::default(),
             banners: Vec::new(),
@@ -269,16 +267,27 @@ impl Hud {
             }
             _ => ui.set_visible(n.error, false),
         }
+        // Old HUD outcome lines (the result dialog shows the details).
+        let mission = k.view.mission.is_some();
         let outcome = k
             .view
             .outcome
             .as_ref()
             .map(|o| match (k.owner(), o.winner) {
-                (None, Some(Owner::Player(p))) => format!("Player {} wins", p + 1),
-                (None, _) => "Match over".to_owned(),
-                (Some(me), Some(w)) if w == me => "Victory".to_owned(),
-                (Some(_), None) if o.defeated.is_empty() => "Draw".to_owned(),
-                _ => "Defeat".to_owned(),
+                (Some(me), w) if mission => {
+                    if w == Some(me) {
+                        "Mission complete".to_owned()
+                    } else {
+                        "Mission failed".to_owned()
+                    }
+                }
+                (_, None) => "Draw — both main forts fell.".to_owned(),
+                (None, Some(Owner::Player(p))) => {
+                    format!("Player {} wins — the rival Mound fell.", p + 1)
+                }
+                (None, Some(_)) => "Match over".to_owned(),
+                (Some(me), Some(w)) if w == me => "Victory — the enemy main fort fell.".to_owned(),
+                _ => "Defeat — your main fort fell.".to_owned(),
             });
         match outcome {
             Some(text) => {
@@ -371,8 +380,13 @@ impl Hud {
                 ui.set_value(bar, ratio);
                 ui.set_color(bar, Some(health_color(ratio)));
             }
+            let label = if i < 3 {
+                play.keymap.label(Shortcut::Hero(i))
+            } else {
+                String::new()
+            };
             if let Some(key) = ui.find_in(cell, "key") {
-                ui.set_text(key, if i < 3 { ["F1", "F2", "F3"][i] } else { "" });
+                ui.set_text(key, &label);
             }
             let available = play.hero_available(id);
             let fallen = k.view.battle.fallen.contains(&e.id());
@@ -382,7 +396,7 @@ impl Hud {
                 cell,
                 Some(Tooltip {
                     title: d.name.clone(),
-                    hotkey: (i < 3).then(|| format!("F{}", i + 1)),
+                    hotkey: (!label.is_empty()).then_some(label),
                     body: if available {
                         "Click to select. Double-click to center the camera.".into()
                     } else if fallen {
@@ -443,6 +457,7 @@ impl Hud {
             ui.set_visible(n.inventory, false);
             ui.set_count(n.queue, 0);
             ui.set_count(n.orders, 0);
+            ui.set_count(n.statuses, 0);
             self.queue.clear();
             self.active = None;
             return;
@@ -595,12 +610,20 @@ impl Hud {
                 &mana.map_or(format!("? / {max_mana}"), |m| format!("{m} / {max_mana}")),
             );
         }
-        self.inventory(ui, n, k, e);
+        self.inventory(ui, n, k, e, &play.keymap);
         self.workplace(ui, n, play, k, e);
         self.order_queue(ui, n, k, e);
+        self.statuses(ui, n, k, e);
     }
 
-    fn inventory(&mut self, ui: &mut Ui, n: &Nodes, k: &Knowledge, e: &EntityView) {
+    fn inventory(
+        &mut self,
+        ui: &mut Ui,
+        n: &Nodes,
+        k: &Knowledge,
+        e: &EntityView,
+        keymap: &Keymap,
+    ) {
         let Some(inv) = e.magic.as_ref().and_then(|m| m.inventory.as_ref()) else {
             ui.set_count(n.inventory, 0);
             ui.set_visible(n.inventory, false);
@@ -636,23 +659,42 @@ impl Hud {
                     ui.set_text(count, &t);
                 }
             }
+            // Old inventory tooltip: tier, description, charges, cooldown, and how to use
+            // or drop it; the slot key only for items that can be used.
+            let ready = runtime
+                .as_ref()
+                .map(|r| r.ready_tick)
+                .filter(|&t| t > k.tick())
+                .map(|t| (t - k.tick()).div_ceil(40));
+            let charges = runtime.as_ref().and_then(|r| r.charges);
+            let usable = item.is_some_and(|d| {
+                d.item_effect.as_ref().is_some_and(|x| {
+                    matches!(x, canopy_content::items::ItemEffect::Consumable { .. })
+                        || x.active().is_some()
+                })
+            });
+            let can_use = own && usable && ready.is_none() && k.view.outcome.is_none();
             ui.set_tooltip(
                 cell,
                 item.map(|d| Tooltip {
                     title: d.name.clone(),
-                    hotkey: own
-                        .then(|| {
-                            ["Num7", "Num8", "Num4", "Num5"]
-                                .get(i)
-                                .map(|s| s.to_string())
-                        })
-                        .flatten(),
+                    hotkey: can_use
+                        .then(|| keymap.label(Shortcut::Inventory(i)))
+                        .filter(|l| !l.is_empty()),
                     body: format!(
-                        "{}{}",
+                        "{}{}{}{}",
                         d.item_tier.map_or(String::new(), |t| format!("Tier {t}. ")),
-                        d.description
+                        d.description,
+                        charges.map_or(String::new(), |c| format!(" {c} charges remaining.")),
+                        ready.map_or(String::new(), |s| format!(" Cooldown: {s}s.")),
                     ),
-                    note: own.then(|| "Click to use. Right-click to drop.".into()),
+                    note: own.then(|| {
+                        if usable {
+                            "Click to use. Right-click to drop.".into()
+                        } else {
+                            "Equipped. Right-click to drop.".into()
+                        }
+                    }),
                     ..Tooltip::default()
                 }),
             );
@@ -845,8 +887,78 @@ impl Hud {
             ui.set_tooltip(
                 cell,
                 Some(Tooltip {
-                    title: format!("{verb}: {target}"),
-                    body: format!("Queued order {}. Runs after the current task.", i + 1),
+                    title: if target.is_empty() {
+                        verb
+                    } else {
+                        format!("{verb}: {target}")
+                    },
+                    body: format!(
+                        "Queued order {}. Runs after the current task. A normal order or Stop clears pending orders.",
+                        i + 1
+                    ),
+                    ..Tooltip::default()
+                }),
+            );
+        }
+    }
+
+    /// Item statuses on the focus (old `itemStatusCard`): auras, active item effects and
+    /// rescue, with their modifiers and remaining time.
+    fn statuses(&mut self, ui: &mut Ui, n: &Nodes, k: &Knowledge, e: &EntityView) {
+        use canopy_content::items::ItemEffect;
+        use canopy_sim::items::ItemStatusKind;
+        let statuses = match e.magic.as_ref() {
+            Some(m) if !e.remembered => m.item_statuses.as_slice(),
+            _ => &[],
+        };
+        ui.set_count(n.statuses, statuses.len());
+        for (i, s) in statuses.iter().enumerate() {
+            let Some(cell) = ui.child(n.statuses, i) else {
+                continue;
+            };
+            let d = k.catalog.get(s.item);
+            if let Some(node) = ui.find_in(cell, "icon") {
+                let key = self.image(ui, k, d.icon.as_str());
+                ui.set_image(node, key);
+            }
+            let (aura, active) = match &d.item_effect {
+                Some(ItemEffect::Equipment { aura, active, .. })
+                | Some(ItemEffect::Consumable { aura, active, .. }) => {
+                    (aura.as_ref(), active.as_ref())
+                }
+                None => (None, None),
+            };
+            let modifiers = match s.kind {
+                ItemStatusKind::Aura => aura.map(|a| modifier_text(&a.modifiers)),
+                ItemStatusKind::Rescue => Some("Invulnerable".to_owned()),
+                ItemStatusKind::Active => active
+                    .and_then(|a| a.status.as_ref())
+                    .map(|st| modifier_text(&st.modifiers)),
+            };
+            let mut parts: Vec<String> = modifiers.into_iter().filter(|m| !m.is_empty()).collect();
+            if let Some(shield) = s.shield {
+                parts.push(format!("{shield} shield remaining"));
+            }
+            parts.push(match (s.kind, aura) {
+                (ItemStatusKind::Aura, Some(a)) => format!(
+                    "While within {} tiles of the bearer. Identical auras do not stack.",
+                    a.radius
+                ),
+                _ => format!(
+                    "{}s remaining",
+                    s.expires.saturating_sub(k.tick()).div_ceil(40)
+                ),
+            });
+            let aura_suffix = if s.kind == ItemStatusKind::Aura {
+                " aura"
+            } else {
+                ""
+            };
+            ui.set_tooltip(
+                cell,
+                Some(Tooltip {
+                    title: format!("{}{aura_suffix}", d.name),
+                    body: escape(&parts.join(" · ")),
                     ..Tooltip::default()
                 }),
             );
@@ -888,7 +1000,7 @@ impl Hud {
                 ui.set_image(icon, key);
             }
             if let Some(key) = ui.find_in(cell, "key") {
-                ui.set_text(key, &c.hotkey.as_deref().map(key_label).unwrap_or_default());
+                ui.set_text(key, &c.chord.as_ref().map(Chord::label).unwrap_or_default());
             }
             ui.set_enabled(cell, c.enabled());
             ui.set_checked(
@@ -930,7 +1042,7 @@ impl Hud {
                 ui.set_text(label, &escape(&c.name));
             }
             if let Some(key) = ui.find_in(cell, "key") {
-                ui.set_text(key, &c.hotkey.as_deref().map(key_label).unwrap_or_default());
+                ui.set_text(key, &c.chord.as_ref().map(Chord::label).unwrap_or_default());
             }
             ui.set_enabled(cell, c.enabled());
             let tip = self.tooltip(ui, k, c);
@@ -970,7 +1082,7 @@ impl Hud {
         }
         Tooltip {
             title: escape(&c.name),
-            hotkey: c.hotkey.as_deref().map(key_label),
+            hotkey: c.chord.as_ref().map(Chord::label),
             costs,
             body: body
                 .into_iter()
@@ -990,7 +1102,12 @@ impl Hud {
         let mut selected = play.selection.ids().to_vec();
         selected.sort_unstable();
         for slot in 0..10 {
-            let Some(cell) = ui.child(n.groups, slot) else {
+            // Each group keeps its column (old grid columns 1–10), so a slot without
+            // members stays as empty, click-through space.
+            let Some(slot_node) = ui.child(n.groups, slot) else {
+                continue;
+            };
+            let Some(cell) = ui.find_in(slot_node, "button") else {
                 continue;
             };
             let members = play.groups.get(slot);
@@ -998,18 +1115,26 @@ impl Hud {
             if let Some(count) = ui.find_in(cell, "count") {
                 ui.set_text(count, &members.len().to_string());
             }
+            let digit = (slot + 1) % 10;
+            let recall = play.keymap.label(Shortcut::Recall(slot));
             if let Some(key) = ui.find_in(cell, "key") {
-                ui.set_text(key, &((slot + 1) % 10).to_string());
+                ui.set_text(key, if recall.is_empty() { "—" } else { &recall });
             }
             let mut m = members.to_vec();
             m.sort_unstable();
             ui.set_checked(cell, !m.is_empty() && m == selected);
+            // Old group tooltip: members, the bound assign and add keys, double press.
             ui.set_tooltip(
                 cell,
                 Some(Tooltip {
-                    title: format!("Group {}", (slot + 1) % 10),
-                    body: "Click to select. Ctrl-click assigns the selection; Shift-click adds it."
-                        .into(),
+                    title: format!("Control group {digit}"),
+                    hotkey: (!recall.is_empty()).then_some(recall),
+                    body: format!(
+                        "{} members. {}: assign. {}: add selection. Double press or double click to focus.",
+                        members.len(),
+                        play.keymap.label(Shortcut::Assign(slot)),
+                        play.keymap.label(Shortcut::Add(slot)),
+                    ),
                     ..Tooltip::default()
                 }),
             );
@@ -1105,19 +1230,31 @@ impl Hud {
                 .as_ref()
                 .is_some_and(|o| o.defeated.contains(&owner));
             if let Some(cell) = ui.find_in(row, "player") {
+                // Old row: the slot badge, the name and "Player N · controller".
+                let (name, ai) = self
+                    .players
+                    .iter()
+                    .find(|(slot, ..)| slot == player)
+                    .map_or((format!("Player {}", player + 1), true), |(_, n, ai)| {
+                        (n.clone(), *ai)
+                    });
+                let role = if defeated {
+                    "Defeated"
+                } else if ai {
+                    "Computer"
+                } else {
+                    "Human"
+                };
                 ui.set_text(
                     cell,
                     &format!(
-                        "[color=#{:02x}{:02x}{:02x}][b]{}[/b][/color]  {}",
+                        "[color=#{:02x}{:02x}{:02x}][b]{}[/b][/color]  {}\n[color=#93afb5]Player {} · {role}[/color]",
                         color[0],
                         color[1],
                         color[2],
                         player + 1,
-                        if defeated {
-                            "Defeated".into()
-                        } else {
-                            format!("Player {}", player + 1)
-                        }
+                        escape(&name),
+                        player + 1,
                     ),
                 );
             }
@@ -1155,20 +1292,27 @@ impl Hud {
             if let Some(cell) = ui.find_in(row, "workers") {
                 ui.set_text(cell, &colony.population.workers.to_string());
             }
-            let hero = k
+            // Every hero (old: one entry each, fallen ones marked).
+            let heroes: Vec<String> = k
                 .view
                 .entities
                 .iter()
-                .find(|e| e.public.owner == owner && k.def(e).is_hero());
-            if let Some(cell) = ui.find_in(row, "hero") {
-                let text = hero.map_or("—".to_owned(), |h| {
+                .filter(|e| e.public.owner == owner && k.def(e).is_hero())
+                .map(|h| {
                     let level = h.combat.as_ref().map_or(1, |c| c.stats.level);
                     if k.view.battle.fallen.contains(&h.id()) {
                         format!("Lv. {level} Fallen")
                     } else {
                         format!("Lv. {level}")
                     }
-                });
+                })
+                .collect();
+            if let Some(cell) = ui.find_in(row, "hero") {
+                let text = if heroes.is_empty() {
+                    "—".to_owned()
+                } else {
+                    heroes.join("\n")
+                };
                 ui.set_text(cell, &text);
             }
         }
@@ -1391,6 +1535,49 @@ fn describe_order(k: &Knowledge, order: &canopy_sim::orders::Order) -> (String, 
         }
         Order::CastAbility { binding, .. } => ("Cast".into(), String::new(), binding.clone()),
     }
+}
+
+/// The stat changes of an item, aura or item status (old `modifierText`).
+fn modifier_text(m: &canopy_content::items::ItemModifiers) -> String {
+    let mut out: Vec<String> = Vec::new();
+    let mut number = |value: Option<f64>, label: &str, permille: bool| {
+        if let Some(v) = value {
+            let shown = if permille { v / 10.0 } else { v };
+            let sign = if v >= 0.0 { "+" } else { "" };
+            let pct = if permille { "%" } else { "" };
+            out.push(format!("{sign}{}{pct} {label}", trim(shown)));
+        }
+    };
+    number(m.max_hp.map(f64::from), "maximum health", false);
+    number(m.max_mana.map(f64::from), "maximum mana", false);
+    number(m.damage.map(f64::from), "damage", false);
+    number(m.armor.map(f64::from), "armor", false);
+    number(m.health_regen_per_second, "health/sec", false);
+    number(m.mana_regen_per_second, "mana/sec", false);
+    number(m.damage_permille.map(f64::from), "attack damage", true);
+    number(m.attack_speed_permille.map(f64::from), "attack speed", true);
+    number(m.move_speed_permille.map(f64::from), "movement speed", true);
+    number(
+        m.cooldown_reduction_permille.map(f64::from),
+        "ability cooldown reduction",
+        true,
+    );
+    number(m.lifesteal_permille.map(f64::from), "lifesteal", true);
+    number(
+        m.melee_reflection_permille.map(f64::from),
+        "meleeReflectionPermille",
+        true,
+    );
+    for (on, text) in [
+        (m.rooted, "Rooted: cannot move"),
+        (m.control_immune, "Immune to roots and stuns"),
+        (m.invulnerable, "Invulnerable"),
+    ] {
+        if on == Some(true) {
+            out.push(text.to_owned());
+        }
+    }
+    out.join(" · ")
 }
 
 /// Escapes markup brackets in plain text.

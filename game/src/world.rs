@@ -36,6 +36,41 @@ pub struct Loaded {
     pub pack: Arc<Pack>,
     /// The data folder (the world UI's label font).
     pub data: std::path::PathBuf,
+    /// The match's day cycle (`None` when the hour stays fixed).
+    pub day: Option<DayCycle>,
+}
+
+/// Seconds of match time per in-game day (old `DAY_CYCLE_SECONDS`).
+pub const DAY_SECONDS: f32 = 600.0;
+
+/// The hour `seconds` of match time after `start` (old `Sky.tick`).
+pub fn day_hour(start: f32, seconds: f32) -> f32 {
+    canopy_render::environment::wrap_hour(start + seconds / DAY_SECONDS * 24.0)
+}
+
+/// The old sky's day cycle in a match: the hour starts at the map's and advances 24 hours
+/// every [`DAY_SECONDS`] of match time; sandboxes and a requested hour stay fixed.
+#[derive(Debug, Clone)]
+pub struct DayCycle {
+    pub start_hour: f32,
+    pub lighting: canopy_render::environment::LightingConfig,
+    pub biome: canopy_render::environment::BiomeConfig,
+}
+
+impl DayCycle {
+    /// The hour after `seconds` of match time.
+    pub fn hour(&self, seconds: f32) -> f32 {
+        day_hour(self.start_hour, seconds)
+    }
+
+    /// The light at `seconds` of match time.
+    pub fn lighting(&self, seconds: f32) -> canopy_render::environment::Lighting {
+        canopy_render::environment::Lighting::resolve(
+            &self.lighting,
+            &self.biome,
+            self.hour(seconds),
+        )
+    }
 }
 
 /// A match: the world, its session and its presenter (they move to the simulation
@@ -135,6 +170,11 @@ fn assemble(
         }
     }
     let presenter = scene.presenter(&world, map, pack.clone());
+    let day = (hour.is_none() && !map.sandbox).then(|| DayCycle {
+        start_hour: scene.hour,
+        lighting: look.lighting.clone(),
+        biome: look.biome.clone(),
+    });
     let hour = hour.unwrap_or(scene.hour);
     let grade = &look.biome.grade;
     let lut_texture = match (&grade.daytime_lut, grade.daytime_lut_strength > 0.0) {
@@ -158,6 +198,7 @@ fn assemble(
             pack,
             // Set by the caller.
             data: std::path::PathBuf::new(),
+            day,
         },
         Match {
             world,
@@ -273,4 +314,16 @@ pub fn prepare(
             .and_then(|m| m.objectives.clone())
             .unwrap_or_default(),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn a_match_day_lasts_ten_minutes() {
+        use super::day_hour;
+        assert_eq!(day_hour(9.5, 0.0), 9.5);
+        assert!((day_hour(9.5, 150.0) - 15.5).abs() < 1e-4);
+        assert!((day_hour(9.5, 600.0) - 9.5).abs() < 1e-3);
+        assert!((day_hour(20.0, 300.0) - 8.0).abs() < 1e-4);
+    }
 }
