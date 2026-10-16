@@ -58,6 +58,13 @@ impl MapEntry {
         let s = map::package::summary(&file.path).map_err(|e| anyhow!("{}: {e}", file.file))?;
         let preview =
             Some(Self::preview_entry(&file.id)).filter(|e| s.preview && pack.entry(e).is_some());
+        // A skirmish needs two starts; a mission or testbed one.
+        let playable = s.starts.len()
+            >= if s.mission.is_some() || s.sandbox {
+                1
+            } else {
+                2
+            };
         Ok(Self {
             name: s.name,
             size: s.size,
@@ -68,7 +75,7 @@ impl MapEntry {
             sandbox: s.sandbox,
             mission: s.mission,
             preview,
-            playable: !s.starts.is_empty(),
+            playable,
             file,
         })
     }

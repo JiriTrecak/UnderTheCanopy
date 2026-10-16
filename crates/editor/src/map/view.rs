@@ -277,10 +277,10 @@ fn delete(session: &Session, docs: &Docs, picked: Picked, id: &str) -> Vec<Comma
     let mut out = Vec::new();
     match picked {
         Picked::Start => {
-            if let Some(i) = docs.map["playerStarts"]
-                .as_array()
-                .and_then(|s| s.iter().position(|s| s["player"].as_u64() == id.parse().ok()))
-            {
+            if let Some(i) = docs.map["playerStarts"].as_array().and_then(|s| {
+                s.iter()
+                    .position(|s| s["player"].as_u64() == id.parse().ok())
+            }) {
                 out.push(Command::Remove {
                     document: map_doc,
                     pointer: format!("/playerStarts/{i}"),
@@ -612,6 +612,23 @@ pub fn show(
         }
     }
 
+    // The ramp being dragged, from where it began.
+    if let Some(stroke) = &session.tools.stroke
+        && let (Some(a), Some(b)) = (stroke.from, stroke.to)
+    {
+        let point = |p: [f32; 2]| {
+            project(
+                view_projection,
+                rect,
+                Vec3::new(p[0], tools::ground_at(map, p[0], p[1]) + 0.2, p[1]),
+            )
+        };
+        if let (Some(pa), Some(pb)) = (point(a), point(b)) {
+            painter.line_segment([pa, pb], Line::new(3.0, TEXT));
+            painter.circle_filled(pa, 4.0, TEXT);
+        }
+    }
+
     if let Some(hit) = hit {
         if tool.is_brush() {
             let color = if shift { ERROR } else { TEXT };
@@ -660,7 +677,11 @@ pub fn show(
             }
             let dt = input.stable_dt.clamp(0.005, 0.05);
             let mut stroke = session.tools.stroke.take().expect("a stroke");
-            if let Some(map) = session.map.as_mut() {
+            if tool == Tool::Ramp {
+                // A ramp is laid when the drag ends, from where it began to where it ends.
+                stroke.from.get_or_insert([hit.x, hit.z]);
+                stroke.to = Some([hit.x, hit.z]);
+            } else if let Some(map) = session.map.as_mut() {
                 if tool == Tool::Trees {
                     tools::trees(map, &session.tools, &mut stroke, hit.x, hit.z);
                 } else {
@@ -670,7 +691,26 @@ pub fn show(
             session.tools.stroke = Some(stroke);
             session.stale = true;
         }
-    } else if let Some(stroke) = session.tools.stroke.take()
+    } else if let Some(mut stroke) = session.tools.stroke.take()
+        && {
+            if let (Some(a), Some(b), Some(map)) = (stroke.from, stroke.to, session.map.as_mut()) {
+                let (ha, hb) = (
+                    tools::ground_at(map, a[0], a[1]),
+                    tools::ground_at(map, b[0], b[1]),
+                );
+                tools::ramp(
+                    map,
+                    &mut stroke,
+                    a,
+                    ha,
+                    b,
+                    hb,
+                    session.tools.radius * 2.0,
+                    cliff,
+                );
+            }
+            true
+        }
         && let Some(edit) = finish(session, docs, stroke)
     {
         out.edits.push(edit);
@@ -756,6 +796,7 @@ fn finish(session: &mut Session, docs: Option<&Docs>, mut stroke: Stroke) -> Opt
         Tool::Water if stroke.lower => "Drain water",
         Tool::Water => "Flood",
         Tool::Cliff => "Cliff",
+        Tool::Ramp => "Ramp",
         Tool::Smooth => "Smooth",
         Tool::Flatten => "Flatten",
         Tool::Lower => "Lower",
@@ -825,6 +866,27 @@ pub fn stroke(
         }));
     }
     let mut stroke = Stroke::new(tool, target, lower);
+    if tool == Tool::Ramp {
+        // From the first point to the last, between the heights there (or `level` at the
+        // bottom), as wide as the brush.
+        let last = *points.last().expect("a point");
+        if points.len() < 2 {
+            return Err("A ramp runs from its first point to its last".into());
+        }
+        let ha = tools::ground_at(map, first[0], first[1]);
+        let hb = level.unwrap_or_else(|| tools::ground_at(map, last[0], last[1]));
+        tools::ramp(
+            map,
+            &mut stroke,
+            *first,
+            ha,
+            last,
+            hb,
+            settings.radius * 2.0,
+            cliff,
+        );
+        return Ok(finish(session, Some(docs), stroke));
+    }
     for _ in 0..passes.max(1) {
         for [x, z] in &along {
             if tool == Tool::Trees {

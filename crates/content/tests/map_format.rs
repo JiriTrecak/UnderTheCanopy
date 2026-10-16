@@ -160,7 +160,6 @@ fn rejects_what_the_old_parser_rejects() {
         ("/description", Value::Null),
         ("/sandbox", json!("yes")),
         ("/initialExploration", json!("partial")),
-        ("/playerStarts", json!([start(1, 40.0)])),
         ("/playerStarts", json!([start(1, 40.0), start(1, 80.0)])),
         ("/playerStarts", json!([start(1, 40.25), start(2, 80.0)])),
         ("/playerStarts", json!([start(1, 256.0), start(2, 80.0)])),

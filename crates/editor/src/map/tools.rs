@@ -23,6 +23,7 @@ pub enum Tool {
     Flatten,
     Smooth,
     Cliff,
+    Ramp,
     Paint,
     Water,
     Trees,
@@ -32,13 +33,14 @@ pub enum Tool {
 }
 
 impl Tool {
-    pub const ALL: [Tool; 12] = [
+    pub const ALL: [Tool; 13] = [
         Tool::Select,
         Tool::Raise,
         Tool::Lower,
         Tool::Flatten,
         Tool::Smooth,
         Tool::Cliff,
+        Tool::Ramp,
         Tool::Paint,
         Tool::Water,
         Tool::Trees,
@@ -55,6 +57,7 @@ impl Tool {
             Tool::Flatten => "Flatten",
             Tool::Smooth => "Smooth",
             Tool::Cliff => "Cliff",
+            Tool::Ramp => "Ramp",
             Tool::Paint => "Paint",
             Tool::Water => "Water",
             Tool::Trees => "Trees",
@@ -72,6 +75,9 @@ impl Tool {
             Tool::Flatten => "Drag to level the ground to where the stroke began",
             Tool::Smooth => "Drag to soften slopes (makes ramps between cliff levels)",
             Tool::Cliff => "Drag to lift ground one cliff level (Shift lowers one level)",
+            Tool::Ramp => {
+                "Drag from the top of a cliff to the ground below: a walkable ramp as wide as the brush"
+            }
             Tool::Paint => "Drag to paint the chosen ground",
             Tool::Water => "Drag to flood to the water level (Shift drains)",
             Tool::Trees => "Drag to plant trees (Shift clears them)",
@@ -90,6 +96,7 @@ impl Tool {
                 | Tool::Flatten
                 | Tool::Smooth
                 | Tool::Cliff
+                | Tool::Ramp
                 | Tool::Paint
                 | Tool::Water
                 | Tool::Trees
@@ -207,6 +214,9 @@ pub struct Stroke {
     pub cleared: Vec<String>,
     /// For trees: the cells already tried.
     pub tried: std::collections::HashSet<(i32, i32)>,
+    /// For ramps: where the drag began, and where it is now.
+    pub from: Option<[f32; 2]>,
+    pub to: Option<[f32; 2]>,
 }
 
 /// The grids of a map's terrain by file, mutably.
@@ -267,6 +277,8 @@ impl Stroke {
             planted: Vec::new(),
             cleared: Vec::new(),
             tried: Default::default(),
+            from: None,
+            to: None,
         }
     }
 
@@ -452,6 +464,60 @@ pub fn brush(
         Tool::Raise | Tool::Lower | Tool::Flatten | Tool::Smooth | Tool::Cliff
     ) && let Some(layer) = cliff
     {
+        mark_cliffs(map, stroke, layer, [x0, z0, x1, z1]);
+    }
+}
+
+/// A straight ramp from world `a` at height `ha` to `b` at `hb`, `width` cells across:
+/// the ground along it is set to the slope between them (blending into its sides over two
+/// cells), and the cliff faces it cuts through are cleared.
+#[allow(clippy::too_many_arguments)]
+pub fn ramp(
+    map: &mut UtcMap,
+    stroke: &mut Stroke,
+    a: [f32; 2],
+    ha: f32,
+    b: [f32; 2],
+    hb: f32,
+    width: f32,
+    cliff: Option<usize>,
+) {
+    let side = map.authoring.terrain.vertices();
+    let halo = MAP_HALO as f32;
+    let half = width / 2.0;
+    let reach = half + 2.0;
+    let (dx, dz) = (b[0] - a[0], b[1] - a[1]);
+    let length2 = (dx * dx + dz * dz).max(1e-6);
+    let lo = |v: f32| ((v - reach + halo).floor().max(0.0)) as u32;
+    let hi = |v: f32| ((v + reach + halo).ceil().max(0.0) as u32).min(side - 1);
+    let (x0, x1) = (lo(a[0].min(b[0])), hi(a[0].max(b[0])));
+    let (z0, z1) = (lo(a[1].min(b[1])), hi(a[1].max(b[1])));
+    if x0 > x1 || z0 > z1 {
+        return;
+    }
+    stroke.keep(map, "terrain/heights.grid");
+    let grid = &mut map.authoring.terrain.heights.0;
+    for z in z0..=z1 {
+        for x in x0..=x1 {
+            let (wx, wz) = (x as f32 - halo, z as f32 - halo);
+            let t = (((wx - a[0]) * dx + (wz - a[1]) * dz) / length2).clamp(0.0, 1.0);
+            let (px, pz) = (a[0] + dx * t, a[1] + dz * t);
+            let d = ((wx - px).powi(2) + (wz - pz).powi(2)).sqrt();
+            if d > reach {
+                continue;
+            }
+            let f = if d <= half {
+                1.0
+            } else {
+                1.0 - (d - half) / 2.0
+            };
+            let i = (z * side + x) as usize;
+            let h = read(grid, i);
+            write(grid, i, h + (ha + (hb - ha) * t - h) * f);
+        }
+    }
+    stroke.touch(x0, z0, x1, z1);
+    if let Some(layer) = cliff {
         mark_cliffs(map, stroke, layer, [x0, z0, x1, z1]);
     }
 }
@@ -711,10 +777,6 @@ pub fn tree_commands(root: &str, stroke: &Stroke, objects: &[Value]) -> Vec<Comm
 }
 
 /// A building position on its 0.5-cell lattice.
-fn half(v: f64) -> f64 {
-    v.floor() + 0.5
-}
-
 /// Five amber nodes in an arc around world (`cx`, `cz`), its hollow facing (`fx`, `fz`)
 /// (the hall), as `map.json` entities.
 pub fn amber_site(
@@ -743,37 +805,71 @@ pub fn amber_site(
         .map(|a| a.id.as_str().to_string())
         .filter(|id| stem.ends_with('-') && id.starts_with(stem))
         .collect();
-    let (dx, dz) = (toward.0 - cx, toward.1 - cz);
-    let length = (dx * dx + dz * dz).sqrt().max(1e-6);
-    // u points at the hall; p across it.
-    let (ux, uz) = (dx / length, dz / length);
-    let (px, pz) = (-uz, ux);
+    // On the building lattice, the hollow turned to the nearest of eight directions
+    // towards the hall: an arc across it when straight, a bent line when diagonal.
+    let (cx, cz) = start_position(cx, cz);
+    let angle = (toward.1 - cz).atan2(toward.0 - cx);
+    let octant = ((angle / std::f64::consts::FRAC_PI_4).round() as i64).rem_euclid(8);
+    let offsets = site_offsets(octant as usize);
     let site = next_id("mine.", map.entities.iter().map(|e| e.id.clone()));
-    [
-        (-8.0, 0.0),
-        (-4.0, -4.0),
-        (0.0, -4.0),
-        (4.0, -4.0),
-        (8.0, 0.0),
-    ]
-    .iter()
-    .enumerate()
-    .map(|(k, (a, b))| {
-        let (x, z) = (cx + px * a + ux * b, cz + pz * a + uz * b);
-        let mut node = json!({
-            "definition": mine.id.as_str(),
-            "id": format!("mine.{site}.{k}"),
-            "initialState": {"amount": amount, "construction": "complete"},
-            "owner": "none",
-            "position": {"x": half(x), "y": half(z)},
-            "rotation": 0.0,
-        });
-        if !crystals.is_empty() {
-            node["appearance"] = json!({"asset": crystals[k % crystals.len()]});
-        }
-        node
-    })
-    .collect()
+    offsets
+        .iter()
+        .enumerate()
+        .map(|(k, (a, b))| {
+            let (x, z) = (cx + a, cz + b);
+            let mut node = json!({
+                "definition": mine.id.as_str(),
+                "id": format!("mine.{site}.{k}"),
+                "initialState": {"amount": amount, "construction": "complete"},
+                "owner": "none",
+                "position": {"x": x, "y": z},
+                "rotation": 0.0,
+            });
+            if !crystals.is_empty() {
+                node["appearance"] = json!({"asset": crystals[k % crystals.len()]});
+            }
+            node
+        })
+        .collect()
+}
+
+/// The five nodes of an amber site around its centre, in cells, for the hall in direction
+/// `octant` (0 east, counting towards +z in eighths of a turn): multiples of the 4-cell
+/// building lattice, an arc across a straight direction and a bent line across a diagonal.
+fn site_offsets(octant: usize) -> Vec<(f64, f64)> {
+    let (sx, sz) = [
+        (1, 0),
+        (1, 1),
+        (0, 1),
+        (-1, 1),
+        (-1, 0),
+        (-1, -1),
+        (0, -1),
+        (1, -1),
+    ][octant % 8];
+    let (sx, sz) = (f64::from(sx), f64::from(sz));
+    // u = (sx, sz) points at the hall; p across it.
+    let (px, pz) = (-sz, sx);
+    if sx == 0.0 || sz == 0.0 {
+        [
+            (-8.0, 0.0),
+            (-4.0, -4.0),
+            (0.0, -4.0),
+            (4.0, -4.0),
+            (8.0, 0.0),
+        ]
+        .iter()
+        .map(|(a, b)| (px * a + sx * b, pz * a + sz * b))
+        .collect()
+    } else {
+        vec![
+            (-8.0 * px, -8.0 * pz + 4.0 * sz),
+            (-4.0 * px, -4.0 * pz),
+            (0.0, 0.0),
+            (4.0 * px, 4.0 * pz),
+            (8.0 * px + 4.0 * sx, 8.0 * pz),
+        ]
+    }
 }
 
 /// A creep camp of `tier` at world (`cx`, `cz`): creeps (units that defend camps)
@@ -910,6 +1006,28 @@ mod tests {
         map.authoring.terrain.rock = floats(0.0);
         map.authoring.terrain.paint[0].weights = floats(0.0);
         map
+    }
+
+    #[test]
+    fn amber_sites_stay_on_the_lattice_without_overlapping_and_open_to_the_hall() {
+        for octant in 0..8 {
+            let nodes = site_offsets(octant);
+            assert_eq!(nodes.len(), 5);
+            for (i, a) in nodes.iter().enumerate() {
+                assert_eq!((a.0 % 4.0, a.1 % 4.0), (0.0, 0.0), "octant {octant}: {a:?}");
+                for b in &nodes[i + 1..] {
+                    // 4×4 footprints: apart by a whole footprint on some axis.
+                    assert!(
+                        (a.0 - b.0).abs() >= 4.0 || (a.1 - b.1).abs() >= 4.0,
+                        "octant {octant}"
+                    );
+                }
+            }
+            // The middle of the site lies behind its ends, seen from the hall.
+            let angle = octant as f64 * std::f64::consts::FRAC_PI_4;
+            let along = |p: &(f64, f64)| p.0 * angle.cos() + p.1 * angle.sin();
+            assert!(along(&nodes[2]) < along(&nodes[0]) && along(&nodes[2]) < along(&nodes[4]));
+        }
     }
 
     #[test]

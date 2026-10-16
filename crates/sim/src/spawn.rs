@@ -392,6 +392,66 @@ pub fn playable(map: &UtcMap, catalog: &Catalog, terrain: &Terrain) -> Result<()
     occupancy(map, content, terrain)
 }
 
+/// The cells ground units can reach from world (`x`, `z`) on bare terrain: walkable cells
+/// joined across their sides where no step is too steep. Buildings, resources and units
+/// are left out.
+pub fn reachable_from(terrain: &Terrain, x: f64, z: f64) -> Vec<bool> {
+    let size = terrain.size() as usize;
+    let mut reached = vec![false; size * size];
+    let Some(first) = terrain.cell(x.floor() as i64, z.floor() as i64) else {
+        return reached;
+    };
+    let steep = terrain.steep_edges();
+    let mut queue = vec![first];
+    reached[first] = true;
+    while let Some(cell) = queue.pop() {
+        let (cx, cz) = (cell % size, cell / size);
+        for (dx, dz) in [(1i32, 0i32), (-1, 0), (0, 1), (0, -1)] {
+            let (nx, nz) = (cx as i64 + i64::from(dx), cz as i64 + i64::from(dz));
+            let Some(next) = terrain.cell(nx, nz) else {
+                continue;
+            };
+            if reached[next]
+                || !terrain.walkable(next)
+                || steep.entered(nx as usize, nz as usize, dx, dz)
+            {
+                continue;
+            }
+            reached[next] = true;
+            queue.push(next);
+        }
+    }
+    reached
+}
+
+/// Whether ground units of every start can walk to every other start (on bare terrain).
+pub fn connected(map: &UtcMap, terrain: &Terrain) -> Result<(), String> {
+    let Some(first) = map.player_starts.first() else {
+        return Ok(());
+    };
+    let reached = reachable_from(terrain, first.x, first.z);
+    for s in &map.player_starts[1..] {
+        if !near(terrain, &reached, s.x, s.z, 12) {
+            return Err(format!(
+                "Player {}'s start cannot be reached on foot from Player {}'s: cliffs, deep water or trees close the way.",
+                s.player, first.player
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Whether any cell within `radius` of world (`x`, `z`) is reached.
+pub fn near(terrain: &Terrain, reached: &[bool], x: f64, z: f64, radius: i64) -> bool {
+    let (cx, cz) = (x.floor() as i64, z.floor() as i64);
+    (-radius..=radius).any(|dz| {
+        (-radius..=radius).any(|dx| {
+            dx * dx + dz * dz <= radius * radius
+                && terrain.cell(cx + dx, cz + dz).is_some_and(|c| reached[c])
+        })
+    })
+}
+
 /// Cells a start needs for its fort and the formation of every race and selectable hero
 /// (old `startingArea`).
 fn starting_area(

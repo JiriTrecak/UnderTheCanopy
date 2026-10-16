@@ -147,6 +147,11 @@ impl Checker {
                                 ) {
                                     fail(error);
                                 }
+                                if let Err(error) =
+                                    canopy_sim::spawn::connected(&map, world.terrain())
+                                {
+                                    fail(error);
+                                }
                             }
                             Err(error) => fail(error.0),
                         }

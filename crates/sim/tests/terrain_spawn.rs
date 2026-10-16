@@ -250,3 +250,25 @@ fn units_may_stand_on_bridge_decks() {
         .unwrap();
     assert_eq!(scout.surface.as_deref(), Some("bridge.1"));
 }
+
+#[test]
+fn starts_must_reach_each_other_on_foot() {
+    let walled = |gap: bool| {
+        let mut document = map();
+        document["authoring"]["terrain"] = terrain_fixture::terrain(
+            move |x, z| {
+                let wall = (120..=130).contains(&x) && !(gap && (100..=112).contains(&z));
+                if wall { 5.0 } else { 0.0 }
+            },
+            |_, _| -1.0,
+        );
+        let map = parse(document);
+        let world = World::new(content(), &map, setup(2))
+            .map_err(|e| e.0)
+            .unwrap();
+        canopy_sim::spawn::connected(&map, world.terrain())
+    };
+    let error = walled(false).unwrap_err();
+    assert!(error.contains("cannot be reached"), "{error}");
+    walled(true).unwrap();
+}

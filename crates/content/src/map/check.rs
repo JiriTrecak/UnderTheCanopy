@@ -271,13 +271,10 @@ pub(super) fn document(map: &UtcMap, file: &str, errors: &mut Vec<Error>) {
         "sandbox",
         "A testbed (sandbox) cannot also be a mission",
     );
-    let fewest = if map.mission.is_some() || map.sandbox {
-        1
-    } else {
-        2
-    };
+    // How few starts a map may have is validation's to say (`validate`, "Place Player 1
+    // and Player 2"): a map being edited may lack them for a while.
     let most = if map.sandbox { 1 } else { 8 };
-    r.count("playerStarts", map.player_starts.len(), fewest, most);
+    r.count("playerStarts", map.player_starts.len(), 0, most);
     for (i, start) in map.player_starts.iter().enumerate() {
         player_start(r, &format!("playerStarts[{i}]"), start, map.size);
     }
