@@ -164,7 +164,7 @@ impl App {
         let format = session.display.format().remove_srgb_suffix();
         session.editor = Some(canopy_editor::Editor::new(
             window,
-            &session.display.gpu.device,
+            &session.display.gpu,
             format,
             setup,
         ));
@@ -180,11 +180,7 @@ impl App {
         let Some(editor) = &mut session.editor else {
             return;
         };
-        let output = editor.run(
-            window,
-            &session.display.gpu.device,
-            &session.display.gpu.queue,
-        );
+        let output = editor.run(window, &session.display.gpu);
         if output.quit {
             session.game.quit();
             event_loop.exit();
@@ -391,6 +387,7 @@ impl ApplicationHandler for App {
 /// What the editor gets from the game: the base package and the interface fonts.
 pub fn editor_setup(paths: &Paths) -> canopy_editor::Setup {
     canopy_editor::Setup {
+        data: paths.data.clone(),
         base: paths.data.join(canopy_content::BASE_DIR),
         fonts: interface_fonts(&paths.data.join("config/ui/fonts")),
         user: Some(paths.user.clone()),

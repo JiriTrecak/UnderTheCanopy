@@ -354,14 +354,14 @@ pub fn run(
 fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
     use canopy_editor::{Editor, Kind};
     let format = CAPTURE_FORMAT.remove_srgb_suffix();
-    let mut editor = Editor::headless(&rig.gpu.device, format, crate::app::editor_setup(paths));
+    let mut editor = Editor::headless(&rig.gpu, format, crate::app::editor_setup(paths));
     let shoot = |editor: &mut Editor, rig: &mut Rig, name: &str| -> Result<()> {
         // A few frames (egui sizes panels and text from the previous frame), and until the
         // check of the latest edits is in.
         let start = Instant::now();
         let mut frames = 0;
         while frames < 4 || (editor.checking() && start.elapsed() < Duration::from_secs(20)) {
-            editor.run_headless(rig.size, rig.scale, &rig.gpu.device, &rig.gpu.queue);
+            editor.run_headless(rig.size, rig.scale, &rig.gpu);
             std::thread::sleep(Duration::from_millis(10));
             frames += 1;
         }

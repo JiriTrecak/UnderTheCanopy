@@ -29,6 +29,8 @@ pub struct Report {
     pub generation: u64,
     pub problems: Vec<Problem>,
     pub ms: f32,
+    /// The loaded game data when the check passed.
+    pub content: Option<Arc<Content>>,
 }
 
 pub struct Checker {
@@ -39,6 +41,8 @@ pub struct Checker {
     /// The newest request while a check runs; older ones are dropped.
     waiting: Option<(u64, Overlay)>,
     report: Option<Report>,
+    /// The game data of the last check that passed.
+    content: Option<Arc<Content>>,
 }
 
 impl Checker {
@@ -51,6 +55,7 @@ impl Checker {
             running: false,
             waiting: None,
             report: None,
+            content: None,
         }
     }
 
@@ -75,9 +80,13 @@ impl Checker {
             .spawn(move || {
                 let started = Instant::now();
                 let prefix = format!("{}/", package.id());
+                let mut content = None;
                 let problems =
                     match Content::from_packages(std::slice::from_ref(&package), Files::Check) {
-                        Ok(_) => Vec::new(),
+                        Ok(loaded) => {
+                            content = Some(Arc::new(loaded));
+                            Vec::new()
+                        }
                         Err(errors) => errors
                             .0
                             .into_iter()
@@ -97,6 +106,7 @@ impl Checker {
                     generation,
                     problems,
                     ms: started.elapsed().as_secs_f32() * 1000.0,
+                    content,
                 });
             });
         if let Err(error) = spawned {
@@ -109,6 +119,9 @@ impl Checker {
     pub fn poll(&mut self) {
         while let Ok(report) = self.rx.try_recv() {
             self.running = false;
+            if let Some(content) = &report.content {
+                self.content = Some(content.clone());
+            }
             self.report = Some(report);
         }
         self.start();
@@ -117,6 +130,11 @@ impl Checker {
     /// The latest finished check.
     pub fn report(&self) -> Option<&Report> {
         self.report.as_ref()
+    }
+
+    /// The game data of the last check that passed (previews draw from it).
+    pub fn content(&self) -> Option<&Arc<Content>> {
+        self.content.as_ref()
     }
 
     /// Whether a check is running or waiting.

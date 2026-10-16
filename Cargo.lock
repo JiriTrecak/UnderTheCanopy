@@ -492,11 +492,15 @@ name = "canopy-editor"
 version = "0.3.5"
 dependencies = [
  "bytes",
+ "canopy-assets",
  "canopy-content",
+ "canopy-render",
+ "canopy-scene",
  "egui",
  "egui-wgpu",
  "egui-winit",
  "egui_dock",
+ "glam 0.30.10",
  "http",
  "http-body-util",
  "hyper",

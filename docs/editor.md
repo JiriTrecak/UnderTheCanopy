@@ -45,6 +45,8 @@ Design decisions for the native editor, agreed with Jiri milestone by milestone 
 
 **Built (2026-10-16): step 5, MCP** (`mcp.rs`, `shell/serve.rs`). `rmcp`'s Streamable HTTP server on `127.0.0.1:7431/mcp`, served by hyper on its own thread; Host must be loopback, any Origin is refused, and requests carry the per-install token (`editor-mcp-token` in the user folder). Tools: `status`, `list_elements`, `read_document`, `document_schema`, `edit` (commands as one undo step), `undo`, `redo`, `save` (refused with problems unless forced), `problems` (waits for the check), `find_uses`, `rename_id`. Calls run on the editor's thread with its documents, so agents' steps undo and show like the user's. The header's MCP chip opens a panel to start and stop it, set "start with the editor" (`editor.json`), and copy the `claude mcp add` command. `canopy mcp` (`just mcp`) runs the same server without a window.
 
+**Built (2026-10-16): step 6, the viewport** (`stage.rs`). The game's renderer, a second instance owned by the editor, draws into a texture sized to the panel that egui shows; it is made when a viewport first shows. For now the inspector shows the open element's model (a definition's look, an asset or scenery model, from the last load that passed the check) on the zinc stage with an orbit camera (drag to turn, scroll to zoom, double-click to reset); a step that changes the look shows once its check passes.
+
 ## M3. The map editor (decided 2026-10-16)
 
 **Settled (Jiri, ahead of the build):**

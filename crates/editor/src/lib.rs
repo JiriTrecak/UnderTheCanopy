@@ -16,6 +16,7 @@ mod library;
 mod mcp;
 mod references;
 mod shell;
+mod stage;
 mod tabs;
 pub mod theme;
 mod watch;
@@ -28,6 +29,8 @@ use winit::{event::WindowEvent, window::Window};
 
 /// What the editor needs from the game.
 pub struct Setup {
+    /// The data folder (the repository): its cooked pack and lighting draw the viewport.
+    pub data: PathBuf,
     /// The base package's folder.
     pub base: PathBuf,
     /// Font files for the interface, first choice first (egui's own stay as fallbacks).
@@ -53,6 +56,9 @@ pub struct Editor {
     jobs: Vec<egui::ClippedPrimitive>,
     screen: egui_wgpu::ScreenDescriptor,
     shell: shell::Shell,
+    /// The viewport's renderer, made when a viewport first shows (or why it could not be).
+    stage: Option<Result<stage::Stage, String>>,
+    data: PathBuf,
 }
 
 impl Editor {
@@ -60,11 +66,11 @@ impl Editor {
     /// surface).
     pub fn new(
         window: &Window,
-        device: &wgpu::Device,
+        gpu: &canopy_render::Gpu,
         format: wgpu::TextureFormat,
         setup: Setup,
     ) -> Self {
-        let mut editor = Self::headless(device, format, setup);
+        let mut editor = Self::headless(gpu, format, setup);
         editor.shell.autostart_mcp();
         editor.state = Some(egui_winit::State::new(
             editor.ctx.clone(),
@@ -78,11 +84,11 @@ impl Editor {
     }
 
     /// An editor without a window, for offscreen captures ([`Editor::run_headless`]).
-    pub fn headless(device: &wgpu::Device, format: wgpu::TextureFormat, setup: Setup) -> Self {
+    pub fn headless(gpu: &canopy_render::Gpu, format: wgpu::TextureFormat, setup: Setup) -> Self {
         let ctx = egui::Context::default();
         theme::apply(&ctx, &setup.fonts);
         let renderer =
-            egui_wgpu::Renderer::new(device, format, egui_wgpu::RendererOptions::default());
+            egui_wgpu::Renderer::new(&gpu.device, format, egui_wgpu::RendererOptions::default());
         let package =
             canopy_content::package::Package::open(&setup.base).map_err(|e| e.to_string());
         if let Err(error) = &package {
@@ -98,6 +104,8 @@ impl Editor {
                 pixels_per_point: 1.0,
             },
             shell: shell::Shell::new(package, setup.user),
+            stage: None,
+            data: setup.data,
         }
     }
 
@@ -109,13 +117,13 @@ impl Editor {
     }
 
     /// Builds this frame's interface and uploads what it draws.
-    pub fn run(&mut self, window: &Window, device: &wgpu::Device, queue: &wgpu::Queue) -> Output {
+    pub fn run(&mut self, window: &Window, gpu: &canopy_render::Gpu) -> Output {
         let Some(state) = &mut self.state else {
             return Output::default();
         };
         let input = state.take_egui_input(window);
         let size = window.inner_size();
-        let (output, platform) = self.frame(input, [size.width, size.height], device, queue);
+        let (output, platform) = self.frame(input, [size.width, size.height], gpu);
         if let Some(state) = &mut self.state {
             state.handle_platform_output(window, platform);
         }
@@ -123,13 +131,7 @@ impl Editor {
     }
 
     /// A frame of `size` physical pixels at `scale` without a window (captures).
-    pub fn run_headless(
-        &mut self,
-        size: [u32; 2],
-        scale: f32,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-    ) -> Output {
+    pub fn run_headless(&mut self, size: [u32; 2], scale: f32, gpu: &canopy_render::Gpu) -> Output {
         let mut input = egui::RawInput {
             screen_rect: Some(egui::Rect::from_min_size(
                 egui::Pos2::ZERO,
@@ -142,7 +144,7 @@ impl Editor {
             .entry(egui::ViewportId::ROOT)
             .or_default()
             .native_pixels_per_point = Some(scale);
-        self.frame(input, size, device, queue).0
+        self.frame(input, size, gpu).0
     }
 
     /// The window is closing: true when it may close now, false when the editor first asks
@@ -190,11 +192,28 @@ impl Editor {
         &mut self,
         input: egui::RawInput,
         size: [u32; 2],
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
+        gpu: &canopy_render::Gpu,
     ) -> (Output, egui::PlatformOutput) {
+        let (device, queue) = (&gpu.device, &gpu.queue);
+        // The viewport shows last frame's picture; this frame's is drawn below.
+        self.shell.viewport_texture = match &self.stage {
+            Some(Ok(stage)) => stage.texture(),
+            _ => None,
+        };
+        self.shell.viewport_error = match &self.stage {
+            Some(Err(error)) => Some(error.clone()),
+            _ => None,
+        };
         let shell = &mut self.shell;
         let output = self.ctx.run_ui(input, |ui| shell.ui(ui));
+        if let Some(shot) = self.shell.shot.take() {
+            let stage = self
+                .stage
+                .get_or_insert_with(|| stage::Stage::new(gpu, &self.data));
+            if let Ok(stage) = stage {
+                stage.draw(gpu, &mut self.renderer, &shot);
+            }
+        }
         let egui::FullOutput {
             platform_output,
             mut textures_delta,

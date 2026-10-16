@@ -172,6 +172,12 @@ pub struct Shell {
     autostart: bool,
     mcp_error: Option<String>,
     mcp_open: bool,
+    /// The viewport: last frame's picture, why it cannot draw, this frame's request and
+    /// its camera.
+    pub viewport_texture: Option<egui::TextureId>,
+    pub viewport_error: Option<String>,
+    pub shot: Option<crate::stage::Shot>,
+    orbit: crate::stage::Orbit,
     /// `problems` calls waiting for the current check.
     waiting: Vec<tokio::sync::oneshot::Sender<Result<Value, String>>>,
     /// The editor is done: back to the menu, or quit the game.
@@ -193,6 +199,10 @@ impl Shell {
             mcp_error: None,
             mcp_open: false,
             waiting: Vec::new(),
+            viewport_texture: None,
+            viewport_error: None,
+            shot: None,
+            orbit: crate::stage::Orbit::default(),
             user,
             watch,
             ids: Vec::new(),
@@ -256,6 +266,7 @@ impl Shell {
             ),
             None => (false, false),
         };
+        let subject = active.as_deref().and_then(|d| self.subject(d));
         let workspace = self
             .workspaces
             .get_mut(&kind)
@@ -273,6 +284,14 @@ impl Shell {
                 uses: uses.as_deref(),
                 can_rename,
                 can_delete,
+                preview: subject.map(|(model, scale)| inspector::Preview {
+                    model,
+                    scale,
+                    texture: self.viewport_texture,
+                    error: self.viewport_error.as_deref(),
+                    orbit: &mut self.orbit,
+                    shot: &mut self.shot,
+                }),
             },
         );
         if workspace
@@ -331,6 +350,22 @@ impl Shell {
         if self.autostart {
             self.start_mcp();
         }
+    }
+
+    /// The model the open document shows in the viewport, and its scale: a definition's
+    /// look or an asset's model, from the last load that passed the check.
+    fn subject(&self, document: &str) -> Option<(String, f32)> {
+        let content = self.checker.as_ref()?.content()?;
+        let (_, collection) = Kind::collection_of(document)?;
+        let id = Kind::of_document(document)
+            .and_then(|k| self.workspaces.get(&k))
+            .map(|w| w.element(document).id)?;
+        let look = match collection.dir {
+            "units" | "buildings" | "items" | "resources" => content.look(&id),
+            "assets" | "scenery" => content.asset(&id),
+            _ => None,
+        }?;
+        Some((look.file.clone()?, look.scale.unwrap_or(1.0) as f32))
     }
 
     /// The package with the unsaved documents laid over it.

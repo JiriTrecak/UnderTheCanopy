@@ -27,6 +27,80 @@ pub struct Inspect<'a> {
     /// Whether the open element's id may be renamed and the element deleted.
     pub can_rename: bool,
     pub can_delete: bool,
+    /// The open element's model in the viewport.
+    pub preview: Option<Preview<'a>>,
+}
+
+/// The viewport at the inspector's top: the model, its picture and camera, and where this
+/// frame's request goes.
+pub struct Preview<'a> {
+    pub model: String,
+    pub scale: f32,
+    pub texture: Option<egui::TextureId>,
+    pub error: Option<&'a str>,
+    pub orbit: &'a mut crate::stage::Orbit,
+    pub shot: &'a mut Option<crate::stage::Shot>,
+}
+
+fn viewport(ui: &mut Ui, preview: Preview) {
+    let width = ui.available_width();
+    let (rect, response) = ui.allocate_exact_size(egui::vec2(width, width * 0.8), Sense::drag());
+    let painter = ui.painter();
+    painter.rect_filled(rect, 7, RAISED);
+    match (preview.error, preview.texture) {
+        (Some(error), _) => {
+            painter.text(
+                rect.center(),
+                egui::Align2::CENTER_CENTER,
+                error,
+                egui::FontId::proportional(11.0),
+                FAINT,
+            );
+        }
+        (None, Some(texture)) => {
+            let uv = egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0));
+            painter.image(texture, rect, uv, egui::Color32::WHITE);
+        }
+        (None, None) => {}
+    }
+    painter.rect_stroke(
+        rect,
+        7,
+        egui::Stroke::new(1.0, BORDER),
+        egui::StrokeKind::Inside,
+    );
+    painter.text(
+        rect.left_bottom() + egui::vec2(8.0, -8.0),
+        egui::Align2::LEFT_BOTTOM,
+        "Drag to turn · scroll to zoom",
+        egui::FontId::proportional(10.0),
+        FAINT,
+    );
+    let orbit = preview.orbit;
+    if response.dragged() {
+        let delta = response.drag_delta();
+        orbit.yaw -= delta.x * 0.01;
+        orbit.pitch = (orbit.pitch + delta.y * 0.01).clamp(-0.2, 1.45);
+    }
+    if response.double_clicked() {
+        *orbit = crate::stage::Orbit::default();
+    }
+    if response.hovered() {
+        let scroll = ui.input(|i| i.smooth_scroll_delta.y);
+        if scroll != 0.0 {
+            orbit.distance = (orbit.distance * (-scroll * 0.003).exp()).clamp(0.8, 8.0);
+        }
+    }
+    let scale = ui.ctx().pixels_per_point();
+    *preview.shot = Some(crate::stage::Shot {
+        model: preview.model,
+        scale: preview.scale,
+        size: [
+            (rect.width() * scale) as u32,
+            (rect.height() * scale) as u32,
+        ],
+        orbit: *orbit,
+    });
 }
 
 pub fn show(ui: &mut Ui, dock: &mut DockState<Doc>, inspect: Inspect) -> Option<Request> {
@@ -44,6 +118,9 @@ pub fn show(ui: &mut Ui, dock: &mut DockState<Doc>, inspect: Inspect) -> Option<
                 ui.label(RichText::new("Open an element from the library.").color(FAINT));
                 return;
             };
+            if let Some(preview) = inspect.preview {
+                viewport(ui, preview);
+            }
             ui.label(RichText::new("Properties").size(13.0).color(TEXT).strong());
             let value = inspect.store.get(&doc.document).ok().flatten().cloned();
             let field_of = |name: &str| {
