@@ -32,9 +32,9 @@ fn main() -> Result<()> {
     let options = options::Options::parse(std::env::args().skip(1))?;
     let paths = paths::Paths::resolve(options.data.clone())?;
     tracing::info!(data = %paths.data.display(), user = %paths.user.display(), "starting");
-    if options.command == Command::Edit && paths.repository().is_none() {
+    if matches!(options.command, Command::Edit | Command::Mcp) && paths.repository().is_none() {
         anyhow::bail!(
-            "`canopy edit` edits a repository checkout's base package; {} is not one (run `just edit` in the repository, or pass --data <checkout>)",
+            "the editor edits a repository checkout's base package; {} is not one (run `just edit` in the repository, or pass --data <checkout>)",
             paths.data.display()
         );
     }
@@ -46,6 +46,9 @@ fn main() -> Result<()> {
             scale,
             only,
         } => screens::capture::run(&paths, out, *size, *scale, only.as_deref()),
+        Command::Mcp => {
+            canopy_editor::serve_headless(app::editor_setup(&paths)).map_err(anyhow::Error::msg)
+        }
         Command::Play | Command::Edit => {
             let event_loop = EventLoop::new()?;
             let mut app = app::App::new(options, paths);

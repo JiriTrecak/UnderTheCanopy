@@ -13,6 +13,7 @@ mod forms;
 mod icons;
 mod inspector;
 mod library;
+mod mcp;
 mod references;
 mod shell;
 mod tabs;
@@ -31,6 +32,8 @@ pub struct Setup {
     pub base: PathBuf,
     /// Font files for the interface, first choice first (egui's own stay as fallbacks).
     pub fonts: Vec<Vec<u8>>,
+    /// The user folder: the MCP token and the editor's settings.
+    pub user: Option<PathBuf>,
 }
 
 /// What the editor asks of the game after a frame.
@@ -62,6 +65,7 @@ impl Editor {
         setup: Setup,
     ) -> Self {
         let mut editor = Self::headless(device, format, setup);
+        editor.shell.autostart_mcp();
         editor.state = Some(egui_winit::State::new(
             editor.ctx.clone(),
             egui::ViewportId::ROOT,
@@ -93,7 +97,7 @@ impl Editor {
                 size_in_pixels: [1, 1],
                 pixels_per_point: 1.0,
             },
-            shell: shell::Shell::new(package),
+            shell: shell::Shell::new(package, setup.user),
         }
     }
 
@@ -256,5 +260,22 @@ impl Editor {
         });
         let mut pass = pass.forget_lifetime();
         self.renderer.render(&mut pass, &self.jobs, &self.screen);
+    }
+}
+
+/// Runs the editor without a window for agents (`canopy mcp`): the same documents, check,
+/// file watch and MCP server; never returns unless the server cannot start.
+pub fn serve_headless(setup: Setup) -> Result<(), String> {
+    let package = canopy_content::package::Package::open(&setup.base).map_err(|e| e.to_string())?;
+    let mut shell = shell::Shell::new(Ok(package), setup.user);
+    shell.start_mcp();
+    let port = shell
+        .mcp_port()
+        .ok_or("the MCP server did not start (is the port taken?)")?;
+    println!("Under the Canopy editor: MCP on 127.0.0.1:{port}. Add it to Claude Code with:");
+    println!("  {}", shell.claude_command());
+    loop {
+        shell.tick();
+        std::thread::sleep(std::time::Duration::from_millis(15));
     }
 }

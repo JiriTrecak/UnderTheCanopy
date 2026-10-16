@@ -393,6 +393,7 @@ pub fn editor_setup(paths: &Paths) -> canopy_editor::Setup {
     canopy_editor::Setup {
         base: paths.data.join(canopy_content::BASE_DIR),
         fonts: interface_fonts(&paths.data.join("config/ui/fonts")),
+        user: Some(paths.user.clone()),
     }
 }
 

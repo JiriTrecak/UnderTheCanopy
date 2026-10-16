@@ -117,15 +117,19 @@ pub fn primary(text: &str) -> egui::Button<'static> {
         .stroke(Stroke::NONE)
 }
 
-/// A service's state: a coloured dot and a word, framed like a button.
+/// A service's state: a coloured dot and a word, as a button.
 pub fn status(ui: &mut Ui, text: &str, dot: Color32) -> Response {
     let galley = ui
         .painter()
         .layout_no_wrap(text.to_string(), FontId::proportional(11.5), MUTED);
     let size = vec2(32.0 + galley.size().x, 28.0);
-    let (rect, response) = ui.allocate_exact_size(size, Sense::hover());
+    let (rect, response) = ui.allocate_exact_size(size, Sense::click());
     let painter = ui.painter();
-    painter.rect_filled(rect, RADIUS, RAISED);
+    painter.rect_filled(
+        rect,
+        RADIUS,
+        if response.hovered() { SELECTED } else { RAISED },
+    );
     painter.rect_stroke(rect, RADIUS, Stroke::new(1.0, BORDER), StrokeKind::Inside);
     painter.circle_filled(pos2(rect.left() + 13.0, rect.center().y), 3.0, dot);
     let top = rect.center().y - galley.size().y / 2.0;

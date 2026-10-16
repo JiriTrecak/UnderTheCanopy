@@ -4,6 +4,7 @@
 //! canopy [--data <folder>] [--no-vsync] [--map <id> | --spectate <id>] [--players <n>]
 //!        [--tick <n>] [--camera <x,z,zoom[,yaw]>] [--hour <h>] [graphics]
 //! canopy edit [--data <folder>]  (opens the editor; docs/editor.md)
+//! canopy mcp [--data <folder>]   (the editor's MCP server without a window)
 //! canopy capture-screens --out <folder> [--size <w>x<h>] [--scale <s>] [--only releases]
 //!                         [--data <folder>]
 //! canopy shot --map <id> --camera <x,z,zoom[,yaw] | battle[,zoom]> --out <png>
@@ -127,6 +128,8 @@ pub enum Command {
     Play,
     /// Open a window in the editor (`canopy edit`).
     Edit,
+    /// The editor's MCP server without a window (`canopy mcp`).
+    Mcp,
     /// Render offscreen and write a PNG.
     Shot { out: PathBuf, size: [u32; 2] },
     /// Render every screen offscreen into a folder.
@@ -272,6 +275,7 @@ impl Options {
                 "--only" if capture => only = Some(value("--only")?),
                 "play" if first => {}
                 "edit" if first => options.command = Command::Edit,
+                "mcp" if first => options.command = Command::Mcp,
                 "--data" => options.data = Some(value("--data")?.into()),
                 "--no-vsync" => options.vsync = false,
                 "--map" => options.map = Some(value("--map")?),

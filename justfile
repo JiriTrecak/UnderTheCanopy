@@ -15,6 +15,10 @@ play *args: cook
 edit *args: cook
     cargo run -p canopy -- edit --data "{{justfile_directory()}}" {{args}}
 
+# The editor's MCP server without a window, for agents (docs/editor.md)
+mcp *args:
+    cargo run -p canopy -- mcp --data "{{justfile_directory()}}" {{args}}
+
 # Render one view offscreen to a PNG: `just shot --map <id> --camera <x,z,zoom[,yaw]> --out <png>` (see docs/renderer.md, "Reference captures")
 shot *args: cook
     cargo run -q --release -p canopy -- shot --data "{{justfile_directory()}}" {{args}}

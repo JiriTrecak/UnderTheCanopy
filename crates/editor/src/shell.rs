@@ -25,6 +25,8 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+mod serve;
+
 /// One editor's state, kept while switching editors.
 struct Workspace {
     library: Library,
@@ -158,16 +160,40 @@ pub struct Shell {
     uses: Option<(String, u64, Vec<Use>)>,
     /// An open rename, delete or create dialog.
     dialog: Option<Dialog>,
+    /// The user folder (the MCP token, the editor's settings).
+    user: Option<std::path::PathBuf>,
+    /// MCP: tool calls from the server's thread, the server, its token, setting and panel.
+    calls: (
+        std::sync::mpsc::Sender<crate::mcp::Call>,
+        std::sync::mpsc::Receiver<crate::mcp::Call>,
+    ),
+    server: Option<crate::mcp::Server>,
+    token: String,
+    autostart: bool,
+    mcp_error: Option<String>,
+    mcp_open: bool,
+    /// `problems` calls waiting for the current check.
+    waiting: Vec<tokio::sync::oneshot::Sender<Result<Value, String>>>,
     /// The editor is done: back to the menu, or quit the game.
     pub close: Option<Leave>,
 }
 
 impl Shell {
-    pub fn new(package: Result<Package, String>) -> Self {
+    pub fn new(package: Result<Package, String>, user: Option<std::path::PathBuf>) -> Self {
         let store = package.as_ref().ok().map(|p| Store::new(&p.root));
         let checker = package.as_ref().ok().cloned().map(Checker::new);
         let watch = package.as_ref().ok().and_then(|p| Watch::new(&p.root));
+        let token = serve::token(user.as_deref());
+        let autostart = serve::autostart(user.as_deref());
         Self {
+            calls: std::sync::mpsc::channel(),
+            server: None,
+            token,
+            autostart,
+            mcp_error: None,
+            mcp_open: false,
+            waiting: Vec::new(),
+            user,
             watch,
             ids: Vec::new(),
             structure: None,
@@ -296,6 +322,15 @@ impl Shell {
         self.leave_dialog(ui.ctx());
         self.save_dialog(ui.ctx());
         self.element_dialog(ui.ctx());
+        self.mcp_dialog(ui.ctx());
+        self.serve_calls();
+    }
+
+    /// Starts the MCP server when the setting asks for it.
+    pub fn autostart_mcp(&mut self) {
+        if self.autostart {
+            self.start_mcp();
+        }
     }
 
     /// The package with the unsaved documents laid over it.
@@ -388,17 +423,11 @@ impl Shell {
             return uses.clone();
         }
         let id = self.id_of(document);
-        let mut uses = Vec::new();
-        if !id.is_empty() {
-            let documents = self.all_documents();
-            if let Some(store) = &mut self.store {
-                for path in documents {
-                    if let Ok(Some(value)) = store.get(&path) {
-                        references::find(&path, value, &id, &mut uses);
-                    }
-                }
-            }
-        }
+        let uses = if id.is_empty() {
+            Vec::new()
+        } else {
+            self.find_uses(&id)
+        };
         self.uses = Some((document.to_string(), generation, uses.clone()));
         uses
     }
@@ -1264,9 +1293,17 @@ impl Shell {
                             .add_enabled(unsaved > 0, primary("Save"))
                             .on_hover_text("Save every changed document (Cmd+S)")
                             .clicked();
-                        status(ui, "MCP off", FAINT).on_hover_text(
-                            "The MCP server for agents comes later in this milestone.",
-                        );
+                        let (text, dot) = match self.server.as_ref().map(|s| s.port) {
+                            Some(port) => (format!("MCP :{port}"), LIVE),
+                            None => ("MCP off".to_string(), FAINT),
+                        };
+                        if status(ui, &text, dot)
+                            .on_hover_text("The MCP server for agents")
+                            .on_hover_cursor(egui::CursorIcon::PointingHand)
+                            .clicked()
+                        {
+                            self.mcp_open = true;
+                        }
                         ui.add_enabled_ui(false, |ui| {
                             ui.button("Test in game").on_disabled_hover_text(
                                 "Playing the open package comes later in this milestone.",

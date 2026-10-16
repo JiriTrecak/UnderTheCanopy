@@ -60,6 +60,16 @@ rustls-platform-verifier = "0.7"
 serde = { version = "1", features = ["derive"] }
 # JSON Schema of the content types: the editor's forms and MCP's tools (docs/editor.md).
 schemars = "1"
+# The editor's MCP server for agents (docs/editor.md): rmcp's Streamable HTTP service,
+# served by hyper on loopback.
+rmcp = { version = "3.5", default-features = false, features = ["server", "macros", "transport-streamable-http-server"] }
+hyper = { version = "1", default-features = false, features = ["server", "http1"] }
+hyper-util = { version = "0.1", default-features = false, features = ["tokio", "server", "http1", "service"] }
+http = "1"
+http-body-util = "0.1"
+bytes = "1"
+tokio-util = { version = "0.7", default-features = false }
+tower-service = "0.3"
 # The editor follows files changed on disk (docs/editor.md).
 notify = "8"
 # Objects keep their keys in document order: the editor writes documents back in place

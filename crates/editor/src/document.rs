@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 /// One change to one document. Pointers are JSON pointers (`/ranks/0/damage`); `""` is
 /// the whole document.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(tag = "op", rename_all = "camelCase")]
 pub enum Command {
     /// Sets a field or an array entry (adding the field if missing). In an object, `at`
