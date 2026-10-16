@@ -3,6 +3,7 @@
 //! ```text
 //! canopy [--data <folder>] [--no-vsync] [--map <id> | --spectate <id>] [--players <n>]
 //!        [--tick <n>] [--camera <x,z,zoom[,yaw]>] [--hour <h>] [graphics]
+//! canopy edit [--data <folder>]  (opens the editor; docs/editor.md)
 //! canopy capture-screens --out <folder> [--size <w>x<h>] [--scale <s>] [--only releases]
 //!                         [--data <folder>]
 //! canopy shot --map <id> --camera <x,z,zoom[,yaw] | battle[,zoom]> --out <png>
@@ -124,6 +125,8 @@ impl EffectSpec {
 pub enum Command {
     /// Open a window.
     Play,
+    /// Open a window in the editor (`canopy edit`).
+    Edit,
     /// Render offscreen and write a PNG.
     Shot { out: PathBuf, size: [u32; 2] },
     /// Render every screen offscreen into a folder.
@@ -268,6 +271,7 @@ impl Options {
                 "--scale" => scale = value("--scale")?.parse().context("--scale")?,
                 "--only" if capture => only = Some(value("--only")?),
                 "play" if first => {}
+                "edit" if first => options.command = Command::Edit,
                 "--data" => options.data = Some(value("--data")?.into()),
                 "--no-vsync" => options.vsync = false,
                 "--map" => options.map = Some(value("--map")?),
@@ -436,6 +440,10 @@ mod tests {
         assert!(parse(&["--render-scale", "2"]).is_err());
         assert!(parse(&["--haze", "ultra"]).is_err());
         assert_eq!(parse(&[]).unwrap().data, None);
+        assert_eq!(
+            parse(&["edit", "--data", "repo"]).unwrap().command,
+            Command::Edit
+        );
     }
 
     #[test]

@@ -7,7 +7,8 @@
 //! user folder. Multiplayer shows a real server when `CANOPY_MATCH_SERVER` names one (a
 //! local match server, `just server`): the capture opens a second client's lobby so the
 //! list has a room, joins it, then hosts a lobby with computer and closed seats. No shipped map is a mission, so the mission HUD captures
-//! feed a sample mission state (marked `-sample` in their names).
+//! feed a sample mission state (marked `-sample` in their names). The `editor` group
+//! renders the editor (`canopy_editor`) offscreen in a few states.
 
 use super::{
     Ctx, Game, Intent, Overlay, Screen,
@@ -163,6 +164,11 @@ impl Rig {
             scale: self.scale,
         };
         self.game.render(&mut ctx, &view, &ui_view);
+        self.save(name)
+    }
+
+    /// Writes what the target holds.
+    fn save(&mut self, name: &str) -> Result<()> {
         let rgba = self.target.read(&self.gpu)?;
         let path = self.out.join(format!("{name}.png"));
         image::save_buffer(
@@ -299,7 +305,10 @@ pub fn run(
         match group {
             "releases" => releases(&mut rig)?,
             "multiplayer" => multiplayer(&mut rig)?,
-            other => anyhow::bail!("unknown capture group {other} (releases, multiplayer)"),
+            "editor" => editor(&mut rig, &paths)?,
+            other => {
+                anyhow::bail!("unknown capture group {other} (releases, multiplayer, editor)")
+            }
         }
         let _ = std::fs::remove_dir_all(&user);
         println!("{} captures", rig.written.len());
@@ -334,8 +343,44 @@ pub fn run(
     rig.game.open_saves();
     rig.settle(0.2);
     rig.shoot("saves-main-menu")?;
+    editor(&mut rig, &paths)?;
     let _ = std::fs::remove_dir_all(&user);
     println!("{} captures", rig.written.len());
+    Ok(())
+}
+
+/// The editor offscreen: an empty editor, documents open, the assistant open, and a
+/// library of several collections.
+fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
+    use canopy_editor::{Editor, Kind};
+    let format = CAPTURE_FORMAT.remove_srgb_suffix();
+    let mut editor = Editor::headless(&rig.gpu.device, format, crate::app::editor_setup(paths));
+    let shoot = |editor: &mut Editor, rig: &mut Rig, name: &str| -> Result<()> {
+        // A few frames: egui sizes panels and text from the previous frame.
+        for _ in 0..4 {
+            editor.run_headless(rig.size, rig.scale, &rig.gpu.device, &rig.gpu.queue);
+        }
+        let mut encoder = rig
+            .gpu
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        editor.paint(&mut encoder, &rig.target.ui_view);
+        rig.gpu.queue.submit([encoder.finish()]);
+        rig.save(name)
+    };
+    editor.select(Kind::Abilities);
+    shoot(&mut editor, rig, "editor-empty")?;
+    editor.open_first(3);
+    shoot(&mut editor, rig, "editor-abilities")?;
+    editor.set_assistant(true);
+    shoot(&mut editor, rig, "editor-assistant")?;
+    editor.set_assistant(false);
+    editor.select(Kind::Races);
+    editor.open_first(1);
+    shoot(&mut editor, rig, "editor-races")?;
+    editor.select(Kind::Maps);
+    editor.open_first(2);
+    shoot(&mut editor, rig, "editor-maps")?;
     Ok(())
 }
 

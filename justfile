@@ -11,6 +11,10 @@ default:
 play *args: cook
     cargo run -p canopy -- --data "{{justfile_directory()}}" {{args}}
 
+# Open the editor (docs/editor.md)
+edit *args: cook
+    cargo run -p canopy -- edit --data "{{justfile_directory()}}" {{args}}
+
 # Render one view offscreen to a PNG: `just shot --map <id> --camera <x,z,zoom[,yaw]> --out <png>` (see docs/renderer.md, "Reference captures")
 shot *args: cook
     cargo run -q --release -p canopy -- shot --data "{{justfile_directory()}}" {{args}}

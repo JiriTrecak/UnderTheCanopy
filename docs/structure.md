@@ -14,6 +14,7 @@ UnderTheCanopy/
 │  ├─ scene/           simulation snapshots → render world, interpolation (M3)
 │  ├─ ui/              HUD toolkit: taffy layout, cosmic-text (M4)
 │  ├─ audio/           playback, voice limiting, effect sounds, music (M4)
+│  ├─ editor/          the editor the game opens as a mode: egui shell, zinc theme (docs/editor.md)
 │  ├─ net/             client for the existing match server protocol (M5)
 │  ├─ release/         release log, update feed, package signatures (D43)
 │  └─ release-tool/    `just release-*`: notes, prepare, build, publish (docs/releases.md)

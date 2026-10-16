@@ -11,7 +11,7 @@ pub mod layer;
 mod tree;
 
 pub use layer::{Contribution, Layered, Layers};
-pub use tree::{Collection, Form};
+pub use tree::{Collection, Form, Found};
 
 use crate::error::{Error, parse};
 use serde::{Deserialize, Serialize};

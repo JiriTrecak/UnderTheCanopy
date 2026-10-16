@@ -33,6 +33,7 @@
               { "id": "skirmish", "kind": "button", "class": "menu-action mm-action", "text": "Skirmish", "action": "menu.skirmish" },
               { "id": "multiplayer", "kind": "button", "class": "menu-action mm-action", "text": "Multiplayer", "action": "menu.multiplayer" },
               { "id": "load", "kind": "button", "class": "menu-action mm-action", "text": "Load Game", "action": "menu.load" },
+              { "id": "editor", "kind": "button", "class": "menu-action mm-action", "text": "Editor", "action": "menu.editor" },
               { "id": "settings", "kind": "button", "class": "menu-action mm-action", "text": "Settings", "action": "menu.settings" },
               { "id": "exit", "kind": "button", "class": "menu-action mm-action", "text": "Exit", "action": "menu.exit" }
             ]

@@ -40,7 +40,7 @@ fn main() -> Result<()> {
             scale,
             only,
         } => screens::capture::run(&paths, out, *size, *scale, only.as_deref()),
-        Command::Play => {
+        Command::Play | Command::Edit => {
             let event_loop = EventLoop::new()?;
             let mut app = app::App::new(options, paths);
             event_loop.run_app(&mut app)?;

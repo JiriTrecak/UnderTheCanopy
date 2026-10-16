@@ -21,6 +21,7 @@ arboard.workspace = true
 canopy-assets = { path = "../crates/assets" }
 canopy-audio = { path = "../crates/audio" }
 canopy-content = { path = "../crates/content" }
+canopy-editor = { path = "../crates/editor" }
 canopy-net = { path = "../crates/net" }
 canopy-release = { path = "../crates/release" }
 canopy-render = { path = "../crates/render" }

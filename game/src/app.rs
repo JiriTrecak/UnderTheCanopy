@@ -8,10 +8,14 @@
 //! (arrow keys and PageUp/PageDown by default) and screen-edge scrolling, the wheel and
 //! middle-drag grab; spectators also turn with Q/E and jump to the largest fight with B;
 //! F9 opens the debug overlay.
+//!
+//! The editor (`canopy_editor`) takes the whole window while it is open: from the main
+//! menu's Editor entry or `canopy edit`. The game waits behind it, not updated, and comes
+//! back when the editor closes.
 
 use crate::{
     gpu::Display,
-    options::Options,
+    options::{Command, Options},
     paths::Paths,
     screens::{Ctx, DevStart, Game, loading::DevSpec},
     settings::{Settings, WindowMode},
@@ -39,6 +43,8 @@ struct Session {
     display: Display,
     renderer: Renderer,
     game: Game,
+    /// Open while editing; it draws the window instead of the game.
+    editor: Option<canopy_editor::Editor>,
 }
 
 /// Measurements gathered between two log lines.
@@ -139,14 +145,78 @@ impl App {
             display,
             renderer,
             game,
+            editor: None,
         });
+        if self.options.command == Command::Edit {
+            self.open_editor();
+        }
         Ok(())
+    }
+
+    fn open_editor(&mut self) {
+        let (Some(session), Some(window)) = (&mut self.session, &self.window) else {
+            return;
+        };
+        if session.editor.is_some() {
+            return;
+        }
+        let setup = editor_setup(&self.paths);
+        let format = session.display.format().remove_srgb_suffix();
+        session.editor = Some(canopy_editor::Editor::new(
+            window,
+            &session.display.gpu.device,
+            format,
+            setup,
+        ));
+        session.game.audio.set_background(true);
+        window.set_title("Under the Canopy · Editor");
+    }
+
+    /// A frame while the editor is open.
+    fn redraw_editor(&mut self) {
+        let (Some(session), Some(window)) = (&mut self.session, &self.window) else {
+            return;
+        };
+        let Some(editor) = &mut session.editor else {
+            return;
+        };
+        let output = editor.run(
+            window,
+            &session.display.gpu.device,
+            &session.display.gpu.queue,
+        );
+        if output.close {
+            session.editor = None;
+            session.game.audio.set_background(false);
+            session.game.forget_cursor();
+            window.set_title("Under the Canopy");
+            return;
+        }
+        let Some(frame) = session.display.acquire() else {
+            session.display.gpu.queue.submit([]);
+            std::thread::sleep(HIDDEN_FRAME);
+            return;
+        };
+        let gpu = &session.display.gpu;
+        let view = session.display.ui_view(&frame);
+        let mut encoder = gpu
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("editor"),
+            });
+        editor.paint(&mut encoder, &view);
+        gpu.queue.submit([encoder.finish()]);
+        session.display.present(frame);
     }
 
     fn redraw(&mut self, event_loop: &ActiveEventLoop) {
         let now = Instant::now();
         let dt_ms = (now - self.last_frame).as_secs_f32() * 1000.0;
         self.last_frame = now;
+        if self.session.as_ref().is_some_and(|s| s.editor.is_some()) {
+            self.redraw_editor();
+            return;
+        }
         let (Some(session), Some(window)) = (&mut self.session, &self.window) else {
             return;
         };
@@ -166,6 +236,10 @@ impl App {
         }
         if requests.exit {
             event_loop.exit();
+            return;
+        }
+        if requests.editor {
+            self.open_editor();
             return;
         }
         if let Some(vsync) = requests.vsync {
@@ -293,8 +367,38 @@ impl ApplicationHandler for App {
             }
             _ => {}
         }
-        if let Some(session) = &mut self.session {
-            session.game.window_event(self.window.as_deref(), &event);
+        let Some(session) = &mut self.session else {
+            return;
+        };
+        match (&mut session.editor, self.window.as_deref()) {
+            (Some(editor), Some(window)) => editor.event(window, &event),
+            _ => session.game.window_event(self.window.as_deref(), &event),
         }
     }
+}
+
+/// What the editor gets from the game: the base package and the interface fonts.
+pub fn editor_setup(paths: &Paths) -> canopy_editor::Setup {
+    canopy_editor::Setup {
+        base: paths.data.join(canopy_content::BASE_DIR),
+        fonts: interface_fonts(&paths.data.join("config/ui/fonts")),
+    }
+}
+
+/// The game's interface fonts (`config/ui/fonts`), by file name; Git LFS pointers (CI
+/// checkouts) and unreadable files are left out.
+fn interface_fonts(dir: &std::path::Path) -> Vec<Vec<u8>> {
+    let mut files: Vec<_> = std::fs::read_dir(dir)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|e| e == "ttf" || e == "otf"))
+        .collect();
+    files.sort();
+    files
+        .iter()
+        .filter_map(|p| std::fs::read(p).ok())
+        .filter(|data| matches!(data.get(..4), Some([0, 1, 0, 0] | b"OTTO" | b"true")))
+        .collect()
 }

@@ -68,6 +68,8 @@ pub struct Ctx<'a> {
 #[derive(Debug, Default)]
 pub struct Requests {
     pub exit: bool,
+    /// Open the editor (the main menu's Editor entry).
+    pub editor: bool,
     pub vsync: Option<bool>,
 }
 
@@ -282,6 +284,11 @@ impl Game {
     pub fn offline_updates(&mut self) {
         self.updater = crate::update::Updater::new(Box::new(crate::update::remote::Offline));
         self.releases.gallery.offline = true;
+    }
+
+    /// The window's cursor changed behind the game's back (the editor): set it again.
+    pub fn forget_cursor(&mut self) {
+        self.cursor = None;
     }
 
     /// Whether the game is ready for the menus (data loaded).
@@ -1116,6 +1123,7 @@ impl Game {
             "menu.multiplayer" if clicked => self.navigate(Intent::Open(Screen::Multiplayer)),
             "menu.load" if clicked => self.open_saves(),
             "menu.settings" if clicked => self.open_settings(),
+            "menu.editor" if clicked => self.requests.editor = true,
             "menu.exit" if clicked => self.apply(Intent::Quit),
             // The release plaque and dialog.
             "releases.notes" if clicked => self.open_releases(releases::View::Notes),
