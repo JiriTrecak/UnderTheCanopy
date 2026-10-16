@@ -58,7 +58,9 @@ reqwest = { version = "0.13", default-features = false, features = ["rustls-no-p
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 rustls-platform-verifier = "0.7"
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+# Objects keep their keys in document order: the editor writes documents back in place
+# (docs/editor.md).
+serde_json = { version = "1", features = ["preserve_order"] }
 serde_path_to_error = "0.1"
 serde_with = "3"
 sha2 = "0.11"

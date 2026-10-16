@@ -27,13 +27,27 @@ pub fn approaching_army(f: &Frame, e: &Known, leader: Pt) -> bool {
         && dist(f.geo.from_place(destination), leader) < REINFORCEMENT_JOIN_RADIUS
 }
 
-/// The command without its recipients: what a squad's members share.
+/// The command without its recipients: what a squad's members share. Keys are sorted at
+/// every level: the text is saved state and must not follow serde_json's map order.
 pub fn intent(action: &Action) -> String {
     let mut value = serde_json::to_value(action).expect("action serializes");
     if let Some(map) = value.as_object_mut() {
         map.remove("actors");
     }
-    value.to_string()
+    sorted(value).to_string()
+}
+
+fn sorted(value: serde_json::Value) -> serde_json::Value {
+    use serde_json::Value;
+    match value {
+        Value::Object(map) => {
+            let mut entries: Vec<_> = map.into_iter().collect();
+            entries.sort_by(|a, b| a.0.cmp(&b.0));
+            Value::Object(entries.into_iter().map(|(k, v)| (k, sorted(v))).collect())
+        }
+        Value::Array(items) => Value::Array(items.into_iter().map(sorted).collect()),
+        other => other,
+    }
 }
 
 /// The command as a whole, for rejection cooldowns.

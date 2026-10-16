@@ -201,7 +201,7 @@ pub struct MatchConfig {
     pub colors: Option<Vec<u8>>,
     /// Campaign carry-over of the old game; never set by the match server.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub company: Option<Value>,
+    pub company: Option<Box<Value>>,
 }
 
 impl MatchConfig {
