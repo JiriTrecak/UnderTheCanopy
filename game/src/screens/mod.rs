@@ -277,11 +277,11 @@ impl Game {
             apply_all: true,
             clear_actors: false,
         };
-        // The editor edits the repository; installed games have none to offer.
+        // The editor edits the repository; installed games show its entry disabled.
         if game.paths.repository().is_none()
             && let Some(entry) = game.host.ui.find("main-menu/editor")
         {
-            game.host.ui.set_visible(entry, false);
+            game.host.ui.set_enabled(entry, false);
         }
         Ok(game)
     }
