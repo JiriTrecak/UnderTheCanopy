@@ -118,14 +118,14 @@ impl Checker {
                                 file: document.clone(),
                             })
                         };
-                        let loaded = canopy_content::package::Package::open(&package.root.join(root))
-                            .map_err(|e| e.to_string())
-                            .and_then(|p| {
-                                canopy_content::map::package::load_package(
-                                    &p.with_overlay(Arc::new(overlay.below(root))),
-                                )
-                                .map_err(|e| e.to_string())
-                            });
+                        let loaded = canopy_content::package::Package::open_overlaid(
+                            &package.root.join(root),
+                            Some(Arc::new(overlay.below(root))),
+                        )
+                        .map_err(|e| e.to_string())
+                        .and_then(|p| {
+                            canopy_content::map::package::load_package(&p).map_err(|e| e.to_string())
+                        });
                         let map = match loaded {
                             Ok(map) => map,
                             Err(error) => {

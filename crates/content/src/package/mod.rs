@@ -99,9 +99,19 @@ impl Overlay {
 impl Package {
     /// Reads the manifest of the package folder `root`.
     pub fn open(root: &Path) -> Result<Self, Error> {
+        Self::open_overlaid(root, None)
+    }
+
+    /// Reads the manifest of the package folder `root` through `overlay` (documents not yet
+    /// saved), so a package that exists only in the overlay opens too.
+    pub fn open_overlaid(root: &Path, overlay: Option<Arc<Overlay>>) -> Result<Self, Error> {
         let label = root.display().to_string();
-        let text = std::fs::read_to_string(root.join(MANIFEST))
-            .map_err(|e| Error::new(&label, MANIFEST, e.to_string()))?;
+        let text = match overlay.as_ref().and_then(|o| o.0.get(MANIFEST)) {
+            Some(Some(bytes)) => String::from_utf8(bytes.clone()).map_err(|e| e.to_string()),
+            Some(None) => Err("the package's manifest was deleted".to_string()),
+            None => std::fs::read_to_string(root.join(MANIFEST)).map_err(|e| e.to_string()),
+        }
+        .map_err(|e| Error::new(&label, MANIFEST, e))?;
         let value: serde_json::Value =
             serde_json::from_str(&text).map_err(|e| Error::new(&label, MANIFEST, e.to_string()))?;
         let manifest: Manifest = parse(value, &format!("{label}/{MANIFEST}"), "")?;
@@ -118,7 +128,7 @@ impl Package {
         Ok(Self {
             manifest,
             root: root.to_path_buf(),
-            overlay: None,
+            overlay,
         })
     }
 

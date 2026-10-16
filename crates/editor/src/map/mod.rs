@@ -292,9 +292,10 @@ pub fn is_float(element: Element) -> bool {
     element == Element::F32
 }
 
-/// The commands that create a new map package `maps/<group>/<id>.utcm`: its manifest, an
-/// empty map (no starts yet) of `size` in `biome`, every ground material as a paint
-/// layer, and flat dry ground at height 2 covered in the biome's grass.
+/// The commands that create a new map package `maps/<group>/<id>.utcm`: its manifest, a
+/// map of `size` in `biome` with players 1 and 2 in opposite corners (a map has two
+/// starts at least; the Start tool places them properly), every ground material as a
+/// paint layer, and flat dry ground at height 2 covered in the biome's grass.
 pub fn new_map(
     content: &Content,
     base_version: &str,
@@ -304,14 +305,10 @@ pub fn new_map(
     size: u32,
     biome: &str,
 ) -> Result<Vec<crate::document::Command>, String> {
-    use crate::document::{Command, Sample};
-    use canopy_content::map::{DRY_WATER_HEIGHT, MAP_HALO, MAP_SIZES};
-    use serde_json::json;
+    use canopy_content::map::MAP_SIZES;
     if !MAP_SIZES.contains(&size) || size > 1024 {
         return Err(format!("a map is 256, 512, 640 or 1024 cells, not {size}"));
     }
-    canopy_content::Id::new(id)?;
-    let root = format!("maps/{group}/{id}.utcm");
     // Ground materials: the painted ones first, cliff faces last (they follow slopes).
     let mut materials: Vec<(&str, bool)> = content
         .landscape
@@ -319,6 +316,39 @@ pub fn new_map(
         .filter_map(|a| Some((a.id.as_str(), a.terrain.as_ref()?.projection.is_some())))
         .collect();
     materials.sort_by_key(|(id, cliff)| (*cliff, *id));
+    let materials: Vec<&str> = materials.into_iter().map(|(m, _)| m).collect();
+    let setup = content
+        .rules
+        .races
+        .values()
+        .filter_map(|r| r.starting_setup.as_ref())
+        .next()
+        .map_or(content.rules.starting_setup.id.to_string(), |s| s.id.to_string());
+    new_map_of(&materials, &setup, base_version, group, id, name, size, biome)
+}
+
+/// [`new_map`] with its paint layers given.
+#[allow(clippy::too_many_arguments)]
+fn new_map_of(
+    materials: &[&str],
+    setup: &str,
+    base_version: &str,
+    group: &str,
+    id: &str,
+    name: &str,
+    size: u32,
+    biome: &str,
+) -> Result<Vec<crate::document::Command>, String> {
+    use crate::document::{Command, Sample};
+    use canopy_content::map::{DRY_WATER_HEIGHT, MAP_HALO};
+    use serde_json::json;
+    canopy_content::Id::new(id)?;
+    let root = format!("maps/{group}/{id}.utcm");
+    let corner = |player: u32, x: f64| {
+        let (x, z) = tools::start_position(x, x);
+        json!({"mainFort": format!("start.player.{player}/main-fort"), "player": player, "setup": setup, "x": x, "z": z})
+    };
+    let starts = vec![corner(1, 48.0), corner(2, f64::from(size) - 48.0)];
     let span = size + 2 * MAP_HALO;
     let vertices = span + 1;
     let floats = |v: f32| -> Vec<u8> {
@@ -351,10 +381,10 @@ pub fn new_map(
                 "biome": biome,
                 "camps": [],
                 "entities": [],
-                "playerStarts": [],
+                "playerStarts": starts,
                 "size": size,
                 "terrain": {
-                    "paint": materials.iter().map(|(m, _)| json!({"material": m, "variants": false})).collect::<Vec<_>>(),
+                    "paint": materials.iter().map(|m| json!({"material": m, "variants": false})).collect::<Vec<_>>(),
                     "textureGrid": {"cellSize": 5, "origin": [-0.5, -0.5]},
                     "waterProfiles": [],
                 },
@@ -379,4 +409,49 @@ pub fn new_map(
         commands.push(grid(&format!("paint-{n}-weights"), Sample::F32, vertices, floats(0.0)));
     }
     Ok(commands)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::document::{Context, Store};
+    use crate::library::Kind;
+    use canopy_content::package::Package;
+    use std::sync::Arc;
+
+    #[test]
+    fn a_new_map_loads_before_and_after_it_is_saved() {
+        let root =
+            std::env::temp_dir().join(format!("canopy-new-map-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(
+            root.join("package.json"),
+            r#"{"format": 1, "id": "base", "kind": "base", "name": "Test", "version": "1.0.0"}"#,
+        )
+        .unwrap();
+        let mut store = Store::new(&root);
+        let commands =
+            new_map_of(&["ground", "cliff"], "setup.test", "1.0.0", "skirmish", "flat", "Flat", 256, "vibrant-forest")
+                .unwrap();
+        let map_root = "maps/skirmish/flat.utcm";
+        let context = Context {
+            editor: Kind::Maps,
+            document: format!("{map_root}/map.json"),
+            pointer: None,
+        };
+        store.run("Create map", context, commands).unwrap();
+        let check = |package: Package| {
+            let map = canopy_content::map::package::load_package(&package).unwrap();
+            assert_eq!(map.size, 256);
+            assert_eq!(map.authoring.terrain.paint.len(), 2);
+            let terrain = map.authoring.terrain.decode().unwrap();
+            assert!(terrain.heights.iter().all(|h| *h == 2.0));
+        };
+        let overlay = Arc::new(store.overlay().below(map_root));
+        check(Package::open_overlaid(&root.join(map_root), Some(overlay)).unwrap());
+        store.save().unwrap();
+        check(Package::open(&root.join(map_root)).unwrap());
+        let _ = std::fs::remove_dir_all(&root);
+    }
 }

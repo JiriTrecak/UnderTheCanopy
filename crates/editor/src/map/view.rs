@@ -737,10 +737,11 @@ pub fn place(
         }
         Tool::Start => {
             let (x, z) = tools::start_position(x, z);
-            let player = map.player_starts.iter().map(|s| s.player).max().unwrap_or(0) + 1;
-            if player > 8 {
+            // The lowest free slot, so starts stay consecutive after one is removed.
+            let Some(player) = (1..=8u8).find(|n| map.player_starts.iter().all(|s| s.player != *n))
+            else {
                 return Err("A map has eight starts at most.".into());
-            }
+            };
             let setup = content
                 .rules
                 .races

@@ -124,6 +124,15 @@ enum Dialog {
         folder: String,
         id: String,
     },
+    /// A new map package in `maps/<group>/`.
+    NewMap {
+        group: String,
+        id: String,
+        name: String,
+        size: u32,
+        biome: String,
+        biomes: Vec<String>,
+    },
 }
 
 /// What map scenes are built from.
@@ -474,11 +483,10 @@ impl Shell {
                 session.loaded_at = Some(generation);
             } else {
                 let overlay = Arc::new(store.overlay().below(root));
-                let loaded = Package::open(&package.root.join(root))
+                let loaded = Package::open_overlaid(&package.root.join(root), Some(overlay))
                     .map_err(|e| e.to_string())
                     .and_then(|p| {
-                        canopy_content::map::package::load_package(&p.with_overlay(overlay))
-                            .map_err(|e| e.to_string())
+                        canopy_content::map::package::load_package(&p).map_err(|e| e.to_string())
                     });
                 match loaded {
                     Ok(map) => {
@@ -710,6 +718,26 @@ impl Shell {
     /// Opens the dialog that creates an element in `kind`'s first collection of files,
     /// next to the open one.
     fn start_create(&mut self, kind: Kind) {
+        if kind == Kind::Maps {
+            let biomes = self
+                .package
+                .as_ref()
+                .ok()
+                .and_then(|p| p.entries("landscape/biomes").ok())
+                .unwrap_or_default()
+                .into_iter()
+                .filter_map(|(name, dir)| (!dir).then_some(name)?.strip_suffix(".json").map(str::to_string))
+                .collect::<Vec<_>>();
+            self.dialog = Some(Dialog::NewMap {
+                group: "skirmish".into(),
+                id: String::new(),
+                name: String::new(),
+                size: 512,
+                biome: biomes.first().cloned().unwrap_or_else(|| "vibrant-forest".into()),
+                biomes,
+            });
+            return;
+        }
         let Some(section) = kind
             .sections()
             .iter()
@@ -745,14 +773,21 @@ impl Shell {
             Close,
             Run(Edit),
             Reveal(String),
+            Fail(String),
         }
         let mut outcome = Outcome::Open;
         let uses = match &dialog {
             Dialog::Rename { document, .. } | Dialog::Delete { document, .. } => {
                 self.uses_of(&document.clone())
             }
-            Dialog::Create { .. } => Vec::new(),
+            Dialog::Create { .. } | Dialog::NewMap { .. } => Vec::new(),
         };
+        let content = self.checker.as_ref().and_then(|c| c.content().cloned());
+        let base_version = self
+            .package
+            .as_ref()
+            .map(|p| p.manifest.version.to_string())
+            .unwrap_or_default();
         let ids = self.ids.clone();
         let exists = |store: &mut Option<Store>, path: &str| {
             store
@@ -881,6 +916,79 @@ impl Shell {
                         });
                     }
                 }
+                Dialog::NewMap { group, id, name, size, biome, biomes } => {
+                    ui.label(RichText::new("New map").size(14.0).color(TEXT));
+                    ui.add_space(6.0);
+                    ui.label(RichText::new("Id").color(MUTED).size(11.0));
+                    ui.add(TextEdit::singleline(id).font(egui::TextStyle::Monospace).hint_text("amber-falls").desired_width(f32::INFINITY));
+                    ui.label(RichText::new("Name").color(MUTED).size(11.0));
+                    ui.add(TextEdit::singleline(name).hint_text("Amber Falls").desired_width(f32::INFINITY));
+                    ui.label(RichText::new("Folder").color(MUTED).size(11.0));
+                    ui.add(TextEdit::singleline(group).font(egui::TextStyle::Monospace).desired_width(f32::INFINITY));
+                    ui.horizontal(|ui| {
+                        egui::ComboBox::from_label("Size")
+                            .selected_text(format!("{size} cells"))
+                            .show_ui(ui, |ui| {
+                                for s in [256, 512, 640, 1024] {
+                                    ui.selectable_value(size, s, format!("{s} cells"));
+                                }
+                            });
+                        egui::ComboBox::from_label("Biome")
+                            .selected_text(biome.as_str())
+                            .show_ui(ui, |ui| {
+                                for b in biomes.iter() {
+                                    ui.selectable_value(biome, b.clone(), b.as_str());
+                                }
+                            });
+                    });
+                    let root = format!("maps/{}/{id}.utcm", group.trim_matches('/'));
+                    let problem = if id.is_empty() {
+                        Some("Type its id.".to_string())
+                    } else if let Err(e) = canopy_content::Id::new(id.as_str()) {
+                        Some(e)
+                    } else if id.contains('.') {
+                        Some("A map id has no dots.".into())
+                    } else if group.trim_matches('/').is_empty() {
+                        Some("Type its folder.".into())
+                    } else if exists(store, &format!("{root}/map.json")) {
+                        Some(format!("{root} already exists."))
+                    } else if content.is_none() {
+                        Some("Waiting for the package to pass its check.".into())
+                    } else {
+                        None
+                    };
+                    ui.label(
+                        RichText::new(problem.clone().unwrap_or_else(|| format!("Creates {root}, flat and empty: add starts, amber and camps with the map tools.")))
+                            .color(FAINT)
+                            .size(11.0),
+                    );
+                    ui.add_space(12.0);
+                    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                        if ui.add_enabled(problem.is_none(), primary("Create")).clicked() {
+                            let title = if name.trim().is_empty() { id.clone() } else { name.trim().to_string() };
+                            if let Some(content) = &content {
+                                match crate::map::new_map(content, &base_version, group.trim_matches('/'), id, &title, *size, biome) {
+                                    Ok(commands) => {
+                                        outcome = Outcome::Run(Edit {
+                                            label: format!("Create map {id}"),
+                                            context: Context {
+                                                editor: Kind::Maps,
+                                                document: format!("{root}/map.json"),
+                                                pointer: None,
+                                            },
+                                            commands,
+                                            merge: None,
+                                        });
+                                    }
+                                    Err(e) => outcome = Outcome::Fail(e),
+                                }
+                            }
+                        }
+                        if ui.button("Cancel").clicked() {
+                            outcome = Outcome::Close;
+                        }
+                    });
+                }
                 Dialog::Create { kind, section, folder, id } => {
                     ui.label(RichText::new(format!("New in {}", kind.name())).size(14.0).color(TEXT));
                     ui.add_space(6.0);
@@ -974,6 +1082,7 @@ impl Shell {
             Outcome::Open => self.dialog = Some(dialog),
             Outcome::Close => {}
             Outcome::Reveal(document) => self.reveal_document(&document),
+            Outcome::Fail(message) => self.say(message, true),
             Outcome::Run(edit) => {
                 let context = edit.context.clone();
                 self.run(edit);
@@ -1902,11 +2011,14 @@ fn library_panel(
                 ui.add_space(4.0);
                 ui.label(eyebrow(&format!("{} library", kind.label())));
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                    let can = kind
-                        .sections()
-                        .iter()
-                        .any(|(_, c)| c.form == Storage::Files);
-                    let hint = if can {
+                    let can = kind == Kind::Maps
+                        || kind
+                            .sections()
+                            .iter()
+                            .any(|(_, c)| c.form == Storage::Files);
+                    let hint = if kind == Kind::Maps {
+                        "New map".to_string()
+                    } else if can {
                         format!("New in {}", kind.name())
                     } else {
                         "New elements of this kind come with their editor.".to_string()

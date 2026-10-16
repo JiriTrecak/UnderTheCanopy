@@ -222,7 +222,8 @@ fn element(package: &Package, collection: &Collection, found: Found) -> Element 
         Form::Folders(manifest) => (format!("{}/{manifest}", found.path), found.value),
         Form::Packages(_) => {
             let manifest = format!("{}/{MANIFEST}", found.path);
-            let value = std::fs::read_to_string(package.root.join(&manifest))
+            let value = package
+                .read_text(&manifest)
                 .ok()
                 .and_then(|text| serde_json::from_str(&text).ok())
                 .unwrap_or(Value::Null);
