@@ -3,6 +3,7 @@
 //! right. Every edit goes through the [`Store`]: one undo history across editors, Cmd+S
 //! saves every changed document, leaving with unsaved changes asks first.
 
+use crate::checker::Checker;
 use crate::document::{Command, Context, Store};
 use crate::icons::{self, Icon};
 use crate::library::{Element, KINDS, Kind, Library, Node};
@@ -144,6 +145,14 @@ pub struct Shell {
     leaving: Option<Leave>,
     /// A short message in the header (saved, an error) and when it was set.
     notice: Option<(String, bool, Instant)>,
+    /// The loader's check of the package with the unsaved edits, and the generation of
+    /// the store it was last asked for.
+    checker: Option<Checker>,
+    checked: Option<u64>,
+    /// The problems list is open.
+    problems_open: bool,
+    /// Asking whether to save although the check found problems.
+    confirm_save: bool,
     /// The editor is done: back to the menu, or quit the game.
     pub close: Option<Leave>,
 }
@@ -151,7 +160,12 @@ pub struct Shell {
 impl Shell {
     pub fn new(package: Result<Package, String>) -> Self {
         let store = package.as_ref().ok().map(|p| Store::new(&p.root));
+        let checker = package.as_ref().ok().cloned().map(Checker::new);
         Self {
+            checker,
+            checked: None,
+            problems_open: false,
+            confirm_save: false,
             package,
             store,
             current: Kind::Abilities,
@@ -173,12 +187,16 @@ impl Shell {
     }
 
     pub fn ui(&mut self, ui: &mut Ui) {
+        if let Some(checker) = &mut self.checker {
+            checker.poll();
+        }
         self.shortcuts(ui.ctx());
         self.rail(ui);
         if self.assistant {
             self.assistant(ui);
         }
         self.header(ui);
+        self.problems(ui);
         let Ok(package) = &self.package else {
             egui::CentralPanel::no_frame()
                 .frame(Frame::new().fill(MAIN))
@@ -201,7 +219,211 @@ impl Shell {
         for edit in edits {
             self.run(edit);
         }
+        self.check();
         self.leave_dialog(ui.ctx());
+        self.save_dialog(ui.ctx());
+    }
+
+    /// Asks for a check when the documents changed since the last one.
+    fn check(&mut self) {
+        let (Some(store), Some(checker)) = (&self.store, &mut self.checker) else {
+            return;
+        };
+        let generation = store.generation();
+        if self.checked != Some(generation) {
+            self.checked = Some(generation);
+            checker.request(generation, store.overlay());
+        }
+    }
+
+    /// The problems the last check found, if one finished.
+    fn problem_count(&self) -> Option<usize> {
+        Some(self.checker.as_ref()?.report()?.problems.len())
+    }
+
+    /// The status bar with the check's outcome, and the problems list when open.
+    fn problems(&mut self, ui: &mut Ui) {
+        let Some(checker) = &self.checker else {
+            return;
+        };
+        let report = checker.report().cloned();
+        let busy = checker.busy()
+            || report
+                .as_ref()
+                .is_some_and(|r| Some(r.generation) != self.checked);
+        let count = report.as_ref().map(|r| r.problems.len());
+        let mut toggle = false;
+        egui::Panel::bottom("status")
+            .exact_size(28.0)
+            .resizable(false)
+            .show_separator_line(true)
+            .frame(Frame::new().fill(BG).inner_margin(Margin::symmetric(12, 0)))
+            .show(ui, |ui| {
+                ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
+                    ui.spacing_mut().item_spacing.x = 6.0;
+                    let dot = |ui: &mut Ui, color| {
+                        let (rect, _) = ui.allocate_exact_size(vec2(6.0, 6.0), Sense::hover());
+                        ui.painter().circle_filled(rect.center(), 3.0, color);
+                    };
+                    match count {
+                        None => {
+                            ui.label(
+                                RichText::new("Checking the package…")
+                                    .color(FAINT)
+                                    .size(11.0),
+                            );
+                        }
+                        Some(0) => {
+                            dot(ui, LIVE);
+                            ui.label(RichText::new("No problems").color(MUTED).size(11.0));
+                        }
+                        Some(n) => {
+                            dot(ui, ERROR);
+                            let text = if n == 1 {
+                                "1 problem".into()
+                            } else {
+                                format!("{n} problems")
+                            };
+                            let label =
+                                egui::Label::new(RichText::new(text).color(SOFT).size(11.0))
+                                    .sense(Sense::click());
+                            toggle = ui
+                                .add(label)
+                                .on_hover_text("Show or hide the problems")
+                                .on_hover_cursor(egui::CursorIcon::PointingHand)
+                                .clicked();
+                        }
+                    }
+                    if busy && count.is_some() {
+                        ui.label(RichText::new("· checking…").color(FAINT).size(11.0));
+                    }
+                    if let Some(report) = &report {
+                        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                            ui.label(
+                                RichText::new(format!("Checked in {:.0} ms", report.ms))
+                                    .color(FAINT)
+                                    .size(11.0),
+                            );
+                        });
+                    }
+                });
+            });
+        if toggle {
+            self.problems_open = !self.problems_open;
+        }
+        let Some(report) = report.filter(|r| self.problems_open && !r.problems.is_empty()) else {
+            return;
+        };
+        let mut reveal = None;
+        egui::Panel::bottom("problems")
+            .resizable(true)
+            .default_size(180.0)
+            .size_range(80.0..=480.0)
+            .show_separator_line(true)
+            .frame(
+                Frame::new()
+                    .fill(SUNK)
+                    .inner_margin(Margin::symmetric(12, 8)),
+            )
+            .show(ui, |ui| {
+                ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
+                        for problem in &report.problems {
+                            let mut job = egui::text::LayoutJob::default();
+                            let mono = egui::FontId::monospace(11.0);
+                            let place = if problem.location.is_empty() {
+                                problem.file.clone()
+                            } else {
+                                format!("{} · {}", problem.file, problem.location)
+                            };
+                            job.append(&place, 0.0, egui::TextFormat::simple(mono, FAINT));
+                            job.append(
+                                &format!("  {}", problem.message),
+                                0.0,
+                                egui::TextFormat::simple(egui::FontId::proportional(12.0), SOFT),
+                            );
+                            let label = egui::Label::new(job).truncate();
+                            let response = match &problem.document {
+                                Some(_) => ui
+                                    .add(label.sense(Sense::click()))
+                                    .on_hover_cursor(egui::CursorIcon::PointingHand),
+                                None => ui.add(label),
+                            };
+                            if response.clicked() {
+                                reveal = problem.document.clone();
+                            }
+                        }
+                    });
+            });
+        if let Some(document) = reveal
+            && let Some(editor) = Kind::of_document(&document)
+        {
+            self.reveal(&Context {
+                editor,
+                document,
+                pointer: None,
+            });
+        }
+    }
+
+    /// Saves, or asks first when the last check found problems.
+    fn request_save(&mut self) {
+        if self.store.as_ref().is_none_or(|s| s.dirty().is_empty()) {
+            return;
+        }
+        if self.problem_count().unwrap_or(0) > 0 {
+            self.confirm_save = true;
+        } else {
+            self.save();
+        }
+    }
+
+    fn save_dialog(&mut self, ctx: &egui::Context) {
+        if !self.confirm_save {
+            return;
+        }
+        let count = self.problem_count().unwrap_or(0);
+        let mut answer = None;
+        let response = egui::Modal::new(Id::new("save-with-problems"))
+            .backdrop_color(egui::Color32::from_black_alpha(150))
+            .frame(
+                Frame::new()
+                    .fill(RAISED)
+                    .stroke(Stroke::new(1.0, BORDER))
+                    .corner_radius(10)
+                    .inner_margin(Margin::same(20)),
+            )
+            .show(ctx, |ui| {
+                ui.set_width(360.0);
+                ui.label(RichText::new("The package has problems").size(14.0).color(TEXT));
+                ui.add_space(4.0);
+                let what = if count == 1 { "1 problem".to_string() } else { format!("{count} problems") };
+                ui.label(
+                    RichText::new(format!(
+                        "The check found {what}. The game will not load the package until they are fixed. Save anyway?"
+                    ))
+                    .color(MUTED),
+                );
+                ui.add_space(12.0);
+                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                    if ui.add(primary("Save anyway")).clicked() {
+                        answer = Some(true);
+                    }
+                    if ui.button("Cancel").clicked() {
+                        answer = Some(false);
+                    }
+                });
+            });
+        if response.should_close() && answer.is_none() {
+            answer = Some(false);
+        }
+        if let Some(save) = answer {
+            self.confirm_save = false;
+            if save {
+                self.save();
+            }
+        }
     }
 
     /// The document of the current editor's focused tab.
@@ -296,7 +518,7 @@ impl Shell {
         let redo = KeyboardShortcut::new(Modifiers::COMMAND | Modifiers::SHIFT, Key::Z);
         let undo = KeyboardShortcut::new(Modifiers::COMMAND, Key::Z);
         if ctx.input_mut(|i| i.consume_shortcut(&save)) {
-            self.save();
+            self.request_save();
         }
         // A focused text field keeps Cmd+Z for its own text.
         if ctx.egui_wants_keyboard_input() {
@@ -307,6 +529,19 @@ impl Shell {
         } else if ctx.input_mut(|i| i.consume_shortcut(&undo)) {
             self.undo();
         }
+    }
+
+    /// Whether the check of the latest edits has not finished yet.
+    pub fn checking(&self) -> bool {
+        self.checker.as_ref().is_some_and(|c| {
+            c.busy()
+                || c.report()
+                    .is_none_or(|r| Some(r.generation) != self.checked)
+        })
+    }
+
+    pub fn show_problems(&mut self, open: bool) {
+        self.problems_open = open;
     }
 
     /// Switches to `kind`'s editor.
@@ -502,7 +737,7 @@ impl Shell {
                 });
             });
         if clicked.0 {
-            self.save();
+            self.request_save();
         }
         if clicked.1 {
             self.undo();

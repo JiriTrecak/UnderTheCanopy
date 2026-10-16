@@ -42,16 +42,9 @@ fn hidden(name: &str) -> bool {
     name.starts_with('.')
 }
 
-fn entries(dir: &Path) -> std::io::Result<Vec<(String, bool)>> {
-    let mut out = Vec::new();
-    for entry in std::fs::read_dir(dir)? {
-        let entry = entry?;
-        let name = entry.file_name().to_string_lossy().into_owned();
-        if hidden(&name) {
-            continue;
-        }
-        out.push((name, entry.file_type()?.is_dir()));
-    }
+fn entries(package: &Package, dir: &str) -> std::io::Result<Vec<(String, bool)>> {
+    let mut out = package.entries(dir)?;
+    out.retain(|(name, _)| !hidden(name));
     out.sort();
     Ok(out)
 }
@@ -66,7 +59,8 @@ fn join(base: &str, name: &str) -> String {
 
 fn read_document(package: &Package, path: &str) -> Result<Value, Error> {
     let file = package.label(path);
-    let text = std::fs::read_to_string(package.root.join(path))
+    let text = package
+        .read_text(path)
         .map_err(|e| Error::new(&file, "", e.to_string()))?;
     serde_json::from_str(&text).map_err(|e| Error::new(&file, "", e.to_string()))
 }
@@ -94,13 +88,12 @@ impl Collection {
     /// an empty collection.
     pub fn read(&self, package: &Package, errors: &mut Vec<Error>) -> Vec<Found> {
         let mut found = Vec::new();
-        let root = package.root.join(self.dir);
-        if !root.is_dir() {
+        if !package.is_dir(self.dir) {
             return found;
         }
         match self.form {
             Form::Singletons(names) => {
-                let present = match entries(&root) {
+                let present = match entries(package, self.dir) {
                     Ok(present) => present,
                     Err(e) => {
                         errors.push(Error::new(&package.label(self.dir), "", e.to_string()));
@@ -133,7 +126,7 @@ impl Collection {
     }
 
     fn walk(&self, package: &Package, dir: &str, found: &mut Vec<Found>, errors: &mut Vec<Error>) {
-        let listed = match entries(&package.root.join(dir)) {
+        let listed = match entries(package, dir) {
             Ok(listed) => listed,
             Err(e) => {
                 errors.push(Error::new(&package.label(dir), "", e.to_string()));
@@ -154,7 +147,7 @@ impl Collection {
                 (Form::Files, true) => self.walk(package, &path, found, errors),
                 (Form::Folders(manifest), true) => {
                     let file = join(&path, manifest);
-                    if package.root.join(&file).is_file() {
+                    if package.is_file(&file) {
                         match read_document(package, &file).and_then(|value| {
                             id_of(package, &file, &value).map(|id| Found { id, path, value })
                         }) {

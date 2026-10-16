@@ -169,6 +169,22 @@ impl Store {
         Ok(self.load(document)?.value.as_ref())
     }
 
+    /// Counts every change to any document: a check is current while it matches.
+    pub fn generation(&self) -> u64 {
+        self.revision
+    }
+
+    /// The unsaved documents as the loader reads them: their text, `None` when deleted.
+    pub fn overlay(&self) -> canopy_content::package::Overlay {
+        canopy_content::package::Overlay(
+            self.documents
+                .iter()
+                .filter(|(_, d)| d.value != d.saved)
+                .map(|(path, d)| (path.clone(), d.value.as_ref().map(format)))
+                .collect(),
+        )
+    }
+
     /// Changes so far of `document` (0 until it changes).
     pub fn revision(&self, document: &str) -> u64 {
         self.documents.get(document).map_or(0, |d| d.revision)

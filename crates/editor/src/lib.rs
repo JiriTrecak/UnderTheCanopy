@@ -7,6 +7,7 @@
 //! events while it is open, calls [`Editor::run`] once a frame and [`Editor::paint`] to
 //! record the frame. The look is [`theme`] (Tailwind's zinc, as the old spell studio).
 
+mod checker;
 mod document;
 mod icons;
 mod library;
@@ -150,6 +151,16 @@ impl Editor {
     /// Runs `commands` as one undo step in the current editor (captures; MCP later).
     pub fn run_step(&mut self, label: &str, commands: Vec<Command>) -> Result<(), String> {
         self.shell.run_step(label, commands)
+    }
+
+    /// Whether the check of the latest edits is still running (captures wait for it).
+    pub fn checking(&self) -> bool {
+        self.shell.checking()
+    }
+
+    /// Opens or closes the problems list (captures).
+    pub fn show_problems(&mut self, open: bool) {
+        self.shell.show_problems(open);
     }
 
     /// Switches editors (captures).

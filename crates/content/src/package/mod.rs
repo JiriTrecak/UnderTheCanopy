@@ -18,6 +18,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
+    sync::Arc,
 };
 
 /// The manifest every package has at its root.
@@ -68,7 +69,14 @@ pub struct Manifest {
 pub struct Package {
     pub manifest: Manifest,
     pub root: PathBuf,
+    /// Documents that stand in for the package's files while it loads.
+    overlay: Option<Arc<Overlay>>,
 }
+
+/// Documents that replace a package's files while it loads: the editor's unsaved edits.
+/// Paths are `/`-separated from the package root; `None` is a deleted file.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct Overlay(pub BTreeMap<String, Option<String>>);
 
 impl Package {
     /// Reads the manifest of the package folder `root`.
@@ -92,7 +100,79 @@ impl Package {
         Ok(Self {
             manifest,
             root: root.to_path_buf(),
+            overlay: None,
         })
+    }
+
+    /// This package with `overlay`'s documents in place of its files.
+    pub fn with_overlay(mut self, overlay: Arc<Overlay>) -> Self {
+        self.overlay = Some(overlay);
+        self
+    }
+
+    fn overlaid(&self, path: &str) -> Option<&Option<String>> {
+        self.overlay.as_ref()?.0.get(path)
+    }
+
+    /// A document's text, from the overlay or the file.
+    pub fn read_text(&self, path: &str) -> std::io::Result<String> {
+        match self.overlaid(path) {
+            Some(Some(text)) => Ok(text.clone()),
+            Some(None) => Err(std::io::ErrorKind::NotFound.into()),
+            None => std::fs::read_to_string(self.root.join(path)),
+        }
+    }
+
+    /// Whether the document `path` exists.
+    pub fn is_file(&self, path: &str) -> bool {
+        match self.overlaid(path) {
+            Some(text) => text.is_some(),
+            None => self.root.join(path).is_file(),
+        }
+    }
+
+    /// Whether `dir` is a folder of the package (on disk, or holding an overlay document).
+    pub fn is_dir(&self, dir: &str) -> bool {
+        self.root.join(dir).is_dir() || self.created_below(dir).next().is_some()
+    }
+
+    /// Overlay documents that exist, below `dir`.
+    fn created_below<'a>(&'a self, dir: &str) -> impl Iterator<Item = &'a str> {
+        let prefix = format!("{dir}/");
+        self.overlay
+            .iter()
+            .flat_map(|o| o.0.iter())
+            .filter(move |(path, text)| text.is_some() && path.starts_with(&prefix))
+            .map(|(path, _)| path.as_str())
+    }
+
+    /// The names in folder `dir` and whether each is a folder, unsorted: the files on disk
+    /// without the overlay's deleted ones, and the overlay's new documents and folders.
+    pub fn entries(&self, dir: &str) -> std::io::Result<Vec<(String, bool)>> {
+        let mut out = Vec::new();
+        let folder = self.root.join(dir);
+        if folder.is_dir() || self.overlay.is_none() {
+            for entry in std::fs::read_dir(&folder)? {
+                let entry = entry?;
+                let name = entry.file_name().to_string_lossy().into_owned();
+                let is_dir = entry.file_type()?.is_dir();
+                if !is_dir && matches!(self.overlaid(&format!("{dir}/{name}")), Some(None)) {
+                    continue;
+                }
+                out.push((name, is_dir));
+            }
+        }
+        for path in self.created_below(dir) {
+            let rest = &path[dir.len() + 1..];
+            let (name, is_dir) = match rest.split_once('/') {
+                Some((folder, _)) => (folder, true),
+                None => (rest, false),
+            };
+            if !out.iter().any(|(n, _)| n == name) {
+                out.push((name.to_string(), is_dir));
+            }
+        }
+        Ok(out)
     }
 
     pub fn id(&self) -> &str {
@@ -192,5 +272,53 @@ impl Package {
             hash.update(&bytes);
         }
         Ok(hash.finalize().into())
+    }
+}
+
+#[cfg(test)]
+mod overlay_tests {
+    use super::*;
+
+    #[test]
+    fn an_overlay_replaces_adds_and_removes_documents() {
+        let root = std::env::temp_dir().join(format!("canopy-overlay-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("units/old")).unwrap();
+        let write = |path: &str, text: &str| std::fs::write(root.join(path), text).unwrap();
+        write(
+            MANIFEST,
+            r#"{"format":1,"id":"fixture","kind":"base","name":"Fixture","version":"1.0.0"}"#,
+        );
+        write("units/old/kept.json", r#"{"id":"unit.kept","hp":1}"#);
+        write("units/old/gone.json", r#"{"id":"unit.gone"}"#);
+        let overlay = Overlay(BTreeMap::from([
+            (
+                "units/old/kept.json".into(),
+                Some(r#"{"id":"unit.kept","hp":2}"#.into()),
+            ),
+            ("units/old/gone.json".into(), None),
+            (
+                "units/new/made.json".into(),
+                Some(r#"{"id":"unit.made"}"#.into()),
+            ),
+        ]));
+        let package = Package::open(&root)
+            .unwrap()
+            .with_overlay(Arc::new(overlay));
+        let mut errors = Vec::new();
+        let found = Collection::files("units").read(&package, &mut errors);
+        assert!(errors.is_empty(), "{errors:?}");
+        let seen: Vec<_> = found
+            .iter()
+            .map(|f| (f.id.as_str(), f.value.get("hp")))
+            .collect();
+        assert_eq!(
+            seen,
+            [
+                ("unit.made", None),
+                ("unit.kept", Some(&serde_json::json!(2)))
+            ]
+        );
+        let _ = std::fs::remove_dir_all(&root);
     }
 }

@@ -76,6 +76,17 @@ impl Kind {
         }
     }
 
+    /// The editor whose collections hold `document` (a path from the package root).
+    pub fn of_document(document: &str) -> Option<Kind> {
+        KINDS.into_iter().find(|kind| {
+            kind.sections().iter().any(|(_, collection)| {
+                document
+                    .strip_prefix(collection.dir)
+                    .is_some_and(|rest| rest.starts_with('/'))
+            })
+        })
+    }
+
     /// The collections it edits, each with its section title.
     pub fn sections(self) -> &'static [(&'static str, Collection)] {
         match self {

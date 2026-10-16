@@ -356,9 +356,14 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
     let format = CAPTURE_FORMAT.remove_srgb_suffix();
     let mut editor = Editor::headless(&rig.gpu.device, format, crate::app::editor_setup(paths));
     let shoot = |editor: &mut Editor, rig: &mut Rig, name: &str| -> Result<()> {
-        // A few frames: egui sizes panels and text from the previous frame.
-        for _ in 0..4 {
+        // A few frames (egui sizes panels and text from the previous frame), and until the
+        // check of the latest edits is in.
+        let start = Instant::now();
+        let mut frames = 0;
+        while frames < 4 || (editor.checking() && start.elapsed() < Duration::from_secs(20)) {
             editor.run_headless(rig.size, rig.scale, &rig.gpu.device, &rig.gpu.queue);
+            std::thread::sleep(Duration::from_millis(10));
+            frames += 1;
         }
         let mut encoder = rig
             .gpu
@@ -386,6 +391,22 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
             )
             .map_err(anyhow::Error::msg)?;
         shoot(&mut editor, rig, "editor-unsaved")?;
+        // A broken edit: the check lists it.
+        let document = editor.active_document().unwrap_or_default();
+        editor
+            .run_step(
+                "Break for the capture",
+                vec![canopy_editor::Command::Set {
+                    document,
+                    pointer: "/activation".into(),
+                    value: "sometimes".into(),
+                    at: None,
+                }],
+            )
+            .map_err(anyhow::Error::msg)?;
+        editor.show_problems(true);
+        shoot(&mut editor, rig, "editor-problems")?;
+        editor.show_problems(false);
     }
     editor.set_assistant(true);
     shoot(&mut editor, rig, "editor-assistant")?;
