@@ -32,6 +32,12 @@ fn main() -> Result<()> {
     let options = options::Options::parse(std::env::args().skip(1))?;
     let paths = paths::Paths::resolve(options.data.clone())?;
     tracing::info!(data = %paths.data.display(), user = %paths.user.display(), "starting");
+    if options.command == Command::Edit && paths.repository().is_none() {
+        anyhow::bail!(
+            "`canopy edit` edits a repository checkout's base package; {} is not one (run `just edit` in the repository, or pass --data <checkout>)",
+            paths.data.display()
+        );
+    }
     match &options.command {
         Command::Shot { out, size } => shot::run(&options, &paths, out, *size),
         Command::CaptureScreens {

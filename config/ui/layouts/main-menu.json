@@ -27,7 +27,7 @@
         "children": [
           { "kind": "image", "class": "menu-logo", "image": "menu-logo" },
           {
-            "class": "menu-actions",
+            "class": "menu-actions mm-actions",
             "children": [
               { "id": "campaign", "kind": "button", "class": "menu-action mm-action", "text": "Campaign", "action": "menu.campaign" },
               { "id": "skirmish", "kind": "button", "class": "menu-action mm-action", "text": "Skirmish", "action": "menu.skirmish" },

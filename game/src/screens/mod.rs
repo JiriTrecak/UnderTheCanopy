@@ -228,7 +228,7 @@ impl Game {
             paths.cache.join("updates"),
         )));
         let releases = releases::Releases::new(&paths.data);
-        let game = Self {
+        let mut game = Self {
             updater,
             releases,
             palette: Palette::load(&paths.data),
@@ -277,6 +277,12 @@ impl Game {
             apply_all: true,
             clear_actors: false,
         };
+        // The editor edits the repository; installed games have none to offer.
+        if game.paths.repository().is_none()
+            && let Some(entry) = game.host.ui.find("main-menu/editor")
+        {
+            game.host.ui.set_visible(entry, false);
+        }
         Ok(game)
     }
 
@@ -1123,7 +1129,9 @@ impl Game {
             "menu.multiplayer" if clicked => self.navigate(Intent::Open(Screen::Multiplayer)),
             "menu.load" if clicked => self.open_saves(),
             "menu.settings" if clicked => self.open_settings(),
-            "menu.editor" if clicked => self.requests.editor = true,
+            "menu.editor" if clicked && self.paths.repository().is_some() => {
+                self.requests.editor = true
+            }
             "menu.exit" if clicked => self.apply(Intent::Quit),
             // The release plaque and dialog.
             "releases.notes" if clicked => self.open_releases(releases::View::Notes),

@@ -1,9 +1,7 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [
-      "An Editor entry in the main menu opens the new editor: browse maps, units, abilities, effects, buildings, races and assets from the game's data (read-only for now)"
-    ],
+    "added": [],
     "improved": [],
     "fixed": [],
     "knownIssues": []

@@ -234,5 +234,7 @@ mod tests {
             ui.frame(0.0);
             assert!(ui.find(screen).is_some(), "{screen}");
         }
+        // `Game::new` hides it outside a repository checkout.
+        assert!(ui.find("main-menu/editor").is_some());
     }
 }

@@ -233,7 +233,7 @@ impl Shell {
                         Err(_) => "no package".into(),
                     };
                     chip(ui, &package, "Read-only").on_hover_text(
-                        "Editing comes with the data editors; documents open read-only.",
+                        "The repository's base package. Editing comes with the data editors; documents open read-only.",
                     );
                     if let Some(title) = &title {
                         ui.add_space(4.0);

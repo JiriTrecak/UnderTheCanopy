@@ -9,6 +9,9 @@ use std::path::{Path, PathBuf};
 
 /// A file every data folder contains; used to recognise one.
 const DATA_MARKER: &str = "base/package.json";
+/// A file only a repository checkout has beside its data: the packaged game ships the
+/// data alone.
+const REPOSITORY_MARKER: &str = "Cargo.toml";
 
 #[derive(Debug, Clone)]
 pub struct Paths {
@@ -42,6 +45,18 @@ impl Paths {
             cache: dirs.cache_dir().to_path_buf(),
         })
     }
+}
+
+impl Paths {
+    /// The repository checkout the data folder is, if it is one. The editor edits its
+    /// base package and nothing else, and exists only then (docs/editor.md).
+    pub fn repository(&self) -> Option<&Path> {
+        is_repository(&self.data).then_some(self.data.as_path())
+    }
+}
+
+fn is_repository(data: &Path) -> bool {
+    data.join(REPOSITORY_MARKER).is_file()
 }
 
 fn data_dir(data_override: Option<PathBuf>, exe: &Path) -> Result<PathBuf> {
@@ -106,6 +121,14 @@ mod tests {
             dir.canonicalize().unwrap()
         );
         assert!(data_dir(Some(dir.join("content")), Path::new("/x/canopy")).is_err());
+    }
+
+    #[test]
+    fn only_a_checkout_is_a_repository() {
+        let dir = data_folder("repository");
+        assert!(!is_repository(&dir));
+        std::fs::write(dir.join(REPOSITORY_MARKER), "[workspace]").unwrap();
+        assert!(is_repository(&dir));
     }
 
     #[test]
