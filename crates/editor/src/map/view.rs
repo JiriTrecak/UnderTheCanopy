@@ -626,114 +626,16 @@ pub fn show(
 
     // Clicks: place, select.
     if response.clicked_by(egui::PointerButton::Primary)
-        && let (Some(hit), Some(content), Some(docs), Some(map)) =
-            (hit, content, docs, session.map.as_ref())
+        && let (Some(hit), Some(content), Some(docs)) = (hit, content, docs)
     {
-        let map_doc = session.path("map.json");
-        let entities = docs.map["entities"].as_array().map_or(0, Vec::len);
-        let insert = |pointer: &str, index: usize, value: Value| Command::Insert {
-            document: map_doc.clone(),
-            pointer: pointer.into(),
-            index,
-            value,
-        };
-        match tool {
-            Tool::Select => session.tools.selected = nearest(session, hit.x, hit.z),
-            Tool::Amber => {
-                let toward = map
-                    .player_starts
-                    .iter()
-                    .min_by(|a, b| {
-                        let d = |s: &&canopy_content::map::PlayerStart| {
-                            (s.x - hit.x as f64).powi(2) + (s.z - hit.z as f64).powi(2)
-                        };
-                        d(a).total_cmp(&d(b))
-                    })
-                    .map_or((map.size as f64 / 2.0, map.size as f64 / 2.0), |s| {
-                        (s.x, s.z)
-                    });
-                let nodes = tools::amber_site(
-                    map,
-                    content,
-                    hit.x as f64,
-                    hit.z as f64,
-                    toward,
-                    session.tools.amber,
-                );
-                let commands = nodes
-                    .into_iter()
-                    .enumerate()
-                    .map(|(k, n)| insert("/entities", entities + k, n))
-                    .collect();
-                out.edits
-                    .push(step(session, "Place an amber site", commands));
+        if tool == Tool::Select {
+            session.tools.selected = nearest(session, hit.x, hit.z);
+        } else {
+            match place(session, content, docs, tool, hit.x as f64, hit.z as f64) {
+                Ok(Some(edit)) => out.edits.push(edit),
+                Ok(None) => {}
+                Err(error) => session.error = Some(error),
             }
-            Tool::Camp => {
-                let (members, camp) =
-                    tools::camp(map, content, hit.x as f64, hit.z as f64, session.tools.tier);
-                let camps = docs.map["camps"].as_array().map_or(0, Vec::len);
-                let mut commands: Vec<Command> = members
-                    .into_iter()
-                    .enumerate()
-                    .map(|(k, m)| insert("/entities", entities + k, m))
-                    .collect();
-                commands.push(insert("/camps", camps, camp));
-                out.edits.push(step(
-                    session,
-                    &format!("Place a {} camp", session.tools.tier.name()),
-                    commands,
-                ));
-            }
-            Tool::Start => {
-                let (x, z) = tools::start_position(hit.x as f64, hit.z as f64);
-                let player = map
-                    .player_starts
-                    .iter()
-                    .map(|s| s.player)
-                    .max()
-                    .unwrap_or(0)
-                    + 1;
-                if player > 8 {
-                    session.error = Some("A map has eight starts at most.".into());
-                } else {
-                    let setup = content
-                        .rules
-                        .races
-                        .values()
-                        .filter_map(|r| r.starting_setup.as_ref())
-                        .next()
-                        .map_or("setup.ants".to_string(), |s| s.id.to_string());
-                    let starts = docs.map["playerStarts"].as_array().map_or(0, Vec::len);
-                    let mut commands = vec![insert(
-                        "/playerStarts",
-                        starts,
-                        json!({"mainFort": format!("start.player.{player}/main-fort"), "player": player, "setup": setup, "x": x, "z": z}),
-                    )];
-                    // Its amber 24 cells towards the middle, its hollow facing the hall.
-                    let (mx, mz) = (map.size as f64 / 2.0, map.size as f64 / 2.0);
-                    let (dx, dz) = (mx - x, mz - z);
-                    let length = (dx * dx + dz * dz).sqrt().max(1.0);
-                    let (ax, az) = (x + dx / length * 26.0, z + dz / length * 26.0);
-                    let nodes =
-                        tools::amber_site(map, content, ax, az, (x, z), session.tools.amber);
-                    commands.extend(
-                        nodes
-                            .into_iter()
-                            .enumerate()
-                            .map(|(k, n)| insert("/entities", entities + k, n)),
-                    );
-                    // A level pad for the hall and its workers.
-                    let mut pad = Stroke::new(Tool::Flatten, 0.0, false);
-                    let root = session.root.clone();
-                    if let Some(map) = session.map.as_mut() {
-                        tools::level_pad(map, &mut pad, x as f32, z as f32, 16.0);
-                        commands.extend(pad.patches(map, &root));
-                    }
-                    out.edits
-                        .push(step(session, &format!("Place start {player}"), commands));
-                }
-            }
-            _ => {}
         }
     }
     if session.tools.tool == Tool::Select
@@ -774,4 +676,100 @@ fn ring(
         .collect();
     painter.add(egui::Shape::line(points, Line::new(1.5, color)));
     let _ = Vec2::ZERO;
+}
+
+/// What a click of `tool` at world (`x`, `z`) places: an amber site facing the nearest
+/// start, a creep camp, or a start with its amber and a level pad. Shared by the view and
+/// MCP.
+pub fn place(
+    session: &mut Session,
+    content: &Content,
+    docs: &Docs,
+    tool: Tool,
+    x: f64,
+    z: f64,
+) -> Result<Option<Edit>, String> {
+    let Some(map) = session.map.as_ref() else {
+        return Err("the map is not loaded".into());
+    };
+    let map_doc = session.path("map.json");
+    let entities = docs.map["entities"].as_array().map_or(0, Vec::len);
+    let insert = |pointer: &str, index: usize, value: Value| Command::Insert {
+        document: map_doc.clone(),
+        pointer: pointer.into(),
+        index,
+        value,
+    };
+    Ok(match tool {
+        Tool::Amber => {
+            let toward = map
+                .player_starts
+                .iter()
+                .min_by(|a, b| {
+                    let d = |s: &&canopy_content::map::PlayerStart| (s.x - x).powi(2) + (s.z - z).powi(2);
+                    d(a).total_cmp(&d(b))
+                })
+                .map_or((map.size as f64 / 2.0, map.size as f64 / 2.0), |s| (s.x, s.z));
+            let nodes = tools::amber_site(map, content, x, z, toward, session.tools.amber);
+            if nodes.is_empty() {
+                return Err("the content has no amber mine".into());
+            }
+            let commands = nodes
+                .into_iter()
+                .enumerate()
+                .map(|(k, n)| insert("/entities", entities + k, n))
+                .collect();
+            Some(step(session, "Place an amber site", commands))
+        }
+        Tool::Camp => {
+            let (members, camp) = tools::camp(map, content, x, z, session.tools.tier);
+            if members.is_empty() {
+                return Err("the content has no creeps for camps".into());
+            }
+            let camps = docs.map["camps"].as_array().map_or(0, Vec::len);
+            let mut commands: Vec<Command> = members
+                .into_iter()
+                .enumerate()
+                .map(|(k, m)| insert("/entities", entities + k, m))
+                .collect();
+            commands.push(insert("/camps", camps, camp));
+            Some(step(session, &format!("Place a {} camp", session.tools.tier.name()), commands))
+        }
+        Tool::Start => {
+            let (x, z) = tools::start_position(x, z);
+            let player = map.player_starts.iter().map(|s| s.player).max().unwrap_or(0) + 1;
+            if player > 8 {
+                return Err("A map has eight starts at most.".into());
+            }
+            let setup = content
+                .rules
+                .races
+                .values()
+                .filter_map(|r| r.starting_setup.as_ref())
+                .next()
+                .map_or(content.rules.starting_setup.id.to_string(), |s| s.id.to_string());
+            let starts = docs.map["playerStarts"].as_array().map_or(0, Vec::len);
+            let mut commands = vec![insert(
+                "/playerStarts",
+                starts,
+                json!({"mainFort": format!("start.player.{player}/main-fort"), "player": player, "setup": setup, "x": x, "z": z}),
+            )];
+            // Its amber 26 cells towards the middle, its hollow facing the hall.
+            let (mx, mz) = (map.size as f64 / 2.0, map.size as f64 / 2.0);
+            let (dx, dz) = (mx - x, mz - z);
+            let length = (dx * dx + dz * dz).sqrt().max(1.0);
+            let (ax, az) = (x + dx / length * 26.0, z + dz / length * 26.0);
+            let nodes = tools::amber_site(map, content, ax, az, (x, z), session.tools.amber);
+            commands.extend(nodes.into_iter().enumerate().map(|(k, n)| insert("/entities", entities + k, n)));
+            // A level pad for the hall and its workers.
+            let mut pad = Stroke::new(Tool::Flatten, 0.0, false);
+            let root = session.root.clone();
+            if let Some(map) = session.map.as_mut() {
+                tools::level_pad(map, &mut pad, x as f32, z as f32, 16.0);
+                commands.extend(pad.patches(map, &root));
+            }
+            Some(step(session, &format!("Place start {player}"), commands))
+        }
+        _ => None,
+    })
 }

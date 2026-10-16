@@ -291,3 +291,92 @@ pub fn bytes_of(values: &[f32]) -> Vec<u8> {
 pub fn is_float(element: Element) -> bool {
     element == Element::F32
 }
+
+/// The commands that create a new map package `maps/<group>/<id>.utcm`: its manifest, an
+/// empty map (no starts yet) of `size` in `biome`, every ground material as a paint
+/// layer, and flat dry ground at height 2 covered in the biome's grass.
+pub fn new_map(
+    content: &Content,
+    base_version: &str,
+    group: &str,
+    id: &str,
+    name: &str,
+    size: u32,
+    biome: &str,
+) -> Result<Vec<crate::document::Command>, String> {
+    use crate::document::{Command, Sample};
+    use canopy_content::map::{DRY_WATER_HEIGHT, MAP_HALO, MAP_SIZES};
+    use serde_json::json;
+    if !MAP_SIZES.contains(&size) || size > 1024 {
+        return Err(format!("a map is 256, 512, 640 or 1024 cells, not {size}"));
+    }
+    canopy_content::Id::new(id)?;
+    let root = format!("maps/{group}/{id}.utcm");
+    // Ground materials: the painted ones first, cliff faces last (they follow slopes).
+    let mut materials: Vec<(&str, bool)> = content
+        .landscape
+        .iter()
+        .filter_map(|a| Some((a.id.as_str(), a.terrain.as_ref()?.projection.is_some())))
+        .collect();
+    materials.sort_by_key(|(id, cliff)| (*cliff, *id));
+    let span = size + 2 * MAP_HALO;
+    let vertices = span + 1;
+    let floats = |v: f32| -> Vec<u8> {
+        std::iter::repeat_n(v, (vertices * vertices) as usize)
+            .flat_map(f32::to_le_bytes)
+            .collect()
+    };
+    let grid = |file: &str, element: Sample, side: u32, bytes: Vec<u8>| Command::Grid {
+        document: format!("{root}/terrain/{file}.grid"),
+        element,
+        width: side,
+        height: side,
+        bytes,
+    };
+    let mut commands = vec![
+        Command::Create {
+            document: format!("{root}/package.json"),
+            value: json!({
+                "format": 1,
+                "id": id,
+                "kind": "map",
+                "name": name,
+                "version": "1.0.0",
+                "dependencies": {"base": format!(">={base_version}")},
+            }),
+        },
+        Command::Create {
+            document: format!("{root}/map.json"),
+            value: json!({
+                "biome": biome,
+                "camps": [],
+                "entities": [],
+                "playerStarts": [],
+                "size": size,
+                "terrain": {
+                    "paint": materials.iter().map(|(m, _)| json!({"material": m, "variants": false})).collect::<Vec<_>>(),
+                    "textureGrid": {"cellSize": 5, "origin": [-0.5, -0.5]},
+                    "waterProfiles": [],
+                },
+            }),
+        },
+        Command::Create {
+            document: format!("{root}/scenery.json"),
+            value: json!({"objects": []}),
+        },
+        grid("heights", Sample::F32, vertices, floats(2.0)),
+        grid("water-heights", Sample::F32, vertices, floats(DRY_WATER_HEIGHT as f32)),
+        grid(
+            "water-flow",
+            Sample::Rgba8,
+            span,
+            std::iter::repeat_n([128u8, 128, 0, 0], (span * span) as usize).flatten().collect(),
+        ),
+        grid("grass", Sample::F32, vertices, floats(1.0)),
+        grid("rock", Sample::F32, vertices, floats(0.0)),
+    ];
+    for n in 1..=materials.len() {
+        commands.push(grid(&format!("paint-{n}-weights"), Sample::F32, vertices, floats(0.0)));
+    }
+    Ok(commands)
+}

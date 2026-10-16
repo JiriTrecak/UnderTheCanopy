@@ -1068,7 +1068,19 @@ impl Shell {
         let generation = store.generation();
         if self.checked != Some(generation) {
             self.checked = Some(generation);
-            checker.request(generation, store.document_overlay());
+            // Maps with unsaved changes are checked too (their grids ride in the overlay).
+            let mut maps: Vec<String> = store
+                .dirty()
+                .iter()
+                .filter_map(|d| d.find(".utcm/").map(|i| d[..i + 5].to_string()))
+                .collect();
+            maps.dedup();
+            let overlay = if maps.is_empty() {
+                store.document_overlay()
+            } else {
+                store.overlay()
+            };
+            checker.request(generation, overlay, maps);
         }
     }
 

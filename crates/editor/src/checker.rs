@@ -39,7 +39,7 @@ pub struct Checker {
     rx: mpsc::Receiver<Report>,
     running: bool,
     /// The newest request while a check runs; older ones are dropped.
-    waiting: Option<(u64, Overlay)>,
+    waiting: Option<(u64, Overlay, Vec<String>)>,
     report: Option<Report>,
     /// The game data of the last check that passed.
     content: Option<Arc<Content>>,
@@ -59,9 +59,10 @@ impl Checker {
         }
     }
 
-    /// Checks the package with `overlay` as generation `generation`.
-    pub fn request(&mut self, generation: u64, overlay: Overlay) {
-        self.waiting = Some((generation, overlay));
+    /// Checks the package with `overlay` as generation `generation`, and the map packages
+    /// at `maps` (folders in the package) with it.
+    pub fn request(&mut self, generation: u64, overlay: Overlay, maps: Vec<String>) {
+        self.waiting = Some((generation, overlay, maps));
         self.start();
     }
 
@@ -69,11 +70,12 @@ impl Checker {
         if self.running {
             return;
         }
-        let Some((generation, overlay)) = self.waiting.take() else {
+        let Some((generation, overlay, maps)) = self.waiting.take() else {
             return;
         };
         self.running = true;
-        let package = self.package.clone().with_overlay(Arc::new(overlay));
+        let overlay = Arc::new(overlay);
+        let package = self.package.clone().with_overlay(overlay.clone());
         let tx = self.tx.clone();
         let spawned = std::thread::Builder::new()
             .name("editor check".into())
@@ -102,6 +104,51 @@ impl Checker {
                             })
                             .collect(),
                     };
+                // The maps with unsaved changes: they load, they follow the content's
+                // rules, and their starts are playable.
+                let mut problems = problems;
+                if let Some(content) = &content {
+                    for root in &maps {
+                        let document = format!("{root}/map.json");
+                        let mut fail = |message: String| {
+                            problems.push(Problem {
+                                document: Some(document.clone()),
+                                location: String::new(),
+                                message,
+                                file: document.clone(),
+                            })
+                        };
+                        let loaded = canopy_content::package::Package::open(&package.root.join(root))
+                            .map_err(|e| e.to_string())
+                            .and_then(|p| {
+                                canopy_content::map::package::load_package(
+                                    &p.with_overlay(Arc::new(overlay.below(root))),
+                                )
+                                .map_err(|e| e.to_string())
+                            });
+                        let map = match loaded {
+                            Ok(map) => map,
+                            Err(error) => {
+                                fail(error);
+                                continue;
+                            }
+                        };
+                        for error in canopy_content::map::validate(&map, content) {
+                            fail(format!("{}: {}", error.location, error.message));
+                        }
+                        let setup = canopy_scene::spectator_setup(&map, None);
+                        match canopy_sim::World::new(content.clone(), &map, setup) {
+                            Ok(world) => {
+                                if let Err(error) =
+                                    canopy_sim::spawn::playable(&map, world.catalog(), world.terrain())
+                                {
+                                    fail(error);
+                                }
+                            }
+                            Err(error) => fail(error.0),
+                        }
+                    }
+                }
                 let _ = tx.send(Report {
                     generation,
                     problems,
