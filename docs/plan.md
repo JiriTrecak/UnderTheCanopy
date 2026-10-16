@@ -58,7 +58,7 @@ Agreed with Jiri, 2026-10-16. One native Rust editor shipped inside the game, us
 | M1. Editor shell | Home screen, tabs, command bus with undo, MCP and a headless mode, the viewport on the game renderer, reload of content and assets. |
 | M2. Data editors | Units and heroes, buildings, items, abilities (the spell editor) and effects, linked to each other. |
 | M3. Map editor | Rebuilt around large-scale tools: symmetric and rotational map halves, shaping whole landforms ("an island here"), start locations that place their mine and forest by rules, and a new look for ground cover (moving grass, decals, foliage). |
-| M4. Asset editor | Scope to be discovered first. |
+| M4. Asset editor | Scope to be discovered first. Assets (the scenery library included) easy to author, find unused and delete. |
 | M5. Players' content | Custom maps in the game, packaged maps, map transfer in multiplayer, the Lua sandbox audit. |
 | M6. Retire the old repository | |
 
