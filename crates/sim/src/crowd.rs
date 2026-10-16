@@ -211,3 +211,134 @@ pub fn gallery(map: &mut UtcMap, content: &Content) -> Result<MatchSetup, String
         }],
     })
 }
+
+/// Trying an ability in a real match (the editor's encounter, docs/editor.md): `caster`
+/// (a unit that binds the ability) stands a little way from player 0's start towards the
+/// middle of the map, a hero at its third level so it can learn three ranks; three of its
+/// race's other units stand beside it as allies to target, and a camp of the map's
+/// neutral creeps waits ahead as enemies. Player 0 is the only player (no computer
+/// players), on its start with its starting setup.
+pub fn encounter(map: &mut UtcMap, content: &Content, caster: &str) -> Result<MatchSetup, String> {
+    let definition = content
+        .definitions
+        .iter()
+        .find(|d| d.id.as_str() == caster)
+        .ok_or_else(|| format!("no unit {caster}"))?;
+    let start = map.player_starts.first().ok_or("the map has no start")?;
+    let n = map.player_starts.len().max(1) as f64;
+    let (mx, mz) = (
+        map.player_starts.iter().map(|s| s.x).sum::<f64>() / n,
+        map.player_starts.iter().map(|s| s.z).sum::<f64>() / n,
+    );
+    // 24 cells from the start towards the middle (or east when there is one start).
+    let (dx, dz) = (mx - start.x, mz - start.z);
+    let length = (dx * dx + dz * dz).sqrt();
+    let (ux, uz) = if length > 1.0 {
+        (dx / length, dz / length)
+    } else {
+        (1.0, 0.0)
+    };
+    let (cx, cz) = ((start.x + ux * 24.0).floor(), (start.z + uz * 24.0).floor());
+    let facing = math::atan2(ux, uz).to_degrees();
+    let experience = definition
+        .behaviors
+        .progression
+        .as_ref()
+        .and_then(|p| p.levels.get(2).or(p.levels.last()))
+        .map(|l| l.experience);
+    let place = |id: String,
+                 d: &Definition,
+                 x: f64,
+                 z: f64,
+                 owner: Owner,
+                 experience: Option<u32>| Placement {
+        activation: None,
+        id,
+        map_knowledge: None,
+        definition: d.id.clone(),
+        // Units stand on navigation cell centres.
+        position: Point {
+            x: x.round(),
+            y: z.round(),
+            surface: None,
+        },
+        rotation: facing,
+        owner,
+        initial_state: experience.map(|experience| canopy_content::placement::InitialState {
+            experience: Some(experience),
+            ..Default::default()
+        }),
+        appearance: None,
+    };
+    map.entities.push(place(
+        "encounter-caster".into(),
+        definition,
+        cx,
+        cz,
+        Owner::Player(0),
+        experience,
+    ));
+    // Allies: the race's other trainable units (the caster's race is its id's second part).
+    let race = caster.split('.').nth(1).unwrap_or_default();
+    let allies: Vec<&Definition> = content
+        .definitions
+        .iter()
+        .filter(|d| {
+            d.kind == Kind::Unit
+                && d.id.as_str() != caster
+                && d.id.as_str().split('.').nth(1) == Some(race)
+                && d.behaviors.progression.is_none()
+        })
+        .take(3)
+        .collect();
+    let (px, pz) = (-uz, ux);
+    for (i, ally) in allies.iter().enumerate() {
+        let side = i as f64 - 1.0;
+        map.entities.push(place(
+            format!("encounter-ally-{i}"),
+            ally,
+            cx - ux * 4.0 + px * side * 3.0,
+            cz - uz * 4.0 + pz * side * 3.0,
+            Owner::Player(0),
+            None,
+        ));
+    }
+    // Enemies: neutral creeps (units nobody's race lists) ahead.
+    let in_roster = |id: &str| {
+        content
+            .rules
+            .races
+            .values()
+            .any(|r| r.roster.iter().any(|x| x.as_str() == id))
+    };
+    let creeps: Vec<&Definition> = content
+        .definitions
+        .iter()
+        .filter(|d| {
+            d.kind == Kind::Unit && !in_roster(d.id.as_str()) && d.behaviors.progression.is_none()
+        })
+        .take(3)
+        .collect();
+    for (i, creep) in creeps.iter().enumerate() {
+        let side = i as f64 - 1.0;
+        map.entities.push(place(
+            format!("encounter-enemy-{i}"),
+            creep,
+            cx + ux * 14.0 + px * side * 3.5,
+            cz + uz * 14.0 + pz * side * 3.5,
+            Owner::Nobody,
+            None,
+        ));
+    }
+    Ok(MatchSetup {
+        seed: 1,
+        slots: vec![Slot {
+            player: 0,
+            kind: SlotKind::Human,
+            name: None,
+            team: None,
+            hero: None,
+            race: None,
+        }],
+    })
+}

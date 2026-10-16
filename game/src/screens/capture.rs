@@ -446,7 +446,7 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
         "the checked data has the unsaved edit"
     );
     rig.game
-        .test_in_game(content, None)
+        .test_in_game(content.clone(), None, None)
         .map_err(anyhow::Error::msg)?;
     rig.until("the test match", Duration::from_secs(180), |g| {
         g.flow.in_match()
@@ -477,6 +477,45 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
         matches!(g.flow.screen(), Screen::MainMenu)
     })?;
     anyhow::ensure!(rig.game.test_finished(), "the test ends at the main menu");
+    // An ability's encounter: a hero near the player's start, allies and creeps around.
+    let hero = content
+        .definitions
+        .iter()
+        .find(|d| d.behaviors.progression.is_some() && d.behaviors.abilities.is_some())
+        .map(|d| d.id.to_string())
+        .context("a hero with abilities")?;
+    rig.game
+        .test_in_game(content.clone(), None, Some(hero.clone()))
+        .map_err(anyhow::Error::msg)?;
+    rig.until("the encounter", Duration::from_secs(180), |g| {
+        g.flow.in_match()
+    })?;
+    rig.settle(2.0);
+    let knowledge = rig
+        .game
+        .playing
+        .as_ref()
+        .context("a match")?
+        .game
+        .play
+        .knowledge();
+    anyhow::ensure!(
+        knowledge
+            .view
+            .entities
+            .iter()
+            .any(|e| knowledge.catalog.id(e.definition()).as_str() == hero),
+        "the encounter's hero is in the match"
+    );
+    rig.shoot("editor-encounter")?;
+    rig.game.apply(Intent::LeaveMatch);
+    rig.until("the main menu", Duration::from_secs(30), |g| {
+        matches!(g.flow.screen(), Screen::MainMenu)
+    })?;
+    anyhow::ensure!(
+        rig.game.test_finished(),
+        "the encounter ends at the main menu"
+    );
     let own = rig.game.data.as_ref().context("data")?;
     anyhow::ensure!(
         own.content

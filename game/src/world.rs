@@ -31,6 +31,9 @@ pub struct MatchSpec<'a> {
     pub human: Option<u8>,
     /// The game data to play; read from the data folder when `None`.
     pub content: Option<Arc<Content>>,
+    /// Trying an ability: this unit near the local player's start, with allies and
+    /// creeps (`canopy_sim::crowd::encounter`).
+    pub encounter: Option<&'a str>,
 }
 
 /// What the renderer draws of a map: the scene, its lighting and the asset pack.
@@ -125,6 +128,9 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
         Some(n) => canopy_sim::crowd::crowd(&mut map, &content, n).map_err(|e| anyhow!(e))?,
         None if spec.gallery => {
             canopy_sim::crowd::gallery(&mut map, &content).map_err(|e| anyhow!(e))?
+        }
+        None if let Some(caster) = spec.encounter => {
+            canopy_sim::crowd::encounter(&mut map, &content, caster).map_err(|e| anyhow!(e))?
         }
         None => {
             let mut setup = canopy_scene::spectator_setup(&map, spec.players);

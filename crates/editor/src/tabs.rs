@@ -85,6 +85,7 @@ pub struct Viewer<'a> {
     /// Links clicked this frame, and a new element to start.
     pub opens: &'a mut Vec<String>,
     pub create: &'a mut Option<String>,
+    pub try_with: &'a mut Option<String>,
 }
 
 impl TabViewer for Viewer<'_> {
@@ -202,6 +203,9 @@ impl TabViewer for Viewer<'_> {
                 self.opens.extend(overview.opens);
                 if overview.create.is_some() {
                     *self.create = overview.create;
+                }
+                if overview.try_with.is_some() {
+                    *self.try_with = overview.try_with;
                 }
                 for change in overview.changes {
                     let merge = change

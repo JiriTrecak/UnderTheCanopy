@@ -31,6 +31,8 @@ pub struct DevSpec {
     pub colors: Option<Vec<usize>>,
     /// The local player's slot (`--map`); `None` spectates (`--spectate`).
     pub human: Option<u8>,
+    /// Trying an ability with this unit (the editor's encounter).
+    pub encounter: Option<String>,
 }
 
 enum Message {
@@ -103,6 +105,7 @@ fn dev(
             colors: spec.colors.clone(),
             human: spec.human,
             content: Some(data.content.clone()),
+            encounter: spec.encounter.as_deref(),
         },
     )?;
     progress(Stage::Gpu, 0.85);

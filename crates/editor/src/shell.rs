@@ -184,7 +184,7 @@ pub struct Shell {
     pub shot: Option<crate::stage::Shot>,
     orbit: crate::stage::Orbit,
     /// Test in game, asked for this frame.
-    pub test: Option<(Arc<canopy_content::Content>, Option<String>)>,
+    pub test: Option<crate::Test>,
     /// `problems` calls waiting for the current check.
     waiting: Vec<tokio::sync::oneshot::Sender<Result<Value, String>>>,
     /// The editor is done: back to the menu, or quit the game.
@@ -315,6 +315,7 @@ impl Shell {
         let highlight = workspace.highlight.clone();
         let mut opens = Vec::new();
         let mut new_ability = None;
+        let mut try_with = None;
         tabs::documents(
             ui,
             kind,
@@ -329,6 +330,7 @@ impl Shell {
                 uses: active.as_deref().zip(uses.as_deref()),
                 opens: &mut opens,
                 create: &mut new_ability,
+                try_with: &mut try_with,
             },
         );
         for edit in edits {
@@ -336,6 +338,22 @@ impl Shell {
         }
         if let Some(id) = opens.pop() {
             self.open_id(&id);
+        }
+        if let Some(unit) = try_with {
+            match self.testable() {
+                Some(content) => {
+                    self.test = Some(crate::Test {
+                        content,
+                        map: None,
+                        encounter: Some(unit),
+                    });
+                }
+                None => self.say(
+                    "Fix the problems first: the game loads only a package that passes the check"
+                        .into(),
+                    true,
+                ),
+            }
         }
         if let Some(prefix) = new_ability {
             self.start_create(Kind::Abilities);
@@ -1226,6 +1244,13 @@ impl Shell {
         })
     }
 
+    /// The data of a check that passed for the latest edits (what Test in game plays).
+    fn testable(&self) -> Option<Arc<canopy_content::Content>> {
+        (self.problem_count() == Some(0) && !self.checking())
+            .then(|| self.checker.as_ref().and_then(|c| c.content().cloned()))
+            .flatten()
+    }
+
     pub fn undo_all(&mut self) {
         while let Some(store) = &mut self.store
             && store.undo().is_some()
@@ -1354,9 +1379,7 @@ impl Shell {
         let mut travel = None;
         let (can_back, can_forward) = (!self.back.is_empty(), !self.forward.is_empty());
         // The data of a check that passed for the latest edits.
-        let testable = (self.problem_count() == Some(0) && !self.checking())
-            .then(|| self.checker.as_ref().and_then(|c| c.content().cloned()))
-            .flatten();
+        let testable = self.testable();
         egui::Panel::top("header")
             .exact_size(HEADER)
             .resizable(false)
@@ -1486,7 +1509,11 @@ impl Shell {
                 .then(|| self.active_document())
                 .flatten()
                 .and_then(|d| self.workspaces.get(&Kind::Maps).map(|w| w.element(&d).id));
-            self.test = Some((content, map));
+            self.test = Some(crate::Test {
+                content,
+                map,
+                encounter: None,
+            });
         }
     }
 

@@ -47,9 +47,18 @@ pub struct Output {
     pub close: bool,
     /// Quit the game (the window was closed and unsaved changes are settled).
     pub quit: bool,
-    /// Test in game: play a skirmish with this content (unsaved edits included), on this
-    /// map when one is open.
-    pub test: Option<(std::sync::Arc<canopy_content::Content>, Option<String>)>,
+    /// Test in game: play this content (unsaved edits included).
+    pub test: Option<Test>,
+}
+
+/// What Test in game plays.
+#[derive(Debug, Clone)]
+pub struct Test {
+    pub content: std::sync::Arc<canopy_content::Content>,
+    /// The open map, when the maps editor shows one.
+    pub map: Option<String>,
+    /// A unit trying its abilities near the player's start, instead of a skirmish.
+    pub encounter: Option<String>,
 }
 
 pub struct Editor {

@@ -110,6 +110,7 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
             biome: options.biome.as_deref(),
             human: None,
             content: None,
+            encounter: None,
         },
     )?;
 

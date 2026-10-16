@@ -297,11 +297,13 @@ impl Game {
 
     /// Test in game (docs/editor.md): a skirmish against computer players on `map` (the
     /// last map played, or the first skirmish map) with `content` in place of the game's
-    /// own until the match is left.
+    /// own until the match is left; with `encounter`, that unit tries its abilities near
+    /// the player's start instead (no computer players).
     pub fn test_in_game(
         &mut self,
         content: Arc<canopy_content::Content>,
         map: Option<String>,
+        encounter: Option<String>,
     ) -> Result<(), String> {
         let data = self.data.clone().ok_or("the game is still loading")?;
         let map = map
@@ -320,6 +322,7 @@ impl Game {
                 crowd: None,
                 colors: None,
                 human: Some(0),
+                encounter,
             },
             tick: 0,
             camera: None,

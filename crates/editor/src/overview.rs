@@ -33,6 +33,8 @@ pub struct Overview<'a> {
     pub opens: Vec<String>,
     /// A new element to create, with its id started (the shell opens the dialog).
     pub create: Option<String>,
+    /// A unit to try this ability with in a test match (the encounter).
+    pub try_with: Option<String>,
 }
 
 /// Whether `document` has an Overview.
@@ -89,6 +91,7 @@ impl<'a> Overview<'a> {
             changes: Vec::new(),
             opens: Vec::new(),
             create: None,
+            try_with: None,
         }
     }
 
@@ -651,10 +654,39 @@ impl<'a> Overview<'a> {
         Self::card(ui, "Targeting", |ui| {
             ui.label(RichText::new(words).color(TEXT));
         });
-        let me = self;
+        // The units that bind it, each with Try (a test match where it casts this).
+        let mut binders: Vec<String> = self
+            .uses
+            .iter()
+            .filter(|u| u.document != self.document && u.pointer.ends_with("/ability"))
+            .filter_map(|u| {
+                self.index
+                    .iter()
+                    .find(|(_, e)| e.document == u.document)
+                    .map(|(id, _)| id.clone())
+            })
+            .collect();
+        binders.dedup();
+        let mut try_with = None;
+        let me = &mut *self;
         Self::card(ui, "Bound by", |ui| {
-            me.users(ui, |u| u.pointer.ends_with("/ability"), "No unit binds it.")
+            if binders.is_empty() {
+                ui.label(RichText::new("No unit binds it.").color(FAINT).size(11.5));
+            }
+            for id in &binders {
+                ui.horizontal(|ui| {
+                    me.link(ui, id);
+                    if ui
+                        .small_button("Try it")
+                        .on_hover_text("A test match: this unit near your start with allies and creeps around it")
+                        .clicked()
+                    {
+                        try_with = Some(id.clone());
+                    }
+                });
+            }
         });
+        self.try_with = try_with;
     }
 
     /// The rank table: parameters by rank, each cell a number.

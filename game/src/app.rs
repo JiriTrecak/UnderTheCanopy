@@ -106,6 +106,7 @@ impl App {
                 crowd: o.crowd,
                 colors: o.colors.clone(),
                 human: (!o.spectate && o.crowd.is_none()).then_some(0),
+                encounter: None,
             },
             tick: o.tick,
             camera: o
@@ -189,8 +190,11 @@ impl App {
             event_loop.exit();
             return;
         }
-        if let Some((content, map)) = output.test {
-            match session.game.test_in_game(content, map) {
+        if let Some(test) = output.test {
+            match session
+                .game
+                .test_in_game(test.content, test.map, test.encounter)
+            {
                 Ok(()) => {
                     session.suspended = session.editor.take();
                     session.game.audio.set_background(false);
