@@ -57,3 +57,13 @@ Design decisions for the native editor, agreed with Jiri milestone by milestone 
 ## M4. The asset editor (direction 2026-10-16)
 
 **Settled (Jiri):** the asset editor is a tool for us, mostly for agents: what makes new assets quick to create and to author well into the game. Its scope is mine to decide from the asset format (not overdone). **Players never bring their own models, icons or other assets**: player packages use the game's pool only. Built right after M3.
+
+## M5. Players' content (decided 2026-10-16: aspirational for now)
+
+**Settled (Jiri):** players' content is a goal for later, not now. The game is not yet one people extend, so:
+
+- **Only we author, and only the base package.** Players do not get the editor; when they do, it will be for maps only at first, with more unlocked later.
+- **No sharing yet**, as a consequence: nothing to share while players cannot edit.
+- **Safety: something reasonable**, aimed at our own authoring; the Lua sandbox audit waits until players write scripts.
+- **Every version loads:** no version gates on packages or maps for now (they would only slow us down).
+- **No mods and no custom maps yet.**
