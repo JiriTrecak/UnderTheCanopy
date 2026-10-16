@@ -1,0 +1,128 @@
+{
+  "id": "asset.terrain.warcraft-cliff-cldi",
+  "name": "Cliff face · CLdi",
+  "kind": "terrain-material",
+  "tags": [
+    "warcraft",
+    "cliff",
+    "CLdi"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin"
+    },
+    {
+      "role": "data",
+      "index": 2,
+      "format": "bin"
+    },
+    {
+      "role": "data",
+      "index": 3,
+      "format": "bin"
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png",
+      "colorSpace": "srgb"
+    },
+    {
+      "role": "normal",
+      "index": 1,
+      "format": "png",
+      "colorSpace": "none"
+    },
+    {
+      "role": "occlusion",
+      "index": 1,
+      "format": "png",
+      "colorSpace": "none"
+    },
+    {
+      "role": "roughness",
+      "index": 1,
+      "format": "png",
+      "colorSpace": "none"
+    },
+    {
+      "role": "metalness",
+      "index": 1,
+      "format": "png",
+      "colorSpace": "none"
+    },
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png",
+      "colorSpace": "srgb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "bin"
+    }
+  ],
+  "terrain": {
+    "tileWorldSize": 12,
+    "projection": {
+      "type": "cliff",
+      "verticalWorldSize": 4,
+      "startSlope": 0.8,
+      "fullSlope": 1.8
+    },
+    "reflectance": 1,
+    "shading": "physical",
+    "sourceIds": [
+      "CLdi"
+    ],
+    "atlas": {
+      "columns": 1,
+      "rows": 1,
+      "fullTiles": [
+        0
+      ]
+    },
+    "albedo": {
+      "role": "albedo",
+      "index": 1
+    },
+    "normal": {
+      "role": "normal",
+      "index": 1
+    },
+    "occlusion": {
+      "role": "occlusion",
+      "index": 1
+    },
+    "roughness": {
+      "role": "roughness",
+      "index": 1
+    },
+    "metalness": {
+      "role": "metalness",
+      "index": 1
+    },
+    "thumbnail": {
+      "role": "image",
+      "index": 1
+    },
+    "runtime": {
+      "albedoRoughness": {
+        "role": "data",
+        "index": 1
+      },
+      "normalOpacity": {
+        "role": "data",
+        "index": 2
+      },
+      "occlusionMetalness": {
+        "role": "data",
+        "index": 3
+      }
+    }
+  },
+  "license": "Imported from the local Warcraft III installation (definitive). Original sources retain their respective rights."
+}

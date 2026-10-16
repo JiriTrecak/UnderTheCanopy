@@ -51,7 +51,7 @@ pub fn crowd(map: &mut UtcMap, content: &Content, per_player: u32) -> Result<Mat
                     && d.behaviors.combat.is_some()
                     && d.behaviors.work.is_none()
                     && content
-                        .asset(d.asset.as_str())
+                        .look(d.id.as_str())
                         .is_some_and(|a| a.character.is_some())
             })
         })

@@ -3,111 +3,111 @@
     "move": {
       "name": "Move",
       "description": "Move eligible selected units to a destination.",
-      "icon": "icon.action.move",
+      "icon": "asset.icons.command-move",
       "priority": 200,
       "hotkey": "M"
     },
     "attack": {
       "name": "Attack",
       "description": "Attack-move on ground, or force attack a visible damageable target, including friendlies.",
-      "icon": "icon.action.attack",
+      "icon": "asset.icons.command-attack",
       "priority": 190,
       "hotkey": "A"
     },
     "stop": {
       "name": "Stop",
       "description": "Cancel orders and return to autonomous activity. Carried goods remain physical.",
-      "icon": "icon.action.stop",
+      "icon": "asset.icons.command-stop",
       "priority": 180,
       "hotkey": "S"
     },
     "build": {
       "name": "Build",
       "description": "Place a construction project on explored, clear ground.",
-      "icon": "icon.action.build",
+      "icon": "asset.icons.command-build",
       "priority": 60,
       "category": "category.build"
     },
     "produce": {
       "name": "Produce",
       "description": "Train a unit. Reserves its resources and supply immediately.",
-      "icon": "icon.action.produce",
+      "icon": "asset.icons.command-produce",
       "priority": 60
     },
     "rally": {
       "name": "Rally point",
       "description": "Choose where newly produced units assemble.",
-      "icon": "icon.action.rally",
+      "icon": "asset.icons.command-rally",
       "priority": 40
     },
     "pause": {
       "name": "Pause production",
       "description": "Finish committed work, then release staffing. Resume to request work again.",
-      "icon": "icon.action.pause",
+      "icon": "asset.icons.command-pause",
       "priority": 30
     },
     "cancel": {
       "name": "Cancel construction",
       "description": "Cancel this project and refund its reserved resources to an owned Mound with space.",
-      "icon": "icon.action.cancel",
+      "icon": "asset.icons.command-cancel",
       "priority": 20
     },
     "upgrade": {
       "name": "Upgrade building",
       "description": "Upgrade this building in place.",
-      "icon": "icon.ants.fort",
+      "icon": "asset.portraits.buildings.ants-acorn-hall",
       "priority": 110,
       "hotkey": "U"
     },
     "cancelUpgrade": {
       "name": "Cancel upgrade",
       "description": "Cancel the upgrade and refund the full price.",
-      "icon": "icon.action.cancel",
+      "icon": "asset.icons.command-cancel",
       "priority": 20,
       "hotkey": "C"
     },
     "research": {
       "name": "Research",
       "description": "Research a permanent colony upgrade.",
-      "icon": "icon.ants.fort",
+      "icon": "asset.portraits.buildings.ants-acorn-hall",
       "priority": 100
     },
     "cancelResearch": {
       "name": "Cancel research",
       "description": "Cancel this research and refund its full price.",
-      "icon": "icon.action.cancel",
+      "icon": "asset.icons.command-cancel",
       "priority": 20
     },
     "hold": {
       "name": "Hold Position",
       "description": "Stand your ground. Attack enemies within weapon range without chasing.",
-      "icon": "icon.action.hold",
+      "icon": "asset.icons.command-hold",
       "priority": 170,
       "hotkey": "H"
     },
     "patrol": {
       "name": "Patrol",
       "description": "Patrol between the current position and a destination. Engage enemies, then resume patrol.",
-      "icon": "icon.action.patrol",
+      "icon": "asset.icons.command-patrol",
       "priority": 160,
       "hotkey": "P"
     },
     "follow": {
       "name": "Follow",
       "description": "Follow a friendly unit. Right-click a friendly unit to follow it.",
-      "icon": "icon.action.follow",
+      "icon": "asset.icons.command-follow",
       "priority": 150
     },
     "unload": {
       "name": "Leave watchtower",
       "description": "Release the archer at the tower entrance. A move order also leaves the lookout.",
-      "icon": "icon.action.move",
+      "icon": "asset.icons.command-move",
       "priority": 100
     },
     "garrison": {
       "name": "Enter watchtower",
       "description": "Walk to a friendly watchtower and occupy its single lookout.",
-      "icon": "icon.ants.tower",
+      "icon": "asset.portraits.buildings.ants-watchtower",
       "priority": 100
     }
   },
@@ -115,21 +115,21 @@
     "category.build": {
       "name": "Build",
       "description": "Open economy and settlement buildings.",
-      "icon": "icon.action.build",
+      "icon": "asset.icons.command-build",
       "priority": 60,
       "hotkey": "B"
     },
     "category.build-advanced": {
       "name": "Advanced Build",
       "description": "Open military and support buildings.",
-      "icon": "icon.action.build-advanced",
+      "icon": "asset.icons.command-build-advanced",
       "priority": 50,
       "hotkey": "V"
     },
     "category.hero.skills": {
       "name": "New spell available",
       "description": "Spend a skill point to learn or improve an ability.",
-      "icon": "icon.ants.marshal",
+      "icon": "asset.portraits.units.ants-marshal",
       "priority": 106,
       "hotkey": "K",
       "placement": "banner"
@@ -139,14 +139,14 @@
     "back": {
       "name": "Back",
       "description": "Return to the previous command category.",
-      "icon": "icon.action.cancel",
+      "icon": "asset.icons.command-cancel",
       "priority": 0,
       "hotkey": "Escape"
     },
     "camera": {
       "name": "Cycle camera",
       "description": "Follow the selected unit. Cycle RTS, third person and first person. Escape returns to RTS.",
-      "icon": "icon.action.camera",
+      "icon": "asset.icons.command-camera",
       "priority": 55,
       "hotkey": "J"
     }

@@ -2,8 +2,8 @@
   "id": "unit.beetles.horn-guard",
   "name": "Horn Guard",
   "description": "Durable heavy infantry. Slower and more expensive than ant Warriors; uses 1 supply.",
-  "asset": "asset.placeholder.missing-model",
-  "icon": "icon.item.root",
+  "model": "asset.placeholder.missing-model",
+  "icon": "asset.icons.resource-root",
   "selectionClass": "army",
   "body": {
     "maxHp": 440,

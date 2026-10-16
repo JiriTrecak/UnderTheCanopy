@@ -18,7 +18,7 @@ impl SoundId {
 
 /// One loaded sound.
 pub struct Clip {
-    /// The pack entry name (`assets/library/<id>/audio.wav`).
+    /// The pack entry name (`<asset id>/audio.wav`).
     pub name: String,
     /// Length in seconds at the original pitch.
     pub duration: f64,

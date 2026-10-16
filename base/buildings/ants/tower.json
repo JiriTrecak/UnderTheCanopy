@@ -2,8 +2,8 @@
   "id": "building.ants.tower",
   "name": "Watchtower",
   "description": "A raised acorn lookout for one Archer. Right-click it with an Archer to enter; fire from the top using that unit’s own weapon and upgrades.",
-  "asset": "asset.ants.tower",
-  "icon": "icon.ants.tower",
+  "model": "asset.models.buildings.ants-watchtower",
+  "icon": "asset.portraits.buildings.ants-watchtower",
   "body": {
     "maxHp": 500,
     "armor": 2,

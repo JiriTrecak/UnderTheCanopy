@@ -1,0 +1,19 @@
+{
+  "id": "scenery.leafbound-twig-bridge",
+  "name": "leafbound twig bridge",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.leafbound-twig-bridge",
+  "deck": {
+    "width": 6.6,
+    "depth": 24,
+    "height": 0.35,
+    "arch": 0.75,
+    "thickness": 0.7,
+    "level": 1,
+    "connections": {
+      "start": 0,
+      "end": 0
+    }
+  }
+}

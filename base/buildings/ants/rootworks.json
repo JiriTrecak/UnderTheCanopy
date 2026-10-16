@@ -2,8 +2,8 @@
   "id": "building.ants.rootworks",
   "name": "Rootworks",
   "description": "Receives Root from nearby Corrupted Root deposits. Delivered Root becomes spendable colony currency. Does not accept Amber or Wood.",
-  "asset": "asset.ants.rootworks",
-  "icon": "icon.ants.rootworks",
+  "model": "asset.models.buildings.ants-rootworks",
+  "icon": "asset.portraits.buildings.ants-rootworks",
   "body": {
     "maxHp": 1000,
     "armor": 5,

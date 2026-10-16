@@ -2,8 +2,8 @@
   "id": "unit.ants.rootbreaker",
   "name": "Rootbreaker",
   "description": "A towering ant bruiser with a massive root club. Weakens enemy armor, crushes individual foes, draws attacks with his roar, and erupts roots across the battlefield.",
-  "asset": "asset.ants.rootbreaker",
-  "icon": "icon.ants.rootbreaker",
+  "model": "asset.models.units.ants-rootbreaker",
+  "icon": "asset.portraits.units.ants-rootbreaker",
   "hero": true,
   "level": 1,
   "selectionClass": "army",
@@ -274,5 +274,8 @@
     ],
     "workTicks": 2200
   },
-  "displayOrder": 1
+  "displayOrder": 1,
+  "presentation": {
+    "castContact": 0.47368421052631576
+  }
 }

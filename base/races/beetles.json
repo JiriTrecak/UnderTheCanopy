@@ -80,7 +80,7 @@
     "building.beetles.hornwatch"
   ],
   "construction": {
-    "scaffold": "asset.construction.beetles",
+    "scaffold": "asset.models.construction.beetles",
     "padding": 0.4,
     "revealAt": 0.95,
     "retractUntil": 0.985,

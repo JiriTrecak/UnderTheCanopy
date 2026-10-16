@@ -1,0 +1,16 @@
+{
+  "id": "asset.icons.command-patrol",
+  "name": "Patrol",
+  "kind": "icon",
+  "tags": [
+    "ants-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ]
+}

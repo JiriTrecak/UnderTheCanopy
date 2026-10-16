@@ -1,0 +1,17 @@
+{
+  "id": "asset.interface.main-menu.forest-aftermath",
+  "name": "forest aftermath",
+  "kind": "interface",
+  "tags": [
+    "main-menu",
+    "original"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "webp"
+    }
+  ],
+  "license": "Original Under the Canopy menu artwork, generated from approved concept."
+}

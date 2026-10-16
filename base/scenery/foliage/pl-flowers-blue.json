@@ -1,0 +1,7 @@
+{
+  "id": "scenery.pl-flowers-blue",
+  "name": "flowers blue",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.pl-flowers-blue"
+}

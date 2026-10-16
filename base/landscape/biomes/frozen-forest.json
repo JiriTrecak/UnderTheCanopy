@@ -1,0 +1,145 @@
+{
+  "name": "Frozen Forest",
+  "daylight": "winter",
+  "light": {
+    "sunTint": "#dceaff",
+    "sunStrength": 0.72,
+    "sunDirection": 0,
+    "sunHeight": 60,
+    "ambientTint": "#c4dcf5",
+    "ambientStrength": 0.7,
+    "skyTint": "#c5ddff",
+    "bounceTint": "#ffffff",
+    "fillStrength": 0.85,
+    "shadowSoftness": 3
+  },
+  "canopy": {
+    "height": 150,
+    "scale": 320,
+    "coverage": 0.45,
+    "softness": 0.22,
+    "strength": 0.12,
+    "sway": 1.2,
+    "speed": 0.35,
+    "cloudShadow": 0,
+    "seed": 731
+  },
+  "grade": {
+    "exposure": 1.12,
+    "contrast": 1.025,
+    "saturation": 1.05,
+    "highlightShoulder": 0,
+    "shadowTint": "#b8d7f3",
+    "highlightTint": "#ffffff",
+    "splitStrength": 0.16,
+    "shadowLift": 0,
+    "vignette": 0,
+    "daytimeLut": "asset.texture.woodland-daytime-grades/data.json#winter_day",
+    "daytimeLutStrength": 0
+  },
+  "bloom": {
+    "strength": 0.025,
+    "threshold": 1.8,
+    "knee": 0.15,
+    "radius": 1.5
+  },
+  "contact": {
+    "strength": 0.3,
+    "radius": 1.2,
+    "bias": 0.07
+  },
+  "atmosphere": {
+    "enabled": false,
+    "color": "#a8bdc6",
+    "density": 0,
+    "shaftDensity": 0,
+    "baseHeight": 1,
+    "heightFalloff": 4,
+    "sunStrength": 1,
+    "noiseScale": 0.09,
+    "noiseStrength": 0.65,
+    "driftSpeed": 0.35
+  },
+  "terrain": {
+    "soil": {
+      "albedo": "asset.terrain.winter-dirt",
+      "normal": "asset.terrain.winter-dirt-normal",
+      "tiling": 0.65,
+      "blend": -1
+    },
+    "grass": {
+      "albedo": "asset.terrain.winter-soil",
+      "normal": "asset.terrain.winter-soil-normal",
+      "tiling": 0.6,
+      "blend": 0.65
+    },
+    "dirt": {
+      "albedo": "asset.terrain.winter-dirt",
+      "normal": "asset.terrain.winter-dirt-normal",
+      "tiling": 0.2,
+      "blend": 0.5
+    },
+    "waterbed": {
+      "albedo": "asset.terrain.woodland-riverbed",
+      "normal": "asset.terrain.woodland-riverbed-normal",
+      "tiling": 0.05,
+      "blend": -1
+    },
+    "stones": {
+      "albedo": "asset.terrain.pebble-trail",
+      "normal": "asset.terrain.pebble-normal",
+      "tiling": 0.4,
+      "blend": 0.25
+    },
+    "rock": {
+      "albedo": "asset.terrain.winter-rock",
+      "normal": "asset.terrain.winter-rock-normal",
+      "tiling": 0.16,
+      "blend": -1,
+      "edge": 1
+    }
+  },
+  "water": "recipe.river.meltwater.water",
+  "surroundings": {
+    "floorTexture": "asset.terrain.winter-soil",
+    "floorColor": "#d1dbdb",
+    "hazeColor": "#c4d9e4",
+    "hazeStart": 170,
+    "hazeEnd": 850,
+    "forest": {
+      "trunk": "scenery.mega-oak-trunk",
+      "mushroom": "scenery.mega-mushroom",
+      "log": "scenery.mega-fallen-log",
+      "limbTexture": "asset.textures.forest-giants-bark",
+      "rings": [
+        {
+          "distance": 48,
+          "spacing": 92,
+          "height": 155
+        },
+        {
+          "distance": 145,
+          "spacing": 110,
+          "height": 195
+        },
+        {
+          "distance": 270,
+          "spacing": 120,
+          "height": 240
+        }
+      ],
+      "leafColors": [
+        "#729c98",
+        "#9ebbb7",
+        "#e0e6dd",
+        "#4b746d"
+      ],
+      "leafSpacing": 16,
+      "leafLength": 24
+    }
+  },
+  "groundCover": {
+    "radius": 1.3,
+    "strength": 0.8
+  }
+}

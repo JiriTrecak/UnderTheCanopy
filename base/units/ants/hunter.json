@@ -2,8 +2,8 @@
   "id": "unit.ants.hunter",
   "name": "Hunter",
   "description": "Spear infantry that charges enemy units from 3–8 building cells away. A clear approach grants double speed and a double-damage first hit, once every 8 seconds.",
-  "asset": "asset.ants.hunter",
-  "icon": "icon.ants.hunter",
+  "model": "asset.placeholder.missing-model",
+  "icon": "asset.icons.unit-ants-hunter",
   "selectionClass": "army",
   "body": {
     "maxHp": 600,
@@ -63,5 +63,13 @@
     "height": 5.2,
     "formationSpacing": 4.25
   },
-  "modelScale": 2.6
+  "modelScale": 2.6,
+  "presentation": {
+    "cameraAnchor": {
+      "height": 1.5,
+      "forward": 0.15,
+      "distance": 7
+    },
+    "healthHeight": 2.7
+  }
 }

@@ -1,0 +1,17 @@
+{
+  "id": "asset.texture.winter-macro",
+  "name": "winter macro",
+  "kind": "texture",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original artwork created for Under the Canopy."
+}

@@ -2,8 +2,8 @@
   "id": "unit.ants.bombardier",
   "name": "Bombardier",
   "description": "Back-mounted mortar fires arcing shells that damage enemies in a two-cell radius and slow movement by 20% for two seconds. Shells can be dodged.",
-  "asset": "asset.ants.bombardier",
-  "icon": "icon.ants.bombardier",
+  "model": "asset.models.units.ants-bombardier",
+  "icon": "asset.portraits.units.ants-bombardier",
   "selectionClass": "army",
   "body": {
     "maxHp": 500,
@@ -66,5 +66,11 @@
     "height": 4.8,
     "formationSpacing": 5.25
   },
-  "modelScale": 3.2
+  "modelScale": 3.2,
+  "presentation": {
+    "projectile": "effect.weapon.resin-bomb",
+    "projectileSocket": "socket_projectile",
+    "impactEffect": "effect.ants.resin-explosion",
+    "castContact": 0.3076923076923077
+  }
 }

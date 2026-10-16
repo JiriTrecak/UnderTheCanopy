@@ -34,9 +34,9 @@ const FIXED: usize = 6;
 /// Pack entry of a terrain material's packed tile (`data.bin`, `data_2.bin`, …).
 pub fn tile_entry(asset: &str, index: u32) -> String {
     if index <= 1 {
-        format!("assets/library/{asset}/data.bin")
+        format!("{asset}/data.bin")
     } else {
-        format!("assets/library/{asset}/data_{index}.bin")
+        format!("{asset}/data_{index}.bin")
     }
 }
 
@@ -487,7 +487,7 @@ pub fn build(
             cells: layout.cells,
         },
         surroundings: Some(Surroundings {
-            floor_texture: format!("assets/library/{}/albedo.png", s.floor_texture),
+            floor_texture: format!("{}/albedo.png", s.floor_texture),
             floor_color: s.floor_color.linear().to_array(),
             haze_color: s.haze_color.linear().to_array(),
             haze: [s.haze_start, s.haze_end],
@@ -605,10 +605,7 @@ mod tests {
         // The lowest layer present takes the full tile.
         assert_eq!(codes[0][1] & 16, 16);
         assert_eq!(codes[1][1] & 16, 0);
-        assert_eq!(tile_entry("asset.x", 1), "assets/library/asset.x/data.bin");
-        assert_eq!(
-            tile_entry("asset.x", 3),
-            "assets/library/asset.x/data_3.bin"
-        );
+        assert_eq!(tile_entry("asset.x", 1), "asset.x/data.bin");
+        assert_eq!(tile_entry("asset.x", 3), "asset.x/data_3.bin");
     }
 }

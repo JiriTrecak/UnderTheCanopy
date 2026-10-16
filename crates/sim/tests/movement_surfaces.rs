@@ -20,7 +20,7 @@ fn river() -> canopy_content::map::UtcMap {
         units,
         ground,
         vec![
-            json!({"id": "bridge.1", "asset": "asset.bridge-prop", "x": 50, "y": 66, "elevation": 0.6}),
+            json!({"id": "bridge.1", "asset": "scenery.asset.bridge-prop", "x": 50, "y": 66, "elevation": 0.6}),
         ],
     )
 }

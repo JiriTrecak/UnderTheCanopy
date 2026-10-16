@@ -2,8 +2,8 @@
   "id": "building.ants.barracks",
   "name": "Barracks",
   "description": "Trains the colony’s infantry and ranged troops.",
-  "asset": "asset.ants.leaf-garrison",
-  "icon": "icon.ants.leaf-garrison",
+  "model": "asset.models.buildings.ants-leaf-garrison",
+  "icon": "asset.portraits.buildings.ants-leaf-garrison",
   "body": {
     "maxHp": 1200,
     "armor": 5,

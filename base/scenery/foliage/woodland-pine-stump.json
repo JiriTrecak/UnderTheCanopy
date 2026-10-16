@@ -1,0 +1,7 @@
+{
+  "id": "scenery.woodland-pine-stump",
+  "name": "woodland pine stump",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.woodland-pine-stump"
+}

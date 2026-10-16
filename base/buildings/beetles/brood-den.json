@@ -2,8 +2,8 @@
   "id": "building.beetles.brood-den",
   "name": "Brood Den",
   "description": "An iron-banded shell nursery that provides eight supply for the beetle colony.",
-  "asset": "asset.beetles.armored-brood-den",
-  "icon": "icon.beetles.armored-brood-den",
+  "model": "asset.models.buildings.beetles-armored-brood-den",
+  "icon": "asset.portraits.buildings.beetles-armored-brood-den",
   "body": {
     "maxHp": 600,
     "armor": 3,

@@ -76,11 +76,11 @@ impl WaterConfig {
     pub fn textures(&self) -> gpu::WaterTextures {
         gpu::WaterTextures {
             reflection: Some(gpu::ReflectionCube {
-                entry: format!("assets/library/{}/data.bin", self.reflection.asset),
+                entry: format!("{}/data.bin", self.reflection.asset),
                 size: self.reflection.size,
                 levels: self.reflection.levels,
             }),
-            caustics: Some(format!("assets/library/{}/albedo.png", self.caustics)),
+            caustics: Some(format!("{}/albedo.png", self.caustics)),
         }
     }
 }
@@ -452,10 +452,7 @@ mod tests {
         )
         .unwrap();
         assert!(good.validate().is_ok());
-        assert_eq!(
-            good.textures().reflection.unwrap().entry,
-            "assets/library/r/data.bin"
-        );
+        assert_eq!(good.textures().reflection.unwrap().entry, "r/data.bin");
         let mut bad = good.clone();
         bad.reflection.levels = 8;
         assert!(bad.validate().is_err());

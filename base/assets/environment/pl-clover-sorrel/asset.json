@@ -1,0 +1,49 @@
+{
+  "id": "asset.models.environment.pl-clover-sorrel",
+  "name": "clover sorrel",
+  "kind": "foliage",
+  "tags": [
+    "pl-pack",
+    "woodland",
+    "clover"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "wind": {
+      "mode": "grass",
+      "strength": 0.04,
+      "speed": 0.16,
+      "stiffness": 0.9
+    },
+    "groundContact": {
+      "mode": "terrain"
+    }
+  },
+  "license": "Adapted from the purchased PL Stylized Fantasy Foliage Environment Assets Pack (licensed for this project); mesh rescaled and re-pivoted, albedo downsized."
+}

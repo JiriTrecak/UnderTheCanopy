@@ -2,8 +2,8 @@
   "id": "building.beetles.great-bastion",
   "name": "Great Bastion",
   "description": "Great Bastion of the beetle colony. Model pending.",
-  "asset": "asset.placeholder.missing-model",
-  "icon": "icon.item.root",
+  "model": "asset.placeholder.missing-model",
+  "icon": "asset.icons.resource-root",
   "body": {
     "maxHp": 2400,
     "armor": 6,

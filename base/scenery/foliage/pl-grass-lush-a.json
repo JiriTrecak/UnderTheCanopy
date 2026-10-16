@@ -1,0 +1,7 @@
+{
+  "id": "scenery.pl-grass-lush-a",
+  "name": "grass lush a",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.pl-grass-lush-a"
+}

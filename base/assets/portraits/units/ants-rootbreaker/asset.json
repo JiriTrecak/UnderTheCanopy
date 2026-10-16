@@ -1,0 +1,16 @@
+{
+  "id": "asset.portraits.units.ants-rootbreaker",
+  "name": "Ant Rootbreaker portrait",
+  "kind": "icon",
+  "tags": [
+    "portrait"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original reference-based artwork generated for Under the Canopy."
+}

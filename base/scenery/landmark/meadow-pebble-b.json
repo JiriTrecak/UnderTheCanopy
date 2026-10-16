@@ -1,0 +1,7 @@
+{
+  "id": "scenery.meadow-pebble-b",
+  "name": "meadow pebble b",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.meadow-pebble-b"
+}

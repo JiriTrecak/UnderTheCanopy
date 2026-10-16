@@ -10,7 +10,7 @@ use canopy_content::testing::{DataFolder, output, record};
 use serde_json::{Value, json};
 use std::sync::Arc;
 
-const CHIME: &str = "assets/library/asset.test.chime/audio.wav";
+const CHIME: &str = "asset.test.chime/audio.wav";
 
 fn sound_effect(id: &str, looping: bool) -> Value {
     json!({"id": id, "name": id, "durationTicks": 40, "loop": false,

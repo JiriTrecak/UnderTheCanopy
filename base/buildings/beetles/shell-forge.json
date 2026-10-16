@@ -2,8 +2,8 @@
   "id": "building.beetles.shell-forge",
   "name": "Shell Forge",
   "description": "Forges stronger weapons and armor for the beetle colony. Completed research benefits existing and future units.",
-  "asset": "asset.beetles.shell-foundry",
-  "icon": "icon.beetles.shell-foundry",
+  "model": "asset.models.buildings.beetles-shell-foundry",
+  "icon": "asset.portraits.buildings.beetles-shell-foundry",
   "body": {
     "maxHp": 1100,
     "armor": 5,

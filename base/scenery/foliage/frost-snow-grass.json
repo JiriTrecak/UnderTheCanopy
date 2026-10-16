@@ -1,0 +1,7 @@
+{
+  "id": "scenery.frost-snow-grass",
+  "name": "frost snow grass",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.frost-snow-grass"
+}

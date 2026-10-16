@@ -2,8 +2,8 @@
   "id": "building.neutral.corrupted-root",
   "name": "Corrupted Root",
   "description": "One miner extracts ten Root at a time; other workers queue. Deliver to a Rootworks.",
-  "asset": "asset.resource.corrupted-root",
-  "icon": "icon.item.root",
+  "model": "asset.models.resources.corrupted-root",
+  "icon": "asset.icons.resource-root",
   "footprint": {
     "width": 8,
     "depth": 8

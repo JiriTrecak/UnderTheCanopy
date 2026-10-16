@@ -1,0 +1,7 @@
+{
+  "id": "scenery.woodland-river-stones",
+  "name": "woodland river stones",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.woodland-river-stones"
+}

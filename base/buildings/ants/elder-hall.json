@@ -2,8 +2,8 @@
   "id": "building.ants.elder-hall",
   "name": "Elder Hall",
   "description": "Tier 3 Acorn Hall. Supports a roster of three distinct heroes.",
-  "asset": "asset.ants.queensguard-hall",
-  "icon": "icon.ants.queensguard-hall",
+  "model": "asset.models.buildings.ants-queensguard-hall",
+  "icon": "asset.portraits.buildings.ants-queensguard-hall",
   "body": {
     "maxHp": 3000,
     "armor": 6,

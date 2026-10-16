@@ -1,0 +1,32 @@
+{
+  "id": "asset.models.effects.resin-bomb",
+  "name": "Resin seed bomb",
+  "kind": "prop",
+  "tags": [
+    "weapon",
+    "projectile"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "license": "Original Under the Canopy seed-shell projectile."
+}

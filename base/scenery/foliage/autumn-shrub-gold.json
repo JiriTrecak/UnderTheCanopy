@@ -1,0 +1,7 @@
+{
+  "id": "scenery.autumn-shrub-gold",
+  "name": "autumn shrub gold",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.autumn-shrub-gold"
+}

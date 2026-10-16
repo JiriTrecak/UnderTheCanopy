@@ -2,8 +2,8 @@
   "id": "unit.ants.marshal",
   "name": "Ant Marshal",
   "description": "A seasoned colony champion armed with a heavy flanged mace. Gains experience from nearby enemy defeats.",
-  "asset": "asset.ants.marshal",
-  "icon": "icon.ants.marshal",
+  "model": "asset.models.units.ants-marshal",
+  "icon": "asset.portraits.units.ants-marshal",
   "hero": true,
   "level": 1,
   "selectionClass": "army",
@@ -277,5 +277,8 @@
       }
     ],
     "workTicks": 2200
+  },
+  "presentation": {
+    "castContact": 0.5384615384615384
   }
 }

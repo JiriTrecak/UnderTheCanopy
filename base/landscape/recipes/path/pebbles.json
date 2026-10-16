@@ -1,0 +1,12 @@
+{
+  "id": "recipe.path.pebbles",
+  "name": "Pebble forest trail",
+  "recipe": {
+    "type": "path",
+    "material": "asset.terrain.pebble-trail",
+    "width": 5,
+    "shoulder": 1.5,
+    "flatten": 0,
+    "vegetationClearance": 1
+  }
+}

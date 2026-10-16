@@ -2,8 +2,8 @@
   "id": "unit.neutral.tadpole-spirit",
   "name": "Tadpole Spirit",
   "description": "Bog Toad Hunters · ranged forest creature. Large amphibians and pond spirits hunting at the waterline.",
-  "asset": "asset.neutral.tadpole-spirit",
-  "icon": "icon.neutral.tadpole-spirit",
+  "model": "asset.models.units.neutral-tadpole-spirit",
+  "icon": "asset.portraits.units.neutral-tadpole-spirit",
   "selectionClass": "army",
   "dimensions": {
     "radius": 0.714,
@@ -41,5 +41,9 @@
   },
   "level": 3,
   "supplyCost": 1,
-  "modelScale": 1.7
+  "modelScale": 1.7,
+  "presentation": {
+    "projectile": "effect.weapon.thorn",
+    "projectileSocket": "socket_projectile"
+  }
 }

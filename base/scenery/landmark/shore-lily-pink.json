@@ -1,0 +1,7 @@
+{
+  "id": "scenery.shore-lily-pink",
+  "name": "shore lily pink",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.shore-lily-pink"
+}

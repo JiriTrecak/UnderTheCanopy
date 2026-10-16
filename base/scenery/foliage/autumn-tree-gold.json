@@ -1,0 +1,10 @@
+{
+  "id": "scenery.autumn-tree-gold",
+  "name": "autumn tree gold",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.autumn-tree-gold",
+  "harvesting": {
+    "definition": "resource.forest.tree"
+  }
+}

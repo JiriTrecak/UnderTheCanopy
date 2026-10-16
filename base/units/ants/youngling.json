@@ -2,8 +2,8 @@
   "id": "unit.ants.youngling",
   "name": "Youngling",
   "description": "Briarwatch campaign character.",
-  "asset": "asset.briar.civilian",
-  "icon": "icon.ants.settler",
+  "model": "asset.models.units.ants-worker",
+  "icon": "asset.portraits.units.ants-worker",
   "selectionClass": "worker",
   "body": {
     "maxHp": 80,

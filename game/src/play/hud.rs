@@ -564,7 +564,7 @@ impl Hud {
                     None => "This unit has no attack.".into(),
                 };
                 stats.push((
-                    Some("icon.action.attack".into()),
+                    Some("asset.icons.command-attack".into()),
                     "Damage",
                     trim(damage),
                     tip,

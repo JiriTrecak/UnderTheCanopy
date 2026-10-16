@@ -1,0 +1,7 @@
+{
+  "id": "scenery.woodland-moss-boulder",
+  "name": "woodland moss boulder",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.woodland-moss-boulder"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "scenery.frost-pine-b",
+  "name": "frost pine b",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.frost-pine-b",
+  "harvesting": {
+    "definition": "resource.forest.tree"
+  }
+}

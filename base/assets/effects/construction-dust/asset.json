@@ -1,0 +1,23 @@
+{
+  "id": "asset.effects.construction-dust",
+  "name": "Construction dust",
+  "kind": "texture",
+  "tags": [
+    "construction",
+    "effects",
+    "generated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original artwork generated for Under the Canopy."
+}

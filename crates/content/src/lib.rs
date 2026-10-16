@@ -22,4 +22,4 @@ mod registry;
 
 pub use error::{Error, Errors};
 pub use id::Id;
-pub use load::{BASE_DIR, Content, MANIFEST_FILE, collections};
+pub use load::{BASE_DIR, Content, collections};

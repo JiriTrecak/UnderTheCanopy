@@ -1,0 +1,23 @@
+{
+  "id": "asset.effects.holy-light-sigil",
+  "name": "Holy Light · floating sigil",
+  "kind": "texture",
+  "tags": [
+    "effect",
+    "holy-light",
+    "sigil"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original generated healing sigil source, 2026-09-30."
+}

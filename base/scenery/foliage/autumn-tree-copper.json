@@ -1,0 +1,10 @@
+{
+  "id": "scenery.autumn-tree-copper",
+  "name": "autumn tree copper",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.autumn-tree-copper",
+  "harvesting": {
+    "definition": "resource.forest.tree"
+  }
+}

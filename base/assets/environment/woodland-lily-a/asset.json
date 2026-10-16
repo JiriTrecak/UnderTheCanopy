@@ -1,0 +1,37 @@
+{
+  "id": "asset.models.environment.woodland-lily-a",
+  "name": "woodland lily a",
+  "kind": "foliage",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "water"
+    }
+  },
+  "license": "Original artwork created for Under the Canopy."
+}

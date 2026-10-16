@@ -1,0 +1,17 @@
+{
+  "id": "asset.texture.woodland-daytime-grades",
+  "name": "Woodland daytime color curves",
+  "kind": "texture",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "license": "Original artwork created for Under the Canopy."
+}

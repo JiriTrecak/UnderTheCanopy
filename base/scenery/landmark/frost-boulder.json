@@ -1,0 +1,7 @@
+{
+  "id": "scenery.frost-boulder",
+  "name": "frost boulder",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.frost-boulder"
+}

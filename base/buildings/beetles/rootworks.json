@@ -2,8 +2,8 @@
   "id": "building.beetles.rootworks",
   "name": "Rootworks",
   "description": "Rootworks of the beetle colony. Model pending.",
-  "asset": "asset.placeholder.missing-model",
-  "icon": "icon.item.root",
+  "model": "asset.placeholder.missing-model",
+  "icon": "asset.icons.resource-root",
   "body": {
     "maxHp": 1000,
     "armor": 5,

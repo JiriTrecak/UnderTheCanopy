@@ -1,0 +1,39 @@
+{
+  "id": "asset.models.environment.shore-boulder-b",
+  "name": "shore boulder b",
+  "kind": "prop",
+  "tags": [
+    "original",
+    "woodland",
+    "river"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    },
+    "vegetationClearance": 0.9
+  },
+  "license": "Original artwork created for Under the Canopy."
+}

@@ -1,0 +1,22 @@
+{
+  "id": "asset.icons.command-camera",
+  "name": "Cycle camera",
+  "kind": "icon",
+  "tags": [
+    "command",
+    "camera",
+    "ants"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png"
+    }
+  ]
+}

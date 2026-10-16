@@ -1,0 +1,7 @@
+{
+  "id": "scenery.canopy-acorns",
+  "name": "canopy acorns",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.canopy-acorns"
+}

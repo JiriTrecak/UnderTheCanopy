@@ -2,7 +2,7 @@
   "id": "research.beetles.broadheads",
   "name": "Broadheads",
   "description": "Stone Slingers deal 35% more attack damage.",
-  "icon": "icon.item.root",
+  "icon": "asset.icons.resource-root",
   "priority": 80,
   "items": [
     {

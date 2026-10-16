@@ -2,8 +2,8 @@
   "id": "unit.ants.queensguard",
   "name": "Queensguard",
   "description": "Elite armored protector. Shields nearby allies and braces behind a tower shield for additional armor at reduced speed.",
-  "asset": "asset.ants.queensguard",
-  "icon": "icon.ants.queensguard",
+  "model": "asset.models.units.ants-queensguard",
+  "icon": "asset.portraits.units.ants-queensguard",
   "selectionClass": "army",
   "body": {
     "maxHp": 720,
@@ -82,5 +82,8 @@
   "modelScale": 3.2,
   "requires": [
     "building.ants.great-mound"
-  ]
+  ],
+  "presentation": {
+    "castContact": 0.5
+  }
 }

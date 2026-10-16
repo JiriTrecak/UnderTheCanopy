@@ -1,0 +1,39 @@
+{
+  "id": "asset.models.environment.canopy-ancient-tree",
+  "name": "canopy ancient tree",
+  "kind": "prop",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "vegetationClearance": 5,
+    "canopy": true,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "license": "Original artwork created for Under the Canopy."
+}

@@ -322,7 +322,7 @@ fn forest(
         limb_texture: config
             .limb_texture
             .as_ref()
-            .map(|id| format!("assets/library/{id}/albedo.png")),
+            .map(|id| format!("{id}/albedo.png")),
         rings: config
             .rings
             .iter()

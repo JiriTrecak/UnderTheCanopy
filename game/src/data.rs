@@ -2,8 +2,8 @@
 //! the cooked pack, the map library with its menu overviews, and the identity of the
 //! content for saves and multiplayer.
 //!
-//! A packaged game ships the cooked pack instead of `assets/library` (D26), so content is
-//! read with `Content::load_packaged` when the library folder is absent.
+//! A packaged game ships the base package's documents and the cooked pack instead of the
+//! asset files (D26), so content is read with `Content::load_packaged` there.
 
 use crate::{paths::Paths, saves};
 use anyhow::{Context, Result, anyhow};
@@ -16,13 +16,6 @@ use canopy_content::{
 use canopy_net::ContentIdentity;
 use std::path::Path;
 use std::sync::Arc;
-
-/// Asset registry files whose bytes identify the content beside the base package's digest
-/// (saves, multiplayer `ready`), until assets move into the package (docs/packages.md).
-pub const IDENTITY_FILES: [&str; 2] = [
-    canopy_content::MANIFEST_FILE,
-    "assets/authoring/catalogue.json",
-];
 
 /// A map as the menus show it.
 #[derive(Debug, Clone)]
@@ -102,7 +95,7 @@ pub struct GameData {
     pub pack: Arc<Pack>,
     /// Sorted by name.
     pub maps: Vec<MapEntry>,
-    /// SHA-256 over [`IDENTITY_FILES`].
+    /// SHA-256 over the base package's digest (`Package::digest`).
     pub content_digest: String,
     /// The bytes behind the digest, kept for per-match identities.
     identity_parts: Vec<Vec<u8>>,
@@ -128,7 +121,7 @@ impl BootStage {
 
 /// Whether `data` is a packaged game's data folder.
 pub fn is_packaged(data: &Path) -> bool {
-    !data.join("assets/library").is_dir() && canopy_assets::find_pack(data).is_some()
+    data.join(canopy_assets::PACK_LOCATIONS[0]).is_file()
 }
 
 impl GameData {
@@ -158,13 +151,7 @@ impl GameData {
         let base_digest = base
             .digest()
             .with_context(|| format!("hashing {}", base.root.display()))?;
-        let identity_parts: Vec<Vec<u8>> = std::iter::once(base_digest.to_vec())
-            .chain(
-                IDENTITY_FILES
-                    .iter()
-                    .map(|f| std::fs::read(paths.data.join(f)).unwrap_or_default()),
-            )
-            .collect();
+        let identity_parts: Vec<Vec<u8>> = vec![base_digest.to_vec()];
         let content_digest = ContentIdentity::digest(
             canopy_net::wire::ABI,
             identity_parts.iter().map(Vec::as_slice),

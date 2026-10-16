@@ -691,9 +691,9 @@ impl Presenter {
                     .appearance
                     .get(&e.id)
                     .and_then(|a| a.0.clone())
-                    .unwrap_or_else(|| catalog.get(e.definition).asset.to_string());
+                    .unwrap_or_else(|| catalog.get(e.definition).model.to_string());
                 if let Some(file) = content
-                    .asset(&asset)
+                    .render_of(catalog.get(e.definition), &asset)
                     .and_then(|a| a.harvest_animation.clone())
                 {
                     felling.insert(file);
@@ -725,7 +725,7 @@ impl Presenter {
             if matches!(d.kind, Kind::Resource) {
                 continue;
             }
-            self.asset_model(d.asset.as_str());
+            self.asset_model(d.model.as_str());
             if let Some(visuals) = &d.resource_visuals {
                 for stage in &visuals.stages {
                     self.asset_model(stage.asset.as_str());
@@ -735,7 +735,7 @@ impl Presenter {
                 }
             }
             if let Some(effect) = content
-                .asset(d.asset.as_str())
+                .look(d.id.as_str())
                 .and_then(|a| a.projectile.clone())
             {
                 self.projectile_layers(effect.as_str());
@@ -808,7 +808,7 @@ impl Presenter {
     /// depletion stage, or its definition's.
     fn look(&self, e: &EntityView, d: &Definition) -> (String, f64) {
         let (placed, scale) = self.appearance.get(&e.id()).cloned().unwrap_or((None, 1.0));
-        let mut asset = placed.unwrap_or_else(|| d.asset.to_string());
+        let mut asset = placed.unwrap_or_else(|| d.model.to_string());
         let mut scale = scale;
         if let Some((form, form_scale)) = e.magic.as_ref().and_then(|m| m.form.as_ref()) {
             if let Some(form) = form {
@@ -907,7 +907,7 @@ impl Presenter {
             }
             let d = catalog.get(e.definition());
             let (asset_id, appearance_scale) = self.look(e, d);
-            let Some(asset) = content.asset(&asset_id) else {
+            let Some(asset) = content.render_of(d, &asset_id) else {
                 continue;
             };
             if asset.scenery_asset.is_some() {
@@ -1174,7 +1174,7 @@ impl Presenter {
                     // Carried goods at the back socket (or the old fixed offset).
                     if let Some(cargo) = work.and_then(|w| w.cargo.as_ref())
                         && let Some(item) = content.definition(cargo.item.as_str())
-                        && let Some(item_asset) = content.asset(item.asset.as_str())
+                        && let Some(item_asset) = content.look(item.id.as_str())
                         && let Some(item_file) = item_asset.file.clone()
                     {
                         let item_model = self.catalog.index(self.pack.as_deref(), &item_file);
@@ -1749,10 +1749,10 @@ impl Presenter {
             let (asset_id, scale) = self
                 .appearance
                 .get(id)
-                .map(|(a, s)| (a.clone().unwrap_or_else(|| d.asset.to_string()), *s))
-                .unwrap_or_else(|| (d.asset.to_string(), 1.0));
+                .map(|(a, s)| (a.clone().unwrap_or_else(|| d.model.to_string()), *s))
+                .unwrap_or_else(|| (d.model.to_string(), 1.0));
             let Some(file) = content
-                .asset(&asset_id)
+                .render_of(d, &asset_id)
                 .and_then(|a| a.harvest_animation.clone())
             else {
                 continue;
@@ -1854,7 +1854,7 @@ impl Presenter {
             .collect();
         for f in flights {
             let d = catalog.get(f.definition);
-            let Some(asset) = content.asset(d.asset.as_str()) else {
+            let Some(asset) = content.look(d.id.as_str()) else {
                 continue;
             };
             let Some(effect) = asset.projectile.clone() else {

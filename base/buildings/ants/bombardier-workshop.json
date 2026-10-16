@@ -2,8 +2,8 @@
   "id": "building.ants.bombardier-workshop",
   "name": "Bombardier Workshop",
   "description": "Equips free workers with Root-loaded mortars. Requires a Great Mound; each Bombardier consumes Amber, Wood, Root and one worker.",
-  "asset": "asset.ants.bombardier-workshop",
-  "icon": "icon.ants.bombardier-workshop",
+  "model": "asset.models.buildings.ants-bombardier-workshop",
+  "icon": "asset.portraits.buildings.ants-bombardier-workshop",
   "body": {
     "maxHp": 1400,
     "armor": 5,

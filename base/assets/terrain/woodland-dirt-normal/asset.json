@@ -1,0 +1,17 @@
+{
+  "id": "asset.terrain.woodland-dirt-normal",
+  "name": "woodland dirt · normal/height",
+  "kind": "terrain-material",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin"
+    }
+  ],
+  "license": "Original artwork created for Under the Canopy."
+}

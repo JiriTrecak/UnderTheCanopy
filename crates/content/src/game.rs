@@ -418,8 +418,11 @@ pub struct Definition {
     pub kind: Kind,
     pub name: String,
     pub description: String,
-    pub asset: Id,
+    /// The model asset (or a piece of scenery) it is drawn with.
+    pub model: Id,
     pub icon: Id,
+    /// How this definition shows its model, beyond the model's own display.
+    pub presentation: Option<DefinitionPresentation>,
     pub display_order: Option<i64>,
     pub hero: Option<bool>,
     /// Maximum distinct colony heroes, provided by the highest completed hall.
@@ -456,6 +459,25 @@ pub struct Definition {
     pub placement_near: Option<PlacementNear>,
     pub creation: Option<Creation>,
     pub behaviors: Behaviors,
+}
+
+/// What a definition adds to its model's display: weapon visuals, cast timing, camera,
+/// and the model's health bar height or animation profile when they differ for this use.
+#[skip_serializing_none]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DefinitionPresentation {
+    pub character: Option<Id>,
+    pub health_height: Option<f64>,
+    /// Visual effect of its missiles.
+    pub projectile: Option<Id>,
+    /// Model node missiles leave from.
+    pub projectile_socket: Option<String>,
+    /// Visual effect where its shells land.
+    pub impact_effect: Option<Id>,
+    /// Share of the cast animation at which a spell lands.
+    pub cast_contact: Option<f64>,
+    pub camera_anchor: Option<CameraAnchor>,
 }
 
 impl Definition {
@@ -796,4 +818,30 @@ pub struct Socket {
     pub name: String,
     pub node: String,
     pub offset: [f64; 3],
+}
+
+impl RenderAsset {
+    /// A render asset with nothing but an id to be set.
+    pub fn empty() -> Self {
+        Self {
+            id: Id::new("empty").expect("valid id"),
+            file: None,
+            image: None,
+            harvest_animation: None,
+            dimensions: None,
+            carry_asset: None,
+            character: None,
+            scale: None,
+            health_height: None,
+            camera_anchor: None,
+            stack_height: None,
+            stack_columns: None,
+            projectile: None,
+            impact_effect: None,
+            projectile_socket: None,
+            sockets: None,
+            cast_contact: None,
+            scenery_asset: None,
+        }
+    }
 }

@@ -240,7 +240,7 @@ fn units_may_stand_on_bridge_decks() {
     let mut document = with_entities(json!([{"id": "scout", "definition": "unit.worker",
         "position": {"x": 120, "y": 120, "surface": "bridge.1"}, "owner": "none"}]));
     document["stamps"] =
-        json!([{"id": "bridge.1", "asset": "asset.bridge-prop", "x": 120, "y": 120}]);
+        json!([{"id": "bridge.1", "asset": "scenery.asset.bridge-prop", "x": 120, "y": 120}]);
     let world = start(document, 2).unwrap();
     let scout = world
         .state()

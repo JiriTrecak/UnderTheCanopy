@@ -1,0 +1,7 @@
+{
+  "id": "scenery.shore-lily-white",
+  "name": "shore lily white",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.shore-lily-white"
+}

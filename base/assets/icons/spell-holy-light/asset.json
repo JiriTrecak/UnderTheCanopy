@@ -1,0 +1,22 @@
+{
+  "id": "asset.icons.spell-holy-light",
+  "name": "Holy Light spell icon",
+  "kind": "icon",
+  "tags": [
+    "spell",
+    "command-icon"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original built-in imagegen artwork. Prompt: Use case: stylized-concept. Create one square painted fantasy RTS spell command icon in a readable hand-painted classic RTS ability style. Original Holy Light icon: a luminous ivory-gold hand cupping a concentrated golden healing star, three broad shafts of sacred golden light descending into the palm, a simple curling golden halo above it. Dark ochre and deep brown background, intense lemon gold and warm ivory focal light. Bold chunky painterly shapes, powerful light-dark contrast, restrained detail, readable at 48x48 pixels. Full bleed square, no UI frame, no lettering, no text, no watermark, no montage. Not photorealistic, not a flat vector."
+}

@@ -1,0 +1,7 @@
+{
+  "id": "scenery.autumn-shrub-copper",
+  "name": "autumn shrub copper",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.autumn-shrub-copper"
+}

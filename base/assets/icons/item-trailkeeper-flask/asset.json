@@ -1,0 +1,16 @@
+{
+  "id": "asset.icons.item-trailkeeper-flask",
+  "name": "Trailkeeper Flask",
+  "kind": "icon",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ]
+}

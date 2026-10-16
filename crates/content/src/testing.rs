@@ -13,9 +13,10 @@ pub struct DataFolder {
     pub abilities: Value,
     /// Visual effects (one file each).
     pub effects: Value,
-    /// Records of `assets/manifest.json`; every output file is created on disk.
+    /// Asset records in the old registry shape (`outputs`, `render`, `scenery`), written as
+    /// asset folders with one-byte files, scenery definitions and definition presentation.
     pub records: Vec<Value>,
-    /// `assets/authoring/catalogue.json`.
+    /// Landscape catalogue entries in the old shape: kinds, harvesting, water, recipes.
     pub landscape: Value,
 }
 
@@ -31,8 +32,9 @@ impl DataFolder {
     }
 
     /// Writes the folder to a fresh directory named after `name` (unique per process) and
-    /// returns its path: the game document split into a base package (one file per
-    /// element, as docs/packages.md lays it out), and the asset registry beside it.
+    /// returns its path: the game document and the asset records split into a base
+    /// package (one file per element, one folder per asset, as docs/packages.md lays it
+    /// out).
     pub fn write(&self, name: &str) -> PathBuf {
         let root = std::env::temp_dir().join(format!("canopy-data-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
@@ -48,7 +50,11 @@ impl DataFolder {
             "package.json",
             &json!({"format": 1, "id": "base", "kind": "base", "name": "Test", "version": "1.0.0"}),
         );
-        let game = &self.game;
+        let assets = Assets::new(&self.records, &self.landscape);
+        assets.write(&base, &write);
+        let mut game = self.game.clone();
+        assets.rename_rules(&mut game);
+        let game = &game;
         for set in game["behaviorSets"].as_array().into_iter().flatten() {
             base(
                 &format!("behaviors/{}.json", set["id"].as_str().unwrap()),
@@ -74,6 +80,7 @@ impl DataFolder {
             if let Some(command) = overrides.remove(&format!("{verb}:{id}")) {
                 d.insert("command".into(), command);
             }
+            assets.rename_definition(&mut d);
             let folder = match kind.as_str() {
                 "unit" => "units",
                 "building" => "buildings",
@@ -167,16 +174,6 @@ impl DataFolder {
                 &Value::Object(e),
             );
         }
-        write(
-            crate::MANIFEST_FILE,
-            &json(&json!({"version": 1, "records": self.records})),
-        );
-        write("assets/authoring/catalogue.json", &json(&self.landscape));
-        for record in &self.records {
-            for output in record["outputs"].as_array().into_iter().flatten() {
-                write(output["path"].as_str().unwrap(), &[0]);
-            }
-        }
         root
     }
 
@@ -230,4 +227,259 @@ pub fn scenery_model(id: &str) -> Value {
         json!([{"id": scenery, "name": "Prop", "category": "resource", "type": "prop",
             "file": format!("library/{id}/geometry.glb")}]),
     )
+}
+
+/// Old-shape asset records converted as `tools/packages/migrate.py` converts shipped data:
+/// render ids become asset (or scenery) ids, render presentation moves to the definitions.
+struct Assets<'a> {
+    records: &'a [Value],
+    landscape: Vec<Value>,
+    /// Render id → (new id, render entry, the model's display entry).
+    renders: std::collections::BTreeMap<String, (String, Value, Value)>,
+}
+
+impl<'a> Assets<'a> {
+    fn new(records: &'a [Value], landscape: &Value) -> Self {
+        let mut renders = std::collections::BTreeMap::new();
+        for record in records {
+            let id = record["id"].as_str().unwrap();
+            let has_glb = outputs(record).any(|(_, f)| f.ends_with(".glb"));
+            let entries: Vec<&Value> = record["render"].as_array().into_iter().flatten().collect();
+            let display = entries
+                .iter()
+                .find(|e| e.get("file").is_some() && e.get("sceneryAsset").is_none())
+                .or_else(|| entries.iter().find(|e| e.get("file").is_some()))
+                .map(|e| (*e).clone())
+                .unwrap_or(Value::Null);
+            for e in &entries {
+                let new = if let Some(prop) = e["sceneryAsset"].as_str() {
+                    format!("scenery.{prop}")
+                } else if e.get("image").is_some() && has_glb {
+                    format!("{id}.portrait")
+                } else {
+                    id.to_string()
+                };
+                renders.insert(
+                    e["id"].as_str().unwrap().to_string(),
+                    (new, (*e).clone(), display.clone()),
+                );
+            }
+        }
+        Self {
+            records,
+            landscape: landscape.as_array().cloned().unwrap_or_default(),
+            renders,
+        }
+    }
+
+    fn id(&self, old: &Value) -> Value {
+        match old.as_str().and_then(|o| self.renders.get(o)) {
+            Some((new, _, _)) => Value::String(new.clone()),
+            None => old.clone(),
+        }
+    }
+
+    fn rename_definition(&self, d: &mut serde_json::Map<String, Value>) {
+        let Some(old) = d.remove("asset") else {
+            return;
+        };
+        d.insert("model".into(), self.id(&old));
+        if let Some(icon) = d.get("icon").cloned() {
+            d.insert("icon".into(), self.id(&icon));
+        }
+        if let Some((_, entry, display)) = old.as_str().and_then(|o| self.renders.get(o)) {
+            let mut presentation = serde_json::Map::new();
+            for key in [
+                "projectile",
+                "projectileSocket",
+                "impactEffect",
+                "castContact",
+                "cameraAnchor",
+            ] {
+                if let Some(v) = entry.get(key) {
+                    presentation.insert(key.into(), v.clone());
+                }
+            }
+            for key in ["healthHeight", "character"] {
+                if let Some(v) = entry.get(key)
+                    && entry.get("sceneryAsset").is_none()
+                    && display.get(key) != Some(v)
+                {
+                    presentation.insert(key.into(), v.clone());
+                }
+            }
+            if !presentation.is_empty() {
+                d.insert("presentation".into(), Value::Object(presentation));
+            }
+        }
+        if let Some(visuals) = d.get_mut("resourceVisuals") {
+            if let Some(variants) = visuals["variants"].as_array_mut() {
+                for v in variants.iter_mut() {
+                    *v = self.id(v);
+                }
+            }
+            if let Some(stages) = visuals["stages"].as_array_mut() {
+                for stage in stages {
+                    stage["asset"] = self.id(&stage["asset"]);
+                }
+            }
+        }
+    }
+
+    /// Icons and scaffolds the rules name.
+    fn rename_rules(&self, game: &mut Value) {
+        let rules = &mut game["rules"];
+        if rules.get("supplyIcon").is_some() {
+            rules["supplyIcon"] = self.id(&rules["supplyIcon"]);
+        }
+        for key in ["research", "armorTypes"] {
+            for v in rules[key]
+                .as_object_mut()
+                .into_iter()
+                .flat_map(|m| m.values_mut())
+            {
+                v["icon"] = self.id(&v["icon"]);
+            }
+        }
+        for race in rules["races"]
+            .as_object_mut()
+            .into_iter()
+            .flat_map(|m| m.values_mut())
+        {
+            if let Some(c) = race.get_mut("construction") {
+                c["scaffold"] = self.id(&c["scaffold"]);
+            }
+        }
+        let actions = &mut game["actions"];
+        for key in ["actions", "categories"] {
+            for v in actions[key]
+                .as_object_mut()
+                .into_iter()
+                .flat_map(|m| m.values_mut())
+            {
+                v["icon"] = self.id(&v["icon"]);
+            }
+        }
+        for v in actions["navigation"]
+            .as_object_mut()
+            .into_iter()
+            .flat_map(|m| m.values_mut())
+        {
+            v["icon"] = self.id(&v["icon"]);
+        }
+    }
+
+    fn write(&self, base: &dyn Fn(&str, &Value), write: &dyn Fn(&str, &[u8])) {
+        let landscape = |id: &str| self.landscape.iter().find(|l| l["id"] == id);
+        for record in self.records {
+            let id = record["id"].as_str().unwrap();
+            let files: Vec<(String, String)> = outputs(record).collect();
+            let has_glb = files.iter().any(|(_, f)| f.ends_with(".glb"));
+            let portrait = record["render"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .any(|e| e.get("image").is_some())
+                && has_glb;
+            let mut resources = Vec::new();
+            for (_, file) in &files {
+                let (stem, format) = file.rsplit_once('.').unwrap();
+                let (role, index) = match stem.rsplit_once('_') {
+                    Some((r, i)) if i.parse::<u32>().is_ok() => {
+                        (r.to_string(), i.parse::<u32>().unwrap())
+                    }
+                    _ => (stem.to_string(), 1),
+                };
+                if portrait && role == "image" {
+                    write(
+                        &format!("{}/assets/{id}.portrait/{file}", crate::BASE_DIR),
+                        &[0],
+                    );
+                    base(
+                        &format!("assets/{id}.portrait/asset.json"),
+                        &json!({"id": format!("{id}.portrait"), "name": id, "kind": "icon",
+                            "resources": [{"role": "image", "index": 1, "format": format}]}),
+                    );
+                    continue;
+                }
+                write(&format!("{}/assets/{id}/{file}", crate::BASE_DIR), &[0]);
+                resources.push(json!({"role": role, "index": index, "format": format}));
+            }
+            let entry = landscape(id);
+            let kind =
+                entry
+                    .and_then(|e| e["kind"].as_str())
+                    .unwrap_or(match record["kind"].as_str() {
+                        Some("audio") => "audio",
+                        _ if has_glb => "prop",
+                        _ if files.iter().any(|(_, f)| f.starts_with("image")) => "icon",
+                        _ => "texture",
+                    });
+            let mut asset =
+                json!({"id": id, "name": record["name"], "kind": kind, "resources": resources});
+            if has_glb {
+                asset["transform"] =
+                    json!({"scale": 1, "pivot": [0, 0, 0], "up": "Y", "forward": "+Z"});
+            }
+            if let Some((_, _, display)) = record["render"]
+                .as_array()
+                .and_then(|r| r.first())
+                .and_then(|e| self.renders.get(e["id"].as_str().unwrap()))
+            {
+                let mut d = serde_json::Map::new();
+                for key in ["scale", "character", "healthHeight"] {
+                    if let Some(v) = display.get(key) {
+                        d.insert(key.into(), v.clone());
+                    }
+                }
+                if !d.is_empty() && has_glb {
+                    asset["display"] = Value::Object(d);
+                }
+            }
+            if let Some(terrain) = entry.and_then(|e| e.get("terrain")) {
+                asset["terrain"] = terrain.clone();
+            }
+            base(&format!("assets/{id}/asset.json"), &asset);
+            for scenery in record["scenery"].as_array().into_iter().flatten() {
+                let prop = scenery["id"].as_str().unwrap();
+                let mut s = scenery.as_object().unwrap().clone();
+                s.remove("file");
+                s.insert("id".into(), json!(format!("scenery.{prop}")));
+                s.insert("model".into(), json!(id));
+                if let Some(h) = entry
+                    .filter(|e| e["scenery"] == prop)
+                    .and_then(|e| e.get("harvesting"))
+                {
+                    s.insert("harvesting".into(), json!({"definition": h["definition"]}));
+                }
+                base(&format!("scenery/{prop}.json"), &Value::Object(s));
+            }
+        }
+        for entry in &self.landscape {
+            let id = entry["id"].as_str().unwrap();
+            if let Some(water) = entry.get("water") {
+                base(
+                    &format!("landscape/water/{id}.json"),
+                    &json!({"id": id, "name": entry["name"], "water": water}),
+                );
+            }
+            if let Some(recipe) = entry.get("recipe") {
+                base(
+                    &format!("landscape/recipes/{id}.json"),
+                    &json!({"id": id, "name": entry["name"], "recipe": recipe}),
+                );
+            }
+        }
+    }
+}
+
+/// (role, file name) of each output of an old-shape record.
+fn outputs(record: &Value) -> impl Iterator<Item = (String, String)> + '_ {
+    record["outputs"].as_array().into_iter().flatten().map(|o| {
+        let path = o["path"].as_str().unwrap();
+        (
+            o["role"].as_str().unwrap_or_default().to_string(),
+            path.rsplit('/').next().unwrap().to_string(),
+        )
+    })
 }

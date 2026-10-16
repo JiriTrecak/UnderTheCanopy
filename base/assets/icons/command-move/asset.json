@@ -1,0 +1,16 @@
+{
+  "id": "asset.icons.command-move",
+  "name": "Move",
+  "kind": "icon",
+  "tags": [
+    "ants-v1",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ]
+}

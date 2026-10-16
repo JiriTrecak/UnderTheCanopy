@@ -1,0 +1,21 @@
+{
+  "id": "image.woodland-health-fill",
+  "name": "Woodland Health Fill",
+  "kind": "interface",
+  "tags": [
+    "interface",
+    "woodland-interface"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png"
+    }
+  ]
+}

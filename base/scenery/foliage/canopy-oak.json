@@ -1,0 +1,10 @@
+{
+  "id": "scenery.canopy-oak",
+  "name": "canopy oak",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.canopy-oak",
+  "harvesting": {
+    "definition": "resource.forest.tree"
+  }
+}

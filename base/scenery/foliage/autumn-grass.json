@@ -1,0 +1,7 @@
+{
+  "id": "scenery.autumn-grass",
+  "name": "autumn grass",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.autumn-grass"
+}

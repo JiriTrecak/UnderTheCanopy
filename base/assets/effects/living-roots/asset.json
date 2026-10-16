@@ -1,0 +1,22 @@
+{
+  "id": "asset.effects.living-roots",
+  "name": "living roots effect texture",
+  "kind": "texture",
+  "tags": [
+    "spell",
+    "effect"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original built-in imagegen. Prompt: A game VFX cutout of a low circular cage of thick winding living roots viewed from the side in three quarter perspective, with 5 curled root tips pointing upward and tiny green leaves, glowing emerald veins. Empty transparent center so a character can be seen through it, transparent outside. Clean stylized painted wood, broad readable shapes. No ground, scene, text, or frame. Original square fantasy RTS command icon; hand-painted chunky shapes, high contrast; no text, frame or watermark."
+}

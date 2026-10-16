@@ -1,0 +1,7 @@
+{
+  "id": "scenery.pl-grass-tall",
+  "name": "grass tall",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.pl-grass-tall"
+}

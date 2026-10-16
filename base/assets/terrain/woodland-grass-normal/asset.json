@@ -1,0 +1,17 @@
+{
+  "id": "asset.terrain.woodland-grass-normal",
+  "name": "woodland grass · normal/height",
+  "kind": "terrain-material",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin"
+    }
+  ],
+  "license": "Original artwork created for Under the Canopy."
+}

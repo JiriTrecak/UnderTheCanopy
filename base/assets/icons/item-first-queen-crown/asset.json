@@ -1,0 +1,16 @@
+{
+  "id": "asset.icons.item-first-queen-crown",
+  "name": "First Queen Crown",
+  "kind": "icon",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ]
+}

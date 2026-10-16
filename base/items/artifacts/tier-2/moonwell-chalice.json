@@ -3,8 +3,8 @@
   "itemTier": 2,
   "name": "Moonwell Chalice",
   "description": "+140 maximum mana and +1.5 mana per second.",
-  "asset": "asset.item.chest",
-  "icon": "icon.item.moonwell-chalice",
+  "model": "asset.placeholder.missing-model",
+  "icon": "asset.icons.item-moonwell-chalice",
   "stackLimit": 1,
   "behaviors": {},
   "itemEffect": {

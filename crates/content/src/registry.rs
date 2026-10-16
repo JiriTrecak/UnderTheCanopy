@@ -481,13 +481,13 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
     if d.id.prefix() != d.kind.name() {
         check.fail(at, "ID prefix must match kind");
     }
-    let model = check.model(at, d.asset.as_str(), "asset");
+    let model = check.model(at, d.model.as_str(), "model");
     if let Some(visuals) = &d.resource_visuals {
         if d.resource_yield.is_none_or(|y| y == 0) {
             check.fail(at, "resource visuals require a yield");
         }
-        if !visuals.variants.contains(&d.asset) {
-            check.fail(at, "default asset must be a full resource variant");
+        if !visuals.variants.contains(&d.model) {
+            check.fail(at, "the model must be a full resource variant");
         }
         for id in visuals
             .variants
@@ -505,7 +505,7 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
         }
     }
     check.image(at, d.icon.as_str(), "icon");
-    let asset = content.asset(d.asset.as_str());
+    let asset = content.asset(d.model.as_str());
     let scenery = asset.is_some_and(|a| a.scenery_asset.is_some());
     if model && d.kind != Kind::Resource && scenery {
         check.fail(at, "batched scenery models require a resource definition");

@@ -2,8 +2,8 @@
   "id": "building.neutral.amber-mine",
   "name": "Amber Node",
   "description": "One miner extracts ten amber at a time; other workers queue. Five nodes form a standard amber site.",
-  "asset": "asset.resource.amber-crystal-1",
-  "icon": "icon.neutral.amber-deposit",
+  "model": "asset.models.resources.amber-crystal-1",
+  "icon": "asset.portraits.resources.amber-deposit",
   "footprint": {
     "width": 4,
     "depth": 4
@@ -29,20 +29,20 @@
   "modelScale": 0.28,
   "resourceVisuals": {
     "variants": [
-      "asset.resource.amber-crystal-1",
-      "asset.resource.amber-crystal-2",
-      "asset.resource.amber-crystal-3",
-      "asset.resource.amber-crystal-4",
-      "asset.resource.amber-crystal-5"
+      "asset.models.resources.amber-crystal-1",
+      "asset.models.resources.amber-crystal-2",
+      "asset.models.resources.amber-crystal-3",
+      "asset.models.resources.amber-crystal-4",
+      "asset.models.resources.amber-crystal-5"
     ],
     "stages": [
       {
         "remaining": 0,
-        "asset": "asset.resource.amber-crystal-empty"
+        "asset": "asset.models.resources.amber-crystal-empty"
       },
       {
         "remaining": 0.3333333333333333,
-        "asset": "asset.resource.amber-crystal-low"
+        "asset": "asset.models.resources.amber-crystal-low"
       }
     ]
   }

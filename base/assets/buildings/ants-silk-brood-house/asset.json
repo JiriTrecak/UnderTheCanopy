@@ -1,0 +1,76 @@
+{
+  "id": "asset.models.buildings.ants-silk-brood-house",
+  "name": "Silk Brood House",
+  "kind": "building",
+  "tags": [
+    "ants",
+    "tripo",
+    "team-mask"
+  ],
+  "race": "ants",
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    },
+    {
+      "role": "team_mask",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_TeamColor"
+      ],
+      "mask": {
+        "role": "team_mask",
+        "index": 1
+      }
+    },
+    "blocker": {
+      "shape": "box",
+      "size": [
+        8,
+        8
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 4,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 7.2727272727272725,
+    "healthHeight": 4.9093828201293945
+  },
+  "shading": "building",
+  "license": "Original generated artwork for Under the Canopy."
+}

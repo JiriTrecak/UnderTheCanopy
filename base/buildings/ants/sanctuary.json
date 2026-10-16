@@ -2,8 +2,8 @@
   "id": "building.ants.sanctuary",
   "name": "Amber Sanctuary",
   "description": "Calls fallen heroes back to the colony, preserving their experience, abilities and inventory.",
-  "asset": "asset.ants.sanctuary",
-  "icon": "icon.item.amber",
+  "model": "asset.placeholder.missing-model",
+  "icon": "asset.icons.resource-amber",
   "body": {
     "maxHp": 1000,
     "armor": 5,
@@ -76,5 +76,8 @@
   "command": {
     "category": "category.build",
     "priority": 70
+  },
+  "presentation": {
+    "healthHeight": 4.9
   }
 }

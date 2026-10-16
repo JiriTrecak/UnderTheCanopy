@@ -1,0 +1,16 @@
+{
+  "id": "asset.icons.stat-armor-light",
+  "name": "Armor Light",
+  "kind": "icon",
+  "tags": [
+    "ants-v1",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ]
+}

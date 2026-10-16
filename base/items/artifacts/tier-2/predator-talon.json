@@ -3,8 +3,8 @@
   "itemTier": 2,
   "name": "Predator’s Talon",
   "description": "+10 damage. Basic attacks restore 10% of damage dealt as health.",
-  "asset": "asset.item.chest",
-  "icon": "icon.item.predator-talon",
+  "model": "asset.placeholder.missing-model",
+  "icon": "asset.icons.item-predator-talon",
   "stackLimit": 1,
   "behaviors": {},
   "itemEffect": {

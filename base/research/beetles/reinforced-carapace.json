@@ -2,7 +2,7 @@
   "id": "research.beetles.reinforced-carapace",
   "name": "Reinforced Carapace",
   "description": "Horn Guards gain 150 maximum health and 2 armor. Existing wounds are preserved.",
-  "icon": "icon.item.root",
+  "icon": "asset.icons.resource-root",
   "priority": 90,
   "items": [
     {

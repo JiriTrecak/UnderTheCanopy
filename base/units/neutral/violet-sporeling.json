@@ -2,8 +2,8 @@
   "id": "unit.neutral.violet-sporeling",
   "name": "Violet Sporeling",
   "description": "The Rotwood Court · ranged forest creature. A corrupted ancient surrounded by rootbeasts and violet spores.",
-  "asset": "asset.neutral.violet-sporeling",
-  "icon": "icon.neutral.violet-sporeling",
+  "model": "asset.models.units.neutral-violet-sporeling",
+  "icon": "asset.portraits.units.neutral-violet-sporeling",
   "selectionClass": "army",
   "dimensions": {
     "radius": 1.156,
@@ -41,5 +41,9 @@
   },
   "level": 6,
   "supplyCost": 1,
-  "modelScale": 1.7
+  "modelScale": 1.7,
+  "presentation": {
+    "projectile": "effect.weapon.thorn",
+    "projectileSocket": "socket_projectile"
+  }
 }

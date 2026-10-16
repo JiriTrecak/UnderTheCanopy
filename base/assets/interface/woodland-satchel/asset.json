@@ -1,0 +1,21 @@
+{
+  "id": "image.woodland-satchel",
+  "name": "Woodland Satchel",
+  "kind": "interface",
+  "tags": [
+    "interface",
+    "woodland-interface"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png"
+    }
+  ]
+}

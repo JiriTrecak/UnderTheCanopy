@@ -1,0 +1,7 @@
+{
+  "id": "scenery.woodland-mushroom-cluster",
+  "name": "woodland mushroom cluster",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.woodland-mushroom-cluster"
+}

@@ -1,0 +1,48 @@
+{
+  "id": "asset.models.environment.woodland-fallen-log",
+  "name": "woodland fallen log",
+  "kind": "prop",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "albedo",
+      "index": 2,
+      "format": "png"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "vegetationClearance": 0.25,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "license": "Original artwork created for Under the Canopy."
+}

@@ -1,0 +1,56 @@
+{
+  "id": "asset.models.resources.corrupted-root",
+  "name": "Corrupted Root Deposit",
+  "kind": "prop",
+  "tags": [
+    "original",
+    "neutral",
+    "woodland",
+    "resource",
+    "tripo"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "blocker": {
+      "shape": "box",
+      "size": [
+        15,
+        15
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 7.5,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 2,
+    "healthHeight": 7.6
+  },
+  "license": "Original artwork created for Under the Canopy."
+}

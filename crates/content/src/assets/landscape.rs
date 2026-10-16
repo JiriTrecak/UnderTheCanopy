@@ -1,25 +1,15 @@
-//! `assets/authoring/catalogue.json`: the landscape index (`LandscapeAsset[]`,
-//! `src/shared/authoring/catalogue.ts`), read by `src/shared/authoring/project.ts` and
-//! `groundTextures.ts`. Map scenes are generated from it: landscape recipes
-//! (`landscapeRecipeSchema`), water profiles (`waterProfileSchema`) and ground textures
-//! (`groundTextureSchema`).
-//!
-//! Publication writes the zod *output* of those schemas, so fields with zod defaults are
-//! always present and are required here.
+//! The landscape catalogue the map scene is generated from, built from packages
+//! ([`super::package`]): placeable models and scenery, ground textures, water profiles and
+//! landscape recipes.
 
-use super::{AuthoringId, Manifest, ResourceRef, output_paths, read, unique};
+use super::{AuthoringId, Manifest, ResourceRef, output_paths};
 use crate::{
     error::Error,
     game::{Definition, Kind},
 };
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    path::Path,
-};
-
-pub const CATALOGUE_FILE: &str = "assets/authoring/catalogue.json";
+use std::collections::{BTreeMap, BTreeSet};
 
 /// One published asset that takes part in landscape generation.
 #[skip_serializing_none]
@@ -423,19 +413,6 @@ pub struct Atlas {
     pub corners: Option<Vec<Option<u32>>>,
 }
 
-/// Reads `assets/authoring/catalogue.json`; ids are unique.
-pub fn load(data: &Path, errors: &mut Vec<Error>) -> Option<Vec<LandscapeAsset>> {
-    let assets: Vec<LandscapeAsset> = read(data, CATALOGUE_FILE, errors)?;
-    unique(
-        CATALOGUE_FILE,
-        "",
-        "asset",
-        assets.iter().map(|a| a.id.as_str()),
-        errors,
-    );
-    Some(assets)
-}
-
 /// Landscape rules against the published records and the resolved definitions
 /// ([`crate::Content`]'s `manifest` and `definitions`): every entry is a
 /// published record; scenery, species, materials, water profiles and terrain images
@@ -464,11 +441,7 @@ pub fn validate(
         assets.iter().map(|a| (a.id.as_str(), a)).collect();
     for asset in assets {
         let location = asset.id.to_string();
-        let mut fail =
-            |message: String| errors.push(Error::new(CATALOGUE_FILE, &location, message));
-        if !records.contains(asset.id.as_str()) {
-            fail("not a published asset record".into());
-        }
+        let mut fail = |message: String| errors.push(Error::new("landscape", &location, message));
         if let Some(id) = &asset.scenery
             && !scenery.contains(id.as_str())
         {

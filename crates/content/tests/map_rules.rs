@@ -130,7 +130,7 @@ fn valid() -> Value {
         json!([
             creep("creep.1"),
             {"id": "mine.1", "definition": "building.mine", "position": {"x": 60.5, "y": 60.5}, "owner": "none", "initialState": {"amount": 50, "construction": "complete"}},
-            {"id": "tree.1", "definition": "resource.tree", "position": {"x": 70, "y": 70}, "owner": "none", "appearance": {"asset": "asset.tree", "scale": 1.2}},
+            {"id": "tree.1", "definition": "resource.tree", "position": {"x": 70, "y": 70}, "owner": "none", "appearance": {"asset": "scenery.asset.tree-prop", "scale": 1.2}},
             {"id": "charm", "definition": "item.charm", "position": {"x": 72, "y": 70}, "owner": "none", "initialState": {"quantity": 1}},
         ]),
     );
@@ -258,7 +258,7 @@ fn placements_reference_fitting_definitions() {
             "appearance must reference a model",
         ),
         (
-            json!({"appearance": {"asset": "asset.tree"}}),
+            json!({"appearance": {"asset": "scenery.asset.tree-prop"}}),
             "batched scenery appearance requires a resource",
         ),
         (

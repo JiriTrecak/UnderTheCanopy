@@ -2,8 +2,8 @@
   "id": "item.amber",
   "name": "Amber",
   "description": "Precious forest resin mined from ancient roots and carried to the Mound.",
-  "asset": "asset.item.amber",
-  "icon": "icon.item.amber",
+  "model": "asset.models.cargo.amber",
+  "icon": "asset.icons.resource-amber",
   "stackLimit": 16,
   "behaviors": {},
   "creation": {

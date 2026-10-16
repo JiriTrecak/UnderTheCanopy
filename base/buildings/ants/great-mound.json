@@ -2,8 +2,8 @@
   "id": "building.ants.great-mound",
   "name": "Great Acorn Hall",
   "description": "The colony main hall stores resources, trains workers and provides 15 supply.",
-  "asset": "asset.ants.queensguard-hall",
-  "icon": "icon.ants.queensguard-hall",
+  "model": "asset.models.buildings.ants-queensguard-hall",
+  "icon": "asset.portraits.buildings.ants-queensguard-hall",
   "body": {
     "maxHp": 2400,
     "armor": 6,

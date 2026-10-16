@@ -1,0 +1,14 @@
+{
+  "id": "scenery.woodland-drift-log",
+  "name": "Waterworn drift log",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.woodland-drift-log",
+  "blockers": [
+    {
+      "width": 9,
+      "depth": 1.8,
+      "shape": "ellipse"
+    }
+  ]
+}

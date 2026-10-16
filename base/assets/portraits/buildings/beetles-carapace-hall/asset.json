@@ -1,0 +1,16 @@
+{
+  "id": "asset.portraits.buildings.beetles-carapace-hall",
+  "name": "Carapace Bastion portrait",
+  "kind": "icon",
+  "tags": [
+    "portrait"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original artwork created for Under the Canopy."
+}

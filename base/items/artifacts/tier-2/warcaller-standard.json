@@ -3,8 +3,8 @@
   "itemTier": 2,
   "name": "Warcaller’s Standard",
   "description": "Aura: allied units within 6 tiles gain 10% attack damage.",
-  "asset": "asset.item.chest",
-  "icon": "icon.item.warcaller-standard",
+  "model": "asset.placeholder.missing-model",
+  "icon": "asset.icons.item-warcaller-standard",
   "stackLimit": 1,
   "behaviors": {},
   "itemEffect": {

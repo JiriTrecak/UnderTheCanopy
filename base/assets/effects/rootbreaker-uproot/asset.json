@@ -1,0 +1,44 @@
+{
+  "id": "asset.models.effects.rootbreaker-uproot",
+  "name": "Rootbreaker · Uproot eruption",
+  "kind": "prop",
+  "tags": [
+    "spell",
+    "roots",
+    "rootbreaker",
+    "tripo"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "animations": [
+      {
+        "semantic": "erupt",
+        "clip": "erupt",
+        "loop": false,
+        "events": []
+      }
+    ]
+  },
+  "license": "Original generated artwork for Under the Canopy. Tripo task 16fa7b55-7efb-42ec-82b7-b94add512c72; Blender ground-eruption animation."
+}

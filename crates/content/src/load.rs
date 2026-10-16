@@ -19,8 +19,6 @@ use std::{collections::BTreeMap, path::Path};
 
 /// The base package's folder in the data folder.
 pub const BASE_DIR: &str = "base";
-/// The asset registry, still outside the package until assets move in (M0 step 2).
-pub const MANIFEST_FILE: &str = "assets/manifest.json";
 
 /// Collections of game data, by package folder.
 pub mod collections {
@@ -72,12 +70,19 @@ pub struct Content {
     pub definitions: Vec<Definition>,
     pub rules: Rules,
     pub actions: Actions,
-    /// Render assets of every published record, sorted by id.
+    /// How every asset and piece of scenery is drawn, sorted by id.
     pub render_assets: Vec<RenderAsset>,
+    /// How each definition is drawn: its model's render asset with the definition's
+    /// presentation applied, by definition index.
+    pub looks: Vec<RenderAsset>,
+    /// The asset records, built from the asset folders ([`assets::package`]).
     pub manifest: Manifest,
-    /// Landscape catalogue (`assets/authoring/catalogue.json`): scenery, ground textures,
-    /// water profiles and recipes the map scene is compiled from.
+    /// Landscape catalogue: scenery, ground textures, water profiles and recipes the map
+    /// scene is compiled from.
     pub landscape: Vec<LandscapeAsset>,
+    /// Every asset and piece of scenery as authored.
+    pub assets: Vec<assets::package::AssetDefinition>,
+    pub scenery: Vec<assets::package::SceneryDefinition>,
     /// Sorted by id.
     pub abilities: AbilityLibrary,
     /// Sorted by id.
@@ -247,32 +252,49 @@ fn campaigns(packages: &[Package], errors: &mut Vec<Error>) -> Value {
     Value::Object(map)
 }
 
+/// A definition's look: `model` (its model's render asset, when there is one) with the
+/// definition's presentation applied.
+fn look(model: Option<&RenderAsset>, d: &Definition) -> RenderAsset {
+    let mut look = model.cloned().unwrap_or_else(RenderAsset::empty);
+    look.id = d.model.clone();
+    if let Some(p) = &d.presentation {
+        if p.character.is_some() {
+            look.character = p.character.clone();
+        }
+        if p.health_height.is_some() {
+            look.health_height = p.health_height;
+        }
+        look.projectile = p.projectile.clone();
+        look.projectile_socket = p.projectile_socket.clone();
+        look.impact_effect = p.impact_effect.clone();
+        look.cast_contact = p.cast_contact;
+        look.camera_anchor = p.camera_anchor.clone();
+    }
+    look
+}
+
 impl Content {
     /// Reads, resolves and validates the base package of `data` (the folder holding
-    /// `base/` and `assets/`). Returns every problem found, not just the first.
+    /// `base/`). Returns every problem found, not just the first.
     pub fn load(data: &Path) -> Result<Self, Errors> {
         Self::load_with(data, assets::Files::Check)
     }
 
-    /// Loads a packaged game's data: like [`Content::load`], but published asset outputs
-    /// are not required on disk, because the cooked pack replaces them.
+    /// Loads a packaged game's data: like [`Content::load`], but asset files are not
+    /// required on disk, because the cooked pack replaces them.
     pub fn load_packaged(data: &Path) -> Result<Self, Errors> {
         Self::load_with(data, assets::Files::Skip)
     }
 
     fn load_with(data: &Path, files: assets::Files) -> Result<Self, Errors> {
         let base = Package::open(&data.join(BASE_DIR)).map_err(|e| Errors(vec![e]))?;
-        Self::from_packages(data, &[base], files)
+        Self::from_packages(&[base], files)
     }
 
-    /// Resolves `packages` in load order (the base first) with the assets of `data`.
-    pub fn from_packages(
-        data: &Path,
-        packages: &[Package],
-        asset_files: assets::Files,
-    ) -> Result<Self, Errors> {
+    /// Resolves `packages` in load order (the base first).
+    pub fn from_packages(packages: &[Package], asset_files: assets::Files) -> Result<Self, Errors> {
         let mut errors = check_order(packages);
-        let content = Self::read(data, packages, asset_files, &mut errors);
+        let content = Self::read(packages, asset_files, &mut errors);
         match content {
             Some(content) if errors.is_empty() => {
                 registry::validate(&content, &mut errors);
@@ -287,7 +309,6 @@ impl Content {
     }
 
     fn read(
-        data: &Path,
         packages: &[Package],
         asset_files: assets::Files,
         errors: &mut Vec<Error>,
@@ -310,18 +331,16 @@ impl Content {
             registry::resolve_definitions(&source.behavior_sets, source.definitions, errors);
         let abilities = abilities::read(source.abilities, &files, errors);
         let effects = effects::read(source.effects, errors);
-        let manifest: Option<Manifest> = assets::load_with(data, asset_files, errors);
-        let landscape = assets::landscape::load(data, errors);
-
-        let manifest = manifest?;
+        let index = assets::package::index(packages, asset_files, errors);
+        let manifest = index.manifest;
         let mut render_assets: Vec<RenderAsset> = assets::render_assets(&manifest);
         render_assets.sort_by(|a, b| a.id.cmp(&b.id));
         for pair in render_assets.windows(2) {
             if pair[0].id == pair[1].id {
                 errors.push(Error::new(
-                    MANIFEST_FILE,
-                    "render",
-                    format!("duplicate asset {}", pair[0].id),
+                    "assets",
+                    pair[0].id.as_str(),
+                    "an asset and a piece of scenery share this id",
                 ));
             }
         }
@@ -335,13 +354,26 @@ impl Content {
             .enumerate()
             .map(|(i, a)| (a.id.to_string(), i))
             .collect();
+        let asset_of = |id: &str| {
+            render_assets
+                .binary_search_by(|a| a.id.as_str().cmp(id))
+                .ok()
+                .map(|i| &render_assets[i])
+        };
+        let looks = definitions
+            .iter()
+            .map(|d| look(asset_of(d.model.as_str()), d))
+            .collect();
         Some(Self {
             definitions,
             rules: rules?,
             actions: actions?,
+            looks,
             render_assets,
             manifest,
-            landscape: landscape?,
+            landscape: index.catalogue,
+            assets: index.assets,
+            scenery: index.scenery,
             abilities: abilities?,
             effects: effects?,
             files,
@@ -356,6 +388,22 @@ impl Content {
 
     pub fn asset(&self, id: &str) -> Option<&RenderAsset> {
         self.asset_index.get(id).map(|&i| &self.render_assets[i])
+    }
+
+    /// How definition `id` is drawn: its model with its presentation applied.
+    pub fn look(&self, id: &str) -> Option<&RenderAsset> {
+        self.definition_index.get(id).map(|&i| &self.looks[i])
+    }
+
+    /// How an entity of definition `d` shown as `asset` is drawn: the definition's look
+    /// when it shows its own model, else that asset (a placement's appearance, a
+    /// depletion stage, a magic form).
+    pub fn render_of(&self, d: &Definition, asset: &str) -> Option<&RenderAsset> {
+        if asset == d.model.as_str() {
+            self.look(d.id.as_str())
+        } else {
+            self.asset(asset)
+        }
     }
 
     /// The file that last authored element `id`; the game rules for anything else.

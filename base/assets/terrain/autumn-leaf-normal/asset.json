@@ -1,0 +1,17 @@
+{
+  "id": "asset.terrain.autumn-leaf-normal",
+  "name": "Autumn fallen leaves · normal/height",
+  "kind": "terrain-material",
+  "tags": [
+    "autumn",
+    "original"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin"
+    }
+  ],
+  "license": "Original ImageGen terrain texture; packed into renderer channels."
+}

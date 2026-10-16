@@ -1,10 +1,10 @@
-//! Test-owned data folders: tiny glTF binaries, PNGs and WAVs built in code, with the
-//! manifest and indexes that publish them.
+//! Test-owned data folders: tiny glTF binaries, PNGs and WAVs built in code, in the asset
+//! folders of a base package.
 
 #![allow(dead_code)]
 
 use serde_json::{Value, json};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 /// A glTF document under construction; `glb` writes the binary container.
 pub struct Gltf {
@@ -338,19 +338,21 @@ pub fn temp_dir(name: &str) -> PathBuf {
     dir
 }
 
-pub const BUILDING: &str = "assets/library/asset.fixture.building/geometry.glb";
-pub const CREATURE: &str = "assets/library/asset.fixture.creature/geometry.glb";
-pub const ICON: &str = "assets/library/asset.fixture.icon/image.png";
-pub const SOUND: &str = "assets/library/asset.fixture.sound/audio.wav";
-pub const SPARK: &str = "assets/library/asset.fixture.spark/image.png";
+pub const BUILDING: &str = "asset.fixture.building/geometry.glb";
+pub const CREATURE: &str = "asset.fixture.creature/geometry.glb";
+pub const ICON: &str = "asset.fixture.icon/image.png";
+pub const SOUND: &str = "asset.fixture.sound/audio.wav";
+pub const SPARK: &str = "asset.fixture.spark/image.png";
 
-fn output(data: &Path, role: &str, path: &str) -> Value {
-    let bytes = std::fs::metadata(data.join(path)).unwrap().len();
-    json!({"role": role, "path": path, "sha256": "0".repeat(64), "bytes": bytes})
+/// The file of pack entry `entry` in a fixture data folder: `<asset id>/<file>` lives in
+/// the base package's `assets/<asset id>/`.
+pub fn source(entry: &str) -> String {
+    format!("base/assets/{entry}")
 }
 
-/// Writes a data folder with a building, a creature, an icon and a sound, published the
-/// way the asset studio publishes them. `customise` may edit the model index first.
+/// Writes a data folder with a building, a creature, an icon and a sound as asset folders
+/// of a base package. `customise` may edit the model entries (transform, capabilities)
+/// first.
 pub fn data_folder(name: &str, customise: impl FnOnce(&mut Value)) -> PathBuf {
     let data = temp_dir(name);
     let write = |path: &str, bytes: &[u8]| {
@@ -358,54 +360,64 @@ pub fn data_folder(name: &str, customise: impl FnOnce(&mut Value)) -> PathBuf {
         std::fs::create_dir_all(file.parent().unwrap()).unwrap();
         std::fs::write(file, bytes).unwrap();
     };
-    write(BUILDING, &building());
-    write(CREATURE, &creature());
+    write(&source(BUILDING), &building());
+    write(&source(CREATURE), &creature());
     write(
-        ICON,
+        &source(ICON),
         &png(16, 16, |x, y| [(x * 16) as u8, (y * 16) as u8, 90, 255]),
     );
-    write(SOUND, &wav(&[0, 1000, -1000, 32767, -32768]));
+    write(&source(SOUND), &wav(&[0, 1000, -1000, 32767, -32768]));
     write(
-        SPARK,
+        &source(SPARK),
         &png(8, 8, |x, y| [255, 200, 90, ((x + y) * 16) as u8]),
     );
-    let record = |id: &str, kind: &str, profile: &str, outputs: Vec<Value>, scenery: Value| {
-        json!({"id": id, "name": id, "kind": kind, "tags": [], "revision": 1, "profile": profile,
-               "outputs": outputs, "render": [], "scenery": scenery})
-    };
-    let manifest = json!({"version": 1, "records": [
-        record("asset.fixture.building", "model", "building", vec![output(&data, "model", BUILDING)],
-            json!([{"id": "fixture-hut", "name": "Hut", "category": "landmark", "type": "prop",
-                    "file": "library/asset.fixture.building/geometry.glb",
-                    "light": {"x": 0.0, "y": 2.0, "z": 0.0, "color": "#ffffff", "intensity": 2.0, "range": 6.0},
-                    "blocker": {"width": 2.0, "depth": 1.0}}])),
-        record("asset.fixture.creature", "model", "base", vec![output(&data, "model", CREATURE)], json!([])),
-        record("asset.fixture.icon", "icon", "icon", vec![output(&data, "image", ICON)], json!([])),
-        record("asset.fixture.sound", "audio", "audio", vec![output(&data, "data", SOUND)], json!([])),
-        record("asset.fixture.spark", "icon", "icon", vec![output(&data, "image", SPARK)], json!([])),
-    ]});
     let transform = |forward: &str| json!({"scale": 1.0, "pivot": [0.0, 0.0, 0.0], "up": "Y", "forward": forward});
     let mut models = json!([
-        {"id": "asset.fixture.building", "transform": transform("-Z"), "groundContact": "terrain",
-         "capabilities": {"teamColor": {"mode": "mask", "slots": ["Team"]}, "groundContact": {"mode": "terrain"}},
-         "geometry": [BUILDING], "scenery": ["fixture-hut"]},
-        {"id": "asset.fixture.creature", "transform": transform("+Z"), "groundContact": "pivot",
+        {"transform": transform("-Z"),
+         "capabilities": {"teamColor": {"mode": "mask", "slots": ["Team"]}, "groundContact": {"mode": "terrain"}}},
+        {"transform": transform("+Z"),
          "capabilities": {
              "groundContact": {"mode": "pivot"},
              "animations": [{"semantic": "attack", "clip": "bend", "loop": false, "events": [{"name": "hit", "time": 0.5}]}],
-             "sockets": [{"name": "tip", "node": "socket_tip", "offset": [0.0, 0.0, 0.0]}]},
-         "geometry": [CREATURE], "scenery": []},
+             "sockets": [{"name": "tip", "node": "socket_tip", "offset": [0.0, 0.0, 0.0]}]}},
     ]);
     customise(&mut models);
-    write(
-        "assets/manifest.json",
-        &serde_json::to_vec_pretty(&manifest).unwrap(),
+    let asset = |id: &str, kind: &str, file: (&str, &str), extra: Value| {
+        let mut asset = json!({"id": id, "name": id, "kind": kind,
+            "resources": [{"role": file.0, "index": 1, "format": file.1}]});
+        for (k, v) in extra.as_object().into_iter().flatten() {
+            asset[k] = v.clone();
+        }
+        write(
+            &format!("base/assets/{id}/asset.json"),
+            &serde_json::to_vec_pretty(&asset).unwrap(),
+        );
+    };
+    let mut building = models[0].clone();
+    building["shading"] = json!("building");
+    asset(
+        "asset.fixture.building",
+        "building",
+        ("geometry", "glb"),
+        building,
     );
-    write(
-        "assets/authoring/models.json",
-        &serde_json::to_vec_pretty(&models).unwrap(),
+    asset(
+        "asset.fixture.creature",
+        "unit",
+        ("geometry", "glb"),
+        models[1].clone(),
     );
-    write("assets/authoring/catalogue.json", b"[]");
+    asset("asset.fixture.icon", "icon", ("image", "png"), json!({}));
+    asset("asset.fixture.sound", "audio", ("audio", "wav"), json!({}));
+    asset("asset.fixture.spark", "icon", ("image", "png"), json!({}));
+    write(
+        "base/scenery/fixture-hut.json",
+        &serde_json::to_vec_pretty(&json!({"id": "scenery.fixture-hut", "name": "Hut",
+            "category": "landmark", "type": "prop", "model": "asset.fixture.building",
+            "light": {"x": 0.0, "y": 2.0, "z": 0.0, "color": "#ffffff", "intensity": 2.0, "range": 6.0},
+            "blocker": {"width": 2.0, "depth": 1.0}}))
+        .unwrap(),
+    );
     write("assets/maps/previews/index.json", b"{}");
     let layer = |id: &str, shape: &str| {
         json!({"id": id, "shape": shape, "colour": "#ffffff", "accent": "#000000",

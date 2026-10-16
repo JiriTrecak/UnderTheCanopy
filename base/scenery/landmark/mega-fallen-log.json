@@ -1,0 +1,57 @@
+{
+  "id": "scenery.mega-fallen-log",
+  "name": "Mega fallen log",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.mega-fallen-log",
+  "blockers": [
+    {
+      "width": 5.5,
+      "depth": 11.3,
+      "x": -19.25,
+      "z": -0.56
+    },
+    {
+      "width": 5.5,
+      "depth": 13.89,
+      "x": -13.75,
+      "z": -0.4
+    },
+    {
+      "width": 5.5,
+      "depth": 13.39,
+      "x": -8.25,
+      "z": -0.46
+    },
+    {
+      "width": 5.5,
+      "depth": 12.63,
+      "x": -2.75,
+      "z": -0.04
+    },
+    {
+      "width": 5.5,
+      "depth": 9.7,
+      "x": 2.75,
+      "z": 0.12
+    },
+    {
+      "width": 5.5,
+      "depth": 10.51,
+      "x": 8.25,
+      "z": 0.41
+    },
+    {
+      "width": 5.5,
+      "depth": 13.62,
+      "x": 13.75,
+      "z": 0.55
+    },
+    {
+      "width": 5.5,
+      "depth": 11.75,
+      "x": 19.25,
+      "z": 0.62
+    }
+  ]
+}

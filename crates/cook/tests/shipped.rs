@@ -19,7 +19,7 @@ fn data() -> PathBuf {
 fn every_published_output_is_cooked_or_deliberately_skipped() {
     let data = data();
     let inputs = plan::Inputs::load(&data).unwrap();
-    let plan = plan::plan(&data, &inputs);
+    let plan = plan::plan(&inputs);
     assert!(
         plan.unknown.is_empty(),
         "outputs of unknown type: {:?}",
@@ -46,7 +46,7 @@ fn every_published_output_is_cooked_or_deliberately_skipped() {
         }
     }
     for scenery in assets::scenery(&inputs.manifest) {
-        let file = format!("assets/{}", scenery.file);
+        let file = &scenery.file;
         assert!(
             planned.contains(file.as_str()),
             "{file} is scenery but not cooked"

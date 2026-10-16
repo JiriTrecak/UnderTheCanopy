@@ -40,7 +40,7 @@ pub const PACK_FILE: &str = "canopy.pack";
 
 #[derive(Debug, Clone)]
 pub struct Options {
-    /// The data folder (holding `content/` and `assets/`).
+    /// The data folder (holding `base/`).
     pub data: PathBuf,
     /// Where the pack and the cache go (`target/cooked`).
     pub out: PathBuf,
@@ -96,7 +96,13 @@ pub fn cook(options: &Options) -> Result<Report> {
     let start = Instant::now();
     let inputs = plan::Inputs::load(&options.data)
         .map_err(|e| anyhow::anyhow!("the published data does not load:\n{e}"))?;
-    let plan = plan::plan(&options.data, &inputs);
+    let plan = plan::plan(&inputs);
+    let locator = &inputs.locator;
+    stage_documents(
+        &options.data.join(canopy_content::BASE_DIR),
+        &options.out.join(canopy_content::BASE_DIR),
+    )
+    .context("staging the base package's documents")?;
     report.skipped = plan.skipped;
     for path in plan.unknown {
         report.diagnostics.push(Diagnostic {
@@ -112,7 +118,7 @@ pub fn cook(options: &Options) -> Result<Report> {
         .with_context(|| format!("cannot create {}", options.out.display()))?;
     let mut cache = Cache::open(&options.out)?;
     let paths: BTreeSet<&str> = plan.jobs.iter().flat_map(Job::sources).collect();
-    let sources = cache.hash_sources(&options.data, &paths)?;
+    let sources = cache.hash_sources(locator, &paths)?;
     cache.save_stamps()?;
     report.timings.hash = start.elapsed().as_secs_f64();
 
@@ -186,7 +192,7 @@ pub fn cook(options: &Options) -> Result<Report> {
     let fresh: Vec<(usize, Result<JobRecord>)> = todo
         .par_iter()
         .map(|&i| {
-            let record = run(&jobs[i], &options.data, &cache, options.force);
+            let record = run(&jobs[i], locator, &cache, options.force);
             if let Ok(record) = &record {
                 cache.store_job(&hashes[i], record)?;
             }
@@ -278,12 +284,43 @@ fn link(cache: &Cache, records: &[JobRecord], pack: &Path, digest: Hash) -> Resu
     Ok(entries.len())
 }
 
-fn read_source(data: &Path, path: &str) -> Result<Vec<u8>> {
-    fs::read(data.join(path)).with_context(|| format!("cannot read {path}"))
+/// Copies the documents of the base package (its identity files: JSON, Lua, map grids)
+/// to `out`, replacing what was there: what a packaged game ships beside the pack, without
+/// the asset files the pack replaces or the working sources.
+pub fn stage_documents(base: &Path, out: &Path) -> Result<()> {
+    fn walk(from: &Path, to: &Path) -> Result<()> {
+        for entry in fs::read_dir(from)? {
+            let entry = entry?;
+            let name = entry.file_name();
+            if name.to_string_lossy().starts_with('.') {
+                continue;
+            }
+            let path = entry.path();
+            if entry.file_type()?.is_dir() {
+                walk(&path, &to.join(&name))?;
+            } else if path
+                .extension()
+                .and_then(|e| e.to_str())
+                .is_some_and(|e| canopy_content::package::IDENTITY_EXTENSIONS.contains(&e))
+            {
+                fs::create_dir_all(to)?;
+                fs::copy(&path, to.join(&name))?;
+            }
+        }
+        Ok(())
+    }
+    if out.exists() {
+        fs::remove_dir_all(out)?;
+    }
+    walk(base, out)
+}
+
+fn read_source(data: &plan::Locator, path: &str) -> Result<Vec<u8>> {
+    fs::read(data.path(path)).with_context(|| format!("cannot read {path}"))
 }
 
 /// Runs one job, storing its blobs in the cache.
-fn run(job: &Job, data: &Path, cache: &Cache, force: bool) -> Result<JobRecord> {
+fn run(job: &Job, data: &plan::Locator, cache: &Cache, force: bool) -> Result<JobRecord> {
     let _span = tracing::debug_span!("job", source = job.label()).entered();
     let mut diags = Diagnostics::new(job.label());
     let mut entries = Vec::new();
@@ -408,9 +445,12 @@ fn run(job: &Job, data: &Path, cache: &Cache, force: bool) -> Result<JobRecord> 
         },
         Job::Grades { path } => {
             let mut errors = Vec::new();
-            let grades =
-                canopy_content::assets::textures::load_daytime_grades(data, path, &mut errors)
-                    .context("colour grades no longer load")?;
+            let grades = canopy_content::assets::textures::load_daytime_grades(
+                Path::new("/"),
+                &data.path(path).to_string_lossy(),
+                &mut errors,
+            )
+            .context("colour grades no longer load")?;
             for (phase, volume) in [
                 ("day", &grades.day),
                 ("day_to_night", &grades.day_to_night),
@@ -533,8 +573,7 @@ fn base64(text: &str) -> Option<Vec<u8>> {
     Some(out)
 }
 
-/// The data folder: `start` or the nearest ancestor holding the base package and
-/// `assets/manifest.json`.
+/// The data folder: `start` or the nearest ancestor holding the base package.
 pub fn find_data(start: &Path) -> Option<PathBuf> {
     start
         .ancestors()
@@ -542,7 +581,6 @@ pub fn find_data(start: &Path) -> Option<PathBuf> {
             dir.join(canopy_content::BASE_DIR)
                 .join(canopy_content::package::MANIFEST)
                 .is_file()
-                && dir.join(canopy_content::MANIFEST_FILE).is_file()
         })
         .map(Path::to_path_buf)
 }

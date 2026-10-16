@@ -1,0 +1,16 @@
+{
+  "id": "asset.icons.item-mossweave-wraps",
+  "name": "Mossweave Wraps",
+  "kind": "icon",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ]
+}

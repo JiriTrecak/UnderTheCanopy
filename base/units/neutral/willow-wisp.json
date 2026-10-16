@@ -2,8 +2,8 @@
   "id": "unit.neutral.willow-wisp",
   "name": "Willow Wisp",
   "description": "The Hollow Stag · ranged forest creature. A sacred forest guardian and its bark-and-willow retinue.",
-  "asset": "asset.neutral.willow-wisp",
-  "icon": "icon.neutral.willow-wisp",
+  "model": "asset.models.units.neutral-willow-wisp",
+  "icon": "asset.portraits.units.neutral-willow-wisp",
   "selectionClass": "army",
   "dimensions": {
     "radius": 1.156,
@@ -41,5 +41,9 @@
   },
   "level": 6,
   "supplyCost": 1,
-  "modelScale": 1.7
+  "modelScale": 1.7,
+  "presentation": {
+    "projectile": "effect.weapon.thorn",
+    "projectileSocket": "socket_projectile"
+  }
 }

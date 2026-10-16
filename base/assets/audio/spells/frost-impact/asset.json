@@ -1,0 +1,23 @@
+{
+  "id": "asset.audio.spells.frost-impact",
+  "name": "Frost Impact",
+  "kind": "audio",
+  "tags": [
+    "spell",
+    "audio",
+    "frost-impact"
+  ],
+  "resources": [
+    {
+      "role": "audio",
+      "index": 1,
+      "format": "wav"
+    },
+    {
+      "role": "recipe",
+      "index": 1,
+      "format": "ts"
+    }
+  ],
+  "license": "Original artwork created for Under the Canopy."
+}

@@ -1,0 +1,76 @@
+{
+  "id": "asset.models.buildings.beetles-shell-foundry",
+  "name": "Shell Foundry",
+  "kind": "building",
+  "tags": [
+    "beetles",
+    "tripo",
+    "team-mask"
+  ],
+  "race": "beetles",
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    },
+    {
+      "role": "team_mask",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_TeamColor"
+      ],
+      "mask": {
+        "role": "team_mask",
+        "index": 1
+      }
+    },
+    "blocker": {
+      "shape": "box",
+      "size": [
+        12,
+        12
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 6,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 12,
+    "healthHeight": 8.228070735931396
+  },
+  "shading": "building",
+  "license": "Original generated artwork for Under the Canopy."
+}

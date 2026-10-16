@@ -1,7 +1,7 @@
 //! The repository's `config/` loads and validates, and every biome a map may name has
 //! a configuration.
 
-use canopy_render::environment::{BIOMES_FOLDER, BiomeConfig, CONFIG_FOLDER, LightingConfig};
+use canopy_render::environment::{BIOMES_FOLDER, BiomeConfig, LightingConfig};
 use std::path::Path;
 
 fn data() -> &'static Path {
@@ -11,7 +11,7 @@ fn data() -> &'static Path {
 #[test]
 fn every_config_file_validates() {
     let lighting = LightingConfig::load(data()).unwrap();
-    let folder = data().join(CONFIG_FOLDER).join(BIOMES_FOLDER);
+    let folder = data().join(BIOMES_FOLDER);
     let mut biomes = 0;
     for entry in std::fs::read_dir(&folder).unwrap() {
         let path = entry.unwrap().path();

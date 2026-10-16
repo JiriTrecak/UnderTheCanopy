@@ -2,19 +2,19 @@
   "armorTypes": {
     "light": {
       "name": "Light armor",
-      "icon": "icon.armor.light"
+      "icon": "asset.icons.stat-armor-light"
     },
     "heavy": {
       "name": "Heavy armor",
-      "icon": "icon.armor.heavy"
+      "icon": "asset.icons.stat-armor-heavy"
     },
     "structure": {
       "name": "Building armor",
-      "icon": "icon.armor.structure"
+      "icon": "asset.icons.stat-armor-structure"
     },
     "hero": {
       "name": "Hero armor",
-      "icon": "icon.armor.heavy"
+      "icon": "asset.icons.stat-armor-heavy"
     }
   },
   "damageTypes": {

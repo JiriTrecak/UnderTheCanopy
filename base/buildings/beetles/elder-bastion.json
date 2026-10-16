@@ -2,8 +2,8 @@
   "id": "building.beetles.elder-bastion",
   "name": "Elder Bastion",
   "description": "Elder Bastion of the beetle colony. Model pending.",
-  "asset": "asset.placeholder.missing-model",
-  "icon": "icon.item.root",
+  "model": "asset.placeholder.missing-model",
+  "icon": "asset.icons.resource-root",
   "body": {
     "maxHp": 3000,
     "armor": 6,

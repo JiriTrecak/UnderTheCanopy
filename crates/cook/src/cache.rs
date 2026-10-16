@@ -77,16 +77,16 @@ impl Cache {
         Ok(Self { root, stamps })
     }
 
-    /// Hashes `paths` (relative to `data`), reusing stamps of unchanged files.
+    /// Hashes the files of pack entries `paths`, reusing stamps of unchanged files.
     pub fn hash_sources(
         &mut self,
-        data: &Path,
+        data: &crate::plan::Locator,
         paths: &BTreeSet<&str>,
     ) -> io::Result<BTreeMap<String, SourceHash>> {
         let results: Vec<io::Result<(String, Stamp)>> = paths
             .par_iter()
             .map(|&path| {
-                let file = data.join(path);
+                let file = data.path(path);
                 let meta = fs::metadata(&file)
                     .map_err(|e| io::Error::new(e.kind(), format!("{}: {e}", file.display())))?;
                 let modified_ns = meta

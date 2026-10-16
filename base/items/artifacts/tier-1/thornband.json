@@ -3,8 +3,8 @@
   "itemTier": 1,
   "name": "Thornband",
   "description": "+6 attack damage.",
-  "asset": "asset.item.chest",
-  "icon": "icon.item.thornband",
+  "model": "asset.placeholder.missing-model",
+  "icon": "asset.icons.item-thornband",
   "stackLimit": 1,
   "behaviors": {},
   "itemEffect": {

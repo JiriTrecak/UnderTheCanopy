@@ -1,19 +1,11 @@
-//! Published asset data the game reads at runtime.
-//!
-//! - `assets/manifest.json`: the runtime asset records ([`Manifest`]), read by
-//!   `src/shared/assets/manifest.ts`. The type is `Manifest` with `RuntimeRecord`s from
-//!   `tooling/asset-studio/shared/schema.ts`; scenery entries are `CatalogEntry`
-//!   (`src/shared/asset/catalog.ts`) and render entries are [`RenderAsset`].
-//! - `assets/authoring/catalogue.json`: the landscape index ([`landscape`]).
-//! - `assets/authoring/models.json`: the published model index ([`models`]).
-//! - `assets/maps/previews/index.json`: map overviews for the menus ([`previews`]).
-//! - Texture data files the renderer imports by path ([`textures`]).
-//!
-//! The asset studio writes all of these and the game only casts them, so the rules here
-//! are the ones publication enforces.
+//! Assets: the folders packages keep them in ([`package`]) and the registries the game
+//! reads, built from them: asset records ([`Manifest`]), the model index ([`models`]), the
+//! landscape catalogue ([`landscape`]); map overviews for the menus ([`previews`]); texture
+//! data files the renderer imports ([`textures`]).
 
 pub mod landscape;
 pub mod models;
+pub mod package;
 pub mod previews;
 pub mod textures;
 
@@ -24,12 +16,9 @@ use crate::{
 };
 use serde::{Deserialize, Deserializer, Serialize, de::DeserializeOwned};
 use serde_with::skip_serializing_none;
-use sha2::Digest;
 use std::{collections::BTreeSet, fmt, path::Path};
 
-const MANIFEST: &str = crate::MANIFEST_FILE;
-
-/// `assets/manifest.json`: every published asset record.
+/// Every asset's runtime record, built from the asset folders.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Manifest {
@@ -334,20 +323,6 @@ pub enum Files {
     Skip,
 }
 
-/// Reads `assets/manifest.json` and checks it: unique record, scenery and output paths;
-/// every output below `assets/` and present under `data`; render and scenery files
-/// declared as outputs.
-pub fn load(data: &Path, errors: &mut Vec<Error>) -> Option<Manifest> {
-    load_with(data, Files::Check, errors)
-}
-
-/// [`load`], choosing whether output files must exist on disk.
-pub fn load_with(data: &Path, files: Files, errors: &mut Vec<Error>) -> Option<Manifest> {
-    let manifest: Manifest = read(data, MANIFEST, errors)?;
-    check_manifest(data, &manifest, files, errors);
-    Some(manifest)
-}
-
 /// Every render asset the published records declare, unsorted.
 pub fn render_assets(manifest: &Manifest) -> Vec<RenderAsset> {
     manifest
@@ -387,51 +362,12 @@ pub fn validate(content: &Content, errors: &mut Vec<Error>) {
             && !scenery.contains(id.as_str())
         {
             errors.push(Error::new(
-                MANIFEST,
-                format!("assets/{}", asset.id),
+                "assets",
+                asset.id.as_str(),
                 format!("unknown sceneryAsset {id}"),
             ));
         }
     }
-}
-
-/// Checks every published output against its file under `data`: size and SHA-256. Reads
-/// every byte, so [`Content::load`] does not run it. Git LFS pointer files count as
-/// missing content.
-pub fn verify_outputs(data: &Path) -> Vec<Error> {
-    let mut errors = Vec::new();
-    let Some(manifest) = read::<Manifest>(data, MANIFEST, &mut errors) else {
-        return errors;
-    };
-    for output in manifest.records.iter().flat_map(|r| &r.outputs) {
-        let mut fail = |message: String| errors.push(Error::new(&output.path, "", message));
-        let bytes = match std::fs::read(data.join(&output.path)) {
-            Ok(bytes) => bytes,
-            Err(error) => {
-                fail(error.to_string());
-                continue;
-            }
-        };
-        if bytes.starts_with(b"version https://git-lfs.github.com/spec/") {
-            fail("Git LFS pointer, not the file (run `git lfs pull`)".into());
-            continue;
-        }
-        if bytes.len() as u64 != output.bytes {
-            fail(format!(
-                "{} bytes, manifest says {}",
-                bytes.len(),
-                output.bytes
-            ));
-        }
-        let hash: String = sha2::Sha256::digest(&bytes)
-            .iter()
-            .map(|b| format!("{b:02x}"))
-            .collect();
-        if !hash.eq_ignore_ascii_case(&output.sha256) {
-            fail(format!("SHA-256 {hash}, manifest says {}", output.sha256));
-        }
-    }
-    errors
 }
 
 /// Reads and parses one JSON file below `data`.
@@ -444,107 +380,6 @@ pub(crate) fn read<T: DeserializeOwned>(
         .and_then(|value| parse(value, file, ""))
         .map_err(|error| errors.push(error))
         .ok()
-}
-
-/// Reports every id that occurs more than once.
-pub(crate) fn unique<'a>(
-    file: &str,
-    location: &str,
-    what: &str,
-    ids: impl IntoIterator<Item = &'a str>,
-    errors: &mut Vec<Error>,
-) {
-    let mut seen = BTreeSet::new();
-    for id in ids {
-        if !seen.insert(id) {
-            errors.push(Error::new(file, location, format!("duplicate {what} {id}")));
-        }
-    }
-}
-
-/// `safePath`: `[a-zA-Z0-9_./-]+`, relative, without `..` segments.
-fn safe_path(path: &str) -> bool {
-    !path.is_empty()
-        && path
-            .bytes()
-            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'_' | b'.' | b'/' | b'-'))
-        && !path.starts_with('/')
-        && !path.split('/').any(|segment| segment == "..")
-}
-
-fn check_manifest(data: &Path, manifest: &Manifest, files: Files, errors: &mut Vec<Error>) {
-    unique(
-        MANIFEST,
-        "records",
-        "asset",
-        manifest.records.iter().map(|r| r.id.as_str()),
-        errors,
-    );
-    unique(
-        MANIFEST,
-        "scenery",
-        "scenery",
-        scenery(manifest).map(|s| s.id.as_str()),
-        errors,
-    );
-    // Unique ignoring case, as publication requires: case-insensitive file systems.
-    let mut lowercase = BTreeSet::new();
-    let outputs = output_paths(manifest);
-    for record in &manifest.records {
-        let location = format!("records/{}", record.id);
-        let mut fail = |message: String| errors.push(Error::new(MANIFEST, &location, message));
-        if record.name.is_empty() {
-            fail("name must not be empty".into());
-        }
-        if record.revision == 0 {
-            fail("revision must be positive".into());
-        }
-        if record.outputs.is_empty() {
-            fail("needs at least one output".into());
-        }
-        for output in &record.outputs {
-            let path = output.path.as_str();
-            if !safe_path(path) || !path.starts_with("assets/") {
-                fail(format!(
-                    "output {path:?} must be a plain path below assets/"
-                ));
-            } else if files == Files::Check && !data.join(path).is_file() {
-                fail(format!("missing output {path}"));
-            }
-            if !lowercase.insert(path.to_lowercase()) {
-                fail(format!("duplicate output {path}"));
-            }
-            if output.sha256.len() != 64 || !output.sha256.bytes().all(|b| b.is_ascii_hexdigit()) {
-                fail(format!("output {path}: sha256 must be 64 hex digits"));
-            }
-        }
-        // A render binding may resolve to another record's output, as publication allows.
-        for asset in &record.render {
-            for file in [&asset.file, &asset.image, &asset.harvest_animation]
-                .into_iter()
-                .flatten()
-            {
-                if !outputs.contains(file.as_str()) {
-                    fail(format!(
-                        "render {}: {file} is not a published output",
-                        asset.id
-                    ));
-                }
-            }
-        }
-        for scenery in &record.scenery {
-            let file = format!("assets/{}", scenery.file);
-            if !record.outputs.iter().any(|o| o.path == file) {
-                fail(format!(
-                    "scenery {}: {file} is not an output of its record",
-                    scenery.id
-                ));
-            }
-            if scenery.name.trim().is_empty() {
-                fail(format!("scenery {}: name must not be empty", scenery.id));
-            }
-        }
-    }
 }
 
 #[cfg(test)]
@@ -563,20 +398,6 @@ mod tests {
         }
         for text in ["", ".a", "-a", "a b", "a/b", &"a".repeat(161)] {
             assert!(AuthoringId::new(text).is_err(), "{text}");
-        }
-    }
-
-    #[test]
-    fn safe_paths_stay_relative() {
-        assert!(safe_path("assets/library/a/geometry.glb"));
-        for path in [
-            "",
-            "/assets/a.png",
-            "assets/../a.png",
-            "assets/a b.png",
-            "assets\\a.png",
-        ] {
-            assert!(!safe_path(path), "{path}");
         }
     }
 

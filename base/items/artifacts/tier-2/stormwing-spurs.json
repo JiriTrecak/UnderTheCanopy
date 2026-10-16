@@ -3,8 +3,8 @@
   "itemTier": 2,
   "name": "Stormwing Spurs",
   "description": "+10% movement speed and +12% attack speed.",
-  "asset": "asset.item.chest",
-  "icon": "icon.item.stormwing-spurs",
+  "model": "asset.placeholder.missing-model",
+  "icon": "asset.icons.item-stormwing-spurs",
   "stackLimit": 1,
   "behaviors": {},
   "itemEffect": {

@@ -1,0 +1,17 @@
+{
+  "id": "asset.interface.campaign.beetles",
+  "name": "beetles campaign crest",
+  "kind": "interface",
+  "tags": [
+    "campaign",
+    "original"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "webp"
+    }
+  ],
+  "license": "Original Under the Canopy faction crest, generated with built-in ImageGen."
+}

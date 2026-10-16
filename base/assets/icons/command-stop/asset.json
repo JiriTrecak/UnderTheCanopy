@@ -1,0 +1,16 @@
+{
+  "id": "asset.icons.command-stop",
+  "name": "Stop",
+  "kind": "icon",
+  "tags": [
+    "ants-v1",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ]
+}

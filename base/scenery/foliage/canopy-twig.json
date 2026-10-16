@@ -1,0 +1,7 @@
+{
+  "id": "scenery.canopy-twig",
+  "name": "canopy twig",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.canopy-twig"
+}

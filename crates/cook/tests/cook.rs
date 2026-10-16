@@ -91,7 +91,7 @@ fn folds_transforms_and_keeps_team_masks_lossless() {
     let hut = &scenery.prototypes[0];
     assert_eq!(
         (hut.id.as_str(), hut.model.as_str()),
-        ("fixture-hut", BUILDING)
+        ("scenery.fixture-hut", BUILDING)
     );
     assert_eq!(hut.blockers.len(), 1);
     assert_eq!(hut.light.as_ref().unwrap().color, [1.0; 3]);
@@ -169,7 +169,11 @@ fn recooks_only_what_changed_and_is_deterministic() {
     );
 
     // Changing one image cooks one job.
-    std::fs::write(data.join(ICON), fixture::png(16, 16, |_, _| [1, 2, 3, 255])).unwrap();
+    std::fs::write(
+        data.join(fixture::source(ICON)),
+        fixture::png(16, 16, |_, _| [1, 2, 3, 255]),
+    )
+    .unwrap();
     let changed = cook(&options(&data, &out)).unwrap();
     assert_eq!(changed.cooked, 1);
     assert_ne!(std::fs::read(out.join(PACK_FILE)).unwrap(), bytes);
@@ -180,7 +184,7 @@ fn recooks_only_what_changed_and_is_deterministic() {
 fn lfs_pointers_fail_unless_allowed() {
     let data = fixture::data_folder("lfs", |_| {});
     std::fs::write(
-        data.join(ICON),
+        data.join(fixture::source(ICON)),
         "version https://git-lfs.github.com/spec/v1\noid sha256:00\nsize 1\n",
     )
     .unwrap();

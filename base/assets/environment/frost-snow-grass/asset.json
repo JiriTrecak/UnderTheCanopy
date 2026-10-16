@@ -1,0 +1,48 @@
+{
+  "id": "asset.models.environment.frost-snow-grass",
+  "name": "frost snow grass",
+  "kind": "foliage",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "terrain"
+    },
+    "wind": {
+      "mode": "grass",
+      "strength": 0.12,
+      "speed": 0.2,
+      "stiffness": 0.75
+    }
+  },
+  "license": "Original artwork created for Under the Canopy."
+}

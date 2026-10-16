@@ -1,0 +1,7 @@
+{
+  "id": "scenery.pl-fern-sword",
+  "name": "fern sword",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.pl-fern-sword"
+}

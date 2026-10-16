@@ -1,0 +1,22 @@
+{
+  "id": "asset.icons.spell-entangling-roots",
+  "name": "entangling roots spell icon",
+  "kind": "icon",
+  "tags": [
+    "spell",
+    "command-icon"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original built-in imagegen. Prompt: Thick living emerald roots curling upward and trapping a dark boot, fresh leaves and green magical sparks against deep woodland shadows. Original square fantasy RTS command icon; hand-painted chunky shapes, high contrast; no text, frame or watermark."
+}

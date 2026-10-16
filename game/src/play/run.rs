@@ -1109,7 +1109,7 @@ pub(crate) fn ghost_instance(
 ) -> Option<canopy_render::actors::ActorInstance> {
     use canopy_render::camera::Ground;
     let d = content.definition(definition)?;
-    let asset = content.asset(d.asset.as_str())?;
+    let asset = content.look(d.id.as_str())?;
     let file = asset.file.as_deref()?;
     let model = presentation.models.iter().position(|m| m == file)? as u32;
     let scale = (asset.scale.unwrap_or(1.0) * d.model_scale.unwrap_or(1.0)) as f32;

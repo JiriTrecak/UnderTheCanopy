@@ -244,7 +244,7 @@ pub fn subject_of(
     id: u32,
 ) -> Option<Subject> {
     let transform = live.entity_transform(id)?;
-    let asset = content.asset(d.asset.as_str());
+    let asset = content.look(d.id.as_str());
     Some(Subject::of(
         transform,
         asset.and_then(|a| a.camera_anchor.as_ref()),

@@ -2,8 +2,8 @@
   "id": "unit.beetles.worker",
   "name": "Worker",
   "description": "Gather resources and construct beetle buildings. Same gathering, movement and training rules as ant workers.",
-  "asset": "asset.placeholder.missing-model",
-  "icon": "icon.item.root",
+  "model": "asset.placeholder.missing-model",
+  "icon": "asset.icons.resource-root",
   "selectionClass": "worker",
   "body": {
     "maxHp": 240,

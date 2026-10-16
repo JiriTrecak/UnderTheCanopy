@@ -1,0 +1,42 @@
+{
+  "id": "asset.models.environment.mega-mushroom",
+  "name": "Mega mushroom",
+  "kind": "prop",
+  "tags": [
+    "original",
+    "woodland",
+    "forest-scale",
+    "mega",
+    "tripo"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "vegetationClearance": 13,
+    "canopy": true,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "license": "Original artwork created for Under the Canopy."
+}

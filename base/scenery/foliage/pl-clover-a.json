@@ -1,0 +1,7 @@
+{
+  "id": "scenery.pl-clover-a",
+  "name": "clover a",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.pl-clover-a"
+}

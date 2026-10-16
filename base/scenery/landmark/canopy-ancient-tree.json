@@ -1,0 +1,12 @@
+{
+  "id": "scenery.canopy-ancient-tree",
+  "name": "canopy ancient tree",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.canopy-ancient-tree",
+  "blocker": {
+    "width": 8,
+    "depth": 8,
+    "shape": "ellipse"
+  }
+}

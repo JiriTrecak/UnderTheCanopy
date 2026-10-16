@@ -1,0 +1,24 @@
+{
+  "id": "asset.effects.ants.resin-burst",
+  "name": "Ant resin-burst",
+  "kind": "texture",
+  "tags": [
+    "ants",
+    "spell-effects",
+    "silk",
+    "generated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original artwork generated for Under the Canopy."
+}

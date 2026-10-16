@@ -1,0 +1,22 @@
+{
+  "id": "asset.effects.marshal.chitin-ward",
+  "name": "Marshal chitin ward glyph",
+  "kind": "texture",
+  "tags": [
+    "spell-effects",
+    "generated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original artwork generated with OpenAI GPT Image 2.5."
+}

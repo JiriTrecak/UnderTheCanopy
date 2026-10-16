@@ -77,13 +77,16 @@ fn harvestable_scenery_becomes_resources_first_object_per_cell() {
     assert_eq!(resource.rotation, 90.0);
     assert_eq!(resource.owner, Owner::Nobody);
     let appearance = resource.appearance.as_ref().unwrap();
-    assert_eq!(appearance.asset.as_ref().unwrap().as_str(), "asset.tree");
+    assert_eq!(
+        appearance.asset.as_ref().unwrap().as_str(),
+        "scenery.asset.tree-prop"
+    );
     assert_eq!(appearance.scale, Some(1.5));
     // The losing tree vanishes; the halo tree, the absolute tree and the rock stay scenery.
     let stamps: Vec<&str> = scene.stamps.iter().map(|s| s.id.as_str()).collect();
     assert_eq!(stamps, ["tree.halo", "tree.absolute", "rock"]);
     let placed = &scene.stamps[1];
-    assert_eq!(placed.asset, "asset.tree-prop");
+    assert_eq!(placed.asset, "scenery.asset.tree-prop");
     assert_eq!(placed.source_transform.as_ref().unwrap().height, 2.0);
     assert_eq!(placed.elevation, None);
     assert_eq!(scene.stamps[2].elevation, Some(0.0));
@@ -112,7 +115,7 @@ fn scenery_blockers_close_ground_from_map_stamps_and_objects() {
     wall["yaw"] = json!(FRAC_PI_2);
     let mut document = with("/authoring/objects", json!([wall]));
     document["stamps"] =
-        json!([{"id": "wall.stamp", "asset": "asset.wall-prop", "x": 100, "y": 50}]);
+        json!([{"id": "wall.stamp", "asset": "scenery.asset.wall-prop", "x": 100, "y": 50}]);
     let t = compile(document);
     // 6 × 1 plus margin: x 97–103 on row 50.
     assert!((97..=103).all(|x| !t.walkable(cell(&t, x, 50))));
@@ -125,7 +128,7 @@ fn scenery_blockers_close_ground_from_map_stamps_and_objects() {
 #[test]
 fn bridge_stamps_add_walk_surfaces() {
     let mut document = map();
-    document["stamps"] = json!([{"id": "bridge.1", "asset": "asset.bridge-prop", "x": 120, "y": 120, "elevation": 1}]);
+    document["stamps"] = json!([{"id": "bridge.1", "asset": "scenery.asset.bridge-prop", "x": 120, "y": 120, "elevation": 1}]);
     let t = compile(document);
     let surfaces = t.surfaces().expect("decks");
     let deck = t.deck_id("bridge.1").unwrap();

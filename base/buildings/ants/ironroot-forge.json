@@ -2,8 +2,8 @@
   "id": "building.ants.ironroot-forge",
   "name": "Chitin Works",
   "description": "Researches permanent improvements for the colony. Existing and future units benefit from completed research.",
-  "asset": "asset.ants.chitin-workshop",
-  "icon": "icon.ants.chitin-workshop",
+  "model": "asset.models.buildings.ants-chitin-workshop",
+  "icon": "asset.portraits.buildings.ants-chitin-workshop",
   "body": {
     "maxHp": 1100,
     "armor": 5,

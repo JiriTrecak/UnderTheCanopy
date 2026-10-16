@@ -1,0 +1,7 @@
+{
+  "id": "scenery.frost-pine-sapling",
+  "name": "frost pine sapling",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.frost-pine-sapling"
+}

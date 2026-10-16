@@ -1,0 +1,7 @@
+{
+  "id": "scenery.autumn-stump",
+  "name": "autumn stump",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.autumn-stump"
+}

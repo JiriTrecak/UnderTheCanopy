@@ -1,0 +1,16 @@
+{
+  "id": "asset.portraits.units.ants-rootweaver",
+  "name": "Ant Rootweaver portrait",
+  "kind": "icon",
+  "tags": [
+    "portrait"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original generated artwork for Under the Canopy."
+}

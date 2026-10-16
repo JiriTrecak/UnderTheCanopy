@@ -2,8 +2,8 @@
   "id": "building.ants.house",
   "name": "Mound",
   "description": "A compact colony mound that provides 8 supply when completed.",
-  "asset": "asset.ants.silk-brood-house",
-  "icon": "icon.ants.silk-brood-house",
+  "model": "asset.models.buildings.ants-silk-brood-house",
+  "icon": "asset.portraits.buildings.ants-silk-brood-house",
   "body": {
     "maxHp": 600,
     "armor": 3,

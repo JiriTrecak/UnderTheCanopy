@@ -230,13 +230,8 @@ pub fn content() -> Arc<Content> {
     static CONTENT: OnceLock<Arc<Content>> = OnceLock::new();
     CONTENT
         .get_or_init(|| {
-            let mut tree = scenery_model("asset.tree");
-            let animation = "assets/library/asset.tree/fell.glb";
-            tree["outputs"]
-                .as_array_mut()
-                .expect("outputs")
-                .push(canopy_content::testing::output("model", animation));
-            tree["render"][0]["harvestAnimation"] = json!(animation);
+            // A tree is felled with its own model's clips.
+            let tree = scenery_model("asset.tree");
             let records = vec![image("asset.icon"), model("asset.model"), tree];
             let folder = DataFolder::new(game(), records);
             Arc::new(

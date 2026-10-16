@@ -2,8 +2,8 @@
   "id": "unit.beetles.stone-slinger",
   "name": "Stone Slinger",
   "description": "Heavy thrown stones strike ground and flying enemies. Shorter reach than ant Archers; uses 1 supply.",
-  "asset": "asset.beetles.stone-slinger",
-  "icon": "icon.item.root",
+  "model": "asset.placeholder.missing-model",
+  "icon": "asset.icons.resource-root",
   "selectionClass": "army",
   "body": {
     "maxHp": 330,
@@ -55,5 +55,8 @@
     "height": 4.8,
     "formationSpacing": 3.75
   },
-  "modelScale": 2.4
+  "modelScale": 2.4,
+  "presentation": {
+    "projectile": "effect.weapon.stone"
+  }
 }

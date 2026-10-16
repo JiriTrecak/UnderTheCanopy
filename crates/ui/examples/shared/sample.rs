@@ -4,7 +4,7 @@
 use canopy_ui::{Color, Cost, ImageKey, NodeId, Tooltip, Ui};
 
 pub fn icon(name: &str) -> String {
-    format!("assets/library/{name}/image.png")
+    format!("{name}/image.png")
 }
 
 pub const ICONS: &[&str] = &[

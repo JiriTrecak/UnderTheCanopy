@@ -2,8 +2,8 @@
   "id": "building.beetles.war-lodge",
   "name": "War Lodge",
   "description": "Iron-clad training hall for the beetle colony’s infantry and ranged troops.",
-  "asset": "asset.beetles.iron-garrison",
-  "icon": "icon.beetles.iron-garrison",
+  "model": "asset.models.buildings.beetles-iron-garrison",
+  "icon": "asset.portraits.buildings.beetles-iron-garrison",
   "body": {
     "maxHp": 1200,
     "armor": 5,

@@ -1,0 +1,7 @@
+{
+  "id": "scenery.woodland-mushrooms-fan",
+  "name": "Woodland russet mushrooms",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.woodland-mushrooms-fan"
+}

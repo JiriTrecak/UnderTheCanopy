@@ -1,0 +1,7 @@
+{
+  "id": "scenery.woodland-reed-tuft",
+  "name": "Quiet-water reeds",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.woodland-reed-tuft"
+}

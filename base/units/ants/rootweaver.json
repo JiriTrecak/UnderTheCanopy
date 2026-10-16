@@ -2,8 +2,8 @@
   "id": "unit.ants.rootweaver",
   "name": "Rootweaver",
   "description": "Fragile root caster with a broad leaf fan. Entangles ground enemies and grows slowing briar patches to control the battlefield.",
-  "asset": "asset.ants.rootweaver",
-  "icon": "icon.ants.rootweaver",
+  "model": "asset.models.units.ants-rootweaver",
+  "icon": "asset.portraits.units.ants-rootweaver",
   "selectionClass": "army",
   "body": {
     "maxHp": 260,
@@ -99,5 +99,10 @@
   "modelScale": 3.2,
   "requires": [
     "building.ants.great-mound"
-  ]
+  ],
+  "presentation": {
+    "projectile": "effect.weapon.thorn",
+    "projectileSocket": "socket_projectile",
+    "castContact": 0.5
+  }
 }

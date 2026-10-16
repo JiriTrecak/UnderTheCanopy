@@ -16,7 +16,7 @@ use crate::texture::{AlphaPolicy, ColorSpace, Encoding, TextureParams};
 use canopy_assets::{Blocker, BlockerShape, PointLight, SceneryPrototype, SceneryTable};
 use canopy_content::assets::{
     self, Manifest, Record,
-    landscape::{self, LandscapeAsset},
+    landscape::LandscapeAsset,
     models::{self, PublishedModel},
     previews,
 };
@@ -90,8 +90,26 @@ impl Job {
     }
 }
 
-/// The published data the cooker reads.
+/// Where each pack entry's file is: asset files by their folder, anything else (map
+/// previews) by its path in the data folder.
+#[derive(Debug, Clone, Default)]
+pub struct Locator {
+    pub data: std::path::PathBuf,
+    pub sources: BTreeMap<String, std::path::PathBuf>,
+}
+
+impl Locator {
+    pub fn path(&self, entry: &str) -> std::path::PathBuf {
+        self.sources
+            .get(entry)
+            .cloned()
+            .unwrap_or_else(|| self.data.join(entry))
+    }
+}
+
+/// The data the cooker reads.
 pub struct Inputs {
+    pub locator: Locator,
     pub manifest: Manifest,
     pub models: Vec<PublishedModel>,
     pub catalogue: Vec<LandscapeAsset>,
@@ -102,23 +120,26 @@ pub struct Inputs {
 impl Inputs {
     pub fn load(data: &Path) -> Result<Self, String> {
         let mut errors = Vec::new();
-        let manifest = assets::load(data, &mut errors);
-        let models = models::load(data, &mut errors);
-        let catalogue = landscape::load(data, &mut errors);
+        let base = canopy_content::package::Package::open(&data.join(canopy_content::BASE_DIR))
+            .map_err(|e| e.to_string())?;
+        let index = assets::package::index(&[base], assets::Files::Check, &mut errors);
         let previews = previews::load(data, &mut errors);
-        if let (Some(manifest), Some(models), Some(catalogue), Some(previews)) =
-            (manifest, models, catalogue, previews)
+        if let Some(previews) = previews
             && errors.is_empty()
         {
             let mut model_errors = Vec::new();
-            models::validate(&models, &manifest, &mut model_errors);
+            models::validate(&index.models, &index.manifest, &mut model_errors);
             if model_errors.is_empty() {
                 let effects =
                     canopy_content::effects::load_base(data).map_err(|e| e.to_string())?;
                 return Ok(Self {
-                    manifest,
-                    models,
-                    catalogue,
+                    locator: Locator {
+                        data: data.to_path_buf(),
+                        sources: index.sources,
+                    },
+                    manifest: index.manifest,
+                    models: index.models,
+                    catalogue: index.catalogue,
                     previews,
                     effects,
                 });
@@ -136,7 +157,7 @@ pub struct Plan {
     pub unknown: Vec<String>,
 }
 
-pub fn plan(data: &Path, inputs: &Inputs) -> Plan {
+pub fn plan(inputs: &Inputs) -> Plan {
     let mut jobs = Vec::new();
     let mut skipped = Vec::new();
     let mut unknown = Vec::new();
@@ -195,7 +216,14 @@ pub fn plan(data: &Path, inputs: &Inputs) -> Plan {
                 "wav" => jobs.push(Job::Sound { path }),
                 "json" => {
                     let mut errors = Vec::new();
-                    if assets::textures::load_daytime_grades(data, &path, &mut errors).is_some() {
+                    let file = inputs.locator.path(&path);
+                    if assets::textures::load_daytime_grades(
+                        Path::new("/"),
+                        &file.to_string_lossy(),
+                        &mut errors,
+                    )
+                    .is_some()
+                    {
                         jobs.push(Job::Grades { path });
                     } else {
                         skipped.push((path, "data the game reads from the catalogue"));
@@ -339,7 +367,7 @@ fn scenery(manifest: &Manifest) -> SceneryTable {
     let prototypes = assets::scenery(manifest)
         .map(|s| SceneryPrototype {
             id: s.id.to_string(),
-            model: format!("assets/{}", s.file),
+            model: s.file.clone(),
             light: s.light.as_ref().map(|l| PointLight {
                 position: [l.x as f32, l.y as f32, l.z as f32],
                 color: hex_color(&l.color),

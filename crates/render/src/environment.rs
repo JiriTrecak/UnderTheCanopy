@@ -23,8 +23,8 @@ use std::{collections::BTreeMap, path::Path};
 pub const CONFIG_FOLDER: &str = "config";
 /// Global lighting file inside [`CONFIG_FOLDER`].
 pub const LIGHTING_FILE: &str = "lighting.json";
-/// Biome files: `config/biomes/<biome id>.json`.
-pub const BIOMES_FOLDER: &str = "biomes";
+/// Biome files: `base/landscape/biomes/<biome id>.json` (the base package's).
+pub const BIOMES_FOLDER: &str = "base/landscape/biomes";
 
 /// A configuration problem: file and message.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -167,7 +167,7 @@ pub struct ShadowConfig {
     pub step: f32,
 }
 
-// --- config/biomes/<id>.json ---------------------------------------------------------
+// --- base/landscape/biomes/<id>.json ---------------------------------------------------------
 
 /// Everything a biome looks like.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -450,12 +450,9 @@ impl LightingConfig {
 }
 
 impl BiomeConfig {
-    /// Reads and checks `config/biomes/<biome>.json` under the data folder.
+    /// Reads and checks `base/landscape/biomes/<biome>.json` under the data folder.
     pub fn load(data: &Path, biome: &str, lighting: &LightingConfig) -> Result<Self, ConfigError> {
-        let path = data
-            .join(CONFIG_FOLDER)
-            .join(BIOMES_FOLDER)
-            .join(format!("{biome}.json"));
+        let path = data.join(BIOMES_FOLDER).join(format!("{biome}.json"));
         let config: Self = read(&path)?;
         config.validate(lighting).map_err(|message| ConfigError {
             file: path.display().to_string(),

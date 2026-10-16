@@ -1,0 +1,31 @@
+{
+  "id": "recipe.grass.winter",
+  "name": "Winter meadow",
+  "recipe": {
+    "type": "grass",
+    "species": [
+      {
+        "asset": "scenery.frost-grass",
+        "weight": 2
+      },
+      {
+        "asset": "scenery.frost-snow-grass",
+        "weight": 3
+      }
+    ],
+    "spacing": 0.65,
+    "probability": 0.7,
+    "jitter": 0.65,
+    "scaleMin": 0.65,
+    "scaleMax": 1.05,
+    "maxSlope": 1,
+    "waterClearance": 0.2,
+    "objectClearance": 0,
+    "edgeFade": 2,
+    "minSpacing": 0.2,
+    "patchiness": {
+      "scale": 5,
+      "strength": 0.65
+    }
+  }
+}

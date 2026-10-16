@@ -1,0 +1,16 @@
+{
+  "id": "asset.interface.main-menu.forest-heroes",
+  "name": "Forest Heroes",
+  "kind": "interface",
+  "tags": [
+    "main-menu",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ]
+}

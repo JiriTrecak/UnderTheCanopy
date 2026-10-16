@@ -2,8 +2,8 @@
   "id": "unit.ants.archer",
   "name": "Archer",
   "description": "Ranged support. Keep enemies at a distance and protect archers with infantry.",
-  "asset": "asset.ants.leaf-archer",
-  "icon": "icon.ants.leaf-archer",
+  "model": "asset.models.units.ants-leaf-archer",
+  "icon": "asset.portraits.units.ants-leaf-archer",
   "selectionClass": "army",
   "body": {
     "maxHp": 375,
@@ -55,5 +55,9 @@
     "height": 4.8,
     "formationSpacing": 3.25
   },
-  "modelScale": 2.4
+  "modelScale": 2.4,
+  "presentation": {
+    "projectile": "effect.weapon.arrow",
+    "projectileSocket": "socket_projectile"
+  }
 }

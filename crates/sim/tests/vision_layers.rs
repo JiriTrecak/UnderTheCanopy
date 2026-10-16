@@ -12,7 +12,7 @@ const P0: Owner = Owner::Player(0);
 
 fn bridged(entities: Vec<Value>) -> Value {
     let mut document = flat(entities);
-    document["stamps"] = json!([{"id": "bridge.1", "asset": "asset.bridge-prop", "x": 120, "y": 120, "elevation": 1}]);
+    document["stamps"] = json!([{"id": "bridge.1", "asset": "scenery.asset.bridge-prop", "x": 120, "y": 120, "elevation": 1}]);
     document
 }
 

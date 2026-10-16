@@ -164,8 +164,8 @@ pub fn build(
         let appearance_scale = appearance.and_then(|a| a.scale).unwrap_or(1.0);
         let asset_id = appearance
             .and_then(|a| a.asset.as_ref())
-            .unwrap_or(&definition.asset);
-        let Some(asset) = content.asset(asset_id.as_str()) else {
+            .unwrap_or(&definition.model);
+        let Some(asset) = content.render_of(definition, asset_id.as_str()) else {
             scene.missing.push(format!("render asset {asset_id}"));
             continue;
         };

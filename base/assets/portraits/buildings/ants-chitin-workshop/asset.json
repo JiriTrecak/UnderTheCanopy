@@ -1,0 +1,16 @@
+{
+  "id": "asset.portraits.buildings.ants-chitin-workshop",
+  "name": "Chitin Workshop portrait",
+  "kind": "icon",
+  "tags": [
+    "portrait"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original generated artwork for Under the Canopy."
+}

@@ -144,7 +144,7 @@ impl Audio {
         &mut self.library
     }
 
-    /// A sound by pack entry name (`assets/library/<id>/audio.wav`).
+    /// A sound by pack entry name (`<asset id>/audio.wav`).
     pub fn sound(&self, name: &str) -> Option<SoundId> {
         self.library.find(name)
     }

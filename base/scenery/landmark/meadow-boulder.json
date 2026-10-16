@@ -1,0 +1,7 @@
+{
+  "id": "scenery.meadow-boulder",
+  "name": "meadow boulder",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.meadow-boulder"
+}

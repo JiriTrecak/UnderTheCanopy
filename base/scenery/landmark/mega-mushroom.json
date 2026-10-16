@@ -1,0 +1,16 @@
+{
+  "id": "scenery.mega-mushroom",
+  "name": "Mega mushroom",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.mega-mushroom",
+  "blockers": [
+    {
+      "width": 4.97,
+      "depth": 4.97,
+      "shape": "ellipse",
+      "x": -0.86,
+      "z": -0.62
+    }
+  ]
+}

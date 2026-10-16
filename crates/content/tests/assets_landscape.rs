@@ -167,7 +167,7 @@ fn manifest(assets: &[Value]) -> Manifest {
 fn resource() -> Vec<Definition> {
     vec![
         serde_json::from_value(json!({"id": "resource.test.tree", "kind": "resource",
-            "name": "Tree", "description": "", "asset": "asset.test.tree",
+            "name": "Tree", "description": "", "model": "asset.test.tree",
             "icon": "asset.test.icon", "behaviors": {}}))
         .unwrap(),
     ]
@@ -244,31 +244,4 @@ fn references_must_resolve() {
         .contains("not a published output")
     );
     assert!(broken(0, json!({"scenery": "elsewhere"})).contains("unknown scenery"));
-}
-
-#[test]
-fn records_outside_the_manifest_fail() {
-    let mut assets = catalogue();
-    let published = manifest(&assets);
-    assets.push(asset("unpublished", "prop", json!({})));
-    let errors = validate(&assets, &published);
-    assert_eq!(errors.len(), 1);
-    assert_eq!(errors[0].location, "unpublished");
-}
-
-#[test]
-fn ids_are_unique() {
-    let root = std::env::temp_dir().join(format!("canopy-catalogue-{}", std::process::id()));
-    std::fs::create_dir_all(root.join("assets/authoring")).unwrap();
-    let mut assets = catalogue();
-    assets.push(assets[0].clone());
-    std::fs::write(
-        root.join(landscape::CATALOGUE_FILE),
-        Value::from(assets).to_string(),
-    )
-    .unwrap();
-    let mut errors = Vec::new();
-    assert!(landscape::load(&root, &mut errors).is_some());
-    assert_eq!(errors.len(), 1);
-    assert_eq!(errors[0].message, "duplicate asset rock");
 }

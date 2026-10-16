@@ -1,0 +1,7 @@
+{
+  "id": "scenery.shore-boulder-c",
+  "name": "shore boulder c",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.shore-boulder-c"
+}

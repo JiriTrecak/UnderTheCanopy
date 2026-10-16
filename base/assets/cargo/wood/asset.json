@@ -1,0 +1,29 @@
+{
+  "id": "asset.models.cargo.wood",
+  "name": "Ant Worker cargo wood",
+  "kind": "prop",
+  "tags": [
+    "cargo"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "materials": [],
+  "display": {
+    "scale": 1
+  }
+}

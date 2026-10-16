@@ -1,0 +1,7 @@
+{
+  "id": "scenery.meadow-stick-b",
+  "name": "meadow stick b",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.meadow-stick-b"
+}

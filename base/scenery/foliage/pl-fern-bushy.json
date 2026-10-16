@@ -1,0 +1,7 @@
+{
+  "id": "scenery.pl-fern-bushy",
+  "name": "fern bushy",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.pl-fern-bushy"
+}

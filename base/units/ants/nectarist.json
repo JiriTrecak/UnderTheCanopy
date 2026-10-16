@@ -2,8 +2,8 @@
   "id": "unit.ants.nectarist",
   "name": "Nectarist",
   "description": "Restorative support. Automatically sends nectar to wounded allies and can cleanse harmful effects.",
-  "asset": "asset.ants.nectarist",
-  "icon": "icon.ants.nectarist",
+  "model": "asset.models.units.ants-nectarist",
+  "icon": "asset.portraits.units.ants-nectarist",
   "selectionClass": "army",
   "body": {
     "maxHp": 280,
@@ -92,5 +92,10 @@
     "height": 4.8,
     "formationSpacing": 3.25
   },
-  "modelScale": 2.4
+  "modelScale": 2.4,
+  "presentation": {
+    "projectile": "effect.weapon.nectar",
+    "projectileSocket": "socket_projectile",
+    "castContact": 0.3611111111111111
+  }
 }

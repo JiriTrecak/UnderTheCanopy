@@ -2,8 +2,8 @@
   "id": "unit.ants.settler",
   "name": "Worker",
   "description": "Gather resources and construct buildings. Trained at the main hall; uses 1 supply.",
-  "asset": "asset.ants.colony-worker",
-  "icon": "icon.ants.colony-worker",
+  "model": "asset.models.units.ants-colony-worker",
+  "icon": "asset.portraits.units.ants-colony-worker",
   "selectionClass": "worker",
   "body": {
     "maxHp": 240,

@@ -1,0 +1,7 @@
+{
+  "id": "scenery.missing-model",
+  "name": "Missing model",
+  "category": "other",
+  "type": "prop",
+  "model": "asset.placeholder.missing-model"
+}

@@ -1,15 +1,11 @@
-//! `assets/authoring/models.json`: the published model index (`PublishedModel[]`,
-//! `src/shared/authoring/modelCatalogue.ts`), read by `src/shared/assets/models.ts` to
-//! place scenery and unit geometry. Capabilities are the zod output of the asset
-//! definition's `capabilities`, so defaulted fields are always present.
+//! The model index the cooker reads, built from asset folders ([`super::package`]): each
+//! model's transform, capabilities and geometry.
 
-use super::{AuthoringId, Manifest, ResourceRef, True, output_paths, read, unique};
+use super::{AuthoringId, Manifest, ResourceRef, True, output_paths};
 use crate::{error::Error, game::Dimensions};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use std::{collections::BTreeSet, path::Path};
-
-pub const MODELS_FILE: &str = "assets/authoring/models.json";
+use std::collections::BTreeSet;
 
 /// A published asset with geometry.
 #[skip_serializing_none]
@@ -38,6 +34,18 @@ pub struct ModelTransform {
     pub pivot: [f64; 3],
     pub up: Up,
     pub forward: Forward,
+}
+
+impl ModelTransform {
+    /// Unit scale, no pivot offset, Y up, facing +Z.
+    pub fn identity() -> Self {
+        Self {
+            scale: 1.0,
+            pivot: [0.0; 3],
+            up: Up::Y,
+            forward: Forward::PlusZ,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -190,37 +198,6 @@ pub struct HarvestingCapability {
     pub definition: Option<AuthoringId>,
 }
 
-/// Reads `assets/authoring/models.json`; model ids, geometry paths and scenery ids are
-/// unique.
-pub fn load(data: &Path, errors: &mut Vec<Error>) -> Option<Vec<PublishedModel>> {
-    let models: Vec<PublishedModel> = read(data, MODELS_FILE, errors)?;
-    unique(
-        MODELS_FILE,
-        "",
-        "model",
-        models.iter().map(|m| m.id.as_str()),
-        errors,
-    );
-    unique(
-        MODELS_FILE,
-        "geometry",
-        "geometry",
-        models.iter().flat_map(|m| &m.geometry).map(String::as_str),
-        errors,
-    );
-    unique(
-        MODELS_FILE,
-        "scenery",
-        "scenery",
-        models
-            .iter()
-            .flat_map(|m| &m.scenery)
-            .map(AuthoringId::as_str),
-        errors,
-    );
-    Some(models)
-}
-
 /// Model rules against the published records: every model is a record with at least one
 /// geometry output, and its scenery ids are published scenery entries.
 pub fn validate(models: &[PublishedModel], manifest: &Manifest, errors: &mut Vec<Error>) {
@@ -229,7 +206,7 @@ pub fn validate(models: &[PublishedModel], manifest: &Manifest, errors: &mut Vec
     let outputs = output_paths(manifest);
     for model in models {
         let location = model.id.to_string();
-        let mut fail = |message: String| errors.push(Error::new(MODELS_FILE, &location, message));
+        let mut fail = |message: String| errors.push(Error::new("models", &location, message));
         if !records.contains(model.id.as_str()) {
             fail("not a published asset record".into());
         }

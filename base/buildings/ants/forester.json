@@ -2,8 +2,8 @@
   "id": "building.ants.forester",
   "name": "Forester lodge",
   "description": "Decorative forest lodge. Ranked forests do not regrow.",
-  "asset": "asset.ants.forester",
-  "icon": "icon.ants.forester",
+  "model": "asset.placeholder.missing-model",
+  "icon": "asset.icons.building-ants-forester",
   "body": {
     "maxHp": 750,
     "armor": 3,
@@ -41,5 +41,8 @@
   "command": {
     "priority": 70,
     "hidden": true
+  },
+  "presentation": {
+    "healthHeight": 3.2
   }
 }

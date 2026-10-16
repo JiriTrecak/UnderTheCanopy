@@ -1,0 +1,23 @@
+{
+  "id": "asset.effects.holy-light-spark",
+  "name": "Holy Light · warm spark",
+  "kind": "texture",
+  "tags": [
+    "effect",
+    "holy-light",
+    "particle"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original generated Holy Light particle source, 2026-09-30."
+}

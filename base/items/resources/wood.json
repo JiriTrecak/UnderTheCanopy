@@ -2,8 +2,8 @@
   "id": "item.wood",
   "name": "Wood",
   "description": "Ten wood per load, carried to a colony drop-off.",
-  "asset": "asset.item.wood",
-  "icon": "icon.item.wood",
+  "model": "asset.models.cargo.wood",
+  "icon": "asset.icons.resource-lumber",
   "stackLimit": 16,
   "behaviors": {},
   "creation": {

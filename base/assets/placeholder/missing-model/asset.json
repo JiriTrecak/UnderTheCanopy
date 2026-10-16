@@ -1,0 +1,41 @@
+{
+  "id": "asset.placeholder.missing-model",
+  "name": "Missing model",
+  "kind": "prop",
+  "tags": [
+    "placeholder",
+    "diagnostic"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 1,
+    "healthHeight": 2.8
+  },
+  "license": "Procedural diagnostic placeholder authored for this project."
+}

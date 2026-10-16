@@ -1,0 +1,50 @@
+{
+  "id": "asset.models.environment.autumn-shrub-copper",
+  "name": "autumn shrub copper",
+  "kind": "foliage",
+  "tags": [
+    "autumn",
+    "original",
+    "amberleaf"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "wind": {
+      "mode": "foliage",
+      "strength": 0.025,
+      "speed": 0.2,
+      "stiffness": 0.8
+    },
+    "vegetationClearance": 0.25,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "license": "Original procedural geometry and ImageGen leaf albedo. No imported tree geometry or textures."
+}

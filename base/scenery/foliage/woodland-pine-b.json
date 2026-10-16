@@ -1,0 +1,10 @@
+{
+  "id": "scenery.woodland-pine-b",
+  "name": "woodland pine b",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.woodland-pine-b",
+  "harvesting": {
+    "definition": "resource.forest.tree"
+  }
+}

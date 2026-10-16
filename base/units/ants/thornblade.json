@@ -2,8 +2,8 @@
   "id": "unit.ants.thornblade",
   "name": "Thornblade",
   "description": "Agile paired-dagger infantry. Automatically rushes visible ground enemies; can disable autocast for controlled engagements.",
-  "asset": "asset.ants.thornblade",
-  "icon": "icon.ants.thornblade",
+  "model": "asset.models.units.ants-thornblade",
+  "icon": "asset.portraits.units.ants-thornblade",
   "selectionClass": "army",
   "body": {
     "maxHp": 280,

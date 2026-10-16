@@ -1,0 +1,22 @@
+{
+  "id": "asset.spells.marshal.rally-icon",
+  "name": "Rally the Colony",
+  "kind": "icon",
+  "tags": [
+    "spell-effects",
+    "generated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original artwork generated with OpenAI GPT Image 2.5."
+}

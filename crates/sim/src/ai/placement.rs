@@ -361,7 +361,7 @@ mod tests {
     fn building(width: u32, depth: u32) -> Definition {
         serde_json::from_value(json!({
             "id": "building.test.snap", "kind": "building", "name": "", "description": "",
-            "asset": "asset.model", "icon": "asset.icon",
+            "model": "asset.model", "icon": "asset.icon",
             "footprint": {"width": width, "depth": depth}, "behaviors": {},
         }))
         .unwrap()

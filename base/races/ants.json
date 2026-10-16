@@ -96,7 +96,7 @@
     "unit.ants.rootbreaker"
   ],
   "construction": {
-    "scaffold": "asset.construction.ants",
+    "scaffold": "asset.models.construction.ants",
     "padding": 0.4,
     "revealAt": 0.95,
     "retractUntil": 0.985,

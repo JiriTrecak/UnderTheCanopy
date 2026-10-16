@@ -1,0 +1,16 @@
+{
+  "id": "asset.icons.item-warcaller-standard",
+  "name": "Warcaller Standard",
+  "kind": "icon",
+  "tags": [
+    "items-v2",
+    "migrated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ]
+}

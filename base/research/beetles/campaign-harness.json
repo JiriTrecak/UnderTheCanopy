@@ -2,7 +2,7 @@
   "id": "research.beetles.campaign-harness",
   "name": "Campaign Harness",
   "description": "The Hornbreaker gains 200 maximum health. Existing wounds are preserved; the improvement remains through death and revival.",
-  "icon": "icon.item.root",
+  "icon": "asset.icons.resource-root",
   "priority": 50,
   "requires": [
     "building.beetles.great-bastion"

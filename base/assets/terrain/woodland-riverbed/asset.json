@@ -1,0 +1,27 @@
+{
+  "id": "asset.terrain.woodland-riverbed",
+  "name": "woodland riverbed · albedo/roughness",
+  "kind": "terrain-material",
+  "tags": [
+    "original",
+    "woodland"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin"
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original artwork created for Under the Canopy."
+}

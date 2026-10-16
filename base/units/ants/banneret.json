@@ -2,8 +2,8 @@
   "id": "unit.ants.banneret",
   "name": "Banneret",
   "description": "Standard bearer. Rallies nearby allies for increased attack damage and defends itself with a baton.",
-  "asset": "asset.ants.banneret",
-  "icon": "icon.ants.banneret",
+  "model": "asset.models.units.ants-banneret",
+  "icon": "asset.portraits.units.ants-banneret",
   "selectionClass": "army",
   "body": {
     "maxHp": 440,
@@ -76,5 +76,8 @@
     "height": 4.8,
     "formationSpacing": 3.25
   },
-  "modelScale": 3.3
+  "modelScale": 3.3,
+  "presentation": {
+    "castContact": 0.325
+  }
 }

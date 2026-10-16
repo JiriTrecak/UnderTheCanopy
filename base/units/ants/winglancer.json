@@ -2,8 +2,8 @@
   "id": "unit.ants.winglancer",
   "name": "Winglancer",
   "description": "Fast flying lancer. Crosses rough terrain and strikes ground targets with an ivory lance; vulnerable to ranged anti-air fire.",
-  "asset": "asset.ants.winglancer",
-  "icon": "icon.ants.winglancer",
+  "model": "asset.models.units.ants-winglancer",
+  "icon": "asset.portraits.units.ants-winglancer",
   "selectionClass": "army",
   "body": {
     "maxHp": 340,
@@ -61,5 +61,8 @@
   "modelScale": 2.5,
   "requires": [
     "building.ants.great-mound"
-  ]
+  ],
+  "presentation": {
+    "castContact": 0.4722222222222222
+  }
 }

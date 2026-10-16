@@ -2,8 +2,8 @@
   "id": "building.beetles.bastion",
   "name": "Bastion",
   "description": "The beetle colony’s iron-clad main hall stores resources, trains workers and provides supply.",
-  "asset": "asset.beetles.carapace-hall",
-  "icon": "icon.beetles.carapace-hall",
+  "model": "asset.models.buildings.beetles-carapace-hall",
+  "icon": "asset.portraits.buildings.beetles-carapace-hall",
   "body": {
     "maxHp": 1800,
     "armor": 5,

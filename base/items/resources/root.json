@@ -2,8 +2,8 @@
   "id": "item.root",
   "name": "Root",
   "description": "Fibrous heartwood from contested Corrupted Root deposits. Workers deliver it only to a Rootworks.",
-  "asset": "asset.item.root",
-  "icon": "icon.item.root",
+  "model": "asset.models.cargo.root",
+  "icon": "asset.icons.resource-root",
   "stackLimit": 16,
   "behaviors": {},
   "creation": {

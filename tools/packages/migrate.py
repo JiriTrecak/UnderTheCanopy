@@ -5,11 +5,13 @@ Run from the repository root, one step at a time; each step reads the old files,
 the new ones and deletes what it replaced:
 
     python3 tools/packages/migrate.py data     # content/ -> base/ (definitions, rules, abilities, effects)
+    python3 tools/packages/migrate.py assets   # art/assets, assets/ registries -> base/assets, scenery, landscape
 
 Key order of every document is kept as authored. Deleted with the old formats once M0 is
 done (git history keeps it).
 """
 
+import collections
 import json
 import os
 import shutil
@@ -211,7 +213,308 @@ def step_data():
         os.rmdir(os.path.join(ROOT, "content"))
 
 
-STEPS = {"data": step_data}
+def save(full, value):
+    with open(full, "w", encoding="utf-8") as f:
+        json.dump(value, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+
+
+def base_files(*folders):
+    out = []
+    for folder in folders:
+        for root, _, files in os.walk(os.path.join(BASE, folder)):
+            out += [os.path.join(root, f) for f in files if f.endswith(".json")]
+    return sorted(out)
+
+
+def asset_folder(id_):
+    """base/assets/<path>: the id without `asset.`/`models.`, dots as folders."""
+    rest = id_
+    for prefix in ("asset.models.", "asset."):
+        if rest.startswith(prefix):
+            rest = rest[len(prefix):]
+            break
+    if rest.startswith("texture."):
+        rest = "textures." + rest[len("texture."):]
+    if rest.startswith("image."):
+        rest = "interface." + rest[len("image."):]
+    return "assets/" + rest.replace(".", "/")
+
+
+def step_assets():
+    records = {r["id"]: r for r in read("assets/manifest.json")["records"]}
+    catalogue = {c["id"]: c for c in read("assets/authoring/catalogue.json")}
+    sources = {}
+    for name in os.listdir(os.path.join(ROOT, "art/assets")):
+        path = os.path.join(ROOT, "art/assets", name, "asset.json")
+        if os.path.exists(path):
+            sources[name] = read(f"art/assets/{name}/asset.json")
+    render = {e["id"]: (r["id"], e) for r in records.values() for e in r["render"]}
+
+    def is_model(rid):
+        return any(o["path"].endswith(".glb") for o in records[rid]["outputs"])
+
+    # --- New ids for every render id -------------------------------------------------
+    new_id = {}
+    portraits = {}  # model record -> portrait asset id
+    cargo = {}  # (record, file) -> cargo asset id
+    for rid, (rec, e) in render.items():
+        if "image" in e:
+            if is_model(rec):
+                pid = "asset.portraits." + rec.removeprefix("asset.models.")
+                portraits[rec] = pid
+                new_id[rid] = pid
+            else:
+                new_id[rid] = rec
+        elif e.get("sceneryAsset"):
+            new_id[rid] = "scenery." + e["sceneryAsset"]
+        else:
+            file = os.path.basename(e["file"])
+            if file != "geometry.glb":
+                cid = "asset.models.cargo." + last(rid)
+                cargo[(rec, file)] = cid
+                new_id[rid] = cid
+            else:
+                new_id[rid] = rec
+
+    def nid(old):
+        if old not in new_id:
+            raise SystemExit(f"no new id for {old}")
+        return new_id[old]
+
+    # --- Display of each model: from its own entry, else the most used one ------------
+    usage = collections.Counter()
+    for f in base_files("units", "buildings", "items", "resources"):
+        usage[read(os.path.relpath(f, ROOT)).get("asset")] += 1
+    display_entry = {}
+    for rec, r in records.items():
+        entries = [e for e in r["render"] if "file" in e and os.path.basename(e["file"]) == "geometry.glb"]
+        if not entries:
+            continue
+        own = [e for e in entries if e["id"] == rec]
+        plain = [e for e in entries if not e.get("sceneryAsset")]
+        pick = own or sorted(plain or entries, key=lambda e: (-usage[e["id"]], e["id"]))
+        display_entry[rec] = pick[0]
+    for (rec, file), cid in cargo.items():
+        display_entry[cid] = next(e for e in records[rec]["render"] if e.get("file", "").endswith("/" + file))
+
+    def display(entry):
+        d = {}
+        for key in ("scale", "character", "healthHeight"):
+            if key in entry:
+                d[key] = entry[key]
+        return d
+
+    # --- Asset folders -----------------------------------------------------------------
+    moved = {}  # old pack entry -> new pack entry, for verification
+    landscape_kinds = {"landscape-recipe", "water-profile"}
+    for aid, a in sorted(sources.items()):
+        old = os.path.join(ROOT, "art/assets", aid)
+        if a["kind"] in landscape_kinds:
+            continue
+        folder = os.path.join(BASE, asset_folder(aid))
+        os.makedirs(os.path.dirname(folder), exist_ok=True)
+        shutil.move(old, folder)
+        resources = [without(r, "sha256", "bytes") for r in a["resources"]]
+        out = {"id": aid, "name": a["name"], "kind": a["kind"], "tags": a["tags"]}
+        rec = records[aid]
+        if rec.get("faction"):
+            out["race"] = rec["faction"]
+        # Carried cargo and portraits leave the model's folder.
+        for (crec, file), cid in cargo.items():
+            if crec != aid:
+                continue
+            cfolder = os.path.join(BASE, asset_folder(cid))
+            os.makedirs(cfolder, exist_ok=True)
+            shutil.move(os.path.join(folder, file), os.path.join(cfolder, "geometry.glb"))
+            index = int(file.split("_")[1].split(".")[0])
+            resources = [r for r in resources if not (r["role"] == "geometry" and r["index"] == index)]
+            save(os.path.join(cfolder, "asset.json"), {
+                "id": cid, "name": a["name"] + " cargo " + last(cid), "kind": "prop", "tags": ["cargo"],
+                "resources": [{"role": "geometry", "index": 1, "format": "glb"}],
+                "transform": a["transform"], "materials": [],
+                "display": display(display_entry[cid]),
+            })
+            moved[f"assets/library/{aid}/{file}"] = f"{cid}/geometry.glb"
+        has_image = any(r["role"] == "image" for r in resources)
+        if is_model(aid) and has_image:
+            image = next(r for r in resources if r["role"] == "image")
+            name = f"image.{image['format']}"
+            resources = [r for r in resources if r is not image]
+            if aid in portraits:
+                pid = portraits[aid]
+                pfolder = os.path.join(BASE, asset_folder(pid))
+                os.makedirs(pfolder, exist_ok=True)
+                shutil.move(os.path.join(folder, name), os.path.join(pfolder, name))
+                portrait = {"id": pid, "name": a["name"] + " portrait", "kind": "icon", "tags": ["portrait"],
+                            "resources": [image]}
+                if a.get("provenance", {}).get("licenseNote"):
+                    portrait["license"] = a["provenance"]["licenseNote"]
+                save(os.path.join(pfolder, "asset.json"), portrait)
+                moved[f"assets/library/{aid}/{name}"] = f"{pid}/{name}"
+            else:
+                # A model's image nothing shows: a stale copy.
+                os.remove(os.path.join(folder, name))
+        out["resources"] = resources
+        if any(r["format"] == "glb" for r in resources):
+            out["transform"] = a["transform"]
+        if a.get("materials"):
+            out["materials"] = a["materials"]
+        if a.get("capabilities"):
+            out["capabilities"] = a["capabilities"]
+        if aid in display_entry and any(r["format"] == "glb" for r in resources):
+            d = display(display_entry[aid])
+            if d:
+                out["display"] = d
+        if rec["profile"] == "building":
+            out["shading"] = "building"
+        for key in ("terrain", "modelClass"):
+            if key in a:
+                out[key] = a[key]
+        if a.get("provenance", {}).get("licenseNote"):
+            out["license"] = a["provenance"]["licenseNote"]
+        os.remove(os.path.join(folder, "asset.json"))
+        save(os.path.join(folder, "asset.json"), out)
+        for o in rec["outputs"]:
+            file = os.path.basename(o["path"])
+            if o["path"] not in moved and os.path.exists(os.path.join(folder, file)):
+                moved[o["path"]] = f"{aid}/{file}"
+
+    # --- Scenery definitions -------------------------------------------------------------
+    for rec, r in sorted(records.items()):
+        for sc in r["scenery"]:
+            body = {"id": "scenery." + sc["id"], "name": sc["name"], "category": sc["category"],
+                    "type": sc["type"], "model": rec}
+            for key in ("editorHidden", "deck", "light", "blocker", "blockers"):
+                if key in sc:
+                    body[key] = sc[key]
+            entry = catalogue.get(rec)
+            if entry and entry.get("harvesting") and entry.get("scenery") == sc["id"]:
+                body["harvesting"] = {"definition": entry["harvesting"]["definition"]}
+            write(f"scenery/{sc['category']}/{sc['id']}.json", body)
+    scenery_of = {rec: "scenery." + r["scenery"][0]["id"] for rec, r in records.items() if r["scenery"]}
+
+    # --- Landscape: recipes, water profiles, biomes ------------------------------------
+    for aid, a in sorted(sources.items()):
+        if a["kind"] not in landscape_kinds:
+            continue
+        entry = catalogue[aid]
+        if a["kind"] == "water-profile":
+            write(f"landscape/water/{aid.removeprefix('recipe.').removeprefix('water.').replace('.', '-')}.json",
+                  {"id": aid, "name": entry["name"], "water": entry["water"]})
+        else:
+            recipe = json.loads(json.dumps(entry["recipe"]))
+            for species in recipe.get("species", []):
+                species["asset"] = scenery_of.get(species["asset"], species["asset"])
+            write(f"landscape/recipes/{aid.removeprefix('recipe.').replace('.', '/')}.json",
+                  {"id": aid, "name": entry["name"], "recipe": recipe})
+        shutil.rmtree(os.path.join(ROOT, "art/assets", aid))
+    prototypes = {sc["id"] for r in records.values() for sc in r["scenery"]}
+
+    def biome_refs(value):
+        if isinstance(value, dict):
+            return {k: biome_refs(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [biome_refs(v) for v in value]
+        if isinstance(value, str):
+            if value in prototypes:
+                return "scenery." + value
+            return value.replace("assets/library/", "")
+        return value
+
+    for name in sorted(os.listdir(os.path.join(ROOT, "config/biomes"))):
+        write(f"landscape/biomes/{name}", biome_refs(read(f"config/biomes/{name}")))
+        os.remove(os.path.join(ROOT, "config/biomes", name))
+    os.rmdir(os.path.join(ROOT, "config/biomes"))
+
+    # --- References ------------------------------------------------------------------------
+    unit_fields = ("projectile", "projectileSocket", "impactEffect", "castContact", "cameraAnchor")
+    for f in base_files("units", "buildings", "items", "resources"):
+        d = read(os.path.relpath(f, ROOT))
+        old = d.pop("asset")
+        out = {}
+        for k, v in d.items():
+            if k == "icon":
+                out["model"] = nid(old)
+                out["icon"] = nid(v)
+            else:
+                out[k] = v
+        rec, e = render[old]
+        presentation = {k: e[k] for k in unit_fields if k in e}
+        base_display = display(display_entry.get(rec, {})) if not e.get("sceneryAsset") else {}
+        for k in ("healthHeight", "character"):
+            if k in e and e[k] != base_display.get(k):
+                presentation[k] = e[k]
+        if presentation:
+            out["presentation"] = presentation
+        rv = out.get("resourceVisuals")
+        if rv:
+            rv["variants"] = [nid(v) for v in rv["variants"]]
+            for stage in rv["stages"]:
+                stage["asset"] = nid(stage["asset"])
+        save(f, out)
+    for f in base_files("races"):
+        race = read(os.path.relpath(f, ROOT))
+        c = race.get("construction")
+        if c:
+            c["scaffold"] = nid(c["scaffold"])
+        save(f, race)
+    for f in base_files("research"):
+        r = read(os.path.relpath(f, ROOT))
+        r["icon"] = nid(r["icon"])
+        save(f, r)
+    combat = read("base/rules/combat.json")
+    for t in combat["armorTypes"].values():
+        t["icon"] = nid(t["icon"])
+    save(os.path.join(BASE, "rules/combat.json"), combat)
+    game = read("base/rules/game.json")
+    game["supplyIcon"] = nid(game["supplyIcon"])
+    save(os.path.join(BASE, "rules/game.json"), game)
+    commands = read("base/rules/commands.json")
+    for group in ("actions", "categories"):
+        for meta in commands.get(group, {}).values():
+            meta["icon"] = nid(meta["icon"])
+    for meta in commands["navigation"].values():
+        meta["icon"] = nid(meta["icon"])
+    save(os.path.join(BASE, "rules/commands.json"), commands)
+    glow = read("config/glow.json")
+    for g in glow["glows"]:
+        g["assets"] = [nid(a) for a in g["assets"]]
+    save(os.path.join(ROOT, "config/glow.json"), glow)
+    theme_path = os.path.join(ROOT, "config/ui/theme.json")
+    with open(theme_path, encoding="utf-8") as f:
+        theme = f.read()
+    with open(theme_path, "w", encoding="utf-8") as f:
+        f.write(theme.replace("assets/library/", ""))
+    for name in os.listdir(os.path.join(ROOT, "assets/maps/skirmish")):
+        path = os.path.join(ROOT, "assets/maps/skirmish", name)
+        m = json.load(open(path, encoding="utf-8"))
+        for e in m.get("entities", []):
+            app = e.get("appearance")
+            if app and "asset" in app:
+                app["asset"] = nid(app["asset"])
+        for o in m["authoring"]["objects"]:
+            o["asset"] = scenery_of[o["asset"]]
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(m, f, indent=2, ensure_ascii=False)
+
+    # --- Old registries go --------------------------------------------------------------------
+    for gone in ["assets/library", "assets/authoring", "assets/manifest.json", "assets/index.md"]:
+        full = os.path.join(ROOT, gone)
+        if os.path.isdir(full):
+            shutil.rmtree(full)
+        elif os.path.exists(full):
+            os.remove(full)
+    if not os.listdir(os.path.join(ROOT, "art/assets")):
+        os.rmdir(os.path.join(ROOT, "art/assets"))
+    with open(os.path.join(ROOT, "target/asset-entry-renames.json"), "w") as f:
+        json.dump(moved, f, indent=1, sort_keys=True)
+    with open(os.path.join(ROOT, "target/render-id-renames.json"), "w") as f:
+        json.dump(new_id, f, indent=1, sort_keys=True)
+    print(f"{len(moved)} pack entries renamed; portraits {len(portraits)}; cargo {len(cargo)}")
+
+
+STEPS = {"data": step_data, "assets": step_assets}
 
 if __name__ == "__main__":
     if len(sys.argv) != 2 or sys.argv[1] not in STEPS:

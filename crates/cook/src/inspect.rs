@@ -8,7 +8,7 @@ use std::{fmt::Write as _, path::Path, time::Instant};
 /// its files), or a scenery prototype id (its model).
 pub fn inspect(pack_path: &Path, query: &str) -> Result<String> {
     let pack = Pack::load(pack_path)?;
-    let folder = format!("assets/library/{query}/");
+    let folder = format!("{query}/");
     let mut names: Vec<String> = pack
         .entries()
         .iter()

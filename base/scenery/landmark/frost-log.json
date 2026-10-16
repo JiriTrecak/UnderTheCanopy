@@ -1,0 +1,7 @@
+{
+  "id": "scenery.frost-log",
+  "name": "frost log",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.frost-log"
+}

@@ -1,0 +1,54 @@
+{
+  "id": "asset.models.environment.autumn-tree-copper",
+  "name": "autumn tree copper",
+  "kind": "tree",
+  "tags": [
+    "autumn",
+    "original",
+    "amberleaf"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "wind": {
+      "mode": "tree",
+      "strength": 0.09,
+      "speed": 0.2,
+      "stiffness": 0.8
+    },
+    "vegetationClearance": 1.1,
+    "groundContact": {
+      "mode": "pivot"
+    },
+    "harvesting": {
+      "replacement": "asset.models.environment.autumn-stump",
+      "definition": "resource.forest.tree"
+    }
+  },
+  "license": "Original procedural geometry and ImageGen leaf albedo. No imported tree geometry or textures."
+}

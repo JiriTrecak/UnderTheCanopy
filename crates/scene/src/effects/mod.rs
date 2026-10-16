@@ -459,7 +459,7 @@ impl EffectDirector {
         let mut impacts = BTreeMap::new();
         for d in &content.definitions {
             if let Some(effect) = content
-                .asset(d.asset.as_str())
+                .look(d.id.as_str())
                 .and_then(|a| a.impact_effect.as_ref())
                 .and_then(|id| table.find(id.as_str()))
             {
