@@ -140,6 +140,43 @@ The terrain data stays what it is today; only the container changes. Map data wi
 
 The server stops embedding `content/game.json`; it validates the shape of seat choices and leaves content to the content identity every client sends before a match starts. Map transfer is a later milestone.
 
+## Migration details
+
+Settled from a full read of today's data and every consumer (2026-10-16). Each keeps gameplay identical unless it says otherwise.
+
+**Loading.** Per collection: layer the packages, resolve `base`, then resolve behaviour sets exactly as today (they merge one level deep, field by field, with conflict errors; keep that), then parse into the Rust types (defaults apply only here), sort, validate. Errors name the element's own file. A `null` in the bottom layer stays a value (command overrides use `null` to clear a category); only a patch's `null` removes a field. `Content` is resolved per match, because a map may carry overrides; menus use the packages without a map.
+
+**Ordering.** Definitions are already sorted by id. Abilities are numbered by their position in today's published file; the loader sorts them by id instead. Measured: every per-tick fingerprint on both maps, AI matches and crowd battles, stays identical; only saved ability numbers change.
+
+**Races and the default race.** `rules/game.json` keeps `defaultRace`: the simulation uses it for seats without a race (AI matches, tests, campaign starts) and for map checks that need a fort (`playable`, resource clearance). The global starting setup becomes `races/ants.json`'s own (keeping id `setup.ants`, which maps name); the "global setup" fallbacks become "the default race's setup".
+
+**AI.** Before the migration, a separate step makes the AI choose its army and spells from the race's data (what its buildings train, what its heroes learn) instead of the composition and skill-preference lists, measured with AI duels; then the baseline is recorded again. AI timing and limits become code constants with today's values. `revision`, `limits.spellCandidates` and `heroStunDurationPermille` are unused and go.
+
+**Commands.** `rules/commands.json` holds navigation, categories and actions. The nine `build:<building>` overrides move into their buildings (`command: {priority, category, hidden, hotkey}`), so removing a building removes its override.
+
+**Abilities and effects.** `published.json` is a plain copy of the sources (checked: identical values for all 24 abilities and 49 effects). An ability file holds its presentation inline under `presentation` (icon, animations, effect bindings); presentation ids go. The per-element `schemaVersion` fields and the library `abi` go; the package format replaces them. Folders follow owners: `abilities/heroes/marshal/rally.json`, `abilities/ants/rootweaver/root-bind.json`, `effects/weapons/arrow.json`.
+
+**Assets.** References change from render ids to asset ids (definitions, research, armour and supply icons, commands, map appearances, `config/glow.json`, one HUD literal). Of the 277 render entries 73 are referenced by nothing and go, with the 24 dead placeholder ids and the unused geometry of legacy models. Where each render field goes:
+
+| Render field | New home |
+|---|---|
+| `file`, `image` | the asset's files, by role |
+| `scale`, `character` (animation profile), `healthHeight` | the model's `asset.json` (`display`): the same for every use of a model today. A definition may override `healthHeight` (the placeholder model stands in for many units). |
+| `projectile`, `projectileSocket`, `impactEffect`, `castContact`, `cameraAnchor` | the unit definition's `presentation` |
+| `harvestAnimation` | implied: the model's own clips |
+| `sceneryAsset` | the `scenery/` definition |
+| `dimensions`, `sockets`, `stackHeight`, `stackColumns`, `carryAsset` | deleted (duplicates of the model's capabilities, or unused) |
+
+The worker's folder holds the carried wood, amber and root models: they become three item assets. The 56 unit and building portraits become icon assets of their own. Definitions name their model `model` (today `asset`). Pack entries are named by asset id and file role instead of `assets/library/…` paths, including the UI theme's images and the renderer's few fixed textures.
+
+**Scenery.** The 73 scenery prototypes become `scenery/` definitions with ids `scenery.<name>`: name, category, model, blockers, deck, light, hidden in the editor, and harvesting (which resource it becomes, as the landscape catalogue says today). Map objects and biome forests reference scenery ids. Terrain materials stay assets (textures plus their projection and atlas settings); landscape recipes and water profiles move to `landscape/`.
+
+**Maps.** Terrain grid files use the extension `.grid` (`.bin` is stored in Git LFS): a small header (magic, element type, width, height, filters), then the values little-endian, byte-shuffled and deflate-compressed, bit-exact. Echo Isles' terrain shrinks from 31.6 MB of base64 to about 0.6 MB. Paint layers are listed in order in `map.json` (order decides blending), one weights grid and one variants grid each. The version wrappers, the duplicate terrain size and retired fields go. Scenery objects keep their order (the simulation numbers resources by it). Map previews move into their packages.
+
+**Identity.** A package's hash is SHA-256 over its files, sorted by path, each prefixed by its path and length. Match, save and lobby identity use the ordered package hashes (the map's included) instead of today's five files and the map file.
+
+**The match server** stops reading `game.json`: it no longer lists races and heroes or fills them into seats; the client takes them from its own content and the simulation fills seats left empty with the default race and its default hero. Clients older than the release that ships this cannot use the new server.
+
 ## Migration and acceptance
 
 - A one-time converter turns today's data into `base/` and deletes the old folders and readers.
