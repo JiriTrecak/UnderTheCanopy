@@ -4,10 +4,11 @@
 //! saves every changed document, leaving with unsaved changes asks first.
 
 use crate::checker::Checker;
-use crate::document::{Command, Context, Store};
+use crate::document::{Command, Context, Outside, Store};
 use crate::icons::{self, Icon};
 use crate::library::{Element, KINDS, Kind, Library, Node};
 use crate::theme::{self, *};
+use crate::watch::Watch;
 use crate::widgets::*;
 use canopy_content::package::Package;
 use egui::{
@@ -153,6 +154,8 @@ pub struct Shell {
     problems_open: bool,
     /// Asking whether to save although the check found problems.
     confirm_save: bool,
+    /// Files changed on disk.
+    watch: Option<Watch>,
     /// The editor is done: back to the menu, or quit the game.
     pub close: Option<Leave>,
 }
@@ -161,7 +164,9 @@ impl Shell {
     pub fn new(package: Result<Package, String>) -> Self {
         let store = package.as_ref().ok().map(|p| Store::new(&p.root));
         let checker = package.as_ref().ok().cloned().map(Checker::new);
+        let watch = package.as_ref().ok().and_then(|p| Watch::new(&p.root));
         Self {
+            watch,
             checker,
             checked: None,
             problems_open: false,
@@ -190,6 +195,7 @@ impl Shell {
         if let Some(checker) = &mut self.checker {
             checker.poll();
         }
+        self.follow_disk();
         self.shortcuts(ui.ctx());
         self.rail(ui);
         if self.assistant {
@@ -220,8 +226,88 @@ impl Shell {
             self.run(edit);
         }
         self.check();
+        self.conflict_dialog(ui.ctx());
         self.leave_dialog(ui.ctx());
         self.save_dialog(ui.ctx());
+    }
+
+    /// Takes in files changed on disk: documents reload or become conflicts, and the
+    /// libraries that list them are read again.
+    fn follow_disk(&mut self) {
+        let Some(changed) = self.watch.as_ref().map(Watch::changed) else {
+            return;
+        };
+        if changed.is_empty() {
+            return;
+        }
+        let Ok(package) = &self.package else {
+            return;
+        };
+        // What is on disk changed, so the last check is out of date.
+        self.checked = None;
+        let mut kinds = HashSet::new();
+        let mut unreadable = None;
+        if let Some(store) = &mut self.store {
+            for document in &changed {
+                if let Outside::Unreadable(message) = store.outside_change(document) {
+                    unreadable = Some(message);
+                }
+                kinds.extend(Kind::of_document(document));
+            }
+        }
+        for kind in kinds {
+            if let Some(workspace) = self.workspaces.get_mut(&kind) {
+                workspace.library = Library::read(package, kind);
+            }
+        }
+        if let Some(message) = unreadable {
+            self.say(format!("Not valid JSON on disk: {message}"), true);
+        }
+    }
+
+    /// Asks which version wins for a document changed on disk while it had unsaved edits.
+    fn conflict_dialog(&mut self, ctx: &egui::Context) {
+        let Some(document) = self
+            .store
+            .as_ref()
+            .and_then(|s| s.conflicts().first().map(|d| d.to_string()))
+        else {
+            return;
+        };
+        let mut answer = None;
+        egui::Modal::new(Id::new("conflict"))
+            .backdrop_color(egui::Color32::from_black_alpha(150))
+            .frame(
+                Frame::new()
+                    .fill(RAISED)
+                    .stroke(Stroke::new(1.0, BORDER))
+                    .corner_radius(10)
+                    .inner_margin(Margin::same(20)),
+            )
+            .show(ctx, |ui| {
+                ui.set_width(400.0);
+                ui.label(RichText::new("Changed on disk").size(14.0).color(TEXT));
+                ui.add_space(4.0);
+                ui.label(RichText::new(&document).monospace().color(SOFT));
+                ui.label(
+                    RichText::new(
+                        "The file changed while it had unsaved edits here. Keeping your edits overwrites the file on the next save; taking the file's version drops your edits to it.",
+                    )
+                    .color(MUTED),
+                );
+                ui.add_space(12.0);
+                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                    if ui.add(primary("Keep my edits")).clicked() {
+                        answer = Some(true);
+                    }
+                    if ui.button("Take the file's version").clicked() {
+                        answer = Some(false);
+                    }
+                });
+            });
+        if let (Some(keep_mine), Some(store)) = (answer, &mut self.store) {
+            store.resolve(&document, keep_mine);
+        }
     }
 
     /// Asks for a check when the documents changed since the last one.

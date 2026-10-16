@@ -58,6 +58,8 @@ reqwest = { version = "0.13", default-features = false, features = ["rustls-no-p
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 rustls-platform-verifier = "0.7"
 serde = { version = "1", features = ["derive"] }
+# The editor follows files changed on disk (docs/editor.md).
+notify = "8"
 # Objects keep their keys in document order: the editor writes documents back in place
 # (docs/editor.md).
 serde_json = { version = "1", features = ["preserve_order", "float_roundtrip"] }

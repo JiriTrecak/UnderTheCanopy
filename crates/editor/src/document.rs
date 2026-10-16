@@ -109,10 +109,25 @@ struct Document {
     revision: u64,
 }
 
+/// What a change on disk did to a document ([`Store::outside_change`]).
+#[derive(Debug, Clone, PartialEq)]
+pub enum Outside {
+    /// Nothing to do: not loaded, or the file holds what the editor last read or saved.
+    Unchanged,
+    /// The document had no unsaved edits and now shows the file.
+    Reloaded,
+    /// The document has unsaved edits and the file changed too: someone must choose.
+    Conflict,
+    /// The file is not valid JSON (yet: an agent or git may be writing it).
+    Unreadable(String),
+}
+
 /// The documents of one package, loaded on first use, and the undo history.
 pub struct Store {
     root: PathBuf,
     documents: BTreeMap<String, Document>,
+    /// Documents changed on disk while they had unsaved edits, with the file's version.
+    conflicts: BTreeMap<String, Option<Value>>,
     done: Vec<Step>,
     undone: Vec<Step>,
     revision: u64,
@@ -131,6 +146,7 @@ impl Store {
         Self {
             root: root.to_path_buf(),
             documents: BTreeMap::new(),
+            conflicts: BTreeMap::new(),
             done: Vec::new(),
             undone: Vec::new(),
             revision: 0,
@@ -269,6 +285,66 @@ impl Store {
 
     pub fn redo_label(&self) -> Option<&str> {
         self.undone.last().map(|s| s.label.as_str())
+    }
+
+    /// The file of `document` changed on disk (an agent, git, another editor).
+    pub fn outside_change(&mut self, document: &str) -> Outside {
+        let Some(current) = self.documents.get(document) else {
+            return Outside::Unchanged;
+        };
+        let file = self.root.join(document);
+        let disk = match std::fs::read_to_string(&file) {
+            Ok(text) => match serde_json::from_str::<Value>(&text) {
+                Ok(value) => Some(value),
+                Err(error) => return Outside::Unreadable(format!("{document}: {error}")),
+            },
+            Err(_) if !file.exists() => None,
+            Err(error) => return Outside::Unreadable(format!("{document}: {error}")),
+        };
+        if disk == current.saved {
+            return Outside::Unchanged;
+        }
+        if current.value == current.saved {
+            self.take(document, disk);
+            Outside::Reloaded
+        } else {
+            self.conflicts.insert(document.to_string(), disk);
+            Outside::Conflict
+        }
+    }
+
+    /// Documents changed on disk while they had unsaved edits.
+    pub fn conflicts(&self) -> Vec<&str> {
+        self.conflicts.keys().map(String::as_str).collect()
+    }
+
+    /// Settles a conflict: keep the unsaved edits (the next save overwrites the file), or
+    /// take the file's version.
+    pub fn resolve(&mut self, document: &str, keep_mine: bool) {
+        let Some(disk) = self.conflicts.remove(document) else {
+            return;
+        };
+        if keep_mine {
+            if let Some(d) = self.documents.get_mut(document) {
+                d.saved = disk;
+            }
+        } else {
+            self.take(document, disk);
+        }
+    }
+
+    /// Shows the file's version and forgets the undo steps that touched the document:
+    /// they were made against a version that is gone.
+    fn take(&mut self, document: &str, disk: Option<Value>) {
+        self.revision += 1;
+        if let Some(d) = self.documents.get_mut(document) {
+            d.value = disk.clone();
+            d.saved = disk;
+            d.revision = self.revision;
+        }
+        let touches = |step: &Step| step.done.iter().any(|c| c.document() == document);
+        self.done.retain(|s| !touches(s));
+        self.undone.retain(|s| !touches(s));
     }
 
     /// Writes every changed document (and removes deleted ones); returns what it wrote.
@@ -636,6 +712,50 @@ mod tests {
         assert_eq!(store.dirty(), [KNIGHT, new]);
         store.save().unwrap();
         assert!(!folder.0.join(new).exists());
+    }
+
+    #[test]
+    fn files_changed_on_disk_reload_or_conflict() {
+        let folder = Folder::new("outside");
+        let mut store = Store::new(&folder.0);
+        let other = |name: &str| {
+            format(
+                &json!({"id": "unit.knight", "name": name, "cost": {"wood": 5}, "tags": ["a", "b"]}),
+            )
+        };
+        store.get(KNIGHT).unwrap();
+        // Unchanged files and the editor's own saves are not changes.
+        assert_eq!(store.outside_change(KNIGHT), Outside::Unchanged);
+        store
+            .run("Rename", here(KNIGHT), vec![set("/name", json!("Paladin"))])
+            .unwrap();
+        store.save().unwrap();
+        assert_eq!(store.outside_change(KNIGHT), Outside::Unchanged);
+        // A clean document follows the file, and its old steps are forgotten.
+        std::fs::write(folder.0.join(KNIGHT), other("Agent")).unwrap();
+        assert_eq!(store.outside_change(KNIGHT), Outside::Reloaded);
+        assert_eq!(store.get(KNIGHT).unwrap().unwrap()["name"], "Agent");
+        assert!(store.undo().is_none());
+        // Unsaved edits and a changed file: a conflict either side can win.
+        store
+            .run("Rename", here(KNIGHT), vec![set("/name", json!("Mine"))])
+            .unwrap();
+        std::fs::write(folder.0.join(KNIGHT), other("Theirs")).unwrap();
+        assert_eq!(store.outside_change(KNIGHT), Outside::Conflict);
+        assert_eq!(store.conflicts(), [KNIGHT]);
+        store.resolve(KNIGHT, true);
+        assert_eq!(store.get(KNIGHT).unwrap().unwrap()["name"], "Mine");
+        assert!(store.is_dirty(KNIGHT));
+        std::fs::write(folder.0.join(KNIGHT), other("Again")).unwrap();
+        assert_eq!(store.outside_change(KNIGHT), Outside::Conflict);
+        store.resolve(KNIGHT, false);
+        assert_eq!(store.get(KNIGHT).unwrap().unwrap()["name"], "Again");
+        assert!(!store.is_dirty(KNIGHT));
+        std::fs::write(folder.0.join(KNIGHT), "{ half").unwrap();
+        assert!(matches!(
+            store.outside_change(KNIGHT),
+            Outside::Unreadable(_)
+        ));
     }
 
     /// Every document of the repository's base package is already in the file format, so

@@ -13,6 +13,7 @@ mod icons;
 mod library;
 mod shell;
 pub mod theme;
+mod watch;
 mod widgets;
 
 pub use document::Command;
