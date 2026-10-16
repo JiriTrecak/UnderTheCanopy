@@ -1392,6 +1392,30 @@ impl Shell {
             .flatten()
     }
 
+    pub fn unsaved(&self) -> Vec<String> {
+        self.store
+            .as_ref()
+            .map(|s| s.dirty().iter().map(|d| d.to_string()).collect())
+            .unwrap_or_default()
+    }
+
+    pub fn set_map_tool(&mut self, name: &str) {
+        let Some(root) = self
+            .active_document()
+            .and_then(|d| crate::map::root_of(&d).map(str::to_string))
+        else {
+            return;
+        };
+        if let (Some(session), Some(tool)) = (
+            self.maps.get_mut(&root),
+            crate::map::tools::Tool::ALL
+                .iter()
+                .find(|t| t.name().eq_ignore_ascii_case(name)),
+        ) {
+            session.tools.tool = *tool;
+        }
+    }
+
     pub fn undo_all(&mut self) {
         while let Some(store) = &mut self.store
             && store.undo().is_some()

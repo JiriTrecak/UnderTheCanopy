@@ -146,11 +146,24 @@ impl Editor {
 
     /// A frame of `size` physical pixels at `scale` without a window (captures).
     pub fn run_headless(&mut self, size: [u32; 2], scale: f32, gpu: &canopy_render::Gpu) -> Output {
+        self.run_headless_with(size, scale, gpu, Vec::new())
+    }
+
+    /// A headless frame with input `events` (captures and tests drive the editor).
+    pub fn run_headless_with(
+        &mut self,
+        size: [u32; 2],
+        scale: f32,
+        gpu: &canopy_render::Gpu,
+        events: Vec<egui::Event>,
+    ) -> Output {
         let mut input = egui::RawInput {
             screen_rect: Some(egui::Rect::from_min_size(
                 egui::Pos2::ZERO,
                 egui::vec2(size[0] as f32, size[1] as f32) / scale,
             )),
+            events,
+            predicted_dt: 1.0 / 30.0,
             ..Default::default()
         };
         input
@@ -186,6 +199,16 @@ impl Editor {
     /// The game data of the last check that passed (Test in game; captures).
     pub fn checked_content(&self) -> Option<std::sync::Arc<canopy_content::Content>> {
         self.shell.checked_content()
+    }
+
+    /// The documents and grids with unsaved changes (captures, tests).
+    pub fn unsaved(&self) -> Vec<String> {
+        self.shell.unsaved()
+    }
+
+    /// Chooses the open map's tool by name (captures).
+    pub fn set_map_tool(&mut self, name: &str) {
+        self.shell.set_map_tool(name);
     }
 
     /// Takes back every step (captures).

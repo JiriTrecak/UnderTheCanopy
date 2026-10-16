@@ -175,10 +175,23 @@ fn panel(ui: &mut Ui, session: &mut Session, content: Option<&Content>) {
                     })
                     .map(|s| s.id.to_string())
                     .collect();
-                if t.tree.is_empty()
-                    && let Some(first) = trees.first()
-                {
-                    t.tree = first.clone();
+                if t.tree.is_empty() {
+                    // The tree the map already uses most, else the first.
+                    let mut counts: std::collections::BTreeMap<&str, usize> = Default::default();
+                    if let Some(map) = map {
+                        for o in &map.authoring.objects {
+                            if trees.iter().any(|t| *t == o.asset) {
+                                *counts.entry(o.asset.as_str()).or_default() += 1;
+                            }
+                        }
+                    }
+                    let most = counts
+                        .into_iter()
+                        .max_by_key(|(_, n)| *n)
+                        .map(|(t, _)| t.to_string());
+                    if let Some(tree) = most.or_else(|| trees.first().cloned()) {
+                        t.tree = tree;
+                    }
                 }
                 egui::ComboBox::from_label("Tree")
                     .selected_text(t.tree.trim_start_matches("scenery."))

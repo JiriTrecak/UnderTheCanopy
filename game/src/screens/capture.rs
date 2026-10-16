@@ -425,6 +425,65 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
         std::thread::sleep(Duration::from_millis(25));
     }
     shoot(&mut editor, rig, "editor-maps")?;
+    // Editing the map through its view: a cliff stroke, trees, a creep camp.
+    let frame = |editor: &mut Editor, rig: &mut Rig, events: Vec<egui::Event>| {
+        editor.run_headless_with(rig.size, rig.scale, &rig.gpu, events);
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    let ui_scale = rig.scale;
+    let point = move |x: f32, y: f32| egui::pos2(x / ui_scale, y / ui_scale);
+    let press = |p: egui::Pos2, pressed: bool| egui::Event::PointerButton {
+        pos: p,
+        button: egui::PointerButton::Primary,
+        pressed,
+        modifiers: egui::Modifiers::NONE,
+    };
+    let drag = |editor: &mut Editor, rig: &mut Rig, from: (f32, f32), to: (f32, f32)| {
+        let a = point(from.0, from.1);
+        frame(editor, rig, vec![egui::Event::PointerMoved(a)]);
+        frame(editor, rig, vec![press(a, true)]);
+        for i in 1..=20 {
+            let t = i as f32 / 20.0;
+            let p = point(from.0 + (to.0 - from.0) * t, from.1 + (to.1 - from.1) * t);
+            frame(editor, rig, vec![egui::Event::PointerMoved(p)]);
+        }
+        let b = point(to.0, to.1);
+        frame(editor, rig, vec![press(b, false)]);
+        frame(editor, rig, vec![]);
+    };
+    let click = |editor: &mut Editor, rig: &mut Rig, at: (f32, f32)| {
+        let p = point(at.0, at.1);
+        frame(editor, rig, vec![egui::Event::PointerMoved(p)]);
+        frame(editor, rig, vec![press(p, true)]);
+        frame(editor, rig, vec![press(p, false)]);
+        frame(editor, rig, vec![]);
+    };
+    editor.undo_all();
+    editor.set_map_tool("cliff");
+    drag(&mut editor, rig, (760.0, 640.0), (1000.0, 700.0));
+    editor.set_map_tool("trees");
+    drag(&mut editor, rig, (800.0, 780.0), (1100.0, 800.0));
+    editor.set_map_tool("camp");
+    click(&mut editor, rig, (1150.0, 600.0));
+    for _ in 0..20 {
+        frame(&mut editor, rig, vec![]);
+    }
+    let unsaved = editor.unsaved();
+    anyhow::ensure!(
+        unsaved.iter().any(|d| d.ends_with("terrain/heights.grid"))
+            && unsaved.iter().any(|d| d.ends_with("scenery.json"))
+            && unsaved.iter().any(|d| d.ends_with("map.json")),
+        "the strokes and the camp are unsaved edits: {unsaved:?}"
+    );
+    shoot(&mut editor, rig, "editor-map-edited")?;
+    editor.undo_all();
+    for _ in 0..5 {
+        frame(&mut editor, rig, vec![]);
+    }
+    anyhow::ensure!(
+        editor.unsaved().is_empty(),
+        "undo takes every map edit back"
+    );
 
     // Test in game: the editor's checked data (a renamed race) plays a skirmish, and the
     // game's own data is back once the match is left.
