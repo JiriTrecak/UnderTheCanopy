@@ -215,9 +215,12 @@ pub fn write(map: &UtcMap, id: &str, version: &str, dir: &Path) -> std::io::Resu
         version: version.into(),
         author: String::new(),
         description: map.description.clone().unwrap_or_default(),
-        dependencies: [(crate::Id::new("base").expect("valid"), ">=0.4".to_string())]
-            .into_iter()
-            .collect(),
+        dependencies: [(
+            crate::Id::new("base").expect("valid"),
+            format!(">={}", env!("CARGO_PKG_VERSION")),
+        )]
+        .into_iter()
+        .collect(),
         license: String::new(),
     };
     std::fs::write(

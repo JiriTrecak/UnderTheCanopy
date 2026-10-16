@@ -3,8 +3,8 @@
   "id": "vanguard",
   "kind": "campaign",
   "name": "The Ant Vanguard",
-  "version": "0.4.0",
+  "version": "1.0.0",
   "dependencies": {
-    "base": ">=0.4"
+    "base": ">=0.3.5"
   }
 }

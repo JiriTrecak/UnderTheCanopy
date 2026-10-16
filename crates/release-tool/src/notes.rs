@@ -106,6 +106,15 @@ pub fn cmd_check(repo: &Repo, allow_pointers: bool) -> Result<()> {
     Ok(())
 }
 
+/// `text` (a `package.json`) with its first `"version"` value set to `version`, the rest of
+/// the document untouched.
+fn set_package_version(text: &str, version: &str) -> Result<String> {
+    let key = "\"version\": \"";
+    let start = text.find(key).context("package.json has no version")? + key.len();
+    let end = start + text[start..].find('"').context("unterminated version")?;
+    Ok(format!("{}{version}{}", &text[..start], &text[end..]))
+}
+
 pub fn cmd_prepare(repo: &Repo, version: &str, title: &str, milestone: bool) -> Result<()> {
     let version: Version = version.parse()?;
     let _lock = repo.lock_log()?;
@@ -130,6 +139,14 @@ pub fn cmd_prepare(repo: &Repo, version: &str, title: &str, milestone: bool) -> 
     if let Err(e) = repo::write_atomic(&manifest_path, next_manifest.as_bytes()) {
         repo::write_atomic(&repo.log_path(), &old_log)?;
         return Err(e);
+    }
+    // The base package carries the game's version.
+    let base = repo.root.join("base/package.json");
+    if let Ok(text) = fs::read_to_string(&base) {
+        repo::write_atomic(
+            &base,
+            set_package_version(&text, &version.to_string())?.as_bytes(),
+        )?;
     }
     // Cargo.lock records the workspace members' versions.
     let status = std::process::Command::new(std::env::var("CARGO").unwrap_or("cargo".into()))

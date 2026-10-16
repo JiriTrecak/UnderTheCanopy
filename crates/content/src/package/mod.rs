@@ -56,7 +56,7 @@ pub struct Manifest {
     pub author: String,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub description: String,
-    /// Package id → version requirement (`">=0.4"`); every dependency loads earlier.
+    /// Package id → version requirement (`">=0.3.5"`); every dependency loads earlier.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub dependencies: BTreeMap<crate::Id, String>,
     #[serde(default, skip_serializing_if = "String::is_empty")]

@@ -39,7 +39,7 @@ base/
   "name": "Frost tuning",
   "version": "1.0.0",
   "description": "Hardier winter units.",
-  "dependencies": {"base": ">=0.4"}
+  "dependencies": {"base": ">=0.3.5"}
 }
 ```
 
