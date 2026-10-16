@@ -236,8 +236,8 @@ pub fn wait_for<T>(
     }
 }
 
-/// The old repository, if it is checked out beside this one with its dependencies: its
-/// TypeScript client still plays against our server in `old_client.rs` and `old_lockstep.rs`.
+/// The old repository, if it is checked out beside this one with its dependencies:
+/// `old_lockstep.rs` compares the lockstep messages against its TypeScript code.
 pub fn old_repository() -> Option<PathBuf> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     std::env::var_os("CANOPY_OLD_REPO")
