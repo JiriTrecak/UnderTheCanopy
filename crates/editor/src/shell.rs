@@ -178,6 +178,8 @@ pub struct Shell {
     pub viewport_error: Option<String>,
     pub shot: Option<crate::stage::Shot>,
     orbit: crate::stage::Orbit,
+    /// Test in game, asked for this frame.
+    pub test: Option<(Arc<canopy_content::Content>, Option<String>)>,
     /// `problems` calls waiting for the current check.
     waiting: Vec<tokio::sync::oneshot::Sender<Result<Value, String>>>,
     /// The editor is done: back to the menu, or quit the game.
@@ -199,6 +201,7 @@ impl Shell {
             mcp_error: None,
             mcp_open: false,
             waiting: Vec::new(),
+            test: None,
             viewport_texture: None,
             viewport_error: None,
             shot: None,
@@ -1155,6 +1158,16 @@ impl Shell {
         })
     }
 
+    pub fn undo_all(&mut self) {
+        while let Some(store) = &mut self.store
+            && store.undo().is_some()
+        {}
+    }
+
+    pub fn checked_content(&self) -> Option<Arc<canopy_content::Content>> {
+        self.checker.as_ref().and_then(|c| c.content().cloned())
+    }
+
     pub fn show_problems(&mut self, open: bool) {
         self.problems_open = open;
     }
@@ -1269,7 +1282,11 @@ impl Shell {
             self.notice = None;
         }
         let notice = self.notice.clone();
-        let mut clicked = (false, false, false);
+        let mut clicked = (false, false, false, false);
+        // The data of a check that passed for the latest edits.
+        let testable = (self.problem_count() == Some(0) && !self.checking())
+            .then(|| self.checker.as_ref().and_then(|c| c.content().cloned()))
+            .flatten();
         egui::Panel::top("header")
             .exact_size(HEADER)
             .resizable(false)
@@ -1339,11 +1356,17 @@ impl Shell {
                         {
                             self.mcp_open = true;
                         }
-                        ui.add_enabled_ui(false, |ui| {
-                            ui.button("Test in game").on_disabled_hover_text(
-                                "Playing the open package comes later in this milestone.",
-                            );
-                        });
+                        let ready = testable.is_some();
+                        let hint = if ready {
+                            "Play a skirmish against the computer with these edits (unsaved ones included); leave the match to come back"
+                        } else {
+                            "Fix the problems first: the game loads only a package that passes the check"
+                        };
+                        clicked.3 = ui
+                            .add_enabled(ready, egui::Button::new("Test in game"))
+                            .on_hover_text(hint)
+                            .on_disabled_hover_text(hint)
+                            .clicked();
                         let (line, _) = ui.allocate_exact_size(vec2(1.0, 20.0), Sense::hover());
                         ui.painter().rect_filled(line, 0, BORDER);
                         let hint = |verb: &str, label: &Option<String>, keys: &str| match label {
@@ -1367,6 +1390,16 @@ impl Shell {
         }
         if clicked.2 {
             self.redo();
+        }
+        if clicked.3
+            && let Some(content) = testable
+        {
+            // The open map, when the maps editor shows one.
+            let map = (self.current == Kind::Maps)
+                .then(|| self.active_document())
+                .flatten()
+                .and_then(|d| self.workspaces.get(&Kind::Maps).map(|w| w.element(&d).id));
+            self.test = Some((content, map));
         }
     }
 

@@ -45,6 +45,8 @@ struct Session {
     game: Game,
     /// Open while editing; it draws the window instead of the game.
     editor: Option<canopy_editor::Editor>,
+    /// The editor waiting while Test in game plays its data.
+    suspended: Option<canopy_editor::Editor>,
 }
 
 /// Measurements gathered between two log lines.
@@ -146,6 +148,7 @@ impl App {
             renderer,
             game,
             editor: None,
+            suspended: None,
         });
         if self.options.command == Command::Edit {
             self.open_editor();
@@ -184,6 +187,18 @@ impl App {
         if output.quit {
             session.game.quit();
             event_loop.exit();
+            return;
+        }
+        if let Some((content, map)) = output.test {
+            match session.game.test_in_game(content, map) {
+                Ok(()) => {
+                    session.suspended = session.editor.take();
+                    session.game.audio.set_background(false);
+                    session.game.forget_cursor();
+                    window.set_title("Under the Canopy · Test in game");
+                }
+                Err(error) => tracing::warn!(%error, "test in game"),
+            }
             return;
         }
         if output.close {
@@ -241,6 +256,13 @@ impl App {
         }
         if requests.editor {
             self.open_editor();
+            return;
+        }
+        // Test in game ends when its match is left: back to the editor as it was.
+        if session.suspended.is_some() && session.game.test_finished() {
+            session.editor = session.suspended.take();
+            session.game.audio.set_background(true);
+            window.set_title("Under the Canopy · Editor");
             return;
         }
         if let Some(vsync) = requests.vsync {

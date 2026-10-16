@@ -420,6 +420,63 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
     editor.select(Kind::Maps);
     editor.open_first(2);
     shoot(&mut editor, rig, "editor-maps")?;
+
+    // Test in game: the editor's checked data (a renamed race) plays a skirmish, and the
+    // game's own data is back once the match is left.
+    editor.undo_all();
+    editor
+        .run_step(
+            "Rename for the test",
+            vec![canopy_editor::Command::Set {
+                document: "races/ants.json".into(),
+                pointer: "/name".into(),
+                value: "Ants (editor test)".into(),
+                at: None,
+            }],
+        )
+        .map_err(anyhow::Error::msg)?;
+    shoot(&mut editor, rig, "editor-before-test")?;
+    let content = editor.checked_content().context("a check passed")?;
+    anyhow::ensure!(
+        content
+            .rules
+            .races
+            .get("ants")
+            .is_some_and(|r| r.name == "Ants (editor test)"),
+        "the checked data has the unsaved edit"
+    );
+    rig.game
+        .test_in_game(content, None)
+        .map_err(anyhow::Error::msg)?;
+    rig.until("the test match", Duration::from_secs(180), |g| {
+        g.flow.in_match()
+    })?;
+    let testing = rig.game.data.as_ref().context("data")?;
+    anyhow::ensure!(
+        testing
+            .content
+            .rules
+            .races
+            .get("ants")
+            .is_some_and(|r| r.name == "Ants (editor test)"),
+        "the match plays the editor's data"
+    );
+    rig.settle(2.0);
+    rig.shoot("editor-test-match")?;
+    rig.game.apply(Intent::LeaveMatch);
+    rig.until("the main menu", Duration::from_secs(30), |g| {
+        matches!(g.flow.screen(), Screen::MainMenu)
+    })?;
+    anyhow::ensure!(rig.game.test_finished(), "the test ends at the main menu");
+    let own = rig.game.data.as_ref().context("data")?;
+    anyhow::ensure!(
+        own.content
+            .rules
+            .races
+            .get("ants")
+            .is_some_and(|r| r.name != "Ants (editor test)"),
+        "the game's own data is back"
+    );
     Ok(())
 }
 

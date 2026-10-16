@@ -186,6 +186,8 @@ pub struct Game {
     view: [f32; 2],
     apply_all: bool,
     clear_actors: bool,
+    /// Test in game: the game's own data while a match plays the editor's.
+    testing: Option<Arc<GameData>>,
 }
 
 fn seed() -> u32 {
@@ -276,6 +278,7 @@ impl Game {
             view: [1.0, 1.0],
             apply_all: true,
             clear_actors: false,
+            testing: None,
         };
         // The editor edits the repository; installed games show its entry disabled.
         if game.paths.repository().is_none()
@@ -290,6 +293,47 @@ impl Game {
     pub fn offline_updates(&mut self) {
         self.updater = crate::update::Updater::new(Box::new(crate::update::remote::Offline));
         self.releases.gallery.offline = true;
+    }
+
+    /// Test in game (docs/editor.md): a skirmish against computer players on `map` (the
+    /// last map played, or the first skirmish map) with `content` in place of the game's
+    /// own until the match is left.
+    pub fn test_in_game(
+        &mut self,
+        content: Arc<canopy_content::Content>,
+        map: Option<String>,
+    ) -> Result<(), String> {
+        let data = self.data.clone().ok_or("the game is still loading")?;
+        let map = map
+            .filter(|m| data.map(m).is_some_and(|e| e.playable))
+            .or_else(|| self.last_match.as_ref().map(|r| r.map.clone()))
+            .or_else(|| data.skirmish_maps().next().map(|m| m.id().to_string()))
+            .ok_or("no playable map")?;
+        self.testing = Some(data.clone());
+        self.data = Some(Arc::new(data.testing(content)));
+        self.start_dev(DevStart {
+            spec: DevSpec {
+                map,
+                hour: None,
+                players: Some(2),
+                biome: None,
+                crowd: None,
+                colors: None,
+                human: Some(0),
+            },
+            tick: 0,
+            camera: None,
+        });
+        Ok(())
+    }
+
+    /// The test match was left: the game's own data is back. True once, when it happens.
+    pub fn test_finished(&mut self) -> bool {
+        if self.testing.is_none() || !matches!(self.flow.screen(), Screen::MainMenu) {
+            return false;
+        }
+        self.data = self.testing.take();
+        true
     }
 
     /// The window's cursor changed behind the game's back (the editor): set it again.

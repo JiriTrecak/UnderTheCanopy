@@ -46,6 +46,9 @@ pub struct Output {
     pub close: bool,
     /// Quit the game (the window was closed and unsaved changes are settled).
     pub quit: bool,
+    /// Test in game: play a skirmish with this content (unsaved edits included), on this
+    /// map when one is open.
+    pub test: Option<(std::sync::Arc<canopy_content::Content>, Option<String>)>,
 }
 
 pub struct Editor {
@@ -169,6 +172,16 @@ impl Editor {
         self.shell.checking()
     }
 
+    /// The game data of the last check that passed (Test in game; captures).
+    pub fn checked_content(&self) -> Option<std::sync::Arc<canopy_content::Content>> {
+        self.shell.checked_content()
+    }
+
+    /// Takes back every step (captures).
+    pub fn undo_all(&mut self) {
+        self.shell.undo_all();
+    }
+
     /// Opens or closes the problems list (captures).
     pub fn show_problems(&mut self, open: bool) {
         self.shell.show_problems(open);
@@ -247,6 +260,7 @@ impl Editor {
         let output = Output {
             close: close == Some(shell::Leave::Menu),
             quit: close == Some(shell::Leave::Quit),
+            test: self.shell.test.take(),
         };
         (output, platform_output)
     }

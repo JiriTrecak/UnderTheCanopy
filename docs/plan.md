@@ -55,7 +55,7 @@ Agreed with Jiri, 2026-10-16. One native Rust editor shipped inside the game, us
 | Candidate | Scope to discuss |
 |---|---|
 | **M0. Data layer** (done, D53) | Packages and layering (base, campaign, map; mods later), one file per definition, overrides and inheritance, schemas from the Rust types, the asset registry, the map format, user folders, content identity, migration of today's data. |
-| M1. Editor shell | Home screen, tabs, command bus with undo, MCP and a headless mode, the viewport on the game renderer, reload of content and assets. |
+| **M1. Editor shell** (done, docs/editor.md) | One editor inside the game for the repository's base package: the rail, tabs, forms from schemas, one undo history, the loader's check, files followed on disk, MCP (and `canopy mcp`), the viewport on the game renderer, Test in game. |
 | M2. Data editors | Units and heroes, buildings, items, abilities (the spell editor) and effects, linked to each other. |
 | M3. Map editor | Rebuilt around large-scale tools: symmetric and rotational map halves, shaping whole landforms ("an island here"), start locations that place their mine and forest by rules, and a new look for ground cover (moving grass, decals, foliage). |
 | M4. Asset editor | Scope to be discovered first. Assets (the scenery library included) easy to author, find unused and delete. |

@@ -159,6 +159,17 @@ impl GameData {
         })
     }
 
+    /// This data with other content: the editor's documents for Test in game.
+    pub fn testing(&self, content: Arc<Content>) -> Self {
+        Self {
+            content,
+            pack: self.pack.clone(),
+            maps: self.maps.clone(),
+            content_digest: self.content_digest.clone(),
+            identity_parts: self.identity_parts.clone(),
+        }
+    }
+
     pub fn map(&self, id: &str) -> Option<&MapEntry> {
         self.maps.iter().find(|m| m.id() == id)
     }
