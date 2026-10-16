@@ -173,7 +173,7 @@ impl App {
     }
 
     /// A frame while the editor is open.
-    fn redraw_editor(&mut self) {
+    fn redraw_editor(&mut self, event_loop: &ActiveEventLoop) {
         let (Some(session), Some(window)) = (&mut self.session, &self.window) else {
             return;
         };
@@ -185,6 +185,11 @@ impl App {
             &session.display.gpu.device,
             &session.display.gpu.queue,
         );
+        if output.quit {
+            session.game.quit();
+            event_loop.exit();
+            return;
+        }
         if output.close {
             session.editor = None;
             session.game.audio.set_background(false);
@@ -214,7 +219,7 @@ impl App {
         let dt_ms = (now - self.last_frame).as_secs_f32() * 1000.0;
         self.last_frame = now;
         if self.session.as_ref().is_some_and(|s| s.editor.is_some()) {
-            self.redraw_editor();
+            self.redraw_editor(event_loop);
             return;
         }
         let (Some(session), Some(window)) = (&mut self.session, &self.window) else {
@@ -343,6 +348,12 @@ impl ApplicationHandler for App {
         match &event {
             WindowEvent::CloseRequested => {
                 if let Some(session) = &mut self.session {
+                    // The editor asks about unsaved changes first; it quits once settled.
+                    if let Some(editor) = &mut session.editor
+                        && !editor.close_requested()
+                    {
+                        return;
+                    }
                     session.game.quit();
                 }
                 event_loop.exit();

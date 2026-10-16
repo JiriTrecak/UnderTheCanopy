@@ -1,26 +1,52 @@
 //! The editor's frame (docs/editor.md, M1): the rail that switches editors, the header,
 //! each editor's library, document tabs and inspector, and the assistant sidebar on the
-//! right. Documents open read-only; editing, the viewport, MCP and the assistant come
-//! later and show here as disabled controls.
+//! right. Every edit goes through the [`Store`]: one undo history across editors, Cmd+S
+//! saves every changed document, leaving with unsaved changes asks first.
 
+use crate::document::{Command, Context, Store};
 use crate::icons::{self, Icon};
 use crate::library::{Element, KINDS, Kind, Library, Node};
 use crate::theme::{self, *};
+use crate::widgets::*;
 use canopy_content::package::Package;
 use egui::{
-    Align, Align2, Color32, CornerRadius, FontId, Frame, Id, Layout, Margin, Rect, Response,
-    RichText, ScrollArea, Sense, Stroke, StrokeKind, TextEdit, Ui, pos2, vec2,
+    Align, Frame, Id, Key, KeyboardShortcut, Layout, Margin, Modifiers, RichText, ScrollArea,
+    Sense, Stroke, TextEdit, Ui, pos2, vec2,
 };
 use egui_dock::{DockArea, DockState, TabViewer};
+use serde_json::Value;
 use std::collections::{HashMap, HashSet};
+use std::time::{Duration, Instant};
 
 /// One open document.
 pub struct Doc {
+    /// The element's name when it was opened (its `name` field wins while it has one).
     name: String,
     id: String,
     /// Path from the package root.
     document: String,
+    /// The JSON view: the text of the revision shown, and the user's edit of it.
+    shown: Option<u64>,
     text: String,
+    edit: String,
+    error: Option<String>,
+    /// The inspector's name field while it is not being typed in.
+    name_field: String,
+}
+
+impl Doc {
+    fn new(element: &Element) -> Self {
+        Self {
+            name: element.name.clone(),
+            id: element.id.clone(),
+            document: element.document.clone(),
+            shown: None,
+            text: String::new(),
+            edit: String::new(),
+            error: None,
+            name_field: String::new(),
+        }
+    }
 }
 
 /// One editor's state, kept while switching editors.
@@ -55,29 +81,99 @@ impl Workspace {
             expanded,
         }
     }
+
+    /// Opens (or focuses) `element`'s tab; shows its folder in the library.
+    fn open(&mut self, element: &Element) {
+        if let Some(path) = self.dock.find_tab_from(|d| d.document == element.document) {
+            let _ = self.dock.set_active_tab(path);
+            self.dock.set_focused_node_and_surface(path.node_path());
+        } else {
+            self.dock.push_to_focused_leaf(Doc::new(element));
+        }
+        let parts: Vec<&str> = element.path.split('/').collect();
+        for end in 1..parts.len() {
+            self.expanded.insert(parts[..end].join("/"));
+        }
+    }
+
+    /// The element whose document is `document`, from the library (or a stand-in for one
+    /// it does not list, such as a new document).
+    fn element(&self, document: &str) -> Element {
+        let mut all = Vec::new();
+        self.library.nodes.iter().for_each(|n| n.elements(&mut all));
+        all.into_iter()
+            .find(|e| e.document == document)
+            .cloned()
+            .unwrap_or_else(|| {
+                let stem = document
+                    .rsplit('/')
+                    .next()
+                    .unwrap_or(document)
+                    .trim_end_matches(".json");
+                Element {
+                    id: stem.to_string(),
+                    name: stem.to_string(),
+                    path: document.to_string(),
+                    document: document.to_string(),
+                }
+            })
+    }
+}
+
+/// An edit a panel asks for this frame; it runs once the frame's panels are drawn.
+struct Edit {
+    label: String,
+    context: Context,
+    commands: Vec<Command>,
+}
+
+/// Where leaving the editor goes once unsaved changes are settled.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Leave {
+    Menu,
+    Quit,
 }
 
 pub struct Shell {
     package: Result<Package, String>,
+    store: Option<Store>,
     current: Kind,
     workspaces: HashMap<Kind, Workspace>,
     assistant: bool,
-    /// The editor asked to close (back to the game's menu).
-    pub close: bool,
+    /// Asking about unsaved changes before leaving.
+    leaving: Option<Leave>,
+    /// A short message in the header (saved, an error) and when it was set.
+    notice: Option<(String, bool, Instant)>,
+    /// The editor is done: back to the menu, or quit the game.
+    pub close: Option<Leave>,
 }
 
 impl Shell {
     pub fn new(package: Result<Package, String>) -> Self {
+        let store = package.as_ref().ok().map(|p| Store::new(&p.root));
         Self {
             package,
+            store,
             current: Kind::Abilities,
             workspaces: HashMap::new(),
             assistant: false,
-            close: false,
+            leaving: None,
+            notice: None,
+            close: None,
+        }
+    }
+
+    /// Leaves now, or asks first when there are unsaved changes.
+    pub fn leave(&mut self, to: Leave) {
+        if self.store.as_ref().is_some_and(|s| !s.dirty().is_empty()) {
+            self.leaving = Some(to);
+        } else {
+            self.close = Some(to);
         }
     }
 
     pub fn ui(&mut self, ui: &mut Ui) {
+        self.shortcuts(ui.ctx());
         self.rail(ui);
         if self.assistant {
             self.assistant(ui);
@@ -97,9 +193,120 @@ impl Shell {
             .workspaces
             .entry(kind)
             .or_insert_with(|| Workspace::read(package, kind));
-        library_panel(ui, kind, workspace, package);
-        inspector(ui, kind, workspace);
-        documents(ui, kind, workspace);
+        let store = self.store.as_mut().expect("a store with the package");
+        let mut edits = Vec::new();
+        library_panel(ui, kind, workspace, store, package);
+        inspector(ui, kind, workspace, store, &mut edits);
+        documents(ui, kind, workspace, store, &mut edits);
+        for edit in edits {
+            self.run(edit);
+        }
+        self.leave_dialog(ui.ctx());
+    }
+
+    /// The document of the current editor's focused tab.
+    pub fn active_document(&mut self) -> Option<String> {
+        self.workspaces
+            .get_mut(&self.current)?
+            .dock
+            .main_surface_mut()
+            .find_active_focused()
+            .map(|(_, d)| d.document.clone())
+    }
+
+    /// Runs `commands` as one step whose context is the current editor and the first
+    /// command's document.
+    pub fn run_step(&mut self, label: &str, commands: Vec<Command>) -> Result<(), String> {
+        let store = self.store.as_mut().ok_or("no package")?;
+        let document = commands
+            .first()
+            .map(|c| c.document().to_string())
+            .unwrap_or_default();
+        let context = Context {
+            editor: self.current,
+            document,
+            pointer: None,
+        };
+        store
+            .run(label, context, commands)
+            .map_err(|e| e.to_string())
+    }
+
+    fn run(&mut self, edit: Edit) {
+        let Some(store) = &mut self.store else {
+            return;
+        };
+        if let Err(error) = store.run(&edit.label, edit.context, edit.commands) {
+            self.say(error.to_string(), true);
+        }
+    }
+
+    fn say(&mut self, text: String, error: bool) {
+        if error {
+            tracing::warn!(%text, "editor");
+        }
+        self.notice = Some((text, error, Instant::now()));
+    }
+
+    fn undo(&mut self) {
+        if let Some(context) = self.store.as_mut().and_then(Store::undo) {
+            self.reveal(&context);
+        }
+    }
+
+    fn redo(&mut self) {
+        if let Some(context) = self.store.as_mut().and_then(Store::redo) {
+            self.reveal(&context);
+        }
+    }
+
+    /// Brings back where a step happened: its editor and its document's tab.
+    fn reveal(&mut self, context: &Context) {
+        let Ok(package) = &self.package else {
+            return;
+        };
+        self.current = context.editor;
+        let workspace = self
+            .workspaces
+            .entry(context.editor)
+            .or_insert_with(|| Workspace::read(package, context.editor));
+        let element = workspace.element(&context.document);
+        workspace.open(&element);
+    }
+
+    fn save(&mut self) {
+        let Some(store) = &mut self.store else {
+            return;
+        };
+        match store.save() {
+            Ok(written) if written.is_empty() => {}
+            Ok(written) => {
+                let text = match written.as_slice() {
+                    [one] => format!("Saved {one}"),
+                    many => format!("Saved {} files", many.len()),
+                };
+                self.say(text, false);
+            }
+            Err(error) => self.say(format!("Not saved: {error}"), true),
+        }
+    }
+
+    fn shortcuts(&mut self, ctx: &egui::Context) {
+        let save = KeyboardShortcut::new(Modifiers::COMMAND, Key::S);
+        let redo = KeyboardShortcut::new(Modifiers::COMMAND | Modifiers::SHIFT, Key::Z);
+        let undo = KeyboardShortcut::new(Modifiers::COMMAND, Key::Z);
+        if ctx.input_mut(|i| i.consume_shortcut(&save)) {
+            self.save();
+        }
+        // A focused text field keeps Cmd+Z for its own text.
+        if ctx.egui_wants_keyboard_input() {
+            return;
+        }
+        if ctx.input_mut(|i| i.consume_shortcut(&redo)) {
+            self.redo();
+        } else if ctx.input_mut(|i| i.consume_shortcut(&undo)) {
+            self.undo();
+        }
     }
 
     /// Switches to `kind`'s editor.
@@ -129,25 +336,7 @@ impl Shell {
             .for_each(|n| n.elements(&mut elements));
         let first: Vec<Element> = elements.into_iter().take(n).cloned().collect();
         for element in &first {
-            open_document(&mut workspace.dock, package, element);
-            // Show where it lives in the tree.
-            let mut folder = String::new();
-            for part in element
-                .path
-                .split('/')
-                .collect::<Vec<_>>()
-                .iter()
-                .rev()
-                .skip(1)
-                .rev()
-            {
-                folder = if folder.is_empty() {
-                    (*part).to_string()
-                } else {
-                    format!("{folder}/{part}")
-                };
-                workspace.expanded.insert(folder.clone());
-            }
+            workspace.open(element);
         }
     }
 
@@ -191,7 +380,7 @@ impl Shell {
                             .on_hover_text("Back to the main menu")
                             .clicked()
                         {
-                            self.close = true;
+                            self.leave(Leave::Menu);
                         }
                     });
                 });
@@ -203,7 +392,34 @@ impl Shell {
             .workspaces
             .get_mut(&self.current)
             .and_then(|w| w.dock.main_surface_mut().find_active_focused())
-            .map(|(_, doc)| doc.name.clone());
+            .map(|(_, doc)| (doc.name.clone(), doc.document.clone()))
+            .map(|(name, document)| {
+                let current = self
+                    .store
+                    .as_mut()
+                    .and_then(|s| s.get(&document).ok().flatten())
+                    .and_then(|v| v.get("name"))
+                    .and_then(Value::as_str)
+                    .map(str::to_string);
+                (current.unwrap_or(name), document)
+            });
+        let (unsaved, undo, redo) = match &self.store {
+            Some(s) => (
+                s.dirty().len(),
+                s.undo_label().map(str::to_string),
+                s.redo_label().map(str::to_string),
+            ),
+            None => (0, None, None),
+        };
+        if self
+            .notice
+            .as_ref()
+            .is_some_and(|n| n.2.elapsed() > Duration::from_secs(4))
+        {
+            self.notice = None;
+        }
+        let notice = self.notice.clone();
+        let mut clicked = (false, false, false);
         egui::Panel::top("header")
             .exact_size(HEADER)
             .resizable(false)
@@ -232,12 +448,23 @@ impl Shell {
                         Ok(p) => p.manifest.id.to_string(),
                         Err(_) => "no package".into(),
                     };
-                    chip(ui, &package, "Read-only").on_hover_text(
-                        "The repository's base package. Editing comes with the data editors; documents open read-only.",
-                    );
-                    if let Some(title) = &title {
+                    chip(ui, &package, "Repository")
+                        .on_hover_text("The repository's base package: saving writes its files.");
+                    if let Some((name, document)) = &title {
                         ui.add_space(4.0);
-                        ui.label(RichText::new(title).color(TEXT));
+                        ui.label(RichText::new(name).color(TEXT))
+                            .on_hover_text(document);
+                    }
+                    if unsaved > 0 {
+                        let text = match unsaved {
+                            1 => "1 unsaved".to_string(),
+                            n => format!("{n} unsaved"),
+                        };
+                        badge(ui, &text, Some(DIRTY));
+                    }
+                    if let Some((text, error, _)) = &notice {
+                        let color = if *error { ERROR } else { MUTED };
+                        ui.label(RichText::new(text).color(color).size(11.0));
                     }
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                         ui.spacing_mut().item_spacing.x = 6.0;
@@ -247,8 +474,10 @@ impl Shell {
                         {
                             self.assistant = !self.assistant;
                         }
-                        ui.add_enabled(false, primary("Save"))
-                            .on_disabled_hover_text("Saving comes with the data editors.");
+                        clicked.0 = ui
+                            .add_enabled(unsaved > 0, primary("Save"))
+                            .on_hover_text("Save every changed document (Cmd+S)")
+                            .clicked();
                         status(ui, "MCP off", FAINT).on_hover_text(
                             "The MCP server for agents comes later in this milestone.",
                         );
@@ -259,11 +488,89 @@ impl Shell {
                         });
                         let (line, _) = ui.allocate_exact_size(vec2(1.0, 20.0), Sense::hover());
                         ui.painter().rect_filled(line, 0, BORDER);
-                        icon_button(ui, Icon::Redo, false, false).on_disabled_hover_text("Redo");
-                        icon_button(ui, Icon::Undo, false, false).on_disabled_hover_text("Undo");
+                        let hint = |verb: &str, label: &Option<String>, keys: &str| match label {
+                            Some(l) => format!("{verb} {l} ({keys})"),
+                            None => format!("Nothing to {}", verb.to_lowercase()),
+                        };
+                        clicked.2 = icon_button(ui, Icon::Redo, false, redo.is_some())
+                            .on_hover_text(hint("Redo", &redo, "Cmd+Shift+Z"))
+                            .clicked();
+                        clicked.1 = icon_button(ui, Icon::Undo, false, undo.is_some())
+                            .on_hover_text(hint("Undo", &undo, "Cmd+Z"))
+                            .clicked();
                     });
                 });
             });
+        if clicked.0 {
+            self.save();
+        }
+        if clicked.1 {
+            self.undo();
+        }
+        if clicked.2 {
+            self.redo();
+        }
+    }
+
+    fn leave_dialog(&mut self, ctx: &egui::Context) {
+        let Some(to) = self.leaving else {
+            return;
+        };
+        let unsaved = self.store.as_ref().map_or(0, |s| s.dirty().len());
+        let mut answer = None;
+        let response = egui::Modal::new(Id::new("leave"))
+            .backdrop_color(egui::Color32::from_black_alpha(150))
+            .frame(
+                Frame::new()
+                    .fill(RAISED)
+                    .stroke(Stroke::new(1.0, BORDER))
+                    .corner_radius(10)
+                    .inner_margin(Margin::same(20)),
+            )
+            .show(ctx, |ui| {
+                ui.set_width(360.0);
+                ui.label(RichText::new("Unsaved changes").size(14.0).color(TEXT));
+                ui.add_space(4.0);
+                let what = match unsaved {
+                    1 => "One document has".to_string(),
+                    n => format!("{n} documents have"),
+                };
+                ui.label(
+                    RichText::new(format!(
+                        "{what} changes that are not saved. Save them before leaving?"
+                    ))
+                    .color(MUTED),
+                );
+                ui.add_space(12.0);
+                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                    if ui.add(primary("Save and leave")).clicked() {
+                        answer = Some(true);
+                    }
+                    if ui.button("Leave without saving").clicked() {
+                        answer = Some(false);
+                    }
+                    if ui.button("Cancel").clicked() {
+                        self.leaving = None;
+                    }
+                });
+            });
+        if response.should_close() && answer.is_none() {
+            self.leaving = None;
+        }
+        match answer {
+            Some(true) => {
+                self.save();
+                if self.store.as_ref().is_some_and(|s| s.dirty().is_empty()) {
+                    self.leaving = None;
+                    self.close = Some(to);
+                }
+            }
+            Some(false) => {
+                self.leaving = None;
+                self.close = Some(to);
+            }
+            None => {}
+        }
     }
 
     fn assistant(&mut self, ui: &mut Ui) {
@@ -288,7 +595,9 @@ impl Shell {
                             ui.vertical(|ui| {
                                 ui.spacing_mut().item_spacing.y = 2.0;
                                 ui.add_space(13.0);
-                                ui.label(RichText::new("Assistant").size(13.0).color(TEXT).strong());
+                                ui.label(
+                                    RichText::new("Assistant").size(13.0).color(TEXT).strong(),
+                                );
                                 ui.label(eyebrow("All editors").size(8.0));
                             });
                             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
@@ -299,7 +608,7 @@ impl Shell {
                                     self.assistant = false;
                                 }
                                 icon_button(ui, Icon::Plus, false, false)
-                                    .on_disabled_hover_text("New thread");
+                                    .on_hover_text("New thread");
                             });
                         });
                     });
@@ -332,10 +641,15 @@ impl Shell {
                                             .frame(Frame::NONE),
                                     );
                                     ui.horizontal(|ui| {
-                                        ui.label(RichText::new("Claude API").color(FAINT).size(11.0));
-                                        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                                            icon_button(ui, Icon::Send, false, false);
-                                        });
+                                        ui.label(
+                                            RichText::new("Claude API").color(FAINT).size(11.0),
+                                        );
+                                        ui.with_layout(
+                                            Layout::right_to_left(Align::Center),
+                                            |ui| {
+                                                icon_button(ui, Icon::Send, false, false);
+                                            },
+                                        );
                                     });
                                 });
                             });
@@ -351,7 +665,13 @@ impl Shell {
     }
 }
 
-fn library_panel(ui: &mut Ui, kind: Kind, workspace: &mut Workspace, package: &Package) {
+fn library_panel(
+    ui: &mut Ui,
+    kind: Kind,
+    workspace: &mut Workspace,
+    store: &Store,
+    package: &Package,
+) {
     egui::Panel::left(Id::new(("library", kind)))
         .default_size(LIBRARY)
         .size_range(180.0..=380.0)
@@ -400,7 +720,7 @@ fn library_panel(ui: &mut Ui, kind: Kind, workspace: &mut Workspace, package: &P
                 ui.label(eyebrow(&format!("{} library", kind.label())));
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                     icon_button(ui, Icon::Plus, false, false)
-                        .on_disabled_hover_text("Creating elements comes with the data editors.");
+                        .on_hover_text("Creating elements comes with the data editors.");
                 });
             });
             ui.add_space(4.0);
@@ -436,13 +756,17 @@ fn library_panel(ui: &mut Ui, kind: Kind, workspace: &mut Workspace, package: &P
                 .show(ui, |ui| {
                     ui.spacing_mut().item_spacing.y = 1.0;
                     let filter = workspace.filter.trim().to_lowercase();
+                    let shown = Shown {
+                        active: active.as_deref(),
+                        store,
+                    };
                     if filter.is_empty() {
                         tree(
                             ui,
                             &workspace.library.nodes,
                             0,
                             &mut workspace.expanded,
-                            active.as_deref(),
+                            &shown,
                             &mut open,
                         );
                     } else {
@@ -463,16 +787,22 @@ fn library_panel(ui: &mut Ui, kind: Kind, workspace: &mut Workspace, package: &P
                             ui.label(RichText::new("Nothing matches").color(FAINT));
                         }
                         for element in matches {
-                            if element_row(ui, 0, element, active.as_deref()).clicked() {
+                            if element_row(ui, 0, element, &shown).clicked() {
                                 open = Some(element.clone());
                             }
                         }
                     }
                 });
             if let Some(element) = open {
-                open_document(&mut workspace.dock, package, &element);
+                workspace.open(&element);
             }
         });
+}
+
+/// What library rows mark: the open document and unsaved ones.
+struct Shown<'a> {
+    active: Option<&'a str>,
+    store: &'a Store,
 }
 
 fn tree(
@@ -480,7 +810,7 @@ fn tree(
     nodes: &[Node],
     depth: usize,
     expanded: &mut HashSet<String>,
-    active: Option<&str>,
+    shown: &Shown,
     open: &mut Option<Element>,
 ) {
     for node in nodes {
@@ -492,7 +822,7 @@ fn tree(
                 count,
             } => {
                 let is_open = expanded.contains(path);
-                let response = row(ui, depth, name, Some(*count), Some(is_open), false);
+                let response = row(ui, depth, name, Some(*count), Some(is_open), false, false);
                 if response.clicked() {
                     if is_open {
                         expanded.remove(path);
@@ -501,11 +831,11 @@ fn tree(
                     }
                 }
                 if is_open {
-                    tree(ui, children, depth + 1, expanded, active, open);
+                    tree(ui, children, depth + 1, expanded, shown, open);
                 }
             }
             Node::Element(element) => {
-                if element_row(ui, depth, element, active).clicked() {
+                if element_row(ui, depth, element, shown).clicked() {
                     *open = Some(element.clone());
                 }
             }
@@ -513,98 +843,26 @@ fn tree(
     }
 }
 
-fn element_row(ui: &mut Ui, depth: usize, element: &Element, active: Option<&str>) -> Response {
+fn element_row(ui: &mut Ui, depth: usize, element: &Element, shown: &Shown) -> egui::Response {
     row(
         ui,
         depth,
         &element.name,
         None,
         None,
-        active == Some(element.document.as_str()),
+        shown.active == Some(element.document.as_str()),
+        shown.store.is_dirty(&element.document),
     )
     .on_hover_text(&element.id)
 }
 
-/// A library row: a folder (`folder` = whether it is open) or an element.
-fn row(
+fn inspector(
     ui: &mut Ui,
-    depth: usize,
-    label: &str,
-    count: Option<usize>,
-    folder: Option<bool>,
-    selected: bool,
-) -> Response {
-    let (rect, response) = ui.allocate_exact_size(vec2(ui.available_width(), 26.0), Sense::click());
-    let painter = ui.painter();
-    let fill = if selected {
-        SELECTED
-    } else if response.hovered() {
-        RAISED
-    } else {
-        Color32::TRANSPARENT
-    };
-    painter.rect_filled(rect, 5, fill);
-    let mut x = rect.left() + 8.0 + depth as f32 * 14.0;
-    let y = rect.center().y;
-    match folder {
-        Some(open) => {
-            let icon = if open {
-                Icon::ChevronDown
-            } else {
-                Icon::ChevronRight
-            };
-            icons::paint(painter, icons::square(pos2(x + 6.0, y), 12.0), icon, MUTED);
-        }
-        None => {
-            let color = if selected { SOFT } else { FAINT };
-            icons::paint(
-                painter,
-                icons::square(pos2(x + 6.0, y), 13.0),
-                Icon::File,
-                color,
-            );
-        }
-    }
-    x += 18.0;
-    let color = if selected { TEXT } else { SOFT };
-    let right = match count {
-        Some(n) => {
-            let r = painter.text(
-                pos2(rect.right() - 8.0, y),
-                Align2::RIGHT_CENTER,
-                n.to_string(),
-                FontId::proportional(11.0),
-                FAINT,
-            );
-            r.left() - 6.0
-        }
-        None => rect.right() - 6.0,
-    };
-    let galley = painter.layout_no_wrap(label.to_string(), FontId::proportional(12.0), color);
-    let clip = Rect::from_min_max(pos2(x, rect.top()), pos2(right, rect.bottom()));
-    painter
-        .with_clip_rect(clip.intersect(painter.clip_rect()))
-        .galley(pos2(x, y - galley.size().y / 2.0), galley, color);
-    response.on_hover_cursor(egui::CursorIcon::PointingHand)
-}
-
-fn open_document(dock: &mut DockState<Doc>, package: &Package, element: &Element) {
-    if let Some(path) = dock.find_tab_from(|d| d.document == element.document) {
-        let _ = dock.set_active_tab(path);
-        dock.set_focused_node_and_surface(path.node_path());
-        return;
-    }
-    let text = std::fs::read_to_string(package.root.join(&element.document))
-        .unwrap_or_else(|e| format!("Could not read {}: {e}", element.document));
-    dock.push_to_focused_leaf(Doc {
-        name: element.name.clone(),
-        id: element.id.clone(),
-        document: element.document.clone(),
-        text,
-    });
-}
-
-fn inspector(ui: &mut Ui, kind: Kind, workspace: &mut Workspace) {
+    kind: Kind,
+    workspace: &mut Workspace,
+    store: &mut Store,
+    edits: &mut Vec<Edit>,
+) {
     egui::Panel::right(Id::new(("inspector", kind)))
         .default_size(INSPECTOR)
         .size_range(260.0..=480.0)
@@ -613,47 +871,68 @@ fn inspector(ui: &mut Ui, kind: Kind, workspace: &mut Workspace) {
         .frame(Frame::new().fill(PANEL).inner_margin(Margin::same(14)))
         .show(ui, |ui| {
             ui.spacing_mut().item_spacing.y = 8.0;
-            match workspace.dock.main_surface_mut().find_active_focused() {
-                None => {
-                    ui.label(eyebrow("Inspector"));
-                    ui.label(RichText::new("Open an element from the library.").color(FAINT));
-                }
-                Some((_, doc)) => {
-                    ui.label(RichText::new("Properties").size(13.0).color(TEXT).strong());
-                    field(ui, "Name", &doc.name, false);
-                    field(ui, "Id", &doc.id, true);
-                    field(ui, "File", &doc.document, true);
-                    ui.add_space(4.0);
-                    ui.label(
-                        RichText::new(
-                            "Read-only for now: fields, undo and saving come with the data editors.",
-                        )
-                        .color(FAINT)
-                        .size(11.0),
+            let Some((_, doc)) = workspace.dock.main_surface_mut().find_active_focused() else {
+                ui.label(eyebrow("Inspector"));
+                ui.label(RichText::new("Open an element from the library.").color(FAINT));
+                return;
+            };
+            ui.label(RichText::new("Properties").size(13.0).color(TEXT).strong());
+            let name = match store.get(&doc.document) {
+                Ok(Some(value)) => value.get("name").and_then(Value::as_str).map(str::to_string),
+                _ => None,
+            };
+            match name {
+                Some(name) => {
+                    ui.label(RichText::new("Name").color(MUTED).size(11.0));
+                    let id = Id::new(("name-field", &doc.document));
+                    if !ui.memory(|m| m.has_focus(id)) {
+                        doc.name_field = name.clone();
+                    }
+                    let response = ui.add(
+                        TextEdit::singleline(&mut doc.name_field)
+                            .id(id)
+                            .desired_width(f32::INFINITY)
+                            .margin(Margin::symmetric(8, 6)),
                     );
+                    if response.lost_focus() && doc.name_field != name {
+                        edits.push(Edit {
+                            label: format!("Rename {name}"),
+                            context: Context {
+                                editor: kind,
+                                document: doc.document.clone(),
+                                pointer: Some("/name".into()),
+                            },
+                            commands: vec![Command::Set {
+                                document: doc.document.clone(),
+                                pointer: "/name".into(),
+                                value: Value::String(doc.name_field.clone()),
+                                at: None,
+                            }],
+                        });
+                    }
                 }
+                None => field(ui, "Name", &doc.name, false),
             }
+            field(ui, "Id", &doc.id, true);
+            field(ui, "File", &doc.document, true);
+            ui.add_space(4.0);
+            ui.label(
+                RichText::new(
+                    "Forms for every field come with the schemas; until then, edit the JSON in the tab.",
+                )
+                .color(FAINT)
+                .size(11.0),
+            );
         });
 }
 
-/// A labelled read-only value in an input-like well.
-fn field(ui: &mut Ui, label: &str, value: &str, mono: bool) {
-    ui.label(RichText::new(label).color(MUTED).size(11.0));
-    Frame::new()
-        .fill(BG)
-        .stroke(Stroke::new(1.0, BORDER))
-        .corner_radius(5)
-        .inner_margin(Margin::symmetric(8, 6))
-        .show(ui, |ui| {
-            ui.set_width(ui.available_width());
-            let text = RichText::new(value).color(TEXT);
-            ui.add(egui::Label::new(if mono { text.monospace() } else { text }).truncate());
-        });
+struct Viewer<'a> {
+    kind: Kind,
+    store: &'a mut Store,
+    edits: &'a mut Vec<Edit>,
 }
 
-struct Viewer;
-
-impl TabViewer for Viewer {
+impl TabViewer for Viewer<'_> {
     type Tab = Doc;
 
     fn id(&mut self, tab: &mut Doc) -> Id {
@@ -661,15 +940,87 @@ impl TabViewer for Viewer {
     }
 
     fn title(&mut self, tab: &mut Doc) -> egui::WidgetText {
-        tab.name.as_str().into()
+        let name = match self.store.get(&tab.document) {
+            Ok(Some(value)) => value
+                .get("name")
+                .and_then(Value::as_str)
+                .unwrap_or(&tab.name)
+                .to_string(),
+            _ => tab.name.clone(),
+        };
+        if self.store.is_dirty(&tab.document) {
+            dirty_title(&name)
+        } else {
+            name.into()
+        }
     }
 
     fn ui(&mut self, ui: &mut Ui, tab: &mut Doc) {
+        let revision = self.store.revision(&tab.document);
+        let value = match self.store.get(&tab.document) {
+            Ok(Some(value)) => value,
+            Ok(None) => {
+                empty(
+                    ui,
+                    "This document is deleted",
+                    "Undo brings it back; saving removes its file.",
+                );
+                return;
+            }
+            Err(error) => {
+                empty(ui, "This document could not be read", &error.to_string());
+                return;
+            }
+        };
+        if tab.shown != Some(revision) {
+            let text = crate::document::format(value);
+            // Typing is kept until applied or reverted; otherwise follow the document.
+            if tab.edit == tab.text {
+                tab.edit = text.clone();
+            }
+            tab.text = text;
+            tab.shown = Some(revision);
+        }
+        let changed = tab.edit != tab.text;
+        if changed || tab.error.is_some() {
+            ui.horizontal(|ui| {
+                if ui.add(primary("Apply")).clicked() {
+                    match serde_json::from_str::<Value>(&tab.edit) {
+                        Ok(value) => {
+                            tab.error = None;
+                            self.edits.push(Edit {
+                                label: format!("Edit {} as JSON", tab.name),
+                                context: Context {
+                                    editor: self.kind,
+                                    document: tab.document.clone(),
+                                    pointer: None,
+                                },
+                                commands: vec![Command::Set {
+                                    document: tab.document.clone(),
+                                    pointer: String::new(),
+                                    value,
+                                    at: None,
+                                }],
+                            });
+                        }
+                        Err(error) => tab.error = Some(format!("Not valid JSON: {error}")),
+                    }
+                }
+                if ui.button("Revert").clicked() {
+                    tab.edit = tab.text.clone();
+                    tab.error = None;
+                }
+                if let Some(error) = &tab.error {
+                    ui.label(RichText::new(error).color(ERROR).size(11.0));
+                }
+            });
+            ui.add_space(6.0);
+        }
         ScrollArea::both()
             .auto_shrink([false, false])
             .show(ui, |ui| {
                 ui.add(
-                    TextEdit::multiline(&mut tab.text.as_str())
+                    TextEdit::multiline(&mut tab.edit)
                         .code_editor()
                         .desired_width(f32::INFINITY)
                         .frame(Frame::NONE),
@@ -686,7 +1037,13 @@ impl TabViewer for Viewer {
     }
 }
 
-fn documents(ui: &mut Ui, kind: Kind, workspace: &mut Workspace) {
+fn documents(
+    ui: &mut Ui,
+    kind: Kind,
+    workspace: &mut Workspace,
+    store: &mut Store,
+    edits: &mut Vec<Edit>,
+) {
     egui::CentralPanel::no_frame()
         .frame(Frame::new().fill(MAIN))
         .show(ui, |ui| {
@@ -706,141 +1063,6 @@ fn documents(ui: &mut Ui, kind: Kind, workspace: &mut Workspace) {
                 .show_leaf_close_all_buttons(false)
                 .show_leaf_collapse_buttons(false)
                 .tab_context_menus(false)
-                .show_inside(ui, &mut Viewer);
+                .show_inside(ui, &mut Viewer { kind, store, edits });
         });
-}
-
-/// A centred title and explanation for an empty area.
-fn empty(ui: &mut Ui, title: &str, body: &str) {
-    ui.with_layout(Layout::top_down(Align::Center), |ui| {
-        ui.add_space((ui.available_height() / 2.0 - 40.0).max(24.0));
-        ui.set_max_width(ui.available_width().min(320.0));
-        ui.label(RichText::new(title).color(SOFT).size(13.0));
-        ui.add_space(2.0);
-        ui.label(RichText::new(body).color(FAINT));
-    });
-}
-
-/// An uppercase spaced label (the spell studio's section titles).
-fn eyebrow(text: &str) -> RichText {
-    RichText::new(text.to_uppercase())
-        .size(9.0)
-        .color(FAINT)
-        .extra_letter_spacing(1.1)
-}
-
-fn primary(text: &str) -> egui::Button<'static> {
-    egui::Button::new(RichText::new(text.to_string()).color(RAISED))
-        .fill(TEXT)
-        .stroke(Stroke::NONE)
-}
-
-/// A service's state: a coloured dot and a word, framed like a button.
-fn status(ui: &mut Ui, text: &str, dot: Color32) -> Response {
-    let galley = ui
-        .painter()
-        .layout_no_wrap(text.to_string(), FontId::proportional(11.5), MUTED);
-    let size = vec2(32.0 + galley.size().x, 28.0);
-    let (rect, response) = ui.allocate_exact_size(size, Sense::hover());
-    let painter = ui.painter();
-    painter.rect_filled(rect, RADIUS, RAISED);
-    painter.rect_stroke(rect, RADIUS, Stroke::new(1.0, BORDER), StrokeKind::Inside);
-    painter.circle_filled(pos2(rect.left() + 13.0, rect.center().y), 3.0, dot);
-    let top = rect.center().y - galley.size().y / 2.0;
-    painter.galley(pos2(rect.left() + 22.0, top), galley, MUTED);
-    response
-}
-
-/// The package chip: a dot, the package and a badge.
-fn chip(ui: &mut Ui, name: &str, badge: &str) -> Response {
-    let painter = ui.painter();
-    let name = painter.layout_no_wrap(name.to_string(), FontId::proportional(11.5), BODY);
-    let badge = painter.layout_no_wrap(badge.to_string(), FontId::proportional(10.0), SOFT);
-    let badge_width = badge.size().x + 14.0;
-    let size = vec2(22.0 + name.size().x + 8.0 + badge_width + 4.0, 28.0);
-    let (rect, response) = ui.allocate_exact_size(size, Sense::hover());
-    let painter = ui.painter();
-    let y = rect.center().y;
-    painter.rect_filled(rect, RADIUS, RAISED);
-    painter.rect_stroke(rect, RADIUS, Stroke::new(1.0, BORDER), StrokeKind::Inside);
-    painter.circle_filled(pos2(rect.left() + 13.0, y), 3.0, TEXT);
-    let x = rect.left() + 22.0;
-    let name_width = name.size().x;
-    painter.galley(pos2(x, y - name.size().y / 2.0), name, BODY);
-    let pill = Rect::from_min_size(
-        pos2(x + name_width + 8.0, y - 10.0),
-        vec2(badge_width, 20.0),
-    );
-    painter.rect_filled(pill, 5, SELECTED);
-    painter.galley(
-        pos2(pill.left() + 7.0, y - badge.size().y / 2.0),
-        badge,
-        SOFT,
-    );
-    response
-}
-
-/// A 28-point square button with an icon.
-fn icon_button(ui: &mut Ui, icon: Icon, on: bool, enabled: bool) -> Response {
-    let sense = if enabled {
-        Sense::click()
-    } else {
-        Sense::hover()
-    };
-    let (rect, response) = ui.allocate_exact_size(vec2(28.0, 28.0), sense);
-    let painter = ui.painter();
-    let hovered = enabled && response.hovered();
-    if on || hovered {
-        painter.rect_filled(rect, RADIUS, SELECTED);
-    }
-    if on {
-        painter.rect_stroke(rect, RADIUS, Stroke::new(1.0, CONTROL), StrokeKind::Inside);
-    }
-    let color = match (enabled, on || hovered) {
-        (false, _) => CONTROL,
-        (true, true) => TEXT,
-        (true, false) => MUTED,
-    };
-    icons::paint(painter, icons::square(rect.center(), 15.0), icon, color);
-    if enabled {
-        response.on_hover_cursor(egui::CursorIcon::PointingHand)
-    } else {
-        response
-    }
-}
-
-/// An editor's button on the rail: icon over a short label.
-fn rail_item(ui: &mut Ui, icon: Icon, label: &str, selected: bool) -> Response {
-    let (rect, response) = ui.allocate_exact_size(vec2(52.0, 48.0), Sense::click());
-    let painter = ui.painter();
-    let hovered = response.hovered();
-    let fill = if selected {
-        SELECTED
-    } else if hovered {
-        RAISED
-    } else {
-        Color32::TRANSPARENT
-    };
-    painter.rect_filled(rect, CornerRadius::same(8), fill);
-    let color = if selected {
-        TEXT
-    } else if hovered {
-        SOFT
-    } else {
-        FAINT
-    };
-    icons::paint(
-        painter,
-        icons::square(pos2(rect.center().x, rect.top() + 18.0), 19.0),
-        icon,
-        color,
-    );
-    painter.text(
-        pos2(rect.center().x, rect.bottom() - 9.0),
-        Align2::CENTER_CENTER,
-        label,
-        FontId::proportional(9.5),
-        color,
-    );
-    response.on_hover_cursor(egui::CursorIcon::PointingHand)
 }

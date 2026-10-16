@@ -7,11 +7,14 @@
 //! events while it is open, calls [`Editor::run`] once a frame and [`Editor::paint`] to
 //! record the frame. The look is [`theme`] (Tailwind's zinc, as the old spell studio).
 
+mod document;
 mod icons;
 mod library;
 mod shell;
 pub mod theme;
+mod widgets;
 
+pub use document::Command;
 pub use library::Kind;
 use std::path::PathBuf;
 use winit::{event::WindowEvent, window::Window};
@@ -29,6 +32,8 @@ pub struct Setup {
 pub struct Output {
     /// Back to the game's menus.
     pub close: bool,
+    /// Quit the game (the window was closed and unsaved changes are settled).
+    pub quit: bool,
 }
 
 pub struct Editor {
@@ -130,6 +135,23 @@ impl Editor {
         self.frame(input, size, device, queue).0
     }
 
+    /// The window is closing: true when it may close now, false when the editor first asks
+    /// about unsaved changes (its answer comes as [`Output::quit`]).
+    pub fn close_requested(&mut self) -> bool {
+        self.shell.leave(shell::Leave::Quit);
+        self.shell.close.take() == Some(shell::Leave::Quit)
+    }
+
+    /// The document of the current editor's focused tab.
+    pub fn active_document(&mut self) -> Option<String> {
+        self.shell.active_document()
+    }
+
+    /// Runs `commands` as one undo step in the current editor (captures; MCP later).
+    pub fn run_step(&mut self, label: &str, commands: Vec<Command>) -> Result<(), String> {
+        self.shell.run_step(label, commands)
+    }
+
     /// Switches editors (captures).
     pub fn select(&mut self, kind: Kind) {
         self.shell.select(kind);
@@ -182,8 +204,10 @@ impl Editor {
         for id in std::mem::take(&mut textures_delta.free) {
             self.renderer.free_texture(&id);
         }
+        let close = self.shell.close.take();
         let output = Output {
-            close: std::mem::take(&mut self.shell.close),
+            close: close == Some(shell::Leave::Menu),
+            quit: close == Some(shell::Leave::Quit),
         };
         (output, platform_output)
     }

@@ -34,6 +34,8 @@ pub const MUTED: Color32 = hex(0xa1a1aa);
 pub const FAINT: Color32 = hex(0x71717a);
 /// Unsaved edits.
 pub const DIRTY: Color32 = hex(0xfbbf24);
+/// Errors and refusals.
+pub const ERROR: Color32 = hex(0xf87171);
 /// A running service (MCP).
 pub const LIVE: Color32 = hex(0x22c55e);
 
@@ -119,7 +121,7 @@ fn style(style: &mut egui::Style) {
     v.text_edit_bg_color = Some(BG);
     v.code_bg_color = RAISED;
     v.warn_fg_color = DIRTY;
-    v.error_fg_color = hex(0xf87171);
+    v.error_fg_color = ERROR;
     v.panel_fill = MAIN;
     v.window_fill = RAISED;
     v.window_stroke = Stroke::new(1.0, BORDER);

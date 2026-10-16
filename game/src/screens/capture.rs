@@ -372,6 +372,21 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
     shoot(&mut editor, rig, "editor-empty")?;
     editor.open_first(3);
     shoot(&mut editor, rig, "editor-abilities")?;
+    // An unsaved edit: marks in the tab, the library and the header (nothing is saved).
+    if let Some(document) = editor.active_document() {
+        editor
+            .run_step(
+                "Rename for the capture",
+                vec![canopy_editor::Command::Set {
+                    document,
+                    pointer: "/name".into(),
+                    value: "Renamed in the editor".into(),
+                    at: None,
+                }],
+            )
+            .map_err(anyhow::Error::msg)?;
+        shoot(&mut editor, rig, "editor-unsaved")?;
+    }
     editor.set_assistant(true);
     shoot(&mut editor, rig, "editor-assistant")?;
     editor.set_assistant(false);

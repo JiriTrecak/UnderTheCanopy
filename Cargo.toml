@@ -60,7 +60,7 @@ rustls-platform-verifier = "0.7"
 serde = { version = "1", features = ["derive"] }
 # Objects keep their keys in document order: the editor writes documents back in place
 # (docs/editor.md).
-serde_json = { version = "1", features = ["preserve_order"] }
+serde_json = { version = "1", features = ["preserve_order", "float_roundtrip"] }
 serde_path_to_error = "0.1"
 serde_with = "3"
 sha2 = "0.11"

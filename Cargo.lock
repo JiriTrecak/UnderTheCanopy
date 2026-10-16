@@ -484,6 +484,7 @@ dependencies = [
  "egui-wgpu",
  "egui-winit",
  "egui_dock",
+ "serde",
  "serde_json",
  "tracing",
  "wgpu",
