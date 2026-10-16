@@ -299,7 +299,7 @@ pub fn build(
 }
 
 /// The biome's forest around the map, with its models found in the pack's scenery.
-fn forest(
+pub fn forest(
     config: &canopy_render::environment::ForestConfig,
     biome: &BiomeConfig,
     size: u32,

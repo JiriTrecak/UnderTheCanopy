@@ -23,6 +23,9 @@ use std::io::{Read, Write};
 const MAGIC: &[u8; 4] = b"UTCG";
 const FORMAT: u8 = 1;
 const CODEC_ZLIB: u8 = 1;
+/// Samples stored as they are: only in memory (the editor's unsaved grids), never in a
+/// package.
+const CODEC_RAW: u8 = 0;
 const FILTER_SHUFFLE: u8 = 1;
 const HEADER: usize = 16;
 
@@ -78,6 +81,18 @@ impl Grid {
         } else {
             Err("Wrong dimensions".into())
         }
+    }
+
+    /// `width × height` samples as an uncompressed grid file: for handing the editor's
+    /// unsaved grids to the loader quickly; packages always hold [`Grid::to_file`]'s.
+    pub fn to_raw_file(&self, element: Element, width: u32, height: u32) -> Vec<u8> {
+        let mut out = Vec::with_capacity(HEADER + self.0.len());
+        out.extend_from_slice(MAGIC);
+        out.extend_from_slice(&[FORMAT, element.code(), CODEC_RAW, 0]);
+        out.extend_from_slice(&width.to_le_bytes());
+        out.extend_from_slice(&height.to_le_bytes());
+        out.extend_from_slice(&self.0);
+        out
     }
 
     /// `width × height` samples of `element` as a `.grid` file.
@@ -150,7 +165,7 @@ impl Grid {
         if file[5] != element.code() {
             return Err("wrong sample type".into());
         }
-        if file[6] != CODEC_ZLIB {
+        if file[6] != CODEC_ZLIB && file[6] != CODEC_RAW {
             return Err(format!("grid codec {} is not supported", file[6]));
         }
         let read =
@@ -164,6 +179,13 @@ impl Grid {
         }
         let size = element.size();
         let count = width as usize * height as usize * size;
+        if file[6] == CODEC_RAW {
+            return if file.len() == HEADER + count {
+                Ok(Self(file[HEADER..].to_vec()))
+            } else {
+                Err("Wrong dimensions".into())
+            };
+        }
         let mut raw = Vec::with_capacity(count);
         flate2::read::ZlibDecoder::new(&file[HEADER..])
             .take(count as u64 + 1)

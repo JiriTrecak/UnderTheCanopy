@@ -418,7 +418,12 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
     editor.open_first(1);
     shoot(&mut editor, rig, "editor-units")?;
     editor.select(Kind::Maps);
-    editor.open_first(2);
+    editor.open_first(1);
+    // The map view builds its scene once the content check has passed.
+    for _ in 0..40 {
+        editor.run_headless(rig.size, rig.scale, &rig.gpu);
+        std::thread::sleep(Duration::from_millis(25));
+    }
     shoot(&mut editor, rig, "editor-maps")?;
 
     // Test in game: the editor's checked data (a renamed race) plays a skirmish, and the

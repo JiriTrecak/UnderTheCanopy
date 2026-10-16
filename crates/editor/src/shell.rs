@@ -126,6 +126,12 @@ enum Dialog {
     },
 }
 
+/// What map scenes are built from.
+struct Resources {
+    pack: Arc<canopy_assets::Pack>,
+    looks: HashMap<String, canopy_scene::Look>,
+}
+
 /// Where leaving the editor goes once unsaved changes are settled.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Leave {
@@ -183,6 +189,12 @@ pub struct Shell {
     pub viewport_error: Option<String>,
     pub shot: Option<crate::stage::Shot>,
     orbit: crate::stage::Orbit,
+    /// Open maps, what their scenes need (the pack, each biome's look), and the map scene
+    /// to draw this frame.
+    maps: HashMap<String, crate::map::Session>,
+    resources: Option<Result<Resources, String>>,
+    data: Option<std::path::PathBuf>,
+    pub scene: Option<crate::stage::SceneShot>,
     /// Test in game, asked for this frame.
     pub test: Option<crate::Test>,
     /// `problems` calls waiting for the current check.
@@ -192,7 +204,11 @@ pub struct Shell {
 }
 
 impl Shell {
-    pub fn new(package: Result<Package, String>, user: Option<std::path::PathBuf>) -> Self {
+    pub fn new(
+        package: Result<Package, String>,
+        user: Option<std::path::PathBuf>,
+        data: Option<std::path::PathBuf>,
+    ) -> Self {
         let store = package.as_ref().ok().map(|p| Store::new(&p.root));
         let checker = package.as_ref().ok().cloned().map(Checker::new);
         let watch = package.as_ref().ok().and_then(|p| Watch::new(&p.root));
@@ -211,6 +227,10 @@ impl Shell {
             viewport_error: None,
             shot: None,
             orbit: crate::stage::Orbit::default(),
+            maps: HashMap::new(),
+            resources: None,
+            data,
+            scene: None,
             user,
             watch,
             ids: Vec::new(),
@@ -278,6 +298,9 @@ impl Shell {
             None => (false, false),
         };
         let subject = active.as_deref().and_then(|d| self.subject(d));
+        if let Some(root) = active.as_deref().and_then(crate::map::root_of) {
+            self.prepare_map(&root.to_string());
+        }
         let workspace = self
             .workspaces
             .get_mut(&kind)
@@ -316,6 +339,8 @@ impl Shell {
         let mut opens = Vec::new();
         let mut new_ability = None;
         let mut try_with = None;
+        let mut map_size = None;
+        let content = self.checker.as_ref().and_then(|c| c.content().cloned());
         tabs::documents(
             ui,
             kind,
@@ -331,8 +356,27 @@ impl Shell {
                 opens: &mut opens,
                 create: &mut new_ability,
                 try_with: &mut try_with,
+                maps: &mut self.maps,
+                content,
+                scene_texture: self.viewport_texture,
+                map_size: &mut map_size,
             },
         );
+        if let Some((root, size)) = map_size
+            && let Some(session) = self.maps.get(&root)
+            && let (Some(scene), Some(map)) = (&session.scene, &session.map)
+        {
+            let ground =
+                crate::map::tools::ground_at(map, session.camera.focus[0], session.camera.focus[1]);
+            self.scene = Some(crate::stage::SceneShot {
+                root: root.clone(),
+                version: session.version,
+                scene: scene.clone(),
+                camera: session.camera,
+                ground,
+                size,
+            });
+        }
         for edit in edits {
             self.run(edit);
         }
@@ -413,10 +457,107 @@ impl Shell {
         Some((look.file.clone()?, look.scale.unwrap_or(1.0) as f32))
     }
 
+    /// Loads the map at `root` from the store when it changed (an undo, MCP, a file on disk)
+    /// and rebuilds its scene when its terrain changed, at most every 150 ms while a stroke
+    /// paints.
+    fn prepare_map(&mut self, root: &str) {
+        let (Some(store), Ok(package)) = (&self.store, &self.package) else {
+            return;
+        };
+        let generation = store.generation();
+        let session = self
+            .maps
+            .entry(root.to_string())
+            .or_insert_with(|| crate::map::Session::new(root));
+        if session.loaded_at != Some(generation) && session.tools.stroke.is_none() {
+            if std::mem::take(&mut session.own) && session.map.is_some() {
+                session.loaded_at = Some(generation);
+            } else {
+                let overlay = Arc::new(store.overlay().below(root));
+                let loaded = Package::open(&package.root.join(root))
+                    .map_err(|e| e.to_string())
+                    .and_then(|p| {
+                        canopy_content::map::package::load_package(&p.with_overlay(overlay))
+                            .map_err(|e| e.to_string())
+                    });
+                match loaded {
+                    Ok(map) => {
+                        if session.map.is_none() {
+                            session.camera = crate::map::Camera::over(map.size);
+                            if let Some(start) = map.player_starts.first() {
+                                session.camera.focus = [start.x as f32, start.z as f32];
+                                session.camera.distance = 140.0;
+                            }
+                        }
+                        session.map = Some(map);
+                        session.error = None;
+                        session.stale = true;
+                    }
+                    Err(error) => session.error = Some(error),
+                }
+                session.loaded_at = Some(generation);
+            }
+        }
+        let due = session.scene.is_none()
+            || (session.stale
+                && session
+                    .last_build
+                    .is_none_or(|t| t.elapsed() > Duration::from_millis(150)));
+        if !due {
+            return;
+        }
+        let Some(content) = self.checker.as_ref().and_then(|c| c.content().cloned()) else {
+            return;
+        };
+        let Some(map) = &session.map else {
+            return;
+        };
+        let biome = map.biome().to_string();
+        let resources = self.resources.get_or_insert_with(|| {
+            let data = self.data.as_ref().ok_or("no data folder")?;
+            let path =
+                canopy_assets::find_pack(data).ok_or("no cooked asset pack (run `just cook`)")?;
+            let pack = canopy_assets::Pack::open(&path).map_err(|e| e.to_string())?;
+            Ok(Resources {
+                pack: Arc::new(pack),
+                looks: HashMap::new(),
+            })
+        });
+        let Ok(resources) = resources else {
+            session.error = resources.as_ref().err().cloned();
+            return;
+        };
+        if !resources.looks.contains_key(&biome) {
+            let Some(data) = &self.data else { return };
+            match canopy_scene::Look::load(data, &biome) {
+                Ok(look) => {
+                    resources.looks.insert(biome.clone(), look);
+                }
+                Err(error) => {
+                    session.error = Some(error.to_string());
+                    return;
+                }
+            }
+        }
+        let started = Instant::now();
+        match crate::map::build(map, &content, &resources.pack, &resources.looks[&biome]) {
+            Ok(scene) => {
+                session.scene = Some(Arc::new(scene));
+                session.version += 1;
+                session.stale = false;
+                tracing::debug!(ms = started.elapsed().as_millis() as u64, map = %root, "editor: map scene");
+            }
+            Err(error) => session.error = Some(error),
+        }
+        session.last_build = Some(Instant::now());
+    }
+
     /// The package with the unsaved documents laid over it.
     fn overlaid(&self, package: &Package) -> Package {
         match &self.store {
-            Some(store) => package.clone().with_overlay(Arc::new(store.overlay())),
+            Some(store) => package
+                .clone()
+                .with_overlay(Arc::new(store.document_overlay())),
             None => package.clone(),
         }
     }
@@ -927,7 +1068,7 @@ impl Shell {
         let generation = store.generation();
         if self.checked != Some(generation) {
             self.checked = Some(generation);
-            checker.request(generation, store.overlay());
+            checker.request(generation, store.document_overlay());
         }
     }
 

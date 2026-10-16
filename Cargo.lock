@@ -497,6 +497,7 @@ dependencies = [
  "canopy-content",
  "canopy-render",
  "canopy-scene",
+ "canopy-sim",
  "egui",
  "egui-wgpu",
  "egui-winit",

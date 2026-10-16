@@ -12,6 +12,8 @@ use serde_json::Value;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum View {
+    /// A map's view: the viewport and the map tools.
+    Map,
     Overview,
     Form,
     Json,
@@ -42,7 +44,9 @@ impl Doc {
             name: element.name.clone(),
             id: element.id.clone(),
             document: element.document.clone(),
-            view: if crate::overview::has(&element.document) {
+            view: if crate::map::root_of(&element.document).is_some() {
+                View::Map
+            } else if crate::overview::has(&element.document) {
                 View::Overview
             } else {
                 View::Form
@@ -86,6 +90,12 @@ pub struct Viewer<'a> {
     pub opens: &'a mut Vec<String>,
     pub create: &'a mut Option<String>,
     pub try_with: &'a mut Option<String>,
+    /// Open maps, the game data of the last passing check, the scene's last picture, and
+    /// the map view's size this frame (the stage draws the scene at it).
+    pub maps: &'a mut std::collections::HashMap<String, crate::map::Session>,
+    pub content: Option<std::sync::Arc<canopy_content::Content>>,
+    pub scene_texture: Option<egui::TextureId>,
+    pub map_size: &'a mut Option<(String, [u32; 2])>,
 }
 
 impl TabViewer for Viewer<'_> {
@@ -139,7 +149,13 @@ impl TabViewer for Viewer<'_> {
         }
         let changed = tab.edit != tab.text;
         ui.horizontal(|ui| {
-            let views: &[(View, &str)] = if crate::overview::has(&tab.document) {
+            let views: &[(View, &str)] = if crate::map::root_of(&tab.document).is_some() {
+                &[
+                    (View::Map, "Map"),
+                    (View::Form, "Form"),
+                    (View::Json, "JSON"),
+                ]
+            } else if crate::overview::has(&tab.document) {
                 &[
                     (View::Overview, "Overview"),
                     (View::Form, "Form"),
@@ -191,6 +207,41 @@ impl TabViewer for Viewer<'_> {
         });
         ui.add_space(6.0);
         match tab.view {
+            View::Map => {
+                let Some(root) = crate::map::root_of(&tab.document).map(str::to_string) else {
+                    return;
+                };
+                let docs = match (
+                    self.store
+                        .get(&format!("{root}/map.json"))
+                        .ok()
+                        .flatten()
+                        .cloned(),
+                    self.store
+                        .get(&format!("{root}/scenery.json"))
+                        .ok()
+                        .flatten()
+                        .cloned(),
+                ) {
+                    (Some(map), Some(scenery)) => Some(crate::map::view::Docs { map, scenery }),
+                    _ => None,
+                };
+                let session = self
+                    .maps
+                    .entry(root.clone())
+                    .or_insert_with(|| crate::map::Session::new(&root));
+                let out = crate::map::view::show(
+                    ui,
+                    session,
+                    self.content.as_deref(),
+                    docs.as_ref(),
+                    self.scene_texture,
+                );
+                self.edits.extend(out.edits);
+                if let Some(size) = out.size {
+                    *self.map_size = Some((root, size));
+                }
+            }
             View::Overview => {
                 let uses = self
                     .uses

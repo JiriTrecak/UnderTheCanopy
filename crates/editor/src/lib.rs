@@ -13,6 +13,7 @@ mod forms;
 mod icons;
 mod inspector;
 mod library;
+mod map;
 mod mcp;
 mod overview;
 mod references;
@@ -116,7 +117,7 @@ impl Editor {
                 size_in_pixels: [1, 1],
                 pixels_per_point: 1.0,
             },
-            shell: shell::Shell::new(package, setup.user),
+            shell: shell::Shell::new(package, setup.user, Some(setup.data.clone())),
             stage: None,
             data: setup.data,
         }
@@ -229,12 +230,17 @@ impl Editor {
         };
         let shell = &mut self.shell;
         let output = self.ctx.run_ui(input, |ui| shell.ui(ui));
-        if let Some(shot) = self.shell.shot.take() {
+        let (shot, scene) = (self.shell.shot.take(), self.shell.scene.take());
+        if shot.is_some() || scene.is_some() {
             let stage = self
                 .stage
                 .get_or_insert_with(|| stage::Stage::new(gpu, &self.data));
             if let Ok(stage) = stage {
-                stage.draw(gpu, &mut self.renderer, &shot);
+                if let Some(scene) = scene {
+                    stage.draw_scene(gpu, &mut self.renderer, &scene);
+                } else if let Some(shot) = shot {
+                    stage.draw(gpu, &mut self.renderer, &shot);
+                }
             }
         }
         let egui::FullOutput {
@@ -310,7 +316,7 @@ impl Editor {
 /// file watch and MCP server; never returns unless the server cannot start.
 pub fn serve_headless(setup: Setup) -> Result<(), String> {
     let package = canopy_content::package::Package::open(&setup.base).map_err(|e| e.to_string())?;
-    let mut shell = shell::Shell::new(Ok(package), setup.user);
+    let mut shell = shell::Shell::new(Ok(package), setup.user, Some(setup.data));
     shell.start_mcp();
     let port = shell
         .mcp_port()

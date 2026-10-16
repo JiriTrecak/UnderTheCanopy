@@ -375,8 +375,24 @@ impl Store {
         self.revision
     }
 
+    /// The unsaved JSON documents only (what the content check reads; grids are maps').
+    pub fn document_overlay(&self) -> canopy_content::package::Overlay {
+        canopy_content::package::Overlay(
+            self.documents
+                .iter()
+                .filter(|(_, d)| d.value != d.saved)
+                .map(|(path, d)| {
+                    (
+                        path.clone(),
+                        d.value.as_ref().map(|v| format(v).into_bytes()),
+                    )
+                })
+                .collect(),
+        )
+    }
+
     /// The unsaved documents and grids as the loader reads them: their file bytes, `None`
-    /// when deleted.
+    /// when deleted (grids uncompressed: they never reach a package this way).
     pub fn overlay(&self) -> canopy_content::package::Overlay {
         let documents = self
             .documents
@@ -396,7 +412,7 @@ impl Store {
                 let file = g
                     .value
                     .as_ref()
-                    .map(|v| Grid(v.bytes.clone()).to_file(v.element, v.width, v.height));
+                    .map(|v| Grid(v.bytes.clone()).to_raw_file(v.element, v.width, v.height));
                 (path.clone(), file)
             });
         canopy_content::package::Overlay(documents.chain(grids).collect())

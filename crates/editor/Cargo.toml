@@ -13,6 +13,7 @@ canopy-assets = { path = "../assets" }
 canopy-content = { path = "../content" }
 canopy-render = { path = "../render" }
 canopy-scene = { path = "../scene" }
+canopy-sim = { path = "../sim" }
 glam.workspace = true
 egui.workspace = true
 egui_dock.workspace = true
