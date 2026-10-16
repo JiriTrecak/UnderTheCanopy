@@ -12,6 +12,7 @@ pub mod game;
 pub mod id;
 pub mod items;
 pub mod map;
+pub mod package;
 pub mod placement;
 #[cfg(feature = "testing")]
 pub mod testing;
