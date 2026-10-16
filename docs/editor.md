@@ -49,6 +49,17 @@ Design decisions for the native editor, agreed with Jiri milestone by milestone 
 
 **Built (2026-10-16): step 7, Test in game.** The header's Test in game (enabled when the latest edits pass the check) hands the game the checked data, unsaved edits included; the game plays a skirmish against a computer player on the open map (or the last one played, or the first skirmish map) with that data in place of its own, and the editor waits. Leaving the match restores the game's own data and brings the editor back as it was. Unsaved edits to a map's own documents are not played yet (the map package is read from disk; the map editor brings that); the match tools are the debug overlay's (F9: speed, reveal), and testing cheats come with the editors that need them. `capture-screens --only editor` plays one such test and checks both data swaps.
 
+## M2. The data editors (decided by Claude while Jiri was away, 2026-10-16 — review)
+
+M1's generic forms already edit every field of every element. M2 adds what a form cannot show, per editor, as an **Overview** beside Form and JSON, and links the elements to each other:
+
+- **Links everywhere (review).** Every id field opens the element it names, in its own editor; the header's Back and Forward walk that trail, so "open the hero's ability, tweak it, come back" is two clicks.
+- **Units and heroes (review).** A stat card (health, armour, damage, attack speed, range, speed, sight, supply, cost and training time; a hero's level table), the abilities it binds with their hotkeys (open each; bind another from a picker, with the next free hotkey and column; create a new ability and bind it in one step), and what trains it.
+- **Buildings and items (review).** What a building trains and researches (open, add, remove), its cost, build time and footprint; an item's stats and who carries or sells it.
+- **Abilities (review).** The old spell studio's form keeps its design: a rank table (parameters by rank, add a rank or a parameter), the cast's timeline (prepare, channel, recover, cooldown) drawn to scale, targeting in words, and which units bind it. **The encounter stage** (cast on test targets in the viewport with the real simulation) is the largest piece and follows once M3 and M4 are built.
+- **Effects (review).** Its layers at a glance; previews come with the encounter stage.
+- **Races and rules (review).** A race's roster (its units, heroes and buildings, opening each) and starting setup.
+
 ## M3. The map editor (decided 2026-10-16)
 
 **Settled (Jiri, ahead of the build):**
