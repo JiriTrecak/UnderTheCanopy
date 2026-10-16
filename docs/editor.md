@@ -15,6 +15,15 @@ Design decisions for the native editor, agreed with Jiri milestone by milestone 
 - **One command set.** Every edit is a typed command; the editor's own controls, MCP clients and the built-in assistant all use it, so all of it is undoable and scriptable.
 - **The assistant** (later milestone): a sidebar on the right that opens from the toolbar over any editor, as in the old spell studio; one assistant with access to every editor and threads per topic. It calls the Claude API directly (needs an API key; not covered by a Claude Code subscription); the shell leaves room for its panel.
 
+**Settled (2026-10-16): the editing model.**
+
+- **One undo history across all editors.** Commands group into steps (a transaction: "new ability + bind it to the Marshal" is one step, across files). Undo and redo bring back the context of the step: they switch to its editor, open or focus its tab and select what it changed.
+- **Edits live in memory; Cmd+S saves everything.** Changed documents show an unsaved mark; Cmd+S (and MCP's `save`) writes every changed file. Leaving the editor (Exit, closing the window) with unsaved changes asks first.
+- **Files changed on disk reload.** A watcher (`notify`) follows the base package: a document without unsaved edits reloads quietly; one with unsaved edits shows the conflict and asks which side to keep.
+- **One file format, written in place.** Documents keep their key order (serde_json's `preserve_order`) and are written as 2-space JSON with a trailing newline, the format nearly every document already has; a test keeps every document in it, so a save's diff is only what changed.
+- **The loader checks after every step.** The full load (about 90 ms) runs after each step and keeps a problems list that links to the element and field. Invalid states are allowed while working; saving with problems warns.
+- **Renames carry their references.** Renaming an id rewrites every reference in the package in the same step; deleting something still referenced is refused, with where it is used.
+
 **Built (2026-10-16): the shell, read-only.** `crates/editor`, opened from the main menu's Editor entry, `canopy edit` or `just edit`. The rail switches seven editors; each lists its collections from the base package with the loader's own walk, opens documents as egui_dock tabs (read-only JSON for now) and shows the open one in its inspector. Undo, save, MCP, Test in game and the assistant are there as disabled controls. The theme is `crates/editor/src/theme.rs`; icons are drawn strokes (`icons.rs`), no icon font. It uses the game's interface font (Outfit). `canopy capture-screens --only editor` renders it offscreen in a few states.
 
-**Open:** the editing model (undo, dirty state, saving files in place with their key order), schemas from the Rust types (`schemars`), viewport foundations (shared camera and picking, live reload, GPU updates), the test loop (play the open package in-process).
+**Open:** schemas from the Rust types (`schemars`), viewport foundations (shared camera and picking, live reload, GPU updates), the test loop (play the open package in-process).
