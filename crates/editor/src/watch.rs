@@ -38,7 +38,7 @@ impl Watch {
         }
     }
 
-    /// Documents (JSON files, `/`-separated from the package root) changed since the last
+    /// Documents and grids (`/`-separated from the package root) changed since the last
     /// call.
     pub fn changed(&self) -> BTreeSet<String> {
         let mut out = BTreeSet::new();
@@ -56,7 +56,11 @@ impl Watch {
                 let hidden = relative
                     .components()
                     .any(|c| c.as_os_str().to_string_lossy().starts_with('.'));
-                if hidden || relative.extension().is_none_or(|e| e != "json") {
+                if hidden
+                    || relative
+                        .extension()
+                        .is_none_or(|e| e != "json" && e != "grid")
+                {
                     continue;
                 }
                 let parts: Vec<_> = relative

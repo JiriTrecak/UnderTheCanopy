@@ -3,6 +3,7 @@
 //! step with the context to bring back on undo. Edits live in memory until [`Store::save`]
 //! writes every changed document in the one file format ([`format`]).
 
+use canopy_content::map::grid::{Element, Grid};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use std::collections::BTreeMap;
@@ -34,8 +35,74 @@ pub enum Command {
     Remove { document: String, pointer: String },
     /// A new document.
     Create { document: String, value: Value },
-    /// Deletes a document (its file goes on save).
+    /// Deletes a document or a grid (its file goes on save).
     Delete { document: String },
+    /// Sets a whole terrain grid (a `.grid` file), creating it when missing: `width ×
+    /// height` samples, little-endian, rows along x (base64 in JSON).
+    Grid {
+        document: String,
+        element: Sample,
+        width: u32,
+        height: u32,
+        #[serde(with = "base64_bytes")]
+        #[schemars(with = "String")]
+        bytes: Vec<u8>,
+    },
+    /// Replaces a rectangle of a grid: `height` rows of `width` samples from sample
+    /// (`x`, `z`) (base64 in JSON). A brush stroke is one patch per grid it touched.
+    Patch {
+        document: String,
+        x: u32,
+        z: u32,
+        width: u32,
+        height: u32,
+        #[serde(with = "base64_bytes")]
+        #[schemars(with = "String")]
+        bytes: Vec<u8>,
+    },
+}
+
+/// What one sample of a grid is.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum Sample {
+    F32,
+    U8,
+    Rgba8,
+}
+
+impl Sample {
+    pub fn element(self) -> Element {
+        match self {
+            Sample::F32 => Element::F32,
+            Sample::U8 => Element::U8,
+            Sample::Rgba8 => Element::Rgba8,
+        }
+    }
+
+    pub fn of(element: Element) -> Self {
+        match element {
+            Element::F32 => Sample::F32,
+            Element::U8 => Sample::U8,
+            Element::Rgba8 => Sample::Rgba8,
+        }
+    }
+}
+
+mod base64_bytes {
+    use base64::Engine;
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S: Serializer>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&base64::engine::general_purpose::STANDARD.encode(bytes))
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<u8>, D::Error> {
+        let text = String::deserialize(deserializer)?;
+        base64::engine::general_purpose::STANDARD
+            .decode(text)
+            .map_err(serde::de::Error::custom)
+    }
 }
 
 impl Command {
@@ -45,8 +112,67 @@ impl Command {
             | Command::Insert { document, .. }
             | Command::Remove { document, .. }
             | Command::Create { document, .. }
-            | Command::Delete { document } => document,
+            | Command::Delete { document }
+            | Command::Grid { document, .. }
+            | Command::Patch { document, .. } => document,
         }
+    }
+}
+
+/// Whether `path` names a terrain grid rather than a JSON document.
+pub fn is_grid(path: &str) -> bool {
+    path.ends_with(".grid")
+}
+
+/// A grid as the editor holds it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct GridData {
+    pub element: Element,
+    pub width: u32,
+    pub height: u32,
+    pub bytes: Vec<u8>,
+}
+
+impl GridData {
+    /// The sample at (`x`, `z`) as `f32` (an `f32` grid).
+    pub fn f32_at(&self, x: u32, z: u32) -> f32 {
+        let i = (z as usize * self.width as usize + x as usize) * 4;
+        f32::from_le_bytes([
+            self.bytes[i],
+            self.bytes[i + 1],
+            self.bytes[i + 2],
+            self.bytes[i + 3],
+        ])
+    }
+
+    /// The samples as `f32`s (an `f32` grid).
+    pub fn floats(&self) -> Vec<f32> {
+        self.bytes
+            .chunks_exact(4)
+            .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
+            .collect()
+    }
+}
+
+/// A grid document; its unsaved state is worked out once per change.
+#[derive(Debug, Clone)]
+struct GridDoc {
+    value: Option<GridData>,
+    saved: Option<GridData>,
+    revision: u64,
+    /// (revision compared, whether it differed from the file).
+    compared: std::cell::Cell<(u64, bool)>,
+}
+
+impl GridDoc {
+    fn dirty(&self) -> bool {
+        let (at, dirty) = self.compared.get();
+        if at == self.revision && at != 0 {
+            return dirty;
+        }
+        let dirty = self.value != self.saved;
+        self.compared.set((self.revision, dirty));
+        dirty
     }
 }
 
@@ -129,6 +255,7 @@ pub enum Outside {
 pub struct Store {
     root: PathBuf,
     documents: BTreeMap<String, Document>,
+    grids: BTreeMap<String, GridDoc>,
     /// Documents changed on disk while they had unsaved edits, with the file's version.
     conflicts: BTreeMap<String, Option<Value>>,
     done: Vec<Step>,
@@ -151,6 +278,7 @@ impl Store {
         Self {
             root: root.to_path_buf(),
             documents: BTreeMap::new(),
+            grids: BTreeMap::new(),
             conflicts: BTreeMap::new(),
             done: Vec::new(),
             undone: Vec::new(),
@@ -188,7 +316,53 @@ impl Store {
 
     /// A document's current value (`None` when it does not exist).
     pub fn get(&mut self, document: &str) -> Result<Option<&Value>, Error> {
+        if is_grid(document) {
+            return Err(Error::Read {
+                document: document.into(),
+                message: "a grid, not a document".into(),
+            });
+        }
         Ok(self.load(document)?.value.as_ref())
+    }
+
+    fn read_grid(&self, path: &str) -> Result<Option<GridData>, Error> {
+        let file = self.root.join(path);
+        if !file.is_file() {
+            return Ok(None);
+        }
+        let failed = |message: String| Error::Read {
+            document: path.into(),
+            message,
+        };
+        let bytes = std::fs::read(&file).map_err(|e| failed(e.to_string()))?;
+        let (grid, element, width, height) = Grid::read_file(&bytes).map_err(failed)?;
+        Ok(Some(GridData {
+            element,
+            width,
+            height,
+            bytes: grid.bytes().to_vec(),
+        }))
+    }
+
+    fn load_grid(&mut self, path: &str) -> Result<&mut GridDoc, Error> {
+        if !self.grids.contains_key(path) {
+            let value = self.read_grid(path)?;
+            self.grids.insert(
+                path.to_string(),
+                GridDoc {
+                    saved: value.clone(),
+                    value,
+                    revision: 0,
+                    compared: std::cell::Cell::new((0, false)),
+                },
+            );
+        }
+        Ok(self.grids.get_mut(path).expect("just loaded"))
+    }
+
+    /// A grid's current samples (`None` when it does not exist).
+    pub fn grid(&mut self, path: &str) -> Result<Option<&GridData>, Error> {
+        Ok(self.load_grid(path)?.value.as_ref())
     }
 
     /// Counts creations and deletions of documents (libraries list what exists).
@@ -201,36 +375,67 @@ impl Store {
         self.revision
     }
 
-    /// The unsaved documents as the loader reads them: their text, `None` when deleted.
+    /// The unsaved documents and grids as the loader reads them: their file bytes, `None`
+    /// when deleted.
     pub fn overlay(&self) -> canopy_content::package::Overlay {
-        canopy_content::package::Overlay(
-            self.documents
-                .iter()
-                .filter(|(_, d)| d.value != d.saved)
-                .map(|(path, d)| (path.clone(), d.value.as_ref().map(format)))
-                .collect(),
-        )
+        let documents = self
+            .documents
+            .iter()
+            .filter(|(_, d)| d.value != d.saved)
+            .map(|(path, d)| {
+                (
+                    path.clone(),
+                    d.value.as_ref().map(|v| format(v).into_bytes()),
+                )
+            });
+        let grids = self
+            .grids
+            .iter()
+            .filter(|(_, g)| g.dirty())
+            .map(|(path, g)| {
+                let file = g
+                    .value
+                    .as_ref()
+                    .map(|v| Grid(v.bytes.clone()).to_file(v.element, v.width, v.height));
+                (path.clone(), file)
+            });
+        canopy_content::package::Overlay(documents.chain(grids).collect())
     }
 
     /// Changes so far of `document` (0 until it changes).
     pub fn revision(&self, document: &str) -> u64 {
+        if is_grid(document) {
+            return self.grids.get(document).map_or(0, |g| g.revision);
+        }
         self.documents.get(document).map_or(0, |d| d.revision)
     }
 
     /// Whether `document` differs from its file.
     pub fn is_dirty(&self, document: &str) -> bool {
+        if is_grid(document) {
+            return self.grids.get(document).is_some_and(GridDoc::dirty);
+        }
         self.documents
             .get(document)
             .is_some_and(|d| d.value != d.saved)
     }
 
-    /// Every document that differs from its file, in path order.
+    /// Every document and grid that differs from its file, in path order.
     pub fn dirty(&self) -> Vec<&str> {
-        self.documents
+        let mut out: Vec<&str> = self
+            .documents
             .iter()
             .filter(|(_, d)| d.value != d.saved)
             .map(|(p, _)| p.as_str())
-            .collect()
+            .chain(
+                self.grids
+                    .iter()
+                    .filter(|(_, g)| g.dirty())
+                    .map(|(p, _)| p.as_str()),
+            )
+            .collect();
+        out.sort();
+        out
     }
 
     /// Runs `commands` as one undo step; all or nothing.
@@ -325,6 +530,9 @@ impl Store {
 
     /// The file of `document` changed on disk (an agent, git, another editor).
     pub fn outside_change(&mut self, document: &str) -> Outside {
+        if is_grid(document) {
+            return self.outside_grid(document);
+        }
         let Some(current) = self.documents.get(document) else {
             return Outside::Unchanged;
         };
@@ -347,6 +555,38 @@ impl Store {
             self.conflicts.insert(document.to_string(), disk);
             Outside::Conflict
         }
+    }
+
+    /// A grid's file changed: it follows the file when it has no unsaved edits; with some,
+    /// the edits stay (grids are not offered as conflicts) and the next save wins.
+    fn outside_grid(&mut self, path: &str) -> Outside {
+        let Some(current) = self.grids.get(path) else {
+            return Outside::Unchanged;
+        };
+        let disk = match self.read_grid(path) {
+            Ok(disk) => disk,
+            Err(error) => return Outside::Unreadable(error.to_string()),
+        };
+        if disk == current.saved {
+            return Outside::Unchanged;
+        }
+        if current.dirty() {
+            if let Some(g) = self.grids.get_mut(path) {
+                g.saved = disk;
+                g.compared.set((0, false));
+            }
+            return Outside::Conflict;
+        }
+        self.revision += 1;
+        if let Some(g) = self.grids.get_mut(path) {
+            g.value = disk.clone();
+            g.saved = disk;
+            g.revision = self.revision;
+        }
+        let touches = |step: &Step| step.done.iter().any(|c| c.document() == path);
+        self.done.retain(|s| !touches(s));
+        self.undone.retain(|s| !touches(s));
+        Outside::Reloaded
     }
 
     /// Documents changed on disk while they had unsaved edits.
@@ -408,6 +648,30 @@ impl Store {
             document.saved = document.value.clone();
             written.push(path.clone());
         }
+        for (path, grid) in &mut self.grids {
+            if !grid.dirty() {
+                continue;
+            }
+            let file = self.root.join(path);
+            let failed = |e: std::io::Error| Error::Write {
+                document: path.clone(),
+                message: e.to_string(),
+            };
+            match &grid.value {
+                Some(v) => {
+                    if let Some(parent) = file.parent() {
+                        std::fs::create_dir_all(parent).map_err(failed)?;
+                    }
+                    let bytes = Grid(v.bytes.clone()).to_file(v.element, v.width, v.height);
+                    std::fs::write(&file, bytes).map_err(failed)?;
+                }
+                None => std::fs::remove_file(&file).map_err(failed)?,
+            }
+            grid.saved = grid.value.clone();
+            grid.compared.set((grid.revision, false));
+            written.push(path.clone());
+        }
+        written.sort();
         Ok(written)
     }
 
@@ -416,8 +680,14 @@ impl Store {
         self.revision += 1;
         let revision = self.revision;
         let path = command.document().to_string();
-        if matches!(command, Command::Create { .. } | Command::Delete { .. }) {
+        if matches!(
+            command,
+            Command::Create { .. } | Command::Delete { .. } | Command::Grid { .. }
+        ) {
             self.structure += 1;
+        }
+        if is_grid(&path) {
+            return self.apply_grid(command, &path, revision);
         }
         let document = self.load(&path)?;
         let back = match command {
@@ -485,8 +755,114 @@ impl Store {
                     .ok_or(Error::NoDocument(path.clone()))?;
                 remove(root, &path, pointer)?
             }
+            Command::Grid { .. } | Command::Patch { .. } => {
+                return Err(Error::Read {
+                    document: path,
+                    message: "grid commands need a .grid file".into(),
+                });
+            }
         };
         document.revision = revision;
+        Ok(back)
+    }
+}
+
+impl Store {
+    /// Applies a command to a grid; returns the command that takes it back.
+    fn apply_grid(
+        &mut self,
+        command: &Command,
+        path: &str,
+        revision: u64,
+    ) -> Result<Command, Error> {
+        let grid = self.load_grid(path)?;
+        let back = match command {
+            Command::Grid {
+                element,
+                width,
+                height,
+                bytes,
+                ..
+            } => {
+                let size = element.element().size();
+                if bytes.len() != *width as usize * *height as usize * size {
+                    return Err(Error::Read {
+                        document: path.into(),
+                        message: format!("{} bytes for {width}×{height} samples", bytes.len()),
+                    });
+                }
+                let new = GridData {
+                    element: element.element(),
+                    width: *width,
+                    height: *height,
+                    bytes: bytes.clone(),
+                };
+                match grid.value.replace(new) {
+                    Some(old) => Command::Grid {
+                        document: path.into(),
+                        element: Sample::of(old.element),
+                        width: old.width,
+                        height: old.height,
+                        bytes: old.bytes,
+                    },
+                    None => Command::Delete {
+                        document: path.into(),
+                    },
+                }
+            }
+            Command::Delete { .. } => {
+                let old = grid.value.take().ok_or(Error::NoDocument(path.into()))?;
+                Command::Grid {
+                    document: path.into(),
+                    element: Sample::of(old.element),
+                    width: old.width,
+                    height: old.height,
+                    bytes: old.bytes,
+                }
+            }
+            Command::Patch {
+                x,
+                z,
+                width,
+                height,
+                bytes,
+                ..
+            } => {
+                let data = grid.value.as_mut().ok_or(Error::NoDocument(path.into()))?;
+                let size = data.element.size();
+                let fits = x + width <= data.width
+                    && z + height <= data.height
+                    && bytes.len() == *width as usize * *height as usize * size;
+                if !fits {
+                    return Err(Error::NoTarget {
+                        document: path.into(),
+                        pointer: format!("{x},{z} {width}×{height}"),
+                    });
+                }
+                let row = *width as usize * size;
+                let mut old = Vec::with_capacity(bytes.len());
+                for r in 0..*height as usize {
+                    let at = ((*z as usize + r) * data.width as usize + *x as usize) * size;
+                    old.extend_from_slice(&data.bytes[at..at + row]);
+                    data.bytes[at..at + row].copy_from_slice(&bytes[r * row..(r + 1) * row]);
+                }
+                Command::Patch {
+                    document: path.into(),
+                    x: *x,
+                    z: *z,
+                    width: *width,
+                    height: *height,
+                    bytes: old,
+                }
+            }
+            _ => {
+                return Err(Error::Read {
+                    document: path.into(),
+                    message: "a grid takes grid, patch and delete commands".into(),
+                });
+            }
+        };
+        grid.revision = revision;
         Ok(back)
     }
 }
@@ -819,6 +1195,59 @@ mod tests {
             store.outside_change(KNIGHT),
             Outside::Unreadable(_)
         ));
+    }
+
+    #[test]
+    fn grids_patch_undo_and_save_as_grid_files() {
+        let folder = Folder::new("grids");
+        let path = "maps/test.utcm/terrain/heights.grid";
+        let heights: Vec<u8> = (0..16).flat_map(|i| (i as f32).to_le_bytes()).collect();
+        let file = folder.0.join(path);
+        std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+        std::fs::write(&file, Grid(heights.clone()).to_file(Element::F32, 4, 4)).unwrap();
+        let mut store = Store::new(&folder.0);
+        assert_eq!(store.grid(path).unwrap().unwrap().f32_at(1, 2), 9.0);
+        // A 2×2 patch at (1, 1) raising four samples to 50.
+        let patch: Vec<u8> = (0..4).flat_map(|_| 50f32.to_le_bytes()).collect();
+        store
+            .run(
+                "Raise",
+                here(path),
+                vec![Command::Patch {
+                    document: path.into(),
+                    x: 1,
+                    z: 1,
+                    width: 2,
+                    height: 2,
+                    bytes: patch,
+                }],
+            )
+            .unwrap();
+        let grid = store.grid(path).unwrap().unwrap().clone();
+        assert_eq!(
+            (grid.f32_at(1, 1), grid.f32_at(2, 2), grid.f32_at(3, 3)),
+            (50.0, 50.0, 15.0)
+        );
+        assert_eq!(store.dirty(), [path]);
+        assert!(store.overlay().0.contains_key(path));
+        store.undo().unwrap();
+        assert_eq!(store.grid(path).unwrap().unwrap().bytes, heights);
+        assert!(store.dirty().is_empty());
+        store.redo().unwrap();
+        assert_eq!(store.save().unwrap(), [path]);
+        let saved = Grid::read_file(&std::fs::read(&file).unwrap()).unwrap();
+        assert_eq!(saved.0.bytes(), grid.bytes.as_slice());
+        // A patch out of the grid fails without changing anything.
+        let wrong = Command::Patch {
+            document: path.into(),
+            x: 3,
+            z: 3,
+            width: 2,
+            height: 2,
+            bytes: vec![0; 16],
+        };
+        assert!(store.run("Wrong", here(path), vec![wrong]).is_err());
+        assert!(store.dirty().is_empty());
     }
 
     /// Every document of the repository's base package is already in the file format, so

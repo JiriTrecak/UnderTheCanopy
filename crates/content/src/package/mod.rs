@@ -75,10 +75,26 @@ pub struct Package {
     overlay: Option<Arc<Overlay>>,
 }
 
-/// Documents that replace a package's files while it loads: the editor's unsaved edits.
+/// Files that replace a package's own while it loads: the editor's unsaved edits.
 /// Paths are `/`-separated from the package root; `None` is a deleted file.
 #[derive(Debug, Clone, Default, PartialEq)]
-pub struct Overlay(pub BTreeMap<String, Option<String>>);
+pub struct Overlay(pub BTreeMap<String, Option<Vec<u8>>>);
+
+impl Overlay {
+    /// The files below `dir`, with paths from `dir` (a nested package's overlay).
+    pub fn below(&self, dir: &str) -> Self {
+        let prefix = format!("{dir}/");
+        Self(
+            self.0
+                .iter()
+                .filter_map(|(path, file)| {
+                    path.strip_prefix(&prefix)
+                        .map(|rest| (rest.to_string(), file.clone()))
+                })
+                .collect(),
+        )
+    }
+}
 
 impl Package {
     /// Reads the manifest of the package folder `root`.
@@ -112,16 +128,22 @@ impl Package {
         self
     }
 
-    fn overlaid(&self, path: &str) -> Option<&Option<String>> {
+    fn overlaid(&self, path: &str) -> Option<&Option<Vec<u8>>> {
         self.overlay.as_ref()?.0.get(path)
     }
 
     /// A document's text, from the overlay or the file.
     pub fn read_text(&self, path: &str) -> std::io::Result<String> {
+        String::from_utf8(self.read_bytes(path)?)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+    }
+
+    /// A file's bytes, from the overlay or the file.
+    pub fn read_bytes(&self, path: &str) -> std::io::Result<Vec<u8>> {
         match self.overlaid(path) {
-            Some(Some(text)) => Ok(text.clone()),
+            Some(Some(bytes)) => Ok(bytes.clone()),
             Some(None) => Err(std::io::ErrorKind::NotFound.into()),
-            None => std::fs::read_to_string(self.root.join(path)),
+            None => std::fs::read(self.root.join(path)),
         }
     }
 
@@ -296,12 +318,12 @@ mod overlay_tests {
         let overlay = Overlay(BTreeMap::from([
             (
                 "units/old/kept.json".into(),
-                Some(r#"{"id":"unit.kept","hp":2}"#.into()),
+                Some(br#"{"id":"unit.kept","hp":2}"#.to_vec()),
             ),
             ("units/old/gone.json".into(), None),
             (
                 "units/new/made.json".into(),
-                Some(r#"{"id":"unit.made"}"#.into()),
+                Some(br#"{"id":"unit.made"}"#.to_vec()),
             ),
         ]));
         let package = Package::open(&root)

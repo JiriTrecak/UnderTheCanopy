@@ -47,7 +47,8 @@ fn grid_path(stem: &str) -> String {
 
 fn read_json(package: &Package, file: &str) -> Result<Value, Error> {
     let label = package.label(file);
-    let text = std::fs::read_to_string(package.root.join(file))
+    let text = package
+        .read_text(file)
         .map_err(|e| Error::new(&label, "", e.to_string()))?;
     serde_json::from_str(&text).map_err(|e| Error::new(&label, "", e.to_string()))
 }
@@ -55,6 +56,13 @@ fn read_json(package: &Package, file: &str) -> Result<Value, Error> {
 /// Reads and checks the map package at `dir`.
 pub fn load(dir: &Path) -> Result<UtcMap, Errors> {
     let package = Package::open(dir).map_err(|e| Errors(vec![e]))?;
+    load_package(&package)
+}
+
+/// Reads and checks a map package, through its overlay when it has one (the editor's
+/// unsaved documents and grids).
+pub fn load_package(package: &Package) -> Result<UtcMap, Errors> {
+    let package = package.clone();
     let label = package.label("");
     if package.manifest.kind != PackageKind::Map {
         return Err(Errors(vec![Error::new(
@@ -117,7 +125,7 @@ pub fn load(dir: &Path) -> Result<UtcMap, Errors> {
         }
     }
     if let Some(Value::Object(mission)) = document.get_mut("mission") {
-        let script = std::fs::read_to_string(package.root.join(MISSION_SCRIPT)).map_err(|e| {
+        let script = package.read_text(MISSION_SCRIPT).map_err(|e| {
             one(Error::new(
                 &package.label(MISSION_SCRIPT),
                 "",
@@ -150,7 +158,8 @@ pub fn load(dir: &Path) -> Result<UtcMap, Errors> {
     let texture = terrain.texture_layout();
     let mut read_grid = |stem: &str, element: Element, side: (u32, u32)| -> Grid {
         let file = grid_path(stem);
-        std::fs::read(package.root.join(&file))
+        package
+            .read_bytes(&file)
             .map_err(|e| e.to_string())
             .and_then(|bytes| Grid::from_file(&bytes, element, side.0, side.1))
             .unwrap_or_else(|message| {

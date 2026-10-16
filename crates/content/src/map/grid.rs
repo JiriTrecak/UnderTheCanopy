@@ -107,6 +107,33 @@ impl Grid {
         encoder.finish().expect("writing to memory cannot fail")
     }
 
+    /// The sample type and size a `.grid` file declares.
+    pub fn header(file: &[u8]) -> Result<(Element, u32, u32), String> {
+        if file.len() < HEADER || &file[..4] != MAGIC {
+            return Err("not a grid file".into());
+        }
+        let element = match file[5] {
+            1 => Element::F32,
+            2 => Element::U8,
+            3 => Element::Rgba8,
+            other => return Err(format!("unknown sample type {other}")),
+        };
+        let read =
+            |at: usize| u32::from_le_bytes([file[at], file[at + 1], file[at + 2], file[at + 3]]);
+        Ok((element, read(8), read(12)))
+    }
+
+    /// Reads a `.grid` file of whatever type and size it declares.
+    pub fn read_file(file: &[u8]) -> Result<(Self, Element, u32, u32), String> {
+        let (element, width, height) = Self::header(file)?;
+        Ok((
+            Self::from_file(file, element, width, height)?,
+            element,
+            width,
+            height,
+        ))
+    }
+
     /// Reads a `.grid` file that must hold `width × height` samples of `element`.
     pub fn from_file(
         file: &[u8],
