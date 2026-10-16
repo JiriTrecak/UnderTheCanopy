@@ -52,7 +52,9 @@ fn main() -> ExitCode {
                 .or_default() += 1;
         }
     }
-    let abilities = serde_json::to_value(&content.abilities).expect("serializable");
+    let abilities = serde_json::json!({
+        "abilities": serde_json::to_value(&content.abilities.abilities).expect("serializable")
+    });
     collect(
         &abilities["abilities"],
         "op",

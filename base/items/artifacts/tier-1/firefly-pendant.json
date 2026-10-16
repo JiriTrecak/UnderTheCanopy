@@ -1,0 +1,20 @@
+{
+  "id": "item.firefly-pendant",
+  "itemTier": 1,
+  "name": "Firefly Pendant",
+  "description": "+50 maximum mana and +0.5 mana per second.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.firefly-pendant",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "equipment",
+    "damage": 0,
+    "armor": 0,
+    "maxHp": 0,
+    "modifiers": {
+      "maxMana": 50,
+      "manaRegenPerSecond": 0.5
+    }
+  }
+}

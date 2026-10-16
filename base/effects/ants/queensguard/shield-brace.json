@@ -1,0 +1,33 @@
+{
+  "id": "effect.ants.shield-brace",
+  "name": "Shield Brace",
+  "description": "Small ivory guard ring bound to the Queensguard’s defensive stance.",
+  "durationTicks": 40,
+  "loop": true,
+  "layers": [
+    {
+      "id": "aura",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "ring",
+      "colour": "#ffe2aa",
+      "accent": "#fff6dd",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 2,
+      "height": 0.05,
+      "motion": {
+        "opacity": {
+          "periodTicks": 80,
+          "min": 0.3,
+          "max": 0.75,
+          "easing": "sine"
+        }
+      },
+      "follow": true,
+      "intensity": 0.6
+    }
+  ]
+}

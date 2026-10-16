@@ -1,0 +1,75 @@
+{
+  "armorTypes": {
+    "light": {
+      "name": "Light armor",
+      "icon": "icon.armor.light"
+    },
+    "heavy": {
+      "name": "Heavy armor",
+      "icon": "icon.armor.heavy"
+    },
+    "structure": {
+      "name": "Building armor",
+      "icon": "icon.armor.structure"
+    },
+    "hero": {
+      "name": "Hero armor",
+      "icon": "icon.armor.heavy"
+    }
+  },
+  "damageTypes": {
+    "melee": {
+      "name": "Melee",
+      "appliesArmor": true
+    },
+    "piercing": {
+      "name": "Piercing",
+      "appliesArmor": true
+    },
+    "hero": {
+      "name": "Hero attack",
+      "appliesArmor": true
+    },
+    "spell": {
+      "name": "Spell",
+      "appliesArmor": false
+    },
+    "siege": {
+      "name": "Siege",
+      "appliesArmor": true
+    }
+  },
+  "damageMultipliers": {
+    "melee": {
+      "light": 1500,
+      "heavy": 1000,
+      "hero": 1000,
+      "structure": 700
+    },
+    "piercing": {
+      "light": 750,
+      "heavy": 900,
+      "hero": 500,
+      "structure": 350
+    },
+    "hero": {
+      "light": 1000,
+      "heavy": 1000,
+      "hero": 1000,
+      "structure": 500
+    },
+    "spell": {
+      "light": 1000,
+      "heavy": 1000,
+      "hero": 700,
+      "structure": 250
+    },
+    "siege": {
+      "light": 1000,
+      "heavy": 1000,
+      "hero": 1000,
+      "structure": 1000
+    }
+  },
+  "armorCoefficient": 0.06
+}

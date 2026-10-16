@@ -1,0 +1,22 @@
+{
+  "id": "item.restoration-draught",
+  "itemTier": 2,
+  "name": "Restoration Draught",
+  "description": "2 charges: restore 300 health and 120 mana. 10s cooldown.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.restoration-draught",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "consumable",
+    "heal": 300,
+    "active": {
+      "target": "self",
+      "radius": 0,
+      "cooldownTicks": 400,
+      "charges": 2,
+      "heal": 300,
+      "mana": 120
+    }
+  }
+}

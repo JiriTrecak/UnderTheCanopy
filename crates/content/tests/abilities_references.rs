@@ -2,7 +2,6 @@
 
 use canopy_content::{Content, Errors};
 use serde_json::{Value, json};
-use std::path::PathBuf;
 
 /// A complete, valid data folder: one fort, one caster unit, one spell and its effect.
 struct World {
@@ -124,29 +123,16 @@ fn world() -> World {
 }
 
 fn load(world: &World, name: &str) -> Result<Content, Errors> {
-    let root = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join(format!("abilities-{name}"));
-    for (file, value) in [
-        (canopy_content::GAME_FILE, &world.game),
-        (canopy_content::ABILITIES_FILE, &world.abilities),
-        (canopy_content::EFFECTS_FILE, &world.effects),
-        (canopy_content::MANIFEST_FILE, &world.manifest),
-    ] {
-        let path = root.join(file);
-        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-        std::fs::write(path, serde_json::to_string_pretty(value).unwrap()).unwrap();
-    }
-    let catalogue = root.join("assets/authoring/catalogue.json");
-    std::fs::create_dir_all(catalogue.parent().unwrap()).unwrap();
-    std::fs::write(catalogue, "[]").unwrap();
-    // Published outputs must exist on disk.
-    for record in world.manifest["records"].as_array().into_iter().flatten() {
-        for output in record["outputs"].as_array().into_iter().flatten() {
-            let path = root.join(output["path"].as_str().unwrap());
-            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-            std::fs::write(path, [0]).unwrap();
-        }
-    }
-    Content::load(&root)
+    let mut folder = canopy_content::testing::DataFolder::new(
+        world.game.clone(),
+        world.manifest["records"]
+            .as_array()
+            .cloned()
+            .unwrap_or_default(),
+    );
+    folder.abilities = world.abilities["library"].clone();
+    folder.effects = world.effects["effects"].clone();
+    folder.load(&format!("abilities-{name}"))
 }
 
 /// Loads a broken world and returns its error messages.
@@ -246,15 +232,12 @@ fn effect_resources_must_be_published() {
 }
 
 #[test]
-fn publication_envelope_is_checked() {
-    let mut w = world();
-    w.abilities["abi"] = json!("abilities-2");
-    assert_reports(&w, "abi", "Unsupported ability publication ABI");
-}
-
-#[test]
-fn unknown_fields_are_reported_per_entry() {
+fn unknown_fields_are_reported_against_the_ability_file() {
     let mut w = world();
     w.abilities["library"]["abilities"][0]["cooldown"] = json!(5);
-    assert_reports(&w, "unknown-field", "library.abilities[0]");
+    assert_reports(
+        &w,
+        "unknown-field",
+        "base/abilities/ability.test.bolt.json · cooldown: unknown field",
+    );
 }

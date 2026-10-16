@@ -1,0 +1,31 @@
+{
+  "id": "effect.rootbreaker.challenged",
+  "name": "Challenge Roar · attention",
+  "description": "Rootbreaker spell presentation. Authored in the Spell Editor; authoritative gameplay owns timing and cleanup.",
+  "durationTicks": 120,
+  "loop": true,
+  "layers": [
+    {
+      "id": "attention",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "billboard",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 120,
+      "count": 1,
+      "size": 1.5,
+      "height": 5.2,
+      "blend": "normal",
+      "orientation": "camera",
+      "follow": true,
+      "texture": {
+        "asset": "asset.spells.rootbreaker.attention",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

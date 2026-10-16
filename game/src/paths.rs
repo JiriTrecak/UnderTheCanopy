@@ -8,11 +8,11 @@ use anyhow::{Context, Result, bail};
 use std::path::{Path, PathBuf};
 
 /// A file every data folder contains; used to recognise one.
-const DATA_MARKER: &str = "content/game.json";
+const DATA_MARKER: &str = "base/package.json";
 
 #[derive(Debug, Clone)]
 pub struct Paths {
-    /// Read-only game data (`content/`, later the cooked asset pack).
+    /// Read-only game data: the base package, the asset registry, the cooked asset pack.
     pub data: PathBuf,
     /// Writable per-user folder for settings and saves.
     pub user: PathBuf,
@@ -88,7 +88,7 @@ mod tests {
 
     fn data_folder(name: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!("canopy-paths-{name}-{}", std::process::id()));
-        std::fs::create_dir_all(dir.join("content")).unwrap();
+        std::fs::create_dir_all(dir.join("base")).unwrap();
         std::fs::write(dir.join(DATA_MARKER), "{}").unwrap();
         dir
     }
@@ -115,7 +115,7 @@ mod tests {
             (root.join("canopy.exe"), root.join("data"))
         };
         std::fs::create_dir_all(exe.parent().unwrap()).unwrap();
-        std::fs::create_dir_all(data.join("content")).unwrap();
+        std::fs::create_dir_all(data.join("base")).unwrap();
         std::fs::write(data.join(DATA_MARKER), "{}").unwrap();
         let found = data_dir(None, &exe).unwrap();
         assert_eq!(found.canonicalize().unwrap(), data.canonicalize().unwrap());

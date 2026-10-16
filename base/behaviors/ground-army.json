@@ -1,0 +1,10 @@
+{
+  "id": "behavior-set.ground-army",
+  "behaviors": {
+    "movement": {
+      "speed": 4,
+      "turnRate": 720
+    },
+    "playerControl": {}
+  }
+}

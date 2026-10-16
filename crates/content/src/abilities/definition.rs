@@ -1,7 +1,7 @@
 //! Ability definitions, presentations and the bindings that give units abilities.
 
 use super::amount::{Amount, RankParameters};
-use super::literal::{SchemaVersion, True, trimmed_name};
+use super::literal::{True, trimmed_name};
 use super::operations::{CombatModifiers, Effect, Operation, StatusEffect, WeaponFilter};
 use crate::{
     conditions::{AbilityCondition, Relation, TargetFilter},
@@ -307,7 +307,6 @@ pub struct Trigger {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Ability {
-    pub schema_version: SchemaVersion,
     pub id: Id,
     #[serde(deserialize_with = "trimmed_name")]
     pub name: String,
@@ -329,7 +328,8 @@ pub struct Ability {
     pub statuses: Option<Vec<StatusEffect>>,
     pub on_release: Vec<Operation>,
     pub triggers: Option<Vec<Trigger>>,
-    pub presentation: Id,
+    /// How it looks and sounds (never read by the simulation).
+    pub presentation: Presentation,
 }
 
 impl Ability {
@@ -395,29 +395,23 @@ pub struct Animations {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Presentation {
-    pub schema_version: SchemaVersion,
-    pub id: Id,
     pub icon: Option<Id>,
     pub animations: Animations,
     pub effects: Vec<EffectBinding>,
 }
 
-/// The `library` of `content/abilities/published.json`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
+/// Every ability of the content, sorted by id.
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct AbilityLibrary {
-    pub schema_version: SchemaVersion,
     pub abilities: Vec<Ability>,
-    pub presentations: Vec<Presentation>,
 }
 
 impl AbilityLibrary {
     pub fn ability(&self, id: &str) -> Option<&Ability> {
-        self.abilities.iter().find(|a| a.id == *id)
-    }
-
-    pub fn presentation(&self, id: &str) -> Option<&Presentation> {
-        self.presentations.iter().find(|p| p.id == *id)
+        self.abilities
+            .binary_search_by(|a| a.id.as_str().cmp(id))
+            .ok()
+            .map(|i| &self.abilities[i])
     }
 }
 
@@ -562,7 +556,7 @@ mod tests {
 
     #[test]
     fn ability_names_are_trimmed() {
-        let ability = json!({"schemaVersion": 1, "id": "ability.test.zap", "name": "  Zap ",
+        let ability = json!({"id": "ability.test.zap", "name": "  Zap ",
             "activation": "targeted", "ranks": [{}],
             "targeting": {"kind": "self", "alive": true, "visible": true, "relations": ["ally"], "allowSelf": true, "range": 0, "outOfRange": "reject"},
             "cast": {"prepareTicks": 0, "recoverTicks": 0, "cost": {"resource": "mana", "amount": 0, "commit": "release"},
@@ -570,7 +564,8 @@ mod tests {
                 "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},
             "statuses": [{"op": "status", "target": "target", "id": "mark", "amount": 5, "polarity": "negative", "dispel": true}],
             "onRelease": [{"op": "mana", "target": "caster", "amount": 1}],
-            "presentation": "presentation.test.zap"});
+            "presentation": {"animations": {"prepare": "cast", "release": "cast", "recover": "idle", "fallback": "idle"},
+                "effects": []}});
         let parsed: Ability = serde_json::from_value(ability.clone()).unwrap();
         assert_eq!(parsed.name, "Zap");
         assert_eq!(parsed.description, "");

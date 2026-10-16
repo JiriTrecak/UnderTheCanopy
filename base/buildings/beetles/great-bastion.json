@@ -1,0 +1,64 @@
+{
+  "id": "building.beetles.great-bastion",
+  "name": "Great Bastion",
+  "description": "Great Bastion of the beetle colony. Model pending.",
+  "asset": "asset.placeholder.missing-model",
+  "icon": "icon.item.root",
+  "body": {
+    "maxHp": 2400,
+    "armor": 6,
+    "armorType": "structure"
+  },
+  "vision": 42,
+  "footprint": {
+    "width": 20,
+    "depth": 20
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 10.5
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {
+    "storage": {
+      "capacity": 100000,
+      "accepts": [
+        "item.wood",
+        "item.amber"
+      ],
+      "dropoff": true,
+      "gathering": {
+        "item": "item.amber",
+        "radius": 40
+      }
+    },
+    "production": {
+      "mode": "queued",
+      "outputs": [
+        "unit.beetles.worker"
+      ],
+      "workerSlots": 0,
+      "queueCapacity": 6
+    }
+  },
+  "level": 2,
+  "supplyProvided": 15,
+  "heroCapacity": 2,
+  "upgrade": {
+    "target": "building.beetles.elder-bastion",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 600
+      },
+      {
+        "item": "item.wood",
+        "amount": 250
+      }
+    ],
+    "workTicks": 4000
+  },
+  "modelScale": 1
+}

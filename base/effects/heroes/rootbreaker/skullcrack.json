@@ -1,0 +1,107 @@
+{
+  "id": "effect.rootbreaker.skullcrack",
+  "name": "Skullcrack · club impact",
+  "description": "Rootbreaker spell presentation. Authored in the Spell Editor; authoritative gameplay owns timing and cleanup.",
+  "durationTicks": 50,
+  "loop": false,
+  "layers": [
+    {
+      "id": "impact",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "ring",
+      "colour": "#eec17e",
+      "accent": "#fff1ce",
+      "durationTicks": 14,
+      "count": 1,
+      "size": 2.8,
+      "height": 0.09,
+      "intensity": 0.8
+    },
+    {
+      "id": "splinters",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "burst",
+      "colour": "#d5b78a",
+      "accent": "#987455",
+      "durationTicks": 20,
+      "count": 9,
+      "size": 0.45,
+      "height": 0.3,
+      "spread": 2.5
+    },
+    {
+      "id": "dust",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 36,
+        "rate": 8,
+        "speed": 3,
+        "speedVariation": 0.35,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 65,
+        "gravity": 1,
+        "drag": 0.6,
+        "spawnRadius": 1.5,
+        "startSize": 1.4,
+        "endSize": 3.5,
+        "spin": 0.4,
+        "fadeIn": 0.03,
+        "fadeOut": 0.85
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#987455",
+      "accent": "#ccb493",
+      "durationTicks": 36,
+      "count": 8,
+      "size": 0.5,
+      "height": 0.1,
+      "blend": "normal",
+      "intensity": 0.6,
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "club-impact",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "sound",
+      "sound": {
+        "asset": "asset.audio.spells.frost-impact",
+        "role": "audio",
+        "index": 1,
+        "volume": 0.65,
+        "pitch": 0.58,
+        "loop": false,
+        "fadeInTicks": 0,
+        "fadeOutTicks": 8,
+        "referenceDistance": 12,
+        "maxDistance": 80
+      },
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 50,
+      "count": 1,
+      "size": 1,
+      "height": 0
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploys server/ and content/game.json to the match host and switches systemd to it
+# Deploys server/ to the match host and switches systemd to it
 # (docs/server.md). `deploy.sh rollback` switches back to the previous TypeScript server
 # from the old repository, which stays installed in /home/ubuntu/settlers-match.
 # Refuses while a match is being played unless FORCE=1.
@@ -41,11 +41,10 @@ if [ "$playing" != 0 ] && [ "${FORCE:-}" != 1 ]; then
   exit 1
 fi
 
-"${ssh[@]}" "$remote" "mkdir -p '$dir/server' '$dir/content'"
+"${ssh[@]}" "$remote" "mkdir -p '$dir/server'"
 rsync -az --delete --exclude node_modules -e "$rsync_ssh" \
   "$repo/server/src" "$repo/server/package.json" "$repo/server/package-lock.json" "$repo/server/tsconfig.json" "$repo/server/deploy" \
   "$remote:$dir/server/"
-rsync -az -e "$rsync_ssh" "$repo/content/game.json" "$remote:$dir/content/game.json"
 
 "${ssh[@]}" "$remote" bash -s <<'REMOTE'
 set -euo pipefail

@@ -1,0 +1,133 @@
+{
+  "id": "effect.marshal.rally.cast",
+  "name": "Rally the Colony · marching standard",
+  "description": "Layered Marshal spell artwork. Gameplay and lifecycle are supplied by its ability binding.",
+  "durationTicks": 320,
+  "loop": true,
+  "layers": [
+    {
+      "id": "warm-pool",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#df9d3f",
+      "accent": "#ffe4a2",
+      "durationTicks": 320,
+      "count": 1,
+      "size": 2.7,
+      "height": 0.08,
+      "follow": true,
+      "intensity": 0.22
+    },
+    {
+      "id": "marching-leaves",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "billboard",
+      "colour": "#ffffff",
+      "accent": "#ffe4a2",
+      "durationTicks": 320,
+      "count": 1,
+      "size": 6.8,
+      "height": 0.14,
+      "motion": {
+        "rotation": {
+          "periodTicks": 320,
+          "direction": "clockwise"
+        }
+      },
+      "orientation": "ground",
+      "follow": true,
+      "intensity": 0.82,
+      "texture": {
+        "asset": "asset.effects.marshal.cadence-wheel",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "heart-crest",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "billboard",
+      "colour": "#ffffff",
+      "accent": "#ffe4a2",
+      "durationTicks": 320,
+      "count": 1,
+      "size": 2.6,
+      "height": 0.17,
+      "motion": {
+        "scale": {
+          "periodTicks": 80,
+          "min": 0.86,
+          "max": 1.07,
+          "easing": "sine",
+          "phase": 0
+        },
+        "opacity": {
+          "periodTicks": 80,
+          "min": 0.5,
+          "max": 0.85,
+          "easing": "sine",
+          "phase": 0
+        }
+      },
+      "orientation": "ground",
+      "follow": true,
+      "intensity": 0.8,
+      "texture": {
+        "asset": "asset.effects.marshal.crown-sigil",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "rising-standard",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 44,
+        "rate": 5,
+        "speed": 1.5,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 12,
+        "gravity": 0,
+        "drag": 0.5,
+        "spawnRadius": 2.3,
+        "startSize": 0.2,
+        "endSize": 0,
+        "spin": 1,
+        "fadeIn": 0.04,
+        "fadeOut": 0.65
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#ffc56e",
+      "accent": "#ffe4a2",
+      "durationTicks": 320,
+      "count": 12,
+      "size": 0.2,
+      "height": 0.15,
+      "follow": true,
+      "intensity": 0.6,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

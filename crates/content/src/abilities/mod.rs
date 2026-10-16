@@ -1,7 +1,5 @@
-//! The published ability library (`content/abilities/published.json`) and ability bindings
-//! on casters (`behaviors.abilities`).
-//!
-//! The game reads only the published snapshot, never the per-ability authoring folders.
+//! Abilities (`abilities/` of a package, one file each with its presentation inline) and
+//! ability bindings on casters (`behaviors.abilities`).
 
 mod amount;
 mod definition;
@@ -15,76 +13,27 @@ pub use amount::{Amount, RankParameters, RankedReference};
 pub use definition::*;
 pub use operations::*;
 
-use crate::{
-    Content,
-    error::{Error, parse},
-};
-use std::path::Path;
+use crate::{Content, error::Error, load::Element};
+use std::collections::BTreeMap;
 
-/// The engine interface the published abilities must target.
-pub const ABILITY_ABI: &str = "abilities-1";
-
-const FILE: &str = crate::ABILITIES_FILE;
-
-/// Reads the published library and checks its envelope and the format's rules.
-pub(crate) fn load(data: &Path, errors: &mut Vec<Error>) -> Option<AbilityLibrary> {
-    let publication = crate::error::read_json(data, FILE)
-        .map_err(|error| errors.push(error))
-        .ok()?;
-    let library = read_publication(publication, errors)?;
-    rules::check(&library, errors);
-    Some(library)
-}
-
-/// The `library` of a publication, parsed entry by entry so every bad entry is reported.
-fn read_publication(
-    mut publication: serde_json::Value,
+/// Parses every ability (sorted by id) and checks the format's rules; every bad element is
+/// reported against its own file.
+pub(crate) fn read(
+    elements: Vec<Element>,
+    files: &BTreeMap<String, String>,
     errors: &mut Vec<Error>,
 ) -> Option<AbilityLibrary> {
-    let abi = publication.get("abi").and_then(serde_json::Value::as_str);
-    let version = publication
-        .get("schemaVersion")
-        .and_then(serde_json::Value::as_u64);
-    if abi != Some(ABILITY_ABI) || version != Some(1) {
-        errors.push(Error::new(FILE, "", "Unsupported ability publication ABI"));
+    let before = errors.len();
+    let abilities: Vec<Ability> = elements
+        .into_iter()
+        .filter_map(|e| e.parse(errors))
+        .collect();
+    if errors.len() != before {
         return None;
     }
-
-    /// The library with its entries still unparsed.
-    #[derive(serde::Deserialize)]
-    #[serde(rename_all = "camelCase", deny_unknown_fields)]
-    struct Entries {
-        schema_version: literal::SchemaVersion,
-        abilities: Vec<serde_json::Value>,
-        presentations: Vec<serde_json::Value>,
-    }
-    let entries: Entries = parse(publication["library"].take(), FILE, "library")
-        .map_err(|error| errors.push(error))
-        .ok()?;
-    fn each<T: serde::de::DeserializeOwned>(
-        items: Vec<serde_json::Value>,
-        key: &str,
-        errors: &mut Vec<Error>,
-    ) -> Option<Vec<T>> {
-        let before = errors.len();
-        let parsed: Vec<T> = items
-            .into_iter()
-            .enumerate()
-            .filter_map(|(index, item)| {
-                parse(item, FILE, &format!("library.{key}[{index}]"))
-                    .map_err(|error| errors.push(error))
-                    .ok()
-            })
-            .collect();
-        (errors.len() == before).then_some(parsed)
-    }
-    let abilities = each(entries.abilities, "abilities", errors);
-    let presentations = each(entries.presentations, "presentations", errors);
-    Some(AbilityLibrary {
-        schema_version: entries.schema_version,
-        abilities: abilities?,
-        presentations: presentations?,
-    })
+    let library = AbilityLibrary { abilities };
+    rules::check(&library, files, errors);
+    Some(library)
 }
 
 /// Ability rules that need the whole content: bindings, damage types, summons, icons.
@@ -94,6 +43,7 @@ pub(crate) fn validate(content: &Content, errors: &mut Vec<Error>) {
         &content.abilities,
         &content.effects,
         &content.manifest,
+        &content.files,
         errors,
     );
 }

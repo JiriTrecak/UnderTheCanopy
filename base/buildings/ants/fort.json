@@ -1,0 +1,83 @@
+{
+  "id": "building.ants.fort",
+  "name": "Queensguard Hall",
+  "description": "The colony main hall stores resources, trains workers and provides 15 supply.",
+  "asset": "asset.ants.queensguard-hall",
+  "icon": "icon.ants.queensguard-hall",
+  "body": {
+    "maxHp": 1800,
+    "armor": 5,
+    "armorType": "structure"
+  },
+  "vision": 42,
+  "footprint": {
+    "width": 20,
+    "depth": 20
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 10.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 400
+      },
+      {
+        "item": "item.wood",
+        "amount": 150
+      }
+    ],
+    "workTicks": 3600,
+    "workAnimation": "build"
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {
+    "storage": {
+      "capacity": 100000,
+      "accepts": [
+        "item.wood",
+        "item.amber"
+      ],
+      "dropoff": true,
+      "gathering": {
+        "item": "item.amber",
+        "radius": 40
+      }
+    },
+    "production": {
+      "mode": "queued",
+      "outputs": [
+        "unit.ants.settler"
+      ],
+      "workerSlots": 0,
+      "queueCapacity": 6
+    }
+  },
+  "level": 1,
+  "upgrade": {
+    "target": "building.ants.great-mound",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 450
+      },
+      {
+        "item": "item.wood",
+        "amount": 200
+      }
+    ],
+    "workTicks": 3200
+  },
+  "supplyProvided": 15,
+  "heroCapacity": 1,
+  "modelScale": 1.25,
+  "command": {
+    "category": "category.build",
+    "priority": 100
+  }
+}

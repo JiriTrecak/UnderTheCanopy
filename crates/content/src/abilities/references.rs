@@ -10,15 +10,16 @@ use crate::{
 };
 use std::collections::BTreeSet;
 
-const ABILITIES: &str = crate::ABILITIES_FILE;
-const GAME: &str = crate::GAME_FILE;
-
 pub(crate) fn check(content: &Content, errors: &mut Vec<Error>) {
     icons(content, errors);
     for definition in &content.definitions {
         if let Some(caster) = &definition.behaviors.abilities {
             for problem in caster_problems(content, definition, caster) {
-                errors.push(Error::new(GAME, definition.id.as_str(), problem));
+                errors.push(Error::new(
+                    content.file_of(definition.id.as_str()),
+                    definition.id.as_str(),
+                    problem,
+                ));
             }
         }
     }
@@ -26,15 +27,15 @@ pub(crate) fn check(content: &Content, errors: &mut Vec<Error>) {
 }
 
 fn icons(content: &Content, errors: &mut Vec<Error>) {
-    for presentation in &content.abilities.presentations {
-        if let Some(icon) = &presentation.icon
+    for ability in &content.abilities.abilities {
+        if let Some(icon) = &ability.presentation.icon
             && !content
                 .asset(icon.as_str())
                 .is_some_and(|a| a.image.is_some())
         {
             errors.push(Error::new(
-                ABILITIES,
-                presentation.id.as_str(),
+                content.file_of(ability.id.as_str()),
+                ability.id.as_str(),
                 format!("Spell icon must reference an image: {icon}"),
             ));
         }
@@ -163,7 +164,11 @@ fn effects(content: &Content, errors: &mut Vec<Error>) {
     let rules = &content.rules;
     for ability in &content.abilities.abilities {
         let mut fail = |message: String| {
-            errors.push(Error::new(ABILITIES, ability.id.as_str(), message));
+            errors.push(Error::new(
+                content.file_of(ability.id.as_str()),
+                ability.id.as_str(),
+                message,
+            ));
         };
         let mut damage_types: Vec<&str> = Vec::new();
         let mut summons = Vec::new();

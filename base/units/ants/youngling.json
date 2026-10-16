@@ -1,0 +1,30 @@
+{
+  "id": "unit.ants.youngling",
+  "name": "Youngling",
+  "description": "Briarwatch campaign character.",
+  "asset": "asset.briar.civilian",
+  "icon": "icon.ants.settler",
+  "selectionClass": "worker",
+  "body": {
+    "maxHp": 80,
+    "armor": 0,
+    "armorType": "light"
+  },
+  "vision": 28,
+  "behaviorSets": [],
+  "behaviors": {
+    "movement": {
+      "speed": 12,
+      "turnRate": 720
+    }
+  },
+  "level": 1,
+  "supplyCost": 1,
+  "dimensions": {
+    "radius": 1.5,
+    "height": 4.8,
+    "formationSpacing": 3.25
+  },
+  "modelScale": 2.4,
+  "experienceYield": 0
+}

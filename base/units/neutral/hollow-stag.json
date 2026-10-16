@@ -1,0 +1,42 @@
+{
+  "id": "unit.neutral.hollow-stag",
+  "name": "Hollow Stag",
+  "description": "The Hollow Stag · melee forest creature. A sacred forest guardian and its bark-and-willow retinue.",
+  "asset": "asset.neutral.hollow-stag",
+  "icon": "icon.neutral.hollow-stag",
+  "selectionClass": "army",
+  "dimensions": {
+    "radius": 2.2627,
+    "height": 6.8,
+    "formationSpacing": 5.0915
+  },
+  "body": {
+    "maxHp": 2500,
+    "armor": 6,
+    "armorType": "heavy"
+  },
+  "vision": 12,
+  "behaviorSets": [
+    "behavior-set.neutral"
+  ],
+  "behaviors": {
+    "movement": {
+      "speed": 10.2
+    },
+    "combat": {
+      "damage": 65,
+      "damageType": "melee",
+      "range": 0.6,
+      "cooldownTicks": 66,
+      "aggroRange": 10,
+      "attack": {
+        "windupTicks": 14,
+        "recoveryTicks": 12,
+        "rangeBuffer": 0.6
+      }
+    }
+  },
+  "level": 9,
+  "supplyCost": 1,
+  "modelScale": 1.7
+}

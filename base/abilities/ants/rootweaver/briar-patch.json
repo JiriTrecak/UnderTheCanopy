@@ -1,0 +1,102 @@
+{
+  "id": "ability.ants.briar-patch",
+  "name": "Briar Patch",
+  "description": "Grow a 5-radius patch of roots for 6 seconds. Enemy ground units inside move 35% slower and take 6 spell damage each second. The patch persists if its caster dies.",
+  "activation": "targeted",
+  "persistent": {
+    "durationTicks": 240,
+    "intervalTicks": 20,
+    "anchor": "point",
+    "endsWithCaster": false,
+    "upkeepMana": 0,
+    "toggle": false
+  },
+  "ranks": [
+    {
+      "range": 20,
+      "mana": 65,
+      "cooldownTicks": 640
+    }
+  ],
+  "targeting": {
+    "filter": {
+      "locomotion": [
+        "ground"
+      ]
+    },
+    "kind": "point",
+    "radius": 5,
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 20,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 10,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": {
+        "rankParameter": "mana"
+      },
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": {
+        "rankParameter": "cooldownTicks"
+      },
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "damage",
+      "target": "target",
+      "amount": 3,
+      "damageType": "spell"
+    },
+    {
+      "op": "status",
+      "target": "target",
+      "id": "briarSnag",
+      "amount": 24,
+      "polarity": "negative",
+      "dispel": true,
+      "modifiers": {
+        "moveSpeedPermille": -350
+      },
+      "lifetime": "duration"
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.spell-entangling-roots",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "cast",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "patch",
+        "effect": "effect.ants.briar-patch",
+        "event": "wave",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

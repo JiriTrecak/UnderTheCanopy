@@ -1,0 +1,19 @@
+{
+  "id": "item.ancient-heartwood",
+  "itemTier": 2,
+  "name": "Ancient Heartwood",
+  "description": "+280 maximum health and +2 health per second.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.ancient-heartwood",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "equipment",
+    "damage": 0,
+    "armor": 0,
+    "maxHp": 280,
+    "modifiers": {
+      "healthRegenPerSecond": 2
+    }
+  }
+}

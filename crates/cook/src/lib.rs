@@ -533,13 +533,15 @@ fn base64(text: &str) -> Option<Vec<u8>> {
     Some(out)
 }
 
-/// The data folder: `start` or the nearest ancestor holding `content/game.json` and
+/// The data folder: `start` or the nearest ancestor holding the base package and
 /// `assets/manifest.json`.
 pub fn find_data(start: &Path) -> Option<PathBuf> {
     start
         .ancestors()
         .find(|dir| {
-            dir.join(canopy_content::GAME_FILE).is_file()
+            dir.join(canopy_content::BASE_DIR)
+                .join(canopy_content::package::MANIFEST)
+                .is_file()
                 && dir.join(canopy_content::MANIFEST_FILE).is_file()
         })
         .map(Path::to_path_buf)

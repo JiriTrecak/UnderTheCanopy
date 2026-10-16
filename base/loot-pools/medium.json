@@ -1,0 +1,47 @@
+{
+  "id": "loot.camp.medium",
+  "rolls": 1,
+  "maxTier": 2,
+  "entries": [
+    {
+      "item": "item.ancient-heartwood",
+      "weight": 10
+    },
+    {
+      "item": "item.royal-crest",
+      "weight": 10
+    },
+    {
+      "item": "item.moonwell-chalice",
+      "weight": 10
+    },
+    {
+      "item": "item.predator-talon",
+      "weight": 10
+    },
+    {
+      "item": "item.amber-carapace",
+      "weight": 10
+    },
+    {
+      "item": "item.broodkeeper-lantern",
+      "weight": 10
+    },
+    {
+      "item": "item.warcaller-standard",
+      "weight": 10
+    },
+    {
+      "item": "item.stormwing-spurs",
+      "weight": 10
+    },
+    {
+      "item": "item.restoration-draught",
+      "weight": 10
+    },
+    {
+      "item": "item.rootbinder-idol",
+      "weight": 10
+    }
+  ]
+}

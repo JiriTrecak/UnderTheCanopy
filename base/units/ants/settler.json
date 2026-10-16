@@ -1,0 +1,58 @@
+{
+  "id": "unit.ants.settler",
+  "name": "Worker",
+  "description": "Gather resources and construct buildings. Trained at the main hall; uses 1 supply.",
+  "asset": "asset.ants.colony-worker",
+  "icon": "icon.ants.colony-worker",
+  "selectionClass": "worker",
+  "body": {
+    "maxHp": 240,
+    "armor": 0,
+    "armorType": "light"
+  },
+  "vision": 28,
+  "behaviorSets": [
+    "behavior-set.worker"
+  ],
+  "behaviors": {
+    "work": {
+      "harvests": [
+        "item.wood",
+        "item.amber",
+        "item.root"
+      ],
+      "builds": [
+        "building.ants.fort",
+        "building.ants.barracks",
+        "building.ants.house",
+        "building.ants.tower",
+        "building.ants.sanctuary",
+        "building.ants.ironroot-forge",
+        "building.ants.rootworks",
+        "building.ants.bombardier-workshop"
+      ]
+    },
+    "movement": {
+      "speed": 12,
+      "walkSpeed": 6
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 100
+      }
+    ],
+    "workTicks": 600
+  },
+  "level": 1,
+  "supplyCost": 1,
+  "dimensions": {
+    "radius": 1.5,
+    "height": 4.8,
+    "formationSpacing": 3.25
+  },
+  "modelScale": 2.4
+}

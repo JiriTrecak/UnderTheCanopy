@@ -1,0 +1,75 @@
+{
+  "id": "building.ants.barracks",
+  "name": "Barracks",
+  "description": "Trains the colony’s infantry and ranged troops.",
+  "asset": "asset.ants.leaf-garrison",
+  "icon": "icon.ants.leaf-garrison",
+  "body": {
+    "maxHp": 1200,
+    "armor": 5,
+    "armorType": "structure"
+  },
+  "vision": 14,
+  "footprint": {
+    "width": 12,
+    "depth": 12
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 6.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 200
+      },
+      {
+        "item": "item.wood",
+        "amount": 60
+      }
+    ],
+    "workTicks": 2000,
+    "workAnimation": "build"
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {
+    "storage": {
+      "capacity": 500,
+      "accepts": [
+        "item.wood",
+        "item.amber",
+        "item.root"
+      ]
+    },
+    "production": {
+      "mode": "queued",
+      "outputs": [
+        "unit.ants.warrior",
+        "unit.ants.archer",
+        "unit.ants.hunter",
+        "unit.ants.thornblade",
+        "unit.ants.silkwarden",
+        "unit.ants.nectarist",
+        "unit.ants.banneret",
+        "unit.ants.bombardier",
+        "unit.ants.amber-adept",
+        "unit.ants.queensguard",
+        "unit.ants.winglancer",
+        "unit.ants.rootweaver"
+      ],
+      "workerSlots": 0,
+      "queueCapacity": 6
+    }
+  },
+  "category": "category.build-advanced",
+  "level": 1,
+  "modelScale": 1.25,
+  "command": {
+    "category": "category.build",
+    "priority": 80
+  }
+}

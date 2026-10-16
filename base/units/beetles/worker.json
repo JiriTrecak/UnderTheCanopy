@@ -1,0 +1,57 @@
+{
+  "id": "unit.beetles.worker",
+  "name": "Worker",
+  "description": "Gather resources and construct beetle buildings. Same gathering, movement and training rules as ant workers.",
+  "asset": "asset.placeholder.missing-model",
+  "icon": "icon.item.root",
+  "selectionClass": "worker",
+  "body": {
+    "maxHp": 240,
+    "armor": 0,
+    "armorType": "light"
+  },
+  "vision": 28,
+  "behaviorSets": [
+    "behavior-set.worker"
+  ],
+  "behaviors": {
+    "work": {
+      "harvests": [
+        "item.wood",
+        "item.amber",
+        "item.root"
+      ],
+      "builds": [
+        "building.beetles.bastion",
+        "building.beetles.war-lodge",
+        "building.beetles.brood-den",
+        "building.beetles.hornwatch",
+        "building.beetles.ancestor-shrine",
+        "building.beetles.shell-forge",
+        "building.beetles.rootworks"
+      ]
+    },
+    "movement": {
+      "speed": 12,
+      "walkSpeed": 6
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 100
+      }
+    ],
+    "workTicks": 600
+  },
+  "level": 1,
+  "supplyCost": 1,
+  "dimensions": {
+    "radius": 1.5,
+    "height": 4.8,
+    "formationSpacing": 3.25
+  },
+  "modelScale": 2.4
+}

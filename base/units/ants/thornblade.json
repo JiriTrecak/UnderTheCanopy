@@ -1,0 +1,80 @@
+{
+  "id": "unit.ants.thornblade",
+  "name": "Thornblade",
+  "description": "Agile paired-dagger infantry. Automatically rushes visible ground enemies; can disable autocast for controlled engagements.",
+  "asset": "asset.ants.thornblade",
+  "icon": "icon.ants.thornblade",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 280,
+    "armor": 1,
+    "armorType": "light"
+  },
+  "vision": 32,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 15,
+      "damageType": "melee",
+      "range": 0.6,
+      "cooldownTicks": 40,
+      "aggroRange": 20,
+      "attack": {
+        "windupTicks": 10,
+        "recoveryTicks": 10,
+        "rangeBuffer": 0.6
+      }
+    },
+    "movement": {
+      "speed": 14
+    },
+    "abilities": {
+      "maxMana": 60,
+      "manaRegenPerSecond": 2,
+      "bindings": [
+        {
+          "id": "thorn-rush",
+          "ability": "ability.ants.thorn-rush",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "Q",
+            "column": 1
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 8
+          }
+        }
+      ]
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 180
+      },
+      {
+        "item": "item.wood",
+        "amount": 35
+      }
+    ],
+    "workTicks": 960
+  },
+  "level": 2,
+  "supplyCost": 2,
+  "dimensions": {
+    "radius": 1.5,
+    "height": 4.8,
+    "formationSpacing": 3.25
+  },
+  "modelScale": 2.4
+}

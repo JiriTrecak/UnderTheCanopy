@@ -1,0 +1,19 @@
+{
+  "id": "item.quickstep-spurs",
+  "itemTier": 1,
+  "name": "Quickstep Spurs",
+  "description": "+8% movement speed.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.quickstep-spurs",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "equipment",
+    "damage": 0,
+    "armor": 0,
+    "maxHp": 0,
+    "modifiers": {
+      "moveSpeedPermille": 80
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "id": "item.winter-heart",
+  "itemTier": 3,
+  "name": "Heart of Winter",
+  "description": "+180 maximum health. Aura: enemies within 5 tiles move 15% slower. Activate: deal 120 magic damage within 5 tiles and slow attack speed by 20% for 4s. 60s cooldown.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.winter-heart",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "equipment",
+    "damage": 0,
+    "armor": 0,
+    "maxHp": 180,
+    "aura": {
+      "target": "enemies",
+      "radius": 5,
+      "modifiers": {
+        "moveSpeedPermille": -150
+      }
+    },
+    "active": {
+      "cooldownTicks": 2400,
+      "target": "enemies",
+      "radius": 5,
+      "damage": 120,
+      "damageType": "spell",
+      "status": {
+        "durationTicks": 160,
+        "modifiers": {
+          "attackSpeedPermille": -200
+        }
+      }
+    }
+  }
+}

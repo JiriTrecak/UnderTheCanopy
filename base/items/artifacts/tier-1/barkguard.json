@@ -1,0 +1,16 @@
+{
+  "id": "item.barkguard",
+  "itemTier": 1,
+  "name": "Barkguard Charm",
+  "description": "+2 armor.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.barkguard",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "equipment",
+    "damage": 0,
+    "armor": 2,
+    "maxHp": 0
+  }
+}

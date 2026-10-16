@@ -1,0 +1,47 @@
+{
+  "id": "loot.camp.easy",
+  "rolls": 1,
+  "maxTier": 1,
+  "entries": [
+    {
+      "item": "item.resin-salve",
+      "weight": 10
+    },
+    {
+      "item": "item.moon-dew",
+      "weight": 10
+    },
+    {
+      "item": "item.trailkeeper-flask",
+      "weight": 10
+    },
+    {
+      "item": "item.heartseed",
+      "weight": 10
+    },
+    {
+      "item": "item.thornband",
+      "weight": 10
+    },
+    {
+      "item": "item.barkguard",
+      "weight": 10
+    },
+    {
+      "item": "item.firefly-pendant",
+      "weight": 10
+    },
+    {
+      "item": "item.mossweave-wraps",
+      "weight": 10
+    },
+    {
+      "item": "item.quickstep-spurs",
+      "weight": 10
+    },
+    {
+      "item": "item.scout-whistle",
+      "weight": 10
+    }
+  ]
+}

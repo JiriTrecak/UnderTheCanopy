@@ -1,0 +1,24 @@
+{
+  "id": "item.first-queen-crown",
+  "itemTier": 3,
+  "name": "Crown of the First Queen",
+  "description": "+150 maximum health. Aura: allied units within 7 tiles gain 15% damage and +2 armor.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.first-queen-crown",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "equipment",
+    "damage": 0,
+    "armor": 0,
+    "maxHp": 150,
+    "aura": {
+      "target": "allies",
+      "radius": 7,
+      "modifiers": {
+        "damagePermille": 150,
+        "armor": 2
+      }
+    }
+  }
+}

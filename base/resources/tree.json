@@ -1,0 +1,20 @@
+{
+  "id": "resource.forest.tree",
+  "name": "Forest tree",
+  "description": "Fifty wood, collected in ten-wood loads. Falls when depleted.",
+  "asset": "asset.resource.tree-primary",
+  "icon": "icon.item.wood",
+  "collisionRadius": 2,
+  "behaviors": {},
+  "yield": 50,
+  "felling": {
+    "maxHp": 50,
+    "fallTicks": 72,
+    "decayTicks": 240
+  },
+  "harvesting": {
+    "activeWorkers": 1,
+    "recommendedWorkers": 1,
+    "searchRadius": 32
+  }
+}

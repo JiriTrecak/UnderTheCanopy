@@ -1,0 +1,45 @@
+{
+  "id": "building.ants.forester",
+  "name": "Forester lodge",
+  "description": "Decorative forest lodge. Ranked forests do not regrow.",
+  "asset": "asset.ants.forester",
+  "icon": "icon.ants.forester",
+  "body": {
+    "maxHp": 750,
+    "armor": 3,
+    "armorType": "structure"
+  },
+  "vision": 14,
+  "footprint": {
+    "width": 12,
+    "depth": 12
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 6.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 120
+      },
+      {
+        "item": "item.wood",
+        "amount": 80
+      }
+    ],
+    "workTicks": 220,
+    "workAnimation": "build"
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {},
+  "level": 1,
+  "command": {
+    "priority": 70,
+    "hidden": true
+  }
+}

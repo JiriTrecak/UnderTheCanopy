@@ -1,0 +1,30 @@
+{
+  "id": "building.neutral.corrupted-root",
+  "name": "Corrupted Root",
+  "description": "One miner extracts ten Root at a time; other workers queue. Deliver to a Rootworks.",
+  "asset": "asset.resource.corrupted-root",
+  "icon": "icon.item.root",
+  "footprint": {
+    "width": 8,
+    "depth": 8
+  },
+  "constructionClearance": 3,
+  "behaviors": {},
+  "yield": 1500,
+  "entrance": {
+    "x": 0.5,
+    "y": 4.5
+  },
+  "body": {
+    "maxHp": 1500,
+    "armor": 5,
+    "armorType": "structure"
+  },
+  "gatheringUnitCollision": false,
+  "harvesting": {
+    "activeWorkers": 1,
+    "recommendedWorkers": 2,
+    "searchRadius": 0
+  },
+  "modelScale": 0.55
+}

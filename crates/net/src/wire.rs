@@ -24,7 +24,6 @@
 use canopy_sim::{Action, Slot};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
-use std::collections::BTreeMap;
 
 /// Milliseconds per lockstep beat (`TICK_MS`); the simulation's 40 Hz tick (D3).
 pub const TICK_MS: u32 = 25;
@@ -161,20 +160,6 @@ pub struct Seat {
     pub round_trip_ms: Option<u32>,
 }
 
-/// The starting heroes a race offers.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct HeroChoice {
-    pub default: String,
-    pub choices: Vec<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct RaceChoice {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub heroes: Option<HeroChoice>,
-}
-
 /// What the lobby shows of a room (`RoomView`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -186,10 +171,6 @@ pub struct RoomView {
     /// The host's name.
     pub host: String,
     pub slots: Vec<Seat>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub races: Option<BTreeMap<String, RaceChoice>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub heroes: Option<HeroChoice>,
     pub spectators: u32,
     /// The last committed beat, once playing.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -642,16 +623,13 @@ mod tests {
     }
 
     fn room_json() -> Value {
-        // As `HostedMatch.view()` writes it, including the content record fields the server
-        // spreads into hero choices.
+        // As `HostedMatch.view()` writes it.
         json!({
             "id": "1", "state": "waiting", "name": "Ann's room", "mapId": "map.a", "host": "Ann",
             "slots": [
                 {"player": 0, "name": "Ann", "race": "race.a", "hero": "unit.h1", "roundTripMs": 31},
                 {"player": 1, "name": null},
             ],
-            "races": {"race.a": {"name": "A", "heroes": {"default": "unit.h1", "choices": ["unit.h1", "unit.h2"], "offset": {"x": 0, "y": -16}}}},
-            "heroes": {"default": "unit.h1", "choices": ["unit.h1", "unit.h2"], "offset": {"x": 0, "y": -16}},
             "spectators": 0,
             "inputDelayMs": 200,
         })

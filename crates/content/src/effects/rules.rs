@@ -4,7 +4,7 @@ use super::{Pulse, Shape, VisualEffect, VisualLayer};
 use crate::error::Error;
 use std::collections::BTreeSet;
 
-const FILE: &str = crate::EFFECTS_FILE;
+const FILE: &str = "effects";
 
 /// Checks every effect; reports each problem once, attributed to the effect or layer.
 pub(crate) fn check(effects: &[VisualEffect], errors: &mut Vec<Error>) {
@@ -254,7 +254,7 @@ mod tests {
     #[test]
     fn library_rules() {
         let effect = |id: &str| -> VisualEffect {
-            serde_json::from_value(json!({"schemaVersion": 1, "id": id, "name": " Glow ", "durationTicks": 10,
+            serde_json::from_value(json!({"id": id, "name": " Glow ", "durationTicks": 10,
                 "layers": [{"id": "a", "shape": "glow", "colour": "#ffffff", "accent": "#ffffff", "durationTicks": 10, "count": 1, "size": 1, "height": 0},
                            {"id": "a", "shape": "glow", "colour": "#ffffff", "accent": "#ffffff", "durationTicks": 10, "count": 1, "size": 1, "height": 0}]}))
             .unwrap()

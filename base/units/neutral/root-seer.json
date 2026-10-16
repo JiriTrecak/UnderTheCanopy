@@ -1,0 +1,64 @@
+{
+  "id": "unit.neutral.root-seer",
+  "name": "Root Seer",
+  "description": "The Rotwood Court · ranged forest creature. A corrupted ancient surrounded by rootbeasts and violet spores.",
+  "asset": "asset.neutral.root-seer",
+  "icon": "icon.neutral.root-seer",
+  "selectionClass": "army",
+  "dimensions": {
+    "radius": 1.156,
+    "height": 4.76,
+    "formationSpacing": 2.601
+  },
+  "body": {
+    "maxHp": 620,
+    "armor": 2,
+    "armorType": "heavy"
+  },
+  "vision": 12,
+  "behaviorSets": [
+    "behavior-set.neutral"
+  ],
+  "behaviors": {
+    "movement": {
+      "speed": 10.2
+    },
+    "combat": {
+      "damage": 31,
+      "damageType": "piercing",
+      "range": 10,
+      "cooldownTicks": 60,
+      "aggroRange": 12,
+      "attack": {
+        "windupTicks": 17,
+        "recoveryTicks": 14,
+        "rangeBuffer": 0.75
+      },
+      "projectile": {
+        "speed": 32
+      }
+    },
+    "abilities": {
+      "maxMana": 200,
+      "manaRegenPerSecond": 1,
+      "bindings": [
+        {
+          "id": "holy-light",
+          "ability": "ability.core.holy-light-lite",
+          "initialRank": 1,
+          "controls": [
+            "ai",
+            "scenario"
+          ],
+          "ai": {
+            "preference": "wounded-ally",
+            "intervalTicks": 12
+          }
+        }
+      ]
+    }
+  },
+  "level": 7,
+  "supplyCost": 1,
+  "modelScale": 1.7
+}

@@ -1,0 +1,59 @@
+{
+  "id": "building.ants.ironroot-forge",
+  "name": "Chitin Works",
+  "description": "Researches permanent improvements for the colony. Existing and future units benefit from completed research.",
+  "asset": "asset.ants.chitin-workshop",
+  "icon": "icon.ants.chitin-workshop",
+  "body": {
+    "maxHp": 1100,
+    "armor": 5,
+    "armorType": "structure"
+  },
+  "vision": 14,
+  "footprint": {
+    "width": 12,
+    "depth": 12
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 6.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 150
+      },
+      {
+        "item": "item.wood",
+        "amount": 75
+      }
+    ],
+    "workTicks": 1600,
+    "workAnimation": "build"
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {
+    "research": {
+      "outputs": [
+        "research.ants.serrated-tools",
+        "research.ants.reinforced-carapace",
+        "research.ants.broadheads",
+        "research.ants.campaign-harness",
+        "research.ants.driving-spear",
+        "research.ants.saturating-shells"
+      ],
+      "queueCapacity": 3
+    }
+  },
+  "category": "category.build",
+  "level": 1,
+  "modelScale": 1.25,
+  "command": {
+    "priority": 30,
+    "category": "category.build"
+  }
+}

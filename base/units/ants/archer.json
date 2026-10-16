@@ -1,0 +1,59 @@
+{
+  "id": "unit.ants.archer",
+  "name": "Archer",
+  "description": "Ranged support. Keep enemies at a distance and protect archers with infantry.",
+  "asset": "asset.ants.leaf-archer",
+  "icon": "icon.ants.leaf-archer",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 375,
+    "armor": 0,
+    "armorType": "light"
+  },
+  "vision": 36,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 15,
+      "damageType": "piercing",
+      "range": 20,
+      "cooldownTicks": 60,
+      "aggroRange": 24,
+      "attack": {
+        "windupTicks": 20,
+        "recoveryTicks": 16,
+        "rangeBuffer": 0.75
+      },
+      "projectile": {
+        "speed": 32
+      }
+    },
+    "movement": {
+      "speed": 12
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 150
+      },
+      {
+        "item": "item.wood",
+        "amount": 20
+      }
+    ],
+    "workTicks": 960
+  },
+  "level": 1,
+  "supplyCost": 1,
+  "dimensions": {
+    "radius": 1.5,
+    "height": 4.8,
+    "formationSpacing": 3.25
+  },
+  "modelScale": 2.4
+}

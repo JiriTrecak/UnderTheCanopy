@@ -642,10 +642,11 @@ fn lobby_host(rig: &mut Rig, net: &canopy_net::Net) -> Result<()> {
         *g.flow.screen() == Screen::Lobby && g.mp.room().is_some()
     })?;
     let id = rig.game.mp.room().context("a room")?.id.clone();
-    rig.game.mp.choose("seat", 1, 2);
-    rig.game.mp.choose("seat", 3, 1);
+    let data = rig.game.data.clone().context("game data")?;
+    rig.game.mp.choose(&data, "seat", 1, 2);
+    rig.game.mp.choose(&data, "seat", 3, 1);
     rig.settle(0.5);
-    rig.game.mp.choose("team", 1, 0);
+    rig.game.mp.choose(&data, "team", 1, 0);
     let joined = net
         .join_room(
             &id,

@@ -1,0 +1,45 @@
+{
+  "id": "unit.neutral.twigcaster",
+  "name": "Twigcaster",
+  "description": "Rootbound Guardians · ranged forest creature. Ancient roots defending an overgrown grove.",
+  "asset": "asset.neutral.twigcaster",
+  "icon": "icon.neutral.twigcaster",
+  "selectionClass": "army",
+  "dimensions": {
+    "radius": 0.714,
+    "height": 4.08,
+    "formationSpacing": 1.6065
+  },
+  "body": {
+    "maxHp": 330,
+    "armor": 0,
+    "armorType": "light"
+  },
+  "vision": 10,
+  "behaviorSets": [
+    "behavior-set.neutral"
+  ],
+  "behaviors": {
+    "movement": {
+      "speed": 11.9
+    },
+    "combat": {
+      "damage": 18,
+      "damageType": "piercing",
+      "range": 8,
+      "cooldownTicks": 60,
+      "aggroRange": 12,
+      "attack": {
+        "windupTicks": 17,
+        "recoveryTicks": 14,
+        "rangeBuffer": 0.75
+      },
+      "projectile": {
+        "speed": 32
+      }
+    }
+  },
+  "level": 3,
+  "supplyCost": 1,
+  "modelScale": 1.7
+}

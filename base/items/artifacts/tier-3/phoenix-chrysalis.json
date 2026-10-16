@@ -1,0 +1,21 @@
+{
+  "id": "item.phoenix-chrysalis",
+  "itemTier": 3,
+  "name": "Phoenix Chrysalis",
+  "description": "+120 maximum health. Once: prevent a lethal hit, restore 35% health and become invulnerable for 1.5s. The chrysalis then breaks.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.phoenix-chrysalis",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "equipment",
+    "damage": 0,
+    "armor": 0,
+    "maxHp": 120,
+    "rescue": {
+      "healMaxPermille": 350,
+      "invulnerableTicks": 60,
+      "charges": 1
+    }
+  }
+}

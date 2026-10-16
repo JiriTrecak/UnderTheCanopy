@@ -142,3 +142,55 @@ pub fn check_order(packages: &[Package]) -> Vec<Error> {
     }
     errors
 }
+
+/// Extensions of the files that make up a package's identity: everything that can change a
+/// match (documents, scripts, map grids). Models, textures and sounds never change the
+/// simulation and are left out, so hashing stays cheap.
+pub const IDENTITY_EXTENSIONS: [&str; 3] = ["json", "lua", "grid"];
+
+impl Package {
+    /// SHA-256 over the package's identity files (see [`IDENTITY_EXTENSIONS`]), sorted
+    /// by path, each as its path, its length and its bytes. Hidden files are skipped.
+    pub fn digest(&self) -> std::io::Result<[u8; 32]> {
+        use sha2::{Digest, Sha256};
+        fn walk(root: &Path, dir: &Path, out: &mut Vec<(String, PathBuf)>) -> std::io::Result<()> {
+            for entry in std::fs::read_dir(dir)? {
+                let entry = entry?;
+                let name = entry.file_name().to_string_lossy().into_owned();
+                if name.starts_with('.') {
+                    continue;
+                }
+                let path = entry.path();
+                if entry.file_type()?.is_dir() {
+                    walk(root, &path, out)?;
+                } else if path
+                    .extension()
+                    .and_then(|e| e.to_str())
+                    .is_some_and(|e| IDENTITY_EXTENSIONS.contains(&e))
+                {
+                    let relative = path
+                        .strip_prefix(root)
+                        .unwrap_or(&path)
+                        .components()
+                        .map(|c| c.as_os_str().to_string_lossy())
+                        .collect::<Vec<_>>()
+                        .join("/");
+                    out.push((relative, path));
+                }
+            }
+            Ok(())
+        }
+        let mut files = Vec::new();
+        walk(&self.root, &self.root, &mut files)?;
+        files.sort();
+        let mut hash = Sha256::new();
+        for (relative, path) in files {
+            let bytes = std::fs::read(&path)?;
+            hash.update((relative.len() as u64).to_le_bytes());
+            hash.update(relative.as_bytes());
+            hash.update((bytes.len() as u64).to_le_bytes());
+            hash.update(&bytes);
+        }
+        Ok(hash.finalize().into())
+    }
+}

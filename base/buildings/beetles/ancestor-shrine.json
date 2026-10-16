@@ -1,0 +1,76 @@
+{
+  "id": "building.beetles.ancestor-shrine",
+  "name": "Ancestor Shrine",
+  "description": "Ancestor Shrine of the beetle colony. Model pending.",
+  "asset": "asset.placeholder.missing-model",
+  "icon": "icon.item.root",
+  "body": {
+    "maxHp": 1000,
+    "armor": 5,
+    "armorType": "structure"
+  },
+  "vision": 14,
+  "footprint": {
+    "width": 12,
+    "depth": 12
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 6.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 180
+      },
+      {
+        "item": "item.wood",
+        "amount": 60
+      }
+    ],
+    "workTicks": 1600,
+    "workAnimation": "build"
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {
+    "revival": {
+      "items": [
+        {
+          "item": "item.amber",
+          "amount": 200
+        }
+      ],
+      "itemsPerLevel": [
+        {
+          "item": "item.amber",
+          "amount": 50
+        }
+      ],
+      "workTicksPerLevel": 200,
+      "workTicks": 1200,
+      "queueCapacity": 4
+    },
+    "production": {
+      "mode": "queued",
+      "outputs": [
+        "unit.beetles.hornbreaker"
+      ],
+      "queueCapacity": 4,
+      "workerSlots": 0
+    },
+    "storage": {
+      "capacity": 100000,
+      "accepts": [
+        "item.amber",
+        "item.wood"
+      ]
+    }
+  },
+  "level": 1,
+  "category": "category.build-advanced",
+  "modelScale": 1
+}

@@ -17,11 +17,9 @@ use canopy_net::ContentIdentity;
 use std::path::Path;
 use std::sync::Arc;
 
-/// Content files whose bytes identify the content (saves, multiplayer `ready`).
-pub const IDENTITY_FILES: [&str; 5] = [
-    canopy_content::GAME_FILE,
-    canopy_content::ABILITIES_FILE,
-    canopy_content::EFFECTS_FILE,
+/// Asset registry files whose bytes identify the content beside the base package's digest
+/// (saves, multiplayer `ready`), until assets move into the package (docs/packages.md).
+pub const IDENTITY_FILES: [&str; 2] = [
     canopy_content::MANIFEST_FILE,
     "assets/authoring/catalogue.json",
 ];
@@ -154,9 +152,18 @@ impl GameData {
             Content::load(&paths.data)
         }
         .map_err(|e| anyhow!("content: {e}"))?;
-        let identity_parts: Vec<Vec<u8>> = IDENTITY_FILES
-            .iter()
-            .map(|f| std::fs::read(paths.data.join(f)).unwrap_or_default())
+        let base =
+            canopy_content::package::Package::open(&paths.data.join(canopy_content::BASE_DIR))
+                .map_err(|e| anyhow!("content: {e}"))?;
+        let base_digest = base
+            .digest()
+            .with_context(|| format!("hashing {}", base.root.display()))?;
+        let identity_parts: Vec<Vec<u8>> = std::iter::once(base_digest.to_vec())
+            .chain(
+                IDENTITY_FILES
+                    .iter()
+                    .map(|f| std::fs::read(paths.data.join(f)).unwrap_or_default()),
+            )
             .collect();
         let content_digest = ContentIdentity::digest(
             canopy_net::wire::ABI,

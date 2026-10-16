@@ -1,0 +1,52 @@
+{
+  "id": "unit.ants.warrior",
+  "name": "Warrior",
+  "description": "Armored ant infantry. Protects the colony and fights at close range.",
+  "asset": "asset.ants.cleaver-warrior",
+  "icon": "icon.ants.cleaver-warrior",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 300,
+    "armor": 2,
+    "armorType": "heavy"
+  },
+  "vision": 32,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 14,
+      "damageType": "melee",
+      "range": 0.6,
+      "cooldownTicks": 54,
+      "aggroRange": 20,
+      "attack": {
+        "windupTicks": 12,
+        "recoveryTicks": 10,
+        "rangeBuffer": 0.6
+      }
+    },
+    "movement": {
+      "speed": 12
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 135
+      }
+    ],
+    "workTicks": 800
+  },
+  "level": 1,
+  "supplyCost": 1,
+  "dimensions": {
+    "radius": 1.5,
+    "height": 4.8,
+    "formationSpacing": 3.25
+  },
+  "modelScale": 2.4
+}

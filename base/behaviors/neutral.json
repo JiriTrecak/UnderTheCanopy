@@ -1,0 +1,11 @@
+{
+  "id": "behavior-set.neutral",
+  "behaviors": {
+    "movement": {
+      "speed": 8,
+      "turnRate": 720
+    },
+    "campDefense": {},
+    "playerControl": {}
+  }
+}

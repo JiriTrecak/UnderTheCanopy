@@ -1,0 +1,42 @@
+{
+  "id": "unit.neutral.capling",
+  "name": "Capling",
+  "description": "Mushroom Circle · melee forest creature. Animated mushrooms hiding among ordinary forest fungi.",
+  "asset": "asset.neutral.capling",
+  "icon": "icon.neutral.capling",
+  "selectionClass": "army",
+  "dimensions": {
+    "radius": 0.493,
+    "height": 3.06,
+    "formationSpacing": 1.1084
+  },
+  "body": {
+    "maxHp": 220,
+    "armor": 1,
+    "armorType": "light"
+  },
+  "vision": 10,
+  "behaviorSets": [
+    "behavior-set.neutral"
+  ],
+  "behaviors": {
+    "movement": {
+      "speed": 11.9
+    },
+    "combat": {
+      "damage": 13,
+      "damageType": "melee",
+      "range": 0.6,
+      "cooldownTicks": 50,
+      "aggroRange": 10,
+      "attack": {
+        "windupTicks": 14,
+        "recoveryTicks": 12,
+        "rangeBuffer": 0.6
+      }
+    }
+  },
+  "level": 1,
+  "supplyCost": 1,
+  "modelScale": 1.7
+}

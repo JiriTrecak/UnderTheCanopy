@@ -1,0 +1,70 @@
+{
+  "id": "unit.ants.bombardier",
+  "name": "Bombardier",
+  "description": "Back-mounted mortar fires arcing shells that damage enemies in a two-cell radius and slow movement by 20% for two seconds. Shells can be dodged.",
+  "asset": "asset.ants.bombardier",
+  "icon": "icon.ants.bombardier",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 500,
+    "armor": 1,
+    "armorType": "light"
+  },
+  "vision": 40,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "movement": {
+      "speed": 10,
+      "turnRate": 720
+    },
+    "combat": {
+      "damage": 42,
+      "damageType": "siege",
+      "range": 32,
+      "cooldownTicks": 120,
+      "aggroRange": 36,
+      "shell": {
+        "flightTicks": 40,
+        "radius": 2,
+        "slowPermille": 200,
+        "slowTicks": 80
+      },
+      "attack": {
+        "windupTicks": 22,
+        "recoveryTicks": 14,
+        "rangeBuffer": 0.75
+      }
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 220
+      },
+      {
+        "item": "item.wood",
+        "amount": 60
+      },
+      {
+        "item": "item.root",
+        "amount": 30
+      }
+    ],
+    "workTicks": 1280
+  },
+  "requires": [
+    "building.ants.great-mound"
+  ],
+  "level": 3,
+  "supplyCost": 3,
+  "dimensions": {
+    "radius": 2.5,
+    "height": 4.8,
+    "formationSpacing": 5.25
+  },
+  "modelScale": 3.2
+}

@@ -4,50 +4,41 @@
 use crate::{
     Content,
     error::{Error, parse},
-    game::{BEHAVIOR_NAMES, Creation, Definition, GameSource, Kind, ProductionMode},
+    game::{BEHAVIOR_NAMES, Creation, Definition, Kind, ProductionMode},
+    load::Element,
 };
 use serde_json::{Map, Value};
 use std::collections::{BTreeMap, BTreeSet};
 
-const GAME: &str = "content/game.json";
 /// Building footprints are whole building cells of this many navigation cells.
 const BUILDING_CELL_SIZE: u32 = 4;
 
 /// Merges behaviour sets, local behaviours and `disabledBehaviors` into resolved
 /// definitions, sorted by id.
-pub fn resolve_definitions(source: &GameSource, errors: &mut Vec<Error>) -> Vec<Definition> {
+pub(crate) fn resolve_definitions(
+    behavior_sets: &[Element],
+    raw_definitions: Vec<Element>,
+    errors: &mut Vec<Error>,
+) -> Vec<Definition> {
     let mut sets: BTreeMap<String, Map<String, Value>> = BTreeMap::new();
-    for (index, set) in source.behavior_sets.iter().enumerate() {
-        let location = format!("behaviorSets[{index}]");
-        match behavior_set(set) {
+    for set in behavior_sets {
+        match behavior_set(&set.value) {
             Ok((id, behaviors)) => {
-                if sets.insert(id.clone(), behaviors).is_some() {
-                    errors.push(Error::new(
-                        GAME,
-                        location,
-                        format!("duplicate behavior set {id}"),
-                    ));
-                }
+                sets.insert(id, behaviors);
             }
-            Err(message) => errors.push(Error::new(GAME, location, message)),
+            Err(message) => errors.push(Error::new(&set.file, "", message)),
         }
     }
 
     let mut definitions: Vec<Definition> = Vec::new();
-    for (index, raw) in source.definitions.iter().enumerate() {
-        let id = raw
-            .get("id")
-            .and_then(Value::as_str)
-            .unwrap_or("?")
-            .to_string();
-        let location = format!("definitions/{id}");
-        match merged_definition(raw, &sets) {
-            Ok(value) => match parse::<Definition>(value, GAME, &location) {
+    for raw in raw_definitions {
+        match merged_definition(&raw.value, &sets) {
+            Ok(value) => match parse::<Definition>(value, &raw.file, "") {
                 Ok(definition) => {
                     if definition.kind == Kind::Unit && definition.dimensions.is_none() {
                         errors.push(Error::new(
-                            GAME,
-                            location,
+                            &raw.file,
+                            "dimensions",
                             "units require explicit dimensions",
                         ));
                     }
@@ -55,20 +46,17 @@ pub fn resolve_definitions(source: &GameSource, errors: &mut Vec<Error>) -> Vec<
                 }
                 Err(error) => errors.push(error),
             },
-            Err(message) => errors.push(Error::new(
-                GAME,
-                format!("definitions[{index}] {id}"),
-                message,
-            )),
+            Err(message) => errors.push(Error::new(&raw.file, "", message)),
         }
     }
+    // Units, buildings, items and resources share one id space.
     definitions.sort_by(|a, b| a.id.cmp(&b.id));
     for pair in definitions.windows(2) {
         if pair[0].id == pair[1].id {
             errors.push(Error::new(
-                GAME,
                 "definitions",
-                format!("duplicate {}", pair[0].id),
+                pair[0].id.as_str(),
+                "defined twice (as different kinds)",
             ));
         }
     }
@@ -197,7 +185,9 @@ struct Checker<'a> {
 
 impl<'a> Checker<'a> {
     fn fail(&mut self, location: impl Into<String>, message: impl Into<String>) {
-        self.errors.push(Error::new(GAME, location, message));
+        let location = location.into();
+        let file = self.content.origin(&location).to_string();
+        self.errors.push(Error::new(&file, location, message));
     }
 
     fn definition(&mut self, location: &str, id: &str, kind: Kind) -> Option<&'a Definition> {

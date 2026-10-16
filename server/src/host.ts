@@ -2,7 +2,6 @@
  * One MatchHost room: lobby until Start, then the lockstep Room.
  * HTTP/WS bind `ingest` / `bind`. `discard` kills a room (tests + `/end`). Tests call the same methods with fake sends.
  */
-import {chosenHero,loadRules,race} from './rules';
 import {ConnectionLatency,connectionDelay} from './latency';
 import {
   CHECKSUM_EVERY,
@@ -14,7 +13,6 @@ import {
   namedMatch,
   parseSaveForHost,
   validAction,
-  type HeroChoice,
   type ClientIdentity,
   type ClientMsg,
   type CreateRoom,
@@ -27,7 +25,8 @@ import {
 } from "./protocol";
 import { Room } from "./room";
 
-const hostRules=loadRules();
+/** A content id (`unit.ants.marshal`, `ants`). */
+const validId=(x:unknown):x is string=>typeof x==='string'&&x.length<=160&&/^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/.test(x);
 
 type Member = {
   token: string;
@@ -71,7 +70,7 @@ export class HostedMatch {
   private chatTimes = new Map<string, number>();
   private readonly seats: SeatState[];
 
-  constructor(draft: CreateRoom, id: string = crypto.randomUUID(), private readonly now=()=>performance.now(), private readonly heroes:HeroChoice|undefined=hostRules.startingSetup.hero) {
+  constructor(draft: CreateRoom, id: string = crypto.randomUUID(), private readonly now=()=>performance.now()) {
     this.id = id;
     this.name = draft.name;
     this.mapId = draft.mapId;
@@ -92,10 +91,10 @@ export class HostedMatch {
     });
   }
 
-  private raceId(m:Member){return m.race??hostRules.defaultRace;}
-  private heroPolicy(m:Member){return race(hostRules,this.raceId(m),this.heroes).heroes;}
-  private aiRace(s:SeatState){return s.race??hostRules.defaultRace;}
-  private aiHeroes(s:SeatState){return race(hostRules,this.aiRace(s),this.heroes).heroes;}
+  // Races and heroes are content: the server passes the seats' choices on, unchecked
+  // (clients agree on content before a match starts); a seat without one plays the
+  // content's default race and its default hero.
+  private choices(x:{race?:string;hero?:string}){return {...(x.race?{race:x.race}:{}),...(x.hero?{hero:x.hero}:{})};}
   /** The human in seat `i`, if any. */
   private seated(i:number){return [...this.members.values()].find((x) => x.role === "player" && x.player === i);}
   /** Whether seat `i` takes part: a human sits there or a computer plays it. */
@@ -123,11 +122,9 @@ export class HostedMatch {
       const s = this.seats[i]!;
       const rtt=m?.latency.roundTrip(this.now());
       const shown = { team: s.team, color: s.color };
-      if (m) seats.push({ player: i, name: m.name, kind: "human", ...(m?{race:this.raceId(m),...(this.heroPolicy(m)?{hero:m.hero??this.heroPolicy(m)!.default}:{})}:{}), ...shown, ...(rtt!=null?{roundTripMs:rtt}:{}) });
-      else if (s.seat === "ai") {
-        const policy = this.aiHeroes(s);
-        seats.push({ player: i, name: "Computer", kind: "ai", race: this.aiRace(s), ...(policy ? { hero: s.hero ?? policy.default } : {}), ...shown });
-      } else seats.push({ player: i, name: null, kind: s.seat, ...shown });
+      if (m) seats.push({ player: i, name: m.name, kind: "human", ...this.choices(m), ...shown, ...(rtt!=null?{roundTripMs:rtt}:{}) });
+      else if (s.seat === "ai") seats.push({ player: i, name: "Computer", kind: "ai", ...this.choices(s), ...shown });
+      else seats.push({ player: i, name: null, kind: s.seat, ...shown });
     }
     return {
       id: this.id,
@@ -136,8 +133,6 @@ export class HostedMatch {
       mapId: this.mapId,
       host: this.members.get(this.hostToken)?.name ?? "",
       slots: seats,
-      races:Object.fromEntries(Object.entries(hostRules.races).map(([id,r])=>[id,{name:r.name,heroes:race(hostRules,id,this.heroes).heroes}])),
-      ...(this.heroes?{heroes:{default:this.heroes.default,choices:[...this.heroes.choices]}}:{}),
       spectators: [...this.members.values()].filter(
         (m) => m.role === "spectator",
       ).length,
@@ -224,8 +219,8 @@ export class HostedMatch {
     const slots: Slot[] = [], colors: number[] = [];
     for (let i = 0; i < this.slotCount; i++) {
       const m = this.seated(i), s = this.seats[i]!;
-      if (m) slots.push({ player: i, kind: "human", name: m.name, race: this.raceId(m), ...(this.heroPolicy(m) ? { hero: chosenHero(this.heroPolicy(m), m.hero) } : {}), team: s.team });
-      else if (s.seat === "ai") slots.push({ player: i, kind: "ai", name: "Computer", race: this.aiRace(s), ...(this.aiHeroes(s) ? { hero: chosenHero(this.aiHeroes(s), s.hero) } : {}), team: s.team });
+      if (m) slots.push({ player: i, kind: "human", name: m.name, ...this.choices(m), team: s.team });
+      else if (s.seat === "ai") slots.push({ player: i, kind: "ai", name: "Computer", ...this.choices(s), team: s.team });
       else continue;
       colors.push(s.color);
     }
@@ -265,12 +260,6 @@ export class HostedMatch {
     if (this.state === "ended") return { error: "ended" };
     const parsed = parseSaveForHost(save);
     if (!parsed) return { error: "bad_save" };
-    for(const slot of parsed.match.slots){
-      const raceId=slot.race??hostRules.defaultRace;
-      if(!Object.hasOwn(hostRules.races,raceId))return {error:'bad_race'};
-      const policy=race(hostRules,raceId,this.heroes).heroes;
-      try{chosenHero(policy,slot.hero);}catch{return {error:'bad_hero'};}
-    }
     if (parsed.match.slots.length < 1) return { error: "empty" };
     if (!parsed.remote) return { error: "sp_save" };
     const players = [...this.members.values()].filter(
@@ -372,8 +361,8 @@ export class HostedMatch {
     if(msg.type==='selectRace') {
       const seat=this.editable(m,msg.player);
       if(seat===null)return;
-      if(typeof msg.race!=='string'||!Object.hasOwn(hostRules.races,msg.race)){m.send?.({type:'error',code:'INVALID_RACE',message:'Choose an available race.'});return;}
-      if(seat===m.player){m.race=msg.race;m.hero=this.heroPolicy(m)?.default;}
+      if(!validId(msg.race)){m.send?.({type:'error',code:'INVALID_RACE',message:'Choose an available race.'});return;}
+      if(seat===m.player){m.race=msg.race;m.hero=undefined;}
       else{const s=this.seats[seat]!;s.race=msg.race;s.hero=undefined;}
       this.fanout({type:'room',room:this.view()});return;
     }
@@ -381,7 +370,7 @@ export class HostedMatch {
       const seat=this.editable(m,msg.player);
       if(seat===null)return;
       const own=seat===m.player,s=this.seats[seat]!;
-      if(typeof msg.hero!=='string'||!(own?this.heroPolicy(m):this.aiHeroes(s))?.choices.includes(msg.hero)){
+      if(!validId(msg.hero)){
         m.send?.({type:'error',code:'INVALID_HERO',message:'Choose an available starting hero.'});return;
       }
       if(own)m.hero=msg.hero;else s.hero=msg.hero;
@@ -579,7 +568,7 @@ export const ABANDONED_AFTER_MS=120_000;
 export class MatchHost {
   private readonly rooms = new Map<string, HostedMatch>();
   private nextId = 1;
-  constructor(private readonly heroes:HeroChoice|undefined=hostRules.startingSetup.hero, private readonly now=()=>performance.now()) {}
+  constructor(private readonly now=()=>performance.now()) {}
   /** Every second: latency probes, and rooms nobody can come back to are discarded. */
   pulse(){
     for(const room of [...this.rooms.values()]){
@@ -593,7 +582,7 @@ export class MatchHost {
     room: RoomView;
     you: ClientIdentity;
   } {
-    const match = new HostedMatch(draft, String(this.nextId++),this.now,this.heroes);
+    const match = new HostedMatch(draft, String(this.nextId++),this.now);
     this.rooms.set(match.id, match);
     const you = match.you(match.hostToken)!;
     return { token: match.hostToken, room: match.view(), you };

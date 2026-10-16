@@ -1,0 +1,25 @@
+{
+  "id": "item.worldroot-heart",
+  "itemTier": 3,
+  "name": "Worldroot Heart",
+  "description": "+450 maximum health and +4 health per second. Activate: restore 20% maximum health. 70s cooldown.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.worldroot-heart",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "equipment",
+    "damage": 0,
+    "armor": 0,
+    "maxHp": 450,
+    "modifiers": {
+      "healthRegenPerSecond": 4
+    },
+    "active": {
+      "cooldownTicks": 2800,
+      "target": "self",
+      "radius": 0,
+      "healMaxPermille": 200
+    }
+  }
+}

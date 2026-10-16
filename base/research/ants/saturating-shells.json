@@ -1,0 +1,34 @@
+{
+  "id": "research.ants.saturating-shells",
+  "name": "Saturating Shells",
+  "description": "Bombardier blast radius grows from 2 to 3 cells, and its two-second slow strengthens from 20% to 35%. Slows do not add together.",
+  "icon": "icon.ants.bombardier",
+  "priority": 60,
+  "requires": [
+    "building.ants.great-mound"
+  ],
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 200
+    },
+    {
+      "item": "item.wood",
+      "amount": 100
+    },
+    {
+      "item": "item.root",
+      "amount": 60
+    }
+  ],
+  "workTicks": 2000,
+  "effects": [
+    {
+      "units": [
+        "unit.ants.bombardier"
+      ],
+      "splashRadius": 3,
+      "splashSlowPermille": 350
+    }
+  ]
+}

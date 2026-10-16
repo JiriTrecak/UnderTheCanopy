@@ -1,0 +1,26 @@
+{
+  "id": "item.amber-carapace",
+  "itemTier": 2,
+  "name": "Amber Carapace",
+  "description": "+4 armor. Activate: absorb 180 damage for up to 8s. 45s cooldown.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.amber-carapace",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "equipment",
+    "damage": 0,
+    "armor": 4,
+    "maxHp": 0,
+    "active": {
+      "cooldownTicks": 1800,
+      "target": "self",
+      "radius": 0,
+      "status": {
+        "durationTicks": 320,
+        "modifiers": {},
+        "shield": 180
+      }
+    }
+  }
+}

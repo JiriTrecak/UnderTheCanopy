@@ -1,0 +1,26 @@
+{
+  "id": "item.scout-whistle",
+  "itemTier": 1,
+  "name": "Scout’s Whistle",
+  "description": "2 charges: allied units within 6 tiles gain 15% movement speed for 8s. 25s cooldown.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.scout-whistle",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "consumable",
+    "heal": 0,
+    "active": {
+      "cooldownTicks": 1000,
+      "target": "allies",
+      "radius": 6,
+      "charges": 2,
+      "status": {
+        "durationTicks": 320,
+        "modifiers": {
+          "moveSpeedPermille": 150
+        }
+      }
+    }
+  }
+}

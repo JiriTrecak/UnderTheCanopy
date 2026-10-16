@@ -1,0 +1,26 @@
+{
+  "id": "item.canopy-aegis",
+  "itemTier": 3,
+  "name": "Aegis of the Canopy",
+  "description": "+5 armor. Activate: shield allied units within 6 tiles for 180 damage each for up to 8s. 80s cooldown.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.canopy-aegis",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "equipment",
+    "damage": 0,
+    "armor": 5,
+    "maxHp": 0,
+    "active": {
+      "cooldownTicks": 3200,
+      "target": "allies",
+      "radius": 6,
+      "status": {
+        "durationTicks": 320,
+        "modifiers": {},
+        "shield": 180
+      }
+    }
+  }
+}

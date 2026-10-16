@@ -8,7 +8,6 @@ User=ubuntu
 WorkingDirectory=/home/ubuntu/canopy-matchhost/server
 Environment=BIND=127.0.0.1
 Environment=PORT=8787
-Environment=GAME_JSON=/home/ubuntu/canopy-matchhost/content/game.json
 ExecStart=/home/ubuntu/canopy-matchhost/server/node_modules/.bin/tsx src/index.ts
 Restart=always
 RestartSec=2

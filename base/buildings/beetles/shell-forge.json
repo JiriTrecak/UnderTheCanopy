@@ -1,0 +1,53 @@
+{
+  "id": "building.beetles.shell-forge",
+  "name": "Shell Forge",
+  "description": "Forges stronger weapons and armor for the beetle colony. Completed research benefits existing and future units.",
+  "asset": "asset.beetles.shell-foundry",
+  "icon": "icon.beetles.shell-foundry",
+  "body": {
+    "maxHp": 1100,
+    "armor": 5,
+    "armorType": "structure"
+  },
+  "vision": 14,
+  "footprint": {
+    "width": 12,
+    "depth": 12
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 6.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 150
+      },
+      {
+        "item": "item.wood",
+        "amount": 75
+      }
+    ],
+    "workTicks": 1600,
+    "workAnimation": "build"
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {
+    "research": {
+      "outputs": [
+        "research.beetles.serrated-tools",
+        "research.beetles.reinforced-carapace",
+        "research.beetles.broadheads",
+        "research.beetles.campaign-harness"
+      ],
+      "queueCapacity": 3
+    }
+  },
+  "category": "category.build",
+  "level": 1,
+  "modelScale": 1
+}

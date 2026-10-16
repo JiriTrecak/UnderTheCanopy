@@ -1,0 +1,60 @@
+{
+  "id": "building.beetles.war-lodge",
+  "name": "War Lodge",
+  "description": "Iron-clad training hall for the beetle colony’s infantry and ranged troops.",
+  "asset": "asset.beetles.iron-garrison",
+  "icon": "icon.beetles.iron-garrison",
+  "body": {
+    "maxHp": 1200,
+    "armor": 5,
+    "armorType": "structure"
+  },
+  "vision": 14,
+  "footprint": {
+    "width": 12,
+    "depth": 12
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 6.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 200
+      },
+      {
+        "item": "item.wood",
+        "amount": 60
+      }
+    ],
+    "workTicks": 2000,
+    "workAnimation": "build"
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {
+    "storage": {
+      "capacity": 500,
+      "accepts": [
+        "item.wood",
+        "item.amber"
+      ]
+    },
+    "production": {
+      "mode": "queued",
+      "outputs": [
+        "unit.beetles.horn-guard",
+        "unit.beetles.stone-slinger"
+      ],
+      "workerSlots": 0,
+      "queueCapacity": 6
+    }
+  },
+  "category": "category.build-advanced",
+  "level": 1,
+  "modelScale": 1
+}

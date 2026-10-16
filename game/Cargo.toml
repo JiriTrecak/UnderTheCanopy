@@ -66,10 +66,10 @@ category = "StrategyGame"
 before-packaging-command = "cargo run --release -p canopy-cook -- --allow-lfs-pointers && cargo build --release -p canopy"
 icons = ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"]
 # Game data ships in `data/`: `Contents/Resources/data` on macOS, beside the executable on Windows.
-# The simulation reads content/, the asset indexes and the maps as JSON; every binary asset
-# ships cooked in canopy.pack instead of assets/library.
+# The simulation reads the base package, the asset indexes and the maps as JSON; every
+# binary asset ships cooked in canopy.pack instead of assets/library.
 resources = [
-    { src = "../content", target = "data/content" },
+    { src = "../base", target = "data/base" },
     { src = "../assets/manifest.json", target = "data/assets/manifest.json" },
     { src = "../assets/authoring/catalogue.json", target = "data/assets/authoring/catalogue.json" },
     { src = "../assets/authoring/models.json", target = "data/assets/authoring/models.json" },

@@ -1,0 +1,26 @@
+{
+  "id": "item.tempest-antennae",
+  "itemTier": 3,
+  "name": "Tempest Antennae",
+  "description": "+15% attack speed. Every third basic hit arcs 45 magic damage to up to 3 enemies within 4 tiles of the target.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.tempest-antennae",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "equipment",
+    "damage": 0,
+    "armor": 0,
+    "maxHp": 0,
+    "modifiers": {
+      "attackSpeedPermille": 150
+    },
+    "onHit": {
+      "every": 3,
+      "radius": 4,
+      "targets": 3,
+      "damage": 45,
+      "damageType": "spell"
+    }
+  }
+}

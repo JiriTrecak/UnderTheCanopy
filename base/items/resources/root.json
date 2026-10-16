@@ -1,0 +1,19 @@
+{
+  "id": "item.root",
+  "name": "Root",
+  "description": "Fibrous heartwood from contested Corrupted Root deposits. Workers deliver it only to a Rootworks.",
+  "asset": "asset.item.root",
+  "icon": "icon.item.root",
+  "stackLimit": 16,
+  "behaviors": {},
+  "creation": {
+    "method": "harvest",
+    "items": [],
+    "workTicks": 200,
+    "source": "building.neutral.corrupted-root",
+    "workAnimation": "chop",
+    "amount": 10
+  },
+  "currency": true,
+  "displayOrder": 30
+}

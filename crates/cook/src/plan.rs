@@ -114,7 +114,7 @@ impl Inputs {
             models::validate(&models, &manifest, &mut model_errors);
             if model_errors.is_empty() {
                 let effects =
-                    canopy_content::effects::load_published(data).map_err(|e| e.to_string())?;
+                    canopy_content::effects::load_base(data).map_err(|e| e.to_string())?;
                 return Ok(Self {
                     manifest,
                     models,

@@ -1,0 +1,86 @@
+{
+  "id": "unit.ants.queensguard",
+  "name": "Queensguard",
+  "description": "Elite armored protector. Shields nearby allies and braces behind a tower shield for additional armor at reduced speed.",
+  "asset": "asset.ants.queensguard",
+  "icon": "icon.ants.queensguard",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 720,
+    "armor": 4,
+    "armorType": "heavy"
+  },
+  "vision": 32,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 26,
+      "damageType": "melee",
+      "range": 1.2,
+      "cooldownTicks": 64,
+      "aggroRange": 20,
+      "attack": {
+        "windupTicks": 16,
+        "recoveryTicks": 18,
+        "rangeBuffer": 0.75
+      }
+    },
+    "movement": {
+      "speed": 10
+    },
+    "abilities": {
+      "maxMana": 100,
+      "manaRegenPerSecond": 1,
+      "bindings": [
+        {
+          "id": "royal-guard",
+          "ability": "ability.ants.royal-guard",
+          "initialRank": 1,
+          "controls": [
+            "scenario"
+          ]
+        },
+        {
+          "id": "shield-brace",
+          "ability": "ability.ants.shield-brace",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "Q",
+            "column": 1
+          }
+        }
+      ]
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 280
+      },
+      {
+        "item": "item.wood",
+        "amount": 80
+      }
+    ],
+    "workTicks": 1280
+  },
+  "level": 3,
+  "supplyCost": 3,
+  "dimensions": {
+    "radius": 2,
+    "height": 6.4,
+    "formationSpacing": 4.4
+  },
+  "modelScale": 3.2,
+  "requires": [
+    "building.ants.great-mound"
+  ]
+}

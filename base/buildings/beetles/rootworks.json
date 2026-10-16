@@ -1,0 +1,55 @@
+{
+  "id": "building.beetles.rootworks",
+  "name": "Rootworks",
+  "description": "Rootworks of the beetle colony. Model pending.",
+  "asset": "asset.placeholder.missing-model",
+  "icon": "icon.item.root",
+  "body": {
+    "maxHp": 1000,
+    "armor": 5,
+    "armorType": "structure"
+  },
+  "vision": 14,
+  "footprint": {
+    "width": 12,
+    "depth": 12
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 6.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 150
+      },
+      {
+        "item": "item.wood",
+        "amount": 75
+      }
+    ],
+    "workTicks": 1600,
+    "workAnimation": "build"
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {
+    "storage": {
+      "capacity": 100000,
+      "accepts": [
+        "item.root"
+      ],
+      "dropoff": true
+    }
+  },
+  "placementNear": {
+    "source": "building.neutral.corrupted-root",
+    "radius": 20
+  },
+  "category": "category.build",
+  "level": 1,
+  "modelScale": 1
+}

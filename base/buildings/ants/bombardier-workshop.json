@@ -1,0 +1,67 @@
+{
+  "id": "building.ants.bombardier-workshop",
+  "name": "Bombardier Workshop",
+  "description": "Equips free workers with Root-loaded mortars. Requires a Great Mound; each Bombardier consumes Amber, Wood, Root and one worker.",
+  "asset": "asset.ants.bombardier-workshop",
+  "icon": "icon.ants.bombardier-workshop",
+  "body": {
+    "maxHp": 1400,
+    "armor": 5,
+    "armorType": "structure"
+  },
+  "vision": 14,
+  "footprint": {
+    "width": 12,
+    "depth": 12
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 6.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 220
+      },
+      {
+        "item": "item.wood",
+        "amount": 120
+      }
+    ],
+    "workTicks": 2000,
+    "workAnimation": "build"
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {
+    "production": {
+      "mode": "queued",
+      "outputs": [
+        "unit.ants.bombardier"
+      ],
+      "workerSlots": 0,
+      "queueCapacity": 6
+    },
+    "storage": {
+      "capacity": 500,
+      "accepts": [
+        "item.amber",
+        "item.wood",
+        "item.root"
+      ]
+    }
+  },
+  "category": "category.build-advanced",
+  "requires": [
+    "building.ants.great-mound"
+  ],
+  "level": 2,
+  "modelScale": 1.15,
+  "command": {
+    "category": "category.build-advanced",
+    "priority": 100
+  }
+}

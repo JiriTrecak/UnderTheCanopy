@@ -1,0 +1,65 @@
+{
+  "id": "unit.ants.winglancer",
+  "name": "Winglancer",
+  "description": "Fast flying lancer. Crosses rough terrain and strikes ground targets with an ivory lance; vulnerable to ranged anti-air fire.",
+  "asset": "asset.ants.winglancer",
+  "icon": "icon.ants.winglancer",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 340,
+    "armor": 1,
+    "armorType": "light"
+  },
+  "vision": 36,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 28,
+      "damageType": "melee",
+      "range": 2.5,
+      "targets": [
+        "ground"
+      ],
+      "cooldownTicks": 56,
+      "aggroRange": 24,
+      "attack": {
+        "windupTicks": 12,
+        "recoveryTicks": 14,
+        "rangeBuffer": 0.75
+      }
+    },
+    "movement": {
+      "speed": 18,
+      "turnRate": 540,
+      "locomotion": "air",
+      "flightHeight": 3
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 230
+      },
+      {
+        "item": "item.wood",
+        "amount": 70
+      }
+    ],
+    "workTicks": 1120
+  },
+  "level": 3,
+  "supplyCost": 3,
+  "dimensions": {
+    "radius": 1.6,
+    "height": 5,
+    "formationSpacing": 5.5
+  },
+  "modelScale": 2.5,
+  "requires": [
+    "building.ants.great-mound"
+  ]
+}

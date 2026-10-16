@@ -1,0 +1,34 @@
+{
+  "id": "effect.weapon.resin-bomb",
+  "name": "Mortar seed bomb",
+  "description": "Static seed-shell model on the authoritative mortar flight; its arc is editable here.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "body",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "missile",
+      "arcHeight": 7,
+      "model": {
+        "asset": "asset.models.effects.resin-bomb",
+        "role": "geometry",
+        "index": 1,
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      },
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 1.2,
+      "height": 0
+    }
+  ]
+}

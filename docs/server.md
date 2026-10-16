@@ -7,22 +7,21 @@ It is the old game's TypeScript server moved here in the smallest form (D48): it
 | File | What |
 |---|---|
 | `src/index.ts` | HTTP routes, CORS, WebSocket upgrade |
-| `src/host.ts` | rooms: lobby, race and hero picks, start, saves, restart, latency probes, content agreement, desync hashes, chat |
+| `src/host.ts` | rooms: lobby, race and hero picks (passed on unchecked), start, saves, restart, latency probes, content agreement, desync hashes, chat |
 | `src/room.ts` | the lockstep mailbox: commits a tick once every player has confirmed it |
 | `src/latency.ts` | measured round trips and the command delay chosen from them |
 | `src/protocol.ts` | wire messages, match config, action shapes, chat clean-up, the parts of a save the host reads |
-| `src/rules.ts` | races and starting heroes from `content/game.json` |
 | `deploy/` | deploy script, systemd service, Nginx config |
 
 ## Running and testing
 
 ```bash
-just server          # installs node_modules and serves 127.0.0.1:8787 (PORT, BIND, GAME_JSON override)
+just server          # installs node_modules and serves 127.0.0.1:8787 (PORT, BIND override)
 ```
 
 `CANOPY_MATCH_SERVER=http://127.0.0.1:8787 just play` points the game at it. `npm run check` in `server/` type-checks it and `npm test` runs its tests; `just check` does both once `node_modules` exists. The network tests (`crates/net/tests/match_server.rs`, the game's `screens/net_tests.rs`) start this server and play matches against it. `old_client.rs` and `old_lockstep.rs` also run the old game's TypeScript client against it when the old repository is checked out beside this one.
 
-The server reads `content/game.json` once at start for the races and starting heroes it accepts. A new race or hero needs a redeploy; new action types need `protocol.ts` changed (and the protocol is frozen, D10).
+The server knows no content (D53): it passes each seat's race and hero on as chosen, checking only that they look like ids, and a seat without a choice plays the content's default race and its default hero. Clients list races and heroes from their own content and agree on content before a match starts. New action types need `protocol.ts` changed (and the protocol is frozen, D10).
 
 ## Lobby seats
 
@@ -55,7 +54,7 @@ just server-deploy             # refuses while a match is being played (FORCE=1 
 just server-deploy rollback    # back to the previous server
 ```
 
-The deploy needs the SSH key at `~/.config/under-the-canopy/matchhost.pem` (or `MATCHHOST_KEY`); never commit it. It copies `server/` and `content/game.json` to `/home/ubuntu/canopy-matchhost`, runs `npm ci --omit=dev` there, installs `deploy/canopy-matchhost.service` and `deploy/nginx.conf`, stops the old `settlers-matchhost` service (the old repository's server, still installed in `/home/ubuntu/settlers-match` for rollback) and starts the new one, then checks health on the host and over HTTPS. Both services bind 127.0.0.1:8787, so only one runs.
+The deploy needs the SSH key at `~/.config/under-the-canopy/matchhost.pem` (or `MATCHHOST_KEY`); never commit it. It copies `server/` to `/home/ubuntu/canopy-matchhost`, runs `npm ci --omit=dev` there, installs `deploy/canopy-matchhost.service` and `deploy/nginx.conf`, stops the old `settlers-matchhost` service (the old repository's server, still installed in `/home/ubuntu/settlers-match` for rollback) and starts the new one, then checks health on the host and over HTTPS. Both services bind 127.0.0.1:8787, so only one runs.
 
 Changing the address the game connects to (`crates/net`, D32) needs new game builds; deploying the server alone does not change what released games use.
 

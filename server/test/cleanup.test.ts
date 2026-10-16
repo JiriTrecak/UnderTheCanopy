@@ -8,7 +8,7 @@ const draft = { name: "room", mapId: "map", mapRevision: "1", slotCount: 2, gues
 
 function host() {
   const clock = { t: 0 };
-  return { clock, host: new MatchHost(undefined, () => clock.t) };
+  return { clock, host: new MatchHost(() => clock.t) };
 }
 
 /** Advances the clock and runs the server's once-a-second pulse. */

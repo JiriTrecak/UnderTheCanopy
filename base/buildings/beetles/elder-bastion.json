@@ -1,0 +1,50 @@
+{
+  "id": "building.beetles.elder-bastion",
+  "name": "Elder Bastion",
+  "description": "Elder Bastion of the beetle colony. Model pending.",
+  "asset": "asset.placeholder.missing-model",
+  "icon": "icon.item.root",
+  "body": {
+    "maxHp": 3000,
+    "armor": 6,
+    "armorType": "structure"
+  },
+  "vision": 42,
+  "footprint": {
+    "width": 20,
+    "depth": 20
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 10.5
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {
+    "storage": {
+      "capacity": 100000,
+      "accepts": [
+        "item.wood",
+        "item.amber"
+      ],
+      "dropoff": true,
+      "gathering": {
+        "item": "item.amber",
+        "radius": 40
+      }
+    },
+    "production": {
+      "mode": "queued",
+      "outputs": [
+        "unit.beetles.worker"
+      ],
+      "workerSlots": 0,
+      "queueCapacity": 6
+    }
+  },
+  "level": 3,
+  "supplyProvided": 15,
+  "heroCapacity": 3,
+  "modelScale": 1
+}

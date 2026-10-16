@@ -1,0 +1,29 @@
+{
+  "id": "item.rootbinder-idol",
+  "itemTier": 2,
+  "name": "Rootbinder’s Idol",
+  "description": "Activate: enemies within 4 tiles take 60 magic damage and are rooted for 2s (they can still attack). 35s cooldown.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.rootbinder-idol",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "equipment",
+    "damage": 0,
+    "armor": 0,
+    "maxHp": 0,
+    "active": {
+      "cooldownTicks": 1400,
+      "target": "enemies",
+      "radius": 4,
+      "damage": 60,
+      "damageType": "spell",
+      "status": {
+        "durationTicks": 80,
+        "modifiers": {
+          "rooted": true
+        }
+      }
+    }
+  }
+}

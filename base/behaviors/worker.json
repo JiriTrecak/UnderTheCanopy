@@ -1,0 +1,16 @@
+{
+  "id": "behavior-set.worker",
+  "behaviors": {
+    "movement": {
+      "speed": 4,
+      "walkSpeed": 2,
+      "idleWander": true,
+      "turnRate": 720
+    },
+    "playerControl": {},
+    "work": {
+      "carryCapacity": 10,
+      "builds": []
+    }
+  }
+}

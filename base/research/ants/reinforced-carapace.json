@@ -1,0 +1,27 @@
+{
+  "id": "research.ants.reinforced-carapace",
+  "name": "Reinforced Carapace",
+  "description": "Warriors gain 150 maximum health and 2 armor. Existing wounds are preserved.",
+  "icon": "icon.ants.warrior",
+  "priority": 90,
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 150
+    },
+    {
+      "item": "item.wood",
+      "amount": 80
+    }
+  ],
+  "workTicks": 1600,
+  "effects": [
+    {
+      "units": [
+        "unit.ants.warrior"
+      ],
+      "maxHp": 150,
+      "armor": 2
+    }
+  ]
+}

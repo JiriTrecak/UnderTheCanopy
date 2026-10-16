@@ -1,0 +1,50 @@
+{
+  "id": "building.ants.elder-hall",
+  "name": "Elder Hall",
+  "description": "Tier 3 Acorn Hall. Supports a roster of three distinct heroes.",
+  "asset": "asset.ants.queensguard-hall",
+  "icon": "icon.ants.queensguard-hall",
+  "body": {
+    "maxHp": 3000,
+    "armor": 6,
+    "armorType": "structure"
+  },
+  "vision": 42,
+  "footprint": {
+    "width": 20,
+    "depth": 20
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 10.5
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {
+    "storage": {
+      "capacity": 100000,
+      "accepts": [
+        "item.wood",
+        "item.amber"
+      ],
+      "dropoff": true,
+      "gathering": {
+        "item": "item.amber",
+        "radius": 40
+      }
+    },
+    "production": {
+      "mode": "queued",
+      "outputs": [
+        "unit.ants.settler"
+      ],
+      "workerSlots": 0,
+      "queueCapacity": 6
+    }
+  },
+  "level": 3,
+  "supplyProvided": 15,
+  "heroCapacity": 3,
+  "modelScale": 1.25
+}

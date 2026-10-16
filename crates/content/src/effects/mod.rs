@@ -1,24 +1,13 @@
-//! The published visual effect library (`content/effects/published.json`) and the
-//! bindings that attach effects to ability events.
+//! Visual effects (`effects/` of a package, one file each) and the bindings that attach
+//! effects to ability events.
 //!
 //! Effects are presentation only: they never change simulation results.
 
 mod rules;
 
-use crate::{
-    abilities::literal::SchemaVersion, abilities::literal::trimmed_name, error::Error, id::Id,
-};
+use crate::{abilities::literal::trimmed_name, error::Error, id::Id, load::Element};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
-use std::path::Path;
-
-/// `content/effects/published.json`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct EffectLibrary {
-    pub schema_version: SchemaVersion,
-    pub effects: Vec<VisualEffect>,
-}
 
 /// A point, direction or rotation in effect space.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -335,7 +324,6 @@ fn enabled() -> bool {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct VisualEffect {
-    pub schema_version: SchemaVersion,
     /// Starts with `effect.`.
     pub id: Id,
     #[serde(deserialize_with = "trimmed_name")]
@@ -441,25 +429,35 @@ pub struct EffectBinding {
     pub spread_from: Option<FromRadius>,
 }
 
-/// Parses the published library without the format's cross-field rules.
-pub(crate) fn read(data: &Path) -> Result<EffectLibrary, Error> {
-    crate::error::read_json(data, crate::EFFECTS_FILE)
-        .and_then(|value| crate::error::parse(value, crate::EFFECTS_FILE, ""))
+/// Parses every effect (sorted by id) and checks the format's rules.
+pub(crate) fn read(elements: Vec<Element>, errors: &mut Vec<Error>) -> Option<Vec<VisualEffect>> {
+    let before = errors.len();
+    let effects: Vec<VisualEffect> = elements
+        .into_iter()
+        .filter_map(|e| e.parse(errors))
+        .collect();
+    if errors.len() != before {
+        return None;
+    }
+    rules::check(&effects, errors);
+    Some(effects)
 }
 
-/// Reads and checks the published effects on their own, without the rest of the content
-/// (the cooker converts them into runtime primitives).
-pub fn load_published(data: &Path) -> Result<Vec<VisualEffect>, crate::Errors> {
+/// Reads and checks the effects of the base package of `data` on their own, without the
+/// rest of the content (the cooker converts them into runtime primitives).
+pub fn load_base(data: &std::path::Path) -> Result<Vec<VisualEffect>, crate::Errors> {
+    let base = crate::package::Package::open(&data.join(crate::BASE_DIR))
+        .map_err(|e| crate::Errors(vec![e]))?;
     let mut errors = Vec::new();
-    match load(data, &mut errors) {
+    let mut files = std::collections::BTreeMap::new();
+    let elements = crate::load::elements(
+        &crate::collections::EFFECTS,
+        std::slice::from_ref(&base),
+        &mut files,
+        &mut errors,
+    );
+    match read(elements, &mut errors) {
         Some(effects) if errors.is_empty() => Ok(effects),
         _ => Err(crate::Errors(errors)),
     }
-}
-
-/// Reads the published effects and checks the format's rules.
-pub(crate) fn load(data: &Path, errors: &mut Vec<Error>) -> Option<Vec<VisualEffect>> {
-    let library = read(data).map_err(|error| errors.push(error)).ok()?;
-    rules::check(&library.effects, errors);
-    Some(library.effects)
 }

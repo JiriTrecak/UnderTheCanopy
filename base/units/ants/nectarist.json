@@ -1,0 +1,96 @@
+{
+  "id": "unit.ants.nectarist",
+  "name": "Nectarist",
+  "description": "Restorative support. Automatically sends nectar to wounded allies and can cleanse harmful effects.",
+  "asset": "asset.ants.nectarist",
+  "icon": "icon.ants.nectarist",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 280,
+    "armor": 0,
+    "armorType": "light"
+  },
+  "vision": 36,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 5,
+      "damageType": "spell",
+      "range": 14,
+      "cooldownTicks": 72,
+      "aggroRange": 20,
+      "attack": {
+        "windupTicks": 18,
+        "recoveryTicks": 16,
+        "rangeBuffer": 0.75
+      },
+      "projectile": {
+        "speed": 26
+      }
+    },
+    "movement": {
+      "speed": 12
+    },
+    "abilities": {
+      "maxMana": 140,
+      "manaRegenPerSecond": 2,
+      "bindings": [
+        {
+          "id": "nectar-mend",
+          "ability": "ability.ants.nectar-mend",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "Q",
+            "column": 1
+          },
+          "ai": {
+            "preference": "wounded-ally",
+            "intervalTicks": 12
+          }
+        },
+        {
+          "id": "nectar-cleanse",
+          "ability": "ability.ants.nectar-cleanse",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "W",
+            "column": 2
+          }
+        }
+      ]
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 170
+      },
+      {
+        "item": "item.wood",
+        "amount": 50
+      }
+    ],
+    "workTicks": 1000
+  },
+  "level": 2,
+  "supplyCost": 2,
+  "dimensions": {
+    "radius": 1.5,
+    "height": 4.8,
+    "formationSpacing": 3.25
+  },
+  "modelScale": 2.4
+}

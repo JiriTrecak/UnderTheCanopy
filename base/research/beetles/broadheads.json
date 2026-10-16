@@ -1,0 +1,26 @@
+{
+  "id": "research.beetles.broadheads",
+  "name": "Broadheads",
+  "description": "Stone Slingers deal 35% more attack damage.",
+  "icon": "icon.item.root",
+  "priority": 80,
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 150
+    },
+    {
+      "item": "item.wood",
+      "amount": 60
+    }
+  ],
+  "workTicks": 1600,
+  "effects": [
+    {
+      "units": [
+        "unit.beetles.stone-slinger"
+      ],
+      "damagePermille": 350
+    }
+  ]
+}

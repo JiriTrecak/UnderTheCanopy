@@ -1,0 +1,99 @@
+{
+  "id": "ability.ants.silken-snare",
+  "name": "Silken Snare",
+  "description": "Bind an enemy in silk for 4 seconds (2 on heroes), grounding airborne units until the silk breaks.",
+  "activation": "targeted",
+  "delivery": {
+    "kind": "projectile",
+    "speed": 24
+  },
+  "autocast": {
+    "intervalTicks": 12,
+    "enabledByDefault": true
+  },
+  "ranks": [
+    {}
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 18,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 10,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": 35,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 280,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "target",
+      "id": "webbed",
+      "amount": 160,
+      "heroDuration": 80,
+      "polarity": "negative",
+      "dispel": true,
+      "modifiers": {
+        "rooted": true
+      },
+      "form": {
+        "movement": {
+          "locomotion": "ground"
+        },
+        "opacity": 1,
+        "scale": 1
+      },
+      "lifetime": "duration"
+    }
+  ],
+  "presentation": {
+    "icon": "asset.custom.web-command-icon",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "cast",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "delivery",
+        "effect": "effect.ants.silk-flight",
+        "event": "projectile",
+        "anchor": "target",
+        "lifetime": "finite",
+        "durationFrom": "delivery"
+      },
+      {
+        "id": "bindings",
+        "effect": "effect.ants.silk-bound",
+        "statusId": "webbed",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status"
+      }
+    ]
+  }
+}

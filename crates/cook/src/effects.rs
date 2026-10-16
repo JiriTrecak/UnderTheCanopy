@@ -324,7 +324,6 @@ mod tests {
 
     fn effect(layers: serde_json::Value) -> VisualEffect {
         serde_json::from_value(json!({
-            "schemaVersion": 1,
             "id": "effect.test.spark",
             "name": "Spark",
             "durationTicks": 40,

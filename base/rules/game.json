@@ -1,0 +1,10 @@
+{
+  "defaultRace": "ants",
+  "maxUnits": 160,
+  "maxBuildings": 160,
+  "maxSupply": 100,
+  "supplyIcon": "icon.resource.supply",
+  "constructionHpPermille": 100,
+  "constructionRefundPermille": 750,
+  "repairTicks": 4
+}

@@ -1,0 +1,80 @@
+{
+  "id": "unit.ants.banneret",
+  "name": "Banneret",
+  "description": "Standard bearer. Rallies nearby allies for increased attack damage and defends itself with a baton.",
+  "asset": "asset.ants.banneret",
+  "icon": "icon.ants.banneret",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 440,
+    "armor": 2,
+    "armorType": "light"
+  },
+  "vision": 36,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 10,
+      "damageType": "melee",
+      "range": 1,
+      "cooldownTicks": 56,
+      "aggroRange": 20,
+      "attack": {
+        "windupTicks": 14,
+        "recoveryTicks": 16,
+        "rangeBuffer": 0.75
+      }
+    },
+    "movement": {
+      "speed": 12
+    },
+    "abilities": {
+      "maxMana": 120,
+      "manaRegenPerSecond": 1.5,
+      "bindings": [
+        {
+          "id": "rallying-standard",
+          "ability": "ability.ants.rallying-standard",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "Q",
+            "column": 1
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 16
+          }
+        }
+      ]
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 150
+      },
+      {
+        "item": "item.wood",
+        "amount": 45
+      }
+    ],
+    "workTicks": 1000
+  },
+  "level": 2,
+  "supplyCost": 2,
+  "dimensions": {
+    "radius": 1.5,
+    "height": 4.8,
+    "formationSpacing": 3.25
+  },
+  "modelScale": 3.3
+}

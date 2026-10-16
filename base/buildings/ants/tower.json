@@ -1,0 +1,55 @@
+{
+  "id": "building.ants.tower",
+  "name": "Watchtower",
+  "description": "A raised acorn lookout for one Archer. Right-click it with an Archer to enter; fire from the top using that unit’s own weapon and upgrades.",
+  "asset": "asset.ants.tower",
+  "icon": "icon.ants.tower",
+  "body": {
+    "maxHp": 500,
+    "armor": 2,
+    "armorType": "structure"
+  },
+  "vision": 25,
+  "footprint": {
+    "width": 8,
+    "depth": 8
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 4.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 100
+      },
+      {
+        "item": "item.wood",
+        "amount": 50
+      }
+    ],
+    "workTicks": 1400,
+    "workAnimation": "build"
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {},
+  "category": "category.build-advanced",
+  "level": 1,
+  "garrison": {
+    "capacity": 1,
+    "accepts": [
+      "unit.ants.archer"
+    ],
+    "height": 5.8,
+    "lookoutRadius": 1.35
+  },
+  "modelScale": 1.25,
+  "command": {
+    "priority": 90,
+    "category": "category.build-advanced"
+  }
+}

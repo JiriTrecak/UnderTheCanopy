@@ -16,32 +16,22 @@ use crate::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
-const FILE: &str = crate::ABILITIES_FILE;
 const MILLION: i64 = 1_000_000;
 const MAX_TICKS: i64 = 144_000;
 
-pub(crate) fn check(library: &AbilityLibrary, errors: &mut Vec<Error>) {
-    let mut fail = |location: &str, message: String| {
-        errors.push(Error::new(FILE, location, message));
+/// Checks every ability; errors name the ability's file (`files`: id → file).
+pub(crate) fn check(
+    library: &AbilityLibrary,
+    files: &BTreeMap<String, String>,
+    errors: &mut Vec<Error>,
+) {
+    let mut fail = |at: &str, message: String| {
+        let file = files.get(at).map_or("abilities", String::as_str);
+        errors.push(Error::new(file, at, message));
     };
-    let mut abilities = BTreeSet::new();
     for ability in &library.abilities {
-        if !abilities.insert(ability.id.as_str()) {
-            fail(
-                "library.abilities",
-                format!("Duplicate definition ID {}", ability.id),
-            );
-        }
-    }
-    let mut presentations = BTreeSet::new();
-    for presentation in &library.presentations {
-        let at = presentation.id.as_str();
-        if !presentations.insert(at) {
-            fail(
-                "library.presentations",
-                format!("Duplicate definition ID {at}"),
-            );
-        }
+        let at = ability.id.as_str();
+        let presentation = &ability.presentation;
         let ids: Vec<_> = presentation.effects.iter().map(|b| b.id.as_str()).collect();
         if has_duplicates(&ids) {
             fail(at, "Binding IDs must be unique".into());
@@ -59,12 +49,6 @@ pub(crate) fn check(library: &AbilityLibrary, errors: &mut Vec<Error>) {
                     ),
                 );
             }
-        }
-    }
-    for ability in &library.abilities {
-        let at = ability.id.as_str();
-        if !presentations.contains(ability.presentation.as_str()) {
-            fail(at, format!("Unknown presentation {}", ability.presentation));
         }
         let mut check = Check {
             ability,
@@ -1137,7 +1121,7 @@ mod tests {
     use serde_json::{Value, json};
 
     fn bolt() -> Value {
-        json!({"schemaVersion": 1, "id": "ability.test.bolt", "name": "Bolt", "activation": "targeted",
+        json!({"id": "ability.test.bolt", "name": "Bolt", "activation": "targeted",
             "ranks": [{"damage": 10}, {"damage": 20}],
             "targeting": {"kind": "unit", "alive": true, "visible": true, "relations": ["enemy"],
                 "allowSelf": false, "range": 6, "outOfRange": "reject"},
@@ -1147,27 +1131,18 @@ mod tests {
                 "cancelBeforeRelease": "refund",
                 "revalidateAtRelease": ["caster", "target", "range", "visibility", "relationship"]},
             "onRelease": [{"op": "damage", "target": "target", "amount": {"rankParameter": "damage"}, "damageType": "spell"}],
-            "presentation": "presentation.test.bolt"})
-    }
-
-    fn presentation() -> Value {
-        json!({"schemaVersion": 1, "id": "presentation.test.bolt",
-            "animations": {"prepare": "cast", "release": "cast", "recover": "idle", "fallback": "idle"},
-            "effects": [{"id": "hit", "effect": "effect.test.spark", "event": "damaged", "anchor": "target"}]})
-    }
-
-    fn problems_of(abilities: Vec<Value>, presentations: Vec<Value>) -> Vec<String> {
-        let library: AbilityLibrary = serde_json::from_value(
-            json!({"schemaVersion": 1, "abilities": abilities, "presentations": presentations}),
-        )
-        .unwrap();
-        let mut errors = Vec::new();
-        check(&library, &mut errors);
-        errors.into_iter().map(|e| e.message).collect()
+            "presentation": {
+                "animations": {"prepare": "cast", "release": "cast", "recover": "idle", "fallback": "idle"},
+                "effects": [{"id": "hit", "effect": "effect.test.spark", "event": "damaged", "anchor": "target"}]}})
     }
 
     fn problems(ability: Value) -> Vec<String> {
-        problems_of(vec![ability], vec![presentation()])
+        let library = AbilityLibrary {
+            abilities: vec![serde_json::from_value(ability).unwrap()],
+        };
+        let mut errors = Vec::new();
+        check(&library, &BTreeMap::new(), &mut errors);
+        errors.into_iter().map(|e| e.message).collect()
     }
 
     fn assert_only(ability: Value, expected: &str) {
@@ -1197,21 +1172,10 @@ mod tests {
     }
 
     #[test]
-    fn library_ids_and_presentations() {
-        let mut orphan = bolt();
-        orphan["presentation"] = json!("presentation.test.none");
-        let found = problems_of(vec![bolt(), bolt(), orphan], vec![presentation()]);
-        assert_eq!(
-            found,
-            [
-                "Duplicate definition ID ability.test.bolt",
-                "Duplicate definition ID ability.test.bolt",
-                "Unknown presentation presentation.test.none"
-            ]
-        );
-        let mut status_bound = presentation();
-        status_bound["effects"][0]["lifetime"] = json!("status");
-        let found = problems_of(vec![bolt()], vec![status_bound]);
+    fn status_bound_effects() {
+        let mut status_bound = bolt();
+        status_bound["presentation"]["effects"][0]["lifetime"] = json!("status");
+        let found = problems(status_bound);
         assert_eq!(
             found,
             ["hit: Status lifetime requires target statusApplied binding"]

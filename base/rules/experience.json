@@ -1,0 +1,43 @@
+{
+  "unitRewards": [
+    24,
+    44,
+    72,
+    108,
+    152,
+    204,
+    264,
+    332,
+    408,
+    492,
+    584
+  ],
+  "heroRewards": [
+    90,
+    120,
+    165,
+    225,
+    300,
+    390,
+    495,
+    615,
+    750,
+    900,
+    1065
+  ],
+  "neutralLevelCap": 6,
+  "neutralMultipliersPermille": [
+    1000,
+    900,
+    800,
+    700,
+    600
+  ],
+  "summonMultiplierPermille": 500,
+  "globalFallback": true,
+  "soloHeroTierBonusPermille": [
+    0,
+    150,
+    300
+  ]
+}

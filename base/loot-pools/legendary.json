@@ -1,0 +1,47 @@
+{
+  "id": "loot.camp.legendary",
+  "rolls": 1,
+  "maxTier": 3,
+  "entries": [
+    {
+      "item": "item.first-queen-crown",
+      "weight": 10
+    },
+    {
+      "item": "item.worldroot-heart",
+      "weight": 10
+    },
+    {
+      "item": "item.reaper-mandible",
+      "weight": 10
+    },
+    {
+      "item": "item.canopy-aegis",
+      "weight": 10
+    },
+    {
+      "item": "item.tempest-antennae",
+      "weight": 10
+    },
+    {
+      "item": "item.phoenix-chrysalis",
+      "weight": 10
+    },
+    {
+      "item": "item.deep-moon-scepter",
+      "weight": 10
+    },
+    {
+      "item": "item.endless-brood-banner",
+      "weight": 10
+    },
+    {
+      "item": "item.amber-hourglass",
+      "weight": 10
+    },
+    {
+      "item": "item.winter-heart",
+      "weight": 10
+    }
+  ]
+}

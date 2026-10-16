@@ -49,30 +49,9 @@ package:
 server:
     cd server && npm ci --prefer-offline --no-audit --no-fund && npm start
 
-# Deploy server/ and content/game.json to the match host; `just server-deploy rollback` returns to the old server
+# Deploy server/ to the match host; `just server-deploy rollback` returns to the old server
 server-deploy *args:
     server/deploy/deploy.sh {{args}}
-
-# Compare every Rust reader with the old TypeScript game (whose data folders link here, D47)
-parity old="../Settlers 3 Web": (parity-content old) (parity-assets old) (parity-maps old)
-
-# Content (game.json, abilities, effects) against the old TypeScript loader
-parity-content old="../Settlers 3 Web":
-    mkdir -p target/parity
-    cd "{{old}}" && node_modules/.bin/tsx "{{justfile_directory()}}/tools/parity/dump-ts.mts" "$PWD" "{{justfile_directory()}}/target/parity/content.json"
-    cargo run -q -p canopy-content --example parity -- "{{old}}" target/parity/content.json
-
-# Published asset data against the old TypeScript game
-parity-assets old="../Settlers 3 Web":
-    mkdir -p target/parity
-    cd "{{old}}" && node_modules/.bin/tsx "{{justfile_directory()}}/tools/parity/assets-ts.mts" "$PWD" "{{justfile_directory()}}/target/parity/assets.json"
-    cargo run -q -p canopy-content --example assets_parity -- "{{old}}" target/parity/assets.json
-
-# Every map against the old TypeScript parser
-parity-maps old="../Settlers 3 Web":
-    mkdir -p target/parity
-    cd "{{old}}" && node_modules/.bin/tsx "{{justfile_directory()}}/tools/parity/maps-ts.mts" "$PWD" "{{justfile_directory()}}/target/parity/maps.json"
-    cargo run -q --release -p canopy-content --example map_parity -- "{{old}}" target/parity/maps.json
 
 # Which engine features the shipped data uses
 content-report:

@@ -1,0 +1,6 @@
+{
+  "id": "behavior-set.player-building",
+  "behaviors": {
+    "playerControl": {}
+  }
+}

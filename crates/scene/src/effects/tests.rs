@@ -56,8 +56,6 @@ fn effect(id: &str, looping: bool, layers: Vec<EffectLayer>) -> CookedEffect {
 
 fn presentation(bindings: serde_json::Value) -> Presentation {
     serde_json::from_value(json!({
-        "schemaVersion": 1,
-        "id": "presentation.test",
         "animations": {"prepare": "cast", "release": "cast", "recover": "cast", "fallback": "idle"},
         "effects": bindings,
     }))

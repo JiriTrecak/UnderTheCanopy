@@ -1,0 +1,51 @@
+{
+  "id": "effect.ants.royal-guard",
+  "name": "Royal Guard · ivory protection",
+  "description": "Restrained ivory motes follow units within a Queensguard’s protective aura. Stops immediately with the aura.",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "march-motes",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 32,
+        "rate": 1,
+        "speed": 1.4,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 15,
+        "gravity": 0,
+        "drag": 0,
+        "spawnRadius": 0.8,
+        "startSize": 0.12,
+        "endSize": 0,
+        "spin": 1,
+        "fadeIn": 0.04,
+        "fadeOut": 0.65
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#fff0cd",
+      "accent": "#ffdd8b",
+      "durationTicks": 80,
+      "count": 3,
+      "size": 0.1,
+      "height": 0.1,
+      "follow": true,
+      "intensity": 0.4,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

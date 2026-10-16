@@ -1039,9 +1039,7 @@ impl Presenter {
                     let work = e.work.as_ref();
                     let cast = magic.and_then(|m| m.casting.as_ref()).and_then(|c| {
                         let ability = content.abilities.abilities.get(usize::from(c.ability.0))?;
-                        let presentation = content
-                            .abilities
-                            .presentation(ability.presentation.as_str())?;
+                        let presentation = &ability.presentation;
                         Some((
                             c.ability.0,
                             &presentation.animations,

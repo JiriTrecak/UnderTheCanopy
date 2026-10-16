@@ -1,0 +1,23 @@
+{
+  "id": "item.reaper-mandible",
+  "itemTier": 3,
+  "name": "Reaper’s Mandible",
+  "description": "+18 damage. Every fourth basic hit cleaves up to 4 enemies within 3 tiles of the target for 50% attack damage.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.reaper-mandible",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "equipment",
+    "damage": 18,
+    "armor": 0,
+    "maxHp": 0,
+    "onHit": {
+      "every": 4,
+      "radius": 3,
+      "targets": 4,
+      "attackDamagePermille": 500,
+      "damageType": "hero"
+    }
+  }
+}

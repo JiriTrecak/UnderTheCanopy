@@ -1,0 +1,25 @@
+{
+  "id": "item.amber-hourglass",
+  "itemTier": 3,
+  "name": "Hourglass of Amber",
+  "description": "+100 maximum mana. Activate: reduce remaining hero ability cooldowns by 12s. Does not affect items. 100s cooldown.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.amber-hourglass",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "equipment",
+    "damage": 0,
+    "armor": 0,
+    "maxHp": 0,
+    "modifiers": {
+      "maxMana": 100
+    },
+    "active": {
+      "cooldownTicks": 4000,
+      "target": "self",
+      "radius": 0,
+      "reduceAbilityCooldownTicks": 480
+    }
+  }
+}

@@ -416,13 +416,15 @@ pub fn data_folder(name: &str, customise: impl FnOnce(&mut Value)) -> PathBuf {
     let mut hut = layer("hut", "mesh");
     hut["model"] = json!({"asset": "asset.fixture.building", "role": "geometry", "index": 1,
                           "rotation": {"x": 0.0, "y": 90.0, "z": 0.0}});
-    let effects = json!({"schemaVersion": 1, "effects": [
-        {"schemaVersion": 1, "id": "effect.fixture.sigil", "name": "Sigil", "durationTicks": 40,
-         "layers": [sigil, hut]},
-    ]});
+    let sigil = json!({"id": "effect.fixture.sigil", "name": "Sigil", "durationTicks": 40,
+         "layers": [sigil, hut]});
     write(
-        "content/effects/published.json",
-        &serde_json::to_vec_pretty(&effects).unwrap(),
+        "base/package.json",
+        br#"{"format": 1, "id": "base", "kind": "base", "name": "Fixture", "version": "1.0.0"}"#,
+    );
+    write(
+        "base/effects/sigil.json",
+        &serde_json::to_vec_pretty(&sigil).unwrap(),
     );
     data
 }

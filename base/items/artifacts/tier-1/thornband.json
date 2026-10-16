@@ -1,0 +1,16 @@
+{
+  "id": "item.thornband",
+  "itemTier": 1,
+  "name": "Thornband",
+  "description": "+6 attack damage.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.thornband",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "equipment",
+    "damage": 6,
+    "armor": 0,
+    "maxHp": 0
+  }
+}

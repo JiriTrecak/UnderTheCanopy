@@ -1,0 +1,109 @@
+{
+  "id": "ability.ants.amber-seal",
+  "name": "Amber Seal",
+  "description": "Seal an enemy’s spellcasting for 3 seconds (1.5 on heroes). Autocast targets enemies with mana remaining. Weapons and movement remain available.",
+  "activation": "targeted",
+  "delivery": {
+    "kind": "projectile",
+    "speed": 32
+  },
+  "autocast": {
+    "intervalTicks": 12,
+    "enabledByDefault": true
+  },
+  "ranks": [
+    {
+      "range": 20,
+      "mana": 35,
+      "cooldownTicks": 400
+    }
+  ],
+  "targeting": {
+    "condition": {
+      "kind": "resource",
+      "of": "target",
+      "resource": "mana",
+      "measure": "current",
+      "comparison": "gt",
+      "value": 0
+    },
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": {
+      "rankParameter": "range"
+    },
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 10,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": {
+        "rankParameter": "mana"
+      },
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": {
+        "rankParameter": "cooldownTicks"
+      },
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "target",
+      "id": "amberSealed",
+      "amount": 120,
+      "heroDuration": 60,
+      "polarity": "negative",
+      "dispel": true,
+      "modifiers": {},
+      "silence": true,
+      "lifetime": "duration"
+    }
+  ],
+  "presentation": {
+    "icon": "asset.custom.silence-command-icon",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "cast",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "delivery",
+        "effect": "effect.ants.amber-flight",
+        "event": "projectile",
+        "anchor": "target",
+        "lifetime": "finite",
+        "durationFrom": "delivery"
+      },
+      {
+        "id": "seal",
+        "effect": "effect.ants.amber-seal",
+        "statusId": "amberSealed",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status"
+      }
+    ]
+  }
+}

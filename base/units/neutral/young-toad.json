@@ -1,0 +1,42 @@
+{
+  "id": "unit.neutral.young-toad",
+  "name": "Young Toad",
+  "description": "Bog Toad Hunters · melee forest creature. Large amphibians and pond spirits hunting at the waterline.",
+  "asset": "asset.neutral.young-toad",
+  "icon": "icon.neutral.young-toad",
+  "selectionClass": "army",
+  "dimensions": {
+    "radius": 0.9639,
+    "height": 4.25,
+    "formationSpacing": 2.1692
+  },
+  "body": {
+    "maxHp": 900,
+    "armor": 2,
+    "armorType": "heavy"
+  },
+  "vision": 10,
+  "behaviorSets": [
+    "behavior-set.neutral"
+  ],
+  "behaviors": {
+    "movement": {
+      "speed": 11.9
+    },
+    "combat": {
+      "damage": 34,
+      "damageType": "melee",
+      "range": 0.6,
+      "cooldownTicks": 50,
+      "aggroRange": 10,
+      "attack": {
+        "windupTicks": 14,
+        "recoveryTicks": 12,
+        "rangeBuffer": 0.6
+      }
+    }
+  },
+  "level": 3,
+  "supplyCost": 1,
+  "modelScale": 1.7
+}

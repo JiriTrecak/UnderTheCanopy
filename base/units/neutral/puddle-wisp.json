@@ -1,0 +1,42 @@
+{
+  "id": "unit.neutral.puddle-wisp",
+  "name": "Puddle Wisp",
+  "description": "Dewdrop Sprites · melee forest creature. Fragile water spirits gathered around wet leaves.",
+  "asset": "asset.neutral.puddle-wisp",
+  "icon": "icon.neutral.puddle-wisp",
+  "selectionClass": "army",
+  "dimensions": {
+    "radius": 0.493,
+    "height": 2.55,
+    "formationSpacing": 1.1084
+  },
+  "body": {
+    "maxHp": 205,
+    "armor": 0,
+    "armorType": "light"
+  },
+  "vision": 10,
+  "behaviorSets": [
+    "behavior-set.neutral"
+  ],
+  "behaviors": {
+    "movement": {
+      "speed": 11.9
+    },
+    "combat": {
+      "damage": 10,
+      "damageType": "melee",
+      "range": 0.6,
+      "cooldownTicks": 50,
+      "aggroRange": 10,
+      "attack": {
+        "windupTicks": 14,
+        "recoveryTicks": 12,
+        "rangeBuffer": 0.6
+      }
+    }
+  },
+  "level": 1,
+  "supplyCost": 1,
+  "modelScale": 1.7
+}

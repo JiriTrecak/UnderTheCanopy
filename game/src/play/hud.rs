@@ -1674,8 +1674,7 @@ fn describe_order(
                 .and_then(|a| a.bindings.iter().find(|b| b.id == *binding))
                 .and_then(|b| k.content.abilities.ability(b.ability.as_str()));
             let icon = spell
-                .and_then(|s| k.content.abilities.presentation(s.presentation.as_str()))
-                .and_then(|p| p.icon.as_ref())
+                .and_then(|s| s.presentation.icon.as_ref())
                 .map_or_else(|| meta("move").1, |i| i.to_string());
             (
                 "Cast".into(),

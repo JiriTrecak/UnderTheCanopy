@@ -1,0 +1,46 @@
+{
+  "id": "building.ants.house",
+  "name": "Mound",
+  "description": "A compact colony mound that provides 8 supply when completed.",
+  "asset": "asset.ants.silk-brood-house",
+  "icon": "icon.ants.silk-brood-house",
+  "body": {
+    "maxHp": 600,
+    "armor": 3,
+    "armorType": "structure"
+  },
+  "vision": 14,
+  "footprint": {
+    "width": 8,
+    "depth": 8
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 4.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 100
+      },
+      {
+        "item": "item.wood",
+        "amount": 25
+      }
+    ],
+    "workTicks": 1000,
+    "workAnimation": "build"
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {},
+  "level": 1,
+  "supplyProvided": 8,
+  "modelScale": 1.1,
+  "command": {
+    "priority": 90
+  }
+}

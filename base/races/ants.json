@@ -1,0 +1,106 @@
+{
+  "id": "ants",
+  "name": "Ants",
+  "description": "Versatile colony with quick infantry and a broad combined-arms roster.",
+  "startingSetup": {
+    "fort": "building.ants.fort",
+    "inventory": {
+      "item.amber": 500,
+      "item.wood": 150
+    },
+    "units": [
+      {
+        "definition": "unit.ants.settler",
+        "offset": {
+          "x": -6,
+          "y": 14
+        }
+      },
+      {
+        "definition": "unit.ants.settler",
+        "offset": {
+          "x": -3,
+          "y": 14
+        }
+      },
+      {
+        "definition": "unit.ants.settler",
+        "offset": {
+          "x": 0,
+          "y": 14
+        }
+      },
+      {
+        "definition": "unit.ants.settler",
+        "offset": {
+          "x": 3,
+          "y": 14
+        }
+      },
+      {
+        "definition": "unit.ants.settler",
+        "offset": {
+          "x": 6,
+          "y": 14
+        }
+      }
+    ],
+    "id": "setup.ants",
+    "gathering": [
+      {
+        "item": "item.amber",
+        "workers": 5,
+        "radius": 40
+      }
+    ],
+    "hero": {
+      "default": "unit.ants.marshal",
+      "choices": [
+        "unit.ants.marshal",
+        "unit.ants.rootbreaker"
+      ],
+      "offset": {
+        "x": 0,
+        "y": -16
+      }
+    }
+  },
+  "roster": [
+    "unit.ants.settler",
+    "unit.ants.warrior",
+    "unit.ants.thornblade",
+    "unit.ants.archer",
+    "unit.ants.silkwarden",
+    "building.ants.fort",
+    "building.ants.great-mound",
+    "building.ants.elder-hall",
+    "building.ants.barracks",
+    "building.ants.forester",
+    "building.ants.house",
+    "building.ants.tower",
+    "unit.ants.marshal",
+    "building.ants.sanctuary",
+    "building.ants.ironroot-forge",
+    "building.ants.rootworks",
+    "unit.ants.hunter",
+    "unit.ants.bombardier",
+    "building.ants.bombardier-workshop",
+    "unit.ants.civilian",
+    "unit.ants.youngling",
+    "unit.ants.nectarist",
+    "unit.ants.banneret",
+    "unit.ants.amber-adept",
+    "unit.ants.queensguard",
+    "unit.ants.winglancer",
+    "unit.ants.rootweaver",
+    "unit.ants.rootbreaker"
+  ],
+  "construction": {
+    "scaffold": "asset.construction.ants",
+    "padding": 0.4,
+    "revealAt": 0.95,
+    "retractUntil": 0.985,
+    "dustEffect": "effect.construction.dust",
+    "dustIntervalTicks": 8
+  }
+}

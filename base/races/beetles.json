@@ -1,0 +1,90 @@
+{
+  "id": "beetles",
+  "name": "Beetles",
+  "description": "Stout, expensive infantry and a relentless frontline champion. Economy follows the same rules as ants.",
+  "startingSetup": {
+    "fort": "building.beetles.bastion",
+    "inventory": {
+      "item.amber": 500,
+      "item.wood": 150
+    },
+    "units": [
+      {
+        "definition": "unit.beetles.worker",
+        "offset": {
+          "x": -6,
+          "y": 14
+        }
+      },
+      {
+        "definition": "unit.beetles.worker",
+        "offset": {
+          "x": -3,
+          "y": 14
+        }
+      },
+      {
+        "definition": "unit.beetles.worker",
+        "offset": {
+          "x": 0,
+          "y": 14
+        }
+      },
+      {
+        "definition": "unit.beetles.worker",
+        "offset": {
+          "x": 3,
+          "y": 14
+        }
+      },
+      {
+        "definition": "unit.beetles.worker",
+        "offset": {
+          "x": 6,
+          "y": 14
+        }
+      }
+    ],
+    "id": "setup.beetles",
+    "gathering": [
+      {
+        "item": "item.amber",
+        "workers": 5,
+        "radius": 40
+      }
+    ],
+    "hero": {
+      "default": "unit.beetles.hornbreaker",
+      "choices": [
+        "unit.beetles.hornbreaker"
+      ],
+      "offset": {
+        "x": 0,
+        "y": -16
+      }
+    }
+  },
+  "roster": [
+    "unit.beetles.worker",
+    "unit.beetles.horn-guard",
+    "unit.beetles.stone-slinger",
+    "unit.beetles.hornbreaker",
+    "building.beetles.bastion",
+    "building.beetles.great-bastion",
+    "building.beetles.elder-bastion",
+    "building.beetles.brood-den",
+    "building.beetles.war-lodge",
+    "building.beetles.shell-forge",
+    "building.beetles.ancestor-shrine",
+    "building.beetles.rootworks",
+    "building.beetles.hornwatch"
+  ],
+  "construction": {
+    "scaffold": "asset.construction.beetles",
+    "padding": 0.4,
+    "revealAt": 0.95,
+    "retractUntil": 0.985,
+    "dustEffect": "effect.construction.dust",
+    "dustIntervalTicks": 8
+  }
+}

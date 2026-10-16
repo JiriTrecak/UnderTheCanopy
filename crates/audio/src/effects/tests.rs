@@ -23,7 +23,7 @@ fn merge(base: &mut Value, extra: Value) {
 }
 
 fn effect(duration: u32, looping: bool, layers: Vec<Value>) -> Value {
-    json!({"schemaVersion": 1, "id": "effect.test.sound", "name": "Sound", "durationTicks": duration,
+    json!({"id": "effect.test.sound", "name": "Sound", "durationTicks": duration,
         "loop": looping, "layers": layers})
 }
 
@@ -42,8 +42,8 @@ struct Bench {
 
 /// Ability 0 has the bindings; ability 1 has none.
 fn bench(bindings: Vec<Value>, effect: Value) -> Bench {
-    let presentation: Presentation = serde_json::from_value(json!({"schemaVersion": 1,
-        "id": "presentation.test", "animations": {"prepare": "a", "release": "a", "recover": "a",
+    let presentation: Presentation = serde_json::from_value(json!({
+        "animations": {"prepare": "a", "release": "a", "recover": "a",
         "fallback": "a"}, "effects": bindings}))
     .unwrap();
     let effect: VisualEffect = serde_json::from_value(effect).unwrap();

@@ -1,0 +1,49 @@
+{
+  "id": "building.neutral.amber-mine",
+  "name": "Amber Node",
+  "description": "One miner extracts ten amber at a time; other workers queue. Five nodes form a standard amber site.",
+  "asset": "asset.resource.amber-crystal-1",
+  "icon": "icon.neutral.amber-deposit",
+  "footprint": {
+    "width": 4,
+    "depth": 4
+  },
+  "constructionClearance": 3,
+  "behaviors": {},
+  "yield": 4500,
+  "entrance": {
+    "x": 0.5,
+    "y": 2.5
+  },
+  "body": {
+    "maxHp": 1500,
+    "armor": 5,
+    "armorType": "structure"
+  },
+  "gatheringUnitCollision": false,
+  "harvesting": {
+    "activeWorkers": 1,
+    "recommendedWorkers": 2,
+    "searchRadius": 24
+  },
+  "modelScale": 0.28,
+  "resourceVisuals": {
+    "variants": [
+      "asset.resource.amber-crystal-1",
+      "asset.resource.amber-crystal-2",
+      "asset.resource.amber-crystal-3",
+      "asset.resource.amber-crystal-4",
+      "asset.resource.amber-crystal-5"
+    ],
+    "stages": [
+      {
+        "remaining": 0,
+        "asset": "asset.resource.amber-crystal-empty"
+      },
+      {
+        "remaining": 0.3333333333333333,
+        "asset": "asset.resource.amber-crystal-low"
+      }
+    ]
+  }
+}

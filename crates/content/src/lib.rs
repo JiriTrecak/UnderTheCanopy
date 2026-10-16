@@ -1,6 +1,6 @@
 //! Game data: reading, resolving and validating the content the game ships with.
 //!
-//! The formats are exactly those the old TypeScript editors write (docs/decisions.md, D9).
+//! Content comes in packages (docs/packages.md, D53).
 //! Content is always passed in; nothing here names a shipped id.
 
 pub mod abilities;
@@ -22,4 +22,4 @@ mod registry;
 
 pub use error::{Error, Errors};
 pub use id::Id;
-pub use load::{ABILITIES_FILE, Content, EFFECTS_FILE, GAME_FILE, MANIFEST_FILE};
+pub use load::{BASE_DIR, Content, MANIFEST_FILE, collections};

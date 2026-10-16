@@ -1225,7 +1225,7 @@ impl Game {
             "lobby.seat" | "lobby.team" | "lobby.race" | "lobby.hero" | "lobby.color" => {
                 if let (Some(row), Some(option)) = (action.index, selected) {
                     self.mp
-                        .choose(name.trim_start_matches("lobby."), row, option);
+                        .choose(&data, name.trim_start_matches("lobby."), row, option);
                 }
             }
             "lobby.start" if clicked => self.mp.start(),

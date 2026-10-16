@@ -1,0 +1,20 @@
+{
+  "id": "item.moon-dew",
+  "itemTier": 1,
+  "name": "Moon Dew",
+  "description": "Restore 80 mana. Consumed on use.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.moon-dew",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "consumable",
+    "heal": 0,
+    "active": {
+      "target": "self",
+      "radius": 0,
+      "cooldownTicks": 400,
+      "mana": 80
+    }
+  }
+}

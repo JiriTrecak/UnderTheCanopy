@@ -200,7 +200,7 @@ impl EffectSounds {
             .abilities
             .abilities
             .iter()
-            .map(|a| content.abilities.presentation(a.presentation.as_str()))
+            .map(|a| Some(&a.presentation))
             .collect();
         self.compile(&presentations, &content.effects, |layer| {
             let found =

@@ -551,7 +551,7 @@ impl Multiplayer {
                 "Choose your race, hero, team and colour. The host starts the match."
             },
         );
-        let races = race_list(room);
+        let races = widgets::races(data);
         let race_names: Vec<String> = races.iter().map(|r| r.1.clone()).collect();
         let seats = room.map_or(&[][..], |r| &r.slots[..]);
         if let Some(list) = ui.find("lobby/seats") {
@@ -609,25 +609,16 @@ impl Multiplayer {
             }
             let team = seat.team.unwrap_or(seat.player + 1).clamp(1, TEAMS);
             widgets::options(ui, &field("team"), &teams, usize::from(team - 1));
-            let race = seat
-                .race
-                .as_ref()
-                .and_then(|id| races.iter().position(|r| &r.0 == id))
-                .unwrap_or(0);
+            let race_id = seat_race(data, seat);
+            let race = races.iter().position(|r| r.0 == race_id).unwrap_or(0);
             widgets::options(ui, &field("race"), &race_names, race);
-            let hero_ids = hero_list(room, seat, &races);
-            let hero_names: Vec<String> = hero_ids
-                .iter()
-                .map(|id| {
-                    data.content
-                        .definition(id)
-                        .map_or_else(|| id.clone(), |d| d.name.clone())
-                })
-                .collect();
+            let (hero_choices, default_hero) = widgets::heroes(data, &race_id);
+            let hero_names: Vec<String> = hero_choices.iter().map(|h| h.1.clone()).collect();
             let hero = seat
                 .hero
-                .as_ref()
-                .and_then(|h| hero_ids.iter().position(|x| x == h))
+                .clone()
+                .or(default_hero)
+                .and_then(|h| hero_choices.iter().position(|x| x.0 == h))
                 .unwrap_or(0);
             widgets::options(ui, &field("hero"), &hero_names, hero);
             let colors = free_colors(seats, i, palette.len());
@@ -657,7 +648,7 @@ impl Multiplayer {
 
     /// A lobby choice on seat row `row`: the host's seat dropdown, or a race, hero, team or
     /// colour for your own seat (or, hosting, a computer's).
-    pub fn choose(&mut self, field: &str, row: usize, option: usize) {
+    pub fn choose(&mut self, data: &GameData, field: &str, row: usize, option: usize) {
         let Some(session) = &self.session else {
             return;
         };
@@ -669,7 +660,7 @@ impl Multiplayer {
         };
         // `None` addresses this connection's own seat.
         let target = (session.player() != Some(seat.player)).then_some(seat.player);
-        let races = race_list(Some(room));
+        let races = widgets::races(data);
         match field {
             "seat" if seat_kind(seat) != SeatKind::Human => {
                 if let Some(&kind) = SEAT_OPTIONS.get(option) {
@@ -683,7 +674,8 @@ impl Multiplayer {
                 }
             }
             "hero" => {
-                if let Some(hero) = hero_list(Some(room), seat, &races).get(option) {
+                let (heroes, _) = widgets::heroes(data, &seat_race(data, seat));
+                if let Some((hero, _)) = heroes.get(option) {
                     session.select_hero(target, hero);
                 }
             }
@@ -728,31 +720,11 @@ fn seat_kind(seat: &Seat) -> SeatKind {
     })
 }
 
-/// The room's races: id and name.
-fn race_list(room: Option<&RoomView>) -> Vec<(String, String)> {
-    room.and_then(|r| r.races.as_ref())
-        .map(|m| {
-            m.iter()
-                .map(|(id, r)| (id.clone(), r.name.clone()))
-                .collect()
-        })
-        .unwrap_or_default()
-}
-
-/// The starting heroes `seat`'s race offers.
-fn hero_list(room: Option<&RoomView>, seat: &Seat, races: &[(String, String)]) -> Vec<String> {
-    room.and_then(|r| {
-        let race_id = seat
-            .race
-            .as_deref()
-            .or(races.first().map(|r| r.0.as_str()))?;
-        r.races
-            .as_ref()
-            .and_then(|m| m.get(race_id))
-            .and_then(|c| c.heroes.clone())
-            .or_else(|| r.heroes.clone())
-    })
-    .map_or(Vec::new(), |h| h.choices)
+/// The race a seat plays: its own choice, else the content's default race.
+fn seat_race(data: &GameData, seat: &Seat) -> String {
+    seat.race
+        .clone()
+        .unwrap_or_else(|| data.content.rules.default_race.clone())
 }
 
 /// Colours seat `row` may take: its own and those no other seat taking part has.

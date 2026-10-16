@@ -454,7 +454,7 @@ impl EffectDirector {
             .abilities
             .abilities
             .iter()
-            .map(|a| content.abilities.presentation(a.presentation.as_str()))
+            .map(|a| Some(&a.presentation))
             .collect();
         let mut impacts = BTreeMap::new();
         for d in &content.definitions {

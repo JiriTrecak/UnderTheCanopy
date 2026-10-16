@@ -1,0 +1,16 @@
+{
+  "id": "item.royal-crest",
+  "itemTier": 2,
+  "name": "Royal Crest",
+  "description": "+10 damage, +3 armor and +100 maximum health.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.royal-crest",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "equipment",
+    "damage": 10,
+    "armor": 3,
+    "maxHp": 100
+  }
+}

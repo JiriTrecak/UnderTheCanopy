@@ -13,7 +13,7 @@ use std::sync::Arc;
 const CHIME: &str = "assets/library/asset.test.chime/audio.wav";
 
 fn sound_effect(id: &str, looping: bool) -> Value {
-    json!({"schemaVersion": 1, "id": id, "name": id, "durationTicks": 40, "loop": false,
+    json!({"id": id, "name": id, "durationTicks": 40, "loop": false,
         "layers": [{"id": "sound", "shape": "sound", "colour": "#ffffff", "accent": "#ffffff",
             "durationTicks": 40, "count": 1, "size": 1, "height": 0, "sustain": looping,
             "sound": {"asset": "asset.test.chime", "role": "audio", "index": 1, "volume": 0.8,

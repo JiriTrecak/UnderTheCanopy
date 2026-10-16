@@ -1,0 +1,26 @@
+{
+  "id": "research.ants.broadheads",
+  "name": "Broadheads",
+  "description": "Archers deal 35% more attack damage.",
+  "icon": "icon.ants.archer",
+  "priority": 80,
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 150
+    },
+    {
+      "item": "item.wood",
+      "amount": 60
+    }
+  ],
+  "workTicks": 1600,
+  "effects": [
+    {
+      "units": [
+        "unit.ants.archer"
+      ],
+      "damagePermille": 350
+    }
+  ]
+}

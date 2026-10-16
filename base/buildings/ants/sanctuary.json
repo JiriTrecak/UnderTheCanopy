@@ -1,0 +1,80 @@
+{
+  "id": "building.ants.sanctuary",
+  "name": "Amber Sanctuary",
+  "description": "Calls fallen heroes back to the colony, preserving their experience, abilities and inventory.",
+  "asset": "asset.ants.sanctuary",
+  "icon": "icon.item.amber",
+  "body": {
+    "maxHp": 1000,
+    "armor": 5,
+    "armorType": "structure"
+  },
+  "vision": 14,
+  "footprint": {
+    "width": 12,
+    "depth": 12
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 6.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 180
+      },
+      {
+        "item": "item.wood",
+        "amount": 60
+      }
+    ],
+    "workTicks": 1600,
+    "workAnimation": "build"
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {
+    "revival": {
+      "items": [
+        {
+          "item": "item.amber",
+          "amount": 200
+        }
+      ],
+      "itemsPerLevel": [
+        {
+          "item": "item.amber",
+          "amount": 50
+        }
+      ],
+      "workTicksPerLevel": 200,
+      "workTicks": 1200,
+      "queueCapacity": 4
+    },
+    "production": {
+      "mode": "queued",
+      "outputs": [
+        "unit.ants.marshal",
+        "unit.ants.rootbreaker"
+      ],
+      "queueCapacity": 4,
+      "workerSlots": 0
+    },
+    "storage": {
+      "capacity": 100000,
+      "accepts": [
+        "item.amber",
+        "item.wood"
+      ]
+    }
+  },
+  "level": 1,
+  "category": "category.build-advanced",
+  "command": {
+    "category": "category.build",
+    "priority": 70
+  }
+}

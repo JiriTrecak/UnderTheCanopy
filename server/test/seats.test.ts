@@ -9,7 +9,7 @@ const draft = { name: "room", mapId: "map", mapRevision: "1", slotCount: 4, gues
 
 /** A room with its host connected; `inbox` collects what each token receives. */
 function lobby() {
-  const host = new MatchHost(undefined);
+  const host = new MatchHost();
   const created = host.create(draft);
   const match = host.get(created.room.id)!;
   const inbox = new Map<string, ServerMsg[]>();
@@ -108,4 +108,19 @@ test("pings with a position pass the action check", () => {
   const ping = { type: "ping", position: { x: 12, y: 30 } } as const;
   say(hostToken, { type: "turn", through: 2, bundles: [{ tick: 2, actions: [ping] }] });
   assert.deepEqual(commits, [[], [ping]]);
+});
+
+test("race and hero choices are content: passed on as chosen, only their form is checked", () => {
+  const { match, hostToken, say, errors } = lobby();
+  say(hostToken, { type: "setSeat", player: 1, seat: "ai" });
+  say(hostToken, { type: "selectRace", race: "race.any" });
+  say(hostToken, { type: "selectHero", hero: "unit.any.hero" });
+  say(hostToken, { type: "selectRace", race: "Not An Id", player: 1 });
+  assert.deepEqual(errors(hostToken), ["INVALID_RACE"]);
+  const result = match.start(hostToken);
+  assert.ok("config" in result);
+  assert.deepEqual(
+    result.config.slots.map((s) => [s.player, s.race, s.hero]),
+    [[0, "race.any", "unit.any.hero"], [1, undefined, undefined]],
+  );
 });

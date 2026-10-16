@@ -1,0 +1,51 @@
+{
+  "id": "building.beetles.hornwatch",
+  "name": "Hornwatch",
+  "description": "Hornwatch of the beetle colony. Model pending.",
+  "asset": "asset.placeholder.missing-model",
+  "icon": "icon.item.root",
+  "body": {
+    "maxHp": 500,
+    "armor": 2,
+    "armorType": "structure"
+  },
+  "vision": 25,
+  "footprint": {
+    "width": 8,
+    "depth": 8
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 4.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 100
+      },
+      {
+        "item": "item.wood",
+        "amount": 50
+      }
+    ],
+    "workTicks": 1400,
+    "workAnimation": "build"
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {},
+  "category": "category.build-advanced",
+  "level": 1,
+  "garrison": {
+    "capacity": 1,
+    "accepts": [
+      "unit.beetles.stone-slinger"
+    ],
+    "height": 5.8,
+    "lookoutRadius": 1.35
+  },
+  "modelScale": 1
+}

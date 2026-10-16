@@ -1,0 +1,67 @@
+{
+  "id": "unit.ants.hunter",
+  "name": "Hunter",
+  "description": "Spear infantry that charges enemy units from 3–8 building cells away. A clear approach grants double speed and a double-damage first hit, once every 8 seconds.",
+  "asset": "asset.ants.hunter",
+  "icon": "icon.ants.hunter",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 600,
+    "armor": 2,
+    "armorType": "light"
+  },
+  "vision": 36,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 24,
+      "damageType": "melee",
+      "range": 0.6,
+      "cooldownTicks": 56,
+      "aggroRange": 20,
+      "charge": {
+        "minRange": 12,
+        "maxRange": 32,
+        "cooldownTicks": 320,
+        "durationTicks": 100,
+        "speedPermille": 2000,
+        "damagePermille": 2000
+      },
+      "attack": {
+        "windupTicks": 14,
+        "recoveryTicks": 12,
+        "rangeBuffer": 0.6
+      }
+    },
+    "movement": {
+      "speed": 14
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 200
+      },
+      {
+        "item": "item.wood",
+        "amount": 40
+      }
+    ],
+    "workTicks": 1200
+  },
+  "requires": [
+    "building.ants.great-mound"
+  ],
+  "level": 2,
+  "supplyCost": 2,
+  "dimensions": {
+    "radius": 2,
+    "height": 5.2,
+    "formationSpacing": 4.25
+  },
+  "modelScale": 2.6
+}

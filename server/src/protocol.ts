@@ -120,7 +120,6 @@ export type CommitSlot = { player: number; actions: Action[] };
 export type Commit = { tick: number; slots: CommitSlot[] };
 export type ClientIdentity = { role: "player" | "spectator"; player?: number; name: string };
 export type RoomState = "waiting" | "playing" | "ended" | "desynced";
-export type HeroChoice = { default: string; choices: string[] };
 
 export type RoomView = {
   id: string;
@@ -139,8 +138,6 @@ export type RoomView = {
     team?: number;
     color?: number;
   }[];
-  heroes?: HeroChoice;
-  races?: Record<string, { name: string; heroes?: HeroChoice }>;
   spectators: number;
   tick?: number;
   inputDelayMs?: number;

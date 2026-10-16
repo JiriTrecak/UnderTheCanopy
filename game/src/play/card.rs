@@ -831,12 +831,7 @@ fn spells(
         let icon = command
             .icon
             .clone()
-            .or_else(|| {
-                k.content
-                    .abilities
-                    .presentation(ability.presentation.as_str())
-                    .and_then(|p| p.icon.clone())
-            })
+            .or_else(|| ability.presentation.icon.clone())
             .unwrap_or_else(|| d.icon.clone());
         if let Some(levels) = &binding.learning {
             let mut c = Command::new(

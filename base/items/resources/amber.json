@@ -1,0 +1,19 @@
+{
+  "id": "item.amber",
+  "name": "Amber",
+  "description": "Precious forest resin mined from ancient roots and carried to the Mound.",
+  "asset": "asset.item.amber",
+  "icon": "icon.item.amber",
+  "stackLimit": 16,
+  "behaviors": {},
+  "creation": {
+    "method": "harvest",
+    "items": [],
+    "workTicks": 80,
+    "source": "building.neutral.amber-mine",
+    "workAnimation": "chop",
+    "amount": 10
+  },
+  "currency": true,
+  "displayOrder": 10
+}

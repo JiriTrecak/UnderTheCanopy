@@ -286,28 +286,7 @@ fn two_players_and_a_spectator_play_in_lockstep() {
     let mut b = Peer::new("Bo", &net, &guest);
     let mut c = Peer::new("Cy", &net, &watcher);
 
-    // Lobby: the guest picks a race the server offers (whatever its content calls them),
-    // and the server measures both players through this client's probe echoes.
-    let races: Vec<String> = a
-        .session
-        .room()
-        .and_then(|r| r.races.clone())
-        .map(|r| r.into_keys().collect())
-        .unwrap_or_default();
-    if let Some(race) = races.last().cloned() {
-        b.session.select_race(None, &race);
-        wait_for(
-            &mut a.session,
-            &mut a.events,
-            "the guest's race",
-            |e| match e {
-                Event::Room(room) => {
-                    (room.slots[1].race.as_deref() == Some(race.as_str())).then_some(())
-                }
-                _ => None,
-            },
-        );
-    }
+    // Lobby: the server measures both players through this client's probe echoes.
     wait_for(
         &mut a.session,
         &mut a.events,

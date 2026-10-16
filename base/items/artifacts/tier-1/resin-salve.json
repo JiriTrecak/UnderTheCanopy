@@ -1,0 +1,20 @@
+{
+  "id": "item.resin-salve",
+  "itemTier": 1,
+  "name": "Resin Salve",
+  "description": "Consume to restore 160 health.",
+  "asset": "asset.item.chest",
+  "icon": "icon.item.resin-salve",
+  "stackLimit": 1,
+  "behaviors": {},
+  "itemEffect": {
+    "type": "consumable",
+    "heal": 160,
+    "active": {
+      "target": "self",
+      "radius": 0,
+      "cooldownTicks": 400,
+      "heal": 160
+    }
+  }
+}

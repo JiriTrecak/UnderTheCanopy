@@ -1,4 +1,5 @@
-//! `content/game.json`: definitions, behaviour sets, command metadata and rules.
+//! Definitions (units, buildings, items, resources), behaviour sets, command metadata and
+//! rules, as the base package's files describe them (docs/packages.md).
 //!
 //! Field names, optionality and defaults match the authoring format exactly. `*Ticks`
 //! values are authored in 25 ms ticks ([`AUTHORED_TICK_MS`]).
@@ -15,16 +16,6 @@ use std::collections::BTreeMap;
 
 /// Length of one authored tick. Content durations named `*Ticks` count these.
 pub const AUTHORED_TICK_MS: u32 = 25;
-
-/// The document as authored: definitions still reference behaviour sets.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct GameSource {
-    pub behavior_sets: Vec<serde_json::Value>,
-    pub actions: serde_json::Value,
-    pub rules: serde_json::Value,
-    pub definitions: Vec<serde_json::Value>,
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -718,7 +709,6 @@ fn default_race() -> String {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Rules {
-    pub id: String,
     pub armor_types: BTreeMap<Id, ArmorType>,
     pub max_units: u32,
     pub max_supply: u32,
@@ -731,7 +721,6 @@ pub struct Rules {
     pub loot_pools: BTreeMap<Id, LootPool>,
     pub armor_coefficient: f64,
     pub damage_types: BTreeMap<Id, DamageType>,
-    pub hero_stun_duration_permille: u32,
     pub experience: Experience,
     pub damage_multipliers: BTreeMap<Id, BTreeMap<Id, u32>>,
     pub starting_setup: StartingSetup,

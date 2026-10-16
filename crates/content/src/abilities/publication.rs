@@ -2,14 +2,13 @@
 //! textures, sounds and models of each enabled layer of its bound effects.
 
 use super::{AbilityLibrary, Presentation};
+
 use crate::{
     assets::Manifest,
     effects::{VisualEffect, VisualLayer},
     error::Error,
 };
 use std::collections::{BTreeMap, BTreeSet};
-
-const FILE: &str = crate::ABILITIES_FILE;
 
 /// A published output of an asset, by role and one-based index: `image`, `audio` or
 /// `geometry`, stored as `<role>.<ext>` for index 1 and `<role>_<index>.<ext>` after that.
@@ -25,6 +24,7 @@ pub(crate) fn check_resources(
     library: &AbilityLibrary,
     effects: &[VisualEffect],
     manifest: &Manifest,
+    files: &BTreeMap<String, String>,
     errors: &mut Vec<Error>,
 ) {
     let outputs: BTreeMap<&str, Vec<&str>> = manifest
@@ -39,13 +39,15 @@ pub(crate) fn check_resources(
             (record.id.as_str(), files)
         })
         .collect();
-    for presentation in &library.presentations {
-        let at = presentation.id.as_str();
+    for ability in &library.abilities {
+        let at = ability.id.as_str();
+        let file = files.get(at).map_or("abilities", String::as_str);
+        let presentation = &ability.presentation;
         let refs = match presentation_resources(presentation, effects) {
             Ok(refs) => refs,
             Err(unknown) => {
                 errors.push(Error::new(
-                    FILE,
+                    file,
                     at,
                     format!("Unknown visual effect {unknown}"),
                 ));
@@ -62,7 +64,7 @@ pub(crate) fn check_resources(
                 .is_some_and(|files| files.iter().any(|f| f.starts_with(&name)));
             if !found {
                 errors.push(Error::new(
-                    FILE,
+                    file,
                     at,
                     format!(
                         "Missing published effect {role} {asset}/{role}:{index}",

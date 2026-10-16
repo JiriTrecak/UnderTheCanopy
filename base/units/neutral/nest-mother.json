@@ -1,0 +1,42 @@
+{
+  "id": "unit.neutral.nest-mother",
+  "name": "Nest Mother",
+  "description": "Hornet Raiders · melee forest creature. Wild hornets patrolling a paper nest.",
+  "asset": "asset.neutral.nest-mother",
+  "icon": "icon.neutral.nest-mother",
+  "selectionClass": "army",
+  "dimensions": {
+    "radius": 0.714,
+    "height": 4.76,
+    "formationSpacing": 1.6065
+  },
+  "body": {
+    "maxHp": 780,
+    "armor": 3,
+    "armorType": "heavy"
+  },
+  "vision": 12,
+  "behaviorSets": [
+    "behavior-set.neutral"
+  ],
+  "behaviors": {
+    "movement": {
+      "speed": 13.6
+    },
+    "combat": {
+      "damage": 30,
+      "damageType": "melee",
+      "range": 0.6,
+      "cooldownTicks": 66,
+      "aggroRange": 10,
+      "attack": {
+        "windupTicks": 14,
+        "recoveryTicks": 12,
+        "rangeBuffer": 0.6
+      }
+    }
+  },
+  "level": 4,
+  "supplyCost": 1,
+  "modelScale": 1.7
+}
