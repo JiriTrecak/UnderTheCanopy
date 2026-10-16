@@ -8,7 +8,8 @@
     ],
     "improved": [
       "A fallen hero keeps their portrait in the top left, greyed out, and shows the seconds left while they are being revived.",
-      "Unit movement is much smoother, in the spirit of StarCraft II: units set off and turn at once, ease around each other, slide past instead of stopping dead, push idle allies out of the way, stream through chokepoints and stop together around their destination instead of fighting for the spot."
+      "Unit movement is much smoother, in the spirit of StarCraft II: units set off and turn at once, ease around each other, slide past instead of stopping dead, push idle allies out of the way, stream through chokepoints and stop together around their destination instead of fighting for the spot.",
+      "The computer opponent fights with its whole army: wounded units no longer pile up idle in its base, it gathers out of its workers' way, waits for a stronger army before attacking and sends reinforcements in groups."
     ],
     "fixed": [
       "Fallen heroes can be revived again: the Sanctuary and Ancestor Shrine offer Revive for each fallen hero.",

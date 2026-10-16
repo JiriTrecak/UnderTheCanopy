@@ -170,6 +170,46 @@ fn enemy_building(f: &Frame, e: &Known) -> bool {
 }
 
 /// Chooses the army's next operation (old `strategy`).
+/// Where the army waits, regroups and falls back to, `reach` cells out of the base towards
+/// the nearest known enemy building (else the map's centre), at most halfway there: out of
+/// the workers' way and between them and the threat, instead of on the hall's doorstep.
+fn staging(f: &Frame, reach: f64) -> Pt {
+    let home = f.home;
+    let toward = f
+        .all
+        .iter()
+        .filter(|e| enemy_building(f, e))
+        .map(|e| e.p)
+        .min_by(|a, b| dist(*a, home).total_cmp(&dist(*b, home)))
+        .unwrap_or_else(|| {
+            let c = f64::from(f.geo.size) / 2.0;
+            Pt::new(c, c)
+        });
+    let (dx, dy) = (toward.x - home.x, toward.y - home.y);
+    let d = (dx * dx + dy * dy).sqrt();
+    if d < 1.0 {
+        return home;
+    }
+    let reach = reach.min(d * 0.5);
+    let point = Pt {
+        x: home.x + dx / d * reach,
+        y: home.y + dy / d * reach,
+        deck: home.deck,
+    }
+    .rounded();
+    if f.geo.connected(home, point) {
+        point
+    } else {
+        home
+    }
+}
+
+/// How far out the army stages, and the home guard stands.
+const STAGING: f64 = 12.0;
+const GUARD_POST: f64 = 6.0;
+/// Reinforcements that set out together.
+const REINFORCEMENT_GROUP: usize = 3;
+
 pub fn strategy(b: &mut Beat) {
     let f = b.f;
     let tick = f.tick;
@@ -227,7 +267,39 @@ pub fn strategy(b: &mut Beat) {
             .then(dist(a.p, f.home).total_cmp(&dist(b.p, f.home)))
             .then(a.id.cmp(&b.id))
     });
-    let army_ready = f.army.len() as u32 >= rules.army.minimum;
+    // Ready to attack: enough units for the stage of the match (the minimum, plus one a
+    // minute, up to half the maximum) and clearly stronger than the enemy army seen lately;
+    // a near-full army goes regardless.
+    let minutes = tick / 2400;
+    let wanted =
+        (rules.army.minimum + minutes).min((rules.army.maximum / 2).max(rules.army.minimum));
+    // The army lately seen around the target (not every opponent's, in a free-for-all).
+    let enemy_army = |target: Pt| -> f64 {
+        s.sightings
+            .iter()
+            .filter(|e| {
+                let d = f.definition(e.definition);
+                d.behaviors.camp_defense.is_none()
+                    && d.behaviors.combat.is_some()
+                    && dist(f.geo.from_place(&e.point), target) < 40.0
+            })
+            .map(|e| {
+                f.nominal_power(
+                    f.definition(e.definition),
+                    Some(f64::from(e.hp)),
+                    None,
+                    None,
+                    None,
+                ) * (1.0 - f64::from(tick.saturating_sub(e.seen)) / 2400.0).max(0.0)
+            })
+            .sum()
+    };
+    let full = f.army.len() as u32 * 5 >= rules.army.maximum * 3;
+    // After twenty minutes the numbers alone decide, so matches come to a head.
+    let late = minutes >= 20;
+    let ready = |target: &Known| {
+        full || (f.army.len() as u32 >= wanted && (late || power >= enemy_army(target.p) * 1.2))
+    };
     let contested: Vec<crate::catalog::Def> = catalog
         .content
         .definitions
@@ -336,7 +408,7 @@ pub fn strategy(b: &mut Beat) {
         );
     };
     if let Some(&target) = buildings.first()
-        && army_ready
+        && ready(target)
         && !best.is_some_and(|c| c.unlocks)
         && (level >= 3 || best.is_none() || xp_needed == 0)
     {
@@ -364,7 +436,7 @@ pub fn strategy(b: &mut Beat) {
         return;
     }
     if let Some(&target) = buildings.first()
-        && army_ready
+        && ready(target)
     {
         assault(s, target);
         return;
@@ -392,7 +464,14 @@ pub fn strategy(b: &mut Beat) {
         mission(f, s, MissionKind::Scout, start_key(p), p, 2400);
         s.plan.reason = "Locate the opponent using possible starting sites".into();
     } else {
-        mission(f, s, MissionKind::Regroup, "home".into(), f.home, 400);
+        mission(
+            f,
+            s,
+            MissionKind::Regroup,
+            "home".into(),
+            staging(f, STAGING),
+            400,
+        );
         s.plan.reason = "Reinforce and recover before another operation".into();
     }
 }
@@ -509,17 +588,34 @@ pub fn operations(b: &mut Beat) {
             );
         }
     }
+    // Health never returns, so a wounded unit is pulled out only while it is fighting;
+    // away from a fight it stays in the army instead of idling in the base for good.
     let retreat = f64::from(rules.army.retreat_health_permille);
+    let wounded_in_fight = |e: &Known| {
+        f64::from(e.hp.unwrap_or(0)) * 1000.0 < f64::from(f.max_hp(e)) * retreat && near(e, 14.0)
+    };
     let healthy: Vec<&Known> = army
         .iter()
         .copied()
         .filter(|e| {
-            f64::from(e.hp.unwrap_or(0)) * 1000.0 >= f64::from(f.max_hp(e)) * retreat
+            !wounded_in_fight(e)
                 && !f.casting(e)
                 && !f.stunned(e)
                 && powers::pickup_target(f, e).is_none()
         })
         .collect();
+    let pulled: Vec<&Known> = army
+        .iter()
+        .copied()
+        .filter(|e| wounded_in_fight(e) && !f.def(e).is_hero())
+        .collect();
+    if !pulled.is_empty() {
+        let destination = f.nearest_safe(staging(f, STAGING), &indices(f, &pulled));
+        b.emit(
+            move_to(f, &pulled, destination, Some(false)),
+            "Pull badly wounded units out of the fight",
+        );
+    }
     let scout = b.s.scout;
     b.s.guards
         .retain(|&id| Some(id) != scout && healthy.iter().any(|e| e.id == id));
@@ -662,11 +758,22 @@ pub fn operations(b: &mut Beat) {
         .collect();
     b.s.mission = Some(m.clone());
     if !joining.is_empty() {
-        let destination = f.nearest_safe(leader.p, &indices(f, &joining));
-        b.emit(
-            move_to(f, &joining, destination, Some(true)),
-            "Send reinforcements to the active army",
-        );
+        // New units go out together, three or more at a time, unless the army fights near
+        // home; alone they would be picked off on the way.
+        let near_home = dist(leader.p, home) < 30.0;
+        if joining.len() >= REINFORCEMENT_GROUP || near_home {
+            let destination = f.nearest_safe(leader.p, &indices(f, &joining));
+            b.emit(
+                move_to(f, &joining, destination, Some(true)),
+                "Send reinforcements to the active army",
+            );
+        } else {
+            let destination = f.nearest_safe(staging(f, STAGING), &indices(f, &joining));
+            b.emit(
+                move_to(f, &joining, destination, Some(true)),
+                "Gather reinforcements before sending them out",
+            );
+        }
     }
     let n = squad.len() as f64;
     let center = Pt::new(
@@ -714,7 +821,7 @@ pub fn operations(b: &mut Beat) {
             .filter(|e| Some(e.id) != scout.map(|s| s.id) && !near(e, 14.0))
             .collect();
         if !rest.is_empty() {
-            let destination = f.nearest_safe(home, &indices(f, &rest));
+            let destination = f.nearest_safe(staging(f, STAGING), &indices(f, &rest));
             b.emit(
                 move_to(f, &rest, destination, Some(true)),
                 "Gather reinforcements at home while the scout travels",
@@ -733,7 +840,7 @@ pub fn operations(b: &mut Beat) {
     if enemy_power * f64::from(rules.army.engage_permille) > our_power * 1000.0
         && dist(center, home) > 25.0
     {
-        let destination = f.nearest_safe(home, &indices(f, &squad));
+        let destination = f.nearest_safe(staging(f, STAGING), &indices(f, &squad));
         b.emit(
             move_to(f, &squad, destination, None),
             "Withdraw from a visibly unfavorable fight",
@@ -743,7 +850,14 @@ pub fn operations(b: &mut Beat) {
         {
             camp.retry = tick + 1200;
         }
-        mission(f, b.s, MissionKind::Regroup, "home".into(), home, 400);
+        mission(
+            f,
+            b.s,
+            MissionKind::Regroup,
+            "home".into(),
+            staging(f, STAGING),
+            400,
+        );
         return;
     }
     let gathered = squad.iter().filter(|e| dist(e.p, center) <= 14.0).count() as f64 >= n * 0.7;
@@ -809,7 +923,7 @@ pub fn operations(b: &mut Beat) {
         }
     }
     if threats.is_empty() && !guards.is_empty() && !guards.iter().any(|g| near(g, 14.0)) {
-        let destination = f.nearest_safe(home, &indices(f, &guards));
+        let destination = f.nearest_safe(staging(f, GUARD_POST), &indices(f, &guards));
         b.emit(
             move_to(f, &guards, destination, Some(true)),
             "Keep a small guard near the workers",
