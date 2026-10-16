@@ -153,8 +153,13 @@ pub struct Shell {
     confirm_save: bool,
     /// Files changed on disk.
     watch: Option<Watch>,
-    /// Every element id (pickers), and the store's structure count the libraries match.
+    /// Every element id (pickers) and every element by id, and the store's structure
+    /// count the libraries match.
     ids: Vec<String>,
+    index: std::collections::BTreeMap<String, crate::overview::Entry>,
+    /// The trail of links followed (editor and document), for Back and Forward.
+    back: Vec<(Kind, String)>,
+    forward: Vec<(Kind, String)>,
     structure: Option<u64>,
     /// Uses of an id: (document, store generation, uses).
     uses: Option<(String, u64, Vec<Use>)>,
@@ -209,6 +214,9 @@ impl Shell {
             user,
             watch,
             ids: Vec::new(),
+            index: Default::default(),
+            back: Vec::new(),
+            forward: Vec::new(),
             structure: None,
             uses: None,
             dialog: None,
@@ -305,6 +313,8 @@ impl Shell {
             workspace.highlight = None;
         }
         let highlight = workspace.highlight.clone();
+        let mut opens = Vec::new();
+        let mut new_ability = None;
         tabs::documents(
             ui,
             kind,
@@ -315,10 +325,24 @@ impl Shell {
                 edits: &mut edits,
                 ids: &self.ids,
                 highlight: highlight.as_ref().map(|h| (h.0.as_str(), h.1.as_str())),
+                index: &self.index,
+                uses: active.as_deref().zip(uses.as_deref()),
+                opens: &mut opens,
+                create: &mut new_ability,
             },
         );
         for edit in edits {
             self.run(edit);
+        }
+        if let Some(id) = opens.pop() {
+            self.open_id(&id);
+        }
+        if let Some(prefix) = new_ability {
+            self.start_create(Kind::Abilities);
+            if let Some(Dialog::Create { id, folder, .. }) = &mut self.dialog {
+                *id = prefix;
+                folder.clear();
+            }
         }
         if create {
             self.start_create(kind);
@@ -397,7 +421,7 @@ impl Shell {
                 }
             }
         }
-        let mut ids: Vec<String> = Vec::new();
+        let mut index = std::collections::BTreeMap::new();
         for workspace in self.workspaces.values() {
             let mut elements = Vec::new();
             workspace
@@ -405,11 +429,18 @@ impl Shell {
                 .nodes
                 .iter()
                 .for_each(|n| n.elements(&mut elements));
-            ids.extend(elements.into_iter().map(|e| e.id.clone()));
+            for e in elements {
+                index.insert(
+                    e.id.clone(),
+                    crate::overview::Entry {
+                        name: e.name.clone(),
+                        document: e.document.clone(),
+                    },
+                );
+            }
         }
-        ids.sort();
-        ids.dedup();
-        self.ids = ids;
+        self.ids = index.keys().cloned().collect();
+        self.index = index;
     }
 
     /// Every document the libraries list, and each map's scenery.
@@ -468,6 +499,43 @@ impl Shell {
         };
         self.uses = Some((document.to_string(), generation, uses.clone()));
         uses
+    }
+
+    /// Follows a link to the element `id`, remembering where it came from.
+    fn open_id(&mut self, id: &str) {
+        let Some(document) = self.index.get(id).map(|e| e.document.clone()) else {
+            return;
+        };
+        if let Some(here) = self.active_document() {
+            self.back.push((self.current, here));
+        }
+        self.forward.clear();
+        self.reveal_document(&document);
+    }
+
+    /// Back (or forward, `ahead`) along the trail of links.
+    fn travel(&mut self, ahead: bool) {
+        let (from, to) = if ahead {
+            (&mut self.forward, &mut self.back)
+        } else {
+            (&mut self.back, &mut self.forward)
+        };
+        let Some((editor, document)) = from.pop() else {
+            return;
+        };
+        if let Some(here) = self.workspaces.get_mut(&self.current).and_then(|w| {
+            w.dock
+                .main_surface_mut()
+                .find_active_focused()
+                .map(|(_, d)| d.document.clone())
+        }) {
+            to.push((self.current, here));
+        }
+        self.reveal(&Context {
+            editor,
+            document,
+            pointer: None,
+        });
     }
 
     fn reveal_document(&mut self, document: &str) {
@@ -1283,6 +1351,8 @@ impl Shell {
         }
         let notice = self.notice.clone();
         let mut clicked = (false, false, false, false);
+        let mut travel = None;
+        let (can_back, can_forward) = (!self.back.is_empty(), !self.forward.is_empty());
         // The data of a check that passed for the latest edits.
         let testable = (self.problem_count() == Some(0) && !self.checking())
             .then(|| self.checker.as_ref().and_then(|c| c.content().cloned()))
@@ -1379,6 +1449,20 @@ impl Shell {
                         clicked.1 = icon_button(ui, Icon::Undo, false, undo.is_some())
                             .on_hover_text(hint("Undo", &undo, "Cmd+Z"))
                             .clicked();
+                        let (line, _) = ui.allocate_exact_size(vec2(1.0, 20.0), Sense::hover());
+                        ui.painter().rect_filled(line, 0, BORDER);
+                        if icon_button(ui, Icon::ChevronRight, false, can_forward)
+                            .on_hover_text("Forward")
+                            .clicked()
+                        {
+                            travel = Some(true);
+                        }
+                        if icon_button(ui, Icon::ChevronLeft, false, can_back)
+                            .on_hover_text("Back to where the last link was followed")
+                            .clicked()
+                        {
+                            travel = Some(false);
+                        }
                     });
                 });
             });
@@ -1390,6 +1474,9 @@ impl Shell {
         }
         if clicked.2 {
             self.redo();
+        }
+        if let Some(ahead) = travel {
+            self.travel(ahead);
         }
         if clicked.3
             && let Some(content) = testable

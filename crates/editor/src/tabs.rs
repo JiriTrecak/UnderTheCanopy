@@ -12,6 +12,7 @@ use serde_json::Value;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum View {
+    Overview,
     Form,
     Json,
 }
@@ -41,7 +42,11 @@ impl Doc {
             name: element.name.clone(),
             id: element.id.clone(),
             document: element.document.clone(),
-            view: View::Form,
+            view: if crate::overview::has(&element.document) {
+                View::Overview
+            } else {
+                View::Form
+            },
             schema: None,
             shown: None,
             text: String::new(),
@@ -73,6 +78,13 @@ pub struct Viewer<'a> {
     pub ids: &'a [String],
     /// The field an undo or redo changed: (document, pointer).
     pub highlight: Option<(&'a str, &'a str)>,
+    /// Every element by id (overviews name and link them).
+    pub index: &'a std::collections::BTreeMap<String, crate::overview::Entry>,
+    /// Uses of the focused document's element: (document, uses).
+    pub uses: Option<(&'a str, &'a [crate::references::Use])>,
+    /// Links clicked this frame, and a new element to start.
+    pub opens: &'a mut Vec<String>,
+    pub create: &'a mut Option<String>,
 }
 
 impl TabViewer for Viewer<'_> {
@@ -126,9 +138,18 @@ impl TabViewer for Viewer<'_> {
         }
         let changed = tab.edit != tab.text;
         ui.horizontal(|ui| {
-            for (view, label) in [(View::Form, "Form"), (View::Json, "JSON")] {
-                if ui.selectable_label(tab.view == view, label).clicked() {
-                    tab.view = view;
+            let views: &[(View, &str)] = if crate::overview::has(&tab.document) {
+                &[
+                    (View::Overview, "Overview"),
+                    (View::Form, "Form"),
+                    (View::Json, "JSON"),
+                ]
+            } else {
+                &[(View::Form, "Form"), (View::Json, "JSON")]
+            };
+            for (view, label) in views {
+                if ui.selectable_label(tab.view == *view, *label).clicked() {
+                    tab.view = *view;
                 }
             }
             if tab.view == View::Json && (changed || tab.error.is_some()) {
@@ -169,6 +190,35 @@ impl TabViewer for Viewer<'_> {
         });
         ui.add_space(6.0);
         match tab.view {
+            View::Overview => {
+                let uses = self
+                    .uses
+                    .filter(|(document, _)| *document == tab.document)
+                    .map_or(&[][..], |(_, uses)| uses);
+                let mut overview = crate::overview::Overview::new(&tab.document, self.index, uses);
+                ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| overview.show(ui, &value));
+                self.opens.extend(overview.opens);
+                if overview.create.is_some() {
+                    *self.create = overview.create;
+                }
+                for change in overview.changes {
+                    let merge = change
+                        .merge
+                        .then(|| format!("{}{}", tab.document, change.pointer));
+                    self.edits.push(Edit {
+                        label: change.label,
+                        context: Context {
+                            editor: self.kind,
+                            document: tab.document.clone(),
+                            pointer: Some(change.pointer),
+                        },
+                        commands: change.commands,
+                        merge,
+                    });
+                }
+            }
             View::Form => {
                 let schema = tab
                     .schema
@@ -190,6 +240,7 @@ impl TabViewer for Viewer<'_> {
                         }
                         form.show(ui, &value);
                     });
+                self.opens.extend(std::mem::take(&mut form.opens));
                 for change in form.changes {
                     let merge = change
                         .merge

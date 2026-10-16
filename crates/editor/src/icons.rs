@@ -20,6 +20,7 @@ pub enum Icon {
     Plus,
     Close,
     ChevronRight,
+    ChevronLeft,
     ChevronDown,
     Search,
     Panel,
@@ -181,6 +182,7 @@ fn parts(icon: Icon) -> Vec<Part> {
             Open(vec![[18.0, 6.0], [6.0, 18.0]]),
         ],
         Icon::ChevronRight => vec![Open(vec![[9.0, 6.0], [15.0, 12.0], [9.0, 18.0]])],
+        Icon::ChevronLeft => vec![Open(vec![[15.0, 6.0], [9.0, 12.0], [15.0, 18.0]])],
         Icon::ChevronDown => vec![Open(vec![[6.0, 9.0], [12.0, 15.0], [18.0, 9.0]])],
         Icon::Search => vec![
             circle([11.0, 11.0], 7.0),

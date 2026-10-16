@@ -60,6 +60,8 @@ M1's generic forms already edit every field of every element. M2 adds what a for
 - **Effects (review).** Its layers at a glance; previews come with the encounter stage.
 - **Races and rules (review).** A race's roster (its units, heroes and buildings, opening each) and starting setup.
 
+**Built (2026-10-16):** `overview.rs` (the Overview view, opening by default where it exists), id fields' → link and the header's Back and Forward (`shell.rs`, `forms.rs`). Units: stat card, a hero's levels, abilities (hotkeys, unbind, bind from a picker with the next free hotkey and column, New ability… starts the create dialog in Abilities), trained by. Buildings: stats, Trains and Researches (open, add, remove), built by. Items: stats, found in. Abilities: rank table (edit cells; add a rank or a parameter; remove a rank), the cast to scale, targeting in words, bound by. Effects: duration, layers on a timeline, used by. Races: roster by group and starting setup. **Not built yet:** the encounter stage.
+
 ## M3. The map editor (decided 2026-10-16)
 
 **Settled (Jiri, ahead of the build):**

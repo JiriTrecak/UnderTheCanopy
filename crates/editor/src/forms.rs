@@ -28,6 +28,8 @@ pub struct Form<'a> {
     /// A field to mark (the place an undo or redo changed).
     pub highlight: Option<&'a str>,
     pub changes: Vec<Change>,
+    /// Ids whose element to open (an id field's link).
+    pub opens: Vec<String>,
 }
 
 const LABEL: f32 = 150.0;
@@ -37,7 +39,7 @@ fn token(key: &str) -> String {
     key.replace('~', "~0").replace('/', "~1")
 }
 
-fn words(key: &str) -> String {
+pub fn words(key: &str) -> String {
     let mut out = String::new();
     for (i, c) in key.chars().enumerate() {
         if c.is_uppercase() && i > 0 {
@@ -60,6 +62,7 @@ impl<'a> Form<'a> {
             ids,
             highlight: None,
             changes: Vec::new(),
+            opens: Vec::new(),
         }
     }
 
@@ -803,6 +806,17 @@ impl<'a> Form<'a> {
                 }
             });
         ui.data_mut(|d| d.insert_temp(search_id, search));
+        if self
+            .ids
+            .binary_search_by(|i| i.as_str().cmp(current))
+            .is_ok()
+            && ui
+                .small_button("→")
+                .on_hover_text(format!("Open {current}"))
+                .clicked()
+        {
+            self.opens.push(current.to_string());
+        }
         if let Some(id) = picked
             && id != current
         {

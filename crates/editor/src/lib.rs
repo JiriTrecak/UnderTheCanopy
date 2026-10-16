@@ -14,6 +14,7 @@ mod icons;
 mod inspector;
 mod library;
 mod mcp;
+mod overview;
 mod references;
 mod shell;
 mod stage;
