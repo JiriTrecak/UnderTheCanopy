@@ -77,6 +77,13 @@ M1's generic forms already edit every field of every element. M2 adds what a for
 
 **Settled (Jiri):** the asset editor is a tool for us, mostly for agents: what makes new assets quick to create and to author well into the game. Its scope is mine to decide from the asset format (not overdone). **Players never bring their own models, icons or other assets**: player packages use the game's pool only. Built right after M3.
 
+**Scope (decided by Claude, review):**
+
+- **An asset's Overview:** its model in the viewport, playing any of its animations (the clips the cooked model has, and which semantic each serves); its files (present, missing, size) and its kind, display and team colour settings in the form.
+- **Import:** a glTF model (or an image, for icons and portraits) becomes a new asset folder with its `asset.json` from the kind's defaults; MCP has the same tool for agents.
+- **Cook from the editor:** the changed assets are cooked into the pack (incrementally) and the viewport reloads, so a new model is seen without leaving.
+- **Unused assets:** a list of assets nothing names (definitions, scenery, effects, maps, biomes, interface), and deleting one removes its whole folder on save (undo before saving brings it back).
+
 ## M5. Players' content (decided 2026-10-16: aspirational for now)
 
 **Settled (Jiri):** players' content is a goal for later, not now. The game is not yet one people extend, so:
