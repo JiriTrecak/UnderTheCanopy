@@ -176,16 +176,6 @@ fn game() -> Value {
                 ],
                 "gathering": [{"item": AMBER, "workers": 3, "radius": 30}],
             },
-            "ai": {
-                "revision": 1, "decisionTicks": 10, "economyTicks": 40, "strategyTicks": 100,
-                "operationTicks": 20, "reactionTicks": 10, "orderIntervalTicks": 40,
-                "workers": {"minimum": 3, "target": 5, "maximum": 8, "reserve": 1},
-                "army": {"minimum": 3, "maximum": 10, "homeGuard": 1, "engagePermille": 1100,
-                    "campPermille": 1400, "retreatHealthPermille": 300, "pursuitRadius": 20},
-                "limits": {"commandsPerBeat": 4, "placementCandidates": 24, "spellCandidates": 16},
-                "composition": [{"definition": SOLDIER, "weight": 60}, {"definition": ARCHER, "weight": 40}],
-                "skillPreference": [RUSH, WARD, SMITE],
-            },
         },
         "definitions": [
             definition(BARRACKS, "building", building(400, 8, json!({

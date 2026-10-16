@@ -336,54 +336,6 @@
         }
       }
     },
-    "ai": {
-      "revision": 2,
-      "decisionTicks": 10,
-      "economyTicks": 80,
-      "strategyTicks": 200,
-      "operationTicks": 40,
-      "reactionTicks": 20,
-      "orderIntervalTicks": 40,
-      "workers": {
-        "minimum": 6,
-        "target": 16,
-        "maximum": 28,
-        "reserve": 2
-      },
-      "army": {
-        "minimum": 6,
-        "maximum": 44,
-        "homeGuard": 2,
-        "engagePermille": 1100,
-        "campPermille": 1400,
-        "retreatHealthPermille": 280,
-        "pursuitRadius": 20
-      },
-      "limits": {
-        "commandsPerBeat": 4,
-        "placementCandidates": 24,
-        "spellCandidates": 16
-      },
-      "composition": [
-        {
-          "definition": "unit.ants.warrior",
-          "weight": 40
-        },
-        {
-          "definition": "unit.ants.archer",
-          "weight": 30
-        },
-        {
-          "definition": "unit.ants.hunter",
-          "weight": 20
-        },
-        {
-          "definition": "unit.ants.bombardier",
-          "weight": 10
-        }
-      ],
-      "skillPreference": []
-    },
     "armorTypes": {
       "light": {
         "name": "Light armor",
@@ -1065,24 +1017,6 @@
           "building.beetles.rootworks",
           "building.beetles.hornwatch"
         ],
-        "ai": {
-          "composition": [
-            {
-              "definition": "unit.beetles.horn-guard",
-              "weight": 65
-            },
-            {
-              "definition": "unit.beetles.stone-slinger",
-              "weight": 35
-            }
-          ],
-          "skillPreference": [
-            "ability.hornbreaker.colossus",
-            "ability.hornbreaker.overwhelm",
-            "ability.hornbreaker.horn-rush",
-            "ability.hornbreaker.steadfast"
-          ]
-        },
         "construction": {
           "scaffold": "asset.construction.beetles",
           "padding": 0.4,

@@ -37,14 +37,16 @@ pub mod navigation;
 pub mod operations;
 pub mod placement;
 pub mod powers;
+pub mod rules;
 pub mod state;
 pub mod tactics;
 
 use crate::{action::Action, setup::MatchSetup};
-use canopy_content::{game::AiRules, placement::Owner};
+use canopy_content::placement::Owner;
 use frame::{Frame, Input, Known};
 use geography::Geography;
 use navigation::{ObservedBlockers, ObservedNavigation};
+pub use rules::AiRules;
 use serde::Serialize;
 pub use state::Memory;
 use state::{MAX_PENDING, MAX_TRACE, Pending, SEQUENCE_BASE, Trace};
@@ -333,21 +335,6 @@ pub struct Brains {
     brains: Vec<Brain>,
 }
 
-/// The race's AI rules with the timing converted to simulation ticks.
-fn race_rules(catalog: &crate::catalog::Catalog, race: Option<&str>) -> AiRules {
-    let rules = &catalog.content.rules;
-    let race = race.unwrap_or(&rules.default_race);
-    let mut ai = rules.race(race).map_or_else(|| rules.ai.clone(), |r| r.ai);
-    let t = crate::combat::ticks;
-    ai.decision_ticks = t(ai.decision_ticks).max(1);
-    ai.economy_ticks = t(ai.economy_ticks);
-    ai.strategy_ticks = t(ai.strategy_ticks);
-    ai.operation_ticks = t(ai.operation_ticks);
-    ai.reaction_ticks = t(ai.reaction_ticks);
-    ai.order_interval_ticks = t(ai.order_interval_ticks);
-    ai
-}
-
 impl Brains {
     /// The AIs of the match's AI slots. `scales` gives placements' appearance scales.
     pub fn new(
@@ -376,7 +363,7 @@ impl Brains {
             .iter()
             .enumerate()
             .map(|(index, slot)| {
-                let rules = race_rules(catalog, slot.race.as_deref());
+                let rules = AiRules::for_race(catalog, slot.race.as_deref());
                 Brain {
                     player: slot.player,
                     owner: Owner::Player(slot.player),

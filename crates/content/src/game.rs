@@ -684,67 +684,6 @@ pub struct StartingSetup {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct AiWorkers {
-    pub minimum: u32,
-    pub target: u32,
-    pub maximum: u32,
-    pub reserve: u32,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct AiArmy {
-    pub minimum: u32,
-    pub maximum: u32,
-    pub home_guard: u32,
-    pub engage_permille: u32,
-    pub camp_permille: u32,
-    pub retreat_health_permille: u32,
-    pub pursuit_radius: u32,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct AiLimits {
-    pub commands_per_beat: u32,
-    pub placement_candidates: u32,
-    pub spell_candidates: u32,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct AiComposition {
-    pub definition: Id,
-    pub weight: u32,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct AiRules {
-    pub revision: u32,
-    pub decision_ticks: u32,
-    pub economy_ticks: u32,
-    pub strategy_ticks: u32,
-    pub operation_ticks: u32,
-    pub reaction_ticks: u32,
-    pub order_interval_ticks: u32,
-    pub workers: AiWorkers,
-    pub army: AiArmy,
-    pub limits: AiLimits,
-    pub composition: Vec<AiComposition>,
-    pub skill_preference: Vec<Id>,
-}
-
-/// A race's own army mix; everything else comes from the global AI rules.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct RaceAi {
-    pub composition: Vec<AiComposition>,
-    pub skill_preference: Vec<Id>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ConstructionPresentation {
     pub scaffold: Id,
     pub padding: f64,
@@ -763,7 +702,6 @@ pub struct Race {
     pub construction: Option<ConstructionPresentation>,
     pub starting_setup: Option<StartingSetup>,
     pub roster: Vec<Id>,
-    pub ai: Option<RaceAi>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -797,7 +735,6 @@ pub struct Rules {
     pub experience: Experience,
     pub damage_multipliers: BTreeMap<Id, BTreeMap<Id, u32>>,
     pub starting_setup: StartingSetup,
-    pub ai: AiRules,
     #[serde(default = "default_race")]
     pub default_race: String,
     #[serde(default)]
@@ -806,28 +743,21 @@ pub struct Rules {
     pub campaigns: BTreeMap<String, Campaign>,
 }
 
-/// A race with the global starting setup and AI rules filled in where it has none.
+/// A race with the global starting setup filled in where it has none.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RaceProfile<'a> {
     pub id: &'a str,
     pub race: &'a Race,
     pub starting_setup: &'a StartingSetup,
-    pub ai: AiRules,
 }
 
 impl Rules {
     pub fn race(&self, id: &str) -> Option<RaceProfile<'_>> {
         let (id, race) = self.races.get_key_value(id)?;
-        let mut ai = self.ai.clone();
-        if let Some(own) = &race.ai {
-            ai.composition = own.composition.clone();
-            ai.skill_preference = own.skill_preference.clone();
-        }
         Some(RaceProfile {
             id,
             race,
             starting_setup: race.starting_setup.as_ref().unwrap_or(&self.starting_setup),
-            ai,
         })
     }
 }

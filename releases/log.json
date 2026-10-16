@@ -2,7 +2,9 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [],
-    "improved": [],
+    "improved": [
+      "The computer opponent fields its whole army roster — casters, Queensguard, Winglancers and more, not just Warriors, Archers and Hunters — and chooses what to train from what its buildings offer and what its enemy fields; AI duels now end decisively instead of stalling for an hour."
+    ],
     "fixed": [],
     "knownIssues": []
   },

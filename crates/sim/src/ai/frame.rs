@@ -7,6 +7,7 @@
 //! It is built straight from the state through [`Sight`] instead of from a cloned
 //! [`crate::view::View`]: the same entities, without copying them.
 
+use super::AiRules;
 use super::{
     geography::{Geography, Pt, dist},
     navigation::{Blocker, Mover, ObservedBlockers, ObservedNavigation},
@@ -28,7 +29,7 @@ use crate::{
 };
 use canopy_content::{
     Id,
-    game::{AiRules, Definition, Kind},
+    game::{Definition, Kind},
     placement::Owner,
 };
 use std::{

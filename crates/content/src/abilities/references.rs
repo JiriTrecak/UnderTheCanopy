@@ -23,7 +23,6 @@ pub(crate) fn check(content: &Content, errors: &mut Vec<Error>) {
         }
     }
     effects(content, errors);
-    skill_preferences(content, errors);
 }
 
 fn icons(content: &Content, errors: &mut Vec<Error>) {
@@ -234,47 +233,6 @@ fn effects(content: &Content, errors: &mut Vec<Error>) {
                 .is_some_and(|d| d.kind == Kind::Unit)
             {
                 fail(format!("summons require a unit definition ({id})"));
-            }
-        }
-    }
-}
-
-/// Each race's AI may prefer only abilities some unit of that race can learn.
-fn skill_preferences(content: &Content, errors: &mut Vec<Error>) {
-    let rules = &content.rules;
-    let profiles: Vec<_> = rules.races.keys().filter_map(|id| rules.race(id)).collect();
-    let in_roster = |race: &str, id: &str| {
-        !profiles
-            .iter()
-            .any(|p| p.id != race && p.race.roster.iter().any(|r| r == id))
-            || profiles
-                .iter()
-                .any(|p| p.id == race && p.race.roster.iter().any(|r| r == id))
-    };
-    let setups: Vec<(&str, &[crate::Id])> = if profiles.is_empty() {
-        vec![("default", &rules.ai.skill_preference)]
-    } else {
-        profiles
-            .iter()
-            .map(|p| (p.id, p.ai.skill_preference.as_slice()))
-            .collect()
-    };
-    for (race, preferences) in setups {
-        for id in preferences {
-            let learnable = content.abilities.ability(id.as_str()).is_some()
-                && content.definitions.iter().any(|d| {
-                    in_roster(race, d.id.as_str())
-                        && d.behaviors
-                            .abilities
-                            .as_ref()
-                            .is_some_and(|c| c.bindings.iter().any(|b| b.ability == *id))
-                });
-            if !learnable {
-                errors.push(Error::new(
-                    GAME,
-                    format!("rules.races.{race}"),
-                    format!("rules.ai.skillPreference: unlearnable {id}"),
-                ));
             }
         }
     }

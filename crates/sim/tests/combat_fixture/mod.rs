@@ -175,14 +175,6 @@ pub fn game() -> Value {
             "startingSetup": {
                 "id": "setup.test", "fort": "building.hall", "inventory": {}, "units": [],
             },
-            "ai": {
-                "revision": 1, "decisionTicks": 1, "economyTicks": 1, "strategyTicks": 1,
-                "operationTicks": 1, "reactionTicks": 1, "orderIntervalTicks": 1,
-                "workers": {"minimum": 1, "target": 2, "maximum": 3, "reserve": 0},
-                "army": {"minimum": 1, "maximum": 2, "homeGuard": 0, "engagePermille": 1, "campPermille": 1, "retreatHealthPermille": 1, "pursuitRadius": 1},
-                "limits": {"commandsPerBeat": 1, "placementCandidates": 1, "spellCandidates": 1},
-                "composition": [{"definition": "unit.swordsman", "weight": 1}], "skillPreference": [],
-            },
         },
         "definitions": [
             definition("building.barracks", "building", building(500, json!({

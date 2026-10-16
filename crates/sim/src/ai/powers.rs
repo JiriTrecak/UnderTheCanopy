@@ -98,7 +98,6 @@ fn observed(f: &Frame, k: &Known) -> Option<Actor> {
 pub fn ability_actions(b: &mut Beat) {
     let f = b.f;
     let catalog = f.catalog();
-    let spells = f.input.spells;
     // What the player observes: its own living units and buildings and the hostiles in
     // sight.
     let mut seen: Vec<&Known> = f
@@ -127,21 +126,13 @@ pub fn ability_actions(b: &mut Beat) {
         let level = f.stats(k).map_or(1, |s| s.level);
         let rank_of = |index: usize| caster_state.ranks.get(index).copied().unwrap_or(0);
         // Learn through the ordinary command: newly unlocked ranks first, then breadth,
-        // then the race's declared preference; no ability names in the planner.
+        // then the order the hero lists its abilities in; no ability names in the planner.
         let spent: u32 = policy
             .bindings
             .iter()
             .enumerate()
             .map(|(index, d)| u32::from(rank_of(index).saturating_sub(d.initial_rank)))
             .sum();
-        let preference = |ability: library::AbilityId| {
-            let id = &spells.ability(ability).id;
-            f.rules
-                .skill_preference
-                .iter()
-                .position(|p| p == id)
-                .unwrap_or(usize::MAX)
-        };
         let learn = policy
             .bindings
             .iter()
@@ -153,7 +144,6 @@ pub fn ability_actions(b: &mut Beat) {
             .min_by(|a, b| {
                 b.2.cmp(&a.2)
                     .then(rank_of(a.0).cmp(&rank_of(b.0)))
-                    .then(preference(a.1.ability).cmp(&preference(b.1.ability)))
                     .then(a.0.cmp(&b.0))
             });
         if spent < level

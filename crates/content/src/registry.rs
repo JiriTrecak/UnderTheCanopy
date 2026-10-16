@@ -1060,36 +1060,20 @@ fn races(check: &mut Checker) {
         let setup = profile.starting_setup;
         let setup_ids = std::iter::once(&setup.fort)
             .chain(setup.units.iter().map(|u| &u.definition))
-            .chain(setup.hero.iter().flat_map(|h| &h.choices))
-            .chain(profile.ai.composition.iter().map(|c| &c.definition));
+            .chain(setup.hero.iter().flat_map(|h| &h.choices));
         for id in setup_ids {
             if foreign(profile.id, id.as_str()) {
-                check.fail(
-                    &location,
-                    format!("setup or AI references foreign unit {id}"),
-                );
+                check.fail(&location, format!("setup references foreign unit {id}"));
             }
         }
     }
-    let in_roster = |race: &str, id: &str| {
-        !profiles
-            .iter()
-            .any(|p| p.id != race && p.race.roster.iter().any(|r| r == id))
-            || profiles
-                .iter()
-                .any(|p| p.id == race && p.race.roster.iter().any(|r| r == id))
+    let defaults = [("default", &rules.starting_setup)];
+    let setups: Vec<(&str, &crate::game::StartingSetup)> = if profiles.is_empty() {
+        defaults.into_iter().collect()
+    } else {
+        profiles.iter().map(|p| (p.id, p.starting_setup)).collect()
     };
-    let defaults = [("default", &rules.starting_setup, rules.ai.clone())];
-    let setups: Vec<(&str, &crate::game::StartingSetup, crate::game::AiRules)> =
-        if profiles.is_empty() {
-            defaults.into_iter().collect()
-        } else {
-            profiles
-                .iter()
-                .map(|p| (p.id, p.starting_setup, p.ai.clone()))
-                .collect()
-        };
-    for (race, setup, ai) in setups {
+    for (race, setup) in setups {
         let location = format!("rules.races.{race}");
         let Some(fort) = check.definition(&location, setup.fort.as_str(), Kind::Building) else {
             continue;
@@ -1146,57 +1130,6 @@ fn races(check: &mut Checker) {
                 && !matches!(item.creation, Some(Creation::Harvest { .. }))
             {
                 check.fail(&location, "starting gather requires harvest recipe");
-            }
-        }
-        let (workers, army) = (&ai.workers, &ai.army);
-        if workers.minimum > workers.target
-            || workers.target > workers.maximum
-            || workers.reserve >= workers.minimum
-            || army.minimum > army.maximum
-        {
-            check.fail(&location, "rules.ai: inconsistent workforce/army limits");
-        }
-        check.unique(
-            &location,
-            ai.composition.iter().map(|c| c.definition.as_str()),
-            "AI composition",
-        );
-        check.unique(
-            &location,
-            ai.skill_preference.iter().map(|s| s.as_str()),
-            "AI skill preference",
-        );
-        for entry in &ai.composition {
-            let Some(unit) = check.definition(&location, entry.definition.as_str(), Kind::Unit)
-            else {
-                continue;
-            };
-            let recruitable = unit.behaviors.combat.is_some()
-                && matches!(unit.creation, Some(Creation::Train { .. }))
-                && content.definitions.iter().any(|building| {
-                    in_roster(race, building.id.as_str())
-                        && building
-                            .behaviors
-                            .production
-                            .as_ref()
-                            .is_some_and(|p| p.outputs.contains(&unit.id))
-                        && content.definitions.iter().any(|worker| {
-                            in_roster(race, worker.id.as_str())
-                                && worker
-                                    .behaviors
-                                    .work
-                                    .as_ref()
-                                    .is_some_and(|w| w.builds.contains(&building.id))
-                        })
-                });
-            if !recruitable {
-                check.fail(
-                    &location,
-                    format!(
-                        "rules.ai.composition: no buildable recruiter for {}",
-                        unit.id
-                    ),
-                );
             }
         }
     }

@@ -28,21 +28,21 @@ fn set_experience(world: &mut World, hero: u32, experience: u32) {
 }
 
 #[test]
-fn heroes_learn_new_ranks_first_then_by_the_race_preference() {
+fn heroes_learn_new_ranks_first_then_in_the_heros_order() {
     let mut world = world(&skirmish(vec![], vec![]), false);
     let hero = all_of(&world, P1, HERO)[0];
-    // Level 1: two abilities open at the same level and rank; the preference picks.
+    // Level 1: two abilities open at the same level and rank; the hero's first listed wins.
     run_until(&mut world, 100, |w| ranks(w, hero).iter().any(|&r| r > 0));
-    assert_eq!(ranks(&world, hero), [0, 1, 0]);
+    assert_eq!(ranks(&world, hero), [1, 0, 0]);
     run(&mut world, 60);
-    assert_eq!(ranks(&world, hero), [0, 1, 0], "one rank per level");
+    assert_eq!(ranks(&world, hero), [1, 0, 0], "one rank per level");
     // Level 2 unlocks the ward: newly unlocked ranks come before older ones.
     set_experience(&mut world, hero, 80);
     run_until(&mut world, 100, |w| ranks(w, hero)[WARD_BINDING] == 1);
-    assert_eq!(ranks(&world, hero)[SMITE_BINDING], 0);
+    assert_eq!(ranks(&world, hero)[RUSH_BINDING], 0);
     set_experience(&mut world, hero, 200);
-    run_until(&mut world, 100, |w| ranks(w, hero)[SMITE_BINDING] == 1);
-    assert_eq!(ranks(&world, hero)[RUSH_BINDING], 1);
+    run_until(&mut world, 100, |w| ranks(w, hero)[RUSH_BINDING] == 1);
+    assert_eq!(ranks(&world, hero)[SMITE_BINDING], 1);
 }
 
 #[test]

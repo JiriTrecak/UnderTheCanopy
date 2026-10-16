@@ -79,13 +79,6 @@ fn world() -> World {
                 "globalFallback": false, "soloHeroTierBonusPermille": []},
             "damageMultipliers": {"spell": {"plain": 1000}},
             "startingSetup": {"id": "setup.test", "fort": "building.test.fort", "inventory": {}, "units": []},
-            "ai": {"revision": 1, "decisionTicks": 1, "economyTicks": 1, "strategyTicks": 1,
-                "operationTicks": 1, "reactionTicks": 1, "orderIntervalTicks": 1,
-                "workers": {"minimum": 1, "target": 1, "maximum": 1, "reserve": 0},
-                "army": {"minimum": 0, "maximum": 1, "homeGuard": 0, "engagePermille": 0,
-                    "campPermille": 0, "retreatHealthPermille": 0, "pursuitRadius": 1},
-                "limits": {"commandsPerBeat": 1, "placementCandidates": 1, "spellCandidates": 1},
-                "composition": [], "skillPreference": ["ability.test.bolt"]}
         },
         "definitions": [
             {"id": "building.test.fort", "kind": "building", "name": "Fort", "description": "",
@@ -190,7 +183,6 @@ fn bindings_must_name_known_abilities() {
     let mut w = world();
     w.game["definitions"][1]["behaviors"]["abilities"]["bindings"][0]["ability"] =
         json!("ability.test.missing");
-    w.game["rules"]["ai"]["skillPreference"] = json!([]);
     assert_reports(
         &w,
         "unknown-ability",
@@ -221,17 +213,6 @@ fn summons_must_be_units() {
         &w,
         "summon",
         "summons require a unit definition (building.test.fort)",
-    );
-}
-
-#[test]
-fn ai_skill_preferences_must_be_learnable() {
-    let mut w = world();
-    w.game["rules"]["ai"]["skillPreference"] = json!(["ability.test.other"]);
-    assert_reports(
-        &w,
-        "skill-preference",
-        "rules.ai.skillPreference: unlearnable ability.test.other",
     );
 }
 
