@@ -109,6 +109,7 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
             colors: options.colors.clone(),
             biome: options.biome.as_deref(),
             human: None,
+            content: None,
         },
     )?;
 

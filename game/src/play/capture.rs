@@ -74,6 +74,7 @@ pub fn run(
             colors: options.colors.clone(),
             biome: options.biome.as_deref(),
             human: me,
+            content: None,
         },
     )?;
     let seat = me.map_or(Seat::Observer, Seat::Player);

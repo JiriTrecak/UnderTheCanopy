@@ -102,6 +102,7 @@ fn dev(
             gallery: false,
             colors: spec.colors.clone(),
             human: spec.human,
+            content: Some(data.content.clone()),
         },
     )?;
     progress(Stage::Gpu, 0.85);

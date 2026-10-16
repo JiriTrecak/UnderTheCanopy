@@ -29,6 +29,8 @@ pub struct MatchSpec<'a> {
     /// The local player's slot (a human on that start); `None` spectates computer
     /// players.
     pub human: Option<u8>,
+    /// The game data to play; read from the data folder when `None`.
+    pub content: Option<Arc<Content>>,
 }
 
 /// What the renderer draws of a map: the scene, its lighting and the asset pack.
@@ -93,10 +95,10 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
     let _span = tracing::info_span!("load_map", map = id).entered();
     let started = std::time::Instant::now();
     // A packaged game ships the cooked pack instead of `assets/library` (D26).
-    let content = if crate::data::is_packaged(&paths.data) {
-        Content::load_packaged(&paths.data)
-    } else {
-        Content::load(&paths.data)
+    let content = match &spec.content {
+        Some(content) => Ok((**content).clone()),
+        None if crate::data::is_packaged(&paths.data) => Content::load_packaged(&paths.data),
+        None => Content::load(&paths.data),
     };
     let content = Arc::new(content.map_err(|e| anyhow!("content: {e}"))?);
     // A map package's path instead of an id loads that package (tests and captures of maps

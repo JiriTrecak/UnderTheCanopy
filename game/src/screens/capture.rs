@@ -451,10 +451,19 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
     rig.until("the test match", Duration::from_secs(180), |g| {
         g.flow.in_match()
     })?;
-    let testing = rig.game.data.as_ref().context("data")?;
+    // The world itself plays the editor's data (not the files on disk).
+    let played = rig
+        .game
+        .playing
+        .as_ref()
+        .context("a match")?
+        .game
+        .play
+        .knowledge()
+        .content
+        .clone();
     anyhow::ensure!(
-        testing
-            .content
+        played
             .rules
             .races
             .get("ants")
