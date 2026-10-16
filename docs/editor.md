@@ -42,3 +42,14 @@ Design decisions for the native editor, agreed with Jiri milestone by milestone 
 **Built (2026-10-16): step 3, files changed on disk** (`watch.rs`, `notify`). A document without unsaved edits follows its file (its undo steps are dropped, as they were made against a version that is gone); one with unsaved edits becomes a conflict, and the editor asks which version to keep. Libraries are read again and the check reruns when files change; a file that is not valid JSON is reported and left alone.
 
 **Built (2026-10-16): step 4, schemas, forms, references** (`content/src/schema.rs`, `forms.rs`, `references.rs`, `tabs.rs`, `inspector.rs`). Every content type derives `schemars::JsonSchema` (hand-serialized types have hand-written schemas; ids are `format: canopy-id`); `schema::of_document` shapes them like the files. A tab shows its document as a form (or its JSON): fields in schema order, enums and tagged variants as menus, ids with a searchable picker, add and remove for optional fields, list entries and map keys, numbers that fold a drag into one undo step; documents without a schema (behaviour sets, biomes, maps for now) get a form from their values. Undo marks the field it changed. The inspector lists where the element's id is used; Rename id rewrites every use (values and keys, in place) in one step; Delete is refused while anything uses it; the library's + creates an element from its schema's required fields.
+
+## M3. The map editor (decided 2026-10-16)
+
+**Settled (Jiri, ahead of the build):**
+
+- **Brushes that change the terrain directly**, as in Warcraft III's editor: raise, lower, flatten, smooth, cliffs, paint. No editable landform objects for now. Procedural or stored objects ("paint a layer called island and get a good island") come later, once everything can be edited by hand.
+- **The finish line:** with these manual tools we can build Echo Isles, and M3 ends with a good, solid, playable 1v1 map authored in the editor with everything a map needs: creep camps, forests, resources.
+- **No symmetry tools** for now.
+- **Start locations** place the player's main hall location and its amber resources, properly oriented. Nothing more by rules yet.
+- **No new ground cover** (moving grass, decals, foliage) for now.
+- **Mission scripting is Lua.**
