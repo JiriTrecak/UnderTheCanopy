@@ -1,6 +1,6 @@
 # Runtime semantics
 
-How the deterministic simulation executes a definition. Authority: `src/sim/abilities/*` (`runtime.ts`, `recipients.ts`, `statuses.ts`, `reactions.ts`, `swarm.ts`, `ai.ts`). The simulation runs at 40 ticks/second. Presentation never changes these outcomes.
+How the deterministic simulation executes an ability. Authority: `crates/sim/src/abilities/` (`cast.rs`, `program.rs`, `deliveries.rs`, `persistent.rs`, `statuses.rs`, `reactions.rs`, `ai.rs`, `state.rs` for limits); unit bindings: `crates/content/src/abilities/definition.rs` (`AbilityCaster`, `AbilityBinding`) and `references.rs` (their rules). The simulation runs at 40 ticks/second. Presentation never changes these outcomes.
 
 ## Cast lifecycle (targeted abilities)
 
@@ -63,7 +63,7 @@ Each chosen recipient must still be alive, targetable, pass the operation filter
 
 - **Projectile**: launches from the caster and homes on the target's current position and height at `speed`/40 units per tick. It fizzles if the target dies, becomes untargetable, ineligible, immune or changes relation, or the caster's owner changes; it survives caster death. Arrival emits `impact` (origin = launch point), then runs `onRelease`. Lifetime cap 4000 ticks.
 - **Chain**: first hit one tick after release. Each hit emits `impact` with the previous hop as origin, runs `onRelease` at `power`, then picks the nearest visible eligible unit within `radius` of that hop that was not hit yet (and is injured with `skipFullHealth`), ID tie-break. Power is multiplied by `retentionPermille` per hop. Ends after `bounces` hits or when no candidate exists. Power scales heal/damage/drain/mana amounts only. `skipFullHealth` filters bounce candidates only; use a targeting condition to reject a full-health first target.
-- **Line**: travels from the caster toward the aim for `length` at `speed`; every tick it tests units within `width` of the swept segment (no tunnelling) using the targeting rules; each unit once, at most 128. `onRelease` runs per victim. No `impact` events: bind per-operation events (`damaged`, `statusApplied`). `targeting.radius` is required by the schema but not used by the line.
+- **Line**: travels from the caster toward the aim for `length` at `speed`; every tick it tests units within `width` of the swept segment (no tunnelling) using the targeting rules; each unit once, at most 128. `onRelease` runs per victim. No `impact` events: bind per-operation events (`damaged`, `statusApplied`). `targeting.radius` is neither required nor used.
 - **Charge**: moves the caster up to `speed`/40 per tick toward the target body; contact emits `impact` and runs `onRelease`. Obstruction by terrain or units, target lost/invisible/ineligible, caster stun/silence/root/death/owner change, an airborne caster or target, or `maxTicks` stops it with `cancelled`. The caster is busy while charging.
 - **Swarm**: `count` seekers launch every `launchIntervalTicks` (each emits `projectile`). A seeker picks a visible eligible enemy within `radius` of the caster (fewest seekers assigned up to `maxPerTarget`, then nearest, ID), bites every `attackIntervalTicks` (`impact` + `onRelease` on that enemy), and returns after `maxHitsPerTrip` bites, when carried health+mana reaches `returnThreshold`, or when no target remains. On reaching the caster it restores carried resources (`healed`/`manaRestored`) and emits `returned`. Drained resources are carried × `returnPermille`. After `durationTicks` no new bites; seekers still out are removed `returnTimeoutTicks` later. Caster death, removal, conversion or containment cancels all seekers. Seekers are untargetable deliveries, not units.
 - At most 512 deliveries exist in the world (each seeker counts); casts that would exceed it are rejected.
@@ -84,7 +84,7 @@ Every tick, before combat, each living passive holder applies its aura statuses 
 - Heroes use `heroDuration` when set. Stun and silence cancel an unreleased cast. A unit carries at most 32 spell statuses; further applications fail.
 - Removal: duration end, `breakOnDamage` on any damage, `onShieldDepleted: remove`, dispel (dispellable only), death, persistent instance end (`instance`), or never (`untilDeath`, until death).
 - Periodic damage is dealt by the original source/owner every `intervalTicks`; spell immunity suppresses it while active.
-- Modifiers resolve through the same stat path as equipment (preview `stats` show the result).
+- Modifiers resolve through the same stat path as equipment.
 - Forms: newest form wins; flight forms take off immediately, grounding searches nearby clear ground and stays airborne until space opens. Contained/garrisoned units cannot change movement.
 - Concealment: hidden from enemies `fadeTicks` after application; breaks on attack/cast when configured (cancelled windups do not reveal). Detection needs ordinary sight plus a `detectionRadius` status or a `vision` with `detectInvisible`.
 - Taunt: forces hostile combat units to attack the living source while it stays valid; respects perception, roots, stun, disarm, immunity; restores previous orders afterwards.
@@ -119,13 +119,18 @@ Every tick, before combat, each living passive holder applies its aura statuses 
 
 - AI casts only bindings with an `ai` policy and `ai` control; autocast also requires `ai` control. Each binding is considered every `ai.intervalTicks` (autocast: `autocast.intervalTicks`).
 - `ai.intent: utility` (default) scores every in-range eligible aim by predicting `onRelease` on observed copies: healing/damage/drain/mana by actual effect, status ±10 (0 if already present, fully control-immune, or a self buff with no enemies within 24 units), summons/splits only with nearby threats, conversion/containment by victim health, sacrifice as a cost. `preference` (`wounded-ally` or `enemy`) doubles the weight of that side. Teleport and vision score 0 under utility.
-- `intent: escape` (point self-teleport), `reinforce` (unit-anchored group teleport) and `scout` (point vision) pick tactical destinations instead; the registry rejects bindings whose spell does not match the intent.
+- `intent: escape` (point self-teleport), `reinforce` (unit-anchored group teleport) and `scout` (point vision) pick tactical destinations instead; the loader rejects bindings whose ability does not match the intent (`scout`: point aim with a `vision`; `escape`: point aim with a caster `teleport`; `reinforce`: unit aim with a queried `teleport`).
 - Prediction runs on copies of observed units in program order: drains credit the caster (clamped), mana grants to enemies count as a cost, mana burn reduces target health before later branch conditions, conversions change later relations, and swarm cargo is not counted as immediate healing. Landing, mitigation and unseen events remain estimates.
 - AI does not score persistent pulses, triggers or passive programs beyond the first release.
 
 ## Unit bindings (caster policy)
 
-`bind` writes `{maxMana ≥1, manaRegenPerSecond, bindings[1–12]}` on a unit definition. Each binding: `id` (`^[a-z][a-z0-9-]*$`), `ability`, `initialRank` 0–10 (≤ ability ranks; 0 = must be learned), `controls` (unique subset of `player`, `ai`, `scenario`), optional `command {hotkey, column 1–4 unique, icon?}` (requires `player`), optional `learning {requiredLevels}` (hero progression only, one increasing level per rank), optional `ai {intent?, preference, intervalTicks 1–400}` (requires `ai`). Passives need a binding with rank ≥1 to work; they have no button unless a command is given. Hidden AI abilities use the same definitions as player ones. Preserve unrelated bindings and the mana policy when editing.
+A unit gets abilities through `behaviors.abilities` in its definition: `{maxMana, manaRegenPerSecond, bindings}`.
+
+- `maxMana` > 0; `manaRegenPerSecond` ≥ 0, a multiple of 0.001. Only units may have abilities.
+- Each binding: `id` (unique on the unit, e.g. `nectar-mend`), `ability` (an existing ability id), `initialRank` (0 = must be learned first; at most the ability's rank count), `controls` (distinct subset of `player`, `ai`, `scenario`), optional `command {hotkey, column 1–4 unique per unit, icon?}` (requires `player`; `icon` an asset id, else the ability's icon), optional `learning {requiredLevels}` (needs hero `progression`: one increasing level per rank, within the progression's levels), optional `ai {intent?, preference: wounded-ally|enemy, intervalTicks > 0}` (requires `ai`).
+- Passives need a binding with rank ≥1 to work; they have no button unless a command is given. Hidden AI abilities use the same definitions as player ones.
+- A map or mod overriding `behaviors.abilities` replaces the `bindings` list whole (lists never merge): restate every binding the unit keeps.
 
 ## Limits
 

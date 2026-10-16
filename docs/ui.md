@@ -172,4 +172,4 @@ Paths include every ancestor with an id (`settings/graphics/shadows`); a path th
 
 ## Gallery
 
-`cargo run -p canopy-ui --example gallery` renders the HUD and every widget offscreen to `target/shots/ui-gallery.png` (`--size 2560x1440 --scale 2` for Retina). It decodes the art from `assets/library` (pull it with Git LFS); the game binds the pack's textures instead.
+`cargo run -p canopy-ui --example gallery` renders the HUD and every widget offscreen to `target/shots/ui-gallery.png` (`--size 2560x1440 --scale 2` for Retina). It decodes the art from the base package's asset folders (pull it with Git LFS); the game binds the pack's textures instead.

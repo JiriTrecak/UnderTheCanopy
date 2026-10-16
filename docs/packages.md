@@ -4,7 +4,7 @@ Agreed with Jiri, 2026-10-16 (D53). This is the data layer every later editor, t
 
 ## Packages
 
-Everything is a package: a folder for authoring and git, or a zip of the same tree for sharing. Every package has the same tree; kinds differ only in their manifest and extra files.
+Everything is a package: a folder for authoring and git, or (with map transfer, M5) a zip of the same tree for sharing. Every package has the same tree; kinds differ only in their manifest and extra files.
 
 | Kind | Form | Notes |
 |---|---|---|
@@ -48,8 +48,8 @@ Everything is a package: a folder for authoring and git, or a zip of the same tr
 
 ## Schemas, validation, versions
 
-- The Rust types are the only definition of every format. JSON Schemas are generated from them (`schemas/`, checked by a test to be current) for the editor's forms, MCP tools and agents.
-- Authoring limits (ranges, D12) become schema annotations the loader enforces.
+- The Rust types are the only definition of every format (strict: unknown fields are errors, and every error names its file). JSON Schemas generated from them for the editor's forms, MCP tools and agents, and the authoring limits (ranges, D12) as schema annotations the loader enforces, are **not done yet**: they need the `schemars` crate and come with the editor shell (M1), where forms and MCP tools consume them.
+- Until then the agent skills (below) are the format reference; a test parses their examples against the Rust types.
 - Each package records its format version. Old packages are upgraded by migrations in Rust, so players' maps survive our format changes.
 
 ## The base package tree
@@ -134,7 +134,8 @@ The terrain data stays what it is today; only the container changes. Map data wi
 ## Where packages live
 
 - The base package ships inside the app, read-only. Developer mode (`--data <repository>`) edits the repository's.
-- The user folder (the OS data directory, D6) gains `maps/` (the player's own) and `downloads/` (received, stored by hash); `mods/` later. The game reads folders and zips alike.
+- The user folder (the OS data directory, D6) holds `maps/` (the player's own, created at start) and `downloads/` (received); `mods/` later. The menus list them after the shipped maps; a map whose id is already taken is left out with a warning.
+- Packages are folders today. Reading a package from a zip of the same tree comes with multiplayer map transfer (M5), where maps start to travel.
 
 ## The match server
 
@@ -185,4 +186,4 @@ The worker's folder holds the carried wood, amber and root models: they become t
 
 ## Agent skills
 
-M0 ships skills (`.claude/skills/`) that describe the formats for agents: packages and layering; definitions (units, buildings, items, research, races, rules); abilities and effects (from the spell studio's authoring reference); assets; maps. Their examples are parsed by a test, so a skill cannot drift from the code.
+Skills in `.claude/skills/` describe the formats for agents: `canopy-packages` (packages and layering), `canopy-definitions` (units, buildings, items, research, races, rules), `canopy-abilities` (abilities and effects, from the spell studio's authoring reference), `canopy-assets` (asset folders, scenery, landscape), `canopy-maps` (map packages). Every example tagged with a kind (```` ```json unit ````) is parsed by `crates/content/tests/skills.rs`, so a skill cannot drift from the code.

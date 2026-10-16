@@ -1,6 +1,8 @@
 # Operation reference
 
-Every entry in `onRelease`, a trigger's `operations`, a branch arm or `statuses` is one of these `op` values. Recipient fields (`target`, `query`, `filter`) are described in `definition`; how recipients are chosen at runtime is in `runtime`. The event column names the presentation event emitted per successful recipient (none for aura refreshes).
+Authority: `crates/content/src/abilities/operations.rs` (fields), `abilities/rules.rs` (cross-field rules), `crates/content/src/items.rs` (fixed modifiers); runtime in `crates/sim/src/abilities/`.
+
+Every entry in `onRelease`, a trigger's `operations`, a branch arm or `statuses` is one of these `op` values. Recipient fields (`target`, `query`, `filter`) are described in `definition.md`; how recipients are chosen at runtime is in `runtime.md`. The event column names the presentation event emitted per successful recipient (none for aura refreshes).
 
 | op | Purpose | Event |
 |---|---|---|
@@ -26,7 +28,7 @@ Every entry in `onRelease`, a trigger's `operations`, a branch arm or `statuses`
 Shared fields: `target`, `query?`, `filter?`, `amount`, `scale?`, `record?`.
 
 - `heal`: clamps at max health; never affects dead units.
-- `damage`: requires `damageType`, a registered type (`catalog.damageTypes`; currently `melee`, `piercing`, `hero`, `siege` use armor, `spell` ignores armor). Mitigation order: damage immunity and the strongest `damageTakenPermille` increase/decrease → armor-class matchup and armor (types with `appliesArmor`) → `invulnerable` and item shields → mana shields → finite spell shields → health. Lethal hits use ordinary death, loot, experience and kill credit.
+- `damage`: requires `damageType`, a key of `damageTypes` in `rules/combat.json` (currently `melee`, `piercing`, `hero`, `siege` apply armour, `spell` ignores it). Mitigation order: damage immunity and the strongest `damageTakenPermille` increase/decrease → armor-class matchup and armor (types with `appliesArmor`) → `invulnerable` and item shields → mana shields → finite spell shields → health. Lethal hits use ordinary death, loot, experience and kill credit.
 - `drain`: `resource: health|mana`, `restoreCaster`, `damageType`, `damagePerDrainedPermille` 0–2000 (default 0). Health drain is ordinary damage of `damageType` and transfers the damage actually dealt. Mana drain removes up to the recipient's mana; with `damagePerDrainedPermille` it also deals `floor(drained × permille / 1000)` damage (mana burn). `restoreCaster` gives the actual amount to a living caster that still has the original owner (clamped). In a swarm, restoration is carried home instead.
 - `mana`: grants mana up to the recipient's capacity minus any reserved cast cost. Units without mana pools gain nothing.
 - Chain retention multiplies these four amounts per hop (not status durations).
@@ -72,7 +74,7 @@ Shared fields: `target`, `query?`, `filter?`, `amount`, `scale?`, `record?`.
 | `periodic` | `{intervalTicks ≥1, damage, damageType}`: damage every interval, first tick one interval after application. |
 | `concealment` | `{fadeTicks 0–400, breakOnAttack, breakOnCast, attackBonus (0)}`: hidden from enemies after the fade unless detected; allies see a faded model. `attackBonus` is added to the revealing attack. Area effects still hit concealed units. |
 | `detectionRadius` | 1–64: reveals concealed enemies within radius (needs ordinary sight). |
-| `form` | `{asset?, scale 0.25–3 (1), opacity 0.1–1 (1), combatProfile?, movement?}`. `asset` is a published model asset ID (`catalog.models`). `combatProfile` is an armed unit definition that supplies weapon damage/range/timing/projectile. `movement: {locomotion: ground\|air, flightHeight 1–30 (air only)}` changes navigation, collision class and targeting; ground forces landing. Latest form wins; expiry reveals the previous/original form. Body size never changes. Units only. |
+| `form` | `{asset?, scale 0.25–3 (1), opacity 0.1–1 (1), combatProfile?, movement?}`. `asset` is a model asset id (an asset with geometry). `combatProfile` is an armed unit definition that supplies weapon damage/range/timing/projectile. `movement: {locomotion: ground\|air, flightHeight 1–30 (air only)}` changes navigation, collision class and targeting; ground forces landing. Latest form wins; expiry reveals the previous/original form. Body size never changes. Units only. |
 | `combatModifiers` | Same policies as the top-level field, active while the status lasts. |
 | `stacking` | `{max 2–16, scope: source\|ability}`: each application adds a stack (to max) and refreshes the duration; numeric modifiers multiply by stacks. `source` keeps a stack count per caster; overlapping sources use the strongest value per modifier. Only plain `duration` statuses without form, periodic, shields, mana shield, combat modifiers, concealment, and not in aura abilities. |
 | `sourceAttackBonus` | Flat bonus per stack to later primary weapon attacks from this status's source (same owner) against the holder, before armor. Requires `stacking.scope: source`. |
@@ -81,7 +83,7 @@ Fixed `modifiers` keys (from item modifiers): `maxHp` ≥0, `maxMana` ≥0, `dam
 
 Application rules: control components, forms, concealment and ethereal apply only to units. A unit holds at most 32 spell statuses. Recipients behind spell immunity reject the whole operation.
 
-Statuses are also how other units carry this ability's `triggers`: a trigger with `whileStatus` runs for whoever currently holds that status (see `runtime`).
+Statuses are also how other units carry this ability's `triggers`: a trigger with `whileStatus` runs for whoever currently holds that status (see `runtime.md`).
 
 ## dispel
 
@@ -91,9 +93,9 @@ Statuses are also how other units carry this ability's `triggers`: a trigger wit
 
 | Field | Meaning |
 |---|---|
-| `target` | `caster`, `target` (the aim unit; for point aims the default area units) or `point` (once at the aim). With `query`, one group per selected recipient. |
+| `target` | `caster`, `target` (the aim unit; for point aims the default area units) or `point` (once at the aim). With `query`, one group per selected recipient. Summon has no `filter`. |
 | `amount` | Units per group, 0–8. |
-| `definition` | Unit definition ID or `{byRank}` (`catalog.units`). |
+| `definition` | Unit definition id or `{byRank}`; must be a unit definition (`units/`). |
 | `durationTicks` | Omit for permanent; otherwise 1–144,000. |
 | `replace` | Remove this caster's previous summons from this ability once a new unit is placed. |
 | `radius` | 1–12: placement ring around the group centre. |
@@ -102,15 +104,15 @@ Statuses are also how other units carry this ability's `triggers`: a trigger wit
 | `grants` | ≤8 template IDs applied to each created unit (bypassing spell immunity for that initial grant). |
 | `corpses` | `{radius, relations ⊆ ally/enemy/neutral, filter?, order: nearest\|strongest, maxTargets}`: create one group per consumed visible corpse instead. `target` must be `caster` or `point`, no query, `amount × maxTargets ≤ 8`. |
 
-Summons belong to the caster's owner (and neutral camp) and are flagged `summoned`. Creation checks only the hard unit limit, but a living summon's `supplyCost` then counts as used supply, so summon-only unit definitions normally have zero supply. Unit definitions are game content: the spell tools can reference them but not create them. A group that cannot be placed consumes nothing and replaces nothing. A summoned unit with `grants` that carry triggers becomes a holder of those triggers (factories, death bursts).
+Summons belong to the caster's owner (and neutral camp) and are flagged `summoned`. Creation checks only the hard unit limit, but a living summon's `supplyCost` then counts as used supply, so summon-only unit definitions normally have zero supply. Summoned units are ordinary unit definitions; add one under `units/` when needed (skill canopy-definitions). A group that cannot be placed consumes nothing and replaces nothing. A summoned unit with `grants` that carry triggers becomes a holder of those triggers (factories, death bursts).
 
 ## resurrect
 
-`{target: caster|point, amount 1–8, corpses {radius, relations, filter?, order}, healthPermille 1–1000, manaPermille 0–1000, placementRadius 0–12, supply: require|allow-over-cap (require), ownership?: original|caster (original), durationTicks?, grants?}`. Raises up to `amount` visible corpses near the anchor with fresh entity IDs, keeping definition, progression and learned ranks (not inventory or statuses). `ownership: caster` + `durationTicks` makes temporary reanimated units (flagged summoned; leave no corpse). Corpses persist 2400 ticks; heroes, summons, mechanical and contained units leave none. `strongest` orders by level, then max health, distance, ID. `allow-over-cap` ignores supply, never the hard unit limit.
+`{target: caster|point, amount 1–8, corpses {radius, relations, filter?, order}, healthPermille 1–1000, manaPermille 0–1000, placementRadius 0–12, supply: require|allow-over-cap (require), ownership?: original|caster (original), durationTicks?, grants?}`. Raises up to `amount` visible corpses near the anchor with fresh entity IDs, keeping definition, progression and learned ranks (not inventory or statuses). `ownership: caster` + `durationTicks` makes temporary reanimated units (flagged summoned; leave no corpse). Corpses persist 2400 ticks; heroes, summons, mechanical and contained units leave none. `strongest` orders by level, then max health, distance, ID. `allow-over-cap` ignores supply, never the hard unit limit. No `query` or `filter`: the type has a `query` field but the rules reject it; select corpses with `corpses` (and its `filter`).
 
 ## revive
 
-Only inside a `death` trigger without `executor`: `{id, target: "caster", amount (delay ticks ≥1), healthPermille 1–1000, manaPermille 0–1000, placementRadius 0–12, placementWaitTicks 0–1200 (400)}`. Schedules the same fallen hero to return at its death point with identity, items and progression. Blocked placement retries until the wait expires, then the hero stays fallen. Owner change cancels it. Pair with trigger `cooldownTicks` for a once-per-N rule.
+Only inside a `death` trigger without `executor`: `{id, target: "caster", amount (delay ticks ≥1), healthPermille 1–1000, manaPermille 0–1000, placementRadius 0–12, placementWaitTicks 0–1200 (400)}`. Schedules the same fallen hero to return at its death point with identity, items and progression. Blocked placement retries until the wait expires, then the hero stays fallen. Owner change cancels it. Pair with trigger `cooldownTicks` for a once-per-N rule. The `query` field parses but is rejected.
 
 ## split
 
@@ -122,7 +124,7 @@ Only inside a `death` trigger without `executor`: `{id, target: "caster", amount
 
 ## vision
 
-`{id, target: point|caster|target, amount (lifetime), radius 1–64, ignoreTerrain, detectInvisible (false), endsWithCaster}`. Creates a fixed sensor at the anchor's position at creation (it does not follow units), sharing team sight and fog exploration. At most 256 active world sensors. Use with `targeting.visible: false` to scout unseen ground.
+`{id, target: point|caster|target, amount (lifetime), radius 1–64, ignoreTerrain, detectInvisible (false), endsWithCaster}`. Creates a fixed sensor at the anchor's position at creation (it does not follow units), sharing team sight and fog exploration. At most 256 active world sensors. Use with `targeting.visible: false` to scout unseen ground. The `query` field parses but is rejected: a vision is one sensor at its anchor.
 
 ## convert
 

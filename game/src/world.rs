@@ -108,7 +108,7 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
     {
         map::package::load(path).map_err(|e| anyhow!("{e}"))?
     } else {
-        let library = map::library(&paths.data).map_err(|e| anyhow!("maps: {e}"))?;
+        let library = crate::data::map_files(paths)?;
         let file = library.iter().find(|m| m.id == id).with_context(|| {
             let ids: Vec<&str> = library.iter().map(|m| m.id.as_str()).collect();
             format!("no map {id} (maps: {})", ids.join(", "))

@@ -28,7 +28,7 @@ Commands are only `Action`s sent through the session (D10); the HUD never touche
 
 ## Controls
 
-Default keys follow the content (`content/game.json` `actions`, categories and navigation) and the old shortcut catalogue. Keys are physical (the old `KeyboardEvent.code`). The engine's keys below (camera, menu, cancel, heroes, groups, selection, placement, inventory, health holds, debug, hide HUD) follow the player's bindings (Settings → Keyboard, `play/keys.rs`, D39); the table lists the defaults. Command hotkeys come from the content and are matched after them.
+Default keys follow the content (`base/rules/commands.json`: actions, categories and navigation) and the old shortcut catalogue. Keys are physical (the old `KeyboardEvent.code`). The engine's keys below (camera, menu, cancel, heroes, groups, selection, placement, inventory, health holds, debug, hide HUD) follow the player's bindings (Settings → Keyboard, `play/keys.rs`, D39); the table lists the defaults. Command hotkeys come from the content and are matched after them.
 
 | Input | Does | Parity |
 |---|---|---|

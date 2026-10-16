@@ -1,4 +1,4 @@
-> **Reference only.** These pages describe the old TypeScript game in `settlers-web` (`../Settlers 3 Web`). They are the behaviour specification for the Rust rebuild. File paths and implementation notes refer to that repository; links to its code don't resolve here.
+> **Reference only.** These pages describe the old TypeScript game in `settlers-web` (`../Settlers 3 Web`). They are the behaviour specification for the Rust rebuild. File paths and implementation notes refer to that repository; links to its code don't resolve here. Data paths (`content/game.json`, `assets/…`, `.utcmap`) are the old layout; today's content is in packages (`base/`, [packages](../packages.md)).
 
 # Documentation
 

@@ -432,6 +432,10 @@ pub struct EffectBinding {
 /// Parses every effect (sorted by id) and checks the format's rules.
 pub(crate) fn read(elements: Vec<Element>, errors: &mut Vec<Error>) -> Option<Vec<VisualEffect>> {
     let before = errors.len();
+    let files: std::collections::BTreeMap<String, String> = elements
+        .iter()
+        .map(|e| (e.id.clone(), e.file.clone()))
+        .collect();
     let effects: Vec<VisualEffect> = elements
         .into_iter()
         .filter_map(|e| e.parse(errors))
@@ -439,7 +443,7 @@ pub(crate) fn read(elements: Vec<Element>, errors: &mut Vec<Error>) -> Option<Ve
     if errors.len() != before {
         return None;
     }
-    rules::check(&effects, errors);
+    rules::check(&effects, &files, errors);
     Some(effects)
 }
 

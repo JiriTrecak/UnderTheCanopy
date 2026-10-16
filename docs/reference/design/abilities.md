@@ -1,6 +1,6 @@
 # Declarative abilities
 
-Abilities are published content executed by one shared, deterministic interpreter. Usage, authoring and publication: [Spell & Effect Studio](../expansion/spell-effects.md). Field-level semantics: `tooling/spell-editor/agent-app/author-spells/reference/`.
+Abilities are published content executed by one shared, deterministic interpreter. Usage, authoring and publication: [Spell & Effect Studio](../expansion/spell-effects.md). Field-level semantics: `tooling/spell-editor/agent-app/author-spells/reference/` (in this repository: [the canopy-abilities skill](../../../.claude/skills/canopy-abilities/SKILL.md)).
 
 ## Principles
 

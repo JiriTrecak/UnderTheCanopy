@@ -1,4 +1,5 @@
-//! Finding the game's maps: map packages (`<id>.utcm`) in the base package's `maps/`.
+//! Finding maps: map packages (`<id>.utcm`) in the base package's `maps/`, and in any
+//! other folder (a player's own maps and downloads, [`folder`]).
 
 use super::UtcMap;
 use crate::error::{Error, Errors};
@@ -15,7 +16,7 @@ pub const MAP_GROUPS: [&str; 3] = ["campaign", "skirmish", "showcase"];
 pub struct MapFile {
     /// The package id, unique across all groups.
     pub id: String,
-    /// One of [`MAP_GROUPS`].
+    /// One of [`MAP_GROUPS`], or the group a [`folder`] was read as.
     pub group: &'static str,
     /// The package folder relative to the data folder, `/`-separated.
     pub file: String,
@@ -34,6 +35,28 @@ impl MapFile {
         package
             .digest()
             .map_err(|e| Errors(vec![Error::new(&self.file, "", e.to_string())]))
+    }
+}
+
+/// Map packages anywhere below `dir` (a player's maps or downloads), sorted by id, as
+/// `group`; a missing folder has none.
+pub fn folder(dir: &Path, group: &'static str) -> Result<Vec<MapFile>, Errors> {
+    let mut maps = Vec::new();
+    let mut errors = Vec::new();
+    if dir.is_dir() {
+        collect(
+            dir,
+            &dir.display().to_string(),
+            group,
+            &mut maps,
+            &mut errors,
+        );
+    }
+    maps.sort_by(|a: &MapFile, b| a.id.cmp(&b.id).then(a.file.cmp(&b.file)));
+    if errors.is_empty() {
+        Ok(maps)
+    } else {
+        Err(Errors(errors))
     }
 }
 

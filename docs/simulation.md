@@ -45,7 +45,7 @@ One function per system, called in a fixed order (from the old game, `Game.tick`
 
 ## Map
 
-`World::new` compiles the `.utcmap`: decodes terrain grids, rounds heights to centimetres, derives walkability (ground at least 60 cm above water), bridge decks and scenery blockers, and projects harvestable scenery objects into resource placements (first object per cell wins). Then it creates entities from placements in placement-id order and adds each player's starting setup.
+`World::new` compiles the map: decodes terrain grids, rounds heights to centimetres, derives walkability (ground at least 60 cm above water), bridge decks and scenery blockers, and projects harvestable scenery objects into resource placements (first object per cell wins). Then it creates entities from placements in placement-id order and adds each player's starting setup.
 
 ## Lua
 

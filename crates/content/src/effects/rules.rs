@@ -4,15 +4,19 @@ use super::{Pulse, Shape, VisualEffect, VisualLayer};
 use crate::error::Error;
 use std::collections::BTreeSet;
 
-const FILE: &str = "effects";
-
 /// Checks every effect; reports each problem once, attributed to the effect or layer.
-pub(crate) fn check(effects: &[VisualEffect], errors: &mut Vec<Error>) {
+/// `files` maps effect ids to the file that authored them; errors name it.
+pub(crate) fn check(
+    effects: &[VisualEffect],
+    files: &std::collections::BTreeMap<String, String>,
+    errors: &mut Vec<Error>,
+) {
     let mut ids = BTreeSet::new();
     for effect in effects {
         let at = effect.id.as_str();
+        let file = files.get(at).map_or("effects", String::as_str);
         let mut fail = |location: &str, message: &str| {
-            errors.push(Error::new(FILE, location, message));
+            errors.push(Error::new(file, location, message));
         };
         if !ids.insert(at) {
             fail(at, "Duplicate effect ID");
@@ -265,6 +269,7 @@ mod tests {
         let mut errors = Vec::new();
         check(
             &[first, effect("effect.test.glow"), effect("spark.test")],
+            &std::collections::BTreeMap::new(),
             &mut errors,
         );
         let messages: Vec<_> = errors.iter().map(|e| e.message.as_str()).collect();

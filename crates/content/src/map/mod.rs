@@ -23,7 +23,7 @@ pub use authoring::{
     HEIGHT_MIN, HeightMode, PaintLayer, SavedScene, TerrainData, TextureGrid, TextureLayout,
     WaterFlow, decode_base64, decode_floats,
 };
-pub use library::{MAP_GROUPS, MAPS_FOLDER, MapFile, library};
+pub use library::{MAP_GROUPS, MAPS_FOLDER, MapFile, folder, library};
 pub use mission::{Mission, Objective, Presentation, Region};
 pub use stamp::{SourceTransform, Stamp, StampVariant, Walk, WalkConnections, WalkMesh};
 pub use validate::validate;

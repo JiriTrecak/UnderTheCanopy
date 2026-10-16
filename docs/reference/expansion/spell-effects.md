@@ -18,7 +18,7 @@ The strict schemas (`src/content/abilities/schema.ts`, `src/content/effects/sche
 - **Statuses and modifiers:** timed or until-death statuses, stacking and refresh, shields, damage/control/spell immunity, concealment and detection, forms (appearance, weapon profile, flight), weapon modifiers (critical strike, evasion, cleave, mana-paid attack bonuses, impact marks), and death, kill, weapon-release and interval triggers.
 - **AI and autocast:** observed-information scoring through the same targeting and admission rules as players.
 
-The authoritative field-by-field description is the spell skill reference in `tooling/spell-editor/agent-app/author-spells/reference/` (definition, operations, runtime, presentation, validated examples). `studio_schema` serves it as sections `reference` and `reference.<topic>`. Update that reference when engine capabilities change, and re-validate every `json` block against the real schemas (illustrative fragments use `jsonc`).
+The authoritative field-by-field description is the spell skill reference in `tooling/spell-editor/agent-app/author-spells/reference/` (definition, operations, runtime, presentation, validated examples; in this repository it lives on as [the canopy-abilities skill](../../../.claude/skills/canopy-abilities/SKILL.md)). `studio_schema` serves it as sections `reference` and `reference.<topic>`. Update that reference when engine capabilities change, and re-validate every `json` block against the real schemas (illustrative fragments use `jsonc`).
 
 Out of scope: terrain/destructible interactions, resource-reward operations, modifiers to other abilities' costs or cooldowns, arbitrary actor/socket motion ribbons, downloadable packs and active-match hot replacement.
 

@@ -38,13 +38,13 @@ Phase 1 is done when the parity checklist against the old game is complete.
 - Technical decisions that change neither look nor behaviour are made by the implementer and recorded in [decisions](decisions.md).
 - Each milestone starts with its open questions.
 
-## Data during phase 1
+## Data
 
-This repository holds the only copy of the data (D47). The editors still run from the old repository, whose `content/`, `assets/` and `art/` are links to this repository's, so they author here directly. **The formats stay identical**: no conversion, no reorganisation. New fields or a format redesign wait until the editors move here.
+All content is in packages ([packages](packages.md), D53), the base game in `base/`. The old TypeScript editors no longer read it; until the native editor (phase 2) exists, content is edited as files, by hand or by agents with the `canopy-*` skills.
 
 ## The old repository
 
-`settlers-web` (`../Settlers 3 Web`) stays runnable and is the reference for behaviour and looks. It keeps hosting the editors until they are ported; it no longer holds data, and the match server moved to `server/` (D48). Nothing is copied from its code; read or run it to answer "what does the game do here".
+`settlers-web` (`../Settlers 3 Web`) stays runnable and is the reference for behaviour and looks. It no longer holds data, its editors no longer read this repository's content (D53), and the match server moved to `server/` (D48). Nothing is copied from its code; read or run it to answer "what does the game do here".
 
 ## Phase 2: one editor, and players' content
 
@@ -54,7 +54,7 @@ Agreed with Jiri, 2026-10-16. One native Rust editor shipped inside the game, us
 
 | Candidate | Scope to discuss |
 |---|---|
-| **M0. Data layer** (current) | Packages and layering (base, campaign, map; mods later), one file per definition, overrides and inheritance, schemas from the Rust types, the asset registry, the map format, user folders, content identity, migration of today's data. |
+| **M0. Data layer** (done, D53) | Packages and layering (base, campaign, map; mods later), one file per definition, overrides and inheritance, schemas from the Rust types, the asset registry, the map format, user folders, content identity, migration of today's data. |
 | M1. Editor shell | Home screen, tabs, command bus with undo, MCP and a headless mode, the viewport on the game renderer, reload of content and assets. |
 | M2. Data editors | Units and heroes, buildings, items, abilities (the spell editor) and effects, linked to each other. |
 | M3. Map editor | Rebuilt around large-scale tools: symmetric and rotational map halves, shaping whole landforms ("an island here"), start locations that place their mine and forest by rules, and a new look for ground cover (moving grass, decals, foliage). |

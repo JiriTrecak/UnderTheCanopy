@@ -20,6 +20,11 @@ pub struct Paths {
     pub cache: PathBuf,
 }
 
+/// The player's own map packages, in the user folder.
+pub const USER_MAPS: &str = "maps";
+/// Map packages received from other players, in the user folder.
+pub const DOWNLOADED_MAPS: &str = "downloads";
+
 impl Paths {
     pub fn resolve(data_override: Option<PathBuf>) -> Result<Self> {
         let exe = std::env::current_exe().context("cannot locate the game executable")?;
@@ -29,7 +34,7 @@ impl Paths {
         let dirs = directories::ProjectDirs::from("com", "jt", "canopy")
             .context("cannot locate the user data folder")?;
         let user = dirs.data_dir().to_path_buf();
-        std::fs::create_dir_all(&user)
+        std::fs::create_dir_all(user.join(USER_MAPS))
             .with_context(|| format!("cannot create {}", user.display()))?;
         Ok(Self {
             data,

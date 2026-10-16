@@ -142,7 +142,7 @@ impl GameData {
         )
         .sha256;
         progress(BootStage::Maps, 0.8);
-        let maps = load_maps(&paths.data, &pack)?;
+        let maps = load_maps(paths, &pack)?;
         progress(BootStage::Maps, 1.0);
         tracing::info!(
             packaged,
@@ -204,8 +204,33 @@ impl GameData {
     }
 }
 
-fn load_maps(data: &Path, pack: &Pack) -> Result<Vec<MapEntry>> {
-    let files = map::library(data).map_err(|e| anyhow!("maps: {e}"))?;
+/// Every map the game offers: the base package's, then the player's own (`maps/` in the
+/// user folder) and downloaded ones. A player's map with the id of an earlier one is left
+/// out with a warning.
+pub fn map_files(paths: &Paths) -> Result<Vec<MapFile>> {
+    let mut files = map::library(&paths.data).map_err(|e| anyhow!("maps: {e}"))?;
+    for (folder, group) in [
+        (crate::paths::USER_MAPS, "custom"),
+        (crate::paths::DOWNLOADED_MAPS, "downloaded"),
+    ] {
+        match map::folder(&paths.user.join(folder), group) {
+            Ok(found) => {
+                for file in found {
+                    if files.iter().any(|f| f.id == file.id) {
+                        tracing::warn!(map = %file.file, "a map with this id already exists; skipped");
+                    } else {
+                        files.push(file);
+                    }
+                }
+            }
+            Err(error) => tracing::warn!(%error, "player maps"),
+        }
+    }
+    Ok(files)
+}
+
+fn load_maps(paths: &Paths, pack: &Pack) -> Result<Vec<MapEntry>> {
+    let files = map_files(paths)?;
     let mut maps = Vec::new();
     for file in files {
         match MapEntry::from_package(file, pack) {
@@ -215,4 +240,56 @@ fn load_maps(data: &Path, pack: &Pack) -> Result<Vec<MapEntry>> {
     }
     maps.sort_by(|a, b| a.name.cmp(&b.name).then(a.id().cmp(b.id())));
     Ok(maps)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Copies the map package `from` to `to`, giving it package id `id`.
+    fn copy_map(from: &Path, to: &Path, id: &str) {
+        for entry in std::fs::read_dir(from).unwrap() {
+            let entry = entry.unwrap();
+            let target = to.join(entry.file_name());
+            if entry.file_type().unwrap().is_dir() {
+                std::fs::create_dir_all(&target).unwrap();
+                copy_map(&entry.path(), &target, id);
+            } else {
+                std::fs::create_dir_all(to).unwrap();
+                std::fs::copy(entry.path(), &target).unwrap();
+            }
+        }
+        let manifest = to.join("package.json");
+        if manifest.is_file() {
+            let mut value: serde_json::Value =
+                serde_json::from_str(&std::fs::read_to_string(&manifest).unwrap()).unwrap();
+            value["id"] = serde_json::json!(id);
+            std::fs::write(&manifest, value.to_string()).unwrap();
+        }
+    }
+
+    #[test]
+    fn players_maps_join_the_base_maps() {
+        let data = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+        let base = map::library(&data).unwrap();
+        let user = std::env::temp_dir().join(format!("canopy-user-maps-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&user);
+        let maps = user.join(crate::paths::USER_MAPS);
+        copy_map(&base[0].path, &maps.join("mine.utcm"), "mine");
+        copy_map(&base[0].path, &maps.join("again.utcm"), base[0].id.as_str());
+        let paths = Paths {
+            data: data.clone(),
+            user,
+            cache: std::env::temp_dir(),
+        };
+        let files = map_files(&paths).unwrap();
+        let mine = files
+            .iter()
+            .find(|f| f.id == "mine")
+            .expect("the player's map");
+        assert_eq!(mine.group, "custom");
+        mine.load().unwrap_or_else(|e| panic!("{e}"));
+        // The copy that reuses a base map's id is left out.
+        assert_eq!(files.len(), base.len() + 1);
+    }
 }
