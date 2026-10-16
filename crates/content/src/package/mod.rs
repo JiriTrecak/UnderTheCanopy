@@ -32,7 +32,9 @@ pub const MAP_EXTENSION: &str = "utcm";
 /// Extension of a campaign package folder (or its zip).
 pub const CAMPAIGN_EXTENSION: &str = "utcc";
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, schemars::JsonSchema,
+)]
 #[serde(rename_all = "camelCase")]
 pub enum PackageKind {
     /// The shipped game; the bottom layer of every load.
@@ -43,7 +45,7 @@ pub enum PackageKind {
 }
 
 /// `package.json`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Manifest {
     /// Package format version ([`FORMAT`]).

@@ -54,6 +54,27 @@ pub(crate) fn trimmed_name<'de, D: Deserializer<'de>>(deserializer: D) -> Result
     Ok(trimmed.to_string())
 }
 
+impl schemars::JsonSchema for True {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "True".into()
+    }
+
+    fn json_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        let _ = &generator;
+        schemars::json_schema!({"const": true})
+    }
+}
+
+impl<const N: u32> schemars::JsonSchema for Exactly<N> {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        format!("Exactly{N}").into()
+    }
+
+    fn json_schema(_: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        schemars::json_schema!({"const": N})
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

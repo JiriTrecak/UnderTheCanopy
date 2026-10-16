@@ -15,7 +15,7 @@ fn yes() -> bool {
     true
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum Activation {
     Targeted,
@@ -25,7 +25,7 @@ pub enum Activation {
 /// A single enhanced normal weapon attack, using weapon timing and the cast's mana and
 /// cooldown.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct WeaponCast {
     pub bonus: Amount,
@@ -33,7 +33,7 @@ pub struct WeaponCast {
     pub status: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum PersistentAnchor {
     Point,
@@ -43,7 +43,7 @@ pub enum PersistentAnchor {
 
 /// A lasting instance that runs the release program every `interval_ticks`.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Persistent {
     pub duration_ticks: Amount,
@@ -60,7 +60,7 @@ pub struct Persistent {
 
 /// How the release reaches its recipients.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Delivery {
     /// The grounded caster runs at a unit; release operations apply only on contact.
@@ -99,21 +99,21 @@ pub enum Delivery {
     Line { speed: f64, length: f64, width: f64 },
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Aura {
     pub radius: f64,
     pub melee_only: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Autocast {
     pub interval_ticks: u32,
     pub enabled_by_default: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum TargetingKind {
     Unit,
@@ -124,7 +124,7 @@ pub enum TargetingKind {
 }
 
 /// The literal `"reject"`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum OutOfRange {
     Reject,
@@ -132,7 +132,7 @@ pub enum OutOfRange {
 
 /// What the ability may be aimed at.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Targeting {
     pub condition: Option<AbilityCondition>,
@@ -151,7 +151,7 @@ pub struct Targeting {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Channel {
     pub waves: Amount,
@@ -160,35 +160,35 @@ pub struct Channel {
 }
 
 /// The literal `"mana"`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum CostResource {
     Mana,
 }
 
 /// The literal `"release"`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum AtRelease {
     Release,
 }
 
 /// The literal `"ability"`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum CooldownScope {
     Ability,
 }
 
 /// The literal `"refund"`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum CancelPolicy {
     Refund,
 }
 
 /// Mana is spent at release.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Cost {
     pub resource: CostResource,
@@ -197,7 +197,7 @@ pub struct Cost {
 }
 
 /// The cooldown starts at release and belongs to the ability.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Cooldown {
     pub ticks: Amount,
@@ -229,7 +229,7 @@ impl<'de> Deserialize<'de> for RevalidateAtRelease {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Cast {
     pub prepare_ticks: u32,
@@ -241,7 +241,7 @@ pub struct Cast {
     pub revalidate_at_release: RevalidateAtRelease,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum TriggerEvent {
     Interval,
@@ -253,7 +253,7 @@ pub enum TriggerEvent {
     Kill,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum TriggerWeapon {
     Melee,
@@ -262,7 +262,7 @@ pub enum TriggerWeapon {
 }
 
 /// The literal `"statusSource"`: a death trigger on a status runs for its applier.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum Executor {
     StatusSource,
@@ -278,7 +278,7 @@ fn every_time() -> u32 {
 
 /// Operations run when an event happens to the holder.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Trigger {
     pub id: String,
@@ -304,7 +304,7 @@ pub struct Trigger {
 
 /// A spell or passive. Numbers that vary by rank are [`Amount`]s naming a rank parameter.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Ability {
     pub id: Id,
@@ -325,6 +325,7 @@ pub struct Ability {
     pub cast: Cast,
     /// Reusable status templates, applied only by explicit reference.
     #[serde(default, with = "super::operations::status_templates")]
+    #[schemars(with = "Option<Vec<super::operations::status_templates::Owned>>")]
     pub statuses: Option<Vec<StatusEffect>>,
     pub on_release: Vec<Operation>,
     pub triggers: Option<Vec<Trigger>>,
@@ -380,7 +381,7 @@ impl<'a> StatusOrEffect<'a> {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Animations {
     pub prepare: String,
@@ -392,7 +393,7 @@ pub struct Animations {
 
 /// How an ability looks and sounds: caster animations, icon and visual effects by event.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Presentation {
     pub icon: Option<Id>,
@@ -415,7 +416,7 @@ impl AbilityLibrary {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum Control {
     Player,
@@ -425,7 +426,7 @@ pub enum Control {
 
 /// A command card button for the ability.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AbilityCommand {
     pub hotkey: String,
@@ -435,13 +436,13 @@ pub struct AbilityCommand {
 }
 
 /// Hero level required for each rank.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Learning {
     pub required_levels: Vec<u32>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum AiIntent {
     Utility,
@@ -450,7 +451,7 @@ pub enum AiIntent {
     Scout,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "kebab-case")]
 pub enum AiPreference {
     WoundedAlly,
@@ -458,7 +459,7 @@ pub enum AiPreference {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AbilityAi {
     pub intent: Option<AiIntent>,
@@ -468,7 +469,7 @@ pub struct AbilityAi {
 
 /// One ability a unit has, and who may use it.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AbilityBinding {
     pub id: String,
@@ -482,12 +483,23 @@ pub struct AbilityBinding {
 }
 
 /// `behaviors.abilities`: the unit's mana pool and abilities.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AbilityCaster {
     pub max_mana: u32,
     pub mana_regen_per_second: f64,
     pub bindings: Vec<AbilityBinding>,
+}
+
+impl schemars::JsonSchema for RevalidateAtRelease {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "RevalidateAtRelease".into()
+    }
+
+    fn json_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        let _ = &generator;
+        schemars::json_schema!({"const": REVALIDATED})
+    }
 }
 
 #[cfg(test)]

@@ -178,6 +178,17 @@ impl<'de> Deserialize<'de> for Grid {
     }
 }
 
+impl schemars::JsonSchema for Grid {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "Grid".into()
+    }
+
+    fn json_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        let _ = &generator;
+        schemars::json_schema!({"type": "string", "contentEncoding": "base64"})
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

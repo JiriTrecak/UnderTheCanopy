@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 /// Daytime colour grades: one 3D lookup table per phase.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DaytimeGrades {
     pub day: ColorVolume,
@@ -25,7 +25,7 @@ pub struct DaytimeGrades {
 }
 
 /// A `size`³ RGBA8 volume, base64 encoded, red varying fastest.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ColorVolume {
     pub size: u32,
@@ -33,7 +33,7 @@ pub struct ColorVolume {
 }
 
 /// A prefiltered cube map: `levels` mips from `size`, faces in `faceOrder`, RGBA8.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CubeMetadata {
     pub size: u32,
@@ -44,7 +44,7 @@ pub struct CubeMetadata {
 }
 
 /// A 2D RGBA8 lookup table.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TableMetadata {
     pub width: u32,

@@ -68,6 +68,18 @@ impl PartialEq<str> for Id {
     }
 }
 
+impl schemars::JsonSchema for Id {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "Id".into()
+    }
+
+    fn json_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        let _ = &generator;
+        // `format` marks every element id: the editor offers a picker for it.
+        schemars::json_schema!({"type": "string", "format": "canopy-id"})
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

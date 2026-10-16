@@ -4,7 +4,19 @@ use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
 /// Ground units path around obstacles; air units ignore them and collide only with air.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize,
+    Deserialize,
+    schemars::JsonSchema,
+)]
 #[serde(rename_all = "camelCase")]
 pub enum Locomotion {
     Ground,
@@ -12,7 +24,19 @@ pub enum Locomotion {
 }
 
 /// Spell-targeting classification; never changes armour or movement.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize,
+    Deserialize,
+    schemars::JsonSchema,
+)]
 #[serde(rename_all = "camelCase")]
 pub enum UnitNature {
     Organic,
@@ -21,7 +45,19 @@ pub enum UnitNature {
 }
 
 /// How a unit stands to the caster's owner.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize,
+    Deserialize,
+    schemars::JsonSchema,
+)]
 #[serde(rename_all = "camelCase")]
 pub enum Relation {
     Ally,
@@ -29,7 +65,7 @@ pub enum Relation {
 }
 
 /// The two actors of a cast.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum Subject {
     Target,
@@ -37,14 +73,14 @@ pub enum Subject {
 }
 
 /// The literal `"target"`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum TargetSubject {
     Target,
 }
 
 /// The literal `"caster"`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum CasterSubject {
     Caster,
@@ -53,7 +89,7 @@ pub enum CasterSubject {
 /// Restricts which units qualify; every present criterion must hold. Units without a
 /// level count as level 1.
 #[skip_serializing_none]
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TargetFilter {
     pub locomotion: Option<Vec<Locomotion>>,
@@ -91,14 +127,14 @@ pub(crate) fn has_duplicates<T: PartialEq>(items: &[T]) -> bool {
         .any(|(i, item)| items[..i].contains(item))
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum PoolResource {
     Health,
     Mana,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum Measure {
     Current,
@@ -106,7 +142,7 @@ pub enum Measure {
     FractionPermille,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum Comparison {
     Lt,
@@ -116,7 +152,7 @@ pub enum Comparison {
     Gt,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum Controller {
     Player,
@@ -124,7 +160,7 @@ pub enum Controller {
 }
 
 /// Compares a health or mana pool of the caster or target with a value.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResourceCondition {
     pub of: Subject,
@@ -134,7 +170,7 @@ pub struct ResourceCondition {
     pub value: u32,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ControllerCondition {
     pub of: Subject,
@@ -142,7 +178,7 @@ pub struct ControllerCondition {
 }
 
 /// The target's relation to the caster.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RelationCondition {
     pub of: TargetSubject,
@@ -151,7 +187,7 @@ pub struct RelationCondition {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct MatchesCondition {
     pub of: Subject,
@@ -160,7 +196,7 @@ pub struct MatchesCondition {
 }
 
 /// A single test; groups combine these, never other groups.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum ConditionLeaf {
     Resource(ResourceCondition),
@@ -169,14 +205,14 @@ pub enum ConditionLeaf {
     Matches(MatchesCondition),
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ConditionGroup {
     pub conditions: Vec<ConditionLeaf>,
 }
 
 /// A condition on the caster and aim, used by targeting and release branches.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum AbilityCondition {
     Resource(ResourceCondition),

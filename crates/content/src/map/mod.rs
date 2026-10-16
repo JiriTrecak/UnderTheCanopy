@@ -87,7 +87,7 @@ impl<'de> Deserialize<'de> for Retired {
 }
 
 /// Terrain knowledge at match start; never grants current sight of enemies.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum Exploration {
     Explored,
@@ -96,7 +96,7 @@ pub enum Exploration {
 
 /// Where a player's fort stands. `x`/`z` are navigation cells on half-cell steps.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PlayerStart {
     /// 1 to 8.
@@ -118,7 +118,7 @@ impl PlayerStart {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum WeatherKind {
     Clear,
@@ -128,7 +128,7 @@ pub enum WeatherKind {
 }
 
 /// Unknown keys are dropped, as the old parser's non-strict schema does.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct WeatherConditions {
     pub kind: WeatherKind,
@@ -137,7 +137,7 @@ pub struct WeatherConditions {
 /// The only environment values a map owns; its look comes from the biome. Unknown keys are
 /// dropped, as the old parser's non-strict schema does.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct EnvironmentConditions {
     /// 0 to 24.
@@ -146,7 +146,7 @@ pub struct EnvironmentConditions {
     pub weather: Option<WeatherConditions>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "kebab-case")]
 pub enum DecalKind {
     LeafLitter,
@@ -159,7 +159,7 @@ pub enum DecalKind {
 /// A painted ground detail; world units, rotation in degrees. Unknown keys are accepted and
 /// dropped (the old parser passes them through, but nothing reads them).
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Decal {
     pub locked: Option<bool>,
@@ -175,7 +175,7 @@ pub struct Decal {
 /// Saved landscape appearance. Generator inputs (`strokes`, `cover`, rivers, imported
 /// terrain) never belong in a saved map.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Landscape {
     pub environment: EnvironmentConditions,
@@ -195,7 +195,7 @@ fn is_false(value: &bool) -> bool {
 
 /// A map, normalised as the old parser returns it.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct UtcMap {
     pub v: Version<UTCMAP_VERSION>,
@@ -293,5 +293,27 @@ impl UtcMap {
 
     pub fn player_start(&self, player: u8) -> Option<&PlayerStart> {
         self.player_starts.iter().find(|s| s.player == player)
+    }
+}
+
+impl schemars::JsonSchema for Retired {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "Retired".into()
+    }
+
+    fn json_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        let _ = &generator;
+        schemars::json_schema!({"description": "no longer read"})
+    }
+}
+
+impl<const N: u32> schemars::JsonSchema for Version<N> {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        format!("Version{N}").into()
+    }
+
+    fn json_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        let _ = &generator;
+        schemars::json_schema!({"const": N})
     }
 }

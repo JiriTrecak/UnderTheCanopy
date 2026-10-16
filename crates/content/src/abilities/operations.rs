@@ -19,7 +19,7 @@ fn yes() -> bool {
 }
 
 /// A fixed point or actor an operation is anchored to.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum Anchor {
     Point,
@@ -36,7 +36,7 @@ impl From<Subject> for Anchor {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum WeaponFilter {
     Melee,
@@ -45,7 +45,7 @@ pub enum WeaponFilter {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AttackBonus {
     /// Status template applied on a damaging weapon hit, before death resolution.
@@ -58,7 +58,7 @@ pub struct AttackBonus {
     pub filter: Option<TargetFilter>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Critical {
     pub chance_permille: Amount,
@@ -66,7 +66,7 @@ pub struct Critical {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Cleave {
     pub damage_permille: Amount,
@@ -80,7 +80,7 @@ pub struct Cleave {
 
 /// Ranked weapon policies, shared by learned passives and timed status grants.
 #[skip_serializing_none]
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CombatModifiers {
     pub attack_bonus: Option<AttackBonus>,
@@ -97,7 +97,9 @@ impl CombatModifiers {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, schemars::JsonSchema,
+)]
 #[serde(rename_all = "kebab-case")]
 pub enum RecipientOrder {
     #[default]
@@ -110,7 +112,7 @@ fn max_recipients() -> u32 {
 }
 
 /// Units around a centre that an operation applies to instead of the aim itself.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RecipientQuery {
     pub center: Anchor,
@@ -128,7 +130,7 @@ pub struct RecipientQuery {
     pub order: RecipientOrder,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum UnitStat {
     Health,
@@ -139,7 +141,7 @@ pub enum UnitStat {
     MissingMana,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum ResultStat {
     Applied,
@@ -153,7 +155,7 @@ pub enum ResultStat {
 /// Adds `floor(stat × permille / 1000)` to an amount, capped at one million. `Target` is
 /// the primary aim, `Recipient` the current recipient; results come from an earlier
 /// `record` in the same program.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(tag = "source", rename_all = "camelCase", deny_unknown_fields)]
 pub enum AmountScale {
     Caster {
@@ -187,7 +189,7 @@ impl AmountScale {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Heal {
     pub target: Subject,
@@ -201,7 +203,7 @@ pub struct Heal {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Damage {
     pub target: Subject,
@@ -215,7 +217,7 @@ pub struct Damage {
 
 /// Restores mana.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ManaRestore {
     pub target: Subject,
@@ -226,7 +228,7 @@ pub struct ManaRestore {
     pub record: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum ControlKind {
     Stun,
@@ -239,14 +241,14 @@ pub enum ControlKind {
     Taunt,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum Polarity {
     Positive,
     Negative,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum StackScope {
     Source,
@@ -254,7 +256,7 @@ pub enum StackScope {
 }
 
 /// Reapplication refreshes all stacks; additive numeric modifiers scale per stack.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Stacking {
     pub max: u32,
@@ -262,7 +264,19 @@ pub struct Stacking {
 }
 
 /// Status modifiers that can take a per-rank amount.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize,
+    Deserialize,
+    schemars::JsonSchema,
+)]
 #[serde(rename_all = "camelCase")]
 pub enum RankedModifier {
     MaxHp,
@@ -294,7 +308,7 @@ impl RankedModifier {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum ShieldDepletion {
     /// Keep the status until its ordinary lifetime ends.
@@ -303,7 +317,7 @@ pub enum ShieldDepletion {
     Remove,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Concealment {
     pub fade_ticks: u32,
@@ -314,7 +328,7 @@ pub struct Concealment {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct FormMovement {
     pub locomotion: Locomotion,
@@ -327,7 +341,7 @@ fn one() -> f64 {
 
 /// Temporary model, scale and movement class; body clearance stays unchanged.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Form {
     pub movement: Option<FormMovement>,
@@ -340,7 +354,9 @@ pub struct Form {
     pub scale: f64,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, schemars::JsonSchema,
+)]
 #[serde(rename_all = "camelCase")]
 pub enum StatusLifetime {
     #[default]
@@ -350,28 +366,28 @@ pub enum StatusLifetime {
     UntilDeath,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ManaShield {
     pub damage_per_mana: f64,
     pub absorb_permille: u32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum Immunity {
     Spell,
     Physical,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum SpellImmunity {
     Hostile,
     All,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PeriodicDamage {
     pub interval_ticks: u32,
@@ -382,7 +398,7 @@ pub struct PeriodicDamage {
 /// A timed (or instance- or life-bound) state on a unit: modifiers, controls, shields,
 /// forms and periodic damage. `amount` is the duration in ticks.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct StatusEffect {
     pub target: Subject,
@@ -424,7 +440,7 @@ pub struct StatusEffect {
     pub periodic: Option<PeriodicDamage>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum DispelPolarity {
     All,
@@ -434,7 +450,7 @@ pub enum DispelPolarity {
 
 /// Removes dispellable statuses; `amount` damages units that lose one.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Dispel {
     pub target: Subject,
@@ -445,7 +461,7 @@ pub struct Dispel {
     pub polarity: DispelPolarity,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum CorpseRelation {
     Ally,
@@ -453,7 +469,9 @@ pub enum CorpseRelation {
     Neutral,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, schemars::JsonSchema,
+)]
 #[serde(rename_all = "camelCase")]
 pub enum CorpseOrder {
     #[default]
@@ -462,7 +480,7 @@ pub enum CorpseOrder {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CorpseQuery {
     pub radius: Amount,
@@ -474,7 +492,7 @@ pub struct CorpseQuery {
 
 /// A corpse query that also limits how many corpses a summon consumes.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SummonCorpseQuery {
     pub radius: Amount,
@@ -488,7 +506,7 @@ pub struct SummonCorpseQuery {
 
 /// Creates `amount` units of a definition.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Summon {
     pub target: Anchor,
@@ -507,7 +525,9 @@ pub struct Summon {
     pub corpses: Option<SummonCorpseQuery>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, schemars::JsonSchema,
+)]
 #[serde(rename_all = "camelCase")]
 pub enum AllLost {
     #[default]
@@ -517,7 +537,7 @@ pub enum AllLost {
 
 /// Splits the caster into linked member units for `amount` ticks.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Split {
     pub id: String,
@@ -533,14 +553,16 @@ pub struct Split {
     pub on_all_lost: AllLost,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum Ownership {
     Original,
     Caster,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, schemars::JsonSchema,
+)]
 #[serde(rename_all = "kebab-case")]
 pub enum SupplyPolicy {
     #[default]
@@ -548,7 +570,7 @@ pub enum SupplyPolicy {
     AllowOverCap,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum ResurrectTarget {
     Caster,
@@ -557,7 +579,7 @@ pub enum ResurrectTarget {
 
 /// Raises corpses as units.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Resurrect {
     pub ownership: Option<Ownership>,
@@ -580,7 +602,7 @@ fn default_placement_wait() -> u32 {
 
 /// Returns the fallen holder after `amount` ticks; runs from a death trigger.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Revive {
     pub id: String,
@@ -594,7 +616,7 @@ pub struct Revive {
     pub placement_wait_ticks: u32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum DrainResource {
     Health,
@@ -602,7 +624,7 @@ pub enum DrainResource {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Drain {
     pub target: Subject,
@@ -620,7 +642,7 @@ pub struct Drain {
 
 /// Moves recipients; `amount` is the arrival clearance search radius.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Teleport {
     pub target: Subject,
@@ -633,7 +655,7 @@ pub struct Teleport {
 
 /// A temporary vision source; `amount` is its lifetime in ticks.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Vision {
     pub id: String,
@@ -648,7 +670,7 @@ pub struct Vision {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Convert {
     pub target: Subject,
@@ -659,7 +681,9 @@ pub struct Convert {
     pub supply: SupplyPolicy,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, schemars::JsonSchema,
+)]
 #[serde(rename_all = "camelCase")]
 pub enum ContainLifetime {
     #[default]
@@ -667,7 +691,7 @@ pub enum ContainLifetime {
     UntilDeath,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Digestion {
     pub interval_ticks: u32,
@@ -677,7 +701,7 @@ pub struct Digestion {
 
 /// Carries recipients inside the caster for up to `amount` ticks.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Contain {
     pub id: String,
@@ -694,7 +718,7 @@ pub struct Contain {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ReleaseContained {
     pub target: Subject,
@@ -705,7 +729,7 @@ pub struct ReleaseContained {
 
 /// Kills an owned non-hero unit other than the caster, bypassing mitigation.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Sacrifice {
     pub target: Subject,
@@ -716,7 +740,7 @@ pub struct Sacrifice {
 }
 
 /// One operation, by `op`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(tag = "op", rename_all = "camelCase")]
 pub enum Effect {
     Heal(Heal),
@@ -868,14 +892,14 @@ impl Effect {
 }
 
 /// The literal `"branch"`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum BranchOp {
     Branch,
 }
 
 /// Runs `then` when the condition holds for the caster and aim, otherwise `else`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Branch {
     pub op: BranchOp,
@@ -935,9 +959,9 @@ pub(crate) mod status_templates {
         Status(&'a StatusEffect),
     }
 
-    #[derive(Deserialize)]
+    #[derive(Deserialize, schemars::JsonSchema)]
     #[serde(tag = "op", rename_all = "camelCase")]
-    enum Owned {
+    pub(crate) enum Owned {
         Status(StatusEffect),
     }
 
@@ -960,6 +984,19 @@ pub(crate) mod status_templates {
                 .map(|Owned::Status(status)| status)
                 .collect()
         }))
+    }
+}
+
+impl schemars::JsonSchema for Operation {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "Operation".into()
+    }
+
+    fn json_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        let _ = &generator;
+        let effect = generator.subschema_for::<Effect>();
+        let branch = generator.subschema_for::<Branch>();
+        schemars::json_schema!({"anyOf": [effect, branch]})
     }
 }
 

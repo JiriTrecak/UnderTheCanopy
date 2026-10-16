@@ -14,6 +14,7 @@ pub mod items;
 pub mod map;
 pub mod package;
 pub mod placement;
+pub mod schema;
 #[cfg(feature = "testing")]
 pub mod testing;
 

@@ -39,7 +39,7 @@ impl<'de> Deserialize<'de> for Owner {
 
 /// A navigation-cell address. Placements of static foundations may sit on half cells.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Point {
     pub x: f64,
@@ -47,28 +47,28 @@ pub struct Point {
     pub surface: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum MapKnowledge {
     Public,
     Hidden,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum Activation {
     /// Created only when a scenario script activates it.
     Script,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum InitialConstruction {
     Complete,
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct InitialState {
     pub health: Option<u32>,
@@ -80,7 +80,7 @@ pub struct InitialState {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Appearance {
     pub asset: Option<Id>,
@@ -88,7 +88,7 @@ pub struct Appearance {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Placement {
     pub activation: Option<Activation>,
@@ -103,7 +103,7 @@ pub struct Placement {
     pub appearance: Option<Appearance>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum Aggression {
     Players,
@@ -112,7 +112,7 @@ pub enum Aggression {
 
 /// A neutral camp: placed members that guard a home point and drop loot.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Camp {
     pub id: String,
@@ -126,6 +126,17 @@ pub struct Camp {
     pub loot_pool: Option<Id>,
     pub fixed_drops: Option<Vec<Id>>,
     pub legendary: Option<bool>,
+}
+
+impl schemars::JsonSchema for Owner {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "Owner".into()
+    }
+
+    fn json_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        let _ = &generator;
+        schemars::json_schema!({"type": "string", "pattern": "^(none|player\\.[1-8])$"})
+    }
 }
 
 #[cfg(test)]

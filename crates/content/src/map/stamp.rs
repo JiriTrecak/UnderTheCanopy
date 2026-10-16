@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum StampVariant {
     Snow,
@@ -15,7 +15,7 @@ pub enum StampVariant {
 }
 
 /// Imported walkable geometry, in the stamp's local space.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct WalkMesh {
     /// 3 to 4096 points.
@@ -26,7 +26,7 @@ pub struct WalkMesh {
 
 /// Explicit navigation levels at the ends of a walkable stamp.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct WalkConnections {
     pub start: Option<u32>,
@@ -35,7 +35,7 @@ pub struct WalkConnections {
 
 /// A walkable stamp (bridge, deck): navigation level 1 to 31, optional absolute centre height.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Walk {
     pub mesh: Option<WalkMesh>,
@@ -46,7 +46,7 @@ pub struct Walk {
 
 /// Authored source transform; avoids re-grounding imported models or losing precision.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SourceTransform {
     pub packed_user_data: Option<[u8; 3]>,
@@ -58,7 +58,7 @@ pub struct SourceTransform {
 /// A placed catalogue asset in cell coordinates. The old parser ignores (and drops) keys it
 /// does not know here, so unknown keys are accepted.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Stamp {
     pub id: String,

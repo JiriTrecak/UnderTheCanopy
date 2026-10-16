@@ -18,7 +18,7 @@ use serde_with::skip_serializing_none;
 use std::{collections::BTreeSet, fmt, path::Path};
 
 /// Every asset's runtime record, built from the asset folders.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Manifest {
     pub version: VersionOne,
@@ -27,7 +27,7 @@ pub struct Manifest {
 
 /// A published asset (`RuntimeRecord`).
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Record {
     pub id: AuthoringId,
@@ -44,7 +44,7 @@ pub struct Record {
     pub scenery: Vec<SceneryEntry>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum RecordKind {
     Icon,
@@ -58,7 +58,7 @@ pub enum RecordKind {
 
 /// A published file.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Output {
     pub role: OutputRole,
@@ -74,7 +74,7 @@ pub struct Output {
 }
 
 /// The schema allows any string; publication writes only these three.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum OutputRole {
     Model,
@@ -84,7 +84,7 @@ pub enum OutputRole {
 
 /// A placeable scenery model (`CatalogEntry`).
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SceneryEntry {
     pub id: AuthoringId,
@@ -102,7 +102,7 @@ pub struct SceneryEntry {
     pub blockers: Option<Vec<Blocker>>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum SceneryCategory {
     Units,
@@ -115,7 +115,7 @@ pub enum SceneryCategory {
 }
 
 /// `prop` sits on dry land, `water` on wet cells, `span` (bridges) and `ground` anywhere.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum SceneryType {
     Prop,
@@ -126,7 +126,7 @@ pub enum SceneryType {
 
 /// Walkable deck of a bridge, in asset-local metres.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Deck {
     pub width: f64,
@@ -141,14 +141,14 @@ pub struct Deck {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct DeckConnections {
     pub start: Option<u32>,
     pub end: Option<u32>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Light {
     pub x: f64,
@@ -162,7 +162,7 @@ pub struct Light {
 
 /// Ground-plane collision in asset-local metres, independent of the visual mesh.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Blocker {
     pub width: f64,
@@ -173,14 +173,14 @@ pub struct Blocker {
     pub yaw: Option<f64>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum BlockerShape {
     Ellipse,
 }
 
 /// A file of an asset by role and 1-based index (`ResourceRef`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResourceRef {
     pub role: FileRole,
@@ -189,7 +189,7 @@ pub struct ResourceRef {
 }
 
 /// `FILE_ROLES`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum FileRole {
     Geometry,
@@ -219,7 +219,9 @@ pub enum FileRole {
 }
 
 /// The literal `1` of versioned documents.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema,
+)]
 #[serde(try_from = "u32", into = "u32")]
 pub struct VersionOne;
 
@@ -240,7 +242,9 @@ impl From<VersionOne> for u32 {
 }
 
 /// The literal `true`, for flags that are either present and true or absent.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema,
+)]
 #[serde(try_from = "bool", into = "bool")]
 pub struct True;
 
@@ -379,6 +383,17 @@ pub(crate) fn read<T: DeserializeOwned>(
         .and_then(|value| parse(value, file, ""))
         .map_err(|error| errors.push(error))
         .ok()
+}
+
+impl schemars::JsonSchema for AuthoringId {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "AuthoringId".into()
+    }
+
+    fn json_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        let _ = &generator;
+        schemars::json_schema!({"type": "string", "format": "canopy-id"})
+    }
 }
 
 #[cfg(test)]

@@ -24,7 +24,9 @@ pub const HEIGHT_MAX: f64 = 24.0;
 /// Water height of a dry vertex; below every editable ground sample.
 pub const DRY_WATER_HEIGHT: f64 = HEIGHT_MIN - 1.0;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, schemars::JsonSchema,
+)]
 #[serde(rename_all = "camelCase")]
 pub enum HeightMode {
     /// Stands on the terrain, `elevation` above it.
@@ -43,7 +45,7 @@ fn yes() -> bool {
 }
 
 /// A placed scenery object (trees, rocks, props), in world units.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AuthoredObject {
     pub id: String,
@@ -68,7 +70,7 @@ pub struct AuthoredObject {
 
 /// Texture tiles, independent of the navigation cells: `cellSize` world units, anchored at
 /// `origin` (x, z).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TextureGrid {
     pub cell_size: f64,
@@ -77,7 +79,7 @@ pub struct TextureGrid {
 
 /// One ground material painted over the terrain.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PaintLayer {
     pub material: String,
@@ -89,7 +91,7 @@ pub struct PaintLayer {
 
 /// Committed terrain samples, as stored.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TerrainData {
     pub version: Version<1>,
@@ -113,7 +115,7 @@ pub struct TerrainData {
 
 /// The saved scene: committed terrain plus placed objects. Procedural layers are editor-only
 /// and never part of a saved map.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SavedScene {
     pub terrain: TerrainData,

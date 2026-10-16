@@ -6,7 +6,7 @@ use serde_with::skip_serializing_none;
 use std::collections::BTreeMap;
 
 /// A named circle scripts refer to.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Region {
     pub id: String,
@@ -17,7 +17,7 @@ pub struct Region {
     pub radius: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Objective {
     pub id: String,
@@ -29,7 +29,7 @@ pub struct Objective {
 
 /// Loading and selection screen material. Images are `asset.interface.*` ids.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Presentation {
     pub loading_background: Option<Id>,
@@ -42,7 +42,7 @@ pub struct Presentation {
 
 /// A campaign mission: metadata, objectives, regions and the Lua scenario script.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Mission {
     /// Campaign id (`rules.campaigns`).

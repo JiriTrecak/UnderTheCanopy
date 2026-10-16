@@ -12,7 +12,7 @@ use std::collections::BTreeSet;
 
 /// One published asset that takes part in landscape generation.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct LandscapeAsset {
     pub id: AuthoringId,
@@ -30,7 +30,7 @@ pub struct LandscapeAsset {
 }
 
 /// `ASSET_KINDS`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "kebab-case")]
 pub enum AssetKind {
     Unit,
@@ -51,7 +51,7 @@ pub enum AssetKind {
 }
 
 /// A harvestable model: generated instances become `definition` with render asset `asset`.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Harvesting {
     pub definition: AuthoringId,
@@ -61,7 +61,7 @@ pub struct Harvesting {
 
 /// Published image paths of a ground texture (`Partial<Record<…, string>>`).
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TerrainImages {
     pub albedo: Option<String>,
@@ -89,7 +89,7 @@ impl TerrainImages {
 
 /// Appearance of a body of water; course and elevation belong to map instances.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct WaterProfile {
     /// `#rrggbb`.
@@ -107,7 +107,7 @@ pub struct WaterProfile {
 }
 
 /// Visual swells that fade with water depth; they never alter navigation.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct WaterWaves {
     pub height: f64,
@@ -123,7 +123,7 @@ pub struct WaterWaves {
 /// A ground material. Atlas tiles count row-major from the top-left; corner bits are
 /// NW=1, NE=2, SW=4, SE=8.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct GroundTexture {
     pub tile_world_size: f64,
@@ -142,7 +142,7 @@ pub struct GroundTexture {
 }
 
 /// Cliff overlays project vertically and never replace top paint.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(tag = "type", rename_all = "camelCase", deny_unknown_fields)]
 pub enum Projection {
     #[serde(rename_all = "camelCase")]
@@ -153,7 +153,7 @@ pub enum Projection {
     },
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum Shading {
     Physical,
@@ -161,7 +161,7 @@ pub enum Shading {
 }
 
 /// Packed runtime textures (`data` resources).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RuntimeTextures {
     pub albedo_roughness: ResourceRef,
@@ -170,7 +170,7 @@ pub struct RuntimeTextures {
 }
 
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Atlas {
     pub columns: u32,

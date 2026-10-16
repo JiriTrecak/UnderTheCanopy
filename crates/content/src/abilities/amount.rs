@@ -156,6 +156,49 @@ impl<'de> Deserialize<'de> for RankedReference {
     }
 }
 
+impl schemars::JsonSchema for Amount {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "Amount".into()
+    }
+
+    fn json_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        let _ = &generator;
+        schemars::json_schema!({
+            "oneOf": [
+                {"type": "integer", "minimum": 0},
+                {
+                    "type": "object",
+                    "properties": {"rankParameter": {"type": "string"}},
+                    "required": ["rankParameter"],
+                    "additionalProperties": false
+                }
+            ]
+        })
+    }
+}
+
+impl schemars::JsonSchema for RankedReference {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "RankedReference".into()
+    }
+
+    fn json_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        let _ = &generator;
+        let id = generator.subschema_for::<Id>();
+        schemars::json_schema!({
+            "oneOf": [
+                id,
+                {
+                    "type": "object",
+                    "properties": {"byRank": {"type": "array", "items": id, "minItems": 1}},
+                    "required": ["byRank"],
+                    "additionalProperties": false
+                }
+            ]
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

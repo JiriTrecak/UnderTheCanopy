@@ -335,7 +335,7 @@ pub struct MapSummary {
 
 /// The mission fields the menus show.
 #[serde_with::skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct MissionSummary {
     pub campaign: String,
@@ -345,7 +345,7 @@ pub struct MissionSummary {
 }
 
 #[serde_with::skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct MissionPresentation {
     /// `asset.interface.*` image ids.
@@ -360,7 +360,7 @@ pub struct MissionPresentation {
 /// Reads [`MapSummary`] of the map package at `dir`: its manifest and `map.json`, not the
 /// terrain or scenery. The map is checked in full when it is played.
 pub fn summary(dir: &Path) -> Result<MapSummary, Errors> {
-    #[derive(serde::Deserialize)]
+    #[derive(serde::Deserialize, schemars::JsonSchema)]
     #[serde(rename_all = "camelCase")]
     struct Start {
         player: u8,

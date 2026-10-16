@@ -37,7 +37,7 @@ pub const ASSET_FILE: &str = "asset.json";
 
 /// `asset.json`: what an asset is and how to read its files.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AssetDefinition {
     pub id: AuthoringId,
@@ -65,7 +65,7 @@ pub struct AssetDefinition {
 }
 
 /// A file of an asset.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct AssetFile {
     pub role: FileRole,
@@ -107,7 +107,7 @@ impl AssetFile {
 /// may override the health bar height and profile for its own use (the placeholder model
 /// stands in for many).
 #[skip_serializing_none]
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Display {
     pub scale: Option<f64>,
@@ -115,7 +115,7 @@ pub struct Display {
     pub health_height: Option<f64>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum AssetShading {
     Building,
@@ -123,7 +123,7 @@ pub enum AssetShading {
 
 /// A placeable piece of scenery (`scenery/`): a model with its placement rules.
 #[skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SceneryDefinition {
     /// `scenery.<name>`.
@@ -144,14 +144,14 @@ pub struct SceneryDefinition {
     pub harvesting: Option<SceneryHarvesting>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SceneryHarvesting {
     pub definition: AuthoringId,
 }
 
 /// `landscape/water/`: the look of a body of water.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct WaterFile {
     pub id: AuthoringId,
