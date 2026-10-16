@@ -1,24 +1,27 @@
-//! Authored maps (`assets/maps/**/*.utcmap`).
+//! Authored maps: map packages (`<id>.utcm`, [`package`]) in the base package's `maps/`.
 //!
-//! A `.utcmap` is one JSON document (format version 3). [`UtcMap::load`] accepts exactly what
-//! the old game's `readUtcMap` accepts and returns the same normalised value; [`validate`]
-//! applies the map rules that need the content. Rules that need navigation geometry or the
-//! terrain projection belong to the simulation.
+//! In memory a map is one [`UtcMap`]: the old single-document format (version 3), which
+//! tests and tools also build as JSON ([`UtcMap::parse`], grids as base64). Reading checks
+//! exactly what the old game's `readUtcMap` checked and returns the same normalised value;
+//! [`validate`] applies the map rules that need the content. Rules that need navigation
+//! geometry or the terrain projection belong to the simulation.
 //!
-//! The committed terrain stays base64 text as stored; [`TerrainData::decode`] and the
-//! per-grid helpers turn it into typed buffers.
+//! Terrain grids hold raw samples ([`grid::Grid`]); [`TerrainData::decode`] and the
+//! per-grid helpers turn them into typed buffers.
 
 mod authoring;
 mod check;
+pub mod grid;
 mod library;
 mod mission;
+pub mod package;
 mod stamp;
 mod validate;
 
 pub use authoring::{
     AuthoredObject, DRY_WATER_HEIGHT, DecodedPaint, DecodedTerrain, GridError, HEIGHT_MAX,
     HEIGHT_MIN, HeightMode, PaintLayer, SavedScene, TerrainData, TextureGrid, TextureLayout,
-    WaterFlow, decode_base64, decode_bytes, decode_floats,
+    WaterFlow, decode_base64, decode_floats,
 };
 pub use library::{MAP_GROUPS, MAPS_FOLDER, MapFile, library};
 pub use mission::{Mission, Objective, Presentation, Region};
@@ -32,12 +35,9 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_with::skip_serializing_none;
-use std::path::Path;
 
 /// The `.utcmap` format version this reader accepts.
 pub const UTCMAP_VERSION: u32 = 3;
-/// File extension of authored maps.
-pub const UTCMAP_EXTENSION: &str = "utcmap";
 /// Name of a map whose document has no (or a blank) name.
 pub const DEFAULT_MAP_NAME: &str = "Untitled";
 /// Playable cells per side a map may have.
@@ -193,7 +193,7 @@ fn is_false(value: &bool) -> bool {
     !value
 }
 
-/// One `.utcmap` document, normalised as the old parser returns it.
+/// A map, normalised as the old parser returns it.
 #[skip_serializing_none]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -225,15 +225,7 @@ pub struct UtcMap {
 }
 
 impl UtcMap {
-    /// Reads and checks a `.utcmap` file. Errors name the file as given.
-    pub fn load(path: &Path) -> Result<Self, Errors> {
-        let file = path.display().to_string();
-        let bytes = std::fs::read(path)
-            .map_err(|error| Errors(vec![Error::new(&file, "", error.to_string())]))?;
-        Self::parse(&bytes, &file)
-    }
-
-    /// Parses and checks a `.utcmap` document; `file` labels the errors.
+    /// Parses and checks a map document (the JSON form); `file` labels the errors.
     pub fn parse(json: &[u8], file: &str) -> Result<Self, Errors> {
         let value: Value = serde_json::from_slice(json)
             .map_err(|error| Errors(vec![Error::new(file, "", error.to_string())]))?;
@@ -260,7 +252,7 @@ impl UtcMap {
     }
 
     /// The old parser's output: trimmed texts, no default stamp scale, no retired fields.
-    fn normalised(mut self) -> Self {
+    pub(crate) fn normalised(mut self) -> Self {
         let name = check::js_trim(&self.name);
         self.name = if name.is_empty() {
             DEFAULT_MAP_NAME.into()

@@ -1,36 +1,44 @@
-//! Finding the game's maps, as the old `src/shared/map/library.ts` does.
+//! Finding the game's maps: map packages (`<id>.utcm`) in the base package's `maps/`.
 
-use super::{UTCMAP_EXTENSION, UtcMap};
+use super::UtcMap;
 use crate::error::{Error, Errors};
+use crate::package::{MAP_EXTENSION, Package};
 use std::path::{Path, PathBuf};
 
 /// Folder holding the maps, relative to the data folder.
-pub const MAPS_FOLDER: &str = "assets/maps";
-/// Subfolders searched (recursively) for `.utcmap` files.
+pub const MAPS_FOLDER: &str = "base/maps";
+/// Subfolders searched (recursively) for map packages.
 pub const MAP_GROUPS: [&str; 3] = ["campaign", "skirmish", "showcase"];
 
-/// A map file the game offers.
+/// A map the game offers.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MapFile {
-    /// Lowercased file stem, unique across all groups.
+    /// The package id, unique across all groups.
     pub id: String,
     /// One of [`MAP_GROUPS`].
     pub group: &'static str,
-    /// Relative to the data folder, `/`-separated.
+    /// The package folder relative to the data folder, `/`-separated.
     pub file: String,
+    /// The package folder.
     pub path: PathBuf,
 }
 
 impl MapFile {
     pub fn load(&self) -> Result<UtcMap, Errors> {
-        let bytes = std::fs::read(&self.path)
-            .map_err(|error| Errors(vec![Error::new(&self.file, "", error.to_string())]))?;
-        UtcMap::parse(&bytes, &self.file)
+        super::package::load(&self.path)
+    }
+
+    /// The package's digest ([`Package::digest`]): the map's identity in saves and matches.
+    pub fn digest(&self) -> Result<[u8; 32], Errors> {
+        let package = Package::open(&self.path).map_err(|e| Errors(vec![e]))?;
+        package
+            .digest()
+            .map_err(|e| Errors(vec![Error::new(&self.file, "", e.to_string())]))
     }
 }
 
-/// Every map below `data`, sorted by id. Fails on unreadable folders and on two files that
-/// would share an id. Menus order maps by name, which needs the documents.
+/// Every map below `data`, sorted by id. Fails on unreadable folders and on two packages
+/// that share an id. Menus order maps by name, which needs the documents.
 pub fn library(data: &Path) -> Result<Vec<MapFile>, Errors> {
     let mut maps = Vec::new();
     let mut errors = Vec::new();
@@ -72,23 +80,30 @@ fn collect(
             return;
         }
     };
-    for entry in entries.flatten() {
+    let mut entries: Vec<_> = entries.flatten().collect();
+    entries.sort_by_key(|e| e.file_name());
+    for entry in entries {
         let name = entry.file_name().to_string_lossy().into_owned();
-        // Globs skip hidden files and folders.
         if name.starts_with('.') {
             continue;
         }
         let path = entry.path();
         let file = format!("{relative}/{name}");
-        if path.is_dir() {
+        if !path.is_dir() {
+            continue;
+        }
+        if path.extension().is_some_and(|e| e == MAP_EXTENSION) {
+            match Package::open(&path) {
+                Ok(package) => maps.push(MapFile {
+                    id: package.id().to_string(),
+                    group,
+                    file,
+                    path,
+                }),
+                Err(error) => errors.push(error),
+            }
+        } else {
             collect(&path, &file, group, maps, errors);
-        } else if path.extension().is_some_and(|e| e == UTCMAP_EXTENSION) {
-            maps.push(MapFile {
-                id: name.replacen(".utcmap", "", 1).to_lowercase(),
-                group,
-                file,
-                path,
-            });
         }
     }
 }

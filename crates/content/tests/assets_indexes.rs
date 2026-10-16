@@ -1,11 +1,11 @@
-//! The model index, map previews and texture data files.
+//! The model index and texture data files.
 
 use canopy_content::{
     Error,
     assets::{
         Manifest,
         models::{self, PublishedModel},
-        previews, textures,
+        textures,
     },
 };
 use serde_json::{Value, json};
@@ -110,72 +110,6 @@ fn model_index_matches_the_manifest() {
     let mut unpublished = model();
     unpublished["id"] = json!("model.other");
     assert_eq!(check(unpublished)[0].location, "model.other");
-}
-
-fn overview() -> Value {
-    json!({
-        "name": "Fixture Isles", "size": 512, "description": "Two islands.",
-        "starts": [
-            {"player": 1, "x": 10.5, "z": 20.0, "setup": "setup.test", "mainFort": "start.1/fort"},
-            {"player": 2, "x": 400.0, "z": 300.5, "rotation": 180, "setup": "setup.test",
-                "mainFort": "start.2/fort"},
-        ],
-        "camps": 3, "sandbox": false, "playable": null, "sourceHash": "c6a4d0cc",
-        "mission": {"campaign": "test", "order": 1, "title": "First",
-            "presentation": {"chapter": "One", "tips": ["Look up"]}},
-        "image": "fixture.webp", "custom": false, "generationHash": "ab",
-    })
-}
-
-fn previews(
-    name: &str,
-    entries: Value,
-) -> (
-    Option<std::collections::BTreeMap<String, previews::MapOverview>>,
-    Vec<Error>,
-) {
-    let root = folder(
-        name,
-        &[
-            (previews::MAP_PREVIEWS_FILE, entries.to_string()),
-            ("assets/maps/previews/fixture.webp", String::new()),
-        ],
-    );
-    let mut errors = Vec::new();
-    (previews::load(&root, &mut errors), errors)
-}
-
-#[test]
-fn map_previews_load() {
-    let (loaded, errors) = previews("valid", json!({"fixture": overview()}));
-    assert_eq!(errors, vec![]);
-    let loaded = loaded.unwrap();
-    assert_eq!(loaded["fixture"].playable, None);
-    assert_eq!(
-        serde_json::to_value(&loaded["fixture"]).unwrap(),
-        overview(),
-        "playable stays null"
-    );
-}
-
-#[test]
-fn map_previews_are_checked() {
-    let mut missing = overview();
-    missing.as_object_mut().unwrap().remove("playable");
-    assert!(
-        previews("playable", json!({"fixture": missing}))
-            .0
-            .is_none(),
-        "playable is required"
-    );
-
-    let mut broken = overview();
-    broken["size"] = json!(300);
-    broken["image"] = json!("gone.webp");
-    broken["starts"][1]["player"] = json!(1);
-    let (_, errors) = previews("broken", json!({"fixture": broken}));
-    let messages: Vec<_> = errors.iter().map(|e| e.message.as_str()).collect();
-    assert_eq!(messages.len(), 3, "{messages:?}");
 }
 
 #[test]

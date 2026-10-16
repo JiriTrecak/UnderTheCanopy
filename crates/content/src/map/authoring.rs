@@ -11,6 +11,7 @@
 //! with `span = size + 2·MAP_HALO` cells per side and `vertices = span + 1`, both starting
 //! at `-MAP_HALO` in world units. Rows run along x; row index is z.
 
+use super::grid::Grid;
 use super::{MAP_HALO, Version};
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
@@ -80,10 +81,10 @@ pub struct TextureGrid {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PaintLayer {
     pub material: String,
-    /// Base64 `f32` blend weight per vertex, 0 to 1.
-    pub weights: String,
-    /// Base64 `u8` atlas variant per texture cell.
-    pub variants: Option<String>,
+    /// `f32` blend weight per vertex, 0 to 1.
+    pub weights: Grid,
+    /// `u8` atlas variant per texture cell.
+    pub variants: Option<Grid>,
 }
 
 /// Committed terrain samples, as stored.
@@ -95,18 +96,18 @@ pub struct TerrainData {
     /// Playable cells per side; equals the map size.
     pub size: u32,
     pub texture_grid: Option<TextureGrid>,
-    /// Base64 `f32` ground height per vertex, [`HEIGHT_MIN`] to [`HEIGHT_MAX`].
-    pub heights: String,
-    /// Base64 `f32` water surface per vertex, [`DRY_WATER_HEIGHT`] to [`HEIGHT_MAX`].
-    pub water_heights: String,
-    /// Base64 [`WaterFlow`] per cell.
-    pub water_flow: String,
+    /// `f32` ground height per vertex, [`HEIGHT_MIN`] to [`HEIGHT_MAX`].
+    pub heights: Grid,
+    /// `f32` water surface per vertex, [`DRY_WATER_HEIGHT`] to [`HEIGHT_MAX`].
+    pub water_heights: Grid,
+    /// [`WaterFlow`] per cell.
+    pub water_flow: Grid,
     /// Published water profiles that [`WaterFlow::profile`] refers to (1-based).
     pub water_profiles: Vec<String>,
-    /// Base64 `f32` grass coverage per vertex, 0 to 1.
-    pub grass: String,
-    /// Base64 `f32` rock coverage per vertex, 0 to 1.
-    pub rock: String,
+    /// `f32` grass coverage per vertex, 0 to 1.
+    pub grass: Grid,
+    /// `f32` rock coverage per vertex, 0 to 1.
+    pub rock: Grid,
     pub paint: Vec<PaintLayer>,
 }
 
@@ -262,7 +263,9 @@ impl TerrainData {
     }
 
     pub fn water_flow(&self) -> Result<Vec<WaterFlow>, GridError> {
-        let bytes = decode_bytes(&self.water_flow, self.cell_count() * 4)
+        let bytes = self
+            .water_flow
+            .exactly(self.cell_count() * 4)
             .map_err(|m| grid_error("waterFlow", m))?;
         Ok(bytes
             .chunks_exact(4)
@@ -282,8 +285,11 @@ impl TerrainData {
             .map_err(|m| grid_error(&format!("paint.{index}"), m))?;
         let variants = layer
             .variants
-            .as_deref()
-            .map(|text| decode_bytes(text, self.texture_layout().count))
+            .as_ref()
+            .map(|grid| {
+                grid.exactly(self.texture_layout().count)
+                    .map(<[u8]>::to_vec)
+            })
             .transpose()
             .map_err(|m| grid_error(&format!("paint.{index}.variants"), m))?;
         Ok(DecodedPaint {
@@ -317,8 +323,8 @@ impl TerrainData {
     pub fn grid_errors(&self) -> Vec<GridError> {
         let n = self.vertex_count();
         let mut errors = Vec::new();
-        let mut floats = |name: String, text: &str, min: f64, max: f64| {
-            if let Err(message) = check_floats(text, n, min, max) {
+        let mut floats = |name: String, grid: &Grid, min: f64, max: f64| {
+            if let Err(message) = check_floats(grid, n, min, max) {
                 errors.push(grid_error(&name, message));
             }
         };
@@ -335,7 +341,7 @@ impl TerrainData {
             floats(format!("paint.{i}"), &layer.weights, 0.0, 1.0);
         }
         let profiles = self.water_profiles.len();
-        match decode_bytes(&self.water_flow, self.cell_count() * 4) {
+        match self.water_flow.exactly(self.cell_count() * 4) {
             Ok(bytes) => {
                 if bytes.chunks_exact(4).any(|c| usize::from(c[3]) > profiles) {
                     errors.push(grid_error("waterFlow", "Unknown water profile".into()));
@@ -345,8 +351,8 @@ impl TerrainData {
         }
         let texture_cells = self.texture_layout().count;
         for (i, layer) in self.paint.iter().enumerate() {
-            if let Some(text) = &layer.variants
-                && let Err(message) = decode_bytes(text, texture_cells)
+            if let Some(grid) = &layer.variants
+                && let Err(message) = grid.exactly(texture_cells)
             {
                 errors.push(grid_error(&format!("paint.{i}.variants"), message));
             }
@@ -376,8 +382,8 @@ fn all_unique<'a>(items: impl Iterator<Item = &'a str>) -> bool {
     items.into_iter().all(|item| seen.insert(item))
 }
 
-fn check_floats(text: &str, count: usize, min: f64, max: f64) -> Result<(), String> {
-    let bytes = decode_bytes(text, count * 4)?;
+fn check_floats(grid: &Grid, count: usize, min: f64, max: f64) -> Result<(), String> {
+    let bytes = grid.exactly(count * 4)?;
     for (i, chunk) in bytes.chunks_exact(4).enumerate() {
         let sample = f64::from(f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]));
         if !sample.is_finite() {
@@ -390,26 +396,13 @@ fn check_floats(text: &str, count: usize, min: f64, max: f64) -> Result<(), Stri
     Ok(())
 }
 
-/// Decodes `count` little-endian `f32`s.
-pub fn decode_floats(text: &str, count: usize) -> Result<Vec<f32>, String> {
-    let bytes = decode_bytes(text, count * 4)?;
+/// `count` little-endian `f32`s.
+pub fn decode_floats(grid: &Grid, count: usize) -> Result<Vec<f32>, String> {
+    let bytes = grid.exactly(count * 4)?;
     Ok(bytes
         .chunks_exact(4)
         .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
         .collect())
-}
-
-/// Decodes exactly `count` bytes. The text must have the canonical base64 length for that
-/// count, checked before anything is allocated.
-pub fn decode_bytes(text: &str, count: usize) -> Result<Vec<u8>, String> {
-    if text.len() != 4 * count.div_ceil(3) {
-        return Err("Wrong dimensions".into());
-    }
-    let bytes = decode_base64(text)?;
-    if bytes.len() != count {
-        return Err("Wrong dimensions".into());
-    }
-    Ok(bytes)
 }
 
 const INVALID: u8 = 0xff;

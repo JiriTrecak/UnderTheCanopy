@@ -10,7 +10,7 @@
 //! - Other `.bin` outputs are data; `.wav` outputs are sounds; JSON outputs shaped as
 //!   daytime colour grades become volume textures (recipes and profiles are already
 //!   inlined in the catalogue the game reads).
-//! - Map preview images, and one `@scenery` table of every placeable prototype.
+//! - Map packages' preview images, and one `@scenery` table of every placeable prototype.
 
 use crate::texture::{AlphaPolicy, ColorSpace, Encoding, TextureParams};
 use canopy_assets::{Blocker, BlockerShape, PointLight, SceneryPrototype, SceneryTable};
@@ -18,7 +18,6 @@ use canopy_content::assets::{
     self, Manifest, Record,
     landscape::LandscapeAsset,
     models::{self, PublishedModel},
-    previews,
 };
 use serde::Serialize;
 use std::{
@@ -113,7 +112,8 @@ pub struct Inputs {
     pub manifest: Manifest,
     pub models: Vec<PublishedModel>,
     pub catalogue: Vec<LandscapeAsset>,
-    pub previews: BTreeMap<String, previews::MapOverview>,
+    /// Pack entries of the map packages' preview images.
+    pub previews: Vec<String>,
     pub effects: Vec<canopy_content::effects::VisualEffect>,
 }
 
@@ -122,11 +122,26 @@ impl Inputs {
         let mut errors = Vec::new();
         let base = canopy_content::package::Package::open(&data.join(canopy_content::BASE_DIR))
             .map_err(|e| e.to_string())?;
-        let index = assets::package::index(&[base], assets::Files::Check, &mut errors);
-        let previews = previews::load(data, &mut errors);
-        if let Some(previews) = previews
-            && errors.is_empty()
-        {
+        let mut index = assets::package::index(&[base], assets::Files::Check, &mut errors);
+        let mut previews = Vec::new();
+        match canopy_content::map::library(data) {
+            Ok(maps) => {
+                for map in maps {
+                    let file = map.path.join(canopy_content::map::package::PREVIEW_FILE);
+                    if file.is_file() {
+                        let entry = format!(
+                            "maps/{}/{}",
+                            map.id,
+                            canopy_content::map::package::PREVIEW_FILE
+                        );
+                        index.sources.insert(entry.clone(), file);
+                        previews.push(entry);
+                    }
+                }
+            }
+            Err(e) => errors.extend(e.0),
+        }
+        if errors.is_empty() {
             let mut model_errors = Vec::new();
             models::validate(&index.models, &index.manifest, &mut model_errors);
             if model_errors.is_empty() {
@@ -233,15 +248,12 @@ pub fn plan(inputs: &Inputs) -> Plan {
             }
         }
     }
-    for overview in inputs.previews.values() {
-        if let Some(image) = &overview.image {
-            let path = format!("{}/{image}", previews::MAP_PREVIEWS_FOLDER);
-            if cooked.insert(path.clone()) {
-                jobs.push(Job::Image {
-                    path,
-                    params: TextureParams::color(ColorSpace::Srgb),
-                });
-            }
+    for path in &inputs.previews {
+        if cooked.insert(path.clone()) {
+            jobs.push(Job::Image {
+                path: path.clone(),
+                params: TextureParams::color(ColorSpace::Srgb),
+            });
         }
     }
     jobs.push(Job::Scenery {

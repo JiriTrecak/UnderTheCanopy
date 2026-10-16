@@ -106,14 +106,12 @@ fn dev(
     )?;
     progress(Stage::Gpu, 0.85);
     let entry = data.map(&spec.map);
-    let map_bytes = entry
-        .and_then(|m| std::fs::read(&m.file.path).ok())
-        .unwrap_or_default();
+    let map_identity = entry.and_then(|m| m.identity().ok()).unwrap_or_default();
     Ok(Prepared {
         loaded,
         game,
         map_name: entry.map_or_else(|| spec.map.clone(), |m| m.name.clone()),
-        map_bytes,
+        map_identity,
         objectives: Vec::new(),
     })
 }

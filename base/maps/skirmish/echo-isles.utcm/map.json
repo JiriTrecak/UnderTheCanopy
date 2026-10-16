@@ -1,0 +1,1631 @@
+{
+  "biome": "vibrant-forest",
+  "camps": [
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 199.0,
+        "y": 469.0
+      },
+      "id": "camp/warcraft-1",
+      "leash": 18,
+      "lootPool": "loot.camp.easy",
+      "members": [
+        "camp/warcraft-1/1",
+        "camp/warcraft-1/2",
+        "camp/warcraft-1/3"
+      ]
+    },
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 429.0,
+        "y": 166.0
+      },
+      "id": "camp/warcraft-2",
+      "leash": 18,
+      "lootPool": "loot.camp.easy",
+      "members": [
+        "camp/warcraft-2/1",
+        "camp/warcraft-2/2",
+        "camp/warcraft-2/3"
+      ]
+    },
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 258.0,
+        "y": 301.0
+      },
+      "id": "camp/warcraft-3",
+      "leash": 18,
+      "lootPool": "loot.camp.easy",
+      "members": [
+        "camp/warcraft-3/1",
+        "camp/warcraft-3/2",
+        "camp/warcraft-3/3",
+        "camp/warcraft-3/4"
+      ]
+    },
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 189.0,
+        "y": 166.0
+      },
+      "id": "camp/warcraft-4",
+      "leash": 18,
+      "lootPool": "loot.camp.easy",
+      "members": [
+        "camp/warcraft-4/1",
+        "camp/warcraft-4/2",
+        "camp/warcraft-4/3"
+      ]
+    },
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 98.0,
+        "y": 308.0
+      },
+      "id": "camp/warcraft-5",
+      "leash": 18,
+      "lootPool": "loot.camp.easy",
+      "members": [
+        "camp/warcraft-5/1",
+        "camp/warcraft-5/2",
+        "camp/warcraft-5/3"
+      ]
+    },
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 547.0,
+        "y": 364.0
+      },
+      "id": "camp/warcraft-6",
+      "leash": 18,
+      "lootPool": "loot.camp.medium",
+      "members": [
+        "camp/warcraft-6/1",
+        "camp/warcraft-6/2",
+        "camp/warcraft-6/3",
+        "camp/warcraft-6/4",
+        "camp/warcraft-6/5"
+      ]
+    },
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 310.0,
+        "y": 148.0
+      },
+      "id": "camp/warcraft-7",
+      "leash": 18,
+      "lootPool": "loot.camp.medium",
+      "members": [
+        "camp/warcraft-7/1",
+        "camp/warcraft-7/2",
+        "camp/warcraft-7/3",
+        "camp/warcraft-7/4",
+        "camp/warcraft-7/5"
+      ]
+    },
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 137.0,
+        "y": 456.0
+      },
+      "id": "camp/warcraft-8",
+      "leash": 18,
+      "lootPool": "loot.camp.medium",
+      "members": [
+        "camp/warcraft-8/1",
+        "camp/warcraft-8/2",
+        "camp/warcraft-8/3",
+        "camp/warcraft-8/4",
+        "camp/warcraft-8/5"
+      ]
+    },
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 309.0,
+        "y": 221.0
+      },
+      "id": "camp/warcraft-9",
+      "leash": 18,
+      "lootPool": "loot.camp.medium",
+      "members": [
+        "camp/warcraft-9/1",
+        "camp/warcraft-9/2",
+        "camp/warcraft-9/3",
+        "camp/warcraft-9/4",
+        "camp/warcraft-9/5"
+      ]
+    },
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 432.0,
+        "y": 380.0
+      },
+      "id": "camp/warcraft-10",
+      "leash": 18,
+      "lootPool": "loot.camp.medium",
+      "members": [
+        "camp/warcraft-10/1",
+        "camp/warcraft-10/2",
+        "camp/warcraft-10/3",
+        "camp/warcraft-10/4",
+        "camp/warcraft-10/5"
+      ]
+    },
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 309.0,
+        "y": 455.0
+      },
+      "id": "camp/warcraft-11",
+      "leash": 18,
+      "lootPool": "loot.camp.medium",
+      "members": [
+        "camp/warcraft-11/1",
+        "camp/warcraft-11/2",
+        "camp/warcraft-11/3",
+        "camp/warcraft-11/4",
+        "camp/warcraft-11/5"
+      ]
+    },
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 184.0,
+        "y": 380.0
+      },
+      "id": "camp/warcraft-12",
+      "leash": 18,
+      "lootPool": "loot.camp.medium",
+      "members": [
+        "camp/warcraft-12/1",
+        "camp/warcraft-12/2",
+        "camp/warcraft-12/3",
+        "camp/warcraft-12/4",
+        "camp/warcraft-12/5"
+      ]
+    },
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 530.0,
+        "y": 539.0
+      },
+      "id": "camp/warcraft-13",
+      "leash": 18,
+      "lootPool": "loot.camp.medium",
+      "members": [
+        "camp/warcraft-13/1",
+        "camp/warcraft-13/2",
+        "camp/warcraft-13/3",
+        "camp/warcraft-13/4",
+        "camp/warcraft-13/5"
+      ]
+    },
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 361.0,
+        "y": 300.0
+      },
+      "id": "camp/warcraft-14",
+      "leash": 18,
+      "lootPool": "loot.camp.easy",
+      "members": [
+        "camp/warcraft-14/1",
+        "camp/warcraft-14/2",
+        "camp/warcraft-14/3"
+      ]
+    },
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 523.0,
+        "y": 306.0
+      },
+      "id": "camp/warcraft-15",
+      "leash": 18,
+      "lootPool": "loot.camp.easy",
+      "members": [
+        "camp/warcraft-15/1",
+        "camp/warcraft-15/2",
+        "camp/warcraft-15/3",
+        "camp/warcraft-15/4"
+      ]
+    },
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 73.0,
+        "y": 362.0
+      },
+      "id": "camp/warcraft-16",
+      "leash": 18,
+      "lootPool": "loot.camp.medium",
+      "members": [
+        "camp/warcraft-16/1",
+        "camp/warcraft-16/2",
+        "camp/warcraft-16/3",
+        "camp/warcraft-16/4",
+        "camp/warcraft-16/5"
+      ]
+    },
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 420.0,
+        "y": 469.0
+      },
+      "id": "camp/warcraft-17",
+      "leash": 18,
+      "lootPool": "loot.camp.easy",
+      "members": [
+        "camp/warcraft-17/1",
+        "camp/warcraft-17/2",
+        "camp/warcraft-17/3"
+      ]
+    },
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 89.0,
+        "y": 539.0
+      },
+      "id": "camp/warcraft-18",
+      "leash": 18,
+      "lootPool": "loot.camp.medium",
+      "members": [
+        "camp/warcraft-18/1",
+        "camp/warcraft-18/2",
+        "camp/warcraft-18/3",
+        "camp/warcraft-18/4",
+        "camp/warcraft-18/5"
+      ]
+    },
+    {
+      "aggression": "players",
+      "aggroRange": 8,
+      "home": {
+        "x": 482.0,
+        "y": 456.0
+      },
+      "id": "camp/warcraft-19",
+      "leash": 18,
+      "lootPool": "loot.camp.medium",
+      "members": [
+        "camp/warcraft-19/1",
+        "camp/warcraft-19/2",
+        "camp/warcraft-19/3",
+        "camp/warcraft-19/4",
+        "camp/warcraft-19/5"
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.0.0",
+      "initialState": {
+        "amount": 2700,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 109.5,
+        "y": 201.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.0.1",
+      "initialState": {
+        "amount": 2700,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 113.5,
+        "y": 197.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.0.2",
+      "initialState": {
+        "amount": 2700,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 117.5,
+        "y": 197.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.0.3",
+      "initialState": {
+        "amount": 2700,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 121.5,
+        "y": 197.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.0.4",
+      "initialState": {
+        "amount": 2700,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 125.5,
+        "y": 201.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.3.0",
+      "initialState": {
+        "amount": 2700,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 493.5,
+        "y": 201.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.3.1",
+      "initialState": {
+        "amount": 2700,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 497.5,
+        "y": 197.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.3.2",
+      "initialState": {
+        "amount": 2700,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 501.5,
+        "y": 197.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.3.3",
+      "initialState": {
+        "amount": 2700,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 505.5,
+        "y": 197.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.3.4",
+      "initialState": {
+        "amount": 2700,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 509.5,
+        "y": 201.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.6.0",
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 121.5,
+        "y": 465.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.6.1",
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 125.5,
+        "y": 461.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.6.2",
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 129.5,
+        "y": 461.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.6.3",
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 133.5,
+        "y": 461.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.6.4",
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 137.5,
+        "y": 465.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.66.0",
+      "initialState": {
+        "amount": 1800,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 301.5,
+        "y": 141.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.66.1",
+      "initialState": {
+        "amount": 1800,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 305.5,
+        "y": 137.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.66.2",
+      "initialState": {
+        "amount": 1800,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 309.5,
+        "y": 137.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.66.3",
+      "initialState": {
+        "amount": 1800,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 313.5,
+        "y": 137.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.66.4",
+      "initialState": {
+        "amount": 1800,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 317.5,
+        "y": 141.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.98.0",
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 481.5,
+        "y": 465.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.98.1",
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 485.5,
+        "y": 461.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.98.2",
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 489.5,
+        "y": 461.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.98.3",
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 493.5,
+        "y": 461.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      },
+      "definition": "building.neutral.amber-mine",
+      "id": "warcraft.mine.98.4",
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 497.5,
+        "y": 465.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.thorn-slinger",
+      "id": "camp/warcraft-1/1",
+      "owner": "none",
+      "position": {
+        "x": 198.0,
+        "y": 467.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.thorn-slinger",
+      "id": "camp/warcraft-1/2",
+      "owner": "none",
+      "position": {
+        "x": 200.0,
+        "y": 476.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.thorn-slinger",
+      "id": "camp/warcraft-1/3",
+      "owner": "none",
+      "position": {
+        "x": 199.0,
+        "y": 462.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.puddle-wisp",
+      "id": "camp/warcraft-2/1",
+      "owner": "none",
+      "position": {
+        "x": 423.0,
+        "y": 164.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.dew-sprite",
+      "id": "camp/warcraft-2/2",
+      "owner": "none",
+      "position": {
+        "x": 430.0,
+        "y": 170.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.dew-sprite",
+      "id": "camp/warcraft-2/3",
+      "owner": "none",
+      "position": {
+        "x": 435.0,
+        "y": 164.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.webling",
+      "id": "camp/warcraft-3/1",
+      "owner": "none",
+      "position": {
+        "x": 258.0,
+        "y": 301.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.webling",
+      "id": "camp/warcraft-3/2",
+      "owner": "none",
+      "position": {
+        "x": 256.0,
+        "y": 306.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.webling",
+      "id": "camp/warcraft-3/3",
+      "owner": "none",
+      "position": {
+        "x": 260.0,
+        "y": 294.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.spitter",
+      "id": "camp/warcraft-3/4",
+      "owner": "none",
+      "position": {
+        "x": 260.0,
+        "y": 303.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.capling",
+      "id": "camp/warcraft-4/1",
+      "owner": "none",
+      "position": {
+        "x": 189.0,
+        "y": 170.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.capling",
+      "id": "camp/warcraft-4/2",
+      "owner": "none",
+      "position": {
+        "x": 183.0,
+        "y": 164.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.puffcap",
+      "id": "camp/warcraft-4/3",
+      "owner": "none",
+      "position": {
+        "x": 194.0,
+        "y": 164.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.thorn-slinger",
+      "id": "camp/warcraft-5/1",
+      "owner": "none",
+      "position": {
+        "x": 99.0,
+        "y": 308.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.thorn-slinger",
+      "id": "camp/warcraft-5/2",
+      "owner": "none",
+      "position": {
+        "x": 100.0,
+        "y": 303.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.thorn-slinger",
+      "id": "camp/warcraft-5/3",
+      "owner": "none",
+      "position": {
+        "x": 96.0,
+        "y": 313.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.nest-mother",
+      "id": "camp/warcraft-6/1",
+      "owner": "none",
+      "position": {
+        "x": 559.0,
+        "y": 365.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.hornet-guard",
+      "id": "camp/warcraft-6/2",
+      "owner": "none",
+      "position": {
+        "x": 547.0,
+        "y": 358.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.hornet-guard",
+      "id": "camp/warcraft-6/3",
+      "owner": "none",
+      "position": {
+        "x": 541.0,
+        "y": 368.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.needle-wasp",
+      "id": "camp/warcraft-6/4",
+      "owner": "none",
+      "position": {
+        "x": 554.0,
+        "y": 356.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.needle-wasp",
+      "id": "camp/warcraft-6/5",
+      "owner": "none",
+      "position": {
+        "x": 542.0,
+        "y": 361.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.young-toad",
+      "id": "camp/warcraft-7/1",
+      "owner": "none",
+      "position": {
+        "x": 310.0,
+        "y": 152.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.tree-frog",
+      "id": "camp/warcraft-7/2",
+      "owner": "none",
+      "position": {
+        "x": 317.0,
+        "y": 150.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.tree-frog",
+      "id": "camp/warcraft-7/3",
+      "owner": "none",
+      "position": {
+        "x": 321.0,
+        "y": 143.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.tadpole-spirit",
+      "id": "camp/warcraft-7/4",
+      "owner": "none",
+      "position": {
+        "x": 303.0,
+        "y": 150.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.tadpole-spirit",
+      "id": "camp/warcraft-7/5",
+      "owner": "none",
+      "position": {
+        "x": 298.0,
+        "y": 144.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.briar-hulk",
+      "id": "camp/warcraft-8/1",
+      "owner": "none",
+      "position": {
+        "x": 138.0,
+        "y": 454.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.briar-hulk",
+      "id": "camp/warcraft-8/2",
+      "owner": "none",
+      "position": {
+        "x": 143.0,
+        "y": 463.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.bloom-witch",
+      "id": "camp/warcraft-8/3",
+      "owner": "none",
+      "position": {
+        "x": 130.0,
+        "y": 450.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.seedcaster",
+      "id": "camp/warcraft-8/4",
+      "owner": "none",
+      "position": {
+        "x": 139.0,
+        "y": 458.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.seedcaster",
+      "id": "camp/warcraft-8/5",
+      "owner": "none",
+      "position": {
+        "x": 134.0,
+        "y": 455.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.old-root",
+      "id": "camp/warcraft-9/1",
+      "owner": "none",
+      "position": {
+        "x": 309.0,
+        "y": 217.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.rootling",
+      "id": "camp/warcraft-9/2",
+      "owner": "none",
+      "position": {
+        "x": 301.0,
+        "y": 226.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.rootling",
+      "id": "camp/warcraft-9/3",
+      "owner": "none",
+      "position": {
+        "x": 296.0,
+        "y": 219.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.twigcaster",
+      "id": "camp/warcraft-9/4",
+      "owner": "none",
+      "position": {
+        "x": 323.0,
+        "y": 219.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.twigcaster",
+      "id": "camp/warcraft-9/5",
+      "owner": "none",
+      "position": {
+        "x": 317.0,
+        "y": 226.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.nest-mother",
+      "id": "camp/warcraft-10/1",
+      "owner": "none",
+      "position": {
+        "x": 440.0,
+        "y": 382.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.hornet-guard",
+      "id": "camp/warcraft-10/2",
+      "owner": "none",
+      "position": {
+        "x": 432.0,
+        "y": 379.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.hornet-guard",
+      "id": "camp/warcraft-10/3",
+      "owner": "none",
+      "position": {
+        "x": 423.0,
+        "y": 382.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.needle-wasp",
+      "id": "camp/warcraft-10/4",
+      "owner": "none",
+      "position": {
+        "x": 426.0,
+        "y": 378.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.needle-wasp",
+      "id": "camp/warcraft-10/5",
+      "owner": "none",
+      "position": {
+        "x": 438.0,
+        "y": 378.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.young-toad",
+      "id": "camp/warcraft-11/1",
+      "owner": "none",
+      "position": {
+        "x": 310.0,
+        "y": 453.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.tree-frog",
+      "id": "camp/warcraft-11/2",
+      "owner": "none",
+      "position": {
+        "x": 317.0,
+        "y": 456.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.tree-frog",
+      "id": "camp/warcraft-11/3",
+      "owner": "none",
+      "position": {
+        "x": 302.0,
+        "y": 456.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.tadpole-spirit",
+      "id": "camp/warcraft-11/4",
+      "owner": "none",
+      "position": {
+        "x": 311.0,
+        "y": 457.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.tadpole-spirit",
+      "id": "camp/warcraft-11/5",
+      "owner": "none",
+      "position": {
+        "x": 306.0,
+        "y": 454.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.briar-hulk",
+      "id": "camp/warcraft-12/1",
+      "owner": "none",
+      "position": {
+        "x": 192.0,
+        "y": 382.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.briar-hulk",
+      "id": "camp/warcraft-12/2",
+      "owner": "none",
+      "position": {
+        "x": 184.0,
+        "y": 379.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.bloom-witch",
+      "id": "camp/warcraft-12/3",
+      "owner": "none",
+      "position": {
+        "x": 176.0,
+        "y": 382.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.seedcaster",
+      "id": "camp/warcraft-12/4",
+      "owner": "none",
+      "position": {
+        "x": 191.0,
+        "y": 378.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.seedcaster",
+      "id": "camp/warcraft-12/5",
+      "owner": "none",
+      "position": {
+        "x": 178.0,
+        "y": 377.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.old-root",
+      "id": "camp/warcraft-13/1",
+      "owner": "none",
+      "position": {
+        "x": 531.0,
+        "y": 542.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.rootling",
+      "id": "camp/warcraft-13/2",
+      "owner": "none",
+      "position": {
+        "x": 541.0,
+        "y": 536.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.rootling",
+      "id": "camp/warcraft-13/3",
+      "owner": "none",
+      "position": {
+        "x": 519.0,
+        "y": 544.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.twigcaster",
+      "id": "camp/warcraft-13/4",
+      "owner": "none",
+      "position": {
+        "x": 535.0,
+        "y": 534.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.twigcaster",
+      "id": "camp/warcraft-13/5",
+      "owner": "none",
+      "position": {
+        "x": 523.0,
+        "y": 539.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.puddle-wisp",
+      "id": "camp/warcraft-14/1",
+      "owner": "none",
+      "position": {
+        "x": 360.0,
+        "y": 300.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.dew-sprite",
+      "id": "camp/warcraft-14/2",
+      "owner": "none",
+      "position": {
+        "x": 362.0,
+        "y": 306.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.dew-sprite",
+      "id": "camp/warcraft-14/3",
+      "owner": "none",
+      "position": {
+        "x": 359.0,
+        "y": 294.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.webling",
+      "id": "camp/warcraft-15/1",
+      "owner": "none",
+      "position": {
+        "x": 522.0,
+        "y": 306.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.webling",
+      "id": "camp/warcraft-15/2",
+      "owner": "none",
+      "position": {
+        "x": 525.0,
+        "y": 303.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.webling",
+      "id": "camp/warcraft-15/3",
+      "owner": "none",
+      "position": {
+        "x": 522.0,
+        "y": 310.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.spitter",
+      "id": "camp/warcraft-15/4",
+      "owner": "none",
+      "position": {
+        "x": 525.0,
+        "y": 308.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.briar-hulk",
+      "id": "camp/warcraft-16/1",
+      "owner": "none",
+      "position": {
+        "x": 62.0,
+        "y": 363.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.briar-hulk",
+      "id": "camp/warcraft-16/2",
+      "owner": "none",
+      "position": {
+        "x": 80.0,
+        "y": 366.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.bloom-witch",
+      "id": "camp/warcraft-16/3",
+      "owner": "none",
+      "position": {
+        "x": 73.0,
+        "y": 356.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.seedcaster",
+      "id": "camp/warcraft-16/4",
+      "owner": "none",
+      "position": {
+        "x": 66.0,
+        "y": 356.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.seedcaster",
+      "id": "camp/warcraft-16/5",
+      "owner": "none",
+      "position": {
+        "x": 79.0,
+        "y": 373.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.thorn-slinger",
+      "id": "camp/warcraft-17/1",
+      "owner": "none",
+      "position": {
+        "x": 421.0,
+        "y": 467.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.thorn-slinger",
+      "id": "camp/warcraft-17/2",
+      "owner": "none",
+      "position": {
+        "x": 420.0,
+        "y": 462.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.thorn-slinger",
+      "id": "camp/warcraft-17/3",
+      "owner": "none",
+      "position": {
+        "x": 419.0,
+        "y": 476.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.nest-mother",
+      "id": "camp/warcraft-18/1",
+      "owner": "none",
+      "position": {
+        "x": 88.0,
+        "y": 542.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.hornet-guard",
+      "id": "camp/warcraft-18/2",
+      "owner": "none",
+      "position": {
+        "x": 100.0,
+        "y": 544.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.hornet-guard",
+      "id": "camp/warcraft-18/3",
+      "owner": "none",
+      "position": {
+        "x": 78.0,
+        "y": 536.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.needle-wasp",
+      "id": "camp/warcraft-18/4",
+      "owner": "none",
+      "position": {
+        "x": 96.0,
+        "y": 539.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.needle-wasp",
+      "id": "camp/warcraft-18/5",
+      "owner": "none",
+      "position": {
+        "x": 84.0,
+        "y": 534.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.young-toad",
+      "id": "camp/warcraft-19/1",
+      "owner": "none",
+      "position": {
+        "x": 482.0,
+        "y": 454.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.tree-frog",
+      "id": "camp/warcraft-19/2",
+      "owner": "none",
+      "position": {
+        "x": 476.0,
+        "y": 463.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.tree-frog",
+      "id": "camp/warcraft-19/3",
+      "owner": "none",
+      "position": {
+        "x": 489.0,
+        "y": 450.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.tadpole-spirit",
+      "id": "camp/warcraft-19/4",
+      "owner": "none",
+      "position": {
+        "x": 484.0,
+        "y": 458.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.tadpole-spirit",
+      "id": "camp/warcraft-19/5",
+      "owner": "none",
+      "position": {
+        "x": 479.0,
+        "y": 455.0
+      },
+      "rotation": 0.0
+    }
+  ],
+  "playerStarts": [
+    {
+      "mainFort": "start.player.1/main-fort",
+      "player": 1,
+      "setup": "setup.ants",
+      "x": 117.5,
+      "z": 225.5
+    },
+    {
+      "mainFort": "start.player.2/main-fort",
+      "player": 2,
+      "setup": "setup.ants",
+      "x": 501.5,
+      "z": 225.5
+    }
+  ],
+  "size": 640,
+  "terrain": {
+    "paint": [
+      {
+        "material": "asset.terrain.warcraft-ldrt",
+        "variants": true
+      },
+      {
+        "material": "asset.terrain.warcraft-ldro",
+        "variants": true
+      },
+      {
+        "material": "asset.terrain.warcraft-ldrg",
+        "variants": true
+      },
+      {
+        "material": "asset.terrain.warcraft-lrok",
+        "variants": true
+      },
+      {
+        "material": "asset.terrain.warcraft-lgrs",
+        "variants": true
+      },
+      {
+        "material": "asset.terrain.warcraft-lgrd",
+        "variants": true
+      },
+      {
+        "material": "asset.terrain.warcraft-zsan",
+        "variants": true
+      },
+      {
+        "material": "asset.terrain.warcraft-cliff-cldi",
+        "variants": true
+      }
+    ],
+    "textureGrid": {
+      "cellSize": 5.0,
+      "origin": [
+        -0.5,
+        -0.5
+      ]
+    },
+    "waterProfiles": []
+  }
+}

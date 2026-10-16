@@ -1,5 +1,5 @@
 # Large binary files are stored in Git LFS: the repository keeps small pointers,
-# GitHub LFS stores the content. Text formats (JSON, .utcmap, code) stay in Git.
+# GitHub LFS stores the content. Text formats (JSON, Lua, code) and map grids (.grid) stay in Git.
 
 # Editable sources
 *.blend   filter=lfs diff=lfs merge=lfs -text

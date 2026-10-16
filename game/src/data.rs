@@ -1,5 +1,5 @@
 //! What the game loads once at boot and keeps for every screen and match: the content,
-//! the cooked pack, the map library with its menu overviews, and the identity of the
+//! the cooked pack, the map library with what the menus show of each map, and the identity of the
 //! content for saves and multiplayer.
 //!
 //! A packaged game ships the base package's documents and the cooked pack instead of the
@@ -10,8 +10,7 @@ use anyhow::{Context, Result, anyhow};
 use canopy_assets::Pack;
 use canopy_content::{
     Content,
-    assets::previews::{self, MapOverview},
-    map::{self, MapFile},
+    map::{self, MapFile, package::MissionSummary},
 };
 use canopy_net::ContentIdentity;
 use std::path::Path;
@@ -30,7 +29,7 @@ pub struct MapEntry {
     pub start_cells: Vec<[f32; 2]>,
     pub camps: u32,
     pub sandbox: bool,
-    pub mission: Option<previews::MissionSummary>,
+    pub mission: Option<MissionSummary>,
     /// Pack entry of the preview image.
     pub preview: Option<String>,
     pub playable: bool,
@@ -41,50 +40,35 @@ impl MapEntry {
         &self.file.id
     }
 
-    fn from_overview(file: MapFile, o: &MapOverview, pack: &Pack) -> Self {
-        let preview = o
-            .image
-            .as_ref()
-            .map(|image| format!("{}/{image}", previews::MAP_PREVIEWS_FOLDER))
-            .filter(|entry| pack.entry(entry).is_some());
-        Self {
-            name: o.name.clone(),
-            size: o.size,
-            description: o.description.clone(),
-            starts: o.starts.iter().map(|s| s.player as u8).collect(),
-            start_cells: o.starts.iter().map(|s| [s.x as f32, s.z as f32]).collect(),
-            camps: o.camps,
-            sandbox: o.sandbox,
-            mission: o.mission.clone(),
-            preview,
-            playable: o.playable.unwrap_or(!o.starts.is_empty()) && o.error.is_none(),
-            file,
-        }
+    /// The map's identity in saves and matches: its package's digest.
+    pub fn identity(&self) -> Result<Vec<u8>> {
+        self.file
+            .digest()
+            .map(|d| d.to_vec())
+            .map_err(|e| anyhow!("{}: {e}", self.file.file))
     }
 
-    /// Reads the map itself (maps the preview index does not list).
-    fn from_map(file: MapFile) -> Result<Self> {
-        let map = file.load().map_err(|e| anyhow!("{}: {e}", file.file))?;
+    /// The pack entry of map `id`'s preview image.
+    pub fn preview_entry(id: &str) -> String {
+        format!("maps/{id}/{}", map::package::PREVIEW_FILE)
+    }
+
+    /// The menus' view of a map package, read without its terrain.
+    fn from_package(file: MapFile, pack: &Pack) -> Result<Self> {
+        let s = map::package::summary(&file.path).map_err(|e| anyhow!("{}: {e}", file.file))?;
+        let preview =
+            Some(Self::preview_entry(&file.id)).filter(|e| s.preview && pack.entry(e).is_some());
         Ok(Self {
-            name: map.name.clone(),
-            size: map.size,
-            description: map.description.clone(),
-            starts: map.player_starts.iter().map(|s| s.player).collect(),
-            start_cells: map
-                .player_starts
-                .iter()
-                .map(|s| [s.x as f32, s.z as f32])
-                .collect(),
-            camps: map.camps.len() as u32,
-            sandbox: map.sandbox,
-            mission: map.mission.as_ref().map(|m| previews::MissionSummary {
-                campaign: m.campaign.clone(),
-                order: m.order,
-                title: m.title.clone(),
-                presentation: None,
-            }),
-            preview: None,
-            playable: !map.player_starts.is_empty(),
+            name: s.name,
+            size: s.size,
+            description: s.description,
+            starts: s.starts.iter().map(|s| s.0).collect(),
+            start_cells: s.starts.iter().map(|s| [s.1 as f32, s.2 as f32]).collect(),
+            camps: s.camps,
+            sandbox: s.sandbox,
+            mission: s.mission,
+            preview,
+            playable: !s.starts.is_empty(),
             file,
         })
     }
@@ -197,47 +181,37 @@ impl GameData {
         out
     }
 
-    /// The identity a save of this map must match.
-    pub fn match_identity(&self, map: &MapEntry, map_bytes: &[u8]) -> saves::MatchIdentity {
+    /// The identity a save of this map must match; `map_identity` is the map package's
+    /// digest (`MapFile::digest`).
+    pub fn match_identity(&self, map: &MapEntry, map_identity: &[u8]) -> saves::MatchIdentity {
         saves::MatchIdentity {
             map_id: map.id().into(),
-            map_digest: saves::digest(map_bytes),
+            map_digest: saves::digest(map_identity),
             content_digest: self.content_digest.clone(),
         }
     }
 
-    /// What a multiplayer client reports in `ready`: the content files and the map.
-    pub fn network_identity(&self, map_bytes: &[u8]) -> ContentIdentity {
+    /// What a multiplayer client reports in `ready`: the content and the map package's
+    /// digest.
+    pub fn network_identity(&self, map_identity: &[u8]) -> ContentIdentity {
         ContentIdentity::digest(
             canopy_net::wire::ABI,
             self.identity_parts
                 .iter()
                 .map(Vec::as_slice)
-                .chain(std::iter::once(map_bytes)),
+                .chain(std::iter::once(map_identity)),
         )
     }
 }
 
 fn load_maps(data: &Path, pack: &Pack) -> Result<Vec<MapEntry>> {
     let files = map::library(data).map_err(|e| anyhow!("maps: {e}"))?;
-    let mut errors = Vec::new();
-    let overviews = previews::load(data, &mut errors).unwrap_or_default();
-    for e in &errors {
-        tracing::warn!(error = %e, "map previews");
-    }
     let mut maps = Vec::new();
     for file in files {
-        let entry = match overviews.get(&file.id) {
-            Some(o) => MapEntry::from_overview(file, o, pack),
-            None => match MapEntry::from_map(file) {
-                Ok(entry) => entry,
-                Err(error) => {
-                    tracing::warn!(%error, "map skipped");
-                    continue;
-                }
-            },
-        };
-        maps.push(entry);
+        match MapEntry::from_package(file, pack) {
+            Ok(entry) => maps.push(entry),
+            Err(error) => tracing::warn!(%error, "map skipped"),
+        }
     }
     maps.sort_by(|a, b| a.name.cmp(&b.name).then(a.id().cmp(b.id())));
     Ok(maps)

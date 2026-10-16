@@ -3,8 +3,8 @@
 //!
 //! `cargo run -p canopy-ui --example gallery [-- --size 1920x1080 --scale 1 --out path]`
 //!
-//! Images are decoded from the mirrored `assets/library` (run `git lfs pull` for real
-//! art); the game binds the same names from the asset pack instead.
+//! Images are decoded from the base package's asset folders (run `git lfs pull` for real
+//! art); the game binds the same names (`<asset id>/<file>`) from the asset pack instead.
 
 #[path = "shared/sample.rs"]
 mod sample;
@@ -59,8 +59,12 @@ fn main() {
         let path = sample::icon(name);
         images.push((path.clone(), path));
     }
+    let folders = asset_folders(&repo().join("base/assets"));
     for (name, path) in images {
-        let Some((w, h, rgba)) = decode(&repo().join(&path)) else {
+        let file = path
+            .split_once('/')
+            .and_then(|(id, file)| folders.get(id).map(|folder| folder.join(file)));
+        let Some((w, h, rgba)) = file.as_deref().and_then(decode) else {
             eprintln!("skipped {path} (missing or an LFS pointer)");
             continue;
         };
@@ -137,6 +141,32 @@ fn main() {
     }
     image::save_buffer(&out, &rgba, size.0, size.1, image::ColorType::Rgba8).expect("png");
     println!("wrote {}", out.display());
+}
+
+/// Asset id → its folder, from every `asset.json` below `root`.
+fn asset_folders(root: &Path) -> std::collections::BTreeMap<String, std::path::PathBuf> {
+    let mut out = std::collections::BTreeMap::new();
+    let mut stack = vec![root.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if path.file_name().is_some_and(|n| n == "asset.json")
+                && let Ok(text) = std::fs::read_to_string(&path)
+                && let Some(id) = text
+                    .split("\"id\": \"")
+                    .nth(1)
+                    .and_then(|rest| rest.split('"').next())
+            {
+                out.insert(id.to_string(), dir.clone());
+            }
+        }
+    }
+    out
 }
 
 fn decode(path: &Path) -> Option<(u32, u32, Vec<u8>)> {

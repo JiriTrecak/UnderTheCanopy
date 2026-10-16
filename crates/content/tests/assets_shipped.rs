@@ -3,7 +3,7 @@
 
 use canopy_content::{
     Content, Errors,
-    assets::{Files, landscape, models, package, previews},
+    assets::{Files, landscape, models, package},
     package::Package,
 };
 use std::path::Path;
@@ -25,7 +25,6 @@ fn shipped_asset_indexes_are_valid() {
         &mut errors,
     );
     models::validate(&index.models, &content.manifest, &mut errors);
-    previews::load(data(), &mut errors);
     assert!(errors.is_empty(), "{}", Errors(errors));
     assert!(!index.models.is_empty());
 }

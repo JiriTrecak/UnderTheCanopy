@@ -2,7 +2,7 @@
 
 mod map_fixture;
 
-use canopy_content::map::{MAP_HALO, WaterFlow, decode_base64, decode_bytes, decode_floats};
+use canopy_content::map::{MAP_HALO, WaterFlow, decode_base64, decode_floats, grid::Grid};
 use map_fixture::{SIZE, base64, floats, map, parse, set, vertex_count};
 use serde_json::json;
 
@@ -23,15 +23,14 @@ fn base64_decodes_like_atob() {
 
 #[test]
 fn byte_grids_need_canonical_dimensions() {
-    assert_eq!(decode_bytes("AQID", 3).unwrap(), [1, 2, 3]);
-    assert_eq!(decode_bytes("AQI=", 2).unwrap(), [1, 2]);
-    // Right length for the count, but whitespace makes it decode short.
-    assert!(decode_bytes("AQ I", 3).is_err());
-    assert!(decode_bytes("AQID", 2).is_err());
-    assert!(decode_bytes("AQ", 1).is_err());
+    let grid: Grid = serde_json::from_value(json!("AQID")).unwrap();
+    assert_eq!(grid.exactly(3).unwrap(), [1, 2, 3]);
+    assert!(grid.exactly(2).is_err());
+    assert!(serde_json::from_value::<Grid>(json!("AQ-D")).is_err());
     let values = [0.5_f32, -16.0, 24.0, f32::MIN_POSITIVE];
-    assert_eq!(decode_floats(&floats(values), 4).unwrap(), values);
-    assert!(decode_floats(&floats(values), 3).is_err());
+    let grid: Grid = serde_json::from_value(json!(floats(values))).unwrap();
+    assert_eq!(decode_floats(&grid, 4).unwrap(), values);
+    assert!(decode_floats(&grid, 3).is_err());
 }
 
 #[test]

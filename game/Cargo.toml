@@ -66,11 +66,10 @@ category = "StrategyGame"
 before-packaging-command = "cargo run --release -p canopy-cook -- --allow-lfs-pointers && cargo build --release -p canopy"
 icons = ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"]
 # Game data ships in `data/`: `Contents/Resources/data` on macOS, beside the executable on Windows.
-# The game reads the base package's documents (staged by the cooker: JSON, Lua, map grids)
-# and the maps; every binary asset ships cooked in canopy.pack.
+# The game reads the base package's documents, maps included (staged by the cooker: JSON,
+# Lua, map grids); every binary asset and map preview ships cooked in canopy.pack.
 resources = [
     { src = "../target/cooked/base", target = "data/base" },
-    { src = "../assets/maps", target = "data/assets/maps" },
     { src = "../config", target = "data/config" },
     # Release gallery images for What's new (Git LFS; pointers in CI show as unavailable).
     { src = "../releases/media", target = "data/releases/media" },

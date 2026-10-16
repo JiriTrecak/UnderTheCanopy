@@ -599,7 +599,7 @@ impl Game {
             let map = data.map(&meta.identity.map_id).ok_or_else(|| {
                 anyhow::anyhow!("the map {} is not in this game", meta.identity.map_id)
             })?;
-            let bytes = std::fs::read(&map.file.path)?;
+            let bytes = map.identity()?;
             let here = data.match_identity(map, &bytes);
             self.library.read(id, Some(&here))
         })();
@@ -687,13 +687,13 @@ impl Game {
         let identity = data.map(&start.map).map_or_else(
             || MatchIdentity {
                 map_id: start.map.clone(),
-                map_digest: saves::digest(&prepared.map_bytes),
+                map_digest: saves::digest(&prepared.map_identity),
                 content_digest: data.content_digest.clone(),
             },
-            |m| data.match_identity(m, &prepared.map_bytes),
+            |m| data.match_identity(m, &prepared.map_identity),
         );
         let ready = start.networked.then(|| Ready {
-            content: data.network_identity(&prepared.map_bytes),
+            content: data.network_identity(&prepared.map_identity),
             build: canopy_net::wire::BUILD.into(),
         });
         self.mission_hud = MissionHud::new(prepared.objectives.clone());
@@ -1410,7 +1410,7 @@ impl Game {
             let map = data.map(&identity.map_id).ok_or_else(|| {
                 anyhow::anyhow!("the map {} is not in this game", identity.map_id)
             })?;
-            let bytes = std::fs::read(&map.file.path)?;
+            let bytes = map.identity()?;
             Ok(data.match_identity(map, &bytes))
         };
         match self.library.import(&path, mode, here) {

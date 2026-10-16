@@ -99,11 +99,14 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
         Content::load(&paths.data)
     };
     let content = Arc::new(content.map_err(|e| anyhow!("content: {e}"))?);
-    // A `.utcmap` path instead of an id loads that file (tests and captures of maps the
-    // game does not ship).
+    // A map package's path instead of an id loads that package (tests and captures of maps
+    // the game does not ship).
     let path = std::path::Path::new(id);
-    let mut map = if path.extension().is_some_and(|e| e == map::UTCMAP_EXTENSION) {
-        map::UtcMap::load(path).map_err(|e| anyhow!("{e}"))?
+    let mut map = if path
+        .extension()
+        .is_some_and(|e| e == canopy_content::package::MAP_EXTENSION)
+    {
+        map::package::load(path).map_err(|e| anyhow!("{e}"))?
     } else {
         let library = map::library(&paths.data).map_err(|e| anyhow!("maps: {e}"))?;
         let file = library.iter().find(|m| m.id == id).with_context(|| {
@@ -270,8 +273,8 @@ pub struct Prepared {
     pub loaded: Loaded,
     pub game: Match,
     pub map_name: String,
-    /// Bytes of the `.utcmap` file (identities for saves and multiplayer).
-    pub map_bytes: Vec<u8>,
+    /// The map package's digest (identities for saves and multiplayer).
+    pub map_identity: Vec<u8>,
     /// The mission's objectives (titles for the mission HUD).
     pub objectives: Vec<canopy_content::map::Objective>,
 }
@@ -291,9 +294,10 @@ pub fn prepare(
     let entry = data
         .map(&request.map)
         .with_context(|| format!("no map {}", request.map))?;
-    let map_bytes = std::fs::read(&entry.file.path)
-        .with_context(|| format!("cannot read {}", entry.file.file))?;
-    let map = map::UtcMap::parse(&map_bytes, &entry.file.file)
+    let map_identity = entry.identity()?;
+    let map = entry
+        .file
+        .load()
         .map_err(|e| anyhow!("{}: {e}", entry.file.file))?;
     let look = Look::load(&paths.data, map.biome())?;
     progress(Stage::World, 0.25);
@@ -341,7 +345,7 @@ pub fn prepare(
         loaded,
         game,
         map_name: entry.name.clone(),
-        map_bytes,
+        map_identity,
         objectives: map
             .mission
             .as_ref()

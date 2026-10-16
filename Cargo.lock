@@ -438,7 +438,9 @@ dependencies = [
 name = "canopy-content"
 version = "0.3.4"
 dependencies = [
+ "base64",
  "canopy-content",
+ "flate2",
  "serde",
  "serde_json",
  "serde_path_to_error",

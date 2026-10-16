@@ -103,14 +103,18 @@ fn round_trips() {
 }
 
 #[test]
-fn reads_files() {
+fn packages_round_trip() {
     let folder = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("map-format");
-    std::fs::create_dir_all(&folder).expect("temp folder");
-    let path = folder.join("fixture.utcmap");
-    std::fs::write(&path, map().to_string()).expect("written");
-    let loaded = UtcMap::load(&path).unwrap_or_else(|e| panic!("{e}"));
-    assert_eq!(loaded.name, "Fixture");
-    assert!(UtcMap::load(&folder.join("missing.utcmap")).is_err());
+    let _ = std::fs::remove_dir_all(&folder);
+    let parsed = parse(map()).expect("parses");
+    let path = folder.join("fixture.utcm");
+    canopy_content::map::package::write(&parsed, "fixture", "1.0.0", &path).expect("written");
+    let loaded = canopy_content::map::package::load(&path).unwrap_or_else(|e| panic!("{e}"));
+    assert_eq!(loaded, parsed);
+    let summary = canopy_content::map::package::summary(&path).unwrap();
+    assert_eq!(summary.name, "Fixture");
+    assert_eq!(summary.starts.len(), parsed.player_starts.len());
+    assert!(canopy_content::map::package::load(&folder.join("missing.utcm")).is_err());
 }
 
 #[test]

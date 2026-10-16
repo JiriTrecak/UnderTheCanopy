@@ -56,7 +56,7 @@ pub enum Mode {
 #[serde(rename_all = "camelCase")]
 pub struct MatchIdentity {
     pub map_id: String,
-    /// SHA-256 of the `.utcmap` file, hex.
+    /// SHA-256 of the map package's digest, hex.
     pub map_digest: String,
     /// `ContentIdentity::sha256` of the content files.
     pub content_digest: String,

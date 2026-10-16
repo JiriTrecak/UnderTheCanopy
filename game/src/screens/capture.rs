@@ -580,7 +580,7 @@ fn multiplayer(rig: &mut Rig) -> Result<()> {
             .skirmish_maps()
             .max_by_key(|m| m.starts.len())
             .context("a map")?;
-        let bytes = std::fs::read(&map.file.path)?;
+        let bytes = map.identity()?;
         let joined = net
             .create_room(&CreateRoom {
                 name: "Bo's lobby".into(),

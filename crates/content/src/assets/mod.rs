@@ -1,12 +1,11 @@
 //! Assets: the folders packages keep them in ([`package`]) and the registries the game
 //! reads, built from them: asset records ([`Manifest`]), the model index ([`models`]), the
-//! landscape catalogue ([`landscape`]); map overviews for the menus ([`previews`]); texture
+//! landscape catalogue ([`landscape`]); texture
 //! data files the renderer imports ([`textures`]).
 
 pub mod landscape;
 pub mod models;
 pub mod package;
-pub mod previews;
 pub mod textures;
 
 use crate::{

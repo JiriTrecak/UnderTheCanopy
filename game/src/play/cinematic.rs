@@ -314,16 +314,20 @@ mod tests {
     /// Writes the scene mission on a shipped map for `canopy shot --map <file>`:
     /// `cargo test -p canopy -- --ignored write_the_scene_capture_map`.
     #[test]
-    #[ignore = "reads the shipped data; writes target/scene-capture.utcmap"]
+    #[ignore = "reads the shipped data; writes target/scene-capture.utcm"]
     fn write_the_scene_capture_map() {
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
         let content = canopy_content::Content::load(&root).unwrap();
-        let base =
-            canopy_content::map::UtcMap::load(&root.join("assets/maps/skirmish/echo-isles.utcmap"))
-                .unwrap();
+        let base = canopy_content::map::library(&root)
+            .unwrap()
+            .into_iter()
+            .find(|m| m.id == "echo-isles")
+            .unwrap()
+            .load()
+            .unwrap();
         let map = scene_map(&content, &base).unwrap();
-        let out = root.join("target/scene-capture.utcmap");
-        std::fs::write(&out, serde_json::to_vec(&map).unwrap()).unwrap();
-        canopy_content::map::UtcMap::load(&out).unwrap();
+        let out = root.join("target/scene-capture.utcm");
+        canopy_content::map::package::write(&map, "scene-capture", "1.0.0", &out).unwrap();
+        canopy_content::map::package::load(&out).unwrap();
     }
 }

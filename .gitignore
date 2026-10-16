@@ -8,9 +8,3 @@
 # Authored maps and their previews are source data.
 /assets/graphics/*
 !/assets/graphics/.gitkeep
-/assets/maps/*
-!/assets/maps/.gitkeep
-!/assets/maps/showcase/
-!/assets/maps/skirmish/
-!/assets/maps/campaign/
-!/assets/maps/previews/

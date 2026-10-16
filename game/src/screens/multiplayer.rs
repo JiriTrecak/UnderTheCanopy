@@ -85,7 +85,7 @@ impl Default for Multiplayer {
     }
 }
 
-/// A short form of a map's identity for `mapRevision`.
+/// A short form of a map's identity (its package digest) for `mapRevision`.
 pub fn map_revision(bytes: &[u8]) -> String {
     crate::saves::digest(bytes)[..16].to_string()
 }
@@ -256,7 +256,7 @@ impl Multiplayer {
                 let Some(map) = maps.get(self.selected_map) else {
                     return;
                 };
-                let bytes = std::fs::read(&map.file.path).unwrap_or_default();
+                let bytes = map.identity().unwrap_or_default();
                 let seats = (2 + self.seats).min(map.starts.len()).max(2) as u32;
                 self.joining = Some(net.create_room(&CreateRoom {
                     name: format!("{name}'s lobby"),

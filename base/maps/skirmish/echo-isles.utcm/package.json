@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "base": ">=0.4"
+  },
+  "description": "Though these islands are surrounded by deep and treacherous waters, they have seen little peace. Many of the creatures dwelling here are refugees from the war. They have nothing left to lose. Don't expect a warm welcome.",
+  "format": 1,
+  "id": "echo-isles",
+  "kind": "map",
+  "name": "Echo Isles v2.2",
+  "version": "2.2.0"
+}
