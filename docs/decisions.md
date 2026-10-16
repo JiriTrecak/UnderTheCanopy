@@ -438,3 +438,14 @@ Jiri asked for movement as crisp and fluid as StarCraft II's. The old game's mov
 - **Terrain changes.** A building across the straight way to the waypoint replans at once (at most every 20 ticks).
 
 Consequences: allies on the move may overlap briefly while squeezing past each other in a jam; never a standing body, an enemy or terrain. Exact timings changed where units used to stop to turn (duels a few ticks earlier, workers' mining cycle about 11% faster). The old route follower is gone; the negotiation code stays as the jam fallback. `crates/sim/tests/movement_feel.rs` measures the feel (arrival, stalled ticks, direction jerks, overlap) on six scenarios; before → after: a 25-unit chokepoint never finished (2 stuck, 2,974 stalled ticks, 228 jerks) → 14.7 s (6, 18); two groups crossing never finished (3 stuck) → 14.6 s; walking through idle allies 21.6 s → 13.6 s; open ground 84 stalled ticks → 0.
+
+## D52. AI fixes: wounded units, staging point, attack readiness, grouped reinforcements (2026-10-16, Jiri asked — review)
+
+Jiri saw the AI clump in its base and attack without waiting for a bigger army. Watching AI-versus-AI matches showed why: units below the retreat health (28 %) left the army for good — and nothing heals in this game, so 5–12 wounded units stood idle at the hall door for the rest of the match, while the army went out short-handed.
+
+- **Wounded units are pulled out only while they fight** (a hostile within 14 cells), sent to the staging point; away from fighting they stay in the army. Idle army units in the base dropped from 5–12 to the two home guards.
+- **A staging point** 12 cells out of the base towards the nearest known enemy building (else the map's centre, at most halfway) is where the army regroups, withdraws to and where reinforcements gather; the home guard stands 6 cells out, not on the hall's doorstep.
+- **Attack readiness**: enough units for the stage of the match (the content's minimum plus one a minute, up to half the maximum) and 1.2 × the power of the enemy army seen near the target in the last minute; after 20 minutes the numbers alone decide, and an army at three fifths of the maximum goes regardless.
+- **Reinforcements** go out three or more at a time (or at once when the army fights near home) instead of walking alone into the enemy.
+
+Measured on both shipped maps with four seeds each (AI duels, one hour cap): matches that end now end sooner (mean 28.7 game minutes, from 37–39), as the AI fights with its whole army; two of eight still reach the cap, as one or two of eight did before these changes and before D51 — a stalemate between two large armies, left for later.
