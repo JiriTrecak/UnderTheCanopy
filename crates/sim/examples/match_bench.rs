@@ -2,7 +2,7 @@
 //!
 //! ```text
 //! cargo run --release -p canopy-sim --example match_bench -- --data . --map echo-isles \
-//!     [--crowd 50 | --ai 2] [--ticks 1600] [--warmup 0] [--no-spans]
+//!     [--crowd 50 | --ai 2] [--ticks 1600] [--warmup 0] [--no-spans] [--save <file>]
 //! ```
 //!
 //! `--crowd N` is the measured battle of `canopy shot --crowd N` (eight players with N
@@ -11,7 +11,9 @@
 //! max, the `tick: …` step spans the world marks, and the costliest inner spans. The
 //! span subscriber costs a little; `--no-spans` times whole ticks without it. The
 //! digest at the end covers every tick's fingerprint and the final saved state: equal
-//! digests mean identical simulations.
+//! digests mean identical simulations. `--save <file>` writes that final state as JSON and
+//! the report adds the fingerprints' digest alone, so a content migration that only
+//! renames references can show identical play and diff the saved state.
 #![allow(clippy::disallowed_methods)] // wall-clock timing of the benchmark itself
 
 use canopy_content::{Content, map};
@@ -86,6 +88,7 @@ struct Args {
     warmup: u32,
     /// Time the whole tick only, without the span subscriber's overhead.
     no_spans: bool,
+    save: Option<PathBuf>,
 }
 
 fn args() -> Result<Args, String> {
@@ -97,6 +100,7 @@ fn args() -> Result<Args, String> {
         ticks: 1600,
         warmup: 0,
         no_spans: false,
+        save: None,
     };
     let mut it = std::env::args().skip(1);
     while let Some(flag) = it.next() {
@@ -110,6 +114,7 @@ fn args() -> Result<Args, String> {
             "--ticks" => out.ticks = number(value()?)?,
             "--warmup" => out.warmup = number(value()?)?,
             "--no-spans" => out.no_spans = true,
+            "--save" => out.save = Some(value()?.into()),
             other => return Err(format!("unknown option {other}")),
         }
     }
@@ -203,8 +208,13 @@ fn main() -> Result<(), String> {
             costs.push(ms(d));
         }
     }
+    let ticks_digest = digest;
     let save = serde_json::to_vec(&world.save()).map_err(|e| e.to_string())?;
     digest = fnv(digest, &save);
+    if let Some(path) = &args.save {
+        let pretty = serde_json::to_vec_pretty(&world.save()).map_err(|e| e.to_string())?;
+        std::fs::write(path, pretty).map_err(|e| format!("{}: {e}", path.display()))?;
+    }
 
     let n = ticks.len();
     let units = world
@@ -270,6 +280,7 @@ fn main() -> Result<(), String> {
     for (_, name, costs) in inner.iter().take(16) {
         report(name, costs);
     }
+    println!("fingerprints {ticks_digest:016x}");
     println!("digest {digest:016x}");
     Ok(())
 }

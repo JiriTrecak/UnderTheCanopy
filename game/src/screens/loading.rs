@@ -99,6 +99,7 @@ fn dev(
             players: spec.players,
             biome: spec.biome.as_deref(),
             crowd: spec.crowd,
+            gallery: false,
             colors: spec.colors.clone(),
             human: spec.human,
         },

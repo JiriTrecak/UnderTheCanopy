@@ -127,3 +127,87 @@ pub fn crowd(map: &mut UtcMap, content: &Content, per_player: u32) -> Result<Mat
             .collect(),
     })
 }
+
+/// Adds one of every unit and building of the content to `map`, in rows around the middle
+/// of the starts: units first, then buildings, each in id order, all owned by player 0
+/// (neutrals by nobody), facing south. A review scenario for captures (`canopy shot
+/// --gallery`): every model at once, to compare looks before and after a change. Returns
+/// the match setup (player 0 human, nobody else).
+pub fn gallery(map: &mut UtcMap, content: &Content) -> Result<MatchSetup, String> {
+    let in_roster = |id: &str| {
+        content
+            .rules
+            .races
+            .values()
+            .any(|r| r.roster.iter().any(|x| x.as_str() == id))
+    };
+    let n = map.player_starts.len().max(1) as f64;
+    let cx = (map.player_starts.iter().map(|s| s.x).sum::<f64>() / n).floor();
+    let cz = (map.player_starts.iter().map(|s| s.z).sum::<f64>() / n).floor();
+    let units: Vec<&Definition> = content
+        .definitions
+        .iter()
+        .filter(|d| d.kind == Kind::Unit)
+        .collect();
+    let buildings: Vec<&Definition> = content
+        .definitions
+        .iter()
+        .filter(|d| d.kind == Kind::Building)
+        .collect();
+    let owner = |d: &Definition| {
+        if in_roster(d.id.as_str()) {
+            Owner::Player(0)
+        } else {
+            Owner::Nobody
+        }
+    };
+    // Units: rows of 12, 6 cells apart, north of the middle.
+    const UNIT_COLUMNS: usize = 12;
+    for (i, d) in units.iter().enumerate() {
+        let (row, column) = (i / UNIT_COLUMNS, i % UNIT_COLUMNS);
+        map.entities.push(Placement {
+            activation: None,
+            id: format!("gallery-unit-{i}"),
+            map_knowledge: None,
+            definition: d.id.clone(),
+            position: Point {
+                x: cx + (column as f64 - (UNIT_COLUMNS as f64 - 1.0) / 2.0) * 6.0,
+                y: cz - 8.0 - row as f64 * 6.0,
+                surface: None,
+            },
+            rotation: 180.0,
+            owner: owner(d),
+            initial_state: None,
+            appearance: None,
+        });
+    }
+    // Buildings: rows of 6, 20 cells apart, south of the middle.
+    const BUILDING_COLUMNS: usize = 6;
+    for (i, d) in buildings.iter().enumerate() {
+        let (row, column) = (i / BUILDING_COLUMNS, i % BUILDING_COLUMNS);
+        let x = cx + (column as f64 - (BUILDING_COLUMNS as f64 - 1.0) / 2.0) * 20.0;
+        let z = cz + 12.0 + row as f64 * 20.0;
+        map.entities.push(Placement {
+            activation: None,
+            id: format!("gallery-building-{i}"),
+            map_knowledge: None,
+            definition: d.id.clone(),
+            position: aligned(d, x, z),
+            rotation: 0.0,
+            owner: owner(d),
+            initial_state: None,
+            appearance: None,
+        });
+    }
+    Ok(MatchSetup {
+        seed: 1,
+        slots: vec![Slot {
+            player: 0,
+            kind: SlotKind::Human,
+            name: None,
+            team: None,
+            hero: None,
+            race: None,
+        }],
+    })
+}

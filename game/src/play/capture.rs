@@ -70,6 +70,7 @@ pub fn run(
             hour: options.hour,
             players: options.players,
             crowd: None,
+            gallery: false,
             colors: options.colors.clone(),
             biome: options.biome.as_deref(),
             human: me,

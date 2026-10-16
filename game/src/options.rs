@@ -6,7 +6,7 @@
 //! canopy capture-screens --out <folder> [--size <w>x<h>] [--scale <s>] [--only releases]
 //!                         [--data <folder>]
 //! canopy shot --map <id> --camera <x,z,zoom[,yaw] | battle[,zoom]> --out <png>
-//!             [--tick <n>] [--players <n>] [--crowd <n>] [--colors <i,j,…>] [--size <w>x<h>]
+//!             [--tick <n>] [--players <n>] [--crowd <n> | --gallery] [--colors <i,j,…>] [--size <w>x<h>]
 //!             [--hour <h>] [--time <s>] [--frames <n>] [--no-shadows] [--pitch <deg>]
 //!             [--movers <n>] [--effect <id>[,<age>[,<radius>]]]… [--viewer <slot>]
 //!             [--select all|player:<slot>|<id,…>] [--health damaged|always|selected]
@@ -153,6 +153,8 @@ pub struct Options {
     pub tick: u32,
     /// A measured battle: this many soldiers for each of eight players.
     pub crowd: Option<u32>,
+    /// One of every unit and building instead of a match (review captures).
+    pub gallery: bool,
     /// Player colour index of each slot (`config/players.json`).
     pub colors: Option<Vec<usize>>,
     pub camera: Option<CameraChoice>,
@@ -230,6 +232,7 @@ impl Options {
             players: None,
             tick: 0,
             crowd: None,
+            gallery: false,
             colors: None,
             camera: None,
             hour: None,
@@ -280,6 +283,7 @@ impl Options {
                     options.players = Some(n);
                 }
                 "--tick" => options.tick = value("--tick")?.parse().context("--tick")?,
+                "--gallery" => options.gallery = true,
                 "--crowd" => options.crowd = Some(value("--crowd")?.parse().context("--crowd")?),
                 "--colors" => {
                     let text = value("--colors")?;
@@ -368,7 +372,7 @@ impl Options {
                     size = [w.parse().context("--size")?, h.parse().context("--size")?];
                 }
                 other => bail!(
-                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --tick, --crowd, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --preset, --lod-pixels, --shadow-map, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --effect, --viewer, --select, --health, --damage, --play, --observe, --input)"
+                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --tick, --crowd, --gallery, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --preset, --lod-pixels, --shadow-map, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --effect, --viewer, --select, --health, --damage, --play, --observe, --input)"
                 ),
             }
             first = false;

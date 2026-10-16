@@ -22,6 +22,8 @@ pub struct MatchSpec<'a> {
     /// A measured battle instead of a match: this many soldiers for each of eight players,
     /// facing each other around the middle of the starts (no computer players).
     pub crowd: Option<u32>,
+    /// One of every unit and building (`canopy_sim::crowd::gallery`).
+    pub gallery: bool,
     /// Player colour (index into `config/players.json`) of each slot, when not its own.
     pub colors: Option<Vec<usize>>,
     /// The local player's slot (a human on that start); `None` spectates computer
@@ -116,6 +118,9 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
     let look = Look::load(&paths.data, spec.biome.unwrap_or(map.biome()))?;
     let setup = match spec.crowd {
         Some(n) => canopy_sim::crowd::crowd(&mut map, &content, n).map_err(|e| anyhow!(e))?,
+        None if spec.gallery => {
+            canopy_sim::crowd::gallery(&mut map, &content).map_err(|e| anyhow!(e))?
+        }
         None => {
             let mut setup = canopy_scene::spectator_setup(&map, spec.players);
             if let Some(slot) = setup
@@ -129,9 +134,9 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
             setup
         }
     };
-    let human = spec
-        .human
-        .filter(|p| spec.crowd.is_none() && setup.slots.iter().any(|s| s.player == *p));
+    let human = spec.human.filter(|p| {
+        spec.crowd.is_none() && !spec.gallery && setup.slots.iter().any(|s| s.player == *p)
+    });
     let session = Session::local(setup, human);
     let setup = session
         .setup()
