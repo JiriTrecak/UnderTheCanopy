@@ -5,6 +5,7 @@
 - [Decisions](decisions.md): the decision log.
 - [Parity](parity.md): the phase 1 checklist against the old game, with evidence and what remains.
 - [Structure](structure.md): repository layout, dependency rules, data.
+- [Editor](editor.md): the native editor's design, decided milestone by milestone (phase 2).
 - [Packages](packages.md): how content is organised: packages, layering, assets, maps (D53). Agent skills in `.claude/skills/canopy-*` describe each format.
 - [Renderer](renderer.md): renderer design and its open questions.
 - [Audio](audio.md): playback, positional sound, voice limiting, effect sounds and music.
