@@ -46,12 +46,20 @@ This repository holds the only copy of the data (D47). The editors still run fro
 
 `settlers-web` (`../Settlers 3 Web`) stays runnable and is the reference for behaviour and looks. It keeps hosting the editors until they are ported; it no longer holds data, and the match server moved to `server/` (D48). Nothing is copied from its code; read or run it to answer "what does the game do here".
 
-## Phase 2: deferred
+## Phase 2: one editor, and players' content
 
-| Deferred | Why it can wait |
+Agreed with Jiri, 2026-10-16. One native Rust editor shipped inside the game, used by us to author the game itself (directly and by agents through MCP) and given to players for their own maps and mods. The base game becomes the bottom layer of the same package format players use (as in StarCraft II and Factorio).
+
+**Working rule: every milestone starts with a deep design discussion with Jiri, and no code is written for it until that discussion is settled.** The milestones below are candidates, not commitments; their scope changes as each is discussed. Old editors are not ported: each editor is designed again from the ground up. The spell editor is the exception, and its design carries over largely as it is.
+
+| Candidate | Scope to discuss |
 |---|---|
-| Map, asset and spell editors (and the in-game map editor entry) | They work in the old repository and write into this one through its data links. Ported one at a time once the game is near 100%, onto the Rust core (Tauri host, WebGPU viewport). |
-| Warcraft map importer | Part of the map editor. |
-| Match server in Rust | It works as TypeScript in `server/` (D48); the protocol is frozen. |
-| Content format redesign (one file per definition, generated TypeScript types) | Happens with the editors. |
-| Steam integration | Purely additive. |
+| **M0. Data layer** (current) | Packages and layering (base, campaign, map; mods later), one file per definition, overrides and inheritance, schemas from the Rust types, the asset registry, the map format, user folders, content identity, migration of today's data. |
+| M1. Editor shell | Home screen, tabs, command bus with undo, MCP and a headless mode, the viewport on the game renderer, reload of content and assets. |
+| M2. Data editors | Units and heroes, buildings, items, abilities (the spell editor) and effects, linked to each other. |
+| M3. Map editor | Rebuilt around large-scale tools: symmetric and rotational map halves, shaping whole landforms ("an island here"), start locations that place their mine and forest by rules, and a new look for ground cover (moving grass, decals, foliage). |
+| M4. Asset editor | Scope to be discovered first. |
+| M5. Players' content | Custom maps in the game, packaged maps, map transfer in multiplayer, the Lua sandbox audit. |
+| M6. Retire the old repository | |
+
+AI stays code, not data: it should read the game data and react to what the opponent does rather than follow fixed unit lists, and custom races later bring their own AI as an included Lua script. Deferred beyond these: a campaign editor, the Warcraft map importer, the match server in Rust (it works as TypeScript in `server/`, D48), Steam integration.
