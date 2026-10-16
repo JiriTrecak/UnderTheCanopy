@@ -23,12 +23,10 @@ fn material(id: &str) -> [f32; 3] {
     let has = |words: &[&str]| words.iter().any(|w| id.contains(w));
     if has(&["cliff"]) {
         [92.0, 86.0, 78.0]
+    } else if has(&["lgrd", "dark"]) {
+        [58.0, 96.0, 44.0]
     } else if has(&["grs", "grass"]) {
-        if has(&["lgrd", "dark"]) {
-            [58.0, 96.0, 44.0]
-        } else {
-            [92.0, 138.0, 58.0]
-        }
+        [92.0, 138.0, 58.0]
     } else if has(&["rok", "rock", "stone"]) {
         [128.0, 124.0, 116.0]
     } else if has(&["san", "sand"]) {

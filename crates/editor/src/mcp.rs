@@ -152,7 +152,7 @@ struct MapPictureArgs {
 pub struct MapStrokeArgs {
     /// The map: its id or its package path.
     pub map: String,
-    /// raise, lower, flatten, smooth, cliff, ramp, paint, water or trees. A ramp runs
+    /// raise, lower, flatten, smooth, cliff, ramp, paint, water, trees or props. A ramp runs
     /// straight from the first point to the last (from the ground height there to the
     /// height at the last point, or `level`), twice the radius wide.
     pub tool: String,
@@ -178,6 +178,9 @@ pub struct MapStrokeArgs {
     /// (default 6).
     pub tree: Option<String>,
     pub density: Option<f32>,
+    /// props: the decoration to scatter (map_info lists the props); spaced wider than
+    /// trees, at `density` per 100 cells.
+    pub prop: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
@@ -388,7 +391,7 @@ impl Handler {
     }
 
     #[tool(
-        description = "One brush stroke along a line as one undo step, as the editor's brushes do it: raise, lower, flatten, smooth, cliff (hard steps of one level), ramp (a straight walkable slope between two heights), paint, water and trees."
+        description = "One brush stroke along a line as one undo step, as the editor's brushes do it: raise, lower, flatten, smooth, cliff (hard steps of one level), ramp (a straight walkable slope between two heights), paint, water, trees and props (decoration that blocks nothing)."
     )]
     async fn map_stroke(
         &self,

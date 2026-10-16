@@ -164,9 +164,10 @@ impl Shell {
             "paint" => MapTool::Paint,
             "water" => MapTool::Water,
             "trees" => MapTool::Trees,
+            "props" => MapTool::Props,
             other => {
                 return Err(format!(
-                    "No brush {other}: raise, lower, flatten, smooth, cliff, paint, water or trees"
+                    "No brush {other}: raise, lower, flatten, smooth, cliff, ramp, paint, water, trees or props"
                 ));
             }
         };
@@ -209,6 +210,19 @@ impl Shell {
                 return Err(format!(
                     "{} is not a tree the package has; map_info lists them",
                     settings.tree
+                ));
+            }
+        }
+        if let Some(prop) = args.prop {
+            settings.prop = if prop.starts_with("scenery.") {
+                prop
+            } else {
+                format!("scenery.{prop}")
+            };
+            if !crate::map::tools::prop_kinds(&content).contains(&settings.prop) {
+                return Err(format!(
+                    "{} is not a prop the package has; map_info lists them",
+                    settings.prop
                 ));
             }
         }
@@ -338,6 +352,7 @@ impl Shell {
             "trees": map.authoring.objects.len(),
             "paintMaterials": map.authoring.terrain.paint.iter().map(|p| p.material.clone()).collect::<Vec<_>>(),
             "treeKinds": content.as_deref().map(crate::map::tools::tree_kinds).unwrap_or_default(),
+            "propKinds": content.as_deref().map(crate::map::tools::prop_kinds).unwrap_or_default(),
             "heights": {
                 "every": step,
                 "note": "rows run north (z = 0) to south, columns west to east; ~ is water",

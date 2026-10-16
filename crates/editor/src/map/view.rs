@@ -193,6 +193,26 @@ fn panel(ui: &mut Ui, session: &mut Session, content: Option<&Content>) {
                     });
             }
         }
+        Tool::Props => {
+            ui.add(egui::Slider::new(&mut t.density, 1.0..=25.0).text("Density"));
+            if let Some(content) = content {
+                let props = tools::prop_kinds(content);
+                if t.prop.is_empty()
+                    && let Some(first) = props.first()
+                {
+                    t.prop = first.clone();
+                }
+                egui::ComboBox::from_label("Prop")
+                    .selected_text(t.prop.trim_start_matches("scenery."))
+                    .height(320.0)
+                    .show_ui(ui, |ui| {
+                        for prop in props {
+                            let label = prop.trim_start_matches("scenery.").to_string();
+                            ui.selectable_value(&mut t.prop, prop, label);
+                        }
+                    });
+            }
+        }
         Tool::Amber => {
             ui.add(
                 egui::Slider::new(&mut t.amber, 500..=6000)
@@ -682,7 +702,7 @@ pub fn show(
                 stroke.from.get_or_insert([hit.x, hit.z]);
                 stroke.to = Some([hit.x, hit.z]);
             } else if let Some(map) = session.map.as_mut() {
-                if tool == Tool::Trees {
+                if matches!(tool, Tool::Trees | Tool::Props) {
                     tools::trees(map, &session.tools, &mut stroke, hit.x, hit.z);
                 } else {
                     tools::brush(map, &session.tools, &mut stroke, hit.x, hit.z, dt, cliff);
@@ -792,6 +812,8 @@ fn finish(session: &mut Session, docs: Option<&Docs>, mut stroke: Stroke) -> Opt
     let label = match stroke.tool {
         Tool::Trees if stroke.lower => "Clear trees",
         Tool::Trees => "Plant trees",
+        Tool::Props if stroke.lower => "Clear props",
+        Tool::Props => "Scatter props",
         Tool::Paint => "Paint the ground",
         Tool::Water if stroke.lower => "Drain water",
         Tool::Water => "Flood",
@@ -847,6 +869,12 @@ pub fn stroke(
     {
         settings.water_level = level;
     }
+    if tool == Tool::Props && settings.prop.is_empty() {
+        settings.prop = tools::prop_kinds(content)
+            .into_iter()
+            .next()
+            .ok_or("The package has no props")?;
+    }
     if tool == Tool::Trees && settings.tree.is_empty() {
         settings.tree = tools::tree_kinds(content)
             .into_iter()
@@ -889,7 +917,7 @@ pub fn stroke(
     }
     for _ in 0..passes.max(1) {
         for [x, z] in &along {
-            if tool == Tool::Trees {
+            if matches!(tool, Tool::Trees | Tool::Props) {
                 tools::trees(map, &settings, &mut stroke, *x, *z);
             } else {
                 tools::brush(map, &settings, &mut stroke, *x, *z, 0.1, cliff);

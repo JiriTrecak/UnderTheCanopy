@@ -27,13 +27,14 @@ pub enum Tool {
     Paint,
     Water,
     Trees,
+    Props,
     Amber,
     Camp,
     Start,
 }
 
 impl Tool {
-    pub const ALL: [Tool; 13] = [
+    pub const ALL: [Tool; 14] = [
         Tool::Select,
         Tool::Raise,
         Tool::Lower,
@@ -44,6 +45,7 @@ impl Tool {
         Tool::Paint,
         Tool::Water,
         Tool::Trees,
+        Tool::Props,
         Tool::Amber,
         Tool::Camp,
         Tool::Start,
@@ -61,6 +63,7 @@ impl Tool {
             Tool::Paint => "Paint",
             Tool::Water => "Water",
             Tool::Trees => "Trees",
+            Tool::Props => "Props",
             Tool::Amber => "Amber",
             Tool::Camp => "Camp",
             Tool::Start => "Start",
@@ -81,6 +84,7 @@ impl Tool {
             Tool::Paint => "Drag to paint the chosen ground",
             Tool::Water => "Drag to flood to the water level (Shift drains)",
             Tool::Trees => "Drag to plant trees (Shift clears them)",
+            Tool::Props => "Drag to scatter rocks, logs, mushrooms and flowers (Shift clears them)",
             Tool::Amber => "Click to place an amber site facing the nearest start",
             Tool::Camp => "Click to place a creep camp of the chosen strength",
             Tool::Start => "Click to place a player start with its amber",
@@ -100,6 +104,7 @@ impl Tool {
                 | Tool::Paint
                 | Tool::Water
                 | Tool::Trees
+                | Tool::Props
         )
     }
 }
@@ -163,6 +168,8 @@ pub struct Tools {
     /// Scenery the tree brush plants (a harvestable tree), and trees per 100 cells.
     pub tree: String,
     pub density: f32,
+    /// Scenery the props brush scatters (decoration that blocks nothing).
+    pub prop: String,
     /// Amber per node of a new site.
     pub amber: u32,
     pub stroke: Option<Stroke>,
@@ -182,6 +189,7 @@ impl Default for Tools {
             tier: Tier::Easy,
             tree: String::new(),
             density: 6.0,
+            prop: String::new(),
             amber: 2500,
             stroke: None,
             selected: None,
@@ -469,7 +477,7 @@ pub fn brush(
 }
 
 /// A straight ramp from world `a` at height `ha` to `b` at `hb`, `width` cells across:
-/// the ground along it is set to the slope between them (blending into its sides over two
+/// the ground along it is set to the slope between them (blending into its sides over four
 /// cells), and the cliff faces it cuts through are cleared.
 #[allow(clippy::too_many_arguments)]
 pub fn ramp(
@@ -485,7 +493,7 @@ pub fn ramp(
     let side = map.authoring.terrain.vertices();
     let halo = MAP_HALO as f32;
     let half = width / 2.0;
-    let reach = half + 2.0;
+    let reach = half + 4.0;
     let (dx, dz) = (b[0] - a[0], b[1] - a[1]);
     let length2 = (dx * dx + dz * dz).max(1e-6);
     let lo = |v: f32| ((v - reach + halo).floor().max(0.0)) as u32;
@@ -509,7 +517,7 @@ pub fn ramp(
             let f = if d <= half {
                 1.0
             } else {
-                1.0 - (d - half) / 2.0
+                1.0 - (d - half) / 4.0
             };
             let i = (z * side + x) as usize;
             let h = read(grid, i);
@@ -655,15 +663,35 @@ pub fn tree_kinds(content: &Content) -> Vec<String> {
         .collect()
 }
 
-/// Plants trees over the brush (one per cell, spaced, on dry flat-enough ground), or
-/// clears them (Shift); the session's map shows them at once.
+/// The scenery the props brush can scatter: decoration that is no tree, no bridge deck and
+/// not retired, and blocks nothing.
+pub fn prop_kinds(content: &Content) -> Vec<String> {
+    let trees = tree_kinds(content);
+    canopy_content::assets::scenery(&content.manifest)
+        .filter(|s| {
+            s.deck.is_none()
+                && s.blocker.is_none()
+                && s.blockers.is_none()
+                && s.editor_hidden != Some(true)
+                && !s.id.as_str().contains("missing")
+                && !trees.iter().any(|t| t == s.id.as_str())
+        })
+        .map(|s| s.id.to_string())
+        .collect()
+}
+
+/// Plants trees (or, for the props brush, decoration) over the brush, one per cell,
+/// spaced, on dry flat-enough ground; or clears them (Shift). The session's map shows them
+/// at once.
 pub fn trees(map: &mut UtcMap, tools: &Tools, stroke: &mut Stroke, cx: f32, cz: f32) {
     let r = tools.radius;
+    let props = stroke.tool == Tool::Props;
     if stroke.lower {
         let before = map.authoring.objects.len();
         let mut cleared = Vec::new();
         map.authoring.objects.retain(|o| {
-            let inside = (o.x as f32 - cx).powi(2) + (o.z as f32 - cz).powi(2) <= r * r;
+            let inside = (o.x as f32 - cx).powi(2) + (o.z as f32 - cz).powi(2) <= r * r
+                && o.id.starts_with("prop.") == props;
             if inside {
                 cleared.push(o.id.clone());
             }
@@ -674,12 +702,17 @@ pub fn trees(map: &mut UtcMap, tools: &Tools, stroke: &mut Stroke, cx: f32, cz: 
         }
         return;
     }
-    if tools.tree.is_empty() {
+    let (asset, prefix, spacing) = if props {
+        (&tools.prop, "prop.", 12.0)
+    } else {
+        (&tools.tree, "tree.", 3.0)
+    };
+    if asset.is_empty() {
         return;
     }
     let size = map.size as f32;
     let mut next = next_id(
-        "tree.",
+        prefix,
         map.authoring.objects.iter().map(|o| o.id.clone()).chain(
             stroke
                 .planted
@@ -696,7 +729,7 @@ pub fn trees(map: &mut UtcMap, tools: &Tools, stroke: &mut Stroke, cx: f32, cz: 
                 || z < 2
                 || x as f32 > size - 3.0
                 || z as f32 > size - 3.0
-                || noise(x as i64, z as i64, 7) > chance.min(1.0) * 0.25
+                || noise(x as i64, z as i64, if props { 17 } else { 7 }) > chance.min(1.0) * 0.25
             {
                 continue;
             }
@@ -711,15 +744,15 @@ pub fn trees(map: &mut UtcMap, tools: &Tools, stroke: &mut Stroke, cx: f32, cz: 
                 .authoring
                 .objects
                 .iter()
-                .any(|o| (o.x as f32 - fx).powi(2) + (o.z as f32 - fz).powi(2) < 3.0);
+                .any(|o| (o.x as f32 - fx).powi(2) + (o.z as f32 - fz).powi(2) < spacing);
             if water > ground - 0.2 || steep || crowded {
                 continue;
             }
             let object = json!({
-                "asset": tools.tree,
+                "asset": asset,
                 "elevation": 0.0,
                 "heightMode": "terrain",
-                "id": format!("tree.{next}"),
+                "id": format!("{prefix}{next}"),
                 "locked": false,
                 "scale": 0.82 + 0.2 * noise(x as i64, z as i64, 11),
                 "visible": true,
@@ -1028,6 +1061,39 @@ mod tests {
             let along = |p: &(f64, f64)| p.0 * angle.cos() + p.1 * angle.sin();
             assert!(along(&nodes[2]) < along(&nodes[0]) && along(&nodes[2]) < along(&nodes[4]));
         }
+    }
+
+    #[test]
+    fn props_and_trees_are_planted_apart_and_cleared_apart() {
+        let mut map = flat(1.0);
+        let tools = Tools {
+            tree: "scenery.pine".into(),
+            prop: "scenery.boulder".into(),
+            density: 25.0,
+            radius: 12.0,
+            ..Tools::default()
+        };
+        let plant = |map: &mut UtcMap, tool: Tool, lower: bool, x: f32| {
+            let mut stroke = Stroke::new(tool, 0.0, lower);
+            trees(map, &tools, &mut stroke, x, 100.0);
+            stroke
+        };
+        // Trees at x 100, props beside them at x 120: the brushes overlap in between.
+        let planted = plant(&mut map, Tool::Trees, false, 100.0).planted.len();
+        let scattered = plant(&mut map, Tool::Props, false, 120.0).planted.len();
+        assert!(
+            planted > 0 && scattered > 0,
+            "{planted} trees, {scattered} props"
+        );
+        // Each brush clears only its own kind, over both.
+        assert!(
+            plant(&mut map, Tool::Trees, true, 110.0)
+                .cleared
+                .iter()
+                .all(|i| i.starts_with("tree."))
+        );
+        let cleared = plant(&mut map, Tool::Props, true, 110.0).cleared;
+        assert!(!cleared.is_empty() && cleared.iter().all(|i| i.starts_with("prop.")));
     }
 
     #[test]
