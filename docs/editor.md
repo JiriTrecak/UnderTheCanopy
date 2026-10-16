@@ -53,3 +53,7 @@ Design decisions for the native editor, agreed with Jiri milestone by milestone 
 - **Start locations** place the player's main hall location and its amber resources, properly oriented. Nothing more by rules yet.
 - **No new ground cover** (moving grass, decals, foliage) for now.
 - **Mission scripting is Lua.**
+
+## M4. The asset editor (direction 2026-10-16)
+
+**Settled (Jiri):** the asset editor is a tool for us, mostly for agents: what makes new assets quick to create and to author well into the game. Its scope is mine to decide from the asset format (not overdone). **Players never bring their own models, icons or other assets**: player packages use the game's pool only. Built right after M3.
