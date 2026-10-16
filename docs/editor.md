@@ -2,7 +2,7 @@
 
 Design decisions for the native editor, agreed with Jiri milestone by milestone ([plan](plan.md), phase 2). Each milestone starts with its open questions; this page records what is settled.
 
-## M1. The editor shell (in discussion)
+## M1. The editor shell (settled; building)
 
 **Settled (2026-10-16):**
 
@@ -24,6 +24,13 @@ Design decisions for the native editor, agreed with Jiri milestone by milestone 
 - **The loader checks after every step.** The full load (about 90 ms) runs after each step and keeps a problems list that links to the element and field. Invalid states are allowed while working; saving with problems warns.
 - **Renames carry their references.** Renaming an id rewrites every reference in the package in the same step; deleting something still referenced is refused, with where it is used.
 
-**Built (2026-10-16): the shell, read-only.** `crates/editor`, opened from the main menu's Editor entry, `canopy edit` or `just edit`. The rail switches seven editors; each lists its collections from the base package with the loader's own walk, opens documents as egui_dock tabs (read-only JSON for now) and shows the open one in its inspector. Undo, save, MCP, Test in game and the assistant are there as disabled controls. The theme is `crates/editor/src/theme.rs`; icons are drawn strokes (`icons.rs`), no icon font. It uses the game's interface font (Outfit). `canopy capture-screens --only editor` renders it offscreen in a few states.
+**Settled (2026-10-16): schemas, viewport, testing.**
 
-**Open:** schemas from the Rust types (`schemars`), viewport foundations (shared camera and picking, live reload, GPU updates), the test loop (play the open package in-process).
+- **Schemas from the Rust types** (`schemars`): the content crate's serde types produce JSON Schema. It drives the inspector's forms, MCP's tool definitions and the skills' checks. Fields that name another element say so in the types (a unit id, an effect), so forms show a searchable picker and renames find every reference.
+- **Generic forms, custom panels where they pay.** Every element gets a form from its schema; hand-built panels sit on top where a form is not enough (the ability timeline and encounter stage, the map tools).
+- **One viewport widget.** The game renderer draws a scene into a texture sized to the panel; camera (orbit, top-down, the game's), picking and an overlay for gizmos are shared by every editor that shows a scene. One renderer serves whichever viewport shows. Each step updates the running preview in place. Previews stand on a zinc stage, with a switch to a biome's terrain.
+- **Test in game runs what is open, unsaved edits included**, in-process: the game's data built from the editor's documents, a skirmish on the open map (or the last one), Esc back to the editor as it was, with the match tools (speed, reveal) and testing cheats. Editors may need their own loops beyond this (the map editor, the ability stage): decided with them.
+
+**Build order:** (1) documents and commands: key order kept, the global undo with its context, Cmd+S, asking before leaving, the file-format check; (2) the loader's check after every step and the problems list; (3) the file watcher; (4) schemas, generic forms with reference pickers, renames; (5) MCP over the commands; (6) the viewport; (7) Test in game.
+
+**Built (2026-10-16): the shell, read-only.** `crates/editor`, opened from the main menu's Editor entry, `canopy edit` or `just edit`. The rail switches seven editors; each lists its collections from the base package with the loader's own walk, opens documents as egui_dock tabs (read-only JSON for now) and shows the open one in its inspector. Undo, save, MCP, Test in game and the assistant are there as disabled controls. The theme is `crates/editor/src/theme.rs`; icons are drawn strokes (`icons.rs`), no icon font. It uses the game's interface font (Outfit). `canopy capture-screens --only editor` renders it offscreen in a few states.
