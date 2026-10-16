@@ -414,6 +414,9 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
     editor.select(Kind::Races);
     editor.open_first(1);
     shoot(&mut editor, rig, "editor-races")?;
+    editor.select(Kind::Units);
+    editor.open_first(1);
+    shoot(&mut editor, rig, "editor-units")?;
     editor.select(Kind::Maps);
     editor.open_first(2);
     shoot(&mut editor, rig, "editor-maps")?;

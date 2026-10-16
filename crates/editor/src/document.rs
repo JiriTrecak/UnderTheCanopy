@@ -68,6 +68,9 @@ pub struct Step {
     pub context: Context,
     done: Vec<Command>,
     inverse: Vec<Command>,
+    /// Continuous edits with the same key fold into this step ([`Store::run_merging`]).
+    merge: Option<String>,
+    at: std::time::Instant,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -131,6 +134,8 @@ pub struct Store {
     done: Vec<Step>,
     undone: Vec<Step>,
     revision: u64,
+    /// Counts creations and deletions: the documents that exist changed.
+    structure: u64,
 }
 
 /// The one file format: 2-space JSON in the document's key order, with a final newline.
@@ -150,6 +155,7 @@ impl Store {
             done: Vec::new(),
             undone: Vec::new(),
             revision: 0,
+            structure: 0,
         }
     }
 
@@ -183,6 +189,11 @@ impl Store {
     /// A document's current value (`None` when it does not exist).
     pub fn get(&mut self, document: &str) -> Result<Option<&Value>, Error> {
         Ok(self.load(document)?.value.as_ref())
+    }
+
+    /// Counts creations and deletions of documents (libraries list what exists).
+    pub fn structure(&self) -> u64 {
+        self.structure
     }
 
     /// Counts every change to any document: a check is current while it matches.
@@ -229,6 +240,18 @@ impl Store {
         context: Context,
         commands: Vec<Command>,
     ) -> Result<(), Error> {
+        self.run_merging(label, context, commands, None)
+    }
+
+    /// Like [`Store::run`]; with `merge`, folds into the last step when it carries the same
+    /// key and came moments ago (dragging a number is one step, not hundreds).
+    pub fn run_merging(
+        &mut self,
+        label: &str,
+        context: Context,
+        commands: Vec<Command>,
+        merge: Option<&str>,
+    ) -> Result<(), Error> {
         let mut inverse = Vec::with_capacity(commands.len());
         for command in &commands {
             match self.apply(command) {
@@ -244,11 +267,24 @@ impl Store {
         if commands.is_empty() {
             return Ok(());
         }
+        let now = std::time::Instant::now();
+        if let (Some(key), Some(last)) = (merge, self.done.last_mut())
+            && self.undone.is_empty()
+            && last.merge.as_deref() == Some(key)
+            && now.duration_since(last.at) < std::time::Duration::from_millis(1500)
+        {
+            last.done.extend(commands);
+            last.inverse.extend(inverse);
+            last.at = now;
+            return Ok(());
+        }
         self.done.push(Step {
             label: label.to_string(),
             context,
             done: commands,
             inverse,
+            merge: merge.map(str::to_string),
+            at: now,
         });
         self.undone.clear();
         Ok(())
@@ -337,6 +373,7 @@ impl Store {
     /// they were made against a version that is gone.
     fn take(&mut self, document: &str, disk: Option<Value>) {
         self.revision += 1;
+        self.structure += 1;
         if let Some(d) = self.documents.get_mut(document) {
             d.value = disk.clone();
             d.saved = disk;
@@ -379,6 +416,9 @@ impl Store {
         self.revision += 1;
         let revision = self.revision;
         let path = command.document().to_string();
+        if matches!(command, Command::Create { .. } | Command::Delete { .. }) {
+            self.structure += 1;
+        }
         let document = self.load(&path)?;
         let back = match command {
             Command::Create { value, .. } => {
@@ -658,6 +698,29 @@ mod tests {
         store.redo().unwrap();
         assert_eq!(text(&mut store), edited);
         assert!(store.redo().is_none());
+    }
+
+    #[test]
+    fn continuous_edits_fold_into_one_step() {
+        let folder = Folder::new("merge");
+        let mut store = Store::new(&folder.0);
+        let original = text(&mut store);
+        for wood in 6..10 {
+            store
+                .run_merging(
+                    "Set wood",
+                    here(KNIGHT),
+                    vec![set("/cost/wood", json!(wood))],
+                    Some("units/knight.json/cost/wood"),
+                )
+                .unwrap();
+        }
+        assert_eq!(store.get(KNIGHT).unwrap().unwrap()["cost"]["wood"], 9);
+        store.undo().unwrap();
+        assert_eq!(text(&mut store), original);
+        assert!(store.undo().is_none());
+        store.redo().unwrap();
+        assert_eq!(store.get(KNIGHT).unwrap().unwrap()["cost"]["wood"], 9);
     }
 
     #[test]

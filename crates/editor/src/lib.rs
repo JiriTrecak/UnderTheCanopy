@@ -9,9 +9,13 @@
 
 mod checker;
 mod document;
+mod forms;
 mod icons;
+mod inspector;
 mod library;
+mod references;
 mod shell;
+mod tabs;
 pub mod theme;
 mod watch;
 mod widgets;

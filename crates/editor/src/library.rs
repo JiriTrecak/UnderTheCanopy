@@ -78,12 +78,20 @@ impl Kind {
 
     /// The editor whose collections hold `document` (a path from the package root).
     pub fn of_document(document: &str) -> Option<Kind> {
-        KINDS.into_iter().find(|kind| {
-            kind.sections().iter().any(|(_, collection)| {
-                document
-                    .strip_prefix(collection.dir)
-                    .is_some_and(|rest| rest.starts_with('/'))
-            })
+        Self::collection_of(document).map(|(kind, _)| kind)
+    }
+
+    /// The editor and collection that hold `document`.
+    pub fn collection_of(document: &str) -> Option<(Kind, &'static Collection)> {
+        KINDS.into_iter().find_map(|kind| {
+            kind.sections()
+                .iter()
+                .find(|(_, collection)| {
+                    document
+                        .strip_prefix(collection.dir)
+                        .is_some_and(|rest| rest.starts_with('/'))
+                })
+                .map(|(_, collection)| (kind, collection))
         })
     }
 
