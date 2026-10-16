@@ -191,10 +191,12 @@ impl App {
             return;
         }
         if let Some(test) = output.test {
-            match session
-                .game
-                .test_in_game(test.content, test.map, test.encounter)
-            {
+            match session.game.test_in_game(
+                test.content,
+                test.map,
+                test.map_package,
+                test.encounter,
+            ) {
                 Ok(()) => {
                     session.suspended = session.editor.take();
                     session.game.audio.set_background(false);

@@ -57,6 +57,17 @@ pub enum Tool {
         document: String,
         new: String,
     },
+    MapCreate(MapCreateArgs),
+    MapInfo {
+        map: String,
+    },
+    MapPicture {
+        map: String,
+        scale: Option<u32>,
+    },
+    MapStroke(MapStrokeArgs),
+    MapPlace(MapPlaceArgs),
+    MapRemove(MapRemoveArgs),
 }
 
 /// A tool call on its way to the editor, with where its answer goes.
@@ -109,6 +120,93 @@ struct RenameArgs {
     new: String,
 }
 
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct MapCreateArgs {
+    /// The map's id: lowercase words joined by hyphens (`amber-falls`).
+    pub id: String,
+    /// Its name in the game's map list.
+    pub name: Option<String>,
+    /// Cells per side: 256, 512, 640 or 1024. 512 by default.
+    pub size: Option<u32>,
+    /// vibrant-forest (the default), deep-forest, autumn-forest or frozen-forest.
+    pub biome: Option<String>,
+    /// The folder under `maps/`; `skirmish` by default.
+    pub folder: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+struct MapArgs {
+    /// The map: its id (`echo-isles`) or its package path (`maps/skirmish/echo-isles.utcm`).
+    map: String,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+struct MapPictureArgs {
+    /// The map: its id or its package path.
+    map: String,
+    /// Pixels per cell, 1 to 4 (default: about 1024 pixels across).
+    scale: Option<u32>,
+}
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct MapStrokeArgs {
+    /// The map: its id or its package path.
+    pub map: String,
+    /// raise, lower, flatten, smooth, cliff, paint, water or trees.
+    pub tool: String,
+    /// The stroke's line in world cells (x, z), from (0, 0) at the north-west corner to
+    /// (size, size). One point dabs once.
+    pub points: Vec<[f32; 2]>,
+    /// Brush radius in cells (default 6).
+    pub radius: Option<f32>,
+    /// Brush strength 0 to 1 (default 0.5): how fast raise, lower, smooth and paint act.
+    pub strength: Option<f32>,
+    /// flatten and cliff: the height to level to (ground is -16 to 24; 2 is a new map's
+    /// ground; one cliff level is 3). water: the surface height to flood to. Without it,
+    /// flatten keeps the first point's height and cliff lifts one level.
+    pub level: Option<f32>,
+    /// The opposite action: lower for raise, a level down for cliff, drain for water,
+    /// clear for trees.
+    pub lower: Option<bool>,
+    /// How many times the brush goes over the line (default 1).
+    pub passes: Option<u32>,
+    /// paint: soil, grass, rock or a paint material of the map (map_info lists them).
+    pub ground: Option<String>,
+    /// trees: the scenery to plant (map_info lists the trees); trees per 100 cells
+    /// (default 6).
+    pub tree: Option<String>,
+    pub density: Option<f32>,
+}
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct MapPlaceArgs {
+    /// The map: its id or its package path.
+    pub map: String,
+    /// amber (a site of five crystals facing the nearest start), camp (creeps guarding
+    /// a point), or start (the next player's start, its amber 26 cells towards the middle
+    /// and a level pad).
+    pub kind: String,
+    pub x: f64,
+    pub z: f64,
+    /// camp: easy, medium or hard.
+    pub tier: Option<String>,
+    /// amber and start: amber per crystal (default 2500).
+    pub amount: Option<u32>,
+}
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct MapRemoveArgs {
+    /// The map: its id or its package path.
+    pub map: String,
+    pub x: f64,
+    pub z: f64,
+    /// Cells around the point.
+    pub radius: f64,
+    /// Any of starts, entities (amber, camps: a camp goes whole) and trees (scenery
+    /// objects). All of them when absent.
+    pub what: Option<Vec<String>>,
+}
+
 #[derive(Clone)]
 struct Handler {
     calls: mpsc::Sender<Call>,
@@ -121,6 +219,13 @@ impl Handler {
             return Ok(failed("The editor is closed."));
         }
         match tokio::time::timeout(Duration::from_secs(60), answer).await {
+            Ok(Ok(Ok(Value::Object(image)))) if image.contains_key("png") => {
+                let data = image["png"].as_str().unwrap_or_default().to_string();
+                Ok(CallToolResult::success(vec![ContentBlock::image(
+                    data,
+                    "image/png",
+                )]))
+            }
             Ok(Ok(Ok(value))) => Ok(CallToolResult::success(vec![ContentBlock::text(
                 serde_json::to_string_pretty(&value).unwrap_or_default(),
             )])),
@@ -245,11 +350,73 @@ impl Handler {
         })
         .await
     }
+
+    #[tool(
+        description = "Creates a map package: flat dry ground at height 2 in grass, every ground material as a paint layer, and players 1 and 2 in opposite corners. Shape it with map_stroke and furnish it with map_place."
+    )]
+    async fn create_map(
+        &self,
+        Parameters(args): Parameters<MapCreateArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::MapCreate(args)).await
+    }
+
+    #[tool(
+        description = "A map's layout: size, biome, starts, amber sites, camps, tree count, paint materials and trees it can use, a coarse height and water grid, and the check's problems for it."
+    )]
+    async fn map_info(
+        &self,
+        Parameters(args): Parameters<MapArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::MapInfo { map: args.map }).await
+    }
+
+    #[tool(
+        description = "The map from straight above as a PNG: ground shaded by height and slope, water blue by depth, cliffs dark, trees dark green, amber orange, camps red with their aggro ring, starts in player colours. North (z = 0) is up."
+    )]
+    async fn map_picture(
+        &self,
+        Parameters(args): Parameters<MapPictureArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::MapPicture {
+            map: args.map,
+            scale: args.scale,
+        })
+        .await
+    }
+
+    #[tool(
+        description = "One brush stroke along a line as one undo step, as the editor's brushes do it: raise, lower, flatten, smooth (ramps between cliff levels), cliff (hard steps of one level), paint, water and trees."
+    )]
+    async fn map_stroke(
+        &self,
+        Parameters(args): Parameters<MapStrokeArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::MapStroke(args)).await
+    }
+
+    #[tool(
+        description = "Places what a click of the editor's tools places: an amber site, a creep camp or a player start (with its amber and a level pad), as one undo step."
+    )]
+    async fn map_place(
+        &self,
+        Parameters(args): Parameters<MapPlaceArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::MapPlace(args)).await
+    }
+
+    #[tool(description = "Removes starts, entities and trees around a point, as one undo step.")]
+    async fn map_remove(
+        &self,
+        Parameters(args): Parameters<MapRemoveArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::MapRemove(args)).await
+    }
 }
 
 #[tool_handler(
     name = "Under the Canopy editor",
-    instructions = "Edits the game's base package (units, buildings, items, abilities, effects, races, rules, assets, maps) through the open editor. Find documents with list_elements, read them with read_document and their shape with document_schema, change them with edit (one undo step per call), check with problems, then save. The canopy-* skills in the repository describe the formats."
+    instructions = "Edits the game's base package (units, buildings, items, abilities, effects, races, rules, assets, maps) through the open editor. Find documents with list_elements, read them with read_document and their shape with document_schema, change them with edit (one undo step per call), check with problems, then save. Maps have their own tools: create_map, map_stroke, map_place, map_remove, map_info and map_picture. The canopy-* skills in the repository describe the formats."
 )]
 impl ServerHandler for Handler {}
 

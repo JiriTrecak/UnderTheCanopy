@@ -510,7 +510,7 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
         "the checked data has the unsaved edit"
     );
     rig.game
-        .test_in_game(content.clone(), None, None)
+        .test_in_game(content.clone(), None, None, None)
         .map_err(anyhow::Error::msg)?;
     rig.until("the test match", Duration::from_secs(180), |g| {
         g.flow.in_match()
@@ -549,7 +549,7 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
         .map(|d| d.id.to_string())
         .context("a hero with abilities")?;
     rig.game
-        .test_in_game(content.clone(), None, Some(hero.clone()))
+        .test_in_game(content.clone(), None, None, Some(hero.clone()))
         .map_err(anyhow::Error::msg)?;
     rig.until("the encounter", Duration::from_secs(180), |g| {
         g.flow.in_match()

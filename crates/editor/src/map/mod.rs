@@ -4,15 +4,12 @@
 //! creeps and start halls); brushes change the grids directly, and a stroke becomes one
 //! undo step of grid patches when it ends.
 
+pub mod picture;
 pub mod tools;
 pub mod view;
 
 use canopy_assets::Pack;
-use canopy_content::{
-    Content,
-    map::{UtcMap, grid::Element},
-    placement::Owner,
-};
+use canopy_content::{Content, map::UtcMap, placement::Owner};
 use canopy_render::{World, actors::ActorInstance, statics::StaticInstance};
 use canopy_scene::Look;
 use canopy_sim::terrain::field::HeightField;
@@ -25,8 +22,6 @@ pub struct Scene {
     pub world: World,
     /// Mines, creeps, start halls (drawn as models; `world.actor_models` lists them).
     pub actors: Vec<ActorInstance>,
-    pub field: HeightField,
-    pub size: u32,
     pub biome: String,
     pub hour: f32,
 }
@@ -185,8 +180,6 @@ pub fn build(map: &UtcMap, content: &Content, pack: &Pack, look: &Look) -> Resul
             forest,
         },
         actors,
-        field,
-        size: map.size,
         biome: map.biome().to_string(),
         hour,
     })
@@ -274,24 +267,6 @@ pub fn root_of(document: &str) -> Option<&str> {
     root.ends_with(".utcm").then_some(root)
 }
 
-/// A float grid's samples from its raw bytes.
-pub fn floats(bytes: &[u8]) -> Vec<f32> {
-    bytes
-        .chunks_exact(4)
-        .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
-        .collect()
-}
-
-/// Raw bytes of float samples.
-pub fn bytes_of(values: &[f32]) -> Vec<u8> {
-    values.iter().flat_map(|v| v.to_le_bytes()).collect()
-}
-
-/// Whether `element` is a float grid.
-pub fn is_float(element: Element) -> bool {
-    element == Element::F32
-}
-
 /// The commands that create a new map package `maps/<group>/<id>.utcm`: its manifest, a
 /// map of `size` in `biome` with players 1 and 2 in opposite corners (a map has two
 /// starts at least; the Start tool places them properly), every ground material as a
@@ -323,8 +298,19 @@ pub fn new_map(
         .values()
         .filter_map(|r| r.starting_setup.as_ref())
         .next()
-        .map_or(content.rules.starting_setup.id.to_string(), |s| s.id.to_string());
-    new_map_of(&materials, &setup, base_version, group, id, name, size, biome)
+        .map_or(content.rules.starting_setup.id.to_string(), |s| {
+            s.id.to_string()
+        });
+    new_map_of(
+        &materials,
+        &setup,
+        base_version,
+        group,
+        id,
+        name,
+        size,
+        biome,
+    )
 }
 
 /// [`new_map`] with its paint layers given.
@@ -395,20 +381,81 @@ fn new_map_of(
             value: json!({"objects": []}),
         },
         grid("heights", Sample::F32, vertices, floats(2.0)),
-        grid("water-heights", Sample::F32, vertices, floats(DRY_WATER_HEIGHT as f32)),
+        grid(
+            "water-heights",
+            Sample::F32,
+            vertices,
+            floats(DRY_WATER_HEIGHT as f32),
+        ),
         grid(
             "water-flow",
             Sample::Rgba8,
             span,
-            std::iter::repeat_n([128u8, 128, 0, 0], (span * span) as usize).flatten().collect(),
+            std::iter::repeat_n([128u8, 128, 0, 0], (span * span) as usize)
+                .flatten()
+                .collect(),
         ),
         grid("grass", Sample::F32, vertices, floats(1.0)),
         grid("rock", Sample::F32, vertices, floats(0.0)),
     ];
     for n in 1..=materials.len() {
-        commands.push(grid(&format!("paint-{n}-weights"), Sample::F32, vertices, floats(0.0)));
+        commands.push(grid(
+            &format!("paint-{n}-weights"),
+            Sample::F32,
+            vertices,
+            floats(0.0),
+        ));
     }
     Ok(commands)
+}
+
+/// Writes the map package at `source` with `overlay` laid over it (its unsaved documents
+/// and grids, paths relative to the package) to the folder `target`.
+pub fn write_overlaid(
+    source: &std::path::Path,
+    overlay: &canopy_content::package::Overlay,
+    target: &std::path::Path,
+) -> std::io::Result<()> {
+    fn walk(dir: &std::path::Path, prefix: &str, out: &mut Vec<String>) -> std::io::Result<()> {
+        if !dir.is_dir() {
+            return Ok(());
+        }
+        for entry in std::fs::read_dir(dir)? {
+            let entry = entry?;
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let path = if prefix.is_empty() {
+                name.clone()
+            } else {
+                format!("{prefix}/{name}")
+            };
+            if entry.file_type()?.is_dir() {
+                walk(&entry.path(), &path, out)?;
+            } else {
+                out.push(path);
+            }
+        }
+        Ok(())
+    }
+    let mut files = Vec::new();
+    walk(source, "", &mut files)?;
+    for (path, bytes) in &overlay.0 {
+        if bytes.is_some() && !files.contains(path) {
+            files.push(path.clone());
+        }
+    }
+    for path in files {
+        let bytes = match overlay.0.get(&path) {
+            Some(Some(bytes)) => bytes.clone(),
+            Some(None) => continue,
+            None => std::fs::read(source.join(&path))?,
+        };
+        let file = target.join(&path);
+        if let Some(parent) = file.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(file, bytes)?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -421,8 +468,7 @@ mod tests {
 
     #[test]
     fn a_new_map_loads_before_and_after_it_is_saved() {
-        let root =
-            std::env::temp_dir().join(format!("canopy-new-map-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("canopy-new-map-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(&root).unwrap();
         std::fs::write(
@@ -431,9 +477,17 @@ mod tests {
         )
         .unwrap();
         let mut store = Store::new(&root);
-        let commands =
-            new_map_of(&["ground", "cliff"], "setup.test", "1.0.0", "skirmish", "flat", "Flat", 256, "vibrant-forest")
-                .unwrap();
+        let commands = new_map_of(
+            &["ground", "cliff"],
+            "setup.test",
+            "1.0.0",
+            "skirmish",
+            "flat",
+            "Flat",
+            256,
+            "vibrant-forest",
+        )
+        .unwrap();
         let map_root = "maps/skirmish/flat.utcm";
         let context = Context {
             editor: Kind::Maps,
@@ -449,7 +503,11 @@ mod tests {
             assert!(terrain.heights.iter().all(|h| *h == 2.0));
         };
         let overlay = Arc::new(store.overlay().below(map_root));
-        check(Package::open_overlaid(&root.join(map_root), Some(overlay)).unwrap());
+        check(Package::open_overlaid(&root.join(map_root), Some(overlay.clone())).unwrap());
+        // The copy Test in game plays.
+        let copy = root.join("copy/flat.utcm");
+        write_overlaid(&root.join(map_root), &overlay, &copy).unwrap();
+        check(Package::open(&copy).unwrap());
         store.save().unwrap();
         check(Package::open(&root.join(map_root)).unwrap());
         let _ = std::fs::remove_dir_all(&root);

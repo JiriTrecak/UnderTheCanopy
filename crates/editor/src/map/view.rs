@@ -164,23 +164,13 @@ fn panel(ui: &mut Ui, session: &mut Session, content: Option<&Content>) {
         Tool::Trees => {
             ui.add(egui::Slider::new(&mut t.density, 1.0..=25.0).text("Density"));
             if let Some(content) = content {
-                let trees: Vec<String> = canopy_content::assets::scenery(&content.manifest)
-                    .filter(|s| {
-                        content.landscape.iter().any(|a| {
-                            a.scenery
-                                .as_ref()
-                                .is_some_and(|i| i.as_str() == s.id.as_str())
-                                && a.harvesting.is_some()
-                        })
-                    })
-                    .map(|s| s.id.to_string())
-                    .collect();
+                let trees = tools::tree_kinds(content);
                 if t.tree.is_empty() {
                     // The tree the map already uses most, else the first.
                     let mut counts: std::collections::BTreeMap<&str, usize> = Default::default();
                     if let Some(map) = map {
                         for o in &map.authoring.objects {
-                            if trees.iter().any(|t| *t == o.asset) {
+                            if trees.contains(&o.asset) {
                                 *counts.entry(o.asset.as_str()).or_default() += 1;
                             }
                         }
@@ -289,7 +279,7 @@ fn delete(session: &Session, docs: &Docs, picked: Picked, id: &str) -> Vec<Comma
         Picked::Start => {
             if let Some(i) = docs.map["playerStarts"]
                 .as_array()
-                .and_then(|s| s.iter().position(|s| s["player"].to_string() == id))
+                .and_then(|s| s.iter().position(|s| s["player"].as_u64() == id.parse().ok()))
             {
                 out.push(Command::Remove {
                     document: map_doc,
@@ -354,6 +344,95 @@ fn delete(session: &Session, docs: &Docs, picked: Picked, id: &str) -> Vec<Comma
         }
     }
     out
+}
+
+/// Removes what lies within `radius` of world (`x`, `z`) as one step: starts, entities
+/// (a camp member takes its whole camp) and scenery objects, as `what` names them. What
+/// MCP's `map_remove` does.
+pub fn remove_area(
+    session: &Session,
+    docs: &Docs,
+    x: f64,
+    z: f64,
+    radius: f64,
+    what: &[&str],
+) -> Option<Edit> {
+    let inside = |v: &Value, px: &str, pz: &str| {
+        let (Some(vx), Some(vz)) = (
+            v.pointer(px).and_then(Value::as_f64),
+            v.pointer(pz).and_then(Value::as_f64),
+        ) else {
+            return false;
+        };
+        (vx - x).powi(2) + (vz - z).powi(2) <= radius * radius
+    };
+    let list = |v: &Value| v.as_array().cloned().unwrap_or_default();
+    let (starts, entities, camps, objects) = (
+        list(&docs.map["playerStarts"]),
+        list(&docs.map["entities"]),
+        list(&docs.map["camps"]),
+        list(&docs.scenery["objects"]),
+    );
+    let mut gone_starts: Vec<usize> = Vec::new();
+    let mut gone_entities: std::collections::BTreeSet<String> = Default::default();
+    let mut gone_camps: Vec<usize> = Vec::new();
+    let mut gone_objects: Vec<usize> = Vec::new();
+    if what.contains(&"starts") {
+        gone_starts = (0..starts.len())
+            .filter(|i| inside(&starts[*i], "/x", "/z"))
+            .collect();
+    }
+    if what.contains(&"entities") {
+        for e in &entities {
+            if inside(e, "/position/x", "/position/y")
+                && let Some(id) = e["id"].as_str()
+            {
+                gone_entities.insert(id.to_string());
+            }
+        }
+        for (i, camp) in camps.iter().enumerate() {
+            let members: Vec<String> = list(&camp["members"])
+                .iter()
+                .filter_map(|m| m.as_str().map(str::to_string))
+                .collect();
+            if members.iter().any(|m| gone_entities.contains(m)) {
+                gone_entities.extend(members);
+                gone_camps.push(i);
+            }
+        }
+    }
+    if what.contains(&"trees") || what.contains(&"objects") {
+        gone_objects = (0..objects.len())
+            .filter(|i| inside(&objects[*i], "/x", "/z"))
+            .collect();
+    }
+    let map_doc = session.path("map.json");
+    let remove = |document: &str, array: &str, mut indices: Vec<usize>| {
+        indices.sort_unstable_by(|a, b| b.cmp(a));
+        indices
+            .into_iter()
+            .map(|i| Command::Remove {
+                document: document.to_string(),
+                pointer: format!("/{array}/{i}"),
+            })
+            .collect::<Vec<_>>()
+    };
+    let entity_indices: Vec<usize> = (0..entities.len())
+        .filter(|i| {
+            entities[*i]["id"]
+                .as_str()
+                .is_some_and(|id| gone_entities.contains(id))
+        })
+        .collect();
+    let mut commands = remove(&map_doc, "playerStarts", gone_starts);
+    commands.extend(remove(&map_doc, "entities", entity_indices));
+    commands.extend(remove(&map_doc, "camps", gone_camps));
+    commands.extend(remove(
+        &session.path("scenery.json"),
+        "objects",
+        gone_objects,
+    ));
+    (!commands.is_empty()).then(|| step(session, "Remove", commands))
 }
 
 /// The map package's JSON documents as the store holds them.
@@ -591,37 +670,10 @@ pub fn show(
             session.tools.stroke = Some(stroke);
             session.stale = true;
         }
-    } else if let Some(mut stroke) = session.tools.stroke.take() {
-        // The stroke ended: its patches (and planted or cleared trees) as one step.
-        let root = session.root.clone();
-        let mut commands = match session.map.as_mut() {
-            Some(map) => stroke.patches(map, &root),
-            None => Vec::new(),
-        };
-        if let Some(docs) = docs {
-            let objects = docs.scenery["objects"]
-                .as_array()
-                .cloned()
-                .unwrap_or_default();
-            commands.extend(tools::tree_commands(&root, &stroke, &objects));
-        }
-        stroke.before.clear();
-        if !commands.is_empty() {
-            let label = match stroke.tool {
-                Tool::Trees if stroke.lower => "Clear trees",
-                Tool::Trees => "Plant trees",
-                Tool::Paint => "Paint the ground",
-                Tool::Water if stroke.lower => "Drain water",
-                Tool::Water => "Flood",
-                Tool::Cliff => "Cliff",
-                Tool::Smooth => "Smooth",
-                Tool::Flatten => "Flatten",
-                Tool::Lower => "Lower",
-                _ => "Raise",
-            };
-            out.edits.push(step(session, label, commands));
-            session.own = true;
-        }
+    } else if let Some(stroke) = session.tools.stroke.take()
+        && let Some(edit) = finish(session, docs, stroke)
+    {
+        out.edits.push(edit);
     }
 
     // Clicks: place, select.
@@ -653,6 +705,7 @@ pub fn show(
 }
 
 /// A ring of `radius` around world (`x`, `z`), following the ground.
+#[allow(clippy::too_many_arguments)]
 fn ring(
     painter: &egui::Painter,
     map: &canopy_content::map::UtcMap,
@@ -676,6 +729,112 @@ fn ring(
         .collect();
     painter.add(egui::Shape::line(points, Line::new(1.5, color)));
     let _ = Vec2::ZERO;
+}
+
+/// The step a finished stroke makes: its grid patches and planted or cleared trees.
+fn finish(session: &mut Session, docs: Option<&Docs>, mut stroke: Stroke) -> Option<Edit> {
+    let root = session.root.clone();
+    let mut commands = match session.map.as_mut() {
+        Some(map) => stroke.patches(map, &root),
+        None => Vec::new(),
+    };
+    if let Some(docs) = docs {
+        let objects = docs.scenery["objects"]
+            .as_array()
+            .cloned()
+            .unwrap_or_default();
+        commands.extend(tools::tree_commands(&root, &stroke, &objects));
+    }
+    stroke.before.clear();
+    if commands.is_empty() {
+        return None;
+    }
+    let label = match stroke.tool {
+        Tool::Trees if stroke.lower => "Clear trees",
+        Tool::Trees => "Plant trees",
+        Tool::Paint => "Paint the ground",
+        Tool::Water if stroke.lower => "Drain water",
+        Tool::Water => "Flood",
+        Tool::Cliff => "Cliff",
+        Tool::Smooth => "Smooth",
+        Tool::Flatten => "Flatten",
+        Tool::Lower => "Lower",
+        _ => "Raise",
+    };
+    session.own = true;
+    session.stale = true;
+    Some(step(session, label, commands))
+}
+
+/// A whole stroke of `settings.tool` along `points` (world x, z), gone over `passes`
+/// times, as one step: what an agent's stroke does (MCP). The brush steps along the line
+/// a third of its radius at a time. `level` is the height Flatten and Cliff level to and
+/// the water surface Water floods to; without it Flatten keeps the first point's height
+/// and Cliff lifts it one cliff level.
+#[allow(clippy::too_many_arguments)]
+pub fn stroke(
+    session: &mut Session,
+    content: &Content,
+    docs: &Docs,
+    mut settings: tools::Tools,
+    points: &[[f32; 2]],
+    level: Option<f32>,
+    lower: bool,
+    passes: u32,
+) -> Result<Option<Edit>, String> {
+    let tool = settings.tool;
+    if !tool.is_brush() {
+        return Err(format!("{} is not a brush", tool.name()));
+    }
+    let map = session.map.as_mut().ok_or("The map does not load")?;
+    let Some(first) = points.first() else {
+        return Err("A stroke needs a point".into());
+    };
+    let cliff = tools::cliff_layer(map, content);
+    let ground = tools::ground_at(map, first[0], first[1]);
+    let target = match (tool, level) {
+        (Tool::Flatten | Tool::Cliff, Some(level)) => level,
+        (Tool::Cliff, None) => {
+            let step = settings.cliff_level;
+            let base = (ground / step).round() * step;
+            if lower { base - step } else { base + step }
+        }
+        _ => ground,
+    };
+    if tool == Tool::Water
+        && let Some(level) = level
+    {
+        settings.water_level = level;
+    }
+    if tool == Tool::Trees && settings.tree.is_empty() {
+        settings.tree = tools::tree_kinds(content)
+            .into_iter()
+            .next()
+            .ok_or("The package has no harvestable trees")?;
+    }
+    // The line's points a third of a radius apart.
+    let spacing = (settings.radius / 3.0).max(0.5);
+    let mut along = vec![*first];
+    for pair in points.windows(2) {
+        let ([ax, az], [bx, bz]) = (pair[0], pair[1]);
+        let length = ((bx - ax).powi(2) + (bz - az).powi(2)).sqrt();
+        let steps = (length / spacing).ceil().max(1.0) as usize;
+        along.extend((1..=steps).map(|i| {
+            let t = i as f32 / steps as f32;
+            [ax + (bx - ax) * t, az + (bz - az) * t]
+        }));
+    }
+    let mut stroke = Stroke::new(tool, target, lower);
+    for _ in 0..passes.max(1) {
+        for [x, z] in &along {
+            if tool == Tool::Trees {
+                tools::trees(map, &settings, &mut stroke, *x, *z);
+            } else {
+                tools::brush(map, &settings, &mut stroke, *x, *z, 0.1, cliff);
+            }
+        }
+    }
+    Ok(finish(session, Some(docs), stroke))
 }
 
 /// What a click of `tool` at world (`x`, `z`) places: an amber site facing the nearest
@@ -706,10 +865,14 @@ pub fn place(
                 .player_starts
                 .iter()
                 .min_by(|a, b| {
-                    let d = |s: &&canopy_content::map::PlayerStart| (s.x - x).powi(2) + (s.z - z).powi(2);
+                    let d = |s: &&canopy_content::map::PlayerStart| {
+                        (s.x - x).powi(2) + (s.z - z).powi(2)
+                    };
                     d(a).total_cmp(&d(b))
                 })
-                .map_or((map.size as f64 / 2.0, map.size as f64 / 2.0), |s| (s.x, s.z));
+                .map_or((map.size as f64 / 2.0, map.size as f64 / 2.0), |s| {
+                    (s.x, s.z)
+                });
             let nodes = tools::amber_site(map, content, x, z, toward, session.tools.amber);
             if nodes.is_empty() {
                 return Err("the content has no amber mine".into());
@@ -733,7 +896,11 @@ pub fn place(
                 .map(|(k, m)| insert("/entities", entities + k, m))
                 .collect();
             commands.push(insert("/camps", camps, camp));
-            Some(step(session, &format!("Place a {} camp", session.tools.tier.name()), commands))
+            Some(step(
+                session,
+                &format!("Place a {} camp", session.tools.tier.name()),
+                commands,
+            ))
         }
         Tool::Start => {
             let (x, z) = tools::start_position(x, z);
@@ -748,7 +915,9 @@ pub fn place(
                 .values()
                 .filter_map(|r| r.starting_setup.as_ref())
                 .next()
-                .map_or(content.rules.starting_setup.id.to_string(), |s| s.id.to_string());
+                .map_or(content.rules.starting_setup.id.to_string(), |s| {
+                    s.id.to_string()
+                });
             let starts = docs.map["playerStarts"].as_array().map_or(0, Vec::len);
             let mut commands = vec![insert(
                 "/playerStarts",
@@ -761,7 +930,12 @@ pub fn place(
             let length = (dx * dx + dz * dz).sqrt().max(1.0);
             let (ax, az) = (x + dx / length * 26.0, z + dz / length * 26.0);
             let nodes = tools::amber_site(map, content, ax, az, (x, z), session.tools.amber);
-            commands.extend(nodes.into_iter().enumerate().map(|(k, n)| insert("/entities", entities + k, n)));
+            commands.extend(
+                nodes
+                    .into_iter()
+                    .enumerate()
+                    .map(|(k, n)| insert("/entities", entities + k, n)),
+            );
             // A level pad for the hall and its workers.
             let mut pad = Stroke::new(Tool::Flatten, 0.0, false);
             let root = session.root.clone();

@@ -58,6 +58,9 @@ pub struct Test {
     pub content: std::sync::Arc<canopy_content::Content>,
     /// The open map, when the maps editor shows one.
     pub map: Option<String>,
+    /// The open map's package with its unsaved edits, written to a temporary folder,
+    /// when it has any (the game plays it instead of the saved one).
+    pub map_package: Option<std::path::PathBuf>,
     /// A unit trying its abilities near the player's start, instead of a skirmish.
     pub encounter: Option<String>,
 }

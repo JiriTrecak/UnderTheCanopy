@@ -170,6 +170,21 @@ impl GameData {
         }
     }
 
+    /// Puts the map package at `path` in place of map `id` (the editor's unsaved copy).
+    pub fn add_test_map(&mut self, id: &str, path: std::path::PathBuf) -> Result<()> {
+        let group = self.map(id).map_or("skirmish", |m| m.file.group);
+        let file = MapFile {
+            id: id.to_string(),
+            group,
+            file: format!("editor/{id}.utcm"),
+            path,
+        };
+        let entry = MapEntry::from_package(file, &self.pack)?;
+        self.maps.retain(|m| m.id() != id);
+        self.maps.push(entry);
+        Ok(())
+    }
+
     pub fn map(&self, id: &str) -> Option<&MapEntry> {
         self.maps.iter().find(|m| m.id() == id)
     }

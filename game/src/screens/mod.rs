@@ -303,16 +303,22 @@ impl Game {
         &mut self,
         content: Arc<canopy_content::Content>,
         map: Option<String>,
+        map_package: Option<std::path::PathBuf>,
         encounter: Option<String>,
     ) -> Result<(), String> {
         let data = self.data.clone().ok_or("the game is still loading")?;
+        let mut testing = data.testing(content);
+        // A map with unsaved edits plays from the editor's copy of its package.
+        if let (Some(id), Some(path)) = (&map, map_package) {
+            testing.add_test_map(id, path).map_err(|e| e.to_string())?;
+        }
         let map = map
-            .filter(|m| data.map(m).is_some_and(|e| e.playable))
+            .filter(|m| testing.map(m).is_some_and(|e| e.playable))
             .or_else(|| self.last_match.as_ref().map(|r| r.map.clone()))
             .or_else(|| data.skirmish_maps().next().map(|m| m.id().to_string()))
             .ok_or("no playable map")?;
         self.testing = Some(data.clone());
-        self.data = Some(Arc::new(data.testing(content)));
+        self.data = Some(Arc::new(testing));
         self.start_dev(DevStart {
             spec: DevSpec {
                 map,

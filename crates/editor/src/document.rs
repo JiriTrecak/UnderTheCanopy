@@ -133,27 +133,6 @@ pub struct GridData {
     pub bytes: Vec<u8>,
 }
 
-impl GridData {
-    /// The sample at (`x`, `z`) as `f32` (an `f32` grid).
-    pub fn f32_at(&self, x: u32, z: u32) -> f32 {
-        let i = (z as usize * self.width as usize + x as usize) * 4;
-        f32::from_le_bytes([
-            self.bytes[i],
-            self.bytes[i + 1],
-            self.bytes[i + 2],
-            self.bytes[i + 3],
-        ])
-    }
-
-    /// The samples as `f32`s (an `f32` grid).
-    pub fn floats(&self) -> Vec<f32> {
-        self.bytes
-            .chunks_exact(4)
-            .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
-            .collect()
-    }
-}
-
 /// A grid document; its unsaved state is worked out once per change.
 #[derive(Debug, Clone)]
 struct GridDoc {
@@ -358,11 +337,6 @@ impl Store {
             );
         }
         Ok(self.grids.get_mut(path).expect("just loaded"))
-    }
-
-    /// A grid's current samples (`None` when it does not exist).
-    pub fn grid(&mut self, path: &str) -> Result<Option<&GridData>, Error> {
-        Ok(self.load_grid(path)?.value.as_ref())
     }
 
     /// Counts creations and deletions of documents (libraries list what exists).
@@ -1038,6 +1012,16 @@ mod tests {
 
     const KNIGHT: &str = "units/knight.json";
 
+    fn grid_of<'a>(store: &'a mut Store, path: &str) -> &'a GridData {
+        store.load_grid(path).unwrap().value.as_ref().unwrap()
+    }
+
+    /// The sample at (`x`, `z`) of an `f32` grid.
+    fn f32_at(grid: &GridData, x: u32, z: u32) -> f32 {
+        let i = (z as usize * grid.width as usize + x as usize) * 4;
+        f32::from_le_bytes(grid.bytes[i..i + 4].try_into().unwrap())
+    }
+
     fn set(pointer: &str, value: Value) -> Command {
         Command::Set {
             document: KNIGHT.into(),
@@ -1222,7 +1206,7 @@ mod tests {
         std::fs::create_dir_all(file.parent().unwrap()).unwrap();
         std::fs::write(&file, Grid(heights.clone()).to_file(Element::F32, 4, 4)).unwrap();
         let mut store = Store::new(&folder.0);
-        assert_eq!(store.grid(path).unwrap().unwrap().f32_at(1, 2), 9.0);
+        assert_eq!(f32_at(grid_of(&mut store, path), 1, 2), 9.0);
         // A 2×2 patch at (1, 1) raising four samples to 50.
         let patch: Vec<u8> = (0..4).flat_map(|_| 50f32.to_le_bytes()).collect();
         store
@@ -1239,15 +1223,19 @@ mod tests {
                 }],
             )
             .unwrap();
-        let grid = store.grid(path).unwrap().unwrap().clone();
+        let grid = grid_of(&mut store, path).clone();
         assert_eq!(
-            (grid.f32_at(1, 1), grid.f32_at(2, 2), grid.f32_at(3, 3)),
+            (
+                f32_at(&grid, 1, 1),
+                f32_at(&grid, 2, 2),
+                f32_at(&grid, 3, 3)
+            ),
             (50.0, 50.0, 15.0)
         );
         assert_eq!(store.dirty(), [path]);
         assert!(store.overlay().0.contains_key(path));
         store.undo().unwrap();
-        assert_eq!(store.grid(path).unwrap().unwrap().bytes, heights);
+        assert_eq!(grid_of(&mut store, path).bytes, heights);
         assert!(store.dirty().is_empty());
         store.redo().unwrap();
         assert_eq!(store.save().unwrap(), [path]);

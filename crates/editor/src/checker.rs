@@ -124,7 +124,8 @@ impl Checker {
                         )
                         .map_err(|e| e.to_string())
                         .and_then(|p| {
-                            canopy_content::map::package::load_package(&p).map_err(|e| e.to_string())
+                            canopy_content::map::package::load_package(&p)
+                                .map_err(|e| e.to_string())
                         });
                         let map = match loaded {
                             Ok(map) => map,
@@ -139,9 +140,11 @@ impl Checker {
                         let setup = canopy_scene::spectator_setup(&map, None);
                         match canopy_sim::World::new(content.clone(), &map, setup) {
                             Ok(world) => {
-                                if let Err(error) =
-                                    canopy_sim::spawn::playable(&map, world.catalog(), world.terrain())
-                                {
+                                if let Err(error) = canopy_sim::spawn::playable(
+                                    &map,
+                                    world.catalog(),
+                                    world.terrain(),
+                                ) {
                                     fail(error);
                                 }
                             }

@@ -25,6 +25,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+mod maps;
 mod serve;
 
 /// One editor's state, kept while switching editors.
@@ -308,7 +309,7 @@ impl Shell {
         };
         let subject = active.as_deref().and_then(|d| self.subject(d));
         if let Some(root) = active.as_deref().and_then(crate::map::root_of) {
-            self.prepare_map(&root.to_string());
+            self.prepare_map(root);
         }
         let workspace = self
             .workspaces
@@ -398,6 +399,7 @@ impl Shell {
                     self.test = Some(crate::Test {
                         content,
                         map: None,
+                        map_package: None,
                         encounter: Some(unit),
                     });
                 }
@@ -470,42 +472,10 @@ impl Shell {
     /// and rebuilds its scene when its terrain changed, at most every 150 ms while a stroke
     /// paints.
     fn prepare_map(&mut self, root: &str) {
-        let (Some(store), Ok(package)) = (&self.store, &self.package) else {
+        self.load_map(root);
+        let Some(session) = self.maps.get_mut(root) else {
             return;
         };
-        let generation = store.generation();
-        let session = self
-            .maps
-            .entry(root.to_string())
-            .or_insert_with(|| crate::map::Session::new(root));
-        if session.loaded_at != Some(generation) && session.tools.stroke.is_none() {
-            if std::mem::take(&mut session.own) && session.map.is_some() {
-                session.loaded_at = Some(generation);
-            } else {
-                let overlay = Arc::new(store.overlay().below(root));
-                let loaded = Package::open_overlaid(&package.root.join(root), Some(overlay))
-                    .map_err(|e| e.to_string())
-                    .and_then(|p| {
-                        canopy_content::map::package::load_package(&p).map_err(|e| e.to_string())
-                    });
-                match loaded {
-                    Ok(map) => {
-                        if session.map.is_none() {
-                            session.camera = crate::map::Camera::over(map.size);
-                            if let Some(start) = map.player_starts.first() {
-                                session.camera.focus = [start.x as f32, start.z as f32];
-                                session.camera.distance = 140.0;
-                            }
-                        }
-                        session.map = Some(map);
-                        session.error = None;
-                        session.stale = true;
-                    }
-                    Err(error) => session.error = Some(error),
-                }
-                session.loaded_at = Some(generation);
-            }
-        }
         let due = session.scene.is_none()
             || (session.stale
                 && session
@@ -558,6 +528,70 @@ impl Shell {
             Err(error) => session.error = Some(error),
         }
         session.last_build = Some(Instant::now());
+    }
+
+    /// The map package at `root` with its unsaved edits, written to a temporary folder;
+    /// none when it has no unsaved edits.
+    pub(crate) fn unsaved_map(
+        &self,
+        root: &str,
+        id: &str,
+    ) -> Result<Option<std::path::PathBuf>, String> {
+        let (Some(store), Ok(package)) = (&self.store, &self.package) else {
+            return Ok(None);
+        };
+        let overlay = store.overlay().below(root);
+        if overlay.0.is_empty() {
+            return Ok(None);
+        }
+        let target = std::env::temp_dir()
+            .join(format!("canopy-editor-test-{}", std::process::id()))
+            .join(format!("{id}.utcm"));
+        let _ = std::fs::remove_dir_all(&target);
+        let source = package.root.join(root);
+        crate::map::write_overlaid(&source, &overlay, &target).map_err(|e| e.to_string())?;
+        Ok(Some(target))
+    }
+
+    /// Loads the map at `root` into its session when the store changed since (an undo,
+    /// MCP, a file on disk), unless the session made that change itself.
+    fn load_map(&mut self, root: &str) {
+        let (Some(store), Ok(package)) = (&self.store, &self.package) else {
+            return;
+        };
+        let generation = store.generation();
+        let session = self
+            .maps
+            .entry(root.to_string())
+            .or_insert_with(|| crate::map::Session::new(root));
+        if session.loaded_at != Some(generation) && session.tools.stroke.is_none() {
+            if std::mem::take(&mut session.own) && session.map.is_some() {
+                session.loaded_at = Some(generation);
+            } else {
+                let overlay = Arc::new(store.overlay().below(root));
+                let loaded = Package::open_overlaid(&package.root.join(root), Some(overlay))
+                    .map_err(|e| e.to_string())
+                    .and_then(|p| {
+                        canopy_content::map::package::load_package(&p).map_err(|e| e.to_string())
+                    });
+                match loaded {
+                    Ok(map) => {
+                        if session.map.is_none() {
+                            session.camera = crate::map::Camera::over(map.size);
+                            if let Some(start) = map.player_starts.first() {
+                                session.camera.focus = [start.x as f32, start.z as f32];
+                                session.camera.distance = 140.0;
+                            }
+                        }
+                        session.map = Some(map);
+                        session.error = None;
+                        session.stale = true;
+                    }
+                    Err(error) => session.error = Some(error),
+                }
+                session.loaded_at = Some(generation);
+            }
+        }
     }
 
     /// The package with the unsaved documents laid over it.
@@ -726,14 +760,22 @@ impl Shell {
                 .and_then(|p| p.entries("landscape/biomes").ok())
                 .unwrap_or_default()
                 .into_iter()
-                .filter_map(|(name, dir)| (!dir).then_some(name)?.strip_suffix(".json").map(str::to_string))
+                .filter_map(|(name, dir)| {
+                    (!dir)
+                        .then_some(name)?
+                        .strip_suffix(".json")
+                        .map(str::to_string)
+                })
                 .collect::<Vec<_>>();
             self.dialog = Some(Dialog::NewMap {
                 group: "skirmish".into(),
                 id: String::new(),
                 name: String::new(),
                 size: 512,
-                biome: biomes.first().cloned().unwrap_or_else(|| "vibrant-forest".into()),
+                biome: biomes
+                    .first()
+                    .cloned()
+                    .unwrap_or_else(|| "vibrant-forest".into()),
                 biomes,
             });
             return;
@@ -1791,13 +1833,27 @@ impl Shell {
             && let Some(content) = testable
         {
             // The open map, when the maps editor shows one.
-            let map = (self.current == Kind::Maps)
+            let open = (self.current == Kind::Maps)
                 .then(|| self.active_document())
                 .flatten()
-                .and_then(|d| self.workspaces.get(&Kind::Maps).map(|w| w.element(&d).id));
+                .and_then(|d| self.workspaces.get(&Kind::Maps).map(|w| w.element(&d)));
+            let map_package = match &open {
+                Some(element) => match self.unsaved_map(&element.path, &element.id) {
+                    Ok(path) => path,
+                    Err(error) => {
+                        self.say(
+                            format!("The map's edits could not be copied: {error}"),
+                            true,
+                        );
+                        return;
+                    }
+                },
+                None => None,
+            };
             self.test = Some(crate::Test {
                 content,
-                map,
+                map: open.map(|e| e.id),
+                map_package,
                 encounter: None,
             });
         }

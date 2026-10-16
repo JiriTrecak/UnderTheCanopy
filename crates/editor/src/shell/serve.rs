@@ -165,6 +165,17 @@ impl Shell {
         if self.store.is_none() {
             return Err("The base package could not be opened.".into());
         }
+        if matches!(
+            tool,
+            Tool::MapCreate(_)
+                | Tool::MapInfo { .. }
+                | Tool::MapPicture { .. }
+                | Tool::MapStroke(_)
+                | Tool::MapPlace(_)
+                | Tool::MapRemove(_)
+        ) {
+            return self.answer_map(tool);
+        }
         match tool {
             Tool::Status => {
                 let store = self.store.as_ref().expect("checked");
@@ -305,6 +316,7 @@ impl Shell {
                     .map_err(|e| e.to_string())?;
                 Ok(json!({ "renamed": old, "to": new, "uses": uses.len() }))
             }
+            _ => unreachable!("map tools answer above"),
         }
     }
 

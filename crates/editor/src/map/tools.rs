@@ -320,14 +320,12 @@ impl Stroke {
     }
 }
 
+/// Vertices under a brush: (index, x, z, falloff), and their bounds.
+type Footprint = (Vec<(usize, u32, u32, f32)>, [u32; 4]);
+
 /// The vertices within `radius` of world (`cx`, `cz`) and their falloff (1 at the centre,
 /// 0 at the rim).
-fn footprint(
-    map: &UtcMap,
-    cx: f32,
-    cz: f32,
-    radius: f32,
-) -> (Vec<(usize, u32, u32, f32)>, [u32; 4]) {
+fn footprint(map: &UtcMap, cx: f32, cz: f32, radius: f32) -> Footprint {
     let side = map.authoring.terrain.vertices();
     let halo = MAP_HALO as f32;
     let (vx, vz) = (cx + halo, cz + halo);
@@ -576,6 +574,21 @@ fn next_id(prefix: &str, taken: impl Iterator<Item = String>) -> u64 {
         .map_or(0, |n| n + 1)
 }
 
+/// The scenery the tree brush can plant: the package's harvestable trees.
+pub fn tree_kinds(content: &Content) -> Vec<String> {
+    canopy_content::assets::scenery(&content.manifest)
+        .filter(|s| {
+            content.landscape.iter().any(|a| {
+                a.scenery
+                    .as_ref()
+                    .is_some_and(|i| i.as_str() == s.id.as_str())
+                    && a.harvesting.is_some()
+            })
+        })
+        .map(|s| s.id.to_string())
+        .collect()
+}
+
 /// Plants trees over the brush (one per cell, spaced, on dry flat-enough ground), or
 /// clears them (Shift); the session's map shows them at once.
 pub fn trees(map: &mut UtcMap, tools: &Tools, stroke: &mut Stroke, cx: f32, cz: f32) {
@@ -686,15 +699,13 @@ pub fn tree_commands(root: &str, stroke: &Stroke, objects: &[Value]) -> Vec<Comm
             pointer: format!("/objects/{i}"),
         });
     }
-    let mut at = objects.len() - indices.len();
-    for object in &stroke.planted {
+    for (at, object) in (objects.len() - indices.len()..).zip(&stroke.planted) {
         out.push(Command::Insert {
             document: document.clone(),
             pointer: "/objects".into(),
             index: at,
             value: object.clone(),
         });
-        at += 1;
     }
     out
 }
