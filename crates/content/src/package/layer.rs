@@ -236,8 +236,11 @@ mod tests {
     use serde_json::json;
     use std::path::PathBuf;
 
-    /// Writes packages (id, kind, files) under a fresh temporary folder, in load order.
-    fn packages(name: &str, list: &[(&str, &str, &[(&str, Value)])]) -> Vec<Package> {
+    /// A test package: id, kind and its files (path, JSON).
+    type Spec<'a> = (&'a str, &'a str, &'a [(&'a str, Value)]);
+
+    /// Writes packages under a fresh temporary folder, in load order.
+    fn packages(name: &str, list: &[Spec]) -> Vec<Package> {
         let root: PathBuf =
             std::env::temp_dir().join(format!("canopy-layers-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
