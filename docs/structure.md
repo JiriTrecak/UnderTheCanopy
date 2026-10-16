@@ -43,7 +43,7 @@ All content is in packages (docs/packages.md, D53); the agent skills `canopy-pac
 
 | Folder | What |
 |---|---|
-| `base/` | the base package: `package.json`; rules, races, behaviours, research, loot pools; one file per unit, building, item, resource, ability and effect; `scenery/`; `landscape/` (biomes, water, recipes); `assets/` (one folder per asset with `asset.json`, runtime files and working sources); `maps/<group>/<id>.utcm` and `campaigns/<id>.utcc` (nested packages) |
+| `base/` | the base package: `package.json`; rules, races, behaviours, research, loot pools; one file per unit, building, item, resource, ability and effect; `scenery/`; `landscape/` (biomes, water profiles); `assets/` (one folder per asset with `asset.json`, runtime files and working sources); `maps/<group>/<id>.utcm` and `campaigns/<id>.utcc` (nested packages) |
 | `config/` | engine settings edited by hand (lighting, water rendering, glow, player colours, UI; D30), read at start and shipped |
 | `art/` | inputs of the image-generation tooling (styles, profiles) |
 

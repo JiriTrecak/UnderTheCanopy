@@ -18,7 +18,7 @@ base/
 ├─ abilities/  effects/                        one file each (skill canopy-abilities)
 ├─ scenery/                                    placeable scenery pieces
 ├─ assets/                                     one folder per asset (skill canopy-assets)
-├─ landscape/  biomes/  recipes/  water/
+├─ landscape/  biomes/  water/
 ├─ campaigns/<id>.utcc/                        nested campaign packages
 └─ maps/<group>/<id>.utcm/                     nested map packages (skill canopy-maps)
 ```

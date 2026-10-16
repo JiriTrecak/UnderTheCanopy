@@ -75,7 +75,6 @@ base/
 ├─ scenery/                placeable scenery: category, model, blocker, what it yields
 ├─ landscape/
 │  ├─ biomes/
-│  ├─ recipes/
 │  └─ water/
 ├─ assets/                 one folder per asset (see Assets)
 ├─ campaigns/              <name>.utcc
@@ -88,7 +87,7 @@ Moves from today's data:
 - **AI is code, not data.** `rules.ai` and the races' `ai` sections leave the data: think rates, budgets and personality become constants in the AI code. The AI should read the game data and react to the opponent rather than follow fixed lists; custom races later bring their own AI as a Lua script.
 - Abilities: `content/abilities/<id>/{definition,presentation}.json` become one file each; `published.json` and `folders.json` go (folders are real directories).
 - Effects: `content/effects/<id>/effect.json` become one file each; `published.json` goes.
-- `config/biomes/` moves to `landscape/biomes/`. The 22 landscape-recipe and 3 water-profile "assets" (JSON only) move to `landscape/recipes/` and `landscape/water/`.
+- `config/biomes/` moves to `landscape/biomes/`. The 3 water-profile "assets" (JSON only) move to `landscape/water/`. The 22 landscape recipes (the old editor's generators) are removed: the new map editor will not use them.
 - `content/neutral-camps.json` (unread; camps live in maps) and `content/import/warcraft/` (tool settings) leave the package.
 - `config/ui`, `players.json`, lighting, water rendering and glow stay in `config/`: engine settings, not moddable content.
 
@@ -170,7 +169,7 @@ Settled from a full read of today's data and every consumer (2026-10-16). Each k
 
 The worker's folder holds the carried wood, amber and root models: they become three item assets. The 56 unit and building portraits become icon assets of their own. Definitions name their model `model` (today `asset`). Pack entries are named by asset id and file role instead of `assets/library/…` paths, including the UI theme's images and the renderer's few fixed textures.
 
-**Scenery.** The 73 scenery prototypes become `scenery/` definitions with ids `scenery.<name>`: name, category, model, blockers, deck, light, hidden in the editor, and harvesting (which resource it becomes, as the landscape catalogue says today). Map objects and biome forests reference scenery ids. Terrain materials stay assets (textures plus their projection and atlas settings); landscape recipes and water profiles move to `landscape/`.
+**Scenery.** The 73 scenery prototypes become `scenery/` definitions with ids `scenery.<name>`: name, category, model, blockers, deck, light, hidden in the editor, and harvesting (which resource it becomes, as the landscape catalogue says today). Map objects and biome forests reference scenery ids. Terrain materials stay assets (textures plus their projection and atlas settings); water profiles move to `landscape/`.
 
 **Maps.** Terrain grid files use the extension `.grid` (`.bin` is stored in Git LFS): a small header (magic, element type, width, height, filters), then the values little-endian, byte-shuffled and deflate-compressed, bit-exact. Echo Isles' terrain shrinks from 31.6 MB of base64 to about 0.6 MB. Paint layers are listed in order in `map.json` (order decides blending), one weights grid and one variants grid each. The version wrappers, the duplicate terrain size and retired fields go. Scenery objects keep their order (the simulation numbers resources by it). Map previews move into their packages.
 

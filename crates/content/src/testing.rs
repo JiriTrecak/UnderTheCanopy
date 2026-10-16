@@ -16,7 +16,7 @@ pub struct DataFolder {
     /// Asset records in the old registry shape (`outputs`, `render`, `scenery`), written as
     /// asset folders with one-byte files, scenery definitions and definition presentation.
     pub records: Vec<Value>,
-    /// Landscape catalogue entries in the old shape: kinds, harvesting, water, recipes.
+    /// Landscape catalogue entries in the old shape: kinds, harvesting, water.
     pub landscape: Value,
 }
 
@@ -461,12 +461,6 @@ impl<'a> Assets<'a> {
                 base(
                     &format!("landscape/water/{id}.json"),
                     &json!({"id": id, "name": entry["name"], "water": water}),
-                );
-            }
-            if let Some(recipe) = entry.get("recipe") {
-                base(
-                    &format!("landscape/recipes/{id}.json"),
-                    &json!({"id": id, "name": entry["name"], "recipe": recipe}),
                 );
             }
         }

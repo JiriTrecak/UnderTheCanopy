@@ -262,7 +262,7 @@ impl From<True> for bool {
 }
 
 /// An authoring asset id (`authoringId`): `[a-zA-Z0-9][a-zA-Z0-9._-]*`, 1–160 characters.
-/// Looser than [`crate::Id`]: asset, scenery and recipe ids may use capitals and `_`.
+/// Looser than [`crate::Id`]: asset and scenery ids may use capitals and `_`.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
 #[serde(transparent)]
 pub struct AuthoringId(String);
@@ -391,7 +391,7 @@ mod tests {
             "asset.models.a",
             "Synty_Rock-01",
             "9lives",
-            "recipe.river.glacial.water",
+            "water.clear_forest",
         ] {
             assert!(AuthoringId::new(text).is_ok(), "{text}");
         }

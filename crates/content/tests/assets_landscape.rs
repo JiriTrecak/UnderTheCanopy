@@ -1,90 +1,21 @@
-//! `assets/authoring/catalogue.json`: landscape recipes, water profiles, ground textures and
-//! the rules tying them to published records.
+//! The landscape catalogue: water profiles, ground textures, placeable models and the rules
+//! tying them to the asset records.
 
 use canopy_content::{
     Error,
     assets::{
         Manifest,
-        landscape::{self, LandscapeAsset, LandscapeRecipe},
+        landscape::{self, LandscapeAsset},
     },
     game::Definition,
 };
 use serde_json::{Value, json};
-
-fn scatter(species: &str) -> Value {
-    json!({
-        "species": [{"asset": species, "weight": 2.0}], "spacing": 1.5, "probability": 0.5,
-        "jitter": 0.25, "scaleMin": 0.5, "scaleMax": 1.5, "maxSlope": 1.0, "waterClearance": 0.5,
-        "objectClearance": 0.0, "edgeFade": 2.0, "riverBank": {"min": 0.5, "max": 3.0},
-        "patchiness": {"scale": 4.0, "strength": 0.75},
-    })
-}
 
 fn with(mut base: Value, fields: Value) -> Value {
     for (key, value) in fields.as_object().unwrap() {
         base[key] = value.clone();
     }
     base
-}
-
-fn recipes() -> Vec<Value> {
-    vec![
-        json!({"type": "terrain", "operation": "raise", "height": 4.0, "falloff": 8.0,
-            "surface": "mountain", "chunks": scatter("rock")}),
-        json!({"type": "river", "water": "water.test", "width": 3.0, "depth": 1.0,
-            "bankWidth": 2.0, "bankMaterial": "ground.test", "flow": 0.5, "maxUphillGrade": 0.01,
-            "details": {"banks": scatter("reed"), "shore": [with(scatter("rock"),
-                json!({"id": "stones", "bank": {"min": -1.0, "max": 1.0}}))]}}),
-        json!({"type": "path", "material": "ground.test", "width": 2.0, "shoulder": 1.0,
-            "flatten": 0.5, "vegetationClearance": 1.0}),
-        with(
-            scatter("tree"),
-            json!({"type": "forest", "interiorMargin": 0.0,
-            "details": [with(scatter("reed"), json!({"id": "undergrowth"}))],
-            "edge": with(scatter("reed"), json!({"width": 4.0}))}),
-        ),
-        with(
-            scatter("reed"),
-            json!({"type": "grass", "density": 2.0, "pattern": "patches"}),
-        ),
-        with(
-            scatter("reed"),
-            json!({"type": "ground-cover", "minSpacing": 0.25}),
-        ),
-        json!({"type": "meadow", "material": "ground.test", "canopy": 2.0, "reach": 6.0,
-            "falloff": 4.0, "under": 0.2, "peak": 1.0, "open": 0.6, "edgeFade": 1.0,
-            "noise": {"scale": 8.0, "strength": 0.5},
-            "ragged": {"width": 1.0, "scale": 2.0, "strength": 0.5},
-            "accents": [with(scatter("flower"), json!({"id": "flowers",
-                "coverage": {"min": 0.2, "max": 0.8}, "trees": {"min": 0.0, "max": 6.0}}))]}),
-    ]
-}
-
-#[test]
-fn every_recipe_type_round_trips() {
-    for raw in recipes() {
-        let recipe: LandscapeRecipe = serde_json::from_value(raw.clone())
-            .unwrap_or_else(|error| panic!("{}: {error}", raw["type"]));
-        assert_eq!(serde_json::to_value(&recipe).unwrap(), raw);
-    }
-}
-
-#[test]
-fn recipes_are_strict() {
-    let parse = |raw: Value| serde_json::from_value::<LandscapeRecipe>(raw).is_err();
-    let [terrain, _, path, forest, grass, _, _]: [Value; 7] = recipes().try_into().unwrap();
-    assert!(
-        parse(with(grass, json!({"colour": "green"}))),
-        "unknown scatter field"
-    );
-    assert!(parse(with(path, json!({"type": "road"}))), "unknown type");
-    assert!(
-        parse(with(terrain, json!({"operation": "tilt"}))),
-        "unknown operation"
-    );
-    let mut forest = forest;
-    forest.as_object_mut().unwrap().remove("interiorMargin");
-    assert!(parse(forest), "zod defaults are written out");
 }
 
 fn asset(id: &str, kind: &str, fields: Value) -> Value {
@@ -110,7 +41,7 @@ fn ground_texture() -> Value {
     })
 }
 
-/// Published records: models with scenery, a ground texture, a water profile and recipes.
+/// Records: models with scenery, a ground texture and a water profile.
 fn catalogue() -> Vec<Value> {
     let model = |id: &str| asset(id, "foliage", json!({"scenery": format!("{id}-prop")}));
     let mut assets: Vec<Value> = ["rock", "reed", "tree", "flower"].map(model).into();
@@ -134,13 +65,6 @@ fn catalogue() -> Vec<Value> {
         "waves": {"height": 0.3, "length": 12.0, "speed": 0.6, "depthStart": 0.4, "depthEnd": 2.5,
             "shallowStrength": 0.02, "shoreWidth": 0.6, "crestStrength": 0.2}}}),
     ));
-    for (index, recipe) in recipes().into_iter().enumerate() {
-        assets.push(asset(
-            &format!("recipe.{index}"),
-            "landscape-recipe",
-            json!({"recipe": recipe}),
-        ));
-    }
     assets
 }
 
@@ -198,30 +122,6 @@ fn references_must_resolve() {
         assert_eq!(errors.len(), 1, "{errors:?}");
         errors[0].message.clone()
     };
-    // A species without a scenery binding.
-    let mut no_scenery = assets.clone();
-    no_scenery[1].as_object_mut().unwrap().remove("scenery");
-    assert!(
-        validate(&no_scenery, &published)
-            .iter()
-            .any(|e| e.message.contains("species reed"))
-    );
-
-    let river = 7;
-    assert!(
-        broken(
-            river,
-            json!({"recipe": with(recipes()[1].clone(), json!({"water": "rock"}))})
-        )
-        .contains("water profile")
-    );
-    assert!(
-        broken(
-            river,
-            json!({"recipe": with(recipes()[1].clone(), json!({"bedMaterial": "gone"}))})
-        )
-        .contains("material gone")
-    );
     assert!(
         broken(
             2,

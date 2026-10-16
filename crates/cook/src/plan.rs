@@ -8,8 +8,7 @@
 //! - Channel images of terrain materials whose catalogue entry declares packed runtime
 //!   tiles are editor previews; the tiles (`.bin`, gzip RGBA) are cooked instead.
 //! - Other `.bin` outputs are data; `.wav` outputs are sounds; JSON outputs shaped as
-//!   daytime colour grades become volume textures (recipes and profiles are already
-//!   inlined in the catalogue the game reads).
+//!   daytime colour grades become volume textures.
 //! - Map packages' preview images, and one `@scenery` table of every placeable prototype.
 
 use crate::texture::{AlphaPolicy, ColorSpace, Encoding, TextureParams};

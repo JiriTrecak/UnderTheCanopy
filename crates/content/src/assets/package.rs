@@ -1,6 +1,6 @@
 //! Assets as packages store them (docs/packages.md, D53): one folder per asset holding
 //! `asset.json` and its files (`assets/`), placeable scenery (`scenery/`), and landscape
-//! recipes and water profiles (`landscape/`).
+//! water profiles and biomes (`landscape/`).
 //!
 //! From these the loader builds the registries the game reads — the asset records
 //! ([`Manifest`]), the model index ([`PublishedModel`]) and the landscape catalogue
@@ -11,8 +11,7 @@ use super::{
     AuthoringId, Blocker, Deck, FileRole, Files, Light, Manifest, Output, OutputRole, Record,
     RecordKind, SceneryCategory, SceneryEntry, SceneryType, VersionOne,
     landscape::{
-        AssetKind, GroundTexture, Harvesting, LandscapeAsset, LandscapeRecipe, TerrainImages,
-        WaterProfile,
+        AssetKind, GroundTexture, Harvesting, LandscapeAsset, TerrainImages, WaterProfile,
     },
     models::{Capabilities, ModelTransform, PublishedModel},
 };
@@ -32,7 +31,6 @@ pub const ASSETS: Collection = Collection {
 };
 pub const SCENERY: Collection = Collection::files("scenery");
 pub const WATER: Collection = Collection::files("landscape/water");
-pub const RECIPES: Collection = Collection::files("landscape/recipes");
 
 /// The file that makes a folder an asset.
 pub const ASSET_FILE: &str = "asset.json";
@@ -161,15 +159,6 @@ pub struct WaterFile {
     pub water: WaterProfile,
 }
 
-/// `landscape/recipes/`: one landscape generation layer.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct RecipeFile {
-    pub id: AuthoringId,
-    pub name: String,
-    pub recipe: LandscapeRecipe,
-}
-
 /// Everything the game reads about assets, built from the packages.
 #[derive(Debug, Clone, Default)]
 pub struct AssetIndex {
@@ -197,10 +186,7 @@ fn record_kind(kind: AssetKind) -> RecordKind {
         AssetKind::Interface => RecordKind::Interface,
         AssetKind::Texture => RecordKind::Texture,
         AssetKind::Audio => RecordKind::Audio,
-        AssetKind::TerrainMaterial
-        | AssetKind::WaterProfile
-        | AssetKind::LandscapeRecipe
-        | AssetKind::Data => RecordKind::Data,
+        AssetKind::TerrainMaterial | AssetKind::WaterProfile | AssetKind::Data => RecordKind::Data,
         AssetKind::Map => RecordKind::Map,
         _ => RecordKind::Model,
     }
@@ -250,11 +236,6 @@ pub fn index(packages: &[Package], files: Files, errors: &mut Vec<Error>) -> Ass
         .into_iter()
         .filter_map(|e| e.parse(errors))
         .collect();
-    let recipes: Vec<RecipeFile> = elements(&RECIPES, packages, &mut paths, errors)
-        .into_iter()
-        .filter_map(|e| e.parse(errors))
-        .collect();
-
     let assets: BTreeMap<&str, &AssetDefinition> =
         out.assets.iter().map(|a| (a.id.as_str(), a)).collect();
     let entry = |id: &str, file: &AssetFile| format!("{id}/{}", file.name());
@@ -426,7 +407,6 @@ pub fn index(packages: &[Package], files: Files, errors: &mut Vec<Error>) -> Ass
                     asset: s.id.to_string(),
                 })
             }),
-            recipe: None,
             water: None,
             terrain: None,
             terrain_images: None,
@@ -468,23 +448,7 @@ pub fn index(packages: &[Package], files: Files, errors: &mut Vec<Error>) -> Ass
             scale: 1.0,
             clearance: 0.0,
             harvesting: None,
-            recipe: None,
             water: Some(w.water),
-            terrain: None,
-            terrain_images: None,
-        });
-    }
-    for r in recipes {
-        out.catalogue.push(LandscapeAsset {
-            id: r.id,
-            name: r.name,
-            kind: AssetKind::LandscapeRecipe,
-            scenery: None,
-            scale: 1.0,
-            clearance: 0.0,
-            harvesting: None,
-            recipe: Some(r.recipe),
-            water: None,
             terrain: None,
             terrain_images: None,
         });

@@ -77,7 +77,7 @@ pub struct Content {
     pub looks: Vec<RenderAsset>,
     /// The asset records, built from the asset folders ([`assets::package`]).
     pub manifest: Manifest,
-    /// Landscape catalogue: scenery, ground textures, water profiles and recipes the map
+    /// Landscape catalogue: scenery, ground textures and water profiles the map
     /// scene is compiled from.
     pub landscape: Vec<LandscapeAsset>,
     /// Every asset and piece of scenery as authored.

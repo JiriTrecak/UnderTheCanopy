@@ -99,7 +99,7 @@
       "edge": 1
     }
   },
-  "water": "recipe.river.meltwater.water",
+  "water": "water.meltwater",
   "surroundings": {
     "floorTexture": "asset.terrain.winter-soil",
     "floorColor": "#d1dbdb",
