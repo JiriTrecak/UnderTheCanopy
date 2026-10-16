@@ -1,18 +1,27 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [
-      "Your own maps appear in Skirmish: put a map package (a .utcm folder) into the maps folder in the game's user folder."
-    ],
-    "improved": [
-      "The computer opponent fields its whole army roster — casters, Queensguard, Winglancers and more, not just Warriors, Archers and Hunters — and chooses what to train from what its buildings offer and what its enemy fields; AI duels now end decisively instead of stalling for an hour."
-    ],
+    "added": [],
+    "improved": [],
     "fixed": [],
-    "knownIssues": [
-      "Games saved in 0.3.4 or earlier can't be loaded: the game's content has a new structure."
-    ]
+    "knownIssues": []
   },
   "releases": [
+    {
+      "added": [
+        "Your own maps appear in Skirmish: put a map package (a .utcm folder) into the maps folder in the game's user folder."
+      ],
+      "improved": [
+        "The computer opponent fields its whole army roster — casters, Queensguard, Winglancers and more, not just Warriors, Archers and Hunters — and chooses what to train from what its buildings offer and what its enemy fields; AI duels now end decisively instead of stalling for an hour."
+      ],
+      "fixed": [],
+      "knownIssues": [
+        "Games saved in 0.3.4 or earlier can't be loaded: the game's content has a new structure."
+      ],
+      "version": "0.3.5",
+      "publishedAt": "2026-10-16T16:59:40.352Z",
+      "title": "A smarter enemy and your own maps"
+    },
     {
       "added": [
         "An idle worker button above the minimap shows how many workers have nothing to do; click it to select the next one.",
