@@ -283,7 +283,9 @@ pub fn new_map(
 ) -> Result<Vec<crate::document::Command>, String> {
     use canopy_content::map::MAP_SIZES;
     if !MAP_SIZES.contains(&size) || size > 1024 {
-        return Err(format!("a map is 256, 512, 640 or 1024 cells, not {size}"));
+        return Err(format!(
+            "a map is 256, 480, 512, 640, 800, 960 or 1024 cells, not {size}"
+        ));
     }
     // Ground materials: the painted ones first, cliff faces last (they follow slopes).
     let mut materials: Vec<(&str, bool)> = content

@@ -97,14 +97,17 @@ impl Terrain {
         let mut heights = Vec::with_capacity(size * size);
         let mut water = Vec::with_capacity(size * size);
         let mut walkable = Vec::with_capacity(size * size);
+        // Outside the playable area the ground is scenery: nothing walks or builds there.
+        let area = map.playable_area();
         for y in 0..size {
             for x in 0..size {
+                let inside = area.contains(x as f64 + 0.5, y as f64 + 0.5);
                 let (fx, fy) = (x as f64, y as f64);
                 let ground = round_half_up(field.sample(fx, fy) * 100.0) as i16;
                 let surface = round_half_up(field.water_at(fx, fy) * 100.0) as i16;
                 heights.push(ground);
                 water.push(surface);
-                walkable.push(i32::from(ground) >= i32::from(surface) - WADING_DEPTH_CM);
+                walkable.push(inside && i32::from(ground) >= i32::from(surface) - WADING_DEPTH_CM);
             }
         }
         let collision = Collision::new(content);

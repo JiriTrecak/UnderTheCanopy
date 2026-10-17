@@ -1270,13 +1270,14 @@ pub fn minimap_frame(
     bodies: &[Body],
     position: &dyn Fn(u64) -> Option<Vec3>,
     colors: &[[f32; 3]],
-    map_size: u32,
+    area: [f32; 3],
     pixels: u32,
     view: [[f32; 2]; 4],
     out: &mut canopy_render::minimap::MinimapFrame,
 ) {
     out.markers.clear();
-    let scale = pixels as f32 / map_size.max(1) as f32;
+    let scale = pixels as f32 / area[2].max(1.0);
+    let (ox, oz) = (area[0], area[1]);
     let srgb = |c: f32| {
         if c <= 0.0031308 {
             c * 12.92
@@ -1316,13 +1317,13 @@ pub fn minimap_frame(
             None => linear(0xa99c78),
         };
         let alpha = if b.remembered { 0.5 } else { 1.0 };
-        let (x, y) = (p.x * scale, p.z * scale);
+        let (x, y) = ((p.x - ox) * scale, (p.z - oz) * scale);
         out.rect(
             [x - w / 2.0, y - h / 2.0, x + w / 2.0, y + h / 2.0],
             [color[0], color[1], color[2], alpha],
         );
     }
-    let corners = view.map(|[x, z]| [x * scale, z * scale]);
+    let corners = view.map(|[x, z]| [(x - ox) * scale, (z - oz) * scale]);
     let dark = linear(0x10150e);
     let light = linear(0xf2eee0);
     for (width, color) in [
@@ -1349,15 +1350,16 @@ pub struct MinimapPing {
 /// and fades, with a dark edge so it reads on any ground.
 pub fn minimap_pings(
     pings: &[MinimapPing],
-    map_size: u32,
+    area: [f32; 3],
     pixels: u32,
     out: &mut canopy_render::minimap::MinimapFrame,
 ) {
-    let scale = pixels as f32 / map_size.max(1) as f32;
+    let scale = pixels as f32 / area[2].max(1.0);
+    let (ox, oz) = (area[0], area[1]);
     let reach = pixels as f32 * 0.07;
     let dark = linear(0x10150e);
     for p in pings.iter().filter(|p| (0.0..4.0).contains(&p.age)) {
-        let (x, y) = (p.x * scale, p.z * scale);
+        let (x, y) = ((p.x - ox) * scale, (p.z - oz) * scale);
         let fade = (1.0 - p.age / 4.0).clamp(0.0, 1.0);
         let pulse = p.age.fract();
         let radius = 2.0 + reach * pulse;

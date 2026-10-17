@@ -272,3 +272,30 @@ fn starts_must_reach_each_other_on_foot() {
     assert!(error.contains("cannot be reached"), "{error}");
     walled(true).unwrap();
 }
+
+#[test]
+fn nothing_walks_or_harvests_outside_the_playable_area() {
+    let mut document = map();
+    document["playable"] = json!({"x": 16, "z": 16, "width": 224, "height": 224});
+    document["authoring"]["objects"] = json!([
+        object("tree.inside", "asset.tree", 100.0, 100.0),
+        object("tree.outside", "asset.tree", 4.0, 4.0),
+    ]);
+    let parsed = parse(document);
+    let terrain = canopy_sim::terrain::Terrain::compile(&parsed, &content()).unwrap();
+    let walkable = |x: i64, z: i64| terrain.walkable(terrain.cell(x, z).unwrap());
+    assert!(walkable(100, 100) && walkable(16, 16));
+    assert!(!walkable(15, 100) && !walkable(100, 240) && !walkable(4, 4));
+    // A tree in the border is scenery, not a resource anyone could reach.
+    let resources: Vec<&str> = terrain
+        .scene()
+        .resources
+        .iter()
+        .map(|r| r.id.as_str())
+        .collect();
+    assert_eq!(resources, ["tree.inside"]);
+    // Starts must stand well inside it.
+    let mut document = map();
+    document["playable"] = json!({"x": 40, "z": 40, "width": 180, "height": 180});
+    fails(document, "inside the map");
+}

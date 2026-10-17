@@ -40,7 +40,7 @@ pub fn project(map: &UtcMap, landscape: &[LandscapeAsset]) -> Result<Scene, Stri
             .get(object.asset.as_str())
             .filter(|a| a.scenery.is_some())
             .ok_or_else(|| format!("Asset {} has no published scenery binding", object.asset))?;
-        match resource_cell(object, asset, map.size) {
+        match resource_cell(object, asset, map) {
             Some(cell) => {
                 if !std::mem::replace(&mut taken[cell], true) {
                     scene
@@ -54,15 +54,17 @@ pub fn project(map: &UtcMap, landscape: &[LandscapeAsset]) -> Result<Scene, Stri
     Ok(scene)
 }
 
-/// The playable cell a harvestable, terrain-standing object occupies.
-fn resource_cell(object: &AuthoredObject, asset: &LandscapeAsset, size: u32) -> Option<usize> {
+/// The playable cell a harvestable, terrain-standing object occupies; outside the map's
+/// playable area it is scenery only (a stamp), as nobody reaches it.
+fn resource_cell(object: &AuthoredObject, asset: &LandscapeAsset, map: &UtcMap) -> Option<usize> {
     if asset.harvesting.is_none() || object.height_mode != HeightMode::Terrain {
         return None;
     }
     let x = (object.x + 0.5).floor();
     let y = (object.z + 0.5).floor();
-    let size = f64::from(size);
-    (x >= 0.0 && y >= 0.0 && x < size && y < size).then_some((y * size + x) as usize)
+    let size = f64::from(map.size);
+    (x >= 0.0 && y >= 0.0 && x < size && y < size && map.playable_area().contains(x + 0.5, y + 0.5))
+        .then_some((y * size + x) as usize)
 }
 
 fn resource(

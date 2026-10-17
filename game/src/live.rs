@@ -80,12 +80,12 @@ impl LiveScene {
             &self.ui_bodies,
             &position,
             &scene.colors,
-            scene.size,
+            scene.minimap,
             pixels,
             canopy_scene::world_ui::ground_footprint(camera),
             &mut frame,
         );
-        canopy_scene::world_ui::minimap_pings(pings, scene.size, pixels, &mut frame);
+        canopy_scene::world_ui::minimap_pings(pings, scene.minimap, pixels, &mut frame);
         renderer.set_minimap(&mut frame);
     }
 

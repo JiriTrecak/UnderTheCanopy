@@ -489,8 +489,15 @@ fn playable(v: &mut Validator) {
             "Player slots must be consecutive, starting at Player 1.",
         );
     }
+    let area = map.playable_area();
+    let (x0, z0) = (f64::from(area.x), f64::from(area.z));
+    let (x1, z1) = (
+        f64::from(area.x + area.width),
+        f64::from(area.z + area.height),
+    );
+    let _ = size;
     for s in starts {
-        if s.x < 8.0 || s.z < 8.0 || s.x > size - 9.0 || s.z > size - 9.0 {
+        if s.x < x0 + 8.0 || s.z < z0 + 8.0 || s.x > x1 - 9.0 || s.z > z1 - 9.0 {
             v.fail(
                 "playerStarts",
                 format!(

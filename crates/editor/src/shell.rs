@@ -1237,7 +1237,7 @@ impl Shell {
                         egui::ComboBox::from_label("Size")
                             .selected_text(format!("{size} cells"))
                             .show_ui(ui, |ui| {
-                                for s in [256, 512, 640, 1024] {
+                                for s in [256, 480, 512, 640, 800, 960, 1024] {
                                     ui.selectable_value(size, s, format!("{s} cells"));
                                 }
                             });

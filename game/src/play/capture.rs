@@ -121,7 +121,12 @@ pub fn run(
         &content,
         loaded.scene.colors.clone(),
     );
-    renderer.bake_minimap(&gpu, loaded.scene.size, super::run::MINIMAP_PIXELS);
+    renderer.bake_minimap(
+        &gpu,
+        loaded.scene.size,
+        loaded.scene.minimap,
+        super::run::MINIMAP_PIXELS,
+    );
     renderer.set_portrait(&gpu, None, super::run::PORTRAIT_PIXELS);
     let mut camera = view::initial(options.camera.and_then(|c| c.pose()), &loaded.scene);
     if me.is_some() {
@@ -546,7 +551,7 @@ pub fn run(
         },
     )?;
     let mut hud = Hud::new();
-    hud.map_size = loaded.scene.size as f32;
+    hud.minimap_area = loaded.scene.minimap;
     hud.palette = loaded
         .scene
         .colors

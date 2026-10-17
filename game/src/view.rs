@@ -31,7 +31,7 @@ pub fn initial(spec: Option<CameraSpec>, scene: &MapScene) -> RtsCamera {
         .map(|s| [s.x, s.z])
         .or_else(|| scene.starts.first().copied())
         .unwrap_or([scene.size as f32 / 2.0; 2]);
-    let mut camera = RtsCamera::new(focus, Some(scene.size));
+    let mut camera = RtsCamera::new(focus, Some(scene.playable));
     camera.zoom_range = (camera::game_zoom().0, SPECTATOR_MAX_ZOOM);
     if let Some(spec) = spec {
         camera.set_zoom(spec.zoom);

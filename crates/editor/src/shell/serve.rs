@@ -294,6 +294,14 @@ impl Shell {
             Tool::Problems => Ok(self.problems_value()),
             Tool::UnusedAssets => Ok(json!({ "unused": self.unused_assets() })),
             Tool::Cook => unreachable!("cooks answer when they finish"),
+            Tool::ImportWarcraft(args) => {
+                let report = self.import_warcraft(
+                    &args.source,
+                    &args.id,
+                    args.folder.as_deref().unwrap_or("skirmish"),
+                )?;
+                Ok(serde_json::to_value(report).unwrap_or_default())
+            }
             Tool::Import(args) => {
                 let request = crate::assets::Import {
                     source: args.source.into(),

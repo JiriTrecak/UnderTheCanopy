@@ -352,16 +352,21 @@ pub fn playable(map: &UtcMap, catalog: &Catalog, terrain: &Terrain) -> Result<()
     let fort = content
         .definition(rules.starting_setup.fort.as_str())
         .ok_or("unknown starting fort")?;
-    let size = f64::from(terrain.size());
+    let area = map.playable_area();
+    let (x0, z0) = (f64::from(area.x), f64::from(area.z));
+    let (x1, z1) = (
+        f64::from(area.x + area.width),
+        f64::from(area.z + area.height),
+    );
     let field = terrain.field();
     for s in &map.player_starts {
         let player = s.player;
         let rotation = f64::from(s.rotation.unwrap_or(0));
         if placement_geometry_error(fort, s.x, s.z, rotation).is_some()
-            || s.x < 8.0
-            || s.z < 8.0
-            || s.x > size - 9.0
-            || s.z > size - 9.0
+            || s.x < x0 + 8.0
+            || s.z < z0 + 8.0
+            || s.x > x1 - 9.0
+            || s.z > z1 - 9.0
         {
             return Err(format!(
                 "Player {player} needs a building-grid-aligned start at least 8 navigation cells inside the map."

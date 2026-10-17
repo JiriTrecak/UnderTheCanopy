@@ -1206,7 +1206,7 @@ fn a_right_click_on_the_minimap_orders_without_moving_the_camera() {
     h.take();
     let mut ui = shipped_ui();
     let mut hud = super::hud::Hud::new();
-    hud.map_size = h.world.terrain().size() as f32;
+    hud.minimap_area = [0.0, 0.0, h.world.terrain().size() as f32];
     let minimap = |kind| canopy_ui::Action {
         node: None,
         path: Some("hud/dock/minimap".into()),

@@ -168,7 +168,8 @@ pub struct Hud {
     /// The match's players: slot, name and whether a computer plays it.
     pub players: Vec<(u8, String, bool)>,
     /// Map size, for minimap clicks.
-    pub map_size: f32,
+    /// The minimap's square on the map: x, z of its corner, its side (cells).
+    pub minimap_area: [f32; 3],
     /// A left-button drag on the minimap is moving the camera (a right-click's slight
     /// movement must not).
     minimap_look: bool,
@@ -200,7 +201,7 @@ impl Hud {
             minimap: false,
             palette: Vec::new(),
             players: Vec::new(),
-            map_size: 1.0,
+            minimap_area: [0.0, 0.0, 1.0],
             minimap_look: false,
             cells: Default::default(),
             banners: Vec::new(),
@@ -1525,7 +1526,10 @@ impl Hud {
                     );
                 }
                 ("minimap", ActionKind::DragStart { button, at }) => {
-                    let (x, z) = (at.x * self.map_size, at.y * self.map_size);
+                    let (x, z) = (
+                        self.minimap_area[0] + at.x * self.minimap_area[2],
+                        self.minimap_area[1] + at.y * self.minimap_area[2],
+                    );
                     let ping = *button == PointerButton::Primary && play.alt_held();
                     self.minimap_look = *button == PointerButton::Primary && !ping;
                     match button {
@@ -1535,7 +1539,10 @@ impl Hud {
                     }
                 }
                 ("minimap", ActionKind::Drag { at }) if self.minimap_look => {
-                    events.push(Event::LookAt([at.x * self.map_size, at.y * self.map_size]));
+                    events.push(Event::LookAt([
+                        self.minimap_area[0] + at.x * self.minimap_area[2],
+                        self.minimap_area[1] + at.y * self.minimap_area[2],
+                    ]));
                 }
                 ("menu", ActionKind::Click { .. }) => events.push(Event::OpenMenu),
                 ("idle", ActionKind::Click { .. }) => play.next_idle_worker(),

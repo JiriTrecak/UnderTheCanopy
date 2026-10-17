@@ -644,6 +644,36 @@ pub fn show(
         }
     }
 
+    // The playable area, when the map has one: a dashed line on the ground.
+    if let Some(area) = map.playable {
+        let (x0, z0) = (area.x as f32, area.z as f32);
+        let (x1, z1) = ((area.x + area.width) as f32, (area.z + area.height) as f32);
+        let corners = [(x0, z0), (x1, z0), (x1, z1), (x0, z1), (x0, z0)];
+        for pair in corners.windows(2) {
+            let ((ax, az), (bx, bz)) = (pair[0], pair[1]);
+            let steps = (((bx - ax).abs() + (bz - az).abs()) / 4.0).max(1.0) as usize;
+            for k in (0..steps).step_by(2) {
+                let at = |t: f32| {
+                    let (x, z) = (ax + (bx - ax) * t, az + (bz - az) * t);
+                    project(
+                        view_projection,
+                        rect,
+                        Vec3::new(x, tools::ground_at(map, x, z) + 0.3, z),
+                    )
+                };
+                if let (Some(p), Some(q)) = (
+                    at(k as f32 / steps as f32),
+                    at((k + 1) as f32 / steps as f32),
+                ) {
+                    painter.line_segment(
+                        [p, q],
+                        Line::new(2.0, Color32::from_rgba_unmultiplied(250, 250, 250, 170)),
+                    );
+                }
+            }
+        }
+    }
+
     // The ramp being dragged, from where it began.
     if let Some(stroke) = &session.tools.stroke
         && let (Some(a), Some(b)) = (stroke.from, stroke.to)

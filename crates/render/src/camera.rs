@@ -136,22 +136,22 @@ pub struct RtsCamera {
     pub pitch: f32,
     /// Distance limits as zoom factors.
     pub zoom_range: (f32, f32),
-    /// Playable cells per side: the view's ground footprint stays inside `[0, size − 1]`.
-    pub map_size: Option<u32>,
+    /// Where the view's ground footprint stays: min x, max x, min z, max z (cells).
+    pub bounds: Option<[f32; 4]>,
     /// Wheel zoom still to apply, log-distance.
     pending_zoom: f32,
 }
 
 impl RtsCamera {
     /// The game's camera at zoom 1 looking at `focus`.
-    pub fn new(focus: [f32; 2], map_size: Option<u32>) -> Self {
+    pub fn new(focus: [f32; 2], bounds: Option<[f32; 4]>) -> Self {
         Self {
             focus,
             distance: game_distance(),
             yaw: 0.0,
             pitch: GAME_PITCH_DEGREES.to_radians(),
             zoom_range: game_zoom(),
-            map_size,
+            bounds,
             pending_zoom: 0.0,
         }
     }
@@ -234,31 +234,30 @@ impl RtsCamera {
     /// Keeps the view's ground footprint on the map: shrinks the distance when the
     /// footprint is larger than the map, then moves the focus (the old `clamp`).
     pub fn clamp(&mut self, aspect: f32, floor: f32) {
-        let Some(size) = self.map_size else {
+        let Some([lo_x, hi_x, lo_z, hi_z]) = self.bounds else {
             return;
         };
-        let bound = size as f32 - 1.0;
         for _ in 0..4 {
             let Some([min_x, max_x, min_z, max_z]) = self.footprint(aspect, floor) else {
                 return;
             };
             let (w, h) = (max_x - min_x, max_z - min_z);
-            if w > bound || h > bound {
-                let fit = (bound / w).min(bound / h);
+            if w > hi_x - lo_x || h > hi_z - lo_z {
+                let fit = ((hi_x - lo_x) / w).min((hi_z - lo_z) / h);
                 self.distance *= fit * 0.999;
                 continue;
             }
-            let dx = if min_x < 0.0 {
-                -min_x
-            } else if max_x > bound {
-                bound - max_x
+            let dx = if min_x < lo_x {
+                lo_x - min_x
+            } else if max_x > hi_x {
+                hi_x - max_x
             } else {
                 0.0
             };
-            let dz = if min_z < 0.0 {
-                -min_z
-            } else if max_z > bound {
-                bound - max_z
+            let dz = if min_z < lo_z {
+                lo_z - min_z
+            } else if max_z > hi_z {
+                hi_z - max_z
             } else {
                 0.0
             };
@@ -386,17 +385,22 @@ mod tests {
 
     #[test]
     fn the_footprint_stays_on_the_map() {
-        let mut camera = RtsCamera::new([2.0, 2.0], Some(256));
+        let mut camera = RtsCamera::new([2.0, 2.0], Some([0.0, 255.0, 0.0, 255.0]));
         camera.clamp(16.0 / 9.0, 0.0);
         let [min_x, max_x, min_z, max_z] = camera.footprint(16.0 / 9.0, 0.0).unwrap();
         assert!(min_x >= -1e-3 && min_z >= -1e-3);
         assert!(max_x <= 255.001 && max_z <= 255.001);
         // A map smaller than the view shrinks the distance.
-        let mut small = RtsCamera::new([30.0, 30.0], Some(64));
+        let mut small = RtsCamera::new([30.0, 30.0], Some([0.0, 63.0, 0.0, 63.0]));
         small.clamp(16.0 / 9.0, 0.0);
         assert!(small.distance < game_distance());
         let [min_x, max_x, ..] = small.footprint(16.0 / 9.0, 0.0).unwrap();
         assert!(max_x - min_x <= 63.0);
+        // A playable area inside a larger map keeps the view inside it.
+        let mut inner = RtsCamera::new([90.0, 90.0], Some([100.0, 400.0, 120.0, 380.0]));
+        inner.clamp(16.0 / 9.0, 0.0);
+        let [min_x, _, min_z, _] = inner.footprint(16.0 / 9.0, 0.0).unwrap();
+        assert!(min_x >= 99.999 && min_z >= 119.999);
     }
 
     struct Hill;

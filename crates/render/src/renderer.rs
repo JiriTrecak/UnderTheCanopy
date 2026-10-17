@@ -723,7 +723,9 @@ impl Renderer {
     /// cells into a `pixels`-square image. Call after `load_world`, before any live models
     /// or effects are set (they would be baked in). The HUD then shows
     /// [`Renderer::minimap_view`].
-    pub fn bake_minimap(&mut self, gpu: &Gpu, map_size: u32, pixels: u32) {
+    /// Bakes the minimap's overview of `area` (x, z of a square's corner and its side, in
+    /// cells: the playable area's square) on a map of `map_size` cells.
+    pub fn bake_minimap(&mut self, gpu: &Gpu, map_size: u32, area: [f32; 3], pixels: u32) {
         let _span = tracing::info_span!("bake_minimap").entered();
         let (quality, size, shadows) = (self.quality, self.output_size, self.shadows);
         self.baking = true;
@@ -754,8 +756,8 @@ impl Renderer {
             view_formats: &[],
         });
         let view = base.create_view(&Default::default());
-        let half = map_size as f32 * 0.5;
-        let centre = Vec3::new(half, 0.0, half);
+        let half = area[2] * 0.5;
+        let centre = Vec3::new(area[0] + half, 0.0, area[1] + half);
         let camera = crate::portrait::orthographic(
             centre + Vec3::Y * 2000.0,
             centre,
@@ -768,7 +770,10 @@ impl Renderer {
         self.shadows = shadows;
         self.baking = false;
         self.resize(gpu, size);
-        self.minimap = Some(MinimapGpu::new(&gpu.device, pixels, view, &self.fog.view));
+        let mut minimap = MinimapGpu::new(&gpu.device, pixels, view, &self.fog.view);
+        let size = map_size.max(1) as f32;
+        minimap.area = [area[0] / size, area[1] / size, area[2] / size];
+        self.minimap = Some(minimap);
         self.world_bytes += u64::from(pixels) * u64::from(pixels) * 8;
         self.set_quality(gpu, quality);
     }

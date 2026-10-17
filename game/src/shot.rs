@@ -153,7 +153,7 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
     // The HUD's images, written next to the shot (`<out>-minimap.png`, `-portrait.png`).
     let hud_images = std::env::var_os("CANOPY_SHOT_HUD").is_some();
     if hud_images {
-        renderer.bake_minimap(&gpu, loaded.scene.size, 256);
+        renderer.bake_minimap(&gpu, loaded.scene.size, loaded.scene.minimap, 256);
         renderer.set_portrait(&gpu, None, 256);
     }
     gpu.device.poll(wgpu::PollType::wait_indefinitely())?;

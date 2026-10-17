@@ -22,6 +22,7 @@ mod shell;
 mod stage;
 mod tabs;
 pub mod theme;
+mod warcraft;
 mod watch;
 mod widgets;
 

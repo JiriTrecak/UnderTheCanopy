@@ -176,8 +176,13 @@ pub struct MapScene {
     pub world: World,
     /// Hour of the day the map sets (noon when it sets none).
     pub hour: f32,
-    /// Playable cells per side.
+    /// Cells per side.
     pub size: u32,
+    /// Where play happens: min x, max x, min z, max z (cells); the whole map unless it
+    /// has a playable area.
+    pub playable: [f32; 4],
+    /// The minimap's square around the playable area: x, z of its corner, its side.
+    pub minimap: [f32; 3],
     /// Player starts (x, z), in player order.
     pub starts: Vec<[f32; 2]>,
     /// What could not be shown (missing models), for warnings.
@@ -286,6 +291,24 @@ pub fn build(
         },
         hour,
         size: map.size,
+        playable: {
+            let a = map.playable_area();
+            [
+                a.x as f32,
+                (a.x + a.width) as f32 - 1.0,
+                a.z as f32,
+                (a.z + a.height) as f32 - 1.0,
+            ]
+        },
+        minimap: {
+            let a = map.playable_area();
+            let side = a.width.max(a.height) as f32;
+            [
+                a.x as f32 + a.width as f32 / 2.0 - side / 2.0,
+                a.z as f32 + a.height as f32 / 2.0 - side / 2.0,
+                side,
+            ]
+        },
         starts: map
             .player_starts
             .iter()

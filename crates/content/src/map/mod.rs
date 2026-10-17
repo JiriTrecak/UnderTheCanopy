@@ -40,8 +40,9 @@ use serde_with::skip_serializing_none;
 pub const UTCMAP_VERSION: u32 = 3;
 /// Name of a map whose document has no (or a blank) name.
 pub const DEFAULT_MAP_NAME: &str = "Untitled";
-/// Playable cells per side a map may have.
-pub const MAP_SIZES: [u32; 5] = [256, 512, 640, 1024, 2048];
+/// Playable cells per side a map may have: multiples of the renderer's 32-cell terrain
+/// chunks, including Warcraft III's 96, 160 and 192-tile maps at 5 cells a tile.
+pub const MAP_SIZES: [u32; 8] = [256, 480, 512, 640, 800, 960, 1024, 2048];
 /// Visible, non-playable border around the playable cells, in cells per side.
 pub const MAP_HALO: u32 = 16;
 /// Biome ids. The old game defines biomes in code (`src/content/biomes.ts`), not data, and
@@ -220,8 +221,31 @@ pub struct UtcMap {
     pub entities: Vec<Placement>,
     pub camps: Vec<Camp>,
     pub landscape: Option<Landscape>,
+    /// The part of the map play happens in, when it is not the whole map: the cells
+    /// around it are scenery (Warcraft III's map margins), seen but never entered.
+    pub playable: Option<Playable>,
     /// Committed terrain and placed objects.
     pub authoring: SavedScene,
+}
+
+/// A rectangle of cells: `x`, `z` its first cell, `width` and `height` cells across.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct Playable {
+    pub x: u32,
+    pub z: u32,
+    pub width: u32,
+    pub height: u32,
+}
+
+impl Playable {
+    /// Whether world (`x`, `z`) lies inside.
+    pub fn contains(&self, x: f64, z: f64) -> bool {
+        x >= f64::from(self.x)
+            && z >= f64::from(self.z)
+            && x < f64::from(self.x + self.width)
+            && z < f64::from(self.z + self.height)
+    }
 }
 
 impl UtcMap {
@@ -289,6 +313,16 @@ impl UtcMap {
     /// The biome id; the first biome when the map names none.
     pub fn biome(&self) -> &str {
         self.biome.as_deref().unwrap_or(BIOMES[0])
+    }
+
+    /// The playable rectangle: [`UtcMap::playable`], or the whole map.
+    pub fn playable_area(&self) -> Playable {
+        self.playable.unwrap_or(Playable {
+            x: 0,
+            z: 0,
+            width: self.size,
+            height: self.size,
+        })
     }
 
     pub fn player_start(&self, player: u8) -> Option<&PlayerStart> {

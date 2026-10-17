@@ -625,7 +625,7 @@ fn effects_fog_world_ui_and_hud_images_render() {
         ..Default::default()
     };
     renderer.load_world(&gpu, &pack, &world).unwrap();
-    renderer.bake_minimap(&gpu, 32, 64);
+    renderer.bake_minimap(&gpu, 32, [0.0, 0.0, 32.0], 64);
     renderer.set_portrait(
         &gpu,
         Some(PortraitSubject {

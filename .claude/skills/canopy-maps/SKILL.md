@@ -28,7 +28,7 @@ echo-isles.utcm/
 ## map.json
 
 The main fields:
-- `size`: playable cells per side, one of 256, 512, 640, 1024, 2048.
+- `size`: playable cells per side, one of 256, 480, 512, 640, 800, 960, 1024, 2048 (the renderer draws up to 1024).
 - `biome`, `sandbox`, `initialExploration`.
 - `playerStarts`: `[{player, x, z, setup, mainFort}]`, where `setup` is a race starting setup id such as `setup.ants`.
 - `entities`: pre-placed units and buildings: `{id, definition, position: {x, y}, rotation, owner: "none" | "player.N", initialState?, appearance?: {asset, scale}}`.

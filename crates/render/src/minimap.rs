@@ -72,10 +72,14 @@ impl MinimapFrame {
 struct MinimapUniform {
     /// 2 / size, −2 / size, fog on, 0.
     scale: [f32; 4],
+    /// The minimap's square in the fog texture: u, v of its corner, its side; 0.
+    fog: [f32; 4],
 }
 
 pub struct MinimapGpu {
     pub size: u32,
+    /// The minimap's square as a share of the map: x, z of its corner, its side.
+    pub area: [f32; 3],
     texture: wgpu::Texture,
     pub view: wgpu::TextureView,
     base: wgpu::TextureView,
@@ -217,6 +221,7 @@ impl MinimapGpu {
         let group = Self::group(device, &layout, &base, fog, &sampler, &uniform);
         Self {
             size,
+            area: [0.0, 0.0, 1.0],
             texture,
             view,
             base,
@@ -288,6 +293,7 @@ impl MinimapGpu {
         let s = self.size as f32;
         let uniform = MinimapUniform {
             scale: [2.0 / s, -2.0 / s, if fog { 1.0 } else { 0.0 }, 0.0],
+            fog: [self.area[0], self.area[1], self.area[2], 0.0],
         };
         queue.write_buffer(&self.uniform, 0, bytemuck::bytes_of(&uniform));
     }

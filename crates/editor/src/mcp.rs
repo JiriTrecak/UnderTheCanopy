@@ -74,6 +74,17 @@ pub enum Tool {
     MapPreview {
         map: String,
     },
+    ImportWarcraft(ImportWarcraftArgs),
+}
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct ImportWarcraftArgs {
+    /// The Warcraft III map file (.w3x or .w3m).
+    pub source: String,
+    /// The new map's id: lowercase words joined by hyphens (`twisted-meadows`).
+    pub id: String,
+    /// The folder under maps/; `skirmish` by default.
+    pub folder: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
@@ -146,7 +157,7 @@ pub struct MapCreateArgs {
     pub id: String,
     /// Its name in the game's map list.
     pub name: Option<String>,
-    /// Cells per side: 256, 512, 640 or 1024. 512 by default.
+    /// Cells per side: 256, 480, 512, 640, 800, 960 or 1024. 512 by default.
     pub size: Option<u32>,
     /// vibrant-forest (the default), deep-forest, autumn-forest or frozen-forest.
     pub biome: Option<String>,
@@ -466,6 +477,16 @@ impl Handler {
         Parameters(args): Parameters<MapArgs>,
     ) -> Result<CallToolResult, ErrorData> {
         self.ask(Tool::MapPreview { map: args.map }).await
+    }
+
+    #[tool(
+        description = "Imports a Warcraft III melee map as a new map package: terrain, cliffs, ramps and water at 5 cells a tile; its ground tiles substituted with the nearest ground this game has (in a biome picked by its tileset); trees as the biome's trees; gold mines as amber sites; creep groups as camps of the same strength; start locations as starts. Written at once with its preview; returns what it did and the problems the check finds."
+    )]
+    async fn import_warcraft(
+        &self,
+        Parameters(args): Parameters<ImportWarcraftArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::ImportWarcraft(args)).await
     }
 
     #[tool(description = "Removes starts, entities and trees around a point, as one undo step.")]

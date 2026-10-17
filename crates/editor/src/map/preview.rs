@@ -113,11 +113,18 @@ pub fn render(map: &UtcMap, trees: &dyn Fn(&str) -> bool) -> Result<image::RgbaI
         .iter()
         .map(|p| paint(&p.material, grass, soil, winter))
         .collect();
-    let step = map.size as f32 / SIZE as f32;
+    // The playable area's square, as the minimap frames it.
+    let area = map.playable_area();
+    let side = area.width.max(area.height) as f32;
+    let (ox, oz) = (
+        area.x as f32 + area.width as f32 / 2.0 - side / 2.0,
+        area.z as f32 + area.height as f32 / 2.0 - side / 2.0,
+    );
+    let step = side / SIZE as f32;
     let mut out = image::RgbaImage::new(SIZE, SIZE);
     for py in 0..SIZE {
         for px in 0..SIZE {
-            let (wx, wz) = ((px as f32 + 0.5) * step, (py as f32 + 0.5) * step);
+            let (wx, wz) = (ox + (px as f32 + 0.5) * step, oz + (py as f32 + 0.5) * step);
             let h = sample(&terrain.heights, wx, wz);
             let water = sample(&terrain.water_heights, wx, wz);
             let i = vertex(wx, wz);
@@ -158,13 +165,14 @@ pub fn render(map: &UtcMap, trees: &dyn Fn(&str) -> bool) -> Result<image::RgbaI
             );
         }
     }
-    symbols(map, &mut out);
+    symbols(map, &mut out, [ox, oz, side]);
     Ok(out)
 }
 
 /// Amber deposits (adjacent mines as one), camps and starts.
-fn symbols(map: &UtcMap, out: &mut image::RgbaImage) {
-    let scale = SIZE as f32 / map.size as f32;
+fn symbols(map: &UtcMap, out: &mut image::RgbaImage, area: [f32; 3]) {
+    let scale = SIZE as f32 / area[2];
+    let (ox, oz) = (area[0], area[1]);
     let mut mines: Vec<(f32, f32)> = map
         .entities
         .iter()
@@ -192,8 +200,8 @@ fn symbols(map: &UtcMap, out: &mut image::RgbaImage) {
         }
         let n = cluster.len() as f32;
         let (x, y) = (
-            cluster.iter().map(|&k| mines[k].0).sum::<f32>() / n * scale,
-            cluster.iter().map(|&k| mines[k].1).sum::<f32>() / n * scale,
+            (cluster.iter().map(|&k| mines[k].0).sum::<f32>() / n - ox) * scale,
+            (cluster.iter().map(|&k| mines[k].1).sum::<f32>() / n - oz) * scale,
         );
         disc(out, x, y, 8.0, [0x14, 0x1b, 0x17]);
         disc(out, x, y - 1.0, 7.2, [0xff, 0xe0, 0x8b]);
@@ -201,13 +209,16 @@ fn symbols(map: &UtcMap, out: &mut image::RgbaImage) {
         disc(out, x - 0.5, y - 2.5, 2.2, [0xff, 0xf0, 0xa5]);
     }
     for camp in &map.camps {
-        let (x, y) = (camp.home.x as f32 * scale, camp.home.y as f32 * scale);
+        let (x, y) = (
+            (camp.home.x as f32 - ox) * scale,
+            (camp.home.y as f32 - oz) * scale,
+        );
         triangle(out, x, y, 10.0, [0x16, 0x20, 0x1a]);
         triangle(out, x, y, 8.0, [0xe3, 0xd6, 0x98]);
         triangle(out, x + 0.5, y + 3.0, 3.0, [0x51, 0x3d, 0x27]);
     }
     for s in &map.player_starts {
-        let (x, y) = (s.x as f32 * scale, s.z as f32 * scale);
+        let (x, y) = ((s.x as f32 - ox) * scale, (s.z as f32 - oz) * scale);
         let colour = PLAYERS[(s.player as usize).saturating_sub(1) % 8];
         let colour = [(colour >> 16) as u8, (colour >> 8) as u8, colour as u8];
         disc(out, x, y, 13.0, [0x11, 0x1b, 0x15]);

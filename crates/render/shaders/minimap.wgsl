@@ -4,6 +4,8 @@
 struct Minimap {
     // 2 / size, −2 / size, fog on, 0
     scale: vec4f,
+    // The minimap's square in the fog texture: u, v of its corner, its side; 0.
+    fog: vec4f,
 }
 
 @group(0) @binding(0) var base_map: texture_2d<f32>;
@@ -40,7 +42,8 @@ fn fs_background(in: BackgroundOut) -> @location(0) vec4f {
     let base = textureSampleLevel(base_map, map_sampler, in.uv, 0.0).rgb;
     var dark = 0.0;
     if (minimap.scale.z > 0.5) {
-        dark = darkness(textureSampleLevel(fog_map, map_sampler, in.uv, 0.0).r);
+        let fog_uv = minimap.fog.xy + in.uv * minimap.fog.z;
+        dark = darkness(textureSampleLevel(fog_map, map_sampler, fog_uv, 0.0).r);
     }
     return vec4f(base * (1.0 - dark), 1.0);
 }

@@ -248,8 +248,18 @@ pub(super) fn document(map: &UtcMap, file: &str, errors: &mut Vec<Error>) {
     r.expect(
         MAP_SIZES.contains(&map.size),
         "size",
-        format!("must be 256, 512, 640, 1024 or 2048, got {}", map.size),
+        format!("must be one of {MAP_SIZES:?}, got {}", map.size),
     );
+    if let Some(p) = &map.playable {
+        r.expect(
+            p.width >= 64
+                && p.height >= 64
+                && p.x + p.width <= map.size
+                && p.z + p.height <= map.size,
+            "playable",
+            "must be at least 64 cells across and lie on the map",
+        );
+    }
     if let Some(biome) = &map.biome {
         r.expect(
             BIOMES.contains(&biome.as_str()),
