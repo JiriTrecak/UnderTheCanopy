@@ -297,8 +297,16 @@ pub fn strategy(b: &mut Beat) {
     // minute, up to half the maximum) and clearly stronger than the enemy army seen lately;
     // a near-full army goes regardless.
     let minutes = tick / 2400;
+    // After twenty minutes the numbers alone decide, so matches come to a head.
+    let late = minutes >= 20;
     let wanted =
         (rules.army.minimum + minutes).min((rules.army.maximum / 2).max(rules.army.minimum));
+    // Late on, an army that stopped growing is as big as it gets: the economy fields no
+    // more than its own target (which follows the workers), and nothing in training means
+    // it cannot afford more. Waiting for the numbers would farm camps for the rest of the
+    // match, so such an army goes when clearly stronger than the enemy seen near the target.
+    let training = f.buildings.iter().any(|&i| !f.queue(f.at(i)).is_empty());
+    let stalled = late && (f.army.len() as u32 >= s.plan.army || !training);
     // The army lately seen around the target (not every opponent's, in a free-for-all).
     let enemy_army = |target: Pt| -> f64 {
         s.sightings
@@ -321,10 +329,11 @@ pub fn strategy(b: &mut Beat) {
             .sum()
     };
     let full = f.army.len() as u32 * 5 >= rules.army.maximum * 3;
-    // After twenty minutes the numbers alone decide, so matches come to a head.
-    let late = minutes >= 20;
     let ready = |target: &Known| {
-        full || (f.army.len() as u32 >= wanted && (late || power >= enemy_army(target.p) * 1.2))
+        let count = f.army.len() as u32;
+        let stronger = || power >= enemy_army(target.p) * 1.2;
+        full || (count >= wanted && (late || stronger()))
+            || (stalled && count >= rules.army.minimum && stronger())
     };
     let contested: Vec<crate::catalog::Def> = catalog
         .content
