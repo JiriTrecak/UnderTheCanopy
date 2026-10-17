@@ -96,6 +96,8 @@ pub struct Viewer<'a> {
     pub content: Option<std::sync::Arc<canopy_content::Content>>,
     pub scene_texture: Option<egui::TextureId>,
     pub map_size: &'a mut Option<(String, [u32; 2])>,
+    /// The package folder on disk.
+    pub root: Option<std::path::PathBuf>,
 }
 
 impl TabViewer for Viewer<'_> {
@@ -248,6 +250,7 @@ impl TabViewer for Viewer<'_> {
                     .filter(|(document, _)| *document == tab.document)
                     .map_or(&[][..], |(_, uses)| uses);
                 let mut overview = crate::overview::Overview::new(&tab.document, self.index, uses);
+                overview.root = self.root.as_deref();
                 ScrollArea::vertical()
                     .auto_shrink([false, false])
                     .show(ui, |ui| overview.show(ui, &value));

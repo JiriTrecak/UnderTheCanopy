@@ -162,7 +162,8 @@ fn panel(ui: &mut Ui, session: &mut Session, content: Option<&Content>) {
             }
         }
         Tool::Trees => {
-            ui.add(egui::Slider::new(&mut t.density, 1.0..=25.0).text("Density"));
+            t.density = t.density.min(8.0);
+            ui.add(egui::Slider::new(&mut t.density, 0.5..=8.0).text("Trees per 100 cells"));
             if let Some(content) = content {
                 let trees = tools::tree_kinds(content);
                 if t.tree.is_empty() {
@@ -1005,15 +1006,15 @@ pub fn place(
                 .values()
                 .filter_map(|r| r.starting_setup.as_ref())
                 .next()
-                .map_or(content.rules.starting_setup.id.to_string(), |s| {
-                    s.id.to_string()
-                });
+                .unwrap_or(&content.rules.starting_setup);
+            // The hall turned so its door faces the middle of the map.
+            let rotation = tools::facing_middle(content, setup.fort.as_str(), x, z, map.size);
+            let mut start = json!({"mainFort": format!("start.player.{player}/main-fort"), "player": player, "setup": setup.id.as_str(), "x": x, "z": z});
+            if rotation != 0 {
+                start["rotation"] = json!(rotation);
+            }
             let starts = docs.map["playerStarts"].as_array().map_or(0, Vec::len);
-            let mut commands = vec![insert(
-                "/playerStarts",
-                starts,
-                json!({"mainFort": format!("start.player.{player}/main-fort"), "player": player, "setup": setup, "x": x, "z": z}),
-            )];
+            let mut commands = vec![insert("/playerStarts", starts, start)];
             // Its amber 26 cells towards the middle, its hollow facing the hall.
             let (mx, mz) = (map.size as f64 / 2.0, map.size as f64 / 2.0);
             let (dx, dz) = (mx - x, mz - z);

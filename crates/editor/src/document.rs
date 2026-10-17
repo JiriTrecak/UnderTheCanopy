@@ -133,6 +133,50 @@ pub struct GridData {
     pub bytes: Vec<u8>,
 }
 
+/// Whether `path` is an asset's `asset.json`.
+fn is_asset(path: &str) -> bool {
+    path.starts_with("assets/") && path.ends_with("/asset.json")
+}
+
+/// The file names an asset lists (`<role>.<format>`, `<role>_<n>.<format>`).
+pub fn asset_files(asset: &Value) -> Vec<String> {
+    asset
+        .get("resources")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|r| {
+            let role = r.get("role")?.as_str()?;
+            let format = r.get("format")?.as_str()?;
+            let index = r.get("index").and_then(Value::as_u64).unwrap_or(1);
+            Some(if index <= 1 {
+                format!("{role}.{format}")
+            } else {
+                format!("{role}_{index}.{format}")
+            })
+        })
+        .filter(|name| !name.contains(['/', '\\']) && !name.starts_with('.'))
+        .collect()
+}
+
+/// Removes the files a deleted asset listed beside its `asset.json` (`manifest`), and the
+/// folder when that leaves it empty.
+fn remove_asset_files(manifest: &Path, asset: &Value) -> std::io::Result<()> {
+    let Some(folder) = manifest.parent() else {
+        return Ok(());
+    };
+    for name in asset_files(asset) {
+        match std::fs::remove_file(folder.join(name)) {
+            Err(e) if e.kind() != std::io::ErrorKind::NotFound => return Err(e),
+            _ => {}
+        }
+    }
+    if std::fs::read_dir(folder)?.next().is_none() {
+        std::fs::remove_dir(folder)?;
+    }
+    Ok(())
+}
+
 /// A grid document; its unsaved state is worked out once per change.
 #[derive(Debug, Clone)]
 struct GridDoc {
@@ -633,7 +677,15 @@ impl Store {
                     }
                     std::fs::write(&file, format(value)).map_err(failed)?;
                 }
-                None => std::fs::remove_file(&file).map_err(failed)?,
+                None => {
+                    std::fs::remove_file(&file).map_err(failed)?;
+                    // An asset goes with its files, and its folder once nothing else is in it.
+                    if is_asset(path)
+                        && let Some(saved) = &document.saved
+                    {
+                        remove_asset_files(&file, saved).map_err(failed)?;
+                    }
+                }
             }
             document.saved = document.value.clone();
             written.push(path.clone());
@@ -1011,6 +1063,60 @@ mod tests {
     }
 
     const KNIGHT: &str = "units/knight.json";
+
+    #[test]
+    fn a_deleted_asset_takes_its_files_and_empty_folder_on_save() {
+        let folder = Folder::new("asset-delete");
+        let dir = folder.0.join("assets/props/rock");
+        std::fs::create_dir_all(&dir).unwrap();
+        let asset = json!({"id": "asset.rock", "kind": "prop", "resources": [
+            {"role": "geometry", "index": 1, "format": "glb"},
+            {"role": "albedo", "index": 2, "format": "png"}
+        ]});
+        std::fs::write(dir.join("asset.json"), format(&asset)).unwrap();
+        std::fs::write(dir.join("geometry.glb"), b"g").unwrap();
+        std::fs::write(dir.join("albedo_2.png"), b"a").unwrap();
+        let mut store = Store::new(&folder.0);
+        let document = "assets/props/rock/asset.json";
+        store.get(document).unwrap();
+        store
+            .run(
+                "Delete",
+                here(document),
+                vec![Command::Delete {
+                    document: document.into(),
+                }],
+            )
+            .unwrap();
+        assert!(
+            dir.join("geometry.glb").exists(),
+            "nothing goes before the save"
+        );
+        store.save().unwrap();
+        assert!(!dir.exists());
+        // A folder holding something else stays, with that file.
+        let other = folder.0.join("assets/props/log");
+        std::fs::create_dir_all(&other).unwrap();
+        std::fs::write(
+            other.join("asset.json"),
+            format(&json!({"id": "asset.log", "resources": []})),
+        )
+        .unwrap();
+        std::fs::write(other.join("notes.txt"), b"keep").unwrap();
+        let document = "assets/props/log/asset.json";
+        store.get(document).unwrap();
+        store
+            .run(
+                "Delete",
+                here(document),
+                vec![Command::Delete {
+                    document: document.into(),
+                }],
+            )
+            .unwrap();
+        store.save().unwrap();
+        assert!(other.join("notes.txt").exists() && !other.join("asset.json").exists());
+    }
 
     fn grid_of<'a>(store: &'a mut Store, path: &str) -> &'a GridData {
         store.load_grid(path).unwrap().value.as_ref().unwrap()

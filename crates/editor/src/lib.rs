@@ -7,6 +7,7 @@
 //! events while it is open, calls [`Editor::run`] once a frame and [`Editor::paint`] to
 //! record the frame. The look is [`theme`] (Tailwind's zinc, as the old spell studio).
 
+mod assets;
 mod checker;
 mod document;
 mod forms;
@@ -256,6 +257,13 @@ impl Editor {
         };
         let shell = &mut self.shell;
         let output = self.ctx.run_ui(input, |ui| shell.ui(ui));
+        // A cook finished: the stage opens the new pack.
+        if std::mem::take(&mut self.shell.reload_pack)
+            && let Some(Ok(stage)) = self.stage.take()
+            && let Some(texture) = stage.texture()
+        {
+            self.renderer.free_texture(&texture);
+        }
         let (shot, scene) = (self.shell.shot.take(), self.shell.scene.take());
         if shot.is_some() || scene.is_some() {
             let stage = self

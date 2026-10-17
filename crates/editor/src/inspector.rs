@@ -40,6 +40,9 @@ pub struct Preview<'a> {
     pub error: Option<&'a str>,
     pub orbit: &'a mut crate::stage::Orbit,
     pub shot: &'a mut Option<crate::stage::Shot>,
+    /// The model's animation clips (name, seconds) and the one playing.
+    pub clips: Vec<(String, f32)>,
+    pub clip: &'a mut Option<usize>,
 }
 
 fn viewport(ui: &mut Ui, preview: Preview) {
@@ -91,6 +94,28 @@ fn viewport(ui: &mut Ui, preview: Preview) {
             orbit.distance = (orbit.distance * (-scroll * 0.003).exp()).clamp(0.8, 8.0);
         }
     }
+    if !preview.clips.is_empty() {
+        ui.horizontal_wrapped(|ui| {
+            ui.spacing_mut().item_spacing = egui::vec2(4.0, 4.0);
+            if ui
+                .selectable_label(preview.clip.is_none(), "rest")
+                .clicked()
+            {
+                *preview.clip = None;
+            }
+            for (i, (name, seconds)) in preview.clips.iter().enumerate() {
+                let label = ui
+                    .selectable_label(*preview.clip == Some(i), name.as_str())
+                    .on_hover_text(format!("{seconds:.2} s"));
+                if label.clicked() {
+                    *preview.clip = Some(i);
+                }
+            }
+        });
+    }
+    let clip = preview
+        .clip
+        .and_then(|i| preview.clips.get(i).map(|(_, s)| (i as u16, *s)));
     let scale = ui.ctx().pixels_per_point();
     *preview.shot = Some(crate::stage::Shot {
         model: preview.model,
@@ -100,6 +125,7 @@ fn viewport(ui: &mut Ui, preview: Preview) {
             (rect.height() * scale) as u32,
         ],
         orbit: *orbit,
+        clip,
     });
 }
 

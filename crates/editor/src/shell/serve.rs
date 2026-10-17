@@ -98,6 +98,7 @@ impl Shell {
         if let Some(checker) = &mut self.checker {
             checker.poll();
         }
+        self.poll_cook();
         self.follow_disk();
         if let Ok(package) = self.package.clone() {
             self.refresh_libraries(&package);
@@ -111,6 +112,11 @@ impl Shell {
         while let Ok(Call { tool, reply }) = self.calls.1.try_recv() {
             if matches!(tool, Tool::Problems) {
                 self.waiting.push(reply);
+                continue;
+            }
+            if matches!(tool, Tool::Cook) {
+                self.start_cook();
+                self.cook_waiting.push(reply);
                 continue;
             }
             let answer = self.answer(tool);
@@ -285,6 +291,21 @@ impl Shell {
                 Ok(json!({ "written": written }))
             }
             Tool::Problems => Ok(self.problems_value()),
+            Tool::UnusedAssets => Ok(json!({ "unused": self.unused_assets() })),
+            Tool::Cook => unreachable!("cooks answer when they finish"),
+            Tool::Import(args) => {
+                let request = crate::assets::Import {
+                    source: args.source.into(),
+                    id: args.id,
+                    name: args.name.unwrap_or_default(),
+                    kind: args.kind,
+                    folder: args.folder,
+                };
+                let document = self.import_asset(&request)?;
+                Ok(
+                    json!({ "imported": document, "next": "cook, then the asset can be named by definitions and scenery" }),
+                )
+            }
             Tool::Uses { id } => {
                 let uses: Vec<Value> = self
                     .find_uses(&id)

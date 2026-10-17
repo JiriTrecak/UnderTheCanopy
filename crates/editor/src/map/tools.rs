@@ -165,7 +165,8 @@ pub struct Tools {
     /// Height of one cliff level.
     pub cliff_level: f32,
     pub tier: Tier,
-    /// Scenery the tree brush plants (a harvestable tree), and trees per 100 cells.
+    /// Scenery the tree brush plants (a harvestable tree), and trees (or props) per 100
+    /// cells: trees fill their lattice at 8.
     pub tree: String,
     pub density: f32,
     /// Scenery the props brush scatters (decoration that blocks nothing).
@@ -720,16 +721,29 @@ pub fn trees(map: &mut UtcMap, tools: &Tools, stroke: &mut Stroke, cx: f32, cz: 
                 .filter_map(|v| v["id"].as_str().map(str::to_string)),
         ),
     );
-    let chance = (tools.density / 100.0).clamp(0.0, 1.0) * 4.0;
+    // Trees stand on Warcraft III's staggered lattice, two to every 5 × 5 cells (about
+    // 3.5 cells apart, as imported maps have them): woods armies see as woods, with lanes
+    // between them. `density` is per 100 cells, so 8 fills every lattice point.
+    let lattice = |x: i32, z: i32| {
+        (x.rem_euclid(5) == 2 && z.rem_euclid(5) == 2)
+            || (x.rem_euclid(5) == 0 && z.rem_euclid(5) == 0)
+    };
+    let chance = if props {
+        tools.density / 100.0
+    } else {
+        tools.density / 8.0
+    }
+    .clamp(0.0, 1.0);
     for z in (cz - r).floor() as i32..=(cz + r).ceil() as i32 {
         for x in (cx - r).floor() as i32..=(cx + r).ceil() as i32 {
             if (x as f32 - cx).powi(2) + (z as f32 - cz).powi(2) > r * r
                 || !stroke.tried.insert((x, z))
+                || (!props && !lattice(x, z))
                 || x < 2
                 || z < 2
                 || x as f32 > size - 3.0
                 || z as f32 > size - 3.0
-                || noise(x as i64, z as i64, if props { 17 } else { 7 }) > chance.min(1.0) * 0.25
+                || noise(x as i64, z as i64, if props { 17 } else { 7 }) > chance
             {
                 continue;
             }
@@ -985,6 +999,25 @@ pub fn camp(map: &UtcMap, content: &Content, cx: f64, cz: f64, tier: Tier) -> (V
 pub fn start_position(x: f64, z: f64) -> (f64, f64) {
     let snap = |v: f64| ((v - 1.5) / 4.0).round() * 4.0 + 1.5;
     (snap(x), snap(z))
+}
+
+/// The quarter turn (degrees) that points the door of building `fort` standing at world
+/// (`x`, `z`) most nearly at the middle of a map of `size`.
+pub fn facing_middle(content: &Content, fort: &str, x: f64, z: f64, size: u32) -> u32 {
+    let Some((ox, oy)) = content
+        .definition(fort)
+        .and_then(|d| d.entrance.as_ref())
+        .map(|e| (e.x, e.y))
+    else {
+        return 0;
+    };
+    let middle = f64::from(size) / 2.0;
+    let (dx, dz) = (middle - x, middle - z);
+    // The simulation's quarter turns (`economy::sites::entrance`).
+    [(0, ox, oy), (90, oy, -ox), (180, -ox, -oy), (270, -oy, ox)]
+        .into_iter()
+        .max_by(|a, b| (a.1 * dx + a.2 * dz).total_cmp(&(b.1 * dx + b.2 * dz)))
+        .map_or(0, |(r, _, _)| r)
 }
 
 /// The cells within `radius` of world (`cx`, `cz`) levelled to their mean height: a

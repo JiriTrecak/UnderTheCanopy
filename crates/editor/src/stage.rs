@@ -23,6 +23,9 @@ pub struct Shot {
     /// Physical pixels.
     pub size: [u32; 2],
     pub orbit: Orbit,
+    /// The animation clip playing (its index in the model and its length), or the rest
+    /// pose.
+    pub clip: Option<(u16, f32)>,
 }
 
 /// An orbit camera around the model: angles in radians, distance in model heights.
@@ -229,10 +232,16 @@ impl Stage {
             Some(Loaded::Model(_, h)) => *h,
             _ => 1.0,
         } * shot.scale;
-        self.renderer.set_actors(&[ActorInstance::rest(
-            0,
-            Mat4::from_scale(Vec3::splat(shot.scale)),
-        )]);
+        let mut actor = ActorInstance::rest(0, Mat4::from_scale(Vec3::splat(shot.scale)));
+        if let Some((clip, duration)) = shot.clip {
+            actor.poses[0] = canopy_render::actors::Pose {
+                clip,
+                time: self.started.elapsed().as_secs_f32() % duration.max(0.05),
+                weight: 1.0,
+            };
+            actor.pose_count = 1;
+        }
+        self.renderer.set_actors(&[actor]);
         let target = Vec3::new(0.0, height * 0.45, 0.0);
         let o = shot.orbit;
         let distance = height.max(0.5) * o.distance;

@@ -317,7 +317,8 @@ impl Shell {
         if let (Some(content), Some(first)) = (&content, map.player_starts.first())
             && let Ok(terrain) = canopy_sim::terrain::Terrain::compile(map, content)
         {
-            let reached = canopy_sim::spawn::reachable_from(&terrain, first.x, first.z);
+            let closed = canopy_sim::spawn::tree_cells(&terrain);
+            let reached = canopy_sim::spawn::reachable_from(&terrain, &closed, first.x, first.z);
             let near = |x: f64, z: f64| canopy_sim::spawn::near(&terrain, &reached, x, z, 7);
             for s in &map.player_starts {
                 if !near(s.x, s.z) {

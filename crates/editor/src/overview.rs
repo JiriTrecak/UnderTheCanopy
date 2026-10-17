@@ -35,6 +35,8 @@ pub struct Overview<'a> {
     pub create: Option<String>,
     /// A unit to try this ability with in a test match (the encounter).
     pub try_with: Option<String>,
+    /// The package folder on disk (an asset's files are checked there).
+    pub root: Option<&'a std::path::Path>,
 }
 
 /// Whether `document` has an Overview.
@@ -42,7 +44,7 @@ pub fn has(document: &str) -> bool {
     matches!(
         document.split('/').next(),
         Some("units" | "buildings" | "items" | "abilities" | "effects" | "races")
-    )
+    ) || (document.starts_with("assets/") && document.ends_with("/asset.json"))
 }
 
 fn number(value: &Value, pointer: &str) -> Option<f64> {
@@ -92,6 +94,7 @@ impl<'a> Overview<'a> {
             opens: Vec::new(),
             create: None,
             try_with: None,
+            root: None,
         }
     }
 
@@ -104,6 +107,7 @@ impl<'a> Overview<'a> {
             Some("abilities") => self.ability(ui, value),
             Some("effects") => self.effect(ui, value),
             Some("races") => self.race(ui, value),
+            Some("assets") => self.asset(ui, value),
             _ => {}
         }
     }
@@ -520,6 +524,118 @@ impl<'a> Overview<'a> {
             };
             self.step(&format!("Add {id}"), &pointer, vec![command], false);
         }
+    }
+
+    fn asset(&mut self, ui: &mut Ui, value: &Value) {
+        let kind = text(value, "/kind").unwrap_or("asset").to_string();
+        let mut rows = vec![("Kind", kind.clone())];
+        if let Some(race) = text(value, "/race") {
+            rows.push(("Race", race.to_string()));
+        }
+        if let Some(scale) = number(value, "/display/scale") {
+            rows.push(("Scale in game", format!("{scale}")));
+        }
+        if let Some(profile) = text(value, "/display/character") {
+            rows.push(("Animation profile", profile.to_string()));
+        }
+        if let Some(mode) = text(value, "/capabilities/teamColor/mode") {
+            rows.push(("Team colour", mode.to_string()));
+        }
+        let clips = value
+            .pointer("/capabilities/animations")
+            .and_then(Value::as_array)
+            .map_or(0, Vec::len);
+        if clips > 0 {
+            rows.push(("Animations", format!("{clips}")));
+        }
+        Self::card(ui, &kind, |ui| Self::stats(ui, "asset-stats", &rows));
+        // Its files: `<role>.<format>` or `<role>_<n>.<format>`, beside asset.json.
+        let folder = self.document.trim_end_matches("asset.json");
+        let files: Vec<(String, bool, Option<u64>)> = crate::document::asset_files(value)
+            .into_iter()
+            .map(|name| {
+                let role = name.split(['.', '_']).next().unwrap_or_default();
+                let working = matches!(
+                    role,
+                    "source" | "recipe" | "build" | "generation" | "reference"
+                );
+                let size = self
+                    .root
+                    .and_then(|root| std::fs::metadata(root.join(folder).join(&name)).ok())
+                    .map(|m| m.len());
+                (name, working, size)
+            })
+            .collect();
+        let root = self.root.is_some();
+        Self::card(ui, "Files", |ui| {
+            if files.is_empty() {
+                ui.label(RichText::new("It lists no files.").color(FAINT).size(11.5));
+            }
+            for (name, working, size) in &files {
+                ui.horizontal(|ui| {
+                    ui.label(RichText::new(name).monospace().size(11.5).color(SOFT));
+                    let (text, colour) = match size {
+                        Some(bytes) if *bytes >= 1 << 20 => (
+                            format!("{:.1} MB", *bytes as f64 / f64::from(1 << 20)),
+                            MUTED,
+                        ),
+                        Some(bytes) => {
+                            (format!("{:.0} KB", (*bytes as f64 / 1024.0).ceil()), MUTED)
+                        }
+                        None if root => ("missing".to_string(), DIRTY),
+                        None => (String::new(), MUTED),
+                    };
+                    ui.label(RichText::new(text).size(11.0).color(colour));
+                    if *working {
+                        ui.label(
+                            RichText::new("working file, not cooked")
+                                .size(11.0)
+                                .color(FAINT),
+                        );
+                    }
+                });
+            }
+        });
+        let animations: Vec<(String, String, bool)> = value
+            .pointer("/capabilities/animations")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(|a| {
+                Some((
+                    a.get("semantic")?.as_str()?.to_string(),
+                    a.get("clip")?.as_str()?.to_string(),
+                    a.get("loop").and_then(Value::as_bool).unwrap_or(false),
+                ))
+            })
+            .collect();
+        if !animations.is_empty() {
+            Self::card(ui, "Animations", |ui| {
+                for (semantic, clip, looping) in &animations {
+                    ui.horizontal(|ui| {
+                        ui.label(RichText::new(semantic).size(11.5).color(TEXT));
+                        ui.label(
+                            RichText::new(format!("clip {clip}"))
+                                .monospace()
+                                .size(11.0)
+                                .color(MUTED),
+                        );
+                        if *looping {
+                            ui.label(RichText::new("loops").size(11.0).color(FAINT));
+                        }
+                    });
+                }
+                ui.label(
+                    RichText::new("Play any clip under the preview.")
+                        .size(11.0)
+                        .color(FAINT),
+                );
+            });
+        }
+        let me = self;
+        Self::card(ui, "Used by", |ui| {
+            me.users(ui, |_| true, "Nothing names it: an unused asset.")
+        });
     }
 
     fn item(&mut self, ui: &mut Ui, value: &Value) {

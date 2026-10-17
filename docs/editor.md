@@ -62,7 +62,7 @@ M1's generic forms already edit every field of every element. M2 adds what a for
 
 **Built (2026-10-16):** `overview.rs` (the Overview view, opening by default where it exists), id fields' → link and the header's Back and Forward (`shell.rs`, `forms.rs`). Units: stat card, a hero's levels, abilities (hotkeys, unbind, bind from a picker with the next free hotkey and column, New ability… starts the create dialog in Abilities), trained by. Buildings: stats, Trains and Researches (open, add, remove), built by. Items: stats, found in. Abilities: rank table (edit cells; add a rank or a parameter; remove a rank), the cast to scale, targeting in words, bound by. Effects: duration, layers on a timeline, used by. Races: roster by group and starting setup. **The encounter (built, review):** instead of the old studio's stage inside the editor, each unit under an ability's "Bound by" has **Try it**: a test match (Test in game, unsaved edits included) where that unit stands 24 cells from your start towards the middle, a hero at its third level, with three of its race's units as allies and three of the map's creeps ahead (`canopy_sim::crowd::encounter`). It is the real game, casting from the real command card; the timeline and slow motion of the old stage are not rebuilt (the debug overlay's speed control slows a match).
 
-## M3. The map editor (decided 2026-10-16)
+## M3. The map editor (built 2026-10-17)
 
 **Settled (Jiri, ahead of the build):**
 
@@ -73,7 +73,18 @@ M1's generic forms already edit every field of every element. M2 adds what a for
 - **No new ground cover** (moving grass, decals, foliage) for now.
 - **Mission scripting is Lua.**
 
-## M4. The asset editor (direction 2026-10-16)
+**Built (2026-10-16/17):**
+
+- **The Maps editor** (`crates/editor/src/map/`): a map opens in a viewport drawn with the game's own renderer and its biome's light (right/middle drag pans, Alt turns, scroll zooms). **New map** in the library makes a package of any size and biome: flat dry ground in grass, every ground material as a paint layer, players 1 and 2 in opposite corners.
+- **Brushes** (one undo step per stroke, the viewport following as you paint): Raise, Lower, Flatten, Smooth, **Cliff** (hard steps of one cliff level), **Ramp** (drag from a cliff top to the ground below: a straight walkable slope as wide as the brush), Paint (soil, grass, rock or any paint material; cliff faces follow the slopes by themselves), Water (flood to a level, Shift drains), **Trees** (harvestable trees on Warcraft III's staggered lattice, two to every 5 × 5 cells as imported maps have them, never in water or on cliffs) and **Props** (rocks, logs, mushrooms, flowers: decoration that blocks nothing; trees and props clear apart).
+- **Clicks:** **Amber** places a five-crystal site on the building lattice, its hollow facing the nearest start; **Camp** places creeps of a chosen strength (easy, medium, hard by the Warcraft levels) with their camp; **Start** places the next free player with a level pad, its amber 26 cells towards the middle and the hall's door turned to face the middle. **Select** picks a start, mine, creep or tree; Delete removes it (a creep takes its camp with it).
+- **The check** loads a map with unsaved edits too: the map rules, the starts' playability, and whether armies, a hero (twice a warrior's size) included, can walk from the first start to every start, camp and amber site around cliffs, deep water and trees, through lanes at least 7 cells wide (`canopy_sim::spawn::connected`).
+- **Test in game** plays the open map with its unsaved edits.
+- **MCP map tools** for agents: `create_map`, `map_stroke` (every brush along a line), `map_place`, `map_remove`, `map_info` (layout, a coarse height grid, unreachable sites, problems) and `map_picture` (the map from straight above as a PNG).
+- **Amberleaf Crossing** (`base/maps/skirmish/amberleaf-crossing.utcm`), the M3 map, was authored entirely through these tools (by an agent, with a script of strokes): mains on cliff plateaus in opposite corners with one wide ramp each, a natural below each ramp, a third and a high-ground fourth on each side, a river winding through a lake with a contested island and two fords, 15 camps that grow harder away from the mains, Warcraft ground paint, pine woods with oak and golden accents, and decoration along the water and the woods' edges. Players 1 and 2 are a half turn of each other, so every distance is the same for both.
+- **Warcraft maps:** the old game's importer (`src/editor/import/warcraft/` there) no longer runs, because it loads the old content. Importing more maps needs it ported to Rust (an MPQ reader: a new crate or a small decoder of our own) and the `.w3x` files themselves; both wait for Jiri.
+
+## M4. The asset editor (built 2026-10-17)
 
 **Settled (Jiri):** the asset editor is a tool for us, mostly for agents: what makes new assets quick to create and to author well into the game. Its scope is mine to decide from the asset format (not overdone). **Players never bring their own models, icons or other assets**: player packages use the game's pool only. Built right after M3.
 
@@ -83,6 +94,14 @@ M1's generic forms already edit every field of every element. M2 adds what a for
 - **Import:** a glTF model (or an image, for icons and portraits) becomes a new asset folder with its `asset.json` from the kind's defaults; MCP has the same tool for agents.
 - **Cook from the editor:** the changed assets are cooked into the pack (incrementally) and the viewport reloads, so a new model is seen without leaving.
 - **Unused assets:** a list of assets nothing names (definitions, scenery, effects, maps, biomes, interface), and deleting one removes its whole folder on save (undo before saving brings it back).
+
+**Built (2026-10-17, review):**
+
+- **An asset's Overview** (`overview.rs`): its kind, race, scale in game, animation profile and team colour; its files, each present with its size or marked missing, working files (sources, recipes) noted as never cooked; its animations (semantic, clip, looping); and what uses it. The preview under the inspector plays any clip the cooked model has (or its rest pose).
+- **Import** (`assets.rs`, the Assets library's **Import…**, MCP `import_asset`): a `.glb` becomes a model asset (unit, creature, building, tree, foliage, prop or bridge) as `geometry.glb`, its `asset.json` prefilled: the clips under the semantics they are named after (idle, walk, run, attack, …, the looping ones looping), its `socket_*` nodes as sockets, a building's shading. A `.png` becomes an icon, interface image or texture as `image.png`. The folder is written at once, as files copied in by hand would be.
+- **Cook** (the Assets library's **Cook**, MCP `cook`): runs `canopy-cook` as `just cook` does, in the background (the editor only runs from the repository, so the cooker stays out of the game binary); when it finishes the viewports and map scenes open the new pack.
+- **Unused assets:** the Assets library's **Only assets nothing names**, and MCP `unused_assets`: assets no document names (as an id or a pack entry, `asset.x/image.png`), nor the repository's config or code (code that forms ids from a pattern, `asset.interface.campaign.{race}`, counts). Deleting an asset (now offered for assets too) removes its listed files and its folder when that leaves it empty, on save; undo brings it back until then.
+- **Not built:** retargeting animations, editing materials or team colour masks, and generating art. Those stay with the art pipeline and its agents.
 
 ## M5. Players' content (decided 2026-10-16: aspirational for now)
 

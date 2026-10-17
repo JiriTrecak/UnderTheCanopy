@@ -68,6 +68,23 @@ pub enum Tool {
     MapStroke(MapStrokeArgs),
     MapPlace(MapPlaceArgs),
     MapRemove(MapRemoveArgs),
+    UnusedAssets,
+    Import(ImportArgs),
+    Cook,
+}
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct ImportArgs {
+    /// The file to copy in: a glTF binary (.glb) for a model, a PNG for an icon or texture.
+    pub source: String,
+    /// The new asset's id, starting with `asset.` (`asset.models.units.example`).
+    pub id: String,
+    pub name: Option<String>,
+    /// .glb: unit, creature, building, tree, foliage, prop or bridge. .png: icon,
+    /// interface or texture.
+    pub kind: String,
+    /// The new folder below assets/ (`units/example`).
+    pub folder: String,
 }
 
 /// A tool call on its way to the editor, with where its answer goes.
@@ -174,8 +191,9 @@ pub struct MapStrokeArgs {
     pub passes: Option<u32>,
     /// paint: soil, grass, rock or a paint material of the map (map_info lists them).
     pub ground: Option<String>,
-    /// trees: the scenery to plant (map_info lists the trees); trees per 100 cells
-    /// (default 6).
+    /// trees: the scenery to plant (map_info lists the trees), on Warcraft III's staggered
+    /// lattice (two to every 5 × 5 cells); `density` is trees per 100 cells, 8 filling the
+    /// lattice (default 6). props: decoration per 100 cells, spaced wider.
     pub tree: Option<String>,
     pub density: Option<f32>,
     /// props: the decoration to scatter (map_info lists the props); spaced wider than
@@ -219,11 +237,14 @@ struct Handler {
 
 impl Handler {
     async fn ask(&self, tool: Tool) -> Result<CallToolResult, ErrorData> {
+        let cook = matches!(tool, Tool::Cook);
         let (reply, answer) = tokio::sync::oneshot::channel();
         if self.calls.send(Call { tool, reply }).is_err() {
             return Ok(failed("The editor is closed."));
         }
-        match tokio::time::timeout(Duration::from_secs(60), answer).await {
+        // A cook may compile the cooker first.
+        let wait = if cook { 900 } else { 60 };
+        match tokio::time::timeout(Duration::from_secs(wait), answer).await {
             Ok(Ok(Ok(Value::Object(image)))) if image.contains_key("png") => {
                 let data = image["png"].as_str().unwrap_or_default().to_string();
                 Ok(CallToolResult::success(vec![ContentBlock::image(
@@ -408,6 +429,30 @@ impl Handler {
         Parameters(args): Parameters<MapPlaceArgs>,
     ) -> Result<CallToolResult, ErrorData> {
         self.ask(Tool::MapPlace(args)).await
+    }
+
+    #[tool(
+        description = "Assets nothing names: no definition, ability, effect, scenery, biome, map, config file or code. Delete one with edit (delete its asset.json): its folder goes on save."
+    )]
+    async fn unused_assets(&self) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::UnusedAssets).await
+    }
+
+    #[tool(
+        description = "Copies a glTF binary or a PNG in as a new asset folder with its asset.json (a model's clips and socket_* nodes filled in). Written at once; cook afterwards."
+    )]
+    async fn import_asset(
+        &self,
+        Parameters(args): Parameters<ImportArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::Import(args)).await
+    }
+
+    #[tool(
+        description = "Cooks the changed assets into the pack (as `just cook`), then the editor's viewports show them. Waits for the cook."
+    )]
+    async fn cook(&self) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::Cook).await
     }
 
     #[tool(description = "Removes starts, entities and trees around a point, as one undo step.")]

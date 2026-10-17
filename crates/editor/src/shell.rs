@@ -25,6 +25,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+mod art;
 mod maps;
 mod serve;
 
@@ -33,6 +34,8 @@ struct Workspace {
     library: Library,
     dock: DockState<Doc>,
     filter: String,
+    /// The Assets library lists only the assets nothing names.
+    unused_only: bool,
     /// Expanded library folders, by path.
     expanded: HashSet<String>,
     /// The field the last undo or redo changed (document, pointer), and when.
@@ -59,6 +62,7 @@ impl Workspace {
             library,
             dock: DockState::new(Vec::new()),
             filter: String::new(),
+            unused_only: false,
             expanded,
             highlight: None,
         }
@@ -124,6 +128,14 @@ enum Dialog {
         section: usize,
         folder: String,
         id: String,
+    },
+    /// Art copied in as a new asset folder.
+    Import {
+        source: String,
+        id: String,
+        name: String,
+        kind: String,
+        folder: String,
     },
     /// A new map package in `maps/<group>/`.
     NewMap {
@@ -196,9 +208,22 @@ pub struct Shell {
     /// The viewport: last frame's picture, why it cannot draw, this frame's request and
     /// its camera.
     pub viewport_texture: Option<egui::TextureId>,
+    /// Set when a cook finished: the viewports open the pack again.
+    pub reload_pack: bool,
+    /// The cook running, and the MCP calls waiting for it.
+    cooking: Option<std::thread::JoinHandle<Result<String, String>>>,
+    cook_waiting: Vec<tokio::sync::oneshot::Sender<Result<Value, String>>>,
     pub viewport_error: Option<String>,
     pub shot: Option<crate::stage::Shot>,
     orbit: crate::stage::Orbit,
+    /// The preview's clip playing, and the clips of the model last previewed.
+    clip: Option<usize>,
+    clips: Option<(String, Vec<(String, f32)>)>,
+    /// Assets nothing names, as of a store generation; the text of the repository's config
+    /// and code and of the documents the libraries do not list (read once), where some
+    /// assets are named too.
+    unused: Option<(u64, std::collections::BTreeSet<String>)>,
+    outside: Option<String>,
     /// Open maps, what their scenes need (the pack, each biome's look), and the map scene
     /// to draw this frame.
     maps: HashMap<String, crate::map::Session>,
@@ -237,6 +262,13 @@ impl Shell {
             viewport_error: None,
             shot: None,
             orbit: crate::stage::Orbit::default(),
+            clip: None,
+            clips: None,
+            reload_pack: false,
+            cooking: None,
+            cook_waiting: Vec::new(),
+            unused: None,
+            outside: None,
             maps: HashMap::new(),
             resources: None,
             data,
@@ -303,21 +335,41 @@ impl Shell {
         let (can_rename, can_delete) = match active.as_deref().and_then(Kind::collection_of) {
             Some((_, collection)) => (
                 matches!(collection.form, Storage::Files | Storage::Folders(_)),
-                collection.form == Storage::Files,
+                // An asset goes with its folder (document.rs, on save).
+                collection.form == Storage::Files
+                    || active
+                        .as_deref()
+                        .is_some_and(|d| d.starts_with("assets/") && d.ends_with("/asset.json")),
             ),
             None => (false, false),
         };
         let subject = active.as_deref().and_then(|d| self.subject(d));
+        let clips = match &subject {
+            Some((model, _)) => self.model_clips(model),
+            None => Vec::new(),
+        };
         if let Some(root) = active.as_deref().and_then(crate::map::root_of) {
             self.prepare_map(root);
         }
+        let unused_assets =
+            if kind == Kind::Assets && self.workspaces.get(&kind).is_some_and(|w| w.unused_only) {
+                self.unused_assets()
+            } else {
+                Default::default()
+            };
         let workspace = self
             .workspaces
             .get_mut(&kind)
             .expect("every editor's library is read");
         let store = self.store.as_mut().expect("a store with the package");
         let mut edits = Vec::new();
-        let create = library_panel(ui, kind, workspace, store, &package);
+        let unused = (kind == Kind::Assets && workspace.unused_only).then_some(&unused_assets);
+        let cooking = self.cooking.is_some();
+        let LibraryAction {
+            create,
+            import,
+            cook,
+        } = library_panel(ui, kind, workspace, store, &package, unused, cooking);
         let request = inspector::show(
             ui,
             &mut workspace.dock,
@@ -335,6 +387,8 @@ impl Shell {
                     error: self.viewport_error.as_deref(),
                     orbit: &mut self.orbit,
                     shot: &mut self.shot,
+                    clips,
+                    clip: &mut self.clip,
                 }),
             },
         );
@@ -370,6 +424,7 @@ impl Shell {
                 content,
                 scene_texture: self.viewport_texture,
                 map_size: &mut map_size,
+                root: Some(package.root.clone()),
             },
         );
         if let Some((root, size)) = map_size
@@ -419,6 +474,18 @@ impl Shell {
         }
         if create {
             self.start_create(kind);
+        }
+        if import {
+            self.dialog = Some(Dialog::Import {
+                source: String::new(),
+                id: String::new(),
+                name: String::new(),
+                kind: String::new(),
+                folder: String::new(),
+            });
+        }
+        if cook {
+            self.start_cook();
         }
         match request {
             Some(Request::Rename(document)) => {
@@ -592,6 +659,118 @@ impl Shell {
                 session.loaded_at = Some(generation);
             }
         }
+    }
+
+    /// The ids of assets nothing names: no document of the package (other than the asset
+    /// itself), nor the repository's `config/` or code.
+    pub(crate) fn unused_assets(&mut self) -> std::collections::BTreeSet<String> {
+        let generation = self.store.as_ref().map_or(0, Store::generation);
+        if let Some((g, unused)) = &self.unused
+            && *g == generation
+        {
+            return unused.clone();
+        }
+        if self.outside.is_none() {
+            let mut text = String::new();
+            if let Some(data) = &self.data {
+                for dir in ["config", "crates", "game/src"] {
+                    collect_text(&data.join(dir), &mut text);
+                }
+            }
+            // Documents the libraries do not list (biomes, rules files), as saved; the
+            // assets' own folders are left out, so an asset does not name itself.
+            if let Ok(package) = &self.package
+                && let Ok(entries) = std::fs::read_dir(&package.root)
+            {
+                for entry in entries.flatten() {
+                    if entry.file_name() != "assets" && entry.file_name() != "maps" {
+                        collect_text(&entry.path(), &mut text);
+                    }
+                }
+            }
+            self.outside = Some(text);
+        }
+        let assets: Vec<(String, String)> = self
+            .workspaces
+            .get(&Kind::Assets)
+            .map(|w| {
+                let mut elements = Vec::new();
+                w.library
+                    .nodes
+                    .iter()
+                    .for_each(|n| n.elements(&mut elements));
+                elements
+                    .into_iter()
+                    .filter(|e| e.document.starts_with("assets/"))
+                    .map(|e| (e.id.clone(), e.document.clone()))
+                    .collect()
+            })
+            .unwrap_or_default();
+        let mut named = std::collections::BTreeSet::new();
+        let documents = self.all_documents();
+        if let Some(store) = &mut self.store {
+            for document in &documents {
+                let own = assets.iter().any(|(_, d)| d == document);
+                if let Ok(Some(value)) = store.get(document) {
+                    strings(value, own, &mut named);
+                }
+            }
+        }
+        let outside = self.outside.as_deref().unwrap_or_default();
+        let unused: std::collections::BTreeSet<String> = assets
+            .into_iter()
+            .map(|(id, _)| id)
+            .filter(|id| {
+                // Code that forms ids from a pattern (`asset.interface.campaign.{race}`).
+                let pattern = id.rsplit_once('.').map(|(head, _)| format!("{head}.{{"));
+                !named.contains(id)
+                    && !outside.contains(id.as_str())
+                    && !pattern.is_some_and(|p| outside.contains(&p))
+            })
+            .collect();
+        self.unused = Some((generation, unused.clone()));
+        unused
+    }
+
+    /// The cooked pack the viewports draw from, opened on first use.
+    fn pack(&mut self) -> Result<Arc<canopy_assets::Pack>, String> {
+        let resources = self.resources.get_or_insert_with(|| {
+            let data = self.data.as_ref().ok_or("no data folder")?;
+            let path =
+                canopy_assets::find_pack(data).ok_or("no cooked asset pack (run `just cook`)")?;
+            let pack = canopy_assets::Pack::open(&path).map_err(|e| e.to_string())?;
+            Ok(Resources {
+                pack: Arc::new(pack),
+                looks: HashMap::new(),
+            })
+        });
+        resources
+            .as_ref()
+            .map(|r| r.pack.clone())
+            .map_err(Clone::clone)
+    }
+
+    /// The animation clips of a model in the pack (name, seconds); a new model starts at
+    /// rest.
+    fn model_clips(&mut self, model: &str) -> Vec<(String, f32)> {
+        if let Some((m, clips)) = &self.clips
+            && m == model
+        {
+            return clips.clone();
+        }
+        let clips: Vec<(String, f32)> = self
+            .pack()
+            .map(|pack| {
+                canopy_scene::models::ModelInfo::read(&pack, model)
+                    .clips
+                    .iter()
+                    .map(|c| (c.name.clone(), c.duration))
+                    .collect()
+            })
+            .unwrap_or_default();
+        self.clip = None;
+        self.clips = Some((model.to_string(), clips.clone()));
+        clips
     }
 
     /// The package with the unsaved documents laid over it.
@@ -816,13 +995,14 @@ impl Shell {
             Run(Edit),
             Reveal(String),
             Fail(String),
+            Import(crate::assets::Import),
         }
         let mut outcome = Outcome::Open;
         let uses = match &dialog {
             Dialog::Rename { document, .. } | Dialog::Delete { document, .. } => {
                 self.uses_of(&document.clone())
             }
-            Dialog::Create { .. } | Dialog::NewMap { .. } => Vec::new(),
+            Dialog::Create { .. } | Dialog::NewMap { .. } | Dialog::Import { .. } => Vec::new(),
         };
         let content = self.checker.as_ref().and_then(|c| c.content().cloned());
         let base_version = self
@@ -906,7 +1086,11 @@ impl Shell {
                     if elsewhere.is_empty() {
                         ui.label(RichText::new(format!("Delete {id}?")).size(14.0).color(TEXT));
                         ui.label(
-                            RichText::new("Nothing uses it. Its file goes on the next save; undo brings it back.")
+                            RichText::new(if document.ends_with("/asset.json") {
+                                "Nothing uses it. Its folder and files go on the next save; undo brings them back until then."
+                            } else {
+                                "Nothing uses it. Its file goes on the next save; undo brings it back."
+                            })
                                 .color(MUTED),
                         );
                         ui.add_space(12.0);
@@ -957,6 +1141,77 @@ impl Shell {
                             }
                         });
                     }
+                }
+                Dialog::Import { source, id, name, kind, folder } => {
+                    ui.label(RichText::new("Import art").size(14.0).color(TEXT));
+                    ui.label(
+                        RichText::new("A glTF binary (.glb) becomes a model, a PNG an icon or texture, in a new folder under assets/. It is written at once; cook to see it in the viewport.")
+                            .color(MUTED)
+                            .size(11.0),
+                    );
+                    ui.add_space(6.0);
+                    ui.label(RichText::new("File").color(MUTED).size(11.0));
+                    ui.add(TextEdit::singleline(source).font(egui::TextStyle::Monospace).hint_text("/path/to/model.glb").desired_width(f32::INFINITY));
+                    let path = std::path::PathBuf::from(source.trim());
+                    let kinds = crate::assets::kinds_for(&path);
+                    if !kinds.contains(&kind.as_str())
+                        && let Some(first) = kinds.first()
+                    {
+                        *kind = first.to_string();
+                    }
+                    let stem = path
+                        .file_stem()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or_default()
+                        .to_ascii_lowercase()
+                        .replace([' ', '_'], "-");
+                    if id.is_empty() && !stem.is_empty() {
+                        let group = if kinds.first() == Some(&"icon") { "icons" } else { "models" };
+                        *id = format!("asset.{group}.{stem}");
+                        *folder = format!("{group}/{stem}");
+                    }
+                    ui.label(RichText::new("Id").color(MUTED).size(11.0));
+                    ui.add(TextEdit::singleline(id).font(egui::TextStyle::Monospace).desired_width(f32::INFINITY));
+                    ui.label(RichText::new("Name").color(MUTED).size(11.0));
+                    ui.add(TextEdit::singleline(name).hint_text(stem.replace('-', " ")).desired_width(f32::INFINITY));
+                    ui.label(RichText::new("Folder below assets/").color(MUTED).size(11.0));
+                    ui.add(TextEdit::singleline(folder).font(egui::TextStyle::Monospace).desired_width(f32::INFINITY));
+                    if !kinds.is_empty() {
+                        egui::ComboBox::from_label("Kind")
+                            .selected_text(kind.as_str())
+                            .show_ui(ui, |ui| {
+                                for k in kinds {
+                                    ui.selectable_value(kind, k.to_string(), *k);
+                                }
+                            });
+                    }
+                    let problem = if kinds.is_empty() {
+                        Some("Choose a .glb or .png file.".to_string())
+                    } else if !path.is_file() {
+                        Some("No such file.".to_string())
+                    } else if ids.binary_search(id).is_ok() {
+                        Some("Another element has this id.".into())
+                    } else {
+                        None
+                    };
+                    if let Some(problem) = &problem {
+                        ui.label(RichText::new(problem).color(FAINT).size(11.0));
+                    }
+                    ui.add_space(12.0);
+                    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                        if ui.add_enabled(problem.is_none(), primary("Import")).clicked() {
+                            outcome = Outcome::Import(crate::assets::Import {
+                                source: path.clone(),
+                                id: id.trim().to_string(),
+                                name: name.clone(),
+                                kind: kind.clone(),
+                                folder: folder.trim().to_string(),
+                            });
+                        }
+                        if ui.button("Cancel").clicked() {
+                            outcome = Outcome::Close;
+                        }
+                    });
                 }
                 Dialog::NewMap { group, id, name, size, biome, biomes } => {
                     ui.label(RichText::new("New map").size(14.0).color(TEXT));
@@ -1125,6 +1380,16 @@ impl Shell {
             Outcome::Close => {}
             Outcome::Reveal(document) => self.reveal_document(&document),
             Outcome::Fail(message) => self.say(message, true),
+            Outcome::Import(request) => match self.import_asset(&request) {
+                Ok(document) => {
+                    self.say(format!("Imported {}; cook to see it.", request.id), false);
+                    self.reveal_document(&document);
+                }
+                Err(error) => {
+                    self.say(error, true);
+                    self.dialog = Some(dialog);
+                }
+            },
             Outcome::Run(edit) => {
                 let context = edit.context.clone();
                 self.run(edit);
@@ -2018,8 +2283,10 @@ fn library_panel(
     workspace: &mut Workspace,
     store: &Store,
     package: &Package,
-) -> bool {
-    let mut create = false;
+    unused: Option<&std::collections::BTreeSet<String>>,
+    cooking: bool,
+) -> LibraryAction {
+    let mut action = LibraryAction::default();
     egui::Panel::left(Id::new(("library", kind)))
         .default_size(LIBRARY)
         .size_range(180.0..=380.0)
@@ -2079,7 +2346,7 @@ fn library_panel(
                     } else {
                         "New elements of this kind come with their editor.".to_string()
                     };
-                    create = icon_button(ui, Icon::Plus, false, can)
+                    action.create = icon_button(ui, Icon::Plus, false, can)
                         .on_hover_text(hint)
                         .clicked();
                 });
@@ -2105,6 +2372,21 @@ fn library_panel(
                 Icon::Search,
                 FAINT,
             );
+            if kind == Kind::Assets {
+                ui.horizontal(|ui| {
+                    action.import = ui
+                        .button("Import…")
+                        .on_hover_text("A .glb model or a .png image as a new asset")
+                        .clicked();
+                    let label = if cooking { "Cooking…" } else { "Cook" };
+                    action.cook = ui
+                        .add_enabled(!cooking, egui::Button::new(label))
+                        .on_hover_text("Cook the changed assets into the pack; the viewports show them after")
+                        .clicked();
+                });
+                ui.checkbox(&mut workspace.unused_only, "Only assets nothing names")
+                    .on_hover_text("No definition, ability, effect, scenery, biome, map, config file or code names them; delete what you no longer need.");
+            }
             ui.add_space(6.0);
             let active = workspace
                 .dock
@@ -2121,7 +2403,33 @@ fn library_panel(
                         active: active.as_deref(),
                         store,
                     };
-                    if filter.is_empty() {
+                    if let Some(unused) = unused {
+                        let mut all = Vec::new();
+                        workspace
+                            .library
+                            .nodes
+                            .iter()
+                            .for_each(|n| n.elements(&mut all));
+                        let matches: Vec<_> = all
+                            .into_iter()
+                            .filter(|e| unused.contains(&e.id))
+                            .filter(|e| {
+                                filter.is_empty()
+                                    || e.name.to_lowercase().contains(&filter)
+                                    || e.id.to_lowercase().contains(&filter)
+                            })
+                            .collect();
+                        ui.label(
+                            RichText::new(format!("{} unused assets", matches.len()))
+                                .color(FAINT)
+                                .size(11.0),
+                        );
+                        for element in matches {
+                            if element_row(ui, 0, element, &shown).clicked() {
+                                open = Some(element.clone());
+                            }
+                        }
+                    } else if filter.is_empty() {
                         tree(
                             ui,
                             &workspace.library.nodes,
@@ -2158,7 +2466,15 @@ fn library_panel(
                 workspace.open(&element);
             }
         });
-    create
+    action
+}
+
+/// What the library's buttons asked for.
+#[derive(Default)]
+struct LibraryAction {
+    create: bool,
+    import: bool,
+    cook: bool,
 }
 
 /// What library rows mark: the open document and unsaved ones.
@@ -2216,4 +2532,46 @@ fn element_row(ui: &mut Ui, depth: usize, element: &Element, shown: &Shown) -> e
         shown.store.is_dirty(&element.document),
     )
     .on_hover_text(&element.id)
+}
+
+/// Every string in `value`, and what precedes a `/` or `#` in it (pack entries such as
+/// `asset.x/image.png`); an asset's own document leaves out its `id`.
+fn strings(value: &Value, own: bool, out: &mut std::collections::BTreeSet<String>) {
+    match value {
+        Value::String(s) => {
+            if let Some(head) = s.split(['/', '#']).next() {
+                out.insert(head.to_string());
+            }
+            out.insert(s.clone());
+        }
+        Value::Array(items) => items.iter().for_each(|v| strings(v, false, out)),
+        Value::Object(fields) => {
+            for (key, v) in fields {
+                if !(own && key == "id") {
+                    strings(v, false, out);
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
+/// The text of every `.json`, `.rs` and `.lua` file below `dir`, appended to `out`.
+fn collect_text(dir: &std::path::Path, out: &mut String) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_text(&path, out);
+        } else if path
+            .extension()
+            .is_some_and(|e| e == "json" || e == "rs" || e == "lua")
+            && let Ok(text) = std::fs::read_to_string(&path)
+        {
+            out.push_str(&text);
+            out.push('\n');
+        }
+    }
 }
