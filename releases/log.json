@@ -10,9 +10,12 @@
       "Maps can frame their playable area with a border of forest, cliffs and water that nobody enters; the camera and minimap stay on the playable area.",
       "The map editor imports Warcraft III melee maps, substituting ground it lacks with the nearest it has."
     ],
-    "improved": [],
+    "improved": [
+      "Maps with large forests run faster."
+    ],
     "fixed": [
-      "A match no longer crashes when a unit that cannot move steers around others."
+      "A match no longer crashes when a unit that cannot move steers around others.",
+      "Computer players no longer get stuck in their base: armies no longer freeze when one unit can't get through, give up targets they can't reach, and units wedged against cliff edges beside ramps step free."
     ],
     "knownIssues": []
   },
