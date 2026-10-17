@@ -1,7 +1,9 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [],
+    "added": [
+      "Submit feedback from the main menu or the game menu: describe a bug, idea or balance problem and it is sent with a screenshot of what you were looking at; reports written offline are sent later."
+    ],
     "improved": [],
     "fixed": [],
     "knownIssues": []
