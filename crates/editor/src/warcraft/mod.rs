@@ -47,6 +47,16 @@ pub fn import(
     for gone in convert::drop_unreachable(&mut map, content)? {
         report.warnings.push(format!("Left out {gone}."));
     }
+    // Creeps clear of trees and of each other's bodies, as the start's check wants them.
+    let terrain =
+        canopy_sim::terrain::Terrain::compile(&map, content).map_err(|e| format!("{e:?}"))?;
+    let (untangled, stuck) = canopy_sim::spawn::untangle(&mut map, content, &terrain)?;
+    report.moved += untangled.len();
+    for id in stuck {
+        report.warnings.push(format!(
+            "{id}: no open ground nearby; check it in the map editor."
+        ));
+    }
     // The checks the editor runs on every map.
     for error in canopy_content::map::validate(&map, content) {
         report

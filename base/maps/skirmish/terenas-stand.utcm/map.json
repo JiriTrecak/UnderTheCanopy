@@ -564,7 +564,7 @@
       "id": "camp.2/2",
       "definition": "unit.neutral.young-toad",
       "position": {
-        "x": 414.0,
+        "x": 413.0,
         "y": 226.0
       },
       "rotation": 300.0,
@@ -574,8 +574,8 @@
       "id": "camp.2/3",
       "definition": "unit.neutral.young-toad",
       "position": {
-        "x": 414.0,
-        "y": 222.0
+        "x": 413.0,
+        "y": 221.0
       },
       "rotation": 60.0,
       "owner": "none"
@@ -614,8 +614,8 @@
       "id": "camp.4/2",
       "definition": "unit.neutral.capling",
       "position": {
-        "x": 383.0,
-        "y": 297.0
+        "x": 381.0,
+        "y": 298.0
       },
       "rotation": 252.0,
       "owner": "none"
@@ -625,7 +625,7 @@
       "definition": "unit.neutral.capling",
       "position": {
         "x": 380.0,
-        "y": 296.0
+        "y": 295.0
       },
       "rotation": 324.0,
       "owner": "none"
@@ -635,7 +635,7 @@
       "definition": "unit.neutral.capling",
       "position": {
         "x": 380.0,
-        "y": 294.0
+        "y": 292.0
       },
       "rotation": 36.0,
       "owner": "none"
@@ -645,7 +645,7 @@
       "definition": "unit.neutral.capling",
       "position": {
         "x": 383.0,
-        "y": 293.0
+        "y": 290.0
       },
       "rotation": 108.0,
       "owner": "none"
@@ -664,7 +664,7 @@
       "id": "camp.5/2",
       "definition": "unit.neutral.barkguard",
       "position": {
-        "x": 400.0,
+        "x": 399.0,
         "y": 79.0
       },
       "rotation": 0.0,
@@ -684,7 +684,7 @@
       "id": "camp.6/2",
       "definition": "unit.neutral.hornet-guard",
       "position": {
-        "x": 248.0,
+        "x": 247.0,
         "y": 152.0
       },
       "rotation": 300.0,
@@ -694,8 +694,8 @@
       "id": "camp.6/3",
       "definition": "unit.neutral.hornet-guard",
       "position": {
-        "x": 248.0,
-        "y": 148.0
+        "x": 247.0,
+        "y": 147.0
       },
       "rotation": 60.0,
       "owner": "none"
@@ -714,7 +714,7 @@
       "id": "camp.7/2",
       "definition": "unit.neutral.bloom-witch",
       "position": {
-        "x": 175.0,
+        "x": 174.0,
         "y": 68.0
       },
       "rotation": 300.0,
@@ -724,8 +724,8 @@
       "id": "camp.7/3",
       "definition": "unit.neutral.bloom-witch",
       "position": {
-        "x": 175.0,
-        "y": 64.0
+        "x": 174.0,
+        "y": 63.0
       },
       "rotation": 60.0,
       "owner": "none"
@@ -764,7 +764,7 @@
       "id": "camp.9/2",
       "definition": "unit.neutral.barkguard",
       "position": {
-        "x": 218.0,
+        "x": 217.0,
         "y": 364.0
       },
       "rotation": 0.0,
@@ -804,7 +804,7 @@
       "id": "camp.11/2",
       "definition": "unit.neutral.briar-hulk",
       "position": {
-        "x": 100.0,
+        "x": 99.0,
         "y": 207.0
       },
       "rotation": 300.0,
@@ -814,8 +814,8 @@
       "id": "camp.11/3",
       "definition": "unit.neutral.briar-hulk",
       "position": {
-        "x": 100.0,
-        "y": 203.0
+        "x": 99.0,
+        "y": 202.0
       },
       "rotation": 60.0,
       "owner": "none"
@@ -834,7 +834,7 @@
       "id": "camp.12/2",
       "definition": "unit.neutral.webling",
       "position": {
-        "x": 71.0,
+        "x": 70.0,
         "y": 422.0
       },
       "rotation": 270.0,
@@ -854,8 +854,8 @@
       "id": "camp.12/4",
       "definition": "unit.neutral.webling",
       "position": {
-        "x": 71.0,
-        "y": 417.0
+        "x": 70.0,
+        "y": 416.0
       },
       "rotation": 90.0,
       "owner": "none"
@@ -874,7 +874,7 @@
       "id": "camp.13/2",
       "definition": "unit.neutral.rootling",
       "position": {
-        "x": 62.0,
+        "x": 61.0,
         "y": 271.0
       },
       "rotation": 0.0,
@@ -885,7 +885,7 @@
       "definition": "unit.neutral.corrupted-rootbeast",
       "position": {
         "x": 352.0,
-        "y": 179.0
+        "y": 178.0
       },
       "rotation": 180.0,
       "owner": "none"
@@ -894,7 +894,7 @@
       "id": "camp.14/2",
       "definition": "unit.neutral.root-seer",
       "position": {
-        "x": 347.0,
+        "x": 346.0,
         "y": 179.0
       },
       "rotation": 0.0,
@@ -974,7 +974,7 @@
       "id": "camp.18/2",
       "definition": "unit.neutral.corrupted-rootbeast",
       "position": {
-        "x": 301.0,
+        "x": 300.0,
         "y": 435.0
       },
       "rotation": 0.0,
@@ -994,7 +994,7 @@
       "id": "camp.19/2",
       "definition": "unit.neutral.bloom-witch",
       "position": {
-        "x": 103.0,
+        "x": 102.0,
         "y": 341.0
       },
       "rotation": 300.0,
@@ -1004,8 +1004,8 @@
       "id": "camp.19/3",
       "definition": "unit.neutral.bloom-witch",
       "position": {
-        "x": 103.0,
-        "y": 337.0
+        "x": 102.0,
+        "y": 336.0
       },
       "rotation": 60.0,
       "owner": "none"

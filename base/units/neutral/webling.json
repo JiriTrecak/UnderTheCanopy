@@ -6,9 +6,9 @@
   "icon": "asset.portraits.units.neutral-webling",
   "selectionClass": "army",
   "dimensions": {
-    "radius": 0.5661,
-    "height": 1.7,
-    "formationSpacing": 1.275
+    "radius": 1.5,
+    "height": 3.98,
+    "formationSpacing": 3.25
   },
   "body": {
     "maxHp": 180,
@@ -38,5 +38,5 @@
   },
   "level": 1,
   "supplyCost": 1,
-  "modelScale": 1.7
+  "modelScale": 3.98
 }

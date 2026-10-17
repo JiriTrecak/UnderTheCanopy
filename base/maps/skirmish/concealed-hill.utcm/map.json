@@ -439,7 +439,7 @@
       "id": "camp.0/2",
       "definition": "unit.neutral.violet-sporeling",
       "position": {
-        "x": 357.0,
+        "x": 356.0,
         "y": 442.0
       },
       "rotation": 0.0,
@@ -459,7 +459,7 @@
       "id": "camp.1/2",
       "definition": "unit.neutral.dew-sprite",
       "position": {
-        "x": 410.0,
+        "x": 409.0,
         "y": 533.0
       },
       "rotation": 270.0,
@@ -479,8 +479,8 @@
       "id": "camp.1/4",
       "definition": "unit.neutral.dew-sprite",
       "position": {
-        "x": 410.0,
-        "y": 528.0
+        "x": 409.0,
+        "y": 527.0
       },
       "rotation": 90.0,
       "owner": "none"
@@ -500,7 +500,7 @@
       "definition": "unit.neutral.seedcaster",
       "position": {
         "x": 227.0,
-        "y": 132.0
+        "y": 131.0
       },
       "rotation": 0.0,
       "owner": "none"
@@ -520,7 +520,7 @@
       "definition": "unit.neutral.hornet-guard",
       "position": {
         "x": 470.0,
-        "y": 267.0
+        "y": 266.0
       },
       "rotation": 0.0,
       "owner": "none"
@@ -540,7 +540,7 @@
       "definition": "unit.neutral.seedcaster",
       "position": {
         "x": 164.0,
-        "y": 393.0
+        "y": 392.0
       },
       "rotation": 0.0,
       "owner": "none"
@@ -559,8 +559,8 @@
       "id": "camp.5/2",
       "definition": "unit.neutral.spitter",
       "position": {
-        "x": 465.0,
-        "y": 207.0
+        "x": 463.0,
+        "y": 208.0
       },
       "rotation": 252.0,
       "owner": "none"
@@ -570,7 +570,7 @@
       "definition": "unit.neutral.spitter",
       "position": {
         "x": 462.0,
-        "y": 206.0
+        "y": 205.0
       },
       "rotation": 324.0,
       "owner": "none"
@@ -580,7 +580,7 @@
       "definition": "unit.neutral.spitter",
       "position": {
         "x": 462.0,
-        "y": 204.0
+        "y": 202.0
       },
       "rotation": 36.0,
       "owner": "none"
@@ -590,7 +590,7 @@
       "definition": "unit.neutral.spitter",
       "position": {
         "x": 465.0,
-        "y": 203.0
+        "y": 200.0
       },
       "rotation": 108.0,
       "owner": "none"
@@ -609,8 +609,8 @@
       "id": "camp.6/2",
       "definition": "unit.neutral.thorn-slinger",
       "position": {
-        "x": 486.0,
-        "y": 412.0
+        "x": 484.0,
+        "y": 413.0
       },
       "rotation": 252.0,
       "owner": "none"
@@ -620,7 +620,7 @@
       "definition": "unit.neutral.thorn-slinger",
       "position": {
         "x": 483.0,
-        "y": 411.0
+        "y": 410.0
       },
       "rotation": 324.0,
       "owner": "none"
@@ -630,7 +630,7 @@
       "definition": "unit.neutral.thorn-slinger",
       "position": {
         "x": 483.0,
-        "y": 409.0
+        "y": 407.0
       },
       "rotation": 36.0,
       "owner": "none"
@@ -640,7 +640,7 @@
       "definition": "unit.neutral.thorn-slinger",
       "position": {
         "x": 486.0,
-        "y": 408.0
+        "y": 405.0
       },
       "rotation": 108.0,
       "owner": "none"
@@ -679,7 +679,7 @@
       "id": "camp.8/2",
       "definition": "unit.neutral.young-toad",
       "position": {
-        "x": 279.0,
+        "x": 278.0,
         "y": 227.0
       },
       "rotation": 300.0,
@@ -689,8 +689,8 @@
       "id": "camp.8/3",
       "definition": "unit.neutral.young-toad",
       "position": {
-        "x": 279.0,
-        "y": 223.0
+        "x": 278.0,
+        "y": 222.0
       },
       "rotation": 60.0,
       "owner": "none"
@@ -709,8 +709,8 @@
       "id": "camp.9/2",
       "definition": "unit.neutral.nest-mother",
       "position": {
-        "x": 155.0,
-        "y": 252.0
+        "x": 154.0,
+        "y": 253.0
       },
       "rotation": 270.0,
       "owner": "none"
@@ -719,8 +719,8 @@
       "id": "camp.9/3",
       "definition": "unit.neutral.nest-mother",
       "position": {
-        "x": 153.0,
-        "y": 249.0
+        "x": 152.0,
+        "y": 248.0
       },
       "rotation": 0.0,
       "owner": "none"
@@ -730,7 +730,7 @@
       "definition": "unit.neutral.nest-mother",
       "position": {
         "x": 155.0,
-        "y": 247.0
+        "y": 244.0
       },
       "rotation": 90.0,
       "owner": "none"
@@ -830,7 +830,7 @@
       "definition": "unit.neutral.twigcaster",
       "position": {
         "x": 177.0,
-        "y": 453.0
+        "y": 452.0
       },
       "rotation": 0.0,
       "owner": "none"
@@ -849,8 +849,8 @@
       "id": "camp.15/2",
       "definition": "unit.neutral.puffcap",
       "position": {
-        "x": 305.0,
-        "y": 321.0
+        "x": 303.0,
+        "y": 322.0
       },
       "rotation": 252.0,
       "owner": "none"
@@ -860,7 +860,7 @@
       "definition": "unit.neutral.puffcap",
       "position": {
         "x": 302.0,
-        "y": 320.0
+        "y": 319.0
       },
       "rotation": 324.0,
       "owner": "none"
@@ -870,7 +870,7 @@
       "definition": "unit.neutral.puffcap",
       "position": {
         "x": 302.0,
-        "y": 318.0
+        "y": 316.0
       },
       "rotation": 36.0,
       "owner": "none"
@@ -880,7 +880,7 @@
       "definition": "unit.neutral.puffcap",
       "position": {
         "x": 305.0,
-        "y": 317.0
+        "y": 314.0
       },
       "rotation": 108.0,
       "owner": "none"

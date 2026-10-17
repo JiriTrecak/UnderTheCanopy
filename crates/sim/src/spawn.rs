@@ -826,6 +826,151 @@ fn occupancy(map: &UtcMap, content: &Content, terrain: &Terrain) -> Result<(), S
     Ok(())
 }
 
+/// Moves the map's own units that would overlap at the start ([`occupancy`]): a body on a
+/// building or standing resource, or on another body, steps to the nearest cell centre
+/// (within 12 cells) on walkable ground where it overlaps nothing; units placed earlier
+/// in the map keep their spot. For camps laid out before their creeps' bodies grew, and
+/// for imports. Returns the ids moved and those that found no room. Maps with decks are
+/// left alone.
+pub fn untangle(
+    map: &mut UtcMap,
+    content: &Content,
+    terrain: &Terrain,
+) -> Result<(Vec<String>, Vec<String>), String> {
+    let every: Vec<Slot> = map
+        .player_starts
+        .iter()
+        .map(|s| Slot {
+            player: s.player.saturating_sub(1),
+            kind: crate::setup::SlotKind::Ai,
+            name: None,
+            team: None,
+            hero: None,
+            race: None,
+        })
+        .collect();
+    let placements = expand(map, content, terrain, &every)?.list;
+    if placements.iter().any(|p| p.position.surface.is_some()) {
+        return Ok((Vec::new(), Vec::new()));
+    }
+    let size = terrain.size();
+    let limit = f64::from(size) - 0.5;
+    let last = i64::from(size) - 1;
+    let mut occupied = BTreeSet::new();
+    // (radius, air) of every unit placement, by id.
+    let mut units: BTreeMap<&str, (f64, bool)> = BTreeMap::new();
+    for p in &placements {
+        let d = definition(content, p)?;
+        let amount = p.initial_state.as_ref().and_then(|s| s.amount);
+        if d.kind == Kind::Item
+            || (d.kind == Kind::Resource && amount == Some(0))
+            || p.activation == Some(Activation::Script)
+        {
+            continue;
+        }
+        if d.kind == Kind::Unit {
+            let radius = d.dimensions.as_ref().map_or(0.0, |b| b.radius);
+            let air =
+                d.behaviors.movement.as_ref().and_then(|m| m.locomotion) == Some(Locomotion::Air);
+            units.insert(&p.id, (radius, air));
+            continue;
+        }
+        let bounds = footprint_cells(
+            p.position.x,
+            p.position.y,
+            Extent::of(d.footprint.as_ref()),
+            p.rotation,
+        );
+        occupied.extend(bounds.cells());
+    }
+    let clear_of_statics = |x: f64, y: f64, radius: f64| {
+        let y0 = ((y - radius + 0.5).floor() as i64).max(0);
+        let y1 = ((y + radius + 0.5).floor() as i64).min(last);
+        let x0 = ((x - radius + 0.5).floor() as i64).max(0);
+        let x1 = ((x + radius + 0.5).floor() as i64).min(last);
+        (y0..=y1).all(|cy| {
+            (x0..=x1).all(|cx| {
+                !occupied.contains(&(cx, cy))
+                    || !body_overlaps_bounds(
+                        x,
+                        y,
+                        radius,
+                        Bounds {
+                            min_x: cx as f64 - 0.5,
+                            min_y: cy as f64 - 0.5,
+                            max_x: cx as f64 + 0.5,
+                            max_y: cy as f64 + 0.5,
+                        },
+                    )
+            })
+        })
+    };
+    let mut offsets: Vec<(i64, i64)> = (-12..=12)
+        .flat_map(|i| (-12..=12).map(move |j| (i, j)))
+        .filter(|(i, j)| i * i + j * j <= 144)
+        .collect();
+    offsets.sort_by_key(|&(i, j)| (i * i + j * j, j, i));
+    let movable: BTreeSet<&str> = map
+        .entities
+        .iter()
+        .filter(|p| units.contains_key(p.id.as_str()))
+        .map(|p| p.id.as_str())
+        .collect();
+    // Bodies that stay: the starts' units; then each map unit once it has its spot.
+    let mut standing: Vec<(f64, f64, f64, bool)> = placements
+        .iter()
+        .filter(|p| !movable.contains(p.id.as_str()))
+        .filter_map(|p| {
+            let &(r, air) = units.get(p.id.as_str())?;
+            Some((p.position.x, p.position.y, r, air))
+        })
+        .collect();
+    let (mut moved, mut stuck) = (Vec::new(), Vec::new());
+    for p in map.entities.iter_mut() {
+        let Some(&(radius, air)) = units.get(p.id.as_str()) else {
+            continue;
+        };
+        let fits = |x: f64, y: f64| {
+            x - radius >= -0.5
+                && y - radius >= -0.5
+                && x + radius <= limit
+                && y + radius <= limit
+                && (air
+                    || (terrain
+                        .cell(round_half_up(x) as i64, round_half_up(y) as i64)
+                        .is_some_and(|c| terrain.walkable(c))
+                        && clear_of_statics(x, y, radius)))
+                && standing.iter().all(|&(ox, oy, or, oair)| {
+                    // As the start's check measures: milli-cells, squared.
+                    let milli = |v: f64| round_half_up(v * 1000.0) as i64;
+                    let (dx, dy) = (milli(ox) - milli(x), milli(oy) - milli(y));
+                    let apart = milli(or) + milli(radius);
+                    oair != air || dx * dx + dy * dy >= apart * apart
+                })
+        };
+        let (x0, y0) = (p.position.x, p.position.y);
+        let spot = offsets
+            .iter()
+            .map(|&(dx, dy)| (x0 + dx as f64, y0 + dy as f64))
+            .find(|&(x, y)| fits(x, y));
+        match spot {
+            Some((x, y)) => {
+                if (x, y) != (x0, y0) {
+                    p.position.x = x;
+                    p.position.y = y;
+                    moved.push(p.id.clone());
+                }
+                standing.push((x, y, radius, air));
+            }
+            None => {
+                stuck.push(p.id.clone());
+                standing.push((x0, y0, radius, air));
+            }
+        }
+    }
+    Ok((moved, stuck))
+}
+
 /// Creates the entity for a placement and adds it to the state. Placed buildings are
 /// complete: the old game never read `initialState.construction`.
 pub fn create(

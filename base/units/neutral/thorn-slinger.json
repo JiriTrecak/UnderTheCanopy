@@ -6,9 +6,9 @@
   "icon": "asset.portraits.units.neutral-thorn-slinger",
   "selectionClass": "army",
   "dimensions": {
-    "radius": 0.493,
-    "height": 3.06,
-    "formationSpacing": 1.1084
+    "radius": 1.5,
+    "height": 5.17,
+    "formationSpacing": 3.25
   },
   "body": {
     "maxHp": 170,
@@ -41,7 +41,7 @@
   },
   "level": 1,
   "supplyCost": 1,
-  "modelScale": 1.7,
+  "modelScale": 2.87,
   "presentation": {
     "projectile": "effect.weapon.arrow",
     "projectileSocket": "socket_projectile"

@@ -958,12 +958,19 @@ pub fn camp(map: &UtcMap, content: &Content, cx: f64, cz: f64, tier: Tier) -> (V
     let n = next_id("camp.", map.camps.iter().map(|c| c.id.clone()));
     let id = format!("camp.{n}");
     let count = members.len().max(1) as f64;
+    // On a ring wide enough that neighbours' bodies stay apart (positions round to cells).
+    let widest = members
+        .iter()
+        .filter_map(|m| content.definition(m).and_then(|d| d.dimensions.as_ref()))
+        .map(|d| d.radius)
+        .fold(0.5, f64::max);
+    let ring = (widest + 0.8) / (std::f64::consts::PI / count).sin();
     let entities: Vec<Value> = members
         .iter()
         .enumerate()
         .map(|(k, definition)| {
             let angle = k as f64 / count * std::f64::consts::TAU;
-            let r = if members.len() == 1 { 0.0 } else { 2.5 };
+            let r = if members.len() == 1 { 0.0 } else { ring };
             json!({
                 "definition": definition,
                 "id": format!("{id}/{}", k + 1),

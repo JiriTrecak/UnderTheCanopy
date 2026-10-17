@@ -714,7 +714,7 @@
       "id": "camp.1/2",
       "definition": "unit.neutral.thorn-slinger",
       "position": {
-        "x": 293.0,
+        "x": 292.0,
         "y": 346.0
       },
       "rotation": 270.0,
@@ -734,8 +734,8 @@
       "id": "camp.1/4",
       "definition": "unit.neutral.thorn-slinger",
       "position": {
-        "x": 293.0,
-        "y": 341.0
+        "x": 292.0,
+        "y": 340.0
       },
       "rotation": 90.0,
       "owner": "none"
@@ -754,7 +754,7 @@
       "id": "camp.2/2",
       "definition": "unit.neutral.barkguard",
       "position": {
-        "x": 217.0,
+        "x": 216.0,
         "y": 132.0
       },
       "rotation": 0.0,
@@ -774,8 +774,8 @@
       "id": "camp.3/2",
       "definition": "unit.neutral.twigcaster",
       "position": {
-        "x": 109.0,
-        "y": 192.0
+        "x": 107.0,
+        "y": 194.0
       },
       "rotation": 252.0,
       "owner": "none"
@@ -784,8 +784,8 @@
       "id": "camp.3/3",
       "definition": "unit.neutral.twigcaster",
       "position": {
-        "x": 106.0,
-        "y": 191.0
+        "x": 105.0,
+        "y": 190.0
       },
       "rotation": 324.0,
       "owner": "none"
@@ -795,7 +795,7 @@
       "definition": "unit.neutral.twigcaster",
       "position": {
         "x": 106.0,
-        "y": 189.0
+        "y": 186.0
       },
       "rotation": 36.0,
       "owner": "none"
@@ -804,8 +804,8 @@
       "id": "camp.3/5",
       "definition": "unit.neutral.twigcaster",
       "position": {
-        "x": 109.0,
-        "y": 188.0
+        "x": 110.0,
+        "y": 185.0
       },
       "rotation": 108.0,
       "owner": "none"
@@ -864,8 +864,8 @@
       "id": "camp.6/2",
       "definition": "unit.neutral.spitter",
       "position": {
-        "x": 122.0,
-        "y": 300.0
+        "x": 120.0,
+        "y": 301.0
       },
       "rotation": 252.0,
       "owner": "none"
@@ -875,7 +875,7 @@
       "definition": "unit.neutral.spitter",
       "position": {
         "x": 119.0,
-        "y": 299.0
+        "y": 298.0
       },
       "rotation": 324.0,
       "owner": "none"
@@ -885,7 +885,7 @@
       "definition": "unit.neutral.spitter",
       "position": {
         "x": 119.0,
-        "y": 297.0
+        "y": 295.0
       },
       "rotation": 36.0,
       "owner": "none"
@@ -895,7 +895,7 @@
       "definition": "unit.neutral.spitter",
       "position": {
         "x": 122.0,
-        "y": 296.0
+        "y": 293.0
       },
       "rotation": 108.0,
       "owner": "none"
@@ -955,7 +955,7 @@
       "definition": "unit.neutral.twigcaster",
       "position": {
         "x": 456.0,
-        "y": 291.0
+        "y": 290.0
       },
       "rotation": 0.0,
       "owner": "none"
@@ -994,8 +994,8 @@
       "id": "camp.11/2",
       "definition": "unit.neutral.puddle-wisp",
       "position": {
-        "x": 506.0,
-        "y": 123.0
+        "x": 504.0,
+        "y": 124.0
       },
       "rotation": 252.0,
       "owner": "none"
@@ -1005,7 +1005,7 @@
       "definition": "unit.neutral.puddle-wisp",
       "position": {
         "x": 503.0,
-        "y": 122.0
+        "y": 121.0
       },
       "rotation": 324.0,
       "owner": "none"
@@ -1015,7 +1015,7 @@
       "definition": "unit.neutral.puddle-wisp",
       "position": {
         "x": 503.0,
-        "y": 120.0
+        "y": 118.0
       },
       "rotation": 36.0,
       "owner": "none"
@@ -1025,7 +1025,7 @@
       "definition": "unit.neutral.puddle-wisp",
       "position": {
         "x": 506.0,
-        "y": 119.0
+        "y": 116.0
       },
       "rotation": 108.0,
       "owner": "none"
@@ -1044,8 +1044,8 @@
       "id": "camp.12/2",
       "definition": "unit.neutral.old-root",
       "position": {
-        "x": 612.0,
-        "y": 113.0
+        "x": 610.0,
+        "y": 115.0
       },
       "rotation": 252.0,
       "owner": "none"
@@ -1054,8 +1054,8 @@
       "id": "camp.12/3",
       "definition": "unit.neutral.old-root",
       "position": {
-        "x": 609.0,
-        "y": 112.0
+        "x": 608.0,
+        "y": 110.0
       },
       "rotation": 324.0,
       "owner": "none"
@@ -1064,8 +1064,8 @@
       "id": "camp.12/4",
       "definition": "unit.neutral.old-root",
       "position": {
-        "x": 609.0,
-        "y": 110.0
+        "x": 611.0,
+        "y": 106.0
       },
       "rotation": 36.0,
       "owner": "none"
@@ -1074,8 +1074,8 @@
       "id": "camp.12/5",
       "definition": "unit.neutral.old-root",
       "position": {
-        "x": 612.0,
-        "y": 109.0
+        "x": 616.0,
+        "y": 106.0
       },
       "rotation": 108.0,
       "owner": "none"
@@ -1095,7 +1095,7 @@
       "definition": "unit.neutral.seedcaster",
       "position": {
         "x": 668.0,
-        "y": 220.0
+        "y": 219.0
       },
       "rotation": 0.0,
       "owner": "none"
@@ -1155,7 +1155,7 @@
       "definition": "unit.neutral.twigcaster",
       "position": {
         "x": 505.0,
-        "y": 458.0
+        "y": 457.0
       },
       "rotation": 0.0,
       "owner": "none"
@@ -1194,7 +1194,7 @@
       "id": "camp.18/2",
       "definition": "unit.neutral.corrupted-rootbeast",
       "position": {
-        "x": 689.0,
+        "x": 687.0,
         "y": 608.0
       },
       "rotation": 300.0,
@@ -1204,8 +1204,8 @@
       "id": "camp.18/3",
       "definition": "unit.neutral.corrupted-rootbeast",
       "position": {
-        "x": 689.0,
-        "y": 604.0
+        "x": 688.0,
+        "y": 602.0
       },
       "rotation": 60.0,
       "owner": "none"
@@ -1224,7 +1224,7 @@
       "id": "camp.19/2",
       "definition": "unit.neutral.old-root",
       "position": {
-        "x": 579.0,
+        "x": 578.0,
         "y": 670.0
       },
       "rotation": 300.0,
@@ -1234,8 +1234,8 @@
       "id": "camp.19/3",
       "definition": "unit.neutral.old-root",
       "position": {
-        "x": 579.0,
-        "y": 666.0
+        "x": 578.0,
+        "y": 665.0
       },
       "rotation": 60.0,
       "owner": "none"
@@ -1294,7 +1294,7 @@
       "id": "camp.22/2",
       "definition": "unit.neutral.rootling",
       "position": {
-        "x": 680.0,
+        "x": 679.0,
         "y": 508.0
       },
       "rotation": 0.0,
@@ -1314,7 +1314,7 @@
       "id": "camp.23/2",
       "definition": "unit.neutral.rootling",
       "position": {
-        "x": 290.0,
+        "x": 289.0,
         "y": 681.0
       },
       "rotation": 0.0,
@@ -1334,7 +1334,7 @@
       "id": "camp.24/2",
       "definition": "unit.neutral.tree-frog",
       "position": {
-        "x": 341.0,
+        "x": 340.0,
         "y": 509.0
       },
       "rotation": 300.0,
@@ -1344,8 +1344,8 @@
       "id": "camp.24/3",
       "definition": "unit.neutral.tree-frog",
       "position": {
-        "x": 341.0,
-        "y": 505.0
+        "x": 340.0,
+        "y": 504.0
       },
       "rotation": 60.0,
       "owner": "none"
@@ -1384,8 +1384,8 @@
       "id": "camp.26/2",
       "definition": "unit.neutral.old-root",
       "position": {
-        "x": 191.0,
-        "y": 691.0
+        "x": 190.0,
+        "y": 692.0
       },
       "rotation": 270.0,
       "owner": "none"
@@ -1394,8 +1394,8 @@
       "id": "camp.26/3",
       "definition": "unit.neutral.old-root",
       "position": {
-        "x": 189.0,
-        "y": 688.0
+        "x": 188.0,
+        "y": 687.0
       },
       "rotation": 0.0,
       "owner": "none"
@@ -1405,7 +1405,7 @@
       "definition": "unit.neutral.old-root",
       "position": {
         "x": 191.0,
-        "y": 686.0
+        "y": 683.0
       },
       "rotation": 90.0,
       "owner": "none"
@@ -1424,7 +1424,7 @@
       "id": "camp.27/2",
       "definition": "unit.neutral.capling",
       "position": {
-        "x": 133.0,
+        "x": 132.0,
         "y": 582.0
       },
       "rotation": 270.0,
@@ -1444,8 +1444,8 @@
       "id": "camp.27/4",
       "definition": "unit.neutral.capling",
       "position": {
-        "x": 133.0,
-        "y": 577.0
+        "x": 132.0,
+        "y": 576.0
       },
       "rotation": 90.0,
       "owner": "none"

@@ -493,3 +493,13 @@ Measured with `ai_duels` (24 seeds per map, 45-minute cap; before is main at the
 | Turtle Rock | 20 → 23 | 20.4 → 22.1 | 24.5 → 23.1 | 6–14 → 11–12 |
 
 The 72 duels ran in 474 s instead of 1,339 s. On the twelve imported Warcraft III maps (4 seeds each) 47 of 48 finish (before 46), mean 23.5 game minutes (before 20.6). The remaining caps are attrition stalemates, not frozen armies.
+
+## D58. Neutral creeps grow with their level (2026-10-17, Jiri asked for it — review: visible)
+
+As in Warcraft III, a creep's size says how strong it is: the weakest are about a Warrior's size, stronger ones are bigger, and the strongest are as large as a dragon. The creeps' scales had been set one by one (every one `modelScale` 1.7), so level 1 creeps stood half a Warrior's height and the level 9 ones 1.5×.
+
+- **Size by level.** A creep's size, the average of its rendered height and footprint (rest bounds × `modelScale`), is the Warrior's (4.7) × (1 + 1.4 × (level − 1) / 8): level 1 1×, level 3 1.35×, level 4 1.5×, level 6 1.9×, level 7 2×, level 9 2.4× (above the heroes' 2×).
+- **Bodies follow** (simulation, review: felt): radius 1.5 × the same factor, as the Warrior's 1.5 at level 1, at most 3.0 (the Marshal's, so the largest still fit the lanes maps keep for heroes); formation spacing 13/6 of the radius, as player units; height the rendered height. Creep bodies had been 0.5–2.3, smaller than any player unit's, and not ordered by level.
+- **Camps made room.** The start refuses overlapping bodies, so camps laid out for the old ones no longer loaded. `canopy_sim::spawn::untangle` moves a map's units that overlap a building, a standing resource (trees included) or another body to the nearest clear cell centre, the earlier ones keeping their spot; it ran once over every shipped map (`cargo run --release -p canopy-sim --example untangle_maps -- --data .`: creeps moved a cell or two) and now runs in the Warcraft importer after its fit pass. The map editor's Camp tool sets its ring from the members' bodies.
+- Shapes still differ: a round creep (the Violet Sporeling) reads heavier than a tall thin one of the same level.
+

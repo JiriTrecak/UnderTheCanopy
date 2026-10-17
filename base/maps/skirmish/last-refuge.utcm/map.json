@@ -525,7 +525,7 @@
       "definition": "unit.neutral.bloom-witch",
       "position": {
         "x": 229.0,
-        "y": 424.0
+        "y": 423.0
       },
       "rotation": 0.0,
       "owner": "none"
@@ -564,8 +564,8 @@
       "id": "camp.2/2",
       "definition": "unit.neutral.spitter",
       "position": {
-        "x": 297.0,
-        "y": 398.0
+        "x": 295.0,
+        "y": 399.0
       },
       "rotation": 252.0,
       "owner": "none"
@@ -575,7 +575,7 @@
       "definition": "unit.neutral.spitter",
       "position": {
         "x": 294.0,
-        "y": 397.0
+        "y": 396.0
       },
       "rotation": 324.0,
       "owner": "none"
@@ -585,7 +585,7 @@
       "definition": "unit.neutral.spitter",
       "position": {
         "x": 294.0,
-        "y": 395.0
+        "y": 393.0
       },
       "rotation": 36.0,
       "owner": "none"
@@ -595,7 +595,7 @@
       "definition": "unit.neutral.spitter",
       "position": {
         "x": 297.0,
-        "y": 394.0
+        "y": 391.0
       },
       "rotation": 108.0,
       "owner": "none"
@@ -615,7 +615,7 @@
       "definition": "unit.neutral.bloom-witch",
       "position": {
         "x": 150.0,
-        "y": 106.0
+        "y": 105.0
       },
       "rotation": 0.0,
       "owner": "none"
@@ -674,7 +674,7 @@
       "id": "camp.6/2",
       "definition": "unit.neutral.twigcaster",
       "position": {
-        "x": 68.0,
+        "x": 67.0,
         "y": 103.0
       },
       "rotation": 300.0,
@@ -684,8 +684,8 @@
       "id": "camp.6/3",
       "definition": "unit.neutral.twigcaster",
       "position": {
-        "x": 68.0,
-        "y": 99.0
+        "x": 67.0,
+        "y": 98.0
       },
       "rotation": 60.0,
       "owner": "none"
@@ -704,8 +704,8 @@
       "id": "camp.7/2",
       "definition": "unit.neutral.dew-sprite",
       "position": {
-        "x": 155.0,
-        "y": 255.0
+        "x": 153.0,
+        "y": 256.0
       },
       "rotation": 252.0,
       "owner": "none"
@@ -715,7 +715,7 @@
       "definition": "unit.neutral.dew-sprite",
       "position": {
         "x": 152.0,
-        "y": 254.0
+        "y": 253.0
       },
       "rotation": 324.0,
       "owner": "none"
@@ -725,7 +725,7 @@
       "definition": "unit.neutral.dew-sprite",
       "position": {
         "x": 152.0,
-        "y": 252.0
+        "y": 250.0
       },
       "rotation": 36.0,
       "owner": "none"
@@ -735,7 +735,7 @@
       "definition": "unit.neutral.dew-sprite",
       "position": {
         "x": 155.0,
-        "y": 251.0
+        "y": 248.0
       },
       "rotation": 108.0,
       "owner": "none"
@@ -755,7 +755,7 @@
       "definition": "unit.neutral.twigcaster",
       "position": {
         "x": 387.0,
-        "y": 407.0
+        "y": 406.0
       },
       "rotation": 0.0,
       "owner": "none"
@@ -774,7 +774,7 @@
       "id": "camp.9/2",
       "definition": "unit.neutral.twigcaster",
       "position": {
-        "x": 311.0,
+        "x": 310.0,
         "y": 246.0
       },
       "rotation": 300.0,
@@ -784,8 +784,8 @@
       "id": "camp.9/3",
       "definition": "unit.neutral.twigcaster",
       "position": {
-        "x": 311.0,
-        "y": 242.0
+        "x": 310.0,
+        "y": 241.0
       },
       "rotation": 60.0,
       "owner": "none"
@@ -804,7 +804,7 @@
       "id": "camp.10/2",
       "definition": "unit.neutral.webling",
       "position": {
-        "x": 238.0,
+        "x": 237.0,
         "y": 78.0
       },
       "rotation": 270.0,
@@ -824,8 +824,8 @@
       "id": "camp.10/4",
       "definition": "unit.neutral.webling",
       "position": {
-        "x": 238.0,
-        "y": 73.0
+        "x": 237.0,
+        "y": 72.0
       },
       "rotation": 90.0,
       "owner": "none"
@@ -844,8 +844,8 @@
       "id": "camp.11/2",
       "definition": "unit.neutral.dew-sprite",
       "position": {
-        "x": 403.0,
-        "y": 331.0
+        "x": 402.0,
+        "y": 332.0
       },
       "rotation": 252.0,
       "owner": "none"
@@ -855,7 +855,7 @@
       "definition": "unit.neutral.dew-sprite",
       "position": {
         "x": 400.0,
-        "y": 330.0
+        "y": 329.0
       },
       "rotation": 324.0,
       "owner": "none"
@@ -865,7 +865,7 @@
       "definition": "unit.neutral.dew-sprite",
       "position": {
         "x": 400.0,
-        "y": 328.0
+        "y": 326.0
       },
       "rotation": 36.0,
       "owner": "none"
@@ -875,7 +875,7 @@
       "definition": "unit.neutral.dew-sprite",
       "position": {
         "x": 402.0,
-        "y": 327.0
+        "y": 323.0
       },
       "rotation": 108.0,
       "owner": "none"
@@ -894,7 +894,7 @@
       "id": "camp.12/2",
       "definition": "unit.neutral.rotwood-ancient",
       "position": {
-        "x": 71.0,
+        "x": 69.0,
         "y": 177.0
       },
       "rotation": 300.0,
@@ -904,8 +904,8 @@
       "id": "camp.12/3",
       "definition": "unit.neutral.rotwood-ancient",
       "position": {
-        "x": 71.0,
-        "y": 173.0
+        "x": 70.0,
+        "y": 171.0
       },
       "rotation": 60.0,
       "owner": "none"
@@ -945,7 +945,7 @@
       "definition": "unit.neutral.twigcaster",
       "position": {
         "x": 171.0,
-        "y": 216.0
+        "y": 215.0
       },
       "rotation": 0.0,
       "owner": "none"
@@ -964,7 +964,7 @@
       "id": "camp.15/2",
       "definition": "unit.neutral.root-seer",
       "position": {
-        "x": 292.0,
+        "x": 291.0,
         "y": 283.0
       },
       "rotation": 0.0,
@@ -984,7 +984,7 @@
       "id": "camp.16/2",
       "definition": "unit.neutral.corrupted-rootbeast",
       "position": {
-        "x": 292.0,
+        "x": 291.0,
         "y": 139.0
       },
       "rotation": 0.0,
@@ -1004,7 +1004,7 @@
       "id": "camp.17/2",
       "definition": "unit.neutral.rootling",
       "position": {
-        "x": 164.0,
+        "x": 163.0,
         "y": 366.0
       },
       "rotation": 0.0,

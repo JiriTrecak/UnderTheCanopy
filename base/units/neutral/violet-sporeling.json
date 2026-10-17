@@ -6,9 +6,9 @@
   "icon": "asset.portraits.units.neutral-violet-sporeling",
   "selectionClass": "army",
   "dimensions": {
-    "radius": 1.156,
-    "height": 3.23,
-    "formationSpacing": 2.601
+    "radius": 2.81,
+    "height": 8.42,
+    "formationSpacing": 6.09
   },
   "body": {
     "maxHp": 360,
@@ -41,7 +41,7 @@
   },
   "level": 6,
   "supplyCost": 1,
-  "modelScale": 1.7,
+  "modelScale": 4.43,
   "presentation": {
     "projectile": "effect.weapon.thorn",
     "projectileSocket": "socket_projectile"

@@ -6,9 +6,9 @@
   "icon": "asset.portraits.units.neutral-barkguard",
   "selectionClass": "army",
   "dimensions": {
-    "radius": 1.5606,
-    "height": 4.25,
-    "formationSpacing": 3.5122
+    "radius": 2.81,
+    "height": 9.88,
+    "formationSpacing": 6.09
   },
   "body": {
     "maxHp": 650,
@@ -38,5 +38,5 @@
   },
   "level": 6,
   "supplyCost": 1,
-  "modelScale": 1.7
+  "modelScale": 3.95
 }

@@ -54,6 +54,7 @@ Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a
   - `cameraAnchor`;
   - and, when they differ from the model's own `display`, `healthHeight` and `character` (animation profile).
 - **Heroes:** `"hero": true`, `supplyCost` 4, `behaviors.progression` (levels) and `behaviors.abilities` (bindings). Keep them under `units/<race>/heroes/`.
+- **Size** (`modelScale`, with `dimensions` to match: the selection circle and health bar follow them, D58). A regular infantry unit such as the Warrior is 1×; heroes and large tier-3 units about 2×. Neutral creeps grow with their `level`: size (the average of rendered height and footprint) is the Warrior's × (1 + 1.4 × (level − 1) / 8), so level 1 is Warrior-sized and level 9 is 2.4×; body radius 1.5 × that factor (at most 3.0), formation spacing 13/6 of the radius, height the rendered height. Measure a model with `just cook --inspect <asset id>` (its rest bounds).
 - **Behaviours** (all optional): `movement`, `combat` (with `projectile`, `shell` or `charge`), `work` (workers: `carryCapacity`, `builds`, `harvests`), `storage`, `production`, `research`, `inventory`, `progression`, `abilities`, `revival`, `playerControl`, `campDefense`.
 
 ## A building

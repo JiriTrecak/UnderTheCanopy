@@ -851,7 +851,7 @@
       "id": "camp/warcraft-3/4",
       "owner": "none",
       "position": {
-        "x": 260.0,
+        "x": 261.0,
         "y": 303.0
       },
       "rotation": 0.0
@@ -991,7 +991,7 @@
       "id": "camp/warcraft-7/3",
       "owner": "none",
       "position": {
-        "x": 321.0,
+        "x": 322.0,
         "y": 143.0
       },
       "rotation": 0.0
@@ -1011,7 +1011,7 @@
       "id": "camp/warcraft-7/5",
       "owner": "none",
       "position": {
-        "x": 298.0,
+        "x": 297.0,
         "y": 144.0
       },
       "rotation": 0.0
@@ -1051,7 +1051,7 @@
       "id": "camp/warcraft-8/4",
       "owner": "none",
       "position": {
-        "x": 139.0,
+        "x": 140.0,
         "y": 458.0
       },
       "rotation": 0.0
@@ -1061,7 +1061,7 @@
       "id": "camp/warcraft-8/5",
       "owner": "none",
       "position": {
-        "x": 134.0,
+        "x": 133.0,
         "y": 455.0
       },
       "rotation": 0.0
@@ -1252,7 +1252,7 @@
       "owner": "none",
       "position": {
         "x": 191.0,
-        "y": 378.0
+        "y": 377.0
       },
       "rotation": 0.0
     },
@@ -1551,8 +1551,8 @@
       "id": "camp/warcraft-19/4",
       "owner": "none",
       "position": {
-        "x": 484.0,
-        "y": 458.0
+        "x": 485.0,
+        "y": 457.0
       },
       "rotation": 0.0
     },
@@ -1561,7 +1561,7 @@
       "id": "camp/warcraft-19/5",
       "owner": "none",
       "position": {
-        "x": 479.0,
+        "x": 478.0,
         "y": 455.0
       },
       "rotation": 0.0

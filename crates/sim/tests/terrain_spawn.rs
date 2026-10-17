@@ -154,6 +154,47 @@ fn starting_bodies_cannot_overlap_footprints() {
 }
 
 #[test]
+fn units_that_overlap_at_the_start_step_apart() {
+    // Two creeps on one spot, one on a tree, one on player 1's first worker.
+    let creep = |id: &str, x: f64, y: f64| {
+        json!({"id": id, "definition": "unit.worker", "position": {"x": x, "y": y},
+            "owner": "none"})
+    };
+    let mut document = with_entities(json!([
+        creep("camp.a", 120.0, 120.0),
+        creep("camp.b", 120.0, 120.0),
+        creep("camp.c", 90.0, 90.0),
+        creep("camp.d", 41.0, 46.0),
+    ]));
+    document["authoring"]["objects"] = json!([object("tree", "asset.tree", 90.0, 90.0)]);
+    let mut map = parse(document);
+    let content = content();
+    let terrain = canopy_sim::terrain::Terrain::compile(&map, &content).unwrap();
+    let (moved, stuck) = canopy_sim::spawn::untangle(&mut map, &content, &terrain).unwrap();
+    assert_eq!(moved, ["camp.b", "camp.c", "camp.d"]);
+    assert!(stuck.is_empty());
+    let world = World::new(content.clone(), &map, setup(2))
+        .map_err(|e| e.0)
+        .unwrap();
+    canopy_sim::spawn::playable(&map, world.catalog(), world.terrain()).unwrap();
+    // The first creep keeps its spot; the others move as little as they can.
+    let at = |id: &str| {
+        map.entities
+            .iter()
+            .find(|p| p.id == id)
+            .unwrap()
+            .position
+            .clone()
+    };
+    assert_eq!((at("camp.a").x, at("camp.a").y), (120.0, 120.0));
+    let b = at("camp.b");
+    assert!((b.x - 120.0).abs() <= 1.0 && (b.y - 120.0).abs() <= 1.0);
+    // Nothing else to do the second time.
+    let (again, _) = canopy_sim::spawn::untangle(&mut map, &content, &terrain).unwrap();
+    assert!(again.is_empty());
+}
+
+#[test]
 fn starts_need_the_lattice_dry_ground_and_gentle_slopes() {
     let mut off_lattice = map();
     off_lattice["playerStarts"][0]["x"] = json!(42.5);
