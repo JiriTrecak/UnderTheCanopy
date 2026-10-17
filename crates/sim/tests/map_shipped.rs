@@ -15,6 +15,8 @@ fn shipped_maps_are_playable_and_armies_reach_everything() {
     let content = Arc::new(Content::load(data()).unwrap_or_else(|errors| panic!("{errors}")));
     for file in map::library(data()).unwrap_or_else(|errors| panic!("{errors}")) {
         let map = file.load().unwrap_or_else(|errors| panic!("{errors}"));
+        // Human seats: the computer players' navigation (built per player on load) is not
+        // what this checks, and on large forest maps it is most of the time.
         let setup = MatchSetup {
             seed: 1,
             slots: map
@@ -22,7 +24,7 @@ fn shipped_maps_are_playable_and_armies_reach_everything() {
                 .iter()
                 .map(|s| Slot {
                     player: s.player - 1,
-                    kind: SlotKind::Ai,
+                    kind: SlotKind::Human,
                     name: None,
                     team: None,
                     hero: None,

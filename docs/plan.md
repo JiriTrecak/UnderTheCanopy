@@ -82,7 +82,7 @@ Updated 2026-10-17. Players' content and user scripts are left out until the gam
 - **Partial parity rows** ([parity](parity.md)): menu background shafts and smoke, debug navigation overlays, Uproot's models looking lighter than in the old game.
 - **Art issues** the cooker reports ([art issues](art-issues.md)): foliage without wind nodes, trees without declared animation states, the team colour mask convention.
 - **Maps**: more authored maps; maps larger than 1024 cells are accepted by the format but not by the renderer (D24).
-- **Performance**: the shipped-maps test takes about 24 s since the imports (army reachability on large forest maps).
+- **Load time**: each computer player builds its own navigation meshes when a match loads (about 0.25 s each; 2 s for eight on Twilight Ruins). Players with the same knowledge could share them.
 
 **Later**
 
