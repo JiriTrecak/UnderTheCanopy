@@ -1,16 +1,24 @@
 // Player feedback: reports are checked, rate limited and kept in the spool with their
-// screenshots until Linear takes them; the screenshot is uploaded to Linear and embedded in
-// the issue, then deleted from the host.
+// screenshots, replays and saves until Linear takes them; the files are uploaded to Linear
+// and embedded or linked in the issue, then deleted from the host.
 import assert from "node:assert/strict";
 import { mkdtempSync, readdirSync, readFileSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { Feedback, MAX_DESCRIPTION, ORPHAN_MS, RATE_LIMIT, RATE_WINDOW_MS } from "../src/feedback";
+import { Feedback, fileName, MAX_DESCRIPTION, MAX_REPLAY, MAX_SAVE, ORPHAN_MS, RATE_LIMIT, RATE_WINDOW_MS } from "../src/feedback";
 
 const image = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4]);
 const jpeg = image.toString("base64");
 const ASSET = "https://uploads.linear.app/team/asset-1";
+/** Where the fake Linear keeps an uploaded file other than the screenshot. */
+const assetOf = (filename: string) => `https://uploads.linear.app/team/${encodeURIComponent(filename)}`;
+const replayBytes = Buffer.concat([Buffer.from("UTCR"), Buffer.from([1, 0, 0, 0, 9, 9])]);
+const saveBytes = Buffer.from([0x1f, 0x8b, 0x08, 0, 1, 2, 3]);
+const REPLAY_NAME = "Echo Isles 2026-10-17 14-03 Victory.utcr";
+const SAVE_NAME = "Echo Isles 2026-10-17 14-03.utcsave";
+const replay = (extra: Record<string, unknown> = {}) => ({ type: "application/vnd.canopy.replay", data: replayBytes.toString("base64"), name: REPLAY_NAME, ...extra });
+const save = (extra: Record<string, unknown> = {}) => ({ type: "application/gzip", data: saveBytes.toString("base64"), name: SAVE_NAME, ...extra });
 
 function report(extra: Record<string, unknown> = {}) {
   return {
@@ -24,7 +32,7 @@ function report(extra: Record<string, unknown> = {}) {
   };
 }
 
-/** A recorded request: a GraphQL operation (its name) or the screenshot's upload. */
+/** A recorded request: a GraphQL operation (its name) or a file's upload. */
 type Call = { op: string; variables: Record<string, any>; auth?: string; headers: Record<string, string>; bytes?: number };
 
 type Fail = (call: Call) => boolean;
@@ -44,9 +52,17 @@ function linear(fail: Fail = () => false, labels = [{ id: "l-feedback", name: "F
     const call = { op, variables, auth: headers.authorization, headers };
     calls.push(call);
     if (fail(call)) return new Response(JSON.stringify({ errors: [{ message: "refused" }] }), { status: 200 });
+    // The screenshot is kept at ASSET, other files at an address of their name.
+    const name = String(variables.filename);
+    const shot = name.startsWith("screenshot.");
+    const uploadFile = {
+      uploadUrl: shot ? "https://upload.example/put" : `https://upload.example/put/${encodeURIComponent(name)}`,
+      assetUrl: shot ? ASSET : assetOf(name),
+      headers: [{ key: "x-amz-acl", value: "private" }],
+    };
     const data =
       op === "Upload"
-        ? { fileUpload: { success: true, uploadFile: { uploadUrl: "https://upload.example/put", assetUrl: ASSET, headers: [{ key: "x-amz-acl", value: "private" }] } } }
+        ? { fileUpload: { success: true, uploadFile } }
         : op === "Labels"
           ? { issueLabels: { nodes: labels } }
           : { issueCreate: { success: true, issue: { identifier: "FB-7" } } };
@@ -219,4 +235,125 @@ test("stray screenshots are swept; waiting reports' screenshots and other files 
   for (const name of [waiting!, stray, "notes.txt"]) utimesSync(join(media, name), old, old);
   assert.equal(feedback.sweep(), 1);
   assert.deepEqual(readdirSync(media).sort(), ["notes.txt", waiting!].sort());
+});
+
+test("a report from a match carries a replay and a save; both are uploaded and linked in the issue", async () => {
+  const { feedback, api, spool, media, logs } = setup();
+  const reply = feedback.submit(report({ replay: replay(), save: save() }), "1.2.3.4");
+  assert.equal(reply.status, 202);
+  const stored = readdirSync(media).map((f) => readFileSync(join(media, f)));
+  assert.equal(stored.length, 3);
+  assert.ok(stored.some((b) => b.equals(replayBytes)) && stored.some((b) => b.equals(saveBytes)));
+  const [waiting] = spooled(spool);
+  assert.equal(waiting.replay.name, REPLAY_NAME);
+  assert.equal(waiting.report.replay, undefined, "the spool keeps the stored file's name, not the bytes");
+  assert.equal(waiting.report.save, undefined);
+  await feedback.settled();
+  assert.deepEqual(api.ops(), ["Upload", "put", "Upload", "put", "Upload", "put", "Labels", "File"]);
+  const uploads = api.calls.filter((c) => c.op === "Upload").map((c) => c.variables);
+  assert.deepEqual(uploads.slice(1), [
+    { contentType: "application/octet-stream", filename: REPLAY_NAME, size: replayBytes.length },
+    { contentType: "application/gzip", filename: SAVE_NAME, size: saveBytes.length },
+  ]);
+  const puts = api.calls.filter((c) => c.op === "put");
+  assert.deepEqual(puts.map((c) => c.bytes), [image.length, replayBytes.length, saveBytes.length]);
+  assert.equal(puts[1]!.headers["content-type"], "application/octet-stream");
+  assert.equal(puts[2]!.headers["content-type"], "application/gzip");
+  const body = String(api.calls.at(-1)!.variables.input.description);
+  const shot = body.indexOf(`![Screenshot of the game](${ASSET})`);
+  const replayLink = body.indexOf(`[Replay of the match](${assetOf(REPLAY_NAME)})`);
+  const saveLink = body.indexOf(`[Save of this moment](${assetOf(SAVE_NAME)})`);
+  const table = body.indexOf("| | |");
+  assert.ok(shot > 0 && shot < replayLink && replayLink < saveLink && saveLink < table, body);
+  assert.ok(body.includes(`\n[Replay of the match](${assetOf(REPLAY_NAME)}): \`${REPLAY_NAME}\`\n`), "on a line of its own");
+  assert.equal(feedback.waiting, 0);
+  assert.deepEqual(readdirSync(media), [], "all three files are deleted once filed");
+  assert.ok(logs.some((l) => l.includes(`replay ${replayBytes.length} bytes`) && l.includes(`save ${saveBytes.length} bytes`)));
+});
+
+test("replays and saves are checked: type, first bytes, size and name", () => {
+  const { feedback, api, media } = setup();
+  const refused = (r: unknown, what: string) => {
+    const reply = feedback.submit(r, "1.2.3.4");
+    assert.equal(reply.status, 400, what);
+    assert.equal(reply.body.error, "bad_body", what);
+    assert.ok(String(reply.body.message).length > 0, what);
+  };
+  refused(report({ replay: replay({ data: saveBytes.toString("base64") }) }), "a replay without UTCR");
+  refused(report({ replay: replay({ data: "" }) }), "an empty replay");
+  const big = Buffer.concat([Buffer.from("UTCR"), Buffer.alloc(MAX_REPLAY - 3)]);
+  refused(report({ replay: replay({ data: big.toString("base64") }) }), "a replay over 1 MB");
+  refused(report({ save: save({ data: replayBytes.toString("base64") }) }), "a save without the gzip magic");
+  const bigSave = Buffer.concat([saveBytes, Buffer.alloc(MAX_SAVE)]);
+  refused(report({ save: save({ data: bigSave.toString("base64") }) }), "a save over 4 MB");
+  refused(report({ replay: replay({ type: "application/octet-stream" }) }), "a replay of the wrong type");
+  refused(report({ save: save({ type: "application/zip" }) }), "a save of the wrong type");
+  refused(report({ save: save({ name: "x".repeat(121) }) }), "a name over 120 characters");
+  refused(report({ replay: replay(), save: save({ data: jpeg }) }), "one bad attachment refuses the report");
+  assert.equal(api.calls.length, 0);
+  assert.throws(() => readdirSync(media), "nothing stored");
+});
+
+test("attachment names are made safe and end in their extension", () => {
+  assert.equal(fileName("replay", undefined), "replay.utcr");
+  assert.equal(fileName("save", "   "), "save.utcsave");
+  assert.equal(fileName("replay", REPLAY_NAME), REPLAY_NAME);
+  assert.equal(fileName("save", "Echo/Isles: (1) ä_b"), "Echo-Isles- (1) -_b.utcsave");
+  assert.equal(fileName("replay", "../../etc/passwd"), "..-..-etc-passwd.utcr");
+  assert.equal(fileName("save", "Moment.UTCSAVE"), "Moment.UTCSAVE");
+});
+
+test("an attachment without a name is uploaded under the default name", async () => {
+  const { feedback, api } = setup();
+  const sent = report({ screenshot: undefined, replay: replay({ name: undefined }), save: save({ name: "  moment  " }) });
+  assert.equal(feedback.submit(sent, "1.2.3.4").status, 202);
+  await feedback.settled();
+  const names = api.calls.filter((c) => c.op === "Upload").map((c) => c.variables.filename);
+  assert.deepEqual(names, ["replay.utcr", "moment.utcsave"]);
+  assert.ok(String(api.calls.at(-1)!.variables.input.description).includes(`[Replay of the match](${assetOf("replay.utcr")})`));
+});
+
+test("a report without attachments files as before, linking nothing", async () => {
+  const { feedback, api } = setup();
+  assert.equal(feedback.submit(report(), "1.2.3.4").status, 202);
+  await feedback.settled();
+  assert.deepEqual(api.ops(), ["Upload", "put", "Labels", "File"]);
+  const body = String(api.calls.at(-1)!.variables.input.description);
+  assert.ok(!body.includes("Replay of the match") && !body.includes("Save of this moment"));
+});
+
+test("a failed save upload is retried later; what was uploaded is not uploaded again", async () => {
+  let down = true;
+  const { feedback, api, spool, media } = setup({ fail: (c) => down && c.op === "put" && String(c.variables.url).includes("utcsave") });
+  feedback.submit(report({ replay: replay(), save: save() }), "1.2.3.4");
+  await feedback.settled();
+  assert.equal(feedback.waiting, 1);
+  assert.equal(readdirSync(media).length, 3, "the files wait for the next try");
+  assert.ok(!api.ops().includes("File"));
+  const [waiting] = spooled(spool);
+  assert.equal(waiting.asset, ASSET);
+  assert.equal(waiting.replay.asset, assetOf(REPLAY_NAME), "the spool remembers the uploaded replay");
+  assert.equal(waiting.save.asset, undefined);
+  down = false;
+  const restarted = new Feedback({ apiKey: "k", teamId: "team-1", spool, mediaDir: media, fetch: api.fetch, log: () => {} });
+  await restarted.retry();
+  assert.equal(restarted.waiting, 0);
+  const uploaded = api.calls.filter((c) => c.op === "Upload").map((c) => c.variables.filename);
+  assert.deepEqual(uploaded, ["screenshot.jpg", REPLAY_NAME, SAVE_NAME, SAVE_NAME], "only the save again");
+  const body = String(api.calls.at(-1)!.variables.input.description);
+  assert.ok(body.includes(`[Replay of the match](${assetOf(REPLAY_NAME)})`) && body.includes(`[Save of this moment](${assetOf(SAVE_NAME)})`));
+  assert.deepEqual(readdirSync(media), []);
+});
+
+test("stray replays and saves are swept; a waiting report's stay", () => {
+  const { feedback, clock, media } = setup({ configured: false });
+  feedback.submit(report({ screenshot: undefined, replay: replay(), save: save() }), "1.2.3.4");
+  const waiting = readdirSync(media);
+  assert.equal(waiting.length, 2);
+  const strays = ["BBBBBBBBBBBBBBBBBBBBBBBB.utcr", "CCCCCCCCCCCCCCCCCCCCCCCC.utcsave"];
+  for (const name of strays) writeFileSync(join(media, name), saveBytes);
+  const old = new Date(clock.t - ORPHAN_MS - 1000);
+  for (const name of [...waiting, ...strays]) utimesSync(join(media, name), old, old);
+  assert.equal(feedback.sweep(), 2);
+  assert.deepEqual(readdirSync(media).sort(), waiting.sort());
 });

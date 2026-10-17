@@ -1,10 +1,11 @@
 /**
  * Player feedback (`POST /api/feedback`, docs/server.md, D59): the game sends a report with
- * a screenshot; the server checks it, keeps the report in a spool file (its screenshot in a
- * private folder beside it) and files it as an issue in the game's Linear team, uploading
- * the screenshot to Linear and embedding it. Reports wait in the spool while Linear is
- * unreachable or not configured, and are retried; a screenshot is deleted from this host
- * once its issue exists.
+ * a screenshot and, from a match, a replay of it so far and a save of the moment; the server
+ * checks it, keeps the report in a spool file (its screenshot and attachments in a private
+ * folder beside it) and files it as an issue in the game's Linear team, uploading the files
+ * to Linear and embedding or linking them. Reports wait in the spool while Linear is
+ * unreachable or not configured, and are retried; the files are deleted from this host once
+ * their issue exists.
  *
  * Not part of the frozen match protocol (D10): a separate route old games never call.
  */
@@ -19,8 +20,14 @@ export type Category = (typeof CATEGORIES)[number];
 export const MAX_DESCRIPTION = 5000;
 /** Decoded screenshot bytes. */
 export const MAX_SCREENSHOT = 2 * 1024 * 1024;
-/** The whole request: the screenshot in base64 plus the text. */
-export const MAX_BODY = 3 * 1024 * 1024 + 512 * 1024;
+/** Decoded replay bytes. */
+export const MAX_REPLAY = 1024 * 1024;
+/** Decoded save bytes. */
+export const MAX_SAVE = 4 * 1024 * 1024;
+/** Characters of an attachment's file name, after trimming. */
+export const MAX_FILE_NAME = 120;
+/** The whole request: screenshot, replay and save in base64 (4/3 of 7 MB) plus the text. */
+export const MAX_BODY = 10 * 1024 * 1024;
 /** Reports per IP address and per install in `RATE_WINDOW_MS`. */
 export const RATE_LIMIT = 5;
 /** Reports from everyone in `RATE_WINDOW_MS`, so the spool and the disk cannot be flooded. */
@@ -30,9 +37,9 @@ export const RATE_WINDOW_MS = 10 * 60 * 1000;
 export const MAX_SPOOLED = 500;
 /** How often waiting reports are sent again. */
 export const RETRY_MS = 5 * 60 * 1000;
-/** Screenshots no waiting report names are deleted after this (left by a crash). */
+/** Stored files no waiting report names are deleted after this (left by a crash). */
 export const ORPHAN_MS = 60 * 60 * 1000;
-/** How often stray screenshots are swept. */
+/** How often stray files are swept. */
 export const SWEEP_MS = 24 * 60 * 60 * 1000;
 
 const LINEAR = "https://api.linear.app/graphql";
@@ -40,8 +47,30 @@ const TIMEOUT_MS = 20_000;
 
 const IMAGE_TYPES = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" } as const;
 type ImageType = keyof typeof IMAGE_TYPES;
-/** A stored screenshot's name: 144 random bits in base64url and the extension. */
-const MEDIA_NAME = /^[A-Za-z0-9_-]{24}\.(?:jpg|png|webp)$/;
+/** A stored file's name: 144 random bits in base64url and the extension. */
+const MEDIA_NAME = /^[A-Za-z0-9_-]{24}\.(?:jpg|png|webp|utcr|utcsave)$/;
+
+/** Files a report from a match may carry besides its screenshot. */
+const ATTACHMENTS = {
+  replay: {
+    type: "application/vnd.canopy.replay",
+    max: MAX_REPLAY,
+    magic: Buffer.from("UTCR", "latin1"),
+    ext: "utcr",
+    contentType: "application/octet-stream",
+    link: "Replay of the match",
+  },
+  save: {
+    type: "application/gzip",
+    max: MAX_SAVE,
+    magic: Buffer.from([0x1f, 0x8b]),
+    ext: "utcsave",
+    contentType: "application/gzip",
+    link: "Save of this moment",
+  },
+} as const;
+type AttachmentKind = keyof typeof ATTACHMENTS;
+const ATTACHMENT_KINDS = Object.keys(ATTACHMENTS) as AttachmentKind[];
 
 const token = z.string().regex(/^[A-Za-z0-9-]{8,64}$/);
 const text = (max: number) => z.string().max(max);
@@ -51,6 +80,18 @@ const screenshotSchema = z.object({
   /** What it shows ("Screenshot of the menu"). */
   label: text(80).optional(),
 });
+const attachmentSchema = (kind: AttachmentKind) =>
+  z.object({
+    type: z.literal(ATTACHMENTS[kind].type),
+    data: z.string().max(Math.ceil(ATTACHMENTS[kind].max / 3) * 4 + 4),
+    /** The file name it is uploaded under ("Echo Isles 2026-10-17 14-03 Victory.utcr"). */
+    name: z
+      .string()
+      .max(MAX_FILE_NAME * 2)
+      .transform((s) => s.trim())
+      .pipe(z.string().max(MAX_FILE_NAME))
+      .optional(),
+  });
 const reportSchema = z.object({
   /** The game's own id for the report: a resend after a lost reply is recognised. */
   reportId: token.optional(),
@@ -74,17 +115,26 @@ const reportSchema = z.object({
     tick: z.number().int().min(0).max(1e9).optional(),
   }),
   screenshot: screenshotSchema.optional(),
+  /** The match so far, from a match. */
+  replay: attachmentSchema("replay").optional(),
+  /** The current moment, from a match. */
+  save: attachmentSchema("save").optional(),
 });
 export type Report = z.infer<typeof reportSchema>;
 
-/** A report waiting to be filed; its screenshot is already stored as `media`. */
+/** A stored attachment: its file here, the name it is uploaded under, and once uploaded its address in Linear. */
+type Attachment = { file: string; name: string; asset?: string };
+
+/** A report waiting to be filed; its screenshot is already stored as `media`, its attachments likewise. */
 type Spooled = {
   id: string;
   receivedAt: string;
-  report: Omit<Report, "screenshot">;
+  report: Omit<Report, "screenshot" | AttachmentKind>;
   media?: { file: string; label?: string };
   /** The screenshot's address in Linear once uploaded (a retry does not upload it again). */
   asset?: string;
+  replay?: Attachment;
+  save?: Attachment;
   attempts: number;
 };
 
@@ -97,7 +147,7 @@ export type FeedbackOptions = {
   teamId?: string;
   /** The spool file (JSON lines). */
   spool: string;
-  /** Where screenshots wait until their issue exists (private to the service). */
+  /** Where screenshots and attachments wait until their issue exists (private to the service). */
   mediaDir: string;
   fetch?: typeof fetch;
   now?: () => number;
@@ -150,13 +200,23 @@ export class Feedback {
       const where = issue?.path.join(".") || "body";
       return { status: 400, body: { error: "bad_body", message: `${where}: ${issue?.message ?? "invalid"}` } };
     }
-    const { screenshot, ...report } = parsed.data;
+    const { screenshot, replay, save, ...report } = parsed.data;
     let image: Buffer | undefined;
     if (screenshot) {
       image = Buffer.from(screenshot.data, "base64");
       if (image.length === 0 || image.length > MAX_SCREENSHOT || !looksLike(image, screenshot.type)) {
         return { status: 400, body: { error: "bad_body", message: "screenshot: not a valid image" } };
       }
+    }
+    const files: Partial<Record<AttachmentKind, { bytes: Buffer; name: string }>> = {};
+    for (const [kind, sent] of [["replay", replay], ["save", save]] as const) {
+      if (!sent) continue;
+      const spec = ATTACHMENTS[kind];
+      const bytes = Buffer.from(sent.data, "base64");
+      if (bytes.length > spec.max || !bytes.subarray(0, spec.magic.length).equals(spec.magic)) {
+        return { status: 400, body: { error: "bad_body", message: `${kind}: not a valid ${kind}` } };
+      }
+      files[kind] = { bytes, name: fileName(kind, sent.name) };
     }
     const known = report.reportId && this.seen.get(report.reportId);
     if (known) return { status: 202, body: { id: known } };
@@ -172,13 +232,22 @@ export class Feedback {
     const id = newId(now);
     const spooled: Spooled = { id, receivedAt: new Date(now).toISOString(), report, attempts: 0 };
     if (screenshot && image) {
-      const file = this.store(image, screenshot.type);
+      const file = this.store(image, IMAGE_TYPES[screenshot.type], "screenshot");
       if (file) spooled.media = { file, label: screenshot.label };
+    }
+    for (const kind of ATTACHMENT_KINDS) {
+      const sent = files[kind];
+      const file = sent && this.store(sent.bytes, ATTACHMENTS[kind].ext, kind);
+      if (sent && file) spooled[kind] = { file, name: sent.name };
     }
     if (report.reportId) this.seen.set(report.reportId, id);
     this.queue.push(spooled);
     this.save();
-    this.log(`feedback ${id}: ${report.category}, ${report.description.length} characters${spooled.media ? `, screenshot ${image!.length} bytes` : ""}`);
+    const sizes = [
+      spooled.media ? `, screenshot ${image!.length} bytes` : "",
+      ...ATTACHMENT_KINDS.map((k) => (spooled[k] ? `, ${k} ${files[k]!.bytes.length} bytes` : "")),
+    ].join("");
+    this.log(`feedback ${id}: ${report.category}, ${report.description.length} characters${sizes}`);
     this.schedule(() => this.deliver(spooled));
     return { status: 202, body: { id } };
   }
@@ -210,10 +279,10 @@ export class Feedback {
     while (this.seen.size > 2000) this.seen.delete(this.seen.keys().next().value!);
   }
 
-  /** Deletes screenshots no waiting report names (older than `ORPHAN_MS`); returns how many. */
+  /** Deletes stored files no waiting report names (older than `ORPHAN_MS`); returns how many. */
   sweep(): number {
     const before = this.now() - ORPHAN_MS;
-    const named = new Set(this.queue.flatMap((s) => (s.media ? [s.media.file] : [])));
+    const named = new Set(this.queue.flatMap(storedFiles));
     let removed = 0;
     let names: string[];
     try {
@@ -233,19 +302,19 @@ export class Feedback {
         // Gone meanwhile.
       }
     }
-    if (removed) this.log(`feedback: removed ${removed} stray screenshots`);
+    if (removed) this.log(`feedback: removed ${removed} stray files`);
     return removed;
   }
 
-  /** Writes a screenshot to the media directory; its file name, or none when it fails. */
-  private store(image: Buffer, type: ImageType): string | undefined {
-    const file = `${randomBytes(18).toString("base64url")}.${IMAGE_TYPES[type]}`;
+  /** Writes a screenshot or an attachment to the media directory; its file name, or none when it fails. */
+  private store(bytes: Buffer, ext: string, what: string): string | undefined {
+    const file = `${randomBytes(18).toString("base64url")}.${ext}`;
     try {
       mkdirSync(this.mediaDir, { recursive: true, mode: 0o700 });
-      writeFileSync(join(this.mediaDir, file), image, { mode: 0o600, flag: "wx" });
+      writeFileSync(join(this.mediaDir, file), bytes, { mode: 0o600, flag: "wx" });
       return file;
     } catch (e) {
-      this.log(`feedback: cannot store a screenshot: ${e instanceof Error ? e.message : "error"}`);
+      this.log(`feedback: cannot store a ${what}: ${e instanceof Error ? e.message : "error"}`);
       return undefined;
     }
   }
@@ -274,7 +343,15 @@ export class Feedback {
     s.attempts += 1;
     try {
       if (s.media && !s.asset) {
-        s.asset = await this.upload(s.media.file);
+        const ext = s.media.file.slice(s.media.file.lastIndexOf(".") + 1);
+        const contentType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+        s.asset = await this.upload(s.media.file, contentType, `screenshot.${ext}`, "screenshot");
+        this.save();
+      }
+      for (const kind of ATTACHMENT_KINDS) {
+        const a = s[kind];
+        if (!a || a.asset) continue;
+        a.asset = await this.upload(a.file, ATTACHMENTS[kind].contentType, a.name, kind);
         this.save();
       }
       const input = { teamId: this.teamId, title: issueTitle(s.report), description: issueBody(s) };
@@ -290,7 +367,7 @@ export class Feedback {
       }
       this.queue = this.queue.filter((q) => q !== s);
       this.save();
-      if (s.media) this.forget(s.media.file);
+      for (const file of storedFiles(s)) this.forget(file);
       this.log(`feedback ${s.id}: filed as ${issue?.identifier ?? "an issue"}`);
     } catch (e) {
       this.log(`feedback ${s.id}: not filed yet (attempt ${s.attempts}): ${e instanceof Error ? e.message : "error"}`);
@@ -311,11 +388,9 @@ export class Feedback {
     return json.data;
   }
 
-  /** Uploads a stored screenshot to Linear; its asset address. */
-  private async upload(file: string): Promise<string> {
-    const image = readFileSync(join(this.mediaDir, file));
-    const ext = file.slice(file.lastIndexOf(".") + 1);
-    const contentType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+  /** Uploads a stored file to Linear under `filename`; its asset address. */
+  private async upload(file: string, contentType: string, filename: string, what: string): Promise<string> {
+    const bytes = readFileSync(join(this.mediaDir, file));
     const data = await this.graphql<{
       fileUpload: { success: boolean; uploadFile?: { uploadUrl: string; assetUrl: string; headers: { key: string; value: string }[] } };
     }>(
@@ -325,19 +400,19 @@ export class Feedback {
           uploadFile { uploadUrl assetUrl headers { key value } }
         }
       }`,
-      { contentType, filename: `screenshot.${ext}`, size: image.length },
+      { contentType, filename, size: bytes.length },
     );
     const target = data.fileUpload.uploadFile;
-    if (!data.fileUpload.success || !target) throw new Error("Linear refused the screenshot");
+    if (!data.fileUpload.success || !target) throw new Error(`Linear refused the ${what}`);
     const headers: Record<string, string> = { "content-type": contentType, "cache-control": "public, max-age=31536000" };
     for (const h of target.headers) headers[h.key] = h.value;
     const put = await this.fetch(target.uploadUrl, {
       method: "PUT",
       headers,
-      body: image,
+      body: bytes,
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-    if (!put.ok) throw new Error(`the screenshot upload answered ${put.status}`);
+    if (!put.ok) throw new Error(`the ${what} upload answered ${put.status}`);
     return target.assetUrl;
   }
 
@@ -374,7 +449,7 @@ export class Feedback {
     return data.issueCreate.issue;
   }
 
-  /** Deletes a screenshot whose issue exists. */
+  /** Deletes a stored file whose issue exists. */
   private forget(file: string): void {
     try {
       unlinkSync(join(this.mediaDir, file));
@@ -407,12 +482,32 @@ function readSpool(path: string): Spooled[] {
     try {
       const s = JSON.parse(line) as Spooled;
       const media = s.media === undefined || MEDIA_NAME.test(s.media.file);
-      if (typeof s.id === "string" && media && reportSchema.safeParse(s.report).success) out.push(s);
+      const attached = ATTACHMENT_KINDS.every((k) => {
+        const a = s[k];
+        return a === undefined || (MEDIA_NAME.test(a.file) && typeof a.name === "string");
+      });
+      if (typeof s.id === "string" && media && attached && reportSchema.safeParse(s.report).success) out.push(s);
     } catch {
       // A torn last line from a crash; the rest still counts.
     }
   }
   return out;
+}
+
+/** The files a waiting report keeps in the media directory. */
+function storedFiles(s: Spooled): string[] {
+  return [s.media?.file, ...ATTACHMENT_KINDS.map((k) => s[k]?.file)].filter((f): f is string => Boolean(f));
+}
+
+/**
+ * The name an attachment is uploaded under: letters, digits, spaces, dots, dashes,
+ * underscores and parentheses (anything else becomes `-`), ending in its extension.
+ */
+export function fileName(kind: AttachmentKind, name: string | undefined): string {
+  const ext = `.${ATTACHMENTS[kind].ext}`;
+  const safe = (name ?? "").trim().replace(/[^A-Za-z0-9 ._()-]/g, "-");
+  if (!safe) return `${kind}${ext}`;
+  return safe.toLowerCase().endsWith(ext) ? safe : `${safe}${ext}`;
 }
 
 /** `20261017-1a2b3c4d`: the day it came in and a random part. */
@@ -470,7 +565,13 @@ export function issueBody(s: Spooled): string {
     .map(([k, v]) => `| ${k} | ${cell(v!)} |`)
     .join("\n");
   const shot = s.asset ? `\n\n![${cell(s.media?.label ?? "Screenshot")}](${s.asset})` : "";
-  return `${quiet(r.description)}${shot}\n\n| | |\n|---|---|\n${table}\n`;
+  // Sanitised names hold no backticks, so they show as written.
+  const links = ATTACHMENT_KINDS.flatMap((k) => {
+    const a = s[k];
+    return a?.asset ? [`[${ATTACHMENTS[k].link}](${a.asset}): \`${a.name}\``] : [];
+  });
+  const attached = links.length ? `\n\n${links.join("\n\n")}` : "";
+  return `${quiet(r.description)}${shot}${attached}\n\n| | |\n|---|---|\n${table}\n`;
 }
 
 /** Match time of a tick (40 ticks a second). */
