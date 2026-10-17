@@ -11,6 +11,7 @@ pub mod catalog;
 pub mod combat;
 pub mod crowd;
 pub mod economy;
+pub mod encounter;
 pub mod entity;
 pub mod fingerprint;
 pub mod garrisons;

@@ -1,10 +1,12 @@
 //! The viewport (docs/editor.md): the game renderer draws a scene into a texture sized to
-//! the panel, and egui shows it. One renderer serves whichever viewport shows. For now the
-//! scene is one model on the zinc stage (the open element's look), turned with an orbit
-//! camera; the map editor and the ability stage build on it.
+//! the panel, and egui shows it. One renderer serves whichever viewport shows: one model on
+//! the zinc stage (the open element's look) turned with an orbit camera, a map's scene, or
+//! an ability encounter's live scene (its presentations interpolated, effects and health
+//! bars as the game draws them).
 
 use canopy_assets::Pack;
 use canopy_render::{CameraView, Gpu, Renderer, World, actors::ActorInstance};
+use canopy_scene::effects::frame::EffectEvaluator;
 use glam::{Mat4, Vec3};
 use std::path::Path;
 use std::sync::Arc;
@@ -46,11 +48,47 @@ impl Default for Orbit {
     }
 }
 
-/// What the stage has loaded: one model, or a map's scene (its map and version).
+/// What the stage has loaded: one model, a map's scene (its map and version), or an
+/// encounter's ground (its version).
 #[derive(Debug, Clone, PartialEq)]
 enum Loaded {
     Model(String, f32),
     Scene(String, u64),
+    Encounter(u64),
+}
+
+/// An ability encounter to draw this frame (`crate::encounter`).
+pub struct EncounterShot {
+    /// The ground and the version it was built at.
+    pub scene: Arc<canopy_scene::MapScene>,
+    pub version: u64,
+    /// The light: `None` for the zinc stage's, else a biome's.
+    pub biome: Option<String>,
+    pub effects: Arc<canopy_assets::EffectTable>,
+    /// The encounter's content (the health bars' badge icons).
+    pub content: Arc<canopy_content::Content>,
+    /// The two presentations around the shown moment, `a` older; `t` blends them.
+    pub a: Option<Arc<canopy_scene::live::Presentation>>,
+    pub b: Arc<canopy_scene::live::Presentation>,
+    pub t: f32,
+    pub eye: Vec3,
+    pub target: Vec3,
+    /// Health bars, the selected caster, the aim while choosing a target.
+    pub ui: canopy_scene::world_ui::WorldUiInput,
+    pub size: [u32; 2],
+}
+
+/// The encounter's live drawing state (the game's `LiveScene`, cut down).
+#[derive(Default)]
+struct Live {
+    /// The effect table the evaluator reads, and the evaluator.
+    evaluator: Option<(Arc<canopy_assets::EffectTable>, EffectEvaluator)>,
+    effects: canopy_render::effects::EffectFrame,
+    instances: Vec<ActorInstance>,
+    /// The models the renderer has, in the presenter's order.
+    models: Arc<Vec<String>>,
+    world_ui: Option<canopy_scene::world_ui::WorldUi>,
+    world_ui_frame: canopy_render::world_ui::WorldUiFrame,
 }
 
 /// A map's scene to draw this frame.
@@ -77,6 +115,7 @@ pub struct Stage {
     loaded: Option<Loaded>,
     texture: Option<egui::TextureId>,
     started: std::time::Instant,
+    live: Live,
 }
 
 fn target(gpu: &Gpu, size: [u32; 2]) -> (wgpu::Texture, wgpu::TextureView) {
@@ -124,6 +163,7 @@ impl Stage {
             loaded: None,
             texture: None,
             started: std::time::Instant::now(),
+            live: Live::default(),
         })
     }
 
@@ -161,24 +201,9 @@ impl Stage {
     /// Draws a map's scene in its biome's light.
     pub fn draw_scene(&mut self, gpu: &Gpu, egui: &mut egui_wgpu::Renderer, shot: &SceneShot) {
         let size = self.fit(gpu, egui, shot.size);
+        self.leave_encounter();
         let scene = &shot.scene;
-        if self.environment != scene.biome {
-            match canopy_scene::Look::load(&self.data, &scene.biome) {
-                Ok(look) => {
-                    let environment = canopy_render::Environment::new(
-                        &look.lighting,
-                        &look.biome,
-                        scene.hour,
-                        None,
-                    );
-                    self.renderer.set_environment(gpu, environment);
-                    self.environment = scene.biome.clone();
-                }
-                Err(error) => {
-                    tracing::warn!(%error, biome = %scene.biome, "editor: biome lighting")
-                }
-            }
-        }
+        self.light(gpu, Some(&scene.biome), scene.hour);
         let loaded = Loaded::Scene(shot.root.clone(), shot.version);
         if self.loaded.as_ref() != Some(&loaded) {
             if let Err(error) = self.renderer.load_world(gpu, &self.pack, &scene.world) {
@@ -203,14 +228,151 @@ impl Stage {
             .render(gpu, &camera, seconds, &self.view, None);
     }
 
+    /// Clears what only an encounter draws (health bars) when another scene follows it.
+    fn leave_encounter(&mut self) {
+        if matches!(self.loaded, Some(Loaded::Encounter(_))) {
+            self.renderer
+                .set_world_ui(&mut canopy_render::world_ui::WorldUiFrame::default());
+            self.loaded = None;
+        }
+    }
+
+    /// Lights the stage as `biome` at `hour`, or as the zinc stage.
+    fn light(&mut self, gpu: &Gpu, biome: Option<&str>, hour: f32) {
+        let Some(biome) = biome else {
+            if self.environment != "stage" {
+                self.renderer
+                    .set_environment(gpu, self.stage_environment.clone());
+                self.environment = "stage".into();
+            }
+            return;
+        };
+        if self.environment == biome {
+            return;
+        }
+        match canopy_scene::Look::load(&self.data, biome) {
+            Ok(look) => {
+                let environment =
+                    canopy_render::Environment::new(&look.lighting, &look.biome, hour, None);
+                self.renderer.set_environment(gpu, environment);
+                self.environment = biome.to_string();
+            }
+            Err(error) => tracing::warn!(%error, %biome, "editor: biome lighting"),
+        }
+    }
+
+    /// Draws an ability encounter: its ground, its units and effects between the two
+    /// presentations, health bars and the aim.
+    pub fn draw_encounter(
+        &mut self,
+        gpu: &Gpu,
+        egui: &mut egui_wgpu::Renderer,
+        shot: &EncounterShot,
+    ) {
+        let size = self.fit(gpu, egui, shot.size);
+        let hour = shot.scene.hour;
+        self.light(gpu, shot.biome.as_deref(), hour);
+        let b = &shot.b;
+        let live = &mut self.live;
+        // A new presenter may list its models in another order: the world loads again.
+        let loaded = Loaded::Encounter(shot.version);
+        if self.loaded.as_ref() != Some(&loaded) || !b.models.starts_with(&live.models) {
+            let mut world = shot.scene.world.clone();
+            world.actor_models = b.models.to_vec();
+            if let Err(error) = self.renderer.load_world(gpu, &self.pack, &world) {
+                tracing::warn!(%error, "editor: encounter scene");
+            }
+            live.models = b.models.clone();
+            self.loaded = Some(loaded);
+        } else if b.models.len() > live.models.len() {
+            self.renderer.sync_actor_models(gpu, &self.pack, &b.models);
+            live.models = b.models.clone();
+        }
+        if live
+            .evaluator
+            .as_ref()
+            .is_none_or(|(table, _)| !Arc::ptr_eq(table, &shot.effects))
+        {
+            let evaluator = EffectEvaluator::new(shot.effects.clone());
+            self.renderer
+                .load_effect_textures(gpu, &self.pack, evaluator.textures());
+            live.evaluator = Some((shot.effects.clone(), evaluator));
+        }
+        let a = shot.a.as_deref();
+        canopy_scene::interpolate::interpolate(a, b, shot.t, &mut live.instances);
+        let tick = match a {
+            Some(a) => f64::from(a.tick) + f64::from(shot.t) * f64::from(b.tick - a.tick),
+            None => f64::from(b.tick),
+        };
+        if let Some((_, evaluator)) = &mut live.evaluator {
+            evaluator.frame(
+                a.map(|a| &a.effects),
+                &b.effects,
+                shot.t,
+                tick,
+                Some(shot.eye),
+                &mut live.effects,
+                &mut live.instances,
+            );
+            self.renderer.set_effects(&mut live.effects);
+        }
+        self.renderer.set_actors(&live.instances);
+        let distance = shot.eye.distance(shot.target).max(1.0);
+        let aspect = size[0] as f32 / size[1].max(1) as f32;
+        let camera = CameraView::look_at(
+            shot.eye,
+            shot.target,
+            crate::map::view::FOV,
+            aspect,
+            distance * 0.02,
+            distance * 12.0,
+        );
+        let seconds = self.started.elapsed().as_secs_f32();
+        // Health bars and circles where the frame draws the units.
+        let ui = live.world_ui.get_or_insert_with(|| {
+            canopy_scene::world_ui::WorldUi::new(
+                &self.data,
+                Some(&self.pack),
+                &shot.content,
+                shot.scene.colors.clone(),
+            )
+        });
+        if ui.atlases_dirty {
+            let (glyphs, icons) = ui.atlases(shot.ui.scale);
+            self.renderer.set_world_ui_atlases(gpu, glyphs, icons);
+        }
+        let instances = &live.instances;
+        let position = |key: u64| {
+            b.actors
+                .binary_search_by_key(&key, |a| a.key)
+                .ok()
+                .and_then(|i| instances.get(i))
+                .map(|x| x.transform.w_axis.truncate())
+        };
+        ui.build(
+            &b.bodies,
+            &position,
+            &shot.ui,
+            &camera,
+            self.renderer.size(),
+            &shot.scene.water_field(),
+            seconds,
+            &mut live.world_ui_frame,
+        );
+        if ui.atlases_dirty {
+            let (glyphs, icons) = ui.atlases(shot.ui.scale);
+            self.renderer.set_world_ui_atlases(gpu, glyphs, icons);
+        }
+        self.renderer.set_world_ui(&mut live.world_ui_frame);
+        self.renderer
+            .render(gpu, &camera, seconds, &self.view, None);
+    }
+
     /// Draws `shot` into the viewport's texture.
     pub fn draw(&mut self, gpu: &Gpu, egui: &mut egui_wgpu::Renderer, shot: &Shot) {
         let size = self.fit(gpu, egui, shot.size);
-        if self.environment != "stage" {
-            self.renderer
-                .set_environment(gpu, self.stage_environment.clone());
-            self.environment = "stage".into();
-        }
+        self.leave_encounter();
+        self.light(gpu, None, 12.0);
         if !matches!(&self.loaded, Some(Loaded::Model(m, _)) if *m == shot.model) {
             let world = World {
                 terrain: None,

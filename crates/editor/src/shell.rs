@@ -160,6 +160,20 @@ struct Resources {
     looks: HashMap<String, canopy_scene::Look>,
 }
 
+impl Resources {
+    /// The cooked pack of the data folder `data`; looks load as scenes ask for them.
+    fn open(data: Option<&std::path::Path>) -> Result<Self, String> {
+        let data = data.ok_or("no data folder")?;
+        let path =
+            canopy_assets::find_pack(data).ok_or("no cooked asset pack (run `just cook`)")?;
+        let pack = canopy_assets::Pack::open(&path).map_err(|e| e.to_string())?;
+        Ok(Resources {
+            pack: Arc::new(pack),
+            looks: HashMap::new(),
+        })
+    }
+}
+
 /// Where leaving the editor goes once unsaved changes are settled.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Leave {
@@ -234,12 +248,24 @@ pub struct Shell {
     /// to draw this frame.
     maps: HashMap<String, crate::map::Session>,
     resources: Option<Result<Resources, String>>,
+    /// No looks (while the pack cannot open).
+    no_looks: HashMap<String, canopy_scene::Look>,
     data: Option<std::path::PathBuf>,
     pub scene: Option<crate::stage::SceneShot>,
+    /// Abilities' stages by document, the looks their grounds asked for, and the
+    /// encounter to draw this frame.
+    encounters: HashMap<String, crate::encounter::Session>,
+    wanted_looks: Vec<String>,
+    pub encounter: Option<crate::stage::EncounterShot>,
     /// Test in game, asked for this frame.
     pub test: Option<crate::Test>,
     /// `problems` calls waiting for the current check.
     waiting: Vec<tokio::sync::oneshot::Sender<Result<Value, String>>>,
+    /// `encounter` calls waiting for the current check.
+    encounter_waiting: Vec<(
+        crate::mcp::EncounterArgs,
+        tokio::sync::oneshot::Sender<Result<Value, String>>,
+    )>,
     /// The editor is done: back to the menu, or quit the game.
     pub close: Option<Leave>,
 }
@@ -263,6 +289,7 @@ impl Shell {
             mcp_error: None,
             mcp_open: false,
             waiting: Vec::new(),
+            encounter_waiting: Vec::new(),
             test: None,
             viewport_texture: None,
             viewport_error: None,
@@ -277,8 +304,12 @@ impl Shell {
             outside: None,
             maps: HashMap::new(),
             resources: None,
+            no_looks: HashMap::new(),
             data,
             scene: None,
+            encounters: HashMap::new(),
+            wanted_looks: Vec::new(),
+            encounter: None,
             user,
             watch,
             ids: Vec::new(),
@@ -336,6 +367,8 @@ impl Shell {
         let package = package.clone();
         self.refresh_libraries(&package);
         let kind = self.current;
+        // The content lags behind edits that do not pass the check.
+        let stale = self.problem_count().is_some_and(|n| n > 0);
         let active = self.active_document();
         let uses = active.as_deref().map(|d| self.uses_of(d));
         let (can_rename, can_delete) = match active.as_deref().and_then(Kind::collection_of) {
@@ -412,6 +445,30 @@ impl Shell {
         let mut map_size = None;
         let mut preview: Option<String> = None;
         let content = self.checker.as_ref().and_then(|c| c.content().cloned());
+        // The ability stages' grounds: the pack, and the looks they asked for.
+        if kind == Kind::Abilities {
+            let resources = self
+                .resources
+                .get_or_insert_with(|| Resources::open(self.data.as_deref()));
+            if let (Ok(resources), Some(data)) = (resources, &self.data) {
+                for biome in self.wanted_looks.drain(..) {
+                    if resources.looks.contains_key(&biome) {
+                        continue;
+                    }
+                    match canopy_scene::Look::load(data, &biome) {
+                        Ok(look) => {
+                            resources.looks.insert(biome, look);
+                        }
+                        Err(error) => tracing::warn!(%error, %biome, "editor: stage look"),
+                    }
+                }
+            }
+        }
+        let (pack, looks) = match &self.resources {
+            Some(Ok(r)) => (Some(&r.pack), &r.looks),
+            _ => (None, &self.no_looks),
+        };
+        let mut encounter_size = None;
         tabs::documents(
             ui,
             kind,
@@ -433,8 +490,19 @@ impl Shell {
                 map_size: &mut map_size,
                 preview: &mut preview,
                 root: Some(package.root.clone()),
+                encounters: &mut self.encounters,
+                pack,
+                looks,
+                wanted_looks: &mut self.wanted_looks,
+                encounter_size: &mut encounter_size,
+                stale,
             },
         );
+        if let Some((document, size)) = encounter_size
+            && let Some(session) = self.encounters.get(&document)
+        {
+            self.encounter = session.shot(size);
+        }
         if let Some(root) = preview {
             match self.write_preview(&root) {
                 Ok(_) => self.say(
@@ -581,16 +649,9 @@ impl Shell {
             return;
         };
         let biome = map.biome().to_string();
-        let resources = self.resources.get_or_insert_with(|| {
-            let data = self.data.as_ref().ok_or("no data folder")?;
-            let path =
-                canopy_assets::find_pack(data).ok_or("no cooked asset pack (run `just cook`)")?;
-            let pack = canopy_assets::Pack::open(&path).map_err(|e| e.to_string())?;
-            Ok(Resources {
-                pack: Arc::new(pack),
-                looks: HashMap::new(),
-            })
-        });
+        let resources = self
+            .resources
+            .get_or_insert_with(|| Resources::open(self.data.as_deref()));
         let Ok(resources) = resources else {
             session.error = resources.as_ref().err().cloned();
             return;
@@ -1803,6 +1864,33 @@ impl Shell {
             .main_surface_mut()
             .find_active_focused()
             .map(|(_, d)| d.document.clone())
+    }
+
+    /// Opens ability `id` on its stage (captures).
+    pub fn open_stage(&mut self, id: &str) {
+        self.open_id(id);
+        if let Some(workspace) = self.workspaces.get_mut(&self.current)
+            && let Some((_, doc)) = workspace.dock.main_surface_mut().find_active_focused()
+        {
+            doc.show_stage();
+        }
+    }
+
+    /// Asks the open ability's stage for `command` at its next frame (captures).
+    pub fn stage(&mut self, command: crate::encounter::Command) {
+        let Some(document) = self.active_document() else {
+            return;
+        };
+        let id = self
+            .index
+            .iter()
+            .find(|(_, e)| e.document == document)
+            .map(|(id, _)| id.clone())
+            .unwrap_or_default();
+        self.encounters
+            .entry(document)
+            .or_insert_with(|| crate::encounter::Session::new(&id))
+            .queue(command);
     }
 
     /// Runs `commands` as one step whose context is the current editor and the first

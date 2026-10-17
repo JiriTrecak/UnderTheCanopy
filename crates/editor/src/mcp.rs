@@ -75,6 +75,48 @@ pub enum Tool {
         map: String,
     },
     ImportWarcraft(ImportWarcraftArgs),
+    Encounter(EncounterArgs),
+}
+
+/// An ability's encounter, headless (the ability stage's take run to its end).
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct EncounterArgs {
+    /// The ability's id; its unsaved edits play.
+    pub ability: String,
+    /// The scene: enemy-single, enemy-group, ally-single, ally-group, fallen-allies,
+    /// neutral-camp, empty or self. The ability's own suggestion when absent.
+    pub preset: Option<String>,
+    /// The unit that casts (a unit definition id); a unit that binds the ability when
+    /// absent.
+    pub caster: Option<String>,
+    /// The unit every target is.
+    pub target: Option<String>,
+    /// How many targets, 0 to 8.
+    pub targets: Option<u32>,
+    /// ally, enemy, self or neutral (a camp).
+    pub relation: Option<String>,
+    /// Cells from the caster to the first target (1 to 30), and between the targets
+    /// around it (1 to 8).
+    pub distance: Option<f64>,
+    pub spacing: Option<f64>,
+    pub rank: Option<u32>,
+    /// Health at the start, percent.
+    pub caster_health: Option<u32>,
+    pub target_health: Option<u32>,
+    /// The caster's mana at the start (of 1000).
+    pub mana: Option<u32>,
+    /// Units keep their weapons, move and fight.
+    pub combat: Option<bool>,
+    /// The targets start as corpses.
+    pub fallen: Option<bool>,
+    /// Aim at this unit (an entity id from a previous answer's units) instead of the
+    /// first target.
+    pub unit: Option<u32>,
+    /// Aim at this cell `[x, y]` instead of the first target (point abilities).
+    pub point: Option<[u32; 2]>,
+    /// Stop the caster at this tick (an interruption).
+    pub interrupt_at: Option<u32>,
 }
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
@@ -487,6 +529,16 @@ impl Handler {
         Parameters(args): Parameters<ImportWarcraftArgs>,
     ) -> Result<CallToolResult, ErrorData> {
         self.ask(Tool::ImportWarcraft(args)).await
+    }
+
+    #[tool(
+        description = "Casts an ability on test targets with the real simulation, as the editor's ability stage does, and runs the take to its end: free and ready at once, on a flat sandbox. Returns the settings used, every ability event (tick, event, amount, target, status), what the simulation refused, the cast's timeline (prepare, channel, recover, impacts, statuses) and each unit's health and mana at the end. Unsaved edits play (waits for the check)."
+    )]
+    async fn encounter(
+        &self,
+        Parameters(args): Parameters<EncounterArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::Encounter(args)).await
     }
 
     #[tool(description = "Removes starts, entities and trees around a point, as one undo step.")]

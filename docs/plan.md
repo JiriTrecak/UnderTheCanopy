@@ -56,7 +56,7 @@ Agreed with Jiri, 2026-10-16. One native Rust editor shipped inside the game, us
 |---|---|
 | **M0. Data layer** (done, D53) | Packages and layering (base, campaign, map; mods later), one file per definition, overrides and inheritance, schemas from the Rust types, the asset registry, the map format, user folders, content identity, migration of today's data. |
 | **M1. Editor shell** (done, docs/editor.md) | One editor inside the game for the repository's base package: the rail, tabs, forms from schemas, one undo history, the loader's check, files followed on disk, MCP (and `canopy mcp`), the viewport on the game renderer, Test in game. |
-| **M2. Data editors** (done, docs/editor.md) | Overviews for units and heroes, buildings, items, abilities and effects, races; links between them with Back and Forward; abilities tried in a test match (the encounter). |
+| **M2. Data editors** (done, docs/editor.md) | Overviews for units and heroes, buildings, items, abilities and effects, races; links between them with Back and Forward; abilities cast on test targets on the Stage (the encounter) or tried in a test match. |
 | **M3. Map editor** (done, docs/editor.md) | Warcraft III-style brushes (raise, lower, flatten, smooth, cliff, ramp, paint, water, trees, props), amber sites, camps and starts by click, new maps, the check of playability and army reachability, Test in game with unsaved edits, MCP map tools; Amberleaf Crossing authored with them. Landform objects, symmetry tools and new ground cover wait (decided 2026-10-16). |
 | **M4. Asset editor** (done, review; docs/editor.md) | An asset's overview (files, animations played in the preview, users), import of models and images (MCP too), cooking from the editor, unused assets and deleting an asset with its folder. |
 | M5. Players' content (deferred) | Custom maps in the game, packaged maps, map transfer in multiplayer, the Lua sandbox audit. Waits until the game is well established (Jiri, 2026-10-17); so do user scripts. |
@@ -70,7 +70,7 @@ Updated 2026-10-17. Players' content and user scripts are left out until the gam
 
 **Editor**
 
-- **The ability encounter in the editor**: cast an ability on test targets in the editor's own viewport with the real simulation, as the old spell studio's stage did (today's Try it starts a full test match instead). In progress.
+- **The ability encounter in the editor** (done 2026-10-17, review; docs/editor.md): an ability's Stage view casts it on test targets in the editor's own viewport with the real simulation, as the old spell studio's stage did, with its timeline, events and seeking by replay; MCP `encounter` runs the same take headless. Try it (a full test match) stays.
 - **The assistant**: the sidebar that calls the Claude API over every editor (M1 left room for it).
 - **Map editor, waiting by decision (2026-10-16)**: landform objects, symmetry tools, new ground cover (moving grass, decals, foliage).
 - **Asset editor, left to the art pipeline**: retargeting animations, editing materials and team colour masks, generating art.

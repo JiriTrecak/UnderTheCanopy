@@ -114,6 +114,10 @@ impl Shell {
                 self.waiting.push(reply);
                 continue;
             }
+            if let Tool::Encounter(args) = tool {
+                self.encounter_waiting.push((args, reply));
+                continue;
+            }
             if matches!(tool, Tool::Cook) {
                 self.start_cook();
                 self.cook_waiting.push(reply);
@@ -121,6 +125,16 @@ impl Shell {
             }
             let answer = self.answer(tool);
             let _ = reply.send(answer);
+        }
+        if !self.encounter_waiting.is_empty() && !self.checking() {
+            let content = self.checked_content();
+            for (args, reply) in std::mem::take(&mut self.encounter_waiting) {
+                let answer = match &content {
+                    Some(content) => crate::encounter::headless(content, &args),
+                    None => Err("No version of the package has passed the check yet.".into()),
+                };
+                let _ = reply.send(answer);
+            }
         }
         if !self.waiting.is_empty() && !self.checking() {
             let answer = self.problems_value();

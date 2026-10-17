@@ -39,5 +39,9 @@ tracing.workspace = true
 wgpu.workspace = true
 winit.workspace = true
 
+[dev-dependencies]
+# The ability stage's test borrows the simulation's test-owned ability fixture.
+canopy-content = { path = "../content", features = ["testing"] }
+
 [lints]
 workspace = true
