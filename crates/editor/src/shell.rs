@@ -404,6 +404,7 @@ impl Shell {
         let mut new_ability = None;
         let mut try_with = None;
         let mut map_size = None;
+        let mut preview: Option<String> = None;
         let content = self.checker.as_ref().and_then(|c| c.content().cloned());
         tabs::documents(
             ui,
@@ -424,9 +425,19 @@ impl Shell {
                 content,
                 scene_texture: self.viewport_texture,
                 map_size: &mut map_size,
+                preview: &mut preview,
                 root: Some(package.root.clone()),
             },
         );
+        if let Some(root) = preview {
+            match self.write_preview(&root) {
+                Ok(_) => self.say(
+                    "Wrote the preview; cook to see it in the game.".into(),
+                    false,
+                ),
+                Err(error) => self.say(error, true),
+            }
+        }
         if let Some((root, size)) = map_size
             && let Some(session) = self.maps.get(&root)
             && let (Some(scene), Some(map)) = (&session.scene, &session.map)

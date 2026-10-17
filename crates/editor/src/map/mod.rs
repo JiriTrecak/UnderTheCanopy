@@ -5,6 +5,7 @@
 //! undo step of grid patches when it ends.
 
 pub mod picture;
+pub mod preview;
 pub mod tools;
 pub mod view;
 

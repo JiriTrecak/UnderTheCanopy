@@ -96,6 +96,8 @@ pub struct Viewer<'a> {
     pub content: Option<std::sync::Arc<canopy_content::Content>>,
     pub scene_texture: Option<egui::TextureId>,
     pub map_size: &'a mut Option<(String, [u32; 2])>,
+    /// A map whose picker preview was asked for.
+    pub preview: &'a mut Option<String>,
     /// The package folder on disk.
     pub root: Option<std::path::PathBuf>,
 }
@@ -240,6 +242,9 @@ impl TabViewer for Viewer<'_> {
                     self.scene_texture,
                 );
                 self.edits.extend(out.edits);
+                if out.preview {
+                    *self.preview = Some(root.clone());
+                }
                 if let Some(size) = out.size {
                     *self.map_size = Some((root, size));
                 }

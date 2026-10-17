@@ -71,6 +71,9 @@ pub enum Tool {
     UnusedAssets,
     Import(ImportArgs),
     Cook,
+    MapPreview {
+        map: String,
+    },
 }
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
@@ -453,6 +456,16 @@ impl Handler {
     )]
     async fn cook(&self) -> Result<CallToolResult, ErrorData> {
         self.ask(Tool::Cook).await
+    }
+
+    #[tool(
+        description = "Writes the map's preview for the map picker (preview.webp in its package, the illustrated atlas with amber, camps and starts) from the map as the editor holds it, and returns it as a PNG. Cook afterwards for the game to show it."
+    )]
+    async fn map_preview(
+        &self,
+        Parameters(args): Parameters<MapArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::MapPreview { map: args.map }).await
     }
 
     #[tool(description = "Removes starts, entities and trees around a point, as one undo step.")]

@@ -21,6 +21,16 @@ impl Shell {
                 Ok(json!({ "png": base64::engine::general_purpose::STANDARD.encode(png) }))
             }
             Tool::MapStroke(args) => self.map_stroke(args),
+            Tool::MapPreview { map } => {
+                let root = self.map_root(&map)?;
+                let image = self.write_preview(&root)?;
+                let mut png = Vec::new();
+                image
+                    .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+                    .map_err(|e| e.to_string())?;
+                use base64::Engine;
+                Ok(json!({ "png": base64::engine::general_purpose::STANDARD.encode(png) }))
+            }
             Tool::MapPlace(args) => self.map_place(args),
             Tool::MapRemove(args) => {
                 let root = self.map_root(&args.map)?;
@@ -38,6 +48,26 @@ impl Shell {
             }
             _ => Err("not a map tool".into()),
         }
+    }
+
+    /// Writes the preview of the map at `root` (as the editor holds it) into its package
+    /// as `preview.webp`, at once.
+    pub(crate) fn write_preview(&mut self, root: &str) -> Result<image::RgbaImage, String> {
+        let trees = self
+            .content()
+            .map(|c| crate::map::tools::tree_kinds(&c))
+            .unwrap_or_default();
+        let package = self.package.as_ref().map_err(Clone::clone)?.root.clone();
+        let map = self.loaded_map(root)?;
+        let is_tree = |asset: &str| {
+            trees.iter().any(|t| t == asset) || asset.contains("pine") || asset.contains("tree")
+        };
+        let image = crate::map::preview::render(map, &is_tree)?;
+        let bytes = crate::map::preview::webp(&image)?;
+        let dir = package.join(root);
+        std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+        std::fs::write(dir.join("preview.webp"), bytes).map_err(|e| e.to_string())?;
+        Ok(image)
     }
 
     /// The package path of the map an agent named by id or path.

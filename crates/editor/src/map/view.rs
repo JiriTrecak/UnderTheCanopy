@@ -23,6 +23,8 @@ pub struct Out {
     /// The viewport's size in physical pixels: the stage draws the scene at this size.
     pub size: Option<[u32; 2]>,
     pub edits: Vec<Edit>,
+    /// The map picker's preview was asked for.
+    pub preview: bool,
 }
 
 /// The camera's view and projection for a viewport of `aspect`.
@@ -102,7 +104,8 @@ fn tool_button(ui: &mut Ui, tool: Tool, on: bool) -> bool {
 }
 
 /// The tool panel on the map view's left.
-fn panel(ui: &mut Ui, session: &mut Session, content: Option<&Content>) {
+fn panel(ui: &mut Ui, session: &mut Session, content: Option<&Content>) -> bool {
+    let mut preview = false;
     let t = &mut session.tools;
     ui.label(eyebrow("Tools"));
     egui::Grid::new(("tools", &session.root))
@@ -258,11 +261,17 @@ fn panel(ui: &mut Ui, session: &mut Session, content: Option<&Content>) {
                     ui.end_row();
                 }
             });
+        ui.add_space(6.0);
+        preview = ui
+            .button("Write preview")
+            .on_hover_text("The map picker's picture (preview.webp), from the map as it is now; cook to see it in the game")
+            .clicked();
     }
     if let Some(error) = &session.error {
         ui.add_space(6.0);
         ui.label(RichText::new(error).color(ERROR).size(11.0));
     }
+    preview
 }
 
 /// The nearest start, entity or object to world (`x`, `z`) within 4 cells.
@@ -484,6 +493,7 @@ pub fn show(
     texture: Option<egui::TextureId>,
 ) -> Out {
     let mut out = Out::default();
+    let mut preview = false;
     egui::Panel::left(egui::Id::new(("map-tools", &session.root)))
         .exact_size(214.0)
         .resizable(false)
@@ -496,8 +506,9 @@ pub fn show(
         .show(ui, |ui| {
             egui::ScrollArea::vertical()
                 .auto_shrink([false, false])
-                .show(ui, |ui| panel(ui, session, content));
+                .show(ui, |ui| preview = panel(ui, session, content));
         });
+    out.preview = preview;
     let rect = ui.available_rect_before_wrap();
     let response = ui.allocate_rect(rect, Sense::click_and_drag());
     let painter = ui.painter_at(rect);

@@ -179,6 +179,7 @@ impl Shell {
                 | Tool::MapStroke(_)
                 | Tool::MapPlace(_)
                 | Tool::MapRemove(_)
+                | Tool::MapPreview { .. }
         ) {
             return self.answer_map(tool);
         }
