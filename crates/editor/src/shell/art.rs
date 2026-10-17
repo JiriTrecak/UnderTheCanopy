@@ -20,6 +20,11 @@ impl Shell {
         Ok(document)
     }
 
+    /// Plays the preview's clip `index` (captures).
+    pub fn play_clip(&mut self, index: usize) {
+        self.clip = Some(index);
+    }
+
     /// Starts cooking the changed assets into the pack (`canopy-cook`, as `just cook`
     /// does), unless a cook is running.
     pub(super) fn start_cook(&mut self) {

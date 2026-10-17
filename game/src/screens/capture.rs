@@ -417,6 +417,18 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
     editor.select(Kind::Units);
     editor.open_first(1);
     shoot(&mut editor, rig, "editor-units")?;
+    // An asset: its overview, its clip playing in the preview.
+    editor.select(Kind::Assets);
+    editor.open("asset.models.units.neutral-violet-sporeling");
+    for _ in 0..4 {
+        editor.run_headless(rig.size, rig.scale, &rig.gpu);
+    }
+    editor.play_clip(3);
+    for _ in 0..8 {
+        editor.run_headless(rig.size, rig.scale, &rig.gpu);
+        std::thread::sleep(Duration::from_millis(25));
+    }
+    shoot(&mut editor, rig, "editor-asset")?;
     editor.select(Kind::Maps);
     editor.open_first(1);
     // The map view builds its scene once the content check has passed.

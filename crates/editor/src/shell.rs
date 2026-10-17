@@ -882,7 +882,7 @@ impl Shell {
     }
 
     /// Follows a link to the element `id`, remembering where it came from.
-    fn open_id(&mut self, id: &str) {
+    pub(crate) fn open_id(&mut self, id: &str) {
         let Some(document) = self.index.get(id).map(|e| e.document.clone()) else {
             return;
         };

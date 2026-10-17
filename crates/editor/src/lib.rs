@@ -235,6 +235,16 @@ impl Editor {
         self.shell.open_first(n);
     }
 
+    /// Opens the element with this id in its editor (captures).
+    pub fn open(&mut self, id: &str) {
+        self.shell.open_id(id);
+    }
+
+    /// Plays the preview's clip `index` (captures).
+    pub fn play_clip(&mut self, index: usize) {
+        self.shell.play_clip(index);
+    }
+
     pub fn set_assistant(&mut self, open: bool) {
         self.shell.set_assistant(open);
     }
