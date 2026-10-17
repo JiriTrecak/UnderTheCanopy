@@ -1,9 +1,15 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [],
+    "added": [
+      "An editor for the game's content, opened from the main menu when the game runs from its repository: forms for every unit, building, item, ability, effect, race and asset, one undo history, problems found as you edit, Test in game with your unsaved changes, and an MCP server so agents can edit too.",
+      "A map editor in the style of Warcraft III's: raise, lower, cliff, ramp, paint, water, tree and prop brushes, amber sites, creep camps and player starts by click, new maps, and previews for the map picker.",
+      "The asset editor imports models and icons, plays a model's animations, cooks them for the game, and lists the assets nothing uses so they can be deleted."
+    ],
     "improved": [],
-    "fixed": [],
+    "fixed": [
+      "A match no longer crashes when a unit that cannot move steers around others."
+    ],
     "knownIssues": []
   },
   "releases": [
