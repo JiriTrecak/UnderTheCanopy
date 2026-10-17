@@ -28,7 +28,8 @@ echo-isles.utcm/
 ## map.json
 
 The main fields:
-- `size`: playable cells per side, one of 256, 480, 512, 640, 800, 960, 1024, 2048 (the renderer draws up to 1024).
+- `size`: cells per side, one of 256, 480, 512, 640, 800, 960, 1024, 2048 (the renderer draws up to 1024).
+- `playable` (optional): `{x, z, width, height}` in cells, the part play happens in. Around it is a border of scenery nobody enters (unwalkable, unbuildable; harvestable trees there are scenery only); the camera, minimap and preview frame it. Starts stand at least 8 cells inside it. Warcraft III imports set it from the map's margins (decision D56).
 - `biome`, `sandbox`, `initialExploration`.
 - `playerStarts`: `[{player, x, z, setup, mainFort}]`, where `setup` is a race starting setup id such as `setup.ants`.
 - `entities`: pre-placed units and buildings: `{id, definition, position: {x, y}, rotation, owner: "none" | "player.N", initialState?, appearance?: {asset, scale}}`.

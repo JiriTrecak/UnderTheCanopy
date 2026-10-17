@@ -5,7 +5,10 @@
       "An editor for the game's content, opened from the main menu when the game runs from its repository: forms for every unit, building, item, ability, effect, race and asset, one undo history, problems found as you edit, Test in game with your unsaved changes, and an MCP server so agents can edit too.",
       "A map editor in the style of Warcraft III's: raise, lower, cliff, ramp, paint, water, tree and prop brushes, amber sites, creep camps and player starts by click, new maps, and previews for the map picker.",
       "The asset editor imports models and icons, plays a model's animations, cooks them for the game, and lists the assets nothing uses so they can be deleted.",
-      "Amberleaf Crossing, a new 1v1 map: mains on high ground in opposite corners, a river winding through a lake with a contested island, high-ground expansions in the far corners and fifteen creep camps that grow harder away from your base."
+      "Amberleaf Crossing, a new 1v1 map: mains on high ground in opposite corners, a river winding through a lake with a contested island, high-ground expansions in the far corners and fifteen creep camps that grow harder away from your base.",
+      "Twelve classic Warcraft III melee maps for 2 to 8 players: Terenas Stand, Amazonia, Northern Isles, Last Refuge, Concealed Hill, Twisted Meadows, Lost Temple, Hillsbrad Creek, Gnoll Wood, Silverpine Forest, Bloodstone Mesa and Twilight Ruins, in the game's own ground, trees and creeps.",
+      "Maps can frame their playable area with a border of forest, cliffs and water that nobody enters; the camera and minimap stay on the playable area.",
+      "The map editor imports Warcraft III melee maps, substituting ground it lacks with the nearest it has."
     ],
     "improved": [],
     "fixed": [

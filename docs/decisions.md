@@ -461,3 +461,13 @@ Part of D53: AI behaviour is code, never content lists. The AI's timing, limits 
 ## D55. JSON objects keep their document order (2026-10-16, technical)
 
 The editor writes documents back in place (docs/editor.md), so a parsed object must keep its keys in the order the file has them: serde_json's `preserve_order` is on for the whole workspace, and so is `float_roundtrip`: numbers parse to exactly the value written (the default parser may land one bit off), so saving a document never drifts its numbers. Nothing the game computes may depend on it: the AI's per-unit intent text, which is saved state, sorts its keys itself (`ai/continuity.rs`), and the match config's opaque `company` value is boxed to keep enums small. Measured: `just bench-sim` digests (every tick's fingerprint and the final saved state) are identical before and after on Echo Isles with two computer players, Turtle Rock with four and the 8 × 50 crowd battle; a forced cook gives a byte-identical pack with and without `preserve_order`. Exact parsing changes six of 644 pack entries, scenery-library models no shipped map places, whose transforms the old parser read one bit off; every document of the base package is already in the file format (a test keeps it so).
+
+## D56. Maps may keep a border nobody enters (2026-10-17, Jiri asked for it)
+
+Warcraft III maps carry margins outside their camera bounds: terrain, cliffs, water and trees that frame the playable area. Jiri wants the game to support that rather than crop it away. A map may name a **playable area** (`playable` in `map.json`: `x`, `z`, `width`, `height` in cells; the whole map when absent):
+
+- **The simulation** treats every cell outside it as unwalkable, so nothing walks or builds there (building placement already needs walkable ground); harvestable scenery outside it is scenery only, never a resource; starts must stand at least 8 cells inside it.
+- **The camera** keeps the view's ground footprint inside it (`RtsCamera::bounds`); the **minimap** and the map picker's **preview** frame its square.
+- **The editor** outlines it in the map view; the Warcraft importer sets it from the map's margins and fills the dry, level border with forest.
+
+Map sizes 480, 800 and 960 join the list (Warcraft's 96, 160 and 192-tile maps at 5 cells a tile; any multiple of the renderer's 32-cell chunks works).
