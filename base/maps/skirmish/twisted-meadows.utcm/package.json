@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "twisted-meadows",
+  "kind": "map",
+  "name": "Twisted Meadows",
+  "version": "1.0.0",
+  "description": "The path twists, and the future is uncertain. Race for the center and the treasures it might hold, or visit a Goblin Laboratory and explore one of the small islands.",
+  "dependencies": {
+    "base": ">=0.3.5"
+  }
+}

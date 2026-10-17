@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "hillsbrad-creek",
+  "kind": "map",
+  "name": "Hillsbrad Creek",
+  "version": "1.0.0",
+  "description": "Peaceful lands of Hillsbrad Foothills, nearly untouched by the Scourge, will soon be torn by a conflict. Only the strongest will remain standing.",
+  "dependencies": {
+    "base": ">=0.3.5"
+  }
+}

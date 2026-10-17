@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "bloodstone-mesa",
+  "kind": "map",
+  "name": "Bloodstone Mesa LV",
+  "version": "1.0.0",
+  "description": "There is no water as far as the eye can see. During the day, beneath the unforgiving sun, it's a struggle to survive. One Tavern is open for business; its mercenaries may tip the scales in your favor.",
+  "dependencies": {
+    "base": ">=0.3.5"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "silverpine-forest",
+  "kind": "map",
+  "name": "Silverpine Forest",
+  "version": "1.0.0",
+  "description": "Conveniently close by, mercenary Heroes are available for hire. Among these rich resources and forested hills, you could team up with allies or strike out on your own.",
+  "dependencies": {
+    "base": ">=0.3.5"
+  }
+}

@@ -1,0 +1,2583 @@
+{
+  "entities": [
+    {
+      "id": "mine.0.0",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 589.5,
+        "y": 493.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "id": "mine.0.1",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 585.5,
+        "y": 485.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "id": "mine.0.2",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 581.5,
+        "y": 481.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "id": "mine.0.3",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 577.5,
+        "y": 477.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      }
+    },
+    {
+      "id": "mine.0.4",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 569.5,
+        "y": 473.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      }
+    },
+    {
+      "id": "mine.1.0",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 565.5,
+        "y": 129.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "id": "mine.1.1",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 569.5,
+        "y": 125.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "id": "mine.1.2",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 569.5,
+        "y": 121.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "id": "mine.1.3",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 569.5,
+        "y": 117.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      }
+    },
+    {
+      "id": "mine.1.4",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 565.5,
+        "y": 113.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      }
+    },
+    {
+      "id": "mine.2.0",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 201.5,
+        "y": 77.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "id": "mine.2.1",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 197.5,
+        "y": 69.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "id": "mine.2.2",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 193.5,
+        "y": 65.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "id": "mine.2.3",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 189.5,
+        "y": 61.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      }
+    },
+    {
+      "id": "mine.2.4",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 181.5,
+        "y": 57.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      }
+    },
+    {
+      "id": "mine.3.0",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 41.5,
+        "y": 277.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "id": "mine.3.1",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 45.5,
+        "y": 281.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "id": "mine.3.2",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 49.5,
+        "y": 281.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "id": "mine.3.3",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 53.5,
+        "y": 281.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      }
+    },
+    {
+      "id": "mine.3.4",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 57.5,
+        "y": 277.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      }
+    },
+    {
+      "id": "mine.4.0",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 193.5,
+        "y": 589.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "id": "mine.4.1",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 197.5,
+        "y": 593.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "id": "mine.4.2",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 201.5,
+        "y": 593.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "id": "mine.4.3",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 205.5,
+        "y": 593.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      }
+    },
+    {
+      "id": "mine.4.4",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 209.5,
+        "y": 589.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      }
+    },
+    {
+      "id": "mine.5.0",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 65.5,
+        "y": 425.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "id": "mine.5.1",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 61.5,
+        "y": 429.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "id": "mine.5.2",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 61.5,
+        "y": 433.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "id": "mine.5.3",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 61.5,
+        "y": 437.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      }
+    },
+    {
+      "id": "mine.5.4",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 65.5,
+        "y": 441.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      }
+    },
+    {
+      "id": "mine.6.0",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 85.5,
+        "y": 121.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "id": "mine.6.1",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 81.5,
+        "y": 121.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "id": "mine.6.2",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 77.5,
+        "y": 125.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "id": "mine.6.3",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 73.5,
+        "y": 129.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      }
+    },
+    {
+      "id": "mine.6.4",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 73.5,
+        "y": 133.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      }
+    },
+    {
+      "id": "mine.7.0",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 393.5,
+        "y": 73.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "id": "mine.7.1",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 389.5,
+        "y": 69.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "id": "mine.7.2",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 385.5,
+        "y": 69.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "id": "mine.7.3",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 381.5,
+        "y": 69.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      }
+    },
+    {
+      "id": "mine.7.4",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 377.5,
+        "y": 73.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      }
+    },
+    {
+      "id": "mine.8.0",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 581.5,
+        "y": 321.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "id": "mine.8.1",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 585.5,
+        "y": 317.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "id": "mine.8.2",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 585.5,
+        "y": 313.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "id": "mine.8.3",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 585.5,
+        "y": 309.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      }
+    },
+    {
+      "id": "mine.8.4",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 581.5,
+        "y": 305.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      }
+    },
+    {
+      "id": "mine.9.0",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 473.5,
+        "y": 585.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "id": "mine.9.1",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 477.5,
+        "y": 589.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "id": "mine.9.2",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 481.5,
+        "y": 589.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "id": "mine.9.3",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 485.5,
+        "y": 589.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      }
+    },
+    {
+      "id": "mine.9.4",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 489.5,
+        "y": 585.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2600
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      }
+    },
+    {
+      "id": "mine.10.0",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 253.5,
+        "y": 413.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 4400
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "id": "mine.10.1",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 249.5,
+        "y": 409.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 4400
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "id": "mine.10.2",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 245.5,
+        "y": 409.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 4400
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "id": "mine.10.3",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 241.5,
+        "y": 409.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 4400
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      }
+    },
+    {
+      "id": "mine.10.4",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 237.5,
+        "y": 413.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 4400
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      }
+    },
+    {
+      "id": "mine.11.0",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 397.5,
+        "y": 373.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 4400
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "id": "mine.11.1",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 401.5,
+        "y": 381.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 4400
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "id": "mine.11.2",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 405.5,
+        "y": 385.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 4400
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "id": "mine.11.3",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 409.5,
+        "y": 389.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 4400
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      }
+    },
+    {
+      "id": "mine.11.4",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 417.5,
+        "y": 393.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 4400
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      }
+    },
+    {
+      "id": "mine.12.0",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 277.5,
+        "y": 249.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 4400
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "id": "mine.12.1",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 281.5,
+        "y": 257.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 4400
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "id": "mine.12.2",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 285.5,
+        "y": 261.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 4400
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "id": "mine.12.3",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 289.5,
+        "y": 265.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 4400
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      }
+    },
+    {
+      "id": "mine.12.4",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 297.5,
+        "y": 269.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 4400
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      }
+    },
+    {
+      "id": "mine.13.0",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 73.5,
+        "y": 577.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "id": "mine.13.1",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 69.5,
+        "y": 581.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "id": "mine.13.2",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 69.5,
+        "y": 585.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "id": "mine.13.3",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 69.5,
+        "y": 589.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      }
+    },
+    {
+      "id": "mine.13.4",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 73.5,
+        "y": 593.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      }
+    },
+    {
+      "id": "mine.14.0",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 361.5,
+        "y": 589.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "id": "mine.14.1",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 357.5,
+        "y": 593.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "id": "mine.14.2",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 357.5,
+        "y": 597.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "id": "mine.14.3",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 357.5,
+        "y": 601.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-4"
+      }
+    },
+    {
+      "id": "mine.14.4",
+      "definition": "building.neutral.amber-mine",
+      "position": {
+        "x": 361.5,
+        "y": 605.5
+      },
+      "rotation": 0.0,
+      "owner": "none",
+      "initialState": {
+        "construction": "complete",
+        "amount": 2000
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-5"
+      }
+    },
+    {
+      "id": "camp.0/1",
+      "definition": "unit.neutral.hollow-stag",
+      "position": {
+        "x": 372.0,
+        "y": 524.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.0/2",
+      "definition": "unit.neutral.briar-hulk",
+      "position": {
+        "x": 367.0,
+        "y": 524.0
+      },
+      "rotation": 0.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.1/1",
+      "definition": "unit.neutral.root-seer",
+      "position": {
+        "x": 55.0,
+        "y": 206.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.1/2",
+      "definition": "unit.neutral.webling",
+      "position": {
+        "x": 53.0,
+        "y": 208.0
+      },
+      "rotation": 252.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.1/3",
+      "definition": "unit.neutral.webling",
+      "position": {
+        "x": 50.0,
+        "y": 207.0
+      },
+      "rotation": 324.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.1/4",
+      "definition": "unit.neutral.webling",
+      "position": {
+        "x": 50.0,
+        "y": 205.0
+      },
+      "rotation": 36.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.1/5",
+      "definition": "unit.neutral.webling",
+      "position": {
+        "x": 53.0,
+        "y": 204.0
+      },
+      "rotation": 108.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.2/1",
+      "definition": "unit.neutral.corrupted-rootbeast",
+      "position": {
+        "x": 208.0,
+        "y": 155.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.2/2",
+      "definition": "unit.neutral.webling",
+      "position": {
+        "x": 206.0,
+        "y": 157.0
+      },
+      "rotation": 252.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.2/3",
+      "definition": "unit.neutral.webling",
+      "position": {
+        "x": 203.0,
+        "y": 156.0
+      },
+      "rotation": 324.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.2/4",
+      "definition": "unit.neutral.webling",
+      "position": {
+        "x": 203.0,
+        "y": 154.0
+      },
+      "rotation": 36.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.2/5",
+      "definition": "unit.neutral.webling",
+      "position": {
+        "x": 206.0,
+        "y": 153.0
+      },
+      "rotation": 108.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.3/1",
+      "definition": "unit.neutral.rotwood-ancient",
+      "position": {
+        "x": 87.0,
+        "y": 577.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.3/2",
+      "definition": "unit.neutral.seedcaster",
+      "position": {
+        "x": 82.0,
+        "y": 577.0
+      },
+      "rotation": 0.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.4/1",
+      "definition": "unit.neutral.root-seer",
+      "position": {
+        "x": 360.0,
+        "y": 584.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.4/2",
+      "definition": "unit.neutral.young-toad",
+      "position": {
+        "x": 356.0,
+        "y": 586.0
+      },
+      "rotation": 300.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.4/3",
+      "definition": "unit.neutral.young-toad",
+      "position": {
+        "x": 356.0,
+        "y": 582.0
+      },
+      "rotation": 60.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.5/1",
+      "definition": "unit.neutral.corrupted-rootbeast",
+      "position": {
+        "x": 67.0,
+        "y": 280.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.5/2",
+      "definition": "unit.neutral.twigcaster",
+      "position": {
+        "x": 63.0,
+        "y": 282.0
+      },
+      "rotation": 300.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.5/3",
+      "definition": "unit.neutral.twigcaster",
+      "position": {
+        "x": 63.0,
+        "y": 278.0
+      },
+      "rotation": 60.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.6/1",
+      "definition": "unit.neutral.root-seer",
+      "position": {
+        "x": 402.0,
+        "y": 377.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.6/2",
+      "definition": "unit.neutral.seedcaster",
+      "position": {
+        "x": 398.0,
+        "y": 379.0
+      },
+      "rotation": 252.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.6/3",
+      "definition": "unit.neutral.seedcaster",
+      "position": {
+        "x": 395.0,
+        "y": 378.0
+      },
+      "rotation": 324.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.6/4",
+      "definition": "unit.neutral.seedcaster",
+      "position": {
+        "x": 394.0,
+        "y": 376.0
+      },
+      "rotation": 36.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.6/5",
+      "definition": "unit.neutral.seedcaster",
+      "position": {
+        "x": 398.0,
+        "y": 377.0
+      },
+      "rotation": 108.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.7/1",
+      "definition": "unit.neutral.old-root",
+      "position": {
+        "x": 62.0,
+        "y": 352.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.7/2",
+      "definition": "unit.neutral.twigcaster",
+      "position": {
+        "x": 57.0,
+        "y": 352.0
+      },
+      "rotation": 0.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.8/1",
+      "definition": "unit.neutral.briar-hulk",
+      "position": {
+        "x": 415.0,
+        "y": 593.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.8/2",
+      "definition": "unit.neutral.rootling",
+      "position": {
+        "x": 410.0,
+        "y": 593.0
+      },
+      "rotation": 0.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.9/1",
+      "definition": "unit.neutral.briar-hulk",
+      "position": {
+        "x": 141.0,
+        "y": 598.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.9/2",
+      "definition": "unit.neutral.webling",
+      "position": {
+        "x": 136.0,
+        "y": 598.0
+      },
+      "rotation": 0.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.10/1",
+      "definition": "unit.neutral.rotwood-ancient",
+      "position": {
+        "x": 559.0,
+        "y": 135.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.10/2",
+      "definition": "unit.neutral.seedcaster",
+      "position": {
+        "x": 554.0,
+        "y": 135.0
+      },
+      "rotation": 0.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.11/1",
+      "definition": "unit.neutral.rootling",
+      "position": {
+        "x": 592.0,
+        "y": 396.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.11/2",
+      "definition": "unit.neutral.hornet-guard",
+      "position": {
+        "x": 587.0,
+        "y": 396.0
+      },
+      "rotation": 0.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.12/1",
+      "definition": "unit.neutral.root-seer",
+      "position": {
+        "x": 506.0,
+        "y": 423.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.12/2",
+      "definition": "unit.neutral.webling",
+      "position": {
+        "x": 504.0,
+        "y": 425.0
+      },
+      "rotation": 252.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.12/3",
+      "definition": "unit.neutral.webling",
+      "position": {
+        "x": 501.0,
+        "y": 424.0
+      },
+      "rotation": 324.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.12/4",
+      "definition": "unit.neutral.webling",
+      "position": {
+        "x": 501.0,
+        "y": 422.0
+      },
+      "rotation": 36.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.12/5",
+      "definition": "unit.neutral.webling",
+      "position": {
+        "x": 504.0,
+        "y": 421.0
+      },
+      "rotation": 108.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.13/1",
+      "definition": "unit.neutral.root-seer",
+      "position": {
+        "x": 579.0,
+        "y": 243.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.13/2",
+      "definition": "unit.neutral.root-seer",
+      "position": {
+        "x": 574.0,
+        "y": 243.0
+      },
+      "rotation": 0.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.14/1",
+      "definition": "unit.neutral.root-seer",
+      "position": {
+        "x": 559.0,
+        "y": 582.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.14/2",
+      "definition": "unit.neutral.tree-frog",
+      "position": {
+        "x": 555.0,
+        "y": 584.0
+      },
+      "rotation": 300.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.14/3",
+      "definition": "unit.neutral.tree-frog",
+      "position": {
+        "x": 555.0,
+        "y": 580.0
+      },
+      "rotation": 60.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.15/1",
+      "definition": "unit.neutral.root-seer",
+      "position": {
+        "x": 302.0,
+        "y": 598.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.15/2",
+      "definition": "unit.neutral.willow-wisp",
+      "position": {
+        "x": 297.0,
+        "y": 598.0
+      },
+      "rotation": 0.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.16/1",
+      "definition": "unit.neutral.rotwood-ancient",
+      "position": {
+        "x": 204.0,
+        "y": 83.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.16/2",
+      "definition": "unit.neutral.hornet-guard",
+      "position": {
+        "x": 199.0,
+        "y": 83.0
+      },
+      "rotation": 0.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.17/1",
+      "definition": "unit.neutral.root-seer",
+      "position": {
+        "x": 258.0,
+        "y": 400.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.17/2",
+      "definition": "unit.neutral.rootling",
+      "position": {
+        "x": 256.0,
+        "y": 402.0
+      },
+      "rotation": 252.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.17/3",
+      "definition": "unit.neutral.rootling",
+      "position": {
+        "x": 253.0,
+        "y": 401.0
+      },
+      "rotation": 324.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.17/4",
+      "definition": "unit.neutral.rootling",
+      "position": {
+        "x": 253.0,
+        "y": 399.0
+      },
+      "rotation": 36.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.17/5",
+      "definition": "unit.neutral.rootling",
+      "position": {
+        "x": 256.0,
+        "y": 398.0
+      },
+      "rotation": 108.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.18/1",
+      "definition": "unit.neutral.rotwood-ancient",
+      "position": {
+        "x": 154.0,
+        "y": 340.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.18/2",
+      "definition": "unit.neutral.young-toad",
+      "position": {
+        "x": 149.0,
+        "y": 340.0
+      },
+      "rotation": 0.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.19/1",
+      "definition": "unit.neutral.rotwood-ancient",
+      "position": {
+        "x": 191.0,
+        "y": 504.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.19/2",
+      "definition": "unit.neutral.puddle-wisp",
+      "position": {
+        "x": 188.0,
+        "y": 507.0
+      },
+      "rotation": 270.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.19/3",
+      "definition": "unit.neutral.puddle-wisp",
+      "position": {
+        "x": 186.0,
+        "y": 504.0
+      },
+      "rotation": 0.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.19/4",
+      "definition": "unit.neutral.puddle-wisp",
+      "position": {
+        "x": 188.0,
+        "y": 502.0
+      },
+      "rotation": 90.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.20/1",
+      "definition": "unit.neutral.hollow-stag",
+      "position": {
+        "x": 292.0,
+        "y": 73.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.20/2",
+      "definition": "unit.neutral.hornet-guard",
+      "position": {
+        "x": 287.0,
+        "y": 73.0
+      },
+      "rotation": 0.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.21/1",
+      "definition": "unit.neutral.rootling",
+      "position": {
+        "x": 458.0,
+        "y": 72.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.21/2",
+      "definition": "unit.neutral.bloom-witch",
+      "position": {
+        "x": 453.0,
+        "y": 72.0
+      },
+      "rotation": 0.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.22/1",
+      "definition": "unit.neutral.hollow-stag",
+      "position": {
+        "x": 52.0,
+        "y": 512.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.22/2",
+      "definition": "unit.neutral.seedcaster",
+      "position": {
+        "x": 47.0,
+        "y": 512.0
+      },
+      "rotation": 0.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.23/1",
+      "definition": "unit.neutral.nest-mother",
+      "position": {
+        "x": 123.0,
+        "y": 84.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.23/2",
+      "definition": "unit.neutral.seedcaster",
+      "position": {
+        "x": 118.0,
+        "y": 84.0
+      },
+      "rotation": 0.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.24/1",
+      "definition": "unit.neutral.root-seer",
+      "position": {
+        "x": 453.0,
+        "y": 173.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.24/2",
+      "definition": "unit.neutral.corrupted-rootbeast",
+      "position": {
+        "x": 448.0,
+        "y": 173.0
+      },
+      "rotation": 0.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.25/1",
+      "definition": "unit.neutral.root-seer",
+      "position": {
+        "x": 298.0,
+        "y": 274.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.25/2",
+      "definition": "unit.neutral.puffcap",
+      "position": {
+        "x": 296.0,
+        "y": 276.0
+      },
+      "rotation": 252.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.25/3",
+      "definition": "unit.neutral.puffcap",
+      "position": {
+        "x": 293.0,
+        "y": 275.0
+      },
+      "rotation": 324.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.25/4",
+      "definition": "unit.neutral.puffcap",
+      "position": {
+        "x": 293.0,
+        "y": 273.0
+      },
+      "rotation": 36.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.25/5",
+      "definition": "unit.neutral.puffcap",
+      "position": {
+        "x": 296.0,
+        "y": 273.0
+      },
+      "rotation": 108.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.26/1",
+      "definition": "unit.neutral.corrupted-rootbeast",
+      "position": {
+        "x": 571.0,
+        "y": 480.0
+      },
+      "rotation": 180.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.26/2",
+      "definition": "unit.neutral.bloom-witch",
+      "position": {
+        "x": 567.0,
+        "y": 482.0
+      },
+      "rotation": 300.0,
+      "owner": "none"
+    },
+    {
+      "id": "camp.26/3",
+      "definition": "unit.neutral.bloom-witch",
+      "position": {
+        "x": 567.0,
+        "y": 478.0
+      },
+      "rotation": 60.0,
+      "owner": "none"
+    }
+  ],
+  "size": 640,
+  "playable": {
+    "x": 30,
+    "z": 40,
+    "width": 580,
+    "height": 580
+  },
+  "biome": "vibrant-forest",
+  "camps": [
+    {
+      "id": "camp.0",
+      "members": [
+        "camp.0/1",
+        "camp.0/2"
+      ],
+      "home": {
+        "x": 369.0,
+        "y": 524.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "camp.1",
+      "members": [
+        "camp.1/1",
+        "camp.1/2",
+        "camp.1/3",
+        "camp.1/4",
+        "camp.1/5"
+      ],
+      "home": {
+        "x": 52.0,
+        "y": 206.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "camp.2",
+      "members": [
+        "camp.2/1",
+        "camp.2/2",
+        "camp.2/3",
+        "camp.2/4",
+        "camp.2/5"
+      ],
+      "home": {
+        "x": 205.0,
+        "y": 155.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "camp.3",
+      "members": [
+        "camp.3/1",
+        "camp.3/2"
+      ],
+      "home": {
+        "x": 84.0,
+        "y": 577.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "camp.4",
+      "members": [
+        "camp.4/1",
+        "camp.4/2",
+        "camp.4/3"
+      ],
+      "home": {
+        "x": 357.0,
+        "y": 584.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "camp.5",
+      "members": [
+        "camp.5/1",
+        "camp.5/2",
+        "camp.5/3"
+      ],
+      "home": {
+        "x": 64.0,
+        "y": 280.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "camp.6",
+      "members": [
+        "camp.6/1",
+        "camp.6/2",
+        "camp.6/3",
+        "camp.6/4",
+        "camp.6/5"
+      ],
+      "home": {
+        "x": 397.0,
+        "y": 377.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.hard"
+    },
+    {
+      "id": "camp.7",
+      "members": [
+        "camp.7/1",
+        "camp.7/2"
+      ],
+      "home": {
+        "x": 59.0,
+        "y": 352.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.easy"
+    },
+    {
+      "id": "camp.8",
+      "members": [
+        "camp.8/1",
+        "camp.8/2"
+      ],
+      "home": {
+        "x": 412.0,
+        "y": 593.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.easy"
+    },
+    {
+      "id": "camp.9",
+      "members": [
+        "camp.9/1",
+        "camp.9/2"
+      ],
+      "home": {
+        "x": 138.0,
+        "y": 598.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.easy"
+    },
+    {
+      "id": "camp.10",
+      "members": [
+        "camp.10/1",
+        "camp.10/2"
+      ],
+      "home": {
+        "x": 556.0,
+        "y": 135.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "camp.11",
+      "members": [
+        "camp.11/1",
+        "camp.11/2"
+      ],
+      "home": {
+        "x": 589.0,
+        "y": 396.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.easy"
+    },
+    {
+      "id": "camp.12",
+      "members": [
+        "camp.12/1",
+        "camp.12/2",
+        "camp.12/3",
+        "camp.12/4",
+        "camp.12/5"
+      ],
+      "home": {
+        "x": 503.0,
+        "y": 423.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "camp.13",
+      "members": [
+        "camp.13/1",
+        "camp.13/2"
+      ],
+      "home": {
+        "x": 576.0,
+        "y": 243.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "camp.14",
+      "members": [
+        "camp.14/1",
+        "camp.14/2",
+        "camp.14/3"
+      ],
+      "home": {
+        "x": 556.0,
+        "y": 582.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "camp.15",
+      "members": [
+        "camp.15/1",
+        "camp.15/2"
+      ],
+      "home": {
+        "x": 299.0,
+        "y": 598.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "camp.16",
+      "members": [
+        "camp.16/1",
+        "camp.16/2"
+      ],
+      "home": {
+        "x": 201.0,
+        "y": 83.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "camp.17",
+      "members": [
+        "camp.17/1",
+        "camp.17/2",
+        "camp.17/3",
+        "camp.17/4",
+        "camp.17/5"
+      ],
+      "home": {
+        "x": 255.0,
+        "y": 400.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.hard"
+    },
+    {
+      "id": "camp.18",
+      "members": [
+        "camp.18/1",
+        "camp.18/2"
+      ],
+      "home": {
+        "x": 151.0,
+        "y": 340.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "camp.19",
+      "members": [
+        "camp.19/1",
+        "camp.19/2",
+        "camp.19/3",
+        "camp.19/4"
+      ],
+      "home": {
+        "x": 188.0,
+        "y": 504.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "camp.20",
+      "members": [
+        "camp.20/1",
+        "camp.20/2"
+      ],
+      "home": {
+        "x": 289.0,
+        "y": 73.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "camp.21",
+      "members": [
+        "camp.21/1",
+        "camp.21/2"
+      ],
+      "home": {
+        "x": 455.0,
+        "y": 72.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.easy"
+    },
+    {
+      "id": "camp.22",
+      "members": [
+        "camp.22/1",
+        "camp.22/2"
+      ],
+      "home": {
+        "x": 49.0,
+        "y": 512.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "camp.23",
+      "members": [
+        "camp.23/1",
+        "camp.23/2"
+      ],
+      "home": {
+        "x": 120.0,
+        "y": 84.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.easy"
+    },
+    {
+      "id": "camp.24",
+      "members": [
+        "camp.24/1",
+        "camp.24/2"
+      ],
+      "home": {
+        "x": 450.0,
+        "y": 173.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "camp.25",
+      "members": [
+        "camp.25/1",
+        "camp.25/2",
+        "camp.25/3",
+        "camp.25/4",
+        "camp.25/5"
+      ],
+      "home": {
+        "x": 295.0,
+        "y": 274.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.hard"
+    },
+    {
+      "id": "camp.26",
+      "members": [
+        "camp.26/1",
+        "camp.26/2",
+        "camp.26/3"
+      ],
+      "home": {
+        "x": 568.0,
+        "y": 480.0
+      },
+      "aggroRange": 8,
+      "leash": 18,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    }
+  ],
+  "playerStarts": [
+    {
+      "player": 1,
+      "x": 209.5,
+      "z": 565.5,
+      "rotation": 180,
+      "setup": "setup.ants",
+      "mainFort": "start.player.1/main-fort"
+    },
+    {
+      "player": 2,
+      "x": 481.5,
+      "z": 561.5,
+      "rotation": 180,
+      "setup": "setup.ants",
+      "mainFort": "start.player.2/main-fort"
+    },
+    {
+      "player": 3,
+      "x": 557.5,
+      "z": 313.5,
+      "rotation": 270,
+      "setup": "setup.ants",
+      "mainFort": "start.player.3/main-fort"
+    },
+    {
+      "player": 4,
+      "x": 385.5,
+      "z": 97.5,
+      "setup": "setup.ants",
+      "mainFort": "start.player.4/main-fort"
+    },
+    {
+      "player": 5,
+      "x": 93.5,
+      "z": 145.5,
+      "rotation": 90,
+      "setup": "setup.ants",
+      "mainFort": "start.player.5/main-fort"
+    },
+    {
+      "player": 6,
+      "x": 89.5,
+      "z": 433.5,
+      "rotation": 90,
+      "setup": "setup.ants",
+      "mainFort": "start.player.6/main-fort"
+    }
+  ],
+  "terrain": {
+    "textureGrid": {
+      "cellSize": 5.0,
+      "origin": [
+        -0.5,
+        -0.5
+      ]
+    },
+    "waterProfiles": [],
+    "paint": [
+      {
+        "material": "asset.terrain.warcraft-ldrg",
+        "variants": true
+      },
+      {
+        "material": "asset.terrain.warcraft-ldro",
+        "variants": true
+      },
+      {
+        "material": "asset.terrain.warcraft-ldrt",
+        "variants": true
+      },
+      {
+        "material": "asset.terrain.warcraft-lrok",
+        "variants": true
+      },
+      {
+        "material": "asset.terrain.warcraft-zsan",
+        "variants": true
+      },
+      {
+        "material": "asset.terrain.warcraft-cliff-cldi",
+        "variants": false
+      }
+    ]
+  }
+}

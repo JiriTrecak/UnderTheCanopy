@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "terenas-stand",
+  "kind": "map",
+  "name": "Terenas Stand LV",
+  "version": "1.0.0",
+  "description": "\"Noble countrymen, evil is upon us. Darkness has befallen our shores. Rise and slay thy enemies… strike, strike so others shall live. The meek shall not fade into the night… live my brethren, live.” –King Terenas",
+  "dependencies": {
+    "base": ">=0.3.5"
+  }
+}

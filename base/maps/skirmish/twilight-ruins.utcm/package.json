@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "twilight-ruins",
+  "kind": "map",
+  "name": "Twilight Ruins LV",
+  "version": "1.0.0",
+  "description": "This sunken island holds many perilous opportunities for adventurous parties to besiege and conquer their opponents.",
+  "dependencies": {
+    "base": ">=0.3.5"
+  }
+}
