@@ -199,6 +199,82 @@ fn a_squad_withdraws_from_a_visibly_stronger_force() {
     }
 }
 
+/// Distance in cells from an entity to a point.
+fn distance_to(world: &World, id: u32, to: (f64, f64)) -> f64 {
+    let p = get(world, id).position;
+    let (dx, dy) = (
+        f64::from(p.x) / 1000.0 - to.0,
+        f64::from(p.y) / 1000.0 - to.1,
+    );
+    (dx * dx + dy * dy).sqrt()
+}
+
+#[test]
+fn a_member_that_cannot_get_out_does_not_hold_the_squad() {
+    // One soldier is boxed in by four houses; the rest of the squad, the hero first, is in
+    // the open. The old safe point needed every member to reach it, found none and sent
+    // the squad to where the hero already stood, for good.
+    let mut world = world(&skirmish(vec![], vec![]), false);
+    let hero = all_of(&world, P1, HERO)[0];
+    let mut squad = vec![hero];
+    squad.extend((0..3).map(|i| {
+        spawn(
+            &mut world,
+            &format!("s{i}"),
+            SOLDIER,
+            P1,
+            38.0 + 2.0 * f64::from(i),
+            22.0,
+        )
+    }));
+    for (i, (x, y)) in [(58.0, 20.0), (63.0, 20.0), (60.0, 18.0), (60.0, 23.0)]
+        .into_iter()
+        .enumerate()
+    {
+        spawn(&mut world, &format!("house-{i}"), HOUSE, P1, x, y);
+    }
+    let boxed = spawn(&mut world, "boxed", SOLDIER, P1, 60.0, 20.0);
+    run(&mut world, 1);
+    let spatial = world.spatial();
+    let body = spatial.body_of(get(&world, boxed));
+    let from = canopy_sim::spatial::Fixed::cell(60, 20, None);
+    assert!(
+        (59..=61)
+            .flat_map(|x| (19..=21).map(move |y| (x, y)))
+            .filter(|&c| c != (60, 20))
+            .all(|(x, y)| !spatial.clear_segment(
+                from,
+                canopy_sim::spatial::Fixed::cell(x, y, None),
+                None,
+                &body
+            )),
+        "the houses box the soldier in"
+    );
+    squad.push(boxed);
+    let tick = world.tick();
+    let target = Place::new(AWAY.0 as i32, AWAY.1 as i32);
+    memory_mut(&mut world, 0).mission = Some(Mission {
+        kind: MissionKind::Assault,
+        key: enemy_hall(&world).to_string(),
+        point: target.clone(),
+        started: tick,
+        until: tick + 2400,
+        stage: Stage::Travel,
+        progress_point: target,
+        progress_tick: tick,
+        members: squad.clone(),
+    });
+    memory_mut(&mut world, 0).next_strategy = tick + 2000;
+    let before = distance_to(&world, hero, AWAY);
+    run(&mut world, 400);
+    let after = distance_to(&world, hero, AWAY);
+    assert!(
+        after < before - 20.0,
+        "the hero advanced from {before:.1} to {after:.1} cells"
+    );
+    assert!(distance_to(&world, boxed, (60.0, 20.0)) < 1.0);
+}
+
 #[test]
 fn a_badly_wounded_fighter_is_pulled_back() {
     let mut world = world(&skirmish(vec![], vec![]), false);

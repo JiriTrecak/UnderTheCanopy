@@ -787,6 +787,14 @@ impl<'a> Frame<'a> {
 
     /// The nearest point to `p` the actors can stand on and reach, or (without actors) an
     /// open point connected to home (old `nearestSafe`).
+    ///
+    /// Bodies that cannot step off their spot (squeezed across a cliff edge or against a
+    /// blocker) reach nothing and do not constrain the point. The old rule required every
+    /// actor to reach the point and otherwise sent them all to where the first one stood, so
+    /// one such body, or a route the AI's knowledge could not prove for one member, held
+    /// the whole group in place for good. Now the point is the nearest one every free actor
+    /// reaches; failing that, the one most of them reach (the widest body always among
+    /// them); failing that, the nearest open point, for movement's own pathfinder to try.
     pub fn nearest_safe(&self, p: Pt, actors: &[Ix]) -> Pt {
         let _span = tracing::trace_span!("ai safe point").entered();
         let geo = self.geo;
@@ -806,22 +814,13 @@ impl<'a> Frame<'a> {
         }
         let first = self.all[actors[0]].p.rounded();
         self.routes(|nav| {
-            if !geo.layered() && movers.iter().any(|m| !nav.fits(geo, m.point(), m)) {
-                return first;
-            }
-            let base = p.rounded();
-            for r in 0..=24i32 {
-                for q in ring(base, r) {
-                    if geo.inside(q)
-                        && movers.iter().all(|m| m.air || geo.connected(m.point(), q))
-                        && movers.iter().all(|m| nav.fits(geo, q, m))
-                        && movers.iter().all(|m| nav.reachable(geo, m, q))
-                    {
-                        return q;
-                    }
-                }
-            }
-            first
+            let free: Vec<Mover> = movers
+                .iter()
+                .copied()
+                .filter(|m| nav.can_leave(geo, m))
+                .collect();
+            let group = if free.is_empty() { movers } else { free };
+            safe_point(geo, nav, p.rounded(), &group).unwrap_or(first)
         })
     }
 
@@ -843,6 +842,69 @@ fn ring(base: Pt, r: i32) -> impl Iterator<Item = Pt> {
             })
         })
     })
+}
+
+/// Candidate points that some but not all movers reach, examined before settling for the
+/// best of them.
+const PARTIAL_CANDIDATES: usize = 4;
+
+/// The safe point search of [`Frame::nearest_safe`] for `group`, ring by ring around
+/// `base`. One body leads: the widest (the first of the widest) on ground connected to
+/// `base`, else the widest; bodies on ground the lead's does not connect to are left out.
+/// The point is the first that every remaining body can stand on and reach; else the
+/// examined point most of them reach, the lead always among them; else the first point
+/// they can all stand on; `None` when there is none within 24 cells.
+fn safe_point(
+    geo: &Geography,
+    nav: &mut ObservedNavigation,
+    base: Pt,
+    group: &[Mover],
+) -> Option<Pt> {
+    let joins = |m: &Mover, p: Pt| m.air || geo.connected(m.point(), p);
+    let widest = |near: bool| {
+        group
+            .iter()
+            .enumerate()
+            .filter(|(_, m)| !near || joins(m, base))
+            .max_by(|(i, a), (j, b)| a.radius.total_cmp(&b.radius).then(j.cmp(i)))
+            .map(|(i, _)| i)
+    };
+    let lead = widest(true).or_else(|| widest(false))?;
+    let leader = group[lead];
+    let mut members = vec![leader];
+    members.extend(group.iter().enumerate().filter_map(|(i, m)| {
+        (i != lead && (leader.air || joins(m, leader.point()))).then_some(*m)
+    }));
+    let mut open = None;
+    let mut best: Option<(usize, Pt)> = None;
+    let mut partial = 0;
+    for r in 0..=24i32 {
+        for q in ring(base, r) {
+            if !geo.inside(q) || !joins(&leader, q) || !members.iter().all(|m| nav.fits(geo, q, m))
+            {
+                continue;
+            }
+            open.get_or_insert(q);
+            if !nav.reachable(geo, &leader, q) {
+                continue;
+            }
+            let reached = 1 + members[1..]
+                .iter()
+                .filter(|m| nav.reachable(geo, m, q))
+                .count();
+            if reached == members.len() {
+                return Some(q);
+            }
+            if best.is_none_or(|(n, _)| reached > n) {
+                best = Some((reached, q));
+            }
+            partial += 1;
+            if partial >= PARTIAL_CANDIDATES {
+                return best.map(|(_, q)| q);
+            }
+        }
+    }
+    best.map(|(_, q)| q).or(open)
 }
 
 /// The deck of a point, by name.

@@ -413,6 +413,37 @@ impl ObservedNavigation {
         result
     }
 
+    /// Whether the body can step off the spot it stands on: it fits there and sweeps to
+    /// its own cell centre or a neighbouring one, where every route over the cell grid
+    /// begins. A body squeezed across a cliff edge or against a blocker can do neither and
+    /// reaches nothing, wherever it is sent.
+    pub fn can_leave(&mut self, geo: &Geography, m: &Mover) -> bool {
+        if m.air {
+            return true;
+        }
+        let i = self.profile(geo, m);
+        (geo.layered() || self.clear(geo, i, m.at, m.at)) && self.join(geo, i, m).is_some()
+    }
+
+    /// The cell the body's route over the grid starts from: its own cell's centre on
+    /// layered ground, else the first of its cell and the eight around it that it can
+    /// sweep to.
+    fn join(&self, geo: &Geography, i: usize, m: &Mover) -> Option<(i64, i64)> {
+        let origin = m.point().rounded();
+        let (ox, oy) = (origin.x as i64, origin.y as i64);
+        if geo.terrain.surfaces().is_some() {
+            return self.clear(geo, i, m.at, fixed(origin)).then_some((ox, oy));
+        }
+        std::iter::once((ox, oy))
+            .chain(
+                (-1..=1)
+                    .flat_map(|dy| (-1..=1).map(move |dx| (dx, dy)))
+                    .filter(|&d| d != (0, 0))
+                    .map(|(dx, dy)| (ox + dx, oy + dy)),
+            )
+            .find(|&(x, y)| self.clear(geo, i, m.at, Fixed::cell(x as i32, y as i32, None)))
+    }
+
     fn find_reachable(&mut self, geo: &Geography, i: usize, from: &Mover, to: Pt) -> bool {
         self.searches += 1;
         let a = from.at;
@@ -428,7 +459,7 @@ impl ObservedNavigation {
         }
         let origin = from.point().rounded();
         if let Some(s) = geo.terrain.surfaces() {
-            if !self.clear(geo, i, a, fixed(origin)) {
+            if self.join(geo, i, from).is_none() {
                 return false;
             }
             let (Some(start), Some(goal)) = (geo.node(origin), geo.node(to)) else {
@@ -457,19 +488,7 @@ impl ObservedNavigation {
             return route.is_some();
         }
         let size = self.size as i64;
-        let (ox, oy) = (origin.x as i64, origin.y as i64);
-        let mut joins = vec![(ox, oy)];
-        for dy in -1..=1 {
-            for dx in -1..=1 {
-                if dx != 0 || dy != 0 {
-                    joins.push((ox + dx, oy + dy));
-                }
-            }
-        }
-        let Some(&(jx, jy)) = joins
-            .iter()
-            .find(|&&(x, y)| self.clear(geo, i, a, Fixed::cell(x as i32, y as i32, None)))
-        else {
+        let Some((jx, jy)) = self.join(geo, i, from) else {
             return false;
         };
         if jx < 0 || jy < 0 || jx >= size || jy >= size {
