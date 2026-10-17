@@ -392,10 +392,29 @@ pub fn playable(map: &UtcMap, catalog: &Catalog, terrain: &Terrain) -> Result<()
     occupancy(map, content, terrain)
 }
 
-/// The cells ground units can reach from world (`x`, `z`) on bare terrain: walkable cells
-/// joined across their sides where no step is too steep. Buildings, resources and units
-/// are left out.
-pub fn reachable_from(terrain: &Terrain, x: f64, z: f64) -> Vec<bool> {
+/// Cells the map's trees close to armies: each tree's cell and its four neighbours (its
+/// trunk and the bodies that cannot squeeze past it).
+pub fn tree_cells(terrain: &Terrain) -> Vec<bool> {
+    let size = terrain.size() as usize;
+    let mut closed = vec![false; size * size];
+    for tree in &terrain.scene().resources {
+        let (x, z) = (
+            tree.position.x.floor() as i64,
+            tree.position.y.floor() as i64,
+        );
+        for (dx, dz) in [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)] {
+            if let Some(c) = terrain.cell(x + dx, z + dz) {
+                closed[c] = true;
+            }
+        }
+    }
+    closed
+}
+
+/// The cells ground units can reach from world (`x`, `z`): walkable cells joined across
+/// their sides where no step is too steep, around the `closed` ones (trees: see
+/// [`tree_cells`]). Buildings and units are left out.
+pub fn reachable_from(terrain: &Terrain, closed: &[bool], x: f64, z: f64) -> Vec<bool> {
     let size = terrain.size() as usize;
     let mut reached = vec![false; size * size];
     let Some(first) = terrain.cell(x.floor() as i64, z.floor() as i64) else {
@@ -412,6 +431,7 @@ pub fn reachable_from(terrain: &Terrain, x: f64, z: f64) -> Vec<bool> {
                 continue;
             };
             if reached[next]
+                || closed.get(next).copied().unwrap_or(false)
                 || !terrain.walkable(next)
                 || steep.entered(nx as usize, nz as usize, dx, dz)
             {
@@ -424,17 +444,100 @@ pub fn reachable_from(terrain: &Terrain, x: f64, z: f64) -> Vec<bool> {
     reached
 }
 
-/// Whether ground units of every start can walk to every other start (on bare terrain).
+/// Cells (radius) the largest bodies armies field keep from cliffs, deep water and trees:
+/// a hero twice a warrior's size. Lanes narrower than twice this close to them, and
+/// computer players' routes give up there.
+pub const ARMY_RADIUS: i64 = 3;
+
+/// `closed` grown by `radius` cells (square), with the cells beside steep steps and
+/// those that are not walkable closed first: where a body of that radius cannot stand.
+pub fn narrowed(terrain: &Terrain, closed: &[bool], radius: i64) -> Vec<bool> {
+    let size = terrain.size() as i64;
+    let steep = terrain.steep_edges();
+    let blocked = |x: i64, z: i64| {
+        let c = (z * size + x) as usize;
+        closed[c]
+            || !terrain.walkable(c)
+            || [(1, 0), (-1, 0), (0, 1), (0, -1)]
+                .iter()
+                .any(|&(dx, dz)| steep.entered(x as usize, z as usize, dx, dz))
+    };
+    // Distance (square rings) to the nearest blocked cell, up to `radius`.
+    let mut out = vec![false; (size * size) as usize];
+    let mut frontier: Vec<(i64, i64)> = Vec::new();
+    for z in 0..size {
+        for x in 0..size {
+            if blocked(x, z) {
+                out[(z * size + x) as usize] = true;
+                frontier.push((x, z));
+            }
+        }
+    }
+    for _ in 0..radius {
+        let mut next = Vec::new();
+        for (x, z) in frontier {
+            for dz in -1..=1 {
+                for dx in -1..=1 {
+                    let (nx, nz) = (x + dx, z + dz);
+                    if nx >= 0 && nz >= 0 && nx < size && nz < size {
+                        let c = (nz * size + nx) as usize;
+                        if !out[c] {
+                            out[c] = true;
+                            next.push((nx, nz));
+                        }
+                    }
+                }
+            }
+        }
+        frontier = next;
+    }
+    out
+}
+
+/// Whether armies, their largest bodies included, can walk from the first start to every
+/// other start, every camp and every resource placement (amber), around cliffs, deep water
+/// and trees. Computer players march at what they cannot reach and stay stuck there.
 pub fn connected(map: &UtcMap, terrain: &Terrain) -> Result<(), String> {
     let Some(first) = map.player_starts.first() else {
         return Ok(());
     };
-    let reached = reachable_from(terrain, first.x, first.z);
+    // Buildings are left out, so the fort's own cells count as ground.
+    let closed = narrowed(terrain, &tree_cells(terrain), ARMY_RADIUS);
+    let reached = reachable_from(terrain, &closed, first.x, first.z);
     for s in &map.player_starts[1..] {
         if !near(terrain, &reached, s.x, s.z, 12) {
             return Err(format!(
-                "Player {}'s start cannot be reached on foot from Player {}'s: cliffs, deep water or trees close the way.",
-                s.player, first.player
+                "Player {}'s start cannot be reached on foot from Player {}'s: cliffs, deep water or trees close the way, or leave it narrower than {} cells.",
+                s.player,
+                first.player,
+                2 * ARMY_RADIUS + 1
+            ));
+        }
+    }
+    for camp in &map.camps {
+        if !near(terrain, &reached, camp.home.x, camp.home.y, 10) {
+            return Err(format!(
+                "{} cannot be reached on foot from Player {}'s start: cliffs, deep water or trees close the way, or leave it narrower than {} cells.",
+                camp.id,
+                first.player,
+                2 * ARMY_RADIUS + 1
+            ));
+        }
+    }
+    let members: std::collections::BTreeSet<&str> = map
+        .camps
+        .iter()
+        .flat_map(|c| c.members.iter().map(String::as_str))
+        .collect();
+    for e in map.entities.iter().filter(|e| {
+        e.owner == canopy_content::placement::Owner::Nobody && !members.contains(e.id.as_str())
+    }) {
+        if !near(terrain, &reached, e.position.x, e.position.y, 10) {
+            return Err(format!(
+                "{} cannot be reached on foot from Player {}'s start: cliffs, deep water or trees close the way, or leave it narrower than {} cells.",
+                e.id,
+                first.player,
+                2 * ARMY_RADIUS + 1
             ));
         }
     }

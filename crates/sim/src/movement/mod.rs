@@ -114,8 +114,13 @@ fn reservations<'a>(
     }
 }
 
-/// Integer `round(a · b / c)` with halves up, for `c > 0`.
+/// Integer `round(a · b / c)` with halves up; 0 when `c` is not positive (a step or a
+/// look-ahead of no length moves nothing: a mover already on its next node, or a
+/// body without size or speed looking ahead).
 fn scale(a: i64, b: i64, c: i64) -> i64 {
+    if c <= 0 {
+        return 0;
+    }
     (2 * a * b + c).div_euclid(2 * c)
 }
 
@@ -952,5 +957,18 @@ impl Motion {
     fn active(&mut self, state: &State) -> Vec<EntityId> {
         self.collect_active(state);
         self.units.clone()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::scale;
+
+    #[test]
+    fn scaling_rounds_halves_up_and_moves_nothing_by_nothing() {
+        assert_eq!(scale(10, 1, 4), 3);
+        assert_eq!(scale(-10, 1, 4), -2);
+        assert_eq!(scale(500, 0, 7), 0);
+        assert_eq!(scale(500, 3, 0), 0);
     }
 }

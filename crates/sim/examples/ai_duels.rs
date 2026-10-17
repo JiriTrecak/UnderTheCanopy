@@ -3,11 +3,12 @@
 //!
 //! ```text
 //! cargo run --release -p canopy-sim --example ai_duels -- --data . [--seeds 4] \
-//!     [--minutes 60] [--races ants,beetles]
+//!     [--minutes 60] [--races ants,beetles] [--maps echo-isles,amberleaf-crossing]
 //! ```
 //!
 //! Each duel takes the two starts farthest apart. `--races a,b` gives the first and second
-//! player those races (the default race for both when absent).
+//! player those races (the default race for both when absent). `--maps` keeps those maps
+//! (package ids) only.
 #![allow(clippy::disallowed_methods)] // wall-clock timing of the runs
 
 use canopy_content::{Content, map, map::UtcMap};
@@ -19,6 +20,7 @@ struct Args {
     seeds: u32,
     minutes: u32,
     races: [Option<String>; 2],
+    maps: Vec<String>,
 }
 
 fn args() -> Result<Args, String> {
@@ -27,6 +29,7 @@ fn args() -> Result<Args, String> {
         seeds: 4,
         minutes: 60,
         races: [None, None],
+        maps: Vec::new(),
     };
     let mut it = std::env::args().skip(1);
     while let Some(flag) = it.next() {
@@ -40,6 +43,7 @@ fn args() -> Result<Args, String> {
                 let mut parts = v.split(',').map(|s| Some(s.trim().to_string()));
                 out.races = [parts.next().flatten(), parts.next().flatten()];
             }
+            "--maps" => out.maps = value()?.split(',').map(|m| m.trim().to_string()).collect(),
             other => return Err(format!("unknown option {other}")),
         }
     }
@@ -141,6 +145,7 @@ fn main() -> Result<(), String> {
     let maps: Vec<UtcMap> = map::library(&args.data)
         .map_err(|e| format!("maps: {e}"))?
         .iter()
+        .filter(|f| args.maps.is_empty() || args.maps.contains(&f.id))
         .map(|f| f.load().map_err(|e| format!("{}: {e}", f.file)))
         .collect::<Result<_, _>>()?;
     let cap = args.minutes * 60 * 40;
