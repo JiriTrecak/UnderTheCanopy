@@ -110,7 +110,7 @@ const CLIFF: &str = "asset.terrain.warcraft-cliff-cldi";
 pub fn biome(tileset: char) -> &'static str {
     match tileset {
         'W' | 'N' | 'I' => "frozen-forest",
-        'F' | 'Q' | 'B' => "autumn-forest",
+        'F' | 'Q' => "autumn-forest",
         'A' | 'C' => "deep-forest",
         _ => "vibrant-forest",
     }
@@ -162,6 +162,10 @@ pub fn substitute(tile: &str, biome: &str) -> Ground {
             Ground::Paint(DARK_GRASS)
         };
     }
+    // The Barrens' dry grass reads as grassy earth.
+    if tile.starts_with('B') && has(&["grr", "grs"]) {
+        return Ground::Paint(GRASSY_DIRT);
+    }
     if has(&["grs", "grt", "gsb", "grr", "gra"]) {
         return if winter || autumn {
             Ground::Grass
@@ -185,8 +189,12 @@ pub fn substitute(tile: &str, biome: &str) -> Ground {
     Ground::Paint(DIRT)
 }
 
-/// The trees of a biome (scenery ids), alternated.
-fn trees(biome: &str) -> [&'static str; 2] {
+/// The trees of a tileset in its biome (scenery ids), alternated: the Barrens' dry trees
+/// golden, the rest the biome's own.
+fn trees(tileset: char, biome: &str) -> [&'static str; 2] {
+    if tileset == 'B' {
+        return ["scenery.autumn-tree-gold", "scenery.autumn-tree-copper"];
+    }
     match biome {
         "frozen-forest" => ["scenery.frost-pine-a", "scenery.frost-pine-b"],
         "autumn-forest" => ["scenery.autumn-tree-gold", "scenery.autumn-tree-copper"],
@@ -410,7 +418,10 @@ pub fn convert(
                     .map(|(c, w)| f(c) * w)
                     .sum::<f64>()
             };
-            let level = blend(&|c| f64::from(c.level));
+            // Levels as drawn: a ramp's middle corner half a level up.
+            let levels = [(ix, iy), (ix + 1, iy), (ix, iy + 1), (ix + 1, iy + 1)]
+                .map(|(x, y)| f64::from(t.level(x as isize, y as isize)));
+            let level = levels.iter().zip(weights).map(|(l, w)| l * w).sum::<f64>();
             let same = corners.iter().all(|c| c.level == corners[0].level);
             let ramp = corners.iter().any(|c| c.ramp);
             let source_height = blend(&|c| f64::from(c.ground))
@@ -533,7 +544,7 @@ pub fn convert(
             None => {}
         }
     }
-    let kinds = trees(biome);
+    let kinds = trees(t.tileset, biome);
     let limit = f64::from(size) - 1.0;
     for (i, d) in source.doodads.iter().enumerate() {
         if !tree_ids.contains(&d.id) || d.life == 0 {
@@ -600,6 +611,14 @@ pub fn convert(
             (i, x, z, u.gold)
         })
         .collect();
+    let node_yield = content
+        .definitions
+        .iter()
+        .find(|d| {
+            d.harvesting.is_some() && d.resource_yield.is_some() && d.id.as_str().contains("amber")
+        })
+        .and_then(|d| d.resource_yield)
+        .map_or(2500, |y| y.max(500));
     let mut sites: Vec<(f64, f64)> = Vec::new();
     let mut fixed: HashSet<String> = HashSet::new();
     let mut primary: HashMap<usize, (f64, f64)> = HashMap::new();
@@ -629,7 +648,8 @@ pub fn convert(
         }
     }
     for (mi, &(_, x, z, gold)) in mines.iter().enumerate() {
-        let amount = (gold.max(0) as u32 / 5).clamp(500, 10_000);
+        // Shared over the five nodes, each up to what a node may hold.
+        let amount = (gold.max(0) as u32 / 5).clamp(500, node_yield);
         let (cx, cz, toward) = match primary.get(&mi) {
             Some(&(sx, sz)) => {
                 let (dx, dz) = (x - sx, z - sz);
@@ -1077,9 +1097,13 @@ mod tests {
         assert_eq!(substitute("Ldrt", "vibrant-forest"), Ground::Paint(DIRT));
         assert_eq!(substitute("Vgrs", "vibrant-forest"), Ground::Paint(GRASS));
         assert_eq!(substitute("Agrd", "deep-forest"), Ground::Paint(DARK_GRASS));
-        assert_eq!(substitute("Bdsr", "autumn-forest"), Ground::Paint(SAND));
+        assert_eq!(substitute("Bdsr", "vibrant-forest"), Ground::Paint(SAND));
+        assert_eq!(
+            substitute("Bgrr", "vibrant-forest"),
+            Ground::Paint(GRASSY_DIRT)
+        );
         assert_eq!(substitute("Ysqd", "vibrant-forest"), Ground::Paint(ROCK));
-        assert_eq!(substitute("Bdrh", "autumn-forest"), Ground::Paint(ROUGH));
+        assert_eq!(substitute("Bdrh", "vibrant-forest"), Ground::Paint(ROUGH));
         // Winter keeps its own look: snow is the biome's soil, its grass the biome's.
         assert_eq!(substitute("Wsnw", "frozen-forest"), Ground::Soil);
         assert_eq!(substitute("Wgrs", "frozen-forest"), Ground::Grass);

@@ -204,6 +204,26 @@ pub struct Terrain {
 }
 
 impl Terrain {
+    /// A corner's cliff level as drawn: a ramp's middle corner (a ramp corner between a
+    /// ramp corner one level up and one at its own level) sits half a level up, so a ramp
+    /// climbs one level evenly over its two tiles.
+    pub fn level(&self, x: isize, y: isize) -> f32 {
+        let c = self.at(x, y);
+        let level = f32::from(c.level);
+        if !c.ramp {
+            return level;
+        }
+        let up = |o: &Corner| o.ramp && o.level == c.level + 1;
+        let same = |o: &Corner| o.ramp && o.level == c.level;
+        let middle = [((1, 0), (-1, 0)), ((0, 1), (0, -1))]
+            .iter()
+            .any(|&((ax, ay), (bx, by))| {
+                let (a, b) = (self.at(x + ax, y + ay), self.at(x + bx, y + by));
+                (up(a) && same(b)) || (up(b) && same(a))
+            });
+        if middle { level + 0.5 } else { level }
+    }
+
     pub fn at(&self, x: isize, y: isize) -> &Corner {
         let x = x.clamp(0, self.width as isize - 1) as usize;
         let y = y.clamp(0, self.height as isize - 1) as usize;
@@ -576,6 +596,39 @@ pub fn read(bytes: &[u8]) -> Result<Map, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_ramps_middle_corner_sits_half_a_level_up() {
+        // One row: plateau at level 5, a ramp (5r 4r 4r), ground at level 4.
+        let row = [(5, false), (5, true), (4, true), (4, true), (4, false)];
+        let corners: Vec<Corner> = row
+            .iter()
+            .cycle()
+            .take(row.len() * 3)
+            .map(|&(level, ramp)| Corner {
+                ground: 0.0,
+                water_height: 0.0,
+                water: false,
+                ramp,
+                texture: 0,
+                variation: 0,
+                cliff_texture: 0,
+                level,
+            })
+            .collect();
+        let t = Terrain {
+            tileset: 'L',
+            ground_tiles: vec!["Ldrt".into()],
+            cliff_tiles: vec![],
+            width: row.len(),
+            height: 3,
+            offset_x: 0.0,
+            offset_y: 0.0,
+            corners,
+        };
+        let levels: Vec<f32> = (0..5).map(|x| t.level(x, 1)).collect();
+        assert_eq!(levels, [5.0, 5.0, 4.5, 4.0, 4.0]);
+    }
 
     #[test]
     fn strings_and_colour_codes_resolve() {
