@@ -171,9 +171,9 @@ for i, wood in enumerate(WOODS):
         both('trees', disc(x, z, r, 5), radius=5, density=16, tree=[PINE, PINE2][i % 2])
         # Oaks and a few golden trees along the wood's edge.
         both('trees', arc(x, z, max(r - 3, 2), 0, 360, 7), radius=2.5, density=8, tree=GOLD if i % 4 == 0 else OAK)
-# Golden trees crown the watch hills; oaks behind the mains' woods.
-both('trees', arc(165, 252, 13, 200, 340, 4), radius=2, density=14, tree=OAK)
-both('trees', arc(HALL[0], HALL[1], 48, 160, 290), radius=3, density=8, tree=OAK)
+# Pines crown the watch hills and thicken the mains' woods.
+both('trees', arc(165, 252, 13, 200, 340, 4), radius=2, density=14, tree=PINE2)
+both('trees', arc(HALL[0], HALL[1], 48, 160, 290), radius=3, density=8, tree=PINE2)
 
 # --- Decoration (blocks nothing) -------------------------------------------------------
 def props(points, prop, density, radius=6):

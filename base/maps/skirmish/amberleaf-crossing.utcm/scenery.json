@@ -43825,7 +43825,7 @@
       "z": 55.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3652",
@@ -43837,7 +43837,7 @@
       "z": 247.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3653",
@@ -43849,7 +43849,7 @@
       "z": 245.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3654",
@@ -43861,7 +43861,7 @@
       "z": 242.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3655",
@@ -43873,7 +43873,7 @@
       "z": 240.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3656",
@@ -43885,7 +43885,7 @@
       "z": 240.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3657",
@@ -43897,7 +43897,7 @@
       "z": 240.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3658",
@@ -43909,7 +43909,7 @@
       "z": 242.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3659",
@@ -43921,7 +43921,7 @@
       "z": 245.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3660",
@@ -43933,7 +43933,7 @@
       "z": 247.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3661",
@@ -43945,7 +43945,7 @@
       "z": 262.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3662",
@@ -43957,7 +43957,7 @@
       "z": 267.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3663",
@@ -43969,7 +43969,7 @@
       "z": 270.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3664",
@@ -43981,7 +43981,7 @@
       "z": 272.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3665",
@@ -43993,7 +43993,7 @@
       "z": 270.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3666",
@@ -44005,7 +44005,7 @@
       "z": 272.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3667",
@@ -44017,7 +44017,7 @@
       "z": 270.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3668",
@@ -44029,7 +44029,7 @@
       "z": 272.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3669",
@@ -44041,7 +44041,7 @@
       "z": 270.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3670",
@@ -44053,7 +44053,7 @@
       "z": 267.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3671",
@@ -44065,7 +44065,7 @@
       "z": 265.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3672",
@@ -44077,7 +44077,7 @@
       "z": 137.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3673",
@@ -44089,7 +44089,7 @@
       "z": 140.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3674",
@@ -44101,7 +44101,7 @@
       "z": 132.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3675",
@@ -44113,7 +44113,7 @@
       "z": 130.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3676",
@@ -44125,7 +44125,7 @@
       "z": 125.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3677",
@@ -44137,7 +44137,7 @@
       "z": 120.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3678",
@@ -44149,7 +44149,7 @@
       "z": 115.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3679",
@@ -44161,7 +44161,7 @@
       "z": 112.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3680",
@@ -44173,7 +44173,7 @@
       "z": 110.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3681",
@@ -44185,7 +44185,7 @@
       "z": 107.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3682",
@@ -44197,7 +44197,7 @@
       "z": 100.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3683",
@@ -44209,7 +44209,7 @@
       "z": 97.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3684",
@@ -44221,7 +44221,7 @@
       "z": 90.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3685",
@@ -44233,7 +44233,7 @@
       "z": 85.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3686",
@@ -44245,7 +44245,7 @@
       "z": 82.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3687",
@@ -44257,7 +44257,7 @@
       "z": 80.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3688",
@@ -44269,7 +44269,7 @@
       "z": 77.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3689",
@@ -44281,7 +44281,7 @@
       "z": 75.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3690",
@@ -44293,7 +44293,7 @@
       "z": 75.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3691",
@@ -44305,7 +44305,7 @@
       "z": 72.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3692",
@@ -44317,7 +44317,7 @@
       "z": 72.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3693",
@@ -44329,7 +44329,7 @@
       "z": 72.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3694",
@@ -44341,7 +44341,7 @@
       "z": 72.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3695",
@@ -44353,7 +44353,7 @@
       "z": 75.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3696",
@@ -44365,7 +44365,7 @@
       "z": 372.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3697",
@@ -44377,7 +44377,7 @@
       "z": 375.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3698",
@@ -44389,7 +44389,7 @@
       "z": 380.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3699",
@@ -44401,7 +44401,7 @@
       "z": 385.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3700",
@@ -44413,7 +44413,7 @@
       "z": 387.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3701",
@@ -44425,7 +44425,7 @@
       "z": 390.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3702",
@@ -44437,7 +44437,7 @@
       "z": 392.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3703",
@@ -44449,7 +44449,7 @@
       "z": 395.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3704",
@@ -44461,7 +44461,7 @@
       "z": 400.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3705",
@@ -44473,7 +44473,7 @@
       "z": 407.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3706",
@@ -44485,7 +44485,7 @@
       "z": 410.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3707",
@@ -44497,7 +44497,7 @@
       "z": 412.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3708",
@@ -44509,7 +44509,7 @@
       "z": 415.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3709",
@@ -44521,7 +44521,7 @@
       "z": 417.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3710",
@@ -44533,7 +44533,7 @@
       "z": 420.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3711",
@@ -44545,7 +44545,7 @@
       "z": 422.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3712",
@@ -44557,7 +44557,7 @@
       "z": 425.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3713",
@@ -44569,7 +44569,7 @@
       "z": 427.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3714",
@@ -44581,7 +44581,7 @@
       "z": 430.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3715",
@@ -44593,7 +44593,7 @@
       "z": 432.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3716",
@@ -44605,7 +44605,7 @@
       "z": 435.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3717",
@@ -44617,7 +44617,7 @@
       "z": 437.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3718",
@@ -44629,7 +44629,7 @@
       "z": 437.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3719",
@@ -44641,7 +44641,7 @@
       "z": 440.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3720",
@@ -44653,7 +44653,7 @@
       "z": 440.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3721",
@@ -44665,7 +44665,7 @@
       "z": 437.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3722",
@@ -44677,7 +44677,7 @@
       "z": 437.0
     },
     {
-      "asset": "scenery.canopy-oak",
+      "asset": "scenery.woodland-pine-b",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "tree.3723",
