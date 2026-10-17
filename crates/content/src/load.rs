@@ -406,6 +406,33 @@ impl Content {
         }
     }
 
+    /// Adds definition `d`, or replaces the one with its id, keeping the definitions in id
+    /// order with their looks: tools that stage test units of their own (the editor's
+    /// ability encounter). It is not checked again.
+    pub fn put_definition(&mut self, d: Definition) {
+        let asset = self.asset(d.model.as_str()).cloned();
+        let shown = look(asset.as_ref(), &d);
+        match self
+            .definitions
+            .binary_search_by(|x| x.id.as_str().cmp(d.id.as_str()))
+        {
+            Ok(i) => {
+                self.definitions[i] = d;
+                self.looks[i] = shown;
+            }
+            Err(i) => {
+                self.definitions.insert(i, d);
+                self.looks.insert(i, shown);
+                self.definition_index = self
+                    .definitions
+                    .iter()
+                    .enumerate()
+                    .map(|(i, d)| (d.id.to_string(), i))
+                    .collect();
+            }
+        }
+    }
+
     /// The file that last authored element `id`; the game rules for anything else.
     pub fn file_of(&self, id: &str) -> &str {
         self.files
