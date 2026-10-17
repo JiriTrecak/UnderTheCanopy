@@ -25,3 +25,16 @@ pub fn open() -> Option<PathBuf> {
         .add_filter(FILTER.0, FILTER.1)
         .pick_file()
 }
+
+/// Shows `folder` in the system's file manager (Finder, Explorer).
+pub fn reveal(folder: &std::path::Path) -> anyhow::Result<()> {
+    let program = if cfg!(target_os = "macos") {
+        "open"
+    } else if cfg!(target_os = "windows") {
+        "explorer"
+    } else {
+        "xdg-open"
+    };
+    std::process::Command::new(program).arg(folder).spawn()?;
+    Ok(())
+}

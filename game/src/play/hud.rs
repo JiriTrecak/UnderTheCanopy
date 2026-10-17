@@ -184,6 +184,8 @@ pub struct Hud {
     first_tick: Option<u32>,
     /// Colonies for the observer panel (from the simulation thread).
     pub colonies: Option<std::sync::Arc<Vec<crate::sim::ColonyStats>>>,
+    /// A replay shows its own statistics instead of the observer panel (D60).
+    pub hide_observer: bool,
 }
 
 impl Default for Hud {
@@ -211,6 +213,7 @@ impl Hud {
             deliveries: BTreeMap::new(),
             first_tick: None,
             colonies: None,
+            hide_observer: false,
         }
     }
 
@@ -1218,7 +1221,7 @@ impl Hud {
     }
 
     fn observer(&mut self, ui: &mut Ui, n: &Nodes, play: &Play, k: &Knowledge) {
-        let observing = play.observer();
+        let observing = play.observer() && !self.hide_observer;
         ui.set_visible(n.observer, observing);
         if !observing {
             return;

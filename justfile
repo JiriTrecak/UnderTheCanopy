@@ -19,6 +19,10 @@ edit *args: cook
 mcp *args:
     cargo run -p canopy -- mcp --data "{{justfile_directory()}}" {{args}}
 
+# Watch a replay (`just replay <file.utcr>`), or check one headless with `--verify`: plays it to the end, checks its fingerprints and outcome, times seeks (docs/ui.md, Replays)
+replay *args: cook
+    cargo run -q --release -p canopy -- replay --data "{{justfile_directory()}}" {{args}}
+
 # Render one view offscreen to a PNG: `just shot --map <id> --camera <x,z,zoom[,yaw]> --out <png>` (see docs/renderer.md, "Reference captures")
 shot *args: cook
     cargo run -q --release -p canopy -- shot --data "{{justfile_directory()}}" {{args}}

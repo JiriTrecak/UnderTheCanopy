@@ -135,6 +135,8 @@ pub struct InMatch {
     lens: cinematic::Lens,
     scene_targets: Option<sim::SceneTargets>,
     networked: bool,
+    /// The snapshots' generation last seen (a replay seek starts a new one).
+    generation: u32,
 }
 
 impl InMatch {
@@ -151,6 +153,8 @@ impl InMatch {
         renderer.set_environment(gpu, loaded.environment.clone());
         renderer.load_world(gpu, &loaded.pack, &loaded.scene.world)?;
         renderer.set_actors(&[]);
+        // No fog until the match's first view says otherwise (not the last match's).
+        renderer.set_fog(gpu, None);
         let loaded_sandbox = loaded.sandbox;
         let content = game.world.catalog().content.clone();
         let catalog = Arc::new(Catalog::new(content.clone()));
@@ -204,9 +208,10 @@ impl InMatch {
         live.world_ui_input.viewer = start.me;
         renderer.bake_minimap(gpu, loaded.scene.size, loaded.scene.minimap, MINIMAP_PIXELS);
         renderer.set_portrait(gpu, None, PORTRAIT_PIXELS);
-        let sim = SimThread::start(
+        let sim = SimThread::start_with(
             game.world,
             game.session,
+            game.driver,
             game.presenter,
             sim::TICK,
             start.tick,
@@ -287,6 +292,7 @@ impl InMatch {
             networked: start.chat_server,
             lens: cinematic::Lens::default(),
             scene_targets: None,
+            generation: 0,
         };
         this.stats.networked = start.chat_server;
         this.stats.players = this
@@ -363,6 +369,30 @@ impl InMatch {
             }
         }
         self.tools = tools;
+    }
+
+    /// A replay (D60): the replay's own statistics replace the observer panel.
+    pub fn set_replay(&mut self) {
+        self.hud.hide_observer = true;
+    }
+
+    /// Whose vision the picture shows: a player's fog of war, or everything (`None`). The
+    /// debug overlay's reveal and fog perspective, as a replay's control.
+    pub fn set_vision(&mut self, player: Option<u8>) {
+        self.set_tools(MatchTools {
+            reveal: player.is_none(),
+            perspective: player,
+            ..self.tools
+        });
+    }
+
+    /// The player whose vision shows (`None`: everything).
+    pub fn vision(&self) -> Option<u8> {
+        if self.tools.reveal {
+            None
+        } else {
+            self.tools.perspective
+        }
     }
 
     /// Follows the player's settings (shortcuts, health bars).
@@ -735,6 +765,13 @@ impl InMatch {
         self.live.poll(self.sim.mailbox());
         self.live.frame(host.renderer, gpu, &self.loaded.pack, now);
         let newest = self.live.newest().cloned();
+        if let Some(s) = &newest
+            && s.generation != self.generation
+        {
+            // The world jumped (a replay seek): sounds and light follow from here.
+            self.generation = s.generation;
+            self.last_tick = None;
+        }
         if let Some(s) = &newest {
             // Effect sounds hear every tick once, in order.
             for snap in self.live.snapshots() {

@@ -1,0 +1,116 @@
+{
+  "visible": false,
+  "templates": {
+    "rl-entry": {
+      "kind": "button", "class": "sk-map", "action": "replays.select",
+      "children": [
+        { "id": "thumb", "kind": "image", "class": "sk-thumb" },
+        {
+          "class": "sk-map-text",
+          "children": [
+            { "id": "name", "kind": "label", "class": "sk-map-name" },
+            { "id": "meta", "kind": "label", "class": "sk-map-meta" },
+            { "id": "players", "kind": "label", "class": "sk-map-meta rl-players" }
+          ]
+        }
+      ]
+    },
+    "rl-player": {
+      "class": "rl-player",
+      "children": [
+        { "id": "swatch", "class": "rl-swatch" },
+        {
+          "class": "sk-player-text rl-player-text",
+          "children": [
+            { "id": "name", "kind": "label", "class": "sk-player-name" },
+            { "id": "sub", "kind": "label", "class": "sk-player-sub" }
+          ]
+        },
+        { "id": "result", "kind": "label", "class": "rl-result" }
+      ]
+    }
+  },
+  "root": {
+    "class": "sk",
+    "children": [
+      { "kind": "image", "class": "cover", "image": "menu-art" },
+      { "class": "sk-shade" },
+      {
+        "class": "sk-shell",
+        "children": [
+          {
+            "class": "sk-header",
+            "children": [
+              {
+                "class": "sk-heading",
+                "children": [
+                  { "kind": "label", "class": "eyebrow", "text": "Skirmish" },
+                  { "kind": "label", "class": "sk-title", "text": "Replays" }
+                ]
+              },
+              { "kind": "button", "class": "sk-ghost", "text": "← Skirmish", "action": "replays.back" }
+            ]
+          },
+          {
+            "class": "sk-layout rl-layout",
+            "children": [
+              {
+                "class": "sk-col",
+                "children": [
+                  {
+                    "class": "sk-section-row",
+                    "children": [
+                      { "kind": "label", "class": "sk-section", "text": "Recorded matches" },
+                      { "id": "count", "kind": "label", "class": "sk-map-meta" }
+                    ]
+                  },
+                  { "id": "list", "class": "sk-maps", "repeat": "rl-entry" },
+                  { "id": "empty", "kind": "label", "class": "sk-hint", "text": "No replays yet. Every match you play is recorded; save one from its result, or find your latest match here as “Last match”.", "visible": false }
+                ]
+              },
+              {
+                "class": "sk-col sk-col-mid rl-details",
+                "children": [
+                  {
+                    "id": "preview", "class": "sk-preview rl-preview",
+                    "children": [
+                      { "id": "image", "kind": "image", "class": "sk-preview-image" },
+                      { "id": "empty", "kind": "label", "class": "sk-preview-empty", "text": "No preview", "visible": false }
+                    ]
+                  },
+                  { "id": "title", "kind": "label", "class": "sk-map-title" },
+                  { "id": "meta", "kind": "label", "class": "sk-meta" },
+                  {
+                    "id": "rename", "class": "rl-rename", "visible": false,
+                    "children": [
+                      { "id": "field", "kind": "text_field", "class": "mp-field rl-field", "max_length": 80, "placeholder": "Replay name", "action": "replays.rename-name" },
+                      { "kind": "button", "class": "sk-ghost", "text": "Rename", "action": "replays.rename-confirm" },
+                      { "kind": "button", "class": "sk-ghost", "text": "Cancel", "action": "replays.rename-cancel" }
+                    ]
+                  },
+                  { "kind": "label", "class": "sk-section rl-section", "text": "Players" },
+                  { "id": "players", "class": "sk-players rl-players-list", "repeat": "rl-player" },
+                  { "id": "status", "kind": "label", "class": "sk-status rl-status", "visible": false }
+                ]
+              }
+            ]
+          },
+          {
+            "class": "sk-footer",
+            "children": [
+              {
+                "class": "rl-tools",
+                "children": [
+                  { "id": "rename-open", "kind": "button", "class": "sk-ghost", "text": "Rename", "action": "replays.rename" },
+                  { "id": "delete", "kind": "button", "class": "sk-ghost", "text": "Delete", "action": "replays.delete" },
+                  { "id": "reveal", "kind": "button", "class": "sk-ghost", "text": "Show in Finder", "action": "replays.reveal" }
+                ]
+              },
+              { "id": "watch", "kind": "button", "class": "sk-launch", "text": "Watch replay →", "action": "replays.watch" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -106,6 +106,9 @@ pub struct Snapshot {
     pub slowdowns: u32,
     /// The match outcome is decided.
     pub decided: bool,
+    /// Counts the jumps of the world (replay seeks): a new generation does not follow on
+    /// from the snapshots before it.
+    pub generation: u32,
 }
 
 impl Snapshot {
@@ -139,6 +142,12 @@ impl Mailbox {
     /// The newest published tick, without locking.
     pub fn latest(&self) -> Option<u32> {
         self.latest.load(Ordering::Acquire).checked_sub(1)
+    }
+
+    /// Forgets every snapshot (the world jumped: a replay seek).
+    pub fn reset(&self) {
+        self.ring.lock().unwrap_or_else(|e| e.into_inner()).clear();
+        self.latest.store(0, Ordering::Release);
     }
 
     /// Copies the ring into `out` (oldest first) unless the lock is busy; never waits.
@@ -193,10 +202,50 @@ pub enum Control {
     /// (an observer reveals the map), or `None` for the seat's own. The HUD and commands
     /// keep the seat's view.
     Shown(Option<Seat>),
+    /// Replays: jump to this tick (D60).
+    Seek(u32),
+    /// Replays: the transport's pause, apart from the game menu's.
+    Hold(bool),
+}
+
+/// What feeds the world its commands: the session (recorded when a recorder is given),
+/// or a replay (D60).
+pub enum Driver {
+    Live {
+        recorder: Option<crate::replay::record::Recorder>,
+    },
+    Replay(Box<crate::replay::playback::Playback>),
+}
+
+impl Driver {
+    pub fn live() -> Self {
+        Self::Live { recorder: None }
+    }
+}
+
+/// What a replay's transport shows, as of the simulation thread's last loop.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct ReplayLive {
+    pub tick: u32,
+    pub start: u32,
+    pub end: u32,
+    /// How far the background analysis has played the replay (keyframes up to there).
+    pub analysed: u32,
+    /// The first tick the replay left the recorded match, as far as known.
+    pub desync: Option<u32>,
+    pub held: bool,
+    pub speed: f32,
+    /// The tick a seek in progress is heading for.
+    pub seeking: Option<u32>,
+    /// The latest seek: its target and how long it took, milliseconds.
+    pub last_seek: Option<(u32, f32)>,
+    pub at_end: bool,
 }
 
 /// The match speeds the debug overlay offers (old 1–4×, and half speed).
 pub const SPEEDS: [f32; 5] = [0.5, 1.0, 2.0, 3.0, 4.0];
+/// A replay's speeds.
+pub const REPLAY_SPEEDS: [f32; 5] = [0.5, 1.0, 2.0, 4.0, 8.0];
 
 /// What a running match tells the window thread.
 #[derive(Debug, Clone)]
@@ -215,6 +264,8 @@ pub struct LiveStatus {
     pub status: canopy_net::Status,
     pub paused: bool,
     pub tick: u32,
+    /// A replay's transport (replays only).
+    pub replay: Option<ReplayLive>,
 }
 
 /// What a networked seat reports once its world is built (`ready`).
@@ -421,10 +472,135 @@ pub struct ColonyStats {
     pub army: u32,
     /// By id.
     pub heroes: Vec<HeroStats>,
+    /// Living buildings, finished or not.
+    pub buildings: u32,
+    /// What the living army units cost to make, all goods added up.
+    pub army_value: u32,
+    /// What the player's buildings are making or researching now.
+    pub production: Vec<Producing>,
+    /// The observers' counts (income, gathered, lost, killed), when kept.
+    pub tally: crate::replay::tally::PlayerTally,
+    /// Deliveries per minute by good, in the colony's goods order.
+    pub income: Vec<u32>,
+    /// Seconds of match time the income has sampled (at most 60).
+    pub sampled: u32,
+}
+
+/// One kind of thing in production: a unit trained, research, an upgrade, a revival.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Producing {
+    /// Icon asset.
+    pub icon: String,
+    pub name: String,
+    pub count: u32,
+    /// The furthest progress among them, 0–1, when one is under way.
+    pub progress: Option<f32>,
+}
+
+/// What `player`'s buildings are making now, the furthest along first.
+fn production(world: &World, player: u8) -> Vec<Producing> {
+    use canopy_content::game::Creation;
+    let state = world.state();
+    let catalog = world.catalog();
+    let content = &catalog.content;
+    let mut out: Vec<Producing> = Vec::new();
+    let mut add = |icon: &str, name: &str, progress: Option<f32>| match out
+        .iter_mut()
+        .find(|p| p.name == name)
+    {
+        Some(p) => {
+            p.count += 1;
+            if let Some(v) = progress {
+                p.progress = Some(p.progress.map_or(v, |w| w.max(v)));
+            }
+        }
+        None => out.push(Producing {
+            icon: icon.to_owned(),
+            name: name.to_owned(),
+            count: 1,
+            progress,
+        }),
+    };
+    for e in state.entities.iter() {
+        if e.owner != Owner::Player(player) || !canopy_sim::abilities::actor::alive(e) {
+            continue;
+        }
+        let d = catalog.get(e.definition);
+        if let Some(p) = &e.production {
+            for q in &p.queue {
+                let od = catalog.get(q.definition);
+                let total = od.creation.as_ref().map_or(1, |c| match c {
+                    Creation::Train { work_ticks, .. }
+                    | Creation::Construct { work_ticks, .. }
+                    | Creation::Harvest { work_ticks, .. }
+                    | Creation::Plant { work_ticks, .. } => *work_ticks,
+                });
+                let progress = p
+                    .active
+                    .as_ref()
+                    .filter(|a| a.queue == Some(q.id))
+                    .map(|a| (a.progress as f32 / total.max(1) as f32).clamp(0.0, 1.0));
+                add(od.icon.as_str(), &od.name, progress);
+            }
+        }
+        if let Some(r) = &e.research {
+            for (i, entry) in r.queue.iter().enumerate() {
+                let rule = content.rules.research.get(entry.id.as_str());
+                let progress = (i == 0).then(|| {
+                    rule.map_or(0.0, |x| {
+                        (entry.progress as f32 / x.work_ticks.max(1) as f32).clamp(0.0, 1.0)
+                    })
+                });
+                add(
+                    rule.map_or("", |x| x.icon.as_str()),
+                    rule.map_or(entry.id.as_str(), |x| x.name.as_str()),
+                    progress,
+                );
+            }
+        }
+        if let (Some(up), Some(rule)) = (&e.upgrade, &d.upgrade) {
+            let target = content.definition(rule.target.as_str());
+            add(
+                target.map_or("", |t| t.icon.as_str()),
+                &format!("{} upgrade", target.map_or("", |t| t.name.as_str())),
+                Some((up.progress as f32 / rule.work_ticks.max(1) as f32).clamp(0.0, 1.0)),
+            );
+        }
+        if let (Some(revival), Some(policy)) = (&e.revival, &d.behaviors.revival) {
+            for r in &revival.queue {
+                let hero = state
+                    .entities
+                    .get(r.hero)
+                    .map(|h| catalog.get(h.definition));
+                let total =
+                    policy.work_ticks + policy.work_ticks_per_level * r.level.saturating_sub(1);
+                add(
+                    hero.map_or("", |h| h.icon.as_str()),
+                    &format!("Revive {}", hero.map_or("hero", |h| h.name.as_str())),
+                    Some((r.progress as f32 / total.max(1) as f32).clamp(0.0, 1.0)),
+                );
+            }
+        }
+    }
+    out.sort_by(|a, b| {
+        b.progress
+            .unwrap_or(-1.0)
+            .total_cmp(&a.progress.unwrap_or(-1.0))
+            .then_with(|| a.name.cmp(&b.name))
+    });
+    out
 }
 
 /// Every slot's row of the observer panel (observers only: it reads the whole state).
 pub fn colonies(world: &World) -> Vec<ColonyStats> {
+    colonies_with(world, None)
+}
+
+/// [`colonies`] with the observers' counts from `tally`.
+pub fn colonies_with(
+    world: &World,
+    tally: Option<&crate::replay::tally::Tally>,
+) -> Vec<ColonyStats> {
     use canopy_content::game::SelectionClass;
     let state = world.state();
     let catalog = world.catalog();
@@ -454,6 +630,14 @@ pub fn colonies(world: &World) -> Vec<ColonyStats> {
             workers: 0,
             army: 0,
             heroes: Vec::new(),
+            buildings: 0,
+            army_value: 0,
+            production: production(world, s.player),
+            tally: tally
+                .and_then(|t| t.players.get(&s.player).cloned())
+                .unwrap_or_default(),
+            income: Vec::new(),
+            sampled: tally.map_or(0, |t| t.sampled_seconds()),
         })
         .collect();
     rows.sort_by_key(|r| r.player);
@@ -464,11 +648,14 @@ pub fn colonies(world: &World) -> Vec<ColonyStats> {
         let Some(row) = rows.iter_mut().find(|r| r.player == player) else {
             continue;
         };
-        if e.unit.is_none() {
-            continue;
-        }
         let d = catalog.get(e.definition);
         let living = canopy_sim::abilities::actor::alive(e);
+        if e.unit.is_none() {
+            if living && d.kind == canopy_content::game::Kind::Building {
+                row.buildings += 1;
+            }
+            continue;
+        }
         if living {
             row.units += 1;
             if d.behaviors.work.is_some() {
@@ -476,6 +663,7 @@ pub fn colonies(world: &World) -> Vec<ColonyStats> {
             }
             if d.selection_class == Some(SelectionClass::Army) {
                 row.army += 1;
+                row.army_value += crate::replay::tally::value(world, e.definition);
             }
         }
         if d.is_hero() && (living || e.fallen) {
@@ -495,6 +683,14 @@ pub fn colonies(world: &World) -> Vec<ColonyStats> {
     }
     for row in &mut rows {
         row.heroes.sort_by_key(|h| h.id);
+        if let Some(t) = tally {
+            row.income = row
+                .colony
+                .goods
+                .iter()
+                .map(|g| t.per_minute(row.player, g.item.as_str()))
+                .collect();
+        }
     }
     rows
 }
@@ -510,14 +706,50 @@ pub fn advance(
     seat: Seat,
     shown: Option<Seat>,
 ) -> Option<Advanced> {
+    advance_with(world, session, &mut Driver::live(), presenter, seat, shown)
+}
+
+/// [`advance`] fed by `driver`: the session (recorded when it has a recorder) or a
+/// replay; `None` while waiting, or at a replay's end.
+pub fn advance_with(
+    world: &mut World,
+    session: &mut Session,
+    driver: &mut Driver,
+    presenter: &mut Presenter,
+    seat: Seat,
+    shown: Option<Seat>,
+) -> Option<Advanced> {
     let started = Instant::now();
-    session.advance(world)?;
+    match driver {
+        Driver::Live { recorder } => {
+            let turn = session.advance(world)?;
+            if let Some(recorder) = recorder {
+                recorder.stepped(&turn.commands, world);
+            }
+        }
+        Driver::Replay(playback) => playback.advance(world)?,
+    }
     let stepped = Instant::now();
+    Some(present_step(
+        world, presenter, seat, shown, started, stepped,
+    ))
+}
+
+/// Presents the world as it stands for `seat` (or the `shown` seat's picture) after a
+/// step that began at `started` and ended at `stepped`.
+fn present_step(
+    world: &World,
+    presenter: &mut Presenter,
+    seat: Seat,
+    shown: Option<Seat>,
+    started: Instant,
+    stepped: Instant,
+) -> Advanced {
     let view = {
         let _span = tracing::trace_span!("seat_view").entered();
         seat.view(world)
     };
-    // Another seat's view (debug), else a mission scene's staging.
+    // Another seat's view (debug, replay vision), else a mission scene's staging.
     let other = match shown.filter(|&s| s != seat) {
         Some(s) => Some(s.view(world)),
         None => stage(world, &view),
@@ -528,7 +760,7 @@ pub fn advance(
     });
     let presented = Instant::now();
     let ms = |a: Instant, b: Instant| (b - a).as_secs_f32() * 1000.0;
-    Some(Advanced {
+    Advanced {
         held: Arc::new(held_units(&view)),
         scene: scene_targets(world, &view),
         presentation,
@@ -539,7 +771,7 @@ pub fn advance(
             view: ms(stepped, viewed),
             present: ms(viewed, presented),
         },
-    })
+    }
 }
 
 /// The presentation of the world as it stands for `seat` (before its first step, or a
@@ -558,9 +790,34 @@ impl SimThread {
     /// runs at `tick_length` per tick (zero: as fast as possible), presenting for `seat`.
     /// A networked seat reports `ready` once its world is built, and its outcome to the
     /// server once decided (D32).
+    #[cfg(test)]
     pub fn start(
+        world: World,
+        session: Session,
+        presenter: Presenter,
+        tick_length: Duration,
+        start_tick: u32,
+        seat: Seat,
+        ready: Option<Ready>,
+    ) -> Self {
+        Self::start_with(
+            world,
+            session,
+            Driver::live(),
+            presenter,
+            tick_length,
+            start_tick,
+            seat,
+            ready,
+        )
+    }
+
+    /// [`SimThread::start`] fed by `driver`: a recorded session, or a replay (D60).
+    #[allow(clippy::too_many_arguments)]
+    pub fn start_with(
         mut world: World,
         mut session: Session,
+        mut driver: Driver,
         mut presenter: Presenter,
         tick_length: Duration,
         start_tick: u32,
@@ -572,10 +829,12 @@ impl SimThread {
         let want_ai = Arc::new(AtomicBool::new(false));
         let (control_tx, controls) = mpsc::channel::<Control>();
         let (notice_tx, notices) = mpsc::channel::<Notice>();
+        let replaying = matches!(driver, Driver::Replay(_));
         let live = Arc::new(Mutex::new(LiveStatus {
             status: session.status(),
             paused: false,
             tick: world.tick(),
+            replay: replaying.then(ReplayLive::default),
         }));
         let handle = {
             let mailbox = mailbox.clone();
@@ -591,7 +850,19 @@ impl SimThread {
                     }
                     let started = Instant::now();
                     while world.tick() < start_tick && !stop.load(Ordering::Relaxed) {
-                        if advance(&mut world, &mut session, &mut presenter, seat, None).is_none() {
+                        if advance_with(
+                            &mut world,
+                            &mut session,
+                            &mut driver,
+                            &mut presenter,
+                            seat,
+                            None,
+                        )
+                        .is_none()
+                        {
+                            if replaying {
+                                break;
+                            }
                             std::thread::sleep(Duration::from_millis(1));
                         }
                     }
@@ -608,17 +879,31 @@ impl SimThread {
                     let tick0 = world.tick();
                     let mut ai: Option<Arc<Vec<canopy_sim::ai::Summary>>> = None;
                     let observing = seat == Seat::Observer;
-                    let mut colony_list = observing.then(|| Arc::new(colonies(&world)));
+                    // Observers' counts: the replay's own, else kept here.
+                    let mut tally = crate::replay::tally::Tally::default();
+                    let rows = |world: &World, driver: &Driver, tally: &crate::replay::tally::Tally| {
+                        let tally = match driver {
+                            Driver::Replay(p) => &p.tally,
+                            Driver::Live { .. } => tally,
+                        };
+                        Arc::new(colonies_with(world, Some(tally)))
+                    };
+                    let mut colony_list = observing.then(|| rows(&world, &driver, &tally));
                     // Schedule: simulation time of tick n is epoch + (n − origin) · pace.
                     // A speed change moves the origin to the newest tick, so the
                     // schedule stays continuous.
                     let mut epoch = Instant::now();
                     let mut origin = tick0;
                     let mut pace = tick_length;
+                    let mut speed = 1.0f32;
                     let mut shown: Option<Seat> = None;
                     let mut slowdowns = 0;
                     let networked = session.room().is_some();
                     let mut paused_at: Option<Instant> = None;
+                    let mut menu_pause = false;
+                    let mut hold = false;
+                    let mut generation = 0u32;
+                    let mut last_seek: Option<(u32, f32)> = None;
                     let mut reported = false;
                     let first_decided = first_view.outcome.is_some();
                     mailbox.publish(Arc::new(Snapshot {
@@ -634,46 +919,118 @@ impl SimThread {
                         cost: TickCost::default(),
                         slowdowns,
                         decided: first_decided,
+                        generation,
                     }));
                     while !stop.load(Ordering::Relaxed) {
-                        // Controls from the window thread.
+                        // Controls from the window thread; of several seeks only the
+                        // newest is made.
+                        let mut seek: Option<u32> = None;
                         while let Ok(control) = controls.try_recv() {
                             match control {
-                                Control::Pause(pause) if !networked => {
-                                    match (pause, paused_at) {
-                                        (true, None) => paused_at = Some(Instant::now()),
-                                        (false, Some(at)) => {
-                                            // Resume where the match stopped: no catch-up.
-                                            epoch += at.elapsed();
-                                            paused_at = None;
-                                        }
-                                        _ => {}
-                                    }
-                                }
+                                Control::Pause(pause) if !networked => menu_pause = pause,
                                 Control::Pause(_) => {}
+                                Control::Hold(on) if replaying => hold = on,
+                                Control::Hold(_) => {}
                                 Control::Save(reply) => {
                                     let _ = reply.send(world.save());
                                 }
                                 Control::Chat(text) => session.chat(&text),
-                                Control::Speed(speed)
-                                    if !networked && !tick_length.is_zero() && speed > 0.0 =>
+                                Control::Speed(s)
+                                    if !networked && !tick_length.is_zero() && s > 0.0 =>
                                 {
                                     let now_tick = world.tick();
                                     epoch += pace * (now_tick - origin);
                                     origin = now_tick;
-                                    pace = tick_length.div_f32(speed);
+                                    pace = tick_length.div_f32(s);
+                                    speed = s;
                                 }
                                 Control::Shown(seat) if !networked => shown = seat,
-                                Control::Speed(_) | Control::Shown(_) => {}
+                                Control::Seek(tick) if replaying => seek = Some(tick),
+                                Control::Speed(_) | Control::Shown(_) | Control::Seek(_) => {}
                             }
+                        }
+                        if let (Some(target), Driver::Replay(playback)) = (seek, &mut driver) {
+                            if let Ok(mut l) = live.lock()
+                                && let Some(r) = &mut l.replay
+                            {
+                                r.seeking = Some(target);
+                            }
+                            match playback.seek(&mut world, target) {
+                                Ok(s) => last_seek = Some((s.to, s.ms)),
+                                Err(error) => {
+                                    tracing::error!(error = %format!("{error:#}"), "replay seek failed")
+                                }
+                            }
+                            presenter.reset();
+                            generation += 1;
+                            mailbox.reset();
+                            let now = Instant::now();
+                            let a = present_step(&world, &mut presenter, seat, shown, now, now);
+                            epoch = now;
+                            origin = world.tick();
+                            if paused_at.is_some() {
+                                paused_at = Some(now);
+                            }
+                            if observing {
+                                colony_list = Some(rows(&world, &driver, &tally));
+                            }
+                            mailbox.publish(Arc::new(Snapshot {
+                                presentation: a.presentation,
+                                view: a.view,
+                                ai: None,
+                                held: a.held,
+                                scene: a.scene,
+                                colonies: colony_list.clone(),
+                                epoch,
+                                origin,
+                                tick_length: pace,
+                                cost: a.cost,
+                                slowdowns,
+                                decided: a.decided,
+                                generation,
+                            }));
                         }
                         for event in session.poll() {
                             let _ = notice_tx.send(Notice::Net(event));
+                        }
+                        let at_end = match &driver {
+                            Driver::Replay(p) => world.tick() >= p.end_tick(),
+                            Driver::Live { .. } => false,
+                        };
+                        // The clock stands while the menu, the transport or a replay's
+                        // end holds it; it resumes where it stopped, without catch-up.
+                        let hold_clock = menu_pause || hold || at_end;
+                        match (hold_clock, paused_at) {
+                            (true, None) => paused_at = Some(Instant::now()),
+                            (false, Some(at)) => {
+                                epoch += at.elapsed();
+                                paused_at = None;
+                            }
+                            _ => {}
                         }
                         if let Ok(mut l) = live.try_lock() {
                             l.status = session.status();
                             l.paused = paused_at.is_some();
                             l.tick = world.tick();
+                            if let Driver::Replay(p) = &driver {
+                                let a = p.analysis();
+                                let desync = match (p.desync, a.desync) {
+                                    (Some(x), Some(y)) => Some(x.min(y)),
+                                    (x, y) => x.or(y),
+                                };
+                                l.replay = Some(ReplayLive {
+                                    tick: world.tick(),
+                                    start: p.script.start_tick,
+                                    end: p.end_tick(),
+                                    analysed: if a.done { p.end_tick() } else { a.analysed },
+                                    desync,
+                                    held: hold,
+                                    speed,
+                                    seeking: None,
+                                    last_seek,
+                                    at_end,
+                                });
+                            }
                         }
                         if paused_at.is_some() {
                             std::thread::sleep(Duration::from_millis(5));
@@ -701,11 +1058,21 @@ impl SimThread {
                             scene,
                             cost,
                             decided,
-                        }) = advance(&mut world, &mut session, &mut presenter, seat, shown)
+                        }) = advance_with(
+                            &mut world,
+                            &mut session,
+                            &mut driver,
+                            &mut presenter,
+                            seat,
+                            shown,
+                        )
                         else {
                             std::thread::sleep(Duration::from_millis(1));
                             continue;
                         };
+                        if observing && !replaying {
+                            tally.observe(&world);
+                        }
                         if let (Some(outcome), false) = (&view.outcome, reported) {
                             reported = true;
                             let _ = notice_tx.send(Notice::Decided {
@@ -726,7 +1093,7 @@ impl SimThread {
                             ai = Some(Arc::new(world.ai_summaries()));
                         }
                         if observing && world.tick().is_multiple_of(AI_SUMMARY_TICKS) {
-                            colony_list = Some(Arc::new(colonies(&world)));
+                            colony_list = Some(rows(&world, &driver, &tally));
                         }
                         mailbox.publish(Arc::new(Snapshot {
                             presentation,
@@ -741,6 +1108,7 @@ impl SimThread {
                             cost,
                             slowdowns,
                             decided,
+                            generation,
                         }));
                     }
                 })
@@ -861,6 +1229,7 @@ mod tests {
             cost: TickCost::default(),
             slowdowns: 0,
             decided: false,
+            generation: 0,
         })
     }
 
@@ -982,6 +1351,7 @@ mod tests {
             cost: TickCost::default(),
             slowdowns: 0,
             decided: false,
+            generation: 0,
         };
         let at = |ms: u64| render_tick(&s, epoch + Duration::from_millis(ms));
         assert!((at(250) - 109.0).abs() < 1e-9);

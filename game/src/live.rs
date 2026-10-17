@@ -234,11 +234,17 @@ impl LiveScene {
             .update(&self.movers, &scene.water_field(), seconds, focus);
     }
 
-    /// Copies the newest snapshots when the simulation published any.
+    /// Copies the newest snapshots when the simulation published any. After a jump of the
+    /// world (a replay seek) the fog and the hidden trees are sent afresh.
     pub fn poll(&mut self, mailbox: &Mailbox) {
-        let newest = self.snapshots.last().map(|s| s.tick());
-        if mailbox.latest() != newest {
+        let newest = self.snapshots.last().map(|s| (s.tick(), s.generation));
+        if mailbox.latest() != newest.map(|n| n.0) {
             mailbox.take(&mut self.snapshots);
+            let generation = self.snapshots.last().map(|s| s.generation);
+            if generation.is_some() && generation != newest.map(|n| n.1) && newest.is_some() {
+                self.fog.forget();
+                self.hidden_revision = None;
+            }
         }
     }
 

@@ -259,6 +259,7 @@ fn menu(paths: &Paths, size: [u32; 2], frames: u32) -> Result<Value> {
         data: paths.data.clone(),
         user: user.clone(),
         cache: user.join("cache"),
+        replays: user.join("replays"),
     };
     let look = canopy_scene::Look::load(&paths.data, canopy_content::map::BIOMES[0])?;
     let environment = canopy_render::Environment::new(&look.lighting, &look.biome, 12.0, None);

@@ -310,17 +310,9 @@ impl SaveLibrary {
     /// Writes save `id` to `path` as one exported file.
     pub fn export(&self, id: &str, path: &Path) -> Result<SaveMeta> {
         let (meta, body) = self.read(id, None)?;
-        let exported = Exported {
-            format: EXPORT_FORMAT.into(),
-            version: VERSION,
-            meta,
-            body,
-        };
-        let mut gz = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::fast());
-        serde_json::to_writer(&mut gz, &exported)?;
-        write_atomic(path, &gz.finish()?)
+        write_atomic(path, &exported_bytes(&meta, &body)?)
             .with_context(|| format!("cannot write {}", path.display()))?;
-        Ok(exported.meta)
+        Ok(meta)
     }
 
     /// Adds the exported save at `path` to the library, named after the file. `here`
@@ -390,6 +382,28 @@ impl SaveLibrary {
 }
 
 /// SHA-256 of bytes, lowercase hex.
+/// A save as an exported `.utcsave` file's bytes (gzip over JSON of header and body).
+pub fn exported_bytes(meta: &SaveMeta, body: &SaveBody) -> Result<Vec<u8>> {
+    #[derive(Serialize)]
+    struct ExportedRef<'a> {
+        format: &'a str,
+        version: u32,
+        meta: &'a SaveMeta,
+        body: &'a SaveBody,
+    }
+    let mut gz = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::fast());
+    serde_json::to_writer(
+        &mut gz,
+        &ExportedRef {
+            format: EXPORT_FORMAT,
+            version: VERSION,
+            meta,
+            body,
+        },
+    )?;
+    Ok(gz.finish()?)
+}
+
 pub fn digest(bytes: &[u8]) -> String {
     use sha2::Digest;
     sha2::Sha256::digest(bytes)

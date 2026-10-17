@@ -1,0 +1,102 @@
+{
+  "visible": false,
+  "templates": {
+    "rp-chip": {
+      "class": "rp-chip",
+      "children": [
+        { "id": "stripe", "class": "rp-stripe" },
+        { "id": "name", "kind": "label", "class": "rp-chip-name" },
+        { "id": "goods", "class": "rp-goods", "repeat": "rp-good" },
+        { "id": "supply", "kind": "label", "class": "rp-chip-value", "tooltip": { "title": "Supply used / available" } },
+        {
+          "id": "hero", "class": "rp-hero",
+          "children": [
+            { "id": "icon", "kind": "image", "class": "rp-icon" },
+            { "id": "level", "kind": "label", "class": "rp-chip-value" }
+          ]
+        }
+      ]
+    },
+    "rp-good": {
+      "class": "rp-good",
+      "children": [
+        { "id": "icon", "kind": "image", "class": "rp-icon" },
+        { "id": "amount", "kind": "label", "class": "rp-chip-value" }
+      ]
+    },
+    "rp-tab": { "kind": "button", "class": "rp-tab", "text": "Tab", "action": "replay.tab", "toggle": true },
+    "rp-head": { "kind": "label", "class": "rp-cell rp-head-cell" },
+    "rp-cell": { "kind": "label", "class": "rp-cell" },
+    "rp-row": {
+      "class": "rp-row",
+      "children": [
+        { "id": "swatch", "class": "rp-swatch" },
+        { "id": "name", "kind": "label", "class": "rp-row-name" },
+        { "id": "cells", "class": "rp-cells", "repeat": "rp-cell" },
+        { "id": "wide", "kind": "label", "class": "rp-wide", "visible": false }
+      ]
+    },
+    "rp-speed": { "kind": "button", "class": "rp-speed", "text": "1×", "action": "replay.speed", "toggle": true }
+  },
+  "root": {
+    "class": "rp",
+    "children": [
+      {
+        "id": "top", "class": "rp-top",
+        "children": [
+          { "id": "chips", "class": "rp-chips", "repeat": "rp-chip" },
+          { "id": "details", "kind": "button", "class": "rp-toggle", "text": "Statistics", "action": "replay.details", "toggle": true, "hotkey": "Tab", "tooltip": { "title": "Statistics", "body": "Resources, army, losses and production of every player.", "note": "Tab" } }
+        ]
+      },
+      {
+        "id": "panel", "class": "rp-panel", "visible": false,
+        "children": [
+          {
+            "class": "rp-panel-head",
+            "children": [
+              { "id": "tabs", "class": "rp-tabs", "repeat": "rp-tab", "count": 4 },
+              { "id": "clock", "kind": "label", "class": "rp-panel-clock" }
+            ]
+          },
+          {
+            "class": "rp-row rp-head",
+            "children": [
+              { "class": "rp-swatch rp-swatch-empty" },
+              { "kind": "label", "class": "rp-row-name rp-head-cell", "text": "Player" },
+              { "id": "columns", "class": "rp-cells", "repeat": "rp-head" },
+              { "id": "wide-head", "kind": "label", "class": "rp-wide rp-head-cell", "visible": false }
+            ]
+          },
+          { "id": "rows", "class": "rp-rows", "repeat": "rp-row" },
+          { "id": "footer", "kind": "label", "class": "rp-footer" }
+        ]
+      },
+      {
+        "id": "dock", "class": "rp-dock",
+        "children": [
+          { "id": "desync", "kind": "label", "class": "rp-desync", "visible": false },
+          {
+            "id": "transport", "class": "rp-transport",
+            "children": [
+              { "id": "play", "kind": "button", "class": "rp-play", "text": "Pause", "action": "replay.play", "tooltip": { "title": "Play / pause", "note": "Space" } },
+              { "id": "time", "kind": "label", "class": "rp-time" },
+              {
+                "id": "timeline", "class": "rp-timeline", "drag": true, "action": "replay.scrub", "tooltip": { "title": "Timeline", "body": "Click or drag to jump. The lighter part is ready for instant jumps.", "note": "← → skip 10 s" },
+                "children": [
+                  { "class": "rp-track" },
+                  { "id": "analysed", "kind": "bar", "class": "rp-bar rp-analysed" },
+                  { "id": "played", "kind": "bar", "class": "rp-bar rp-played" },
+                  { "id": "desync-mark", "class": "rp-desync-mark", "visible": false },
+                  { "id": "thumb", "class": "rp-thumb" }
+                ]
+              },
+              { "id": "end", "kind": "label", "class": "rp-time rp-time-end" },
+              { "id": "speeds", "class": "rp-speeds", "repeat": "rp-speed", "count": 5 },
+              { "id": "vision", "kind": "dropdown", "class": "rp-select", "action": "replay.vision", "options": ["Everyone"], "tooltip": { "title": "Vision", "body": "Whose fog of war the view shows; Everyone shows the whole map." } }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

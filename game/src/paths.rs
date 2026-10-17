@@ -21,7 +21,15 @@ pub struct Paths {
     pub user: PathBuf,
     /// Per-user cache (downloaded update packages); may be emptied by the system.
     pub cache: PathBuf,
+    /// The player's replays (D60): `Under the Canopy/Replays` in their documents, where
+    /// they find and share them; the user folder's `replays` without a documents folder.
+    pub replays: PathBuf,
 }
+
+/// The game's folder in the player's documents.
+pub const DOCUMENTS_FOLDER: &str = "Under the Canopy";
+/// Replays, in the game's documents folder.
+pub const REPLAYS: &str = "Replays";
 
 /// The player's own map packages, in the user folder.
 pub const USER_MAPS: &str = "maps";
@@ -43,10 +51,17 @@ impl Paths {
         let user = dirs.data_dir().to_path_buf();
         std::fs::create_dir_all(user.join(USER_MAPS))
             .with_context(|| format!("cannot create {}", user.display()))?;
+        let replays = directories::UserDirs::new()
+            .and_then(|u| {
+                u.document_dir()
+                    .map(|d| d.join(DOCUMENTS_FOLDER).join(REPLAYS))
+            })
+            .unwrap_or_else(|| user.join("replays"));
         Ok(Self {
             data,
             user,
             cache: dirs.cache_dir().to_path_buf(),
+            replays,
         })
     }
 }

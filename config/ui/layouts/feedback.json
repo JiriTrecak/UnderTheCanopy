@@ -23,7 +23,8 @@
                     "class": "fb-shot-text",
                     "children": [
                       { "id": "shot-label", "kind": "label", "class": "mp-caption", "text": "Screenshot of the game" },
-                      { "id": "shot-note", "kind": "label", "class": "fb-note", "text": "This screenshot is submitted with your report." }
+                      { "id": "shot-note", "kind": "label", "class": "fb-note", "text": "This screenshot is submitted with your report." },
+                      { "id": "files-note", "kind": "label", "class": "fb-note fb-files", "visible": false }
                     ]
                   }
                 ]

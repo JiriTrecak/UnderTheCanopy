@@ -34,6 +34,8 @@ pub enum MatchKind {
     Skirmish,
     Campaign,
     Multiplayer,
+    /// Watching a replay (D60).
+    Replay,
 }
 
 impl MatchKind {
@@ -41,9 +43,28 @@ impl MatchKind {
         match self {
             Self::Skirmish => Some(Mode::Skirmish),
             Self::Campaign => Some(Mode::Campaign),
-            Self::Multiplayer => None,
+            Self::Multiplayer | Self::Replay => None,
         }
     }
+
+    /// The replay's word for a recorded match of this kind.
+    pub fn replay_mode(self) -> Option<crate::replay::format::Mode> {
+        use crate::replay::format::Mode as M;
+        match self {
+            Self::Skirmish => Some(M::Skirmish),
+            Self::Campaign => Some(M::Campaign),
+            Self::Multiplayer => Some(M::Multiplayer),
+            Self::Replay => None,
+        }
+    }
+}
+
+/// The replay being watched.
+#[derive(Debug, Clone)]
+pub struct Watching {
+    /// Its name in the replays folder (the file name).
+    pub name: String,
+    pub header: crate::replay::format::Header,
 }
 
 /// What the screens learn from a running match.
@@ -80,6 +101,13 @@ pub struct Playing {
     pub outcome: Option<canopy_sim::state::Outcome>,
     events: Vec<MatchEvent>,
     problem: bool,
+    /// The match's recording and what a replay of it says about it (D60).
+    pub recorder: Option<crate::replay::record::Recorder>,
+    /// The match as it started.
+    pub setup: canopy_sim::MatchSetup,
+    pub info: Option<crate::replay::MatchInfo>,
+    /// The replay being watched.
+    pub watching: Option<Watching>,
 }
 
 /// How a match starts.
@@ -98,6 +126,10 @@ pub struct Start {
     pub groups: Option<Vec<Vec<u32>>>,
     /// The player's name in the chat.
     pub name: String,
+    /// What a replay of this match says about it (recorded matches).
+    pub info: Option<crate::replay::MatchInfo>,
+    /// The replay being watched.
+    pub watching: Option<Watching>,
 }
 
 impl Playing {
@@ -148,6 +180,8 @@ impl Playing {
             .map(|c| c.map(|v| (play::run::srgb(v) * 255.0).round() as u8))
             .collect();
         let networked = game.session.room().is_some();
+        let recorder = game.recorder().filter(|_| start.info.is_some());
+        let setup = game.world.setup().clone();
         let camera = start
             .camera
             .map(|[x, z, zoom, yaw]| crate::options::CameraSpec { x, z, zoom, yaw });
@@ -169,6 +203,9 @@ impl Playing {
             },
         )?;
         game.set_options(options);
+        if start.watching.is_some() {
+            game.set_replay();
+        }
         Ok(Self {
             game,
             me: start.me,
@@ -184,7 +221,29 @@ impl Playing {
             outcome: None,
             events: Vec::new(),
             problem: false,
+            recorder,
+            setup,
+            info: start.info,
+            watching: start.watching,
         })
+    }
+
+    /// The replay of this match so far (recorded matches), its result as `result`.
+    pub fn replay(&self, result: &str) -> Option<crate::replay::format::Replay> {
+        let recording = self.recorder.as_ref()?.snapshot();
+        let info = self.info.as_ref()?;
+        match crate::replay::build(&recording, info, result, crate::saves::now_ms()) {
+            Ok(replay) => Some(replay),
+            Err(error) => {
+                tracing::warn!(error = %format!("{error:#}"), "the replay could not be made");
+                None
+            }
+        }
+    }
+
+    /// How the match stands for the local player, in a word (a replay's result).
+    pub fn result_word(&self, surrendered: bool) -> &'static str {
+        crate::replay::result_word(self.outcome.as_ref(), self.me, &self.setup, surrendered)
     }
 
     /// A computer player whose colony falls says "gg" in the chat, on every seat (each
@@ -210,6 +269,14 @@ impl Playing {
                 .unwrap_or([0xcc, 0xcc, 0xcc]);
             self.game.play.hear(self.name_of(slot), color, line);
         }
+    }
+
+    /// Player `player`'s colour (sRGB).
+    pub fn color_of(&self, player: u8) -> [u8; 3] {
+        self.colors
+            .get(usize::from(player))
+            .copied()
+            .unwrap_or([0xcc, 0xcc, 0xcc])
     }
 
     pub fn name_of(&self, player: u8) -> String {
@@ -294,9 +361,13 @@ impl Playing {
                 if self.outcome.is_none() {
                     tracing::info!(tick, winner = ?outcome.winner, "match decided");
                     self.outcome = Some(outcome.clone());
-                    self.events.push(MatchEvent::Decided(outcome));
+                    // A replay plays on through its end; it has no result dialog.
+                    if self.watching.is_none() {
+                        self.events.push(MatchEvent::Decided(outcome));
+                    }
                 }
             }
+
             Notice::Net(Event::Chat(message)) => self.hear(&message),
             Notice::Net(Event::Desync { tick, .. }) => {
                 self.problem = true;

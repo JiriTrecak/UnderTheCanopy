@@ -276,6 +276,7 @@ pub fn run(
         data: paths.data.clone(),
         user: user.clone(),
         cache: user.join("cache"),
+        replays: user.join("replays"),
     };
     let look = canopy_scene::Look::load(&paths.data, canopy_content::map::BIOMES[0])?;
     let environment = canopy_render::Environment::new(&look.lighting, &look.biome, 12.0, None);
@@ -306,6 +307,31 @@ pub fn run(
             "releases" => releases(&mut rig)?,
             "multiplayer" => multiplayer(&mut rig)?,
             "editor" => editor(&mut rig, &paths)?,
+            "replays" => {
+                start_skirmish(&mut rig)?;
+                rig.until("the match", Duration::from_secs(180), |g| g.flow.in_match())?;
+                // A minute and a half of match time to replay.
+                if let Some(p) = &rig.game.playing {
+                    p.game.sim().control(crate::sim::Control::Speed(8.0));
+                }
+                rig.settle(12.0);
+                // The result offers the replay.
+                let outcome = canopy_sim::state::Outcome {
+                    winner: Some(canopy_content::placement::Owner::Player(0)),
+                    defeated: vec![canopy_content::placement::Owner::Player(1)],
+                };
+                if let Some(playing) = &mut rig.game.playing {
+                    playing.outcome = Some(outcome.clone());
+                }
+                rig.game.decided(Some(outcome), false);
+                rig.settle(0.2);
+                rig.click("result.save-replay");
+                rig.settle(0.2);
+                rig.shoot("result-replay-saved")?;
+                rig.game.apply(Intent::LeaveMatch);
+                rig.settle(0.3);
+                replays(&mut rig)?;
+            }
             "feedback" => {
                 feedback_menu(&mut rig)?;
                 start_skirmish(&mut rig)?;
@@ -316,7 +342,7 @@ pub fn run(
                 feedback_match(&mut rig)?;
             }
             other => anyhow::bail!(
-                "unknown capture group {other} (releases, multiplayer, editor, feedback)"
+                "unknown capture group {other} (releases, multiplayer, editor, feedback, replays)"
             ),
         }
         let _ = std::fs::remove_dir_all(&user);
@@ -1089,6 +1115,13 @@ fn feedback_menu(rig: &mut Rig) -> Result<()> {
 /// The feedback form over a match (opened from the game menu, which stays under it).
 fn feedback_match(rig: &mut Rig) -> Result<()> {
     open_feedback(rig, "gm.feedback", "feedback-screenshot-match")?;
+    rig.until("the match's files", Duration::from_secs(30), |g| {
+        g.feedback.files_ready()
+    })?;
+    anyhow::ensure!(
+        rig.game.feedback.files().replay.is_some(),
+        "the replay of the match is attached"
+    );
     describe(
         rig,
         crate::feedback::Category::Bug,
@@ -1310,9 +1343,142 @@ fn a_match(rig: &mut Rig) -> Result<()> {
     rig.game.decided(Some(outcome), false);
     rig.settle(0.2);
     rig.shoot("result-victory")?;
+    rig.click("result.save-replay");
+    rig.settle(0.2);
+    anyhow::ensure!(
+        matches!(rig.game.replay_saved, Some(Ok(_))),
+        "the replay is saved: {:?}",
+        rig.game.replay_saved
+    );
+    rig.shoot("result-replay-saved")?;
     rig.game.apply(Intent::LeaveMatch);
+    rig.settle(0.2);
+    replays(rig)?;
+    rig.game.apply(Intent::Back);
     rig.settle(0.2);
     rig.game.apply(Intent::Back);
     rig.settle(0.2);
+    Ok(())
+}
+
+/// The replays (D60): the list with an entry from another game version, the viewer with
+/// its bar, the statistics panel, one player's vision, the timeline dragged and a jump,
+/// and a replay out of sync. Starts on the skirmish screen after a match was left (its
+/// replay is the last match), ends there.
+fn replays(rig: &mut Rig) -> Result<()> {
+    use crate::replay::library::LAST_MATCH;
+    let library = rig.game.replay_library.clone();
+    let last = library
+        .list()
+        .into_iter()
+        .find(|e| e.name == LAST_MATCH)
+        .context("the last match is kept")?;
+    let mut old = crate::replay::format::Replay::read(&last.path)?;
+    // As another version of the game recorded it.
+    old.header.game_version = "0.3.5".into();
+    old.header.identity.content_digest = "0".repeat(64);
+    old.header.recorded_at -= 86_400_000;
+    let old_name = library.write(&old, &format!("{} from last week", old.header.map_name))?;
+    // A replay whose recorded fingerprints no longer match from its second one.
+    let mut changed = crate::replay::format::Replay::read(&last.path)?;
+    match changed.body.fingerprints.get_mut(1) {
+        Some(f) => f.1 ^= 1,
+        // A short match: a fingerprint of its own that cannot match.
+        None => changed.body.fingerprints = vec![(40, 0)],
+    }
+    changed.header.recorded_at -= 3_600_000;
+    let changed_name = library.write(&changed, "Out of sync sample")?;
+    rig.game.apply(Intent::Open(Screen::Replays));
+    rig.settle(0.4);
+    let index = |g: &Game, name: &str| g.replays.entries.iter().position(|e| e.name == name);
+    rig.game.replays.selected = index(&rig.game, LAST_MATCH).context("listed")?;
+    rig.settle(0.2);
+    rig.shoot("replays")?;
+    rig.game.replays.selected = index(&rig.game, &old_name).context("listed")?;
+    rig.settle(0.2);
+    rig.shoot("replays-incompatible")?;
+    anyhow::ensure!(
+        rig.game
+            .replays
+            .watchable(rig.game.data.as_ref().context("data")?)
+            .is_err(),
+        "another version's replay cannot be watched"
+    );
+    // Watching the last match.
+    rig.game.replays.selected = index(&rig.game, LAST_MATCH).context("listed")?;
+    rig.game.watch_selected();
+    rig.until("the replay", Duration::from_secs(180), |g| {
+        g.flow.in_match() && g.playing.as_ref().is_some_and(|p| p.watching.is_some())
+    })?;
+    rig.settle(4.0);
+    rig.shoot("replay-viewer")?;
+    rig.game.replay_ui.details = true;
+    rig.settle(0.3);
+    rig.shoot("replay-statistics")?;
+    rig.game.replay_ui.tab = 2;
+    rig.settle(0.2);
+    rig.shoot("replay-units-lost")?;
+    rig.game.replay_ui.tab = 3;
+    rig.settle(0.2);
+    rig.shoot("replay-production")?;
+    rig.game.replay_ui.details = false;
+    let first = rig
+        .game
+        .playing
+        .as_ref()
+        .and_then(|p| p.names.first().map(|(slot, _)| *slot));
+    if let Some(p) = &mut rig.game.playing {
+        p.game.set_vision(first);
+    }
+    rig.settle(1.0);
+    rig.shoot("replay-vision-player")?;
+    if let Some(p) = &mut rig.game.playing {
+        p.game.set_vision(None);
+    }
+    // The timeline held at 60 % (its preview), then the jump made.
+    rig.game.replay_ui.drag = Some(0.6);
+    rig.settle(0.2);
+    rig.shoot("replay-scrub")?;
+    rig.game.replay_ui.drag = None;
+    let live = rig
+        .game
+        .playing
+        .as_ref()
+        .and_then(|p| p.status().replay)
+        .context("a replay's transport")?;
+    let target = live.start + (live.end - live.start) * 3 / 5;
+    if let Some(p) = &rig.game.playing {
+        p.game.sim().control(crate::sim::Control::Seek(target));
+    }
+    rig.until("the jump", Duration::from_secs(30), |g| {
+        g.playing
+            .as_ref()
+            .and_then(|p| p.status().replay)
+            .and_then(|r| r.last_seek)
+            .is_some()
+    })?;
+    rig.settle(1.0);
+    rig.shoot("replay-seeked")?;
+    rig.game.apply(Intent::LeaveMatch);
+    rig.until("the replays", Duration::from_secs(30), |g| {
+        matches!(g.flow.screen(), Screen::Replays)
+    })?;
+    // The replay out of sync: the notice and the timeline's mark.
+    rig.game.replays.refresh(&library);
+    rig.game.replays.selected = index(&rig.game, &changed_name).context("listed")?;
+    rig.game.watch_selected();
+    rig.until("the replay out of sync", Duration::from_secs(180), |g| {
+        g.playing
+            .as_ref()
+            .and_then(|p| p.status().replay)
+            .is_some_and(|r| r.desync.is_some())
+    })?;
+    rig.settle(1.0);
+    rig.shoot("replay-out-of-sync")?;
+    rig.game.apply(Intent::LeaveMatch);
+    rig.until("the replays", Duration::from_secs(30), |g| {
+        matches!(g.flow.screen(), Screen::Replays)
+    })?;
+    rig.settle(0.3);
     Ok(())
 }

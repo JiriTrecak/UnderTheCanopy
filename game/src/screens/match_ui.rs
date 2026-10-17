@@ -310,6 +310,7 @@ fn kind_name(kind: MatchKind) -> &'static str {
         MatchKind::Skirmish => "Skirmish",
         MatchKind::Campaign => "Campaign",
         MatchKind::Multiplayer => "Multiplayer",
+        MatchKind::Replay => "Replay",
     }
 }
 
@@ -535,6 +536,7 @@ impl ResultModel {
                 MatchKind::Campaign => "Return to campaign",
                 MatchKind::Multiplayer => "Return to multiplayer",
                 MatchKind::Skirmish => "Return to menu",
+                MatchKind::Replay => "Return to replays",
             },
         );
     }
@@ -557,8 +559,19 @@ pub fn show_game_menu(host: &mut UiHost, playing: &Playing, page: MenuPage, stat
     let local = !playing.networked;
     let decided = playing.outcome.is_some();
     let menu = format!("{} menu", kind_name(playing.kind));
+    let watching = playing.watching.is_some();
+    let replay_sub = playing.watching.as_ref().map(|w| {
+        format!(
+            "{} · recorded {} in version {}",
+            w.name.replace('[', "[["),
+            crate::saves::format_time(w.header.recorded_at),
+            w.header.game_version
+        )
+    });
     let (title, sub) = match page {
+        MenuPage::Main if let Some(sub) = &replay_sub => (menu.as_str(), sub.as_str()),
         MenuPage::Main | MenuPage::Save => (menu.as_str(), playing.map_name.as_str()),
+        MenuPage::Exit if watching => ("Leave the replay?", "Back to the replays."),
         MenuPage::Exit if local && !decided => {
             ("Leave this scenario?", "Unsaved progress will be lost.")
         }
@@ -581,19 +594,26 @@ pub fn show_game_menu(host: &mut UiHost, playing: &Playing, page: MenuPage, stat
     ] {
         widgets::visible(ui, &format!("game-menu/{id}"), page == shown);
     }
-    widgets::visible(ui, "game-menu/exit-page/save-exit", local && !decided);
+    widgets::visible(
+        ui,
+        "game-menu/exit-page/save-exit",
+        local && !decided && !watching,
+    );
     widgets::text(
         ui,
         "game-menu/exit-page/leave",
-        if local && !decided {
+        if watching {
+            "Leave the replay"
+        } else if local && !decided {
             "Exit without saving"
         } else {
             "Leave the match"
         },
     );
     for id in ["save", "load", "restart"] {
-        widgets::enabled(ui, &format!("game-menu/main/{id}"), local);
+        widgets::enabled(ui, &format!("game-menu/main/{id}"), local && !watching);
     }
+
     widgets::enabled(ui, "game-menu/main/save", local && !decided);
     widgets::enabled(
         ui,

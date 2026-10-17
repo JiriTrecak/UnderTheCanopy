@@ -11,6 +11,7 @@ mod live;
 mod options;
 mod paths;
 mod play;
+mod replay;
 mod saves;
 mod screens;
 mod settings;
@@ -47,10 +48,18 @@ fn main() -> Result<()> {
             scale,
             only,
         } => screens::capture::run(&paths, out, *size, *scale, only.as_deref()),
+        Command::Replay {
+            file,
+            record: Some((map, ticks)),
+            ..
+        } => replay::verify::record_stand_in(&paths, map, *ticks, file),
+        Command::Replay {
+            file, verify: true, ..
+        } => replay::verify::run(&paths, file),
         Command::Mcp => {
             canopy_editor::serve_headless(app::editor_setup(&paths)).map_err(anyhow::Error::msg)
         }
-        Command::Play | Command::Edit => {
+        Command::Play | Command::Edit | Command::Replay { .. } => {
             let event_loop = EventLoop::new()?;
             let mut app = app::App::new(options, paths);
             event_loop.run_app(&mut app)?;

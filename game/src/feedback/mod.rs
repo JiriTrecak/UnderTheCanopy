@@ -117,7 +117,46 @@ pub fn build(
             data: base64::engine::general_purpose::STANDARD.encode(&s.jpeg),
             label: Some(place.shot_label().to_string()),
         }),
+        replay: None,
+        save: None,
     }
+}
+
+/// Files a report from a match carries besides its screenshot (D60): the replay of the
+/// match so far and a save of the moment the form opened, each as its file name and
+/// bytes.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct Attachments {
+    pub replay: Option<(String, Vec<u8>)>,
+    pub save: Option<(String, Vec<u8>)>,
+}
+
+impl Attachments {
+    /// Leaves out what the server would refuse as too large.
+    pub fn within_limits(mut self) -> Self {
+        use canopy_net::feedback::{MAX_REPLAY, MAX_SAVE};
+        if self.replay.as_ref().is_some_and(|r| r.1.len() > MAX_REPLAY) {
+            tracing::warn!("the replay is too large to attach");
+            self.replay = None;
+        }
+        if self.save.as_ref().is_some_and(|s| s.1.len() > MAX_SAVE) {
+            tracing::warn!("the save is too large to attach");
+            self.save = None;
+        }
+        self
+    }
+}
+
+/// Puts `files` into `report`.
+pub fn attach(report: &mut FeedbackReport, files: &Attachments) {
+    use canopy_net::feedback::{FeedbackFile, REPLAY_TYPE, SAVE_TYPE};
+    let file = |(name, bytes): &(String, Vec<u8>), mime: &str| FeedbackFile {
+        mime: mime.into(),
+        data: base64::engine::general_purpose::STANDARD.encode(bytes),
+        name: Some(name.clone()),
+    };
+    report.replay = files.replay.as_ref().map(|f| file(f, REPLAY_TYPE));
+    report.save = files.save.as_ref().map(|f| file(f, SAVE_TYPE));
 }
 
 /// The operating system and its version (`macOS 15.4 (aarch64)`), looked up once.
@@ -413,6 +452,30 @@ mod tests {
             gpu: "Apple M1 (Metal)".into(),
             preset: "High".into(),
         }
+    }
+
+    #[test]
+    fn a_report_from_a_match_carries_its_replay_and_save_within_limits() {
+        let files = Attachments {
+            replay: Some(("Echo.utcr".into(), b"UTCR....".to_vec())),
+            save: Some((
+                "big.utcsave".into(),
+                vec![0; canopy_net::feedback::MAX_SAVE + 1],
+            )),
+        }
+        .within_limits();
+        assert!(files.save.is_none(), "too large for the server: left out");
+        let mut report = build("i", Category::Bug, "x", &system(), &Place::default(), None);
+        attach(&mut report, &files);
+        let replay = report.replay.as_ref().expect("the replay");
+        assert_eq!(replay.mime, canopy_net::feedback::REPLAY_TYPE);
+        assert_eq!(replay.name.as_deref(), Some("Echo.utcr"));
+        use base64::Engine as _;
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(&replay.data)
+            .unwrap();
+        assert_eq!(&bytes[..4], b"UTCR");
+        assert!(report.save.is_none());
     }
 
     #[test]

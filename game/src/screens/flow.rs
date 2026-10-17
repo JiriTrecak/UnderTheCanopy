@@ -3,7 +3,7 @@
 //!
 //! ```text
 //! Boot ─▶ MainMenu ─┬▶ Campaign ─▶ Missions ─┐
-//!                   ├▶ Skirmish ─────────────┼▶ Loading ─▶ Match ─▶ Result ─▶ (origin)
+//!                   ├▶ Skirmish ─▶ Replays ──┼▶ Loading ─▶ Match ─▶ Result ─▶ (origin)
 //!                   ├▶ Multiplayer ─▶ Lobby ─┘      │         │
 //!                   ├▶ Load (overlay) ─────────────▶┘         └▶ GameMenu (overlay) ─▶ (origin)
 //!                   ├▶ Settings (overlay)
@@ -27,6 +27,8 @@ pub enum Screen {
         campaign: String,
     },
     Skirmish,
+    /// The recorded matches (D60), from the skirmish screen.
+    Replays,
     /// Server status, lobbies, create and join.
     Multiplayer,
     /// Inside a room before its match.
@@ -60,6 +62,7 @@ pub enum Overlay {
 pub enum Origin {
     MainMenu,
     Skirmish,
+    Replays,
     Missions { campaign: String },
     Multiplayer,
 }
@@ -69,6 +72,7 @@ impl Origin {
         match self {
             Self::MainMenu => Screen::MainMenu,
             Self::Skirmish => Screen::Skirmish,
+            Self::Replays => Screen::Replays,
             Self::Missions { campaign } => Screen::Missions {
                 campaign: campaign.clone(),
             },
@@ -197,6 +201,7 @@ impl Flow {
                         Screen::MainMenu,
                         Screen::Campaign | Screen::Skirmish | Screen::Multiplayer
                     ) | (Screen::Campaign, Screen::Missions { .. })
+                        | (Screen::Skirmish, Screen::Replays)
                         | (Screen::Multiplayer, Screen::Lobby)
                         | (Screen::Lobby, Screen::Multiplayer)
                 );
@@ -216,6 +221,7 @@ impl Flow {
                             Some(Screen::MainMenu)
                         }
                         Screen::Missions { .. } => Some(Screen::Campaign),
+                        Screen::Replays => Some(Screen::Skirmish),
                         Screen::Lobby => Some(Screen::Multiplayer),
                         Screen::Loading => Some(self.origin.screen()),
                         // Escape in a match opens its menu.
@@ -304,6 +310,23 @@ mod tests {
         assert!(flow.apply(Intent::Booted).is_empty());
         assert_eq!(flow.screen(), &Screen::MainMenu);
         flow
+    }
+
+    #[test]
+    fn replays_open_from_skirmish_and_a_watched_replay_returns_to_them() {
+        let mut flow = booted();
+        flow.apply(Intent::Open(Screen::Replays));
+        assert_eq!(flow.screen(), &Screen::MainMenu, "only from skirmish");
+        flow.apply(Intent::Open(Screen::Skirmish));
+        flow.apply(Intent::Open(Screen::Replays));
+        assert_eq!(flow.screen(), &Screen::Replays);
+        flow.apply(Intent::StartMatch(Origin::Replays));
+        flow.apply(Intent::Loaded);
+        assert!(flow.in_match());
+        assert_eq!(flow.apply(Intent::LeaveMatch), [Effect::EndMatch]);
+        assert_eq!(flow.screen(), &Screen::Replays);
+        flow.apply(Intent::Back);
+        assert_eq!(flow.screen(), &Screen::Skirmish);
     }
 
     #[test]

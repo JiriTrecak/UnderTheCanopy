@@ -5,7 +5,9 @@
 //!        [--tick <n>] [--camera <x,z,zoom[,yaw]>] [--hour <h>] [graphics]
 //! canopy edit [--data <folder>]  (opens the editor; docs/editor.md)
 //! canopy mcp [--data <folder>]   (the editor's MCP server without a window)
-//! canopy capture-screens --out <folder> [--size <w>x<h>] [--scale <s>] [--only releases|multiplayer|editor|feedback]
+//! canopy replay <file.utcr> [--verify] [--data <folder>]  (watch a replay; --verify plays it headless and checks it)
+//! canopy replay <out.utcr> --record <map> [--ticks <n>]  (records a stand-in match: a computer player's commands sent as a human's)
+//! canopy capture-screens --out <folder> [--size <w>x<h>] [--scale <s>] [--only releases|multiplayer|editor|feedback|replays]
 //!                         [--data <folder>]
 //! canopy shot --map <id> --camera <x,z,zoom[,yaw] | battle[,zoom]> --out <png>
 //!             [--tick <n>] [--players <n>] [--crowd <n> | --gallery] [--colors <i,j,…>] [--size <w>x<h>]
@@ -132,6 +134,13 @@ pub enum Command {
     Mcp,
     /// Render offscreen and write a PNG.
     Shot { out: PathBuf, size: [u32; 2] },
+    /// Watch a replay (`canopy replay <file>`), or check it headless (`--verify`).
+    Replay {
+        file: PathBuf,
+        verify: bool,
+        /// `--record <map> [--ticks n]`: writes a stand-in match to `file` (developers).
+        record: Option<(String, u32)>,
+    },
     /// Render every screen offscreen into a folder.
     CaptureScreens {
         out: PathBuf,
@@ -265,6 +274,11 @@ impl Options {
         let mut scale = 1.0f32;
         let mut only = None;
         let mut first = true;
+        let mut replay = false;
+        let mut replay_file: Option<PathBuf> = None;
+        let mut verify = false;
+        let mut record: Option<String> = None;
+        let mut record_ticks = 48_000u32;
         while let Some(arg) = args.next() {
             let mut value =
                 |name: &str| args.next().with_context(|| format!("{name} needs a value"));
@@ -274,6 +288,15 @@ impl Options {
                 "--scale" => scale = value("--scale")?.parse().context("--scale")?,
                 "--only" if capture => only = Some(value("--only")?),
                 "play" if first => {}
+                "replay" if first => replay = true,
+                "--verify" if replay => verify = true,
+                "--record" if replay => record = Some(value("--record")?),
+                "--ticks" if replay => {
+                    record_ticks = value("--ticks")?.parse().context("--ticks")?
+                }
+                file if replay && replay_file.is_none() && !file.starts_with("--") => {
+                    replay_file = Some(PathBuf::from(file));
+                }
                 "edit" if first => options.command = Command::Edit,
                 "mcp" if first => options.command = Command::Mcp,
                 "--data" => options.data = Some(value("--data")?.into()),
@@ -385,7 +408,15 @@ impl Options {
             }
             first = false;
         }
-        if capture {
+        if replay {
+            let file =
+                replay_file.context("replay needs a file: canopy replay <file.utcr> [--verify]")?;
+            options.command = Command::Replay {
+                file,
+                verify,
+                record: record.map(|m| (m, record_ticks)),
+            };
+        } else if capture {
             let out = out.context("capture-screens needs --out <folder>")?;
             if !(0.5..=4.0).contains(&scale) {
                 bail!("--scale must be within 0.5–4");
@@ -418,6 +449,30 @@ mod tests {
 
     fn parse(args: &[&str]) -> Result<Options> {
         Options::parse(args.iter().map(|arg| arg.to_string()))
+    }
+
+    #[test]
+    fn replay_takes_a_file_and_verifies_or_records() {
+        let o = parse(&["replay", "--data", "/d", "a.utcr", "--verify"]).unwrap();
+        assert_eq!(o.data, Some(PathBuf::from("/d")));
+        assert_eq!(
+            o.command,
+            Command::Replay {
+                file: "a.utcr".into(),
+                verify: true,
+                record: None
+            }
+        );
+        let o = parse(&["replay", "out.utcr", "--record", "m", "--ticks", "400"]).unwrap();
+        assert_eq!(
+            o.command,
+            Command::Replay {
+                file: "out.utcr".into(),
+                verify: false,
+                record: Some(("m".into(), 400))
+            }
+        );
+        assert!(parse(&["replay", "--verify"]).is_err(), "a file is needed");
     }
 
     #[test]

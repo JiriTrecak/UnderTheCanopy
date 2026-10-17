@@ -3,7 +3,7 @@
 //! (required), and shows the report going out: sending, sent, or saved for later.
 
 use super::{ui_host::UiHost, widgets};
-use crate::feedback::{Category, Delivery, Place, grab::Shot};
+use crate::feedback::{Attachments, Category, Delivery, Place, grab::Shot};
 use canopy_render::Gpu;
 use canopy_ui::{ImageKey, Ui};
 
@@ -33,8 +33,18 @@ enum Screenshot {
     Missing,
 }
 
+/// The match's files for the report (D60), made on a worker thread as the form opens.
+#[derive(Debug, Default)]
+enum Files {
+    #[default]
+    None,
+    Preparing(std::sync::mpsc::Receiver<Attachments>),
+    Ready(Attachments),
+}
+
 #[derive(Debug, Default)]
 pub struct FeedbackForm {
+    files: Files,
     pub category: Category,
     pub description: String,
     pub place: Place,
@@ -59,6 +69,7 @@ impl FeedbackForm {
         self.place = place;
         self.phase = Phase::Editing;
         self.screenshot = Screenshot::Taking;
+        self.files = Files::None;
         self.status.clear();
         self.focus = true;
     }
@@ -88,6 +99,47 @@ impl FeedbackForm {
         };
     }
 
+    /// Makes the match's files for the report with `make`, on a worker thread.
+    pub fn prepare_files(&mut self, make: impl FnOnce() -> Attachments + Send + 'static) {
+        let (tx, rx) = std::sync::mpsc::channel();
+        let spawned = std::thread::Builder::new()
+            .name("feedback-files".into())
+            .spawn(move || {
+                let _ = tx.send(make().within_limits());
+            });
+        self.files = match spawned {
+            Ok(_) => Files::Preparing(rx),
+            Err(error) => {
+                tracing::warn!(%error, "the match's files are not attached");
+                Files::None
+            }
+        };
+    }
+
+    /// Takes the match's files once made.
+    pub fn poll_files(&mut self) {
+        if let Files::Preparing(rx) = &self.files {
+            match rx.try_recv() {
+                Ok(files) => self.files = Files::Ready(files),
+                Err(std::sync::mpsc::TryRecvError::Empty) => {}
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => self.files = Files::None,
+            }
+        }
+    }
+
+    /// Whether the match's files are made (or none are coming).
+    pub fn files_ready(&self) -> bool {
+        !matches!(self.files, Files::Preparing(_))
+    }
+
+    /// The match's files to send (none until made).
+    pub fn files(&self) -> Attachments {
+        match &self.files {
+            Files::Ready(files) => files.clone(),
+            _ => Attachments::default(),
+        }
+    }
+
     /// The encoded screenshot, once taken.
     pub fn shot(&self) -> Option<&Shot> {
         match &self.screenshot {
@@ -101,6 +153,7 @@ impl FeedbackForm {
         self.phase == Phase::Editing
             && crate::feedback::description_ok(&self.description)
             && !matches!(self.screenshot, Screenshot::Taking)
+            && !matches!(self.files, Files::Preparing(_))
     }
 
     /// A report went out (`report` is its id).
@@ -143,6 +196,20 @@ impl FeedbackForm {
         };
         widgets::text(ui, "feedback/form/shot-label", shot_label);
         widgets::text(ui, "feedback/form/shot-note", &note);
+        let attached = match &self.files {
+            Files::None => String::new(),
+            Files::Preparing(_) => "Attaching the replay of this match…".into(),
+            Files::Ready(files) => match (&files.replay, &files.save) {
+                (Some(_), Some(_)) => {
+                    "Replay of this match is attached, with a save of this moment.".into()
+                }
+                (Some(_), None) => "Replay of this match is attached.".into(),
+                (None, Some(_)) => "A save of this moment is attached.".into(),
+                (None, None) => String::new(),
+            },
+        };
+        widgets::text(ui, "feedback/form/files-note", &attached);
+        widgets::visible(ui, "feedback/form/files-note", !attached.is_empty());
         let thumb = match &self.screenshot {
             Screenshot::Ready { thumb, .. } => *thumb,
             _ => None,

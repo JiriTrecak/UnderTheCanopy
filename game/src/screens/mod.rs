@@ -20,6 +20,8 @@ pub mod multiplayer;
 #[cfg(test)]
 mod net_tests;
 pub mod releases;
+pub mod replay_ui;
+pub mod replays;
 pub mod settings_ui;
 pub mod skirmish;
 pub mod ui_host;
@@ -93,6 +95,10 @@ struct PendingStart {
     /// Control groups of a loaded save.
     groups: Option<Vec<Vec<u32>>>,
     start_tick: u32,
+    /// Palette colours by player number (the lobby's or a replay's), when not their own.
+    colors: Option<Vec<usize>>,
+    /// The replay this load watches.
+    watching: Option<in_match::Watching>,
 }
 
 /// A match that can be started again (restart).
@@ -116,6 +122,7 @@ struct Loading {
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Ask {
     DeleteSave(String),
+    DeleteReplay(String),
 }
 
 struct Dialog {
@@ -195,6 +202,16 @@ pub struct Game {
     courier: crate::feedback::Courier,
     /// Where feedback goes instead of the multiplayer server (captures).
     feedback_server: Option<String>,
+    /// The replays folder and screen, and the viewer's controls (D60).
+    replay_library: crate::replay::library::Library,
+    replays: replays::Replays,
+    replay_ui: replay_ui::ReplayUi,
+    /// A replay the command line asks to watch once the game has loaded.
+    boot_replay: Option<std::path::PathBuf>,
+    /// The local player surrendered the running match.
+    surrendered: bool,
+    /// The result screen's replay was saved under this name.
+    replay_saved: Option<Result<String, String>>,
 }
 
 fn seed() -> u32 {
@@ -242,6 +259,12 @@ impl Game {
             releases,
             palette: Palette::load(&paths.data),
             library: SaveLibrary::new(&paths.user),
+            replay_library: crate::replay::library::Library::new(&paths.replays),
+            replays: replays::Replays::default(),
+            replay_ui: replay_ui::ReplayUi::default(),
+            boot_replay: None,
+            surrendered: false,
+            replay_saved: None,
             courier: crate::feedback::Courier::new(&paths.user),
             progress: Progress::load(&paths.user),
             catalog,
@@ -298,6 +321,11 @@ impl Game {
             game.host.ui.set_enabled(entry, false);
         }
         Ok(game)
+    }
+
+    /// Watches the replay at `path` once the game has loaded (`canopy replay <file>`).
+    pub fn watch_on_boot(&mut self, path: std::path::PathBuf) {
+        self.boot_replay = Some(path);
     }
 
     /// Updates never reach the network (benchmarks, captures).
@@ -403,6 +431,31 @@ impl Game {
         }
         if let (Some(playing), true) = (&mut self.playing, self.flow.in_match()) {
             if self.flow.overlays().is_empty() {
+                // A replay's keys: Space plays and pauses, the arrows skip 10 s.
+                if playing.watching.is_some()
+                    && !consumed
+                    && !self.host.ui.wants_keyboard()
+                    && let WindowEvent::KeyboardInput { event: key, .. } = event
+                    && let winit::keyboard::PhysicalKey::Code(code) = key.physical_key
+                {
+                    use winit::keyboard::KeyCode;
+                    let skip = replay_ui::SKIP_TICKS as i64;
+                    let handled = matches!(
+                        code,
+                        KeyCode::Space | KeyCode::ArrowLeft | KeyCode::ArrowRight
+                    );
+                    if handled && key.state == winit::event::ElementState::Pressed {
+                        match code {
+                            KeyCode::Space if !key.repeat => self.replay_ui.toggle(playing),
+                            KeyCode::ArrowLeft => self.replay_ui.skip(playing, -skip),
+                            KeyCode::ArrowRight => self.replay_ui.skip(playing, skip),
+                            _ => {}
+                        }
+                    }
+                    if handled {
+                        return;
+                    }
+                }
                 playing.window_event(window, event, &self.host.ui, consumed);
                 return;
             }
@@ -522,7 +575,10 @@ impl Game {
     }
 
     fn end_match(&mut self) {
+        self.keep_last_match();
         self.playing = None;
+        self.surrendered = false;
+        self.replay_saved = None;
         self.host.ui.show("hud", false);
         self.loading = None;
         self.result = None;
@@ -546,6 +602,10 @@ impl Game {
                 if self.skirmish.map_index(&data).is_none() {
                     self.skirmish.choose_map(&data, 0);
                 }
+            }
+            Screen::Replays => {
+                self.replays.status.clear();
+                self.replays.refresh(&self.replay_library);
             }
             Screen::Multiplayer => {
                 self.mp.open(self.settings.multiplayer.server.as_deref());
@@ -596,6 +656,8 @@ impl Game {
             camera: None,
             groups: None,
             start_tick: 0,
+            colors: None,
+            watching: None,
         };
         // A restart plays the same scenario again: map, players, teams and seed (old
         // "Restart scenario"); new matches bring their own seed.
@@ -607,6 +669,8 @@ impl Game {
             resume: None,
             session: None,
             colors: None,
+            replay: None,
+            map_path: None,
         }));
         self.last_match = Some(Rerun {
             setup,
@@ -713,6 +777,8 @@ impl Game {
             camera: body.camera,
             groups: body.groups.clone(),
             start_tick: 0,
+            colors: None,
+            watching: None,
         };
         let job = Job::Match(Box::new(MatchRequest {
             map: meta.identity.map_id.clone(),
@@ -721,6 +787,8 @@ impl Game {
             resume: Some(body.world),
             session: None,
             colors: None,
+            replay: None,
+            map_path: None,
         }));
         self.saves_status.clear();
         self.start_loading(job, start, origin);
@@ -735,6 +803,8 @@ impl Game {
             camera: dev.camera,
             groups: None,
             start_tick: dev.tick,
+            colors: dev.spec.colors.clone(),
+            watching: None,
         };
         self.start_loading(Job::Dev(dev.spec), start, Origin::MainMenu);
     }
@@ -774,6 +844,50 @@ impl Game {
             content: data.network_identity(&prepared.map_identity),
             build: canopy_net::wire::BUILD.into(),
         });
+        // What a replay of this match says about it; matches of the editor's content
+        // (Test in game) and replays themselves are not recorded.
+        let info = start
+            .kind
+            .replay_mode()
+            .filter(|_| self.testing.is_none() && start.watching.is_none())
+            .map(|mode| {
+                let setup = prepared.game.world.setup();
+                let map_package = data
+                    .map(&start.map)
+                    .filter(|m| !m.file.path.starts_with(&self.paths.data))
+                    .map(|m| m.file.path.clone());
+                crate::replay::MatchInfo {
+                    mode,
+                    map_name: prepared.map_name.clone(),
+                    identity: identity.clone(),
+                    map_package,
+                    players: setup
+                        .slots
+                        .iter()
+                        .map(|s| crate::replay::format::Player {
+                            slot: s.player,
+                            name: match s.kind {
+                                canopy_sim::SlotKind::Ai => format!("Computer {}", s.player + 1),
+                                canopy_sim::SlotKind::Human => s
+                                    .name
+                                    .clone()
+                                    .unwrap_or_else(|| format!("Player {}", s.player + 1)),
+                            },
+                            computer: s.kind == canopy_sim::SlotKind::Ai,
+                            race: s.race.clone(),
+                            hero: s.hero.clone(),
+                            team: s.team,
+                            color: start
+                                .colors
+                                .as_ref()
+                                .and_then(|c| c.get(usize::from(s.player)).copied())
+                                .unwrap_or(usize::from(s.player)),
+                        })
+                        .collect(),
+                    recorder: start.me,
+                    colors: start.colors.clone(),
+                }
+            });
         self.mission_hud = MissionHud::new(prepared.objectives.clone());
         let mut host = Host {
             window: ctx.window,
@@ -796,6 +910,8 @@ impl Game {
                 camera: start.camera,
                 groups: start.groups.clone(),
                 name: self.settings.display_name(),
+                info,
+                watching: start.watching.clone(),
             },
             &mut host,
             &self.play_options,
@@ -808,6 +924,11 @@ impl Game {
                     "match started"
                 );
                 self.playing = Some(playing);
+                self.surrendered = false;
+                self.replay_saved = None;
+                if start.watching.is_some() {
+                    self.replay_ui.reset();
+                }
                 self.apply(Intent::Loaded);
                 self.apply_hud();
             }
@@ -978,6 +1099,8 @@ impl Game {
                 self.apply(Intent::Booted);
                 if let Some(dev) = self.dev.take() {
                     self.start_dev(dev);
+                } else if let Some(path) = self.boot_replay.take() {
+                    self.watch_replay(&path, None);
                 }
             }
             Some(Err(error)) => {
@@ -1010,15 +1133,6 @@ impl Game {
                     return;
                 }
                 let me = session.player();
-                let start = PendingStart {
-                    kind: MatchKind::Multiplayer,
-                    me,
-                    map: config.map_id.clone(),
-                    networked: true,
-                    camera: None,
-                    groups: None,
-                    start_tick: 0,
-                };
                 self.last_match = None;
                 // The lobby's colours, by player number; the others keep their own.
                 let colors = config.colors.as_ref().map(|colors| {
@@ -1030,6 +1144,17 @@ impl Game {
                     }
                     by_player
                 });
+                let start = PendingStart {
+                    kind: MatchKind::Multiplayer,
+                    me,
+                    map: config.map_id.clone(),
+                    networked: true,
+                    camera: None,
+                    groups: None,
+                    start_tick: 0,
+                    colors: colors.clone(),
+                    watching: None,
+                };
                 let job = Job::Match(Box::new(MatchRequest {
                     map: config.map_id.clone(),
                     setup: config.setup(),
@@ -1037,6 +1162,8 @@ impl Game {
                     resume: None,
                     session: Some(*session),
                     colors,
+                    replay: None,
+                    map_path: None,
                 }));
                 self.start_loading(job, start, Origin::Multiplayer);
             }
@@ -1297,6 +1424,67 @@ impl Game {
                 }
             }
             "skirmish.start" if clicked => self.start_skirmish(),
+            "skirmish.replays" if clicked => self.navigate(Intent::Open(Screen::Replays)),
+            // Replays (D60).
+            "replays.back" if clicked => self.navigate(Intent::Back),
+            "replays.select" if clicked => {
+                if let Some(i) = action.index {
+                    self.replays.selected = i;
+                    self.replays.renaming = false;
+                    self.replays.status.clear();
+                    if matches!(action.kind, ActionKind::Click { count: 2, .. }) {
+                        self.watch_selected();
+                    }
+                }
+            }
+            "replays.watch" if clicked => self.watch_selected(),
+            "replays.rename" if clicked => {
+                if let Some(entry) = self.replays.selected() {
+                    let name = entry.name.clone();
+                    self.replays.renaming = true;
+                    self.replays.rename_text = name.clone();
+                    widgets::text(&mut self.host.ui, "replays/rename/field", &name);
+                    let field = self.host.ui.find("replays/rename/field");
+                    self.host.ui.focus(field);
+                }
+            }
+            "replays.rename-name" => match &action.kind {
+                ActionKind::TextChanged(text) => self.replays.rename_text = text.clone(),
+                ActionKind::Submitted(text) => {
+                    self.replays.rename_text = text.clone();
+                    self.rename_replay();
+                }
+                _ => {}
+            },
+            "replays.rename-confirm" if clicked => self.rename_replay(),
+            "replays.rename-cancel" if clicked => self.replays.renaming = false,
+            "replays.delete" if clicked => {
+                if let Some(entry) = self.replays.selected() {
+                    self.ask(Dialog {
+                        ask: Ask::DeleteReplay(entry.name.clone()),
+                        title: "Delete this replay?".into(),
+                        body: format!("“{}” is removed for good.", plain(&entry.name)),
+                        confirm: "Delete".into(),
+                        danger: true,
+                        second: None,
+                    });
+                }
+            }
+            "replays.reveal" if clicked => {
+                let dir = self.replay_library.dir().to_path_buf();
+                if let Err(error) = std::fs::create_dir_all(&dir)
+                    .map_err(anyhow::Error::from)
+                    .and_then(|()| crate::files::reveal(&dir))
+                {
+                    self.replays.status = format!("Cannot open the folder: {error:#}");
+                }
+            }
+            _ if name.starts_with("replay.") => {
+                if let Some(playing) = &mut self.playing {
+                    self.replay_ui.act(action, playing);
+                }
+            }
+            "result.save-replay" if clicked => self.save_result_replay(),
             // Multiplayer.
             "mp.find" if clicked => {
                 self.mp.tab = multiplayer::Tab::Find;
@@ -1380,7 +1568,10 @@ impl Game {
                     self.start_rerun(rerun);
                 }
             }
-            "gm.surrender-now" if clicked => self.decided(None, true),
+            "gm.surrender-now" if clicked => {
+                self.surrendered = true;
+                self.decided(None, true);
+            }
             // Saves.
             "saves.load" if clicked => {
                 if let Some(meta) = action.index.and_then(|i| self.saves_list.get(i)).cloned() {
@@ -1446,6 +1637,7 @@ impl Game {
                     MatchKind::Skirmish => "skirmish",
                     MatchKind::Campaign => "campaign",
                     MatchKind::Multiplayer => "multiplayer",
+                    MatchKind::Replay => "replay",
                 }),
                 tick: playing.newest().map(|s| s.view.tick),
             },
@@ -1458,6 +1650,69 @@ impl Game {
         self.feedback.open(place);
         self.feedback.fill(&mut self.host.ui);
         self.grab.request();
+        self.attach_match_files();
+    }
+
+    /// From inside a match, the report carries the replay of the match so far and a save
+    /// of this moment (D60); watching a replay, the replay itself. Encoded on a worker
+    /// thread; the form waits for them as for the screenshot.
+    fn attach_match_files(&mut self) {
+        let Some(playing) = self.playing.as_ref().filter(|_| self.flow.in_match()) else {
+            return;
+        };
+        if let Some(watching) = &playing.watching {
+            let path = self.replay_library.dir().join(format!(
+                "{}.{}",
+                watching.name,
+                crate::replay::format::EXTENSION
+            ));
+            let name = format!("{}.{}", watching.name, crate::replay::format::EXTENSION);
+            self.feedback
+                .prepare_files(move || crate::feedback::Attachments {
+                    replay: std::fs::read(&path).ok().map(|bytes| (name, bytes)),
+                    save: None,
+                });
+            return;
+        }
+        let result = if playing.outcome.is_some() || self.surrendered {
+            playing.result_word(self.surrendered)
+        } else {
+            "In progress"
+        };
+        let replay = playing.replay(result);
+        let save = playing.kind.save_mode().and_then(|mode| {
+            let body = playing.save()?;
+            let meta = saves::SaveMeta {
+                format: saves::FORMAT.into(),
+                version: saves::VERSION,
+                id: "feedback".into(),
+                name: format!("{} for feedback", playing.map_name),
+                saved_at: saves::now_ms(),
+                mode,
+                map_name: playing.map_name.clone(),
+                identity: playing.identity.clone(),
+                player: playing.me,
+                tick: body.world.state.tick,
+            };
+            Some((meta, body))
+        });
+        self.feedback.prepare_files(move || {
+            let replay = replay.and_then(|r| {
+                let name = format!(
+                    "{}.{}",
+                    crate::replay::library::clean_name(&crate::replay::default_name(&r.header)),
+                    crate::replay::format::EXTENSION
+                );
+                r.to_bytes().ok().map(|bytes| (name, bytes))
+            });
+            let save = save.and_then(|(meta, body)| {
+                let name = saves::SaveLibrary::export_name(&meta);
+                saves::exported_bytes(&meta, &body)
+                    .ok()
+                    .map(|bytes| (name, bytes))
+            });
+            crate::feedback::Attachments { replay, save }
+        });
     }
 
     fn submit_feedback(&mut self, gpu: &Gpu) {
@@ -1475,7 +1730,7 @@ impl Game {
                 .active_preset()
                 .map_or_else(|| "Custom".into(), |p| format!("{p:?}")),
         };
-        let report = fb::build(
+        let mut report = fb::build(
             &fb::install_id(&self.paths.user),
             self.feedback.category,
             &self.feedback.description,
@@ -1483,6 +1738,7 @@ impl Game {
             &self.feedback.place,
             self.feedback.shot(),
         );
+        fb::attach(&mut report, &self.feedback.files());
         let id = report.report_id.clone();
         if let Err(error) = self.courier.submit(report) {
             tracing::warn!(error = %format!("{error:#}"), "feedback could not be kept for later");
@@ -1501,6 +1757,7 @@ impl Game {
         if let Some(result) = self.grab.poll(gpu) {
             self.feedback.screenshot(&mut self.host, gpu, result);
         }
+        self.feedback.poll_files();
         let (setting, chosen) = (&self.settings.multiplayer.server, &self.feedback_server);
         let server = || match chosen {
             Some(address) => canopy_net::ServerAddress::parse(address),
@@ -1561,6 +1818,13 @@ impl Game {
 
     fn answer(&mut self, ask: Ask, _second: bool) {
         match ask {
+            Ask::DeleteReplay(name) => {
+                self.replays.status = match self.replay_library.delete(&name) {
+                    Ok(()) => format!("Deleted “{}”.", plain(&name)),
+                    Err(error) => format!("Cannot delete: {error:#}"),
+                };
+                self.replays.refresh(&self.replay_library);
+            }
             Ask::DeleteSave(id) => {
                 if let Err(error) = self.library.delete(&id) {
                     self.saves_status = format!("Cannot delete: {error:#}");
@@ -1568,6 +1832,158 @@ impl Game {
                 self.list_saves();
             }
         }
+    }
+
+    /// Keeps the running match as the last match's replay (overwritten every match), so
+    /// it is never lost: when it ends, is left, restarted or the game closes (D60).
+    fn keep_last_match(&mut self) {
+        let Some(playing) = &self.playing else {
+            return;
+        };
+        if playing.watching.is_some() || playing.recorder.is_none() {
+            return;
+        }
+        let result = if playing.outcome.is_some() || self.surrendered {
+            playing.result_word(self.surrendered)
+        } else {
+            "Left"
+        };
+        if let Some(replay) = playing.replay(result) {
+            match self
+                .replay_library
+                .write(&replay, crate::replay::library::LAST_MATCH)
+            {
+                Ok(_) => tracing::info!(
+                    commands = replay.body.commands.len(),
+                    ticks = replay.header.duration(),
+                    "kept the last match's replay"
+                ),
+                Err(error) => {
+                    tracing::warn!(error = %format!("{error:#}"), "the last match's replay could not be kept")
+                }
+            }
+        }
+    }
+
+    /// The result screen's Save replay: the match as `<Map> <date> <time> <result>`.
+    fn save_result_replay(&mut self) {
+        let Some(playing) = &self.playing else {
+            return;
+        };
+        let result = playing.result_word(self.surrendered);
+        let saved = match playing.replay(result) {
+            Some(replay) => {
+                let name = crate::replay::default_name(&replay.header);
+                self.replay_library
+                    .write(&replay, &name)
+                    .map_err(|e| format!("{e:#}"))
+            }
+            None => Err("this match was not recorded".into()),
+        };
+        self.replay_saved = Some(saved);
+    }
+
+    fn rename_replay(&mut self) {
+        let Some(entry) = self.replays.selected() else {
+            return;
+        };
+        let from = entry.name.clone();
+        let to = self.replays.rename_text.clone();
+        match self.replay_library.rename(&from, &to) {
+            Ok(name) => {
+                self.replays.status = format!("Renamed to “{}”.", plain(&name));
+                self.replays.refresh(&self.replay_library);
+                if let Some(i) = self.replays.entries.iter().position(|e| e.name == name) {
+                    self.replays.selected = i;
+                }
+            }
+            Err(error) => self.replays.status = format!("Cannot rename: {error:#}"),
+        }
+    }
+
+    fn watch_selected(&mut self) {
+        let Some(data) = self.data.clone() else {
+            return;
+        };
+        if let Err(reason) = self.replays.watchable(&data) {
+            self.replays.status = reason;
+            return;
+        }
+        if let Some(entry) = self.replays.selected() {
+            let path = entry.path.clone();
+            let name = entry.name.clone();
+            self.watch_replay(&path, Some(name));
+        }
+    }
+
+    /// Opens the replay at `path` in the viewer; leaving it returns to the replays.
+    fn watch_replay(&mut self, path: &std::path::Path, name: Option<String>) {
+        let Some(data) = self.data.clone() else {
+            return;
+        };
+        let attempt =
+            (|| -> Result<(crate::replay::format::Replay, Option<std::path::PathBuf>)> {
+                let replay = crate::replay::format::Replay::read(path)?;
+                if let Some(reason) = replays::unplayable(&replay.header, &data) {
+                    anyhow::bail!("{reason}");
+                }
+                let map_path = match &replay.body.map {
+                    Some(package)
+                        if data.map(&replay.header.identity.map_id).is_none_or(|m| {
+                            m.identity().map(|d| saves::digest(&d)).ok().as_deref()
+                                != Some(replay.header.identity.map_digest.as_str())
+                        }) =>
+                    {
+                        Some(crate::replay::unpack_map(
+                            &replay.header,
+                            package,
+                            &self.paths.cache,
+                        )?)
+                    }
+                    _ => None,
+                };
+                Ok((replay, map_path))
+            })();
+        let (replay, map_path) = match attempt {
+            Ok(x) => x,
+            Err(error) => {
+                tracing::warn!(error = %format!("{error:#}"), "cannot watch the replay");
+                self.replays.status = format!("Cannot watch: {error:#}");
+                return;
+            }
+        };
+        let name = name.unwrap_or_else(|| {
+            path.file_stem()
+                .map_or_else(String::new, |s| s.to_string_lossy().into_owned())
+        });
+        let header = replay.header.clone();
+        let colors = replay.body.colors.clone();
+        let start = PendingStart {
+            kind: MatchKind::Replay,
+            me: None,
+            map: header.identity.map_id.clone(),
+            networked: false,
+            camera: None,
+            groups: None,
+            start_tick: 0,
+            colors: colors.clone(),
+            watching: Some(in_match::Watching {
+                name,
+                header: header.clone(),
+            }),
+        };
+        let job = Job::Match(Box::new(MatchRequest {
+            map: header.identity.map_id.clone(),
+            setup: replay.body.setup.clone(),
+            me: None,
+            resume: None,
+            session: None,
+            colors,
+            replay: Some(Arc::new(replay)),
+            map_path,
+        }));
+        self.last_match = None;
+        self.start_loading(job, start, Origin::Replays);
     }
 
     /// Exports a save to a file the player picks (old `Export`).
@@ -1744,6 +2160,11 @@ impl Game {
             ("campaign", screen == Screen::Campaign),
             ("missions", matches!(screen, Screen::Missions { .. })),
             ("skirmish", screen == Screen::Skirmish),
+            ("replays", screen == Screen::Replays),
+            (
+                "replay",
+                in_match && self.playing.as_ref().is_some_and(|p| p.watching.is_some()),
+            ),
             ("multiplayer", screen == Screen::Multiplayer),
             ("lobby", screen == Screen::Lobby),
             ("loading", matches!(screen, Screen::Loading | Screen::Boot)),
@@ -1813,6 +2234,11 @@ impl Game {
                         .show(&mut self.host, gpu, data, &self.palette, &name);
                 }
             }
+            Screen::Replays => {
+                if let Some(data) = &data {
+                    self.replays.show(&mut self.host, gpu, data, &self.palette);
+                }
+            }
             Screen::Multiplayer => {
                 if let Some(data) = &data {
                     self.mp
@@ -1863,6 +2289,37 @@ impl Game {
             }
             if let (Some(result), Some(Overlay::Result)) = (&self.result, top) {
                 result.show(&mut self.host, &self.palette, playing.kind);
+                let ui = &mut self.host.ui;
+                let recorded = playing.recorder.is_some() && playing.info.is_some();
+                widgets::visible(ui, "result/save-replay", recorded);
+                let saved = matches!(self.replay_saved, Some(Ok(_)));
+                widgets::enabled(ui, "result/save-replay", !saved);
+                widgets::text(
+                    ui,
+                    "result/save-replay",
+                    if saved { "Replay saved" } else { "Save replay" },
+                );
+                let status = match &self.replay_saved {
+                    Some(Ok(name)) => format!(
+                        "Saved as “{}” in Replays · rename it from the replays list",
+                        plain(name)
+                    ),
+                    Some(Err(error)) => {
+                        format!(
+                            "[color=#fca5a5]The replay could not be saved: {}[/color]",
+                            plain(error)
+                        )
+                    }
+                    None => String::new(),
+                };
+                widgets::text(ui, "result/replay-status", &status);
+                widgets::visible(ui, "result/replay-status", !status.is_empty());
+            }
+            if playing.watching.is_some()
+                && let Some(data) = &data
+            {
+                self.replay_ui
+                    .show(&mut self.host, gpu, data, playing, self.view, ctx.scale);
             }
         }
         match top {

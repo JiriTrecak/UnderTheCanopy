@@ -37,9 +37,11 @@
             ]
           },
           { "id": "goods", "kind": "label", "class": "rs-goods" },
+          { "id": "replay-status", "kind": "label", "class": "rs-saved", "visible": false },
           {
             "class": "rs-actions",
             "children": [
+              { "id": "save-replay", "kind": "button", "class": "rs-button rs-ghost", "text": "Save replay", "action": "result.save-replay" },
               { "id": "watch", "kind": "button", "class": "rs-button rs-ghost", "text": "Keep watching", "action": "result.watch" },
               { "id": "next", "kind": "button", "class": "rs-button rs-ghost", "text": "Continue to next chapter →", "action": "result.next", "visible": false },
               { "id": "leave", "kind": "button", "class": "rs-button", "text": "Return to menu", "action": "result.leave" }

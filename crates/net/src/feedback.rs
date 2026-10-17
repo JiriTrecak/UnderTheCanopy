@@ -1,5 +1,5 @@
 //! Player feedback: `POST /api/feedback` on the match server (docs/server.md, D59), which
-//! files the report as an issue in a private repository. A lobby route of its own, not
+//! files the report as an issue in Linear. A lobby route of its own, not
 //! part of the frozen match protocol (D10).
 
 use crate::net::{Net, NetError, Pending};
@@ -23,6 +23,34 @@ pub struct FeedbackReport {
     pub meta: FeedbackMeta,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub screenshot: Option<FeedbackScreenshot>,
+    /// The replay of the match so far, from inside a match (D60).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub replay: Option<FeedbackFile>,
+    /// A save of the moment the form opened, from inside a match.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub save: Option<FeedbackFile>,
+}
+
+/// The replay's media type.
+pub const REPLAY_TYPE: &str = "application/vnd.canopy.replay";
+/// An exported save's media type.
+pub const SAVE_TYPE: &str = "application/gzip";
+/// The largest replay the server takes, decoded.
+pub const MAX_REPLAY: usize = 1 << 20;
+/// The largest save the server takes, decoded.
+pub const MAX_SAVE: usize = 4 << 20;
+
+/// A file a report carries besides its screenshot.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FeedbackFile {
+    /// [`REPLAY_TYPE`] or [`SAVE_TYPE`].
+    #[serde(rename = "type")]
+    pub mime: String,
+    /// The file, base64.
+    pub data: String,
+    /// Its file name.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -104,6 +132,12 @@ mod tests {
                 data: "AA==".into(),
                 label: None,
             }),
+            replay: Some(FeedbackFile {
+                mime: REPLAY_TYPE.into(),
+                data: "VVRDUg==".into(),
+                name: Some("Echo.utcr".into()),
+            }),
+            save: None,
         };
         let json = serde_json::to_value(&report).unwrap();
         assert_eq!(json["reportId"], "r1234567");
@@ -111,6 +145,9 @@ mod tests {
         assert_eq!(json["meta"]["tick"], 40);
         assert!(json["meta"].get("map").is_none());
         assert_eq!(json["screenshot"]["type"], "image/jpeg");
+        assert_eq!(json["replay"]["type"], REPLAY_TYPE);
+        assert_eq!(json["replay"]["name"], "Echo.utcr");
+        assert!(json.get("save").is_none(), "absent files are left out");
     }
 
     #[test]

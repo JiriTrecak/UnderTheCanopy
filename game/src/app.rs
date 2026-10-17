@@ -141,7 +141,10 @@ impl App {
         tracing::info!(preset = ?settings.graphics.active_preset(), "graphics");
         renderer.set_quality(&display.gpu, settings.graphics.quality(display.size()));
         renderer.shadows = settings.graphics.shadows;
-        let game = Game::new(self.paths.clone(), settings, &display.gpu, self.dev_start())?;
+        let mut game = Game::new(self.paths.clone(), settings, &display.gpu, self.dev_start())?;
+        if let Command::Replay { file, .. } = &self.options.command {
+            game.watch_on_boot(file.clone());
+        }
         window.request_redraw();
         self.window = Some(window);
         self.session = Some(Session {

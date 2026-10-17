@@ -136,18 +136,7 @@ impl GameData {
             Content::load(&paths.data)
         }
         .map_err(|e| anyhow!("content: {e}"))?;
-        let base =
-            canopy_content::package::Package::open(&paths.data.join(canopy_content::BASE_DIR))
-                .map_err(|e| anyhow!("content: {e}"))?;
-        let base_digest = base
-            .digest()
-            .with_context(|| format!("hashing {}", base.root.display()))?;
-        let identity_parts: Vec<Vec<u8>> = vec![base_digest.to_vec()];
-        let content_digest = ContentIdentity::digest(
-            canopy_net::wire::ABI,
-            identity_parts.iter().map(Vec::as_slice),
-        )
-        .sha256;
+        let (identity_parts, content_digest) = content_identity(paths)?;
         progress(BootStage::Maps, 0.8);
         let maps = load_maps(paths, &pack)?;
         progress(BootStage::Maps, 1.0);
@@ -237,6 +226,25 @@ impl GameData {
     }
 }
 
+/// The parts of the content's identity (the base package's digest) and their SHA-256,
+/// the content digest saves and replays carry.
+fn content_identity(paths: &Paths) -> Result<(Vec<Vec<u8>>, String)> {
+    let base = canopy_content::package::Package::open(&paths.data.join(canopy_content::BASE_DIR))
+        .map_err(|e| anyhow!("content: {e}"))?;
+    let base_digest = base
+        .digest()
+        .with_context(|| format!("hashing {}", base.root.display()))?;
+    let parts: Vec<Vec<u8>> = vec![base_digest.to_vec()];
+    let digest =
+        ContentIdentity::digest(canopy_net::wire::ABI, parts.iter().map(Vec::as_slice)).sha256;
+    Ok((parts, digest))
+}
+
+/// The content digest of the game's data (`GameData::content_digest` without loading).
+pub fn content_digest(paths: &Paths) -> Result<String> {
+    Ok(content_identity(paths)?.1)
+}
+
 /// Every map the game offers: the base package's, then the player's own (`maps/` in the
 /// user folder) and downloaded ones. A player's map with the id of an earlier one is left
 /// out with a warning.
@@ -314,6 +322,7 @@ mod tests {
             data: data.clone(),
             user,
             cache: std::env::temp_dir(),
+            replays: std::env::temp_dir(),
         };
         let files = map_files(&paths).unwrap();
         let mine = files

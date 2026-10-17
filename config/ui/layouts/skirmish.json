@@ -60,7 +60,13 @@
                   { "kind": "label", "class": "sk-title", "text": "Skirmish" }
                 ]
               },
-              { "kind": "button", "class": "sk-ghost", "text": "← Main menu", "action": "skirmish.back" }
+              {
+                "class": "rl-tools",
+                "children": [
+                  { "id": "replays", "kind": "button", "class": "sk-ghost", "text": "Replays", "action": "skirmish.replays" },
+                  { "kind": "button", "class": "sk-ghost", "text": "← Main menu", "action": "skirmish.back" }
+                ]
+              }
             ]
           },
           {

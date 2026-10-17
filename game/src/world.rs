@@ -85,11 +85,22 @@ impl DayCycle {
 }
 
 /// A match: the world, its session and its presenter (they move to the simulation
-/// thread together).
+/// thread together), and what feeds it: the session, recorded (D60), or a replay.
 pub struct Match {
     pub world: canopy_sim::World,
     pub session: Session,
     pub presenter: Presenter,
+    pub driver: crate::sim::Driver,
+}
+
+impl Match {
+    /// The recording of this match, if it is recorded.
+    pub fn recorder(&self) -> Option<crate::replay::record::Recorder> {
+        match &self.driver {
+            crate::sim::Driver::Live { recorder } => recorder.clone(),
+            crate::sim::Driver::Replay(_) => None,
+        }
+    }
 }
 
 /// Loads a match on map `spec.map` with its biome's look.
@@ -155,12 +166,18 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
         .clone();
     let world = canopy_sim::World::new(content, &map, setup)
         .map_err(|e| anyhow!("cannot start the match: {}", e.0))?;
+    // Matches of the shipped kind are recorded; measured scenes and encounters are not.
+    let recorded = spec.crowd.is_none() && !spec.gallery && spec.encounter.is_none();
+    let driver = crate::sim::Driver::Live {
+        recorder: recorded.then(|| crate::replay::record::Recorder::new(&world)),
+    };
     let (mut loaded, game) = assemble(
         &map,
         pack,
         &look,
         world,
         session,
+        driver,
         spec.colors.as_deref(),
         spec.hour,
     )?;
@@ -178,12 +195,14 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
 }
 
 /// The static scene, presenter and lighting of a built world.
+#[allow(clippy::too_many_arguments)]
 fn assemble(
     map: &map::UtcMap,
     pack: Arc<Pack>,
     look: &Look,
     world: canopy_sim::World,
     session: Session,
+    driver: crate::sim::Driver,
     colors: Option<&[usize]>,
     hour: Option<f32>,
 ) -> Result<(Loaded, Match)> {
@@ -238,6 +257,7 @@ fn assemble(
             world,
             session,
             presenter,
+            driver,
         },
     ))
 }
@@ -274,6 +294,10 @@ pub struct MatchRequest {
     pub session: Option<Session>,
     /// Palette colour of each player by player number (the lobby's), when not its own.
     pub colors: Option<Vec<usize>>,
+    /// Watch this replay instead (D60): its start and commands; no session commands.
+    pub replay: Option<Arc<crate::replay::format::Replay>>,
+    /// The map package to load instead of the library's map `map` (a replay's own map).
+    pub map_path: Option<std::path::PathBuf>,
 }
 
 /// A prepared match and what the game needs to know about it.
@@ -299,18 +323,43 @@ pub fn prepare(
     let _span = tracing::info_span!("prepare_match", map = %request.map).entered();
     let started = std::time::Instant::now();
     progress(Stage::Map, 0.05);
-    let entry = data
-        .map(&request.map)
-        .with_context(|| format!("no map {}", request.map))?;
-    let map_identity = entry.identity()?;
-    let map = entry
-        .file
-        .load()
-        .map_err(|e| anyhow!("{}: {e}", entry.file.file))?;
+    let (map, map_identity, map_name) = match &request.map_path {
+        Some(path) => {
+            let package = canopy_content::package::Package::open(path)
+                .map_err(|e| anyhow!("{}: {e}", path.display()))?;
+            let digest = package.digest()?.to_vec();
+            let map = map::package::load(path).map_err(|e| anyhow!("{}: {e}", path.display()))?;
+            let name = map::package::summary(path)
+                .map(|s| s.name)
+                .unwrap_or_else(|_| request.map.clone());
+            (map, digest, name)
+        }
+        None => {
+            let entry = data
+                .map(&request.map)
+                .with_context(|| format!("no map {}", request.map))?;
+            let map = entry
+                .file
+                .load()
+                .map_err(|e| anyhow!("{}: {e}", entry.file.file))?;
+            (map, entry.identity()?, entry.name.clone())
+        }
+    };
     let look = Look::load(&paths.data, map.biome())?;
     progress(Stage::World, 0.25);
     let colors = request.colors.clone();
+    let mut playback = None;
     let (world, session) = match request.resume {
+        _ if let Some(replay) = &request.replay => {
+            let p = crate::replay::playback::Playback::new(
+                replay,
+                data.content.clone(),
+                Arc::new(map.clone()),
+            );
+            let world = p.first_world().context("cannot start the replay")?;
+            playback = Some(p);
+            (world, Session::local(replay.body.setup.clone(), None))
+        }
         Some(save) => {
             let setup = save.setup.clone();
             let world = canopy_sim::World::restore(data.content.clone(), &map, save)
@@ -331,12 +380,19 @@ pub fn prepare(
         }
     };
     progress(Stage::Scene, 0.6);
+    let driver = match playback {
+        Some(p) => crate::sim::Driver::Replay(Box::new(p)),
+        None => crate::sim::Driver::Live {
+            recorder: Some(crate::replay::record::Recorder::new(&world)),
+        },
+    };
     let (mut loaded, game) = assemble(
         &map,
         data.pack.clone(),
         &look,
         world,
         session,
+        driver,
         colors.as_deref(),
         None,
     )?;
@@ -352,8 +408,9 @@ pub fn prepare(
     Ok(Prepared {
         loaded,
         game,
-        map_name: entry.name.clone(),
+        map_name,
         map_identity,
+
         objectives: map
             .mission
             .as_ref()
