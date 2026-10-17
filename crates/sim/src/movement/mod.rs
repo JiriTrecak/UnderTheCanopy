@@ -161,6 +161,18 @@ impl Motion {
         }
     }
 
+    /// Brings the spatial model to `state` from another moment of the same match (a
+    /// replay's jump), keeping what does not differ; the movement scratch starts afresh.
+    pub fn rewind(&mut self, state: &State) {
+        self.spatial.rewind(state);
+        let n = self.spatial.node_count() as usize;
+        self.units.clear();
+        self.ground = CellSet::new(n);
+        self.air = CellSet::new(n);
+        self.claims = CellSet::new(n);
+        self.local = LocalScratch::default();
+    }
+
     /// Ready units physically on the map, in id order (old `activeUnits`).
     fn collect_active(&mut self, state: &State) {
         self.units.clear();

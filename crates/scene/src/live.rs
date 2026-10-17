@@ -499,6 +499,9 @@ pub struct Presenter {
     hulls: BTreeMap<u32, Option<Arc<Hull>>>,
     /// The tick presented last (melee blows landed since then throw dust).
     last_tick: Option<u32>,
+    /// The world jumped (a replay seek): the next presentation rebuilds the hidden trees
+    /// from the world instead of from the change since the last one.
+    jumped: bool,
 }
 
 /// A melee blow that lands this tick.
@@ -671,6 +674,7 @@ impl Presenter {
             fires: Fires::default(),
             hulls: BTreeMap::new(),
             last_tick: None,
+            jumped: false,
         };
         presenter.preload(world);
         presenter
@@ -741,6 +745,25 @@ impl Presenter {
                 self.projectile_layers(effect.as_str());
             }
         }
+    }
+
+    /// Forgets what the presenter tracked from tick to tick (deaths, corpses, felling trees,
+    /// hits, dust, fires, effects in play), keeping its models: the world jumped to another
+    /// moment (a replay seek). The next presentation shows that moment afresh.
+    pub fn reset(&mut self) {
+        self.units.clear();
+        self.corpses.clear();
+        self.origins.clear();
+        self.felling.clear();
+        self.chunks = None;
+        self.previous.clear();
+        self.health.clear();
+        self.dust.clear();
+        self.missile_poses.clear();
+        self.fires = Fires::default();
+        self.last_tick = None;
+        self.effects.reset();
+        self.jumped = true;
     }
 
     /// The model of render asset `id`, if it has one.
@@ -1378,6 +1401,22 @@ impl Presenter {
             counts.corpses += 1;
         }
 
+        if std::mem::take(&mut self.jumped) {
+            // After a jump the trees felled since the start are hidden afresh: those gone
+            // from the world, then (below) whatever the view lists as struck or empty.
+            let mut bits = vec![0u64; self.hidden.bits.len()];
+            for (&id, &slot) in &self.tree_slots {
+                if world.state().entities.get(id).is_none()
+                    && let Some(word) = bits.get_mut(slot / 64)
+                {
+                    *word |= 1 << (slot % 64);
+                }
+            }
+            self.hidden = HiddenStatics {
+                revision: self.hidden.revision + 1,
+                bits: Arc::new(bits),
+            };
+        }
         self.trees(catalog, view, &mut actors, &mut counts);
         self.flights(catalog, view, &by_id, &mut actors, &mut counts);
 

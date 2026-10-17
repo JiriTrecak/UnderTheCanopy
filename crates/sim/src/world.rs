@@ -912,6 +912,55 @@ impl World {
     }
 }
 
+impl World {
+    /// Moves this world to `save`, a save of another moment of the same match (a replay's
+    /// keyframe, D60), as [`World::restore`] would rebuild it but much faster: the parts
+    /// derived from the map, content and setup stay, and the spatial model and the AI
+    /// players' navigation are synced to the saved state as after any tick (only what
+    /// differs is redone) rather than built from nothing. The world then plays on exactly
+    /// as a restored one.
+    pub fn rewind(&mut self, save: Save) -> Result<(), SetupError> {
+        if save.version != SAVE_VERSION {
+            return Err(SetupError(format!(
+                "unsupported save version {}",
+                save.version
+            )));
+        }
+        if save.setup != self.setup {
+            return Err(SetupError("the save is of another match".into()));
+        }
+        if self.mission.is_some() != save.state.mission.is_some() {
+            return Err(SetupError(
+                "the save does not match the map's mission".into(),
+            ));
+        }
+        self.ai
+            .check(&save.state.ai, &save.pending)
+            .map_err(SetupError)?;
+        let mut state = save.state;
+        let vision = Vision::restore(
+            &mut state,
+            &self.catalog,
+            &self.terrain,
+            &self.setup,
+            &self.sight,
+        )
+        .map_err(SetupError)?;
+        self.motion.rewind(&state);
+        self.economy = Economy::new(&state, &self.catalog, &self.setup);
+        self.combat.scratch = Default::default();
+        self.state = state;
+        self.pending = save.pending;
+        self.vision = vision;
+        self.events = abilities::Events::default();
+        if let Some(m) = &self.mission {
+            self.mission = Some(mission::Runtime::new(m.script.clone()));
+        }
+        self.prepare_ai();
+        Ok(())
+    }
+}
+
 /// How the map decides its outcome.
 fn match_rules(map: &UtcMap) -> victory::Rules {
     if map.mission.is_some() {

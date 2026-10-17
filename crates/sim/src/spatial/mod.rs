@@ -330,6 +330,22 @@ impl Spatial {
         this
     }
 
+    /// Brings the model to `state` from whatever state it followed before (a replay's
+    /// jump back or ahead): the static blockers and bodies are synced as after every tick,
+    /// so what was built stays and only what differs is redone; the caches start afresh,
+    /// as in a model built from `state` ([`Spatial::new`]).
+    pub fn rewind(&mut self, state: &State) {
+        self.scratch = Scratch::default();
+        self.surface_scratch = SurfaceScratch::default();
+        self.corridors = None;
+        self.steps.clear();
+        self.layered_steps.clear();
+        self.present.clear();
+        self.sync_static(state);
+        self.sync_bodies(state);
+        self.prepare_meshes(state);
+    }
+
     /// Builds the navigation meshes of the smallest ground body and of every ground unit
     /// present, so the first long order does not stall (the old `rebuild` did the same).
     fn prepare_meshes(&mut self, state: &State) {

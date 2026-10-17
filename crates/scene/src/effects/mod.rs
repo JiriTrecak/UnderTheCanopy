@@ -536,6 +536,21 @@ impl EffectDirector {
         }
     }
 
+    /// Forgets every effect in play (the world jumped to another moment: a replay seek);
+    /// the next tick starts afresh.
+    pub fn reset(&mut self) {
+        self.cues.clear();
+        self.last_event = 0;
+        self.last_tick = 0;
+        self.landed.clear();
+        self.projectiles.clear();
+        self.trails.clear();
+        self.sparks.clear();
+        self.blades.clear();
+        self.hit_dust.clear();
+        self.fires.clear();
+    }
+
     /// The cooked effect table from `pack`, or an empty one (warned) when the pack has none.
     pub fn table(pack: Option<&Pack>) -> Arc<EffectTable> {
         match pack.map(Pack::effects) {

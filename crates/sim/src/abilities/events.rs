@@ -90,7 +90,26 @@ pub struct AbilityEvent {
 pub struct Events {
     list: Vec<AbilityEvent>,
     sequence: u32,
+    /// Recent deaths, for observers' statistics (replays). Cosmetic like the rest.
+    deaths: std::collections::VecDeque<Fallen>,
+    death_sequence: u32,
 }
+
+/// One death: who died, whose it was and who is credited with the kill (`None` when no
+/// lethal blow is known: scripts, sacrifices, expired summons). Cosmetic, never saved.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Fallen {
+    /// Counts deaths from 1 since the world was built or restored.
+    pub sequence: u32,
+    pub tick: u32,
+    pub entity: EntityId,
+    pub definition: crate::catalog::Def,
+    pub owner: Owner,
+    pub killer: Option<Owner>,
+}
+
+/// Deaths kept for observers: the last [`EVENT_TICKS`], at most this many.
+const MAX_DEATHS: usize = 4096;
 
 /// Ticks an event stays listed in views.
 pub const EVENT_TICKS: u32 = 400;
@@ -124,5 +143,25 @@ impl Events {
 
     pub fn all(&self) -> &[AbilityEvent] {
         &self.list
+    }
+
+    /// Notes a death (observers' statistics).
+    pub fn fallen(&mut self, mut death: Fallen) {
+        self.death_sequence += 1;
+        death.sequence = self.death_sequence;
+        while self
+            .deaths
+            .front()
+            .is_some_and(|d| death.tick.saturating_sub(d.tick) > EVENT_TICKS)
+            || self.deaths.len() >= MAX_DEATHS
+        {
+            self.deaths.pop_front();
+        }
+        self.deaths.push_back(death);
+    }
+
+    /// The deaths of the last [`EVENT_TICKS`], oldest first.
+    pub fn deaths(&self) -> impl Iterator<Item = &Fallen> {
+        self.deaths.iter()
     }
 }

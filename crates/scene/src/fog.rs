@@ -14,6 +14,11 @@ pub struct FogFeed {
 }
 
 impl FogFeed {
+    /// Sends the whole fog next time (the world jumped: a replay seek).
+    pub fn forget(&mut self) {
+        self.revision = None;
+    }
+
     /// Brings the renderer's fog to `fog` (`None`: observers see everything).
     pub fn feed(&mut self, renderer: &mut Renderer, gpu: &Gpu, fog: Option<&FogView>) {
         let Some(fog) = fog else {
