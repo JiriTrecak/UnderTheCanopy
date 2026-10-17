@@ -81,6 +81,51 @@ fn walkers_go_around_a_cliff_and_never_cross_it() {
 }
 
 #[test]
+fn a_body_wedged_across_a_cliff_edge_steps_free_and_goes_where_it_is_sent() {
+    // A 3 m cliff along x = 99.5 (cells from x = 100 up are high). A wide body that slid
+    // along it stands across the edge where every sweep to a cell centre around it crosses
+    // the step: no route can start from there.
+    let map = map(
+        vec![unit("t", "unit.trooper", 100, 50)],
+        walls(|x, _| x >= 100),
+        vec![],
+    );
+    let mut world = world(&map);
+    let t = id(&world, "t");
+    // Placements sit on half cells; the slide leaves it off them.
+    let e = world
+        .state_mut()
+        .entities
+        .get_mut(canopy_sim::entity::EntityId(t))
+        .unwrap();
+    e.position.x = 100_400;
+    let e = e.clone();
+    world.spatial_mut().update_body(&e);
+    assert_eq!(at(&world, "t"), (100.4, 50.0), "placed across the edge");
+    let spatial = world.spatial();
+    let body = spatial.body_of(&e);
+    let from = canopy_sim::spatial::Fixed::new(e.position.x, e.position.y);
+    let wedged = (99..=101).all(|x| {
+        (49..=51).all(|y| {
+            !spatial.clear_segment(
+                from,
+                canopy_sim::spatial::Fixed::cell(x, y, None),
+                None,
+                &body,
+            )
+        })
+    });
+    assert!(wedged, "the set-up wedges the body");
+    command(
+        &mut world,
+        json!({"type": "move", "actors": [t], "destination": {"x": 120, "y": 50}}),
+    );
+    run(&mut world, 400);
+    assert_eq!(at(&world, "t"), (120.0, 50.0));
+    assert!(errors(&world).is_empty(), "{:?}", errors(&world));
+}
+
+#[test]
 fn an_unreachable_destination_ends_the_order_with_an_error() {
     // A closed ring of cliffs around (80, 80).
     let ring = |x: i32, y: i32| {

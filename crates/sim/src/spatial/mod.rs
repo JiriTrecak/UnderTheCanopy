@@ -464,6 +464,45 @@ impl Spatial {
         ) / 100.0
     }
 
+    /// Whether a ground body standing at `p` stands on one level: no two neighbouring
+    /// open cells under its sweep's rays differ by more than a climbable step. Bridges'
+    /// decks are not judged.
+    fn level(&self, p: Fixed, body: &Body) -> bool {
+        if p.deck.is_some() || self.layered() {
+            return true;
+        }
+        let size = i64::from(self.size);
+        let mut cells: Vec<(i64, i64)> = self
+            .pattern(body.radius_milli())
+            .iter()
+            .map(|&(ox, oy)| {
+                (
+                    (i64::from(p.x + ox) + 500).div_euclid(1000),
+                    (i64::from(p.y + oy) + 500).div_euclid(1000),
+                )
+            })
+            .collect();
+        cells.sort_unstable();
+        cells.dedup();
+        let heights = self.terrain.heights();
+        let open = |x: i64, y: i64| {
+            (x >= 0 && y >= 0 && x < size && y < size)
+                .then(|| (y * size + x) as usize)
+                .filter(|&i| self.walk[i])
+        };
+        cells.iter().all(|&(x, y)| {
+            let Some(a) = open(x, y) else {
+                return true;
+            };
+            [(x + 1, y), (x, y + 1)].into_iter().all(|(nx, ny)| {
+                cells.binary_search(&(nx, ny)).is_err()
+                    || open(nx, ny).is_none_or(|b| {
+                        (i32::from(heights[a]) - i32::from(heights[b])).abs() <= MAX_GROUND_STEP_CM
+                    })
+            })
+        })
+    }
+
     fn pattern(&self, radius: i32) -> Cow<'_, [(i32, i32)]> {
         match self.patterns.get(&radius) {
             Some(p) => Cow::Borrowed(p),

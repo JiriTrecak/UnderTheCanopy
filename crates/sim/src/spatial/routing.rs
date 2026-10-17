@@ -548,6 +548,34 @@ impl Spatial {
             .map(|(_, node, _)| node)
     }
 
+    /// Where a body wedged by terrain steps to, if it is wedged: the nearest free cell
+    /// centre within two cells where it stands on one level and from which it can step on
+    /// to a neighbouring centre.
+    ///
+    /// The sweep forbids crossing a step too high to climb, but not standing across one:
+    /// a body sliding along a cliff edge (beside a ramp, typically) can end up straddling
+    /// it, and then every sweep to a cell centre around it crosses the step, so no route
+    /// can start and the unit stays there for good. It is wedged only when terrain and
+    /// static blockers alone stop it; units around it never count.
+    fn unwedge(&self, id: EntityId, here: Spot, from: Fixed, body: &Body) -> Option<Spot> {
+        if body.air || self.route_origin(here, from, None, body).is_some() {
+            return None;
+        }
+        let leaves = |p: Spot| {
+            let at = p.fixed();
+            self.level(at, body)
+                && (-1..=1).any(|dy: i32| {
+                    (-1..=1).any(|dx: i32| {
+                        let q = Spot::new(p.x + dx, p.y + dy, p.deck);
+                        (dx, dy) != (0, 0)
+                            && self.valid_spot(q)
+                            && self.clear_segment(at, q.fixed(), None, body)
+                    })
+                })
+        };
+        self.nearest(here, 2, Some(id), Some(body), Some(&leaves), None)
+    }
+
     /// Plans a route for `e` to `destination` and stores it on the unit (old `route`).
     /// `avoid_units` treats other bodies' cells as walls for the search.
     pub fn route(&mut self, e: &mut Entity, destination: Spot, avoid_units: bool) -> bool {
@@ -583,7 +611,7 @@ impl Spatial {
         let deck = self.deck_of(e);
         let (cx, cy) = e.position.cell();
         let here = Spot::new(cx, cy, deck);
-        let (Some(goal), Some(own)) = (self.node(destination), self.node(here)) else {
+        let (Some(goal), Some(mut own)) = (self.node(destination), self.node(here)) else {
             return false;
         };
         let body = self.body_of(e);
@@ -603,17 +631,29 @@ impl Spatial {
         }
         let blocked: Option<&CellSet> = (!blockers.is_empty()).then_some(&blockers);
         let reserved = blocked.map(|b| b as &dyn Reserved);
-        let from = Fixed::on(e.position.x, e.position.y, deck);
+        let mut from = Fixed::on(e.position.x, e.position.y, deck);
         let target = destination.fixed();
         let direct = self.clear_segment(from, target, reserved, &body);
         if direct {
             self.stats.direct += 1;
         }
-        let origin = if direct {
+        let mut origin = if direct {
             Some(own)
         } else {
             self.route_origin(here, from, reserved, &body)
         };
+        if origin.is_none()
+            && let Some(spot) = self.unwedge(e.id, here, from, &body)
+            && let Some(node) = self.node(spot)
+        {
+            from = spot.fixed();
+            e.position = crate::entity::Milli {
+                x: from.x,
+                y: from.y,
+            };
+            own = node;
+            origin = Some(node);
+        }
         let Some(origin) = origin else {
             self.blockers = blockers;
             return false;
