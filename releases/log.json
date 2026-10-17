@@ -2,10 +2,14 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [
-      "Submit feedback from the main menu or the game menu: describe a bug, idea or balance problem and it is sent with a screenshot of what you were looking at; reports written offline are sent later."
+      "Submit feedback from the main menu or the game menu: describe a bug, idea or balance problem and it is sent with a screenshot of what you were looking at; reports written offline are sent later.",
+      "Replays: every match is recorded. Save it from the result screen, or find your latest match as Last match, and watch it from Skirmish → Replays with a timeline, speeds, any player's vision and statistics.",
+      "Feedback sent from a match includes its replay and a save of that moment."
     ],
     "improved": [],
-    "fixed": [],
+    "fixed": [
+      "Watching a match after playing one no longer shows the previous match's fog of war."
+    ],
     "knownIssues": []
   },
   "releases": [
