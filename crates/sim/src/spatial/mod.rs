@@ -214,8 +214,11 @@ pub struct Spatial {
     /// Per node: walkable terrain (or deck) not covered by a building or resource.
     walk: Vec<bool>,
     occupancy: Occupancy,
-    /// Static blocker signatures by entity, to detect changes.
-    statics: BTreeMap<EntityId, Signature>,
+    /// Static blocker signatures by entity id, to detect changes (ids are dense, so a
+    /// vector beats a map when every tree on a forest map is checked several times a tick).
+    statics: Vec<Option<Signature>>,
+    /// Signatures held in `statics`.
+    static_count: usize,
     clearance: Option<Clearance>,
     patterns: BTreeMap<i32, Vec<(i32, i32)>>,
     adjacent: BTreeMap<i32, AdjacentSweep>,
@@ -289,7 +292,8 @@ impl Spatial {
             profiles,
             walk,
             occupancy,
-            statics: BTreeMap::new(),
+            statics: Vec::new(),
+            static_count: 0,
             patterns,
             adjacent,
             grids: BTreeMap::new(),
@@ -568,15 +572,15 @@ impl Spatial {
         }
         // Every present blocker has a signature, so equal counts mean nothing went away.
         let present_count = present.len();
-        if present_count != self.statics.len() {
-            let gone: Vec<EntityId> = self
-                .statics
-                .keys()
-                .filter(|id| present.binary_search(id).is_err())
-                .copied()
+        if present_count != self.static_count {
+            let gone: Vec<EntityId> = (0..self.statics.len() as u32)
+                .map(EntityId)
+                .filter(|id| {
+                    self.statics[id.0 as usize].is_some() && present.binary_search(id).is_err()
+                })
                 .collect();
             for id in gone {
-                self.statics.remove(&id);
+                self.forget_static(id);
                 self.occupancy.set(id, Cover::default(), &mut changed);
             }
         }
@@ -596,20 +600,42 @@ impl Spatial {
     fn sync_one(&mut self, e: &Entity, changed: &mut Vec<u32>) {
         let alive = e.hp.is_none_or(|hp| hp > 0);
         let standing = e.resource.as_ref().is_some_and(|r| r.amount > 0);
+        let flags = u64::from(alive) | u64::from(standing) << 1;
+        let slot = e.id.0 as usize;
+        if let Some(Some((definition, x, y, rotation, held, surface))) = self.statics.get(slot)
+            && (*definition, *x, *y, *rotation, *held)
+                == (e.definition, e.position.x, e.position.y, e.rotation, flags)
+            && *surface == e.surface
+        {
+            return;
+        }
+        let cover = self.cover(e);
+        self.occupancy.set(e.id, cover, changed);
+        if self.statics.len() <= slot {
+            self.statics.resize(slot + 1, None);
+        }
         let signature = (
             e.definition,
             e.position.x,
             e.position.y,
             e.rotation,
-            u64::from(alive) | u64::from(standing) << 1,
+            flags,
             e.surface.clone(),
         );
-        if self.statics.get(&e.id) == Some(&signature) {
-            return;
+        if self.statics[slot].replace(signature).is_none() {
+            self.static_count += 1;
         }
-        let cover = self.cover(e);
-        self.occupancy.set(e.id, cover, changed);
-        self.statics.insert(e.id, signature);
+    }
+
+    /// Drops a static blocker's signature; whether it had one.
+    fn forget_static(&mut self, id: EntityId) -> bool {
+        let held = self
+            .statics
+            .get_mut(id.0 as usize)
+            .and_then(Option::take)
+            .is_some();
+        self.static_count -= usize::from(held);
+        held
     }
 
     /// Follows one entity's static change at once (a site placed, a resource depleted or
@@ -621,7 +647,7 @@ impl Spatial {
         match state.entities.get(id) {
             Some(e) if self.is_static(e) => self.sync_one(e, &mut changed),
             found => {
-                if self.statics.remove(&id).is_some() {
+                if self.forget_static(id) {
                     self.occupancy.set(id, Cover::default(), &mut changed);
                 }
                 // A unit that left the world stops blocking at once, as the old game
