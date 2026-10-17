@@ -78,6 +78,7 @@ Updated 2026-10-17. Players' content and user scripts are left out until the gam
 
 **Game**
 
+- **Submit feedback (0.3.7, agreed 2026-10-17)**: a "Submit feedback" entry in the main menu and the game menu. Opening it takes a screenshot of the game as it was (before the form shows); the form previews that screenshot, says it will be submitted, and requires a description, with a category (bug, idea, balance, other); version, OS, GPU and the map or match go with it. The match server takes it (`POST /api/feedback`, no new deployment; the match protocol, D10, is untouched) and files an issue in a private feedback repository with a repository-scoped token kept on the host, committing the screenshot there and linking it. Reports queue while offline.
 - **Reviews**: decisions marked "review" in [decisions](decisions.md) wait for Jiri, those he will see or feel first: D51 movement steering, D57 wedged bodies stepping free, D44–D46 foundations, tree picking and damage effects, D56's framing of a map's border, and the editor's M2 and M4 calls.
 - **Partial parity rows** ([parity](parity.md)): menu background shafts and smoke, debug navigation overlays, Uproot's models looking lighter than in the old game.
 - **Art issues** the cooker reports ([art issues](art-issues.md)): foliage without wind nodes, trees without declared animation states, the team colour mask convention.
