@@ -274,7 +274,7 @@ fn starts_must_reach_each_other_on_foot() {
 }
 
 #[test]
-fn nothing_walks_or_harvests_outside_the_playable_area() {
+fn nothing_walks_outside_the_playable_area_but_its_trees_are_resources() {
     let mut document = map();
     document["playable"] = json!({"x": 16, "z": 16, "width": 224, "height": 224});
     document["authoring"]["objects"] = json!([
@@ -286,14 +286,14 @@ fn nothing_walks_or_harvests_outside_the_playable_area() {
     let walkable = |x: i64, z: i64| terrain.walkable(terrain.cell(x, z).unwrap());
     assert!(walkable(100, 100) && walkable(16, 16));
     assert!(!walkable(15, 100) && !walkable(100, 240) && !walkable(4, 4));
-    // A tree in the border is scenery, not a resource anyone could reach.
+    // Trees are resources wherever they stand; those at the edge are cut from inside.
     let resources: Vec<&str> = terrain
         .scene()
         .resources
         .iter()
         .map(|r| r.id.as_str())
         .collect();
-    assert_eq!(resources, ["tree.inside"]);
+    assert_eq!(resources, ["tree.inside", "tree.outside"]);
     // Starts must stand well inside it.
     let mut document = map();
     document["playable"] = json!({"x": 40, "z": 40, "width": 180, "height": 180});

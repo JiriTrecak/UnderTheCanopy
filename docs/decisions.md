@@ -466,7 +466,7 @@ The editor writes documents back in place (docs/editor.md), so a parsed object m
 
 Warcraft III maps carry margins outside their camera bounds: terrain, cliffs, water and trees that frame the playable area. Jiri wants the game to support that rather than crop it away. A map may name a **playable area** (`playable` in `map.json`: `x`, `z`, `width`, `height` in cells; the whole map when absent):
 
-- **The simulation** treats every cell outside it as unwalkable, so nothing walks or builds there (building placement already needs walkable ground); harvestable scenery outside it is scenery only, never a resource; starts must stand at least 8 cells inside it.
+- **The simulation** treats every cell outside it as unwalkable, so nothing walks or builds there (building placement already needs walkable ground); trees there are still resources (Jiri: trees are resources, not decoration), so those at its edge are cut from inside, as in Warcraft III; starts must stand at least 8 cells inside it.
 - **The camera** keeps the view's ground footprint inside it (`RtsCamera::bounds`); the **minimap** and the map picker's **preview** frame its square.
 - **The editor** outlines it in the map view; the Warcraft importer sets it from the map's margins and fills the dry, level border with forest.
 

@@ -815,7 +815,7 @@ pub fn convert(
     }
 
     // The border around the playable area: forest on the tree lattice wherever it is dry
-    // and level enough (scenery only: nothing reaches it).
+    // and level enough (resources like any tree; those at the edge are cut from inside).
     let border = map.playable_area();
     let decoded = map.authoring.terrain.decode().map_err(|e| e.to_string())?;
     let halo = MAP_HALO as usize;

@@ -54,8 +54,9 @@ pub fn project(map: &UtcMap, landscape: &[LandscapeAsset]) -> Result<Scene, Stri
     Ok(scene)
 }
 
-/// The playable cell a harvestable, terrain-standing object occupies; outside the map's
-/// playable area it is scenery only (a stamp), as nobody reaches it.
+/// The cell a harvestable, terrain-standing object occupies: trees are resources wherever
+/// they stand, the border around a playable area included (those at its edge are cut from
+/// inside, as in Warcraft III).
 fn resource_cell(object: &AuthoredObject, asset: &LandscapeAsset, map: &UtcMap) -> Option<usize> {
     if asset.harvesting.is_none() || object.height_mode != HeightMode::Terrain {
         return None;
@@ -63,8 +64,7 @@ fn resource_cell(object: &AuthoredObject, asset: &LandscapeAsset, map: &UtcMap) 
     let x = (object.x + 0.5).floor();
     let y = (object.z + 0.5).floor();
     let size = f64::from(map.size);
-    (x >= 0.0 && y >= 0.0 && x < size && y < size && map.playable_area().contains(x + 0.5, y + 0.5))
-        .then_some((y * size + x) as usize)
+    (x >= 0.0 && y >= 0.0 && x < size && y < size).then_some((y * size + x) as usize)
 }
 
 fn resource(
