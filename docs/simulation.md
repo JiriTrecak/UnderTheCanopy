@@ -62,6 +62,7 @@ Vendored Lua 5.4 through `mlua`, no standard libraries, a fresh state per run, a
 ## Saves and hashing
 
 - A save is the serialized state plus pending commands; AI memories are part of the state (`State::ai`), their derived navigation is rebuilt on load (new format, D16).
+- `World::rewind(save)` moves a world to a save of another moment of the same match (replays' keyframes, D60) as `World::restore` would rebuild it, keeping what was built from the map and syncing the spatial model and the AI players' navigation to the saved state as after any tick; it plays on identically to a restored world, ten to fifteen times faster.
 - Desync detection (D13): every 8 ticks a cheap fingerprint of counters, jobs, stocks, outcome and a rotating sample of up to 32 actors.
 - Tests run long AI-versus-AI matches and require identical fingerprints across runs, across save/load, and (while CI ran, D50) on macOS and Windows.
 

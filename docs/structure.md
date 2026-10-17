@@ -3,7 +3,7 @@
 ```
 UnderTheCanopy/
 ├─ Cargo.toml          Rust workspace
-├─ justfile            every command: just play | profile | cook | check | test | package | server
+├─ justfile            every command: just play | replay | profile | cook | check | test | package | server
 ├─ AGENTS.md           rules for anyone changing this repository
 ├─ crates/             libraries, named canopy-*; added when a milestone needs them
 │  ├─ content/         packages, data model, loading, validation (M1, D53)
@@ -48,7 +48,7 @@ All content is in packages (docs/packages.md, D53); the agent skills `canopy-pac
 | `config/` | engine settings edited by hand (lighting, water rendering, glow, player colours, UI; D30), read at start and shipped |
 | `art/` | inputs of the image-generation tooling (styles, profiles) |
 
-Art files (glb, images, `.blend` sources) are in Git LFS; map grids (`.grid`) and every document stay in plain git. `just cook` turns the asset folders and map previews into the runtime pack `target/cooked/canopy.pack` ([D26](decisions.md)) and stages the base package's documents in `target/cooked/base` for packaging; cooked output is never committed. Players' maps live in the user folder (`maps/`, `downloads/`).
+Art files (glb, images, `.blend` sources) are in Git LFS; map grids (`.grid`) and every document stay in plain git. `just cook` turns the asset folders and map previews into the runtime pack `target/cooked/canopy.pack` ([D26](decisions.md)) and stages the base package's documents in `target/cooked/base` for packaging; cooked output is never committed. Players' maps live in the user folder (`maps/`, `downloads/`); replays in `Under the Canopy/Replays` in their documents (D60).
 
 ## Tests
 

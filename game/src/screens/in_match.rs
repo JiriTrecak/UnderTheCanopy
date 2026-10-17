@@ -64,6 +64,8 @@ impl MatchKind {
 pub struct Watching {
     /// Its name in the replays folder (the file name).
     pub name: String,
+    /// The file.
+    pub path: std::path::PathBuf,
     pub header: crate::replay::format::Header,
 }
 

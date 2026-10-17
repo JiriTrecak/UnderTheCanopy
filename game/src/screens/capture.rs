@@ -1384,7 +1384,7 @@ fn replays(rig: &mut Rig) -> Result<()> {
     match changed.body.fingerprints.get_mut(1) {
         Some(f) => f.1 ^= 1,
         // A short match: a fingerprint of its own that cannot match.
-        None => changed.body.fingerprints = vec![(40, 0)],
+        None => changed.body.fingerprints = vec![(changed.header.start_tick + 40, 0)],
     }
     changed.header.recorded_at -= 3_600_000;
     let changed_name = library.write(&changed, "Out of sync sample")?;

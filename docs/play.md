@@ -58,6 +58,7 @@ Default keys follow the content (`base/rules/commands.json`: actions, categories
 | F9 (Ctrl+F3) | Debug overlay. | old F3 |
 | Arrows, screen edges, wheel, PageUp/PageDown, middle drag | Camera (unchanged from M3). | as old |
 | Q / E, B (spectating) | Turn the view; jump to the largest fight. | new (not in the old game; fixed keys) |
+| Space, ← / → (replays) | Play and pause; skip 10 s back or ahead ([ui §Replays](ui.md#replays)). | new (D60) |
 | J (the content's camera command) | Cycles the unit camera: RTS → third person → first person, locked to the focused unit (offered while it is a visible, living unit outside buildings, for observers too). Pan and zoom are ignored while following; Escape, a camera jump (alerts, double presses, the minimap) or losing the unit returns to RTS. | as old |
 | Minimap | Left click/drag moves the camera; right click moves the selection or completes move, attack, patrol and rally modes. | as old |
 

@@ -78,8 +78,9 @@ Updated 2026-10-17. Players' content and user scripts are left out until the gam
 
 **Game**
 
+- **Replays (0.3.7): built** (D60, [ui §Replays](ui.md#replays)). Every match recorded, Save replay on the result, Last match kept, the Replays screen from Skirmish, the viewer with timeline, speeds, vision and statistics, out of sync notices, feedback attaching the replay and a save, `canopy replay --verify`. Waiting for Jiri's look (review: visible) and for a mission map to play a mission's replay back.
 - **Submit feedback (0.3.7): built, waiting for the host's setup** (D59, [ui §Submit feedback](ui.md#submit-feedback), [server §Feedback](server.md#feedback)). The game and the server are done. Reports wait (in the players' games until the server is deployed, then in its spool) until Jiri creates the token, writes `/etc/canopy-matchhost/feedback.env` and runs `just server-deploy` ([setup](server.md#setting-up-feedback-on-the-host)). Then: a multi-line description field in `canopy-ui`, and perhaps letting players leave the screenshot out.
-- **Reviews**: decisions marked "review" in [decisions](decisions.md) wait for Jiri, those he will see or feel first: D51 movement steering, D57 wedged bodies stepping free, D44–D46 foundations, tree picking and damage effects, D56's framing of a map's border, and the editor's M2 and M4 calls.
+- **Reviews**: decisions marked "review" in [decisions](decisions.md) wait for Jiri, those he will see or feel first: D51 movement steering, D57 wedged bodies stepping free, D44–D46 foundations, tree picking and damage effects, D56's framing of a map's border, the editor's M2 and M4 calls, and D60's replays (the viewer's look, Last match, the keyframes' memory budget).
 - **Partial parity rows** ([parity](parity.md)): menu background shafts and smoke, debug navigation overlays, Uproot's models looking lighter than in the old game.
 - **Art issues** the cooker reports ([art issues](art-issues.md)): foliage without wind nodes, trees without declared animation states, the team colour mask convention.
 - **Maps**: more authored maps; maps larger than 1024 cells are accepted by the format but not by the renderer (D24).

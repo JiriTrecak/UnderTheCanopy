@@ -1661,11 +1661,7 @@ impl Game {
             return;
         };
         if let Some(watching) = &playing.watching {
-            let path = self.replay_library.dir().join(format!(
-                "{}.{}",
-                watching.name,
-                crate::replay::format::EXTENSION
-            ));
+            let path = watching.path.clone();
             let name = format!("{}.{}", watching.name, crate::replay::format::EXTENSION);
             self.feedback
                 .prepare_files(move || crate::feedback::Attachments {
@@ -1969,6 +1965,7 @@ impl Game {
             colors: colors.clone(),
             watching: Some(in_match::Watching {
                 name,
+                path: path.to_path_buf(),
                 header: header.clone(),
             }),
         };
