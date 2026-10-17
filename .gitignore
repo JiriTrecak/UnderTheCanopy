@@ -8,3 +8,4 @@
 # Authored maps and their previews are source data.
 /assets/graphics/*
 !/assets/graphics/.gitkeep
+/server/feedback-spool.jsonl*

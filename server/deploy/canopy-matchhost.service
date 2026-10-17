@@ -8,6 +8,16 @@ User=ubuntu
 WorkingDirectory=/home/ubuntu/canopy-matchhost/server
 Environment=BIND=127.0.0.1
 Environment=PORT=8787
+# Feedback (docs/server.md): reports wait in the spool, outside the folder each deploy
+# replaces; screenshots go to /var/lib/canopy-matchhost (systemd creates it for the
+# service, readable by Nginx, which serves it at /feedback-media/).
+StateDirectory=canopy-matchhost
+StateDirectoryMode=0755
+Environment=FEEDBACK_SPOOL=/home/ubuntu/canopy-matchhost/feedback-spool.jsonl
+Environment=FEEDBACK_MEDIA_DIR=/var/lib/canopy-matchhost/feedback-media
+Environment=FEEDBACK_PUBLIC_BASE=https://18.134.138.1
+# FEEDBACK_GITHUB_REPO and FEEDBACK_GITHUB_TOKEN; optional (reports wait without them).
+EnvironmentFile=-/etc/canopy-matchhost/feedback.env
 ExecStart=/home/ubuntu/canopy-matchhost/server/node_modules/.bin/tsx src/index.ts
 Restart=always
 RestartSec=2

@@ -3,7 +3,9 @@
  * runs the game. Production binds 127.0.0.1:8787 behind Nginx HTTPS/WSS on port 443.
  */
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { resolve as resolvePath } from "node:path";
 import { WebSocketServer } from "ws";
+import { Feedback, MAX_BODY, RETRY_MS, SWEEP_MS } from "./feedback";
 import { MatchHost } from "./host";
 import type { CreateRoom, JoinRoom } from "./protocol";
 
@@ -19,6 +21,25 @@ const CORS = {
 const host = new MatchHost();
 const probes=setInterval(()=>host.pulse(),1000);
 probes.unref();
+
+// Player feedback becomes issues in the game's repository, screenshots stay on this host
+// (docs/server.md, D59).
+const feedback = new Feedback({
+  repo: process.env.FEEDBACK_GITHUB_REPO,
+  token: process.env.FEEDBACK_GITHUB_TOKEN,
+  spool: resolvePath(process.env.FEEDBACK_SPOOL ?? "feedback-spool.jsonl"),
+  mediaDir: resolvePath(process.env.FEEDBACK_MEDIA_DIR ?? "feedback-media"),
+  publicBase: process.env.FEEDBACK_PUBLIC_BASE,
+});
+const feedbackRetry = setInterval(() => {
+  feedback.prune();
+  void feedback.retry();
+}, RETRY_MS);
+feedbackRetry.unref();
+const feedbackSweep = setInterval(() => feedback.sweep(), SWEEP_MS);
+feedbackSweep.unref();
+void feedback.retry();
+feedback.sweep();
 
 const server = createServer((req, res) => {
   void handle(req, res);
@@ -71,6 +92,20 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   try {
     if (req.method === "GET" && path === "/api/health") {
       send(res, 200, { ok: true, version: VERSION });
+      return;
+    }
+    if (req.method === "POST" && path === "/api/feedback") {
+      const body = await readJson(req, MAX_BODY).catch((e: unknown) => e);
+      if (body instanceof TooLarge) {
+        send(res, 413, { error: "too_large" });
+        return;
+      }
+      if (body instanceof Error) {
+        send(res, 400, { error: "bad_json" });
+        return;
+      }
+      const reply = feedback.submit(body, clientAddress(req));
+      send(res, reply.status, reply.body);
       return;
     }
     if (req.method === "GET" && path === "/api/rooms") {
@@ -206,6 +241,15 @@ function fromThisMachine(req: IncomingMessage): boolean {
   return loopback && !req.headers["x-forwarded-for"] && !req.headers["x-real-ip"];
 }
 
+/** The caller's address: Nginx passes it in `X-Forwarded-For` to the loopback service. */
+function clientAddress(req: IncomingMessage): string {
+  const address = req.socket.remoteAddress ?? "";
+  const forwarded = req.headers["x-forwarded-for"];
+  const loopback = address === "127.0.0.1" || address === "::1" || address === "::ffff:127.0.0.1";
+  if (loopback && typeof forwarded === "string" && forwarded) return forwarded.split(",")[0]!.trim();
+  return address;
+}
+
 function bearer(req: IncomingMessage): string | null {
   const h = req.headers.authorization;
   if (!h?.startsWith("Bearer ")) return null;
@@ -218,11 +262,24 @@ function send(res: ServerResponse, status: number, body: unknown): void {
   res.end(data);
 }
 
-function readJson(req: IncomingMessage): Promise<unknown> {
+class TooLarge extends Error {}
+
+/** The request's JSON body; a body over `limit` bytes is refused with `TooLarge`. */
+function readJson(req: IncomingMessage, limit = Infinity): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
-    req.on("data", (c) => chunks.push(c));
+    let size = 0;
+    req.on("data", (c: Buffer) => {
+      size += c.length;
+      if (size > limit) {
+        chunks.length = 0;
+        reject(new TooLarge("too large"));
+        return;
+      }
+      chunks.push(c);
+    });
     req.on("end", () => {
+      if (size > limit) return;
       if (chunks.length === 0) {
         resolve({});
         return;
