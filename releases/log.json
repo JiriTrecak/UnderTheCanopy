@@ -8,7 +8,8 @@
       "Amberleaf Crossing, a new 1v1 map: mains on high ground in opposite corners, a river winding through a lake with a contested island, high-ground expansions in the far corners and fifteen creep camps that grow harder away from your base.",
       "Twelve classic Warcraft III melee maps for 2 to 8 players: Terenas Stand, Amazonia, Northern Isles, Last Refuge, Concealed Hill, Twisted Meadows, Lost Temple, Hillsbrad Creek, Gnoll Wood, Silverpine Forest, Bloodstone Mesa and Twilight Ruins, in the game's own ground, trees and creeps.",
       "Maps can frame their playable area with a border of forest, cliffs and water that nobody enters; the camera and minimap stay on the playable area.",
-      "The map editor imports Warcraft III melee maps, substituting ground it lacks with the nearest it has."
+      "The map editor imports Warcraft III melee maps, substituting ground it lacks with the nearest it has.",
+      "Editor: an ability's Stage casts it on test targets in the editor's viewport with the real simulation, with a timeline, an events list and replay seeking."
     ],
     "improved": [
       "Maps with large forests run faster."
