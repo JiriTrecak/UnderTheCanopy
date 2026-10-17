@@ -384,7 +384,7 @@ dependencies = [
 
 [[package]]
 name = "canopy"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "anyhow",
  "arboard",
@@ -422,7 +422,7 @@ dependencies = [
 
 [[package]]
 name = "canopy-assets"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "block_compression",
  "bytemuck",
@@ -434,7 +434,7 @@ dependencies = [
 
 [[package]]
 name = "canopy-audio"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "assert_no_alloc",
  "canopy-assets",
@@ -448,7 +448,7 @@ dependencies = [
 
 [[package]]
 name = "canopy-content"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "base64",
  "canopy-content",
@@ -464,7 +464,7 @@ dependencies = [
 
 [[package]]
 name = "canopy-cook"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "anyhow",
  "blake3",
@@ -489,7 +489,7 @@ dependencies = [
 
 [[package]]
 name = "canopy-editor"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "base64",
  "bytes",
@@ -525,7 +525,7 @@ dependencies = [
 
 [[package]]
 name = "canopy-net"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "canopy-content",
  "canopy-sim",
@@ -545,7 +545,7 @@ dependencies = [
 
 [[package]]
 name = "canopy-release"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "base64",
  "minisign",
@@ -557,7 +557,7 @@ dependencies = [
 
 [[package]]
 name = "canopy-release-tool"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "anyhow",
  "base64",
@@ -578,7 +578,7 @@ dependencies = [
 
 [[package]]
 name = "canopy-render"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -597,7 +597,7 @@ dependencies = [
 
 [[package]]
 name = "canopy-scene"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "anyhow",
  "canopy-assets",
@@ -613,7 +613,7 @@ dependencies = [
 
 [[package]]
 name = "canopy-sim"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "canopy-content",
  "libm",
@@ -627,7 +627,7 @@ dependencies = [
 
 [[package]]
 name = "canopy-ui"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "bytemuck",
  "canopy-ui",
