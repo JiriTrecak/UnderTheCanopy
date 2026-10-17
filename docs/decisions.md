@@ -471,3 +471,25 @@ Warcraft III maps carry margins outside their camera bounds: terrain, cliffs, wa
 - **The editor** outlines it in the map view; the Warcraft importer sets it from the map's margins and fills the dry, level border with forest.
 
 Map sizes 480, 800 and 960 join the list (Warcraft's 96, 160 and 192-tile maps at 5 cells a tile; any multiple of the renderer's 32-cell chunks works).
+
+## D57. The AI never freezes in place; wedged bodies step free (2026-10-17, Jiri asked — review)
+
+Jiri saw the AI "glitch and get stuck in base". Watching AI duels found five causes:
+
+- **One member froze the army.** The safe point a squad is sent to (`Frame::nearest_safe`, old `nearestSafe`) had to be reachable by every member, and otherwise was where the first member stood. A member the AI could not route (wedged, boxed in, or a route its knowledge could not prove) sent the whole army to where it already stood, accepted every beat, for 20 minutes and more. Now bodies that cannot step off their spot are left out, the widest body on ground connected to the point leads, and the point is the nearest one everybody reaches, else the one most reach among the first four the lead reaches, else the nearest open point for movement's pathfinder to try. The failed searches also made AI matches four to five times slower.
+- **Stalls were not noticed.** An operation counted as progressing while the squad's centre moved 3 cells, which shuffling and joining reinforcements always do, and its "destination" could be the squad's own position. Progress is now getting closer to the operation's point, or fighting on the way; a stalled target waits 40 seconds before it is chosen again, and buildings on ground the base does not connect to are no target.
+- **Empty camps looped.** A camp seen empty before its operation began counted as done at once, was chosen again at the next strategy beat (every 5 s), and every restart began with assembling at home. Only a sighting after the operation began ends it now.
+- **Late armies waited for numbers they would never have.** After 20 minutes the attack waited for 22 units, while the economy trains only up to its own army target (which follows the workers) or cannot afford more; such AIs farmed camps for the rest of the match. Late on, an army at its economy's target or with nothing in training goes with at least the minimum when 1.2 × the power of the enemy army seen near the target, as before 20 minutes.
+- **Bodies wedged across cliff edges** (simulation, both players; review: felt). The terrain sweep forbids crossing a step too high to climb but not standing across one, so a wide body sliding along a cliff beside a ramp (Amberleaf Crossing's base ramps) could end up straddling it, where every route start crosses the step: the unit stood there for the rest of the match. When terrain alone stops every route from starting, the unit steps to the nearest free cell centre within two cells where it stands on one level (a hop of usually less than a cell, once).
+
+Also: badly wounded soldiers fall back to the staging point (D52), not to the hall's door.
+
+Measured with `ai_duels` (24 seeds per map, 45-minute cap; before is main at the same commit; "with caps" counts a capped match as 45 minutes):
+
+| Map | Finished before → after | Mean minutes of finished | With caps | Wins P1–P2 before → after |
+|---|---|---|---|---|
+| Amberleaf Crossing | 18 → 22 | 29.1 → 21.8 | 33.1 → 23.7 | 5–13 → 15–7 |
+| Echo Isles | 22 → 24 | 21.7 → 22.0 | 23.6 → 22.0 | 10–12 → 8–16 |
+| Turtle Rock | 20 → 23 | 20.4 → 22.1 | 24.5 → 23.1 | 6–14 → 11–12 |
+
+The 72 duels ran in 474 s instead of 1,339 s. On the twelve imported Warcraft III maps (4 seeds each) 47 of 48 finish (before 46), mean 23.5 game minutes (before 20.6). The remaining caps are attrition stalemates, not frozen armies.
