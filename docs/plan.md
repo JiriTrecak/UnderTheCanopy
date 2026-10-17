@@ -16,7 +16,7 @@ Phase 1 runs on Apple Silicon Macs with `just play` and `just package`. The code
 
 ### Milestones
 
-Status: M0, M1 and M2 done (2026-10-14); M3 in progress.
+Status: all done (M0–M2 2026-10-14, M3–M5 2026-10-15; [status](status.md)). The parity checklist has no missing rows; the few partial ones are under [What remains](#what-remains).
 
 **M0. Repository.** Cargo workspace, `just`, CI on macOS and Windows (format, lint, test, package), a window on Metal and DX12, the platform layer (data and user folders, DPI, present modes), Tracy profiling. Data mirrored from the old repository; docs, plan and decision log.
 
@@ -40,7 +40,7 @@ Phase 1 is done when the parity checklist against the old game is complete.
 
 ## Data
 
-All content is in packages ([packages](packages.md), D53), the base game in `base/`. The old TypeScript editors no longer read it; until the native editor (phase 2) exists, content is edited as files, by hand or by agents with the `canopy-*` skills.
+All content is in packages ([packages](packages.md), D53), the base game in `base/`. The old TypeScript editors no longer read it. It is edited in the native editor (`just edit`; agents through its MCP server, `just mcp`) or as files, by hand or by agents with the `canopy-*` skills.
 
 ## The old repository
 
@@ -59,7 +59,31 @@ Agreed with Jiri, 2026-10-16. One native Rust editor shipped inside the game, us
 | **M2. Data editors** (done, docs/editor.md) | Overviews for units and heroes, buildings, items, abilities and effects, races; links between them with Back and Forward; abilities tried in a test match (the encounter). |
 | **M3. Map editor** (done, docs/editor.md) | Warcraft III-style brushes (raise, lower, flatten, smooth, cliff, ramp, paint, water, trees, props), amber sites, camps and starts by click, new maps, the check of playability and army reachability, Test in game with unsaved edits, MCP map tools; Amberleaf Crossing authored with them. Landform objects, symmetry tools and new ground cover wait (decided 2026-10-16). |
 | **M4. Asset editor** (done, review; docs/editor.md) | An asset's overview (files, animations played in the preview, users), import of models and images (MCP too), cooking from the editor, unused assets and deleting an asset with its folder. |
-| M5. Players' content | Custom maps in the game, packaged maps, map transfer in multiplayer, the Lua sandbox audit. |
+| M5. Players' content (deferred) | Custom maps in the game, packaged maps, map transfer in multiplayer, the Lua sandbox audit. Waits until the game is well established (Jiri, 2026-10-17); so do user scripts. |
 | M6. Retire the old repository | |
 
-AI stays code, not data: it should read the game data and react to what the opponent does rather than follow fixed unit lists, and custom races later bring their own AI as an included Lua script. Deferred beyond these: a campaign editor, the Warcraft map importer, the match server in Rust (it works as TypeScript in `server/`, D48), Steam integration.
+AI stays code, not data: it should read the game data and react to what the opponent does rather than follow fixed unit lists, and custom races later bring their own AI as an included Lua script. Built beyond the candidates: the Warcraft III map importer (2026-10-17, docs/editor.md) with twelve imported maps, and playable areas with a border (D56). Deferred: a campaign editor, the match server in Rust (it works as TypeScript in `server/`, D48), Steam integration.
+
+## What remains
+
+Updated 2026-10-17. Players' content and user scripts are left out until the game is well established.
+
+**Editor**
+
+- **The ability encounter in the editor**: cast an ability on test targets in the editor's own viewport with the real simulation, as the old spell studio's stage did (today's Try it starts a full test match instead). In progress.
+- **The assistant**: the sidebar that calls the Claude API over every editor (M1 left room for it).
+- **Map editor, waiting by decision (2026-10-16)**: landform objects, symmetry tools, new ground cover (moving grass, decals, foliage).
+- **Asset editor, left to the art pipeline**: retargeting animations, editing materials and team colour masks, generating art.
+- **A campaign editor** (missions are authored as files and Lua today).
+
+**Game**
+
+- **Reviews**: decisions marked "review" in [decisions](decisions.md) wait for Jiri, those he will see or feel first: D51 movement steering, D57 wedged bodies stepping free, D44–D46 foundations, tree picking and damage effects, D56's framing of a map's border, and the editor's M2 and M4 calls.
+- **Partial parity rows** ([parity](parity.md)): menu background shafts and smoke, debug navigation overlays, Uproot's models looking lighter than in the old game.
+- **Art issues** the cooker reports ([art issues](art-issues.md)): foliage without wind nodes, trees without declared animation states, the team colour mask convention.
+- **Maps**: more authored maps; maps larger than 1024 cells are accepted by the format but not by the renderer (D24).
+- **Performance**: the shipped-maps test takes about 24 s since the imports (army reachability on large forest maps).
+
+**Later**
+
+- Players' content and the Lua sandbox audit (phase 2 M5), Steam, Windows (D8, D50), the match server in Rust (D48), retiring the old repository (phase 2 M6).
