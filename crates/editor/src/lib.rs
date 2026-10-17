@@ -10,6 +10,7 @@
 mod assets;
 mod checker;
 mod document;
+mod encounter;
 mod forms;
 mod icons;
 mod inspector;
@@ -241,6 +242,21 @@ impl Editor {
         self.shell.open_id(id);
     }
 
+    /// Opens ability `id` on its stage (captures).
+    pub fn open_stage(&mut self, id: &str) {
+        self.shell.open_stage(id);
+    }
+
+    /// Casts the open ability on its stage at the first target (captures).
+    pub fn stage_cast(&mut self) {
+        self.shell.stage(encounter::Command::Cast);
+    }
+
+    /// Shows the open ability's stage at `tick` of its take (captures).
+    pub fn stage_seek(&mut self, tick: u32) {
+        self.shell.stage(encounter::Command::Seek(tick));
+    }
+
     /// Plays the preview's clip `index` (captures).
     pub fn play_clip(&mut self, index: usize) {
         self.shell.play_clip(index);
@@ -275,14 +291,20 @@ impl Editor {
         {
             self.renderer.free_texture(&texture);
         }
-        let (shot, scene) = (self.shell.shot.take(), self.shell.scene.take());
-        if shot.is_some() || scene.is_some() {
+        let (shot, scene, encounter) = (
+            self.shell.shot.take(),
+            self.shell.scene.take(),
+            self.shell.encounter.take(),
+        );
+        if shot.is_some() || scene.is_some() || encounter.is_some() {
             let stage = self
                 .stage
                 .get_or_insert_with(|| stage::Stage::new(gpu, &self.data));
             if let Ok(stage) = stage {
                 if let Some(scene) = scene {
                     stage.draw_scene(gpu, &mut self.renderer, &scene);
+                } else if let Some(encounter) = encounter {
+                    stage.draw_encounter(gpu, &mut self.renderer, &encounter);
                 } else if let Some(shot) = shot {
                     stage.draw(gpu, &mut self.renderer, &shot);
                 }

@@ -151,7 +151,7 @@ cargo test -q -p canopy-content --test shipped_data   # loads base/ and checks e
 cargo test -q -p canopy-content --test skills         # the examples in the skills still parse
 ```
 
-Errors read `<package>/<path> · <id>: <message>`, e.g. `base/abilities/example/fireball.json · ability.example.fireball: Delivery does not match targeting`. Effect rule errors name the effect's file and the layer: `base/effects/example/burst.json · effect.example.burst/layers/scorch: This layer requires a texture`. A parse error (unknown field, wrong literal) stops the ability rules from running, so fix those first. Fix the field the error names; do not delete requested mechanics to make validation pass. To see an ability in play, bind it to a unit and run the game (`docs/play.md`).
+Errors read `<package>/<path> · <id>: <message>`, e.g. `base/abilities/example/fireball.json · ability.example.fireball: Delivery does not match targeting`. Effect rule errors name the effect's file and the layer: `base/effects/example/burst.json · effect.example.burst/layers/scorch: This layer requires a texture`. A parse error (unknown field, wrong literal) stops the ability rules from running, so fix those first. Fix the field the error names; do not delete requested mechanics to make validation pass. To see an ability in play, open it on the editor's Stage (its tab's Stage view: cast on test targets with the real simulation, with a timeline), run the editor MCP's `encounter` tool (the same take headless: events, refusals, health at the end), or bind it to a unit and run the game (`docs/play.md`).
 
 ## Reference
 

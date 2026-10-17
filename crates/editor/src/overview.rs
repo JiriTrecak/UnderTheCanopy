@@ -33,8 +33,10 @@ pub struct Overview<'a> {
     pub opens: Vec<String>,
     /// A new element to create, with its id started (the shell opens the dialog).
     pub create: Option<String>,
-    /// A unit to try this ability with in a test match (the encounter).
+    /// A unit to try this ability with in a test match (Try it).
     pub try_with: Option<String>,
+    /// A unit to cast this ability on the stage (the ability's Stage view).
+    pub stage_with: Option<String>,
     /// The package folder on disk (an asset's files are checked there).
     pub root: Option<&'a std::path::Path>,
 }
@@ -94,6 +96,7 @@ impl<'a> Overview<'a> {
             opens: Vec::new(),
             create: None,
             try_with: None,
+            stage_with: None,
             root: None,
         }
     }
@@ -770,7 +773,8 @@ impl<'a> Overview<'a> {
         Self::card(ui, "Targeting", |ui| {
             ui.label(RichText::new(words).color(TEXT));
         });
-        // The units that bind it, each with Try (a test match where it casts this).
+        // The units that bind it, each with Stage (it casts this on test targets in the
+        // Stage view) and Try it (a test match where it casts this).
         let mut binders: Vec<String> = self
             .uses
             .iter()
@@ -784,6 +788,7 @@ impl<'a> Overview<'a> {
             .collect();
         binders.dedup();
         let mut try_with = None;
+        let mut stage_with = None;
         let me = &mut *self;
         Self::card(ui, "Bound by", |ui| {
             if binders.is_empty() {
@@ -792,6 +797,13 @@ impl<'a> Overview<'a> {
             for id in &binders {
                 ui.horizontal(|ui| {
                     me.link(ui, id);
+                    if ui
+                        .small_button("Stage")
+                        .on_hover_text("Cast it on test targets in the Stage view, this unit casting")
+                        .clicked()
+                    {
+                        stage_with = Some(id.clone());
+                    }
                     if ui
                         .small_button("Try it")
                         .on_hover_text("A test match: this unit near your start with allies and creeps around it")
@@ -803,6 +815,7 @@ impl<'a> Overview<'a> {
             }
         });
         self.try_with = try_with;
+        self.stage_with = stage_with;
     }
 
     /// The rank table: parameters by rank, each cell a number.

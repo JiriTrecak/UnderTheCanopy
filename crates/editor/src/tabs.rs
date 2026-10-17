@@ -15,6 +15,8 @@ pub enum View {
     /// A map's view: the viewport and the map tools.
     Map,
     Overview,
+    /// An ability's stage: cast on test targets with the real simulation.
+    Stage,
     Form,
     Json,
 }
@@ -63,6 +65,18 @@ impl Doc {
     pub fn show_form(&mut self) {
         self.view = View::Form;
     }
+
+    /// Shows the ability stage (abilities only).
+    pub fn show_stage(&mut self) {
+        if is_ability(&self.document) {
+            self.view = View::Stage;
+        }
+    }
+}
+
+/// Whether `document` is an ability (it has a stage).
+pub fn is_ability(document: &str) -> bool {
+    document.starts_with("abilities/") && document.ends_with(".json")
 }
 
 /// An edit a panel asks for this frame; it runs once the frame's panels are drawn.
@@ -100,6 +114,16 @@ pub struct Viewer<'a> {
     pub preview: &'a mut Option<String>,
     /// The package folder on disk.
     pub root: Option<std::path::PathBuf>,
+    /// Abilities' stages by document, what their grounds are built from (the pack and
+    /// the looks loaded so far; a look the stage needs and lacks is asked for), the
+    /// stage's size this frame, and whether the content lags behind the edits (the
+    /// latest ones do not pass the check).
+    pub encounters: &'a mut std::collections::HashMap<String, crate::encounter::Session>,
+    pub pack: Option<&'a std::sync::Arc<canopy_assets::Pack>>,
+    pub looks: &'a std::collections::HashMap<String, canopy_scene::Look>,
+    pub wanted_looks: &'a mut Vec<String>,
+    pub encounter_size: &'a mut Option<(String, [u32; 2])>,
+    pub stale: bool,
 }
 
 impl TabViewer for Viewer<'_> {
@@ -156,6 +180,13 @@ impl TabViewer for Viewer<'_> {
             let views: &[(View, &str)] = if crate::map::root_of(&tab.document).is_some() {
                 &[
                     (View::Map, "Map"),
+                    (View::Form, "Form"),
+                    (View::Json, "JSON"),
+                ]
+            } else if is_ability(&tab.document) {
+                &[
+                    (View::Overview, "Overview"),
+                    (View::Stage, "Stage"),
                     (View::Form, "Form"),
                     (View::Json, "JSON"),
                 ]
@@ -249,6 +280,33 @@ impl TabViewer for Viewer<'_> {
                     *self.map_size = Some((root, size));
                 }
             }
+            View::Stage => {
+                let id = value.get("id").and_then(Value::as_str).unwrap_or(&tab.id);
+                let session = self
+                    .encounters
+                    .entry(tab.document.clone())
+                    .or_insert_with(|| crate::encounter::Session::new(id));
+                // A renamed ability starts its stage again.
+                if session.ability != id {
+                    *session = crate::encounter::Session::new(id);
+                }
+                if let (Some(content), Some(pack)) = (&self.content, self.pack) {
+                    match self.looks.get(session.look_biome()) {
+                        Some(look) => session.prepare(content, pack, look),
+                        None => self.wanted_looks.push(session.look_biome().to_string()),
+                    }
+                }
+                let out = crate::encounter::show(
+                    ui,
+                    session,
+                    self.content.as_deref(),
+                    self.scene_texture,
+                    self.stale,
+                );
+                if let Some(size) = out.size {
+                    *self.encounter_size = Some((tab.document.clone(), size));
+                }
+            }
             View::Overview => {
                 let uses = self
                     .uses
@@ -265,6 +323,14 @@ impl TabViewer for Viewer<'_> {
                 }
                 if overview.try_with.is_some() {
                     *self.try_with = overview.try_with;
+                }
+                if let Some(unit) = overview.stage_with {
+                    let id = value.get("id").and_then(Value::as_str).unwrap_or(&tab.id);
+                    self.encounters
+                        .entry(tab.document.clone())
+                        .or_insert_with(|| crate::encounter::Session::new(id))
+                        .set_caster(&unit);
+                    tab.view = View::Stage;
                 }
                 for change in overview.changes {
                     let merge = change

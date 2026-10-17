@@ -417,6 +417,47 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
     editor.select(Kind::Units);
     editor.open_first(1);
     shoot(&mut editor, rig, "editor-units")?;
+    // The ability stage: a unit's projectile spell cast at an enemy in the editor's own
+    // viewport, caught in flight; then a hero's area spell on a few enemies.
+    {
+        use canopy_content::abilities::{Delivery, TargetingKind};
+        let content = editor.checked_content().context("a check passed")?;
+        let bound: Vec<_> = content
+            .abilities
+            .abilities
+            .iter()
+            .filter(|a| !canopy_sim::encounter::binders(&content, a.id.as_str()).is_empty())
+            .filter(|a| a.targeting.condition.is_none() && a.targeting.filter.is_none())
+            .collect();
+        let projectile = bound
+            .iter()
+            .find(|a| {
+                a.targeting.kind == TargetingKind::Unit
+                    && matches!(a.delivery, Some(Delivery::Projectile { .. }))
+                    && !a.presentation.effects.is_empty()
+            })
+            .or(bound.first())
+            .context("an ability a unit binds")?;
+        let area = bound
+            .iter()
+            .filter(|a| a.targeting.kind == TargetingKind::Point)
+            .max_by_key(|a| a.presentation.effects.len());
+        let takes = [
+            Some((projectile, 8, "editor-ability-stage")),
+            area.map(|a| (a, 12, "editor-ability-stage-area")),
+        ];
+        editor.select(Kind::Abilities);
+        for (ability, after, name) in takes.into_iter().flatten() {
+            editor.open_stage(ability.id.as_str());
+            for _ in 0..6 {
+                editor.run_headless(rig.size, rig.scale, &rig.gpu);
+            }
+            editor.stage_cast();
+            editor.run_headless(rig.size, rig.scale, &rig.gpu);
+            editor.stage_seek(ability.cast.prepare_ticks + after);
+            shoot(&mut editor, rig, name)?;
+        }
+    }
     // An asset: its overview, its clip playing in the preview.
     editor.select(Kind::Assets);
     editor.open("asset.models.units.neutral-violet-sporeling");
