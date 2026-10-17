@@ -22,14 +22,12 @@ const host = new MatchHost();
 const probes=setInterval(()=>host.pulse(),1000);
 probes.unref();
 
-// Player feedback becomes issues in the game's repository, screenshots stay on this host
-// (docs/server.md, D59).
+// Player feedback becomes issues in the game's Linear team (docs/server.md, D59).
 const feedback = new Feedback({
-  repo: process.env.FEEDBACK_GITHUB_REPO,
-  token: process.env.FEEDBACK_GITHUB_TOKEN,
+  apiKey: process.env.LINEAR_API_KEY,
+  teamId: process.env.LINEAR_TEAM_ID,
   spool: resolvePath(process.env.FEEDBACK_SPOOL ?? "feedback-spool.jsonl"),
   mediaDir: resolvePath(process.env.FEEDBACK_MEDIA_DIR ?? "feedback-media"),
-  publicBase: process.env.FEEDBACK_PUBLIC_BASE,
 });
 const feedbackRetry = setInterval(() => {
   feedback.prune();

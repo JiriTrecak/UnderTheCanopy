@@ -1,10 +1,10 @@
 /**
  * Player feedback (`POST /api/feedback`, docs/server.md, D59): the game sends a report with
- * a screenshot; the server checks it, stores the screenshot on this host under an
- * unguessable name (Nginx serves it at `/feedback-media/`), keeps the report in a spool
- * file and files it as an issue in the game's GitHub repository with the screenshot
- * embedded by its public URL. Reports wait in the spool while GitHub is unreachable or
- * the repository is not configured, and are retried. Screenshots go after 180 days.
+ * a screenshot; the server checks it, keeps the report in a spool file (its screenshot in a
+ * private folder beside it) and files it as an issue in the game's Linear team, uploading
+ * the screenshot to Linear and embedding it. Reports wait in the spool while Linear is
+ * unreachable or not configured, and are retried; a screenshot is deleted from this host
+ * once its issue exists.
  *
  * Not part of the frozen match protocol (D10): a separate route old games never call.
  */
@@ -30,14 +30,12 @@ export const RATE_WINDOW_MS = 10 * 60 * 1000;
 export const MAX_SPOOLED = 500;
 /** How often waiting reports are sent again. */
 export const RETRY_MS = 5 * 60 * 1000;
-/** How long screenshots are kept. */
-export const MEDIA_DAYS = 180;
-/** How often old screenshots are swept. */
+/** Screenshots no waiting report names are deleted after this (left by a crash). */
+export const ORPHAN_MS = 60 * 60 * 1000;
+/** How often stray screenshots are swept. */
 export const SWEEP_MS = 24 * 60 * 60 * 1000;
-/** The public path Nginx serves the media directory at. */
-export const MEDIA_PATH = "/feedback-media/";
 
-const GITHUB = "https://api.github.com";
+const LINEAR = "https://api.linear.app/graphql";
 const TIMEOUT_MS = 20_000;
 
 const IMAGE_TYPES = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" } as const;
@@ -85,33 +83,32 @@ type Spooled = {
   receivedAt: string;
   report: Omit<Report, "screenshot">;
   media?: { file: string; label?: string };
+  /** The screenshot's address in Linear once uploaded (a retry does not upload it again). */
+  asset?: string;
   attempts: number;
 };
 
 export type Reply = { status: number; body: Record<string, unknown> };
 
 export type FeedbackOptions = {
-  /** `owner/name` of the repository issues go to; without it reports wait in the spool. */
-  repo?: string;
-  /** A fine-grained token for that repository (Issues: read and write). */
-  token?: string;
+  /** A Linear API key that may create issues in the team; without it reports wait. */
+  apiKey?: string;
+  /** The Linear team issues go to (its id). */
+  teamId?: string;
   /** The spool file (JSON lines). */
   spool: string;
-  /** Where screenshots are stored (Nginx serves it at `/feedback-media/`). */
+  /** Where screenshots wait until their issue exists (private to the service). */
   mediaDir: string;
-  /** The public HTTPS origin screenshots are linked from (`https://18.134.138.1`). */
-  publicBase?: string;
   fetch?: typeof fetch;
   now?: () => number;
   log?: (message: string) => void;
 };
 
 export class Feedback {
-  private readonly repo?: string;
-  private readonly token?: string;
+  private readonly apiKey?: string;
+  private readonly teamId?: string;
   private readonly spool: string;
   private readonly mediaDir: string;
-  private readonly publicBase?: string;
   private readonly fetch: typeof fetch;
   private readonly now: () => number;
   private readonly log: (message: string) => void;
@@ -121,24 +118,23 @@ export class Feedback {
   private readonly seen = new Map<string, string>();
   private delivering: Promise<void> = Promise.resolve();
   private warned = false;
+  /** Label ids by lowercase name, once read from Linear. */
+  private labelIds?: Map<string, string>;
 
   constructor(options: FeedbackOptions) {
-    const repo = options.repo?.trim();
-    this.repo = repo && /^[\w.-]+\/[\w.-]+$/.test(repo) ? repo : undefined;
-    this.token = options.token?.trim() || undefined;
+    this.apiKey = options.apiKey?.trim() || undefined;
+    this.teamId = options.teamId?.trim() || undefined;
     this.spool = options.spool;
     this.mediaDir = options.mediaDir;
-    this.publicBase = options.publicBase?.trim().replace(/\/+$/, "") || undefined;
     this.fetch = options.fetch ?? fetch;
     this.now = options.now ?? Date.now;
     this.log = options.log ?? ((m) => console.log(m));
     this.queue = readSpool(this.spool);
     for (const s of this.queue) if (s.report.reportId) this.seen.set(s.report.reportId, s.id);
-    if (repo && !this.repo) this.log("feedback: FEEDBACK_GITHUB_REPO is not owner/name");
   }
 
   get configured(): boolean {
-    return Boolean(this.repo && this.token);
+    return Boolean(this.apiKey && this.teamId);
   }
 
   /** Reports waiting to be filed. */
@@ -208,13 +204,16 @@ export class Feedback {
       if (kept.length) this.hits.set(key, kept);
       else this.hits.delete(key);
     }
+    // Labels made in Linear meanwhile are found at the next filing.
+    this.labelIds = undefined;
     // Remember recent report ids only (a resend comes within minutes).
     while (this.seen.size > 2000) this.seen.delete(this.seen.keys().next().value!);
   }
 
-  /** Deletes screenshots older than `MEDIA_DAYS`; returns how many went. */
+  /** Deletes screenshots no waiting report names (older than `ORPHAN_MS`); returns how many. */
   sweep(): number {
-    const before = this.now() - MEDIA_DAYS * 24 * 60 * 60 * 1000;
+    const before = this.now() - ORPHAN_MS;
+    const named = new Set(this.queue.flatMap((s) => (s.media ? [s.media.file] : [])));
     let removed = 0;
     let names: string[];
     try {
@@ -223,7 +222,7 @@ export class Feedback {
       return 0;
     }
     for (const name of names) {
-      if (!MEDIA_NAME.test(name)) continue;
+      if (!MEDIA_NAME.test(name) || named.has(name)) continue;
       const path = join(this.mediaDir, name);
       try {
         if (statSync(path).mtimeMs < before) {
@@ -234,7 +233,7 @@ export class Feedback {
         // Gone meanwhile.
       }
     }
-    if (removed) this.log(`feedback: removed ${removed} screenshots older than ${MEDIA_DAYS} days`);
+    if (removed) this.log(`feedback: removed ${removed} stray screenshots`);
     return removed;
   }
 
@@ -242,9 +241,8 @@ export class Feedback {
   private store(image: Buffer, type: ImageType): string | undefined {
     const file = `${randomBytes(18).toString("base64url")}.${IMAGE_TYPES[type]}`;
     try {
-      mkdirSync(this.mediaDir, { recursive: true, mode: 0o755 });
-      // Readable by Nginx, which serves it; written once, never changed.
-      writeFileSync(join(this.mediaDir, file), image, { mode: 0o644, flag: "wx" });
+      mkdirSync(this.mediaDir, { recursive: true, mode: 0o700 });
+      writeFileSync(join(this.mediaDir, file), image, { mode: 0o600, flag: "wx" });
       return file;
     } catch (e) {
       this.log(`feedback: cannot store a screenshot: ${e instanceof Error ? e.message : "error"}`);
@@ -269,42 +267,120 @@ export class Feedback {
   private async deliver(s: Spooled): Promise<void> {
     if (!this.queue.includes(s)) return;
     if (!this.configured) {
-      if (!this.warned) this.log("feedback: no FEEDBACK_GITHUB_REPO or FEEDBACK_GITHUB_TOKEN; reports wait in the spool");
+      if (!this.warned) this.log("feedback: no LINEAR_API_KEY or LINEAR_TEAM_ID; reports wait in the spool");
       this.warned = true;
       return;
     }
     s.attempts += 1;
     try {
-      const fields = { title: issueTitle(s.report), body: issueBody(s, this.publicBase) };
-      let issue = await this.createIssue({ ...fields, labels: issueLabels(s.report) });
-      // 422: GitHub refused the labels (a token that may not create them); file it without.
-      if (issue.status === 422) {
-        this.log(`feedback ${s.id}: GitHub refused the labels; filing without them`);
-        issue = await this.createIssue(fields);
+      if (s.media && !s.asset) {
+        s.asset = await this.upload(s.media.file);
+        this.save();
       }
-      if (!issue.ok) throw new Error(`GitHub answered ${issue.status}`);
-      const number = ((await issue.json()) as { number?: number }).number;
+      const input = { teamId: this.teamId, title: issueTitle(s.report), description: issueBody(s) };
+      const labelIds = await this.labels(s.report);
+      let issue: { identifier?: string } | undefined;
+      try {
+        issue = await this.createIssue(labelIds.length ? { ...input, labelIds } : input);
+      } catch (e) {
+        // A label the key may not use: file it without.
+        if (!labelIds.length) throw e;
+        this.log(`feedback ${s.id}: Linear refused the labels; filing without them`);
+        issue = await this.createIssue(input);
+      }
       this.queue = this.queue.filter((q) => q !== s);
       this.save();
-      this.log(`feedback ${s.id}: filed as issue ${number ?? "?"}`);
+      if (s.media) this.forget(s.media.file);
+      this.log(`feedback ${s.id}: filed as ${issue?.identifier ?? "an issue"}`);
     } catch (e) {
       this.log(`feedback ${s.id}: not filed yet (attempt ${s.attempts}): ${e instanceof Error ? e.message : "error"}`);
     }
   }
 
-  private createIssue(body: Record<string, unknown>): Promise<Response> {
-    return this.fetch(`${GITHUB}/repos/${this.repo}/issues`, {
+  /** One Linear GraphQL request; its data, or an error for any failure. */
+  private async graphql<T>(query: string, variables: Record<string, unknown>): Promise<T> {
+    const response = await this.fetch(LINEAR, {
       method: "POST",
-      headers: {
-        accept: "application/vnd.github+json",
-        authorization: `Bearer ${this.token}`,
-        "content-type": "application/json",
-        "user-agent": "canopy-matchhost",
-        "x-github-api-version": "2022-11-28",
-      },
-      body: JSON.stringify(body),
+      headers: { authorization: this.apiKey!, "content-type": "application/json" },
+      body: JSON.stringify({ query, variables }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
+    if (!response.ok) throw new Error(`Linear answered ${response.status}`);
+    const json = (await response.json()) as { data?: T; errors?: { message?: string }[] };
+    if (json.errors?.length || !json.data) throw new Error(`Linear: ${json.errors?.[0]?.message ?? "no data"}`);
+    return json.data;
+  }
+
+  /** Uploads a stored screenshot to Linear; its asset address. */
+  private async upload(file: string): Promise<string> {
+    const image = readFileSync(join(this.mediaDir, file));
+    const ext = file.slice(file.lastIndexOf(".") + 1);
+    const contentType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+    const data = await this.graphql<{
+      fileUpload: { success: boolean; uploadFile?: { uploadUrl: string; assetUrl: string; headers: { key: string; value: string }[] } };
+    }>(
+      `mutation Upload($contentType: String!, $filename: String!, $size: Int!) {
+        fileUpload(contentType: $contentType, filename: $filename, size: $size) {
+          success
+          uploadFile { uploadUrl assetUrl headers { key value } }
+        }
+      }`,
+      { contentType, filename: `screenshot.${ext}`, size: image.length },
+    );
+    const target = data.fileUpload.uploadFile;
+    if (!data.fileUpload.success || !target) throw new Error("Linear refused the screenshot");
+    const headers: Record<string, string> = { "content-type": contentType, "cache-control": "public, max-age=31536000" };
+    for (const h of target.headers) headers[h.key] = h.value;
+    const put = await this.fetch(target.uploadUrl, {
+      method: "PUT",
+      headers,
+      body: image,
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (!put.ok) throw new Error(`the screenshot upload answered ${put.status}`);
+    return target.assetUrl;
+  }
+
+  /** The ids of the report's labels that exist in Linear (none when they cannot be read). */
+  private async labels(report: Spooled["report"]): Promise<string[]> {
+    if (!this.labelIds) {
+      try {
+        const data = await this.graphql<{ issueLabels: { nodes: { id: string; name: string; team?: { id: string } | null }[] } }>(
+          `query Labels { issueLabels(first: 250) { nodes { id name team { id } } } }`,
+          {},
+        );
+        this.labelIds = new Map(
+          data.issueLabels.nodes
+            .filter((l) => !l.team || l.team.id === this.teamId)
+            .map((l) => [l.name.toLowerCase(), l.id]),
+        );
+      } catch (e) {
+        this.log(`feedback: cannot read Linear's labels: ${e instanceof Error ? e.message : "error"}`);
+        return [];
+      }
+    }
+    return issueLabels(report).flatMap((name) => {
+      const id = this.labelIds!.get(name.toLowerCase());
+      return id ? [id] : [];
+    });
+  }
+
+  private async createIssue(input: Record<string, unknown>): Promise<{ identifier?: string } | undefined> {
+    const data = await this.graphql<{ issueCreate: { success: boolean; issue?: { identifier?: string } } }>(
+      `mutation File($input: IssueCreateInput!) { issueCreate(input: $input) { success issue { identifier } } }`,
+      { input },
+    );
+    if (!data.issueCreate.success) throw new Error("Linear did not create the issue");
+    return data.issueCreate.issue;
+  }
+
+  /** Deletes a screenshot whose issue exists. */
+  private forget(file: string): void {
+    try {
+      unlinkSync(join(this.mediaDir, file));
+    } catch {
+      // Already gone.
+    }
   }
 
   private save(): void {
@@ -366,14 +442,13 @@ export function issueTitle(report: Spooled["report"]): string {
   return `[${report.category}] ${quiet(short)}`;
 }
 
+/** Label names a report's issue gets where the team has them: Feedback and its category. */
 export function issueLabels(report: Spooled["report"]): string[] {
-  const labels = ["feedback", report.category];
-  const version = report.meta.version.replace(/[^\w.+-]/g, "").slice(0, 40);
-  if (version) labels.push(`v${version}`);
-  return labels;
+  const category = { bug: "Bug", idea: "Idea", balance: "Balance", other: undefined }[report.category];
+  return category ? ["Feedback", category] : ["Feedback"];
 }
 
-export function issueBody(s: Spooled, publicBase?: string): string {
+export function issueBody(s: Spooled): string {
   const r = s.report;
   const cell = (v: string) => quiet(v).replace(/\|/g, "\\|").replace(/\s+/g, " ").trim() || "–";
   const rows: [string, string | undefined][] = [
@@ -394,13 +469,7 @@ export function issueBody(s: Spooled, publicBase?: string): string {
     .filter(([, v]) => v !== undefined && v !== "")
     .map(([k, v]) => `| ${k} | ${cell(v!)} |`)
     .join("\n");
-  let shot = "";
-  if (s.media) {
-    const label = cell(s.media.label ?? "Screenshot");
-    shot = publicBase
-      ? `\n\n![${label}](${publicBase}${MEDIA_PATH}${s.media.file})`
-      : `\n\n${label}: \`${MEDIA_PATH}${s.media.file}\` on the match host (FEEDBACK_PUBLIC_BASE is not set)`;
-  }
+  const shot = s.asset ? `\n\n![${cell(s.media?.label ?? "Screenshot")}](${s.asset})` : "";
   return `${quiet(r.description)}${shot}\n\n| | |\n|---|---|\n${table}\n`;
 }
 
