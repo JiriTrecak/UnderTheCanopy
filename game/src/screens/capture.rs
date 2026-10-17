@@ -306,9 +306,18 @@ pub fn run(
             "releases" => releases(&mut rig)?,
             "multiplayer" => multiplayer(&mut rig)?,
             "editor" => editor(&mut rig, &paths)?,
-            other => {
-                anyhow::bail!("unknown capture group {other} (releases, multiplayer, editor)")
+            "feedback" => {
+                feedback_menu(&mut rig)?;
+                start_skirmish(&mut rig)?;
+                rig.until("the match", Duration::from_secs(180), |g| g.flow.in_match())?;
+                rig.settle(3.0);
+                rig.game.apply(Intent::Show(Overlay::GameMenu));
+                rig.settle(0.2);
+                feedback_match(&mut rig)?;
             }
+            other => anyhow::bail!(
+                "unknown capture group {other} (releases, multiplayer, editor, feedback)"
+            ),
         }
         let _ = std::fs::remove_dir_all(&user);
         println!("{} captures", rig.written.len());
@@ -317,6 +326,7 @@ pub fn run(
     rig.shoot("main-menu")?;
     releases(&mut rig)?;
     settings_tabs(&mut rig)?;
+    feedback_menu(&mut rig)?;
 
     // Campaign and missions.
     rig.game.apply(Intent::Open(Screen::Campaign));
@@ -973,7 +983,8 @@ fn lobby_host(rig: &mut Rig, net: &canopy_net::Net) -> Result<()> {
 
 /// A skirmish match: loading, the match, overlays, its menu, saves, a confirmation and
 /// the result.
-fn a_match(rig: &mut Rig) -> Result<()> {
+/// Starts a skirmish on the first map, the player against computer players.
+fn start_skirmish(rig: &mut Rig) -> Result<()> {
     let data = rig.game.data.clone().context("booted")?;
     rig.game.apply(Intent::Open(Screen::Skirmish));
     rig.game.skirmish.choose_map(&data, 0);
@@ -983,6 +994,120 @@ fn a_match(rig: &mut Rig) -> Result<()> {
     }
     rig.game.start_skirmish();
     rig.settle(0.15);
+    Ok(())
+}
+
+/// Opens the feedback form as the window does: the next frame, drawn without the form
+/// and the game menu, becomes its screenshot (also written as `<name>.jpg`).
+fn open_feedback(rig: &mut Rig, action: &str, name: &str) -> Result<()> {
+    rig.click(action);
+    rig.frame();
+    anyhow::ensure!(rig.game.grab_due(), "the form asks for a screenshot");
+    let (view, ui_view) = (rig.target.view.clone(), rig.target.ui_view.clone());
+    let mut ctx = Ctx {
+        gpu: &rig.gpu,
+        renderer: &mut rig.renderer,
+        window: None,
+        size: rig.size,
+        scale: rig.scale,
+    };
+    rig.game.render(&mut ctx, &view, &ui_view);
+    rig.game.grab(&rig.gpu, &rig.target.texture);
+    rig.until("the screenshot", Duration::from_secs(20), |g| {
+        !g.grab.busy()
+    })?;
+    let shot = rig.game.feedback.shot().context("a screenshot")?;
+    let path = rig.out.join(format!("{name}.jpg"));
+    std::fs::write(&path, &shot.jpeg)?;
+    println!("wrote {}", path.display());
+    Ok(())
+}
+
+fn describe(rig: &mut Rig, category: crate::feedback::Category, text: &str) {
+    rig.game.feedback.category = category;
+    rig.game.feedback.description = text.into();
+    rig.game.feedback.fill(&mut rig.game.host.ui);
+}
+
+/// The feedback form over the main menu, and a report going out: saved for later when
+/// the server cannot be reached, sent when `CANOPY_MATCH_SERVER` names a local server.
+/// Captures never send to the deployed server.
+fn feedback_menu(rig: &mut Rig) -> Result<()> {
+    use super::feedback::Phase;
+    use crate::feedback::Category;
+    let local = std::env::var(canopy_net::server::ENV)
+        .ok()
+        .filter(|s| !s.trim().is_empty());
+    open_feedback(rig, "menu.feedback", "feedback-screenshot-menu")?;
+    rig.settle(0.2);
+    rig.shoot("feedback-main-menu")?;
+    describe(
+        rig,
+        Category::Idea,
+        "Let me queue research from the building's tooltip",
+    );
+    rig.settle(0.1);
+    rig.shoot("feedback-main-menu-filled")?;
+    // Nothing listens there: the report is saved for later.
+    rig.game.feedback_server = Some("http://127.0.0.1:9".into());
+    rig.click("fb.submit");
+    anyhow::ensure!(
+        matches!(rig.game.feedback.phase, Phase::Sending { .. }),
+        "the report goes out"
+    );
+    rig.shoot("feedback-sending")?;
+    rig.until("the report saved for later", Duration::from_secs(30), |g| {
+        g.feedback.phase == Phase::Queued
+    })?;
+    rig.settle(0.1);
+    rig.shoot("feedback-queued")?;
+    anyhow::ensure!(
+        crate::feedback::Outbox::new(&rig.game.paths.user)
+            .waiting()
+            .len()
+            == 1,
+        "the report waits in the outbox"
+    );
+    rig.click("fb.close");
+    if let Some(server) = local {
+        rig.game.feedback_server = Some(server);
+        open_feedback(rig, "menu.feedback", "feedback-screenshot-menu-2")?;
+        describe(rig, Category::Bug, "The menu music stops after a match");
+        rig.click("fb.submit");
+        rig.until("the report sent", Duration::from_secs(30), |g| {
+            matches!(g.feedback.phase, Phase::Sent { .. })
+        })?;
+        rig.settle(0.1);
+        rig.shoot("feedback-sent")?;
+        rig.click("fb.close");
+    }
+    rig.game.feedback_server = None;
+    rig.settle(0.2);
+    Ok(())
+}
+
+/// The feedback form over a match (opened from the game menu, which stays under it).
+fn feedback_match(rig: &mut Rig) -> Result<()> {
+    open_feedback(rig, "gm.feedback", "feedback-screenshot-match")?;
+    describe(
+        rig,
+        crate::feedback::Category::Bug,
+        "Workers stop gathering when the tree next to the hall falls",
+    );
+    rig.settle(0.2);
+    rig.shoot("feedback-match")?;
+    rig.click("fb.cancel");
+    anyhow::ensure!(
+        rig.game.flow.top() == Some(Overlay::GameMenu),
+        "back to the game menu"
+    );
+    rig.settle(0.1);
+    Ok(())
+}
+
+fn a_match(rig: &mut Rig) -> Result<()> {
+    let data = rig.game.data.clone().context("booted")?;
+    start_skirmish(rig)?;
     rig.shoot("loading")?;
     rig.until("the match", Duration::from_secs(180), |g| g.flow.in_match())?;
     rig.settle(3.0);
@@ -1106,6 +1231,7 @@ fn a_match(rig: &mut Rig) -> Result<()> {
     rig.game.menu_page = MenuPage::Main;
     rig.settle(0.2);
     rig.shoot("game-menu")?;
+    feedback_match(rig)?;
     rig.click("gm.save");
     super::widgets::text(
         &mut rig.game.host.ui,

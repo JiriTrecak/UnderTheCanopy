@@ -229,6 +229,7 @@ mod tests {
             "loading",
             "mission-hud",
             "releases",
+            "feedback",
         ] {
             ui.show(screen, true);
             ui.frame(0.0);

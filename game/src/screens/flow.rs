@@ -8,6 +8,7 @@
 //!                   ├▶ Load (overlay) ─────────────▶┘         └▶ GameMenu (overlay) ─▶ (origin)
 //!                   ├▶ Settings (overlay)
 //!                   ├▶ Releases (overlay: What's new, updates)
+//!                   ├▶ Feedback (overlay; also over the game menu)
 //!                   └▶ Exit
 //! ```
 //!
@@ -49,6 +50,9 @@ pub enum Overlay {
     /// What's new and the update details: only over the main menu, so an update is
     /// never installed during a match (D43).
     Releases,
+    /// The feedback form: over the main menu or the game menu (which keeps a
+    /// single-player match paused under it).
+    Feedback,
 }
 
 /// Where a match returns to when it is left.
@@ -234,6 +238,9 @@ impl Flow {
                     }
                     Overlay::Settings | Overlay::Confirm => self.screen != Screen::Boot,
                     Overlay::Releases => self.screen == Screen::MainMenu,
+                    Overlay::Feedback => {
+                        self.screen == Screen::MainMenu || self.has(Overlay::GameMenu)
+                    }
                 };
                 if fits {
                     if overlay == Overlay::Result {
@@ -389,6 +396,31 @@ mod tests {
         flow.apply(Intent::Loaded);
         flow.apply(Intent::Back);
         flow.apply(Intent::Show(Overlay::Releases));
+        assert_eq!(flow.top(), Some(Overlay::GameMenu));
+    }
+
+    #[test]
+    fn feedback_opens_over_the_menus_and_keeps_the_match_paused() {
+        let mut flow = booted();
+        flow.apply(Intent::Show(Overlay::Feedback));
+        assert_eq!(flow.top(), Some(Overlay::Feedback));
+        flow.apply(Intent::Back);
+        assert!(flow.overlays().is_empty());
+        flow.apply(Intent::Open(Screen::Skirmish));
+        flow.apply(Intent::Show(Overlay::Feedback));
+        assert!(
+            flow.overlays().is_empty(),
+            "only the main menu and the game menu"
+        );
+        flow.apply(Intent::StartMatch(Origin::Skirmish));
+        flow.apply(Intent::Loaded);
+        flow.apply(Intent::Show(Overlay::Feedback));
+        assert!(flow.overlays().is_empty(), "not over the playing match");
+        assert_eq!(flow.apply(Intent::Back), vec![Effect::Pause(true)]);
+        // Over the game menu the match stays paused, and closing returns to the menu.
+        assert!(flow.apply(Intent::Show(Overlay::Feedback)).is_empty());
+        assert_eq!(flow.overlays(), &[Overlay::GameMenu, Overlay::Feedback]);
+        assert!(flow.apply(Intent::Back).is_empty());
         assert_eq!(flow.top(), Some(Overlay::GameMenu));
     }
 

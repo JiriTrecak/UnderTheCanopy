@@ -226,7 +226,7 @@ impl Net {
         self.inner.http.get(self.inner.server.http(path))
     }
 
-    fn post(&self, path: &str) -> reqwest::RequestBuilder {
+    pub(crate) fn post(&self, path: &str) -> reqwest::RequestBuilder {
         self.inner.http.post(self.inner.server.http(path))
     }
 
@@ -247,7 +247,7 @@ impl Net {
         Pending { rx }
     }
 
-    fn json<T: DeserializeOwned + Send + 'static>(
+    pub(crate) fn json<T: DeserializeOwned + Send + 'static>(
         &self,
         request: reqwest::RequestBuilder,
     ) -> Pending<T> {

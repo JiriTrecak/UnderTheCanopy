@@ -274,6 +274,25 @@ impl App {
         if let Some(vsync) = requests.vsync {
             session.display.set_vsync(vsync && self.options.vsync);
         }
+        // The feedback screenshot: this frame (without the form) is drawn into a texture of
+        // its own and read back; the window keeps showing the previous frame.
+        if session.game.grab_due() {
+            let gpu = &session.display.gpu;
+            let target = crate::feedback::grab::Target::new(gpu, session.display.format(), size);
+            session.game.render(
+                &mut Ctx {
+                    gpu,
+                    renderer: &mut session.renderer,
+                    window: Some(window),
+                    size,
+                    scale,
+                },
+                &target.view,
+                &target.ui_view,
+            );
+            session.game.grab(gpu, &target.texture);
+            return;
+        }
         let Some(frame) = session.display.acquire() else {
             // No frame while the window is hidden, minimised or covered. The update still
             // queued its uploads, which only a submit releases, and nothing paces the loop:

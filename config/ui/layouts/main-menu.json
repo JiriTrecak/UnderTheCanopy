@@ -35,6 +35,7 @@
               { "id": "load", "kind": "button", "class": "menu-action mm-action", "text": "Load Game", "action": "menu.load" },
               { "id": "editor", "kind": "button", "class": "menu-action mm-action", "text": "Editor", "action": "menu.editor" },
               { "id": "settings", "kind": "button", "class": "menu-action mm-action", "text": "Settings", "action": "menu.settings" },
+              { "id": "feedback", "kind": "button", "class": "menu-action mm-action", "text": "Submit feedback", "action": "menu.feedback" },
               { "id": "exit", "kind": "button", "class": "menu-action mm-action", "text": "Exit", "action": "menu.exit" }
             ]
           }

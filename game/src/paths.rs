@@ -27,6 +27,10 @@ pub struct Paths {
 pub const USER_MAPS: &str = "maps";
 /// Map packages received from other players, in the user folder.
 pub const DOWNLOADED_MAPS: &str = "downloads";
+/// Feedback reports waiting to be sent, in the user folder.
+pub const FEEDBACK_OUTBOX: &str = "feedback";
+/// This installation's anonymous id (feedback reports), in the user folder.
+pub const INSTALL_ID: &str = "install-id";
 
 impl Paths {
     pub fn resolve(data_override: Option<PathBuf>) -> Result<Self> {

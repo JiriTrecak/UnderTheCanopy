@@ -18,6 +18,7 @@ profile = ["dep:tracing-tracy"]
 [dependencies]
 anyhow.workspace = true
 arboard.workspace = true
+base64.workspace = true
 canopy-assets = { path = "../crates/assets" }
 canopy-audio = { path = "../crates/audio" }
 canopy-content = { path = "../crates/content" }

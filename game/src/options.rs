@@ -5,7 +5,7 @@
 //!        [--tick <n>] [--camera <x,z,zoom[,yaw]>] [--hour <h>] [graphics]
 //! canopy edit [--data <folder>]  (opens the editor; docs/editor.md)
 //! canopy mcp [--data <folder>]   (the editor's MCP server without a window)
-//! canopy capture-screens --out <folder> [--size <w>x<h>] [--scale <s>] [--only releases]
+//! canopy capture-screens --out <folder> [--size <w>x<h>] [--scale <s>] [--only releases|multiplayer|editor|feedback]
 //!                         [--data <folder>]
 //! canopy shot --map <id> --camera <x,z,zoom[,yaw] | battle[,zoom]> --out <png>
 //!             [--tick <n>] [--players <n>] [--crowd <n> | --gallery] [--colors <i,j,…>] [--size <w>x<h>]
@@ -137,7 +137,7 @@ pub enum Command {
         out: PathBuf,
         size: [u32; 2],
         scale: f32,
-        /// One group of captures only (`releases`).
+        /// One group of captures only (`releases`, `multiplayer`, `editor`, `feedback`).
         only: Option<String>,
     },
 }

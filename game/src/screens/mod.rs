@@ -1,5 +1,5 @@
 //! The game's screens and app flow: boot, main menu, campaign, skirmish, multiplayer,
-//! loading, the match with its menu and result, settings and saves.
+//! loading, the match with its menu and result, settings, saves and feedback.
 //!
 //! [`Game`] owns the one UI ([`ui_host::UiHost`]: menus, overlays and the in-match HUD),
 //! the audio, the flow state machine ([`flow::Flow`]), the models of every screen and the
@@ -10,6 +10,7 @@
 
 pub mod campaign;
 pub mod capture;
+pub mod feedback;
 pub mod flow;
 pub mod in_match;
 pub mod loading;
@@ -188,6 +189,12 @@ pub struct Game {
     clear_actors: bool,
     /// Test in game: the game's own data while a match plays the editor's.
     testing: Option<Arc<GameData>>,
+    /// The feedback form, its screenshot and the reports going out (D59).
+    feedback: feedback::FeedbackForm,
+    grab: crate::feedback::grab::Grab,
+    courier: crate::feedback::Courier,
+    /// Where feedback goes instead of the multiplayer server (captures).
+    feedback_server: Option<String>,
 }
 
 fn seed() -> u32 {
@@ -235,6 +242,7 @@ impl Game {
             releases,
             palette: Palette::load(&paths.data),
             library: SaveLibrary::new(&paths.user),
+            courier: crate::feedback::Courier::new(&paths.user),
             progress: Progress::load(&paths.user),
             catalog,
             play_options,
@@ -279,6 +287,9 @@ impl Game {
             apply_all: true,
             clear_actors: false,
             testing: None,
+            feedback: feedback::FeedbackForm::default(),
+            grab: crate::feedback::grab::Grab::default(),
+            feedback_server: None,
         };
         // The editor edits the repository; installed games show its entry disabled.
         if game.paths.repository().is_none()
@@ -418,6 +429,7 @@ impl Game {
             }
             Some(Overlay::Settings) => self.close_settings(),
             Some(Overlay::Releases) => self.close_releases(),
+            Some(Overlay::Feedback) => self.close_feedback(),
             Some(Overlay::GameMenu) if self.menu_page != MenuPage::Main => {
                 self.menu_page = MenuPage::Main;
             }
@@ -855,6 +867,7 @@ impl Game {
         self.poll_boot();
         self.poll_network();
         self.poll_updates();
+        self.poll_feedback(ctx.gpu);
         self.finish_loading(ctx);
         // Text fields reach the system clipboard (copy, cut, paste) for every screen.
         let mut taken = self.host.ui.take_actions();
@@ -1186,6 +1199,25 @@ impl Game {
                 self.requests.editor = true
             }
             "menu.exit" if clicked => self.apply(Intent::Quit),
+            // Feedback, from the main menu or the game menu.
+            "menu.feedback" | "gm.feedback" if clicked => self.open_feedback(),
+            "fb.category" => {
+                if let Some(&category) =
+                    selected.and_then(|i| crate::feedback::Category::ALL.get(i))
+                {
+                    self.feedback.category = category;
+                }
+            }
+            "fb.description" => match &action.kind {
+                ActionKind::TextChanged(text) => self.feedback.description = text.clone(),
+                ActionKind::Submitted(text) => {
+                    self.feedback.description = text.clone();
+                    self.submit_feedback(ctx.gpu);
+                }
+                _ => {}
+            },
+            "fb.submit" if clicked => self.submit_feedback(ctx.gpu),
+            "fb.cancel" | "fb.close" if clicked => self.close_feedback(),
             // The release plaque and dialog.
             "releases.notes" if clicked => self.open_releases(releases::View::Notes),
             "releases.updates" if clicked => {
@@ -1401,6 +1433,94 @@ impl Game {
             }
             _ => {}
         }
+    }
+
+    /// Opens the feedback form; the frame drawn next, without it, is its screenshot.
+    fn open_feedback(&mut self) {
+        use crate::feedback::Place;
+        let place = match (&self.playing, self.flow.in_match()) {
+            (Some(playing), true) => Place {
+                in_match: true,
+                map: Some(playing.map_id.clone()),
+                mode: Some(match playing.kind {
+                    MatchKind::Skirmish => "skirmish",
+                    MatchKind::Campaign => "campaign",
+                    MatchKind::Multiplayer => "multiplayer",
+                }),
+                tick: playing.newest().map(|s| s.view.tick),
+            },
+            _ => Place::default(),
+        };
+        self.apply(Intent::Show(Overlay::Feedback));
+        if self.flow.top() != Some(Overlay::Feedback) {
+            return;
+        }
+        self.feedback.open(place);
+        self.feedback.fill(&mut self.host.ui);
+        self.grab.request();
+    }
+
+    fn submit_feedback(&mut self, gpu: &Gpu) {
+        use crate::feedback::{self as fb, System};
+        if !self.feedback.can_submit() {
+            return;
+        }
+        let system = System {
+            version: env!("CARGO_PKG_VERSION").into(),
+            os: fb::os_description(),
+            gpu: gpu.name(),
+            preset: self
+                .settings
+                .graphics
+                .active_preset()
+                .map_or_else(|| "Custom".into(), |p| format!("{p:?}")),
+        };
+        let report = fb::build(
+            &fb::install_id(&self.paths.user),
+            self.feedback.category,
+            &self.feedback.description,
+            &system,
+            &self.feedback.place,
+            self.feedback.shot(),
+        );
+        let id = report.report_id.clone();
+        if let Err(error) = self.courier.submit(report) {
+            tracing::warn!(error = %format!("{error:#}"), "feedback could not be kept for later");
+        }
+        self.feedback.sending(id);
+    }
+
+    fn close_feedback(&mut self) {
+        if self.flow.top() == Some(Overlay::Feedback) {
+            self.apply(Intent::Back);
+        }
+    }
+
+    /// The screenshot being taken and the reports going out.
+    fn poll_feedback(&mut self, gpu: &Gpu) {
+        if let Some(result) = self.grab.poll(gpu) {
+            self.feedback.screenshot(&mut self.host, gpu, result);
+        }
+        let (setting, chosen) = (&self.settings.multiplayer.server, &self.feedback_server);
+        let server = || match chosen {
+            Some(address) => canopy_net::ServerAddress::parse(address),
+            None => canopy_net::ServerAddress::resolve(setting.as_deref()),
+        };
+        for delivery in self.courier.poll(server) {
+            self.feedback.delivered(&delivery);
+        }
+    }
+
+    /// Whether the next frame is the feedback screenshot: the window then draws it into a
+    /// texture of its own ([`crate::feedback::grab::Target`]) and calls [`Game::grab`]
+    /// instead of presenting it.
+    pub fn grab_due(&self) -> bool {
+        self.grab.due()
+    }
+
+    /// Reads back the frame just drawn into `texture` as the feedback screenshot.
+    pub fn grab(&mut self, gpu: &Gpu, texture: &wgpu::Texture) {
+        self.grab.record(gpu, texture);
     }
 
     fn open_releases(&mut self, view: releases::View) {
@@ -1638,6 +1758,11 @@ impl Game {
             ("saves", top == Some(Overlay::Saves)),
             ("dialog", top == Some(Overlay::Confirm)),
             ("releases", top == Some(Overlay::Releases)),
+            // Not in the frame that becomes its screenshot.
+            (
+                "feedback",
+                top == Some(Overlay::Feedback) && !self.grab.due(),
+            ),
             ("fade", true),
         ];
         for (name, show) in shows {
@@ -1748,6 +1873,7 @@ impl Game {
             Some(Overlay::Saves) => self.show_saves(),
             Some(Overlay::Confirm) => self.show_dialog(),
             Some(Overlay::Releases) => self.releases.show(&mut self.host, gpu, &self.updater),
+            Some(Overlay::Feedback) => self.feedback.show(&mut self.host.ui),
             _ => {}
         }
     }

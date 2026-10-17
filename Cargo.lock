@@ -388,6 +388,7 @@ version = "0.3.6"
 dependencies = [
  "anyhow",
  "arboard",
+ "base64",
  "canopy-assets",
  "canopy-audio",
  "canopy-content",

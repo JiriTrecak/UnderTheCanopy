@@ -1,0 +1,58 @@
+{
+  "root": {
+    "class": "scrim fb-scrim",
+    "children": [
+      {
+        "class": "gm fb",
+        "children": [
+          { "kind": "label", "class": "gm-title", "text": "Submit feedback" },
+          {
+            "id": "form", "class": "gm-page",
+            "children": [
+              {
+                "class": "fb-shot",
+                "children": [
+                  {
+                    "class": "fb-frame",
+                    "children": [
+                      { "id": "thumb", "kind": "image", "class": "fb-thumb" },
+                      { "id": "taking", "kind": "label", "class": "fb-taking", "text": "Taking the screenshot…" }
+                    ]
+                  },
+                  {
+                    "class": "fb-shot-text",
+                    "children": [
+                      { "id": "shot-label", "kind": "label", "class": "mp-caption", "text": "Screenshot of the game" },
+                      { "id": "shot-note", "kind": "label", "class": "fb-note", "text": "This screenshot is submitted with your report." }
+                    ]
+                  }
+                ]
+              },
+              { "kind": "label", "class": "mp-caption fb-caption", "text": "Category" },
+              { "id": "category", "kind": "dropdown", "class": "sk-select fb-select", "action": "fb.category", "options": ["Bug", "Idea", "Balance", "Other"] },
+              { "kind": "label", "class": "mp-caption fb-caption", "text": "Description" },
+              { "id": "description", "kind": "text_field", "class": "mp-field", "max_length": 5000, "placeholder": "What happened, or what would you change?", "action": "fb.description" },
+              { "kind": "label", "class": "fb-note", "text": "Your game version, operating system, graphics card and the map or match are attached." },
+              { "id": "status", "kind": "label", "class": "gm-status", "visible": false },
+              {
+                "class": "gm-row fb-actions",
+                "children": [
+                  { "kind": "button", "class": "gm-button st-grow", "text": "Cancel", "action": "fb.cancel" },
+                  { "id": "submit", "kind": "button", "class": "gm-button fb-submit st-grow", "text": "Submit", "action": "fb.submit" }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "done", "class": "gm-page", "visible": false,
+            "children": [
+              { "id": "done-title", "kind": "label", "class": "fb-done-title" },
+              { "id": "done-body", "kind": "label", "class": "gm-sub" },
+              { "id": "close", "kind": "button", "class": "gm-button", "text": "Close", "action": "fb.close" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

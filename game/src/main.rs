@@ -4,6 +4,7 @@ mod app;
 mod bench;
 mod clipboard;
 mod data;
+mod feedback;
 mod files;
 mod gpu;
 mod live;

@@ -8,6 +8,8 @@
 //!   session's [`MatchSetup`](canopy_sim::MatchSetup), feeds it the committed commands of
 //!   each beat ([`Session::next_turn`] or [`Session::advance`]) and reports each simulated
 //!   beat back ([`Session::stepped`]) so desync hashes go out every 8 beats.
+//! - [`feedback`] sends players' reports (`POST /api/feedback`, D59), outside the match
+//!   protocol.
 //! - [`wire`] is the message format, [`lockstep`] the outbox, [`mailbox`] the server's
 //!   commit rule (used in-process for single-player), [`latency`] the server's input-delay
 //!   choice.
@@ -17,6 +19,7 @@
 //! ticks one lower than the old game, D21), and the desync hash for beat `T` is the
 //! fingerprint after that step.
 
+pub mod feedback;
 pub mod latency;
 mod link;
 pub mod lockstep;
