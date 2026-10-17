@@ -260,7 +260,9 @@ pub fn reactions(b: &mut Beat) {
             && health * 1000.0 < f64::from(rules.army.retreat_health_permille)
             && memory.is_some_and(|m| tick >= m.react_at)
         {
-            let destination = f.nearest_safe(f.home, &[si]);
+            // To the staging point, where the army regroups (D52), not the hall's door.
+            let staging = super::operations::staging(f, super::operations::STAGING);
+            let destination = f.nearest_safe(staging, &[si]);
             b.emit(
                 Action::Move {
                     actors: vec![soldier.id],

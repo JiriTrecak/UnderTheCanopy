@@ -134,6 +134,49 @@ fn a_camp_is_cleared_for_hero_experience_and_remembered() {
 }
 
 #[test]
+fn a_camp_found_empty_long_ago_is_visited_again() {
+    // The defenders were away when the camp was last seen. Counting the old sighting as
+    // the mission's end chose the camp again every strategy beat, and the army only ever
+    // assembled at home.
+    let map = skirmish(
+        vec![
+            place_for("creep-1", CREEP, "none", 75.0, 36.0),
+            place_for("creep-2", CREEP, "none", 76.0, 38.0),
+        ],
+        vec![camp("camp-east", (75.0, 37.0), &["creep-1", "creep-2"])],
+    );
+    let mut world = world(&map, false);
+    memory_mut(&mut world, 0).camps.insert(
+        "camp-east".into(),
+        canopy_sim::ai::state::CampMemory {
+            status: CampStatus::Empty,
+            seen: 0,
+            retry: 0,
+            killed: Vec::new(),
+            seen_ids: Vec::new(),
+        },
+    );
+    let hero = all_of(&world, P1, HERO)[0];
+    run_until(&mut world, 400, |w| {
+        memory(w, 0)
+            .mission
+            .as_ref()
+            .is_some_and(|m| m.kind == MissionKind::Camp)
+    });
+    let started = memory(&world, 0).mission.as_ref().unwrap().started;
+    let before = distance_to(&world, hero, (75.0, 37.0));
+    run_until(&mut world, 1200, |w| {
+        memory(w, 0)
+            .camps
+            .get("camp-east")
+            .is_some_and(|c| c.status == CampStatus::Active)
+    });
+    let m = memory(&world, 0).mission.clone().expect("an operation");
+    assert_eq!((m.key.as_str(), m.started), ("camp-east", started));
+    assert!(distance_to(&world, hero, (75.0, 37.0)) < before - 10.0);
+}
+
+#[test]
 fn a_squad_withdraws_from_a_visibly_stronger_force() {
     let mut world = world(&skirmish(vec![], vec![]), false);
     let squad: Vec<u32> = (0..3)

@@ -139,7 +139,8 @@ pub fn observe(f: &Frame, s: &mut Memory) {
     s.inspected.retain(|key, value| {
         !((key.starts_with("reject:")
             || key.starts_with("item:")
-            || key.starts_with("replacement:"))
+            || key.starts_with("replacement:")
+            || key.starts_with("stalled:"))
             && *value <= tick)
     });
     let sightings = &s.sightings;
@@ -169,11 +170,10 @@ fn enemy_building(f: &Frame, e: &Known) -> bool {
         && f.def(e).kind == Kind::Building
 }
 
-/// Chooses the army's next operation (old `strategy`).
 /// Where the army waits, regroups and falls back to, `reach` cells out of the base towards
 /// the nearest known enemy building (else the map's centre), at most halfway there: out of
 /// the workers' way and between them and the threat, instead of on the hall's doorstep.
-fn staging(f: &Frame, reach: f64) -> Pt {
+pub(super) fn staging(f: &Frame, reach: f64) -> Pt {
     let home = f.home;
     let toward = f
         .all
@@ -204,12 +204,23 @@ fn staging(f: &Frame, reach: f64) -> Pt {
     }
 }
 
+/// An operation whose squad gets no closer for this long is given up.
+const STALL_TICKS: u32 = 600;
+/// A given-up target is not chosen again for this long.
+const STALL_RETRY_TICKS: u32 = 2400;
+
+/// The memory key of a given-up operation target (`inspected`, until a tick).
+fn stalled_key(key: &str) -> String {
+    format!("stalled:{key}")
+}
+
 /// How far out the army stages, and the home guard stands.
-const STAGING: f64 = 12.0;
+pub(super) const STAGING: f64 = 12.0;
 const GUARD_POST: f64 = 6.0;
 /// Reinforcements that set out together.
 const REINFORCEMENT_GROUP: usize = 3;
 
+/// Chooses the army's next operation (old `strategy`).
 pub fn strategy(b: &mut Beat) {
     let f = b.f;
     let tick = f.tick;
@@ -232,10 +243,13 @@ pub fn strategy(b: &mut Beat) {
     {
         let point = f.geo.from_place(&m.point);
         let done = match m.kind {
-            MissionKind::Camp => s
-                .camps
-                .get(&m.key)
-                .is_some_and(|c| matches!(c.status, CampStatus::Empty | CampStatus::Cleared)),
+            // A camp found empty before the mission began is worth another look: counting
+            // it as done would choose it again at once, every strategy beat, and the army
+            // would assemble at home for good.
+            MissionKind::Camp => s.camps.get(&m.key).is_some_and(|c| {
+                c.status == CampStatus::Cleared
+                    || (c.status == CampStatus::Empty && c.seen > m.started)
+            }),
             MissionKind::Scout => f.visible(point),
             MissionKind::Assault => {
                 f.visible(point) && !f.hostiles.iter().any(|&i| dist(f.at(i).p, point) < 15.0)
@@ -249,10 +263,22 @@ pub fn strategy(b: &mut Beat) {
     }
     let rules = f.rules;
     let power: f64 = f.army.iter().map(|&i| f.power(f.at(i))).sum();
+    // Targets the army could not get closer to lately wait, and ground the army cannot
+    // walk to is no target.
+    let stalled = |key: &str| {
+        s.inspected
+            .get(&stalled_key(key))
+            .is_some_and(|&t| t > tick)
+    };
     let mut buildings: Vec<&Known> = f
         .all
         .iter()
-        .filter(|e| enemy_building(f, e) && e.hostile != Some(false))
+        .filter(|e| {
+            enemy_building(f, e)
+                && e.hostile != Some(false)
+                && f.geo.connected(f.home, e.p)
+                && !stalled(&e.id.to_string())
+        })
         .collect();
     let dropoff = |e: &Known| {
         f.def(e)
@@ -782,16 +808,27 @@ pub fn operations(b: &mut Beat) {
     );
     let point = f.geo.from_place(&m.point);
     let destination = f.nearest_safe(point, &indices(f, &squad));
-    if dist(center, f.geo.from_place(&m.progress_point)) > 3.0 {
+    // Progress is getting closer to the operation's point, or fighting on the way. The
+    // squad's centre alone jitters as members shuffle and reinforcements join, and the
+    // safe point may be where the squad already stands, so neither proves progress.
+    let fighting = f.hostiles.iter().any(|&h| dist(f.at(h).p, center) < 18.0);
+    let reference = f.geo.from_place(&m.progress_point);
+    if m.progress_point == m.point || fighting || dist(center, point) + 3.0 < dist(reference, point)
+    {
         m.progress_point = f.geo.place(center);
         m.progress_tick = tick;
-    } else if tick - m.progress_tick > 600 && dist(center, destination) > 12.0 {
+    } else if tick - m.progress_tick > STALL_TICKS && dist(center, point) > 12.0 {
         if m.kind == MissionKind::Camp
             && let Some(camp) = b.s.camps.get_mut(&m.key)
         {
             camp.retry = tick + 1600;
         }
-        b.s.inspected.insert(m.key.clone(), tick);
+        if m.kind == MissionKind::Scout {
+            // Scouting moves on to the start inspected longest ago.
+            b.s.inspected.insert(m.key.clone(), tick);
+        }
+        b.s.inspected
+            .insert(stalled_key(&m.key), tick + STALL_RETRY_TICKS);
         b.s.mission = None;
         b.s.next_strategy = tick;
         return;
