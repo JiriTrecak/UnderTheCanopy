@@ -20,7 +20,8 @@ The anchors are the chosen images of `specs/style-test.json`, copied to the old 
 `.asset-work/concepts/buildings/refs/icons/anchor-<type>.png`.
 
 **install** writes each chosen image as an icon asset: `{"src", "dir", "id", "name", "tags",
-"race"?, "alpha"?, "crop"?, "lift"?, "request"?}` per entry. The image is cut to `crop`
+"race"?, "key"?, "alpha"?, "crop"?, "lift"?, "request"?}` per entry. `key` cuts an image
+generated on flat white out to transparency (resources: gpt-image-2 has no transparent output). The image is cut to `crop`
 (fractions x0, y0, x1, y1), downscaled to `SIZE` (Lanczos) and lifted by the gamma `lift`
 (portraits use 0.85: black chitin on the HUD's dark slots needs it) as `image.png`; `alpha`
 keeps a cut-out's transparency (resources). The request it came from is kept as
@@ -47,18 +48,16 @@ KINDS = {
     'ability': """ICON TYPE: ABILITY (an active spell or skill). It shows the ACTION at its peak moment, not a portrait: a dynamic, diagonal composition with motion and energy, the caster's weapon or body part as the subject when it helps. The ability's energy colour lights the scene and glows behind the subject: abilities are the brightest icons in the game, but the corners still fall to darkness.""",
     'passive': """ICON TYPE: PASSIVE OR AURA ability. A calm, symmetric, centred emblem-like composition (the subject seen from the front) with a radiating glow of the ability's energy colour behind it and darkness in the corners.""",
     'research': """ICON TYPE: RESEARCH (an upgrade). A still life of the one improved piece of equipment, close-up and slightly angled, floating on a dark forge-steel-grey background with a soft warm glow behind it. Research reads as engineering: a better machine, never a mutation.""",
-    'resource': """ICON TYPE: RESOURCE, a CUT-OUT (it sits on the HUD's resource bar and in cost rows, as small as 24 pixels). The resource itself as one compact object, centred, filling about 85% of the frame, on a FULLY TRANSPARENT background: no backdrop, no vignette, no glow or haze outside the object, no cast shadow. A soft inner glow and a thin dark edge keep it readable on both dark and light HUD panels. This overrides the family's background rule; everything else about the family applies.""",
+    'resource': """ICON TYPE: RESOURCE, a CUT-OUT (the game keys it out: it sits on the HUD's resource bar and in cost rows, as small as 24 pixels). The resource itself as one compact object, centred, filling about 85% of the frame, on a PLAIN, FLAT, PURE WHITE background (#ffffff) with nothing else on it: no vignette, no glow or haze outside the object, no cast shadow, no reflection. A thin dark outline runs around the object, and a soft inner glow keeps it readable. This overrides the family's background rule; everything else about the family applies.""",
     'command': """ICON TYPE: COMMAND (a basic order shared by every race). One clear symbolic object, centred, filling about 75% of the frame, on a dark neutral background with a soft warm glow behind it. Race-neutral materials: steel, bronze, leather, wood. No creature in it unless stated.""",
 }
 
 FACTIONS = {
     'beetles': """FACTION: BEETLES, a fortress race of steam and contained magic. Their bodies are plain glossy black chitin, never glowing and never mutated. Materials: dark riveted steel, brass, and royal-blue painted plates (the faction's colour, large clean solid areas). Substance, the forest's magic, glows deep blue to violet ONLY inside glass (tanks, coils, canisters, lanterns, gauges): never green, never yellow, never on a body. Match the reference images' materials and palette exactly.""",
     'ants': """FACTION: ANTS, a biological army of the forest. Glossy burnt-rust-orange chitin, ivory mandible tusks, big black eyes; everything they carry is grown: leaf cloaks and hoods, bark-rimmed leaf shields, bone and thorn blades, silk nets, seed pods. The faction's colour is deep maple-leaf red (cloaks, hoods, shields). Substance, the forest's magic, has changed their bodies: where it shows, it is a faint blue-violet glow in veins and sap, never green. Match the reference board's materials and palette.""",
+    'creatures': """NEUTRAL FOREST CREATURES, the wild camps of the forest floor: drawn with the same chunky Warcraft proportions and glossy finish as the armies, in their own natural materials (bark, moss, mushroom caps, water, fur, chitin, paper nests). Corrupted creatures show rot, fungus and magenta-violet spore light; none of them glows green.""",
     'neutral': """No faction: a race-neutral design.""",
 }
-
-# Icon types drawn as cut-outs on transparency (everything else is full-bleed).
-CUTOUTS = {'resource'}
 
 DEFAULT_REFNOTE = "the first image is the subject's approved concept: keep its design, materials and colours exactly."
 ANCHOR_NOTE = " The other images are approved icons of the same family: match their rendering, lighting, background and framing, but not their subject."
@@ -78,16 +77,55 @@ def requests(spec_path, out):
         lines.append('THE SUBJECT: ' + it['subject'])
         req = {'slug': 'icon-' + it['name'], 'size': '1024x1024', 'n': it.get('n', spec.get('n', 1)),
                'quality': 'high', 'references': refs, 'prompt': '\n'.join(lines)}
-        if it['kind'] in CUTOUTS:
-            req['background'] = 'transparent'
         with open(os.path.join(out, it['name'] + '.json'), 'w') as f:
             json.dump(req, f, indent=2)
         print(it['name'], len(refs), 'references')
 
 
-def load(path, alpha=False):
-    """RGB, or premultiplied RGBA when `alpha` and the image has an alpha channel."""
+def key_white(buf):
+    """Premultiplied RGBA from an image on flat white: the white connected to the border
+    becomes transparent (white highlights inside the object stay), with a soft edge."""
+    rgb = buf.get_pixels(oiio.FLOAT)[:, :, :3]
+    h, w = rgb.shape[:2]
+    whiteness = rgb.min(axis=2)
+    near = whiteness > 0.88
+    bg = np.zeros((h, w), bool)
+    bg[0, :], bg[-1, :], bg[:, 0], bg[:, -1] = near[0, :], near[-1, :], near[:, 0], near[:, -1]
+    while True:
+        grown = bg.copy()
+        grown[1:, :] |= bg[:-1, :]
+        grown[:-1, :] |= bg[1:, :]
+        grown[:, 1:] |= bg[:, :-1]
+        grown[:, :-1] |= bg[:, 1:]
+        grown &= near
+        if (grown == bg).all():
+            break
+        bg = grown
+    # The edge: background pixels fade by how white they are; one ring of object pixels
+    # next to the background loses the white it was blended with.
+    alpha = np.where(bg, np.clip((1.0 - whiteness) / 0.12, 0.0, 1.0), 1.0)
+    ring = np.zeros_like(bg)
+    ring[1:, :] |= bg[:-1, :]
+    ring[:-1, :] |= bg[1:, :]
+    ring[:, 1:] |= bg[:, :-1]
+    ring[:, :-1] |= bg[:, 1:]
+    ring &= ~bg
+    alpha = np.where(ring, np.minimum(alpha, 0.6 + 0.4 * np.clip((0.95 - whiteness) / 0.3, 0, 1)), alpha)
+    # Colour of a partly transparent pixel without the white behind it: c = a*o + (1-a)*1.
+    a = alpha[:, :, None]
+    obj = np.clip((rgb - (1.0 - a)) / np.maximum(a, 1e-3), 0.0, 1.0)
+    out = np.concatenate([obj * a, a], axis=2).astype(np.float32)
+    res = oiio.ImageBuf(oiio.ImageSpec(w, h, 4, oiio.FLOAT))
+    res.set_pixels(oiio.ROI(0, w, 0, h, 0, 1, 0, 4), out)
+    return res
+
+
+def load(path, alpha=False, key=False):
+    """RGB, or premultiplied RGBA when `alpha` and the image has an alpha channel, or when
+    `key` (an image on flat white to cut out)."""
     buf = oiio.ImageBuf(path)
+    if key:
+        return key_white(buf)
     n = buf.spec().nchannels
     if alpha and n == 4:
         return oiio.ImageBufAlgo.premult(buf)
@@ -111,7 +149,7 @@ def install(plan_path):
     for it in json.load(open(plan_path)):
         d = os.path.join(ROOT, it['dir'])
         os.makedirs(d, exist_ok=True)
-        img = load(it['src'], alpha=it.get('alpha', False))
+        img = load(it['src'], alpha=it.get('alpha', False), key=it.get('key', False))
         if it.get('crop'):
             w, h = img.spec().width, img.spec().height
             x0, y0, x1, y1 = it['crop']
@@ -131,7 +169,7 @@ def install(plan_path):
         stale = os.path.join(d, 'generation.json')
         if it.get('request'):
             record = dict(it['request'])
-            record['install'] = {k: it[k] for k in ('crop', 'lift', 'alpha') if k in it}
+            record['install'] = {k: it[k] for k in ('crop', 'lift', 'alpha', 'key') if k in it}
             with open(stale, 'w') as f:
                 json.dump(record, f, indent=2)
                 f.write('\n')

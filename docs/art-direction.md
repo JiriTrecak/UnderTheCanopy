@@ -145,7 +145,7 @@ One family drives every icon in the game: unit, hero and building portraits, abi
 | Ability | the action at its peak, diagonal and moving; the weapon or effect is the subject, not the caster's portrait | the ability's energy colour, the brightest icons in the game |
 | Passive and aura | a calm symmetric emblem (a banner, an anvil, a shield) with a radiating ring | the ability's energy colour, quieter |
 | Research | a still life of the one improved piece of equipment | dark forge-steel grey with a warm glow |
-| Resource | the resource itself, about 85 % of the frame, as a **cut-out** with a thin dark edge: it sits on the resource bar and in 24 px cost rows | transparent |
+| Resource | the resource itself, about 85 % of the frame, as a **cut-out** with a thin dark edge: it sits on the resource bar and in 24 px cost rows | transparent (generated on flat white and keyed out: gpt-image-2 has no transparent output) |
 | Command and stat | one race-neutral symbolic object (boot, sword, shield, anvil) in steel, bronze, leather and wood | dark neutral with a warm glow |
 
 **Energy colours** say what an ability does: violet and white for substance (arcs, shields, mana), orange and white for fire, forge, impact and charges, warm gold for healing and auras, cold steel and white for blocking and armour. Substance is never green.
