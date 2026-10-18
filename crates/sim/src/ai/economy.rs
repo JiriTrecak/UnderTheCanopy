@@ -214,6 +214,154 @@ fn harvest_source(d: &Definition) -> Option<&Id> {
     }
 }
 
+/// Soldiers per further well: one well first, then one more for every this many.
+const SOLDIERS_PER_WELL: usize = 10;
+
+/// The next building to place on a resource (`placementOn`, a Substance Well, D62) and
+/// the deposit for it: while the colony holds fewer than it wants (one, and one more for
+/// every [`SOLDIERS_PER_WELL`] soldiers), the nearest reachable deposit nobody is known to
+/// have built on and no enemy is seen near. Farther ones come as the army grows.
+fn next_well<'g>(
+    f: &'g super::frame::Frame,
+    failed: &BTreeMap<String, u32>,
+    defs: &[Def],
+    army: usize,
+) -> Option<(Def, &'g super::geography::ResourceSite)> {
+    let catalog = f.catalog();
+    for &d in defs {
+        let Some(on) = catalog.get(d).placement_on.as_ref() else {
+            continue;
+        };
+        let Some(source) = f.find(on.source.as_str()) else {
+            continue;
+        };
+        let own = f.buildings.iter().filter(|&&i| f.at(i).def == d).count();
+        let mut sites: Vec<&super::geography::ResourceSite> = f
+            .geo
+            .resources
+            .iter()
+            .filter(|r| r.definition == source)
+            .collect();
+        if own >= (1 + army / SOLDIERS_PER_WELL).min(sites.len()) {
+            continue;
+        }
+        sites.retain(|s| {
+            let key = site_key(catalog.id(d).as_str(), s.point.x, s.point.y, 0);
+            f.geo.connected(f.home, s.point)
+                && !f.all.iter().any(|b| {
+                    b.alive()
+                        && dist(b.p, s.point) < 0.01
+                        && f.def(b)
+                            .placement_on
+                            .as_ref()
+                            .is_some_and(|o| o.source == on.source)
+                })
+                && !f.hostiles.iter().any(|&h| dist(f.at(h).p, s.point) < 16.0)
+                && failed.get(&key).is_none_or(|&t| t <= f.tick)
+        });
+        sites.sort_by(|a, b| {
+            dist(a.point, f.home)
+                .total_cmp(&dist(b.point, f.home))
+                .then_with(|| a.id.cmp(&b.id))
+        });
+        if let Some(site) = sites.first() {
+            return Some((d, site));
+        }
+    }
+    None
+}
+
+/// Places the next wanted well on its deposit (D62): with the deposit in sight, the
+/// nearest available worker builds it; otherwise one walks out to see it.
+fn wells(p: &mut Planner, defs: &[Def], army: usize) -> bool {
+    let f = p.b.f;
+    let Some((def, site)) = next_well(f, &p.b.s.failed_sites, defs, army) else {
+        return false;
+    };
+    let d = f.definition(def);
+    if !f.can_afford(d, &[]) || f.buildings.iter().any(|&i| f.at(i).construction) {
+        return false;
+    }
+    let builds = |w: &Known| {
+        f.def(w)
+            .behaviors
+            .work
+            .as_ref()
+            .is_some_and(|work| work.builds.contains(&d.id))
+    };
+    let walking_out =
+        |w: &Known| matches!(f.order(w), Some(Order::Move { .. })) && f.queued(w).is_empty();
+    let available = |w: &Known| {
+        f.free(w)
+            || walking_out(w)
+            || (matches!(f.order(w), Some(Order::Gather { .. }))
+                && f.cargo(w).is_none()
+                && f.queued(w).is_empty()
+                && !w.contained)
+    };
+    let worker = f
+        .workers
+        .iter()
+        .map(|&i| f.at(i))
+        .filter(|w| builds(w) && available(w))
+        .min_by(|a, b| {
+            dist(a.p, site.point)
+                .total_cmp(&dist(b.p, site.point))
+                .then(a.id.cmp(&b.id))
+        })
+        .map(|w| (w.id, w.p));
+    let Some((worker, at)) = worker else {
+        return false;
+    };
+    let source = f.find(d.placement_on.as_ref().map_or("", |on| on.source.as_str()));
+    let seen = f
+        .resources
+        .iter()
+        .map(|&i| f.at(i))
+        .any(|r| !r.remembered && Some(r.def) == source && dist(r.p, site.point) < 0.01);
+    if seen {
+        return p.emit(
+            Action::Build {
+                actors: vec![worker],
+                definition: d.id.clone(),
+                position: FoundationPoint {
+                    x: HalfCells((site.point.x * 2.0).round() as u32),
+                    y: HalfCells((site.point.y * 2.0).round() as u32),
+                    surface: None,
+                },
+                rotation: Some(0),
+                append: None,
+            },
+            format!("Build {} on the nearest free deposit", d.name),
+        );
+    }
+    // Out of sight: walk a worker there first (it builds on arrival, next beat).
+    if dist(at, site.point) < 12.0
+        || p.b
+            .s
+            .inspected
+            .get("economy:well")
+            .is_some_and(|&t| t > f.tick)
+    {
+        return false;
+    }
+    let index = f.index_of(worker).expect("known");
+    let destination = f.nearest_safe(site.point, &[index]);
+    if p.emit(
+        Action::Move {
+            actors: vec![worker],
+            destination: f.geo.cell_point(destination),
+            attack_move: None,
+            append: None,
+        },
+        format!("Send a worker to claim a deposit with {}", d.name),
+    ) {
+        p.b.s.inspected.insert("economy:well".into(), f.tick + 1200);
+        return true;
+    }
+    false
+}
+
 /// The economy pass (old `economy`).
 pub fn economy(b: &mut Beat) {
     let _span = tracing::trace_span!("ai economy").entered();
@@ -727,6 +875,9 @@ fn run(p: &mut Planner) {
                 }
             }
         }
+        if wells(p, &defs, army.len()) {
+            return;
+        }
         for b in &ready {
             let bd = f.def(b);
             let Some(upgrade) = &bd.upgrade else {
@@ -825,19 +976,23 @@ fn run(p: &mut Planner) {
     // consume every delivery and the colony never advances.
     let mut reserve = promised.clone();
     if army.len() >= 8 && !threatened {
-        let outpost = defs.iter().copied().find(|&d| {
-            let dd = catalog.get(d);
-            dd.placement_near.as_ref().is_some_and(|near| {
-                dd.behaviors
-                    .storage
-                    .as_ref()
-                    .is_some_and(|s| s.dropoff == Some(true))
-                    && f.geo
-                        .resources
-                        .iter()
-                        .any(|r| Some(r.definition) == def_of(&near.source))
-            }) && !buildings.iter().any(|b| b.def == d)
-        });
+        let outpost = defs
+            .iter()
+            .copied()
+            .find(|&d| {
+                let dd = catalog.get(d);
+                dd.placement_near.as_ref().is_some_and(|near| {
+                    dd.behaviors
+                        .storage
+                        .as_ref()
+                        .is_some_and(|s| s.dropoff == Some(true))
+                        && f.geo
+                            .resources
+                            .iter()
+                            .any(|r| Some(r.definition) == def_of(&near.source))
+                }) && !buildings.iter().any(|b| b.def == d)
+            })
+            .or_else(|| next_well(f, &p.b.s.failed_sites, &defs, army.len()).map(|(d, _)| d));
         let upgrade = ready.iter().find_map(|b| {
             let bd = f.def(b);
             let u = bd.upgrade.as_ref()?;
@@ -1105,6 +1260,7 @@ fn harvesting(p: &mut Planner, workers: &[&Known]) {
                     && f.accepts(id.as_str())
             }) && orderable(r)
                 && has_room(r)
+                && f.open(r)
                 && f.geo.connected(w.p, r.p)
                 && !hostile_near(r, 12.0)
         });
@@ -1204,6 +1360,7 @@ fn harvesting(p: &mut Planner, workers: &[&Known]) {
             r.def == source
                 && orderable(r)
                 && has_room(r)
+                && f.open(r)
                 && f.geo.connected(f.home, r.p)
                 && !hostile_near(r, 12.0)
         });

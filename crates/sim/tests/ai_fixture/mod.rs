@@ -30,6 +30,11 @@ pub const HALL: &str = "building.test.hall";
 pub const HOUSE: &str = "building.test.house";
 pub const BARRACKS: &str = "building.test.barracks";
 pub const MINE: &str = "building.test.mine";
+/// An endless deposit gathered only through a well built on it (D62); maps place none
+/// unless a test adds them.
+pub const SPRING: &str = "building.test.spring";
+pub const WELL: &str = "building.test.well";
+pub const ESSENCE: &str = "item.test.essence";
 /// A hero spell whose value lies in its second operation: a token hit, then the blow.
 pub const SMITE: &str = "ability.test.smite";
 pub const RUSH: &str = "ability.test.rush";
@@ -206,6 +211,24 @@ fn game() -> Value {
                 "gatheringUnitCollision": false,
                 "harvesting": {"activeWorkers": 2, "recommendedWorkers": 3, "searchRadius": 0},
             })),
+            definition(SPRING, "building", json!({
+                "body": body(1000, 5, "armor.structure"), "footprint": {"width": 8, "depth": 8},
+                "entrance": {"x": 0.5, "y": 4.5}, "yield": 500, "constructionClearance": 2,
+                "gatheringUnitCollision": false,
+                "harvesting": {"activeWorkers": 2, "recommendedWorkers": 2, "searchRadius": 0,
+                    "needsBuilding": true, "endless": true},
+            })),
+            definition(WELL, "building", building(300, 8, json!({
+                "placementOn": {"source": SPRING},
+                "creation": {"method": "construct", "items": cost(20), "workTicks": 30, "workAnimation": "build"},
+                "behaviors": {"playerControl": {},
+                    "storage": {"capacity": 1000, "accepts": [ESSENCE], "dropoff": true}},
+            }))),
+            definition(ESSENCE, "item", json!({
+                "currency": true, "stackLimit": 100, "displayOrder": 20,
+                "creation": {"method": "harvest", "items": [], "source": SPRING, "amount": 5,
+                    "workTicks": 10, "workAnimation": "chop"},
+            })),
             definition(AMBER, "item", json!({
                 "currency": true, "stackLimit": 100, "displayOrder": 10,
                 "creation": {"method": "harvest", "items": [], "source": MINE, "amount": 5,
@@ -227,7 +250,8 @@ fn game() -> Value {
                 "creation": {"method": "train", "items": cost(10), "workTicks": 20},
                 "behaviors": {
                     "playerControl": {}, "movement": {"speed": 4},
-                    "work": {"carryCapacity": 5, "builds": [HALL, HOUSE, BARRACKS], "harvests": [AMBER]},
+                    "work": {"carryCapacity": 5, "builds": [HALL, HOUSE, BARRACKS, WELL],
+                        "harvests": [AMBER, ESSENCE]},
                 },
             })),
         ],
