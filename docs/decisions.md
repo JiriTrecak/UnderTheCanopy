@@ -559,6 +559,10 @@ Wood and its costs go away. The engine keeps felling for now (content is input);
 
 **Tree walls are solid**: no unit passes through vegetation that forms a wall, so players never have to think about it.
 
+**Root is renamed Substance** (Jiri, 2026-10-18, a working name): the forest's raw magic (D66). Players see "Substance"; content ids keep `root` until the name settles.
+
+**A Substance Well is built on top of the site** (Jiri, 2026-10-18, to design and build): instead of a drop-off building placed near a deposit, each race builds its Substance Well directly on the deposit, as StarCraft's refineries sit on geysers. Players read it at once: this is where substance comes from. For beetles the well is the Rootworks' role, and a network source (D66).
+
 ## D63. Renderer additions for the forest floor (2026-10-18, Jiri asked to build it — review: visible)
 
 Three renderer changes, made while bringing the fall look-dev map (`base/maps/showcase/lookdev-fall.utcm`) towards its target frame (`art/styles/target-fall-lookdev.jpg`, docs/art-direction.md):
