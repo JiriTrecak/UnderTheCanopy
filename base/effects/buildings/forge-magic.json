@@ -1,7 +1,7 @@
 {
   "id": "effect.buildings.forge-magic",
   "name": "Quench tank glow",
-  "description": "Green light of the contained magic in a working forge quench tank. Loops while the building works (D65).",
+  "description": "Blue-purple light of the contained magic in a working forge quench tank. Loops while the building works (D65).",
   "durationTicks": 80,
   "loop": true,
   "layers": [
@@ -12,8 +12,8 @@
       "startTick": 0,
       "anchor": "target",
       "shape": "light",
-      "colour": "#8cff4a",
-      "accent": "#c8ff8a",
+      "colour": "#8a5cff",
+      "accent": "#b89cff",
       "durationTicks": 80,
       "count": 1,
       "size": 6,

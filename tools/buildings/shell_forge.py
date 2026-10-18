@@ -116,8 +116,9 @@ by_name = {o.name: o for o in parts}
 # The furnace mouth: only its dark interior burns, never its stone ring.
 active_glow(by_name[FURNACE], (1.0, 0.45, 0.1), lambda rgb: np.clip((0.1 - lum(rgb)) / 0.06, 0.0, 1.0) ** 1.5,
             5.0, 1.6)
-# The quench tank: its dark glass glows green from within; steel and brass stay as they are.
-active_glow(by_name[TANK], (0.4, 1.0, 0.18), lambda rgb: np.clip((0.2 - lum(rgb)) / 0.12, 0.0, 1.0),
+# The quench tank: its dark glass glows with the forest's blue-purple magic from within;
+# steel and brass stay as they are.
+active_glow(by_name[TANK], (0.55, 0.32, 1.0), lambda rgb: np.clip((0.2 - lum(rgb)) / 0.12, 0.0, 1.0),
             5.0, 0.9)
 
 # --- Sockets.
