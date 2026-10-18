@@ -172,6 +172,55 @@ The target is unchanged: 60 FPS on a base M1 with about 400 units (plan). Most o
 4. **Art.** The frame props at the target's quality, the beetle hall model and the amber crater.
 5. **Again side by side, and on the base M1 Medium preset**, until Jiri calls it.
 
+### The look-dev map (2026-10-18)
+
+`base/maps/showcase/lookdev-fall.utcm` rebuilds `art/styles/target-fall-wide-map.jpg` in the engine with **no engine code**, on today's cell terrain, scenery and water. The buildings are left out, as the scene's subject is the environment.
+
+**Rendering it:**
+- Map: `tools/maps/lookdev_fall.py`. It runs on Blender's bundled Python, which has numpy.
+- Overhead shot: `just shot --map lookdev-fall --camera 240,240,2.1 --hour 16.5`.
+- Third-person shot: `canopy shot --map lookdev-fall --play --input "focus:warrior;key:J"`.
+- The map's layout is traced on the target in pixel coordinates and projected through the game camera, so the shot frames the same composition.
+
+**What it uses:**
+- **Ground.** Four gpt-image tileable textures (soil, leaf litter, sparse litter, waterbed), made seamless and packed by `tools/terrain/pack_ground.py`. They are the `autumn-forest` biome's soil, grass, dirt and waterbed layers.
+  - The leaf litter follows the map's `grass.grid`.
+  - A sparse-litter band along the clearing's rim is the map's first paint layer.
+- **Frame props from Tripo** (text to 3D), made game-ready by `tools/props/import_tripo.py` in Blender. It decimates to a triangle budget, shrinks the textures and tones them down.
+
+  | Prop | Triangles |
+  |---|---|
+  | two giant trunks | 24k each |
+  | stump | 8k |
+  | arching root | 6k |
+  | round mushroom | 1.6k |
+  | mushroom cluster | 1.4k |
+  | acorn | 700 |
+  | amber crystals | 5k, emissive |
+
+- **Leaf and fern props from gpt-image cut-outs.** `tools/props/build_cards.py` keys out the white and bleeds the edge colour. It builds clusters of subdivided, gently curled cards, 144–240 triangles each, alpha-tested. Ferns arch off the ground, so they cast shadows and hold up in third person.
+- **Water.** Two profiles: `water.fall-ford`, a clear shallow ford units wade through, given per cell through the map's water flow; and `water.fall-pool`, deep teal. Plus fallen leaves floating on both.
+- **Amber.** Crystals in a crater dug into the heightfield. On this map they are scenery, not a mine, because a mine's foundation would flatten the crater.
+- **Light.** The `autumn-forest` biome: low warm sun from the side (`sunDirection` 120) for long diagonal trunk shadows; a highlight shoulder of 0.6; a darker, warmer grade; a vignette; drifting canopy light. No shipped map uses this biome.
+
+**Measured** on an M4 Max at 1080p, with 7,544 static instances:
+- High preset: 5.4 ms GPU.
+- Medium preset (1440 × 810): 3.4 ms. A base M1 is roughly 3–4× slower, so about 12 ms; that is unmeasured.
+- Region averages are within a few levels of 255 of the target for soil and pool, and close for the frame.
+
+**Still apart from the target:**
+- **Frame richness.** The target's leaf litter has more depth and darker gaps. Flat cards under 0.75 m cast no shadow, so contact shading carries it alone.
+- **Ford.** The target's ford has sun glints and a lighter olive colour.
+- **Third person.** The fog of war greys everything beyond the unit's sight. Beyond the map there is still only haze and the old surroundings forest; the trunks there have no art at this quality yet.
+- **Amber crater rim.** The target's rim is a crumbly, lighter soil ring.
+
+**Engine work this points to** (each a visible change to discuss first):
+- a playable-area darkening of the frame;
+- per-instance tint, so one leaf set covers more variety;
+- a scatter by mask instead of a placement script;
+- statics LOD for the giant props;
+- art for the surroundings forest at this quality, for third person.
+
 ## Open questions
 
 - **Human leftovers as landmarks** (a lost button, a nail, a coin)? They show scale instantly but are a lore choice.

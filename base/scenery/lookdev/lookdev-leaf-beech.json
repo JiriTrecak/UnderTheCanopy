@@ -1,0 +1,8 @@
+{
+  "id": "scenery.lookdev-leaf-beech",
+  "name": "lookdev leaf beech",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.lookdev-leaf-beech",
+  "editorHidden": true
+}

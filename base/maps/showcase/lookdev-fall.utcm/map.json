@@ -1,0 +1,45 @@
+{
+  "biome": "autumn-forest",
+  "sandbox": true,
+  "camps": [],
+  "size": 480,
+  "playerStarts": [
+    {
+      "mainFort": "start.player.1/main-fort",
+      "player": 1,
+      "setup": "setup.beetles",
+      "x": 205.5,
+      "z": 197.5
+    }
+  ],
+  "entities": [
+    {
+      "definition": "unit.ants.warrior",
+      "id": "lookdev.hero",
+      "owner": "player.1",
+      "position": {
+        "x": 210.0,
+        "y": 283.0
+      },
+      "rotation": 200.0
+    }
+  ],
+  "terrain": {
+    "paint": [
+      {
+        "material": "asset.terrain.lookdev-litter-sparse",
+        "variants": false
+      }
+    ],
+    "textureGrid": {
+      "cellSize": 5,
+      "origin": [
+        -0.5,
+        -0.5
+      ]
+    },
+    "waterProfiles": [
+      "water.fall-ford"
+    ]
+  }
+}

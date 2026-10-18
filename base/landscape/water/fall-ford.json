@@ -1,0 +1,26 @@
+{
+  "id": "water.fall-ford",
+  "name": "Fall forest ford",
+  "water": {
+    "shallowColor": "#5d5a44",
+    "deepColor": "#2c2b1e",
+    "clarity": 1.1,
+    "rippleScale": 0.18,
+    "rippleStrength": 0.08,
+    "foamStrength": 0.2,
+    "reflectionStrength": 0.5,
+    "causticStrength": 0.3,
+    "cloudStrength": 0.02,
+    "flowSpeed": 0.6,
+    "waves": {
+      "height": 0.02,
+      "length": 6,
+      "speed": 0.5,
+      "depthStart": 0.1,
+      "depthEnd": 0.6,
+      "shallowStrength": 0.2,
+      "shoreWidth": 0.5,
+      "crestStrength": 0.1
+    }
+  }
+}

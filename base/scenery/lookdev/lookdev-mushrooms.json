@@ -1,0 +1,8 @@
+{
+  "id": "scenery.lookdev-mushrooms",
+  "name": "lookdev mushrooms",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.lookdev-mushrooms",
+  "editorHidden": true
+}

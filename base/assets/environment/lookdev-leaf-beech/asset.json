@@ -1,0 +1,44 @@
+{
+  "id": "asset.models.environment.lookdev-leaf-beech",
+  "name": "lookdev leaf beech",
+  "kind": "foliage",
+  "tags": [
+    "lookdev",
+    "autumn",
+    "imagegen"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "vegetationClearance": 0,
+    "groundContact": {
+      "mode": "terrain"
+    }
+  },
+  "license": "Original ImageGen (gpt-image-2) albedo on procedural Blender geometry (tools/props/build_cards.py)."
+}

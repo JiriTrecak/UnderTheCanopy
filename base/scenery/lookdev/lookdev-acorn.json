@@ -1,0 +1,8 @@
+{
+  "id": "scenery.lookdev-acorn",
+  "name": "lookdev acorn",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.lookdev-acorn",
+  "editorHidden": true
+}

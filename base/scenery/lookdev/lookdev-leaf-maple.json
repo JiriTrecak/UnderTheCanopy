@@ -1,0 +1,8 @@
+{
+  "id": "scenery.lookdev-leaf-maple",
+  "name": "lookdev leaf maple",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.lookdev-leaf-maple",
+  "editorHidden": true
+}

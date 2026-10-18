@@ -1,7 +1,9 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [],
+    "added": [
+      "A look-dev showcase map, Look-dev: Fall, previews the new forest-floor look: giant trunks, leaf litter, mushrooms, a shallow ford, a deep pool and glowing amber"
+    ],
     "improved": [],
     "fixed": [],
     "knownIssues": []

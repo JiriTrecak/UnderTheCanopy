@@ -1,0 +1,26 @@
+{
+  "id": "water.fall-pool",
+  "name": "Fall forest pool",
+  "water": {
+    "shallowColor": "#1d3a3a",
+    "deepColor": "#022a36",
+    "clarity": 0.5,
+    "rippleScale": 0.12,
+    "rippleStrength": 0.03,
+    "foamStrength": 0.0,
+    "reflectionStrength": 0.6,
+    "causticStrength": 0.08,
+    "cloudStrength": 0.02,
+    "flowSpeed": 0.3,
+    "waves": {
+      "height": 0.05,
+      "length": 14,
+      "speed": 0.3,
+      "depthStart": 0.45,
+      "depthEnd": 2.5,
+      "shallowStrength": 0.05,
+      "shoreWidth": 0.4,
+      "crestStrength": 0.05
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "scenery.lookdev-amber",
+  "name": "lookdev amber",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.resources.lookdev-amber",
+  "editorHidden": true,
+  "blocker": {
+    "width": 10,
+    "depth": 10,
+    "shape": "ellipse"
+  }
+}
