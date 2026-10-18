@@ -18,7 +18,8 @@
       "Computer players build Substance Wells, staff them, spend Substance, and attack an enemy's well when they have none of their own.",
       "Beetle Substance Wells also power the ground around them, so beetles can build out by a well they hold; the well itself needs no power and goes wherever its deposit is.",
       "Units can show their own effects: muzzle blasts, footstep dust and exhaust follow their animations, and machines' glowing parts light up while they move, fight or cast.",
-      "Buildings and resource deposits can glow and mist at rest, and a building that workers gather from works visibly while they do."
+      "Buildings and resource deposits can glow and mist at rest, and a building that workers gather from works visibly while they do.",
+      "The beetles' Substance Well and the Substance Deposit have their own models: the well fills the deposit exactly, seeps at rest, and pumps and arcs while workers gather from it."
     ],
     "fixed": [],
     "knownIssues": []

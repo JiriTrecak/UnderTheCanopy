@@ -2,8 +2,8 @@
   "id": "building.neutral.corrupted-root",
   "name": "Substance Deposit",
   "description": "The forest's raw magic wells up here and never runs out. Build a Substance Well on it; two workers saturate it, and only the well's owner can gather.",
-  "model": "asset.models.resources.corrupted-root",
-  "icon": "asset.icons.resource-root",
+  "model": "asset.models.resources.substance-deposit",
+  "icon": "asset.portraits.resources.substance-deposit",
   "footprint": {
     "width": 8,
     "depth": 8
@@ -27,6 +27,5 @@
     "searchRadius": 0,
     "needsBuilding": true,
     "endless": true
-  },
-  "modelScale": 0.55
+  }
 }

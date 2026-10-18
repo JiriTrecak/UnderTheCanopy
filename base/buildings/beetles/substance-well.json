@@ -2,7 +2,7 @@
   "id": "building.beetles.substance-well",
   "name": "Substance Well",
   "description": "Built on a Substance Deposit. Workers gather Substance from it and carry it straight in; two workers saturate it. When it falls, the deposit remains.",
-  "model": "asset.placeholder.missing-model",
+  "model": "asset.models.buildings.beetles-substance-well",
   "icon": "asset.portraits.buildings.beetles-substance-well",
   "body": {
     "maxHp": 1000,
@@ -50,9 +50,48 @@
   },
   "category": "category.build",
   "level": 1,
-  "modelScale": 0.67,
   "command": {
     "priority": 25,
     "category": "category.build"
+  },
+  "modelScale": 1,
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.substance-well-seep",
+        "state": "idle",
+        "socket": "socket_knot"
+      },
+      {
+        "effect": "effect.buildings.substance-well-seep",
+        "state": "work",
+        "socket": "socket_knot"
+      },
+      {
+        "effect": "effect.buildings.substance-well-column",
+        "state": "work",
+        "socket": "socket_column_foot"
+      },
+      {
+        "effect": "effect.buildings.substance-well-light",
+        "state": "work",
+        "socket": "socket_column"
+      },
+      {
+        "effect": "effect.buildings.substance-well-arcs",
+        "state": "work",
+        "socket": "socket_coil"
+      },
+      {
+        "effect": "effect.buildings.substance-well-pump",
+        "event": "pump",
+        "socket": "socket_knot"
+      },
+      {
+        "effect": "effect.buildings.substance-well-surge",
+        "event": "surge",
+        "socket": "socket_coil"
+      }
+    ]
   }
 }
