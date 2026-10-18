@@ -114,6 +114,34 @@ fn the_owner_sees_its_ledger_queues_and_workers() {
 }
 
 #[test]
+fn a_mine_works_while_workers_gather_from_it() {
+    let mut world = world(&sandbox(vec![
+        place("hall", HALL, 19.5, 19.5),
+        resource("mine", MINE, 33.5, 21.5),
+        place("miner", WORKER, 28.0, 20.0),
+    ]));
+    let (mine, miner) = (id(&world, "mine"), id(&world, "miner"));
+    let busy = |world: &canopy_sim::World| {
+        world
+            .view(P1)
+            .entity(canopy_sim::entity::EntityId(mine))
+            .and_then(|e| e.work.as_ref())
+            .is_some_and(|w| w.busy)
+    };
+    run(&mut world, 2);
+    assert!(!busy(&world), "an idle mine rests");
+    command(
+        &mut world,
+        json!({"type": "gather", "actors": [miner], "target": mine}),
+    );
+    run(&mut world, 2);
+    // Its work clip and effects play while it is gathered from (D65).
+    assert!(busy(&world));
+    command(&mut world, json!({"type": "stop", "actors": [miner]}));
+    run_until(&mut world, 200, |w| !busy(w));
+}
+
+#[test]
 fn construction_progress_and_carried_goods_are_shown() {
     let mut world = world(&sandbox(vec![
         place("hall", HALL, 19.5, 19.5),

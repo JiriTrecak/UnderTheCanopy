@@ -4,6 +4,7 @@ use canopy_content::{Content, Errors};
 use serde_json::{Value, json};
 
 /// A complete, valid data folder: one fort, one caster unit, one spell and its effect.
+#[derive(Clone)]
 struct World {
     game: Value,
     abilities: Value,
@@ -218,6 +219,47 @@ fn presentations_bind_known_effects() {
         "unknown-effect",
         "Unknown visual effect effect.test.none",
     );
+}
+
+#[test]
+fn state_effects_name_their_kind_s_states_known_effects_and_sockets() {
+    let mut w = world();
+    let effect = |extra: Value| {
+        let mut e = json!({"effect": "effect.test.spark"});
+        e.as_object_mut()
+            .unwrap()
+            .extend(extra.as_object().unwrap().clone());
+        e
+    };
+    // Buildings rest, work, spawn and stand; units move, fight and cast; both fire on
+    // clip events from sockets.
+    w.game["definitions"][0]["presentation"] = json!({"effects": [
+        effect(json!({"state": "idle"})), effect(json!({"state": "always", "socket": "socket_motes"})),
+        effect(json!({"event": "pump"}))]});
+    w.game["definitions"][1]["presentation"] = json!({"effects": [
+        effect(json!({"state": "move", "socket": "socket_exhaust"})), effect(json!({"state": "cast"})),
+        effect(json!({"event": "release", "socket": "socket_muzzle"}))]});
+    load(&w, "state-effects").unwrap_or_else(|errors| panic!("{errors}"));
+    let mut wrong = w.clone();
+    wrong.game["definitions"][1]["presentation"]["effects"][0]["state"] = json!("spawn");
+    assert_reports(&wrong, "unit-state", "unknown effect state spawn");
+    let mut wrong = w.clone();
+    wrong.game["definitions"][0]["presentation"]["effects"][0]["state"] = json!("move");
+    assert_reports(&wrong, "building-state", "unknown effect state move");
+    let mut wrong = w.clone();
+    wrong.game["definitions"][1]["presentation"]["effects"][2]["effect"] =
+        json!("effect.test.none");
+    assert_reports(
+        &wrong,
+        "state-effect",
+        "unknown presentation effect effect.test.none",
+    );
+    let mut wrong = w.clone();
+    wrong.game["definitions"][1]["presentation"]["effects"][2]["socket"] = json!("muzzle");
+    assert_reports(&wrong, "state-socket", "effect socket muzzle");
+    let mut wrong = w;
+    wrong.game["definitions"][1]["presentation"]["effects"][1]["event"] = json!("release");
+    assert_reports(&wrong, "both", "exactly one of state and event");
 }
 
 #[test]
