@@ -146,6 +146,11 @@ pub fn can_build(
             return Some(format!("Build within {} cells of {name}", rule.radius));
         }
     }
+    if d.power.is_some() && !ctx.network.covers(owner, i64::from(f.x), i64::from(f.y)) {
+        return Some(super::network::outside(
+            ctx.tables.network.get(&owner).map(String::as_str),
+        ));
+    }
     let edges = footprint_bounds(x, y, extent, f64::from(rotation));
     let decks = ctx.spatial.terrain().surfaces();
     let blocked_cell = on_map

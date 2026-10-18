@@ -410,6 +410,36 @@ pub struct PlacementNear {
     pub radius: u32,
 }
 
+/// What a building does in its race's power network (D66).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum NetworkRole {
+    /// Powers the ground around it whenever it stands complete (a main hall, a well).
+    Source,
+    /// Extends the network around it, but only while it stands inside the network
+    /// itself: a chain of nodes must reach back to a source.
+    Node,
+}
+
+/// A building's part in its owner's power network (D66): the disc of `radius` cells
+/// around its centre is powered while it is complete and, for a node, powered itself.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Network {
+    pub role: NetworkRole,
+    /// Cells from the building's centre; research may add to it (`networkRadius`).
+    pub radius: u32,
+}
+
+/// What a building needs from its owner's power network (D66).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum Power {
+    /// Placed only where its centre is powered, and its work (training, research,
+    /// upgrades, revival, a lookout's shots) pauses while it is not.
+    Required,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum SelectionClass {
@@ -469,6 +499,10 @@ pub struct Definition {
     pub regrowth_ticks: Option<u32>,
     pub construction_clearance: Option<u32>,
     pub placement_near: Option<PlacementNear>,
+    /// Sources and nodes of the power network (D66).
+    pub network: Option<Network>,
+    /// Buildings that only work inside the power network (D66).
+    pub power: Option<Power>,
     pub creation: Option<Creation>,
     pub behaviors: Behaviors,
 }
@@ -630,6 +664,9 @@ pub struct ResearchEffect {
     pub splash_radius: Option<f64>,
     pub splash_slow_permille: Option<u32>,
     pub charge_cooldown_permille: Option<u32>,
+    /// Cells added to the network radius of the listed buildings (D66); `units` then
+    /// lists buildings with a `network`.
+    pub network_radius: Option<u32>,
 }
 
 #[skip_serializing_none]

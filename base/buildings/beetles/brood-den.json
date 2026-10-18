@@ -39,5 +39,10 @@
   "behaviors": {},
   "level": 1,
   "supplyProvided": 8,
+  "network": {
+    "role": "node",
+    "radius": 28
+  },
+  "power": "required",
   "modelScale": 1
 }

@@ -267,6 +267,34 @@ fn research(check: &mut Checker) {
                 effect.units.iter().map(|u| u.as_str()),
                 "research unit",
             );
+            if effect.network_radius.is_some() {
+                // A network research widens buildings' discs and does nothing else.
+                let other = effect.max_hp.is_some()
+                    || effect.armor.is_some()
+                    || effect.damage_permille.is_some()
+                    || effect.tree_work_rate.is_some()
+                    || effect.splash_radius.is_some()
+                    || effect.splash_slow_permille.is_some()
+                    || effect.charge_cooldown_permille.is_some();
+                if other {
+                    check.fail(
+                        &location,
+                        "a network radius effect lists buildings and changes nothing else",
+                    );
+                }
+                for building in &effect.units {
+                    if let Some(target) =
+                        check.definition(&location, building.as_str(), Kind::Building)
+                        && target.network.is_none()
+                    {
+                        check.fail(
+                            &location,
+                            format!("network research target {building} has no network"),
+                        );
+                    }
+                }
+                continue;
+            }
             for unit in &effect.units {
                 let Some(target) = check.definition(&location, unit.as_str(), Kind::Unit) else {
                     continue;
@@ -758,6 +786,12 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
             );
         }
     }
+    if (d.network.is_some() || d.power.is_some()) && d.kind != Kind::Building {
+        check.fail(at, "only buildings take part in the power network");
+    }
+    if d.network.as_ref().is_some_and(|n| n.radius == 0) {
+        check.fail(at, "a network radius must be at least one cell");
+    }
     if (d.kind == Kind::Unit) != d.supply_cost.is_some() {
         check.fail(
             at,
@@ -1066,6 +1100,23 @@ fn races(check: &mut Checker) {
                     }
                 }
             }
+        }
+        let roster_defs = || {
+            race.roster
+                .iter()
+                .filter_map(|id| content.definition(id.as_str()))
+        };
+        let needs_power = roster_defs().any(|d| d.power.is_some());
+        let has_source = roster_defs().any(|d| {
+            d.network
+                .as_ref()
+                .is_some_and(|n| n.role == crate::game::NetworkRole::Source)
+        });
+        if needs_power && !has_source {
+            check.fail(
+                &location,
+                "buildings need power but the roster has no network source",
+            );
         }
         let setup = profile.starting_setup;
         let setup_ids = std::iter::once(&setup.fort)

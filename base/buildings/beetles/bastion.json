@@ -75,5 +75,9 @@
   },
   "supplyProvided": 15,
   "heroCapacity": 1,
+  "network": {
+    "role": "source",
+    "radius": 32
+  },
   "modelScale": 1.25
 }

@@ -1,7 +1,9 @@
 //! Test-owned content and maps for the economy tests: a worker, a soldier and a hero; a
 //! hall (drop-off, trains workers, upgrades into a keep), a house, a barracks, a forge
 //! (research), a sanctuary (revival and heroes) and a forester (plants trees); felled
-//! trees and an amber mine. No shipped content.
+//! trees and an amber mine; a power network (D66): a nexus (source), a pylon (node) and
+//! a workshop that needs power (trains soldiers, researches a wider network). No shipped
+//! content.
 #![allow(dead_code)]
 
 use canopy_content::{
@@ -37,6 +39,14 @@ pub const MINE: &str = "building.test.mine";
 pub const TREE: &str = "resource.test.tree";
 pub const TOOLS: &str = "research.test.tools";
 pub const VIGOUR: &str = "research.test.vigour";
+pub const NEXUS: &str = "building.test.nexus";
+pub const PYLON: &str = "building.test.pylon";
+pub const WORKSHOP: &str = "building.test.workshop";
+pub const AMPLIFY: &str = "research.test.amplify";
+/// Network radii of the nexus and the pylon, and what the research adds.
+pub const NEXUS_RADIUS: u32 = 16;
+pub const PYLON_RADIUS: u32 = 12;
+pub const AMPLIFY_CELLS: u32 = 8;
 
 fn definition(id: &str, kind: &str, extra: Value) -> Value {
     let mut definition = json!({
@@ -98,6 +108,9 @@ fn game() -> Value {
                 VIGOUR: {"name": "Vigour", "description": "", "icon": "asset.icon", "priority": 2,
                     "requires": [KEEP], "items": [cost(AMBER, 10)], "workTicks": 20,
                     "effects": [{"units": [WORKER], "maxHp": 50}]},
+                AMPLIFY: {"name": "Amplify", "description": "", "icon": "asset.icon", "priority": 3,
+                    "items": [cost(AMBER, 10)], "workTicks": 30,
+                    "effects": [{"units": [NEXUS, PYLON], "networkRadius": AMPLIFY_CELLS}]},
             },
             "lootPools": {}, "armorCoefficient": 0.06,
             "damageTypes": {"damage.plain": {"name": "Plain", "appliesArmor": true}, "spell": {"name": "Spell", "appliesArmor": false}},
@@ -148,7 +161,7 @@ fn game() -> Value {
                     "playerControl": {},
                     "movement": {"speed": 4, "walkSpeed": 2, "idleWander": true},
                     "work": {"carryCapacity": 5,
-                        "builds": [HALL, HOUSE, BARRACKS, FORGE, SANCTUARY, FORESTER],
+                        "builds": [HALL, HOUSE, BARRACKS, FORGE, SANCTUARY, FORESTER, PYLON, WORKSHOP],
                         "harvests": [WOOD, AMBER]},
                 },
             })),
@@ -210,6 +223,30 @@ fn game() -> Value {
                     "production": {"mode": "queued", "outputs": [HERO, SOLDIER], "workerSlots": 0, "queueCapacity": 3},
                     "revival": {"items": [cost(AMBER, 30)], "itemsPerLevel": [cost(AMBER, 5)],
                         "workTicks": 40, "workTicksPerLevel": 10, "queueCapacity": 3},
+                },
+            })),
+            definition(NEXUS, "building", json!({
+                "body": body(400), "vision": 12, "footprint": {"width": 8, "depth": 8}, "entrance": {"x": 0.5, "y": 4.5},
+                "network": {"role": "source", "radius": NEXUS_RADIUS},
+                "behaviors": {"playerControl": {}},
+            })),
+            definition(PYLON, "building", json!({
+                "body": body(100), "footprint": {"width": 4, "depth": 4}, "entrance": {"x": 0.5, "y": 2.5},
+                "creation": {"method": "construct", "items": [cost(AMBER, 10)],
+                    "workTicks": 20, "workAnimation": "build"},
+                "network": {"role": "node", "radius": PYLON_RADIUS}, "power": "required",
+                "behaviors": {"playerControl": {}},
+            })),
+            definition(WORKSHOP, "building", json!({
+                "body": body(300), "footprint": {"width": 4, "depth": 4}, "entrance": {"x": 0.5, "y": 2.5},
+                "creation": {"method": "construct", "items": [cost(AMBER, 10)],
+                    "workTicks": 30, "workAnimation": "build"},
+                "power": "required",
+                "behaviors": {
+                    "playerControl": {},
+                    "storage": {"capacity": 100, "accepts": [AMBER]},
+                    "production": {"mode": "queued", "outputs": [SOLDIER], "workerSlots": 0, "queueCapacity": 2},
+                    "research": {"outputs": [AMPLIFY], "queueCapacity": 1},
                 },
             })),
             definition(FORESTER, "building", json!({

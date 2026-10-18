@@ -181,6 +181,14 @@ pub fn game() -> Value {
                 "behaviors": {"production": {"mode": "queued", "outputs": ["unit.swordsman"], "workerSlots": 0, "queueCapacity": 5}},
                 "creation": {"method": "construct", "items": [], "workTicks": 100},
             }))),
+            definition("building.charged-tower", "building", building(400, json!({
+                "behaviors": {"playerControl": control},
+                "garrison": {"capacity": 1, "accepts": ["unit.bowman"], "height": 6},
+                "power": "required",
+            }))),
+            definition("building.dynamo", "building", building(800, json!({
+                "network": {"role": "source", "radius": 12},
+            }))),
             definition("building.hall", "building", building(1000, json!({
                 "heroCapacity": 2,
                 "behaviors": {"storage": {"capacity": 10, "accepts": ["item.trinket"]}},

@@ -94,10 +94,10 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
         self.b.emit(action, reason)
     }
 
-    /// Places `d` near `origin` with an available builder (old `build`).
-    fn build(&mut self, def: Def, reason: &str, origin: Pt) -> bool {
+    /// A worker free enough to build `d`: idle, else gathering empty-handed, else
+    /// carrying goods no store takes (old `build`'s choice).
+    fn builder(&self, d: &Definition) -> Option<u32> {
         let f = self.b.f;
-        let d = f.definition(def);
         let builds = |w: &Known| {
             f.def(w)
                 .behaviors
@@ -111,7 +111,7 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
             .map(|&i| f.at(i))
             .filter(|w| builds(w))
             .collect();
-        let worker = builders
+        builders
             .iter()
             .find(|w| f.free(w))
             .or_else(|| {
@@ -129,8 +129,15 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
                         && f.order(w).is_none_or(|o| matches!(o, Order::Gather { .. }))
                 })
             })
-            .map(|w| w.id);
-        let Some(worker) = worker else {
+            .map(|w| w.id)
+    }
+
+    /// Places `d` near `origin` with an available builder (old `build`). A building that
+    /// needs power and finds no powered site extends the network instead (D66).
+    fn build(&mut self, def: Def, reason: &str, origin: Pt) -> bool {
+        let f = self.b.f;
+        let d = f.definition(def);
+        let Some(worker) = self.builder(d) else {
             return false;
         };
         if !f.can_afford(d, &[])
@@ -154,7 +161,6 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
                 x.max(y)
             })
             .unwrap_or(0.0);
-        let home = f.home;
         for _ in 0..f.rules.limits.placement_candidates {
             let k = self.b.s.placement_cursor % 192;
             self.b.s.placement_cursor = self.b.s.placement_cursor.wrapping_add(1);
@@ -168,36 +174,134 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
                 origin.x + crate::math::cos(angle) * radius,
                 origin.y + crate::math::sin(angle) * radius,
             );
-            let p = snap(d, cursor, 0);
-            let (dx, dy) = (home.x - p.x, home.y - p.y);
-            let r = if dx.abs() > dy.abs() {
-                if dx > 0.0 { 90 } else { 270 }
-            } else if dy > 0.0 {
-                0
-            } else {
-                180
-            };
-            let p = snap(d, cursor, r);
-            let key = site_key(d.id.as_str(), p.x, p.y, r);
-            if self.b.s.failed_sites.get(&key).is_some_and(|&t| t > f.tick)
-                || !placeable(f, def, p, r)
-            {
-                continue;
+            if let Some(action) = self.site(def, worker, cursor) {
+                return self.emit(action, reason);
             }
-            return self.emit(
-                Action::Build {
-                    actors: vec![worker],
-                    definition: d.id.clone(),
-                    position: FoundationPoint {
-                        x: HalfCells((p.x * 2.0) as u32),
-                        y: HalfCells((p.y * 2.0) as u32),
-                        surface: None,
-                    },
-                    rotation: Some(r),
-                    append: None,
-                },
-                reason,
-            );
+        }
+        if d.power.is_some() {
+            return self.extend_network(None);
+        }
+        false
+    }
+
+    /// The build order for `def` snapped at `cursor`, turned to face home, when the site
+    /// is placeable and has not failed lately.
+    fn site(&self, def: Def, worker: u32, cursor: Pt) -> Option<Action> {
+        let f = self.b.f;
+        let d = f.definition(def);
+        let home = f.home;
+        let p = snap(d, cursor, 0);
+        let (dx, dy) = (home.x - p.x, home.y - p.y);
+        let r = if dx.abs() > dy.abs() {
+            if dx > 0.0 { 90 } else { 270 }
+        } else if dy > 0.0 {
+            0
+        } else {
+            180
+        };
+        let p = snap(d, cursor, r);
+        let key = site_key(d.id.as_str(), p.x, p.y, r);
+        if self.b.s.failed_sites.get(&key).is_some_and(|&t| t > f.tick) || !placeable(f, def, p, r)
+        {
+            return None;
+        }
+        Some(Action::Build {
+            actors: vec![worker],
+            definition: d.id.clone(),
+            position: FoundationPoint {
+                x: HalfCells((p.x * 2.0) as u32),
+                y: HalfCells((p.y * 2.0) as u32),
+                surface: None,
+            },
+            rotation: Some(r),
+            append: None,
+        })
+    }
+
+    /// Grows the power network (D66) with the cheapest node the workers build: at the
+    /// edge of a powered disc, nearest `toward` when given (an unpowered building), else
+    /// where it covers the most new ground (the base ran out of powered sites).
+    fn extend_network(&mut self, toward: Option<Pt>) -> bool {
+        let f = self.b.f;
+        let catalog = f.catalog();
+        let mut buildable: Vec<&Id> = f
+            .workers
+            .iter()
+            .flat_map(|&w| {
+                f.def(f.at(w))
+                    .behaviors
+                    .work
+                    .iter()
+                    .flat_map(|work| &work.builds)
+            })
+            .collect();
+        buildable.sort();
+        buildable.dedup();
+        let node = buildable
+            .iter()
+            .filter_map(|id| f.find(id.as_str()))
+            .filter(|&d| {
+                let dd = catalog.get(d);
+                dd.network
+                    .as_ref()
+                    .is_some_and(|n| n.role == canopy_content::game::NetworkRole::Node)
+                    && f.can_afford(dd, &[])
+            })
+            .min_by_key(|&d| {
+                let cost: u32 = items(catalog.get(d)).iter().map(|c| c.amount).sum();
+                (cost, d)
+            });
+        let Some(node) = node else {
+            return false;
+        };
+        let d = catalog.get(node);
+        if f.buildings.iter().any(|&i| f.at(i).construction)
+            || f.buildings.len() as u32 >= catalog.content.rules.max_buildings
+        {
+            return false;
+        }
+        let Some(worker) = self.builder(d) else {
+            return false;
+        };
+        let fields: Vec<(Pt, f64)> = f
+            .input
+            .economy()
+            .network()
+            .fields(f.me)
+            .map(|field| {
+                (
+                    Pt::new(f64::from(field.x) / 1000.0, f64::from(field.y) / 1000.0),
+                    field.radius as f64 / 1000.0,
+                )
+            })
+            .collect();
+        let extent = Extent::of(d.footprint.as_ref());
+        let half = extent.width.max(extent.depth) / 2.0;
+        let mut candidates: Vec<(f64, Pt)> = Vec::new();
+        for &(centre, radius) in &fields {
+            let reach = (radius - half - 1.0).max(0.0);
+            for k in 0..16 {
+                let angle = f64::from(k) * std::f64::consts::PI / 8.0;
+                let p = Pt::new(
+                    centre.x + crate::math::cos(angle) * reach,
+                    centre.y + crate::math::sin(angle) * reach,
+                );
+                let score = match toward {
+                    Some(t) => dist(p, t),
+                    None => -fields
+                        .iter()
+                        .map(|&(o, _)| dist(p, o))
+                        .fold(f64::INFINITY, f64::min),
+                };
+                candidates.push((score, p));
+            }
+        }
+        candidates.sort_by(|a, b| a.0.total_cmp(&b.0));
+        let limit = f.rules.limits.placement_candidates as usize;
+        for &(_, cursor) in candidates.iter().take(limit) {
+            if let Some(action) = self.site(node, worker, cursor) {
+                return self.emit(action, "Extend the network");
+            }
         }
         false
     }
@@ -391,6 +495,12 @@ fn run(p: &mut Planner) {
         .copied()
         .filter(|b| !b.construction)
         .collect();
+    // A building cut off from the network (a node lost) gets a node built towards it.
+    if let Some(cut) = ready.iter().find(|b| f.unpowered(b))
+        && p.extend_network(Some(cut.p))
+    {
+        return;
+    }
     let barracks: Vec<&Known> = ready
         .iter()
         .copied()

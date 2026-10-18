@@ -15,6 +15,7 @@ pub mod construction;
 pub mod harvest;
 pub mod index;
 pub mod jobs;
+pub mod network;
 pub mod production;
 pub mod research;
 pub mod revival;
@@ -27,6 +28,7 @@ pub mod work;
 
 pub use index::Index;
 pub use jobs::{Job, JobKind, Jobs, Phase};
+pub use network::Network;
 pub use work::interrupt;
 
 use crate::{
@@ -169,6 +171,8 @@ pub enum Status {
     UnitLimitReached,
     SupplyBlocked,
     DeploymentBlocked,
+    /// Needs power and stands outside its owner's network (D66).
+    Unpowered,
 }
 
 impl Status {
@@ -191,6 +195,7 @@ impl Status {
                 None => "Supply blocked — free supply".into(),
             },
             Self::DeploymentBlocked => "Deployment blocked".into(),
+            Self::Unpowered => "Unpowered: outside the network".into(),
         }
     }
 }
@@ -281,12 +286,17 @@ pub struct Tables {
     /// Per building definition: the buildings whose requirement it fulfils, itself and
     /// every building that upgrades into it (old `fulfilledPrerequisites`).
     pub fulfils: Vec<Vec<Def>>,
+    /// Per owner: the name of the cheapest constructable network node of its race, for
+    /// placement messages (D66).
+    pub network: BTreeMap<Owner, String>,
 }
 
 /// Derived economy data kept beside the state: indexes, compiled tables and the tick's
 /// deliveries. Never saved.
 pub struct Economy {
     pub(crate) index: Index,
+    /// The power network (D66), derived from the buildings and research.
+    pub(crate) network: Network,
     tables: Tables,
     /// Goods delivered during the latest tick.
     pub deliveries: Vec<Delivery>,
@@ -298,17 +308,24 @@ pub struct Ctx<'a> {
     pub catalog: &'a Catalog,
     pub spatial: &'a mut Spatial,
     pub index: &'a mut Index,
+    /// The power network as of this context's creation.
+    pub network: &'a Network,
     pub tables: &'a Tables,
     pub deliveries: &'a mut Vec<Delivery>,
 }
 
 impl Economy {
     pub fn new(state: &State, catalog: &Catalog, setup: &MatchSetup) -> Self {
+        let index = Index::rebuild(state, catalog);
+        let mut network = Network::default();
+        network.refresh(state, catalog, &index);
         Self {
-            index: Index::rebuild(state, catalog),
+            index,
+            network,
             tables: Tables {
                 hints: supply::hints(catalog, setup),
                 fulfils: supply::fulfils(catalog),
+                network: network::hints(catalog, setup),
             },
             deliveries: Vec::new(),
         }
@@ -325,11 +342,13 @@ impl Economy {
         spatial: &'a mut Spatial,
     ) -> Ctx<'a> {
         self.index.sync(state, catalog);
+        self.network.refresh(state, catalog, &self.index);
         Ctx {
             state,
             catalog,
             spatial,
             index: &mut self.index,
+            network: &self.network,
             tables: &self.tables,
             deliveries: &mut self.deliveries,
         }
@@ -338,7 +357,18 @@ impl Economy {
     /// The derived index, brought up to date with entity creation and removal.
     pub fn index(&mut self, state: &State, catalog: &Catalog) -> &Index {
         self.index.sync(state, catalog);
+        self.network.refresh(state, catalog, &self.index);
         &self.index
+    }
+
+    /// The power network (D66) as of the latest sync.
+    pub fn network(&self) -> &Network {
+        &self.network
+    }
+
+    /// The node building name used in network messages for `owner`.
+    pub fn network_hint(&self, owner: Owner) -> Option<&str> {
+        self.tables.network.get(&owner).map(String::as_str)
     }
 
     /// The supply building name used in messages for `owner`.
@@ -350,7 +380,14 @@ impl Economy {
     pub fn verify(&mut self, state: &State, catalog: &Catalog) -> Result<(), String> {
         self.index.sync(state, catalog);
         let cold = Index::rebuild(state, catalog);
-        self.index.verify(&cold)
+        self.index.verify(&cold)?;
+        self.network.refresh(state, catalog, &self.index);
+        let mut fresh = Network::default();
+        fresh.refresh(state, catalog, &cold);
+        if fresh != self.network {
+            return Err("power network differs from a rebuild".into());
+        }
+        Ok(())
     }
 }
 
