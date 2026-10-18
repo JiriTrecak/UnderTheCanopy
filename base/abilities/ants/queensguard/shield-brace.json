@@ -63,7 +63,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.custom.frost-armor-command",
+    "icon": "asset.icons.ability-ants-queensguard-shield-brace",
     "animations": {
       "prepare": "cast",
       "release": "cast",

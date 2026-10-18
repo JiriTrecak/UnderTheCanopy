@@ -89,7 +89,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.icons.spell-entangling-roots",
+    "icon": "asset.icons.ability-ants-rootweaver-root-bind",
     "animations": {
       "prepare": "cast",
       "release": "cast",

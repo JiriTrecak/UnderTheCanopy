@@ -63,7 +63,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.icons.spell-holy-light",
+    "icon": "asset.icons.ability-ants-nectarist-nectar-cleanse",
     "animations": {
       "prepare": "cast",
       "release": "cast",

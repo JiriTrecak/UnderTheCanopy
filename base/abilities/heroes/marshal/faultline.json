@@ -102,7 +102,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.spells.marshal.faultline-icon",
+    "icon": "asset.icons.ability-ants-marshal-faultline",
     "animations": {
       "prepare": "cast",
       "release": "cast",

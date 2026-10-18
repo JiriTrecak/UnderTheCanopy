@@ -1,0 +1,14 @@
+{
+  "tool": "gpt-image-2 through tools/buildings/concept.sh, prompt from tools/icons/icons.py",
+  "chosen": "icon-a-research-driving-spear-1.png",
+  "slug": "icon-a-research-driving-spear",
+  "size": "1024x1024",
+  "n": 1,
+  "quality": "high",
+  "references": [
+    ".asset-work/concepts/buildings/refs/icons/old-ants-hunter.png",
+    ".asset-work/concepts/buildings/refs/icons/anchor-research.png"
+  ],
+  "prompt": "Use case: one game icon for Under the Canopy, a Warcraft III: Reforged-like RTS of insect armies on the forest floor. The game shows it small (about 56 to 72 pixels) on its HUD command card, so it must read instantly at that size.\nTHE ICON FAMILY (every icon in the game follows it): a square, full-bleed, hand-painted stylised 3D illustration in the manner of Warcraft III: Reforged unit and ability icons. ONE subject, big in the frame, with chunky, simple, bold forms, crisp clean edges, glossy materials with clear edge highlights, saturated but controlled colour. Strong value contrast: the subject is clearly brighter and more saturated than its background, and a bright rim light separates its silhouette. Light: a warm key light from the upper left and a cool blue-violet rim light from behind on the right. The background is dark, simple and soft, never scenery: a smoky vignette that falls to near-black in the corners. Keep the bottom-right corner calm and dark (the game draws a hotkey letter there). NO text, letters, numbers, runes, UI, frame, border or bevel (the game draws the frame). No noise, grain, sparkle, specks or tiny clutter; few, large, clear shapes.\nICON TYPE: RESEARCH (an upgrade). A still life of the one improved piece of equipment, close-up and slightly angled, floating on a dark forge-steel-grey background with a soft warm glow behind it. Research reads as engineering: a better machine, never a mutation.\nFACTION: ANTS, a biological army of the forest. Glossy burnt-rust-orange chitin, ivory mandible tusks, big black eyes; everything they carry is grown: leaf cloaks and hoods, bark-rimmed leaf shields, bone and thorn blades, silk nets, seed pods. The faction's colour is deep maple-leaf red (cloaks, hoods, shields). Substance, the forest's magic, has changed their bodies: where it shows, it is a faint blue-violet glow in veins and sap, never green. Match the reference board's materials and palette.\nREFERENCES: the first image is the subject's approved concept: keep its design, materials and colours exactly. The other images are approved icons of the same family: match their rendering, lighting, background and framing, but not their subject.\nTHE SUBJECT: DRIVING SPEAR (hunters charge more often): a long spear with a heavy barbed ivory point and a red leaf binding below the head, angled diagonally, a short motion streak behind the point.",
+  "install": {}
+}

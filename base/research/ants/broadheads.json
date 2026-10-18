@@ -2,7 +2,7 @@
   "id": "research.ants.broadheads",
   "name": "Broadheads",
   "description": "Archers deal 35% more attack damage.",
-  "icon": "asset.portraits.units.ants-archer",
+  "icon": "asset.icons.research-ants-broadheads",
   "priority": 80,
   "items": [
     {

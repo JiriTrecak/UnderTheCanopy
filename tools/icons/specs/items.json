@@ -1,0 +1,306 @@
+{
+  "n": 1,
+  "anchors": {},
+  "items": [
+    {
+      "name": "i-barkguard",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-barkguard.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "BARKGUARD CHARM, a hero item (+2 armor)"
+    },
+    {
+      "name": "i-firefly-pendant",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-firefly-pendant.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "FIREFLY PENDANT, a hero item (+50 maximum mana and +0.5 mana per second)"
+    },
+    {
+      "name": "i-heartseed",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-heartseed.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "HEARTSEED, a hero item (+120 maximum health)"
+    },
+    {
+      "name": "i-moon-dew",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-moon-dew.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "MOON DEW, a hero item (Restore 80 mana. Consumed on use)"
+    },
+    {
+      "name": "i-mossweave-wraps",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-mossweave-wraps.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "MOSSWEAVE WRAPS, a hero item (Regenerate 1.5 extra health per second)"
+    },
+    {
+      "name": "i-quickstep-spurs",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-quickstep-spurs.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "QUICKSTEP SPURS, a hero item (+8% movement speed)"
+    },
+    {
+      "name": "i-resin-salve",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-resin-salve.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "RESIN SALVE, a hero item (Consume to restore 160 health)"
+    },
+    {
+      "name": "i-scout-whistle",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-scout-whistle.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "SCOUT\u2019S WHISTLE, a hero item (2 charges: allied units within 6 tiles gain 15% movement speed for 8s. 25s cooldown)"
+    },
+    {
+      "name": "i-thornband",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-thornband.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "THORNBAND, a hero item (+6 attack damage)"
+    },
+    {
+      "name": "i-trailkeeper-flask",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-trailkeeper-flask.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "TRAILKEEPER\u2019S FLASK, a hero item (3 charges: restore 70 health and 25 mana. 10s cooldown between uses)"
+    },
+    {
+      "name": "i-amber-carapace",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-amber-carapace.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "AMBER CARAPACE, a hero item (+4 armor. Activate: absorb 180 damage for up to 8s. 45s cooldown)"
+    },
+    {
+      "name": "i-ancient-heartwood",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-ancient-heartwood.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "ANCIENT HEARTWOOD, a hero item (+280 maximum health and +2 health per second)"
+    },
+    {
+      "name": "i-broodkeeper-lantern",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-broodkeeper-lantern.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "BROODKEEPER\u2019S LANTERN, a hero item (Aura: allied living units within 6 tiles regenerate 2 health per second)"
+    },
+    {
+      "name": "i-moonwell-chalice",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-moonwell-chalice.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "MOONWELL CHALICE, a hero item (+140 maximum mana and +1.5 mana per second)"
+    },
+    {
+      "name": "i-predator-talon",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-predator-talon.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "PREDATOR\u2019S TALON, a hero item (+10 damage. Basic attacks restore 10% of damage dealt as health)"
+    },
+    {
+      "name": "i-restoration-draught",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-restoration-draught.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "RESTORATION DRAUGHT, a hero item (2 charges: restore 300 health and 120 mana. 10s cooldown)"
+    },
+    {
+      "name": "i-rootbinder-idol",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-rootbinder-idol.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "ROOTBINDER\u2019S IDOL, a hero item (Activate: enemies within 4 tiles take 60 magic damage and are rooted for 2s (they can still attack). 35s cooldown)"
+    },
+    {
+      "name": "i-royal-crest",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-royal-crest.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "ROYAL CREST, a hero item (+10 damage, +3 armor and +100 maximum health)"
+    },
+    {
+      "name": "i-stormwing-spurs",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-stormwing-spurs.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "STORMWING SPURS, a hero item (+10% movement speed and +12% attack speed)"
+    },
+    {
+      "name": "i-warcaller-standard",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-warcaller-standard.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "WARCALLER\u2019S STANDARD, a hero item (Aura: allied units within 6 tiles gain 10% attack damage)"
+    },
+    {
+      "name": "i-amber-hourglass",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-amber-hourglass.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "HOURGLASS OF AMBER, a hero item (+100 maximum mana. Activate: reduce remaining hero ability cooldowns by 12s. Does not affect items. 100s cooldown)"
+    },
+    {
+      "name": "i-canopy-aegis",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-canopy-aegis.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "AEGIS OF THE CANOPY, a hero item (+5 armor. Activate: shield allied units within 6 tiles for 180 damage each for up to 8s. 80s cooldown)"
+    },
+    {
+      "name": "i-deep-moon-scepter",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-deep-moon-scepter.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "SCEPTER OF THE DEEP MOON, a hero item (+220 maximum mana, +2 mana per second and 20% shorter hero ability cooldowns. Does not affect items)"
+    },
+    {
+      "name": "i-endless-brood-banner",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-endless-brood-banner.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "BANNER OF THE ENDLESS BROOD, a hero item (Aura: allied units within 7 tiles gain 15% attack speed. Activate: nearby allies ignore roots and stuns for 4s. 90s cooldown)"
+    },
+    {
+      "name": "i-first-queen-crown",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-first-queen-crown.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "CROWN OF THE FIRST QUEEN, a hero item (+150 maximum health. Aura: allied units within 7 tiles gain 15% damage and +2 armor)"
+    },
+    {
+      "name": "i-phoenix-chrysalis",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-phoenix-chrysalis.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "PHOENIX CHRYSALIS, a hero item (+120 maximum health. Once: prevent a lethal hit, restore 35% health and become invulnerable for 1.5s. The chrysalis then breaks)"
+    },
+    {
+      "name": "i-reaper-mandible",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-reaper-mandible.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "REAPER\u2019S MANDIBLE, a hero item (+18 damage. Every fourth basic hit cleaves up to 4 enemies within 3 tiles of the target for 50% attack damage)"
+    },
+    {
+      "name": "i-tempest-antennae",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-tempest-antennae.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "TEMPEST ANTENNAE, a hero item (+15% attack speed. Every third basic hit arcs 45 magic damage to up to 3 enemies within 4 tiles of the target)"
+    },
+    {
+      "name": "i-winter-heart",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-winter-heart.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "HEART OF WINTER, a hero item (+180 maximum health. Aura: enemies within 5 tiles move 15% slower. Activate: deal 120 magic damage within 5 tiles and slow attack speed by 20% for 4s. 60s cooldown)"
+    },
+    {
+      "name": "i-worldroot-heart",
+      "kind": "item",
+      "faction": "neutral",
+      "refs": [
+        ".asset-work/concepts/buildings/refs/icons/old-item-worldroot-heart.png"
+      ],
+      "refnote": "the first image is the old icon of this item: keep what the object is and its main colours (but magic that glowed green there now glows blue-violet), and redraw it in this family.",
+      "subject": "WORLDROOT HEART, a hero item (+450 maximum health and +4 health per second. Activate: restore 20% maximum health. 70s cooldown)"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "tool": "gpt-image-2 through tools/buildings/concept.sh, prompt from tools/icons/icons.py",
+  "chosen": "icon-b-hornbreaker-1.png",
+  "slug": "icon-b-hornbreaker",
+  "size": "1024x1024",
+  "n": 2,
+  "quality": "high",
+  "references": [
+    ".asset-work/concepts/buildings/unit-hornbreaker-2.png",
+    ".asset-work/concepts/buildings/refs/icons/anchor-hero.png"
+  ],
+  "prompt": "Use case: one game icon for Under the Canopy, a Warcraft III: Reforged-like RTS of insect armies on the forest floor. The game shows it small (about 56 to 72 pixels) on its HUD command card, so it must read instantly at that size.\nTHE ICON FAMILY (every icon in the game follows it): a square, full-bleed, hand-painted stylised 3D illustration in the manner of Warcraft III: Reforged unit and ability icons. ONE subject, big in the frame, with chunky, simple, bold forms, crisp clean edges, glossy materials with clear edge highlights, saturated but controlled colour. Strong value contrast: the subject is clearly brighter and more saturated than its background, and a bright rim light separates its silhouette. Light: a warm key light from the upper left and a cool blue-violet rim light from behind on the right. The background is dark, simple and soft, never scenery: a smoky vignette that falls to near-black in the corners. Keep the bottom-right corner calm and dark (the game draws a hotkey letter there). NO text, letters, numbers, runes, UI, frame, border or bevel (the game draws the frame). No noise, grain, sparkle, specks or tiny clutter; few, large, clear shapes.\nICON TYPE: HERO PORTRAIT. Like a unit portrait but closer and grander: the head and its unique crown shape (horn, helm, halo) fill the upper half, a slightly low heroic angle from the front-left, shoulders and the top of the signature weapon below. Background: dark smoke with a clear golden glow behind the head, bright enough (mid-value at its centre) that the black crown shape reads sharply against it, falling to near-black in the corners.\nFACTION: BEETLES, a fortress race of steam and contained magic. Their bodies are plain glossy black chitin, never glowing and never mutated. Materials: dark riveted steel, brass, and royal-blue painted plates (the faction's colour, large clean solid areas). Substance, the forest's magic, glows deep blue to violet ONLY inside glass (tanks, coils, canisters, lanterns, gauges): never green, never yellow, never on a body. Match the reference images' materials and palette exactly.\nREFERENCES: the first image is the subject's approved concept: keep its design, materials and colours exactly. The other images are approved icons of the same family: match their rendering, lighting, background and framing, but not their subject.\nTHE SUBJECT: the HORNBREAKER, the beetle warlord hero: a Hercules beetle whose long curved black horn sweeps up and forward, big glossy eyes, a royal-blue cape and brass-trimmed royal-blue pauldrons, the head of his great steel-and-brass hammer with a violet glass core resting on his shoulder.",
+  "install": {
+    "lift": 0.85
+  }
+}

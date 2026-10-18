@@ -85,7 +85,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.spells.marshal.rally-icon",
+    "icon": "asset.icons.ability-ants-marshal-rally",
     "animations": {
       "prepare": "attack",
       "release": "attack",

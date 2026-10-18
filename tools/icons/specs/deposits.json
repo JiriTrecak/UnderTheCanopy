@@ -1,0 +1,14 @@
+{
+  "n": 2,
+  "anchors": {
+    "building": [".asset-work/concepts/buildings/refs/icons/anchor-building.png"]
+  },
+  "items": [
+    {"name": "d-amber-deposit", "kind": "building", "faction": "neutral", "refs": [".asset-work/concepts/buildings/refs/icons/target-frost-amber.jpg"],
+     "refnote": "the first image shows how amber deposits look in the game's art direction (take only the amber crystals' look); the others are approved icons of the same family: match their rendering, lighting, background and framing, but not their subject.",
+     "subject": "an AMBER DEPOSIT, the mine every base gathers from: a heap of big glossy, translucent honey-orange amber crystals and nuggets glowing warmly from within, bedded in a low rim of dark earth and pebbles. Warm orange and gold only."},
+    {"name": "d-substance-deposit", "kind": "building", "faction": "neutral", "refs": [".asset-work/concepts/buildings/refs/icons/beetle-substance-well-idle.png"],
+     "refnote": "the first image shows the Substance Well built on such a deposit (take only the raw violet substance's look, not the building); the others are approved icons of the same family: match their rendering, lighting, background and framing, but not their subject.",
+     "subject": "a SUBSTANCE DEPOSIT, raw forest magic welling out of the ground: a crack in dark earth among gnarled old roots, faceted violet-blue crystal shards growing from it and a soft violet glow and light mist rising from the crack. Violet and blue, never green."}
+  ]
+}

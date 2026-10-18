@@ -2,7 +2,7 @@
   "id": "research.ants.serrated-tools",
   "name": "Serrated Tools",
   "description": "Workers extract wood twice as fast. Each tree still contains fifty Wood.",
-  "icon": "asset.portraits.units.ants-worker",
+  "icon": "asset.icons.research-ants-serrated-tools",
   "priority": 100,
   "items": [
     {

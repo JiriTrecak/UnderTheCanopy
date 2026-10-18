@@ -1,0 +1,22 @@
+{
+  "id": "asset.icons.ability-ants-queensguard-royal-guard",
+  "name": "Royal Guard",
+  "kind": "icon",
+  "tags": [
+    "ability"
+  ],
+  "race": "ants",
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "license": "Original artwork for Under the Canopy: gpt-image-2 from the game's own concept art (docs/art-direction.md#icons)."
+}

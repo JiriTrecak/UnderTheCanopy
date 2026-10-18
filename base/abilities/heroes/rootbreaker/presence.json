@@ -79,7 +79,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.spells.rootbreaker.presence-icon-v2",
+    "icon": "asset.icons.ability-ants-rootbreaker-presence",
     "animations": {
       "prepare": "idle",
       "release": "idle",
