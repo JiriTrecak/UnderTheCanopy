@@ -3,13 +3,17 @@
   "unreleased": {
     "added": [
       "A look-dev showcase map, Look-dev: Fall, previews the new forest-floor look: giant trunks, leaf litter, mushrooms, a shallow ford, a deep pool and glowing amber",
-      "Look-dev: Fall has a canopy: giant trees rise into it in the third-person view, light falls through it in beams with dust and drifting leaves, and the distant forest goes soft with depth of field."
+      "Look-dev: Fall has a canopy: giant trees rise into it in the third-person view, light falls through it in beams with dust and drifting leaves, and the distant forest goes soft with depth of field.",
+      "Substance Wells: build one on top of a Substance Deposit, as a refinery sits on its geyser. Your workers gather Substance from it and carry it straight in; two workers saturate it, only its owner can gather there, and the deposit never runs out and stays when the well falls."
     ],
     "improved": [
       "Look-dev: Fall now has a painted forest floor around its clearing, sun glints on its shallow ford, and amber that sits in a crater.",
       "The beetles' Shell Forge has a new model that comes alive while it researches: the furnace glows, the chimneys smoke and the hammer strikes the anvil in a shower of sparks; at rest it stands still.",
       "The Shell Forge is larger, sized against the main hall like a Warcraft III Blacksmith, fills its footprint and no longer sits on a patch of dirt.",
-      "The second resource, Root, is now called Substance (a working name)."
+      "The second resource, Root, is now called Substance (a working name).",
+      "Trees are no longer a resource: wood is gone from every cost. Basic buildings and units cost a little more amber, and advancing your hall and the tier-2 roster costs Substance instead. Tree walls still block the way.",
+      "Echo Isles has two Substance Deposits between the bases to fight over, and every other skirmish map has one near each start.",
+      "Computer players build Substance Wells, staff them, spend Substance, and attack an enemy's well when they have none of their own."
     ],
     "fixed": [],
     "knownIssues": []
