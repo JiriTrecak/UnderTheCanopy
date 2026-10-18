@@ -7,6 +7,7 @@
 - [Structure](structure.md): repository layout, dependency rules, data.
 - [Editor](editor.md): the native editor's design, decided milestone by milestone (phase 2).
 - [Packages](packages.md): how content is organised: packages, layering, assets, maps (D53). Agent skills in `.claude/skills/canopy-*` describe each format.
+- [Art direction](art-direction.md): the graphical direction (D61), its research and the order of work.
 - [Renderer](renderer.md): renderer design and its open questions.
 - [Audio](audio.md): playback, positional sound, voice limiting, effect sounds and music.
 - [UI](ui.md): the HUD and menu toolkit: layout files, theme, widgets, renderer contract.

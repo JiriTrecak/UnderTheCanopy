@@ -530,3 +530,11 @@ Every match is recorded and can be saved, listed, watched with a timeline and at
 - **Out of sync**: a fingerprint that differs from the recorded one (from the background analysis or playback) shows "This replay is out of sync from mm:ss" above the transport and is logged; the replay plays on.
 - **Feedback** (D59) from a match attaches the replay so far and an exported save of the moment (`.utcsave`, as Export writes it), encoded on a worker thread; the form says "Replay of this match is attached". Watching a replay, the replay itself is attached. Multiplayer matches have no save. The server takes `replay` (≤ 1 MB) and `save` (≤ 4 MB), uploads both to the Linear issue and links them ([server §Feedback](server.md#feedback)); its body limit is 10 MB (Nginx 11 MB).
 - **Developers**: `canopy replay <file>` (`just replay`) watches one; `--verify` plays it headless, checks fingerprints and outcome, times seeks and fails when it does not reproduce; `--record <map> [--ticks n]` records a stand-in match (a computer player's commands sent as a human's) for measurements.
+
+## D61. Graphical direction: stylized armies on a realistic forest floor (2026-10-17, settled 2026-10-18, Jiri)
+
+The look is a hybrid. Units and buildings are stylized, crisp and saturated, in the readable, chunky style of Warcraft III: Reforged, as Jiri's boards in `art/styles/units-*.webp` show (ants a biological army, beetles steam and contained magic, bees a holy order with blood rituals). They stand on a realistic, ZeroSpace-style forest floor at insect scale.
+
+The army comes first: the playable ground is calm and toned down, with only enough detail to sell a real surface. The non-playable frame (colossal trunks, roots, ferns, leaves) carries the detail, and the army is the brightest, sharpest thing on screen. Buildings are made of the faction's creature: the beetle hall is a colossal armoured beetle turned into a fortress. Huge assets keep the scale in view.
+
+The target frames are `art/styles/target-*.jpg` and the beetle building sheets `art/styles/buildings-*.jpg`, all generated concepts. This replaces D24's "today's look first" as the target, and the bright cartoon `art/styles/forest-settlement.png` is no longer it. The research, rules and order of work are in [art direction](art-direction.md).

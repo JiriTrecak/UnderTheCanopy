@@ -1,0 +1,139 @@
+# Art direction
+
+**Agreed with Jiri, 2026-10-17 and 2026-10-18 (D61):**
+- **The look is a hybrid.** Stylized, crisp, saturated Warcraft III: Reforged-style units and buildings stand on a realistic, ZeroSpace-style forest floor at insect scale.
+- **The army comes first.** The playable ground is quiet and toned down, the non-playable frame (trunks, roots, ferns, leaves) carries the detail, and the army is the brightest, sharpest thing on screen ([below](#environment-the-forest-floor-at-low-sun)).
+- **Target frames**: `art/styles/target-autumn.jpg`, `target-summer.jpg` and `target-frost.jpg` for an army on the ground; `target-frost-amber.jpg`, `target-frost-cliff.jpg` and `target-frost-base.jpg` for a resource, a cliff with its ramp, and a base with buildings under construction. All are generated concepts, not renders: they set the look the game aims for.
+- **Units** are dark fantasy in Warcraft's style: readable and chunky. They look like Jiri's three boards in `art/styles/` (`units-ants.webp`, `units-beetles.webp`, `units-bees.webp`; their backgrounds don't count).
+- **Factions**: ants are a biological army, beetles run on steam and contained magic, bees are a holy order with blood rituals.
+- **Buildings** are made of the faction's creature and materials. The beetle hall is a colossal armoured beetle turned into a fortress (`art/styles/buildings-beetles.jpg`, with alternatives in `buildings-beetle-hall-variations.jpg`).
+- **Huge assets** keep the scale in view everywhere.
+
+Except for these points, everything below the research section is Claude's proposal for how to get there, until Jiri settles each part. Each step comes with side-by-side captures, as for every visual decision (plan).
+
+## What ZeroSpace does
+
+From its 15 Steam store screenshots (Starlance Studios and Ironward, early access since 2026-07-20; art direction by Aaron Kambeitz of Homeworld and Relic, who is reported to be steering it towards a heavier, grimmer, industrial look rather than a glossy sci-fi one).
+
+1. **Light carries the frame.** A low, raking sun throws long, crisp shadows across the play area; the shadows are compositional shapes in their own right. The key light is warm and the shadows are cool and saturated (blue to violet). Highlights roll off; nothing clips.
+2. **The ground is photographic in material and quiet in value.** Single grass blades, sand ripples, cracked mud, wet sheen and specks of wildflowers. The detail is high in frequency and low in contrast, so units sit on it as on a calm carpet.
+3. **A strict value hierarchy.** The ground is mid to dark and desaturated. Units are a step lighter, with crisp silhouettes and panels of team colour. Emissives and spell effects are the only very bright, very saturated things. Dusk and night maps lean on this.
+4. **Every map has a material and a colour key** of two or three hues: desert sand, ice sheet, swamp, volcanic plate, city.
+5. **Set dressing comes in clusters** along the edges of lanes: rock shelves, crystal growths, beds of alien plants, debris. The lanes themselves stay clean.
+6. **The ground remembers fights**: track marks, scorches, blood, dust trails.
+7. **Frame edges fall away into depth**: cliffs drop into darkness and haze, and there is never a hard map edge.
+8. **Atmosphere** in play is rain, drifting dust and distant haze. Volumetric shafts appear only in cinematics.
+
+What we don't take: sci-fi hard surfaces, neon, and its budget (its recommended GPU is an RTX 3060 Ti).
+
+## Environment: the forest floor at low sun
+
+**The army comes first (Jiri, 2026-10-18).** ZeroSpace reads because its backdrops are clean and toned down against the army, and the same rule holds here:
+- **Playable ground** is a calm, smooth, almost uniform realistic surface. It has low contrast, a slightly muted colour and only soft, large-scale variation: just enough detail to sell the illusion of a real surface. It never carries busy texture or scattered objects.
+- **Non-playable areas**, such as trunks, roots, ferns and the map border, carry the rich detail, and are still a little darker and less saturated than the units.
+- **Units and buildings** are by far the most saturated, sharpest and highest-contrast things on screen.
+
+The rest of this section serves that rule.
+
+- **Light.** Late-afternoon sun, low and warm (amber), with cool teal-blue shadows. The canopy breaks the sun into patches that drift slowly (a light pattern multiplied into the sun term). The tone mapper gets a shoulder instead of today's clip (D31).
+- **Ground.** Moss, compacted soil, leaf litter and needle dust as soft, muted materials: height-blended layers and gentle detail normals, never dense grass geometry. Litter, pebbles and twigs belong to the non-playable areas.
+- **Biome keys.**
+
+  | Biome | Hues | Notes |
+  |---|---|---|
+  | Vibrant forest | moss green, ochre litter, amber light | |
+  | Autumn | rust, copper, slate shadow | |
+  | Deep forest | dark teal, shafts, glowing fungi | the darkest biome, where dark fantasy shows most |
+  | Frozen | frost blue, bark brown | |
+
+- **Colour reserved for meaning.** Amber is the resource and glows, so the ground never uses saturated orange-yellow. Team colours belong to units and buildings only.
+- **Ground memory.** Trails through moss, scorches, ichor splatter, crushed litter.
+- **Edges.** The map's border becomes the giant world (Scale, point 1).
+
+## Scale: the world is enormous
+
+Ranked by effect for the cost:
+1. **Giants on the border.** Trunks, roots and fern fronds rise out of frame at the map's edges; their tops are never seen. The surroundings forest (renderer §surroundings) is brought into view at the play pitch, where the map fit hides it today.
+2. **Landmarks inside the map**, one to three per map. Each is a forest-floor object used as terrain:
+
+   | Object | Plays as |
+   |---|---|
+   | acorn cap | plateau |
+   | fallen leaf | ramp |
+   | mushroom ring | choke |
+   | root | cliff |
+   | puddle | lake |
+   | empty snail shell | ruin |
+
+   Partly there already: `mega-oak-trunk`, `mega-mushroom`, `mega-fallen-log`, `canopy-ancient-tree`.
+3. **Canopy shadows.** Large leaf shadows drift across the field, the role cloud shadows play elsewhere.
+4. **Air.** Pollen and dust in the light, a drifting seed, a falling leaf crossing the screen. These are cheap particles.
+5. **Overhanging foreground.** Out-of-focus fronds at the top edge of the frame, never over play. Riskiest; try last.
+6. **Macro optics.** A very faint defocus at the frame's edges at most. A strong tilt-shift reads as a toy miniature, which fights the grim tone.
+
+Giant objects are scenery and never hide a unit; the scenery cutaway already opens around units.
+
+## Units: the three boards
+
+Jiri's boards set the look: `art/styles/units-ants.webp`, `units-beetles.webp` and `units-bees.webp`. Their bright grass backgrounds are not part of it. They are heroic Warcraft with dark undertones rather than grimdark: glossy chitin and big black eyes stay, and the darkness lives in the materials and rituals (bone, contained magic, blood).
+
+**Shared rules, read from all three boards:**
+- **Warcraft proportions.** Big heads, oversized weapons, shields and shoulders, short sturdy legs. Two or three large shapes per silhouette, so a unit reads from directly above at normal zoom.
+- **One oversized prop per unit tells its role**: a shield, a bow, a hammer, a net, a censer, a cannon.
+- **Heroes** are about 1.5× a soldier, with a unique crown shape: horns, a halo, a vine-wrapped boulder.
+- **Siege and beasts** are big creatures carrying the weapon (a pod-carrier, a mortar beetle, a reliquary grub).
+- **HD materials on simple forms.** Glossy chitin, carved bone, brass, cloth and leaves, with clear edge highlights and no noisy surface detail.
+
+**The factions:**
+
+| | Ants: biological army | Beetles: steam and contained magic | Bees: holy order, blood rituals |
+|---|---|---|---|
+| Body | glossy rust-orange chitin, ivory mandible tusks | black chitin, squat and armoured | black and gold striped, fur collars, amber wings |
+| Materials | everything grown: leaf cloaks and hoods, bark-rimmed leaf shields, bone and thorn blades, silk nets and spools, seed pods, gourds | brass pipes, rivets and gauges; stone-and-brass hammers; tower shields with steel bosses; cannons | ivory plate, gold filigree, bee-skull masks, tabards and banners with a sigil |
+| Magic | sap, nectar, silk, roots | green-yellow glowing canisters, steam exhaust | blood in glass reliquaries, red censer smoke, halos, blood circles under casters |
+| Board's red, which becomes team colour | maple-leaf cloaks, hoods and shields | elytra plates and shield faces | tabards, banners, capes and shield faces |
+| Units in the roster today | warrior (bone axe), thornblade (paired blades), archer (hooded), queensguard (leaf tower shield and spear), winglancer (flying lance), silkwarden (net and spool), nectarist (gourds and seed-head staff), bombardier (back-mounted pod), settler (carried crate), rootbreaker (vine-wrapped boulder club) | horn guard (hammer and tower shield), stone slinger (the board's gunner), worker (wrench), hornbreaker (horned hero, great hammer) | none: bees are a new race |
+
+**What the boards leave open:**
+- **Team colour is red on every board.** In the game the red zones become the team colour mask, and faction identity has to come from everything that isn't red. Checked in every player colour, white and dark included (AGENTS.md).
+- **Clashes to test.**
+  - Ant chitin against orange and red players: darkening the chitin towards burnt umber is the likely fix.
+  - The beetles' green glow against a green player.
+  - The bees' gold against a yellow player.
+- **Value over the new ground.** The boards are saturated and bright, which works: the ZeroSpace-style ground is darker and muted, so units become the brightest thing on screen apart from spells.
+- **Bees need game design first.** A new race is gameplay (roster, buildings, abilities). Its art waits for that discussion; the board fixes only how it looks.
+- **Buildings** are made of the faction's creature and materials. The beetles' are settled (`art/styles/buildings-beetles.jpg`): the hall is a colossal armoured beetle turned into a fortress, and the rest of the set shares its royal-blue plates, black chitin, brass, riveted steel bases and green glowing tanks. Ants and bees get the same treatment: grown mounds and leaf roofs for ants, ivory-and-gold chapels and hives for bees.
+- **Clean models.** Models are crisp, with big calm surfaces; detail clusters at one or two focal points per building, not everywhere. Every building function gets its own silhouette (too many domes read alike), and hall tiers change shape, not only size.
+- **Neutrals** keep the corrupted forest (rot, fungus, spore light; the roster already has a corrupted root and a rotwood ancient), drawn with the same proportions.
+
+The bright cartoon image `art/styles/forest-settlement.png` is no longer the target.
+
+## References
+
+| For | Reference | What to take |
+|---|---|---|
+| Whole frame | `art/styles/target-*.jpg` | the look itself |
+| Environment | ZeroSpace | a quiet, realistic play ground with detail in the frame |
+| Units | Jiri's boards in `art/styles/units-*.webp` | the look itself |
+| Buildings | `art/styles/buildings-*.jpg` | the beetle set and hall |
+| Units and buildings | Warcraft III: Reforged | chunky, clean, readable models seen in game |
+
+## Budget
+
+The target is unchanged: 60 FPS on a base M1 with about 400 units (plan). Most of this look is lighting, grading, terrain materials and placement, which are cheap. Not planned: ray tracing, volumetrics in play, or dense geometry grass everywhere.
+
+## Order of work
+
+1. **Concepts for ants and bees** at the beetles' level: a hall, its tiers and the building set, plus a readability pass on all three (silhouettes, every player colour, play zoom, a dark biome).
+2. **Quiet ground and grade in the engine**: one biome's play ground redone as a calm surface, with shouldered tone mapping and low sun, compared with the target frames on Echo Isles and Turtle Rock.
+3. **The frame**: border giants (trunks, roots, ferns) in view at the play pitch, and one landmark on one map.
+4. **One building and two units through the pipeline**: the beetle hall, an ant warrior and a beetle horn guard, made from the concepts with Tripo and Blender, with the red zones as the team colour mask. Seen at normal zoom from the overhead camera and from directly above, in every player colour.
+5. Roll out what is agreed.
+
+## Open questions
+
+- **Human leftovers as landmarks** (a lost button, a nail, a coin)? They show scale instantly but are a lore choice.
+- **Default skirmish light**: late afternoon (recommended) or midday?
+- **How dark is the deep forest**: near night with glowing fungi, or daylight like the others?
+- **Ant chitin**: keep the board's rust orange, or darken it so orange and red players stay distinct?
+- **Bees**: when does their game design start?
