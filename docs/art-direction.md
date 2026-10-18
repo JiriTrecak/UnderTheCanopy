@@ -122,7 +122,7 @@ The bright cartoon image `art/styles/forest-settlement.png` is no longer the tar
 
 ## Icons
 
-One family drives every icon in the game: unit, hero and building portraits, abilities, research, resources, commands and stats (2026-10-18, Claude's proposal while Jiri was away, D67). It is the look of Warcraft III: Reforged's icons, painted from our own concept art. The reference sheet is `art/styles/icons-sheet.png`.
+One family drives every icon in the game: unit, hero, creature and building portraits, abilities, research, items, resources, commands and stats (2026-10-18, Claude's proposal while Jiri was away, D67). It is the look of Warcraft III: Reforged's icons, painted from our own concept art. The reference sheet is `art/styles/icons-sheet.png`.
 
 **The HUD's size sets the rules.** At 1080p a command card button shows its icon at about 48 px, a unit card at about 36 px and a hero button at about 58 px; HiDPI doubles that. An icon has to read at 36 px.
 
@@ -145,6 +145,7 @@ One family drives every icon in the game: unit, hero and building portraits, abi
 | Ability | the action at its peak, diagonal and moving; the weapon or effect is the subject, not the caster's portrait | the ability's energy colour, the brightest icons in the game |
 | Passive and aura | a calm symmetric emblem (a banner, an anvil, a shield) with a radiating ring | the ability's energy colour, quieter |
 | Research | a still life of the one improved piece of equipment | dark forge-steel grey with a warm glow |
+| Item | the object alone, close-up and slightly angled, in forest-made materials | a glow of the object's own colour |
 | Resource | the resource itself, about 85 % of the frame, as a **cut-out** with a thin dark edge: it sits on the resource bar and in 24 px cost rows | transparent (generated on flat white and keyed out: gpt-image-2 has no transparent output) |
 | Command and stat | one race-neutral symbolic object (boot, sword, shield, anvil) in steel, bronze, leather and wood | dark neutral with a warm glow |
 
@@ -154,6 +155,7 @@ One family drives every icon in the game: unit, hero and building portraits, abi
 - **Beetles:** glossy black chitin, dark riveted steel, brass and royal-blue plates; substance glows violet only inside glass. Research tiers read as engineering: I plain iron and steel, II brass and polish, III a violet substance-glass core.
 - **Ants:** burnt-rust chitin, ivory tusks, bone and bark, deep maple-leaf red cloaks, hoods and shields; where substance has changed them, a faint blue-violet glow in veins and sap.
 - **Bees** (when they come): black-and-gold chitin, ivory and gold filigree, blood red in glass.
+- **Neutral creatures:** their own natural materials (bark, moss, mushroom caps, water, fur, paper nests), drawn from their in-game models; corrupted ones show rot and magenta-violet spore light.
 
 **Making one.** `tools/icons/icons.py` holds the prompt blocks above as text and turns a spec (`tools/icons/specs/`, one subject line per icon) into gpt-image-2 requests for `tools/buildings/concept.sh`: the subject's approved concept is the first reference, approved icons of the same type are anchors, at 1024². It then installs the chosen image downscaled to the shipped size, and every icon folder keeps its request in `generation.json`.
 - **Size:** 256 × 256 PNG, RGB (RGBA for resources). The cooker makes BC7 mips, so the HUD's 36–116 px all sample a sharp level.
