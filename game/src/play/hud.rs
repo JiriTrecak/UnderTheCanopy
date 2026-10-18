@@ -833,6 +833,11 @@ impl Hud {
                     .map_or(String::new(), |r| format!(" · {} remaining", r.amount))
             ));
         }
+        // Out of the network its work waits (D66), whatever it is.
+        let unpowered = e.work.as_ref().is_some_and(|w| w.unpowered);
+        if unpowered {
+            status = Some(canopy_sim::economy::Status::Unpowered.label(None));
+        }
         if let Some(c) = e.public.construction {
             let total = d.creation.as_ref().map_or(1, |c| match c {
                 canopy_content::game::Creation::Construct { work_ticks, .. } => *work_ticks,
@@ -853,6 +858,7 @@ impl Hud {
                 let p = a.progress.unwrap_or(0.0).clamp(0.0, 1.0);
                 ui.set_value(n.task_meter, p);
                 let label = match a.progress {
+                    _ if unpowered => format!("{} · no power", a.name),
                     Some(p) => format!("{} · {}%", a.name, (p.clamp(0.0, 1.0) * 100.0).floor()),
                     None => format!("{} · waiting", a.name),
                 };

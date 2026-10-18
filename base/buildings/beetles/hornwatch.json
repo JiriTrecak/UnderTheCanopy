@@ -39,6 +39,7 @@
   "behaviors": {},
   "category": "category.build-advanced",
   "level": 1,
+  "power": "required",
   "garrison": {
     "capacity": 1,
     "accepts": [

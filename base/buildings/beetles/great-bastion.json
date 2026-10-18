@@ -46,6 +46,10 @@
   "level": 2,
   "supplyProvided": 15,
   "heroCapacity": 2,
+  "network": {
+    "role": "source",
+    "radius": 32
+  },
   "upgrade": {
     "target": "building.beetles.elder-bastion",
     "items": [

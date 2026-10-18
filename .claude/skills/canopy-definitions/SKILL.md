@@ -87,6 +87,21 @@ Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a
 - **`supplyProvided`** is building-only.
 - **`upgrade`** turns one building into another; both need the same behaviours and footprint.
 
+### The power network (D66)
+
+StarCraft's pylon power, as content: a race whose buildings need power places them only inside its own network, and they pause while it does not reach them.
+
+```jsonc
+"network": {"role": "source", "radius": 32}   // a main hall (every tier), a Substance Well
+"network": {"role": "node", "radius": 28}     // the Brood Den
+"power": "required"                           // placed only inside the network; work pauses outside it
+```
+
+- **`network.role`**: a `source` powers the disc of `radius` cells around its centre whenever it stands complete. A `node` powers its disc only while its own centre is powered (by a source or a powered node), so the network grows outward in chains, and losing a node unpowers everything that hung on it.
+- **`power: "required"`**: the building's centre must be inside its owner's network to place it ("Build inside your network: extend it with a Brood Den", naming the race's cheapest node). Once complete and outside the network it stops working: training, research, upgrades and revival hold their progress, and a lookout's garrison holds its fire; it stands, keeps its supply, and resumes when power returns. Construction goes on regardless; a site neither powers nor needs power. A node usually needs power too (so it can only be placed in the chain); a source never does.
+- **Research** widens discs: `{"units": ["building.beetles.bastion", "building.beetles.brood-den"], "networkRadius": 8}` adds 8 cells to the listed buildings' radius. Such an effect lists only buildings with a `network` and changes nothing else.
+- A race with buildings that need power must have a source in its roster. Players see the network as a blue-violet field on the ground while placing a building that needs power (and with the debug overlay's **Show power network**); an unpowered building goes dark and shows a struck-bolt badge.
+
 ## An item
 
 ```json item

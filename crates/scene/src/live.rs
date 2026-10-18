@@ -275,6 +275,8 @@ pub struct Body {
     pub footprint: Option<[f32; 2]>,
     /// A deposit with something left to harvest.
     pub deposit: bool,
+    /// A building that needs power stands outside its owner's network (D66).
+    pub unpowered: bool,
 }
 
 /// The foundations drawn under the buildings of `bodies` (D44): each footprint on the
@@ -1622,6 +1624,7 @@ impl Presenter {
                     if quarter { [h, w] } else { [w, h] }
                 }),
             deposit: e.public.resource.as_ref().is_some_and(|r| r.amount > 0),
+            unpowered: !e.remembered && e.work.as_ref().is_some_and(|w| w.unpowered),
         }
     }
 

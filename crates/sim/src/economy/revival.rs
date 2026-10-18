@@ -189,6 +189,7 @@ pub fn advance(ctx: &mut Ctx) {
             || e.production.as_ref().is_some_and(|p| p.paused)
             || production::lane(e) != Some(production::Lane::Revival)
             || !ready(e, tick)
+            || ctx.network.unpowered(b)
         {
             continue;
         }

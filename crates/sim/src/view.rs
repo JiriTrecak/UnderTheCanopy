@@ -171,6 +171,14 @@ pub struct MissionView {
     pub error: Option<String>,
 }
 
+/// The viewer's power network (D66): its powered discs (every owner's for an observer)
+/// and the building that extends it, for placement messages.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct NetworkView {
+    pub fields: Vec<crate::economy::network::Field>,
+    pub hint: Option<String>,
+}
+
 #[derive(Debug, Clone)]
 pub struct View {
     pub tick: u32,
@@ -205,6 +213,8 @@ pub struct View {
     pub pings: Vec<crate::state::Ping>,
     /// Players out of the match so far, for everyone (filled by the world).
     pub defeated: Vec<Owner>,
+    /// The viewer's power network (D66).
+    pub network: NetworkView,
 }
 
 impl View {
@@ -327,6 +337,10 @@ impl View {
         Self {
             pings,
             defeated: Vec::new(),
+            network: NetworkView {
+                fields: economy.network().fields(owner).copied().collect(),
+                hint: economy.network_hint(owner).map(str::to_owned),
+            },
             tick: state.tick,
             owner: Some(owner),
             entities,
@@ -402,6 +416,10 @@ impl View {
             .collect();
         Self {
             defeated: Vec::new(),
+            network: NetworkView {
+                fields: economy.network().all_fields().to_vec(),
+                hint: None,
+            },
             pings: state
                 .pings
                 .iter()

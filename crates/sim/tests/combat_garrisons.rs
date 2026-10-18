@@ -172,3 +172,61 @@ fn orders_unload_and_a_lost_tower_put_the_archer_outside() {
     assert!(lookout(&world, "a").is_none());
     assert!(entity(&world, "a").unit.as_ref().unwrap().release.is_none());
 }
+
+/// A charged tower (needs power) 12 cells from the dynamo that powers it, an archer
+/// beside it and an enemy swordsman out of reach (D66).
+fn charged_tower_map() -> canopy_content::map::UtcMap {
+    map(vec![
+        placed("t", "building.charged-tower", 101.5, 101.5, 1),
+        placed("dynamo", "building.dynamo", 89.5, 101.5, 1),
+        placed("a", "unit.bowman", 96.0, 106.0, 1),
+        placed("e1", "unit.swordsman", 121.0, 100.0, 2),
+    ])
+}
+
+fn destroy(world: &mut World, placement: &str) {
+    let target = EntityId(id(world, placement));
+    world
+        .state_mut()
+        .combat
+        .scripted
+        .push(canopy_sim::combat::ScriptedHit {
+            target,
+            source: None,
+            amount: 1,
+        });
+    world.state_mut().entities.get_mut(target).unwrap().hp = Some(1);
+    run(world, 1);
+    assert!(find(world, placement).is_none());
+}
+
+#[test]
+fn a_lookout_that_needs_power_shoots_only_while_powered() {
+    for powered in [true, false] {
+        let map = charged_tower_map();
+        let mut world = world(&map);
+        let (t, a, e1) = (id(&world, "t"), id(&world, "a"), id(&world, "e1"));
+        command(
+            &mut world,
+            1,
+            json!({"type": "garrison", "actors": [a], "target": t}),
+        );
+        run_until(&mut world, 300, |w| lookout(w, "a").is_some());
+        if !powered {
+            destroy(&mut world, "dynamo");
+        }
+        command(
+            &mut world,
+            2,
+            json!({"type": "move", "actors": [e1], "destination": {"x": 108, "y": 101}}),
+        );
+        if powered {
+            run_until(&mut world, 900, |w| !alive(w, "e1"));
+        } else {
+            // In the dark tower the archer stays inside and never shoots.
+            run(&mut world, 600);
+            assert_eq!(lookout(&world, "a"), Some(EntityId(t)));
+            assert_eq!(hp(&world, "e1"), 100, "an unpowered lookout holds its fire");
+        }
+    }
+}

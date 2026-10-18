@@ -40,12 +40,29 @@ fn ring_alpha(across: f32) -> f32 {
     return mix(1.0, 0.0, clamp(across / 0.45, 0.0, 1.0));
 }
 
+// The power network field (D66): `depth` metres inside the union of its discs (negative
+// outside) → an even faint fill, a glow inward from the edge and a crisp rim, antialiased
+// across the edge by the depth's screen derivative (`width`, taken in uniform control
+// flow by the caller).
+fn network_color(base: vec3f, depth: f32, width: f32) -> vec4f {
+    let aa = max(width, 0.02);
+    let inside = smoothstep(-aa, aa, depth);
+    let rim = 1.0 - smoothstep(0.22, 0.22 + aa * 1.5, depth);
+    let glow = exp(-depth / 1.8) * 0.24;
+    let alpha = inside * max(rim * 0.8, glow + 0.065);
+    let color = mix(base, vec3f(0.78, 0.74, 1.0), rim * 0.45);
+    return vec4f(color, alpha);
+}
+
 @fragment
 fn fs_ground(in: GroundOut) -> SceneOut {
     // Not fogged: the viewer's own markers stay readable (old materials ignored fog).
     var out: SceneOut;
     out.color = in.color;
-    if (in.ring.y > 0.5) {
+    let width = fwidth(in.ring.x);
+    if (in.ring.y > 1.5) {
+        out.color = network_color(in.color.rgb, in.ring.x, width);
+    } else if (in.ring.y > 0.5) {
         out.color.a *= ring_alpha(in.ring.x);
     }
     out.depth = vec2f(0.0);

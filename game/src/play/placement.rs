@@ -208,6 +208,16 @@ fn check(
             ));
         }
     }
+    // Power (D66): the viewer knows its own network.
+    if d.power.is_some() {
+        let milli = |v: f64| (v * 1000.0).round() as i64;
+        let network = &k.view.network;
+        if !network.fields.iter().any(|f| f.covers(milli(x), milli(y))) {
+            return Some(canopy_sim::economy::network::outside(
+                network.hint.as_deref(),
+            ));
+        }
+    }
     // Known blockers: buildings (seen or remembered), resources and scenery.
     let mut blocked: Vec<(i64, i64)> = Vec::new();
     for e in &k.view.entities {

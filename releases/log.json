@@ -3,7 +3,8 @@
   "unreleased": {
     "added": [
       "A look-dev showcase map, Look-dev: Fall, previews the new forest-floor look: giant trunks, leaf litter, mushrooms, a shallow ford, a deep pool and glowing amber",
-      "Look-dev: Fall has a canopy: giant trees rise into it in the third-person view, light falls through it in beams with dust and drifting leaves, and the distant forest goes soft with depth of field."
+      "Look-dev: Fall has a canopy: giant trees rise into it in the third-person view, light falls through it in beams with dust and drifting leaves, and the distant forest goes soft with depth of field.",
+      "Beetles build on a substance network: their halls power the ground around them and Brood Dens extend it in a chain. War Lodges, Shell Forges, Hornwatches and Ancestor Shrines must be placed inside it and stop working while cut off; placing one shows the network on the ground, and a dark building shows a struck-bolt badge."
     ],
     "improved": [
       "Look-dev: Fall now has a painted forest floor around its clearing, sun glints on its shallow ford, and amber that sits in a crater.",

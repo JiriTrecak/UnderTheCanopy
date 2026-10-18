@@ -71,6 +71,7 @@
     }
   },
   "level": 1,
+  "power": "required",
   "category": "category.build-advanced",
   "modelScale": 1
 }

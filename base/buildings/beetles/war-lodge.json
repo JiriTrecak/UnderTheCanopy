@@ -56,5 +56,6 @@
   },
   "category": "category.build-advanced",
   "level": 1,
+  "power": "required",
   "modelScale": 1
 }

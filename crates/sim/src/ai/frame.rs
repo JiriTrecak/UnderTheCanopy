@@ -500,6 +500,25 @@ impl<'a> Frame<'a> {
         })
     }
 
+    /// Whether the player's own power network reaches `p` (D66).
+    pub fn powered(&self, p: Pt) -> bool {
+        let milli = |v: f64| crate::terrain::round_half_up(v * 1000.0) as i64;
+        self.input
+            .economy()
+            .network()
+            .covers(self.me, milli(p.x), milli(p.y))
+    }
+
+    /// Whether an own building stands outside the network it needs (D66).
+    pub fn unpowered(&self, k: &Known) -> bool {
+        k.owner == self.me
+            && self
+                .input
+                .economy()
+                .network()
+                .unpowered(crate::entity::EntityId(k.id))
+    }
+
     pub fn balance(&self, item: &str) -> u32 {
         self.bank
             .iter()

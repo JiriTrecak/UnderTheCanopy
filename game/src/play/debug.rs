@@ -44,6 +44,9 @@ pub struct MatchTools {
     pub reveal: bool,
     /// Whose fog the picture shows when not revealed; `None` for an observer's own view.
     pub perspective: Option<u8>,
+    /// Show the power network on the ground (D66), as while placing a building that
+    /// needs it. Visual only, so it works in network matches too.
+    pub network: bool,
 }
 
 /// What the overlay changed this frame.
@@ -213,6 +216,7 @@ impl Debug {
                                     });
                             });
                         });
+                        ui.checkbox(&mut t.network, "Show power network");
                         ui.small(if stats.networked {
                             "Network matches use synchronized speed and player vision."
                         } else {

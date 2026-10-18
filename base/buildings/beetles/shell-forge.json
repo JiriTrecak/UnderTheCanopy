@@ -49,6 +49,7 @@
   },
   "category": "category.build",
   "level": 1,
+  "power": "required",
   "modelScale": 1,
   "presentation": {
     "effects": [

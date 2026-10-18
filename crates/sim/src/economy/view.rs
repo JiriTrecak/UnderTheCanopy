@@ -46,6 +46,9 @@ pub struct PublicWork {
     pub busy: bool,
     /// Training cycles the building has finished: a unit stepped out when it grows.
     pub cycles: u32,
+    /// A complete building that needs power stands outside its owner's network: its work
+    /// pauses (D66). Anyone who sees it sees that it is dark.
+    pub unpowered: bool,
 }
 
 /// A worker's job as its owner's command card sees it.
@@ -112,6 +115,7 @@ pub struct Colony {
 pub struct WorkViews {
     sites: BTreeMap<EntityId, u32>,
     bases: BTreeMap<EntityId, Workforce>,
+    unpowered: std::collections::BTreeSet<EntityId>,
 }
 
 /// Every worker's source (old `gatherAssignments`), from state alone.
@@ -150,7 +154,11 @@ impl WorkViews {
             *sites.entry(source).or_default() += 1;
         }
         let bases = base_gathering(state, catalog, index, &assignments);
-        Self { sites, bases }
+        Self {
+            sites,
+            bases,
+            unpowered: economy.network.unpowered_buildings().clone(),
+        }
     }
 }
 
@@ -340,21 +348,23 @@ pub fn public(
                 Status::Training | Status::Planting | Status::Upgrading | Status::RevivingHero
             )
     });
+    let unpowered = views.unpowered.contains(&e.id);
     let busy = e.construction.is_none()
+        && !unpowered
         && (producing
             || e.research.as_ref().is_some_and(|r| !r.queue.is_empty())
             || e.upgrade.is_some()
             || e.revival.as_ref().is_some_and(|r| !r.queue.is_empty()));
     let cycles = e.production.as_ref().map_or(0, |p| p.produced);
-    (cargo.is_some() || pose.is_some() || site.is_some() || busy || cycles > 0).then_some(
-        PublicWork {
+    (cargo.is_some() || pose.is_some() || site.is_some() || busy || cycles > 0 || unpowered)
+        .then_some(PublicWork {
             cargo,
             pose,
             site,
             busy,
             cycles,
-        },
-    )
+            unpowered,
+        })
 }
 
 fn progress(done: u32, total: u32) -> Progress {
