@@ -1,0 +1,104 @@
+{
+  "id": "effect.units.juggernaut-crash",
+  "name": "Juggernaut crash",
+  "description": "The hull slamming into the ground as it dies: a wide ring of dust, a cloud and a spray of sparks. For the death clip's `crash` event.",
+  "durationTicks": 90,
+  "loop": false,
+  "layers": [
+    {
+      "id": "ring",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "ring",
+      "colour": "#8b7d6b",
+      "accent": "#b3a58f",
+      "durationTicks": 30,
+      "count": 1,
+      "size": 13,
+      "height": 0.1,
+      "blend": "normal"
+    },
+    {
+      "id": "sparks",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#ffc65a",
+      "accent": "#fff0b0",
+      "durationTicks": 26,
+      "count": 28,
+      "size": 0.3,
+      "height": 0.5,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 24,
+        "rate": 28,
+        "speed": 9,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 85,
+        "gravity": 18,
+        "drag": 0.3,
+        "spawnRadius": 2.5,
+        "startSize": 0.36,
+        "endSize": 0.05,
+        "spin": 0.0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "dust",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#8a7c6a",
+      "accent": "#b4a690",
+      "durationTicks": 90,
+      "count": 18,
+      "size": 1.0,
+      "height": 0.3,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 86,
+        "rate": 18,
+        "speed": 5,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 0.3,
+          "z": 0
+        },
+        "coneDegrees": 88,
+        "gravity": -0.3,
+        "drag": 1.6,
+        "spawnRadius": 3.0,
+        "startSize": 3.0,
+        "endSize": 8.0,
+        "spin": 0.3,
+        "fadeIn": 0.05,
+        "fadeOut": 0.7
+      }
+    }
+  ]
+}

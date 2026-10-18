@@ -1,0 +1,99 @@
+{
+  "id": "effect.beetles.steamwing-impact",
+  "name": "Steamwing bolt impact",
+  "description": "Where a Steamwing bolt strikes: a small violet burst with a bright core, a quick violet light and a crackle of sparks.",
+  "durationTicks": 26,
+  "loop": false,
+  "layers": [
+    {
+      "id": "light",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#9a6cff",
+      "accent": "#d8c8ff",
+      "durationTicks": 8,
+      "count": 1,
+      "size": 6,
+      "height": 0.4,
+      "intensity": 8
+    },
+    {
+      "id": "core",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#a57cff",
+      "accent": "#f4eeff",
+      "durationTicks": 7,
+      "count": 1,
+      "size": 1.8,
+      "height": 0.4,
+      "intensity": 1.1
+    },
+    {
+      "id": "burst",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "burst",
+      "colour": "#9a6cff",
+      "accent": "#efe6ff",
+      "durationTicks": 10,
+      "count": 14,
+      "size": 0.75,
+      "height": 0.4,
+      "spread": 1.4,
+      "blend": "additive",
+      "intensity": 2.4,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "sparks",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 18,
+        "rate": 16,
+        "speed": 5.5,
+        "speedVariation": 0.55,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 120,
+        "gravity": 10,
+        "drag": 0.4,
+        "spawnRadius": 0.15,
+        "startSize": 0.22,
+        "endSize": 0.03,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#b28cff",
+      "accent": "#efe6ff",
+      "durationTicks": 20,
+      "count": 16,
+      "size": 0.18,
+      "height": 0.4,
+      "blend": "additive",
+      "intensity": 2.6,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

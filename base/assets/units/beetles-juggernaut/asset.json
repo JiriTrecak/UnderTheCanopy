@@ -17,6 +17,11 @@
       "format": "glb"
     },
     {
+      "role": "geometry",
+      "index": 2,
+      "format": "glb"
+    },
+    {
       "role": "source",
       "index": 1,
       "format": "blend"

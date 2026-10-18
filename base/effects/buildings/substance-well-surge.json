@@ -14,7 +14,7 @@
         "mode": "burst",
         "lifetimeTicks": 20,
         "rate": 26,
-        "speed": 6.0,
+        "speed": 4.0,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
@@ -22,11 +22,11 @@
           "z": 0
         },
         "coneDegrees": 150,
-        "gravity": 5,
+        "gravity": 3.33,
         "drag": 0.9,
-        "spawnRadius": 0.8,
-        "startSize": 0.32,
-        "endSize": 0.03,
+        "spawnRadius": 0.53,
+        "startSize": 0.21,
+        "endSize": 0.02,
         "spin": 2,
         "fadeIn": 0.0,
         "fadeOut": 0.5
@@ -37,7 +37,7 @@
       "accent": "#8a5cff",
       "durationTicks": 20,
       "count": 26,
-      "size": 0.24,
+      "size": 0.16,
       "height": 0,
       "blend": "additive",
       "intensity": 3.0,
@@ -58,8 +58,8 @@
       "accent": "#efe8ff",
       "durationTicks": 8,
       "count": 1,
-      "size": 3.2,
-      "height": 0,
+      "size": 2.13,
+      "height": 0.0,
       "intensity": 0.9
     }
   ]

@@ -8,7 +8,8 @@ The well is Tripo's image-to-3D model of the approved concept
 spikes and a team-coloured ring, driven into a Substance root knot, with a tall glass column
 in brass bands under a copper coil cap. Tripo's segmentation split it into parts that share
 one texture atlas, though the knot, the ring and some clamps share parts. It stands exactly
-on a Substance deposit (8 x 8 cells) and covers it: 12 x 12 cells. Here:
+on a Substance deposit, and its footprint equals the deposit's (8 x 8 cells, `placementOn`):
+its ring, knot and clamps cover the deposit model, which the engine hides under it. Here:
 - the royal-blue ring and plates become the team mask in the atlas's alpha. The knot is
   violet, not blue (hue about 256 against the plates' 220), so the mask keeps to blue hues;
 - the knot's cracks glow violet ALWAYS: raw substance is the forest's own wild magic, the
@@ -37,7 +38,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 WELL = sys.argv[sys.argv.index('--') + 1:][0]
 NAME = 'beetles-substance-well'
 OUT = os.path.join(ROOT, 'base', 'assets', 'buildings', NAME)
-WIDTH = 12.0  # covers the 8-cell deposit within a 12-cell footprint; no walkable perimeter
+WIDTH = 8.0  # the deposit's 8-cell footprint, filled to the edge; no walkable perimeter
 S = WIDTH / 12.0  # the offsets below were set on the 12-metre build
 VIOLET = (0.55, 0.32, 1.0)
 
@@ -535,8 +536,8 @@ asset = {
              'events': [{'name': 'pump', 'time': round(9 / kit.FPS, 3)},
                         {'name': 'surge', 'time': round(18 / kit.FPS, 3)}]},
         ],
-        'blocker': {'shape': 'box', 'size': [12, 12], 'offset': [0, 0]},
-        'vegetationClearance': 6,
+        'blocker': {'shape': 'box', 'size': [8, 8], 'offset': [0, 0]},
+        'vegetationClearance': 4,
         'groundContact': {'mode': 'pivot'},
     },
     'display': {'scale': 1, 'healthHeight': round(height + 0.6, 1)},

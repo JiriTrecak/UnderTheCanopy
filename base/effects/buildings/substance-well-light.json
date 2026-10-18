@@ -16,8 +16,8 @@
       "accent": "#b89cff",
       "durationTicks": 80,
       "count": 1,
-      "size": 12,
-      "height": 0,
+      "size": 8.0,
+      "height": 0.0,
       "intensity": 14,
       "motion": {
         "opacity": {
@@ -39,8 +39,8 @@
       "accent": "#c8b4ff",
       "durationTicks": 80,
       "count": 1,
-      "size": 3.2,
-      "height": 0,
+      "size": 2.13,
+      "height": 0.0,
       "intensity": 0.45,
       "motion": {
         "opacity": {
