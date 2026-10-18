@@ -204,6 +204,19 @@ test("a failed upload keeps the report and its screenshot for the next try", asy
   assert.ok(!api.ops().includes("File"));
 });
 
+test("a screenshot Linear refuses is left out: the issue is filed without it, saying why", async () => {
+  const { feedback, api, media, logs } = setup({ fail: (c) => c.op === "Upload" });
+  feedback.submit(report({ replay: undefined, save: undefined }), "1.2.3.4");
+  await feedback.settled();
+  assert.equal(feedback.waiting, 0, "filed, not retried forever");
+  const file = api.calls.find((c) => c.op === "File")!;
+  const body = String(file.variables.input.description);
+  assert.ok(!body.includes("!["), "no screenshot embedded");
+  assert.ok(body.includes("Linear did not take the screenshot"));
+  assert.ok(logs.some((l) => l.includes("Linear refused the screenshot") && l.includes("refused")), "Linear's own reason is logged");
+  assert.deepEqual(readdirSync(media), []);
+});
+
 test("an issue Linear refuses with its labels is filed without them", async () => {
   const { feedback, api } = setup({ fail: (c) => c.op === "File" && Boolean(c.variables.input.labelIds) });
   feedback.submit(report({ screenshot: undefined }), "1.2.3.4");

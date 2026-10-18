@@ -135,8 +135,14 @@ type Spooled = {
   asset?: string;
   replay?: Attachment;
   save?: Attachment;
+  /** Files Linear refused to take, with its reason: the issue is filed without them. */
+  refused?: string[];
   attempts: number;
 };
+
+/** Linear refused a request (a 4xx other than rate limiting, or a GraphQL error): trying
+ * the same request again will not help. Network failures and 5xx are retried instead. */
+class Refused extends Error {}
 
 export type Reply = { status: number; body: Record<string, unknown> };
 
@@ -342,16 +348,32 @@ export class Feedback {
     }
     s.attempts += 1;
     try {
-      if (s.media && !s.asset) {
+      // A file Linear refuses is left out (the issue says so); a failure that may pass is
+      // retried with the whole report.
+      const refused = (what: string, e: unknown): boolean => {
+        if (!(e instanceof Refused)) return false;
+        this.log(`feedback ${s.id}: Linear refused the ${what}, filing without it: ${e.message}`);
+        s.refused = [...(s.refused ?? []), what];
+        return true;
+      };
+      if (s.media && !s.asset && !s.refused?.includes("screenshot")) {
         const ext = s.media.file.slice(s.media.file.lastIndexOf(".") + 1);
         const contentType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
-        s.asset = await this.upload(s.media.file, contentType, `screenshot.${ext}`, "screenshot");
+        try {
+          s.asset = await this.upload(s.media.file, contentType, `screenshot.${ext}`, "screenshot");
+        } catch (e) {
+          if (!refused("screenshot", e)) throw e;
+        }
         this.save();
       }
       for (const kind of ATTACHMENT_KINDS) {
         const a = s[kind];
-        if (!a || a.asset) continue;
-        a.asset = await this.upload(a.file, ATTACHMENTS[kind].contentType, a.name, kind);
+        if (!a || a.asset || s.refused?.includes(kind)) continue;
+        try {
+          a.asset = await this.upload(a.file, ATTACHMENTS[kind].contentType, a.name, kind);
+        } catch (e) {
+          if (!refused(kind, e)) throw e;
+        }
         this.save();
       }
       const input = { teamId: this.teamId, title: issueTitle(s.report), description: issueBody(s) };
@@ -382,9 +404,20 @@ export class Feedback {
       body: JSON.stringify({ query, variables }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-    if (!response.ok) throw new Error(`Linear answered ${response.status}`);
-    const json = (await response.json()) as { data?: T; errors?: { message?: string }[] };
-    if (json.errors?.length || !json.data) throw new Error(`Linear: ${json.errors?.[0]?.message ?? "no data"}`);
+    type Answer = { data?: T; errors?: { message?: string; extensions?: { userPresentableMessage?: string } }[] };
+    const json = (await response.json().catch(() => ({}))) as Answer;
+    const error = json.errors?.[0];
+    // Linear's own words (never the key), so the log says what to fix.
+    const reason = [error?.message, error?.extensions?.userPresentableMessage]
+      .filter((m, i, all) => m && all.indexOf(m) === i)
+      .join(" — ")
+      .slice(0, 300);
+    const status = response.status;
+    if (!response.ok || error || !json.data) {
+      const message = `Linear answered ${status}${reason ? `: ${reason}` : ""}`;
+      const lasting = (status >= 400 && status < 500 && status !== 429) || (response.ok && error);
+      throw lasting ? new Refused(message) : new Error(message);
+    }
     return json.data;
   }
 
@@ -403,7 +436,7 @@ export class Feedback {
       { contentType, filename, size: bytes.length },
     );
     const target = data.fileUpload.uploadFile;
-    if (!data.fileUpload.success || !target) throw new Error(`Linear refused the ${what}`);
+    if (!data.fileUpload.success || !target) throw new Refused(`Linear refused the ${what}`);
     const headers: Record<string, string> = { "content-type": contentType, "cache-control": "public, max-age=31536000" };
     for (const h of target.headers) headers[h.key] = h.value;
     const put = await this.fetch(target.uploadUrl, {
@@ -412,7 +445,10 @@ export class Feedback {
       body: bytes,
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-    if (!put.ok) throw new Error(`the ${what} upload answered ${put.status}`);
+    if (!put.ok) {
+      const message = `the ${what} upload answered ${put.status}`;
+      throw put.status >= 400 && put.status < 500 && put.status !== 429 ? new Refused(message) : new Error(message);
+    }
     return target.assetUrl;
   }
 
@@ -570,7 +606,11 @@ export function issueBody(s: Spooled): string {
     const a = s[k];
     return a?.asset ? [`[${ATTACHMENTS[k].link}](${a.asset}): \`${a.name}\``] : [];
   });
-  const attached = links.length ? `\n\n${links.join("\n\n")}` : "";
+  const left = s.refused?.length
+    ? [`_Linear did not take the ${s.refused.join(" and ")}; it is left out._`]
+    : [];
+  const all = [...links, ...left];
+  const attached = all.length ? `\n\n${all.join("\n\n")}` : "";
   return `${quiet(r.description)}${shot}${attached}\n\n| | |\n|---|---|\n${table}\n`;
 }
 
