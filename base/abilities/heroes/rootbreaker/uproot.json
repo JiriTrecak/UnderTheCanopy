@@ -102,7 +102,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.spells.rootbreaker.uproot-icon-v2",
+    "icon": "asset.icons.ability-ants-rootbreaker-uproot",
     "animations": {
       "prepare": "uproot",
       "release": "uproot",

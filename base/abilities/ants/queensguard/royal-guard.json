@@ -63,7 +63,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.spells.marshal.rally-icon",
+    "icon": "asset.icons.ability-ants-queensguard-royal-guard",
     "animations": {
       "prepare": "idle",
       "release": "idle",

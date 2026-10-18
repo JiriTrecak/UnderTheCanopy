@@ -95,7 +95,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.spells.rootbreaker.skullcrack-icon",
+    "icon": "asset.icons.ability-ants-rootbreaker-skullcrack",
     "animations": {
       "prepare": "skullcrack",
       "release": "skullcrack",

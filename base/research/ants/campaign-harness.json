@@ -2,7 +2,7 @@
   "id": "research.ants.campaign-harness",
   "name": "Campaign Harness",
   "description": "The Marshal gains 200 maximum health. Existing wounds are preserved; the improvement remains through death and revival.",
-  "icon": "asset.portraits.units.ants-marshal",
+  "icon": "asset.icons.research-ants-campaign-harness",
   "priority": 50,
   "requires": [
     "building.ants.great-mound"

@@ -70,7 +70,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.custom.web-command-icon",
+    "icon": "asset.icons.ability-ants-silkwarden-silken-snare",
     "animations": {
       "prepare": "cast",
       "release": "cast",

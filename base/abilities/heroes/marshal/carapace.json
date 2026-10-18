@@ -100,7 +100,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.spells.marshal.carapace-icon",
+    "icon": "asset.icons.ability-ants-marshal-carapace",
     "animations": {
       "prepare": "cast",
       "release": "cast",

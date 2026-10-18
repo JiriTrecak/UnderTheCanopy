@@ -82,7 +82,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.icons.spell-entangling-roots",
+    "icon": "asset.icons.ability-ants-rootweaver-briar-patch",
     "animations": {
       "prepare": "cast",
       "release": "cast",

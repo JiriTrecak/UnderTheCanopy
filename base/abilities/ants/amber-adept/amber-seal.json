@@ -80,7 +80,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.custom.silence-command-icon",
+    "icon": "asset.icons.ability-ants-amber-adept-amber-seal",
     "animations": {
       "prepare": "cast",
       "release": "cast",
