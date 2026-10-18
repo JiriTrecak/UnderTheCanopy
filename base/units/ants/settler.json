@@ -17,7 +17,6 @@
   "behaviors": {
     "work": {
       "harvests": [
-        "item.wood",
         "item.amber",
         "item.root"
       ],
@@ -28,7 +27,7 @@
         "building.ants.tower",
         "building.ants.sanctuary",
         "building.ants.ironroot-forge",
-        "building.ants.rootworks",
+        "building.ants.substance-well",
         "building.ants.bombardier-workshop"
       ]
     },

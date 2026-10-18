@@ -1,7 +1,7 @@
 {
   "id": "building.neutral.corrupted-root",
-  "name": "Corrupted Root",
-  "description": "One miner extracts ten Substance at a time; other workers queue. Deliver to a Rootworks.",
+  "name": "Substance Deposit",
+  "description": "The forest's raw magic wells up here and never runs out. Build a Substance Well on it; two workers saturate it, and only the well's owner can gather.",
   "model": "asset.models.resources.corrupted-root",
   "icon": "asset.icons.resource-root",
   "footprint": {
@@ -22,9 +22,11 @@
   },
   "gatheringUnitCollision": false,
   "harvesting": {
-    "activeWorkers": 1,
+    "activeWorkers": 2,
     "recommendedWorkers": 2,
-    "searchRadius": 0
+    "searchRadius": 0,
+    "needsBuilding": true,
+    "endless": true
   },
   "modelScale": 0.55
 }

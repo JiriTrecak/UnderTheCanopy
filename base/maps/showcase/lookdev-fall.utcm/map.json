@@ -29,8 +29,7 @@
       "initialState": {
         "construction": "complete",
         "inventory": {
-          "item.amber": 9000,
-          "item.wood": 9000
+          "item.amber": 9000
         }
       },
       "owner": "player.1",

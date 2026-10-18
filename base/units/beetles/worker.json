@@ -17,7 +17,6 @@
   "behaviors": {
     "work": {
       "harvests": [
-        "item.wood",
         "item.amber",
         "item.root"
       ],
@@ -28,7 +27,7 @@
         "building.beetles.hornwatch",
         "building.beetles.ancestor-shrine",
         "building.beetles.shell-forge",
-        "building.beetles.rootworks"
+        "building.beetles.substance-well"
       ]
     },
     "movement": {

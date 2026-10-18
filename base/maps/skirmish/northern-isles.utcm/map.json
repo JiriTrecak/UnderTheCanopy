@@ -989,6 +989,32 @@
       },
       "rotation": 0.0,
       "owner": "none"
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance.1",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 179.5,
+        "y": 419.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance.2",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 463.5,
+        "y": 223.5
+      },
+      "rotation": 0.0
     }
   ],
   "size": 640,

@@ -1,7 +1,7 @@
 {
   "id": "item.root",
   "name": "Substance",
-  "description": "The forest's raw magic, drawn from contested Corrupted Root deposits. Workers deliver it only to a Rootworks.",
+  "description": "The forest's raw magic, drawn from contested Substance Deposits. Workers carry it into the Substance Well built on the deposit.",
   "model": "asset.models.cargo.root",
   "icon": "asset.icons.resource-root",
   "stackLimit": 16,
@@ -9,7 +9,7 @@
   "creation": {
     "method": "harvest",
     "items": [],
-    "workTicks": 200,
+    "workTicks": 400,
     "source": "building.neutral.corrupted-root",
     "workAnimation": "chop",
     "amount": 10

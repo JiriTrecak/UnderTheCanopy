@@ -5,8 +5,7 @@
   "startingSetup": {
     "fort": "building.beetles.bastion",
     "inventory": {
-      "item.amber": 500,
-      "item.wood": 150
+      "item.amber": 575
     },
     "units": [
       {
@@ -76,7 +75,7 @@
     "building.beetles.war-lodge",
     "building.beetles.shell-forge",
     "building.beetles.ancestor-shrine",
-    "building.beetles.rootworks",
+    "building.beetles.substance-well",
     "building.beetles.hornwatch"
   ],
   "construction": {
