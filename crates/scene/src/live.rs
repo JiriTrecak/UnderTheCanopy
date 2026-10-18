@@ -948,13 +948,13 @@ impl Presenter {
                 }
             }
         }
+        // Looping state effects onto their sockets this tick.
+        let mut moves: BTreeMap<u32, Vec3> = BTreeMap::new();
         let mut damaged: Vec<Damaged> = Vec::new();
         let mut posed: BTreeMap<u32, Posed> = BTreeMap::new();
         let mut bodies: Vec<Body> = Vec::new();
         let mut health: BTreeMap<EntityId, u32> = BTreeMap::new();
         let mut building: BTreeSet<EntityId> = BTreeSet::new();
-        // Looping state effects onto their sockets this tick.
-        let mut moves: BTreeMap<u32, Vec3> = BTreeMap::new();
 
         for e in &view.entities {
             let id = e.id();
