@@ -2,7 +2,7 @@
   "id": "research.beetles.interlocking-shields",
   "name": "Interlocking Shields",
   "description": "Locked shields interlock: Lock Shields gives 10 armor instead of 6 and cuts piercing damage by 55% instead of 40%.",
-  "icon": "asset.custom.frost-armor-command",
+  "icon": "asset.icons.research-beetles-interlocking-shields",
   "priority": 70,
   "items": [
     {

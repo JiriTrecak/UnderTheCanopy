@@ -1,0 +1,65 @@
+{
+  "id": "effect.buildings.great-bastion-rivet",
+  "name": "Great Bastion rivet sparks",
+  "description": "A spray of hot sparks and a brief flare at the rim of the Great Bastion's platform, as if the tinkers were riveting new plates on. Plays on the work clip's `rivet` and `rivet-2` events.",
+  "durationTicks": 30,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flare",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#ffb055",
+      "accent": "#fff0c8",
+      "durationTicks": 6,
+      "count": 1,
+      "size": 1.8,
+      "height": 0.2,
+      "blend": "additive",
+      "intensity": 0.9
+    },
+    {
+      "id": "sparks",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 22,
+        "rate": 22,
+        "speed": 6.5,
+        "speedVariation": 0.55,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": 12,
+        "drag": 0.3,
+        "spawnRadius": 0.15,
+        "startSize": 0.3,
+        "endSize": 0.04,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#ffc65a",
+      "accent": "#fff0b0",
+      "durationTicks": 24,
+      "count": 22,
+      "size": 0.22,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

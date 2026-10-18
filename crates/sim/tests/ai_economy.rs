@@ -121,3 +121,79 @@ fn a_lost_hall_is_rebuilt_while_another_building_stands() {
     });
     assert!(world.state().outcome.is_none());
 }
+
+#[test]
+fn a_colony_builds_a_well_on_a_deposit_and_gathers_through_it() {
+    let spring = place_for("spring", SPRING, "none", 67.5, 35.5);
+    let mut world = world(&skirmish(vec![spring], vec![]), false);
+    let held = |w: &World| {
+        w.state()
+            .wallets
+            .get(&P1)
+            .and_then(|s| s.get(ESSENCE))
+            .copied()
+            .unwrap_or(0)
+    };
+    run_until(&mut world, 30_000, |w| held(w) >= 20);
+    let well = all_of(&world, P1, WELL);
+    assert_eq!(well.len(), 1, "one well");
+    let spring = world
+        .state()
+        .entities
+        .iter()
+        .find(|e| e.placement.as_deref() == Some("spring"))
+        .expect("spring");
+    assert_eq!(
+        get(&world, well[0]).position,
+        spring.position,
+        "on the deposit"
+    );
+    let gathering = |e: &canopy_sim::entity::Entity| {
+        e.unit.as_ref().is_some_and(|u| {
+            matches!(u.order, Some(canopy_sim::orders::Order::Gather { target }) if target == spring.id)
+        })
+    };
+    let gatherers = world
+        .state()
+        .entities
+        .iter()
+        .filter(|e| gathering(e))
+        .count();
+    assert!(
+        (1..=2).contains(&gatherers),
+        "staffed by about its two recommended workers: {gatherers}"
+    );
+    let m = memory(&world, 0);
+    assert_eq!(m.metrics.rejected, 0, "{:?}", m.trace);
+}
+
+#[test]
+fn a_networked_colony_builds_inside_its_network_and_its_well_on_the_deposit() {
+    // Outside the hall's disc: the well, a source, needs no power to stand there.
+    let spring = place_for("spring", SPRING, "none", 67.5, 35.5);
+    let mut world = networked_world(&skirmish(vec![spring], vec![]), false);
+    let held = |w: &World| {
+        w.state()
+            .wallets
+            .get(&P1)
+            .and_then(|s| s.get(ESSENCE))
+            .copied()
+            .unwrap_or(0)
+    };
+    run_until(&mut world, 30_000, |w| held(w) >= 20);
+    assert_eq!(all_of(&world, P1, WELL).len(), 1, "one well");
+    let barracks = all_of(&world, P1, BARRACKS);
+    assert!(!barracks.is_empty());
+    for b in barracks {
+        let p = get(&world, b).position;
+        assert!(
+            world
+                .economy()
+                .network()
+                .covers(P1, i64::from(p.x), i64::from(p.y)),
+            "a barracks stands inside the network"
+        );
+    }
+    let m = memory(&world, 0);
+    assert_eq!(m.metrics.rejected, 0, "{:?}", m.trace);
+}

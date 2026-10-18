@@ -1,0 +1,141 @@
+{
+  "id": "asset.models.units.beetles-steamwing",
+  "name": "Steamwing",
+  "kind": "unit",
+  "tags": [
+    "beetles",
+    "tripo",
+    "machine",
+    "flyer",
+    "animated",
+    "team-mask"
+  ],
+  "race": "beetles",
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "geometry",
+      "index": 2,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_beetles-steamwing"
+      ]
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "walk",
+        "clip": "walk",
+        "loop": true,
+        "events": [],
+        "nominalSpeed": 8.0
+      },
+      {
+        "semantic": "run",
+        "clip": "walk",
+        "loop": true,
+        "events": [],
+        "nominalSpeed": 8.0
+      },
+      {
+        "semantic": "attack",
+        "clip": "attack",
+        "loop": false,
+        "events": [
+          {
+            "name": "release",
+            "time": 0.4
+          }
+        ]
+      },
+      {
+        "semantic": "hit",
+        "clip": "hit",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "death",
+        "clip": "death",
+        "loop": false,
+        "events": []
+      }
+    ],
+    "sockets": [
+      {
+        "name": "projectile",
+        "node": "socket_projectile",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "exhaust_a",
+        "node": "socket_exhaust_a",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "exhaust_b",
+        "node": "socket_exhaust_b",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "exhaust_c",
+        "node": "socket_exhaust_c",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 2.0,
+    "character": "base",
+    "healthHeight": 3.1
+  },
+  "license": "Generated with Tripo (image to 3D, segmentation) from an ImageGen (gpt-image-2) concept for Under the Canopy; prepared and animated by tools/units/steamwing.py (the bolt is modelled there)."
+}

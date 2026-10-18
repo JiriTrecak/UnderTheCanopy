@@ -14,10 +14,10 @@
       "format": "png"
     },
     {
-      "role": "source",
+      "role": "generation",
       "index": 1,
-      "format": "png"
+      "format": "json"
     }
   ],
-  "license": "Original Under the Canopy resource artwork generated with built-in ImageGen."
+  "license": "Original artwork for Under the Canopy: gpt-image-2 from the game's own concept art (docs/art-direction.md#icons)."
 }

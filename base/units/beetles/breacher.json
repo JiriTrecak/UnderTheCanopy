@@ -2,8 +2,8 @@
   "id": "unit.beetles.breacher",
   "name": "Breacher",
   "description": "Siege drill arm and clamp. Breaks buildings and armor, and charges in from range. Every strike cracks armor. Requires a Great Bastion; uses 3 supply.",
-  "model": "asset.models.units.ants-thornblade",
-  "icon": "asset.portraits.units.ants-thornblade",
+  "model": "asset.models.units.beetles-breacher",
+  "icon": "asset.portraits.units.beetles-breacher",
   "selectionClass": "army",
   "body": {
     "maxHp": 760,

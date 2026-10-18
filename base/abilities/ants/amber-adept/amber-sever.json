@@ -63,7 +63,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.icons.spell-dispel-magic",
+    "icon": "asset.icons.ability-ants-amber-adept-amber-sever",
     "animations": {
       "prepare": "cast",
       "release": "cast",

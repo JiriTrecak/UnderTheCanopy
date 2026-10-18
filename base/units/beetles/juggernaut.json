@@ -2,8 +2,8 @@
   "id": "unit.beetles.juggernaut",
   "name": "Juggernaut",
   "description": "Ultimate walking fortress: six legs, a violet furnace window, two cannons and a crew. Fires Broadside; Furnace Plating turns aside 30% of spell damage. One at a time. Requires an Elder Bastion; uses 8 supply.",
-  "model": "asset.models.units.neutral-briar-hulk",
-  "icon": "asset.portraits.units.neutral-briar-hulk",
+  "model": "asset.models.units.beetles-juggernaut",
+  "icon": "asset.portraits.units.beetles-juggernaut",
   "selectionClass": "army",
   "body": {
     "maxHp": 3000,
@@ -97,15 +97,56 @@
   "maxOwned": 1,
   "unitNature": "mechanical",
   "dimensions": {
-    "radius": 3.0,
-    "height": 9.0,
-    "formationSpacing": 6.6
+    "radius": 3.2,
+    "height": 7.0,
+    "formationSpacing": 7.0
   },
-  "modelScale": 2.2,
+  "modelScale": 1.0,
   "presentation": {
-    "projectile": "effect.weapon.resin-bomb",
-    "launchEffect": "effect.beetles.weapons.cannon-launch",
-    "impactEffect": "effect.beetles.weapons.cannon-impact",
+    "projectile": "effect.units.juggernaut-shell",
+    "projectileSocket": "socket_projectile",
+    "impactEffect": "effect.units.juggernaut-impact",
+    "effects": [
+      {
+        "effect": "effect.units.juggernaut-muzzle",
+        "event": "release",
+        "socket": "socket_muzzle_l"
+      },
+      {
+        "effect": "effect.units.juggernaut-muzzle",
+        "event": "release",
+        "socket": "socket_muzzle_r"
+      },
+      {
+        "effect": "effect.units.juggernaut-step",
+        "event": "step",
+        "socket": "socket_foot_fl"
+      },
+      {
+        "effect": "effect.units.juggernaut-step",
+        "event": "step",
+        "socket": "socket_foot_mr"
+      },
+      {
+        "effect": "effect.units.juggernaut-step",
+        "event": "step",
+        "socket": "socket_foot_bl"
+      },
+      {
+        "effect": "effect.units.juggernaut-furnace",
+        "state": "always",
+        "socket": "socket_furnace"
+      },
+      {
+        "effect": "effect.units.juggernaut-steam",
+        "state": "always",
+        "socket": "socket_steam"
+      },
+      {
+        "effect": "effect.units.juggernaut-crash",
+        "event": "crash"
+      }
+    ],
     "cameraAnchor": {
       "height": 3.0,
       "forward": 0.2,

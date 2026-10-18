@@ -2,8 +2,8 @@
   "id": "building.beetles.brood-den",
   "name": "Brood Den",
   "description": "An iron-banded shell nursery: provides 8 supply and extends the substance network with a generous radius.",
-  "model": "asset.models.buildings.beetles-armored-brood-den",
-  "icon": "asset.portraits.buildings.beetles-armored-brood-den",
+  "model": "asset.models.buildings.beetles-brood-den",
+  "icon": "asset.portraits.buildings.beetles-brood-den",
   "body": {
     "maxHp": 700,
     "armor": 3,
@@ -36,9 +36,33 @@
   "category": "category.build",
   "level": 1,
   "supplyProvided": 8,
+  "network": {
+    "role": "node",
+    "radius": 28
+  },
+  "power": "required",
   "modelScale": 1.0,
   "command": {
     "category": "category.build",
     "priority": 90
+  },
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.brood-den-steam",
+        "state": "work",
+        "socket": "socket_vent"
+      },
+      {
+        "effect": "effect.buildings.brood-den-pressure",
+        "state": "work",
+        "socket": "socket_gauge"
+      },
+      {
+        "effect": "effect.buildings.brood-den-vent",
+        "event": "vent",
+        "socket": "socket_vent"
+      }
+    ]
   }
 }

@@ -15,6 +15,7 @@ use crate::{
     spatial::{Spatial, Spot},
     state::State,
 };
+use std::collections::BTreeSet;
 
 /// Scratch kept between passes (derived, never saved).
 #[derive(Debug, Default)]
@@ -48,8 +49,15 @@ fn unit_mut(state: &mut State, id: EntityId) -> &mut crate::entity::Unit {
         .expect("unit")
 }
 
-/// Plans every unit (step 5, after garrisons).
-pub fn plan(senses: &Senses, spatial: &mut Spatial, state: &mut State, scratch: &mut Scratch) {
+/// Plans every unit (step 5, after garrisons). Units in a lookout that is `unpowered`
+/// (D66) hold their fire.
+pub fn plan(
+    senses: &Senses,
+    spatial: &mut Spatial,
+    state: &mut State,
+    scratch: &mut Scratch,
+    unpowered: &BTreeSet<EntityId>,
+) {
     let _span = tracing::trace_span!("combat planning").entered();
     spatial.sync_bodies(state);
     projectiles::expire(state);
@@ -75,7 +83,7 @@ pub fn plan(senses: &Senses, spatial: &mut Spatial, state: &mut State, scratch: 
     let candidates = &mut scratch.candidates;
     spatial.with_shared_routes(|spatial| {
         for id in units {
-            plan_unit(&senses, spatial, state, targets, candidates, id);
+            plan_unit(&senses, spatial, state, targets, candidates, id, unpowered);
         }
     });
 }
@@ -87,8 +95,22 @@ fn plan_unit(
     targets: &mut TargetIndex,
     candidates: &mut Vec<EntityId>,
     id: EntityId,
+    unpowered: &BTreeSet<EntityId>,
 ) {
     let tick = state.tick;
+    // A lookout without power is dark: whoever stands in it neither aims nor shoots
+    // until power returns (D66). Its orders stay.
+    if unit(state, id)
+        .garrison
+        .as_ref()
+        .is_some_and(|g| unpowered.contains(&g.building))
+    {
+        let u = unit_mut(state, id);
+        crate::orders::suspend_combat(u, tick);
+        u.combat.cooldown = u.combat.cooldown.saturating_sub(1);
+        spatial.update_body(state.entities.get(id).expect("unit"));
+        return;
+    }
     charge::maintain(senses, state, id);
     let e = state.entities.get(id).expect("unit");
     let weapon = senses.weapon(e).copied();

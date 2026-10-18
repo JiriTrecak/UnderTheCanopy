@@ -59,6 +59,76 @@ pub fn can_assign_gather(catalog: &Catalog, worker: &Entity, resource: &Entity) 
         && harvest_item(catalog, worker, resource).is_some()
 }
 
+/// The living building placed on `resource` (`placementOn`), finished or not (D62).
+pub fn building_on(ctx: &Ctx, resource: &Entity) -> Option<EntityId> {
+    let source = ctx.catalog.id(resource.definition);
+    ctx.index.buildings.iter().copied().find(|&id| {
+        ctx.state.entities.get(id).is_some_and(|b| {
+            alive(b)
+                && b.position == resource.position
+                && ctx
+                    .catalog
+                    .get(b.definition)
+                    .placement_on
+                    .as_ref()
+                    .is_some_and(|on| &on.source == source)
+        })
+    })
+}
+
+/// The standing resource a building placed on one (`placementOn`) stands on.
+pub fn resource_under(ctx: &Ctx, building: &Entity) -> Option<EntityId> {
+    let on = ctx.catalog.get(building.definition).placement_on.as_ref()?;
+    let source = ctx.catalog.find(on.source.as_str())?;
+    let (x, y) = (
+        i64::from(building.position.x),
+        i64::from(building.position.y),
+    );
+    ctx.index
+        .resources
+        .near(x, y, 1000)
+        .into_iter()
+        .find(|&id| {
+            ctx.state.entities.get(id).is_some_and(|r| {
+                r.definition == source && r.position == building.position && alive(r)
+            })
+        })
+}
+
+/// Whether `owner`'s workers may gather `resource`: one that needs a building only through
+/// its owner's completed building standing on it (D62).
+pub fn open_to(ctx: &Ctx, owner: Owner, resource: &Entity) -> bool {
+    let needs = ctx
+        .catalog
+        .get(resource.definition)
+        .harvesting
+        .as_ref()
+        .is_some_and(|h| h.needs_building());
+    !needs
+        || building_on(ctx, resource)
+            .and_then(|b| ctx.state.entities.get(b))
+            .is_some_and(|b| b.owner == owner && b.construction.is_none())
+}
+
+/// The resource a gather order on `target` means: the resource under a building placed on
+/// one, else the target itself.
+pub fn gather_target(ctx: &Ctx, target: EntityId) -> EntityId {
+    ctx.state
+        .entities
+        .get(target)
+        .filter(|t| t.resource.is_none())
+        .and_then(|t| resource_under(ctx, t))
+        .unwrap_or(target)
+}
+
+fn endless(catalog: &Catalog, resource: &Entity) -> bool {
+    catalog
+        .get(resource.definition)
+        .harvesting
+        .as_ref()
+        .is_some_and(|h| h.endless())
+}
+
 fn recipe(catalog: &Catalog, item: &str) -> Option<HarvestRecipe> {
     match catalog.content.definition(item)?.creation.as_ref()? {
         Creation::Harvest {
@@ -177,7 +247,11 @@ pub fn gather_orders(ctx: &mut Ctx) {
         if u.work.job.is_some() || u.work.cargo.is_some() || u.retry_at > tick {
             continue;
         }
-        let origin = ctx.state.entities.get(target);
+        let origin = ctx
+            .state
+            .entities
+            .get(target)
+            .filter(|o| open_to(ctx, w.owner, o));
         let item = origin
             .and_then(|o| harvest_item(ctx.catalog, w, o))
             .cloned();
@@ -296,7 +370,7 @@ fn start_harvest(
     ) else {
         return false;
     };
-    if !can_assign_gather(ctx.catalog, w, r) {
+    if !can_assign_gather(ctx.catalog, w, r) || !open_to(ctx, w.owner, r) {
         return false;
     }
     let Some(recipe) = recipe(ctx.catalog, item.as_str()) else {
@@ -347,17 +421,19 @@ pub fn admit_harvesters(ctx: &mut Ctx) {
         let Some(source) = job.source else {
             continue;
         };
-        let valid = ctx
+        let worker_owner = ctx
             .state
             .entities
             .get(job.worker)
-            .is_some_and(|w| w.unit.is_some() && alive(w))
+            .filter(|w| w.unit.is_some() && alive(w))
+            .map(|w| w.owner);
+        let valid = worker_owner.is_some()
             && ctx.state.entities.get(job.target).is_some_and(alive)
-            && ctx
-                .state
-                .entities
-                .get(source)
-                .is_some_and(|s| alive(s) && s.resource.as_ref().is_some_and(|r| r.amount > 0));
+            && ctx.state.entities.get(source).is_some_and(|s| {
+                alive(s)
+                    && s.resource.as_ref().is_some_and(|r| r.amount > 0)
+                    && worker_owner.is_some_and(|o| open_to(ctx, o, s))
+            });
         if !valid {
             continue;
         }
@@ -478,11 +554,12 @@ pub fn advance_harvest(ctx: &mut Ctx, id: u32) {
         abandon(ctx, id);
         return;
     };
-    let standing = ctx
-        .state
-        .entities
-        .get(source)
-        .is_some_and(|s| alive(s) && s.resource.as_ref().is_some_and(|r| r.amount > 0));
+    let owner = ctx.state.entities.get(worker).map(|w| w.owner);
+    let standing = ctx.state.entities.get(source).is_some_and(|s| {
+        alive(s)
+            && s.resource.as_ref().is_some_and(|r| r.amount > 0)
+            && owner.is_some_and(|o| open_to(ctx, o, s))
+    });
     if !standing {
         abandon(ctx, id);
         return;
@@ -523,11 +600,12 @@ pub fn advance_harvest(ctx: &mut Ctx, id: u32) {
         .get(source)
         .and_then(|s| s.resource.as_ref())
         .map_or(0, |r| r.amount);
+    let endless = endless(ctx.catalog, ctx.state.entities.get(source).expect("source"));
     let amount = recipe
         .amount
         .min(job.amount.saturating_sub(carried))
-        .min(left);
-    let remaining = left - amount;
+        .min(if endless { u32::MAX } else { left });
+    let remaining = if endless { left } else { left - amount };
     let s = ctx.state.entities.get_mut(source).expect("source");
     s.resource.as_mut().expect("resource").amount = remaining;
     let owner = {

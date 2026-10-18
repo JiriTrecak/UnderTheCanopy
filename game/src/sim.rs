@@ -1209,6 +1209,7 @@ mod tests {
             spells: Default::default(),
             pings: Vec::new(),
             defeated: Vec::new(),
+            network: Default::default(),
         }
     }
 

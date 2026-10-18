@@ -1565,6 +1565,32 @@
         "y": 455.0
       },
       "rotation": 0.0
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance.west",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 259.5,
+        "y": 247.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance.east",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 359.5,
+        "y": 247.5
+      },
+      "rotation": 0.0
     }
   ],
   "playerStarts": [

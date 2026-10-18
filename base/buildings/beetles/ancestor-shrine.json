@@ -2,8 +2,8 @@
   "id": "building.beetles.ancestor-shrine",
   "name": "Ancestor Shrine",
   "description": "Where the colony’s heroes are called and reconstituted: trains the Hornbreaker, the Forgemaster and the Coilkeeper, and revives the fallen.",
-  "model": "asset.models.buildings.beetles-shell-foundry",
-  "icon": "asset.portraits.buildings.beetles-shell-foundry",
+  "model": "asset.models.buildings.beetles-ancestor-shrine",
+  "icon": "asset.portraits.buildings.beetles-ancestor-shrine",
   "body": {
     "maxHp": 1150,
     "armor": 5,
@@ -70,9 +70,44 @@
   },
   "category": "category.build",
   "level": 1,
+  "power": "required",
   "modelScale": 1.0,
   "command": {
     "category": "category.build",
     "priority": 70
+  },
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.ancestor-shrine-light",
+        "state": "work",
+        "socket": "socket_shell"
+      },
+      {
+        "effect": "effect.buildings.ancestor-shrine-motes",
+        "state": "work",
+        "socket": "socket_dais"
+      },
+      {
+        "effect": "effect.buildings.ancestor-shrine-crackle",
+        "state": "work",
+        "socket": "socket_orb"
+      },
+      {
+        "effect": "effect.buildings.ancestor-shrine-crackle",
+        "state": "work",
+        "socket": "socket_emitter_l"
+      },
+      {
+        "effect": "effect.buildings.ancestor-shrine-crackle",
+        "state": "work",
+        "socket": "socket_emitter_r"
+      },
+      {
+        "effect": "effect.buildings.ancestor-shrine-spawn",
+        "event": "flash",
+        "socket": "socket_dais"
+      }
+    ]
   }
 }

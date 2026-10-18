@@ -1,0 +1,65 @@
+{
+  "id": "effect.buildings.great-bastion-surge",
+  "name": "Great Bastion tank surge",
+  "description": "A swell of blue-violet light and a spray of substance motes from a boiler tank as it pumps, one tank after another round the hall. Plays on the work clip's `vent-<tower>` events.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "swell",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#d8ccff",
+      "durationTicks": 22,
+      "count": 1,
+      "size": 4.2,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 0.85
+    },
+    {
+      "id": "motes",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 38,
+        "rate": 14,
+        "speed": 2.4,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 55,
+        "gravity": -0.6,
+        "drag": 0.9,
+        "spawnRadius": 0.9,
+        "startSize": 0.42,
+        "endSize": 0.05,
+        "spin": 1.5,
+        "fadeIn": 0.05,
+        "fadeOut": 0.6
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#a07cff",
+      "accent": "#e6dcff",
+      "durationTicks": 40,
+      "count": 14,
+      "size": 0.3,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.6,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

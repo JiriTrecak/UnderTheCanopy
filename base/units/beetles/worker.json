@@ -2,8 +2,8 @@
   "id": "unit.beetles.worker",
   "name": "Tinker",
   "description": "Gathers amber and substance, builds and repairs beetle buildings, and patches machines with Patch Up. Uses 1 supply.",
-  "model": "asset.models.units.ants-worker",
-  "icon": "asset.portraits.units.ants-worker",
+  "model": "asset.models.units.beetles-tinker",
+  "icon": "asset.portraits.units.beetles-worker",
   "selectionClass": "worker",
   "body": {
     "maxHp": 280,
@@ -58,7 +58,7 @@
         "building.beetles.ancestor-shrine",
         "building.beetles.alembic",
         "building.beetles.engine-yard",
-        "building.beetles.rootworks"
+        "building.beetles.substance-well"
       ]
     }
   },

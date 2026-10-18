@@ -10,7 +10,12 @@
       "role": "image",
       "index": 1,
       "format": "png"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
     }
   ],
-  "license": "Original generated artwork for Under the Canopy."
+  "license": "Original artwork for Under the Canopy: gpt-image-2 from the game's own concept art (docs/art-direction.md#icons)."
 }

@@ -415,12 +415,28 @@ pub struct Felling {
     pub decay_ticks: u32,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Harvesting {
     pub active_workers: u32,
     pub recommended_workers: u32,
     pub search_radius: f64,
+    /// Gathered only through a completed building placed on it (`placementOn`), and only
+    /// by that building's owner's workers (D62: a Substance Well on its deposit).
+    pub needs_building: Option<bool>,
+    /// Never runs out: loads leave its amount as it is (D62).
+    pub endless: Option<bool>,
+}
+
+impl Harvesting {
+    pub fn needs_building(&self) -> bool {
+        self.needs_building == Some(true)
+    }
+
+    pub fn endless(&self) -> bool {
+        self.endless == Some(true)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -428,6 +444,45 @@ pub struct Harvesting {
 pub struct PlacementNear {
     pub source: Id,
     pub radius: u32,
+}
+
+/// What a building does in its race's power network (D66).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum NetworkRole {
+    /// Powers the ground around it whenever it stands complete (a main hall, a well).
+    Source,
+    /// Extends the network around it, but only while it stands inside the network
+    /// itself: a chain of nodes must reach back to a source.
+    Node,
+}
+
+/// A building's part in its owner's power network (D66): the disc of `radius` cells
+/// around its centre is powered while it is complete and, for a node, powered itself.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Network {
+    pub role: NetworkRole,
+    /// Cells from the building's centre; research may add to it (`networkRadius`).
+    pub radius: u32,
+}
+
+/// What a building needs from its owner's power network (D66).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum Power {
+    /// Placed only where its centre is powered, and its work (training, research,
+    /// upgrades, revival, a lookout's shots) pauses while it is not.
+    Required,
+}
+
+/// A building placed exactly on a standing resource of `source` (a refinery on its
+/// geyser): it snaps to the resource, covers its footprint, and leaves it intact when it
+/// is gone (D62).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct PlacementOn {
+    pub source: Id,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -491,6 +546,11 @@ pub struct Definition {
     pub regrowth_ticks: Option<u32>,
     pub construction_clearance: Option<u32>,
     pub placement_near: Option<PlacementNear>,
+    /// Sources and nodes of the power network (D66).
+    pub network: Option<Network>,
+    /// Buildings that only work inside the power network (D66).
+    pub power: Option<Power>,
+    pub placement_on: Option<PlacementOn>,
     pub creation: Option<Creation>,
     pub behaviors: Behaviors,
 }
@@ -519,9 +579,10 @@ pub struct DefinitionPresentation {
     pub effects: Option<Vec<StateEffect>>,
 }
 
-/// An effect a building plays from one of its model's sockets: looping for as long as
-/// the model is in `state` (`work` or `spawn`), or once whenever its clip crosses the
-/// animation event `event`. Exactly one of `state` and `event`.
+/// An effect a building or unit plays from one of its model's sockets: looping for as
+/// long as it is in `state` ([`StateEffect::BUILDING_STATES`],
+/// [`StateEffect::UNIT_STATES`]), or once whenever its clip crosses the animation event
+/// `event`. Exactly one of `state` and `event`.
 #[skip_serializing_none]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -529,8 +590,34 @@ pub struct StateEffect {
     pub effect: Id,
     pub state: Option<String>,
     pub event: Option<String>,
-    /// Socket name (`capabilities.sockets`); the model's origin without one.
+    /// Socket name (`capabilities.sockets`) or a model node named `socket*`; the model's
+    /// origin without one.
     pub socket: Option<String>,
+}
+
+impl StateEffect {
+    /// A building's states (D65): `idle` while it rests (complete, nothing to do), `work`
+    /// while it trains, researches, upgrades, revives or is gathered from, `spawn` once
+    /// per trained unit, `always` whenever it stands complete in sight.
+    pub const BUILDING_STATES: &[&str] = &["idle", "work", "spawn", "always"];
+    /// A unit's states: its animation states, `move` (walking, running, carrying or
+    /// charging), `cast` (any cast in progress) and `always` (while it is in sight).
+    pub const UNIT_STATES: &[&str] = &[
+        "always",
+        "move",
+        "idle",
+        "walk",
+        "run",
+        "charge",
+        "attack",
+        "hit",
+        "cast",
+        "carry",
+        "carry_walk",
+        "carry_run",
+        "build",
+        "chop",
+    ];
 }
 
 impl Definition {
@@ -662,6 +749,9 @@ pub struct ResearchEffect {
     /// Ability bindings (by binding id) raised to at least this rank: 1 unlocks an
     /// ability the unit trains without (`initialRank` 0), 2 strengthens it.
     pub ability_ranks: Option<BTreeMap<String, u32>>,
+    /// Cells added to the network radius of the listed buildings (D66); `units` then
+    /// lists buildings with a `network`.
+    pub network_radius: Option<u32>,
 }
 
 #[skip_serializing_none]

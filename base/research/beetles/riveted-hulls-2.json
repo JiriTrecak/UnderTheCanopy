@@ -2,7 +2,7 @@
   "id": "research.beetles.riveted-hulls-2",
   "name": "Riveted Hulls II",
   "description": "Machines gain the same again: Bombards +100, Steamwings +80, the Juggernaut +450. Requires an Elder Bastion.",
-  "icon": "asset.icons.item-canopy-aegis",
+  "icon": "asset.icons.research-ants-campaign-harness",
   "priority": 69,
   "requires": [
     "building.beetles.elder-bastion",

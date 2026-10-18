@@ -46,8 +46,7 @@
       "mode": "pivot"
     },
     "harvesting": {
-      "replacement": "asset.models.environment.autumn-stump",
-      "definition": "resource.forest.tree"
+      "replacement": "asset.models.environment.autumn-stump"
     }
   },
   "license": "Original procedural geometry and ImageGen leaf albedo. No imported tree geometry or textures."

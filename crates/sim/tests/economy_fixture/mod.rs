@@ -1,7 +1,10 @@
 //! Test-owned content and maps for the economy tests: a worker, a soldier and a hero; a
 //! hall (drop-off, trains workers, upgrades into a keep), a house, a barracks, a forge
 //! (research), a sanctuary (revival and heroes) and a forester (plants trees); felled
-//! trees and an amber mine. No shipped content.
+//! trees, an amber mine, and an endless spring tapped by a well built on it; a power
+//! network (D66): a nexus and the well (sources), a pylon (node) and a workshop that
+//! needs power (trains soldiers, researches a wider network). No shipped
+//! content.
 #![allow(dead_code)]
 
 use canopy_content::{
@@ -35,8 +38,22 @@ pub const SANCTUARY: &str = "building.test.sanctuary";
 pub const FORESTER: &str = "building.test.forester";
 pub const MINE: &str = "building.test.mine";
 pub const TREE: &str = "resource.test.tree";
+pub const ESSENCE: &str = "item.test.essence";
+/// An endless deposit gathered only through a well built on it.
+pub const SPRING: &str = "building.test.spring";
+pub const WELL: &str = "building.test.well";
 pub const TOOLS: &str = "research.test.tools";
 pub const VIGOUR: &str = "research.test.vigour";
+pub const NEXUS: &str = "building.test.nexus";
+pub const PYLON: &str = "building.test.pylon";
+pub const WORKSHOP: &str = "building.test.workshop";
+pub const AMPLIFY: &str = "research.test.amplify";
+/// Network radii of the nexus and the pylon, and what the research adds.
+pub const NEXUS_RADIUS: u32 = 16;
+pub const PYLON_RADIUS: u32 = 12;
+pub const AMPLIFY_CELLS: u32 = 8;
+/// The well is also a network source, powering this many cells around it.
+pub const WELL_RADIUS: u32 = 10;
 
 fn definition(id: &str, kind: &str, extra: Value) -> Value {
     let mut definition = json!({
@@ -98,6 +115,9 @@ fn game() -> Value {
                 VIGOUR: {"name": "Vigour", "description": "", "icon": "asset.icon", "priority": 2,
                     "requires": [KEEP], "items": [cost(AMBER, 10)], "workTicks": 20,
                     "effects": [{"units": [WORKER], "maxHp": 50}]},
+                AMPLIFY: {"name": "Amplify", "description": "", "icon": "asset.icon", "priority": 3,
+                    "items": [cost(AMBER, 10)], "workTicks": 30,
+                    "effects": [{"units": [NEXUS, PYLON], "networkRadius": AMPLIFY_CELLS}]},
             },
             "lootPools": {}, "armorCoefficient": 0.06,
             "damageTypes": {"damage.plain": {"name": "Plain", "appliesArmor": true}, "spell": {"name": "Spell", "appliesArmor": false}},
@@ -141,6 +161,28 @@ fn game() -> Value {
                 "yield": 100, "constructionClearance": 1, "gatheringUnitCollision": false,
                 "harvesting": {"activeWorkers": 1, "recommendedWorkers": 2, "searchRadius": 0},
             })),
+            definition(ESSENCE, "item", json!({
+                "currency": true, "stackLimit": 100, "displayOrder": 30,
+                "creation": {"method": "harvest", "items": [], "source": SPRING, "amount": 5,
+                    "workTicks": 10, "workAnimation": "chop"},
+            })),
+            definition(SPRING, "building", json!({
+                "body": body(1000), "footprint": {"width": 4, "depth": 4}, "entrance": {"x": 0.5, "y": 2.5},
+                "yield": 50, "constructionClearance": 1, "gatheringUnitCollision": false,
+                "harvesting": {"activeWorkers": 2, "recommendedWorkers": 2, "searchRadius": 0,
+                    "needsBuilding": true, "endless": true},
+            })),
+            definition(WELL, "building", json!({
+                "placementOn": {"source": SPRING},
+                "network": {"role": "source", "radius": WELL_RADIUS},
+                "body": body(200), "footprint": {"width": 4, "depth": 4}, "entrance": {"x": 0.5, "y": 2.5},
+                "creation": {"method": "construct", "items": [cost(AMBER, 20)],
+                    "workTicks": 20, "workAnimation": "build"},
+                "behaviors": {
+                    "playerControl": {},
+                    "storage": {"capacity": 1000, "accepts": [ESSENCE], "dropoff": true},
+                },
+            })),
             definition(WORKER, "unit", json!({
                 "body": body(100), "supplyCost": 1, "vision": 10, "dimensions": dimensions,
                 "creation": {"method": "train", "items": [cost(AMBER, 10)], "workTicks": 20},
@@ -148,8 +190,8 @@ fn game() -> Value {
                     "playerControl": {},
                     "movement": {"speed": 4, "walkSpeed": 2, "idleWander": true},
                     "work": {"carryCapacity": 5,
-                        "builds": [HALL, HOUSE, BARRACKS, FORGE, SANCTUARY, FORESTER],
-                        "harvests": [WOOD, AMBER]},
+                        "builds": [HALL, HOUSE, BARRACKS, FORGE, SANCTUARY, FORESTER, PYLON, WORKSHOP, WELL],
+                        "harvests": [WOOD, AMBER, ESSENCE]},
                 },
             })),
             definition(SOLDIER, "unit", json!({
@@ -210,6 +252,30 @@ fn game() -> Value {
                     "production": {"mode": "queued", "outputs": [HERO, SOLDIER], "workerSlots": 0, "queueCapacity": 3},
                     "revival": {"items": [cost(AMBER, 30)], "itemsPerLevel": [cost(AMBER, 5)],
                         "workTicks": 40, "workTicksPerLevel": 10, "queueCapacity": 3},
+                },
+            })),
+            definition(NEXUS, "building", json!({
+                "body": body(400), "vision": 12, "footprint": {"width": 8, "depth": 8}, "entrance": {"x": 0.5, "y": 4.5},
+                "network": {"role": "source", "radius": NEXUS_RADIUS},
+                "behaviors": {"playerControl": {}},
+            })),
+            definition(PYLON, "building", json!({
+                "body": body(100), "footprint": {"width": 4, "depth": 4}, "entrance": {"x": 0.5, "y": 2.5},
+                "creation": {"method": "construct", "items": [cost(AMBER, 10)],
+                    "workTicks": 20, "workAnimation": "build"},
+                "network": {"role": "node", "radius": PYLON_RADIUS}, "power": "required",
+                "behaviors": {"playerControl": {}},
+            })),
+            definition(WORKSHOP, "building", json!({
+                "body": body(300), "footprint": {"width": 4, "depth": 4}, "entrance": {"x": 0.5, "y": 2.5},
+                "creation": {"method": "construct", "items": [cost(AMBER, 10)],
+                    "workTicks": 30, "workAnimation": "build"},
+                "power": "required",
+                "behaviors": {
+                    "playerControl": {},
+                    "storage": {"capacity": 100, "accepts": [AMBER]},
+                    "production": {"mode": "queued", "outputs": [SOLDIER], "workerSlots": 0, "queueCapacity": 2},
+                    "research": {"outputs": [AMPLIFY], "queueCapacity": 1},
                 },
             })),
             definition(FORESTER, "building", json!({

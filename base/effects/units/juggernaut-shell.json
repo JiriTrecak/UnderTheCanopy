@@ -1,0 +1,34 @@
+{
+  "id": "effect.units.juggernaut-shell",
+  "name": "Juggernaut shell",
+  "description": "The heavy iron shell both cannons hurl (geometry_2 of the Juggernaut's model): an iron ball with a brass band and a burning fuse, on the authoritative shell flight with a high lobbing arc.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "body",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "missile",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 1.6,
+      "height": 0,
+      "sustain": false,
+      "arcHeight": 4.5,
+      "model": {
+        "asset": "asset.models.units.beetles-juggernaut",
+        "role": "geometry",
+        "index": 2,
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      }
+    }
+  ]
+}

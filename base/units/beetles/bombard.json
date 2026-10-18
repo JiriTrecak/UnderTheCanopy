@@ -2,8 +2,8 @@
   "id": "unit.beetles.bombard",
   "name": "Bombard",
   "description": "Six-legged mortar crawler with a crewman. Long-range splash that wrecks clumps and buildings, but it cannot fire at anything within 7 units. Requires a Great Bastion; uses 3 supply.",
-  "model": "asset.models.units.ants-bombardier",
-  "icon": "asset.portraits.units.ants-bombardier",
+  "model": "asset.models.units.beetles-bombard",
+  "icon": "asset.portraits.units.beetles-bombard",
   "selectionClass": "army",
   "body": {
     "maxHp": 640,
@@ -59,16 +59,21 @@
   "supplyCost": 3,
   "unitNature": "mechanical",
   "dimensions": {
-    "radius": 2.5,
-    "height": 4.8,
-    "formationSpacing": 5.25
+    "radius": 1.8,
+    "height": 3.0,
+    "formationSpacing": 4.5
   },
-  "modelScale": 3.2,
+  "modelScale": 1.0,
   "presentation": {
-    "projectile": "effect.weapon.resin-bomb",
-    "projectileSocket": "socket_projectile",
-    "launchEffect": "effect.beetles.weapons.mortar-launch",
-    "impactEffect": "effect.beetles.weapons.mortar-impact",
-    "castContact": 0.31
+    "projectile": "effect.units.bombard-shell",
+    "projectileSocket": "socket_muzzle",
+    "impactEffect": "effect.units.bombard-impact",
+    "effects": [
+      {
+        "effect": "effect.units.bombard-launch",
+        "event": "release",
+        "socket": "socket_muzzle"
+      }
+    ]
   }
 }

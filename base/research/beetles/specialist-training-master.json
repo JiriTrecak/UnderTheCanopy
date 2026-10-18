@@ -2,7 +2,7 @@
   "id": "research.beetles.specialist-training-master",
   "name": "Specialist Training: Master",
   "description": "Every specialist ability reaches its second rank: stronger Arc Surge and Static Field, Mend and Field Repair, a cheaper Barrier Field and a stronger Bulwark Pulse. Requires an Elder Bastion.",
-  "icon": "asset.icons.item-deep-moon-scepter",
+  "icon": "asset.icons.research-beetles-specialist-training-master",
   "priority": 70,
   "requires": [
     "building.beetles.elder-bastion",

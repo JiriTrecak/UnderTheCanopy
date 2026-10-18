@@ -1,0 +1,64 @@
+{
+  "id": "effect.buildings.engine-yard-release",
+  "name": "Engine Yard machine release",
+  "description": "A big billow of steam and a warm flash at the hangar mouth when a finished machine rolls out.",
+  "durationTicks": 80,
+  "loop": false,
+  "layers": [
+    {
+      "id": "steam",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 72,
+        "rate": 28,
+        "speed": 3.4,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": -0.6,
+        "drag": 1.2,
+        "spawnRadius": 1.4,
+        "startSize": 1.6,
+        "endSize": 5.5,
+        "spin": 0.3,
+        "fadeIn": 0.05,
+        "fadeOut": 0.7
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#dcd8d2",
+      "accent": "#f4f2ee",
+      "durationTicks": 74,
+      "count": 28,
+      "size": 1.6,
+      "height": 0,
+      "blend": "normal",
+      "intensity": 1.0,
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "flash",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#ffcf8f",
+      "accent": "#fff0d0",
+      "durationTicks": 10,
+      "count": 1,
+      "size": 12,
+      "height": 0.5,
+      "intensity": 12
+    }
+  ]
+}

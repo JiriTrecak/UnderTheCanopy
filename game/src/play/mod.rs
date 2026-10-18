@@ -139,6 +139,9 @@ pub struct WorldUi {
     pub aim: Option<Aim>,
     /// A hovered tree the selection can gather from: its ground ring.
     pub tree: Option<Ring>,
+    /// The power network's discs (x, z, radius) while placing a building that needs it
+    /// or while the debug overlay shows it (D66).
+    pub network: Vec<[f32; 3]>,
 }
 
 /// A ground ring (world units).
@@ -234,6 +237,8 @@ pub struct Play {
     pub keymap: Keymap,
     /// Health bars over every unit unless a hold narrows them (a setting).
     pub always_health_bars: bool,
+    /// The power network shows on the ground at all times (debug overlay, D66).
+    pub show_network: bool,
     /// Commands sent, newest last (debug overlay).
     pub sent: Vec<(Duration, Action)>,
     /// The unit camera (J cycles it; Escape and camera jumps return to RTS).
@@ -282,6 +287,7 @@ impl Play {
             name: None,
             keymap: Keymap::default(),
             always_health_bars: false,
+            show_network: false,
             sent: Vec::new(),
             camera_mode: follow::CameraMode::Rts,
         };
@@ -739,7 +745,37 @@ impl Play {
             rally,
             aim: self.aim(),
             tree: self.tree_ring(),
+            network: self.network_discs(),
         }
+    }
+
+    /// The viewer's power network (D66), shown only while a building that needs it is
+    /// being placed, or when the debug overlay asks for it.
+    fn network_discs(&self) -> Vec<[f32; 3]> {
+        let placing = match &self.mode {
+            Mode::Place { placement, .. } => self
+                .know
+                .content
+                .definition(&placement.definition)
+                .is_some_and(|d| d.power.is_some()),
+            _ => false,
+        };
+        if !placing && !self.show_network {
+            return Vec::new();
+        }
+        self.know
+            .view
+            .network
+            .fields
+            .iter()
+            .map(|f| {
+                [
+                    f.x as f32 / 1000.0,
+                    f.y as f32 / 1000.0,
+                    f.radius as f32 / 1000.0,
+                ]
+            })
+            .collect()
     }
 
     /// The spell aimed at the cursor (old `onHover` → `gameAbilityTarget`).

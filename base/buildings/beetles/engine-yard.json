@@ -2,8 +2,8 @@
   "id": "building.beetles.engine-yard",
   "name": "Engine Yard",
   "description": "Machine works: builds Bombards, Steamwings and the Juggernaut, and researches Fragmentation Shells, Riveted Hulls and Afterburners. Requires a Great Bastion.",
-  "model": "asset.models.buildings.ants-bombardier-workshop",
-  "icon": "asset.portraits.buildings.ants-bombardier-workshop",
+  "model": "asset.models.buildings.beetles-engine-yard",
+  "icon": "asset.portraits.buildings.beetles-engine-yard",
   "body": {
     "maxHp": 1600,
     "armor": 5,
@@ -69,9 +69,34 @@
   },
   "category": "category.build-advanced",
   "level": 1,
-  "modelScale": 1.5,
+  "power": "required",
+  "modelScale": 1.0,
   "command": {
     "category": "category.build-advanced",
     "priority": 80
+  },
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.engine-yard-magic",
+        "state": "work",
+        "socket": "socket_tank"
+      },
+      {
+        "effect": "effect.buildings.engine-yard-steam",
+        "state": "work",
+        "socket": "socket_steam"
+      },
+      {
+        "effect": "effect.buildings.engine-yard-sparks",
+        "event": "weld",
+        "socket": "socket_weld"
+      },
+      {
+        "effect": "effect.buildings.engine-yard-release",
+        "event": "release",
+        "socket": "socket_hangar"
+      }
+    ]
   }
 }

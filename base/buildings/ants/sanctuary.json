@@ -3,7 +3,7 @@
   "name": "Amber Sanctuary",
   "description": "Calls fallen heroes back to the colony, preserving their experience, abilities and inventory.",
   "model": "asset.placeholder.missing-model",
-  "icon": "asset.icons.resource-amber",
+  "icon": "asset.portraits.buildings.ants-amber-sanctuary",
   "body": {
     "maxHp": 1000,
     "armor": 5,
@@ -23,11 +23,7 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 180
-      },
-      {
-        "item": "item.wood",
-        "amount": 60
+        "amount": 210
       }
     ],
     "workTicks": 1600,
@@ -66,8 +62,7 @@
     "storage": {
       "capacity": 100000,
       "accepts": [
-        "item.amber",
-        "item.wood"
+        "item.amber"
       ]
     }
   },

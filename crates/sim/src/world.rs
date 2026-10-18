@@ -424,6 +424,7 @@ impl World {
             &mut self.motion.spatial,
             &mut self.state,
             &mut self.combat.scratch,
+            self.economy.network().unpowered_buildings(),
         );
         drop(s);
         let s = step!("separation");

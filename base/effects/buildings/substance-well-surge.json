@@ -1,0 +1,66 @@
+{
+  "id": "effect.buildings.substance-well-surge",
+  "name": "Substance Well surge",
+  "description": "A crackling violet discharge off the coil cap as each pump stroke drives Substance up the column.",
+  "durationTicks": 24,
+  "loop": false,
+  "layers": [
+    {
+      "id": "burst",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 20,
+        "rate": 26,
+        "speed": 4.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 150,
+        "gravity": 3.33,
+        "drag": 0.9,
+        "spawnRadius": 0.53,
+        "startSize": 0.21,
+        "endSize": 0.02,
+        "spin": 2,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#e6dcff",
+      "accent": "#8a5cff",
+      "durationTicks": 20,
+      "count": 26,
+      "size": 0.16,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "flash",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#9a74ff",
+      "accent": "#efe8ff",
+      "durationTicks": 8,
+      "count": 1,
+      "size": 2.13,
+      "height": 0.0,
+      "intensity": 0.9
+    }
+  ]
+}

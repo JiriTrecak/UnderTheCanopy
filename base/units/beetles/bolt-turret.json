@@ -2,8 +2,8 @@
   "id": "unit.beetles.bolt-turret",
   "name": "Bolt Turret",
   "description": "A brass repeater turret deployed by the Forgemaster. Shoots ground and air units; it runs down after 40 seconds.",
-  "model": "asset.models.buildings.ants-watchtower",
-  "icon": "asset.portraits.buildings.ants-watchtower",
+  "model": "asset.models.buildings.beetles-hornwatch",
+  "icon": "asset.portraits.buildings.beetles-hornwatch",
   "body": {
     "maxHp": 320,
     "armor": 3,

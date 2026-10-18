@@ -504,6 +504,25 @@ impl<'a> Frame<'a> {
         })
     }
 
+    /// Whether the player's own power network reaches `p` (D66).
+    pub fn powered(&self, p: Pt) -> bool {
+        let milli = |v: f64| crate::terrain::round_half_up(v * 1000.0) as i64;
+        self.input
+            .economy()
+            .network()
+            .covers(self.me, milli(p.x), milli(p.y))
+    }
+
+    /// Whether an own building stands outside the network it needs (D66).
+    pub fn unpowered(&self, k: &Known) -> bool {
+        k.owner == self.me
+            && self
+                .input
+                .economy()
+                .network()
+                .unpowered(crate::entity::EntityId(k.id))
+    }
+
     pub fn balance(&self, item: &str) -> u32 {
         self.bank
             .iter()
@@ -589,6 +608,34 @@ impl<'a> Frame<'a> {
             |s| s.armor,
         );
         f64::from(combat.mitigate(raw, weapon.damage_type, armor, value))
+    }
+
+    /// The known building of any owner standing on a resource (`placementOn`, D62).
+    pub fn building_on(&self, r: &Known<'a>) -> Option<&Known<'a>> {
+        let source = self.catalog().id(r.def);
+        self.all.iter().find(|b| {
+            b.alive()
+                && b.pos == r.pos
+                && self
+                    .def(b)
+                    .placement_on
+                    .as_ref()
+                    .is_some_and(|on| &on.source == source)
+        })
+    }
+
+    /// Whether this player's workers may gather `r`: one that needs a building only through
+    /// its own finished building on it (D62).
+    pub fn open(&self, r: &Known<'a>) -> bool {
+        let needs = self
+            .def(r)
+            .harvesting
+            .as_ref()
+            .is_some_and(|h| h.needs_building());
+        !needs
+            || self
+                .building_on(r)
+                .is_some_and(|b| b.owner == self.me && !b.construction && !b.remembered)
     }
 
     /// The known resource nearest to `origin` that `accept` takes; ties go to the lower id.

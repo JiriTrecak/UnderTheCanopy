@@ -2,7 +2,7 @@
   "id": "research.beetles.afterburners",
   "name": "Afterburners",
   "description": "Steamwings fly 30% faster.",
-  "icon": "asset.icons.item-stormwing-spurs",
+  "icon": "asset.icons.research-beetles-afterburners",
   "priority": 60,
   "items": [
     {

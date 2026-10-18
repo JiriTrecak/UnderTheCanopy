@@ -1,0 +1,55 @@
+{
+  "id": "effect.buildings.alembic-glow",
+  "name": "Alembic column light",
+  "description": "Violet light breathing out of the Alembic's distillation column while it trains or researches (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "light",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#b89cff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 13,
+      "height": 0,
+      "intensity": 22,
+      "motion": {
+        "opacity": {
+          "periodTicks": 40,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "aura",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#c8b4ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 2.6,
+      "height": 0,
+      "intensity": 0.45,
+      "motion": {
+        "opacity": {
+          "periodTicks": 40,
+          "min": 0.45,
+          "max": 0.9,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

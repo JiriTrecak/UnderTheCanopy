@@ -1,0 +1,226 @@
+{
+  "id": "asset.models.units.beetles-juggernaut",
+  "name": "Juggernaut",
+  "kind": "unit",
+  "tags": [
+    "beetles",
+    "machine",
+    "tripo",
+    "animated",
+    "team-mask"
+  ],
+  "race": "beetles",
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "geometry",
+      "index": 2,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_beetles-juggernaut"
+      ]
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "walk",
+        "clip": "walk",
+        "loop": true,
+        "events": [
+          {
+            "name": "step",
+            "time": 0.967
+          },
+          {
+            "name": "step",
+            "time": 1.967
+          }
+        ],
+        "nominalSpeed": 7.0
+      },
+      {
+        "semantic": "run",
+        "clip": "walk",
+        "loop": true,
+        "events": [
+          {
+            "name": "step",
+            "time": 0.967
+          },
+          {
+            "name": "step",
+            "time": 1.967
+          }
+        ],
+        "nominalSpeed": 7.0
+      },
+      {
+        "semantic": "attack",
+        "clip": "attack",
+        "loop": false,
+        "events": [
+          {
+            "name": "release",
+            "time": 0.333
+          }
+        ]
+      },
+      {
+        "semantic": "hit",
+        "clip": "hit",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "death",
+        "clip": "death",
+        "loop": false,
+        "events": [
+          {
+            "name": "crash",
+            "time": 1.2
+          }
+        ]
+      }
+    ],
+    "sockets": [
+      {
+        "name": "socket_foot_bl",
+        "node": "socket_foot_bl",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "socket_foot_br",
+        "node": "socket_foot_br",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "socket_foot_fl",
+        "node": "socket_foot_fl",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "socket_foot_fr",
+        "node": "socket_foot_fr",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "socket_foot_ml",
+        "node": "socket_foot_ml",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "socket_foot_mr",
+        "node": "socket_foot_mr",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "socket_furnace",
+        "node": "socket_furnace",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "socket_muzzle_l",
+        "node": "socket_muzzle_l",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "socket_muzzle_r",
+        "node": "socket_muzzle_r",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "socket_projectile",
+        "node": "socket_projectile",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "socket_steam",
+        "node": "socket_steam",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 1,
+    "character": "base",
+    "healthHeight": 7.6
+  },
+  "license": "Generated with Tripo (image to 3D, detailed segmentation) from an ImageGen (gpt-image-2) concept for Under the Canopy; animated by tools/units/juggernaut.py."
+}

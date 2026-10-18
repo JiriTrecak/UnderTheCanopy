@@ -2,8 +2,8 @@
   "id": "building.beetles.hornwatch",
   "name": "Hornwatch",
   "description": "Armored tower crewed by its own repeater gunner: shoots ground and air units for 24 damage, far harder than other races’ towers. Needs the substance network. Upgrades to the Arc Tower at tier 3.",
-  "model": "asset.models.buildings.ants-watchtower",
-  "icon": "asset.portraits.buildings.ants-watchtower",
+  "model": "asset.models.buildings.beetles-hornwatch",
+  "icon": "asset.portraits.buildings.beetles-hornwatch",
   "body": {
     "maxHp": 850,
     "armor": 4,
@@ -49,15 +49,30 @@
     ],
     "workTicks": 1600
   },
-  "modelScale": 1.25,
+  "power": "required",
+  "modelScale": 1.0,
   "command": {
     "category": "category.build-advanced",
     "priority": 100
   },
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.hornwatch-canister",
+        "state": "work",
+        "socket": "socket_canister"
+      },
+      {
+        "effect": "effect.buildings.hornwatch-muzzle",
+        "event": "fire",
+        "socket": "socket_muzzle"
+      }
+    ]
+  },
   "garrison": {
     "capacity": 1,
     "accepts": [],
-    "height": 5.8,
+    "height": 7.7,
     "lookoutRadius": 0.6,
     "crew": "unit.beetles.hornwatch-gunner"
   }

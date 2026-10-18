@@ -21,9 +21,10 @@ pub const MAX_OVERLAY_VERTICES: usize = 1 << 16;
 pub struct GroundVertex {
     pub position: [f32; 3],
     pub color: [f32; 4],
-    /// Line widths from the ring's core; ignored unless `ring_profile` is 1.
+    /// Line widths from the ring's core for a selection ring; metres inside the edge for
+    /// the network field.
     pub across: f32,
-    /// 1 for a selection ring.
+    /// 1 for a selection ring, 2 for the power network's field (D66).
     pub ring_profile: f32,
 }
 

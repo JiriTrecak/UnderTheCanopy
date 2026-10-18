@@ -1,0 +1,105 @@
+{
+  "id": "asset.models.buildings.beetles-engine-yard",
+  "name": "Engine Yard",
+  "kind": "building",
+  "tags": [
+    "beetles",
+    "tripo",
+    "animated",
+    "team-mask"
+  ],
+  "race": "beetles",
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_engine_yard"
+      ]
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "work",
+        "clip": "work",
+        "loop": true,
+        "events": [
+          {
+            "name": "weld",
+            "time": 1.233
+          },
+          {
+            "name": "weld",
+            "time": 1.533
+          },
+          {
+            "name": "weld",
+            "time": 3.167
+          },
+          {
+            "name": "weld",
+            "time": 3.367
+          }
+        ]
+      },
+      {
+        "semantic": "spawn",
+        "clip": "spawn",
+        "loop": false,
+        "events": [
+          {
+            "name": "release",
+            "time": 0.1
+          }
+        ]
+      }
+    ],
+    "blocker": {
+      "shape": "box",
+      "size": [
+        16,
+        16
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 8,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 1,
+    "healthHeight": 10.7
+  },
+  "shading": "building",
+  "license": "Generated with Tripo (image to 3D, segmentation) from an ImageGen (gpt-image-2) concept for Under the Canopy; animated by tools/buildings/engine_yard.py."
+}

@@ -95,6 +95,10 @@ pub fn placeable(f: &Frame, def: Def, p: Pt, rotation: i32) -> bool {
             return false;
         }
     }
+    // Power (D66): the player knows its own network.
+    if d.power.is_some() && !f.powered(p) {
+        return false;
+    }
     let extent = Extent::of(d.footprint.as_ref());
     let cells = footprint_cells(p.x, p.y, extent, f64::from(rotation));
     let size = i64::from(geo.size);

@@ -2,8 +2,8 @@
   "id": "unit.beetles.arc-coil",
   "name": "Arc Coil",
   "description": "The substance coil of an Arc Tower.",
-  "model": "asset.models.units.ants-amber-adept",
-  "icon": "asset.portraits.units.ants-amber-adept",
+  "model": "asset.models.units.beetles-arcwright",
+  "icon": "asset.portraits.units.beetles-arcwright",
   "body": {
     "maxHp": 100,
     "armor": 0,

@@ -23,11 +23,7 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 150
-      },
-      {
-        "item": "item.wood",
-        "amount": 75
+        "amount": 190
       }
     ],
     "workTicks": 1600,
@@ -39,7 +35,6 @@
   "behaviors": {
     "research": {
       "outputs": [
-        "research.ants.serrated-tools",
         "research.ants.reinforced-carapace",
         "research.ants.broadheads",
         "research.ants.campaign-harness",

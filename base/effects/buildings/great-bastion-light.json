@@ -1,0 +1,32 @@
+{
+  "id": "effect.buildings.great-bastion-light",
+  "name": "Great Bastion substance light",
+  "description": "Slowly pulsing blue-violet light over the Great Bastion's shell, washing its four glowing boiler tanks. Loops while the hall works (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#b89cff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 18,
+      "height": 0,
+      "intensity": 9,
+      "motion": {
+        "opacity": {
+          "periodTicks": 44,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

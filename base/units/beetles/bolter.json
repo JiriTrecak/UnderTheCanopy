@@ -2,8 +2,8 @@
   "id": "unit.beetles.bolter",
   "name": "Bolter",
   "description": "Multi-barrel pressure repeater fed from a back canister: rapid bolts against ground and air. Uses 2 supply.",
-  "model": "asset.models.units.ants-leaf-archer",
-  "icon": "asset.portraits.units.ants-leaf-archer",
+  "model": "asset.models.units.beetles-bolter",
+  "icon": "asset.portraits.units.beetles-bolter",
   "selectionClass": "army",
   "body": {
     "maxHp": 420,

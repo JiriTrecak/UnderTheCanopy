@@ -2079,6 +2079,84 @@
       },
       "rotation": 108.0,
       "owner": "none"
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance.1",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 251.5,
+        "y": 179.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance.2",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 523.5,
+        "y": 179.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance.3",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 623.5,
+        "y": 415.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance.4",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 551.5,
+        "y": 647.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance.5",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 279.5,
+        "y": 643.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance.6",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 171.5,
+        "y": 407.5
+      },
+      "rotation": 0.0
     }
   ],
   "size": 800,

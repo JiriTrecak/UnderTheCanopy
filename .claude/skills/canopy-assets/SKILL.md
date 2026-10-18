@@ -60,7 +60,7 @@ Authority: `crates/content/src/assets/package.rs` (formats and the registries bu
 - `display` is how the model is shown everywhere: runtime scale, animation profile (`character`), health bar height. A definition may override the health bar height and profile in its own `presentation`.
 - `capabilities`:
   - `teamColor`: which material slots take the player colour, through a mask or a whole slot;
-  - `animations`: the semantic → clip map, with events such as the `hit`/`release` contact time as a share of the clip;
+  - `animations`: the semantic → clip map, with events such as the `hit`/`release` contact time as a share of the clip; a gait (`walk`, `run`, `charge`, `carry_walk`, `carry_run`) may declare `nominalSpeed`, the ground speed in the model's own metres per second at which its clip plays at rate 1 without sliding feet. The clip's rate is then the unit's measured ground speed ÷ (`nominalSpeed` × the scale it is drawn at), clamped to 0.4–3×. Without it, gaits play at the engine's 1.5×, as the ants do;
   - `sockets`: model nodes for missiles, cargo and effects;
   - `groundContact`: `pivot` or `terrain`;
   - `wind`, `canopy`, `blocker`, `vegetationClearance`, `dimensions`.
@@ -77,7 +77,7 @@ The cooker also stages the base package's documents into `target/cooked/base` fo
 
 ## Placeable scenery
 
-`scenery/<free folders>/<name>.json` is a piece maps place (objects in `scenery.json`) and biomes use (forest trunks). It names its model and its placement rules. A piece with `harvesting` becomes that resource where it stands on playable ground: trees become `resource.forest.tree`.
+`scenery/<free folders>/<name>.json` is a piece maps place (objects in `scenery.json`) and biomes use (forest trunks). It names its model and its placement rules. A piece with `harvesting` (`{"definition": <resource>}`) becomes that resource where it stands on playable ground. In the base game trees are no resource (D62): a tree's trunk closes the ground with a `blocker` instead, so tree walls stay solid.
 
 ```json scenery
 {
@@ -86,7 +86,7 @@ The cooker also stages the base package's documents into `target/cooked/base` fo
   "category": "foliage",
   "type": "prop",
   "model": "asset.models.environment.woodland-pine-a",
-  "harvesting": {"definition": "resource.forest.tree"}
+  "blocker": {"width": 3.3, "depth": 3.3, "shape": "ellipse"}
 }
 ```
 

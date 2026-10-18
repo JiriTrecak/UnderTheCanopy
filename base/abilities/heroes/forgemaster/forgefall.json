@@ -89,7 +89,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.spells.marshal.crownfall-icon",
+    "icon": "asset.icons.ability-beetles-forgemaster-forgefall",
     "animations": {
       "prepare": "cast",
       "release": "cast",

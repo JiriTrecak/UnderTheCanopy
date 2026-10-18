@@ -1,0 +1,55 @@
+{
+  "id": "effect.buildings.bastion-glow",
+  "name": "Bastion gate light",
+  "description": "Violet substance light spilling out of the Bastion's opening mandible gate, pulsing with its tanks, while the hall trains or upgrades (D65).",
+  "durationTicks": 88,
+  "loop": true,
+  "layers": [
+    {
+      "id": "light",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#b89cff",
+      "durationTicks": 88,
+      "count": 1,
+      "size": 14,
+      "height": 0,
+      "intensity": 14,
+      "motion": {
+        "opacity": {
+          "periodTicks": 44,
+          "min": 0.55,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "aura",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#c8b4ff",
+      "durationTicks": 88,
+      "count": 1,
+      "size": 3.6,
+      "height": 0,
+      "intensity": 0.45,
+      "motion": {
+        "opacity": {
+          "periodTicks": 44,
+          "min": 0.35,
+          "max": 0.85,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

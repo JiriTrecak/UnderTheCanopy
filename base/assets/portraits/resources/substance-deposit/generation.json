@@ -1,0 +1,16 @@
+{
+  "tool": "gpt-image-2 through tools/buildings/concept.sh, prompt from tools/icons/icons.py",
+  "chosen": "icon-d-substance-deposit-1.png",
+  "slug": "icon-d-substance-deposit",
+  "size": "1024x1024",
+  "n": 2,
+  "quality": "high",
+  "references": [
+    ".asset-work/concepts/buildings/refs/icons/beetle-substance-well-idle.png",
+    ".asset-work/concepts/buildings/refs/icons/anchor-building.png"
+  ],
+  "prompt": "Use case: one game icon for Under the Canopy, a Warcraft III: Reforged-like RTS of insect armies on the forest floor. The game shows it small (about 56 to 72 pixels) on its HUD command card, so it must read instantly at that size.\nTHE ICON FAMILY (every icon in the game follows it): a square, full-bleed, hand-painted stylised 3D illustration in the manner of Warcraft III: Reforged unit and ability icons. ONE subject, big in the frame, with chunky, simple, bold forms, crisp clean edges, glossy materials with clear edge highlights, saturated but controlled colour. Strong value contrast: the subject is clearly brighter and more saturated than its background, and a bright rim light separates its silhouette. Light: a warm key light from the upper left and a cool blue-violet rim light from behind on the right. The background is dark, simple and soft, never scenery: a smoky vignette that falls to near-black in the corners. Keep the bottom-right corner calm and dark (the game draws a hotkey letter there). NO text, letters, numbers, runes, UI, frame, border or bevel (the game draws the frame). No noise, grain, sparkle, specks or tiny clutter; few, large, clear shapes.\nICON TYPE: BUILDING PORTRAIT. The whole building seen from the front-left at about 35 degrees from above, as in the reference, centred and filling about 90% of the frame's width, slightly cropped at the bottom. No ground, dirt, base plate or scenery around it: it stands on darkness with a soft dark shadow. Background: dark charcoal with a soft warm amber glow behind the building's top.\nNo faction: a race-neutral design.\nREFERENCES: the first image shows the Substance Well built on such a deposit (take only the raw violet substance's look, not the building); the others are approved icons of the same family: match their rendering, lighting, background and framing, but not their subject.\nTHE SUBJECT: a SUBSTANCE DEPOSIT, raw forest magic welling out of the ground: a crack in dark earth among gnarled old roots, faceted violet-blue crystal shards growing from it and a soft violet glow and light mist rising from the crack. Violet and blue, never green.",
+  "install": {
+    "lift": 0.85
+  }
+}

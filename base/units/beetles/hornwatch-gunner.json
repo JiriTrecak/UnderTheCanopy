@@ -2,8 +2,8 @@
   "id": "unit.beetles.hornwatch-gunner",
   "name": "Hornwatch Gunner",
   "description": "The repeater crew of a Hornwatch.",
-  "model": "asset.models.units.ants-leaf-archer",
-  "icon": "asset.portraits.units.ants-leaf-archer",
+  "model": "asset.models.units.beetles-bolter",
+  "icon": "asset.portraits.units.beetles-bolter",
   "body": {
     "maxHp": 100,
     "armor": 0,

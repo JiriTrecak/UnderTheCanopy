@@ -2,8 +2,8 @@
   "id": "unit.beetles.hornbreaker",
   "name": "Hornbreaker",
   "description": "Beetle warlord with a Hercules horn and a great hammer. Charges into battle, overwhelms a chosen enemy, steadies nearby allies and becomes a Colossus.",
-  "model": "asset.models.units.ants-rootbreaker",
-  "icon": "asset.portraits.units.ants-rootbreaker",
+  "model": "asset.models.units.beetles-hornbreaker",
+  "icon": "asset.portraits.units.beetles-hornbreaker",
   "selectionClass": "army",
   "body": {
     "maxHp": 860,
@@ -45,7 +45,8 @@
           ],
           "command": {
             "hotkey": "Q",
-            "column": 1
+            "column": 1,
+            "icon": "asset.icons.ability-beetles-hornbreaker-horn-rush"
           },
           "learning": {
             "requiredLevels": [
@@ -70,7 +71,8 @@
           ],
           "command": {
             "hotkey": "W",
-            "column": 2
+            "column": 2,
+            "icon": "asset.icons.ability-beetles-hornbreaker-overwhelm"
           },
           "learning": {
             "requiredLevels": [
@@ -95,7 +97,8 @@
           ],
           "command": {
             "hotkey": "E",
-            "column": 3
+            "column": 3,
+            "icon": "asset.icons.ability-beetles-hornbreaker-steadfast"
           },
           "learning": {
             "requiredLevels": [
@@ -120,7 +123,8 @@
           ],
           "command": {
             "hotkey": "R",
-            "column": 4
+            "column": 4,
+            "icon": "asset.icons.ability-beetles-hornbreaker-colossus"
           },
           "learning": {
             "requiredLevels": [

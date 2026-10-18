@@ -128,7 +128,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.spells.marshal.rally-icon",
+    "icon": "asset.icons.ability-beetles-forgemaster-field-forge",
     "animations": {
       "prepare": "idle",
       "release": "idle",

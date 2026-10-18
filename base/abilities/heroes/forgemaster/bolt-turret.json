@@ -69,7 +69,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.portraits.buildings.ants-watchtower",
+    "icon": "asset.icons.ability-beetles-forgemaster-bolt-turret",
     "animations": {
       "prepare": "cast",
       "release": "cast",

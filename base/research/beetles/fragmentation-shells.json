@@ -2,7 +2,7 @@
   "id": "research.beetles.fragmentation-shells",
   "name": "Fragmentation Shells",
   "description": "Bombard and Juggernaut shells burst wider: blast radius grows to 3.5 units and they slow survivors by 25% for 2 seconds.",
-  "icon": "asset.portraits.units.ants-bombardier",
+  "icon": "asset.icons.research-beetles-fragmentation-shells",
   "priority": 75,
   "items": [
     {

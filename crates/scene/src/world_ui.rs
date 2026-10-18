@@ -89,6 +89,8 @@ pub struct WorldUiInput {
     pub aim: Option<AimMark>,
     /// A hovered tree's ring (x, z, radius): the neutral hover ring of a body.
     pub tree: Option<[f32; 3]>,
+    /// The power network to show (D66): its discs (x, z, radius), drawn as one field.
+    pub network: Vec<[f32; 3]>,
 }
 
 impl Default for WorldUiInput {
@@ -104,6 +106,7 @@ impl Default for WorldUiInput {
             placement: None,
             aim: None,
             tree: None,
+            network: Vec::new(),
         }
     }
 }
@@ -541,6 +544,10 @@ impl WorldUi {
                 .map(|i| &bodies[i])
         };
         let at = |b: &Body| position(b.key).unwrap_or(b.position);
+        // The network lies under every other mark.
+        if !input.network.is_empty() {
+            network(out, &input.network, field);
+        }
         // Attack targets of the selection.
         let targets: Vec<u32> = bodies
             .iter()
@@ -695,6 +702,14 @@ impl WorldUi {
                     solid(out, inner, [color[0], color[1], color[2], 1.0]);
                 }
             }
+            // A building without power (D66): a small dark badge with a struck bolt.
+            if b.unpowered
+                && b.building
+                && !b.remembered
+                && let Some(anchor) = project(camera, size, p + Vec3::Y * (b.height + 0.25))
+            {
+                unpowered_badge(out, [anchor.x, anchor.y - 27.0 * s], s);
+            }
             // Item status badges (world-sized, above the bar).
             if !b.badges.is_empty() && !b.remembered && b.hp.is_some_and(|hp| hp > 0) {
                 let columns = b.badges.len().min(6);
@@ -822,6 +837,131 @@ fn circle(
         out.ground.extend_from_slice(&[p, q, r, p, r, t]);
         h0 = h1;
     }
+}
+
+/// Most cells the network field is drawn with, and most grid points it looks at (far
+/// apart islands span a large box); larger networks use coarser cells.
+const NETWORK_CELLS: f32 = 6000.0;
+const NETWORK_POINTS: f32 = 60000.0;
+
+/// How far inside its edge the network field is, in metres, at `(x, z)`: the signed
+/// distance to the union of the discs (positive inside).
+pub fn network_depth(discs: &[[f32; 3]], x: f32, z: f32) -> f32 {
+    discs
+        .iter()
+        .map(|&[cx, cz, r]| r - (x - cx).hypot(z - cz))
+        .fold(f32::NEG_INFINITY, f32::max)
+}
+
+/// The power network (D66) as one soft blue-violet field draped on the ground: a grid
+/// over the discs' bounds whose vertices carry the distance to the union's edge, so the
+/// fragment shader draws an even fill, a bright rim and a glow inside it without the
+/// discs' overlaps stacking.
+fn network(out: &mut WorldUiFrame, discs: &[[f32; 3]], field: &dyn WaterField) {
+    let _span = tracing::trace_span!("network field").entered();
+    let (mut x0, mut z0, mut x1, mut z1) = (f32::MAX, f32::MAX, f32::MIN, f32::MIN);
+    let mut area = 0.0;
+    for &[x, z, r] in discs {
+        x0 = x0.min(x - r);
+        z0 = z0.min(z - r);
+        x1 = x1.max(x + r);
+        z1 = z1.max(z + r);
+        area += std::f32::consts::PI * r * r;
+    }
+    let step = (area / NETWORK_CELLS)
+        .sqrt()
+        .max(((x1 - x0) * (z1 - z0) / NETWORK_POINTS).sqrt())
+        .max(2.0);
+    let (columns, rows) = (
+        ((x1 - x0) / step).ceil() as usize + 1,
+        ((z1 - z0) / step).ceil() as usize + 1,
+    );
+    let color = linear(0x8f7dff);
+    let vertex = |i: usize, j: usize| {
+        let (x, z) = (x0 + i as f32 * step, z0 + j as f32 * step);
+        let depth = network_depth(discs, x, z);
+        // Points far outside are never drawn: no need to find the ground under them.
+        let y = if depth > -3.0 * step {
+            field.walk(x, z, 0) + 0.07
+        } else {
+            0.0
+        };
+        GroundVertex {
+            position: [x, y, z],
+            color: [color[0], color[1], color[2], 1.0],
+            across: depth,
+            ring_profile: 2.0,
+        }
+    };
+    let mut previous: Vec<GroundVertex> = (0..columns).map(|i| vertex(i, 0)).collect();
+    for j in 1..rows {
+        let row: Vec<GroundVertex> = (0..columns).map(|i| vertex(i, j)).collect();
+        for i in 0..columns - 1 {
+            let (a, b, c, d) = (previous[i], previous[i + 1], row[i + 1], row[i]);
+            // Cells wholly outside (beyond the rim's antialiasing) draw nothing.
+            if [a, b, c, d].iter().all(|v| v.across < -step) {
+                continue;
+            }
+            out.ground.extend_from_slice(&[a, d, b, b, d, c]);
+        }
+        previous = row;
+    }
+}
+
+/// A building's no-power badge (D66), centred at `at` (pixels): a dark round plate with
+/// a muted violet bolt struck through.
+fn unpowered_badge(out: &mut WorldUiFrame, at: [f32; 2], s: f32) {
+    let size = (24.0 * s).round();
+    let (x0, y0) = ((at[0] - size / 2.0).round(), (at[1] - size / 2.0).round());
+    let plate = linear(0x0b0c14);
+    let rim = linear(0x6f66a8);
+    let v = |x: f32, y: f32, u: f32, t: f32| OverlayVertex {
+        position: [x, y],
+        uv: [u, t],
+        color: [plate[0], plate[1], plate[2], 0.86],
+        params: [size, size, size / 2.0, s],
+        extra: [rim[0], rim[1], rim[2], 0.9],
+        kind: [overlay::BOX, 0, 0, 0],
+    };
+    out.quad([
+        v(x0, y0, 0.0, 0.0),
+        v(x0 + size, y0, size, 0.0),
+        v(x0 + size, y0 + size, size, size),
+        v(x0, y0 + size, 0.0, size),
+    ]);
+    let half = size * 0.4;
+    let point = |p: [f32; 2]| [at[0] + p[0] * half, at[1] + p[1] * half];
+    let tri = |out: &mut WorldUiFrame, points: [[f32; 2]; 3], color: [f32; 4]| {
+        for p in points {
+            out.overlay.push(OverlayVertex {
+                position: point(p),
+                color,
+                kind: [overlay::SOLID, 0, 0, 0],
+                ..Default::default()
+            });
+        }
+    };
+    let bolt = linear(0xb4a9ff);
+    let bolt = [bolt[0], bolt[1], bolt[2], 0.95];
+    // Two slanted wedges meeting in the middle: a lightning bolt.
+    tri(out, [[0.4, -1.0], [-0.55, 0.14], [0.22, 0.14]], bolt);
+    tri(out, [[-0.22, -0.14], [0.55, -0.14], [-0.4, 1.0]], bolt);
+    // The strike: a dark border under a warm line, corner to corner.
+    let line = |out: &mut WorldUiFrame, width: f32, color: [f32; 4]| {
+        let (a, b) = ([-0.8, -0.8], [0.8, 0.8]);
+        let n = width / half * std::f32::consts::FRAC_1_SQRT_2;
+        let quad = [
+            [a[0] + n, a[1] - n],
+            [b[0] + n, b[1] - n],
+            [b[0] - n, b[1] + n],
+            [a[0] - n, a[1] + n],
+        ];
+        tri(out, [quad[0], quad[1], quad[2]], color);
+        tri(out, [quad[0], quad[2], quad[3]], color);
+    };
+    let warm = linear(0xe0675c);
+    line(out, 1.9 * s, [plate[0], plate[1], plate[2], 0.95]);
+    line(out, 0.8 * s, [warm[0], warm[1], warm[2], 0.9]);
 }
 
 /// The placement grid: faint cell fills and their outlines, draped on the ground, and a
@@ -1445,6 +1585,7 @@ mod tests {
             idle: None,
             footprint: None,
             deposit: false,
+            unpowered: false,
         }
     }
 
@@ -1470,6 +1611,17 @@ mod tests {
         dead.hp = Some(10);
         dead.remembered = true;
         assert!(!health_bar_visible(&dead, true, HealthBars::Always));
+    }
+
+    #[test]
+    fn the_network_field_is_the_union_of_its_discs() {
+        let discs = [[0.0, 0.0, 10.0], [16.0, 0.0, 10.0]];
+        // Inside both: the deeper one counts, so overlaps never stack.
+        assert_eq!(network_depth(&discs, 8.0, 0.0), 2.0);
+        assert_eq!(network_depth(&discs, 0.0, 0.0), 10.0);
+        // On an edge and outside both.
+        assert_eq!(network_depth(&discs, 26.0, 0.0), 0.0);
+        assert!(network_depth(&discs, 8.0, 20.0) < 0.0);
     }
 
     #[test]

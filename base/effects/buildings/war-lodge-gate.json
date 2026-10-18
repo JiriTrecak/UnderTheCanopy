@@ -1,0 +1,91 @@
+{
+  "id": "effect.buildings.war-lodge-gate",
+  "name": "War Lodge gate dust",
+  "description": "A puff of stone dust rolling out from the foot of the War Lodge's portcullis as it lifts for a soldier marching out. Plays on the spawn clip's `gate` event.",
+  "durationTicks": 60,
+  "loop": false,
+  "layers": [
+    {
+      "id": "puff",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 56,
+        "rate": 12,
+        "speed": 2.0,
+        "speedVariation": 0.45,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": -0.3,
+        "drag": 1.5,
+        "spawnRadius": 1.1,
+        "startSize": 1.0,
+        "endSize": 3.4,
+        "spin": 0.3,
+        "fadeIn": 0.06,
+        "fadeOut": 0.8
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#8f8b84",
+      "accent": "#bbb6ae",
+      "durationTicks": 58,
+      "count": 12,
+      "size": 0.9,
+      "height": 0,
+      "blend": "normal",
+      "intensity": 0.9,
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "grit",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 26,
+        "rate": 10,
+        "speed": 3.2,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": 9,
+        "drag": 0.6,
+        "spawnRadius": 0.9,
+        "startSize": 0.22,
+        "endSize": 0.12,
+        "spin": 1,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#77736d",
+      "accent": "#9c978f",
+      "durationTicks": 28,
+      "count": 10,
+      "size": 0.2,
+      "height": 0,
+      "blend": "normal",
+      "intensity": 1.0,
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

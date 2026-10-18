@@ -1,0 +1,62 @@
+{
+  "id": "effect.units.juggernaut-furnace",
+  "name": "Juggernaut furnace glow",
+  "description": "The violet substance furnace behind the front window breathing light onto the ground and the cannons. Loops while the Juggernaut lives.",
+  "durationTicks": 48,
+  "loop": true,
+  "layers": [
+    {
+      "id": "light",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#b89cff",
+      "durationTicks": 48,
+      "count": 1,
+      "size": 9,
+      "height": 0,
+      "sustain": true,
+      "intensity": 4,
+      "motion": {
+        "opacity": {
+          "periodTicks": 48,
+          "min": 0.55,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "glow",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#b89cff",
+      "durationTicks": 48,
+      "count": 1,
+      "size": 2.4,
+      "height": 0,
+      "sustain": true,
+      "blend": "additive",
+      "intensity": 0.9,
+      "motion": {
+        "scale": {
+          "periodTicks": 48,
+          "min": 0.85,
+          "max": 1.1,
+          "easing": "sine"
+        },
+        "opacity": {
+          "periodTicks": 48,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

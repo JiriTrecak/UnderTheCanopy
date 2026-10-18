@@ -36,6 +36,7 @@ use crate::{
     },
     models::{ModelCatalog, ModelInfo},
     obstruction::Hull,
+    state_effects::{Doing, Mount, StateCues, ease_activity},
 };
 use canopy_assets::{Matrix3x4, Pack};
 use canopy_content::map::UtcMap;
@@ -112,7 +113,7 @@ pub struct Actor {
     /// A ground unit that wakes water: its walking surface (0 the ground, `n` the deck
     /// [`deck_index`] `n − 1`) and height above it.
     pub walker: Option<(u32, f32)>,
-    /// How much a building works, 0 at rest to 1: its active emission (D65).
+    /// How much a building or unit works, 0 at rest to 1: its active emission (D65).
     pub activity: f32,
 }
 
@@ -275,6 +276,8 @@ pub struct Body {
     pub footprint: Option<[f32; 2]>,
     /// A deposit with something left to harvest.
     pub deposit: bool,
+    /// A building that needs power stands outside its owner's network (D66).
+    pub unpowered: bool,
 }
 
 /// The foundations drawn under the buildings of `bodies` (D44): each footprint on the
@@ -380,15 +383,24 @@ struct Tracked {
     floor: Option<f32>,
     garrison: Option<EntityId>,
     seen: u32,
+    /// Its state effects, and the activity of its active glow (D65).
+    cues: StateCues,
+    activity: f32,
+    /// Where it stood when last presented (tick, cells), and its smoothed ground speed
+    /// (metres per second) while moving: stride-matched gaits.
+    ground: Option<(u32, f64, f64)>,
+    speed: Option<f32>,
 }
+
+/// Smoothing of a unit's measured ground speed per tick.
+const SPEED_SMOOTHING: f32 = 0.35;
 
 /// A built building's animation and the state effects it is playing (D65).
 #[derive(Debug, Clone)]
 struct BuildingTrack {
     model: u32,
     animation: Option<BuildingAnimation>,
-    /// Cues of looping state effects, by the effect's index in the presentation.
-    cues: BTreeMap<usize, Vec<u32>>,
+    cues: StateCues,
     /// Eases towards 1 while it works and back to 0 at rest.
     activity: f32,
     seen: u32,
@@ -552,7 +564,7 @@ fn cells(p: Milli) -> (f64, f64) {
 }
 
 /// Applies a 3×4 row-major affine to a point.
-fn affine_point(m: &Matrix3x4, p: Vec3) -> Vec3 {
+pub(crate) fn affine_point(m: &Matrix3x4, p: Vec3) -> Vec3 {
     Vec3::new(
         m[0] * p.x + m[1] * p.y + m[2] * p.z + m[3],
         m[4] * p.x + m[5] * p.y + m[6] * p.z + m[7],
@@ -782,6 +794,7 @@ impl Presenter {
     /// moment (a replay seek). The next presentation shows that moment afresh.
     pub fn reset(&mut self) {
         self.units.clear();
+        self.buildings.clear();
         self.corpses.clear();
         self.origins.clear();
         self.felling.clear();
@@ -953,15 +966,19 @@ impl Presenter {
                 }
             }
         }
+        // Looping state effects onto their sockets this tick.
+        let mut moves: BTreeMap<u32, Vec3> = BTreeMap::new();
         let mut damaged: Vec<Damaged> = Vec::new();
         let mut posed: BTreeMap<u32, Posed> = BTreeMap::new();
         let mut bodies: Vec<Body> = Vec::new();
         let mut health: BTreeMap<EntityId, u32> = BTreeMap::new();
         let mut building: BTreeSet<EntityId> = BTreeSet::new();
+        // A deposit under a building placed on it is drawn as that building (D62).
+        let covered = view.covered(catalog);
 
         for e in &view.entities {
             let id = e.id();
-            if fallen.contains(&id) || held(id) {
+            if fallen.contains(&id) || held(id) || covered.contains(&id) {
                 continue;
             }
             let d = catalog.get(e.definition());
@@ -1095,12 +1112,41 @@ impl Presenter {
                         floor: None,
                         garrison,
                         seen: tick,
+                        cues: StateCues::default(),
+                        activity: 0.0,
+                        ground: None,
+                        speed: None,
                     });
                     if tracked.asset != asset_id || tracked.model != model {
                         tracked.asset = asset_id.clone();
                         tracked.model = model;
                         tracked.animation = UnitAnimation::new(&info);
+                        tracked.cues.stop(&mut self.effects);
                         actor.snap = true;
+                    }
+                    let moving = e.motion.is_some_and(|m| m.moving);
+                    {
+                        // Ground speed from the last presented position (stride matching).
+                        let (x, z) = cells(e.public.position);
+                        tracked.speed = match tracked.ground {
+                            Some((t, px, pz)) if moving && t < tick && tick - t <= 4 => {
+                                let step = ((x - px).powi(2) + (z - pz).powi(2)).sqrt() as f32
+                                    / (tick - t) as f32;
+                                let raw = step / TICK_SECONDS;
+                                if step > TELEPORT_DISTANCE {
+                                    tracked.speed
+                                } else {
+                                    Some(
+                                        tracked
+                                            .speed
+                                            .map_or(raw, |s| s + (raw - s) * SPEED_SMOOTHING),
+                                    )
+                                }
+                            }
+                            _ if moving => tracked.speed,
+                            _ => None,
+                        };
+                        tracked.ground = Some((tick, x, z));
                     }
                     if tracked.garrison != garrison {
                         actor.snap = true;
@@ -1121,6 +1167,7 @@ impl Presenter {
                             },
                         ))
                     });
+                    let mut events: Vec<String> = Vec::new();
                     let work_state = work.and_then(|w| w.pose).map(|p| {
                         (
                             match p.animation {
@@ -1134,7 +1181,7 @@ impl Presenter {
                     if let Some(animation) = &mut tracked.animation {
                         let inputs = UnitInputs {
                             tick,
-                            moving: e.motion.is_some_and(|m| m.moving),
+                            moving,
                             strolling: e.motion.is_some_and(|m| m.strolling),
                             charging: combat.is_some_and(|c| c.charging),
                             attack: combat
@@ -1149,8 +1196,10 @@ impl Presenter {
                                 .as_ref()
                                 .is_some_and(|c| c.as_str() == "base"),
                             cast_contact: asset.cast_contact.map(|c| c as f32),
+                            speed: tracked.speed.map(|s| s / scale.max(1e-3)),
                         };
-                        let decision = animation.step(&info, &inputs);
+                        let mut decision = animation.step(&info, &inputs);
+                        events = std::mem::take(&mut decision.events);
                         if decision.face_work
                             && let Some((_, _, target)) = work_state
                         {
@@ -1224,6 +1273,53 @@ impl Presenter {
                                 }
                             }
                         }
+                    }
+                    // A unit works while it moves, fights, casts or works: its active glow
+                    // and its state and event effects (D65).
+                    let charging = combat.is_some_and(|c| c.charging);
+                    let working = moving
+                        || charging
+                        || combat.is_some_and(|c| c.attack.is_some())
+                        || cast.is_some()
+                        || work_state.is_some();
+                    tracked.activity = ease_activity(tracked.activity, working);
+                    actor.activity = tracked.activity;
+                    if let Some(effects) = asset.effects.as_deref() {
+                        let state = tracked
+                            .animation
+                            .as_ref()
+                            .map_or(crate::animation::states::IDLE, |a| a.animator.state());
+                        let casting = cast.is_some();
+                        let in_state = |s: &str| match s {
+                            "always" => true,
+                            "move" => moving || charging,
+                            "cast" => casting || s == state,
+                            _ => s == state,
+                        };
+                        let mount = Mount {
+                            info: &info,
+                            sockets: asset.sockets.as_deref(),
+                            clip: tracked
+                                .animation
+                                .as_ref()
+                                .map_or((0, 0.0), |a| a.animator.current()),
+                            position,
+                            rotation: actor.rotation,
+                            scale: actor.scale,
+                        };
+                        tracked.cues.update(
+                            &mut self.effects,
+                            effects,
+                            id.0,
+                            tick,
+                            &Doing {
+                                shown: true,
+                                in_state: &in_state,
+                                events: &events,
+                            },
+                            &mount,
+                            &mut moves,
+                        );
                     }
                     // Ground bodies wake water (not flyers or lookout occupants).
                     if flight.is_none() && garrison.is_none() {
@@ -1351,7 +1447,15 @@ impl Presenter {
                     ));
                     hide = !show_body;
                     if e.public.construction.is_none() && !info.missing {
-                        self.animate_building(e, asset, model, &info, &mut actor, &mut posed, tick);
+                        self.animate_building(
+                            e,
+                            asset,
+                            model,
+                            &info,
+                            &mut actor,
+                            (&mut posed, &mut moves),
+                            tick,
+                        );
                     }
                     // Built buildings in sight burn when damaged (deposits and mines do not).
                     let max_hp = e
@@ -1404,10 +1508,8 @@ impl Presenter {
             .map(|(&id, _)| id)
             .collect();
         for id in stale {
-            let track = self.buildings.remove(&id).expect("listed");
-            for cues in track.cues.values() {
-                self.effects.stop(cues);
-            }
+            let mut track = self.buildings.remove(&id).expect("listed");
+            track.cues.stop(&mut self.effects);
         }
         let gone: Vec<EntityId> = self
             .units
@@ -1416,7 +1518,8 @@ impl Presenter {
             .filter(|id| !seen.contains(id))
             .collect();
         for id in gone {
-            let tracked = self.units.remove(&id).expect("listed");
+            let mut tracked = self.units.remove(&id).expect("listed");
+            tracked.cues.stop(&mut self.effects);
             let died = view.deaths.iter().any(|c| c.sighting.id == id);
             if !died || tracked.seen + 1 < tick {
                 continue;
@@ -1512,6 +1615,7 @@ impl Presenter {
                 keep
             })
             .collect();
+        self.effects.relocate(&moves);
         let anchors: BTreeMap<u32, Vec3> = actors
             .iter()
             .filter(|a| a.key >> 40 == Part::Entity as u64)
@@ -1652,6 +1756,7 @@ impl Presenter {
                     if quarter { [h, w] } else { [w, h] }
                 }),
             deposit: e.public.resource.as_ref().is_some_and(|r| r.amount > 0),
+            unpowered: !e.remembered && e.work.as_ref().is_some_and(|w| w.unpowered),
         }
     }
 
@@ -1663,7 +1768,9 @@ impl Presenter {
     /// A built building at work (D65): its rest, work and spawn clips from what anyone
     /// sees of it (busy, finished cycles), its sockets for effects, the looping effects of
     /// its current state and the one-shot effects of the clip events it crossed. A
-    /// remembered building rests: what it does out of sight is not shown.
+    /// building without clips still rests or works for its effects and glow (a deposit's
+    /// `always` motes). A remembered building rests: what it does out of sight is not
+    /// shown.
     #[allow(clippy::too_many_arguments)]
     fn animate_building(
         &mut self,
@@ -1672,102 +1779,80 @@ impl Presenter {
         model: u32,
         info: &Arc<ModelInfo>,
         actor: &mut Actor,
-        posed: &mut BTreeMap<u32, Posed>,
+        (posed, moves): (&mut BTreeMap<u32, Posed>, &mut BTreeMap<u32, Vec3>),
         tick: u32,
     ) {
+        use crate::animation::building_states::{IDLE, WORK};
         let id = e.id();
         let work = e.work.as_ref();
-        let busy = !e.remembered && work.is_some_and(|w| w.busy);
+        let shown = !e.remembered;
+        let busy = shown && work.is_some_and(|w| w.busy);
         let cycles = work.map_or(0, |w| w.cycles);
         let track = self.buildings.entry(id).or_insert_with(|| BuildingTrack {
             model,
             animation: BuildingAnimation::new(info),
-            cues: BTreeMap::new(),
+            cues: StateCues::default(),
             activity: 0.0,
             seen: tick,
         });
         if track.model != model {
-            for cues in std::mem::take(&mut track.cues).values() {
-                self.effects.stop(cues);
-            }
+            track.cues.stop(&mut self.effects);
             track.model = model;
             track.animation = BuildingAnimation::new(info);
         }
         track.seen = tick;
-        let Some(animation) = &mut track.animation else {
-            return;
-        };
-        let events = animation.step(info, busy, cycles);
-        actor.poses = animation.animator.poses(info);
-        let (clip, time) = animation.animator.current();
-        let state = animation.animator.state().to_owned();
-        // Machinery spins up and winds down over about half a second.
-        let working = if state == crate::animation::building_states::IDLE {
-            0.0
-        } else {
-            1.0
-        };
-        track.activity += (working - track.activity).clamp(-0.06, 0.06);
-        actor.activity = track.activity;
-        posed.insert(
-            id.0,
-            Posed {
-                info: info.clone(),
-                clip: Some((clip, time)),
-                position: actor.position,
-                rotation: actor.rotation,
-                scale: actor.scale,
-            },
-        );
-        let Some(effects) = asset.effects.as_ref() else {
-            return;
-        };
-        let at = |socket: Option<&String>| -> Vec3 {
-            let node = socket.map(|s| {
-                asset
-                    .sockets
-                    .iter()
-                    .flatten()
-                    .find(|k| &k.name == s)
-                    .map_or(s.as_str(), |k| k.node.as_str())
-            });
-            node.and_then(|n| info.socket(n, clip, time))
-                .map_or(actor.position, |m| {
-                    actor.position + actor.rotation * (affine_point(&m, Vec3::ZERO) * actor.scale)
-                })
-        };
-        for (k, effect) in effects.iter().enumerate() {
-            let Some(index) = self.effects.find(effect.effect.as_str()) else {
-                continue;
-            };
-            let seed = id.0.wrapping_mul(0x9e37_79b1) ^ tick ^ (k as u32).wrapping_mul(7919);
-            let play = |director: &mut EffectDirector| {
-                director.play(Play {
-                    effect: index,
-                    tick: f64::from(tick),
-                    seed,
-                    at: at(effect.socket.as_ref()),
-                    from: None,
-                    radius: None,
-                })
-            };
-            if let Some(wanted) = &effect.state {
-                let active = !e.remembered && *wanted == state;
-                let playing = track.cues.get(&k).is_some_and(|c| !c.is_empty());
-                if active && !playing {
-                    let cues = play(&mut self.effects);
-                    track.cues.insert(k, cues);
-                } else if !active && playing {
-                    let cues = track.cues.remove(&k).unwrap_or_default();
-                    self.effects.stop(&cues);
-                }
-            } else if let Some(event) = &effect.event
-                && !e.remembered
-                && events.iter().any(|n| n == event)
-            {
-                play(&mut self.effects);
+        let (events, clip) = match &mut track.animation {
+            Some(animation) => {
+                let events = animation.step(info, busy, cycles);
+                actor.poses = animation.animator.poses(info);
+                (events, Some(animation.animator.current()))
             }
+            None => (Vec::new(), None),
+        };
+        let state = track
+            .animation
+            .as_ref()
+            .map_or(if busy { WORK } else { IDLE }, |a| a.animator.state());
+        // Machinery spins up and winds down over about half a second.
+        track.activity = ease_activity(track.activity, state != IDLE);
+        actor.activity = track.activity;
+        if let Some(clip) = clip {
+            posed.insert(
+                id.0,
+                Posed {
+                    info: info.clone(),
+                    clip: Some(clip),
+                    position: actor.position,
+                    rotation: actor.rotation,
+                    scale: actor.scale,
+                },
+            );
         }
+        let Some(effects) = asset.effects.as_deref() else {
+            return;
+        };
+        let in_state = |s: &str| s == "always" || s == state;
+        let mount = Mount {
+            info,
+            sockets: asset.sockets.as_deref(),
+            clip: clip.unwrap_or((0, 0.0)),
+            position: actor.position,
+            rotation: actor.rotation,
+            scale: actor.scale,
+        };
+        track.cues.update(
+            &mut self.effects,
+            effects,
+            id.0,
+            tick,
+            &Doing {
+                shown,
+                in_state: &in_state,
+                events: &events,
+            },
+            &mount,
+            moves,
+        );
     }
 
     /// Construction dust on a rising scaffold (old `ConstructionScaffold.update`): three

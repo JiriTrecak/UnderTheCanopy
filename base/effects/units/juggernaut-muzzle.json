@@ -1,0 +1,155 @@
+{
+  "id": "effect.units.juggernaut-muzzle",
+  "name": "Juggernaut cannon blast",
+  "description": "One cannon firing: a big orange flash at the mouth, sparks, a smoke ring and rolling smoke. For the muzzle sockets on the attack clip's `release` event.",
+  "durationTicks": 72,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash-light",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#ffa845",
+      "accent": "#ffe0a0",
+      "durationTicks": 7,
+      "count": 1,
+      "size": 13,
+      "height": 0,
+      "intensity": 16
+    },
+    {
+      "id": "flash-core",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#ffc76a",
+      "accent": "#fff6d8",
+      "durationTicks": 6,
+      "count": 1,
+      "size": 3.6,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 1.2
+    },
+    {
+      "id": "flash-burst",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "burst",
+      "colour": "#ffcf70",
+      "accent": "#fff4d0",
+      "durationTicks": 9,
+      "count": 18,
+      "size": 1.3,
+      "height": 0,
+      "spread": 2.4,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "smoke-ring",
+      "enabled": true,
+      "startTick": 1,
+      "anchor": "target",
+      "shape": "ring",
+      "colour": "#9a948a",
+      "accent": "#c8c2b6",
+      "durationTicks": 26,
+      "count": 1,
+      "size": 3.8,
+      "height": 0,
+      "blend": "normal",
+      "orientation": "camera"
+    },
+    {
+      "id": "sparks",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#ffc65a",
+      "accent": "#fff0b0",
+      "durationTicks": 24,
+      "count": 24,
+      "size": 0.26,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 22,
+        "rate": 24,
+        "speed": 10,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": 14,
+        "drag": 0.35,
+        "spawnRadius": 0.25,
+        "startSize": 0.34,
+        "endSize": 0.04,
+        "spin": 0.0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "smoke",
+      "enabled": true,
+      "startTick": 1,
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#8a847a",
+      "accent": "#b0a898",
+      "durationTicks": 70,
+      "count": 12,
+      "size": 1.0,
+      "height": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 66,
+        "rate": 12,
+        "speed": 2.6,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": -0.6,
+        "drag": 1.4,
+        "spawnRadius": 0.45,
+        "startSize": 1.8,
+        "endSize": 4.8,
+        "spin": 0.3,
+        "fadeIn": 0.05,
+        "fadeOut": 0.75
+      }
+    }
+  ]
+}

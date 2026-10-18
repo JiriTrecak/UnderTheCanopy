@@ -2,8 +2,8 @@
   "id": "unit.beetles.steamwing",
   "name": "Steamwing",
   "description": "Boiler-winged flyer: a scout and anti-air harasser whose chin emitter fires violet bolts at ground and air. Flak Beam adds damage against flyers. Requires a Great Bastion; uses 3 supply.",
-  "model": "asset.models.units.ants-winglancer",
-  "icon": "asset.portraits.units.ants-winglancer",
+  "model": "asset.models.units.beetles-steamwing",
+  "icon": "asset.portraits.units.beetles-steamwing",
   "selectionClass": "army",
   "body": {
     "maxHp": 420,
@@ -81,14 +81,31 @@
   "supplyCost": 3,
   "unitNature": "mechanical",
   "dimensions": {
-    "radius": 1.6,
-    "height": 5.0,
-    "formationSpacing": 5.5
+    "radius": 1.8,
+    "height": 3.5,
+    "formationSpacing": 5.0
   },
-  "modelScale": 2.5,
+  "modelScale": 1.0,
   "presentation": {
+    "projectile": "effect.beetles.steamwing-bolt",
     "projectileSocket": "socket_projectile",
-    "launchEffect": "effect.beetles.weapons.steam-beam",
-    "impactEffect": "effect.beetles.weapons.steam-beam-impact"
+    "impactEffect": "effect.beetles.steamwing-impact",
+    "effects": [
+      {
+        "effect": "effect.beetles.steamwing-muzzle",
+        "event": "release",
+        "socket": "socket_projectile"
+      },
+      {
+        "effect": "effect.beetles.steamwing-exhaust",
+        "state": "walk",
+        "socket": "socket_exhaust_b"
+      },
+      {
+        "effect": "effect.beetles.steamwing-exhaust",
+        "state": "run",
+        "socket": "socket_exhaust_b"
+      }
+    ]
   }
 }

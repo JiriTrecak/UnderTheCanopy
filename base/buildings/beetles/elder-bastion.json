@@ -2,8 +2,8 @@
   "id": "building.beetles.elder-bastion",
   "name": "Elder Bastion",
   "description": "Hall tier 3, upgraded once an Engine Yard stands: unlocks the Juggernaut, level III research, Specialist Training Master, the Arc Tower and a third hero.",
-  "model": "asset.models.buildings.beetles-carapace-hall",
-  "icon": "asset.portraits.buildings.beetles-carapace-hall",
+  "model": "asset.models.buildings.beetles-elder-bastion",
+  "icon": "asset.portraits.buildings.beetles-elder-bastion",
   "body": {
     "maxHp": 3500,
     "armor": 7,
@@ -28,8 +28,7 @@
     "storage": {
       "capacity": 100000,
       "accepts": [
-        "item.amber",
-        "item.root"
+        "item.amber"
       ],
       "dropoff": true,
       "gathering": {
@@ -54,6 +53,119 @@
   },
   "level": 3,
   "supplyProvided": 15,
-  "modelScale": 1.4,
+  "network": {
+    "role": "source",
+    "radius": 32
+  },
+  "modelScale": 1.0,
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.elder-bastion-light",
+        "state": "work",
+        "socket": "socket_core"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-arc-light",
+        "state": "work",
+        "socket": "socket_crown"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-column",
+        "state": "work",
+        "socket": "socket_reactor"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-crackle",
+        "state": "work",
+        "socket": "socket_horn_l"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-crackle",
+        "state": "work",
+        "socket": "socket_horn_m"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-crackle",
+        "state": "work",
+        "socket": "socket_horn_r"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-steam",
+        "state": "work",
+        "socket": "socket_tower_fl"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-steam",
+        "state": "work",
+        "socket": "socket_tower_bl"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-steam",
+        "state": "work",
+        "socket": "socket_tower_br"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-steam",
+        "state": "work",
+        "socket": "socket_tower_fr"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-vent",
+        "event": "vent-fl",
+        "socket": "socket_tower_fl"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-vent",
+        "event": "vent-bl",
+        "socket": "socket_tower_bl"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-vent",
+        "event": "vent-br",
+        "socket": "socket_tower_br"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-vent",
+        "event": "vent-fr",
+        "socket": "socket_tower_fr"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-surge",
+        "event": "surge",
+        "socket": "socket_cap"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-rivet",
+        "event": "rivet",
+        "socket": "socket_rivet_a"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-rivet",
+        "event": "rivet",
+        "socket": "socket_rivet_c"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-rivet",
+        "event": "rivet-2",
+        "socket": "socket_rivet_b"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-rivet",
+        "event": "rivet-2",
+        "socket": "socket_rivet_d"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-gate",
+        "event": "gate",
+        "socket": "socket_gate"
+      },
+      {
+        "effect": "effect.buildings.elder-bastion-flash",
+        "event": "gate",
+        "socket": "socket_core"
+      }
+    ]
+  },
   "heroCapacity": 3
 }

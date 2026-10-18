@@ -75,7 +75,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.icons.item-resin-salve",
+    "icon": "asset.icons.ability-beetles-mender-repair",
     "animations": {
       "prepare": "cast",
       "release": "cast",

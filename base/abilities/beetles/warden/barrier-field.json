@@ -73,7 +73,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.spells.rootbreaker.roar-icon-v2",
+    "icon": "asset.icons.ability-beetles-warden-field",
     "animations": {
       "prepare": "cast",
       "release": "cast",

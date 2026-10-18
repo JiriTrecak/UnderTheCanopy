@@ -1,0 +1,32 @@
+{
+  "id": "effect.buildings.engine-yard-magic",
+  "name": "Engine Yard tank glow",
+  "description": "Soft blue-violet light of the substance in the working yard's tank. Loops while the yard works (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#b89cff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 7,
+      "height": 0,
+      "intensity": 7,
+      "motion": {
+        "opacity": {
+          "periodTicks": 44,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

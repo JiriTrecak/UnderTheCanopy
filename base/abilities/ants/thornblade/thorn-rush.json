@@ -75,6 +75,7 @@
     }
   ],
   "presentation": {
+    "icon": "asset.icons.ability-ants-thornblade-thorn-rush",
     "animations": {
       "prepare": "charge",
       "release": "charge",

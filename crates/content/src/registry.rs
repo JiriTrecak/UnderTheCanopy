@@ -274,6 +274,34 @@ fn research(check: &mut Checker) {
                 effect.units.iter().map(|u| u.as_str()),
                 "research unit",
             );
+            if effect.network_radius.is_some() {
+                // A network research widens buildings' discs and does nothing else.
+                let other = effect.max_hp.is_some()
+                    || effect.armor.is_some()
+                    || effect.damage_permille.is_some()
+                    || effect.tree_work_rate.is_some()
+                    || effect.splash_radius.is_some()
+                    || effect.splash_slow_permille.is_some()
+                    || effect.charge_cooldown_permille.is_some();
+                if other {
+                    check.fail(
+                        &location,
+                        "a network radius effect lists buildings and changes nothing else",
+                    );
+                }
+                for building in &effect.units {
+                    if let Some(target) =
+                        check.definition(&location, building.as_str(), Kind::Building)
+                        && target.network.is_none()
+                    {
+                        check.fail(
+                            &location,
+                            format!("network research target {building} has no network"),
+                        );
+                    }
+                }
+                continue;
+            }
             for unit in &effect.units {
                 let Some(target) = check.definition(&location, unit.as_str(), Kind::Unit) else {
                     continue;
@@ -588,20 +616,7 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
         .iter()
         .flat_map(|p| p.effects.iter().flatten())
     {
-        match (&e.state, &e.event) {
-            (Some(state), None) if matches!(state.as_str(), "work" | "spawn") => {}
-            (Some(state), None) => {
-                check.fail(at, format!("unknown effect state {state}: work or spawn"))
-            }
-            (None, Some(_)) => {}
-            _ => check.fail(
-                at,
-                "a presentation effect needs exactly one of state and event",
-            ),
-        }
-        if d.kind != Kind::Building {
-            check.fail(at, "presentation effects are for buildings");
-        }
+        state_effect(check, d, e);
     }
     if let Some(body) = &d.body {
         if rules
@@ -844,6 +859,43 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
                 "placement-near requires a constructable building and a finite resource source",
             );
         }
+    }
+    if (d.network.is_some() || d.power.is_some()) && d.kind != Kind::Building {
+        check.fail(at, "only buildings take part in the power network");
+    }
+    if d.network.as_ref().is_some_and(|n| n.radius == 0) {
+        check.fail(at, "a network radius must be at least one cell");
+    }
+    if let Some(on) = &d.placement_on {
+        let source = content.definition(on.source.as_str());
+        let fits = source.is_some_and(|s| {
+            s.kind == Kind::Building
+                && s.harvesting.is_some()
+                && s.resource_yield.is_some_and(|y| y != 0)
+                && s.footprint == d.footprint
+        });
+        if d.kind != Kind::Building
+            || !matches!(d.creation, Some(Creation::Construct { .. }))
+            || d.placement_near.is_some()
+            || !fits
+        {
+            check.fail(
+                at,
+                "placement-on requires a constructable building with the footprint of a \
+                 harvested resource building, and no placement-near",
+            );
+        }
+    }
+    if d.harvesting.as_ref().is_some_and(|h| h.needs_building())
+        && !content
+            .definitions
+            .iter()
+            .any(|b| b.placement_on.as_ref().is_some_and(|on| on.source == d.id))
+    {
+        check.fail(
+            at,
+            "harvesting that needs a building requires a building placed on it (placementOn)",
+        );
     }
     if (d.kind == Kind::Unit) != d.supply_cost.is_some() {
         check.fail(
@@ -1154,6 +1206,23 @@ fn races(check: &mut Checker) {
                 }
             }
         }
+        let roster_defs = || {
+            race.roster
+                .iter()
+                .filter_map(|id| content.definition(id.as_str()))
+        };
+        let needs_power = roster_defs().any(|d| d.power.is_some());
+        let has_source = roster_defs().any(|d| {
+            d.network
+                .as_ref()
+                .is_some_and(|n| n.role == crate::game::NetworkRole::Source)
+        });
+        if needs_power && !has_source {
+            check.fail(
+                &location,
+                "buildings need power but the roster has no network source",
+            );
+        }
         let setup = profile.starting_setup;
         let setup_ids = std::iter::once(&setup.fort)
             .chain(setup.units.iter().map(|u| &u.definition))
@@ -1228,6 +1297,49 @@ fn races(check: &mut Checker) {
             {
                 check.fail(&location, "starting gather requires harvest recipe");
             }
+        }
+    }
+}
+
+/// A `presentation.effects` entry (D65): a known effect, exactly one of a state the
+/// definition's kind has and a clip event, and a socket as models name them.
+fn state_effect(check: &mut Checker, d: &Definition, e: &crate::game::StateEffect) {
+    use crate::game::StateEffect;
+    let at = d.id.as_str();
+    let states = match d.kind {
+        Kind::Building => StateEffect::BUILDING_STATES,
+        Kind::Unit => StateEffect::UNIT_STATES,
+        _ => {
+            check.fail(at, "presentation effects are for units and buildings");
+            return;
+        }
+    };
+    match (&e.state, &e.event) {
+        (Some(state), None) if states.contains(&state.as_str()) => {}
+        (Some(state), None) => check.fail(
+            at,
+            format!("unknown effect state {state}: {}", states.join(", ")),
+        ),
+        (None, Some(_)) => {}
+        _ => check.fail(
+            at,
+            "a presentation effect needs exactly one of state and event",
+        ),
+    }
+    if !check.content.effects.iter().any(|v| v.id == e.effect) {
+        check.fail(at, format!("unknown presentation effect {}", e.effect));
+    }
+    if let Some(socket) = &e.socket {
+        let declared = check
+            .content
+            .asset(d.model.as_str())
+            .and_then(|a| a.sockets.as_ref())
+            .is_some_and(|s| s.iter().any(|k| &k.name == socket));
+        if !declared && !socket.starts_with("socket") {
+            check.fail(
+                at,
+                format!("effect socket {socket}: a declared socket or a socket* model node"),
+            );
         }
     }
 }

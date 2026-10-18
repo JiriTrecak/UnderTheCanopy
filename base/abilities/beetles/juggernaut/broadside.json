@@ -50,7 +50,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.spells.marshal.crownfall-icon",
+    "icon": "asset.icons.ability-ants-marshal-crownfall",
     "animations": {
       "prepare": "attack",
       "release": "attack",

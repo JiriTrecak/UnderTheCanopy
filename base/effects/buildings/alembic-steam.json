@@ -1,0 +1,51 @@
+{
+  "id": "effect.buildings.alembic-steam",
+  "name": "Alembic tube steam",
+  "description": "Small puffs of pale steam venting from the Alembic's brass condenser tubes while it works (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "steam",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 56,
+        "rate": 1,
+        "speed": 1.1,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 18,
+        "gravity": 0,
+        "drag": 0.4,
+        "spawnRadius": 0.12,
+        "startSize": 0.35,
+        "endSize": 1.6,
+        "spin": 0.4,
+        "fadeIn": 0.1,
+        "fadeOut": 0.75
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#c9c4d6",
+      "accent": "#e8e4f0",
+      "durationTicks": 80,
+      "count": 5,
+      "size": 0.5,
+      "height": 0,
+      "blend": "normal",
+      "intensity": 0.75,
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

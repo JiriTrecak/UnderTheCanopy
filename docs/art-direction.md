@@ -120,6 +120,48 @@ Jiri's boards set the look: `art/styles/units-ants.webp`, `units-beetles.webp` a
 
 The bright cartoon image `art/styles/forest-settlement.png` is no longer the target.
 
+## Icons
+
+One family drives every icon in the game: unit, hero, creature and building portraits, abilities, research, items, resources, commands and stats (2026-10-18, Claude's proposal while Jiri was away, D67). It is the look of Warcraft III: Reforged's icons, painted from our own concept art. The reference sheet is `art/styles/icons-sheet.png`.
+
+**The HUD's size sets the rules.** At 1080p a command card button shows its icon at about 48 px, a unit card at about 36 px and a hero button at about 58 px; HiDPI doubles that. An icon has to read at 36 px.
+
+**Shared by every icon:**
+- **Square and full-bleed.** A painted illustration that fills the square, never a cut-out on a plate (resources are the one exception, below). No painted frame, border, bevel, text, numbers or runes: the HUD draws the rim, the hotkey and the cooldown.
+- **One subject, big.** Few, large, chunky shapes, crisp edges, glossy materials with clear edge highlights. Detail sits at one focal point, as on the models.
+- **Lighting:** a warm key from the upper left and a cool blue-violet rim from behind on the right, the game's own sun and shadow colours. The rim outlines the silhouette.
+- **Values:** the subject is brighter and more saturated than its background, which is dark, soft and smoky and falls to near-black in the corners. Black chitin needs a mid-value glow straight behind it to read.
+- **The bottom-right corner stays calm and dark:** the hotkey letter is drawn there.
+- **No noise:** no grain, sparkle or specks (the "no noise" rule above).
+
+**By icon type** (each type has one background, so the type reads before the subject does):
+
+| Type | Subject and framing | Background |
+|---|---|---|
+| Unit portrait | bust from the front-left three-quarter view, slightly from above; the head takes about a third of the frame, the signature prop beside it | warm amber glow behind the head |
+| Machine portrait | the machine's front, close and cropped, its key part (barrel, wings, furnace window) central | warm amber glow |
+| Hero portrait | closer and grander, slightly from below: the crown shape (horn, helm, halo) fills the upper half | golden glow outlining the crown |
+| Building portrait | the whole building from the front-left at about 35° from above, like the concept, about 90 % of the width, no ground | warm amber glow behind its top |
+| Ability | the action at its peak, diagonal and moving; the weapon or effect is the subject, not the caster's portrait | the ability's energy colour, the brightest icons in the game |
+| Passive and aura | a calm symmetric emblem (a banner, an anvil, a shield) with a radiating ring | the ability's energy colour, quieter |
+| Research | a still life of the one improved piece of equipment | dark forge-steel grey with a warm glow |
+| Item | the object alone, close-up and slightly angled, in forest-made materials | a glow of the object's own colour |
+| Resource | the resource itself, about 85 % of the frame, as a **cut-out** with a thin dark edge: it sits on the resource bar and in 24 px cost rows | transparent (generated on flat white and keyed out: gpt-image-2 has no transparent output) |
+| Command and stat | one race-neutral symbolic object (boot, sword, shield, anvil) in steel, bronze, leather and wood | dark neutral with a warm glow |
+
+**Energy colours** say what an ability does: violet and white for substance (arcs, shields, mana), orange and white for fire, forge, impact and charges, warm gold for healing and auras, cold steel and white for blocking and armour. Substance is never green.
+
+**Factions.** Icons are not team-coloured: the HUD draws them as they are, as Warcraft III does. Each race's icons carry its board colour instead, so the race reads at a glance:
+- **Beetles:** glossy black chitin, dark riveted steel, brass and royal-blue plates; substance glows violet only inside glass. Research tiers read as engineering: I plain iron and steel, II brass and polish, III a violet substance-glass core.
+- **Ants:** burnt-rust chitin, ivory tusks, bone and bark, deep maple-leaf red cloaks, hoods and shields; where substance has changed them, a faint blue-violet glow in veins and sap.
+- **Bees** (when they come): black-and-gold chitin, ivory and gold filigree, blood red in glass.
+- **Neutral creatures:** their own natural materials (bark, moss, mushroom caps, water, fur, paper nests), drawn from their in-game models; corrupted ones show rot and magenta-violet spore light.
+
+**Making one.** `tools/icons/icons.py` holds the prompt blocks above as text and turns a spec (`tools/icons/specs/`, one subject line per icon) into gpt-image-2 requests for `tools/buildings/concept.sh`: the subject's approved concept is the first reference, approved icons of the same type are anchors, at 1024². It then installs the chosen image downscaled to the shipped size, and every icon folder keeps its request in `generation.json`.
+- **Size:** 256 × 256 PNG, RGB (RGBA for resources). The cooker makes BC7 mips, so the HUD's 36–116 px all sample a sharp level.
+- **Finish at install:** portraits get a gamma lift of 0.85 (black chitin on the HUD's near-black slots otherwise sinks), building portraits a 5 % crop of their empty margins.
+- **Check** every new icon on a sheet at 48 px on the HUD's dark slot colour (`#080d09`) next to the rest of its type, and in the game with `canopy shot --play`.
+
 ## References
 
 | For | Reference | What to take |

@@ -109,7 +109,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.spells.rootbreaker.roar-icon-v2",
+    "icon": "asset.icons.ability-ants-rootbreaker-roar",
     "animations": {
       "prepare": "roar",
       "release": "roar",

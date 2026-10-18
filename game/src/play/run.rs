@@ -288,6 +288,7 @@ impl InMatch {
                 speed: 1.0,
                 reveal: start.me.is_none(),
                 perspective: start.me,
+                network: false,
             },
             networked: start.chat_server,
             lens: cinematic::Lens::default(),
@@ -342,7 +343,9 @@ impl InMatch {
     /// the simulation's pace, and whose view the picture shows. A new perspective clears
     /// the selection (old `onVision`).
     fn set_tools(&mut self, mut tools: MatchTools) {
+        self.play.show_network = tools.network;
         if self.networked {
+            self.tools.network = tools.network;
             return;
         }
         if !tools.reveal && tools.perspective.is_none() {
@@ -1119,6 +1122,7 @@ pub(crate) fn world_ui_input(
         tree: world_ui
             .tree
             .map(|r| [r.position[0], r.position[1], r.radius]),
+        network: world_ui.network.clone(),
         ..WorldUiInput::default()
     }
 }

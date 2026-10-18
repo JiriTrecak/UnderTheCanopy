@@ -67,7 +67,7 @@
   ],
   "onRelease": [],
   "presentation": {
-    "icon": "asset.custom.bash-command-icon",
+    "icon": "asset.icons.ability-beetles-breacher-charge",
     "animations": {
       "prepare": "idle",
       "release": "idle",

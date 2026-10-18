@@ -1,0 +1,54 @@
+{
+  "id": "building.ants.substance-well",
+  "name": "Substance Well",
+  "description": "Built on a Substance Deposit. Workers gather Substance from it and carry it straight in; two workers saturate it. When it falls, the deposit remains.",
+  "model": "asset.models.buildings.ants-rootworks",
+  "icon": "asset.portraits.buildings.ants-rootworks",
+  "body": {
+    "maxHp": 1000,
+    "armor": 5,
+    "armorType": "structure"
+  },
+  "vision": 14,
+  "footprint": {
+    "width": 8,
+    "depth": 8
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 4.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 150
+      }
+    ],
+    "workTicks": 1600,
+    "workAnimation": "build"
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {
+    "storage": {
+      "capacity": 100000,
+      "accepts": [
+        "item.root"
+      ],
+      "dropoff": true
+    }
+  },
+  "placementOn": {
+    "source": "building.neutral.corrupted-root"
+  },
+  "category": "category.build",
+  "level": 1,
+  "modelScale": 0.73,
+  "command": {
+    "priority": 25,
+    "category": "category.build"
+  }
+}

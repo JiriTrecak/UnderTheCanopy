@@ -67,7 +67,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.spells.marshal.faultline-icon",
+    "icon": "asset.icons.ability-beetles-arcwright-arc",
     "animations": {
       "prepare": "cast",
       "release": "cast",

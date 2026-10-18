@@ -3,7 +3,7 @@
   "name": "Shell Forge",
   "description": "Forges weapons and plating for the colony: Weapon Edges, Bolt Calibre and Plating, three levels each. Level II needs a Great Bastion, level III an Elder Bastion.",
   "model": "asset.models.buildings.beetles-shell-forge",
-  "icon": "asset.portraits.buildings.beetles-shell-foundry",
+  "icon": "asset.portraits.buildings.beetles-shell-forge",
   "body": {
     "maxHp": 1250,
     "armor": 5,
@@ -50,6 +50,7 @@
   },
   "category": "category.build",
   "level": 1,
+  "power": "required",
   "modelScale": 1.0,
   "command": {
     "category": "category.build",

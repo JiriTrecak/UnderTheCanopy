@@ -64,7 +64,7 @@ pub fn advance(ctx: &mut Ctx) {
         let Some(e) = ctx.state.entities.get(b) else {
             continue;
         };
-        if e.upgrade.is_none() || !ready(e, tick) {
+        if e.upgrade.is_none() || !ready(e, tick) || ctx.network.unpowered(b) {
             continue;
         }
         let owner = e.owner;

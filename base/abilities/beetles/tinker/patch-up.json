@@ -56,7 +56,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.icons.item-restoration-draught",
+    "icon": "asset.icons.ability-beetles-mender-repair",
     "animations": {
       "prepare": "build",
       "release": "build",

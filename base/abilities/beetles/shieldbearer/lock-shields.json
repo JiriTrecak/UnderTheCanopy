@@ -80,7 +80,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.custom.frost-armor-command",
+    "icon": "asset.icons.ability-beetles-shieldbearer-lock-shields",
     "animations": {
       "prepare": "cast",
       "release": "cast",

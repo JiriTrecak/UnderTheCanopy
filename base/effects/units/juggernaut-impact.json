@@ -1,0 +1,249 @@
+{
+  "id": "effect.units.juggernaut-impact",
+  "name": "Juggernaut shell impact",
+  "description": "Where a Juggernaut shell lands: a blinding orange flash, a towering fireball that rolls into smoke, a shock ring along the ground, flying sparks and debris and a slow cloud of dust.",
+  "durationTicks": 96,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash-light",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#ffa040",
+      "accent": "#ffe2a8",
+      "durationTicks": 10,
+      "count": 1,
+      "size": 18,
+      "height": 1.5,
+      "intensity": 20
+    },
+    {
+      "id": "flash-core",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#ffc070",
+      "accent": "#fff4d8",
+      "durationTicks": 8,
+      "count": 1,
+      "size": 6.5,
+      "height": 1.2,
+      "blend": "additive",
+      "intensity": 1.4
+    },
+    {
+      "id": "fireball",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "billboard",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 48,
+      "count": 1,
+      "size": 10,
+      "height": 3.2,
+      "blend": "normal",
+      "flipbook": {
+        "columns": 4,
+        "rows": 4,
+        "firstFrame": 0,
+        "frames": 16,
+        "frameTicks": 3,
+        "mode": "once",
+        "randomStart": false
+      },
+      "texture": {
+        "asset": "asset.effects.ants.resin-burst",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "fireball-side",
+      "enabled": true,
+      "startTick": 3,
+      "anchor": "target",
+      "shape": "billboard",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 45,
+      "count": 1,
+      "size": 7,
+      "height": 2.4,
+      "blend": "normal",
+      "offset": {
+        "x": 1.6,
+        "y": 0,
+        "z": 0.8
+      },
+      "flipbook": {
+        "columns": 4,
+        "rows": 4,
+        "firstFrame": 0,
+        "frames": 16,
+        "frameTicks": 3,
+        "mode": "once",
+        "randomStart": false
+      },
+      "texture": {
+        "asset": "asset.effects.ants.resin-burst",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "shock-ring",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "ring",
+      "colour": "#ffd08a",
+      "accent": "#fff2d0",
+      "durationTicks": 16,
+      "count": 1,
+      "size": 12,
+      "height": 0.15,
+      "blend": "additive",
+      "intensity": 1.6
+    },
+    {
+      "id": "dust-ring",
+      "enabled": true,
+      "startTick": 2,
+      "anchor": "target",
+      "shape": "ring",
+      "colour": "#8f8170",
+      "accent": "#b8aa96",
+      "durationTicks": 36,
+      "count": 1,
+      "size": 9,
+      "height": 0.1,
+      "blend": "normal"
+    },
+    {
+      "id": "sparks",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#ffc65a",
+      "accent": "#fff0b0",
+      "durationTicks": 32,
+      "count": 40,
+      "size": 0.3,
+      "height": 0.8,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 30,
+        "rate": 40,
+        "speed": 15,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 75,
+        "gravity": 20,
+        "drag": 0.3,
+        "spawnRadius": 0.6,
+        "startSize": 0.42,
+        "endSize": 0.05,
+        "spin": 0.0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "debris",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#3a3430",
+      "accent": "#5a5048",
+      "durationTicks": 40,
+      "count": 24,
+      "size": 0.5,
+      "height": 0.6,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 38,
+        "rate": 24,
+        "speed": 11,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 55,
+        "gravity": 24,
+        "drag": 0.2,
+        "spawnRadius": 0.8,
+        "startSize": 0.6,
+        "endSize": 0.35,
+        "spin": 2.0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.3
+      }
+    },
+    {
+      "id": "dust",
+      "enabled": true,
+      "startTick": 4,
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#8a7c6a",
+      "accent": "#b4a690",
+      "durationTicks": 96,
+      "count": 16,
+      "size": 1.0,
+      "height": 0.5,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 90,
+        "rate": 16,
+        "speed": 4.5,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 85,
+        "gravity": -0.4,
+        "drag": 1.4,
+        "spawnRadius": 1.5,
+        "startSize": 2.6,
+        "endSize": 7.5,
+        "spin": 0.3,
+        "fadeIn": 0.05,
+        "fadeOut": 0.7
+      }
+    }
+  ]
+}

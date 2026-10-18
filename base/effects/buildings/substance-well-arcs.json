@@ -1,0 +1,139 @@
+{
+  "id": "effect.buildings.substance-well-arcs",
+  "name": "Substance Well coil arcs",
+  "description": "Violet arcs crackling round the Substance Well's turning coil cap while workers gather (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "sparks",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 9,
+        "rate": 24,
+        "speed": 3.2,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": 0.0,
+        "drag": 1.3,
+        "spawnRadius": 0.57,
+        "startSize": 0.2,
+        "endSize": 0.0,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#e6dcff",
+      "accent": "#8a5cff",
+      "durationTicks": 80,
+      "count": 12,
+      "size": 0.15,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 3.2,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "embers",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 34,
+        "rate": 7,
+        "speed": 0.93,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 55,
+        "gravity": -0.53,
+        "drag": 0.6,
+        "spawnRadius": 0.47,
+        "startSize": 0.12,
+        "endSize": 0.0,
+        "spin": 2,
+        "fadeIn": 0.05,
+        "fadeOut": 0.6
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#b89cff",
+      "accent": "#efe8ff",
+      "durationTicks": 80,
+      "count": 8,
+      "size": 0.09,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "flicker",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#9a74ff",
+      "accent": "#e6dcff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 1.33,
+      "height": 0.0,
+      "intensity": 0.6,
+      "motion": {
+        "opacity": {
+          "periodTicks": 3,
+          "min": 0.3,
+          "max": 1.0,
+          "easing": "bounce"
+        }
+      }
+    },
+    {
+      "id": "arc-light",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#9a74ff",
+      "accent": "#d2c2ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 4.67,
+      "height": 0.0,
+      "intensity": 7,
+      "motion": {
+        "opacity": {
+          "periodTicks": 3,
+          "min": 0.35,
+          "max": 1.0,
+          "easing": "bounce"
+        }
+      }
+    }
+  ]
+}

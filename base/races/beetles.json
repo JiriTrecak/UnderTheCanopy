@@ -5,7 +5,7 @@
   "startingSetup": {
     "fort": "building.beetles.bastion",
     "inventory": {
-      "item.amber": 500
+      "item.amber": 575
     },
     "units": [
       {
@@ -94,7 +94,7 @@
     "building.beetles.hornwatch",
     "building.beetles.arc-tower",
     "building.beetles.ancestor-shrine",
-    "building.beetles.rootworks"
+    "building.beetles.substance-well"
   ],
   "construction": {
     "scaffold": "asset.models.construction.beetles",

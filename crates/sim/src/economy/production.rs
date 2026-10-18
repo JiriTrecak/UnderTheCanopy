@@ -169,6 +169,10 @@ pub fn start_workplace(ctx: &mut Ctx, b: EntityId, supply: &mut Cache) {
         }
         return;
     }
+    if ctx.network.unpowered(b) {
+        set_status(ctx, b, Status::Unpowered);
+        return;
+    }
     if lane(e) == Some(Lane::Revival) {
         set_status(ctx, b, Status::RevivingHero);
         return;
@@ -423,6 +427,10 @@ pub fn advance_training(ctx: &mut Ctx) {
             .expect("production");
         if p.paused {
             p.status = Status::Paused;
+            continue;
+        }
+        if ctx.network.unpowered(b) {
+            p.status = Status::Unpowered;
             continue;
         }
         p.status = Status::Training;

@@ -2,8 +2,8 @@
   "id": "building.beetles.war-lodge",
   "name": "War Lodge",
   "description": "Iron-clad barracks for Shieldbearers, Bolters and Breachers. Researches Interlocking Shields, Drum Magazines and Heavy Pistons.",
-  "model": "asset.models.buildings.beetles-iron-garrison",
-  "icon": "asset.portraits.buildings.beetles-iron-garrison",
+  "model": "asset.models.buildings.beetles-war-lodge",
+  "icon": "asset.portraits.buildings.beetles-war-lodge",
   "body": {
     "maxHp": 1400,
     "armor": 5,
@@ -61,9 +61,34 @@
   },
   "category": "category.build",
   "level": 1,
-  "modelScale": 1.3,
+  "power": "required",
+  "modelScale": 1.0,
   "command": {
     "category": "category.build",
     "priority": 80
+  },
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.war-lodge-steam",
+        "state": "work",
+        "socket": "socket_tower_l"
+      },
+      {
+        "effect": "effect.buildings.war-lodge-steam",
+        "state": "work",
+        "socket": "socket_tower_r"
+      },
+      {
+        "effect": "effect.buildings.war-lodge-clang",
+        "event": "clang",
+        "socket": "socket_clang"
+      },
+      {
+        "effect": "effect.buildings.war-lodge-gate",
+        "event": "gate",
+        "socket": "socket_gate"
+      }
+    ]
   }
 }

@@ -40,12 +40,15 @@ pub struct PublicWork {
     pub pose: Option<WorkPose>,
     /// Workers assigned to a harvest building (a mine).
     pub site: Option<Workforce>,
-    /// A building is at work: training, researching, upgrading or reviving, and not
-    /// paused or blocked. Everyone who sees it sees that it works, never at what (its
-    /// animation and effects, D65).
+    /// A building is at work: training, researching, upgrading, reviving or gathered from
+    /// (workers assigned to it as a harvest site), and not paused or blocked. Everyone who
+    /// sees it sees that it works, never at what (its animation and effects, D65).
     pub busy: bool,
     /// Training cycles the building has finished: a unit stepped out when it grows.
     pub cycles: u32,
+    /// A complete building that needs power stands outside its owner's network: its work
+    /// pauses (D66). Anyone who sees it sees that it is dark.
+    pub unpowered: bool,
 }
 
 /// A worker's job as its owner's command card sees it.
@@ -112,6 +115,10 @@ pub struct Colony {
 pub struct WorkViews {
     sites: BTreeMap<EntityId, u32>,
     bases: BTreeMap<EntityId, Workforce>,
+    unpowered: std::collections::BTreeSet<EntityId>,
+    /// Buildings placed on a resource (`placementOn`): the workforce of the resource
+    /// under them.
+    tapped: BTreeMap<EntityId, Workforce>,
 }
 
 /// Every worker's source (old `gatherAssignments`), from state alone.
@@ -150,7 +157,42 @@ impl WorkViews {
             *sites.entry(source).or_default() += 1;
         }
         let bases = base_gathering(state, catalog, index, &assignments);
-        Self { sites, bases }
+        let mut tapped = BTreeMap::new();
+        for b in index
+            .buildings
+            .iter()
+            .filter_map(|&id| state.entities.get(id))
+        {
+            let Some(on) = catalog.get(b.definition).placement_on.as_ref() else {
+                continue;
+            };
+            let (x, y) = (i64::from(b.position.x), i64::from(b.position.y));
+            let under = index.resources.near(x, y, 1000).into_iter().find(|&r| {
+                state.entities.get(r).is_some_and(|r| {
+                    r.position == b.position && catalog.id(r.definition) == &on.source
+                })
+            });
+            if let Some(r) = under {
+                let recommended = catalog
+                    .get(state.entities.get(r).expect("resource").definition)
+                    .harvesting
+                    .as_ref()
+                    .map_or(0, |h| h.recommended_workers);
+                tapped.insert(
+                    b.id,
+                    Workforce {
+                        workers: sites.get(&r).copied().unwrap_or(0),
+                        recommended,
+                    },
+                );
+            }
+        }
+        Self {
+            sites,
+            bases,
+            tapped,
+            unpowered: economy.network.unpowered_buildings().clone(),
+        }
     }
 }
 
@@ -326,10 +368,12 @@ pub fn public(
 ) -> Option<PublicWork> {
     let tick = state.tick.saturating_sub(1);
     let d = catalog.get(e.definition);
-    let site = (d.kind == Kind::Building && d.harvesting.is_some()).then(|| Workforce {
-        workers: views.sites.get(&e.id).copied().unwrap_or(0),
-        recommended: d.harvesting.as_ref().map_or(0, |h| h.recommended_workers),
-    });
+    let site = (d.kind == Kind::Building && d.harvesting.is_some())
+        .then(|| Workforce {
+            workers: views.sites.get(&e.id).copied().unwrap_or(0),
+            recommended: d.harvesting.as_ref().map_or(0, |h| h.recommended_workers),
+        })
+        .or_else(|| views.tapped.get(&e.id).copied());
     let cargo = e.unit.as_ref().and_then(|u| u.work.cargo.clone());
     let pose = pose(state, catalog, e, tick, at_goal);
     let producing = e.production.as_ref().is_some_and(|p| {
@@ -340,21 +384,26 @@ pub fn public(
                 Status::Training | Status::Planting | Status::Upgrading | Status::RevivingHero
             )
     });
+    let unpowered = views.unpowered.contains(&e.id);
+    // A harvest building works while workers gather from it (a well pumps, D65).
+    let gathered = site.is_some_and(|s| s.workers > 0);
     let busy = e.construction.is_none()
+        && !unpowered
         && (producing
+            || gathered
             || e.research.as_ref().is_some_and(|r| !r.queue.is_empty())
             || e.upgrade.is_some()
             || e.revival.as_ref().is_some_and(|r| !r.queue.is_empty()));
     let cycles = e.production.as_ref().map_or(0, |p| p.produced);
-    (cargo.is_some() || pose.is_some() || site.is_some() || busy || cycles > 0).then_some(
-        PublicWork {
+    (cargo.is_some() || pose.is_some() || site.is_some() || busy || cycles > 0 || unpowered)
+        .then_some(PublicWork {
             cargo,
             pose,
             site,
             busy,
             cycles,
-        },
-    )
+            unpowered,
+        })
 }
 
 fn progress(done: u32, total: u32) -> Progress {

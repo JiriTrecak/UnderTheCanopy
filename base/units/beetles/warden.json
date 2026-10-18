@@ -2,8 +2,8 @@
   "id": "unit.beetles.warden",
   "name": "Warden",
   "description": "Carries a barrier projector: a curved violet pane that stops enemy missiles and shells from the front. Bulwark Pulse after Specialist Training. Requires a Great Bastion; uses 3 supply.",
-  "model": "asset.models.units.ants-silkwarden",
-  "icon": "asset.portraits.units.ants-silkwarden",
+  "model": "asset.models.units.beetles-warden",
+  "icon": "asset.portraits.units.beetles-warden",
   "selectionClass": "army",
   "body": {
     "maxHp": 640,

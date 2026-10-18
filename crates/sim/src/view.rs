@@ -171,6 +171,14 @@ pub struct MissionView {
     pub error: Option<String>,
 }
 
+/// The viewer's power network (D66): its powered discs (every owner's for an observer)
+/// and the building that extends it, for placement messages.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct NetworkView {
+    pub fields: Vec<crate::economy::network::Field>,
+    pub hint: Option<String>,
+}
+
 #[derive(Debug, Clone)]
 pub struct View {
     pub tick: u32,
@@ -205,6 +213,8 @@ pub struct View {
     pub pings: Vec<crate::state::Ping>,
     /// Players out of the match so far, for everyone (filled by the world).
     pub defeated: Vec<Owner>,
+    /// The viewer's power network (D66).
+    pub network: NetworkView,
 }
 
 impl View {
@@ -327,6 +337,10 @@ impl View {
         Self {
             pings,
             defeated: Vec::new(),
+            network: NetworkView {
+                fields: economy.network().fields(owner).copied().collect(),
+                hint: economy.network_hint(owner).map(str::to_owned),
+            },
             tick: state.tick,
             owner: Some(owner),
             entities,
@@ -402,6 +416,10 @@ impl View {
             .collect();
         Self {
             defeated: Vec::new(),
+            network: NetworkView {
+                fields: economy.network().all_fields().to_vec(),
+                hint: None,
+            },
             pings: state
                 .pings
                 .iter()
@@ -431,6 +449,34 @@ impl View {
             .binary_search_by_key(&id, EntityView::id)
             .ok()
             .map(|i| &self.entities[i])
+    }
+
+    /// Known resources a known building placed on them (`placementOn`) stands on: they are
+    /// drawn and picked as that building (a Substance Well on its deposit, D62).
+    pub fn covered(&self, catalog: &Catalog) -> std::collections::BTreeSet<EntityId> {
+        let mut on: Vec<(i32, i32, &canopy_content::Id)> = self
+            .entities
+            .iter()
+            .filter_map(|e| {
+                let source = &catalog.get(e.definition()).placement_on.as_ref()?.source;
+                Some((e.public.position.x, e.public.position.y, source))
+            })
+            .collect();
+        if on.is_empty() {
+            return Default::default();
+        }
+        on.sort_unstable();
+        self.entities
+            .iter()
+            .filter(|e| {
+                e.public.resource.is_some() && {
+                    let id = catalog.id(e.definition());
+                    on.binary_search(&(e.public.position.x, e.public.position.y, id))
+                        .is_ok()
+                }
+            })
+            .map(EntityView::id)
+            .collect()
     }
 }
 

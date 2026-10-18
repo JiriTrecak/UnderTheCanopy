@@ -2,8 +2,8 @@
   "id": "building.beetles.alembic",
   "name": "Alembic",
   "description": "Distillery of the specialists who handle substance through devices: trains Arcwrights, Menders and Wardens and researches Specialist Training. Requires a Great Bastion.",
-  "model": "asset.models.buildings.ants-chitin-workshop",
-  "icon": "asset.portraits.buildings.ants-chitin-workshop",
+  "model": "asset.models.buildings.beetles-alembic",
+  "icon": "asset.portraits.buildings.beetles-alembic",
   "body": {
     "maxHp": 1150,
     "armor": 4,
@@ -67,9 +67,49 @@
   },
   "category": "category.build-advanced",
   "level": 1,
-  "modelScale": 1.25,
+  "power": "required",
+  "modelScale": 1.0,
   "command": {
     "category": "category.build-advanced",
     "priority": 90
+  },
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.alembic-glow",
+        "state": "work",
+        "socket": "socket_column"
+      },
+      {
+        "effect": "effect.buildings.alembic-motes",
+        "state": "work",
+        "socket": "socket_column"
+      },
+      {
+        "effect": "effect.buildings.alembic-crackle",
+        "state": "work",
+        "socket": "socket_spire"
+      },
+      {
+        "effect": "effect.buildings.alembic-steam",
+        "state": "work",
+        "socket": "socket_tube_l"
+      },
+      {
+        "effect": "effect.buildings.alembic-steam",
+        "state": "work",
+        "socket": "socket_tube_r"
+      },
+      {
+        "effect": "effect.buildings.alembic-discharge",
+        "event": "discharge",
+        "socket": "socket_spire"
+      },
+      {
+        "effect": "effect.buildings.alembic-door",
+        "event": "discharge",
+        "socket": "socket_door"
+      }
+    ]
   }
 }

@@ -74,7 +74,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.icons.item-moon-dew",
+    "icon": "asset.icons.ability-beetles-coilkeeper-recharge",
     "animations": {
       "prepare": "cast",
       "release": "cast",

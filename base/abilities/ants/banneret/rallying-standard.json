@@ -84,7 +84,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.custom.roar-command-icon",
+    "icon": "asset.icons.ability-ants-banneret-rallying-standard",
     "animations": {
       "prepare": "cast",
       "release": "cast",

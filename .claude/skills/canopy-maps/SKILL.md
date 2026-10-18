@@ -29,7 +29,7 @@ echo-isles.utcm/
 
 The main fields:
 - `size`: cells per side, one of 256, 480, 512, 640, 800, 960, 1024, 2048 (the renderer draws up to 1024).
-- `playable` (optional): `{x, z, width, height}` in cells, the part play happens in. Around it is a border of scenery nobody enters (unwalkable, unbuildable; its trees are still resources, the edge ones cut from inside); the camera, minimap and preview frame it. Starts stand at least 8 cells inside it. Warcraft III imports set it from the map's margins (decision D56).
+- `playable` (optional): `{x, z, width, height}` in cells, the part play happens in. Around it is a border of scenery nobody enters (unwalkable, unbuildable); the camera, minimap and preview frame it. Starts stand at least 8 cells inside it. Warcraft III imports set it from the map's margins (decision D56).
 - `biome`, `sandbox`, `initialExploration`.
 - `playerStarts`: `[{player, x, z, setup, mainFort}]`, where `setup` is a race starting setup id such as `setup.ants`.
 - `entities`: pre-placed units and buildings: `{id, definition, position: {x, y}, rotation, owner: "none" | "player.N", initialState?, appearance?: {asset, scale}}`.
@@ -68,7 +68,9 @@ Samples come back bit-exact (`crates/content/src/map/grid.rs`).
 
 `scenery.json` objects: `{id, asset, x, z, elevation, yaw (radians), scale, heightMode, visible, locked}`. `asset` is a scenery id (`scenery.woodland-pine-a`, skill **canopy-assets**).
 
-Order matters. The simulation turns each harvestable piece standing on playable ground into a resource, numbered in object order. Only the first one on a cell counts.
+Order matters. The simulation turns each harvestable piece standing on playable ground into a resource, numbered in object order. Only the first one on a cell counts. The base game's trees are not harvestable (D62): they are scenery whose blockers close the ground.
+
+**Substance Deposits** (`building.neutral.corrupted-root`) are entities, like amber mines. A race's Substance Well is built exactly on one (`placementOn`), so place each on flat, open, dry ground every army can walk to, with its 8-cell footprint on the building lattice (edges at -0.5 + 4k) and its 3-cell clearance free of trees and other buildings.
 
 ## Reading and writing in code
 

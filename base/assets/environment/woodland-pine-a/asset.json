@@ -71,8 +71,7 @@
       "mode": "pivot"
     },
     "harvesting": {
-      "replacement": "asset.models.environment.woodland-pine-stump",
-      "definition": "resource.forest.tree"
+      "replacement": "asset.models.environment.woodland-pine-stump"
     }
   },
   "license": "Original Blender geometry and original foliage and bark textures generated with built-in ImageGen. All geometry and pixels independently authored."

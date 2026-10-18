@@ -2,7 +2,7 @@
   "id": "research.beetles.heavy-pistons",
   "name": "Heavy Pistons",
   "description": "Breachers can charge every 5 seconds instead of 10. Requires a Great Bastion.",
-  "icon": "asset.portraits.units.ants-thornblade",
+  "icon": "asset.icons.research-beetles-heavy-pistons",
   "priority": 65,
   "requires": [
     "building.beetles.great-bastion"

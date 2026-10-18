@@ -2,7 +2,7 @@
   "id": "research.beetles.plating-2",
   "name": "Plating II",
   "description": "Beetle troops and machines gain 2 armor (level II; levels add up). Requires a Great Bastion.",
-  "icon": "asset.icons.item-amber-carapace",
+  "icon": "asset.icons.research-ants-reinforced-carapace",
   "priority": 79,
   "requires": [
     "building.beetles.great-bastion",

@@ -1,0 +1,30 @@
+{
+  "n": 2,
+  "anchors": {
+    "building": [".asset-work/concepts/buildings/refs/icons/anchor-building.png"]
+  },
+  "items": [
+    {"name": "b-bastion", "kind": "building", "faction": "beetles", "refs": [".asset-work/concepts/buildings/refs/icons/beetle-hall-t1-idle.png"],
+     "subject": "the BASTION, the beetles' main hall (tier one): a colossal armoured beetle turned into a fortress, its great domed royal-blue shell with brass ribs, black chitin legs and claws gripping a low riveted stone-and-steel plinth, two brass cupola towers and royal-blue banners at its sides."},
+    {"name": "b-great-bastion", "kind": "building", "faction": "beetles", "refs": [".asset-work/concepts/buildings/refs/icons/beetle-hall-t2-idle.png"],
+     "subject": "the GREAT BASTION, the beetle main hall at tier two: the colossal armoured beetle fortress grown larger and taller, its royal-blue domed shell with brass ribs, more brass towers and chimneys around it, stairs and banners on a bigger riveted plinth."},
+    {"name": "b-elder-bastion", "kind": "building", "faction": "beetles", "refs": [".asset-work/concepts/buildings/refs/icons/beetle-hall-t3-idle.png"],
+     "subject": "the ELDER BASTION, the beetle main hall at tier three: the grandest armoured beetle fortress, a tall royal-blue domed shell crowned by a brass spire and two great curved golden horns rising on either side, black claws gripping a wide plinth with banners."},
+    {"name": "b-brood-den", "kind": "building", "faction": "beetles", "refs": [".asset-work/concepts/buildings/refs/icons/beetle-brood-den-idle.png"],
+     "subject": "the BROOD DEN, the beetles' supply building and network node: a low round building of rounded royal-blue shell segments around a dark steel dome, a brass pressure gauge and a valve wheel on top."},
+    {"name": "b-substance-well", "kind": "building", "faction": "beetles", "refs": [".asset-work/concepts/buildings/refs/icons/beetle-substance-well-idle.png"],
+     "subject": "the SUBSTANCE WELL, built on a deposit of the forest's magic: a round royal-blue and brass base with a tall glass column in its centre where raw violet substance glows and swirls, a copper coil cap on top, faint violet light spilling over the base."},
+    {"name": "b-war-lodge", "kind": "building", "faction": "beetles", "refs": [".asset-work/concepts/buildings/refs/icons/beetle-war-lodge-idle.png"],
+     "subject": "the WAR LODGE, the beetles' barracks: a squat riveted fortress block of dark steel and royal-blue plates with brass trim, horned corner towers, a big royal-blue shield crest over a portcullis gate."},
+    {"name": "b-shell-forge", "kind": "building", "faction": "beetles", "refs": [".asset-work/concepts/buildings/refs/icons/forge-idle.png"],
+     "subject": "the SHELL FORGE, the beetles' weapons and armour workshop: a royal-blue domed forge with brass ribs and three brass chimneys, a dark arched furnace mouth with an anvil in front, a quench tank at its side; at rest, no fire."},
+    {"name": "b-alembic", "kind": "building", "faction": "beetles", "refs": [".asset-work/concepts/buildings/refs/icons/beetle-alembic-idle.png"],
+     "subject": "the ALEMBIC, where beetle specialists learn to handle substance through devices: a tall building of brass retorts, glass flasks and pipes around a central royal-blue domed column topped by a stacked brass spire, on a riveted plinth with banners."},
+    {"name": "b-engine-yard", "kind": "building", "faction": "beetles", "refs": [".asset-work/concepts/buildings/refs/icons/beetle-engine-yard-idle.png"],
+     "subject": "the ENGINE YARD, the beetles' machine workshop: a big royal-blue barrel-vaulted hangar roof with brass ribs over an open bay, a brass gear wheel and a crane frame at its side, steel tanks, on a riveted plinth."},
+    {"name": "b-hornwatch", "kind": "building", "faction": "beetles", "refs": [".asset-work/concepts/buildings/refs/icons/beetle-hornwatch-idle.png"],
+     "subject": "the HORNWATCH, the beetles' guard tower: a stout round royal-blue and brass tower flanked by two great curved black horns, a brass bolt cannon mounted on top, on a small riveted plinth. Tall in the frame."},
+    {"name": "b-ancestor-shrine", "kind": "building", "faction": "beetles", "refs": [".asset-work/concepts/buildings/refs/icons/beetle-ancestor-shrine-idle.png"],
+     "subject": "the ANCESTOR SHRINE, where beetle heroes are called: a tall stepped dark-stone and brass altar holding a huge black ancestral beetle helm-statue in a brass frame, royal-blue banners on brass posts, stairs leading up. Tall in the frame."}
+  ]
+}

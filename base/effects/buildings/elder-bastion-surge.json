@@ -1,0 +1,87 @@
+{
+  "id": "effect.buildings.elder-bastion-surge",
+  "name": "Elder Bastion reactor surge",
+  "description": "A swell of blue-violet light, rays and a fountain of substance motes from the Elder Bastion's reactor cap as it kicks up on each surge. Plays on the work clip's `surge` events.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "swell",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#d8ccff",
+      "durationTicks": 22,
+      "count": 1,
+      "size": 5.5,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 1.0
+    },
+    {
+      "id": "rays",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "streaks",
+      "colour": "#e6dcff",
+      "accent": "#8a5cff",
+      "durationTicks": 16,
+      "count": 10,
+      "size": 0.18,
+      "height": 1.2,
+      "intensity": 1.1,
+      "spread": 2.6,
+      "length": 2.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "motes",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 40,
+        "rate": 22,
+        "speed": 4.2,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": 1.5,
+        "drag": 0.9,
+        "spawnRadius": 1.4,
+        "startSize": 0.42,
+        "endSize": 0.05,
+        "spin": 1.5,
+        "fadeIn": 0.05,
+        "fadeOut": 0.6
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#a07cff",
+      "accent": "#e6dcff",
+      "durationTicks": 40,
+      "count": 22,
+      "size": 0.3,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.8,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}
