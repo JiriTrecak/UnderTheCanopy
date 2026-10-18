@@ -12,3 +12,4 @@
 
 # Blender backups
 *.blend1
+__pycache__/
