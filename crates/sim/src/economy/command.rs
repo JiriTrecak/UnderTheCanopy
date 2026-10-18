@@ -230,11 +230,23 @@ fn gather(
     target: EntityId,
     append: bool,
 ) -> Result<Vec<EntityId>, String> {
+    // Workers sent to a building that stands on a resource (a Substance Well) gather the
+    // resource under it.
+    let target = harvest::gather_target(ctx, target);
     let visible = ctx.state.entities.get(target).is_some_and(|t| {
         t.resource.as_ref().is_some_and(|r| r.amount > 0) && senses.sight(ctx).seen(owner, t)
     });
     if !visible {
         return Err("Resource is not visible".into());
+    }
+    if !append
+        && ctx
+            .state
+            .entities
+            .get(target)
+            .is_some_and(|t| !harvest::open_to(ctx, owner, t))
+    {
+        return Err("Build on this deposit first; only its builder gathers here".into());
     }
     let mut actors = Vec::new();
     for &id in eligible {
@@ -245,7 +257,9 @@ fn gather(
         let takes = e.unit.is_some()
             && harvest::harvest_item(ctx.catalog, e, t).is_some()
             && can_issue(e, append)
-            && ((append && busy(e)) || harvest::can_assign_gather(ctx.catalog, e, t));
+            && ((append && busy(e))
+                || (harvest::can_assign_gather(ctx.catalog, e, t)
+                    && harvest::open_to(ctx, owner, t)));
         if !takes {
             continue;
         }

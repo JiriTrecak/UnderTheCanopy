@@ -758,6 +758,37 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
             );
         }
     }
+    if let Some(on) = &d.placement_on {
+        let source = content.definition(on.source.as_str());
+        let fits = source.is_some_and(|s| {
+            s.kind == Kind::Building
+                && s.harvesting.is_some()
+                && s.resource_yield.is_some_and(|y| y != 0)
+                && s.footprint == d.footprint
+        });
+        if d.kind != Kind::Building
+            || !matches!(d.creation, Some(Creation::Construct { .. }))
+            || d.placement_near.is_some()
+            || !fits
+        {
+            check.fail(
+                at,
+                "placement-on requires a constructable building with the footprint of a \
+                 harvested resource building, and no placement-near",
+            );
+        }
+    }
+    if d.harvesting.as_ref().is_some_and(|h| h.needs_building())
+        && !content
+            .definitions
+            .iter()
+            .any(|b| b.placement_on.as_ref().is_some_and(|on| on.source == d.id))
+    {
+        check.fail(
+            at,
+            "harvesting that needs a building requires a building placed on it (placementOn)",
+        );
+    }
     if (d.kind == Kind::Unit) != d.supply_cost.is_some() {
         check.fail(
             at,

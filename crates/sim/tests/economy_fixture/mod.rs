@@ -1,7 +1,8 @@
 //! Test-owned content and maps for the economy tests: a worker, a soldier and a hero; a
 //! hall (drop-off, trains workers, upgrades into a keep), a house, a barracks, a forge
 //! (research), a sanctuary (revival and heroes) and a forester (plants trees); felled
-//! trees and an amber mine. No shipped content.
+//! trees, an amber mine, and an endless spring tapped by a well built on it. No shipped
+//! content.
 #![allow(dead_code)]
 
 use canopy_content::{
@@ -35,6 +36,10 @@ pub const SANCTUARY: &str = "building.test.sanctuary";
 pub const FORESTER: &str = "building.test.forester";
 pub const MINE: &str = "building.test.mine";
 pub const TREE: &str = "resource.test.tree";
+pub const ESSENCE: &str = "item.test.essence";
+/// An endless deposit gathered only through a well built on it.
+pub const SPRING: &str = "building.test.spring";
+pub const WELL: &str = "building.test.well";
 pub const TOOLS: &str = "research.test.tools";
 pub const VIGOUR: &str = "research.test.vigour";
 
@@ -141,6 +146,27 @@ fn game() -> Value {
                 "yield": 100, "constructionClearance": 1, "gatheringUnitCollision": false,
                 "harvesting": {"activeWorkers": 1, "recommendedWorkers": 2, "searchRadius": 0},
             })),
+            definition(ESSENCE, "item", json!({
+                "currency": true, "stackLimit": 100, "displayOrder": 30,
+                "creation": {"method": "harvest", "items": [], "source": SPRING, "amount": 5,
+                    "workTicks": 10, "workAnimation": "chop"},
+            })),
+            definition(SPRING, "building", json!({
+                "body": body(1000), "footprint": {"width": 4, "depth": 4}, "entrance": {"x": 0.5, "y": 2.5},
+                "yield": 50, "constructionClearance": 1, "gatheringUnitCollision": false,
+                "harvesting": {"activeWorkers": 2, "recommendedWorkers": 2, "searchRadius": 0,
+                    "needsBuilding": true, "endless": true},
+            })),
+            definition(WELL, "building", json!({
+                "placementOn": {"source": SPRING},
+                "body": body(200), "footprint": {"width": 4, "depth": 4}, "entrance": {"x": 0.5, "y": 2.5},
+                "creation": {"method": "construct", "items": [cost(AMBER, 20)],
+                    "workTicks": 20, "workAnimation": "build"},
+                "behaviors": {
+                    "playerControl": {},
+                    "storage": {"capacity": 1000, "accepts": [ESSENCE], "dropoff": true},
+                },
+            })),
             definition(WORKER, "unit", json!({
                 "body": body(100), "supplyCost": 1, "vision": 10, "dimensions": dimensions,
                 "creation": {"method": "train", "items": [cost(AMBER, 10)], "workTicks": 20},
@@ -148,8 +174,8 @@ fn game() -> Value {
                     "playerControl": {},
                     "movement": {"speed": 4, "walkSpeed": 2, "idleWander": true},
                     "work": {"carryCapacity": 5,
-                        "builds": [HALL, HOUSE, BARRACKS, FORGE, SANCTUARY, FORESTER],
-                        "harvests": [WOOD, AMBER]},
+                        "builds": [HALL, HOUSE, BARRACKS, FORGE, SANCTUARY, FORESTER, WELL],
+                        "harvests": [WOOD, AMBER, ESSENCE]},
                 },
             })),
             definition(SOLDIER, "unit", json!({

@@ -201,6 +201,18 @@ pub fn harvests(k: &Knowledge, actor: u32, target: &Target) -> bool {
         })
 }
 
+/// The known resource a building placed on one (`placementOn`) stands on.
+pub fn resource_under(k: &Knowledge, building: &Target) -> Option<Target> {
+    let on = k.catalog.get(building.definition).placement_on.as_ref()?;
+    let e = k.entity(building.id)?;
+    let resource = k.view.entities.iter().find(|r| {
+        r.public.resource.is_some()
+            && r.public.position == e.public.position
+            && k.def(r).id == on.source
+    })?;
+    Target::of(k, resource.id().0)
+}
+
 /// A rally command for `producer` toward the click (old `rallyAt`): a resource or an
 /// own unit becomes the rally target, anything else a ground point.
 pub fn rally(
@@ -322,6 +334,29 @@ pub fn smart(
                     Action::Garrison {
                         actors: guests,
                         target: t.id,
+                        append: append(shift),
+                    },
+                    Some(marker),
+                )];
+            }
+        }
+        // b'. Gather at an own finished building placed on a resource (a Substance Well on
+        // its deposit, D62): the workers gather the resource under it.
+        if mine(t)
+            && !t.construction
+            && let Some(r) = resource_under(k, t)
+        {
+            let gatherers: Vec<u32> = selected
+                .iter()
+                .copied()
+                .filter(|&a| harvests(k, a, &r))
+                .collect();
+            if !gatherers.is_empty() {
+                let marker = target_marker(k, MarkerKind::Gather, t);
+                return vec![(
+                    Action::Gather {
+                        actors: gatherers,
+                        target: r.id,
                         append: append(shift),
                     },
                     Some(marker),
