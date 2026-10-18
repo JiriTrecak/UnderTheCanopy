@@ -613,3 +613,11 @@ The forest runs on **substance**, its magic, and each race relates to it differe
 - **Towers need power** and are clearly stronger than other races' towers, to offset not being able to push them forward for harassment.
 - **No pipes are drawn.** The network shows as an overlay only while a building is being placed (or when the grid is shown).
 - **Open:** whether dens must chain to the network or can stand alone, and any further race mechanic. To be settled when the network is designed.
+
+## D67. One icon family for the whole game (2026-10-18, Claude while Jiri was away — review: visible)
+
+Jiri asked for icons for everything with one identity driving them. Every icon (unit, hero and building portraits, abilities, research, resources, commands, stats) now follows one family, written down in [art direction §Icons](art-direction.md#icons): Warcraft III: Reforged-style full-bleed painted squares made with gpt-image-2 from our own concept art, one big subject, a warm key and a cool violet rim (the game's own light), a dark smoky background whose colour says the icon's type (amber glow for portraits, the energy colour for abilities, forge steel for research), and a calm bottom-right corner for the hotkey. Resources are the one exception: cut-outs, because they sit on the resource bar and in 24 px cost rows.
+- **Icons are not team-coloured.** The HUD draws them as they are, as Warcraft III does; each race's icons carry its board colour instead (beetles royal blue, ants maple red), so the race reads at a glance. Tinting icons by player would need a mask per icon and HUD support. Alternative if Jiri wants it: generate a team mask with each portrait and tint in the HUD.
+- **256 × 256 PNG** (was 128): at 1080p a command button shows 48 px, HiDPI doubles it, and the hero bar and mission portraits are larger.
+- **Portraits get a 0.85 gamma lift** at install, building portraits a 5 % crop of empty margins: black chitin on the HUD's near-black slots sank at 48 px.
+- **Replaced in place where an id existed**, so references keep working; new ids follow `asset.portraits.units.<race>-<unit>`, `asset.portraits.buildings.<race>-<building>`, `asset.icons.ability-<race>-<caster>-<ability>` and `asset.icons.research-<race>-<research>`. The tool is `tools/icons/icons.py`; each icon keeps its request in `generation.json`.

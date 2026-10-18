@@ -1,0 +1,21 @@
+{
+  "n": 2,
+  "items": [
+    {"name": "t-shieldbearer", "kind": "unit", "faction": "beetles", "refs": [".asset-work/concepts/buildings/unit-shieldbearer-2.png"],
+     "subject": "the SHIELDBEARER, the beetles' front-line tank: a rhinoceros beetle with one big black horn, black chitin head with big glossy black eyes, royal-blue and brass shoulder plates, and the top edge of its huge riveted royal-blue tower shield with a steel boss raised in front of its body on the right side of the frame."},
+    {"name": "t-hornbreaker", "kind": "hero", "faction": "beetles", "refs": [".asset-work/concepts/buildings/unit-hornbreaker-2.png"],
+     "subject": "the HORNBREAKER, the beetle warlord hero: a Hercules beetle whose long curved black horn sweeps up and forward, black chitin head with big eyes, a royal-blue cape and brass-trimmed royal-blue pauldrons, the head of his great steel-and-brass hammer with a violet substance-glass core resting on his shoulder."},
+    {"name": "t-war-lodge", "kind": "building", "faction": "beetles", "refs": [".asset-work/concepts/buildings/refs/icons/beetle-war-lodge-idle.png"],
+     "subject": "the WAR LODGE, the beetles' barracks: a squat riveted fortress block of dark steel and royal-blue plates with brass trim, horned corner towers, a big royal-blue shield crest over a portcullis gate."},
+    {"name": "t-arc-lash", "kind": "ability", "faction": "beetles", "refs": [".asset-work/concepts/buildings/unit-coilkeeper-1.png"],
+     "subject": "ARC LASH, the Coilkeeper's spell: a jagged chain of brilliant violet lightning leaps from the brass coil-tip of her lantern-staff (lower left) and forks across the frame, jumping between three dark silhouetted enemy insects. Energy colour: violet and electric blue-white."},
+    {"name": "t-horn-rush", "kind": "ability", "faction": "beetles", "refs": [".asset-work/concepts/buildings/unit-hornbreaker-2.png"],
+     "subject": "HORN RUSH, the Hornbreaker's charge: the hero's great curved black horn and armoured head drive forward diagonally out of the frame toward the viewer, lowered like a battering ram, with dust and orange-white speed streaks trailing behind and a burst of impact sparks at the horn's tip. Energy colour: hot orange and white."},
+    {"name": "t-plating-2", "kind": "research", "faction": "beetles", "refs": [".asset-work/concepts/buildings/unit-shieldbearer-2.png"],
+     "subject": "PLATING II, a beetle armour upgrade (tier two of three): one thick curved royal-blue armour plate (a shoulder pauldron) of riveted dark steel with polished brass edging and heavy brass rivets, shown on its own as a crafted part."},
+    {"name": "t-substance", "kind": "resource", "faction": "neutral",
+     "subject": "SUBSTANCE, the forest's raw magic, one of the game's two resources: a cluster of translucent, faceted violet-blue crystal shards growing out of a small dark root knot, glowing from within with deep violet and blue light, a few drifting violet motes. Never green."},
+    {"name": "t-ant-warrior", "kind": "unit", "faction": "ants", "refs": [".asset-work/concepts/buildings/refs/icons/units-ants.png"],
+     "subject": "the ANT WARRIOR, the ants' basic melee soldier (the axe-wielding ants in the middle of the reference board): a rust-orange ant head with big black eyes, ivory mandible tusks and antennae, a mantle of deep red maple leaves on its shoulders, and the ivory bone axe blade raised beside its head."}
+  ]
+}
