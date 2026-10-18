@@ -1,0 +1,333 @@
+{
+  "id": "effect.units.bombard-impact",
+  "name": "Bombard shell explosion",
+  "description": "Where a Bombard shell lands: a big fireball with a violet substance core, a bright flash, a shockwave ring racing over the ground, dirt and debris thrown up, sparks and a slow pall of smoke. Large enough to read the splash area.",
+  "durationTicks": 100,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash-light",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#ff9a3c",
+      "accent": "#ffd59a",
+      "durationTicks": 10,
+      "count": 1,
+      "size": 18,
+      "height": 1.5,
+      "intensity": 22
+    },
+    {
+      "id": "fireball",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "billboard",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 32,
+      "count": 1,
+      "size": 9.5,
+      "height": 2.4,
+      "blend": "normal",
+      "flipbook": {
+        "columns": 4,
+        "rows": 4,
+        "firstFrame": 0,
+        "frames": 16,
+        "frameTicks": 2,
+        "mode": "once",
+        "randomStart": false
+      },
+      "texture": {
+        "asset": "asset.effects.ants.resin-burst",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "flash-core",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#ffc46a",
+      "accent": "#fff6d8",
+      "durationTicks": 8,
+      "count": 1,
+      "size": 6.5,
+      "height": 1.2,
+      "intensity": 1.3
+    },
+    {
+      "id": "substance-core",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#9a70ff",
+      "accent": "#e6dcff",
+      "durationTicks": 12,
+      "count": 1,
+      "size": 3.6,
+      "height": 1.0,
+      "intensity": 1.2
+    },
+    {
+      "id": "shockwave",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "ring",
+      "colour": "#ffd9a0",
+      "accent": "#fff3d8",
+      "durationTicks": 16,
+      "count": 1,
+      "size": 13,
+      "height": 0.15,
+      "intensity": 1.5
+    },
+    {
+      "id": "dust-ring",
+      "enabled": true,
+      "startTick": 2,
+      "anchor": "target",
+      "shape": "ring",
+      "colour": "#8f7a62",
+      "accent": "#b8a68e",
+      "durationTicks": 30,
+      "count": 1,
+      "size": 17,
+      "height": 0.1,
+      "intensity": 0.8
+    },
+    {
+      "id": "rays",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "streaks",
+      "colour": "#ffd08a",
+      "accent": "#ff8a35",
+      "durationTicks": 12,
+      "count": 12,
+      "size": 0.32,
+      "height": 1.2,
+      "intensity": 1.3,
+      "spread": 4.5,
+      "length": 3.2,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "dirt",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 44,
+        "rate": 22,
+        "speed": 10,
+        "speedVariation": 0.55,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 42,
+        "gravity": 15,
+        "drag": 0.35,
+        "spawnRadius": 1.0,
+        "startSize": 1.1,
+        "endSize": 2.4,
+        "spin": 0.6,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#6b5641",
+      "accent": "#8c7458",
+      "durationTicks": 46,
+      "count": 22,
+      "size": 1.0,
+      "height": 0,
+      "blend": "normal",
+      "intensity": 1.0,
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "debris",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 38,
+        "rate": 18,
+        "speed": 13,
+        "speedVariation": 0.45,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 55,
+        "gravity": 24,
+        "drag": 0.15,
+        "spawnRadius": 0.6,
+        "startSize": 0.45,
+        "endSize": 0.35,
+        "spin": 2.0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.3
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#2a2420",
+      "accent": "#4a3f35",
+      "durationTicks": 40,
+      "count": 18,
+      "size": 0.4,
+      "height": 0,
+      "blend": "normal",
+      "intensity": 1.0,
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "sparks",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 28,
+        "rate": 34,
+        "speed": 12,
+        "speedVariation": 0.55,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": 15,
+        "drag": 0.3,
+        "spawnRadius": 0.8,
+        "startSize": 0.36,
+        "endSize": 0.04,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#ffb64d",
+      "accent": "#fff0b0",
+      "durationTicks": 30,
+      "count": 34,
+      "size": 0.28,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 3.2,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "substance-sparks",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 28,
+        "rate": 14,
+        "speed": 7,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": 4,
+        "drag": 0.6,
+        "spawnRadius": 0.6,
+        "startSize": 0.32,
+        "endSize": 0.04,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.6
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#a585ff",
+      "accent": "#e6dcff",
+      "durationTicks": 30,
+      "count": 14,
+      "size": 0.24,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.8,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "smoke",
+      "enabled": true,
+      "startTick": 5,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 94,
+        "rate": 12,
+        "speed": 2.4,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": -0.6,
+        "drag": 1.2,
+        "spawnRadius": 1.6,
+        "startSize": 2.6,
+        "endSize": 6.5,
+        "spin": 0.25,
+        "fadeIn": 0.08,
+        "fadeOut": 0.75
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#6f6a62",
+      "accent": "#9a9388",
+      "durationTicks": 100,
+      "count": 12,
+      "size": 1.0,
+      "height": 0,
+      "blend": "normal",
+      "intensity": 1.0,
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

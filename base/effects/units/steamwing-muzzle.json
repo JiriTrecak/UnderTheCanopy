@@ -1,0 +1,99 @@
+{
+  "id": "effect.beetles.steamwing-muzzle",
+  "name": "Steamwing emitter flash",
+  "description": "The chin emitter firing: a sharp violet flash, a white-violet core and a spray of violet sparks at the mouth. Once per shot, on the attack clip's `release` event, at the `projectile` socket.",
+  "durationTicks": 24,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash-light",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#9a6cff",
+      "accent": "#d8c8ff",
+      "durationTicks": 6,
+      "count": 1,
+      "size": 7,
+      "height": 0,
+      "intensity": 10
+    },
+    {
+      "id": "flash-core",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#a57cff",
+      "accent": "#f4eeff",
+      "durationTicks": 5,
+      "count": 1,
+      "size": 1.6,
+      "height": 0,
+      "intensity": 1.2
+    },
+    {
+      "id": "flash-burst",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "burst",
+      "colour": "#a07aff",
+      "accent": "#efe6ff",
+      "durationTicks": 7,
+      "count": 10,
+      "size": 0.6,
+      "height": 0,
+      "spread": 1.0,
+      "blend": "additive",
+      "intensity": 2.6,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "sparks",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 14,
+        "rate": 12,
+        "speed": 6.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 90,
+        "gravity": 6,
+        "drag": 0.5,
+        "spawnRadius": 0.1,
+        "startSize": 0.2,
+        "endSize": 0.03,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#b28cff",
+      "accent": "#efe6ff",
+      "durationTicks": 16,
+      "count": 12,
+      "size": 0.16,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.6,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

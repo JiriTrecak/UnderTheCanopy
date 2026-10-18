@@ -554,9 +554,10 @@ pub struct DefinitionPresentation {
     pub effects: Option<Vec<StateEffect>>,
 }
 
-/// An effect a building plays from one of its model's sockets: looping for as long as
-/// the model is in `state` (`work` or `spawn`), or once whenever its clip crosses the
-/// animation event `event`. Exactly one of `state` and `event`.
+/// An effect a building or unit plays from one of its model's sockets: looping for as
+/// long as it is in `state` ([`StateEffect::BUILDING_STATES`],
+/// [`StateEffect::UNIT_STATES`]), or once whenever its clip crosses the animation event
+/// `event`. Exactly one of `state` and `event`.
 #[skip_serializing_none]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -564,8 +565,34 @@ pub struct StateEffect {
     pub effect: Id,
     pub state: Option<String>,
     pub event: Option<String>,
-    /// Socket name (`capabilities.sockets`); the model's origin without one.
+    /// Socket name (`capabilities.sockets`) or a model node named `socket*`; the model's
+    /// origin without one.
     pub socket: Option<String>,
+}
+
+impl StateEffect {
+    /// A building's states (D65): `idle` while it rests (complete, nothing to do), `work`
+    /// while it trains, researches, upgrades, revives or is gathered from, `spawn` once
+    /// per trained unit, `always` whenever it stands complete in sight.
+    pub const BUILDING_STATES: &[&str] = &["idle", "work", "spawn", "always"];
+    /// A unit's states: its animation states, `move` (walking, running, carrying or
+    /// charging), `cast` (any cast in progress) and `always` (while it is in sight).
+    pub const UNIT_STATES: &[&str] = &[
+        "always",
+        "move",
+        "idle",
+        "walk",
+        "run",
+        "charge",
+        "attack",
+        "hit",
+        "cast",
+        "carry",
+        "carry_walk",
+        "carry_run",
+        "build",
+        "chop",
+    ];
 }
 
 impl Definition {

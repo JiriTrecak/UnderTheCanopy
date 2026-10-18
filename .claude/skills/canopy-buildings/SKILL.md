@@ -168,7 +168,12 @@ Gotchas:
 
 In `base/buildings/<race>/<building>.json`:
 - `model`, `footprint`, `entrance`;
-- `presentation.effects`: a list of `{effect, state: "work" | "spawn", socket}` for effects that loop while in that state, or `{effect, event, socket}` for one-shots on a clip event.
+- `presentation.effects`: a list of `{effect, state, socket}` for effects that loop while in that state, or `{effect, event, socket}` for one-shots on a clip event. States:
+  - `work`: while it trains, researches, upgrades, revives, or workers gather from it (a well pumps while gathered);
+  - `spawn`: once per trained unit;
+  - `idle`: while it rests, complete;
+  - `always`: whenever it stands complete in sight (raw substance that glows even at rest).
+- A building without clips still rests and works for its effects and glow, and its `socket*` nodes resolve at rest: a neutral deposit can carry `{effect, state: "always", socket: "socket_motes"}`.
 
 Effects live in `base/effects/buildings/<building>-*.json`. Start from the forge's:
 - `forge-smoke` (loop, particles);
@@ -176,7 +181,7 @@ Effects live in `base/effects/buildings/<building>-*.json`. Start from the forge
 - `forge-sparks` (burst plus flash on `strike`);
 - `forge-magic` (pulsing violet light).
 
-Up to 8 effect lights show at once, so a building should use at most 2.
+Up to 8 effect lights show at once, and looping state effects of buildings and units share 5 of them (spells and impacts keep the rest), so a building should use at most 2.
 
 ### 6. Check it in game
 

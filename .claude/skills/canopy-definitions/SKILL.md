@@ -53,7 +53,18 @@ Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a
   - `castContact` (share of the cast animation at which a spell lands);
   - `cameraAnchor`;
   - and, when they differ from the model's own `display`, `healthHeight` and `character` (animation profile);
-  - buildings: `effects`, `[{effect, state | event, socket}]` (D65): an effect looping from a model socket while the building is in `state` (`work` while it trains, researches, upgrades or revives; `spawn` once per trained unit), or played once whenever its clip crosses `event`. Example: `base/buildings/beetles/shell-forge.json`.
+  - `effects`, `[{effect, state | event, socket}]` (D65): an effect looping from a model socket while the building or unit is in `state`, or played once whenever its clip crosses `event` (a clip event of the model's `capabilities.animations`). `socket` is a declared socket name or a model node named `socket*`. Looping effects follow their socket as the model moves.
+    - Building states: `work` (it trains, researches, upgrades, revives, or workers gather from it), `spawn` (once per trained unit), `idle` (resting, complete), `always` (complete, in sight). Example: `base/buildings/beetles/shell-forge.json`.
+    - Unit states: `move` (walking, running, carrying or charging), `attack`, `cast` (any cast), `idle`, `always`, or any engine animation state (`walk`, `run`, `charge`, `hit`, `carry`, `carry_walk`, `carry_run`, `build`, `chop`).
+    - A unit's `activeGlow` materials light while it moves, fights, casts or works.
+
+```jsonc
+"presentation": {"effects": [
+  {"effect": "effect.example.muzzle-blast", "event": "release", "socket": "socket_muzzle"},
+  {"effect": "effect.example.footstep-dust", "event": "step", "socket": "socket_foot_fl"},
+  {"effect": "effect.example.exhaust", "state": "move", "socket": "socket_steam"}
+]}
+```
 - **Heroes:** `"hero": true`, `supplyCost` 4, `behaviors.progression` (levels) and `behaviors.abilities` (bindings). Keep them under `units/<race>/heroes/`.
 - **Size** (`modelScale`, with `dimensions` to match: the selection circle and health bar follow them, D58). A regular infantry unit such as the Warrior is 1×; heroes and large tier-3 units about 2×. Neutral creeps grow with their `level`: size (the average of rendered height and footprint) is the Warrior's × (1 + 1.4 × (level − 1) / 8), so level 1 is Warrior-sized and level 9 is 2.4×; body radius 1.5 × that factor (at most 3.0), formation spacing 13/6 of the radius, height the rendered height. Measure a model with `just cook --inspect <asset id>` (its rest bounds).
 - **Behaviours** (all optional): `movement`, `combat` (with `projectile`, `shell` or `charge`), `work` (workers: `carryCapacity`, `builds`, `harvests`), `storage`, `production`, `research`, `inventory`, `progression`, `abilities`, `revival`, `playerControl`, `campDefense`.

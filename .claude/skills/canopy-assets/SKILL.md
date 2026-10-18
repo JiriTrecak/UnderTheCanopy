@@ -60,7 +60,7 @@ Authority: `crates/content/src/assets/package.rs` (formats and the registries bu
 - `display` is how the model is shown everywhere: runtime scale, animation profile (`character`), health bar height. A definition may override the health bar height and profile in its own `presentation`.
 - `capabilities`:
   - `teamColor`: which material slots take the player colour, through a mask or a whole slot;
-  - `animations`: the semantic → clip map, with events such as the `hit`/`release` contact time as a share of the clip;
+  - `animations`: the semantic → clip map, with events such as the `hit`/`release` contact time as a share of the clip; a gait (`walk`, `run`, `charge`, `carry_walk`, `carry_run`) may declare `nominalSpeed`, the ground speed in the model's own metres per second at which its clip plays at rate 1 without sliding feet. The clip's rate is then the unit's measured ground speed ÷ (`nominalSpeed` × the scale it is drawn at), clamped to 0.4–3×. Without it, gaits play at the engine's 1.5×, as the ants do;
   - `sockets`: model nodes for missiles, cargo and effects;
   - `groundContact`: `pivot` or `terrain`;
   - `wind`, `canopy`, `blocker`, `vegetationClearance`, `dimensions`.

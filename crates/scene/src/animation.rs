@@ -9,6 +9,10 @@
 //! old one fades out from its current weight; at most the current clip and the two
 //! heaviest fading ones are blended; `sample` locks the current clip to authoritative
 //! time (attack wind-up and impact, work strokes, cast phases) while fades keep running.
+//!
+//! New: a locomotion clip whose state declares `nominalSpeed` plays at the unit's actual
+//! ground speed over it instead (feet do not slide), and steps report the clip events
+//! they crossed, for state effects.
 
 use crate::models::ModelInfo;
 use canopy_content::abilities::Animations;
@@ -22,6 +26,9 @@ pub const TICK_SECONDS: f32 = 0.025;
 pub const FADE: f32 = 0.18;
 /// Fallback contact point of attacks and casts without an authored event.
 pub const CONTACT: f32 = 0.55;
+/// Bounds of a stride-matched clip's rate (clip seconds per second): a crawl or a sprint
+/// far from the authored stride stays a plausible gait.
+pub const STRIDE_RATE: (f32, f32) = (0.4, 3.0);
 
 /// Engine animation states (the old `AntState` names models declare).
 pub mod states {
@@ -36,6 +43,9 @@ pub mod states {
     pub const CARRY: &str = "carry";
     pub const CARRY_WALK: &str = "carry_walk";
     pub const CARRY_RUN: &str = "carry_run";
+
+    /// Gaits: the states whose clip can follow the ground speed (`nominalSpeed`).
+    pub const LOCOMOTION: [&str; 5] = [WALK, RUN, CHARGE, CARRY_WALK, CARRY_RUN];
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -60,6 +70,8 @@ pub struct Animator {
     current: Track,
     fade_in: Option<(f32, f32)>,
     fading: Vec<Fading>,
+    /// The current clip's rate (clip seconds per second of game time).
+    rate: f32,
 }
 
 impl Animator {
@@ -80,7 +92,14 @@ impl Animator {
             state,
             fade_in: None,
             fading: Vec::new(),
+            rate: SPEED,
         })
+    }
+
+    /// Sets the current clip's rate ([`SPEED`] unless a gait follows the ground speed);
+    /// fades keep [`SPEED`].
+    pub fn set_rate(&mut self, rate: f32) {
+        self.rate = rate;
     }
 
     pub fn state(&self) -> &str {
@@ -138,10 +157,9 @@ impl Animator {
 
     /// Advances every clock by `dt` seconds of game time.
     pub fn update(&mut self, model: &ModelInfo, dt: f32) {
-        let step = dt * SPEED;
-        self.advance_fades(model, step);
+        self.advance_fades(model, dt * SPEED);
         let duration = model.duration(self.current.clip);
-        let finished = advance(&mut self.current, duration, step);
+        let finished = advance(&mut self.current, duration, dt * self.rate);
         if finished && self.state != states::DEATH && model.has(states::IDLE) {
             self.set_state(model, states::IDLE, false, FADE);
         }
@@ -275,6 +293,36 @@ pub fn attack_phase(tick: f32, started: u32, impact: u32, ends: u32, contact: f3
     phase.clamp(0.0, 1.0)
 }
 
+/// The events of `state` its clip crossed between `before` and `after` (clip, seconds):
+/// within one clip from just after `before` up to `after`, around the end of a loop, and
+/// from the start when the clip changed or a one-shot restarted.
+pub fn crossed(
+    model: &ModelInfo,
+    state: &str,
+    before: (u16, f32),
+    after: (u16, f32),
+) -> Vec<String> {
+    let Some(info) = model.state(state) else {
+        return Vec::new();
+    };
+    let duration = model.duration(after.0);
+    if info.events.is_empty() || duration <= 0.0 || info.clip != after.0 {
+        return Vec::new();
+    }
+    let to = after.1 / duration;
+    let from = (before.0 == after.0).then_some(before.1 / duration);
+    info.events
+        .iter()
+        .filter(|(_, t)| match from {
+            Some(from) if to > from => *t > from && *t <= to,
+            Some(from) if to == from => false,
+            Some(from) if info.looping => *t > from || *t <= to,
+            _ => *t <= to,
+        })
+        .map(|(name, _)| name.clone())
+        .collect()
+}
+
 /// A cast's timeline (`CastingView`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CastTimeline {
@@ -359,6 +407,9 @@ pub struct UnitInputs<'a> {
     pub works: bool,
     /// Fallback contact of casts (`castContact` of the render asset).
     pub cast_contact: Option<f32>,
+    /// Ground speed in the model's own metres per second (world speed over the drawn
+    /// scale), measured while moving: gaits with a `nominalSpeed` follow it.
+    pub speed: Option<f32>,
 }
 
 /// A unit's animation: the clocks and what the previous tick showed.
@@ -427,38 +478,36 @@ impl BuildingAnimation {
             );
         }
         let state = a.state().to_owned();
-        let (clip, before) = a.current();
+        let before = a.current();
         a.update(model, if first { 0.0 } else { TICK_SECONDS });
-        let (after_clip, after) = a.current();
-        let duration = model.duration(clip);
-        if after_clip != clip || duration <= 0.0 || state == IDLE {
+        let after = a.current();
+        if after.0 != before.0 || state == IDLE || state != a.state() {
             return Vec::new();
         }
-        let (from, to) = (before / duration, after / duration);
-        model
-            .state(&state)
-            .map(|s| {
-                s.events
-                    .iter()
-                    .filter(|(_, t)| {
-                        if to >= from {
-                            *t > from && *t <= to
-                        } else {
-                            *t > from || *t <= to
-                        }
-                    })
-                    .map(|(name, _)| name.clone())
-                    .collect()
-            })
-            .unwrap_or_default()
+        crossed(model, &state, before, after)
+    }
+}
+
+/// The rate of `state`'s clip: a gait with a `nominalSpeed` plays at the measured ground
+/// `speed` over it (within [`STRIDE_RATE`]); everything else at [`SPEED`].
+pub fn stride_rate(model: &ModelInfo, state: &str, speed: Option<f32>) -> f32 {
+    let nominal = model
+        .state(state)
+        .and_then(|s| s.nominal_speed)
+        .filter(|_| states::LOCOMOTION.contains(&state));
+    match (nominal, speed) {
+        (Some(nominal), Some(speed)) => (speed / nominal).clamp(STRIDE_RATE.0, STRIDE_RATE.1),
+        _ => SPEED,
     }
 }
 
 /// What the animation decided beyond the pose.
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Decision {
     /// The unit faces its work target instead of its own rotation.
     pub face_work: bool,
+    /// Clip events of the current state crossed this tick (for event effects).
+    pub events: Vec<String>,
 }
 
 impl UnitAnimation {
@@ -483,11 +532,13 @@ impl UnitAnimation {
 
     /// One tick of the old settlement layer's state choice and clock.
     pub fn step(&mut self, model: &ModelInfo, i: &UnitInputs<'_>) -> Decision {
-        let dt = if self.first { 0.0 } else { TICK_SECONDS };
+        let first = self.first;
+        let dt = if first { 0.0 } else { TICK_SECONDS };
         self.first = false;
         let tick = i.tick as f32;
         let a = &mut self.animator;
         let previous = a.state.clone();
+        let before = a.current();
         let attacked = i
             .attack
             .is_some_and(|(started, ..)| self.attack_started != Some(started));
@@ -555,6 +606,7 @@ impl UnitAnimation {
         }
         self.was_casting = cast_pose.is_some();
         let cycle = i.work.and_then(|w| w.1);
+        a.set_rate(stride_rate(model, &a.state, i.speed));
         if i.charging {
             a.update(model, if previous == states::CHARGE { dt } else { 0.0 });
         } else if let Some((_, _, _, phase)) = &cast_pose {
@@ -586,6 +638,9 @@ impl UnitAnimation {
             );
         }
         self.last_hp = i.hp;
+        if !first {
+            decision.events = crossed(model, &a.state, before, a.current());
+        }
         decision
     }
 
@@ -641,6 +696,7 @@ mod tests {
             looping,
             contact,
             events: Vec::new(),
+            nominal_speed: None,
         };
         let states = [
             ("idle", state(0, true, None)),
@@ -950,6 +1006,7 @@ mod tests {
             looping,
             contact: None,
             events: events.iter().map(|(n, t)| ((*n).to_owned(), *t)).collect(),
+            nominal_speed: None,
         };
         ModelInfo {
             name: "building".into(),
@@ -990,5 +1047,94 @@ mod tests {
         assert_eq!(b.animator.state(), "work");
         b.step(&m, false, 1);
         assert_eq!(b.animator.state(), "idle");
+    }
+
+    /// A walker: a 1 s walk loop stepping at a quarter and three quarters, its stride
+    /// authored at 2 m/s, and an attack releasing at 0.4.
+    fn walker(nominal: Option<f32>) -> ModelInfo {
+        let mut m = model();
+        let walk = m.states.get_mut("walk").unwrap();
+        walk.events = vec![("step".into(), 0.25), ("step".into(), 0.75)];
+        walk.nominal_speed = nominal;
+        m.states.get_mut("attack").unwrap().events = vec![("release".into(), 0.4)];
+        m
+    }
+
+    #[test]
+    fn gaits_follow_the_ground_speed_when_their_stride_is_authored() {
+        let walked = |m: &ModelInfo, speed: Option<f32>| {
+            let mut u = UnitAnimation::new(m).unwrap();
+            let mut steps = 0;
+            for tick in 0..=40 {
+                steps += u
+                    .step(
+                        m,
+                        &UnitInputs {
+                            tick,
+                            moving: true,
+                            strolling: true,
+                            speed,
+                            ..Default::default()
+                        },
+                    )
+                    .events
+                    .len();
+            }
+            steps
+        };
+        // One second at 1.5× crosses three steps whatever the speed, without a stride.
+        assert_eq!(walked(&walker(None), Some(6.0)), 3);
+        assert_eq!(walked(&walker(Some(2.0)), None), 3);
+        // At 4 m/s over a 2 m/s stride: two loops, four steps; at 1 m/s: half a loop.
+        assert_eq!(walked(&walker(Some(2.0)), Some(4.0)), 4);
+        assert_eq!(walked(&walker(Some(2.0)), Some(1.0)), 1);
+        // Far off the stride the rate is clamped, not frozen or frantic.
+        assert_eq!(
+            stride_rate(&walker(Some(2.0)), "walk", Some(0.0)),
+            STRIDE_RATE.0
+        );
+        assert_eq!(
+            stride_rate(&walker(Some(2.0)), "walk", Some(100.0)),
+            STRIDE_RATE.1
+        );
+        // Only gaits follow the ground.
+        assert_eq!(stride_rate(&walker(Some(2.0)), "idle", Some(4.0)), SPEED);
+    }
+
+    #[test]
+    fn a_swing_reports_its_release_once_at_the_impact_tick() {
+        let m = walker(None);
+        let mut u = UnitAnimation::new(&m).unwrap();
+        let mut released = Vec::new();
+        for tick in 0..=45 {
+            let attack = (10..40).contains(&tick).then_some((10, 20, 40));
+            let d = u.step(
+                &m,
+                &UnitInputs {
+                    tick,
+                    attack,
+                    ..Default::default()
+                },
+            );
+            if d.events.iter().any(|e| e == "release") {
+                released.push(tick);
+            }
+        }
+        assert_eq!(released, [20]);
+        // A second swing releases again.
+        for tick in 46..=60 {
+            let d = u.step(
+                &m,
+                &UnitInputs {
+                    tick,
+                    attack: Some((46, 50, 60)),
+                    ..Default::default()
+                },
+            );
+            if d.events.iter().any(|e| e == "release") {
+                released.push(tick);
+            }
+        }
+        assert_eq!(released, [20, 50]);
     }
 }

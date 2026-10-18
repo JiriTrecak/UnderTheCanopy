@@ -50,6 +50,9 @@ pub const MAX_CUES: usize = 256;
 /// Effect lights at once (old `EffectLights` pool of 4; the renderer's budget since
 /// buildings light their work, D65).
 pub const MAX_LIGHTS: usize = canopy_render::effects::MAX_EFFECT_LIGHTS;
+/// Effect lights looping state effects of buildings and units may hold at once; the
+/// rest stay free for spells and impacts.
+pub const AMBIENT_LIGHTS: usize = MAX_LIGHTS - 3;
 /// Effect model instances at once (old `EFFECT_MODEL_LIMITS.instances`).
 pub const MAX_MODELS: usize = 16;
 /// Triangles of every effect model at once (old `EFFECT_MODEL_LIMITS.triangles`).
@@ -405,6 +408,8 @@ pub struct EffectDirector {
     fires: Vec<Fire>,
     /// Effect models by entry name, resolved when the director is made.
     models: BTreeMap<String, ModelRef>,
+    /// Light cues of looping state effects ([`EffectDirector::play_ambient`]).
+    ambient: BTreeSet<u32>,
 }
 
 /// FNV-1a: status names as keys without keeping strings.
@@ -534,6 +539,7 @@ impl EffectDirector {
             hit_dust: VecDeque::new(),
             fires: Vec::new(),
             models,
+            ambient: BTreeSet::new(),
         }
     }
 
@@ -809,6 +815,63 @@ impl EffectDirector {
     /// The table index of an effect id.
     pub fn find(&self, id: &str) -> Option<usize> {
         self.table.find(id)
+    }
+
+    /// Plays a looping state effect of a building or unit (D65) like [`Self::play`], but
+    /// its light layers take only the [`AMBIENT_LIGHTS`] share of the effect lights, so
+    /// working machines never starve spell flashes and impacts of theirs.
+    pub fn play_ambient(&mut self, play: Play) -> Vec<u32> {
+        let mut started = Vec::new();
+        let table = self.table.clone();
+        let Some(effect) = table.effects.get(play.effect) else {
+            return started;
+        };
+        let live: BTreeSet<u32> = self.cues.iter().map(|c| c.view.id).collect();
+        self.ambient.retain(|id| live.contains(id));
+        let trigger = Trigger {
+            ability: None,
+            event: EffectEvent::Released,
+            cast: None,
+            seed: play.seed,
+            tick: play.tick,
+            caster: None,
+            target: None,
+            origin: play.from.unwrap_or(play.at),
+            point: play.at,
+            duration: None,
+            radius: play.radius,
+            status: None,
+        };
+        for (layer, l) in effect.layers.iter().enumerate() {
+            if l.primitive == Primitive::Sound || l.motion == Motion::Unsupported {
+                continue;
+            }
+            let light = l.primitive == Primitive::Light;
+            if light && self.ambient.len() >= AMBIENT_LIGHTS {
+                continue;
+            }
+            if let Some(id) = self.emit(&trigger, None, Some((play.effect, layer))) {
+                if light {
+                    self.ambient.insert(id);
+                }
+                started.push(id);
+            }
+        }
+        started
+    }
+
+    /// Moves cues to new roots (looping state effects following a socket of a moving
+    /// model), keeping each layer's own offset.
+    pub fn relocate(&mut self, moves: &BTreeMap<u32, Vec3>) {
+        if moves.is_empty() {
+            return;
+        }
+        for c in &mut self.cues {
+            if let Some(&at) = moves.get(&c.view.id) {
+                c.base = at + c.offset + Vec3::Y * ROOT_LIFT;
+                c.view.root = c.base;
+            }
+        }
     }
 
     /// A hit on `entity` at `position` (old `ImpactEffects.hit`).

@@ -14,7 +14,7 @@
         "mode": "burst",
         "lifetimeTicks": 44,
         "rate": 22,
-        "speed": 2.0,
+        "speed": 1.33,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
@@ -22,11 +22,11 @@
           "z": 0
         },
         "coneDegrees": 22,
-        "gravity": -0.6,
+        "gravity": -0.4,
         "drag": 0.4,
-        "spawnRadius": 3.6,
-        "startSize": 0.26,
-        "endSize": 0.04,
+        "spawnRadius": 2.4,
+        "startSize": 0.17,
+        "endSize": 0.03,
         "spin": 1,
         "fadeIn": 0.05,
         "fadeOut": 0.55
@@ -37,7 +37,7 @@
       "accent": "#e6dcff",
       "durationTicks": 44,
       "count": 22,
-      "size": 0.2,
+      "size": 0.13,
       "height": 0,
       "blend": "additive",
       "intensity": 2.4,

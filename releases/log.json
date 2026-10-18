@@ -16,7 +16,9 @@
       "Trees are no longer a resource: wood is gone from every cost. Basic buildings and units cost a little more amber, and advancing your hall and the tier-2 roster costs Substance instead. Tree walls still block the way.",
       "Echo Isles has two Substance Deposits between the bases to fight over, and every other skirmish map has one near each start.",
       "Computer players build Substance Wells, staff them, spend Substance, and attack an enemy's well when they have none of their own.",
-      "Beetle Substance Wells also power the ground around them, so beetles can build out by a well they hold; the well itself needs no power and goes wherever its deposit is."
+      "Beetle Substance Wells also power the ground around them, so beetles can build out by a well they hold; the well itself needs no power and goes wherever its deposit is.",
+      "Units can show their own effects: muzzle blasts, footstep dust and exhaust follow their animations, and machines' glowing parts light up while they move, fight or cast.",
+      "Buildings and resource deposits can glow and mist at rest, and a building that workers gather from works visibly while they do."
     ],
     "fixed": [],
     "knownIssues": []
