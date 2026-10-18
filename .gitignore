@@ -9,3 +9,6 @@
 /assets/graphics/*
 !/assets/graphics/.gitkeep
 /server/feedback-spool.jsonl*
+
+# Blender backups
+*.blend1

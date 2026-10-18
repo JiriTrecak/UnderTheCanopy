@@ -414,7 +414,13 @@ def build_map():
                 'appearance': {'asset': 'asset.models.resources.lookdev-amber'}}
 
     def hall(id_, px, py):
+        # Sandbox maps spawn no start setup: the hall holds the test stock (9k amber, 9k wood).
         return {'definition': 'building.beetles.bastion', 'id': id_,
+                'initialState': {'construction': 'complete', 'inventory': {'item.amber': 9000, 'item.wood': 9000}},
+                'owner': 'player.1', 'position': at(px, py), 'rotation': 0.0}
+
+    def forge(id_, px, py):
+        return {'definition': 'building.beetles.shell-forge', 'id': id_,
                 'initialState': {'construction': 'complete'}, 'owner': 'player.1',
                 'position': at(px, py), 'rotation': 0.0}
 
@@ -430,6 +436,10 @@ def build_map():
             {'definition': 'unit.ants.warrior', 'id': 'lookdev.hero', 'owner': 'player.1',
              'position': {'x': float(math.floor(to_world(560, 860)[0])), 'y': float(math.floor(to_world(560, 860)[1]))},
              'rotation': 200.0},
+            # Where the target frame has the beetle main hall, and the Shell Forge (D65) beside
+            # it in the open upper clearing.
+            hall('lookdev.hall', 617, 383),
+            forge('lookdev.forge', 860, 330),
         ],
         'terrain': {'paint': [{'material': 'asset.terrain.lookdev-debris', 'variants': False},
                               {'material': 'asset.terrain.lookdev-wet-soil', 'variants': False}], 'textureGrid': {'cellSize': 5, 'origin': [-0.5, -0.5]}, 'waterProfiles': ['water.fall-ford'],

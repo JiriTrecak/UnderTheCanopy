@@ -22,6 +22,36 @@
         "y": 283.0
       },
       "rotation": 200.0
+    },
+    {
+      "definition": "building.beetles.bastion",
+      "id": "lookdev.hall",
+      "initialState": {
+        "construction": "complete",
+        "inventory": {
+          "item.amber": 9000,
+          "item.wood": 9000
+        }
+      },
+      "owner": "player.1",
+      "position": {
+        "x": 185.5,
+        "y": 209.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.beetles.shell-forge",
+      "id": "lookdev.forge",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "player.1",
+      "position": {
+        "x": 217.5,
+        "y": 197.5
+      },
+      "rotation": 0.0
     }
   ],
   "terrain": {
