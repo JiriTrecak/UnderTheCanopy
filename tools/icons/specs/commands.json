@@ -1,0 +1,22 @@
+{
+  "n": 1,
+  "anchors": {},
+  "items": [
+    {"name": "c-move", "kind": "command", "subject": "MOVE: one sturdy armoured boot of dark leather with a polished steel toe cap and greave, mid-stride toward the upper right, a short soft dust trail behind its heel."},
+    {"name": "c-attack", "kind": "command", "subject": "ATTACK: a broad steel sword with a bronze crossguard and leather grip, blade pointing diagonally up to the upper right, a bright glint running along its edge."},
+    {"name": "c-stop", "kind": "command", "subject": "STOP: a round steel shield with a bronze rim and a central boss, seen head-on, filling the middle of the frame."},
+    {"name": "c-hold", "kind": "command", "subject": "HOLD POSITION: a steel-tipped spear planted upright in the ground with a small round bronze-rimmed shield leaning against its shaft."},
+    {"name": "c-patrol", "kind": "command", "subject": "PATROL: two curved bronze arrows chasing each other around a circle, forming a closed loop, with a soft warm glow in the middle."},
+    {"name": "c-follow", "kind": "command", "subject": "FOLLOW: a trail of three insect footprints pressed into dark soil, leading from the lower left to the upper right, each lit by a faint golden glow, the farthest one smallest."},
+    {"name": "c-build", "kind": "command", "subject": "BUILD: a heavy builder's hammer with a dark stone-and-bronze head and a leather-wrapped wooden handle, angled diagonally, a few wood shavings."},
+    {"name": "c-build-advanced", "kind": "command", "subject": "BUILD ADVANCED STRUCTURE: a heavy bronze-headed hammer crossed with a steel carpenter's square over a rolled-out parchment building plan."},
+    {"name": "c-produce", "kind": "command", "subject": "PRODUCE: a dark iron anvil with a glowing orange-hot piece of metal on it and a small burst of sparks."},
+    {"name": "c-rally", "kind": "command", "subject": "SET RALLY POINT: a small swallow-tailed cream cloth flag on a wooden pole planted in the ground, flapping in the wind, a soft golden glow at its base."},
+    {"name": "c-pause", "kind": "command", "subject": "PAUSE: two thick upright bronze bars side by side, polished, with bevelled edges."},
+    {"name": "c-cancel", "kind": "command", "subject": "CANCEL: a bold X of two crossed iron bars enamelled deep red, with bronze rivets at the crossing."},
+    {"name": "c-camera", "kind": "command", "subject": "CAMERA: a brass spyglass with leather bands, extended, angled diagonally, a deep blue lens glinting at its wide end."},
+
+    {"name": "s-armor-light", "kind": "command", "subject": "LIGHT ARMOUR (a stat icon): a padded brown leather jerkin with stitched seams and a few small bronze studs, seen from the front."},
+    {"name": "s-armor-heavy", "kind": "command", "subject": "HEAVY ARMOUR (a stat icon): a polished steel breastplate with layered pauldrons and bronze edging, seen from the front."},
+    {"name": "s-armor-structure", "kind": "command", "subject": "FORTIFIED (a stat icon for buildings' armour): a short section of thick fitted grey stone wall with a crenellated top and iron bands."}  ]
+}
