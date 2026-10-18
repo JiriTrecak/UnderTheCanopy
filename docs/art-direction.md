@@ -3,7 +3,7 @@
 **Agreed with Jiri, 2026-10-17 and 2026-10-18 (D61):**
 - **The look is a hybrid.** Stylized, crisp, saturated Warcraft III: Reforged-style units and buildings stand on a realistic, ZeroSpace-style forest floor at insect scale.
 - **The army comes first.** The playable ground is quiet and toned down, the non-playable frame (trunks, roots, ferns, leaves) carries the detail, and the army is the brightest, sharpest thing on screen ([below](#environment-the-forest-floor-at-low-sun)).
-- **Target frames**: `art/styles/target-autumn.jpg`, `target-summer.jpg` and `target-frost.jpg` for an army on the ground; `target-frost-amber.jpg`, `target-frost-cliff.jpg` and `target-frost-base.jpg` for a resource, a cliff with its ramp, and a base with buildings under construction. All are generated concepts, not renders: they set the look the game aims for.
+- **Target frames**: `art/styles/target-autumn.jpg`, `target-summer.jpg` and `target-frost.jpg` for an army on the ground; `target-frost-amber.jpg`, `target-frost-cliff.jpg` and `target-frost-base.jpg` for a resource, a cliff with its ramp, and a base with buildings under construction. `target-fall-wide-map.jpg` shows a wider view: the main base, an expansion with its own amber, shallow water units wade through and deep water that blocks the edge. All are generated concepts, not renders: they set the look the game aims for.
 - **Units** are dark fantasy in Warcraft's style: readable and chunky. They look like Jiri's three boards in `art/styles/` (`units-ants.webp`, `units-beetles.webp`, `units-bees.webp`; their backgrounds don't count).
 - **Factions**: ants are a biological army, beetles run on steam and contained magic, bees are a holy order with blood rituals.
 - **Buildings** are made of the faction's creature and materials. The beetle hall is a colossal armoured beetle turned into a fortress (`art/styles/buildings-beetles.jpg`, with alternatives in `buildings-beetle-hall-variations.jpg`).
@@ -136,11 +136,41 @@ The target is unchanged: 60 FPS on a base M1 with about 400 units (plan). Most o
 
 ## Order of work
 
-1. **Concepts for ants and bees** at the beetles' level: a hall, its tiers and the building set, plus a readability pass on all three (silhouettes, every player colour, play zoom, a dark biome).
-2. **Quiet ground and grade in the engine**: one biome's play ground redone as a calm surface, with shouldered tone mapping and low sun, compared with the target frames on Echo Isles and Turtle Rock.
-3. **The frame**: border giants (trunks, roots, ferns) in view at the play pitch, and one landmark on one map.
-4. **One building and two units through the pipeline**: the beetle hall, an ant warrior and a beetle horn guard, made from the concepts with Tripo and Blender, with the red zones as the team colour mask. Seen at normal zoom from the overhead camera and from directly above, in every player colour.
-5. Roll out what is agreed.
+**The next goal is one scene rendered in the game (Jiri, 2026-10-18):** `art/styles/target-biome-fall.jpg`, the beetle base by the amber pit in the fall biome. Faction concepts wait until it renders. Cliffs are left out of this scene.
+
+### What the scene is made of, and what the engine has
+
+| Layer | Engine system | Today | Needed |
+|---|---|---|---|
+| Calm soil of the clearing | biome `terrain.soil` layer, tiled | layer exists; `woodland-soil` is busier than the target | a calmer soil material; a script that packs ground textures, since nothing in the repository packs `data.bin` |
+| Leaf litter towards the edges | biome `terrain.grass` layer (`autumn-leaf-litter`), driven by the map's `grass.grid` and by `groundCover` around props, height-blended with breakup noise | works | a painted band along the clearing's edge |
+| Fallen leaves, acorns, mushrooms, ferns | statics from `scenery.json` (instanced, GPU culled, foliage cutout, wind on ferns) | pieces exist: `autumn-leaf-litter`, `canopy-acorns`, `canopy-mushrooms-*`, `pl-fern-*` | dense placement: the editor's prop brush places at most one prop per 3.5 cells, so the first pass uses a script that writes `scenery.json`; later a scatter by mask, per-instance tint and statics LOD |
+| Colossal trunk at the corner | a static: `scenery.mega-oak-trunk` (Tripo) | exists | placement and scale |
+| Amber pit | the amber deposit model | exists, in the old style | a crater version, later |
+| Beetle hall, tower, brood den, workers | live models | only the old beetle buildings | the hall from `buildings-beetles.jpg` through Tripo and Blender; the old buildings stand in until then |
+| Warm low sun, long shadows | biome `light` (`sunHeight`, `sunTint`, `sunDirection`) and `--hour` | exists | values |
+| Filmic finish, warm grade | biome `grade` (`highlightShoulder`, contrast, saturation, tints, vignette) | a single shoulder knee; every biome uses 0 (clip) | values first; a proper filmic curve if the knee isn't enough |
+| Frame darker than the clearing | nothing darkens outside `playable` today | screen vignette only | a playable-area mask in `scene_out` (new, small) |
+
+**Sources (Jiri, 2026-10-18):**
+- **Textures** are generated with gpt-image from reference images; its transparent output covers leaf decals and cutout sprites.
+- **3D** is made with Tripo and Blender.
+- **The beetle main hall** is a new model.
+- **Vegetation** is decoration only (D62): nothing is felled, so frame props never need damage states or harvesting.
+
+### Steps
+
+1. **Data-only first render (no engine code).** A small flat test map (256 cells) in the fall biome:
+   - soil in the middle and a painted litter band;
+   - a script that places the leaf, acorn, mushroom and fern pieces densely around the clearing, with the trunk at the corner;
+   - the old beetle buildings as stand-ins;
+   - biome light and grade tuned towards the target.
+
+   Shot next to the target at the same framing. This shows how far data alone gets and turns the rest into a measured gap list.
+2. **Ground materials.** A packing script and a calm soil and litter pair that match the target.
+3. **Engine.** The playable-area darkening, a filmic shoulder if needed, then per-instance tint, statics LOD and scatter by mask, as the gap list asks.
+4. **Art.** The frame props at the target's quality, the beetle hall model and the amber crater.
+5. **Again side by side, and on the base M1 Medium preset**, until Jiri calls it.
 
 ## Open questions
 

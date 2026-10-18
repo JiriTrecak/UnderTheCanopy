@@ -538,3 +538,23 @@ The look is a hybrid. Units and buildings are stylized, crisp and saturated, in 
 The army comes first: the playable ground is calm and toned down, with only enough detail to sell a real surface. The non-playable frame (colossal trunks, roots, ferns, leaves) carries the detail, and the army is the brightest, sharpest thing on screen. Buildings are made of the faction's creature: the beetle hall is a colossal armoured beetle turned into a fortress. Huge assets keep the scale in view.
 
 The target frames are `art/styles/target-*.jpg` and the beetle building sheets `art/styles/buildings-*.jpg`, all generated concepts. This replaces D24's "today's look first" as the target, and the bright cartoon `art/styles/forest-settlement.png` is no longer it. The research, rules and order of work are in [art direction](art-direction.md).
+
+## D62. No tree felling; two resources, one of them out in the world (2026-10-18, Jiri)
+
+Trees stop being a resource. Every piece of vegetation, from colossal trunks to small trees and ferns, is decoration that sells the scale (D61); nothing in the environment is cut down or broken. Why: at insect scale, felling a tree breaks the fiction; most players find two resources easier than three; the AI no longer reasons about tree lines; and maps get easier to design, because tree walls become permanent terrain.
+
+The economy becomes two resources:
+- **Amber** at the base pays for everything basic.
+- **Root**, from Corrupted Root sites out in the world, which players must go out to take.
+
+**Root** is gathered (Jiri, 2026-10-18):
+- **Same system as amber.** The same workers from the main hall carry it to a Rootworks.
+- **It gates progress**: what lifts a player past the early game costs root.
+- **About two workers per site** saturate it.
+- **Sites:** maps place a few root sites that are relatively safe and close to the bases. Bigger armies need more sites held further out.
+
+**Amber runs out**, like a Warcraft III gold mine: each deposit holds a finite amount, so players must expand to new amber sites. **Root never runs out**: a held site keeps paying, so the fight is over holding sites, not draining them.
+
+Wood and its costs go away. The engine keeps felling for now (content is input); the base game simply stops using it.
+
+**Tree walls are solid**: no unit passes through vegetation that forms a wall, so players never have to think about it.
