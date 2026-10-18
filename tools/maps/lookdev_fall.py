@@ -397,15 +397,17 @@ def build_scenery():
 
 # ------------------------------------------------------------------ map
 
-def snap(value):
-    """Building grid: centres at 1.5 mod 4."""
-    return math.floor((value - 1.5) / 4.0 + 0.5) * 4.0 + 1.5
+def snap(value, footprint=20):
+    """Building grid: footprint edges on the 4-cell lattice from -0.5 (centres at 1.5 mod 4
+    for 12 and 20 cells, 3.5 mod 4 for 16)."""
+    offset = (-0.5 + footprint / 2.0) % 4.0
+    return math.floor((value - offset) / 4.0 + 0.5) * 4.0 + offset
 
 
 def build_map():
-    def at(px, py):
+    def at(px, py, footprint=20):
         x, z = to_world(px, py)
-        return {'x': snap(x), 'y': snap(z)}
+        return {'x': snap(x, footprint), 'y': snap(z, footprint)}
 
     def amber(id_, px, py):
         return {'definition': 'building.neutral.amber-mine', 'id': id_,
@@ -422,7 +424,7 @@ def build_map():
     def forge(id_, px, py):
         return {'definition': 'building.beetles.shell-forge', 'id': id_,
                 'initialState': {'construction': 'complete'}, 'owner': 'player.1',
-                'position': at(px, py), 'rotation': 0.0}
+                'position': at(px, py, 16), 'rotation': 0.0}
 
     start = at(560, 640)
     return {

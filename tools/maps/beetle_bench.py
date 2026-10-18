@@ -13,9 +13,10 @@ OUT = os.path.join(ROOT, 'base', 'maps', 'showcase', 'beetle-bench.utcm')
 SIZE = 256
 SPAN = SIZE + 32
 SIDE = SPAN + 1
-# Buildings stand on the 4-cell grid at 1.5 mod 4.
+# Footprint edges lie on the 4-cell grid (from -0.5): centres at 1.5 mod 4 for the
+# 20-cell hall, 3.5 mod 4 for the 16-cell forge.
 START = (113.5, 129.5)
-FORGE = (137.5, 125.5)
+FORGE = (135.5, 127.5)
 
 
 def write_grid(path, data, code, side):

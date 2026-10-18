@@ -69,22 +69,22 @@
     "blocker": {
       "shape": "box",
       "size": [
-        12,
-        12
+        16,
+        16
       ],
       "offset": [
         0,
         0
       ]
     },
-    "vegetationClearance": 6,
+    "vegetationClearance": 8,
     "groundContact": {
       "mode": "pivot"
     }
   },
   "display": {
     "scale": 1,
-    "healthHeight": 8.5
+    "healthHeight": 11.8
   },
   "shading": "building",
   "license": "Generated with Tripo (image and text to 3D, segmentation) from an ImageGen (gpt-image-2) concept for Under the Canopy; animated by tools/buildings/shell_forge.py."

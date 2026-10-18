@@ -279,6 +279,46 @@ def scale_uv(obj, su, sv):
         loop_uv.uv = (loop_uv.uv[0] * su, loop_uv.uv[1] * sv)
 
 
+def strip_dirt(obj, below, warm=0.03):
+    """Removes the dirt skirt Tripo models around a building's foot: faces below world height
+    `below` whose texture is warm, dull earth (red over blue by `warm`, not dark, not
+    saturated like brass). Buildings stand on the map's ground, never on their own (Jiri);
+    neighbour voting keeps the cut's edge clean. Returns the faces removed."""
+    me = obj.data
+    node = next(n for n in me.materials[0].node_tree.nodes
+                if n.type == 'TEX_IMAGE' and n.image and 'basecolor' in n.image.name.lower())
+    w, h = node.image.size
+    px = np.array(node.image.pixels[:], np.float32).reshape(h, w, 4)[:, :, :3]
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    uv = bm.loops.layers.uv.active
+    bm.faces.ensure_lookup_table()
+    texel = lambda u, v: px[min(h - 1, int(v * h)), min(w - 1, int(u * w))]  # noqa: E731
+    dirt = set()
+    for f in bm.faces:
+        uvs = [l[uv].uv for l in f.loops]
+        c = np.mean([texel(*t) for t in uvs] + [texel(*np.mean(uvs, axis=0))], axis=0)
+        z = (obj.matrix_world @ f.calc_center_median()).z
+        lum = float(c @ np.array([0.2126, 0.7152, 0.0722], np.float32))
+        if z < below and c[0] - c[2] > warm and lum > 0.13 and c.max() - c.min() < 0.13:
+            dirt.add(f.index)
+    for _ in range(2):
+        voted = set(dirt)
+        for f in bm.faces:
+            near = [g.index for e in f.edges for g in e.link_faces if g is not f]
+            if near:
+                share = sum(i in dirt for i in near) / len(near)
+                if share > 0.6:
+                    voted.add(f.index)
+                elif share < 0.25:
+                    voted.discard(f.index)
+        dirt = voted
+    bmesh.ops.delete(bm, geom=[bm.faces[i] for i in dirt], context='FACES')
+    bm.to_mesh(me)
+    bm.free()
+    return len(dirt)
+
+
 def socket(name, at):
     e = bpy.data.objects.new(name, None)
     e.empty_display_size = 0.3

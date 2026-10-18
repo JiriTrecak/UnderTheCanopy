@@ -11,7 +11,8 @@ hammer arm is a separate Tripo model (text to 3D). Here (D65):
   alive while it works);
 - the hammer arm turns on a pivot on the pillar beside the anvil: raised at rest, two
   strikes per `work` cycle (`strike` events for the sparks);
-- sockets for the state effects: three chimney tops, the furnace mouth, the anvil, the tank."""
+- sockets for the state effects: three chimney tops, the furnace mouth, the anvil, the tank;
+- the dirt skirt Tripo modelled round the base ring is cut away."""
 import math, os, sys
 
 import bpy
@@ -25,10 +26,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 FORGE, HAMMER = sys.argv[sys.argv.index('--') + 1:][:2]
 NAME = 'beetles-shell-forge'
 OUT = os.path.join(ROOT, 'base', 'assets', 'buildings', NAME)
-WIDTH = 11.5  # the 12-metre footprint, a little inside its edge
+WIDTH = 16.0  # fills its 16-cell footprint: buildings have no walkable perimeter
+S = WIDTH / 11.5  # the offsets below were set on the first, 11.5-metre build
 
 # Segmented parts by role (tripo_part_<n>).
-FURNACE, TANK, ANVIL = 'tripo_part_6', 'tripo_part_3', 'tripo_part_5'
+FURNACE, TANK, ANVIL, BASE = 'tripo_part_6', 'tripo_part_3', 'tripo_part_5', 'tripo_part_0'
 CHIMNEYS = {'a': 'tripo_part_9', 'b': 'tripo_part_8', 'c': 'tripo_part_10'}
 
 kit.reset()
@@ -43,6 +45,11 @@ for o in list(bpy.context.scene.objects):
             c.matrix_world = m
 for o in [o for o in bpy.context.scene.objects if o.type != 'MESH']:
     bpy.data.objects.remove(o, do_unlink=True)
+# No dirt: the base ring's earth skirt goes, the map's ground is the ground (Jiri). Cut before
+# measuring, so the stone ring, not the skirt, fills the footprint.
+pts = [o.matrix_world @ v.co for o in parts for v in o.data.vertices]
+floor, top = min(p.z for p in pts), max(p.z for p in pts)
+print('dirt faces', kit.strip_dirt(bpy.data.objects[BASE], floor + 0.06 * (top - floor)))
 pts = [o.matrix_world @ v.co for o in parts for v in o.data.vertices]
 lo = mathutils.Vector([min(p[i] for p in pts) for i in range(3)])
 hi = mathutils.Vector([max(p[i] for p in pts) for i in range(3)])
@@ -130,21 +137,21 @@ def top_of(obj):
 
 
 for key, part in CHIMNEYS.items():
-    kit.socket('socket_chimney_' + key, top_of(by_name[part]) + mathutils.Vector((0, 0, 0.3)))
+    kit.socket('socket_chimney_' + key, top_of(by_name[part]) + mathutils.Vector((0, 0, 0.3 * S)))
 fur = by_name[FURNACE]
 fy = min(v.co.y for v in fur.data.vertices)
 fx = sum(v.co.x for v in fur.data.vertices) / len(fur.data.vertices)
-kit.socket('socket_furnace', (fx, fy - 0.4, 1.7))
+kit.socket('socket_furnace', (fx, fy - 0.4 * S, 1.7 * S))
 anvil_top = top_of(by_name[ANVIL])
 kit.socket('socket_anvil', anvil_top + mathutils.Vector((0, 0, 0.05)))
-kit.socket('socket_tank', top_of(by_name[TANK]) - mathutils.Vector((0, 0, 0.8)))
+kit.socket('socket_tank', top_of(by_name[TANK]) - mathutils.Vector((0, 0, 0.8 * S)))
 
 # --- The hammer arm: Tripo's beam lies along +X with its head at +X. Turned head to −X,
-# 2 m long, its pivot at the hub end on a post right of the anvil, so it swings across the
+# its pivot at the hub end on a post right of the anvil, so it swings across the
 # RTS camera's view (a swing towards the camera would not read).
 bpy.ops.import_scene.gltf(filepath=HAMMER)
 hammer = [o for o in bpy.context.scene.objects if o.type == 'MESH' and o not in parts][0]
-LENGTH = 3.0
+LENGTH = 3.0 * S
 hm = hammer.matrix_world.copy()
 hammer.parent = None
 hammer.data.transform(hm)
@@ -176,7 +183,7 @@ hammer.rotation_mode = 'XYZ'  # glTF imports use quaternions; the clips key Eule
 hammer.location = pivot
 hammer.data.materials[0].name = 'hammer'
 # Its post: a plain steel column under the hub, in the hammer's own material.
-post = kit.cylinder('hammer-post', 0.16, pivot.z - 0.6, at=(pivot.x, pivot.y, 0.6), verts=16)
+post = kit.cylinder('hammer-post', 0.16 * S, pivot.z - 0.6 * S, at=(pivot.x, pivot.y, 0.6 * S), verts=16)
 post.data.materials.append(hammer.data.materials[0])
 kit.cube_uv(post, 1.0)  # a textured material needs UVs (the exporter writes −1 without)
 for p in post.data.polygons:
@@ -202,11 +209,11 @@ asset = {
              # Event times are seconds into the clip.
              'events': [{'name': 'strike', 'time': round(18 / kit.FPS, 3)}, {'name': 'strike', 'time': round(42 / kit.FPS, 3)}]},
         ],
-        'blocker': {'shape': 'box', 'size': [12, 12], 'offset': [0, 0]},
-        'vegetationClearance': 6,
+        'blocker': {'shape': 'box', 'size': [16, 16], 'offset': [0, 0]},
+        'vegetationClearance': 8,
         'groundContact': {'mode': 'pivot'},
     },
-    'display': {'scale': 1, 'healthHeight': 8.5},
+    'display': {'scale': 1, 'healthHeight': 11.8},
     'shading': 'building',
     'license': 'Generated with Tripo (image and text to 3D, segmentation) from an ImageGen (gpt-image-2) '
                'concept for Under the Canopy; animated by tools/buildings/shell_forge.py.',

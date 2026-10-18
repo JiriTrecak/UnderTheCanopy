@@ -11,12 +11,12 @@
   },
   "vision": 14,
   "footprint": {
-    "width": 12,
-    "depth": 12
+    "width": 16,
+    "depth": 16
   },
   "entrance": {
     "x": 0.5,
-    "y": 6.5
+    "y": 8.5
   },
   "creation": {
     "method": "construct",
