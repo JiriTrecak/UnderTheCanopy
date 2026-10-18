@@ -107,6 +107,7 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
             crowd: options.crowd,
             gallery: options.gallery,
             colors: options.colors.clone(),
+            races: options.races.clone(),
             biome: options.biome.as_deref(),
             human: None,
             content: None,

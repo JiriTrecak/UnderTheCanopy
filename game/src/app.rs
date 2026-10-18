@@ -105,6 +105,7 @@ impl App {
                 biome: o.biome.clone(),
                 crowd: o.crowd,
                 colors: o.colors.clone(),
+                races: o.races.clone(),
                 human: (!o.spectate && o.crowd.is_none()).then_some(0),
                 encounter: None,
             },

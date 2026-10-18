@@ -26,6 +26,8 @@ pub struct MatchSpec<'a> {
     pub gallery: bool,
     /// Player colour (index into `config/players.json`) of each slot, when not its own.
     pub colors: Option<Vec<usize>>,
+    /// Race of each slot in order, when not the start's own.
+    pub races: Option<Vec<String>>,
     /// The local player's slot (a human on that start); `None` spectates computer
     /// players.
     pub human: Option<u8>,
@@ -145,6 +147,9 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
         }
         None => {
             let mut setup = canopy_scene::spectator_setup(&map, spec.players);
+            for (slot, race) in setup.slots.iter_mut().zip(spec.races.iter().flatten()) {
+                slot.race = Some(race.clone());
+            }
             if let Some(slot) = setup
                 .slots
                 .iter_mut()
