@@ -2,8 +2,8 @@
   "id": "water.fall-pool",
   "name": "Fall forest pool",
   "water": {
-    "shallowColor": "#2a3a3a",
-    "deepColor": "#0d2030",
+    "shallowColor": "#142632",
+    "deepColor": "#06192c",
     "clarity": 0.7,
     "rippleScale": 0.12,
     "rippleStrength": 0.03,

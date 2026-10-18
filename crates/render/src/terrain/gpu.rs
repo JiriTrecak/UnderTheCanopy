@@ -36,6 +36,8 @@ struct TerrainUniform {
     grid: [f32; 4],
     cells: [f32; 4],
     counts: [u32; 4],
+    /// Painted ground: corner x, z, 1 / width, 1 / depth; zero width when absent.
+    overlay: [f32; 4],
     layers: [LayerUniform; MAX_LAYERS],
 }
 
@@ -517,6 +519,9 @@ impl TerrainGpu {
                 super::selection_offset(desc),
             ],
             counts: [cx, cz, layer_count, 0],
+            overlay: desc.overlay.as_ref().map_or([0.0; 4], |o| {
+                [o.rect[0], o.rect[1], 1.0 / o.rect[2], 1.0 / o.rect[3]]
+            }),
             layers: layer_uniforms,
         };
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -585,6 +590,7 @@ impl TerrainGpu {
                     ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
                     count: None,
                 },
+                tex_entry(11, frag, filterable, d2),
                 wgpu::BindGroupLayoutEntry {
                     binding: 10,
                     visibility: vf,
@@ -633,6 +639,28 @@ impl TerrainGpu {
         entries.push(wgpu::BindGroupEntry {
             binding: 10,
             resource: uniform_buffer.as_entire_binding(),
+        });
+        let overlay_texture = match &desc.overlay {
+            Some(o) => texture::upload(
+                device,
+                queue,
+                features,
+                &pack
+                    .texture(&o.texture)
+                    .with_context(|| o.texture.clone())?,
+            ),
+            None => texture::solid(
+                device,
+                queue,
+                "no overlay",
+                wgpu::TextureFormat::Rgba8UnormSrgb,
+                [0; 4],
+            ),
+        };
+        let overlay_view = overlay_texture.create_view(&Default::default());
+        entries.push(wgpu::BindGroupEntry {
+            binding: 11,
+            resource: wgpu::BindingResource::TextureView(&overlay_view),
         });
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("terrain"),

@@ -259,6 +259,7 @@ fn terrain() -> TerrainDesc {
         },
         surroundings: None,
         shade: None,
+        overlay: None,
     }
 }
 
@@ -418,6 +419,7 @@ fn a_tiny_lake_renders_with_wakes_and_every_post_effect() {
         reflection_strength: 0.5,
         caustic_strength: 0.18,
         cloud_strength: 0.03,
+        glint: 0.0,
         flow_speed: 1.0,
         waves: DEFAULT_WAVES,
     };

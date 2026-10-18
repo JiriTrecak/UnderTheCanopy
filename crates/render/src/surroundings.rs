@@ -1174,6 +1174,7 @@ mod tests {
             },
             surroundings: None,
             shade: None,
+            overlay: None,
         };
         let desc = ForestDesc {
             map_size: 32,

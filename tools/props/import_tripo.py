@@ -3,7 +3,7 @@
     /Applications/Blender.app/Contents/MacOS/Blender -b -P tools/props/import_tripo.py -- <spec.json>
 
 spec.json: {"out": "<base/assets/environment>", "items": [{"name", "glb", "height" | "width"
-(metres after scaling), "triangles" (budget), "texture" (pixels, square), "tone", "saturation",
+(metres after scaling), "triangles" (budget), "texture" (pixels, square), "tone", "saturation", "tint" ([r, g, b] multiplier),
 "kind": "prop"|"foliage"|"tree", "tags": [...]}]}.
 
 For each item: joins the meshes, puts the pivot at the centre of the base (lowest point at 0),
@@ -18,12 +18,12 @@ spec = json.load(open(argv[0]))
 OUT = spec['out']
 
 
-def tone_image(img, tone, saturation):
+def tone_image(img, tone, saturation, tint=(1.0, 1.0, 1.0)):
     w, h = img.size
     px = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)
     rgb = px[:, :, :3]
     grey = rgb.mean(axis=2, keepdims=True)
-    px[:, :, :3] = np.clip((grey + (rgb - grey) * saturation) * tone, 0.0, 1.0)
+    px[:, :, :3] = np.clip((grey + (rgb - grey) * saturation) * tone * np.array(tint, np.float32), 0.0, 1.0)
     img.pixels[:] = px.ravel()
 
 
@@ -89,7 +89,7 @@ def process(item):
                     img.scale(px, px)
                 linked = [l.to_socket.name for l in node.outputs['Color'].links]
                 if 'Base Color' in linked:
-                    tone_image(img, item.get('tone', 1.0), item.get('saturation', 1.0))
+                    tone_image(img, item.get('tone', 1.0), item.get('saturation', 1.0), item.get('tint', (1.0, 1.0, 1.0)))
                     if item.get('emissive'):
                         # Self-lit material (amber): the base colour also drives emission.
                         bsdf = [l.to_node for l in node.outputs['Color'].links if l.to_socket.name == 'Base Color'][0]

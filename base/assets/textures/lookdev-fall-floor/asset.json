@@ -1,0 +1,23 @@
+{
+  "id": "asset.texture.lookdev-fall-floor",
+  "name": "lookdev fall floor",
+  "kind": "texture",
+  "tags": [
+    "lookdev",
+    "imagegen",
+    "overlay"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original ImageGen (gpt-image-2) painting for Under the Canopy, cut to the map by tools/terrain/build_overlay.py."
+}

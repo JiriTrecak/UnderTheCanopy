@@ -98,7 +98,7 @@ Optional fields:
 ## Landscape
 
 - `landscape/biomes/<id>.json` sets each biome's look: lighting, fixed ground layers, water, forest pieces. The renderer reads the base package's biomes.
-- `landscape/water/<name>.json` is a water profile (a biome's water, or one a map's water flow names).
+- `landscape/water/<name>.json` is a water profile (a biome's water, or one a map's water flow names). An optional `glint` (0 none) adds sun glitter on the ripples.
 
 ```json water
 {

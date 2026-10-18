@@ -124,6 +124,8 @@ pub struct WaterProfile {
     pub caustic_strength: f32,
     pub cloud_strength: f32,
     pub flow_speed: f32,
+    /// Sun glitter on the ripples (0 none).
+    pub glint: f32,
     pub waves: WaterWaves,
 }
 
@@ -189,7 +191,7 @@ pub fn profile_rows(p: &WaterProfile) -> [[f32; 4]; 6] {
             p.caustic_strength,
             p.foam_strength,
         ],
-        [p.cloud_strength, p.flow_speed, 0.0, 0.0],
+        [p.cloud_strength, p.flow_speed, p.glint, 0.0],
         [w.height, w.length, w.speed, w.depth_end],
         [
             w.depth_start,
@@ -388,6 +390,7 @@ mod tests {
             },
             surroundings: None,
             shade: None,
+            overlay: None,
         }
     }
 
@@ -403,6 +406,7 @@ mod tests {
             caustic_strength: 0.18,
             cloud_strength: 0.03,
             flow_speed: 1.0,
+            glint: 0.0,
             waves: DEFAULT_WAVES,
         }
     }

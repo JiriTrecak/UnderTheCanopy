@@ -360,6 +360,7 @@ pub fn sandbox(entities: Vec<Placement>, camps: Vec<Camp>) -> UtcMap {
                 rock: floats(0.0, vertices),
                 paint: Vec::new(),
                 shade: None,
+                overlay: None,
             },
             version: Version,
             objects: Vec::new(),

@@ -37,7 +37,7 @@ The main fields:
 - `stamps`: scenery placed with walk surfaces.
 - `landscape.environment`: `{hour, weather}`.
 - `mission`: campaign metadata, objectives and regions; the script is in `mission.lua`.
-- `terrain`: `{textureGrid, waterProfiles, paint: [{material, variants}]}`.
+- `terrain`: `{textureGrid, waterProfiles, paint: [{material, variants}], overlay?}`. The optional `overlay` (`{asset, x, z, width, height}`, metres) lays one painted texture asset, premultiplied alpha, over the ground in that rectangle (D63).
 
 **The order of `terrain.paint` matters.** Later layers paint over earlier ones, and cliffs come after non-cliffs. Each layer has `terrain/paint-<n>-weights.grid`, plus `paint-<n>-variants.grid` when `variants` is true. `material` is a terrain-material asset id.
 
@@ -54,6 +54,7 @@ The terrain covers the playable square plus a 16-cell halo on every side:
 | `water-heights.grid` | f32 per vertex | the water surface; -17 means dry |
 | `water-flow.grid` | 4 bytes per cell | x, z (128 still), foam, profile (0 = the biome's water) |
 | `grass.grid`, `rock.grid` | f32 per vertex | 0 to 1 |
+| `shade.grid` (optional) | f32 per vertex | 0 lit to 1 black: the frame shade (D63) |
 | `paint-<n>-weights.grid` | f32 per vertex | 0 to 1 |
 | `paint-<n>-variants.grid` | u8 per texture cell | atlas variant |
 

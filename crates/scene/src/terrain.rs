@@ -226,6 +226,7 @@ pub fn water_profile(
         caustic_strength: water.caustic_strength as f32,
         cloud_strength: water.cloud_strength as f32,
         flow_speed: water.flow_speed as f32,
+        glint: water.glint.unwrap_or(0.0) as f32,
         waves,
     })
 }
@@ -493,6 +494,13 @@ pub fn build(
             haze: [s.haze_start, s.haze_end],
         }),
         shade: decoded.shade,
+        overlay: decoded
+            .overlay
+            .as_ref()
+            .map(|o| canopy_render::terrain::TerrainOverlay {
+                texture: format!("{}/image.png", o.asset),
+                rect: [o.x as f32, o.z as f32, o.width as f32, o.height as f32],
+            }),
     };
     Ok((terrain, water))
 }

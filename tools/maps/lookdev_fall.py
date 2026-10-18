@@ -63,12 +63,13 @@ POOL = poly([(1050, 1150), (1100, 960), (1250, 930), (1450, 860), (1600, 815), (
              (2100, 795), (2100, 1200)])
 # Giant pieces: (scenery id, pixel x, pixel y, scale, yaw degrees)
 GIANTS = [
-    ('scenery.lookdev-trunk', 800, 175, 0.85, 15),
+    ('scenery.lookdev-trunk', 800, 130, 0.78, 15),
     ('scenery.lookdev-trunk-mushrooms', 1720, 150, 0.85, 200),
-    ('scenery.lookdev-trunk', 2150, 760, 0.8, 300),
+    ('scenery.lookdev-trunk', 2080, 640, 0.95, 300),
+    ('scenery.lookdev-trunk-mushrooms', 120, 120, 0.8, 70),
     ('scenery.lookdev-trunk', -150, 380, 0.75, 110),
     ('scenery.lookdev-stump', 200, 740, 1.5, 40),
-    ('scenery.lookdev-puffball', 1015, 1000, 1.6, 0),
+    ('scenery.lookdev-puffball', 1015, 1000, 0.75, 0),
     ('scenery.lookdev-root-arch', 1370, 860, 1.1, 10),
 ]
 
@@ -161,12 +162,17 @@ def build_grids():
     rim = signed_distance(x, z, OPEN)
     # The debris band (a Warcraft-style transition atlas): from about 12 m inside the
     # clearing out under the leaf litter, and a ring around the ford.
-    band = smoothstep(-24.0, -9.0, rim + (fbm(x, z, 9, 53) - 0.5) * 12.0)
-    ford_rim = 1.0 - smoothstep(0.5, 5.0, signed_distance(x, z, FORD) + (fbm(x, z, 6, 57) - 0.5) * 5.0)
+    band = smoothstep(-9.0, -2.0, rim + (fbm(x, z, 9, 53) - 0.5) * 6.0)
+    ford_rim = 1.0 - smoothstep(0.0, 3.5, signed_distance(x, z, FORD) + (fbm(x, z, 6, 57) - 0.5) * 4.0)
     sparse = np.clip(np.maximum(band, ford_rim) * (1.0 - pool), 0.0, 1.0)
     # Wet, darker soil in a ragged band around the ford.
     ford_edge = signed_distance(x, z, FORD)
     wet = 0.25 * (1.0 - smoothstep(-0.5, 3.0, ford_edge + (fbm(x, z, 5, 61) - 0.5) * 4.0)) * open_
+    # Each amber crater's bowl and thrown-out rim are darker, damp soil.
+    for px, py in AMBER:
+        cx, cz = to_world(px, py)
+        r = np.sqrt((x - cx) ** 2 + (z - cz) ** 2) + (fbm(x, z, 3, 63) - 0.5) * 2.0
+        wet = np.maximum(wet, 0.7 * (1.0 - smoothstep(5.0, 8.5, r)))
     flow = np.zeros((SPAN, SPAN, 4), dtype=np.uint8)
     flow[..., 0] = 128
     flow[..., 1] = 128
@@ -176,7 +182,11 @@ def build_grids():
     flow[in_ford, 3] = 1
     # Frame shade: nothing on the playable ground, deepening into the frame, so the frame
     # sits below the clearing in value as in the target.
-    shade = 0.7 * smoothstep(6.0, 32.0, rim + (fbm(x, z, 20, 71) - 0.5) * 10.0)
+    shade = 0.45 * smoothstep(6.0, 40.0, rim + (fbm(x, z, 20, 71) - 0.5) * 10.0)
+    # The target's top edge sinks into the giants' shadow: darker towards the far side.
+    _, z_far = to_world(W / 2, 0)
+    _, z_near = to_world(W / 2, 200)
+    shade = np.maximum(shade, 0.4 * smoothstep(z_near, z_far, z) * smoothstep(0.0, 8.0, rim))
     return (heights.astype('<f4'), water.astype('<f4'), litter.astype('<f4'), np.zeros_like(heights, dtype='<f4'),
             flow, sparse.astype('<f4'), wet.astype('<f4'), shade.astype('<f4'))
 
@@ -185,9 +195,9 @@ def build_grids():
 # (scenery id, weight, scale range, zone): 'edge' only at the clearing's rim, 'deep' only
 # further into the frame, 'any' both.
 FRAME = [
-    ('scenery.lookdev-leaf-oak', 10, (1.3, 2.0), 'any'),
-    ('scenery.lookdev-leaf-maple', 9, (1.3, 2.0), 'any'),
-    ('scenery.lookdev-leaf-beech', 8, (1.2, 1.8), 'any'),
+    ('scenery.lookdev-leaf-oak', 1.5, (1.3, 2.0), 'edge'),
+    ('scenery.lookdev-leaf-maple', 1.5, (1.3, 2.0), 'edge'),
+    ('scenery.lookdev-leaf-beech', 1.5, (1.2, 1.8), 'edge'),
     ('scenery.lookdev-fern', 12, (1.0, 1.7), 'any'),
     ('scenery.lookdev-bracken', 1.2, (0.6, 1.1), 'any'),
     ('scenery.lookdev-bracken', 5, (0.6, 1.2), 'edge'),
@@ -195,11 +205,11 @@ FRAME = [
     ('scenery.lookdev-leaf-big-oak', 1.0, (1.0, 2.2), 'any'),
     ('scenery.lookdev-leaf-big', 1.2, (1.1, 2.0), 'edge'),
     ('scenery.lookdev-leaf-big-oak', 1.2, (1.1, 2.0), 'edge'),
-    ('scenery.lookdev-mushrooms', 0.6, (0.7, 1.2), 'edge'),
+    ('scenery.lookdev-mushrooms', 0.6, (0.35, 0.6), 'edge'),
     ('scenery.lookdev-acorn', 1.2, (0.8, 1.2), 'edge'),
-    ('scenery.lookdev-mushrooms', 0.3, (0.6, 1.1), 'any'),
+    ('scenery.lookdev-mushrooms', 0.3, (0.35, 0.7), 'any'),
     ('scenery.lookdev-acorn', 0.5, (0.7, 1.1), 'any'),
-    ('scenery.lookdev-puffball', 0.3, (0.5, 0.9), 'deep'),
+    ('scenery.lookdev-puffball', 0.3, (0.3, 0.5), 'deep'),
 ]
 LEAVES = ['scenery.lookdev-leaf-big', 'scenery.lookdev-leaf-big-oak']
 # Amber deposits (target pixels); each sits in a crater.
@@ -220,6 +230,7 @@ def build_scenery():
         })
 
     roots = ['scenery.lookdev-root-a', 'scenery.lookdev-root-b', 'scenery.lookdev-root-c', 'scenery.lookdev-root-d']
+    root_lengths = [48.0, 38.0, 58.0, 28.0]  # tools/props/build_roots.py lengths
     for asset, px, py, scale, yaw in GIANTS:
         x, z = to_world(px, py)
         add(asset, x, z, scale, math.radians(yaw))
@@ -229,18 +240,28 @@ def build_scenery():
             count = 8
             for k in range(count):
                 angle = 2 * math.pi * k / count + rng.uniform(-0.3, 0.3)
+                kind = int(rng.integers(4))
+                scale_root = scale * 1.6 * rng.uniform(0.8, 1.2)
                 dx, dz = math.cos(angle), math.sin(angle)
                 start = 11.0 * scale
-                tip = (x + dx * (start + 40 * scale), z + dz * (start + 40 * scale))
-                if signed_distance(np.array(tip[0]), np.array(tip[1]), OPEN) < 6.0:
-                    continue  # roots stay in the frame, out of the playable ground
-                add(roots[rng.integers(4)], x + dx * start, z + dz * start,
-                    scale * rng.uniform(0.8, 1.2), math.atan2(-dx, -dz))
+                # Roots stay in the frame: every point along the root's length, give or
+                # take its wander, is at most a flare's width into the playable ground.
+                along = start + np.linspace(0.0, 1.0, 6) * root_lengths[kind] * scale_root * 0.9
+                if (signed_distance(x + dx * along, z + dz * along, OPEN).min() < -3.0
+                        or fields(x + dx * along, z + dz * along)[2].max() > 0.05):
+                    continue  # nor into the pool, whose bed drops away under them
+                add(roots[kind], x + dx * start, z + dz * start, scale_root, math.atan2(-dx, -dz))
     # Amber crystals stand in their craters (render-only: no mine entity, whose foundation
     # would flatten the crater).
     for i, (px, py) in enumerate(AMBER):
         x, z = to_world(px, py)
         add('scenery.lookdev-amber', x, z, 1.45, math.radians(30 + 70 * i), 'absolute', -2.2)
+        # Pebbles and clods thrown up on the crater's rim.
+        for k in range(22):
+            a = 2 * math.pi * k / 22 + rng.uniform(-0.12, 0.12)
+            r = rng.uniform(8.5, 11.0)
+            add('scenery.lookdev-acorn', x + math.cos(a) * r, z + math.sin(a) * r,
+                rng.uniform(0.25, 0.45), rng.uniform(0, 2 * math.pi))
 
     # Candidates on a jittered grid over the framed area plus a margin, so the instance
     # count follows what the camera can see.
@@ -251,7 +272,7 @@ def build_scenery():
     gz = gz + rng.uniform(-1.0, 1.0, gz.shape)
     open_, _, pool = fields(gx, gz)
     frame = 1.0 - open_
-    density = smoothstep(0.25, 0.9, frame) * (0.35 + 0.45 * fbm(gx, gz, 14, 77))
+    density = smoothstep(0.25, 0.9, frame) * (0.08 + 0.18 * fbm(gx, gz, 14, 77))
     dist = signed_distance(gx, gz, OPEN)
     deep = smoothstep(4.0, 12.0, dist) > 0.5
     edge = (dist > -1.0) & (dist < 7.0)
@@ -278,7 +299,7 @@ def build_scenery():
     rim = signed_distance(gx, gz, OPEN)
     # Densest along the clearing's rim, where the eye lands; thinner deep in the frame,
     # where the litter texture and the larger clusters carry it.
-    fine = smoothstep(0.15, 0.75, 1.0 - open_) * (0.15 + 0.5 * (1.0 - smoothstep(6.0, 22.0, rim)))
+    fine = smoothstep(0.15, 0.75, 1.0 - open_) * 0.12 * (1.0 - smoothstep(2.0, 9.0, rim))
     rolls = rng.random(gx.shape)
     small = ['scenery.lookdev-litter-oak', 'scenery.lookdev-litter-maple', 'scenery.lookdev-litter-beech']
     for idx in np.ndindex(gx.shape):
@@ -297,11 +318,15 @@ def build_scenery():
         x, z = to_world(rng.uniform(1250, 2000), rng.uniform(880, 1125))
         if fields(np.array(x), np.array(z))[2] > 0.6:
             add(LEAVES[rng.integers(2)], x, z, rng.uniform(0.18, 0.32), rng.uniform(0, 2 * math.pi), 'absolute', -0.38)
-    for _ in range(140):
+    for _ in range(260):
         t = rng.uniform(0, 1)
-        x, z = to_world(720 + 720 * t + rng.uniform(-80, 80), 650 - 320 * t + rng.uniform(-60, 60))
-        if fields(np.array(x), np.array(z))[1] > 0.5:
-            add(LEAVES[rng.integers(2)], x, z, rng.uniform(0.14, 0.3), rng.uniform(0, 2 * math.pi), 'absolute', -0.14)
+        x, z = to_world(720 + 720 * t + rng.uniform(-90, 90), 650 - 320 * t + rng.uniform(-70, 70))
+        d = float(signed_distance(np.array(x), np.array(z), FORD))
+        if d < -1.5 and rng.random() < 0.45:
+            add(LEAVES[rng.integers(2)], x, z, rng.uniform(0.22, 0.42), rng.uniform(0, 2 * math.pi), 'absolute', -0.14)
+        elif -1.5 <= d < 2.5:
+            # Washed up along the banks.
+            add(small[rng.integers(3)], x, z, rng.uniform(0.7, 1.2), rng.uniform(0, 2 * math.pi))
     # Gnarled surface roots all through the frame, pointing away from the clearing, as the
     # giants' root networks that cover the target's forest floor.
     xs = np.arange(FOCUS[0] - 175, FOCUS[0] + 175, 13.0)
@@ -317,13 +342,17 @@ def build_scenery():
             gz_ = float(signed_distance(np.array(x), np.array(z + 1.0), OPEN)) - d
             angle = math.atan2(gz_, gx_) + rng.uniform(-0.8, 0.8)
             dx, dz = math.cos(angle), math.sin(angle)
-            add(roots[rng.integers(4)], x, z, rng.uniform(0.35, 0.7), math.atan2(-dx, -dz))
+            kind, scale = int(rng.integers(4)), rng.uniform(0.35, 0.7)
+            along = np.linspace(0.0, 1.0, 6) * root_lengths[kind] * scale
+            if fields(x + dx * along, z + dz * along)[2].max() > 0.05:
+                continue
+            add(roots[kind], x, z, scale, math.atan2(-dx, -dz))
     for px, py, count in CLUSTERS:
         cx, cz = to_world(px, py)
         for _ in range(count):
             a, r = rng.uniform(0, 2 * math.pi), rng.uniform(0, 7)
             add('scenery.lookdev-mushrooms', cx + math.cos(a) * r, cz + math.sin(a) * r,
-                rng.uniform(0.45, 0.9), rng.uniform(0, 2 * math.pi))
+                rng.uniform(0.3, 0.6), rng.uniform(0, 2 * math.pi))
     # Single fallen leaves blown onto the soil near the clearing's rim.
     xs = np.arange(FOCUS[0] - 175, FOCUS[0] + 175, 3.0)
     zs = np.arange(FOCUS[1] - 150, FOCUS[1] + 140, 3.0)
@@ -376,7 +405,9 @@ def build_map():
              'rotation': 200.0},
         ],
         'terrain': {'paint': [{'material': 'asset.terrain.lookdev-debris', 'variants': False},
-                              {'material': 'asset.terrain.lookdev-wet-soil', 'variants': False}], 'textureGrid': {'cellSize': 5, 'origin': [-0.5, -0.5]}, 'waterProfiles': ['water.fall-ford']},
+                              {'material': 'asset.terrain.lookdev-wet-soil', 'variants': False}], 'textureGrid': {'cellSize': 5, 'origin': [-0.5, -0.5]}, 'waterProfiles': ['water.fall-ford'],
+                    'overlay': {'asset': 'asset.texture.lookdev-fall-floor', 'x': 60.0, 'z': 110.0,
+                                'width': 360.0, 'height': 221.25}},
     }
 
 

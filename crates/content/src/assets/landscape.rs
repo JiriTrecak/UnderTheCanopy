@@ -103,6 +103,8 @@ pub struct WaterProfile {
     pub caustic_strength: f64,
     pub cloud_strength: f64,
     pub flow_speed: f64,
+    /// Sun glitter: sparkles on the ripples, seen from any angle (0 none).
+    pub glint: Option<f64>,
     pub waves: Option<WaterWaves>,
 }
 

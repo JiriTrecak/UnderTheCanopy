@@ -133,6 +133,18 @@ pub struct TerrainDesc {
     pub surroundings: Option<Surroundings>,
     /// The map's frame shade per vertex, `(span + 1)²`, 0 to 1 ([`crate::shade`]).
     pub shade: Option<Vec<f32>>,
+    /// The map's painted ground: a pack image over a world rectangle.
+    pub overlay: Option<TerrainOverlay>,
+}
+
+/// A map's painted ground (`terrain.overlay` in map.json): an image laid over the ground
+/// layers, composited by its (premultiplied) alpha before lighting.
+#[derive(Debug, Clone, PartialEq)]
+pub struct TerrainOverlay {
+    /// Pack entry of the image.
+    pub texture: String,
+    /// World x, z of its corner and its width, depth.
+    pub rect: [f32; 4],
 }
 
 impl TerrainDesc {
@@ -545,6 +557,7 @@ mod tests {
             },
             surroundings: None,
             shade: None,
+            overlay: None,
         }
     }
 

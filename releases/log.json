@@ -4,7 +4,9 @@
     "added": [
       "A look-dev showcase map, Look-dev: Fall, previews the new forest-floor look: giant trunks, leaf litter, mushrooms, a shallow ford, a deep pool and glowing amber"
     ],
-    "improved": [],
+    "improved": [
+      "Look-dev: Fall now has a painted forest floor around its clearing, sun glints on its shallow ford, and amber that sits in a crater."
+    ],
     "fixed": [],
     "knownIssues": []
   },

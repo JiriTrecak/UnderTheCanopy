@@ -29,6 +29,8 @@ struct TerrainInfo {
     cells: vec4f,
     // texture cells x, z; layer count; mask layers
     counts: vec4u,
+    // painted ground: corner x, z, 1 / width, 1 / depth (zero width: none)
+    overlay: vec4f,
     layers: array<Layer, 32>,
 }
 
@@ -52,6 +54,7 @@ struct Chunk {
 @group(1) @binding(8) var clamp_sampler: sampler;
 @group(1) @binding(9) var tile_sampler: sampler;
 @group(1) @binding(10) var<uniform> terrain: TerrainInfo;
+@group(1) @binding(11) var overlay_image: texture_2d<f32>;
 @group(2) @binding(0) var<storage, read> chunks: array<Chunk>;
 
 fn height_at(x: u32, z: u32) -> f32 {
@@ -372,6 +375,14 @@ fn ground_at(
         }
     }
 
+    // The map's painted ground over every layer (premultiplied alpha), before lighting.
+    if (terrain.overlay.z > 0.0) {
+        let uv = (world.xz - terrain.overlay.xy) * terrain.overlay.zw;
+        if (all(uv >= vec2f(0.0)) && all(uv <= vec2f(1.0))) {
+            let o = textureSampleGrad(overlay_image, clamp_sampler, uv, dx * terrain.overlay.zw, dy * terrain.overlay.zw);
+            g.ar = vec4f(o.rgb + g.ar.rgb * (1.0 - o.a), g.ar.a);
+        }
+    }
     return g;
 }
 

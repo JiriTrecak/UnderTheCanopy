@@ -267,6 +267,12 @@ pub fn write(map: &UtcMap, id: &str, version: &str, dir: &Path) -> std::io::Resu
         );
     }
     meta.insert("waterProfiles".into(), json!(terrain.water_profiles));
+    if let Some(overlay) = &terrain.overlay {
+        meta.insert(
+            "overlay".into(),
+            serde_json::to_value(overlay).expect("serialises"),
+        );
+    }
     meta.insert(
         "paint".into(),
         Value::Array(

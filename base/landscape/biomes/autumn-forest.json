@@ -11,7 +11,7 @@
     "skyTint": "#c9b49a",
     "bounceTint": "#9c7a5a",
     "fillStrength": 0.95,
-    "shadowSoftness": 2.0
+    "shadowSoftness": 5.0
   },
   "canopy": {
     "height": 140,
@@ -50,16 +50,16 @@
   },
   "atmosphere": {
     "enabled": true,
-    "color": "#c4adc8",
+    "color": "#8a6a4a",
     "density": 0.0,
-    "shaftDensity": 0.0,
-    "baseHeight": 1,
-    "heightFalloff": 18,
-    "sunStrength": 2.2,
+    "shaftDensity": 0.0012,
+    "baseHeight": 0.5,
+    "heightFalloff": 22,
+    "sunStrength": 1.4,
     "noiseScale": 0.05,
     "noiseStrength": 0.8,
     "driftSpeed": 0.35,
-    "sunTint": "#ffda9e"
+    "sunTint": "#ffd6a0"
   },
   "terrain": {
     "soil": {

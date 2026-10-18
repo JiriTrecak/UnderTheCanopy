@@ -89,6 +89,20 @@ pub struct PaintLayer {
     pub variants: Option<Grid>,
 }
 
+/// A map's painted ground: one image laid over the terrain's ground layers in a world
+/// rectangle (cells), composited by its alpha. It carries a map's unique, hand-made
+/// (or generated) look where tiled materials cannot, such as its non-playable frame.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct TerrainOverlay {
+    /// The image asset (`kind: texture`, one `image` resource).
+    pub asset: String,
+    pub x: f64,
+    pub z: f64,
+    pub width: f64,
+    pub height: f64,
+}
+
 /// Committed terrain samples, as stored.
 #[skip_serializing_none]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -116,6 +130,9 @@ pub struct TerrainData {
     /// (`terrain/shade.grid`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub shade: Option<Grid>,
+    /// The map's painted ground, when it has one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub overlay: Option<TerrainOverlay>,
 }
 
 /// The saved scene: committed terrain plus placed objects. Procedural layers are editor-only
@@ -194,6 +211,7 @@ pub struct DecodedTerrain {
     pub texture: TextureLayout,
     /// The frame shade per vertex, when the map has one.
     pub shade: Option<Vec<f32>>,
+    pub overlay: Option<TerrainOverlay>,
 }
 
 impl TerrainData {
@@ -334,6 +352,7 @@ impl TerrainData {
                 .collect::<Result<_, _>>()?,
             texture: self.texture_layout(),
             shade: self.shade()?,
+            overlay: self.overlay.clone(),
         })
     }
 

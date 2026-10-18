@@ -176,7 +176,7 @@ The target is unchanged: 60 FPS on a base M1 with about 400 units (plan). Most o
 
 **Target:** `art/styles/target-fall-lookdev.jpg`. An earlier version of this section compared against `target-fall-wide-map.jpg`, a different generation with another layout, and called the result close. It was not. The layout is now traced from the right frame.
 
-`base/maps/showcase/lookdev-fall.utcm` rebuilds that frame on today's cell terrain, scenery and water, plus the renderer additions of D63 (ground-clutter shadows, foliage variation, a painted frame shade). The buildings are left out, as the scene's subject is the environment.
+`base/maps/showcase/lookdev-fall.utcm` rebuilds that frame on today's cell terrain, scenery and water, plus the renderer additions of D63 (ground-clutter shadows, foliage variation, a painted frame shade, a painted frame overlay, water glint). The buildings are left out, as the scene's subject is the environment.
 
 **Rendering it:**
 - Map: `tools/maps/lookdev_fall.py`. It runs on Blender's bundled Python, which has numpy.
@@ -187,7 +187,10 @@ The target is unchanged: 60 FPS on a base M1 with about 400 units (plan). Most o
 **What it uses:**
 - **Ground.** Four gpt-image tileable textures (soil, leaf litter, sparse litter, waterbed), made seamless and packed by `tools/terrain/pack_ground.py`. They are the `autumn-forest` biome's soil, grass, dirt and waterbed layers.
   - The leaf litter follows the map's `grass.grid`.
-  - A sparse-litter band along the clearing's rim is the map's first paint layer.
+  - A debris band along the clearing's rim is the map's first paint layer, a Warcraft-style transition atlas (below), toned to the soil's value so it reads as debris on soil, not a stain.
+- **The painted frame.** A gpt-image painting of the forest floor (`asset.texture.lookdev-fall-floor`) is the map's terrain overlay (D63). `tools/terrain/build_overlay.py` cuts it to the frame with the map's own clearing outline, a ragged noisy edge and a speckled fade, and stores it premultiplied so it never bleeds onto the clearing. The 3D props stand on it; it supplies the dense small detail between them.
+- **Frame shade.** `terrain/shade.grid` darkens the frame with distance from the clearing, up to 45 %.
+- **Roots.** `tools/props/build_roots.py` makes gnarled bark-root tubes in Blender. Up to eight fan out from each giant trunk, kept in the frame along their whole length, and more are scattered through the frame pointing away from the clearing.
 - **Frame props from Tripo** (text to 3D), made game-ready by `tools/props/import_tripo.py` in Blender. It decimates to a triangle budget, shrinks the textures and tones them down.
 
   | Prop | Triangles |
@@ -201,30 +204,28 @@ The target is unchanged: 60 FPS on a base M1 with about 400 units (plan). Most o
   | amber crystals | 5k, emissive |
 
 - **Leaf and fern props from gpt-image cut-outs.** `tools/props/build_cards.py` keys out the white and bleeds the edge colour. It builds clusters of subdivided, gently curled cards, 144–240 triangles each, alpha-tested. Ferns arch off the ground, so they cast shadows and hold up in third person.
-- **Water.** Two profiles: `water.fall-ford`, a clear shallow ford units wade through, given per cell through the map's water flow; and `water.fall-pool`, deep teal. Plus fallen leaves floating on both.
-- **Amber.** Crystals in a crater dug into the heightfield. On this map they are scenery, not a mine, because a mine's foundation would flatten the crater.
+- **Water.** Two profiles: `water.fall-ford`, a pale, murky shallow ford units wade through, with sun glint (D63), given per cell through the map's water flow; and `water.fall-pool`, deep blue-black. Plus fallen leaves floating on both.
+- **Amber.** Crystals, tinted orange and faintly self-lit, in a crater dug into the heightfield, with damp soil in the bowl and pebbles thrown up on the rim. On this map they are scenery, not a mine, because a mine's foundation would flatten the crater.
 - **Light.** The `autumn-forest` biome: low warm sun from the side (`sunDirection` 120) for long diagonal trunk shadows; a highlight shoulder of 0.6; a darker, warmer grade; a vignette; drifting canopy light. No shipped map uses this biome.
 
-**Measured** on an M4 Max at 1080p, with 7,544 static instances:
-- High preset: 5.4 ms GPU.
-- Medium preset (1440 × 810): 3.4 ms. A base M1 is roughly 3–4× slower, so about 12 ms; that is unmeasured.
-- Region averages are within a few levels of 255 of the target for soil and pool, and close for the frame.
+**Measured** on an M4 Max at 1080p (`just shot`, frame to idle):
+- High preset: 3.1 ms.
+- Medium preset: 2.3 ms. A base M1 is roughly 3–4× slower; that is unmeasured.
+- Region averages are within a few levels of 255 of the target for the soil, the pool and the frame's left and bottom. The frame along the top is brighter than the target's.
 
 **Still apart from the target:**
-- **Frame richness.** The target's leaf litter has more depth and darker gaps. Flat cards under 0.75 m cast no shadow, so contact shading carries it alone.
-- **Ford.** The target's ford has sun glints and a lighter olive colour.
-- **Third person.** The fog of war greys everything beyond the unit's sight. Beyond the map there is still only haze and the old surroundings forest; the trunks there have no art at this quality yet.
-- **Amber crater rim.** The target's rim is a crumbly, lighter soil ring.
+- **Pool.** The target's pool mirrors the dark trunks; ours is a flat dark blue with floating leaves.
+- **Amber.** The target's crystals are faceted and glow from within; ours read as a flat orange cluster at this zoom.
+- **Frame top.** The target's top edge is dark trunks and roots; ours shows more lit leaves there.
+- **Third person.** The fog of war greys everything beyond the unit's sight, and the Tripo trunks end in flat tops that show from eye level. Beyond the map there is still only haze and the old surroundings forest.
 
-**Transitions, Warcraft-style (2026-10-18).** The band where clean soil meets the litter, and the rim of the ford, is a dark debris layer that breaks up into clumps and speckle. It is built the way Warcraft III builds tileset transitions:
+**Transitions, Warcraft-style (2026-10-18).** The band where clean soil meets the litter, and the rim of the ford, is a debris layer of twigs and leaf crumbs on soil that breaks up into clumps and speckle. It is built the way Warcraft III builds tileset transitions:
 - **The atlas.** An atlas ground (`asset.terrain.lookdev-debris`, made by `tools/terrain/build_atlas.py` from one seamless gpt-image texture) has 16 corner-transition tiles, one per combination of covered cell corners, and 48 full-tile variants. The engine already picks a tile per texture cell from the four corners' paint (`atlas_codes`), as the Warcraft imports do.
 - **Seamless meeting.** Every tile's border is the same self-tiling content, so any two tiles meet without a seam.
 - **The edges.** They come from noise periodic over one tile and fade out where a tile is fully covered or empty. A speckle dither thins the debris out instead of ending it on a line.
 - **What to watch.** One shape per corner combination repeats every texture cell (5 m on this map), as Warcraft's tiles do. More variants per corner combination would need the engine to pick among them.
 
-**Engine work this points to** (each a visible change to discuss first):
-- a playable-area darkening of the frame;
-- per-instance tint, so one leaf set covers more variety;
+**Engine work this points to** (each a visible change to discuss first; the frame darkening, the per-instance tint and the painted frame are done, D63):
 - a scatter by mask instead of a placement script;
 - statics LOD for the giant props;
 - art for the surroundings forest at this quality, for third person.

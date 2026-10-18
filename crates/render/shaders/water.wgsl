@@ -26,7 +26,7 @@ struct Profile {
     deep: vec4f,
     // ripple scale, ripple strength, caustic strength, foam strength
     effects: vec4f,
-    // cloud strength, flow speed, 0, 0
+    // cloud strength, flow speed, glint, 0
     extra: vec4f,
     // swell height, length, speed, depth end
     swell: vec4f,
@@ -291,6 +291,19 @@ fn fs_main(in: VsOut) -> SceneOut {
     let half_light = normalize(to_eye + sun_dir);
     let highlight = pow(max(dot(normal, half_light), 0.0), 120.0);
     a += vec3f(0.65, 0.86, 0.94) * body_light * highlight * pr.deep.a * 0.10 * shadow;
+    // Sun glitter: sparse points on the ripples that flare and fade, a stylised stand-in
+    // for the sun mirrored in moving water that a top-down camera never sees.
+    if (pr.extra.z > 0.0) {
+        // Stretched along the current (or a fixed axis on still water) into short streaks.
+        let along = normalize(flow_dir + vec2f(0.0001, 0.0));
+        let q = vec2f(dot(p, along) * 0.9, dot(p, vec2f(-along.y, along.x)) * 4.5);
+        let gp = q + slope * 3.0 - vec2f(t * 0.6, 0.0);
+        let flare = water_noise(gp + vec2f(t * 0.9, -t * 0.6)) * water_noise(gp * 1.7 - vec2f(t * 0.5, t * 0.8));
+        // Broad drifting streaks gate the sparkles, so they gather in runs, not a sheet.
+        let runs = smoothstep(0.55, 0.8, water_noise(p * vec2f(0.18, 0.18) + slope * 2.0 - flow_dir * t * 0.15));
+        let glitter = smoothstep(0.5, 0.7, flare) * runs * smoothstep(0.02, 0.12, column) * (1.0 - smoothstep(0.3, 0.8, pixel));
+        a += vec3f(0.85, 0.93, 1.0) * glitter * pr.extra.z * shadow * dot(body_light, vec3f(0.2126, 0.7152, 0.0722));
+    }
 
     // Foam: broken islands along banks, streaks on swell crests, and flow foam.
     let width = pr.shore.z * (0.65 + 0.35 * sin(t * 0.8 + noise * 4.0));
