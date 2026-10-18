@@ -416,9 +416,9 @@ def build_map():
                 'appearance': {'asset': 'asset.models.resources.lookdev-amber'}}
 
     def hall(id_, px, py):
-        # Sandbox maps spawn no start setup: the hall holds the test stock (9k amber, 9k wood).
+        # Sandbox maps spawn no start setup: the hall holds the test stock (9k amber).
         return {'definition': 'building.beetles.bastion', 'id': id_,
-                'initialState': {'construction': 'complete', 'inventory': {'item.amber': 9000, 'item.wood': 9000}},
+                'initialState': {'construction': 'complete', 'inventory': {'item.amber': 9000}},
                 'owner': 'player.1', 'position': at(px, py), 'rotation': 0.0}
 
     def forge(id_, px, py):

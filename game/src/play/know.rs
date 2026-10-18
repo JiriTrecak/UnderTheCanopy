@@ -33,6 +33,9 @@ pub struct Knowledge {
     pub me: Option<u8>,
     /// Own units held inside another entity or waiting to be placed back (sorted).
     pub held: Arc<Vec<u32>>,
+    /// Known resources a known building stands on (`View::covered`): only the building is
+    /// drawn, picked and selected.
+    pub covered: Arc<std::collections::BTreeSet<canopy_sim::entity::EntityId>>,
 }
 
 impl Knowledge {
@@ -42,12 +45,14 @@ impl Knowledge {
         view: Arc<View>,
         me: Option<u8>,
     ) -> Self {
+        let covered = Arc::new(view.covered(&catalog));
         Self {
             content,
             catalog,
             view,
             me,
             held: Arc::new(Vec::new()),
+            covered,
         }
     }
 
@@ -104,7 +109,10 @@ impl Knowledge {
 
     /// May be clicked or box-selected at all.
     pub fn selectable(&self, e: &EntityView) -> bool {
-        self.alive(e) && self.def(e).selectable != Some(false) && !self.held(e.id().0)
+        self.alive(e)
+            && self.def(e).selectable != Some(false)
+            && !self.held(e.id().0)
+            && !self.covered.contains(&e.id())
     }
 
     /// Position in world units (x east, z south).

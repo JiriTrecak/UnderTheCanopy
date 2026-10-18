@@ -2010,6 +2010,58 @@
         "y": 182.0
       },
       "rotation": 0.0
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance.1",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 475.5,
+        "y": 391.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance.2",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 391.5,
+        "y": 479.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance.3",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 167.5,
+        "y": 267.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance.4",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 267.5,
+        "y": 187.5
+      },
+      "rotation": 0.0
     }
   ],
   "landscape": {

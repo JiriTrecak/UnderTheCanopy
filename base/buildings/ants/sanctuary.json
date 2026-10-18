@@ -23,11 +23,7 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 180
-      },
-      {
-        "item": "item.wood",
-        "amount": 60
+        "amount": 210
       }
     ],
     "workTicks": 1600,
@@ -66,8 +62,7 @@
     "storage": {
       "capacity": 100000,
       "accepts": [
-        "item.amber",
-        "item.wood"
+        "item.amber"
       ]
     }
   },

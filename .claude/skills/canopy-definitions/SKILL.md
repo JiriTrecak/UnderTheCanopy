@@ -86,13 +86,55 @@ Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a
 - **`command`** places the building on the workers' command card.
 - **`supplyProvided`** is building-only.
 - **`upgrade`** turns one building into another; both need the same behaviours and footprint.
+- **`placementNear`** (`{source, radius}`) keeps a building within `radius` cells of a standing resource of `source`.
+- **`placementOn`** (`{source}`) places a building exactly on a standing resource of `source`, as StarCraft's refinery on its geyser (D62): the placement snaps onto it, the footprints must be equal, and when the building falls the resource is left intact. The base game's Substance Wells (`building.<race>.substance-well`) stand on Substance Deposits this way and are their own drop-off for Substance. A building placed on a resource still obeys `power` if it declares it; the beetles' well declares none and is a network source instead:
+
+```json building
+{
+  "id": "building.example.well",
+  "name": "Well",
+  "description": "Built on a deposit; workers carry what they gather straight in.",
+  "model": "asset.models.buildings.ants-rootworks",
+  "icon": "asset.portraits.buildings.ants-rootworks",
+  "body": {"maxHp": 1000, "armor": 5, "armorType": "structure"},
+  "footprint": {"width": 8, "depth": 8},
+  "entrance": {"x": 0.5, "y": 4.5},
+  "creation": {"method": "construct", "items": [{"item": "item.amber", "amount": 150}], "workTicks": 1600, "workAnimation": "build"},
+  "behaviorSets": ["behavior-set.player-building"],
+  "behaviors": {"storage": {"capacity": 100000, "accepts": ["item.root"], "dropoff": true}},
+  "placementOn": {"source": "building.neutral.corrupted-root"}
+}
+```
+
+## A deposit
+
+A harvested building (a mine, a deposit) has a `yield` and a `harvesting` policy: `activeWorkers` gather at once, `recommendedWorkers` saturate it, `searchRadius` is how far gatherers look for another of its kind. `needsBuilding: true` lets workers gather only through a finished building placed on it (`placementOn`), and only its owner's; `endless: true` never runs out (loads leave the yield as it is). The Substance Deposit (`building.neutral.corrupted-root`) is both.
+
+```json building
+{
+  "id": "building.example.deposit",
+  "name": "Deposit",
+  "description": "Never runs out; build a well on it.",
+  "model": "asset.models.resources.corrupted-root",
+  "icon": "asset.icons.resource-root",
+  "footprint": {"width": 8, "depth": 8},
+  "entrance": {"x": 0.5, "y": 4.5},
+  "constructionClearance": 3,
+  "behaviors": {},
+  "yield": 1500,
+  "body": {"maxHp": 1500, "armor": 5, "armorType": "structure"},
+  "gatheringUnitCollision": false,
+  "harvesting": {"activeWorkers": 2, "recommendedWorkers": 2, "searchRadius": 0, "needsBuilding": true, "endless": true}
+}
+```
 
 ### The power network (D66)
 
 StarCraft's pylon power, as content: a race whose buildings need power places them only inside its own network, and they pause while it does not reach them.
 
 ```jsonc
-"network": {"role": "source", "radius": 32}   // a main hall (every tier), a Substance Well
+"network": {"role": "source", "radius": 32}   // a main hall (every tier)
+"network": {"role": "source", "radius": 20}   // the beetles' Substance Well: no power, it goes on its deposit
 "network": {"role": "node", "radius": 28}     // the Brood Den
 "power": "required"                           // placed only inside the network; work pauses outside it
 ```
@@ -118,7 +160,7 @@ StarCraft's pylon power, as content: a race whose buildings need power places th
 }
 ```
 
-Goods the economy counts (wood, amber, root) are items with `"currency": true` and a `harvest` creation.
+Goods the economy counts are items with `"currency": true` and a `harvest` creation. The base game has two (D62): Amber (`item.amber`, finite mines at the base) and Substance (`item.root`, endless deposits out in the world). Trees are no resource in the base game; the engine still fells and plants harvestable trees for content that wants them.
 
 ## Race, research, loot pool, behaviour set
 

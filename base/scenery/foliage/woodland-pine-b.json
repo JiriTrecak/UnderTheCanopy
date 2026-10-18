@@ -4,7 +4,9 @@
   "category": "foliage",
   "type": "prop",
   "model": "asset.models.environment.woodland-pine-b",
-  "harvesting": {
-    "definition": "resource.forest.tree"
+  "blocker": {
+    "width": 3.3,
+    "depth": 3.3,
+    "shape": "ellipse"
   }
 }

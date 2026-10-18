@@ -269,11 +269,7 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 425
-      },
-      {
-        "item": "item.wood",
-        "amount": 100
+        "amount": 475
       }
     ],
     "workTicks": 2200

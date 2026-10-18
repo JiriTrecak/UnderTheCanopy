@@ -8,7 +8,10 @@
 //!
 //! Each duel takes the two starts farthest apart. `--races a,b` gives the first and second
 //! player those races (the default race for both when absent). `--maps` keeps those maps
-//! (package ids) only.
+//! (package ids) only. Per player it also shows the most buildings it held on resources
+//! at once (Substance Wells, D62), every good it gathered and spent, and, for a race on a
+//! power network (D66), its most nodes and buildings needing power at once and how long
+//! those stood unpowered.
 #![allow(clippy::disallowed_methods)] // wall-clock timing of the runs
 
 use canopy_content::{Content, map, map::UtcMap};
@@ -72,6 +75,13 @@ struct Duel {
     winner: Option<u8>,
     /// Per player: units trained by definition.
     trained: [BTreeMap<String, u32>; 2],
+    /// Per player: the most finished buildings on resources (`placementOn`) at once.
+    wells: [u32; 2],
+    /// Per player and good: gathered, spent.
+    goods: [BTreeMap<String, (u32, u32)>; 2],
+    /// Per player, power network (D66): the most finished nodes and finished buildings
+    /// that need power at once, and the building-seconds such buildings stood unpowered.
+    network: [(u32, u32, u32); 2],
 }
 
 fn duel(
@@ -104,9 +114,76 @@ fn duel(
     let mut seen = std::collections::BTreeSet::new();
     let mut trained: [BTreeMap<String, u32>; 2] = Default::default();
     let mut ticks = 0;
+    let mut wells = [0u32; 2];
+    let mut network = [(0u32, 0u32, 0u32); 2];
+    let mut goods: [BTreeMap<String, (u32, u32)>; 2] = Default::default();
+    let mut next_fact = 0;
+    let side_of = |o: canopy_content::placement::Owner| match o {
+        canopy_content::placement::Owner::Player(p) => players.iter().position(|&x| x == p),
+        canopy_content::placement::Owner::Nobody => None,
+    };
     for tick in 0..cap {
         world.step();
         ticks = tick + 1;
+        let from = next_fact;
+        for f in world.state().facts.iter().filter(|f| f.id >= from) {
+            next_fact = f.id + 1;
+            let (Some(side), Some(item), Some(amount)) = (side_of(f.owner), &f.item, f.amount)
+            else {
+                continue;
+            };
+            let entry = goods[side].entry(item.to_string()).or_default();
+            match f.kind {
+                canopy_sim::state::FactKind::Produced => entry.0 += amount,
+                canopy_sim::state::FactKind::Consumed => entry.1 += amount,
+                _ => {}
+            }
+        }
+        if tick % 40 == 0 {
+            let mut now = [0u32; 2];
+            for e in world.state().entities.iter() {
+                if e.construction.is_none()
+                    && e.hp.is_some_and(|hp| hp > 0)
+                    && world.catalog().get(e.definition).placement_on.is_some()
+                    && let Some(side) = side_of(e.owner)
+                {
+                    now[side] += 1;
+                }
+            }
+            for side in 0..2 {
+                wells[side] = wells[side].max(now[side]);
+            }
+            let mut nodes = [0u32; 2];
+            let mut needing = [0u32; 2];
+            for e in world.state().entities.iter() {
+                let d = world.catalog().get(e.definition);
+                if e.construction.is_some()
+                    || e.hp.is_none_or(|hp| hp == 0)
+                    || d.kind != canopy_content::game::Kind::Building
+                {
+                    continue;
+                }
+                let Some(side) = side_of(e.owner) else {
+                    continue;
+                };
+                if d.network
+                    .as_ref()
+                    .is_some_and(|n| n.role == canopy_content::game::NetworkRole::Node)
+                {
+                    nodes[side] += 1;
+                }
+                if d.power.is_some() {
+                    needing[side] += 1;
+                    if world.economy().network().unpowered(e.id) {
+                        network[side].2 += 1;
+                    }
+                }
+            }
+            for side in 0..2 {
+                network[side].0 = network[side].0.max(nodes[side]);
+                network[side].1 = network[side].1.max(needing[side]);
+            }
+        }
         if tick % 40 == 0 {
             for e in world.state().entities.iter() {
                 let canopy_content::placement::Owner::Player(p) = e.owner else {
@@ -136,6 +213,9 @@ fn duel(
         ticks,
         winner,
         trained,
+        wells,
+        goods,
+        network,
     }
 }
 
@@ -147,7 +227,11 @@ fn main() -> Result<(), String> {
         .iter()
         .filter(|f| args.maps.is_empty() || args.maps.contains(&f.id))
         .map(|f| f.load().map_err(|e| format!("{}: {e}", f.file)))
-        .collect::<Result<_, _>>()?;
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        // A duel needs two starts (the showcase benches have one).
+        .filter(|m| m.player_starts.len() >= 2)
+        .collect();
     let cap = args.minutes * 60 * 40;
     let started = Instant::now();
     let results: Vec<Duel> = std::thread::scope(|s| {
@@ -186,6 +270,19 @@ fn main() -> Result<(), String> {
                 .map(|(id, n)| format!("{}×{n}", id.rsplit('.').next().unwrap_or(id)))
                 .collect();
             println!("    player {}: {}", side + 1, list.join(" "));
+            let goods: Vec<String> = r.goods[side]
+                .iter()
+                .map(|(id, (got, spent))| {
+                    format!("{} +{got} -{spent}", id.rsplit('.').next().unwrap_or(id))
+                })
+                .collect();
+            println!("      wells {}; {}", r.wells[side], goods.join(", "));
+            let (nodes, needing, dark) = r.network[side];
+            if nodes + needing > 0 {
+                println!(
+                    "      network: nodes {nodes}, needing power {needing}, unpowered {dark} building-s"
+                );
+            }
         }
     }
     let mean = finished.iter().sum::<f64>() / finished.len().max(1) as f64;

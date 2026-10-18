@@ -942,10 +942,12 @@ impl Presenter {
         let mut bodies: Vec<Body> = Vec::new();
         let mut health: BTreeMap<EntityId, u32> = BTreeMap::new();
         let mut building: BTreeSet<EntityId> = BTreeSet::new();
+        // A deposit under a building placed on it is drawn as that building (D62).
+        let covered = view.covered(catalog);
 
         for e in &view.entities {
             let id = e.id();
-            if fallen.contains(&id) || held(id) {
+            if fallen.contains(&id) || held(id) || covered.contains(&id) {
                 continue;
             }
             let d = catalog.get(e.definition());

@@ -1,7 +1,7 @@
 {
-  "id": "building.ants.rootworks",
-  "name": "Rootworks",
-  "description": "Receives Substance from nearby Corrupted Root deposits. Delivered Substance becomes spendable colony currency. Does not accept Amber or Wood.",
+  "id": "building.ants.substance-well",
+  "name": "Substance Well",
+  "description": "Built on a Substance Deposit. Workers gather Substance from it and carry it straight in; two workers saturate it. When it falls, the deposit remains.",
   "model": "asset.models.buildings.ants-rootworks",
   "icon": "asset.portraits.buildings.ants-rootworks",
   "body": {
@@ -11,12 +11,12 @@
   },
   "vision": 14,
   "footprint": {
-    "width": 12,
-    "depth": 12
+    "width": 8,
+    "depth": 8
   },
   "entrance": {
     "x": 0.5,
-    "y": 6.5
+    "y": 4.5
   },
   "creation": {
     "method": "construct",
@@ -24,10 +24,6 @@
       {
         "item": "item.amber",
         "amount": 150
-      },
-      {
-        "item": "item.wood",
-        "amount": 75
       }
     ],
     "workTicks": 1600,
@@ -45,13 +41,12 @@
       "dropoff": true
     }
   },
-  "placementNear": {
-    "source": "building.neutral.corrupted-root",
-    "radius": 20
+  "placementOn": {
+    "source": "building.neutral.corrupted-root"
   },
   "category": "category.build",
   "level": 1,
-  "modelScale": 1.1,
+  "modelScale": 0.73,
   "command": {
     "priority": 25,
     "category": "category.build"

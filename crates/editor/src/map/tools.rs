@@ -649,15 +649,20 @@ fn next_id(prefix: &str, taken: impl Iterator<Item = String>) -> u64 {
         .map_or(0, |n| n + 1)
 }
 
-/// The scenery the tree brush can plant: the package's harvestable trees.
+/// The scenery the tree brush can plant: the package's trees, harvestable or (D62: trees
+/// are no resource in the base game) foliage tree models whose trunks close the ground.
 pub fn tree_kinds(content: &Content) -> Vec<String> {
+    use canopy_content::assets::{SceneryCategory, landscape::AssetKind};
     canopy_content::assets::scenery(&content.manifest)
         .filter(|s| {
             content.landscape.iter().any(|a| {
                 a.scenery
                     .as_ref()
                     .is_some_and(|i| i.as_str() == s.id.as_str())
-                    && a.harvesting.is_some()
+                    && (a.harvesting.is_some()
+                        || (a.kind == AssetKind::Tree
+                            && s.category == SceneryCategory::Foliage
+                            && (s.blocker.is_some() || s.blockers.is_some())))
             })
         })
         .map(|s| s.id.to_string())

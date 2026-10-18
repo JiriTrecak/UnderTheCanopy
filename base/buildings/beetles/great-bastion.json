@@ -25,7 +25,6 @@
     "storage": {
       "capacity": 100000,
       "accepts": [
-        "item.wood",
         "item.amber"
       ],
       "dropoff": true,
@@ -58,7 +57,7 @@
         "amount": 600
       },
       {
-        "item": "item.wood",
+        "item": "item.root",
         "amount": 250
       }
     ],

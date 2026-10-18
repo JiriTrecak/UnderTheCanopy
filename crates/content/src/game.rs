@@ -395,12 +395,28 @@ pub struct Felling {
     pub decay_ticks: u32,
 }
 
+#[skip_serializing_none]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Harvesting {
     pub active_workers: u32,
     pub recommended_workers: u32,
     pub search_radius: f64,
+    /// Gathered only through a completed building placed on it (`placementOn`), and only
+    /// by that building's owner's workers (D62: a Substance Well on its deposit).
+    pub needs_building: Option<bool>,
+    /// Never runs out: loads leave its amount as it is (D62).
+    pub endless: Option<bool>,
+}
+
+impl Harvesting {
+    pub fn needs_building(&self) -> bool {
+        self.needs_building == Some(true)
+    }
+
+    pub fn endless(&self) -> bool {
+        self.endless == Some(true)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -438,6 +454,15 @@ pub enum Power {
     /// Placed only where its centre is powered, and its work (training, research,
     /// upgrades, revival, a lookout's shots) pauses while it is not.
     Required,
+}
+
+/// A building placed exactly on a standing resource of `source` (a refinery on its
+/// geyser): it snaps to the resource, covers its footprint, and leaves it intact when it
+/// is gone (D62).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct PlacementOn {
+    pub source: Id,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -503,6 +528,7 @@ pub struct Definition {
     pub network: Option<Network>,
     /// Buildings that only work inside the power network (D66).
     pub power: Option<Power>,
+    pub placement_on: Option<PlacementOn>,
     pub creation: Option<Creation>,
     pub behaviors: Behaviors,
 }

@@ -606,6 +606,34 @@ impl<'a> Frame<'a> {
         f64::from(combat.mitigate(raw, weapon.damage_type, armor, value))
     }
 
+    /// The known building of any owner standing on a resource (`placementOn`, D62).
+    pub fn building_on(&self, r: &Known<'a>) -> Option<&Known<'a>> {
+        let source = self.catalog().id(r.def);
+        self.all.iter().find(|b| {
+            b.alive()
+                && b.pos == r.pos
+                && self
+                    .def(b)
+                    .placement_on
+                    .as_ref()
+                    .is_some_and(|on| &on.source == source)
+        })
+    }
+
+    /// Whether this player's workers may gather `r`: one that needs a building only through
+    /// its own finished building on it (D62).
+    pub fn open(&self, r: &Known<'a>) -> bool {
+        let needs = self
+            .def(r)
+            .harvesting
+            .as_ref()
+            .is_some_and(|h| h.needs_building());
+        !needs
+            || self
+                .building_on(r)
+                .is_some_and(|b| b.owner == self.me && !b.construction && !b.remembered)
+    }
+
     /// The known resource nearest to `origin` that `accept` takes; ties go to the lower id.
     pub fn nearest_resource(&self, origin: Pt, accept: impl Fn(&Known<'a>) -> bool) -> Option<Ix> {
         let mut best: Option<(f64, Ix)> = None;

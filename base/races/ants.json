@@ -5,8 +5,7 @@
   "startingSetup": {
     "fort": "building.ants.fort",
     "inventory": {
-      "item.amber": 500,
-      "item.wood": 150
+      "item.amber": 575
     },
     "units": [
       {
@@ -81,7 +80,7 @@
     "unit.ants.marshal",
     "building.ants.sanctuary",
     "building.ants.ironroot-forge",
-    "building.ants.rootworks",
+    "building.ants.substance-well",
     "unit.ants.hunter",
     "unit.ants.bombardier",
     "building.ants.bombardier-workshop",

@@ -116,6 +116,9 @@ pub struct WorkViews {
     sites: BTreeMap<EntityId, u32>,
     bases: BTreeMap<EntityId, Workforce>,
     unpowered: std::collections::BTreeSet<EntityId>,
+    /// Buildings placed on a resource (`placementOn`): the workforce of the resource
+    /// under them.
+    tapped: BTreeMap<EntityId, Workforce>,
 }
 
 /// Every worker's source (old `gatherAssignments`), from state alone.
@@ -154,9 +157,40 @@ impl WorkViews {
             *sites.entry(source).or_default() += 1;
         }
         let bases = base_gathering(state, catalog, index, &assignments);
+        let mut tapped = BTreeMap::new();
+        for b in index
+            .buildings
+            .iter()
+            .filter_map(|&id| state.entities.get(id))
+        {
+            let Some(on) = catalog.get(b.definition).placement_on.as_ref() else {
+                continue;
+            };
+            let (x, y) = (i64::from(b.position.x), i64::from(b.position.y));
+            let under = index.resources.near(x, y, 1000).into_iter().find(|&r| {
+                state.entities.get(r).is_some_and(|r| {
+                    r.position == b.position && catalog.id(r.definition) == &on.source
+                })
+            });
+            if let Some(r) = under {
+                let recommended = catalog
+                    .get(state.entities.get(r).expect("resource").definition)
+                    .harvesting
+                    .as_ref()
+                    .map_or(0, |h| h.recommended_workers);
+                tapped.insert(
+                    b.id,
+                    Workforce {
+                        workers: sites.get(&r).copied().unwrap_or(0),
+                        recommended,
+                    },
+                );
+            }
+        }
         Self {
             sites,
             bases,
+            tapped,
             unpowered: economy.network.unpowered_buildings().clone(),
         }
     }
@@ -334,10 +368,12 @@ pub fn public(
 ) -> Option<PublicWork> {
     let tick = state.tick.saturating_sub(1);
     let d = catalog.get(e.definition);
-    let site = (d.kind == Kind::Building && d.harvesting.is_some()).then(|| Workforce {
-        workers: views.sites.get(&e.id).copied().unwrap_or(0),
-        recommended: d.harvesting.as_ref().map_or(0, |h| h.recommended_workers),
-    });
+    let site = (d.kind == Kind::Building && d.harvesting.is_some())
+        .then(|| Workforce {
+            workers: views.sites.get(&e.id).copied().unwrap_or(0),
+            recommended: d.harvesting.as_ref().map_or(0, |h| h.recommended_workers),
+        })
+        .or_else(|| views.tapped.get(&e.id).copied());
     let cargo = e.unit.as_ref().and_then(|u| u.work.cargo.clone());
     let pose = pose(state, catalog, e, tick, at_goal);
     let producing = e.production.as_ref().is_some_and(|p| {

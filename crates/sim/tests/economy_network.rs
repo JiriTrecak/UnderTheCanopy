@@ -79,6 +79,36 @@ fn buildings_that_need_power_are_placed_only_inside_the_network() {
 }
 
 #[test]
+fn a_source_placed_on_a_deposit_goes_wherever_the_deposit_is_and_powers_around_it() {
+    let mut entities = base();
+    entities.extend([
+        // Far outside the nexus's disc.
+        resource("spring", SPRING, 81.5, 81.5),
+        place("scout", WORKER, 74.0, 74.0),
+    ]);
+    let mut world = world(&sandbox(entities));
+    fund(&mut world, P1, AMBER, 100);
+    let scout = id(&world, "scout");
+    assert!(!covers(&world, 81.5, 81.5));
+    assert_eq!(
+        try_command(&mut world, build(scout, WELL, 81.5, 81.5)),
+        None,
+        "a well needs no power: it goes on its deposit"
+    );
+    let well = all_of(&world, P1, WELL)[0];
+    assert!(!covers(&world, 81.5, 89.5), "a site powers nothing yet");
+    run_until(&mut world, 600, |w| get(w, well).construction.is_none());
+    run(&mut world, 1);
+    assert!(covers(&world, 81.5, 89.5), "the finished well does");
+    assert_eq!(
+        try_command(&mut world, build(scout, WORKSHOP, 81.5, 89.5)),
+        None
+    );
+    destroy(&mut world, well);
+    assert!(!covers(&world, 81.5, 89.5), "a fallen well powers nothing");
+}
+
+#[test]
 fn a_node_extends_the_network_only_when_chained_to_a_source() {
     let mut entities = base();
     entities.extend([

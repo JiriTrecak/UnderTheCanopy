@@ -349,7 +349,13 @@ pub fn strategy(b: &mut Beat) {
                     .iter()
                     .any(|&i| catalog.id(f.at(i).def) == &d.id)
         })
-        .filter_map(|d| f.find(d.placement_near.as_ref()?.source.as_str()))
+        .filter_map(|d| {
+            let near = d.placement_near.as_ref().map(|n| &n.source);
+            f.find(
+                near.or(d.placement_on.as_ref().map(|o| &o.source))?
+                    .as_str(),
+            )
+        })
         .collect();
     let xp_needed = s.plan.hero_xp_needed;
     struct Candidate<'c> {
@@ -442,6 +448,31 @@ pub fn strategy(b: &mut Beat) {
             2400,
         );
     };
+    // Without a well of its own the colony cannot advance (D62), so waiting only makes it
+    // weaker: an enemy building on a deposit is broken once the army is a match for what
+    // was seen guarding it (or is as large as the stage of the match asks), to free it.
+    let well_less = !f
+        .buildings
+        .iter()
+        .any(|&i| f.def(f.at(i)).placement_on.is_some());
+    let wells: Vec<&Known> = buildings
+        .iter()
+        .copied()
+        .filter(|e| f.def(e).placement_on.is_some())
+        .collect();
+    let guarded = |e: &Known| enemy_army(e.p);
+    if well_less
+        && f.army.len() as u32 >= rules.army.minimum
+        && let Some(target) = wells
+            .iter()
+            .copied()
+            .min_by(|a, b| guarded(a).total_cmp(&guarded(b)).then(a.id.cmp(&b.id)))
+        && (power >= guarded(target) * 0.8 || f.army.len() as u32 >= wanted)
+    {
+        assault(s, target);
+        s.plan.reason = "Break an enemy well to free its deposit".into();
+        return;
+    }
     if let Some(&target) = buildings.first()
         && ready(target)
         && !best.is_some_and(|c| c.unlocks)

@@ -70,8 +70,7 @@
       "mode": "pivot"
     },
     "harvesting": {
-      "replacement": "asset.models.environment.woodland-pine-stump",
-      "definition": "resource.forest.tree"
+      "replacement": "asset.models.environment.woodland-pine-stump"
     }
   },
   "license": "Original artwork created for Under the Canopy."

@@ -1239,6 +1239,58 @@
       },
       "rotation": 0.0,
       "owner": "none"
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance.1",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 267.5,
+        "y": 523.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance.2",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 271.5,
+        "y": 279.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance.3",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 551.5,
+        "y": 311.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance.4",
+      "initialState": {
+        "construction": "complete"
+      },
+      "owner": "none",
+      "position": {
+        "x": 527.5,
+        "y": 547.5
+      },
+      "rotation": 0.0
     }
   ],
   "size": 800,

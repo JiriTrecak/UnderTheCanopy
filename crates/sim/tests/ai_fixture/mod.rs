@@ -1,6 +1,7 @@
 //! Test-owned content and small maps for the AI tests: a worker, a melee soldier, an
 //! archer, a levelling hero and a camp creature; a hall (drop-off, trains workers), a
-//! house and a barracks; amber deposits. No shipped content.
+//! house and a barracks; amber deposits; the same on a power network (D66). No
+//! shipped content.
 #![allow(dead_code)]
 
 use canopy_content::{
@@ -30,6 +31,11 @@ pub const HALL: &str = "building.test.hall";
 pub const HOUSE: &str = "building.test.house";
 pub const BARRACKS: &str = "building.test.barracks";
 pub const MINE: &str = "building.test.mine";
+/// An endless deposit gathered only through a well built on it (D62); maps place none
+/// unless a test adds them.
+pub const SPRING: &str = "building.test.spring";
+pub const WELL: &str = "building.test.well";
+pub const ESSENCE: &str = "item.test.essence";
 /// A hero spell whose value lies in its second operation: a token hit, then the blow.
 pub const SMITE: &str = "ability.test.smite";
 pub const RUSH: &str = "ability.test.rush";
@@ -206,6 +212,24 @@ fn game() -> Value {
                 "gatheringUnitCollision": false,
                 "harvesting": {"activeWorkers": 2, "recommendedWorkers": 3, "searchRadius": 0},
             })),
+            definition(SPRING, "building", json!({
+                "body": body(1000, 5, "armor.structure"), "footprint": {"width": 8, "depth": 8},
+                "entrance": {"x": 0.5, "y": 4.5}, "yield": 500, "constructionClearance": 2,
+                "gatheringUnitCollision": false,
+                "harvesting": {"activeWorkers": 2, "recommendedWorkers": 2, "searchRadius": 0,
+                    "needsBuilding": true, "endless": true},
+            })),
+            definition(WELL, "building", building(300, 8, json!({
+                "placementOn": {"source": SPRING},
+                "creation": {"method": "construct", "items": cost(20), "workTicks": 30, "workAnimation": "build"},
+                "behaviors": {"playerControl": {},
+                    "storage": {"capacity": 1000, "accepts": [ESSENCE], "dropoff": true}},
+            }))),
+            definition(ESSENCE, "item", json!({
+                "currency": true, "stackLimit": 100, "displayOrder": 20,
+                "creation": {"method": "harvest", "items": [], "source": SPRING, "amount": 5,
+                    "workTicks": 10, "workAnimation": "chop"},
+            })),
             definition(AMBER, "item", json!({
                 "currency": true, "stackLimit": 100, "displayOrder": 10,
                 "creation": {"method": "harvest", "items": [], "source": MINE, "amount": 5,
@@ -227,7 +251,8 @@ fn game() -> Value {
                 "creation": {"method": "train", "items": cost(10), "workTicks": 20},
                 "behaviors": {
                     "playerControl": {}, "movement": {"speed": 4},
-                    "work": {"carryCapacity": 5, "builds": [HALL, HOUSE, BARRACKS], "harvests": [AMBER]},
+                    "work": {"carryCapacity": 5, "builds": [HALL, HOUSE, BARRACKS, WELL],
+                        "harvests": [AMBER, ESSENCE]},
                 },
             })),
         ],
@@ -296,24 +321,66 @@ fn library() -> Value {
 
 pub fn content() -> Arc<Content> {
     static CONTENT: OnceLock<Arc<Content>> = OnceLock::new();
+    CONTENT.get_or_init(|| load(game(), "sim-ai")).clone()
+}
+
+/// A relay: the networked colony's node (D66).
+pub const RELAY: &str = "building.test.relay";
+/// Network radii in the networked content: the hall, the relay and the well.
+pub const HALL_RADIUS: u32 = 24;
+pub const RELAY_RADIUS: u32 = 20;
+pub const WELL_RADIUS: u32 = 12;
+
+/// The same content on a power network (D66): the hall and the well are sources, a relay
+/// (a node that gives supply) extends it, and the barracks needs power.
+pub fn networked_content() -> Arc<Content> {
+    static CONTENT: OnceLock<Arc<Content>> = OnceLock::new();
     CONTENT
         .get_or_init(|| {
-            let mut folder = DataFolder::new(
-                game(),
-                vec![
-                    image("asset.icon"),
-                    image("asset.spell-icon"),
-                    model("asset.model"),
-                ],
-            );
-            folder.abilities = library();
-            Arc::new(
-                folder
-                    .load("sim-ai")
-                    .unwrap_or_else(|errors| panic!("{errors}")),
-            )
+            let mut game = game();
+            let definitions = game["definitions"].as_array_mut().expect("definitions");
+            for d in definitions.iter_mut() {
+                match d["id"].as_str().expect("id") {
+                    HALL => d["network"] = json!({"role": "source", "radius": HALL_RADIUS}),
+                    WELL => d["network"] = json!({"role": "source", "radius": WELL_RADIUS}),
+                    BARRACKS => d["power"] = json!("required"),
+                    WORKER => {
+                        d["behaviors"]["work"]["builds"] =
+                            json!([HALL, HOUSE, BARRACKS, WELL, RELAY]);
+                    }
+                    _ => {}
+                }
+            }
+            let mut relay = definitions
+                .iter()
+                .find(|d| d["id"] == HOUSE)
+                .expect("house")
+                .clone();
+            relay["id"] = json!(RELAY);
+            relay["name"] = json!(RELAY);
+            relay["network"] = json!({"role": "node", "radius": RELAY_RADIUS});
+            relay["power"] = json!("required");
+            definitions.push(relay);
+            load(game, "sim-ai-network")
         })
         .clone()
+}
+
+fn load(game: Value, folder_name: &str) -> Arc<Content> {
+    let mut folder = DataFolder::new(
+        game,
+        vec![
+            image("asset.icon"),
+            image("asset.spell-icon"),
+            model("asset.model"),
+        ],
+    );
+    folder.abilities = library();
+    Arc::new(
+        folder
+            .load(folder_name)
+            .unwrap_or_else(|errors| panic!("{errors}")),
+    )
 }
 
 /// Standard base64 with padding.
@@ -417,6 +484,11 @@ pub fn setup(both: bool) -> MatchSetup {
 
 pub fn world(map: &UtcMap, both: bool) -> World {
     World::new(content(), map, setup(both)).unwrap_or_else(|e| panic!("{e}"))
+}
+
+/// A world on [`networked_content`].
+pub fn networked_world(map: &UtcMap, both: bool) -> World {
+    World::new(networked_content(), map, setup(both)).unwrap_or_else(|e| panic!("{e}"))
 }
 
 pub fn run(world: &mut World, ticks: u32) {

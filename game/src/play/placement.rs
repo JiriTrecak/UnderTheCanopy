@@ -66,7 +66,30 @@ pub fn ghost(
 ) -> Option<Ghost> {
     let def = k.catalog.find(&placement.definition)?;
     let d = k.catalog.get(def);
-    let p = snap(d, Pt::new(f64::from(x), f64::from(z)), placement.rotation);
+    let mut p = snap(d, Pt::new(f64::from(x), f64::from(z)), placement.rotation);
+    // A building placed on a resource snaps onto the nearest known one under the cursor
+    // (a Substance Well onto its deposit, D62).
+    if let Some(on) = &d.placement_on {
+        let reach = d
+            .footprint
+            .as_ref()
+            .map_or(4.0, |f| f64::from(f.width.max(f.depth)));
+        let nearest = k
+            .view
+            .entities
+            .iter()
+            .filter(|e| e.public.resource.is_some() && k.def(e).id == on.source)
+            .map(|e| {
+                let [ex, ey] = k.position(e);
+                let d = (f64::from(ex) - f64::from(x)).hypot(f64::from(ey) - f64::from(z));
+                (d, ex, ey)
+            })
+            .filter(|&(d, _, _)| d <= reach)
+            .min_by(|a, b| a.0.total_cmp(&b.0));
+        if let Some((_, ex, ey)) = nearest {
+            p = Pt::new(f64::from(ex), f64::from(ey));
+        }
+    }
     let half = |v: f64| HalfCells((v * 2.0).round().max(0.0) as u32);
     let point = FoundationPoint {
         x: half(p.x),
@@ -218,6 +241,29 @@ fn check(
             ));
         }
     }
+    let (dx, dy) = door.cell();
+    let (dx, dy) = (i64::from(dx), i64::from(dy));
+    if let Some(on) = &d.placement_on {
+        // Exactly on a standing resource in sight that nobody is known to have built on.
+        let at = [x as f32, y as f32];
+        let resource = k.view.entities.iter().find(|e| {
+            !e.remembered
+                && k.def(e).id == on.source
+                && e.public.resource.as_ref().is_some_and(|r| r.amount > 0)
+                && k.position(e) == at
+        });
+        let name = k.name_of(on.source.as_str());
+        let Some(resource) = resource else {
+            return Some(format!("Build on a {name}"));
+        };
+        if k.covered.contains(&resource.id()) {
+            return Some(format!("This {name} is already built on"));
+        }
+        if !index(dx, dy).is_some_and(|c| terrain.walkable(c)) {
+            return Some("Entrance blocked".into());
+        }
+        return affordable(k, d);
+    }
     // Known blockers: buildings (seen or remembered), resources and scenery.
     let mut blocked: Vec<(i64, i64)> = Vec::new();
     for e in &k.view.entities {
@@ -301,12 +347,15 @@ fn check(
     if !terrain.foundation_fits(bounds) {
         return Some("Choose flatter ground".into());
     }
-    let (dx, dy) = door.cell();
-    let (dx, dy) = (i64::from(dx), i64::from(dy));
     let door_open = index(dx, dy).is_some_and(|c| terrain.walkable(c) && !is_blocked(dx, dy));
     if !door_open {
         return Some("Entrance blocked".into());
     }
+    affordable(k, d)
+}
+
+/// Whether the colony's unreserved goods pay for `d`, as far as the view shows.
+fn affordable(k: &Knowledge, d: &Definition) -> Option<String> {
     let items = d.creation.as_ref().map_or(&[][..], |c| c.items());
     let affordable = items.iter().all(|c| {
         k.view

@@ -1,9 +1,9 @@
 {
-  "id": "building.beetles.rootworks",
-  "name": "Rootworks",
-  "description": "Rootworks of the beetle colony. Model pending.",
+  "id": "building.beetles.substance-well",
+  "name": "Substance Well",
+  "description": "Built on a Substance Deposit. Workers gather Substance from it and carry it straight in; two workers saturate it. When it falls, the deposit remains.",
   "model": "asset.placeholder.missing-model",
-  "icon": "asset.icons.resource-root",
+  "icon": "asset.portraits.buildings.beetles-substance-well",
   "body": {
     "maxHp": 1000,
     "armor": 5,
@@ -11,12 +11,12 @@
   },
   "vision": 14,
   "footprint": {
-    "width": 12,
-    "depth": 12
+    "width": 8,
+    "depth": 8
   },
   "entrance": {
     "x": 0.5,
-    "y": 6.5
+    "y": 4.5
   },
   "creation": {
     "method": "construct",
@@ -24,10 +24,6 @@
       {
         "item": "item.amber",
         "amount": 150
-      },
-      {
-        "item": "item.wood",
-        "amount": 75
       }
     ],
     "workTicks": 1600,
@@ -45,11 +41,18 @@
       "dropoff": true
     }
   },
-  "placementNear": {
-    "source": "building.neutral.corrupted-root",
+  "placementOn": {
+    "source": "building.neutral.corrupted-root"
+  },
+  "network": {
+    "role": "source",
     "radius": 20
   },
   "category": "category.build",
   "level": 1,
-  "modelScale": 1
+  "modelScale": 0.67,
+  "command": {
+    "priority": 25,
+    "category": "category.build"
+  }
 }

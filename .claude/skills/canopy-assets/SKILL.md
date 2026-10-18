@@ -77,7 +77,7 @@ The cooker also stages the base package's documents into `target/cooked/base` fo
 
 ## Placeable scenery
 
-`scenery/<free folders>/<name>.json` is a piece maps place (objects in `scenery.json`) and biomes use (forest trunks). It names its model and its placement rules. A piece with `harvesting` becomes that resource where it stands on playable ground: trees become `resource.forest.tree`.
+`scenery/<free folders>/<name>.json` is a piece maps place (objects in `scenery.json`) and biomes use (forest trunks). It names its model and its placement rules. A piece with `harvesting` (`{"definition": <resource>}`) becomes that resource where it stands on playable ground. In the base game trees are no resource (D62): a tree's trunk closes the ground with a `blocker` instead, so tree walls stay solid.
 
 ```json scenery
 {
@@ -86,7 +86,7 @@ The cooker also stages the base package's documents into `target/cooked/base` fo
   "category": "foliage",
   "type": "prop",
   "model": "asset.models.environment.woodland-pine-a",
-  "harvesting": {"definition": "resource.forest.tree"}
+  "blocker": {"width": 3.3, "depth": 3.3, "shape": "ellipse"}
 }
 ```
 

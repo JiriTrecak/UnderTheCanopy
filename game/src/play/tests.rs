@@ -692,6 +692,78 @@ fn the_ghost_agrees_with_the_simulation_where_the_player_sees() {
 }
 
 #[test]
+fn a_well_snaps_onto_its_deposit_and_workers_sent_to_it_gather_there() {
+    let at = (199.5, 227.5);
+    let spring = fx::place_for("spring", fx::SPRING, "none", at.0, at.1);
+    let mut h = Harness::new(vec![spring]);
+    let k = h.play.knowledge().clone();
+    let spring = k
+        .view
+        .entities
+        .iter()
+        .find(|e| k.def(e).id.as_str() == fx::SPRING && !e.remembered)
+        .map(|e| e.id().0)
+        .expect("the deposit in sight");
+    let workers = h.mine(fx::WORKER);
+    let placement = super::placement::Placement {
+        definition: fx::WELL.into(),
+        actors: vec![workers[0]],
+        rotation: 0,
+    };
+    // Near the deposit the ghost stands on it, as the simulation agrees; away it cannot.
+    for (dx, dz, on) in [(2.5, -1.5, true), (0.0, 0.0, true), (-30.0, 0.0, false)] {
+        let ghost = super::placement::ghost(
+            &k,
+            h.world.terrain(),
+            &placement,
+            at.0 as f32 + dx,
+            at.1 as f32 + dz,
+        )
+        .expect("a ghost");
+        let verdict = h.world.can_build(
+            OWNER,
+            fx::WELL,
+            &ghost.point,
+            Some(canopy_sim::entity::EntityId(workers[0])),
+            0,
+        );
+        assert_eq!(ghost.problem, verdict, "{:?}", ghost.point);
+        assert_eq!(ghost.center == [at.0 as f32, at.1 as f32], on, "{ghost:?}");
+        assert_eq!(ghost.problem.is_none(), on, "{ghost:?}");
+    }
+    // Build it there.
+    h.click(workers[0]);
+    h.play.activate_id(&format!("build:{}", fx::WELL), false);
+    h.click_px(h.pixel(at.0 as f32 + 2.0, at.1 as f32 + 1.0), Button::Left);
+    let sent = h.take();
+    assert!(
+        matches!(sent.as_slice(), [Action::Build { .. }]),
+        "{sent:?}"
+    );
+    h.apply(&sent, 400);
+    assert!(h.errors().is_empty(), "{:?}", h.errors());
+    let well = h.mine(fx::WELL)[0];
+    assert!(fx::get(&h.world, well).construction.is_none(), "finished");
+    // The deposit under it is neither picked nor selectable; a right-click on the well
+    // sends workers to gather the deposit.
+    assert!(
+        h.play
+            .knowledge()
+            .covered
+            .contains(&canopy_sim::entity::EntityId(spring))
+    );
+    h.click(workers[1]);
+    h.right_click(well);
+    let sent = h.take();
+    assert!(
+        matches!(sent.as_slice(), [Action::Gather { target, .. }] if *target == spring),
+        "{sent:?}"
+    );
+    h.apply(&sent, 4);
+    assert!(h.errors().is_empty(), "{:?}", h.errors());
+}
+
+#[test]
 fn idle_workers_menu_keys_tab_and_chat() {
     let mut h = Harness::new(vec![]);
     // Three of the four starting workers gather; F8 finds the fourth and centres on it.

@@ -450,6 +450,34 @@ impl View {
             .ok()
             .map(|i| &self.entities[i])
     }
+
+    /// Known resources a known building placed on them (`placementOn`) stands on: they are
+    /// drawn and picked as that building (a Substance Well on its deposit, D62).
+    pub fn covered(&self, catalog: &Catalog) -> std::collections::BTreeSet<EntityId> {
+        let mut on: Vec<(i32, i32, &canopy_content::Id)> = self
+            .entities
+            .iter()
+            .filter_map(|e| {
+                let source = &catalog.get(e.definition()).placement_on.as_ref()?.source;
+                Some((e.public.position.x, e.public.position.y, source))
+            })
+            .collect();
+        if on.is_empty() {
+            return Default::default();
+        }
+        on.sort_unstable();
+        self.entities
+            .iter()
+            .filter(|e| {
+                e.public.resource.is_some() && {
+                    let id = catalog.id(e.definition());
+                    on.binary_search(&(e.public.position.x, e.public.position.y, id))
+                        .is_ok()
+                }
+            })
+            .map(EntityView::id)
+            .collect()
+    }
 }
 
 fn private(

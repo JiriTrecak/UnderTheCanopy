@@ -151,6 +151,37 @@ pub fn can_build(
             ctx.tables.network.get(&owner).map(String::as_str),
         ));
     }
+    if let Some(rule) = &d.placement_on {
+        // On a resource (a Substance Well on its deposit, D62): exactly on a seen,
+        // standing one nobody has built on yet. Its footprint is the resource's own, so the
+        // ground rules were the map's to keep; only the doorway must be open.
+        let source = ctx.catalog.find(rule.source.as_str());
+        let name = source.map_or(rule.source.as_str(), |s| ctx.catalog.get(s).name.as_str());
+        let at = Milli { x: f.x, y: f.y };
+        let resource = ctx
+            .index
+            .resources
+            .near(i64::from(f.x), i64::from(f.y), 1000)
+            .into_iter()
+            .filter_map(|id| ctx.state.entities.get(id))
+            .find(|e| {
+                Some(e.definition) == source
+                    && e.position == at
+                    && alive(e)
+                    && e.resource.as_ref().is_some_and(|r| r.amount > 0)
+                    && sight.seen(owner, e)
+            });
+        let Some(resource) = resource else {
+            return Some(format!("Build on a {name}"));
+        };
+        if super::harvest::building_on(ctx, resource).is_some() {
+            return Some(format!("This {name} is already built on"));
+        }
+        if !door_open(ctx, def, f, rotation) {
+            return Some("Entrance blocked".into());
+        }
+        return affordable(ctx, owner, def);
+    }
     let edges = footprint_bounds(x, y, extent, f64::from(rotation));
     let decks = ctx.spatial.terrain().surfaces();
     let blocked_cell = on_map
@@ -186,18 +217,28 @@ pub fn can_build(
     if !terrain.foundation_fits(bounds) {
         return Some("Choose flatter ground".into());
     }
+    if !door_open(ctx, def, f, rotation) {
+        return Some("Entrance blocked".into());
+    }
+    affordable(ctx, owner, def)
+}
+
+/// Whether the foundation's doorway cell is walkable.
+fn door_open(ctx: &Ctx, def: Def, f: Foundation, rotation: i32) -> bool {
+    let size = i64::from(ctx.spatial.size());
     let door = sites::entrance(ctx.catalog, def, Milli { x: f.x, y: f.y }, rotation * 1000);
     let (dx, dy) = door.cell();
-    let door_open = dx >= 0
+    dx >= 0
         && dy >= 0
         && i64::from(dx) < size
         && i64::from(dy) < size
         && ctx
             .spatial
-            .walkable((i64::from(dy) * size + i64::from(dx)) as u32);
-    if !door_open {
-        return Some("Entrance blocked".into());
-    }
+            .walkable((i64::from(dy) * size + i64::from(dx)) as u32)
+}
+
+/// Why the owner cannot pay for `def` now, if it cannot.
+fn affordable(ctx: &Ctx, owner: Owner, def: Def) -> Option<String> {
     if stock::reserve(
         ctx.state,
         ctx.catalog,

@@ -20,8 +20,7 @@
       "initialState": {
         "construction": "complete",
         "inventory": {
-          "item.amber": 20000,
-          "item.wood": 20000
+          "item.amber": 20000
         }
       },
       "position": {

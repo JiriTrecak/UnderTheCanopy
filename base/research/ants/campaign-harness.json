@@ -13,12 +13,8 @@
       "amount": 200
     },
     {
-      "item": "item.wood",
-      "amount": 80
-    },
-    {
       "item": "item.root",
-      "amount": 60
+      "amount": 140
     }
   ],
   "workTicks": 2000,
