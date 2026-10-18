@@ -26,6 +26,9 @@ pub struct StateInfo {
     pub contact: Option<f32>,
     /// Every authored event: name and normalised time.
     pub events: Vec<(String, f32)>,
+    /// Ground speed (model metres per second) at which the clip plays at rate 1 without
+    /// its feet sliding, when authored (`nominalSpeed`).
+    pub nominal_speed: Option<f32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -35,6 +38,8 @@ pub struct ModelInfo {
     pub states: BTreeMap<String, StateInfo>,
     /// Socket node names, in the pack's socket order.
     pub sockets: Vec<String>,
+    /// Their model-space transforms at rest (the same order).
+    pub socket_rest: Vec<Matrix3x4>,
     /// Bind-pose bounds (model space).
     pub rest_min: [f32; 3],
     pub rest_max: [f32; 3],
@@ -86,6 +91,7 @@ impl ModelInfo {
                             .iter()
                             .map(|e| (e.name.clone(), e.time.clamp(0.0, 1.0)))
                             .collect(),
+                        nominal_speed: s.nominal_speed.filter(|v| *v > 0.0),
                     },
                 )
             })
@@ -95,6 +101,7 @@ impl ModelInfo {
             clips,
             states,
             sockets: meta.sockets.iter().map(|s| s.node.clone()).collect(),
+            socket_rest: meta.sockets.iter().map(|s| s.rest).collect(),
             rest_min: meta.rest_bounds.min,
             rest_max: meta.rest_bounds.max,
             missing: false,
@@ -139,6 +146,16 @@ impl ModelInfo {
         let frame = ((time.max(0.0) * CLIP_FRAME_RATE).round() as usize)
             .min(clip.frames.saturating_sub(1) as usize);
         clip.sockets.get(frame * count + socket).copied()
+    }
+
+    /// A socket's transform at `time` into `clip`, or at rest when the model has no such
+    /// clip (a model without animation still has its sockets).
+    pub fn socket_or_rest(&self, node: &str, clip: u16, time: f32) -> Option<Matrix3x4> {
+        if usize::from(clip) < self.clips.len() {
+            return self.socket(node, clip, time);
+        }
+        let socket = self.sockets.iter().position(|s| s == node)?;
+        self.socket_rest.get(socket).copied()
     }
 
     /// Rest height in model metres.

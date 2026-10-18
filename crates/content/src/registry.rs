@@ -546,20 +546,7 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
         .iter()
         .flat_map(|p| p.effects.iter().flatten())
     {
-        match (&e.state, &e.event) {
-            (Some(state), None) if matches!(state.as_str(), "work" | "spawn") => {}
-            (Some(state), None) => {
-                check.fail(at, format!("unknown effect state {state}: work or spawn"))
-            }
-            (None, Some(_)) => {}
-            _ => check.fail(
-                at,
-                "a presentation effect needs exactly one of state and event",
-            ),
-        }
-        if d.kind != Kind::Building {
-            check.fail(at, "presentation effects are for buildings");
-        }
+        state_effect(check, d, e);
     }
     if let Some(body) = &d.body {
         if rules
@@ -1192,6 +1179,49 @@ fn races(check: &mut Checker) {
             {
                 check.fail(&location, "starting gather requires harvest recipe");
             }
+        }
+    }
+}
+
+/// A `presentation.effects` entry (D65): a known effect, exactly one of a state the
+/// definition's kind has and a clip event, and a socket as models name them.
+fn state_effect(check: &mut Checker, d: &Definition, e: &crate::game::StateEffect) {
+    use crate::game::StateEffect;
+    let at = d.id.as_str();
+    let states = match d.kind {
+        Kind::Building => StateEffect::BUILDING_STATES,
+        Kind::Unit => StateEffect::UNIT_STATES,
+        _ => {
+            check.fail(at, "presentation effects are for units and buildings");
+            return;
+        }
+    };
+    match (&e.state, &e.event) {
+        (Some(state), None) if states.contains(&state.as_str()) => {}
+        (Some(state), None) => check.fail(
+            at,
+            format!("unknown effect state {state}: {}", states.join(", ")),
+        ),
+        (None, Some(_)) => {}
+        _ => check.fail(
+            at,
+            "a presentation effect needs exactly one of state and event",
+        ),
+    }
+    if !check.content.effects.iter().any(|v| v.id == e.effect) {
+        check.fail(at, format!("unknown presentation effect {}", e.effect));
+    }
+    if let Some(socket) = &e.socket {
+        let declared = check
+            .content
+            .asset(d.model.as_str())
+            .and_then(|a| a.sockets.as_ref())
+            .is_some_and(|s| s.iter().any(|k| &k.name == socket));
+        if !declared && !socket.starts_with("socket") {
+            check.fail(
+                at,
+                format!("effect socket {socket}: a declared socket or a socket* model node"),
+            );
         }
     }
 }

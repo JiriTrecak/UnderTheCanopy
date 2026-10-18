@@ -36,7 +36,11 @@ impl DataFolder {
     /// package (one file per element, one folder per asset, as docs/packages.md lays it
     /// out).
     pub fn write(&self, name: &str) -> PathBuf {
-        let root = std::env::temp_dir().join(format!("canopy-data-{name}-{}", std::process::id()));
+        // A folder per call: tests of one process may load the same name at once.
+        static WRITES: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+        let n = WRITES.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let root =
+            std::env::temp_dir().join(format!("canopy-data-{name}-{}-{n}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         let write = |file: &str, bytes: &[u8]| {
             let path = root.join(file);
