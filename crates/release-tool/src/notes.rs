@@ -140,13 +140,15 @@ pub fn cmd_prepare(repo: &Repo, version: &str, title: &str, milestone: bool) -> 
         repo::write_atomic(&repo.log_path(), &old_log)?;
         return Err(e);
     }
-    // The base package carries the game's version.
-    let base = repo.root.join("base/package.json");
-    if let Ok(text) = fs::read_to_string(&base) {
-        repo::write_atomic(
-            &base,
-            set_package_version(&text, &version.to_string())?.as_bytes(),
-        )?;
+    // The base package and the match server carry the game's version.
+    for file in ["base/package.json", "server/package.json"] {
+        let path = repo.root.join(file);
+        if let Ok(text) = fs::read_to_string(&path) {
+            repo::write_atomic(
+                &path,
+                set_package_version(&text, &version.to_string())?.as_bytes(),
+            )?;
+        }
     }
     // Cargo.lock records the workspace members' versions.
     let status = std::process::Command::new(std::env::var("CARGO").unwrap_or("cargo".into()))

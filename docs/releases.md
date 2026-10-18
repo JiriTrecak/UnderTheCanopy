@@ -74,7 +74,7 @@ just release-publish --artifact build/releases/0.3.1/darwin-aarch64/artifact.jso
 ```
 
 1. **Prepare** moves Unreleased into the version (published at now, UTC), clears
-   Unreleased, and sets the app version in `Cargo.toml` and `Cargo.lock`. It refuses an
+   Unreleased, and sets the app version in `Cargo.toml` and `Cargo.lock`, the base package's `package.json` and the match server's `server/package.json` (the server's health check reports it, so a deployed server shows which game it belongs to). It refuses an
    empty Unreleased. Commit the result. Frozen notes never change; corrections go into a
    newer release.
 2. **Build** requires the log to have a release for the app version. It verifies the

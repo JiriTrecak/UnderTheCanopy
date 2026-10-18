@@ -2,6 +2,7 @@
  * MatchHost HTTP + WebSocket (docs/server.md). Mailbox only: it relays commands and never
  * runs the game. Production binds 127.0.0.1:8787 behind Nginx HTTPS/WSS on port 443.
  */
+import { readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { resolve as resolvePath } from "node:path";
 import { WebSocketServer } from "ws";
@@ -11,7 +12,8 @@ import type { CreateRoom, JoinRoom } from "./protocol";
 
 const PORT = Number(process.env.PORT ?? 8787);
 const BIND = process.env.BIND ?? "127.0.0.1";
-const VERSION = "0.1.0";
+// The game's version: releases set it in package.json with the app's (docs/releases.md).
+const VERSION: string = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")).version;
 const CORS = {
   "access-control-allow-origin": "*",
   "access-control-allow-headers": "content-type, authorization",
