@@ -1,12 +1,11 @@
 {
   "id": "beetles",
   "name": "Beetles",
-  "description": "Stout, expensive infantry and a relentless frontline champion. Economy follows the same rules as ants.",
+  "description": "Slow, stubborn and territorial: expensive, durable troops and machines that run on substance they never let touch them.",
   "startingSetup": {
     "fort": "building.beetles.bastion",
     "inventory": {
-      "item.amber": 500,
-      "item.wood": 150
+      "item.amber": 500
     },
     "units": [
       {
@@ -56,7 +55,9 @@
     "hero": {
       "default": "unit.beetles.hornbreaker",
       "choices": [
-        "unit.beetles.hornbreaker"
+        "unit.beetles.hornbreaker",
+        "unit.beetles.forgemaster",
+        "unit.beetles.coilkeeper"
       ],
       "offset": {
         "x": 0,
@@ -66,18 +67,34 @@
   },
   "roster": [
     "unit.beetles.worker",
-    "unit.beetles.horn-guard",
-    "unit.beetles.stone-slinger",
+    "unit.beetles.shieldbearer",
+    "unit.beetles.bolter",
+    "unit.beetles.breacher",
+    "unit.beetles.arcwright",
+    "unit.beetles.mender",
+    "unit.beetles.warden",
+    "unit.beetles.bombard",
+    "unit.beetles.steamwing",
+    "unit.beetles.juggernaut",
     "unit.beetles.hornbreaker",
+    "unit.beetles.forgemaster",
+    "unit.beetles.coilkeeper",
+    "unit.beetles.bolt-turret",
+    "unit.beetles.bolt-turret-mk2",
+    "unit.beetles.hornwatch-gunner",
+    "unit.beetles.arc-coil",
     "building.beetles.bastion",
     "building.beetles.great-bastion",
     "building.beetles.elder-bastion",
     "building.beetles.brood-den",
     "building.beetles.war-lodge",
     "building.beetles.shell-forge",
+    "building.beetles.alembic",
+    "building.beetles.engine-yard",
+    "building.beetles.hornwatch",
+    "building.beetles.arc-tower",
     "building.beetles.ancestor-shrine",
-    "building.beetles.rootworks",
-    "building.beetles.hornwatch"
+    "building.beetles.rootworks"
   ],
   "construction": {
     "scaffold": "asset.models.construction.beetles",

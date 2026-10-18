@@ -1,0 +1,115 @@
+{
+  "id": "unit.beetles.arcwright",
+  "name": "Arcwright",
+  "description": "Specialist with a coil lance. Its arcs jump between enemies; casts Arc Surge, and Static Field after Specialist Training. Requires a Great Bastion; uses 3 supply.",
+  "model": "asset.models.units.ants-amber-adept",
+  "icon": "asset.portraits.units.ants-amber-adept",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 420,
+    "armor": 1,
+    "armorType": "light"
+  },
+  "vision": 32,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 15,
+      "damageType": "spell",
+      "range": 15,
+      "cooldownTicks": 64,
+      "aggroRange": 20,
+      "attack": {
+        "windupTicks": 16,
+        "recoveryTicks": 12,
+        "rangeBuffer": 0.75
+      },
+      "projectile": {
+        "speed": 60
+      },
+      "chain": {
+        "bounces": 2,
+        "radius": 5.0,
+        "retentionPermille": 650
+      }
+    },
+    "movement": {
+      "speed": 10
+    },
+    "abilities": {
+      "maxMana": 220,
+      "manaRegenPerSecond": 1.0,
+      "bindings": [
+        {
+          "id": "arc-surge",
+          "ability": "ability.beetles.arc-surge",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "Q",
+            "column": 1
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        },
+        {
+          "id": "static-field",
+          "ability": "ability.beetles.static-field",
+          "initialRank": 0,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "W",
+            "column": 2
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        }
+      ]
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 215
+      },
+      {
+        "item": "item.root",
+        "amount": 50
+      }
+    ],
+    "workTicks": 1200
+  },
+  "requires": [
+    "building.beetles.great-bastion"
+  ],
+  "level": 2,
+  "supplyCost": 3,
+  "dimensions": {
+    "radius": 1.75,
+    "height": 4.8,
+    "formationSpacing": 3.75
+  },
+  "modelScale": 2.7,
+  "presentation": {
+    "projectileSocket": "socket_projectile",
+    "launchEffect": "effect.beetles.weapons.arc",
+    "impactEffect": "effect.beetles.weapons.arc-impact",
+    "castContact": 0.5
+  }
+}

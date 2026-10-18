@@ -1,0 +1,99 @@
+{
+  "id": "effect.coilkeeper.unbottled-shatter",
+  "name": "The lantern shatters",
+  "description": "Glass and substance burst from the broken lantern: a blinding violet-white flash and a ring of shards.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#e6dcff",
+      "accent": "#ffffff",
+      "durationTicks": 12,
+      "count": 1,
+      "size": 20.0,
+      "height": 2.0,
+      "intensity": 14.0,
+      "startTick": 0
+    },
+    {
+      "id": "glass",
+      "enabled": true,
+      "shape": "burst",
+      "colour": "#dfe8ff",
+      "accent": "#ffffff",
+      "durationTicks": 12,
+      "count": 24,
+      "size": 2.6,
+      "height": 1.6,
+      "blend": "additive"
+    },
+    {
+      "id": "shards",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c9d8ff",
+      "accent": "#ffffff",
+      "durationTicks": 24,
+      "count": 50,
+      "size": 0.3,
+      "height": 1.6,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 22,
+        "rate": 50,
+        "speed": 14,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": 10,
+        "drag": 0.4,
+        "spawnRadius": 0.15,
+        "startSize": 0.3,
+        "endSize": 0.045,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "wave",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#c9b8ff",
+      "accent": "#ffffff",
+      "durationTicks": 22,
+      "count": 1,
+      "size": 14.0,
+      "height": 0.06,
+      "blend": "additive"
+    },
+    {
+      "id": "wave2",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 28,
+      "count": 1,
+      "size": 10.0,
+      "height": 0.06,
+      "blend": "additive",
+      "startTick": 6
+    }
+  ]
+}

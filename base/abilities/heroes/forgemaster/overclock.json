@@ -1,0 +1,95 @@
+{
+  "id": "ability.forgemaster.overclock",
+  "name": "Overclock",
+  "description": "Pull the governor on an allied unit or machine: it attacks and moves 40/55/70% faster for 8 seconds.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "boost": 400
+    },
+    {
+      "boost": 550
+    },
+    {
+      "boost": 700
+    }
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 16,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 8,
+    "recoverTicks": 6,
+    "cost": {
+      "resource": "mana",
+      "amount": 60,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 360,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "target",
+      "id": "overclocked",
+      "amount": 320,
+      "polarity": "positive",
+      "dispel": true,
+      "rankedModifiers": {
+        "attackSpeedPermille": {
+          "rankParameter": "boost"
+        },
+        "moveSpeedPermille": {
+          "rankParameter": "boost"
+        }
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.item-quickstep-spurs",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "burst",
+        "effect": "effect.forgemaster.overclock-burst",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "finite",
+        "statusId": "overclocked"
+      },
+      {
+        "id": "heat",
+        "effect": "effect.forgemaster.overclock",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "overclocked"
+      }
+    ]
+  }
+}

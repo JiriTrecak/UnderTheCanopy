@@ -1,33 +1,29 @@
 {
   "id": "building.beetles.war-lodge",
   "name": "War Lodge",
-  "description": "Iron-clad training hall for the beetle colony’s infantry and ranged troops.",
+  "description": "Iron-clad barracks for Shieldbearers, Bolters and Breachers. Researches Interlocking Shields, Drum Magazines and Heavy Pistons.",
   "model": "asset.models.buildings.beetles-iron-garrison",
   "icon": "asset.portraits.buildings.beetles-iron-garrison",
   "body": {
-    "maxHp": 1200,
+    "maxHp": 1400,
     "armor": 5,
     "armorType": "structure"
   },
-  "vision": 14,
+  "vision": 16,
   "footprint": {
-    "width": 12,
-    "depth": 12
+    "width": 16,
+    "depth": 16
   },
   "entrance": {
     "x": 0.5,
-    "y": 6.5
+    "y": 8.5
   },
   "creation": {
     "method": "construct",
     "items": [
       {
         "item": "item.amber",
-        "amount": 200
-      },
-      {
-        "item": "item.wood",
-        "amount": 60
+        "amount": 220
       }
     ],
     "workTicks": 2000,
@@ -38,23 +34,36 @@
   ],
   "behaviors": {
     "storage": {
-      "capacity": 500,
+      "capacity": 800,
       "accepts": [
-        "item.wood",
-        "item.amber"
+        "item.amber",
+        "item.root"
       ]
     },
     "production": {
       "mode": "queued",
       "outputs": [
-        "unit.beetles.horn-guard",
-        "unit.beetles.stone-slinger"
+        "unit.beetles.shieldbearer",
+        "unit.beetles.bolter",
+        "unit.beetles.breacher"
       ],
       "workerSlots": 0,
       "queueCapacity": 6
+    },
+    "research": {
+      "outputs": [
+        "research.beetles.interlocking-shields",
+        "research.beetles.drum-magazines",
+        "research.beetles.heavy-pistons"
+      ],
+      "queueCapacity": 3
     }
   },
-  "category": "category.build-advanced",
+  "category": "category.build",
   "level": 1,
-  "modelScale": 1
+  "modelScale": 1.3,
+  "command": {
+    "category": "category.build",
+    "priority": 80
+  }
 }

@@ -1,0 +1,86 @@
+{
+  "id": "effect.beetles.weapons.steam-beam-impact",
+  "name": "Beam scorch",
+  "description": "Violet bolts burst and sparks fly where the beam lands.",
+  "durationTicks": 26,
+  "loop": false,
+  "layers": [
+    {
+      "id": "burst",
+      "enabled": true,
+      "shape": "burst",
+      "colour": "#8a5cff",
+      "accent": "#ffffff",
+      "durationTicks": 8,
+      "count": 8,
+      "size": 1.1,
+      "height": 0.0,
+      "blend": "additive"
+    },
+    {
+      "id": "sparks",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#9a78ff",
+      "accent": "#efe8ff",
+      "durationTicks": 16,
+      "count": 16,
+      "size": 0.24,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 14,
+        "rate": 16,
+        "speed": 7,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 110,
+        "gravity": 8,
+        "drag": 0.4,
+        "spawnRadius": 0.15,
+        "startSize": 0.24,
+        "endSize": 0.036,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 5,
+      "count": 1,
+      "size": 4.0,
+      "height": 0.4,
+      "intensity": 6.0,
+      "startTick": 0
+    },
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#c9b8ff",
+      "accent": "#ffffff",
+      "durationTicks": 10,
+      "count": 1,
+      "size": 1.6,
+      "height": 0.06,
+      "blend": "additive"
+    }
+  ]
+}

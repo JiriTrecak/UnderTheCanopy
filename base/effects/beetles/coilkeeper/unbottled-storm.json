@@ -1,0 +1,175 @@
+{
+  "id": "effect.coilkeeper.unbottled-storm",
+  "name": "Unbottled storm",
+  "description": "A violet storm around the Coilkeeper for six seconds: a turning vortex on the ground, a swirling column and constant crackle.",
+  "durationTicks": 240,
+  "loop": false,
+  "layers": [
+    {
+      "id": "vortex",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 240,
+      "count": 1,
+      "size": 22.0,
+      "height": 0.08,
+      "orientation": "ground",
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.marshal.cadence-wheel",
+        "role": "image",
+        "index": 1
+      },
+      "sustain": true,
+      "follow": true,
+      "motion": {
+        "rotation": {
+          "periodTicks": 60,
+          "direction": "counterclockwise"
+        },
+        "opacity": {
+          "periodTicks": 20,
+          "min": 0.5,
+          "max": 0.9,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "inner",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#c9b8ff",
+      "accent": "#ffffff",
+      "durationTicks": 240,
+      "count": 1,
+      "size": 12.0,
+      "height": 0.08,
+      "orientation": "ground",
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.holy-light-sigil",
+        "role": "image",
+        "index": 1
+      },
+      "sustain": true,
+      "follow": true,
+      "motion": {
+        "rotation": {
+          "periodTicks": 40,
+          "direction": "clockwise"
+        },
+        "opacity": {
+          "periodTicks": 16,
+          "min": 0.4,
+          "max": 0.8,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "edge",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 240,
+      "count": 1,
+      "size": 14.0,
+      "height": 0.06,
+      "blend": "additive",
+      "sustain": true,
+      "follow": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 12,
+          "min": 0.5,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "column",
+      "enabled": true,
+      "shape": "pillar",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 240,
+      "count": 1,
+      "size": 4.0,
+      "height": 16,
+      "sustain": true,
+      "follow": true,
+      "blend": "additive"
+    },
+    {
+      "id": "swirl",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c9b8ff",
+      "accent": "#ffffff",
+      "durationTicks": 240,
+      "count": 24,
+      "size": 0.3,
+      "height": 0.3,
+      "sustain": true,
+      "follow": true,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 3.5,
+      "distribution": "disc",
+      "spread": 12.0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 30,
+        "rate": 24,
+        "speed": 3.5,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 30,
+        "gravity": -5.0,
+        "drag": 0.5,
+        "spawnRadius": 12.0,
+        "startSize": 0.3,
+        "endSize": 0.05,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 240,
+      "count": 1,
+      "size": 18.0,
+      "height": 3.0,
+      "intensity": 6.0,
+      "startTick": 0,
+      "sustain": true,
+      "follow": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 6,
+          "min": 0.5,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

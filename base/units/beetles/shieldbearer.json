@@ -1,0 +1,80 @@
+{
+  "id": "unit.beetles.shieldbearer",
+  "name": "Shieldbearer",
+  "description": "Front-line tank behind a riveted tower shield, swinging a piston hammer. Lock Shields braces it in place for heavy armor. Slow and stubborn; uses 2 supply.",
+  "model": "asset.models.units.ants-queensguard",
+  "icon": "asset.portraits.units.ants-queensguard",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 620,
+    "armor": 3,
+    "armorType": "heavy"
+  },
+  "vision": 32,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 17,
+      "damageType": "melee",
+      "range": 0.6,
+      "cooldownTicks": 60,
+      "aggroRange": 20,
+      "attack": {
+        "windupTicks": 14,
+        "recoveryTicks": 12,
+        "rangeBuffer": 0.6
+      }
+    },
+    "movement": {
+      "speed": 10
+    },
+    "abilities": {
+      "maxMana": 10,
+      "manaRegenPerSecond": 0,
+      "bindings": [
+        {
+          "id": "lock-shields",
+          "ability": "ability.beetles.lock-shields",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "Q",
+            "column": 1
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20,
+            "threatRadius": 7
+          }
+        }
+      ]
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 195
+      }
+    ],
+    "workTicks": 1080
+  },
+  "level": 1,
+  "supplyCost": 2,
+  "dimensions": {
+    "radius": 1.75,
+    "height": 4.8,
+    "formationSpacing": 3.75
+  },
+  "modelScale": 2.6,
+  "presentation": {
+    "impactEffect": "effect.beetles.weapons.shield-bash"
+  }
+}

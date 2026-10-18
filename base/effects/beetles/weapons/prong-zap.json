@@ -1,0 +1,35 @@
+{
+  "id": "effect.beetles.weapons.prong-zap",
+  "name": "Prong discharge",
+  "description": "A short blue discharge between the projector prongs and the target.",
+  "durationTicks": 16,
+  "loop": false,
+  "layers": [
+    {
+      "id": "arc",
+      "enabled": true,
+      "shape": "beam",
+      "colour": "#5b7bff",
+      "accent": "#b8c8ff",
+      "durationTicks": 6,
+      "count": 1,
+      "size": 0.24,
+      "height": 0.0,
+      "blend": "additive"
+    },
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#5b7bff",
+      "accent": "#b8c8ff",
+      "durationTicks": 4,
+      "count": 1,
+      "size": 3.0,
+      "height": 0.2,
+      "intensity": 4.0,
+      "startTick": 0,
+      "anchor": "source"
+    }
+  ]
+}

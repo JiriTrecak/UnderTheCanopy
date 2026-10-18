@@ -1,0 +1,77 @@
+{
+  "id": "ability.beetles.broadside",
+  "name": "Broadside",
+  "description": "Fire both cannons at once into an area: 140 siege damage to everything hostile in a 5-radius.",
+  "activation": "targeted",
+  "ranks": [
+    {}
+  ],
+  "targeting": {
+    "kind": "point",
+    "radius": 5,
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 24,
+    "outOfRange": "reject",
+    "includeBuildings": true
+  },
+  "cast": {
+    "prepareTicks": 16,
+    "recoverTicks": 12,
+    "cost": {
+      "resource": "mana",
+      "amount": 80,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 600,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "damage",
+      "target": "target",
+      "amount": 140,
+      "damageType": "siege"
+    }
+  ],
+  "presentation": {
+    "icon": "asset.spells.marshal.crownfall-icon",
+    "animations": {
+      "prepare": "attack",
+      "release": "attack",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "fire",
+        "effect": "effect.beetles.broadside-fire",
+        "event": "released",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
+        "id": "impact",
+        "effect": "effect.beetles.broadside",
+        "event": "released",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

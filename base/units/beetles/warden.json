@@ -1,0 +1,111 @@
+{
+  "id": "unit.beetles.warden",
+  "name": "Warden",
+  "description": "Carries a barrier projector: a curved violet pane that stops enemy missiles from the front. Bulwark Pulse after Specialist Training. Requires a Great Bastion; uses 3 supply.",
+  "model": "asset.models.units.ants-silkwarden",
+  "icon": "asset.portraits.units.ants-silkwarden",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 560,
+    "armor": 2,
+    "armorType": "heavy"
+  },
+  "vision": 32,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 11,
+      "damageType": "spell",
+      "range": 6,
+      "cooldownTicks": 56,
+      "aggroRange": 18,
+      "attack": {
+        "windupTicks": 12,
+        "recoveryTicks": 10,
+        "rangeBuffer": 0.75
+      },
+      "projectile": {
+        "speed": 70
+      }
+    },
+    "movement": {
+      "speed": 10
+    },
+    "abilities": {
+      "maxMana": 200,
+      "manaRegenPerSecond": 1.2,
+      "bindings": [
+        {
+          "id": "barrier-field",
+          "ability": "ability.beetles.barrier-field",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "Q",
+            "column": 1
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20,
+            "threatRadius": 26
+          }
+        },
+        {
+          "id": "bulwark-pulse",
+          "ability": "ability.beetles.bulwark-pulse",
+          "initialRank": 0,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "W",
+            "column": 2
+          },
+          "ai": {
+            "preference": "wounded-ally",
+            "intervalTicks": 20
+          }
+        }
+      ]
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 230
+      },
+      {
+        "item": "item.root",
+        "amount": 50
+      }
+    ],
+    "workTicks": 1200
+  },
+  "requires": [
+    "building.beetles.great-bastion"
+  ],
+  "level": 2,
+  "supplyCost": 3,
+  "dimensions": {
+    "radius": 1.8,
+    "height": 5.2,
+    "formationSpacing": 4.0
+  },
+  "modelScale": 2.6,
+  "presentation": {
+    "projectileSocket": "socket_projectile",
+    "launchEffect": "effect.beetles.weapons.prong-zap",
+    "impactEffect": "effect.beetles.weapons.arc-impact",
+    "castContact": 0.37
+  }
+}

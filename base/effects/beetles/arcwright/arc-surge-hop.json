@@ -1,0 +1,98 @@
+{
+  "id": "effect.beetles.arc-surge-hop",
+  "name": "Arc surge hop",
+  "description": "A thick violet arc that jumps from victim to victim, flashing on each.",
+  "durationTicks": 18,
+  "loop": false,
+  "layers": [
+    {
+      "id": "arc",
+      "enabled": true,
+      "shape": "beam",
+      "colour": "#8a5cff",
+      "accent": "#efe8ff",
+      "durationTicks": 10,
+      "count": 1,
+      "size": 0.5,
+      "height": 1.2,
+      "blend": "additive"
+    },
+    {
+      "id": "core",
+      "enabled": true,
+      "shape": "beam",
+      "colour": "#f8f4ff",
+      "accent": "#ffffff",
+      "durationTicks": 8,
+      "count": 1,
+      "size": 0.18,
+      "height": 1.2,
+      "blend": "additive"
+    },
+    {
+      "id": "burst",
+      "enabled": true,
+      "shape": "burst",
+      "colour": "#c9b8ff",
+      "accent": "#ffffff",
+      "durationTicks": 8,
+      "count": 8,
+      "size": 1.2,
+      "height": 1.0,
+      "blend": "additive"
+    },
+    {
+      "id": "sparks",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#9a78ff",
+      "accent": "#efe8ff",
+      "durationTicks": 16,
+      "count": 14,
+      "size": 0.24,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 14,
+        "rate": 14,
+        "speed": 6,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": 14.0,
+        "drag": 0.4,
+        "spawnRadius": 0.15,
+        "startSize": 0.24,
+        "endSize": 0.036,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 6,
+      "count": 1,
+      "size": 5.0,
+      "height": 1.0,
+      "intensity": 7.0,
+      "startTick": 0
+    }
+  ]
+}

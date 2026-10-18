@@ -1,0 +1,37 @@
+{
+  "id": "building.beetles.arc-tower",
+  "name": "Arc Tower",
+  "description": "A Hornwatch refitted with a substance coil: its arcs deal 30 spell damage and jump to three more enemies. Requires an Elder Bastion.",
+  "model": "asset.models.buildings.ants-watchtower",
+  "icon": "asset.portraits.buildings.ants-watchtower",
+  "body": {
+    "maxHp": 1100,
+    "armor": 5,
+    "armorType": "structure"
+  },
+  "vision": 28,
+  "footprint": {
+    "width": 8,
+    "depth": 8
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 4.5
+  },
+  "requires": [
+    "building.beetles.elder-bastion"
+  ],
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {},
+  "level": 3,
+  "modelScale": 1.4,
+  "garrison": {
+    "capacity": 1,
+    "accepts": [],
+    "height": 5.8,
+    "lookoutRadius": 0.6,
+    "crew": "unit.beetles.arc-coil"
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "id": "ability.beetles.mend",
+  "name": "Mend",
+  "description": "Inject a wounded ally with pressurised tonic, restoring 110/160 health. Works on beetles and machines alike. Autocast.",
+  "activation": "targeted",
+  "autocast": {
+    "intervalTicks": 16,
+    "enabledByDefault": true
+  },
+  "ranks": [
+    {
+      "heal": 110
+    },
+    {
+      "heal": 160
+    }
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 14,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 8,
+    "recoverTicks": 6,
+    "cost": {
+      "resource": "mana",
+      "amount": 45,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 160,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "heal",
+      "target": "target",
+      "amount": {
+        "rankParameter": "heal"
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.spell-holy-light",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "mend",
+        "effect": "effect.beetles.mend",
+        "event": "healed",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

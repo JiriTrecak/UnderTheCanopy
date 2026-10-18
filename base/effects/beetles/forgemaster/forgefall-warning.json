@@ -1,0 +1,116 @@
+{
+  "id": "effect.forgemaster.forgefall-warning",
+  "name": "Forgefall warning",
+  "description": "A blazing warning circle and sigil on the ground while the crucible is in the air; it falls in the last half second.",
+  "durationTicks": 60,
+  "loop": false,
+  "layers": [
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#ff5a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 60,
+      "count": 1,
+      "size": 5.0,
+      "height": 0.06,
+      "blend": "additive",
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 10,
+          "min": 0.5,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "sigil",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 60,
+      "count": 1,
+      "size": 10.0,
+      "height": 0.08,
+      "orientation": "ground",
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.holy-light-sigil",
+        "role": "image",
+        "index": 1
+      },
+      "sustain": true,
+      "motion": {
+        "rotation": {
+          "periodTicks": 120,
+          "direction": "clockwise"
+        },
+        "opacity": {
+          "periodTicks": 10,
+          "min": 0.45,
+          "max": 0.9,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "glow",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 60,
+      "count": 1,
+      "size": 8.0,
+      "height": 1.0,
+      "intensity": 3.0,
+      "startTick": 0,
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 10,
+          "min": 0.4,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "crucible",
+      "enabled": true,
+      "shape": "rain",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 24,
+      "count": 1,
+      "size": 3.2,
+      "height": 26,
+      "startTick": 36,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "spread": 0.4,
+      "fallSpeed": 2.0,
+      "launchDelayMs": 0,
+      "fallAngleDegrees": 0,
+      "fallAzimuthDegrees": 0,
+      "intensity": 4.0,
+      "impact": {
+        "durationTicks": 6,
+        "count": 6,
+        "size": 2.0,
+        "spread": 1.0,
+        "height": 0.2,
+        "colour": "#ff8a2a",
+        "accent": "#ffd9a0"
+      }
+    }
+  ]
+}

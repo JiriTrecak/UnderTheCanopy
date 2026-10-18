@@ -1,0 +1,74 @@
+{
+  "id": "effect.beetles.weapons.arc-impact",
+  "name": "Arc impact",
+  "description": "Violet sparks crawl over whatever the arc strikes.",
+  "durationTicks": 24,
+  "loop": false,
+  "layers": [
+    {
+      "id": "sparks",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#9a78ff",
+      "accent": "#efe8ff",
+      "durationTicks": 16,
+      "count": 16,
+      "size": 0.22,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 14,
+        "rate": 16,
+        "speed": 6,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 120,
+        "gravity": 4,
+        "drag": 0.4,
+        "spawnRadius": 0.15,
+        "startSize": 0.22,
+        "endSize": 0.033,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "pop",
+      "enabled": true,
+      "shape": "burst",
+      "colour": "#c9b8ff",
+      "accent": "#ffffff",
+      "durationTicks": 6,
+      "count": 6,
+      "size": 0.9,
+      "height": 0.0,
+      "blend": "additive"
+    },
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 5,
+      "count": 1,
+      "size": 3.5,
+      "height": 0.4,
+      "intensity": 5.0,
+      "startTick": 0
+    }
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "id": "ability.forgemaster.forgefall",
+  "name": "Forgefall",
+  "description": "Call down a crucible. After a 1.5-second warning circle it slams into a 5-radius area: 220/340 spell damage and a 1.5-second stun (half on heroes), then a pool of molten metal that burns enemies standing in it for 20/32 spell damage each half second for 6 seconds.",
+  "activation": "targeted",
+  "persistent": {
+    "durationTicks": 240,
+    "intervalTicks": 20,
+    "anchor": "point",
+    "endsWithCaster": false,
+    "upkeepMana": 0,
+    "toggle": false,
+    "delayTicks": 60,
+    "pulse": [
+      {
+        "op": "damage",
+        "target": "target",
+        "amount": {
+          "rankParameter": "burn"
+        },
+        "damageType": "spell"
+      }
+    ]
+  },
+  "ranks": [
+    {
+      "damage": 220,
+      "burn": 20
+    },
+    {
+      "damage": 340,
+      "burn": 32
+    }
+  ],
+  "targeting": {
+    "kind": "point",
+    "radius": 5,
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 22,
+    "outOfRange": "reject",
+    "maxTargets": 24,
+    "includeBuildings": true
+  },
+  "cast": {
+    "prepareTicks": 18,
+    "recoverTicks": 10,
+    "cost": {
+      "resource": "mana",
+      "amount": 175,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 3200,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "damage",
+      "target": "target",
+      "amount": {
+        "rankParameter": "damage"
+      },
+      "damageType": "spell"
+    },
+    {
+      "op": "status",
+      "target": "target",
+      "id": "slammed",
+      "amount": 60,
+      "heroDuration": 30,
+      "polarity": "negative",
+      "dispel": true,
+      "stun": true
+    }
+  ],
+  "presentation": {
+    "icon": "asset.spells.marshal.crownfall-icon",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "warning",
+        "effect": "effect.forgemaster.forgefall-warning",
+        "event": "released",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
+        "id": "impact",
+        "effect": "effect.forgemaster.forgefall-impact",
+        "event": "impact",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
+        "id": "pool",
+        "effect": "effect.forgemaster.forgefall-pool",
+        "event": "impact",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
+        "id": "burn",
+        "effect": "effect.forgemaster.molten-burn",
+        "event": "damaged",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

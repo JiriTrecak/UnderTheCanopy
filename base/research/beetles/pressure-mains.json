@@ -1,0 +1,22 @@
+{
+  "id": "research.beetles.pressure-mains",
+  "name": "Pressure Mains",
+  "description": "Raises the pressure in the colony’s mains: the substance network reaches further around the Bastion, the Substance Wells and every Brood Den.",
+  "icon": "asset.icons.resource-root",
+  "priority": 40,
+  "requires": [
+    "building.beetles.great-bastion"
+  ],
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 150
+    },
+    {
+      "item": "item.root",
+      "amount": 100
+    }
+  ],
+  "workTicks": 1800,
+  "effects": []
+}

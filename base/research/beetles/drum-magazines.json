@@ -1,0 +1,26 @@
+{
+  "id": "research.beetles.drum-magazines",
+  "name": "Drum Magazines",
+  "description": "Bolters attack 25% faster.",
+  "icon": "asset.portraits.units.ants-leaf-archer",
+  "priority": 75,
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 150
+    },
+    {
+      "item": "item.root",
+      "amount": 40
+    }
+  ],
+  "workTicks": 1800,
+  "effects": [
+    {
+      "units": [
+        "unit.beetles.bolter"
+      ],
+      "attackSpeedPermille": 250
+    }
+  ]
+}

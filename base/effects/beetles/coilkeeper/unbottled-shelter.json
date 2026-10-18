@@ -1,0 +1,43 @@
+{
+  "id": "effect.coilkeeper.unbottled-shelter",
+  "name": "Storm shelter",
+  "description": "A bright blue bubble around allies the storm protects.",
+  "durationTicks": 60,
+  "loop": true,
+  "layers": [
+    {
+      "id": "bubble",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#5b7bff",
+      "accent": "#b8c8ff",
+      "durationTicks": 60,
+      "count": 1,
+      "size": 2.4,
+      "height": 1.2,
+      "blend": "additive",
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 24,
+          "min": 0.45,
+          "max": 0.85,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#5b7bff",
+      "accent": "#b8c8ff",
+      "durationTicks": 60,
+      "count": 1,
+      "size": 2.2,
+      "height": 0.06,
+      "blend": "additive",
+      "sustain": true
+    }
+  ]
+}

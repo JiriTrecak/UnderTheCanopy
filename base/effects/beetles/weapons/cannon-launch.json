@@ -1,0 +1,143 @@
+{
+  "id": "effect.beetles.weapons.cannon-launch",
+  "name": "Twin cannon blast",
+  "description": "A furnace-orange blast from both cannons, violet furnace sparks and heavy smoke.",
+  "durationTicks": 44,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 7,
+      "count": 1,
+      "size": 9.0,
+      "height": 0.2,
+      "intensity": 10.0,
+      "startTick": 0,
+      "anchor": "source"
+    },
+    {
+      "id": "muzzle",
+      "enabled": true,
+      "shape": "burst",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 7,
+      "count": 10,
+      "size": 1.6,
+      "height": 0.2,
+      "blend": "additive",
+      "anchor": "source"
+    },
+    {
+      "id": "furnace",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 20,
+      "count": 10,
+      "size": 0.24,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 18,
+        "rate": 10,
+        "speed": 5,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": 6,
+        "drag": 0.4,
+        "spawnRadius": 0.15,
+        "startSize": 0.24,
+        "endSize": 0.036,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      },
+      "anchor": "source"
+    },
+    {
+      "id": "smoke",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#55524f",
+      "accent": "#9a9590",
+      "durationTicks": 48,
+      "count": 10,
+      "size": 1.7,
+      "height": 0.2,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 44,
+        "rate": 10,
+        "speed": 3.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 60,
+        "gravity": -1.0,
+        "drag": 1.6,
+        "spawnRadius": 0.3,
+        "startSize": 0.85,
+        "endSize": 2.72,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      },
+      "anchor": "source"
+    },
+    {
+      "id": "tracer",
+      "enabled": true,
+      "shape": "missile",
+      "colour": "#ff9a4a",
+      "accent": "#ffe0b0",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 0.55,
+      "height": 0,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 3.0,
+      "trail": {
+        "durationTicks": 18,
+        "maxPoints": 12,
+        "width": 0.4,
+        "colour": "#ffe0b0",
+        "opacity": 0.85,
+        "breakDistance": 6
+      }
+    }
+  ]
+}

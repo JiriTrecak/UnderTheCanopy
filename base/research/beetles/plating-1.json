@@ -1,0 +1,30 @@
+{
+  "id": "research.beetles.plating-1",
+  "name": "Plating I",
+  "description": "Beetle troops and machines gain 2 armor (level I; levels add up).",
+  "icon": "asset.icons.item-amber-carapace",
+  "priority": 80,
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 150
+    }
+  ],
+  "workTicks": 1600,
+  "effects": [
+    {
+      "units": [
+        "unit.beetles.shieldbearer",
+        "unit.beetles.bolter",
+        "unit.beetles.breacher",
+        "unit.beetles.arcwright",
+        "unit.beetles.mender",
+        "unit.beetles.warden",
+        "unit.beetles.bombard",
+        "unit.beetles.steamwing",
+        "unit.beetles.juggernaut"
+      ],
+      "armor": 2
+    }
+  ]
+}

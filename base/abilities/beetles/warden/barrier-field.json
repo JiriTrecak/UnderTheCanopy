@@ -1,0 +1,102 @@
+{
+  "id": "ability.beetles.barrier-field",
+  "name": "Barrier Field",
+  "description": "Toggle. Raise the projector pane: enemy missiles fired at the Warden or anyone behind it from the front stop at the pane, 4 units ahead. The Warden moves 30% slower and the field costs 2/1 mana each second.",
+  "activation": "targeted",
+  "persistent": {
+    "durationTicks": 144000,
+    "intervalTicks": 40,
+    "anchor": "caster",
+    "endsWithCaster": true,
+    "upkeepMana": {
+      "rankParameter": "upkeep"
+    },
+    "toggle": true
+  },
+  "ranks": [
+    {
+      "upkeep": 2
+    },
+    {
+      "upkeep": 1
+    }
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 8,
+    "recoverTicks": 4,
+    "cost": {
+      "resource": "mana",
+      "amount": 20,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 80,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "caster",
+      "id": "field",
+      "amount": 80,
+      "polarity": "positive",
+      "dispel": false,
+      "lifetime": "instance",
+      "modifiers": {
+        "moveSpeedPermille": -300
+      },
+      "barrier": {
+        "radius": 4.0,
+        "arcDegrees": 150.0
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.spells.rootbreaker.roar-icon-v2",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "raise",
+        "effect": "effect.beetles.barrier-raise",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "finite",
+        "statusId": "field"
+      },
+      {
+        "id": "field",
+        "effect": "effect.beetles.barrier-field",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "field"
+      }
+    ]
+  }
+}

@@ -1,12 +1,12 @@
 {
   "id": "building.beetles.elder-bastion",
   "name": "Elder Bastion",
-  "description": "Elder Bastion of the beetle colony. Model pending.",
-  "model": "asset.placeholder.missing-model",
-  "icon": "asset.icons.resource-root",
+  "description": "Hall tier 3: unlocks the Juggernaut, level III research, Specialist Training Master, the Arc Tower and a third hero.",
+  "model": "asset.models.buildings.beetles-carapace-hall",
+  "icon": "asset.portraits.buildings.beetles-carapace-hall",
   "body": {
-    "maxHp": 3000,
-    "armor": 6,
+    "maxHp": 3500,
+    "armor": 7,
     "armorType": "structure"
   },
   "vision": 42,
@@ -25,8 +25,8 @@
     "storage": {
       "capacity": 100000,
       "accepts": [
-        "item.wood",
-        "item.amber"
+        "item.amber",
+        "item.root"
       ],
       "dropoff": true,
       "gathering": {
@@ -41,10 +41,16 @@
       ],
       "workerSlots": 0,
       "queueCapacity": 6
+    },
+    "research": {
+      "outputs": [
+        "research.beetles.pressure-mains"
+      ],
+      "queueCapacity": 1
     }
   },
   "level": 3,
   "supplyProvided": 15,
-  "heroCapacity": 3,
-  "modelScale": 1
+  "modelScale": 1.4,
+  "heroCapacity": 3
 }

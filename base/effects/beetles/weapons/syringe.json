@@ -1,0 +1,75 @@
+{
+  "id": "effect.beetles.weapons.syringe",
+  "name": "Syringe dart",
+  "description": "A hissing dart of pressurised tonic.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "hiss",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#e8ecf2",
+      "accent": "#ffffff",
+      "durationTicks": 22,
+      "count": 2,
+      "size": 0.45,
+      "height": 0.1,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 18,
+        "rate": 2,
+        "speed": 0.8,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": -1.4,
+        "drag": 1.6,
+        "spawnRadius": 0.3,
+        "startSize": 0.225,
+        "endSize": 0.7200000000000001,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      },
+      "anchor": "source"
+    },
+    {
+      "id": "tracer",
+      "enabled": true,
+      "shape": "missile",
+      "colour": "#7f9bff",
+      "accent": "#dde6ff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 0.25,
+      "height": 0,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 3.0,
+      "trail": {
+        "durationTicks": 8,
+        "maxPoints": 12,
+        "width": 0.12,
+        "colour": "#dde6ff",
+        "opacity": 0.85,
+        "breakDistance": 6
+      }
+    }
+  ]
+}

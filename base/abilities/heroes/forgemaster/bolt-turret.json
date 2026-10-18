@@ -1,0 +1,89 @@
+{
+  "id": "ability.forgemaster.bolt-turret",
+  "name": "Bolt Turret",
+  "description": "Unfold a brass repeater turret at a point for 40 seconds. It shoots ground and air units and can be destroyed. Rank 3 deploys two.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "count": 1
+    },
+    {
+      "count": 1
+    },
+    {
+      "count": 2
+    }
+  ],
+  "targeting": {
+    "kind": "point",
+    "radius": 2,
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 12,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 16,
+    "recoverTicks": 10,
+    "cost": {
+      "resource": "mana",
+      "amount": 90,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 600,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "summon",
+      "target": "point",
+      "amount": {
+        "rankParameter": "count"
+      },
+      "definition": {
+        "byRank": [
+          "unit.beetles.bolt-turret",
+          "unit.beetles.bolt-turret-mk2",
+          "unit.beetles.bolt-turret-mk2"
+        ]
+      },
+      "durationTicks": 1600,
+      "replace": false,
+      "radius": 2,
+      "maxActive": 4
+    }
+  ],
+  "presentation": {
+    "icon": "asset.portraits.buildings.ants-watchtower",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "deploy",
+        "effect": "effect.forgemaster.bolt-turret",
+        "event": "summoned",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

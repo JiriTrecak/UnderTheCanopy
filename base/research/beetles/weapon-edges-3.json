@@ -1,0 +1,31 @@
+{
+  "id": "research.beetles.weapon-edges-3",
+  "name": "Weapon Edges III",
+  "description": "Shieldbearers and Breachers deal 12% more attack damage (level III; levels add up). Requires an Elder Bastion.",
+  "icon": "asset.icons.item-reaper-mandible",
+  "priority": 88,
+  "requires": [
+    "building.beetles.elder-bastion",
+    "research.beetles.weapon-edges-2"
+  ],
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 260
+    },
+    {
+      "item": "item.root",
+      "amount": 150
+    }
+  ],
+  "workTicks": 2400,
+  "effects": [
+    {
+      "units": [
+        "unit.beetles.shieldbearer",
+        "unit.beetles.breacher"
+      ],
+      "damagePermille": 120
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "id": "ability.coilkeeper.recharge",
+  "name": "Recharge",
+  "description": "Pour substance into allies in a 6-radius: they regain 40/70/100 mana and gain a shield absorbing 80/130/180 damage for 8 seconds.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "mana": 40,
+      "shield": 80
+    },
+    {
+      "mana": 70,
+      "shield": 130
+    },
+    {
+      "mana": 100,
+      "shield": 180
+    }
+  ],
+  "targeting": {
+    "kind": "point",
+    "radius": 6,
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": false,
+    "range": 18,
+    "outOfRange": "reject",
+    "maxTargets": 16
+  },
+  "cast": {
+    "prepareTicks": 10,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": 90,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 640,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "mana",
+      "target": "target",
+      "amount": {
+        "rankParameter": "mana"
+      }
+    },
+    {
+      "op": "status",
+      "target": "target",
+      "id": "charged",
+      "amount": 320,
+      "polarity": "positive",
+      "dispel": true,
+      "shield": {
+        "rankParameter": "shield"
+      },
+      "onShieldDepleted": "remove"
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.item-moon-dew",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "flow",
+        "effect": "effect.coilkeeper.recharge",
+        "event": "released",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
+        "id": "shield",
+        "effect": "effect.coilkeeper.recharge-shield",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "charged"
+      }
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "research.beetles.plating-3",
+  "name": "Plating III",
+  "description": "Beetle troops and machines gain 2 armor (level III; levels add up). Requires an Elder Bastion.",
+  "icon": "asset.icons.item-amber-carapace",
+  "priority": 78,
+  "requires": [
+    "building.beetles.elder-bastion",
+    "research.beetles.plating-2"
+  ],
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 260
+    },
+    {
+      "item": "item.root",
+      "amount": 150
+    }
+  ],
+  "workTicks": 2400,
+  "effects": [
+    {
+      "units": [
+        "unit.beetles.shieldbearer",
+        "unit.beetles.bolter",
+        "unit.beetles.breacher",
+        "unit.beetles.arcwright",
+        "unit.beetles.mender",
+        "unit.beetles.warden",
+        "unit.beetles.bombard",
+        "unit.beetles.steamwing",
+        "unit.beetles.juggernaut"
+      ],
+      "armor": 2
+    }
+  ]
+}

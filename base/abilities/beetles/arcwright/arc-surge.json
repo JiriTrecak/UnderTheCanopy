@@ -1,0 +1,87 @@
+{
+  "id": "ability.beetles.arc-surge",
+  "name": "Arc Surge",
+  "description": "Discharge the coil lance into an enemy: a violet arc that jumps to 4/6 enemies, dealing 75/100 spell damage and keeping 80% of it on each jump.",
+  "activation": "targeted",
+  "delivery": {
+    "kind": "chain",
+    "bounces": {
+      "rankParameter": "hits"
+    },
+    "radius": 7,
+    "intervalTicks": 4,
+    "retentionPermille": 800,
+    "skipFullHealth": false
+  },
+  "ranks": [
+    {
+      "hits": 4,
+      "damage": 75
+    },
+    {
+      "hits": 6,
+      "damage": 100
+    }
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 18,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 10,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": 70,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 400,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "damage",
+      "target": "target",
+      "amount": {
+        "rankParameter": "damage"
+      },
+      "damageType": "spell"
+    }
+  ],
+  "presentation": {
+    "icon": "asset.spells.marshal.faultline-icon",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "hop",
+        "effect": "effect.beetles.arc-surge-hop",
+        "event": "impact",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

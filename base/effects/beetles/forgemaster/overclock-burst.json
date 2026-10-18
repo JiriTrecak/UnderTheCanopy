@@ -1,0 +1,101 @@
+{
+  "id": "effect.forgemaster.overclock-burst",
+  "name": "Overclock",
+  "description": "A burst of heat as the governor is pulled.",
+  "durationTicks": 24,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 8,
+      "count": 1,
+      "size": 5.0,
+      "height": 1.0,
+      "intensity": 6.0,
+      "startTick": 0
+    },
+    {
+      "id": "sparks",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffc65a",
+      "accent": "#fff0b0",
+      "durationTicks": 16,
+      "count": 18,
+      "size": 0.22,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 14,
+        "rate": 18,
+        "speed": 6,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": 14.0,
+        "drag": 0.4,
+        "spawnRadius": 0.15,
+        "startSize": 0.22,
+        "endSize": 0.033,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "steam",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#e8ecf2",
+      "accent": "#ffffff",
+      "durationTicks": 30,
+      "count": 6,
+      "size": 0.8,
+      "height": 0.4,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 26,
+        "rate": 6,
+        "speed": 2.6,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 110,
+        "gravity": -1.0,
+        "drag": 1.6,
+        "spawnRadius": 0.3,
+        "startSize": 0.4,
+        "endSize": 1.2800000000000002,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      }
+    }
+  ]
+}

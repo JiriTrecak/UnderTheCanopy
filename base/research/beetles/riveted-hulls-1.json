@@ -1,0 +1,38 @@
+{
+  "id": "research.beetles.riveted-hulls-1",
+  "name": "Riveted Hulls I",
+  "description": "Machines gain health: Bombards +100, Steamwings +80, the Juggernaut +450.",
+  "icon": "asset.icons.item-canopy-aegis",
+  "priority": 70,
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 150
+    },
+    {
+      "item": "item.root",
+      "amount": 50
+    }
+  ],
+  "workTicks": 1800,
+  "effects": [
+    {
+      "units": [
+        "unit.beetles.bombard"
+      ],
+      "maxHp": 100
+    },
+    {
+      "units": [
+        "unit.beetles.steamwing"
+      ],
+      "maxHp": 80
+    },
+    {
+      "units": [
+        "unit.beetles.juggernaut"
+      ],
+      "maxHp": 450
+    }
+  ]
+}

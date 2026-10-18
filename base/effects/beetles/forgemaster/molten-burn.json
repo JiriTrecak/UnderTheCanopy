@@ -1,0 +1,49 @@
+{
+  "id": "effect.forgemaster.molten-burn",
+  "name": "Molten burn",
+  "description": "Flame licks at a unit standing in molten metal.",
+  "durationTicks": 18,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flames",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 16,
+      "count": 6,
+      "size": 0.3,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 14,
+        "rate": 6,
+        "speed": 2.5,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 25,
+        "gravity": -4,
+        "drag": 0.4,
+        "spawnRadius": 0.15,
+        "startSize": 0.3,
+        "endSize": 0.045,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "id": "ability.coilkeeper.arc-lash",
+  "name": "Arc Lash",
+  "description": "Violet lightning leaps between up to 5 enemies, dealing 85/125/165 spell damage and losing 15% on each jump.",
+  "activation": "targeted",
+  "delivery": {
+    "kind": "chain",
+    "bounces": 5,
+    "radius": 8,
+    "intervalTicks": 5,
+    "retentionPermille": 850,
+    "skipFullHealth": false
+  },
+  "ranks": [
+    {
+      "damage": 85
+    },
+    {
+      "damage": 125
+    },
+    {
+      "damage": 165
+    }
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 18,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 10,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": 85,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 320,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "damage",
+      "target": "target",
+      "amount": {
+        "rankParameter": "damage"
+      },
+      "damageType": "spell"
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.item-stormwing-spurs",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "hop",
+        "effect": "effect.coilkeeper.arc-lash",
+        "event": "impact",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

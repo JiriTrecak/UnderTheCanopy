@@ -1,11 +1,11 @@
 {
   "id": "building.beetles.great-bastion",
   "name": "Great Bastion",
-  "description": "Great Bastion of the beetle colony. Model pending.",
-  "model": "asset.placeholder.missing-model",
-  "icon": "asset.icons.resource-root",
+  "description": "Hall tier 2: unlocks the Alembic, the Engine Yard and tier-2 troops, a second hero and level II research. Researches Pressure Mains; upgrades to the Elder Bastion.",
+  "model": "asset.models.buildings.beetles-carapace-hall",
+  "icon": "asset.portraits.buildings.beetles-carapace-hall",
   "body": {
-    "maxHp": 2400,
+    "maxHp": 2700,
     "armor": 6,
     "armorType": "structure"
   },
@@ -25,8 +25,8 @@
     "storage": {
       "capacity": 100000,
       "accepts": [
-        "item.wood",
-        "item.amber"
+        "item.amber",
+        "item.root"
       ],
       "dropoff": true,
       "gathering": {
@@ -41,24 +41,30 @@
       ],
       "workerSlots": 0,
       "queueCapacity": 6
+    },
+    "research": {
+      "outputs": [
+        "research.beetles.pressure-mains"
+      ],
+      "queueCapacity": 1
     }
   },
   "level": 2,
-  "supplyProvided": 15,
-  "heroCapacity": 2,
   "upgrade": {
     "target": "building.beetles.elder-bastion",
     "items": [
       {
         "item": "item.amber",
-        "amount": 600
+        "amount": 500
       },
       {
-        "item": "item.wood",
-        "amount": 250
+        "item": "item.root",
+        "amount": 200
       }
     ],
     "workTicks": 4000
   },
-  "modelScale": 1
+  "supplyProvided": 15,
+  "modelScale": 1.32,
+  "heroCapacity": 2
 }

@@ -1,0 +1,197 @@
+{
+  "id": "effect.forgemaster.forgefall-impact",
+  "name": "Forgefall impact",
+  "description": "The crucible slams down: a white-orange fireball, a shockwave, molten splashes and a pillar of smoke.",
+  "durationTicks": 60,
+  "loop": false,
+  "layers": [
+    {
+      "id": "blast",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 32,
+      "count": 1,
+      "size": 9.0,
+      "height": 2.0,
+      "startTick": 0,
+      "blend": "normal",
+      "flipbook": {
+        "columns": 4,
+        "rows": 4,
+        "firstFrame": 0,
+        "frames": 16,
+        "frameTicks": 2,
+        "mode": "once",
+        "randomStart": false
+      },
+      "texture": {
+        "asset": "asset.effects.ants.resin-burst",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "second",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 32,
+      "count": 1,
+      "size": 6.5,
+      "height": 1.2,
+      "startTick": 5,
+      "blend": "normal",
+      "flipbook": {
+        "columns": 4,
+        "rows": 4,
+        "firstFrame": 0,
+        "frames": 16,
+        "frameTicks": 2,
+        "mode": "once",
+        "randomStart": false
+      },
+      "texture": {
+        "asset": "asset.effects.ants.resin-burst",
+        "role": "image",
+        "index": 1
+      },
+      "offset": {
+        "x": 1.5,
+        "y": 0,
+        "z": -1.0
+      }
+    },
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ffb070",
+      "accent": "#ffffff",
+      "durationTicks": 12,
+      "count": 1,
+      "size": 18.0,
+      "height": 2.0,
+      "intensity": 12.0,
+      "startTick": 0
+    },
+    {
+      "id": "splash",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 28,
+      "count": 60,
+      "size": 0.36,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 4.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 26,
+        "rate": 60,
+        "speed": 13,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 75,
+        "gravity": 20,
+        "drag": 0.4,
+        "spawnRadius": 0.15,
+        "startSize": 0.36,
+        "endSize": 0.054,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "shock",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#ffd9a0",
+      "accent": "#ffffff",
+      "durationTicks": 18,
+      "count": 1,
+      "size": 7.0,
+      "height": 0.06,
+      "blend": "additive"
+    },
+    {
+      "id": "shock2",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 24,
+      "count": 1,
+      "size": 5.0,
+      "height": 0.06,
+      "blend": "additive",
+      "startTick": 4
+    },
+    {
+      "id": "pillar",
+      "enabled": true,
+      "shape": "pillar",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 14,
+      "count": 1,
+      "size": 2.6,
+      "height": 14,
+      "blend": "additive"
+    },
+    {
+      "id": "smoke",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#4a4644",
+      "accent": "#8e8884",
+      "durationTicks": 64,
+      "count": 14,
+      "size": 2.6,
+      "height": 0.6,
+      "startTick": 4,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 60,
+        "rate": 14,
+        "speed": 3.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 60,
+        "gravity": -1.4,
+        "drag": 1.6,
+        "spawnRadius": 2.0,
+        "startSize": 1.3,
+        "endSize": 4.16,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      }
+    }
+  ]
+}

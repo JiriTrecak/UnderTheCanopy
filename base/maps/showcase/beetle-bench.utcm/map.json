@@ -21,7 +21,7 @@
         "construction": "complete",
         "inventory": {
           "item.amber": 20000,
-          "item.wood": 20000
+          "item.root": 20000
         }
       },
       "position": {

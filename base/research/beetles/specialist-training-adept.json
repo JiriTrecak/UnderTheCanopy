@@ -1,0 +1,44 @@
+{
+  "id": "research.beetles.specialist-training-adept",
+  "name": "Specialist Training: Adept",
+  "description": "Arcwrights learn Static Field, Menders Field Repair and Wardens Bulwark Pulse.",
+  "icon": "asset.icons.item-deep-moon-scepter",
+  "priority": 80,
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 150
+    },
+    {
+      "item": "item.root",
+      "amount": 75
+    }
+  ],
+  "workTicks": 2000,
+  "effects": [
+    {
+      "units": [
+        "unit.beetles.arcwright"
+      ],
+      "abilityRanks": {
+        "static-field": 1
+      }
+    },
+    {
+      "units": [
+        "unit.beetles.mender"
+      ],
+      "abilityRanks": {
+        "field-repair": 1
+      }
+    },
+    {
+      "units": [
+        "unit.beetles.warden"
+      ],
+      "abilityRanks": {
+        "bulwark-pulse": 1
+      }
+    }
+  ]
+}

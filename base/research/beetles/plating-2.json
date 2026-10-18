@@ -1,0 +1,38 @@
+{
+  "id": "research.beetles.plating-2",
+  "name": "Plating II",
+  "description": "Beetle troops and machines gain 2 armor (level II; levels add up). Requires a Great Bastion.",
+  "icon": "asset.icons.item-amber-carapace",
+  "priority": 79,
+  "requires": [
+    "building.beetles.great-bastion",
+    "research.beetles.plating-1"
+  ],
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 200
+    },
+    {
+      "item": "item.root",
+      "amount": 75
+    }
+  ],
+  "workTicks": 2000,
+  "effects": [
+    {
+      "units": [
+        "unit.beetles.shieldbearer",
+        "unit.beetles.bolter",
+        "unit.beetles.breacher",
+        "unit.beetles.arcwright",
+        "unit.beetles.mender",
+        "unit.beetles.warden",
+        "unit.beetles.bombard",
+        "unit.beetles.steamwing",
+        "unit.beetles.juggernaut"
+      ],
+      "armor": 2
+    }
+  ]
+}

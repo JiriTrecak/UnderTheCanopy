@@ -1,0 +1,183 @@
+{
+  "id": "effect.beetles.weapons.mortar-launch",
+  "name": "Mortar report",
+  "description": "A deep orange muzzle flash, a cloud of grey smoke and a ring of steam as the shell leaves.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 6,
+      "count": 1,
+      "size": 7.0,
+      "height": 0.2,
+      "intensity": 8.0,
+      "startTick": 0,
+      "anchor": "source"
+    },
+    {
+      "id": "muzzle",
+      "enabled": true,
+      "shape": "burst",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 6,
+      "count": 8,
+      "size": 1.1,
+      "height": 0.2,
+      "blend": "additive",
+      "anchor": "source"
+    },
+    {
+      "id": "embers",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 18,
+      "count": 12,
+      "size": 0.22,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 16,
+        "rate": 12,
+        "speed": 6,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": 10,
+        "drag": 0.4,
+        "spawnRadius": 0.15,
+        "startSize": 0.22,
+        "endSize": 0.033,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      },
+      "anchor": "source"
+    },
+    {
+      "id": "smoke",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#8a8a90",
+      "accent": "#c8c8cc",
+      "durationTicks": 44,
+      "count": 8,
+      "size": 1.3,
+      "height": 0.2,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 40,
+        "rate": 8,
+        "speed": 2.4,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 55,
+        "gravity": -1.2,
+        "drag": 1.6,
+        "spawnRadius": 0.3,
+        "startSize": 0.65,
+        "endSize": 2.08,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      },
+      "anchor": "source"
+    },
+    {
+      "id": "steam",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#e8ecf2",
+      "accent": "#ffffff",
+      "durationTicks": 30,
+      "count": 5,
+      "size": 0.9,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 26,
+        "rate": 5,
+        "speed": 3.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 0.2,
+          "z": 0
+        },
+        "coneDegrees": 100,
+        "gravity": -0.8,
+        "drag": 1.6,
+        "spawnRadius": 0.3,
+        "startSize": 0.45,
+        "endSize": 1.4400000000000002,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      },
+      "anchor": "source"
+    },
+    {
+      "id": "tracer",
+      "enabled": true,
+      "shape": "missile",
+      "colour": "#ffb46a",
+      "accent": "#ffe2b8",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 0.4,
+      "height": 0,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 3.0,
+      "trail": {
+        "durationTicks": 16,
+        "maxPoints": 12,
+        "width": 0.3,
+        "colour": "#ffe2b8",
+        "opacity": 0.85,
+        "breakDistance": 6
+      }
+    }
+  ]
+}

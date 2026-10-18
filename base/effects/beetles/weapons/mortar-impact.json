@@ -1,0 +1,197 @@
+{
+  "id": "effect.beetles.weapons.mortar-impact",
+  "name": "Shell burst",
+  "description": "A fireball, flying debris, sparks and a scorched shockwave where a mortar shell lands.",
+  "durationTicks": 48,
+  "loop": false,
+  "layers": [
+    {
+      "id": "blast",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 32,
+      "count": 1,
+      "size": 5.5,
+      "height": 1.4,
+      "startTick": 0,
+      "blend": "normal",
+      "flipbook": {
+        "columns": 4,
+        "rows": 4,
+        "firstFrame": 0,
+        "frames": 16,
+        "frameTicks": 2,
+        "mode": "once",
+        "randomStart": false
+      },
+      "texture": {
+        "asset": "asset.effects.ants.resin-burst",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 8,
+      "count": 1,
+      "size": 10.0,
+      "height": 1.0,
+      "intensity": 9.0,
+      "startTick": 0
+    },
+    {
+      "id": "sparks",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffc65a",
+      "accent": "#fff0b0",
+      "durationTicks": 24,
+      "count": 34,
+      "size": 0.3,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.5,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 22,
+        "rate": 34,
+        "speed": 11,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 85,
+        "gravity": 18,
+        "drag": 0.4,
+        "spawnRadius": 0.15,
+        "startSize": 0.3,
+        "endSize": 0.045,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "debris",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#7a6a55",
+      "accent": "#b8a88f",
+      "durationTicks": 30,
+      "count": 12,
+      "size": 0.55,
+      "height": 0.2,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 26,
+        "rate": 12,
+        "speed": 6.5,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 60,
+        "gravity": 16,
+        "drag": 1.6,
+        "spawnRadius": 0.3,
+        "startSize": 0.275,
+        "endSize": 0.8800000000000001,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      }
+    },
+    {
+      "id": "smoke",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#5d5a58",
+      "accent": "#a09c98",
+      "durationTicks": 52,
+      "count": 8,
+      "size": 2.0,
+      "height": 0.4,
+      "startTick": 3,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 48,
+        "rate": 8,
+        "speed": 2.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 90,
+        "gravity": -0.8,
+        "drag": 1.6,
+        "spawnRadius": 0.3,
+        "startSize": 1.0,
+        "endSize": 3.2,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      }
+    },
+    {
+      "id": "shock",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#ffd9a0",
+      "accent": "#ffffff",
+      "durationTicks": 14,
+      "count": 1,
+      "size": 4.5,
+      "height": 0.06,
+      "blend": "additive"
+    },
+    {
+      "id": "scorch",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#3a2a20",
+      "accent": "#6a4a30",
+      "durationTicks": 48,
+      "count": 1,
+      "size": 4.0,
+      "height": 0.08,
+      "orientation": "ground",
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.seismic-crescent",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

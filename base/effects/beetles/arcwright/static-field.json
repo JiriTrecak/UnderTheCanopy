@@ -1,0 +1,125 @@
+{
+  "id": "effect.beetles.static-field",
+  "name": "Static field",
+  "description": "A crackling violet field on the ground: a turning glyph, a bright rim and sparks that never stop.",
+  "durationTicks": 200,
+  "loop": false,
+  "layers": [
+    {
+      "id": "rim",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 200,
+      "count": 1,
+      "size": 4.0,
+      "height": 0.06,
+      "blend": "additive",
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 20,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "glyph",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 200,
+      "count": 1,
+      "size": 7.6,
+      "height": 0.08,
+      "orientation": "ground",
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.marshal.cadence-wheel",
+        "role": "image",
+        "index": 1
+      },
+      "sustain": true,
+      "motion": {
+        "rotation": {
+          "periodTicks": 160,
+          "direction": "clockwise"
+        },
+        "opacity": {
+          "periodTicks": 30,
+          "min": 0.45,
+          "max": 0.8,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "crackle",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#9a78ff",
+      "accent": "#efe8ff",
+      "durationTicks": 200,
+      "count": 12,
+      "size": 0.22,
+      "height": 0.2,
+      "sustain": true,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 3.0,
+      "distribution": "disc",
+      "spread": 3.6,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 10,
+        "rate": 12,
+        "speed": 3.0,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": 4,
+        "drag": 0.5,
+        "spawnRadius": 3.6,
+        "startSize": 0.22,
+        "endSize": 0.04,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 200,
+      "count": 1,
+      "size": 7.0,
+      "height": 1.0,
+      "intensity": 3.0,
+      "startTick": 0,
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 12,
+          "min": 0.5,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

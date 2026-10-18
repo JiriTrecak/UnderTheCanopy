@@ -1,0 +1,94 @@
+{
+  "id": "unit.beetles.steamwing",
+  "name": "Steamwing",
+  "description": "Boiler-winged flyer: a scout and anti-air harasser whose chin emitter fires violet bolts at ground and air. Flak Beam adds damage against flyers. Requires a Great Bastion; uses 3 supply.",
+  "model": "asset.models.units.ants-winglancer",
+  "icon": "asset.portraits.units.ants-winglancer",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 400,
+    "armor": 1,
+    "armorType": "light"
+  },
+  "vision": 36,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 15,
+      "damageType": "piercing",
+      "range": 12,
+      "cooldownTicks": 48,
+      "aggroRange": 22,
+      "attack": {
+        "windupTicks": 10,
+        "recoveryTicks": 10,
+        "rangeBuffer": 0.75
+      },
+      "projectile": {
+        "speed": 70
+      },
+      "targets": [
+        "ground",
+        "air"
+      ]
+    },
+    "movement": {
+      "speed": 16,
+      "locomotion": "air",
+      "flightHeight": 7
+    },
+    "abilities": {
+      "maxMana": 10,
+      "manaRegenPerSecond": 0,
+      "bindings": [
+        {
+          "id": "flak-beam",
+          "ability": "ability.beetles.flak-beam",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        }
+      ]
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 230
+      },
+      {
+        "item": "item.root",
+        "amount": 50
+      }
+    ],
+    "workTicks": 1200
+  },
+  "requires": [
+    "building.beetles.great-bastion"
+  ],
+  "level": 2,
+  "supplyCost": 3,
+  "unitNature": "mechanical",
+  "dimensions": {
+    "radius": 1.6,
+    "height": 5.0,
+    "formationSpacing": 5.5
+  },
+  "modelScale": 2.5,
+  "presentation": {
+    "projectileSocket": "socket_projectile",
+    "launchEffect": "effect.beetles.weapons.steam-beam",
+    "impactEffect": "effect.beetles.weapons.steam-beam-impact"
+  }
+}

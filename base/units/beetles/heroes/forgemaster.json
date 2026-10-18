@@ -1,0 +1,293 @@
+{
+  "id": "unit.beetles.forgemaster",
+  "name": "Forgemaster",
+  "description": "Engineer hero with a smokestack helm and a back arm rig. Deploys Bolt Turrets, Overclocks allies, keeps a Field Forge burning around him and calls down Forgefall.",
+  "model": "asset.models.units.ants-marshal",
+  "icon": "asset.portraits.units.ants-marshal",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 760,
+    "armor": 3,
+    "armorType": "hero"
+  },
+  "vision": 36,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 27,
+      "damageType": "hero",
+      "range": 13,
+      "cooldownTicks": 78,
+      "aggroRange": 20,
+      "attack": {
+        "windupTicks": 18,
+        "recoveryTicks": 14,
+        "rangeBuffer": 0.75
+      },
+      "projectile": {
+        "speed": 40
+      }
+    },
+    "movement": {
+      "speed": 11
+    },
+    "abilities": {
+      "maxMana": 240,
+      "manaRegenPerSecond": 0.85,
+      "bindings": [
+        {
+          "id": "bolt-turret",
+          "ability": "ability.forgemaster.bolt-turret",
+          "initialRank": 0,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "Q",
+            "column": 1
+          },
+          "learning": {
+            "requiredLevels": [
+              1,
+              3,
+              5
+            ]
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        },
+        {
+          "id": "overclock",
+          "ability": "ability.forgemaster.overclock",
+          "initialRank": 0,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "W",
+            "column": 2
+          },
+          "learning": {
+            "requiredLevels": [
+              1,
+              3,
+              5
+            ]
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20,
+            "threatRadius": 14
+          }
+        },
+        {
+          "id": "field-forge",
+          "ability": "ability.forgemaster.field-forge",
+          "initialRank": 0,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "E",
+            "column": 3
+          },
+          "learning": {
+            "requiredLevels": [
+              1,
+              3,
+              5
+            ]
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        },
+        {
+          "id": "forgefall",
+          "ability": "ability.forgemaster.forgefall",
+          "initialRank": 0,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "R",
+            "column": 4
+          },
+          "learning": {
+            "requiredLevels": [
+              5,
+              8
+            ]
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        }
+      ]
+    },
+    "progression": {
+      "experienceRadius": 40,
+      "levels": [
+        {
+          "experience": 0,
+          "maxHp": 760,
+          "damage": 27,
+          "armor": 3,
+          "maxMana": 240,
+          "cooldownTicks": 78,
+          "healthRegenPerSecond": 1.4,
+          "manaRegenPerSecond": 0.85
+        },
+        {
+          "experience": 160,
+          "maxHp": 835,
+          "damage": 31,
+          "armor": 3,
+          "maxMana": 265,
+          "cooldownTicks": 76,
+          "healthRegenPerSecond": 1.55,
+          "manaRegenPerSecond": 0.93
+        },
+        {
+          "experience": 400,
+          "maxHp": 910,
+          "damage": 34,
+          "armor": 4,
+          "maxMana": 290,
+          "cooldownTicks": 74,
+          "healthRegenPerSecond": 1.7,
+          "manaRegenPerSecond": 1.01
+        },
+        {
+          "experience": 720,
+          "maxHp": 985,
+          "damage": 37,
+          "armor": 4,
+          "maxMana": 315,
+          "cooldownTicks": 72,
+          "healthRegenPerSecond": 1.85,
+          "manaRegenPerSecond": 1.09
+        },
+        {
+          "experience": 1120,
+          "maxHp": 1060,
+          "damage": 41,
+          "armor": 5,
+          "maxMana": 340,
+          "cooldownTicks": 70,
+          "healthRegenPerSecond": 2.0,
+          "manaRegenPerSecond": 1.17
+        },
+        {
+          "experience": 1600,
+          "maxHp": 1135,
+          "damage": 45,
+          "armor": 5,
+          "maxMana": 365,
+          "cooldownTicks": 68,
+          "healthRegenPerSecond": 2.15,
+          "manaRegenPerSecond": 1.25
+        },
+        {
+          "experience": 2160,
+          "maxHp": 1210,
+          "damage": 48,
+          "armor": 6,
+          "maxMana": 390,
+          "cooldownTicks": 66,
+          "healthRegenPerSecond": 2.3,
+          "manaRegenPerSecond": 1.33
+        },
+        {
+          "experience": 2800,
+          "maxHp": 1285,
+          "damage": 51,
+          "armor": 6,
+          "maxMana": 415,
+          "cooldownTicks": 64,
+          "healthRegenPerSecond": 2.45,
+          "manaRegenPerSecond": 1.41
+        },
+        {
+          "experience": 3520,
+          "maxHp": 1360,
+          "damage": 55,
+          "armor": 7,
+          "maxMana": 440,
+          "cooldownTicks": 64,
+          "healthRegenPerSecond": 2.6,
+          "manaRegenPerSecond": 1.49
+        },
+        {
+          "experience": 4320,
+          "maxHp": 1435,
+          "damage": 59,
+          "armor": 7,
+          "maxMana": 465,
+          "cooldownTicks": 64,
+          "healthRegenPerSecond": 2.75,
+          "manaRegenPerSecond": 1.57
+        },
+        {
+          "experience": 5200,
+          "maxHp": 1510,
+          "damage": 62,
+          "armor": 8,
+          "maxMana": 490,
+          "cooldownTicks": 64,
+          "healthRegenPerSecond": 2.9,
+          "manaRegenPerSecond": 1.65
+        }
+      ]
+    },
+    "inventory": {
+      "slots": 4,
+      "pickupRange": 1.5
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 425
+      },
+      {
+        "item": "item.root",
+        "amount": 100
+      }
+    ],
+    "workTicks": 2200
+  },
+  "level": 1,
+  "supplyCost": 4,
+  "dimensions": {
+    "radius": 3.0,
+    "height": 9.6,
+    "formationSpacing": 6.5
+  },
+  "modelScale": 4.4,
+  "presentation": {
+    "projectile": "effect.beetles.weapons.bolt",
+    "projectileSocket": "socket_projectile",
+    "launchEffect": "effect.beetles.weapons.bolter-muzzle",
+    "impactEffect": "effect.beetles.weapons.bolt-impact",
+    "castContact": 0.54
+  },
+  "hero": true,
+  "displayOrder": 2
+}

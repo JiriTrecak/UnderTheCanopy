@@ -1,0 +1,81 @@
+{
+  "id": "effect.beetles.field-repair",
+  "name": "Welding torch",
+  "description": "A white-hot weld point spraying orange sparks over the plating being repaired.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "point",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#fff4d8",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 0.8,
+      "height": 1.2,
+      "blend": "additive"
+    },
+    {
+      "id": "spray",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffc65a",
+      "accent": "#fff0b0",
+      "durationTicks": 40,
+      "count": 20,
+      "size": 0.2,
+      "height": 1.2,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 3.5,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 14,
+        "rate": 20,
+        "speed": 6.5,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": 16,
+        "drag": 0.5,
+        "spawnRadius": 0.2,
+        "startSize": 0.2,
+        "endSize": 0.03,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#fff0d0",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 4.0,
+      "height": 1.2,
+      "intensity": 4.0,
+      "startTick": 0,
+      "motion": {
+        "opacity": {
+          "periodTicks": 4,
+          "min": 0.4,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

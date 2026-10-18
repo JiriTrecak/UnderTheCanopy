@@ -1,0 +1,54 @@
+{
+  "id": "unit.beetles.arc-coil",
+  "name": "Arc Coil",
+  "description": "The substance coil of an Arc Tower.",
+  "model": "asset.models.units.ants-amber-adept",
+  "icon": "asset.portraits.units.ants-amber-adept",
+  "body": {
+    "maxHp": 100,
+    "armor": 0,
+    "armorType": "light"
+  },
+  "vision": 30,
+  "behaviorSets": [],
+  "behaviors": {
+    "combat": {
+      "damage": 30,
+      "damageType": "spell",
+      "range": 20,
+      "cooldownTicks": 60,
+      "aggroRange": 22,
+      "attack": {
+        "windupTicks": 10,
+        "recoveryTicks": 8,
+        "rangeBuffer": 0.75
+      },
+      "projectile": {
+        "speed": 70
+      },
+      "targets": [
+        "ground",
+        "air"
+      ],
+      "chain": {
+        "bounces": 3,
+        "radius": 6.0,
+        "retentionPermille": 700
+      }
+    }
+  },
+  "level": 1,
+  "supplyCost": 0,
+  "unitNature": "mechanical",
+  "dimensions": {
+    "radius": 0.8,
+    "height": 3.0,
+    "formationSpacing": 2.0
+  },
+  "modelScale": 1.6,
+  "presentation": {
+    "launchEffect": "effect.beetles.weapons.arc",
+    "impactEffect": "effect.beetles.weapons.arc-impact"
+  },
+  "selectable": false
+}

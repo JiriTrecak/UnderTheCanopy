@@ -1,0 +1,131 @@
+{
+  "id": "effect.forgemaster.overclock",
+  "name": "Overclocked",
+  "description": "An overclocked unit runs hot: an orange glow, violet sparks thrown off and steam venting.",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "heat",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 1.8,
+      "height": 1.0,
+      "blend": "additive",
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 10,
+          "min": 0.5,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "sparks",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 80,
+      "count": 6,
+      "size": 0.2,
+      "height": 1.0,
+      "sustain": true,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 3.0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 12,
+        "rate": 6,
+        "speed": 3.5,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 120,
+        "gravity": 8,
+        "drag": 0.5,
+        "spawnRadius": 0.6,
+        "startSize": 0.2,
+        "endSize": 0.03,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "steam",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#e8ecf2",
+      "accent": "#ffffff",
+      "durationTicks": 80,
+      "count": 3,
+      "size": 0.6,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 24,
+        "rate": 3,
+        "speed": 1.2,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": -1.8,
+        "drag": 1.6,
+        "spawnRadius": 0.3,
+        "startSize": 0.3,
+        "endSize": 0.96,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      },
+      "sustain": true
+    },
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 1.8,
+      "height": 0.06,
+      "blend": "additive",
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 10,
+          "min": 0.4,
+          "max": 0.9,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

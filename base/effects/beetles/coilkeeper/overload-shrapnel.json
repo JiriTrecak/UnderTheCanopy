@@ -1,0 +1,49 @@
+{
+  "id": "effect.coilkeeper.overload-shrapnel",
+  "name": "Overload shrapnel",
+  "description": "Violet sparks on units caught in the detonation.",
+  "durationTicks": 16,
+  "loop": false,
+  "layers": [
+    {
+      "id": "sparks",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#9a78ff",
+      "accent": "#efe8ff",
+      "durationTicks": 14,
+      "count": 8,
+      "size": 0.2,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 12,
+        "rate": 8,
+        "speed": 4,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": 14.0,
+        "drag": 0.4,
+        "spawnRadius": 0.15,
+        "startSize": 0.2,
+        "endSize": 0.03,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    }
+  ]
+}

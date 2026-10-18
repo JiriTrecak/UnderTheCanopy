@@ -1,0 +1,95 @@
+{
+  "id": "unit.beetles.breacher",
+  "name": "Breacher",
+  "description": "Siege drill arm and clamp. Breaks buildings and armor, and charges in from range. Every strike cracks armor. Requires a Great Bastion; uses 3 supply.",
+  "model": "asset.models.units.ants-thornblade",
+  "icon": "asset.portraits.units.ants-thornblade",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 780,
+    "armor": 3,
+    "armorType": "heavy"
+  },
+  "vision": 32,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 32,
+      "damageType": "siege",
+      "range": 0.8,
+      "cooldownTicks": 72,
+      "aggroRange": 20,
+      "attack": {
+        "windupTicks": 16,
+        "recoveryTicks": 14,
+        "rangeBuffer": 0.6
+      },
+      "charge": {
+        "minRange": 10,
+        "maxRange": 28,
+        "cooldownTicks": 400,
+        "durationTicks": 100,
+        "speedPermille": 1900,
+        "damagePermille": 2000
+      }
+    },
+    "movement": {
+      "speed": 10
+    },
+    "abilities": {
+      "maxMana": 10,
+      "manaRegenPerSecond": 0,
+      "bindings": [
+        {
+          "id": "armor-breaker",
+          "ability": "ability.beetles.armor-breaker",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        }
+      ]
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 250
+      },
+      {
+        "item": "item.root",
+        "amount": 40
+      }
+    ],
+    "workTicks": 1240
+  },
+  "requires": [
+    "building.beetles.great-bastion"
+  ],
+  "level": 2,
+  "supplyCost": 3,
+  "dimensions": {
+    "radius": 2.0,
+    "height": 5.6,
+    "formationSpacing": 4.4
+  },
+  "modelScale": 2.9,
+  "presentation": {
+    "impactEffect": "effect.beetles.weapons.drill-strike",
+    "cameraAnchor": {
+      "height": 1.6,
+      "forward": 0.2,
+      "distance": 7
+    }
+  }
+}

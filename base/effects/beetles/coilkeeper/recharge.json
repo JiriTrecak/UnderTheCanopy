@@ -1,0 +1,99 @@
+{
+  "id": "effect.coilkeeper.recharge",
+  "name": "Recharge",
+  "description": "A column of violet light and a rising ring as substance flows back into allies.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "pillar",
+      "enabled": true,
+      "shape": "pillar",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 24,
+      "count": 1,
+      "size": 6.0,
+      "height": 10,
+      "blend": "additive"
+    },
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#c9b8ff",
+      "accent": "#ffffff",
+      "durationTicks": 26,
+      "count": 1,
+      "size": 6.0,
+      "height": 0.06,
+      "blend": "additive"
+    },
+    {
+      "id": "glow",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 24,
+      "count": 1,
+      "size": 5.0,
+      "height": 0.6,
+      "blend": "additive"
+    },
+    {
+      "id": "motes",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c9b8ff",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 24,
+      "size": 0.24,
+      "height": 0.2,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 3.0,
+      "distribution": "disc",
+      "spread": 5.0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 34,
+        "rate": 24,
+        "speed": 3.0,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 20,
+        "gravity": -3.0,
+        "drag": 0.5,
+        "spawnRadius": 5.0,
+        "startSize": 0.24,
+        "endSize": 0.04,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 10,
+      "count": 1,
+      "size": 9.0,
+      "height": 1.0,
+      "intensity": 7.0,
+      "startTick": 0
+    }
+  ]
+}

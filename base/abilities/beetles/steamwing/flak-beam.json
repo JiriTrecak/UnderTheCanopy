@@ -1,0 +1,70 @@
+{
+  "id": "ability.beetles.flak-beam",
+  "name": "Flak Beam",
+  "description": "The substance beam is tuned against flyers: +10 damage against air units.",
+  "activation": "passive",
+  "combatModifiers": {
+    "attackBonus": {
+      "amount": {
+        "rankParameter": "bonus"
+      },
+      "manaCost": 0,
+      "weapon": "projectile",
+      "blockedBySilence": false,
+      "filter": {
+        "locomotion": [
+          "air"
+        ]
+      }
+    }
+  },
+  "ranks": [
+    {
+      "bonus": 10
+    }
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 0,
+    "recoverTicks": 0,
+    "cost": {
+      "resource": "mana",
+      "amount": 0,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 0,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [],
+  "presentation": {
+    "icon": "asset.icons.item-tempest-antennae",
+    "animations": {
+      "prepare": "idle",
+      "release": "idle",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": []
+  }
+}

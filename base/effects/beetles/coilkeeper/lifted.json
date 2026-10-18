@@ -1,0 +1,70 @@
+{
+  "id": "effect.coilkeeper.lifted",
+  "name": "Lifted",
+  "description": "A violet glow and sparks around an enemy held up in the storm.",
+  "durationTicks": 40,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 1.6,
+      "height": 0.6,
+      "blend": "additive",
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 8,
+          "min": 0.5,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "crackle",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#9a78ff",
+      "accent": "#efe8ff",
+      "durationTicks": 40,
+      "count": 4,
+      "size": 0.18,
+      "height": 0.6,
+      "sustain": true,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 3.0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 10,
+        "rate": 4,
+        "speed": 2.5,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": 0,
+        "drag": 0.5,
+        "spawnRadius": 0.8,
+        "startSize": 0.18,
+        "endSize": 0.03,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    }
+  ]
+}

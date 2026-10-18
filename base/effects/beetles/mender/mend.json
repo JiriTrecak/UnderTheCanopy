@@ -1,0 +1,112 @@
+{
+  "id": "effect.beetles.mend",
+  "name": "Mend",
+  "description": "Blue-violet tonic glows up through the patient while white steam vents from the patched seams.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "glow",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#5b7bff",
+      "accent": "#b8c8ff",
+      "durationTicks": 30,
+      "count": 1,
+      "size": 2.0,
+      "height": 1.0,
+      "blend": "additive"
+    },
+    {
+      "id": "motes",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#9fb2ff",
+      "accent": "#ffffff",
+      "durationTicks": 36,
+      "count": 14,
+      "size": 0.24,
+      "height": 0.3,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 2.5,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 30,
+        "rate": 14,
+        "speed": 2.6,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 30,
+        "gravity": -3.0,
+        "drag": 0.5,
+        "spawnRadius": 0.7,
+        "startSize": 0.24,
+        "endSize": 0.05,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "steam",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#e8ecf2",
+      "accent": "#ffffff",
+      "durationTicks": 32,
+      "count": 4,
+      "size": 0.7,
+      "height": 0.6,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 28,
+        "rate": 4,
+        "speed": 1.4,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": -1.8,
+        "drag": 1.6,
+        "spawnRadius": 0.3,
+        "startSize": 0.35,
+        "endSize": 1.1199999999999999,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      }
+    },
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#5b7bff",
+      "accent": "#b8c8ff",
+      "durationTicks": 10,
+      "count": 1,
+      "size": 3.5,
+      "height": 1.0,
+      "intensity": 4.0,
+      "startTick": 0
+    }
+  ]
+}

@@ -1,15 +1,15 @@
 {
   "id": "building.beetles.ancestor-shrine",
   "name": "Ancestor Shrine",
-  "description": "Ancestor Shrine of the beetle colony. Model pending.",
-  "model": "asset.placeholder.missing-model",
-  "icon": "asset.icons.resource-root",
+  "description": "Where the colony’s heroes are called and reconstituted: trains the Hornbreaker, the Forgemaster and the Coilkeeper, and revives the fallen.",
+  "model": "asset.models.buildings.beetles-shell-foundry",
+  "icon": "asset.portraits.buildings.beetles-shell-foundry",
   "body": {
-    "maxHp": 1000,
+    "maxHp": 1150,
     "armor": 5,
     "armorType": "structure"
   },
-  "vision": 14,
+  "vision": 16,
   "footprint": {
     "width": 12,
     "depth": 12
@@ -23,11 +23,7 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 180
-      },
-      {
-        "item": "item.wood",
-        "amount": 60
+        "amount": 200
       }
     ],
     "workTicks": 1600,
@@ -37,11 +33,28 @@
     "behavior-set.player-building"
   ],
   "behaviors": {
+    "storage": {
+      "capacity": 100000,
+      "accepts": [
+        "item.amber",
+        "item.root"
+      ]
+    },
+    "production": {
+      "mode": "queued",
+      "outputs": [
+        "unit.beetles.hornbreaker",
+        "unit.beetles.forgemaster",
+        "unit.beetles.coilkeeper"
+      ],
+      "workerSlots": 0,
+      "queueCapacity": 3
+    },
     "revival": {
       "items": [
         {
           "item": "item.amber",
-          "amount": 200
+          "amount": 220
         }
       ],
       "itemsPerLevel": [
@@ -50,27 +63,16 @@
           "amount": 50
         }
       ],
-      "workTicksPerLevel": 200,
       "workTicks": 1200,
-      "queueCapacity": 4
-    },
-    "production": {
-      "mode": "queued",
-      "outputs": [
-        "unit.beetles.hornbreaker"
-      ],
-      "queueCapacity": 4,
-      "workerSlots": 0
-    },
-    "storage": {
-      "capacity": 100000,
-      "accepts": [
-        "item.amber",
-        "item.wood"
-      ]
+      "workTicksPerLevel": 200,
+      "queueCapacity": 3
     }
   },
+  "category": "category.build",
   "level": 1,
-  "category": "category.build-advanced",
-  "modelScale": 1
+  "modelScale": 1.0,
+  "command": {
+    "category": "category.build",
+    "priority": 70
+  }
 }

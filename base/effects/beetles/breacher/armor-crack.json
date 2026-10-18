@@ -1,0 +1,76 @@
+{
+  "id": "effect.beetles.armor-crack",
+  "name": "Cracked armour",
+  "description": "Orange glints and a fracture glyph on armour the drill has opened.",
+  "durationTicks": 40,
+  "loop": true,
+  "layers": [
+    {
+      "id": "crack",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 2.2,
+      "height": 0.08,
+      "orientation": "ground",
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.marshal.crown-fracture",
+        "role": "image",
+        "index": 1
+      },
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 40,
+          "min": 0.4,
+          "max": 0.8,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "glints",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 40,
+      "count": 3,
+      "size": 0.18,
+      "height": 1.2,
+      "sustain": true,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 2.5,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 14,
+        "rate": 3,
+        "speed": 1.5,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 60,
+        "gravity": 6,
+        "drag": 0.5,
+        "spawnRadius": 0.6,
+        "startSize": 0.18,
+        "endSize": 0.03,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    }
+  ]
+}

@@ -1,0 +1,101 @@
+{
+  "id": "effect.beetles.patch-up",
+  "name": "Patched up",
+  "description": "A clatter of sparks and a puff of steam as a machine is patched.",
+  "durationTicks": 28,
+  "loop": false,
+  "layers": [
+    {
+      "id": "sparks",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffc65a",
+      "accent": "#fff0b0",
+      "durationTicks": 16,
+      "count": 12,
+      "size": 0.2,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 14,
+        "rate": 12,
+        "speed": 5,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": 14.0,
+        "drag": 0.4,
+        "spawnRadius": 0.15,
+        "startSize": 0.2,
+        "endSize": 0.03,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "steam",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#e8ecf2",
+      "accent": "#ffffff",
+      "durationTicks": 28,
+      "count": 3,
+      "size": 0.7,
+      "height": 0.8,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 24,
+        "rate": 3,
+        "speed": 1.2,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": -1.6,
+        "drag": 1.6,
+        "spawnRadius": 0.3,
+        "startSize": 0.35,
+        "endSize": 1.1199999999999999,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      }
+    },
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ffc65a",
+      "accent": "#fff0b0",
+      "durationTicks": 6,
+      "count": 1,
+      "size": 3.0,
+      "height": 1.0,
+      "intensity": 3.0,
+      "startTick": 0
+    }
+  ]
+}

@@ -1,0 +1,229 @@
+{
+  "id": "ability.coilkeeper.unbottled",
+  "name": "Unbottled",
+  "description": "Shatter the lantern. For 6 seconds a violet storm stands around the Coilkeeper: enemies within 14 units are dragged towards her, enemies within 7 are lifted off the ground and stunned, and arcs strike up to 6 enemies for 16/24 spell damage five times a second. Allies inside are shielded for 220/320 damage.",
+  "activation": "targeted",
+  "persistent": {
+    "durationTicks": 240,
+    "intervalTicks": 8,
+    "anchor": "caster",
+    "endsWithCaster": true,
+    "upkeepMana": 0,
+    "toggle": false,
+    "pulse": [
+      {
+        "op": "pull",
+        "target": "caster",
+        "query": {
+          "center": "caster",
+          "radius": 14,
+          "relations": [
+            "enemy"
+          ],
+          "maxTargets": 32
+        },
+        "amount": 60,
+        "toward": "caster",
+        "minDistance": 2.5
+      },
+      {
+        "op": "status",
+        "target": "caster",
+        "query": {
+          "center": "caster",
+          "radius": 7,
+          "relations": [
+            "enemy"
+          ],
+          "maxTargets": 16
+        },
+        "filter": {
+          "heroes": false
+        },
+        "id": "lifted",
+        "amount": 20,
+        "polarity": "negative",
+        "dispel": false,
+        "lifetime": "instance",
+        "stun": true,
+        "form": {
+          "movement": {
+            "locomotion": "air",
+            "flightHeight": 2.5
+          }
+        }
+      },
+      {
+        "op": "status",
+        "target": "caster",
+        "query": {
+          "center": "caster",
+          "radius": 7,
+          "relations": [
+            "enemy"
+          ],
+          "maxTargets": 4
+        },
+        "filter": {
+          "heroes": true
+        },
+        "id": "heldHero",
+        "amount": 20,
+        "polarity": "negative",
+        "dispel": false,
+        "lifetime": "instance",
+        "stun": true
+      },
+      {
+        "op": "damage",
+        "target": "caster",
+        "query": {
+          "center": "caster",
+          "radius": 9,
+          "relations": [
+            "enemy"
+          ],
+          "maxTargets": 6,
+          "order": "lowest-health"
+        },
+        "amount": {
+          "rankParameter": "arc"
+        },
+        "damageType": "spell"
+      }
+    ]
+  },
+  "ranks": [
+    {
+      "shield": 220,
+      "arc": 16,
+      "blast": 60
+    },
+    {
+      "shield": 320,
+      "arc": 24,
+      "blast": 90
+    }
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 14,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": 200,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 3600,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "damage",
+      "target": "caster",
+      "query": {
+        "center": "caster",
+        "radius": 10,
+        "relations": [
+          "enemy"
+        ],
+        "maxTargets": 24
+      },
+      "amount": {
+        "rankParameter": "blast"
+      },
+      "damageType": "spell"
+    },
+    {
+      "op": "status",
+      "target": "caster",
+      "query": {
+        "center": "caster",
+        "radius": 12,
+        "relations": [
+          "ally"
+        ],
+        "allowSelf": true,
+        "maxTargets": 24
+      },
+      "id": "sheltered",
+      "amount": 480,
+      "polarity": "positive",
+      "dispel": false,
+      "lifetime": "instance",
+      "shield": {
+        "rankParameter": "shield"
+      },
+      "onShieldDepleted": "remove"
+    }
+  ],
+  "presentation": {
+    "icon": "asset.custom.avatar-command-icon",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "shatter",
+        "effect": "effect.coilkeeper.unbottled-shatter",
+        "event": "released",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
+        "id": "storm",
+        "effect": "effect.coilkeeper.unbottled-storm",
+        "event": "released",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
+        "id": "arc",
+        "effect": "effect.coilkeeper.unbottled-arc",
+        "event": "damaged",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
+        "id": "lifted",
+        "effect": "effect.coilkeeper.lifted",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "lifted"
+      },
+      {
+        "id": "shelter",
+        "effect": "effect.coilkeeper.unbottled-shelter",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "sheltered"
+      }
+    ]
+  }
+}

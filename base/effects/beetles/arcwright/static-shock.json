@@ -1,0 +1,61 @@
+{
+  "id": "effect.beetles.static-shock",
+  "name": "Static shock",
+  "description": "A small violet spark on a unit the field bites.",
+  "durationTicks": 14,
+  "loop": false,
+  "layers": [
+    {
+      "id": "sparks",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#9a78ff",
+      "accent": "#efe8ff",
+      "durationTicks": 12,
+      "count": 6,
+      "size": 0.18,
+      "height": 0.8,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 10,
+        "rate": 6,
+        "speed": 3.5,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": 14.0,
+        "drag": 0.4,
+        "spawnRadius": 0.15,
+        "startSize": 0.18,
+        "endSize": 0.027,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "pop",
+      "enabled": true,
+      "shape": "burst",
+      "colour": "#c9b8ff",
+      "accent": "#ffffff",
+      "durationTicks": 5,
+      "count": 3,
+      "size": 0.5,
+      "height": 0.8,
+      "blend": "additive"
+    }
+  ]
+}

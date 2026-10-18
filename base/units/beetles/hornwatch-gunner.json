@@ -1,0 +1,51 @@
+{
+  "id": "unit.beetles.hornwatch-gunner",
+  "name": "Hornwatch Gunner",
+  "description": "The repeater crew of a Hornwatch.",
+  "model": "asset.models.units.ants-leaf-archer",
+  "icon": "asset.portraits.units.ants-leaf-archer",
+  "body": {
+    "maxHp": 100,
+    "armor": 0,
+    "armorType": "light"
+  },
+  "vision": 30,
+  "behaviorSets": [],
+  "behaviors": {
+    "combat": {
+      "damage": 24,
+      "damageType": "piercing",
+      "range": 20,
+      "cooldownTicks": 44,
+      "aggroRange": 22,
+      "attack": {
+        "windupTicks": 8,
+        "recoveryTicks": 8,
+        "rangeBuffer": 0.75
+      },
+      "projectile": {
+        "speed": 44
+      },
+      "targets": [
+        "ground",
+        "air"
+      ]
+    }
+  },
+  "level": 1,
+  "supplyCost": 0,
+  "unitNature": "mechanical",
+  "dimensions": {
+    "radius": 0.8,
+    "height": 3.0,
+    "formationSpacing": 2.0
+  },
+  "modelScale": 1.6,
+  "presentation": {
+    "projectile": "effect.beetles.weapons.bolt",
+    "projectileSocket": "socket_projectile",
+    "launchEffect": "effect.beetles.weapons.bolter-muzzle",
+    "impactEffect": "effect.beetles.weapons.bolt-impact"
+  },
+  "selectable": false
+}

@@ -1,15 +1,15 @@
 {
   "id": "building.beetles.shell-forge",
   "name": "Shell Forge",
-  "description": "Forges stronger weapons and armor for the beetle colony. Completed research benefits existing and future units.",
+  "description": "Forges weapons and plating for the colony: Weapon Edges, Bolt Calibre and Plating, three levels each. Level II needs a Great Bastion, level III an Elder Bastion.",
   "model": "asset.models.buildings.beetles-shell-forge",
   "icon": "asset.portraits.buildings.beetles-shell-foundry",
   "body": {
-    "maxHp": 1100,
+    "maxHp": 1250,
     "armor": 5,
     "armorType": "structure"
   },
-  "vision": 14,
+  "vision": 16,
   "footprint": {
     "width": 16,
     "depth": 16
@@ -23,11 +23,7 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 150
-      },
-      {
-        "item": "item.wood",
-        "amount": 75
+        "amount": 170
       }
     ],
     "workTicks": 1600,
@@ -39,17 +35,26 @@
   "behaviors": {
     "research": {
       "outputs": [
-        "research.beetles.serrated-tools",
-        "research.beetles.reinforced-carapace",
-        "research.beetles.broadheads",
-        "research.beetles.campaign-harness"
+        "research.beetles.weapon-edges-1",
+        "research.beetles.weapon-edges-2",
+        "research.beetles.weapon-edges-3",
+        "research.beetles.bolt-calibre-1",
+        "research.beetles.bolt-calibre-2",
+        "research.beetles.bolt-calibre-3",
+        "research.beetles.plating-1",
+        "research.beetles.plating-2",
+        "research.beetles.plating-3"
       ],
       "queueCapacity": 3
     }
   },
   "category": "category.build",
   "level": 1,
-  "modelScale": 1,
+  "modelScale": 1.0,
+  "command": {
+    "category": "category.build",
+    "priority": 30
+  },
   "presentation": {
     "effects": [
       {

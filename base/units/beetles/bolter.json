@@ -1,0 +1,61 @@
+{
+  "id": "unit.beetles.bolter",
+  "name": "Bolter",
+  "description": "Multi-barrel pressure repeater fed from a back canister: rapid bolts against ground and air. Uses 2 supply.",
+  "model": "asset.models.units.ants-leaf-archer",
+  "icon": "asset.portraits.units.ants-leaf-archer",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 470,
+    "armor": 1,
+    "armorType": "light"
+  },
+  "vision": 32,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 12,
+      "damageType": "piercing",
+      "range": 17,
+      "cooldownTicks": 40,
+      "aggroRange": 22,
+      "attack": {
+        "windupTicks": 10,
+        "recoveryTicks": 10,
+        "rangeBuffer": 0.75
+      },
+      "projectile": {
+        "speed": 40
+      }
+    },
+    "movement": {
+      "speed": 10
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 200
+      }
+    ],
+    "workTicks": 1080
+  },
+  "level": 1,
+  "supplyCost": 2,
+  "dimensions": {
+    "radius": 1.75,
+    "height": 4.8,
+    "formationSpacing": 3.75
+  },
+  "modelScale": 2.5,
+  "presentation": {
+    "projectile": "effect.beetles.weapons.bolt",
+    "projectileSocket": "socket_projectile",
+    "launchEffect": "effect.beetles.weapons.bolter-muzzle",
+    "impactEffect": "effect.beetles.weapons.bolt-impact"
+  }
+}

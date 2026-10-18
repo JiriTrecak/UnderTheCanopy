@@ -1,15 +1,15 @@
 {
   "id": "building.beetles.brood-den",
   "name": "Brood Den",
-  "description": "An iron-banded shell nursery that provides eight supply for the beetle colony.",
+  "description": "An iron-banded shell nursery: provides 8 supply and extends the substance network with a generous radius.",
   "model": "asset.models.buildings.beetles-armored-brood-den",
   "icon": "asset.portraits.buildings.beetles-armored-brood-den",
   "body": {
-    "maxHp": 600,
+    "maxHp": 700,
     "armor": 3,
     "armorType": "structure"
   },
-  "vision": 14,
+  "vision": 16,
   "footprint": {
     "width": 8,
     "depth": 8
@@ -23,11 +23,7 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 100
-      },
-      {
-        "item": "item.wood",
-        "amount": 25
+        "amount": 110
       }
     ],
     "workTicks": 1000,
@@ -37,7 +33,12 @@
     "behavior-set.player-building"
   ],
   "behaviors": {},
+  "category": "category.build",
   "level": 1,
   "supplyProvided": 8,
-  "modelScale": 1
+  "modelScale": 1.0,
+  "command": {
+    "category": "category.build",
+    "priority": 90
+  }
 }

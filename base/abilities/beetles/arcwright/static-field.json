@@ -1,0 +1,106 @@
+{
+  "id": "ability.beetles.static-field",
+  "name": "Static Field",
+  "description": "Charge the ground for 5 seconds: enemies in a 4-radius take 10/15 spell damage each second and move 25/35% slower. Unlocked by Specialist Training.",
+  "activation": "targeted",
+  "persistent": {
+    "durationTicks": 200,
+    "intervalTicks": 40,
+    "anchor": "point",
+    "endsWithCaster": false,
+    "upkeepMana": 0,
+    "toggle": false
+  },
+  "ranks": [
+    {
+      "damage": 10,
+      "slow": -250
+    },
+    {
+      "damage": 15,
+      "slow": -350
+    }
+  ],
+  "targeting": {
+    "kind": "point",
+    "radius": 4,
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 18,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 10,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": 90,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 640,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "damage",
+      "target": "target",
+      "amount": {
+        "rankParameter": "damage"
+      },
+      "damageType": "spell"
+    },
+    {
+      "op": "status",
+      "target": "target",
+      "id": "static",
+      "amount": 48,
+      "polarity": "negative",
+      "dispel": true,
+      "rankedModifiers": {
+        "moveSpeedPermille": {
+          "rankParameter": "slow"
+        }
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.spell-entangling-roots",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "zone",
+        "effect": "effect.beetles.static-field",
+        "event": "released",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
+        "id": "shock",
+        "effect": "effect.beetles.static-shock",
+        "event": "damaged",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

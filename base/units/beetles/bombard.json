@@ -1,0 +1,74 @@
+{
+  "id": "unit.beetles.bombard",
+  "name": "Bombard",
+  "description": "Six-legged mortar crawler with a crewman. Long-range splash that wrecks clumps and buildings, but it cannot fire at anything within 7 units. Requires a Great Bastion; uses 3 supply.",
+  "model": "asset.models.units.ants-bombardier",
+  "icon": "asset.portraits.units.ants-bombardier",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 560,
+    "armor": 2,
+    "armorType": "heavy"
+  },
+  "vision": 32,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 50,
+      "damageType": "siege",
+      "range": 30,
+      "cooldownTicks": 140,
+      "aggroRange": 32,
+      "attack": {
+        "windupTicks": 24,
+        "recoveryTicks": 20,
+        "rangeBuffer": 0.75
+      },
+      "minRange": 7.0,
+      "shell": {
+        "flightTicks": 46,
+        "radius": 2.5,
+        "slowPermille": 0,
+        "slowTicks": 0
+      }
+    },
+    "movement": {
+      "speed": 8
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 280
+      },
+      {
+        "item": "item.root",
+        "amount": 60
+      }
+    ],
+    "workTicks": 1360
+  },
+  "requires": [
+    "building.beetles.great-bastion"
+  ],
+  "level": 2,
+  "supplyCost": 3,
+  "unitNature": "mechanical",
+  "dimensions": {
+    "radius": 2.5,
+    "height": 4.8,
+    "formationSpacing": 5.25
+  },
+  "modelScale": 3.2,
+  "presentation": {
+    "projectile": "effect.weapon.resin-bomb",
+    "projectileSocket": "socket_projectile",
+    "launchEffect": "effect.beetles.weapons.mortar-launch",
+    "impactEffect": "effect.beetles.weapons.mortar-impact",
+    "castContact": 0.31
+  }
+}

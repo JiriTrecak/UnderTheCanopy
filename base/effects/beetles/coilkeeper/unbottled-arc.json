@@ -1,0 +1,45 @@
+{
+  "id": "effect.coilkeeper.unbottled-arc",
+  "name": "Storm arc",
+  "description": "Lightning from the storm strikes a lifted enemy.",
+  "durationTicks": 12,
+  "loop": false,
+  "layers": [
+    {
+      "id": "arc",
+      "enabled": true,
+      "shape": "beam",
+      "colour": "#8a5cff",
+      "accent": "#efe8ff",
+      "durationTicks": 6,
+      "count": 1,
+      "size": 0.45,
+      "height": 2.4,
+      "blend": "additive"
+    },
+    {
+      "id": "core",
+      "enabled": true,
+      "shape": "beam",
+      "colour": "#faf8ff",
+      "accent": "#ffffff",
+      "durationTicks": 5,
+      "count": 1,
+      "size": 0.16,
+      "height": 2.4,
+      "blend": "additive"
+    },
+    {
+      "id": "burst",
+      "enabled": true,
+      "shape": "burst",
+      "colour": "#c9b8ff",
+      "accent": "#ffffff",
+      "durationTicks": 6,
+      "count": 6,
+      "size": 1.0,
+      "height": 2.4,
+      "blend": "additive"
+    }
+  ]
+}

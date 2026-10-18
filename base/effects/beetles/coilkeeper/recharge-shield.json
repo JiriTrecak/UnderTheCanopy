@@ -1,0 +1,70 @@
+{
+  "id": "effect.coilkeeper.recharge-shield",
+  "name": "Charged shield",
+  "description": "A violet shell crackling around a recharged ally.",
+  "durationTicks": 60,
+  "loop": true,
+  "layers": [
+    {
+      "id": "shell",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 60,
+      "count": 1,
+      "size": 2.0,
+      "height": 1.1,
+      "blend": "additive",
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 20,
+          "min": 0.35,
+          "max": 0.75,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "crackle",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#9a78ff",
+      "accent": "#efe8ff",
+      "durationTicks": 60,
+      "count": 3,
+      "size": 0.16,
+      "height": 1.1,
+      "sustain": true,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 2.5,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 10,
+        "rate": 3,
+        "speed": 2.0,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": 0,
+        "drag": 0.5,
+        "spawnRadius": 0.9,
+        "startSize": 0.16,
+        "endSize": 0.03,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    }
+  ]
+}

@@ -1,13 +1,13 @@
 {
   "id": "unit.beetles.worker",
-  "name": "Worker",
-  "description": "Gather resources and construct beetle buildings. Same gathering, movement and training rules as ant workers.",
-  "model": "asset.placeholder.missing-model",
-  "icon": "asset.icons.resource-root",
+  "name": "Tinker",
+  "description": "Gathers amber and substance, builds and repairs beetle buildings, and patches machines with Patch Up. Uses 1 supply.",
+  "model": "asset.models.units.ants-worker",
+  "icon": "asset.portraits.units.ants-worker",
   "selectionClass": "worker",
   "body": {
-    "maxHp": 240,
-    "armor": 0,
+    "maxHp": 280,
+    "armor": 1,
     "armorType": "light"
   },
   "vision": 28,
@@ -15,25 +15,51 @@
     "behavior-set.worker"
   ],
   "behaviors": {
+    "movement": {
+      "speed": 11,
+      "walkSpeed": 6
+    },
+    "abilities": {
+      "maxMana": 60,
+      "manaRegenPerSecond": 0.6,
+      "bindings": [
+        {
+          "id": "patch-up",
+          "ability": "ability.beetles.patch-up",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "Q",
+            "column": 1
+          },
+          "ai": {
+            "preference": "wounded-ally",
+            "intervalTicks": 20
+          }
+        }
+      ]
+    },
     "work": {
+      "carryCapacity": 10,
       "harvests": [
-        "item.wood",
         "item.amber",
         "item.root"
       ],
       "builds": [
         "building.beetles.bastion",
-        "building.beetles.war-lodge",
         "building.beetles.brood-den",
+        "building.beetles.war-lodge",
+        "building.beetles.shell-forge",
         "building.beetles.hornwatch",
         "building.beetles.ancestor-shrine",
-        "building.beetles.shell-forge",
+        "building.beetles.alembic",
+        "building.beetles.engine-yard",
         "building.beetles.rootworks"
       ]
-    },
-    "movement": {
-      "speed": 12,
-      "walkSpeed": 6
     }
   },
   "creation": {

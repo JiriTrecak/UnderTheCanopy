@@ -1,0 +1,77 @@
+{
+  "id": "building.beetles.engine-yard",
+  "name": "Engine Yard",
+  "description": "Machine works: builds Bombards, Steamwings and the Juggernaut, and researches Fragmentation Shells, Riveted Hulls and Afterburners. Requires a Great Bastion.",
+  "model": "asset.models.buildings.ants-bombardier-workshop",
+  "icon": "asset.portraits.buildings.ants-bombardier-workshop",
+  "body": {
+    "maxHp": 1600,
+    "armor": 5,
+    "armorType": "structure"
+  },
+  "vision": 16,
+  "footprint": {
+    "width": 16,
+    "depth": 16
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 8.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 250
+      },
+      {
+        "item": "item.root",
+        "amount": 80
+      }
+    ],
+    "workTicks": 2200,
+    "workAnimation": "build"
+  },
+  "requires": [
+    "building.beetles.great-bastion"
+  ],
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {
+    "storage": {
+      "capacity": 1200,
+      "accepts": [
+        "item.amber",
+        "item.root"
+      ]
+    },
+    "production": {
+      "mode": "queued",
+      "outputs": [
+        "unit.beetles.bombard",
+        "unit.beetles.steamwing",
+        "unit.beetles.juggernaut"
+      ],
+      "workerSlots": 0,
+      "queueCapacity": 6
+    },
+    "research": {
+      "outputs": [
+        "research.beetles.fragmentation-shells",
+        "research.beetles.riveted-hulls-1",
+        "research.beetles.riveted-hulls-2",
+        "research.beetles.afterburners"
+      ],
+      "queueCapacity": 3
+    }
+  },
+  "category": "category.build-advanced",
+  "level": 1,
+  "modelScale": 1.5,
+  "command": {
+    "category": "category.build-advanced",
+    "priority": 80
+  }
+}

@@ -1,0 +1,156 @@
+{
+  "id": "ability.forgemaster.field-forge",
+  "name": "Field Forge",
+  "description": "Allies within 10 units gain 2/3/4 armor. Every second, allied machines and buildings within 10 units are repaired for 6/10/14 health.",
+  "activation": "passive",
+  "aura": {
+    "radius": 10,
+    "meleeOnly": false
+  },
+  "ranks": [
+    {
+      "armor": 2,
+      "repair": 6
+    },
+    {
+      "armor": 3,
+      "repair": 10
+    },
+    {
+      "armor": 4,
+      "repair": 14
+    }
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 0,
+    "recoverTicks": 0,
+    "cost": {
+      "resource": "mana",
+      "amount": 0,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 0,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "target",
+      "id": "forged",
+      "amount": 1,
+      "polarity": "positive",
+      "dispel": false,
+      "rankedModifiers": {
+        "armor": {
+          "rankParameter": "armor"
+        }
+      }
+    },
+    {
+      "op": "status",
+      "target": "caster",
+      "id": "forge",
+      "amount": 1,
+      "polarity": "positive",
+      "dispel": false
+    }
+  ],
+  "triggers": [
+    {
+      "id": "repair",
+      "event": "interval",
+      "intervalTicks": 40,
+      "blockedBySilence": false,
+      "operations": [
+        {
+          "op": "heal",
+          "target": "target",
+          "query": {
+            "center": "caster",
+            "radius": 10,
+            "relations": [
+              "ally"
+            ],
+            "allowSelf": false,
+            "maxTargets": 12
+          },
+          "filter": {
+            "natures": [
+              "mechanical"
+            ]
+          },
+          "amount": {
+            "rankParameter": "repair"
+          }
+        },
+        {
+          "op": "heal",
+          "target": "target",
+          "query": {
+            "center": "caster",
+            "radius": 10,
+            "relations": [
+              "ally"
+            ],
+            "includeBuildings": true,
+            "maxTargets": 6
+          },
+          "filter": {
+            "buildings": true
+          },
+          "amount": {
+            "rankParameter": "repair"
+          }
+        }
+      ]
+    }
+  ],
+  "presentation": {
+    "icon": "asset.spells.marshal.rally-icon",
+    "animations": {
+      "prepare": "idle",
+      "release": "idle",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "forge",
+        "effect": "effect.forgemaster.field-forge",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "forge"
+      },
+      {
+        "id": "mend",
+        "effect": "effect.forgemaster.field-forge-repair",
+        "event": "healed",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

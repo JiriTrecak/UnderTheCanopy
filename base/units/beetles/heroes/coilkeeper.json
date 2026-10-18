@@ -1,0 +1,291 @@
+{
+  "id": "unit.beetles.coilkeeper",
+  "name": "Coilkeeper",
+  "description": "Substance savant with a coil halo and a lantern-staff. Lashes enemies with chained lightning, Overloads their mana, Recharges allies and, once, lets the substance loose: Unbottled.",
+  "model": "asset.models.units.neutral-root-seer",
+  "icon": "asset.portraits.units.neutral-root-seer",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 640,
+    "armor": 1,
+    "armorType": "hero"
+  },
+  "vision": 36,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 23,
+      "damageType": "hero",
+      "range": 16,
+      "cooldownTicks": 72,
+      "aggroRange": 20,
+      "attack": {
+        "windupTicks": 18,
+        "recoveryTicks": 12,
+        "rangeBuffer": 0.75
+      },
+      "projectile": {
+        "speed": 60
+      }
+    },
+    "movement": {
+      "speed": 11
+    },
+    "abilities": {
+      "maxMana": 300,
+      "manaRegenPerSecond": 1.05,
+      "bindings": [
+        {
+          "id": "arc-lash",
+          "ability": "ability.coilkeeper.arc-lash",
+          "initialRank": 0,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "Q",
+            "column": 1
+          },
+          "learning": {
+            "requiredLevels": [
+              1,
+              3,
+              5
+            ]
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        },
+        {
+          "id": "overload",
+          "ability": "ability.coilkeeper.overload",
+          "initialRank": 0,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "W",
+            "column": 2
+          },
+          "learning": {
+            "requiredLevels": [
+              1,
+              3,
+              5
+            ]
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        },
+        {
+          "id": "recharge",
+          "ability": "ability.coilkeeper.recharge",
+          "initialRank": 0,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "E",
+            "column": 3
+          },
+          "learning": {
+            "requiredLevels": [
+              1,
+              3,
+              5
+            ]
+          },
+          "ai": {
+            "preference": "wounded-ally",
+            "intervalTicks": 20
+          }
+        },
+        {
+          "id": "unbottled",
+          "ability": "ability.coilkeeper.unbottled",
+          "initialRank": 0,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "R",
+            "column": 4
+          },
+          "learning": {
+            "requiredLevels": [
+              5,
+              8
+            ]
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20,
+            "threatRadius": 12
+          }
+        }
+      ]
+    },
+    "progression": {
+      "experienceRadius": 40,
+      "levels": [
+        {
+          "experience": 0,
+          "maxHp": 640,
+          "damage": 23,
+          "armor": 1,
+          "maxMana": 300,
+          "cooldownTicks": 72,
+          "healthRegenPerSecond": 1.2,
+          "manaRegenPerSecond": 1.05
+        },
+        {
+          "experience": 160,
+          "maxHp": 708,
+          "damage": 26,
+          "armor": 1,
+          "maxMana": 332,
+          "cooldownTicks": 70,
+          "healthRegenPerSecond": 1.35,
+          "manaRegenPerSecond": 1.13
+        },
+        {
+          "experience": 400,
+          "maxHp": 776,
+          "damage": 29,
+          "armor": 2,
+          "maxMana": 364,
+          "cooldownTicks": 68,
+          "healthRegenPerSecond": 1.5,
+          "manaRegenPerSecond": 1.21
+        },
+        {
+          "experience": 720,
+          "maxHp": 844,
+          "damage": 32,
+          "armor": 2,
+          "maxMana": 396,
+          "cooldownTicks": 66,
+          "healthRegenPerSecond": 1.65,
+          "manaRegenPerSecond": 1.29
+        },
+        {
+          "experience": 1120,
+          "maxHp": 912,
+          "damage": 35,
+          "armor": 3,
+          "maxMana": 428,
+          "cooldownTicks": 64,
+          "healthRegenPerSecond": 1.8,
+          "manaRegenPerSecond": 1.37
+        },
+        {
+          "experience": 1600,
+          "maxHp": 980,
+          "damage": 38,
+          "armor": 3,
+          "maxMana": 460,
+          "cooldownTicks": 62,
+          "healthRegenPerSecond": 1.95,
+          "manaRegenPerSecond": 1.45
+        },
+        {
+          "experience": 2160,
+          "maxHp": 1048,
+          "damage": 41,
+          "armor": 4,
+          "maxMana": 492,
+          "cooldownTicks": 60,
+          "healthRegenPerSecond": 2.1,
+          "manaRegenPerSecond": 1.53
+        },
+        {
+          "experience": 2800,
+          "maxHp": 1116,
+          "damage": 44,
+          "armor": 4,
+          "maxMana": 524,
+          "cooldownTicks": 60,
+          "healthRegenPerSecond": 2.25,
+          "manaRegenPerSecond": 1.61
+        },
+        {
+          "experience": 3520,
+          "maxHp": 1184,
+          "damage": 47,
+          "armor": 5,
+          "maxMana": 556,
+          "cooldownTicks": 60,
+          "healthRegenPerSecond": 2.4,
+          "manaRegenPerSecond": 1.69
+        },
+        {
+          "experience": 4320,
+          "maxHp": 1252,
+          "damage": 50,
+          "armor": 5,
+          "maxMana": 588,
+          "cooldownTicks": 60,
+          "healthRegenPerSecond": 2.55,
+          "manaRegenPerSecond": 1.77
+        },
+        {
+          "experience": 5200,
+          "maxHp": 1320,
+          "damage": 53,
+          "armor": 6,
+          "maxMana": 620,
+          "cooldownTicks": 60,
+          "healthRegenPerSecond": 2.7,
+          "manaRegenPerSecond": 1.85
+        }
+      ]
+    },
+    "inventory": {
+      "slots": 4,
+      "pickupRange": 1.5
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 425
+      },
+      {
+        "item": "item.root",
+        "amount": 100
+      }
+    ],
+    "workTicks": 2200
+  },
+  "level": 1,
+  "supplyCost": 4,
+  "dimensions": {
+    "radius": 3.0,
+    "height": 9.6,
+    "formationSpacing": 6.5
+  },
+  "modelScale": 3.35,
+  "presentation": {
+    "projectileSocket": "socket_projectile",
+    "launchEffect": "effect.beetles.weapons.arc",
+    "impactEffect": "effect.beetles.weapons.arc-impact"
+  },
+  "hero": true,
+  "displayOrder": 3
+}

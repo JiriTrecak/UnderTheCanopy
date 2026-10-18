@@ -1,0 +1,31 @@
+{
+  "id": "effect.beetles.weapons.bolt",
+  "name": "Pressure bolt",
+  "description": "A brass bolt from a pressure repeater.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "body",
+      "enabled": true,
+      "shape": "missile",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 0.8,
+      "height": 0,
+      "arcHeight": 0.0,
+      "model": {
+        "asset": "asset.models.effects.amber-bolt",
+        "role": "geometry",
+        "index": 1,
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "id": "building.beetles.alembic",
+  "name": "Alembic",
+  "description": "Distillery of the specialists who handle substance through devices: trains Arcwrights, Menders and Wardens and researches Specialist Training. Requires a Great Bastion.",
+  "model": "asset.models.buildings.ants-chitin-workshop",
+  "icon": "asset.portraits.buildings.ants-chitin-workshop",
+  "body": {
+    "maxHp": 1150,
+    "armor": 4,
+    "armorType": "structure"
+  },
+  "vision": 16,
+  "footprint": {
+    "width": 12,
+    "depth": 12
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 6.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 200
+      },
+      {
+        "item": "item.root",
+        "amount": 60
+      }
+    ],
+    "workTicks": 1800,
+    "workAnimation": "build"
+  },
+  "requires": [
+    "building.beetles.great-bastion"
+  ],
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "behaviors": {
+    "storage": {
+      "capacity": 800,
+      "accepts": [
+        "item.amber",
+        "item.root"
+      ]
+    },
+    "production": {
+      "mode": "queued",
+      "outputs": [
+        "unit.beetles.arcwright",
+        "unit.beetles.mender",
+        "unit.beetles.warden"
+      ],
+      "workerSlots": 0,
+      "queueCapacity": 6
+    },
+    "research": {
+      "outputs": [
+        "research.beetles.specialist-training-adept",
+        "research.beetles.specialist-training-master"
+      ],
+      "queueCapacity": 2
+    }
+  },
+  "category": "category.build-advanced",
+  "level": 1,
+  "modelScale": 1.25,
+  "command": {
+    "category": "category.build-advanced",
+    "priority": 90
+  }
+}

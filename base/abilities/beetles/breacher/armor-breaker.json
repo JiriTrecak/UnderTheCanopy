@@ -1,0 +1,88 @@
+{
+  "id": "ability.beetles.armor-breaker",
+  "name": "Armor Breaker",
+  "description": "Every drill strike cracks the target open: its armor falls by 3 for 6 seconds.",
+  "activation": "passive",
+  "combatModifiers": {
+    "attackBonus": {
+      "status": "cracked",
+      "amount": 0,
+      "manaCost": 0,
+      "weapon": "melee",
+      "blockedBySilence": false
+    }
+  },
+  "ranks": [
+    {
+      "armor": -3
+    }
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 0,
+    "recoverTicks": 0,
+    "cost": {
+      "resource": "mana",
+      "amount": 0,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 0,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "statuses": [
+    {
+      "op": "status",
+      "target": "target",
+      "id": "cracked",
+      "amount": 240,
+      "polarity": "negative",
+      "dispel": true,
+      "rankedModifiers": {
+        "armor": {
+          "rankParameter": "armor"
+        }
+      }
+    }
+  ],
+  "onRelease": [],
+  "presentation": {
+    "icon": "asset.custom.bash-command-icon",
+    "animations": {
+      "prepare": "idle",
+      "release": "idle",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "crack",
+        "effect": "effect.beetles.armor-crack",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "cracked"
+      }
+    ]
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "id": "ability.coilkeeper.overload",
+  "name": "Overload",
+  "description": "Detonate an enemy's mana: drain up to 60/100/140 of it and deal 45/70/95 plus the drained amount as spell damage to every enemy within 4 units of the target.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "drain": 60,
+      "blast": 45
+    },
+    {
+      "drain": 100,
+      "blast": 70
+    },
+    {
+      "drain": 140,
+      "blast": 95
+    }
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 16,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 10,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": 75,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 520,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "drain",
+      "target": "target",
+      "resource": "mana",
+      "amount": {
+        "rankParameter": "drain"
+      },
+      "restoreCaster": false,
+      "damageType": "spell",
+      "damagePerDrainedPermille": 0,
+      "record": "burnt"
+    },
+    {
+      "op": "damage",
+      "target": "target",
+      "query": {
+        "center": "target",
+        "radius": 4,
+        "relations": [
+          "enemy"
+        ],
+        "includeBuildings": false,
+        "maxTargets": 12
+      },
+      "amount": {
+        "rankParameter": "blast"
+      },
+      "damageType": "spell",
+      "scale": {
+        "source": "result",
+        "id": "burnt",
+        "stat": "applied",
+        "permille": 1000
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.custom.silence-command-icon",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "overload",
+        "effect": "effect.coilkeeper.overload",
+        "event": "released",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
+        "id": "shrapnel",
+        "effect": "effect.coilkeeper.overload-shrapnel",
+        "event": "damaged",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

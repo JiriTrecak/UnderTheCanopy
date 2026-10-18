@@ -1,0 +1,78 @@
+{
+  "id": "effect.beetles.lock-shields",
+  "name": "Locked shields",
+  "description": "A blue-violet ring and a steady glow around a shieldbearer bracing behind a locked tower shield.",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#5b7bff",
+      "accent": "#b8c8ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 2.6,
+      "height": 0.06,
+      "blend": "additive",
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 40,
+          "min": 0.55,
+          "max": 0.95,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "glow",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#5b7bff",
+      "accent": "#b8c8ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 2.2,
+      "height": 1.2,
+      "blend": "additive",
+      "sustain": true,
+      "motion": {
+        "scale": {
+          "periodTicks": 40,
+          "min": 0.9,
+          "max": 1.08,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "plate",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#5b7bff",
+      "accent": "#b8c8ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 3.2,
+      "height": 0.08,
+      "orientation": "ground",
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.marshal.chitin-ward",
+        "role": "image",
+        "index": 1
+      },
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 60,
+          "min": 0.35,
+          "max": 0.7,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

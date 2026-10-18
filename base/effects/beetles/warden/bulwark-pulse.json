@@ -1,0 +1,59 @@
+{
+  "id": "effect.beetles.bulwark-pulse",
+  "name": "Bulwark pulse",
+  "description": "A blue shockwave of field energy rolling out from the warden.",
+  "durationTicks": 30,
+  "loop": false,
+  "layers": [
+    {
+      "id": "wave",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#5b7bff",
+      "accent": "#b8c8ff",
+      "durationTicks": 22,
+      "count": 1,
+      "size": 8.0,
+      "height": 0.3,
+      "blend": "additive"
+    },
+    {
+      "id": "wave2",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 18,
+      "count": 1,
+      "size": 6.0,
+      "height": 0.6,
+      "blend": "additive",
+      "startTick": 4
+    },
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#5b7bff",
+      "accent": "#b8c8ff",
+      "durationTicks": 10,
+      "count": 1,
+      "size": 9.0,
+      "height": 1.2,
+      "intensity": 8.0,
+      "startTick": 0
+    },
+    {
+      "id": "burst",
+      "enabled": true,
+      "shape": "burst",
+      "colour": "#b8c8ff",
+      "accent": "#ffffff",
+      "durationTicks": 10,
+      "count": 10,
+      "size": 1.8,
+      "height": 1.2,
+      "blend": "additive"
+    }
+  ]
+}

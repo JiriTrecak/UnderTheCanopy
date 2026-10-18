@@ -1,0 +1,96 @@
+{
+  "id": "ability.beetles.field-repair",
+  "name": "Field Repair",
+  "description": "Channel the welding torch for 4 seconds on a machine or building, restoring 45/70 health each second. Unlocked by Specialist Training.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "repair": 45
+    },
+    {
+      "repair": 70
+    }
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": false,
+    "range": 6,
+    "outOfRange": "reject",
+    "includeBuildings": true
+  },
+  "cast": {
+    "prepareTicks": 6,
+    "recoverTicks": 6,
+    "cost": {
+      "resource": "mana",
+      "amount": 60,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 480,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ],
+    "channel": {
+      "waves": 4,
+      "intervalTicks": 40,
+      "tetherRange": 8
+    }
+  },
+  "onRelease": [
+    {
+      "op": "heal",
+      "target": "target",
+      "filter": {
+        "natures": [
+          "mechanical"
+        ]
+      },
+      "amount": {
+        "rankParameter": "repair"
+      }
+    },
+    {
+      "op": "heal",
+      "target": "target",
+      "filter": {
+        "buildings": true
+      },
+      "amount": {
+        "rankParameter": "repair"
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.item-resin-salve",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle",
+      "channel": "cast"
+    },
+    "effects": [
+      {
+        "id": "weld",
+        "effect": "effect.beetles.field-repair",
+        "event": "healed",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

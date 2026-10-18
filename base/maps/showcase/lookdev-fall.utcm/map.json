@@ -30,7 +30,7 @@
         "construction": "complete",
         "inventory": {
           "item.amber": 9000,
-          "item.wood": 9000
+          "item.root": 9000
         }
       },
       "owner": "player.1",

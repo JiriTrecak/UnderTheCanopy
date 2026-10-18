@@ -1,0 +1,69 @@
+{
+  "id": "ability.beetles.furnace-plating",
+  "name": "Furnace Plating",
+  "description": "Riveted furnace plates shrug off magic: spell damage taken is reduced by 30%.",
+  "activation": "passive",
+  "aura": {
+    "radius": 1,
+    "meleeOnly": false
+  },
+  "ranks": [
+    {}
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 0,
+    "recoverTicks": 0,
+    "cost": {
+      "resource": "mana",
+      "amount": 0,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 0,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "caster",
+      "id": "plating",
+      "amount": 1,
+      "polarity": "positive",
+      "dispel": false,
+      "damageTakenPermille": {
+        "spell": 700
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.item-barkguard",
+    "animations": {
+      "prepare": "idle",
+      "release": "idle",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": []
+  }
+}

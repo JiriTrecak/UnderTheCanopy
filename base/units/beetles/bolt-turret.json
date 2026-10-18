@@ -1,0 +1,50 @@
+{
+  "id": "unit.beetles.bolt-turret",
+  "name": "Bolt Turret",
+  "description": "A brass repeater turret deployed by the Forgemaster. Shoots ground and air units; it runs down after 40 seconds.",
+  "model": "asset.models.buildings.ants-watchtower",
+  "icon": "asset.portraits.buildings.ants-watchtower",
+  "body": {
+    "maxHp": 320,
+    "armor": 3,
+    "armorType": "heavy"
+  },
+  "vision": 24,
+  "behaviorSets": [],
+  "behaviors": {
+    "combat": {
+      "damage": 16,
+      "damageType": "piercing",
+      "range": 16,
+      "cooldownTicks": 36,
+      "aggroRange": 18,
+      "attack": {
+        "windupTicks": 8,
+        "recoveryTicks": 8,
+        "rangeBuffer": 0.75
+      },
+      "projectile": {
+        "speed": 44
+      },
+      "targets": [
+        "ground",
+        "air"
+      ]
+    }
+  },
+  "level": 1,
+  "supplyCost": 0,
+  "unitNature": "mechanical",
+  "dimensions": {
+    "radius": 1.2,
+    "height": 3.0,
+    "formationSpacing": 2.6
+  },
+  "modelScale": 0.32,
+  "presentation": {
+    "projectile": "effect.beetles.weapons.bolt",
+    "projectileSocket": "socket_projectile",
+    "launchEffect": "effect.beetles.weapons.bolter-muzzle",
+    "impactEffect": "effect.beetles.weapons.bolt-impact"
+  }
+}

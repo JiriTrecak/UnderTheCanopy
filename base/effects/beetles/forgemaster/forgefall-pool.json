@@ -1,0 +1,182 @@
+{
+  "id": "effect.forgemaster.forgefall-pool",
+  "name": "Molten pool",
+  "description": "A pool of molten metal glowing orange for six seconds, embers and heat shimmer rising from it.",
+  "durationTicks": 240,
+  "loop": false,
+  "layers": [
+    {
+      "id": "pool",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ff6a1a",
+      "accent": "#ffd9a0",
+      "durationTicks": 240,
+      "count": 1,
+      "size": 9.5,
+      "height": 0.08,
+      "orientation": "ground",
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.marshal.crown-fracture",
+        "role": "image",
+        "index": 1
+      },
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 30,
+          "min": 0.7,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "heat",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#ff6a1a",
+      "accent": "#ffd9a0",
+      "durationTicks": 240,
+      "count": 1,
+      "size": 5.0,
+      "height": 0.2,
+      "blend": "additive",
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 20,
+          "min": 0.5,
+          "max": 0.9,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "rim",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 240,
+      "count": 1,
+      "size": 5.0,
+      "height": 0.06,
+      "blend": "additive",
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 24,
+          "min": 0.5,
+          "max": 0.9,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "embers",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 240,
+      "count": 10,
+      "size": 0.22,
+      "height": 0.2,
+      "sustain": true,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 3.0,
+      "distribution": "disc",
+      "spread": 4.5,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 30,
+        "rate": 10,
+        "speed": 2.0,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 20,
+        "gravity": -2.0,
+        "drag": 0.5,
+        "spawnRadius": 4.5,
+        "startSize": 0.22,
+        "endSize": 0.04,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "smoke",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#4a4644",
+      "accent": "#8e8884",
+      "durationTicks": 240,
+      "count": 3,
+      "size": 1.6,
+      "height": 0.4,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 50,
+        "rate": 3,
+        "speed": 0.8,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": -1.2,
+        "drag": 1.6,
+        "spawnRadius": 3.5,
+        "startSize": 0.8,
+        "endSize": 2.5600000000000005,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      },
+      "sustain": true
+    },
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 240,
+      "count": 1,
+      "size": 9.0,
+      "height": 0.8,
+      "intensity": 4.0,
+      "startTick": 0,
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 16,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "id": "research.beetles.bolt-calibre-2",
+  "name": "Bolt Calibre II",
+  "description": "Bolters, Steamwings, Hornwatch gunners and Bolt Turrets deal 12% more attack damage (level II; levels add up). Requires a Great Bastion.",
+  "icon": "asset.icons.item-predator-talon",
+  "priority": 84,
+  "requires": [
+    "building.beetles.great-bastion",
+    "research.beetles.bolt-calibre-1"
+  ],
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 200
+    },
+    {
+      "item": "item.root",
+      "amount": 75
+    }
+  ],
+  "workTicks": 2000,
+  "effects": [
+    {
+      "units": [
+        "unit.beetles.bolter",
+        "unit.beetles.steamwing",
+        "unit.beetles.hornwatch-gunner",
+        "unit.beetles.bolt-turret",
+        "unit.beetles.bolt-turret-mk2"
+      ],
+      "damagePermille": 120
+    }
+  ]
+}

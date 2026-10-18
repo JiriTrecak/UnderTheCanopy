@@ -1,0 +1,26 @@
+{
+  "id": "research.beetles.afterburners",
+  "name": "Afterburners",
+  "description": "Steamwings fly 30% faster.",
+  "icon": "asset.icons.item-stormwing-spurs",
+  "priority": 60,
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 150
+    },
+    {
+      "item": "item.root",
+      "amount": 50
+    }
+  ],
+  "workTicks": 1600,
+  "effects": [
+    {
+      "units": [
+        "unit.beetles.steamwing"
+      ],
+      "moveSpeedPermille": 300
+    }
+  ]
+}

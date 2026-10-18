@@ -1,0 +1,31 @@
+{
+  "id": "research.beetles.weapon-edges-2",
+  "name": "Weapon Edges II",
+  "description": "Shieldbearers and Breachers deal 12% more attack damage (level II; levels add up). Requires a Great Bastion.",
+  "icon": "asset.icons.item-reaper-mandible",
+  "priority": 89,
+  "requires": [
+    "building.beetles.great-bastion",
+    "research.beetles.weapon-edges-1"
+  ],
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 200
+    },
+    {
+      "item": "item.root",
+      "amount": 75
+    }
+  ],
+  "workTicks": 2000,
+  "effects": [
+    {
+      "units": [
+        "unit.beetles.shieldbearer",
+        "unit.beetles.breacher"
+      ],
+      "damagePermille": 120
+    }
+  ]
+}

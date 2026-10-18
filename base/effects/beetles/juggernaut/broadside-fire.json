@@ -1,0 +1,73 @@
+{
+  "id": "effect.beetles.broadside-fire",
+  "name": "Broadside salvo",
+  "description": "Both cannons roar at once.",
+  "durationTicks": 30,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 8,
+      "count": 1,
+      "size": 10.0,
+      "height": 3.0,
+      "intensity": 10.0,
+      "startTick": 0
+    },
+    {
+      "id": "muzzle",
+      "enabled": true,
+      "shape": "burst",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 8,
+      "count": 12,
+      "size": 2.0,
+      "height": 3.0,
+      "blend": "additive"
+    },
+    {
+      "id": "smoke",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#55524f",
+      "accent": "#9a9590",
+      "durationTicks": 44,
+      "count": 10,
+      "size": 1.8,
+      "height": 3.0,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 40,
+        "rate": 10,
+        "speed": 3.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": -1.0,
+        "drag": 1.6,
+        "spawnRadius": 0.3,
+        "startSize": 0.9,
+        "endSize": 2.8800000000000003,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      }
+    }
+  ]
+}

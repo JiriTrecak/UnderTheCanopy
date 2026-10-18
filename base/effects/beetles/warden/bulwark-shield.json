@@ -1,0 +1,57 @@
+{
+  "id": "effect.beetles.bulwark-shield",
+  "name": "Field shield",
+  "description": "A thin blue shell of field energy around a protected unit.",
+  "durationTicks": 60,
+  "loop": true,
+  "layers": [
+    {
+      "id": "shell",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#5b7bff",
+      "accent": "#b8c8ff",
+      "durationTicks": 60,
+      "count": 1,
+      "size": 2.0,
+      "height": 1.1,
+      "blend": "additive",
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 30,
+          "min": 0.35,
+          "max": 0.7,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "ward",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#5b7bff",
+      "accent": "#b8c8ff",
+      "durationTicks": 60,
+      "count": 1,
+      "size": 2.4,
+      "height": 0.08,
+      "orientation": "ground",
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.marshal.chitin-ward",
+        "role": "image",
+        "index": 1
+      },
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 30,
+          "min": 0.4,
+          "max": 0.8,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

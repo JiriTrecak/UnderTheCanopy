@@ -1,0 +1,97 @@
+{
+  "id": "ability.beetles.bulwark-pulse",
+  "name": "Bulwark Pulse",
+  "description": "Pulse the projector: up to 8 allies within 8 units gain a field shield absorbing 120/180 damage for 10 seconds. Unlocked by Specialist Training.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "shield": 120
+    },
+    {
+      "shield": 180
+    }
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 8,
+    "recoverTicks": 6,
+    "cost": {
+      "resource": "mana",
+      "amount": 90,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 800,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "caster",
+      "query": {
+        "center": "caster",
+        "radius": 8,
+        "relations": [
+          "ally"
+        ],
+        "allowSelf": true,
+        "maxTargets": 8,
+        "order": "lowest-health"
+      },
+      "id": "bulwark",
+      "amount": 400,
+      "polarity": "positive",
+      "dispel": true,
+      "shield": {
+        "rankParameter": "shield"
+      },
+      "onShieldDepleted": "remove"
+    }
+  ],
+  "presentation": {
+    "icon": "asset.spells.marshal.carapace-icon",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "pulse",
+        "effect": "effect.beetles.bulwark-pulse",
+        "event": "released",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
+        "id": "ward",
+        "effect": "effect.beetles.bulwark-shield",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "bulwark"
+      }
+    ]
+  }
+}

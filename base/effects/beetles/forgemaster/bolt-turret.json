@@ -1,0 +1,113 @@
+{
+  "id": "effect.forgemaster.bolt-turret",
+  "name": "Turret deploys",
+  "description": "The folded turret drops from the arm rig: a thump of steam, sparks and a brass flash.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "steam",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#e8ecf2",
+      "accent": "#ffffff",
+      "durationTicks": 38,
+      "count": 10,
+      "size": 1.1,
+      "height": 0.2,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 34,
+        "rate": 10,
+        "speed": 3.4,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 0.3,
+          "z": 0
+        },
+        "coneDegrees": 100,
+        "gravity": -0.9,
+        "drag": 1.6,
+        "spawnRadius": 0.3,
+        "startSize": 0.55,
+        "endSize": 1.7600000000000002,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      }
+    },
+    {
+      "id": "sparks",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffc65a",
+      "accent": "#fff0b0",
+      "durationTicks": 18,
+      "count": 22,
+      "size": 0.24,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 16,
+        "rate": 22,
+        "speed": 7,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": 14.0,
+        "drag": 0.4,
+        "spawnRadius": 0.15,
+        "startSize": 0.24,
+        "endSize": 0.036,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      }
+    },
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ffc65a",
+      "accent": "#fff0b0",
+      "durationTicks": 8,
+      "count": 1,
+      "size": 6.0,
+      "height": 1.0,
+      "intensity": 6.0,
+      "startTick": 0
+    },
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#ffc65a",
+      "accent": "#fff0b0",
+      "durationTicks": 14,
+      "count": 1,
+      "size": 3.0,
+      "height": 0.06,
+      "blend": "additive"
+    }
+  ]
+}

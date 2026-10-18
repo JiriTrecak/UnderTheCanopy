@@ -1,0 +1,110 @@
+{
+  "id": "unit.beetles.mender",
+  "name": "Mender",
+  "description": "Field medic with a pressure syringe-gun and a welding torch. Mends beetles and machines; Field Repair after Specialist Training. Requires a Great Bastion; uses 2 supply.",
+  "model": "asset.models.units.ants-nectarist",
+  "icon": "asset.portraits.units.ants-nectarist",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 380,
+    "armor": 1,
+    "armorType": "light"
+  },
+  "vision": 32,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 7,
+      "damageType": "piercing",
+      "range": 14,
+      "cooldownTicks": 60,
+      "aggroRange": 18,
+      "attack": {
+        "windupTicks": 14,
+        "recoveryTicks": 10,
+        "rangeBuffer": 0.75
+      },
+      "projectile": {
+        "speed": 34
+      }
+    },
+    "movement": {
+      "speed": 10
+    },
+    "abilities": {
+      "maxMana": 240,
+      "manaRegenPerSecond": 1.2,
+      "bindings": [
+        {
+          "id": "mend",
+          "ability": "ability.beetles.mend",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "Q",
+            "column": 1
+          },
+          "ai": {
+            "preference": "wounded-ally",
+            "intervalTicks": 16
+          }
+        },
+        {
+          "id": "field-repair",
+          "ability": "ability.beetles.field-repair",
+          "initialRank": 0,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "W",
+            "column": 2
+          },
+          "ai": {
+            "preference": "wounded-ally",
+            "intervalTicks": 40
+          }
+        }
+      ]
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 180
+      },
+      {
+        "item": "item.root",
+        "amount": 40
+      }
+    ],
+    "workTicks": 1080
+  },
+  "requires": [
+    "building.beetles.great-bastion"
+  ],
+  "level": 2,
+  "supplyCost": 2,
+  "dimensions": {
+    "radius": 1.75,
+    "height": 4.8,
+    "formationSpacing": 3.75
+  },
+  "modelScale": 2.4,
+  "presentation": {
+    "projectileSocket": "socket_projectile",
+    "launchEffect": "effect.beetles.weapons.syringe",
+    "impactEffect": "effect.beetles.weapons.syringe-impact",
+    "castContact": 0.36
+  }
+}

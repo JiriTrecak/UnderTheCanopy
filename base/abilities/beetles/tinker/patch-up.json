@@ -1,0 +1,76 @@
+{
+  "id": "ability.beetles.patch-up",
+  "name": "Patch Up",
+  "description": "Bolt fresh plates onto an allied machine, restoring 60 health. Autocast; Tinkers repair buildings by hand.",
+  "activation": "targeted",
+  "autocast": {
+    "intervalTicks": 20,
+    "enabledByDefault": true
+  },
+  "ranks": [
+    {}
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": false,
+    "range": 6,
+    "outOfRange": "reject",
+    "filter": {
+      "natures": [
+        "mechanical"
+      ]
+    }
+  },
+  "cast": {
+    "prepareTicks": 10,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": 15,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 200,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "heal",
+      "target": "target",
+      "amount": 60
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.item-restoration-draught",
+    "animations": {
+      "prepare": "build",
+      "release": "build",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "patch",
+        "effect": "effect.beetles.patch-up",
+        "event": "healed",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

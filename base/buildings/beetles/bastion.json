@@ -1,11 +1,11 @@
 {
   "id": "building.beetles.bastion",
   "name": "Bastion",
-  "description": "The beetle colony’s iron-clad main hall stores resources, trains workers and provides supply.",
+  "description": "The beetle colony’s iron-clad main hall: stores goods, trains Tinkers, provides 15 supply and feeds the substance network. Upgrades to the Great Bastion.",
   "model": "asset.models.buildings.beetles-carapace-hall",
   "icon": "asset.portraits.buildings.beetles-carapace-hall",
   "body": {
-    "maxHp": 1800,
+    "maxHp": 2000,
     "armor": 5,
     "armorType": "structure"
   },
@@ -23,11 +23,7 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 400
-      },
-      {
-        "item": "item.wood",
-        "amount": 150
+        "amount": 450
       }
     ],
     "workTicks": 3600,
@@ -40,8 +36,8 @@
     "storage": {
       "capacity": 100000,
       "accepts": [
-        "item.wood",
-        "item.amber"
+        "item.amber",
+        "item.root"
       ],
       "dropoff": true,
       "gathering": {
@@ -56,24 +52,35 @@
       ],
       "workerSlots": 0,
       "queueCapacity": 6
+    },
+    "research": {
+      "outputs": [
+        "research.beetles.pressure-mains"
+      ],
+      "queueCapacity": 1
     }
   },
+  "category": "category.build",
   "level": 1,
   "upgrade": {
     "target": "building.beetles.great-bastion",
     "items": [
       {
         "item": "item.amber",
-        "amount": 450
+        "amount": 400
       },
       {
-        "item": "item.wood",
-        "amount": 200
+        "item": "item.root",
+        "amount": 100
       }
     ],
     "workTicks": 3200
   },
   "supplyProvided": 15,
-  "heroCapacity": 1,
-  "modelScale": 1.25
+  "modelScale": 1.25,
+  "command": {
+    "category": "category.build",
+    "priority": 100
+  },
+  "heroCapacity": 1
 }

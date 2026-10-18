@@ -1,0 +1,115 @@
+{
+  "id": "unit.beetles.juggernaut",
+  "name": "Juggernaut",
+  "description": "Ultimate walking fortress: six legs, a violet furnace window, two cannons and a crew. Fires Broadside; Furnace Plating turns aside 30% of spell damage. One at a time. Requires an Elder Bastion; uses 8 supply.",
+  "model": "asset.models.units.neutral-briar-hulk",
+  "icon": "asset.portraits.units.neutral-briar-hulk",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 3000,
+    "armor": 6,
+    "armorType": "heavy"
+  },
+  "vision": 34,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 62,
+      "damageType": "siege",
+      "range": 22,
+      "cooldownTicks": 96,
+      "aggroRange": 26,
+      "attack": {
+        "windupTicks": 20,
+        "recoveryTicks": 18,
+        "rangeBuffer": 0.75
+      },
+      "shell": {
+        "flightTicks": 30,
+        "radius": 2.8,
+        "slowPermille": 0,
+        "slowTicks": 0
+      }
+    },
+    "movement": {
+      "speed": 7
+    },
+    "abilities": {
+      "maxMana": 160,
+      "manaRegenPerSecond": 0.8,
+      "bindings": [
+        {
+          "id": "broadside",
+          "ability": "ability.beetles.broadside",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "Q",
+            "column": 1
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 40
+          }
+        },
+        {
+          "id": "furnace-plating",
+          "ability": "ability.beetles.furnace-plating",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        }
+      ]
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 600
+      },
+      {
+        "item": "item.root",
+        "amount": 200
+      }
+    ],
+    "workTicks": 2400
+  },
+  "requires": [
+    "building.beetles.elder-bastion"
+  ],
+  "level": 4,
+  "supplyCost": 8,
+  "maxOwned": 1,
+  "unitNature": "mechanical",
+  "dimensions": {
+    "radius": 3.0,
+    "height": 9.0,
+    "formationSpacing": 6.6
+  },
+  "modelScale": 2.2,
+  "presentation": {
+    "projectile": "effect.weapon.resin-bomb",
+    "launchEffect": "effect.beetles.weapons.cannon-launch",
+    "impactEffect": "effect.beetles.weapons.cannon-impact",
+    "cameraAnchor": {
+      "height": 3.0,
+      "forward": 0.2,
+      "distance": 12
+    }
+  }
+}
