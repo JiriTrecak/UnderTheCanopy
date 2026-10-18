@@ -1,18 +1,27 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [
-      "Submit feedback from the main menu or the game menu: describe a bug, idea or balance problem and it is sent with a screenshot of what you were looking at; reports written offline are sent later.",
-      "Replays: every match is recorded. Save it from the result screen, or find your latest match as Last match, and watch it from Skirmish → Replays with a timeline, speeds, any player's vision and statistics.",
-      "Feedback sent from a match includes its replay and a save of that moment."
-    ],
+    "added": [],
     "improved": [],
-    "fixed": [
-      "Watching a match after playing one no longer shows the previous match's fog of war."
-    ],
+    "fixed": [],
     "knownIssues": []
   },
   "releases": [
+    {
+      "added": [
+        "Submit feedback from the main menu or the game menu: describe a bug, idea or balance problem and it is sent with a screenshot of what you were looking at; reports written offline are sent later.",
+        "Replays: every match is recorded. Save it from the result screen, or find your latest match as Last match, and watch it from Skirmish → Replays with a timeline, speeds, any player's vision and statistics.",
+        "Feedback sent from a match includes its replay and a save of that moment."
+      ],
+      "improved": [],
+      "fixed": [
+        "Watching a match after playing one no longer shows the previous match's fog of war."
+      ],
+      "knownIssues": [],
+      "version": "0.3.7",
+      "publishedAt": "2026-10-18T08:02:03.410Z",
+      "title": "Replays and feedback"
+    },
     {
       "added": [
         "Under the Canopy's own editor, opened from the main menu when the game runs from its repository (for now the team's tool): forms for every unit, building, item, ability, effect and race with one undo history and Test in game; a Warcraft III-style map editor that also imports Warcraft III melee maps; an asset editor; an ability Stage that casts spells on test targets with the real simulation; and an MCP server so agents can edit too.",
