@@ -56,6 +56,12 @@ pub struct Persistent {
     pub upkeep_mana: Amount,
     #[serde(default)]
     pub toggle: bool,
+    /// Ticks between the release and the instance's first run: a warning before the blow
+    /// lands. The duration counts from that first run, which reports an `impact`.
+    #[serde(default)]
+    pub delay_ticks: u32,
+    /// The program of every later pulse; the release program pulses again without one.
+    pub pulse: Option<Vec<Operation>>,
 }
 
 /// How the release reaches its recipients.
@@ -341,6 +347,11 @@ impl Ability {
         let programs = self
             .on_release
             .iter()
+            .chain(
+                self.persistent
+                    .iter()
+                    .flat_map(|p| p.pulse.iter().flatten()),
+            )
             .chain(self.triggers.iter().flatten().flat_map(|t| &t.operations))
             .flat_map(Operation::effects)
             .map(StatusOrEffect::Effect);
@@ -465,6 +476,9 @@ pub struct AbilityAi {
     pub intent: Option<AiIntent>,
     pub preference: AiPreference,
     pub interval_ticks: u32,
+    /// Self buffs and statuses are worth casting only with an enemy this close (cells,
+    /// default 24): a brace or a shield wall waits until the fight is at hand.
+    pub threat_radius: Option<u32>,
 }
 
 /// One ability a unit has, and who may use it.

@@ -3,8 +3,11 @@
 //!
 //! ```text
 //! cargo run --release -p canopy-sim --example ai_duels -- --data . [--seeds 4] \
-//!     [--minutes 60] [--races ants,beetles] [--maps echo-isles,amberleaf-crossing]
+//!     [--minutes 60] [--races ants,beetles] [--maps echo-isles,amberleaf-crossing] [--log]
 //! ```
+//!
+//! `--log` also prints each player's milestones: when each kind of building first stands
+//! complete and when each research finishes.
 //!
 //! Each duel takes the two starts farthest apart. `--races a,b` gives the first and second
 //! player those races (the default race for both when absent). `--maps` keeps those maps
@@ -21,6 +24,7 @@ struct Args {
     minutes: u32,
     races: [Option<String>; 2],
     maps: Vec<String>,
+    log: bool,
 }
 
 fn args() -> Result<Args, String> {
@@ -30,6 +34,7 @@ fn args() -> Result<Args, String> {
         minutes: 60,
         races: [None, None],
         maps: Vec::new(),
+        log: false,
     };
     let mut it = std::env::args().skip(1);
     while let Some(flag) = it.next() {
@@ -44,6 +49,7 @@ fn args() -> Result<Args, String> {
                 out.races = [parts.next().flatten(), parts.next().flatten()];
             }
             "--maps" => out.maps = value()?.split(',').map(|m| m.trim().to_string()).collect(),
+            "--log" => out.log = true,
             other => return Err(format!("unknown option {other}")),
         }
     }
@@ -72,6 +78,8 @@ struct Duel {
     winner: Option<u8>,
     /// Per player: units trained by definition.
     trained: [BTreeMap<String, u32>; 2],
+    /// Per player: (minute, what) as buildings first stand complete and research finishes.
+    milestones: [Vec<(f64, String)>; 2],
 }
 
 fn duel(
@@ -103,6 +111,9 @@ fn duel(
     let mut world = World::new(content, &map, setup).unwrap_or_else(|e| panic!("{e}"));
     let mut seen = std::collections::BTreeSet::new();
     let mut trained: [BTreeMap<String, u32>; 2] = Default::default();
+    let mut milestones: [Vec<(f64, String)>; 2] = Default::default();
+    let mut built: [std::collections::BTreeSet<String>; 2] = Default::default();
+    let mut learned: [usize; 2] = [0, 0];
     let mut ticks = 0;
     for tick in 0..cap {
         world.step();
@@ -112,11 +123,34 @@ fn duel(
                 let canopy_content::placement::Owner::Player(p) = e.owner else {
                     continue;
                 };
+                let side = players.iter().position(|&x| x == p).unwrap_or(0);
+                let id = world.catalog().id(e.definition).to_string();
                 if e.unit.is_some() && seen.insert(e.id.0) && tick > 0 {
-                    let side = players.iter().position(|&x| x == p).unwrap_or(0);
-                    *trained[side]
-                        .entry(world.catalog().id(e.definition).to_string())
-                        .or_default() += 1;
+                    *trained[side].entry(id.clone()).or_default() += 1;
+                }
+                if e.unit.is_none()
+                    && e.construction.is_none()
+                    && e.hp.is_some_and(|hp| hp > 0)
+                    && tick > 0
+                    && built[side].insert(id.clone())
+                {
+                    milestones[side].push((f64::from(tick) / 2400.0, id));
+                }
+            }
+            for (side, &p) in players.iter().enumerate() {
+                let done = world
+                    .state()
+                    .economy
+                    .researched(canopy_content::placement::Owner::Player(p));
+                // Research lists stay sorted; report what is new since the last look.
+                if done.len() > learned[side] {
+                    for id in done {
+                        let name = id.to_string();
+                        if !milestones[side].iter().any(|(_, m)| *m == name) {
+                            milestones[side].push((f64::from(tick) / 2400.0, name));
+                        }
+                    }
+                    learned[side] = done.len();
                 }
             }
         }
@@ -136,6 +170,7 @@ fn duel(
         ticks,
         winner,
         trained,
+        milestones,
     }
 }
 
@@ -186,6 +221,15 @@ fn main() -> Result<(), String> {
                 .map(|(id, n)| format!("{}×{n}", id.rsplit('.').next().unwrap_or(id)))
                 .collect();
             println!("    player {}: {}", side + 1, list.join(" "));
+        }
+        if args.log {
+            for (side, steps) in r.milestones.iter().enumerate() {
+                let list: Vec<String> = steps
+                    .iter()
+                    .map(|(m, id)| format!("{m:.1} {}", id.rsplit('.').next().unwrap_or(id)))
+                    .collect();
+                println!("    player {} milestones: {}", side + 1, list.join(", "));
+            }
         }
     }
     let mean = finished.iter().sum::<f64>() / finished.len().max(1) as f64;

@@ -135,9 +135,11 @@ pub fn busy(e: &Entity) -> bool {
 /// Whether the unit accepts an order now (old `canIssue`): the queue has room for an
 /// appended one.
 pub fn can_issue(e: &Entity, append: bool) -> bool {
-    e.unit
-        .as_ref()
-        .is_some_and(|u| u.taunt.is_none() && (!append || u.order_queue.len() < MAX_QUEUED_ORDERS))
+    e.unit.as_ref().is_some_and(|u| {
+        u.taunt.is_none()
+            && !u.garrison.as_ref().is_some_and(|g| g.crew)
+            && (!append || u.order_queue.len() < MAX_QUEUED_ORDERS)
+    })
 }
 
 /// Cancels current activity: queue, engagement, detours and navigation (the movement part

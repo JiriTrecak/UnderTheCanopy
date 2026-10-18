@@ -80,6 +80,8 @@ impl Stats {
         armor += bonus_armor;
         max_mana += bonus_mana;
         let mut damage_bonus: i64 = 0;
+        let mut attack_speed: i64 = 1000;
+        let mut move_speed: i64 = 1000;
         for id in research {
             let Some(r) = catalog.content.rules.research.get(id) else {
                 continue;
@@ -88,10 +90,10 @@ impl Stats {
                 max_hp += i64::from(effect.max_hp.unwrap_or(0));
                 armor += i64::from(effect.armor.unwrap_or(0));
                 damage_bonus += i64::from(effect.damage_permille.unwrap_or(0));
+                attack_speed += i64::from(effect.attack_speed_permille.unwrap_or(0));
+                move_speed += i64::from(effect.move_speed_permille.unwrap_or(0));
             }
         }
-        let mut attack_speed: i64 = 1000;
-        let mut move_speed: i64 = 1000;
         let mut cooldown_reduction: i64 = 0;
         let mut lifesteal: i64 = 0;
         let mut reflection: i64 = 0;
@@ -180,15 +182,31 @@ pub fn max_hp(catalog: &Catalog, e: &Entity) -> u32 {
     Stats::of(catalog, e, &[]).max_hp
 }
 
-/// Movement speed in permille of the authored speed: modifiers, then the strongest shell
-/// slow unless immune, clamped to [`MOVE_SPEED_RANGE`] (old `entityStats`).
-pub fn move_speed_permille(catalog: &Catalog, e: &Entity) -> u32 {
+/// Movement speed research gives `e` (permille).
+pub fn research_move_speed(catalog: &Catalog, e: &Entity, research: &[Id]) -> i64 {
+    if research.is_empty() {
+        return 0;
+    }
+    let id = catalog.id(e.definition);
+    research
+        .iter()
+        .filter_map(|r| catalog.content.rules.research.get(r.as_str()))
+        .flat_map(|r| &r.effects)
+        .filter(|effect| effect.units.contains(id))
+        .map(|effect| i64::from(effect.move_speed_permille.unwrap_or(0)))
+        .sum()
+}
+
+/// Movement speed in permille of the authored speed: research and modifiers, then the
+/// strongest shell slow unless immune, clamped to [`MOVE_SPEED_RANGE`] (old `entityStats`).
+pub fn move_speed_permille(catalog: &Catalog, e: &Entity, research: &[Id]) -> u32 {
+    let base = 1000 + research_move_speed(catalog, e, research);
     if e.statuses.is_empty() && e.equipment.is_none() {
-        return slowed(e, 0, 1000);
+        return slowed(e, 0, base);
     }
     let immunities = crate::abilities::statuses::control_immunities(catalog, e);
     let immune = immunities & crate::abilities::library::control::MOVE_SLOW != 0;
-    let mut speed: i64 = 1000;
+    let mut speed: i64 = base;
     let mut add = |m: &crate::abilities::library::Modifiers| {
         speed += if immune {
             m.move_speed_permille.max(0)

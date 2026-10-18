@@ -820,7 +820,8 @@ pub fn run(ctx: &mut Ctx, state: &mut State, mut run: Run) {
                         | Effect::Contain(_)
                         | Effect::Sacrifice(_)
                 );
-                if run.aura || (zero_skips && applied == 0) {
+                // Pulls move units a little every pulse; they report no events.
+                if run.aura || (zero_skips && applied == 0) || matches!(effect, Effect::Pull(_)) {
                     continue;
                 }
                 let moved = match effect {

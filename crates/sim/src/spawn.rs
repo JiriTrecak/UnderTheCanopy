@@ -1116,6 +1116,11 @@ pub fn insert(state: &mut State, catalog: &Catalog, spawn: Spawn) -> EntityId {
         }
     }
     crate::abilities::equip_new(catalog, &mut entity);
+    crate::abilities::research_ranks(
+        catalog,
+        crate::stats::research(state, entity.owner),
+        &mut entity,
+    );
     state.entities.insert(entity);
     id
 }

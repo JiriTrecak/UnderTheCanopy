@@ -589,6 +589,9 @@ pub fn produce(ctx: &mut Ctx, b: EntityId, definition: &str) -> Result<(), Strin
     if let Some(reason) = supply::prerequisite(ctx, owner, target.requires.as_deref()) {
         return Err(reason);
     }
+    if let Some(reason) = supply::owned_limit(ctx, owner, def) {
+        return Err(reason);
+    }
     let roster = crate::heroes::Roster::of(ctx.state, ctx.catalog, owner);
     if let Some(reason) = supply::hero_admission(ctx.catalog, def, &roster) {
         return Err(reason);

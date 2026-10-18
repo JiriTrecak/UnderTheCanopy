@@ -93,6 +93,21 @@ pub struct Missile {
     /// A weapon cast or attack bonus it carries (abilities).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enhancement: Option<Box<crate::abilities::weapons::Enhancement>>,
+    /// The jumps still to come of a chaining weapon, and who it hit.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub chain: Option<Box<Jumps>>,
+    /// Stopped by a field barrier where it would have crossed it (no hit).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub blocked: bool,
+}
+
+/// A chaining missile's remaining jumps (`combat.chain`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Jumps {
+    pub remaining: u8,
+    /// Victims so far, the newest last.
+    pub hit: Vec<EntityId>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -155,7 +170,7 @@ pub fn launch_missile(
     let flight =
         ((distance / f64::from(speed) * f64::from(crate::mission::TICKS_PER_SECOND)).ceil() as u32)
             .max(1);
-    let missile = Missile {
+    let mut missile = Missile {
         id: state.counters.missile,
         source: a,
         target: b,
@@ -171,10 +186,52 @@ pub fn launch_missile(
         resolved: false,
         critical,
         enhancement,
+        chain: weapon.chain.map(|c| {
+            Box::new(Jumps {
+                remaining: c.bounces,
+                hit: Vec::new(),
+            })
+        }),
+        blocked: false,
     };
+    crate::abilities::barriers::intercept(senses, state, &mut missile);
     state.counters.missile += 1;
     state.combat.missiles.push(missile);
     flight
+}
+
+/// The next victim of a chaining missile that hit `victim`: the nearest living, exposed,
+/// hostile body its owner sees within the weapon's chain radius that it has not hit yet
+/// (distance, then id).
+fn next_jump(senses: &Senses, state: &State, m: &Missile, victim: &Entity) -> Option<EntityId> {
+    let weapon = senses.combat.weapon(m.definition)?;
+    let policy = weapon.chain?;
+    let hit = m.chain.as_ref().map_or(&[][..], |c| c.hit.as_slice());
+    let sight = senses.sight(state);
+    let r2 = policy.radius_milli * policy.radius_milli;
+    let mut best: Option<(i64, EntityId)> = None;
+    for e in state.entities.iter() {
+        if e.id == victim.id
+            || hit.contains(&e.id)
+            || !e.hp.is_some_and(|hp| hp > 0)
+            || e.unit.as_ref().is_some_and(|u| {
+                u.contained.is_some() || u.release.is_some() || u.garrison.is_some()
+            })
+            || !weapon.reaches(senses.air(e))
+            || !senses.hostile_as(victim, m.owner, e)
+            || !sight.visible(m.owner, e)
+        {
+            continue;
+        }
+        let dx = i64::from(e.position.x - victim.position.x);
+        let dy = i64::from(e.position.y - victim.position.y);
+        let d2 = dx * dx + dy * dy;
+        if d2 > r2 || best.is_some_and(|(b, id)| (b, id) <= (d2, e.id)) {
+            continue;
+        }
+        best = Some((d2, e.id));
+    }
+    best.map(|(_, id)| id)
 }
 
 /// Lobs a shell from `a` at where `b` stands (old `ShellCombat.launch`).
@@ -382,6 +439,7 @@ pub fn land_missiles(senses: &Senses, state: &mut State, hits: &mut Vec<Hit>) {
         .combat
         .missiles
         .retain(|m| !m.resolved || tick < m.impact + MISSILE_LINGER);
+    let mut jumps: Vec<(usize, EntityId, EntityId)> = Vec::new();
     for index in 0..state.combat.missiles.len() {
         if state.combat.missiles[index].resolved {
             continue;
@@ -391,7 +449,9 @@ pub fn land_missiles(senses: &Senses, state: &mut State, hits: &mut Vec<Hit>) {
             .entities
             .get(target)
             .filter(|t| t.hp.is_none_or(|hp| hp > 0));
-        if let Some(t) = living {
+        if let Some(t) = living
+            && !state.combat.missiles[index].blocked
+        {
             let destination = Aim::of(senses.eye(state, t), t.surface.clone());
             state.combat.missiles[index].destination = destination;
         }
@@ -405,10 +465,20 @@ pub fn land_missiles(senses: &Senses, state: &mut State, hits: &mut Vec<Hit>) {
                     u.contained.is_none() && u.release.is_none() && u.garrison.is_none()
                 })
         });
-        let clear = hittable
+        let clear = !m.blocked
+            && hittable
             && senses
                 .terrain
                 .shot_clear(m.origin.point(senses), m.destination.point(senses));
+        // A chaining missile jumps on from its victim.
+        if clear
+            && m.chain.as_ref().is_some_and(|c| c.remaining > 0)
+            && let Some(victim) = living
+            && let Some(next) = next_jump(senses, state, m, victim)
+        {
+            jumps.push((index, victim.id, next));
+        }
+        let m = &state.combat.missiles[index];
         let hit = clear.then(|| Hit {
             source: m.source,
             owner: m.owner,
@@ -422,5 +492,49 @@ pub fn land_missiles(senses: &Senses, state: &mut State, hits: &mut Vec<Hit>) {
         });
         state.combat.missiles[index].resolved = true;
         hits.extend(hit);
+    }
+    for (index, from, to) in jumps {
+        let m = state.combat.missiles[index].clone();
+        let (Some(a), Some(b)) = (state.entities.get(from), state.entities.get(to)) else {
+            continue;
+        };
+        let Some(weapon) = senses.combat.weapon(m.definition) else {
+            continue;
+        };
+        let (Delivery::Missile { speed }, Some(policy)) = (weapon.delivery, weapon.chain) else {
+            continue;
+        };
+        let origin = senses.eye(state, a);
+        let destination = senses.eye(state, b);
+        let (dx, dy) = (destination.x - origin.x, destination.y - origin.y);
+        let flight = (((dx * dx + dy * dy).sqrt() / f64::from(speed)
+            * f64::from(crate::mission::TICKS_PER_SECOND))
+        .ceil() as u32)
+            .max(1);
+        let mut chain = m.chain.clone().expect("chain");
+        chain.remaining -= 1;
+        chain.hit.push(from);
+        let mut next = Missile {
+            id: state.counters.missile,
+            source: m.source,
+            target: to,
+            definition: m.definition,
+            owner: m.owner,
+            origin: Aim::of(origin, a.surface.clone()),
+            destination: Aim::of(destination, b.surface.clone()),
+            launched: tick,
+            impact: tick + flight,
+            damage_milli: m.damage_milli * u64::from(policy.retention_permille) / 1000,
+            damage_type: m.damage_type,
+            viewers: viewers(senses, state, a, b),
+            resolved: false,
+            critical: None,
+            enhancement: None,
+            chain: Some(chain),
+            blocked: false,
+        };
+        crate::abilities::barriers::intercept(senses, state, &mut next);
+        state.counters.missile += 1;
+        state.combat.missiles.push(next);
     }
 }

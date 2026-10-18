@@ -31,6 +31,108 @@ pub struct Lookout {
     pub height_cm: i32,
     /// Where the unit steps out: the lookout's entrance.
     pub exit: Place,
+    /// The building's own crew (`garrison.crew`): it never steps out.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub crew: bool,
+}
+
+/// The lookout's own crew unit, if its building has one.
+fn crew_of(catalog: &Catalog, host: &Entity) -> Option<crate::catalog::Def> {
+    let crew = catalog
+        .get(host.definition)
+        .garrison
+        .as_ref()?
+        .crew
+        .as_ref()?;
+    catalog.find(crew.as_str())
+}
+
+/// Step 5, after [`tick`]: every completed lookout with a crew has its own crew standing
+/// in it; a crew whose building lost it (an upgrade to another tower) gives way to the
+/// new one.
+pub fn staff(ctx: &mut crate::abilities::Ctx, state: &mut State) {
+    let _span = tracing::trace_span!("tower crews").entered();
+    let tick = state.tick;
+    let catalog = ctx.catalog();
+    let mut posted: std::collections::BTreeMap<EntityId, (EntityId, bool)> = Default::default();
+    for e in state.entities.iter().filter(|e| alive(e)) {
+        if let Some(g) = e.unit.as_ref().and_then(|u| u.garrison.as_ref()) {
+            posted.insert(g.building, (e.id, g.crew));
+        }
+    }
+    let mut dismissed = Vec::new();
+    let mut hire = Vec::new();
+    for host in state.entities.iter() {
+        let Some(crew) = crew_of(catalog, host) else {
+            continue;
+        };
+        if !alive(host) || host.construction.is_some() || host.ready_tick > tick {
+            continue;
+        }
+        match posted.get(&host.id) {
+            Some(&(occupant, true)) => {
+                if state
+                    .entities
+                    .get(occupant)
+                    .is_some_and(|o| o.definition != crew)
+                {
+                    dismissed.push(occupant);
+                    hire.push((host.id, crew));
+                }
+            }
+            Some(_) => {}
+            None => hire.push((host.id, crew)),
+        }
+    }
+    // Crews of lookouts that are gone or lost their crew leave with them.
+    for e in state.entities.iter().filter(|e| alive(e)) {
+        let Some(g) = e.unit.as_ref().and_then(|u| u.garrison.as_ref()) else {
+            continue;
+        };
+        let keeps = state
+            .entities
+            .get(g.building)
+            .is_some_and(|h| alive(h) && crew_of(catalog, h).is_some());
+        if g.crew && !keeps && !dismissed.contains(&e.id) {
+            dismissed.push(e.id);
+        }
+    }
+    for id in dismissed {
+        if let Some(e) = state.entities.get_mut(id) {
+            e.hp = Some(0);
+            crate::combat::deaths::die(ctx, state, id);
+        }
+    }
+    for (host, crew) in hire {
+        let h = state.entities.get(host).expect("host");
+        let (owner, position, surface, rotation) =
+            (h.owner, h.position, h.surface.clone(), h.rotation);
+        let height = catalog
+            .get(h.definition)
+            .garrison
+            .as_ref()
+            .map_or(0.0, |g| g.height);
+        let exit = entrance(catalog, h);
+        let deck = surface.as_deref().and_then(|s| ctx.spatial.deck_id(s));
+        let at = Spot::new(
+            crate::abilities::cell_round(position.x),
+            crate::abilities::cell_round(position.y),
+            deck,
+        );
+        let id = crate::abilities::summons::spawn(ctx, state, crew, owner, at, rotation);
+        let e = state.entities.get_mut(id).expect("crew");
+        e.position = position;
+        e.surface = surface;
+        let u = e.unit.as_mut().expect("unit");
+        u.garrison = Some(Lookout {
+            building: host,
+            height_cm: round_half_up(height * 100.0) as i32,
+            exit,
+            crew: true,
+        });
+        u.order = Some(Order::Hold);
+        ctx.spatial.update_body(e);
+    }
 }
 
 /// Whether a garrisoned unit ghosts through bodies (it stands inside a building).
@@ -110,7 +212,8 @@ pub fn settle(spatial: &mut Spatial, e: &mut Entity) -> bool {
     true
 }
 
-/// Releases every unit standing in `host` (it is being removed).
+/// Releases every unit standing in `host` (it is being removed); its own crew stays to
+/// go with it ([`staff`]).
 pub fn evict(state: &mut State, spatial: &mut Spatial, host: EntityId) {
     let occupants: Vec<EntityId> = state
         .entities
@@ -120,7 +223,7 @@ pub fn evict(state: &mut State, spatial: &mut Spatial, host: EntityId) {
                 && e.unit
                     .as_ref()
                     .and_then(|u| u.garrison.as_ref())
-                    .is_some_and(|g| g.building == host)
+                    .is_some_and(|g| g.building == host && !g.crew)
         })
         .map(|e| e.id)
         .collect();
@@ -200,7 +303,9 @@ pub fn tick(state: &mut State, catalog: &Catalog, spatial: &mut Spatial) {
         let u = e.unit.as_ref().expect("unit");
         if let Some(lookout) = &u.garrison {
             let host = state.entities.get(lookout.building);
-            let stay = host.is_some_and(|h| eligible(state, catalog, spatial, e, h));
+            // A crew stays at its post; [`staff`] dismisses it with its building.
+            let stay =
+                lookout.crew || host.is_some_and(|h| eligible(state, catalog, spatial, e, h));
             let e = state.entities.get_mut(id).expect("unit");
             let u = e.unit.as_mut().expect("unit");
             if stay {
@@ -254,6 +359,7 @@ pub fn tick(state: &mut State, catalog: &Catalog, spatial: &mut Spatial) {
                 building,
                 height_cm: round_half_up(height * 100.0) as i32,
                 exit: door,
+                crew: false,
             });
             u.order = Some(Order::Hold);
             crate::orders::discard_navigation(u);
@@ -340,7 +446,7 @@ pub fn command(
                         && e.unit
                             .as_ref()
                             .and_then(|u| u.garrison.as_ref())
-                            .is_some_and(|g| g.building == host)
+                            .is_some_and(|g| g.building == host && !g.crew)
                 })
                 .map(|e| e.id);
             let Some(occupant) = occupant else {

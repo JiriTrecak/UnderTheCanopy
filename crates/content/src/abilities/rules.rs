@@ -168,7 +168,12 @@ impl<'a> Check<'a> {
         self.targeting();
         self.amount(&a.cast.cost.amount, "cast.cost.amount", MILLION);
         self.amount(&a.cast.cooldown.ticks, "cast.cooldown.ticks", MAX_TICKS);
-        for (i, operation) in a.on_release.iter().enumerate() {
+        for (i, operation) in a
+            .on_release
+            .iter()
+            .chain(a.persistent.iter().flat_map(|p| p.pulse.iter().flatten()))
+            .enumerate()
+        {
             match operation {
                 Operation::Branch(branch) => {
                     for e in branch.then.iter().chain(&branch.otherwise) {
@@ -427,6 +432,7 @@ impl<'a> Check<'a> {
     fn records(&mut self) {
         let a = self.ability;
         let programs = std::iter::once(&a.on_release)
+            .chain(a.persistent.iter().filter_map(|p| p.pulse.as_ref()))
             .chain(a.triggers.iter().flatten().map(|t| &t.operations));
         for program in programs {
             let mut records = BTreeSet::new();
@@ -667,6 +673,18 @@ impl<'a> Check<'a> {
                     self.fail("Unit teleport destinations require a unit aim");
                 }
             }
+            Effect::Pull(e) => {
+                self.amount(&e.amount, "onRelease.amount", 10_000);
+                if e.toward == Anchor::Point && a.targeting.kind != TargetingKind::Point {
+                    self.fail("Pulls toward a point require point targeting");
+                }
+                if e.toward == Anchor::Target && a.targeting.kind != TargetingKind::Unit {
+                    self.fail("Pulls toward the target require a unit aim");
+                }
+                if !(0.0..=32.0).contains(&e.min_distance) {
+                    self.fail("Pull minimum distance must be within 0–32");
+                }
+            }
             Effect::Vision(e) => {
                 self.amount(&e.amount, "onRelease.amount", MAX_TICKS);
                 self.amount(&e.radius, "onRelease.radius", 64);
@@ -775,6 +793,12 @@ impl<'a> Check<'a> {
             if a.aura.is_some() {
                 self.fail("Concealment requires a timed status, not a continuously reapplied aura");
             }
+        }
+        if let Some(barrier) = &e.barrier
+            && (!(1.0..=16.0).contains(&barrier.radius)
+                || !(10.0..=360.0).contains(&barrier.arc_degrees))
+        {
+            self.fail("A barrier needs a 1–16 radius and a 10–360° arc");
         }
         if let Some(radius) = &e.detection_radius {
             self.amount(radius, "onRelease.detectionRadius", 64);
@@ -964,6 +988,17 @@ impl<'a> Check<'a> {
             || (p.tether_range.is_some() && p.anchor != PersistentAnchor::Target)
         {
             self.fail("Target anchors and tethers require a unit target");
+        }
+        if p.toggle && p.delay_ticks > 0 {
+            self.fail("Toggles start at once; a delay needs a timed instance");
+        }
+        if i64::from(p.delay_ticks) > MAX_TICKS {
+            self.fail("Persistent delay is too long");
+        }
+        if let Some(pulse) = &p.pulse
+            && (pulse.is_empty() || pulse.len() > 8)
+        {
+            self.fail("A pulse program has 1–8 operations");
         }
     }
 

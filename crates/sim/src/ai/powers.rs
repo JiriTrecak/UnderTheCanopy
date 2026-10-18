@@ -250,6 +250,7 @@ fn cast_one(
                 observed,
                 ai.preference,
                 &corpses,
+                ai.threat_radius,
             )
         };
         let t = &spell.targeting;

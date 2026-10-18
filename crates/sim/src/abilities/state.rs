@@ -414,6 +414,9 @@ pub struct Instance {
     pub next_tick: u32,
     pub expires: u32,
     pub source_context: Option<Box<Source>>,
+    /// The release program still waits for `next_tick` (`persistent.delayTicks`).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub delayed: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]

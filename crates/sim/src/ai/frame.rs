@@ -494,7 +494,11 @@ impl<'a> Frame<'a> {
             }
             complete.extend(fulfils[usize::from(k.def.0)].iter().copied());
         }
+        let research = &self.catalog().content.rules.research;
         requires.iter().all(|id| {
+            if research.contains_key(id.as_str()) {
+                return self.researched.contains(id);
+            }
             self.find(id.as_str())
                 .is_some_and(|d| complete.contains(&d))
         })

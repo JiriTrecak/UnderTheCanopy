@@ -258,7 +258,14 @@ fn research(check: &mut Checker) {
         for cost in &research.items {
             check.definition(&location, cost.item.as_str(), Kind::Item);
         }
+        // A research may require buildings and earlier research (levels I–III).
         for prerequisite in research.requires.iter().flatten() {
+            if content.rules.research.contains_key(prerequisite.as_str()) {
+                if prerequisite.as_str() == id.as_str() {
+                    check.fail(&location, "research cannot require itself");
+                }
+                continue;
+            }
             check.definition(&location, prerequisite.as_str(), Kind::Building);
         }
         for effect in &research.effects {
@@ -285,6 +292,35 @@ fn research(check: &mut Checker) {
                 }
                 if effect.tree_work_rate.is_some_and(|v| v != 0) && !worker {
                     check.fail(&location, "tree research requires worker");
+                }
+                if effect.attack_speed_permille.is_some() && combat.is_none() {
+                    check.fail(&location, "attack speed research requires combat");
+                }
+                for (binding, &rank) in effect.ability_ranks.iter().flatten() {
+                    let found = target
+                        .behaviors
+                        .abilities
+                        .as_ref()
+                        .and_then(|a| a.bindings.iter().find(|b| b.id.as_str() == binding));
+                    let Some(found) = found else {
+                        check.fail(
+                            &location,
+                            format!("{unit} has no ability binding {binding}"),
+                        );
+                        continue;
+                    };
+                    let ranks = content
+                        .abilities
+                        .ability(found.ability.as_str())
+                        .map_or(0, |a| a.ranks.len() as u32);
+                    if rank == 0 || rank > ranks {
+                        check.fail(
+                            &location,
+                            format!(
+                                "research rank {rank} of {binding} is outside its ability's ranks"
+                            ),
+                        );
+                    }
                 }
             }
         }
@@ -371,6 +407,24 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
         if d.kind != Kind::Building || d.footprint.is_none() || d.entrance.is_none() {
             check.fail(at, "garrison requires a building footprint and entrance");
         }
+        if let Some(crew) = &garrison.crew
+            && let Some(unit) = check.definition(at, crew.as_str(), Kind::Unit)
+        {
+            let ranged = unit
+                .behaviors
+                .combat
+                .as_ref()
+                .is_some_and(|c| c.projectile.is_some() || c.shell.is_some());
+            if !ranged
+                || unit.behaviors.player_control.is_some()
+                || unit.supply_cost.unwrap_or(0) != 0
+            {
+                check.fail(
+                    at,
+                    "a garrison crew is a ranged, uncontrolled unit without supply",
+                );
+            }
+        }
         for id in &garrison.accepts {
             if let Some(unit) = check.definition(at, id.as_str(), Kind::Unit) {
                 let ranged = unit
@@ -383,6 +437,9 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
                 }
             }
         }
+    }
+    if d.max_owned.is_some_and(|m| m == 0 || d.kind != Kind::Unit) {
+        check.fail(at, "maxOwned needs a unit and at least 1");
     }
     if let Some(requires) = &d.requires {
         check.unique(at, requires.iter().map(|r| r.as_str()), "prerequisite");
@@ -513,6 +570,19 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
     if matches!(d.kind, Kind::Unit | Kind::Building) && d.body.is_none() {
         check.fail(at, "body required");
     }
+    if let Some(p) = &d.presentation {
+        for (what, effect) in [
+            ("projectile", &p.projectile),
+            ("launch", &p.launch_effect),
+            ("impact", &p.impact_effect),
+        ] {
+            if let Some(effect) = effect
+                && !content.effects.iter().any(|e| e.id == *effect)
+            {
+                check.fail(at, format!("unknown {what} effect {effect}"));
+            }
+        }
+    }
     for e in d
         .presentation
         .iter()
@@ -556,6 +626,23 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
     if let Some(combat) = &b.combat {
         if combat.projectile.is_some() && combat.shell.is_some() {
             check.fail(at, "weapon cannot launch both a missile and an area shell");
+        }
+        if let Some(jumps) = &combat.chain
+            && (combat.projectile.is_none()
+                || !(1..=8).contains(&jumps.bounces)
+                || !(1.0..=32.0).contains(&jumps.radius)
+                || !(1..=1000).contains(&jumps.retention_permille))
+        {
+            check.fail(
+                at,
+                "a weapon chain needs a missile, 1–8 bounces, a 1–32 radius and 1–1000 retention",
+            );
+        }
+        if combat
+            .min_range
+            .is_some_and(|m| !(0.0..combat.range).contains(&m))
+        {
+            check.fail(at, "minimum range must be below the weapon's range");
         }
         if d.kind != Kind::Unit {
             check.fail(at, "combat currently requires a unit");

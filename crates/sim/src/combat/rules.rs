@@ -68,6 +68,8 @@ pub struct Weapon {
     pub range: f64,
     /// Extra reach a released swing still connects at, cells.
     pub range_buffer: f64,
+    /// Targets nearer than this (body edges, cells) are out of the weapon's reach.
+    pub min_range: f64,
     /// Cells within which the unit looks for targets.
     pub aggro: u32,
     pub cooldown: u32,
@@ -77,6 +79,17 @@ pub struct Weapon {
     pub ground: bool,
     pub air: bool,
     pub charge: Option<ChargePolicy>,
+    /// Missiles that jump on from each victim.
+    pub chain: Option<ChainPolicy>,
+}
+
+/// A missile weapon's jumps: `bounces` more victims within `radius_milli` of the last,
+/// each hit keeping `retention_permille` of the damage before.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ChainPolicy {
+    pub bounces: u8,
+    pub radius_milli: i64,
+    pub retention_permille: u32,
 }
 
 impl Weapon {
@@ -190,6 +203,7 @@ impl Rules {
                             .ok_or_else(|| format!("{}: unknown damage type", d.id))?,
                         range: c.range,
                         range_buffer: c.attack.range_buffer,
+                        min_range: c.min_range.unwrap_or(0.0),
                         aggro: c.aggro_range,
                         cooldown: ticks(c.cooldown_ticks).max(1),
                         windup: ticks(c.attack.windup_ticks),
@@ -204,6 +218,11 @@ impl Rules {
                             duration: ticks(c.duration_ticks),
                             speed_permille: c.speed_permille,
                             damage_permille: c.damage_permille,
+                        }),
+                        chain: c.chain.as_ref().map(|c| ChainPolicy {
+                            bounces: c.bounces.min(8) as u8,
+                            radius_milli: crate::terrain::round_half_up(c.radius * 1000.0) as i64,
+                            retention_permille: c.retention_permille,
                         }),
                     })
                 }
@@ -302,6 +321,7 @@ mod tests {
             damage_type: DamageType(0),
             range: 1.0,
             range_buffer: 0.5,
+            min_range: 0.0,
             aggro: 5,
             cooldown: 54,
             windup: 12,
@@ -310,6 +330,7 @@ mod tests {
             ground: true,
             air: false,
             charge: None,
+            chain: None,
         };
         assert_eq!(weapon.timing(54), (12, 10));
         // A faster cycle shortens both phases, rounding halves up; wind-up stays ≥ 1.

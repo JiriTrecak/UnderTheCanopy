@@ -367,6 +367,7 @@ impl StatusDecl {
             || s.mana_shield.is_some()
             || s.concealment.is_some()
             || s.detection_radius.is_some()
+            || s.barrier.is_some()
             || s.form.is_some()
             || s.immunity.is_some()
             || s.spell_immunity.is_some()

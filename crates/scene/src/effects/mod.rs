@@ -640,8 +640,10 @@ impl EffectDirector {
                 // Standalone plays bind no `sizeFrom`/`spreadFrom` (old `EffectPlayer.play`
                 // ignored its radius, shell impacts included).
                 (None, Some((e, l))) => {
-                    let at_source = self.table.effects[e].layers[l].at_source;
-                    (e, l, at_source, false, false, false, false)
+                    let layer = &self.table.effects[e].layers[l];
+                    // Weapon flights pass their duration to travelling layers only.
+                    let flight = trigger.duration.is_some() && layer.motion.travels();
+                    (e, l, layer.at_source, false, flight, false, false)
                 }
                 (None, None) => return None,
             };
@@ -788,6 +790,38 @@ impl EffectDirector {
             origin: play.from.unwrap_or(play.at),
             point: play.at,
             duration: None,
+            radius: play.radius,
+            status: None,
+        };
+        for layer in 0..layers {
+            let l = &self.table.effects[play.effect].layers[layer];
+            if l.primitive == Primitive::Sound || l.motion == Motion::Unsupported {
+                continue;
+            }
+            started.extend(self.emit(&trigger, None, Some((play.effect, layer))));
+        }
+        started
+    }
+
+    /// Plays a weapon effect for a missile or shell in flight: travelling layers run from
+    /// `play.from` to `play.at` over `duration` ticks and home on `target`.
+    pub fn play_flight(&mut self, play: Play, duration: f64, target: Option<u32>) -> Vec<u32> {
+        let mut started = Vec::new();
+        let Some(effect) = self.table.effects.get(play.effect) else {
+            return started;
+        };
+        let layers = effect.layers.len();
+        let trigger = Trigger {
+            ability: None,
+            event: EffectEvent::Projectile,
+            cast: None,
+            seed: play.seed,
+            tick: play.tick,
+            caster: None,
+            target,
+            origin: play.from.unwrap_or(play.at),
+            point: play.at,
+            duration: Some(duration),
             radius: play.radius,
             status: None,
         };

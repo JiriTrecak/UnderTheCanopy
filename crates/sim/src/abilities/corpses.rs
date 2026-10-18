@@ -100,6 +100,7 @@ pub fn visible(ctx: &Ctx, state: &State, caster: &Actor) -> Vec<CorpseView> {
                     Side::Neutral => CorpseRelation::Neutral,
                 },
                 traits: actor::Plain {
+                    building: false,
                     hero: false,
                     summoned: false,
                     level,

@@ -152,6 +152,7 @@ pub fn apply(ctx: &mut Ctx, state: &mut State, a: Apply) -> i64 {
         a.effect,
         Effect::Split(_)
             | Effect::Teleport(_)
+            | Effect::Pull(_)
             | Effect::Vision(_)
             | Effect::Convert(_)
             | Effect::Contain(_)

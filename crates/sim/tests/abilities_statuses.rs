@@ -311,11 +311,11 @@ fn slows_change_movement_speed() {
     );
     let before = {
         let world = canopy_sim::World::new(script.content(), &script.map(), setup(false)).unwrap();
-        move_speed_permille(world.catalog(), entity(&world, "b"))
+        move_speed_permille(world.catalog(), entity(&world, "b"), &[])
     };
     let played = script.play();
     assert_eq!(
-        move_speed_permille(played.world.catalog(), played.entity("b")),
+        move_speed_permille(played.world.catalog(), played.entity("b"), &[]),
         before * 700 / 1000
     );
 }

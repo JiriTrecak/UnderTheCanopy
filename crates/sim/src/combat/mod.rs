@@ -187,6 +187,7 @@ pub fn round(x: f64) -> f64 {
 /// move speed (slows, M2.6 items) and its charge.
 pub fn speed_factors(
     catalog: &crate::catalog::Catalog,
+    research: &[canopy_content::Id],
     e: &crate::entity::Entity,
     tick: u32,
 ) -> (u32, u32) {
@@ -194,7 +195,10 @@ pub fn speed_factors(
         Some(c) if charge::charging(e, tick) => c.speed_permille,
         _ => 1000,
     };
-    (crate::stats::move_speed_permille(catalog, e), charge)
+    (
+        crate::stats::move_speed_permille(catalog, e, research),
+        charge,
+    )
 }
 
 /// Combat's derived side, rebuilt from content, map and setup (never saved).

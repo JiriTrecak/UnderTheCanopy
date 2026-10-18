@@ -152,6 +152,18 @@ pub struct Projectile {
     pub speed: u32,
 }
 
+/// A missile that jumps on from each victim to the nearest other enemy (arcs).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct WeaponChain {
+    /// Further victims after the first, 1–8.
+    pub bounces: u32,
+    /// How far from a victim the next one may stand, world units.
+    pub radius: f64,
+    /// Damage each jump keeps of the one before, permille.
+    pub retention_permille: u32,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Shell {
@@ -182,11 +194,16 @@ pub struct Combat {
     pub targets: Option<Vec<Locomotion>>,
     /// Weapon reach beyond body edges, in world units.
     pub range: f64,
+    /// Targets closer than this (body edges, world units) cannot be hit: siege weapons
+    /// that are weak up close.
+    pub min_range: Option<f64>,
     pub cooldown_ticks: u32,
     #[serde(default)]
     pub attack: AttackTiming,
     pub aggro_range: u32,
     pub projectile: Option<Projectile>,
+    /// Missiles only: each hit jumps on to further enemies.
+    pub chain: Option<WeaponChain>,
     pub shell: Option<Shell>,
     pub charge: Option<Charge>,
 }
@@ -339,6 +356,9 @@ pub struct Garrison {
     pub accepts: Vec<Id>,
     pub height: f64,
     pub lookout_radius: Option<f64>,
+    /// A tower's own gunner: this unit stands in the lookout whenever the building is
+    /// complete, cannot leave or take orders, and goes with the building.
+    pub crew: Option<Id>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -444,6 +464,8 @@ pub struct Definition {
     /// Presentation only; never changes movement, collision or weapon range.
     pub model_scale: Option<f64>,
     pub supply_cost: Option<u32>,
+    /// At most this many living or in training per player (a unit: one Juggernaut).
+    pub max_owned: Option<u32>,
     pub supply_provided: Option<u32>,
     pub level: Option<u32>,
     pub experience_yield: Option<u32>,
@@ -485,8 +507,11 @@ pub struct DefinitionPresentation {
     pub projectile: Option<Id>,
     /// Model node missiles leave from.
     pub projectile_socket: Option<String>,
-    /// Visual effect where its shells land.
+    /// Visual effect where its shells and missiles land, and where its melee blows strike.
     pub impact_effect: Option<Id>,
+    /// Visual effect played from the projectile socket as each missile or shell leaves
+    /// (muzzle flash, steam, a beam to the target), lasting the flight.
+    pub launch_effect: Option<Id>,
     /// Share of the cast animation at which a spell lands.
     pub cast_contact: Option<f64>,
     pub camera_anchor: Option<CameraAnchor>,
@@ -630,6 +655,13 @@ pub struct ResearchEffect {
     pub splash_radius: Option<f64>,
     pub splash_slow_permille: Option<u32>,
     pub charge_cooldown_permille: Option<u32>,
+    /// Faster weapon cycles: 250 makes 25% more attacks.
+    pub attack_speed_permille: Option<u32>,
+    /// Faster movement: 200 is 20% faster.
+    pub move_speed_permille: Option<u32>,
+    /// Ability bindings (by binding id) raised to at least this rank: 1 unlocks an
+    /// ability the unit trains without (`initialRank` 0), 2 strengthens it.
+    pub ability_ranks: Option<BTreeMap<String, u32>>,
 }
 
 #[skip_serializing_none]
@@ -821,6 +853,7 @@ pub struct RenderAsset {
     pub stack_columns: Option<u32>,
     pub projectile: Option<Id>,
     pub impact_effect: Option<Id>,
+    pub launch_effect: Option<Id>,
     pub projectile_socket: Option<String>,
     pub sockets: Option<Vec<Socket>>,
     pub cast_contact: Option<f64>,
@@ -868,6 +901,7 @@ impl RenderAsset {
             stack_columns: None,
             projectile: None,
             impact_effect: None,
+            launch_effect: None,
             projectile_socket: None,
             sockets: None,
             cast_contact: None,

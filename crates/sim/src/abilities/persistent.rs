@@ -28,6 +28,9 @@ pub fn start(ctx: &mut Ctx, state: &mut State, caster: &Actor, p: &Pending) {
         .entities
         .get(caster.id)
         .map(|e| Box::new(actor::source(&ctx.senses, state, e)));
+    // A delayed instance runs its release program when the delay ends, and lasts from then.
+    let delay = d.delay_ticks;
+    let interval = library::value(spell, p.rank, &d.interval_ticks).max(0) as u32;
     state.abilities.instances.push(Instance {
         cast: p.id,
         ability: p.ability,
@@ -38,10 +41,16 @@ pub fn start(ctx: &mut Ctx, state: &mut State, caster: &Actor, p: &Pending) {
         point: mark.position,
         origin: caster.position,
         started: tick,
-        next_tick: tick + library::value(spell, p.rank, &d.interval_ticks).max(0) as u32,
-        expires: tick + library::value(spell, p.rank, &d.duration_ticks).max(0) as u32,
+        next_tick: tick + if delay > 0 { delay } else { interval },
+        expires: tick + delay + library::value(spell, p.rank, &d.duration_ticks).max(0) as u32,
         source_context: source,
+        delayed: delay > 0,
     });
+}
+
+/// Whether the cast's release program waits for a persistent delay.
+pub fn delayed(spell: &canopy_content::abilities::Ability) -> bool {
+    spell.persistent.as_ref().is_some_and(|p| p.delay_ticks > 0)
 }
 
 /// Ends the `instance` statuses of a cast (old `endInstance`).
@@ -130,7 +139,10 @@ pub fn tick(ctx: &mut Ctx, state: &mut State) {
                     }
                     instance.next_tick +=
                         library::value(spell, instance.rank, &d.interval_ticks).max(0) as u32;
+                    let first = instance.delayed;
+                    instance.delayed = false;
                     state.abilities.instances[i].next_tick = instance.next_tick;
+                    state.abilities.instances[i].delayed = false;
                     let center = center.clone().expect("center");
                     let radius = spell
                         .targeting
@@ -141,6 +153,7 @@ pub fn tick(ctx: &mut Ctx, state: &mut State) {
                         radius,
                         ..Extra::default()
                     };
+                    // The delayed release lands (`impact`); later pulses are waves.
                     super::emit(
                         ctx,
                         state,
@@ -148,10 +161,18 @@ pub fn tick(ctx: &mut Ctx, state: &mut State) {
                         &center.mark(),
                         instance.cast,
                         instance.ability,
-                        EventKind::Wave,
+                        if first {
+                            EventKind::Impact
+                        } else {
+                            EventKind::Wave
+                        },
                         extra,
                         None,
                     );
+                    let operations = match (&d.pulse, first) {
+                        (Some(pulse), false) => pulse,
+                        _ => &spell.on_release,
+                    };
                     program::run(
                         ctx,
                         state,
@@ -164,7 +185,7 @@ pub fn tick(ctx: &mut Ctx, state: &mut State) {
                             power: 1000,
                             aura: false,
                             area_defaults: true,
-                            operations: Ops::Program(&spell.on_release),
+                            operations: Ops::Program(operations),
                             origin_viewers: None,
                             visual_origin: None,
                             creation_grant: false,

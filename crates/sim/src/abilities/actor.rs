@@ -313,9 +313,16 @@ pub trait Traits {
     fn level(&self) -> u32;
     fn nature(&self) -> Option<UnitNature>;
     fn locomotion(&self) -> Option<Locomotion>;
+    /// A structure rather than a unit.
+    fn building(&self) -> bool {
+        false
+    }
 }
 
 impl Traits for Actor {
+    fn building(&self) -> bool {
+        !self.unit
+    }
     fn hp(&self) -> Option<u32> {
         Some(self.hp)
     }
@@ -396,9 +403,13 @@ pub struct Plain {
     pub level: u32,
     pub nature: Option<UnitNature>,
     pub locomotion: Option<Locomotion>,
+    pub building: bool,
 }
 
 impl Traits for Plain {
+    fn building(&self) -> bool {
+        self.building
+    }
     fn hp(&self) -> Option<u32> {
         None
     }
@@ -445,6 +456,7 @@ pub fn plain(catalog: &Catalog, e: &Entity) -> Plain {
         } else {
             Locomotion::Ground
         }),
+        building: d.kind == canopy_content::game::Kind::Building,
     }
 }
 
@@ -463,6 +475,7 @@ pub fn matches(t: &dyn Traits, f: Option<&TargetFilter>) -> bool {
             .is_none_or(|n| t.nature().is_some_and(|x| n.contains(&x)))
         && f.min_level.is_none_or(|m| t.level() >= m)
         && f.max_level.is_none_or(|m| t.level() <= m)
+        && f.buildings.is_none_or(|b| t.building() == b)
 }
 
 /// Evaluates a condition (old `matchesAbilityCondition`).

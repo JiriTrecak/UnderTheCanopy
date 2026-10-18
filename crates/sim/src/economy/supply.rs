@@ -244,7 +244,8 @@ pub fn fulfils(catalog: &Catalog) -> Vec<Vec<Def>> {
 }
 
 /// Why `owner` may not buy something that requires `requires` (old
-/// `prerequisiteReason`): each must be a completed living building, or one upgraded from it.
+/// `prerequisiteReason`): each must be a completed living building, or one upgraded from it,
+/// or a research the owner completed.
 pub fn prerequisite(
     ctx: &Ctx,
     owner: Owner,
@@ -266,21 +267,52 @@ pub fn prerequisite(
             );
         }
     }
+    let researched = ctx.state.economy.researched(owner);
+    let rules = &ctx.catalog.content.rules;
     let missing: Vec<&str> = requires
         .iter()
-        .filter(|id| {
-            ctx.catalog
+        .filter(|id| match rules.research.get(id.as_str()) {
+            Some(_) => !researched.contains(id),
+            None => ctx
+                .catalog
                 .find(id.as_str())
-                .is_none_or(|d| !complete.contains(&d))
+                .is_none_or(|d| !complete.contains(&d)),
         })
-        .map(|id| {
-            ctx.catalog
+        .map(|id| match rules.research.get(id.as_str()) {
+            Some(r) => r.name.as_str(),
+            None => ctx
+                .catalog
                 .content
                 .definition(id.as_str())
-                .map_or(id.as_str(), |d| d.name.as_str())
+                .map_or(id.as_str(), |d| d.name.as_str()),
         })
         .collect();
     (!missing.is_empty()).then(|| format!("Requires {}", missing.join(", ")))
+}
+
+/// Why `owner` may not order another `def`: a definition with `maxOwned` allows that many
+/// living or queued at once (one Juggernaut at a time).
+pub fn owned_limit(ctx: &Ctx, owner: Owner, def: Def) -> Option<String> {
+    let d = ctx.catalog.get(def);
+    let limit = d.max_owned?;
+    let living = ctx
+        .index
+        .units
+        .iter()
+        .filter_map(|&id| ctx.state.entities.get(id))
+        .filter(|e| e.owner == owner && e.definition == def && alive(e))
+        .count();
+    let queued = ctx
+        .index
+        .buildings
+        .iter()
+        .filter_map(|&id| ctx.state.entities.get(id))
+        .filter(|e| e.owner == owner)
+        .filter_map(|e| e.production.as_ref())
+        .flat_map(|p| &p.queue)
+        .filter(|q| q.definition == def)
+        .count();
+    (living + queued >= limit as usize).then(|| format!("Only {limit} {} at a time", d.name))
 }
 
 /// Why `def` cannot join the roster (old `heroAdmission`).

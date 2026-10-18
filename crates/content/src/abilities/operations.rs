@@ -438,6 +438,18 @@ pub struct StatusEffect {
     pub immunity: Option<Immunity>,
     pub spell_immunity: Option<SpellImmunity>,
     pub periodic: Option<PeriodicDamage>,
+    /// A field barrier in front of the holder: hostile weapon missiles that would cross it
+    /// from the front are stopped where they meet it.
+    pub barrier: Option<Barrier>,
+}
+
+/// A curved field pane `radius` world units in front of its holder, `arcDegrees` wide,
+/// centred on the holder's facing.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Barrier {
+    pub radius: f64,
+    pub arc_degrees: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -653,6 +665,22 @@ pub struct Teleport {
     pub preserve_offset: bool,
 }
 
+/// Drags recipients toward an anchor, as a vortex does: `amount` is the distance per
+/// application in hundredths of a world unit. Recipients never come closer than
+/// `minDistance` (world units) and never cross ground they could not stand on.
+#[skip_serializing_none]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Pull {
+    pub target: Subject,
+    pub query: Option<RecipientQuery>,
+    pub filter: Option<TargetFilter>,
+    pub amount: Amount,
+    pub toward: Anchor,
+    #[serde(default)]
+    pub min_distance: f64,
+}
+
 /// A temporary vision source; `amount` is its lifetime in ticks.
 #[skip_serializing_none]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -754,6 +782,7 @@ pub enum Effect {
     Drain(Drain),
     Mana(ManaRestore),
     Teleport(Teleport),
+    Pull(Pull),
     Vision(Vision),
     Convert(Convert),
     Contain(Contain),
@@ -778,6 +807,7 @@ impl Effect {
             Self::Drain(e) => e.target.into(),
             Self::Mana(e) => e.target.into(),
             Self::Teleport(e) => e.target.into(),
+            Self::Pull(e) => e.target.into(),
             Self::Vision(e) => e.target,
             Self::Convert(e) => e.target.into(),
             Self::Contain(e) => e.target.into(),
@@ -799,6 +829,7 @@ impl Effect {
             Self::Drain(e) => e.query.as_ref(),
             Self::Mana(e) => e.query.as_ref(),
             Self::Teleport(e) => e.query.as_ref(),
+            Self::Pull(e) => e.query.as_ref(),
             Self::Vision(e) => e.query.as_ref(),
             Self::Convert(e) => e.query.as_ref(),
             Self::Contain(e) => e.query.as_ref(),
@@ -816,6 +847,7 @@ impl Effect {
             Self::Drain(e) => e.filter.as_ref(),
             Self::Mana(e) => e.filter.as_ref(),
             Self::Teleport(e) => e.filter.as_ref(),
+            Self::Pull(e) => e.filter.as_ref(),
             Self::Convert(e) => e.filter.as_ref(),
             Self::Contain(e) => e.filter.as_ref(),
             Self::ReleaseContained(e) => e.filter.as_ref(),
@@ -842,6 +874,7 @@ impl Effect {
             Self::Drain(e) => e.amount.clone(),
             Self::Mana(e) => e.amount.clone(),
             Self::Teleport(e) => e.amount.clone(),
+            Self::Pull(e) => e.amount.clone(),
             Self::Vision(e) => e.amount.clone(),
             Self::Contain(e) => e.amount.clone(),
             Self::Convert(_) | Self::ReleaseContained(_) | Self::Sacrifice(_) => Amount::Fixed(1),
@@ -882,6 +915,7 @@ impl Effect {
             Self::Drain(_) => "drain",
             Self::Mana(_) => "mana",
             Self::Teleport(_) => "teleport",
+            Self::Pull(_) => "pull",
             Self::Vision(_) => "vision",
             Self::Convert(_) => "convert",
             Self::Contain(_) => "contain",

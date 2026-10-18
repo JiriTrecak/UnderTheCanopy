@@ -485,8 +485,78 @@ pub fn apply(ctx: &mut Ctx, state: &mut State, a: &Apply) -> i64 {
             ctx.spatial.update_body(e);
             1
         }
+        Effect::Pull(op) => {
+            let Some(t) = target else {
+                return 0;
+            };
+            pull(ctx, state, a, op, t)
+        }
         _ => 0,
     }
+}
+
+/// Drags `t` one step toward the pull's anchor over ground it could stand on, never
+/// closer than the minimum distance; returns 1 when it moved.
+fn pull(
+    ctx: &mut Ctx,
+    state: &mut State,
+    a: &Apply,
+    op: &canopy_content::abilities::Pull,
+    t: EntityId,
+) -> i64 {
+    let Some(e) = state.entities.get(t) else {
+        return 0;
+    };
+    if e.unit.is_none() || !alive(e) || held(e) || t == a.source {
+        return 0;
+    }
+    let anchor = match (op.toward, a.aim) {
+        (Anchor::Caster, _) => state
+            .entities
+            .get(a.source)
+            .map_or(a.origin.position, |c| c.position),
+        (Anchor::Target, program::Aim::Unit(u)) => {
+            state.entities.get(u.id).map_or(u.position, |x| x.position)
+        }
+        (_, aim) => aim.position(),
+    };
+    let dx = f64::from(anchor.x - e.position.x);
+    let dy = f64::from(anchor.y - e.position.y);
+    let distance = (dx * dx + dy * dy).sqrt();
+    let keep = op.min_distance * 1000.0;
+    if distance <= keep || distance <= 0.0 {
+        return 0;
+    }
+    // Hundredths of a world unit per application; positions are thousandths.
+    let step = (a.amount.max(0) as f64 * 10.0).min(distance - keep);
+    let to = Milli {
+        x: e.position.x + crate::terrain::round_half_up(dx * step / distance) as i32,
+        y: e.position.y + crate::terrain::round_half_up(dy * step / distance) as i32,
+    };
+    if to == e.position {
+        return 0;
+    }
+    let body = ctx.spatial.body_of(e);
+    let spot = Spot::new(
+        super::cell_round(to.x),
+        super::cell_round(to.y),
+        ctx.spatial.deck_of(e),
+    );
+    // Ground only: bodies crowd together in a vortex.
+    if !ctx
+        .spatial
+        .free(spot, Some(t), Some(&body), Some(&|_| false))
+    {
+        return 0;
+    }
+    let e = state.entities.get_mut(t).expect("unit");
+    let u = e.unit.as_mut().expect("unit");
+    discard_navigation(u);
+    u.combat.attack = None;
+    u.last_moved_tick = None;
+    e.position = to;
+    ctx.spatial.update_body(e);
+    1
 }
 
 /// Holds `victim` inside `host` (old `SpellContainments.hold`).

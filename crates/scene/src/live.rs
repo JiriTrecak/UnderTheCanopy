@@ -494,6 +494,10 @@ pub struct Presenter {
     buildings: BTreeMap<EntityId, BuildingTrack>,
     corpses: BTreeMap<EntityId, Corpse>,
     origins: BTreeMap<(Part, u32), (u32, Vec3)>,
+    /// Weapon flights whose launch effect played (with their launch tick).
+    fired: BTreeMap<(Part, u32), u32>,
+    /// Missiles whose impact effect played (with their launch tick).
+    struck: BTreeMap<u32, u32>,
     projectiles: BTreeMap<String, Vec<Layer>>,
     tree_slots: BTreeMap<EntityId, usize>,
     hidden: HiddenStatics,
@@ -522,12 +526,18 @@ pub struct Presenter {
 }
 
 /// A melee blow that lands this tick.
+/// A weapon effect to play: effect, from, to, flight ticks, homing target, seed id, tick,
+/// and whether it is a launch (else an impact).
+type WeaponCue = (usize, Vec3, Vec3, f64, Option<u32>, u32, u32, bool);
+
 #[derive(Debug, Clone, Copy)]
 struct Blow {
     /// The striker's facing on the ground (unit).
     direction: Vec3,
     power: f32,
     seed: u32,
+    /// The striker's impact effect (`presentation.impactEffect`).
+    effect: Option<usize>,
 }
 
 fn yaw(millidegrees: i32) -> f32 {
@@ -667,6 +677,8 @@ impl Presenter {
             buildings: BTreeMap::new(),
             corpses: BTreeMap::new(),
             origins: BTreeMap::new(),
+            fired: BTreeMap::new(),
+            struck: BTreeMap::new(),
             projectiles: BTreeMap::new(),
             tree_slots: setup.tree_slots,
             hidden: HiddenStatics {
@@ -927,10 +939,16 @@ impl Presenter {
                     let d = catalog.get(a.definition());
                     let facing = yaw(a.public.rotation);
                     let scale = d.model_scale.unwrap_or(1.0) as f32;
+                    let effect = self
+                        .content
+                        .look(d.id.as_str())
+                        .and_then(|l| l.impact_effect.as_ref())
+                        .and_then(|e| self.effects.find(e.as_str()));
                     blows.entry(target).or_default().push(Blow {
                         direction: Vec3::new(facing.sin(), 0.0, facing.cos()),
                         power: scale * if d.is_hero() { 1.2 } else { 1.0 },
                         seed: a.id().0.wrapping_mul(0x9e37_79b1) ^ attack.started,
+                        effect,
                     });
                 }
             }
@@ -1020,14 +1038,25 @@ impl Presenter {
                             } else {
                                 radius * 0.9
                             };
+                            let at = position - blow.direction * near + Vec3::Y * lift;
                             self.effects.hit_dust(HitDust {
-                                position: position - blow.direction * near + Vec3::Y * lift,
+                                position: at,
                                 tick: f64::from(tick),
                                 direction: blow.direction,
                                 lift,
                                 power: blow.power,
                                 seed: blow.seed,
                             });
+                            if let Some(effect) = blow.effect {
+                                self.effects.play(Play {
+                                    effect,
+                                    tick: f64::from(tick),
+                                    seed: blow.seed,
+                                    at,
+                                    from: Some(at - blow.direction),
+                                    radius: None,
+                                });
+                            }
                         }
                     }
                 }
@@ -1452,6 +1481,7 @@ impl Presenter {
         }
         self.trees(catalog, view, &mut actors, &mut counts);
         self.flights(catalog, view, &by_id, &mut actors, &mut counts);
+        self.weapon_effects(catalog, view, &by_id);
 
         self.health = health;
         self.last_tick = Some(tick);
@@ -2115,6 +2145,141 @@ impl Presenter {
             }
         }
         self.origins.retain(|k, _| live.contains(k));
+    }
+
+    /// Launch and impact effects of weapons (`presentation.launchEffect`, `impactEffect`):
+    /// each missile or shell plays its shooter's launch effect once as it leaves, and each
+    /// missile its impact effect once where it lands (shell impacts play with the shells).
+    fn weapon_effects(
+        &mut self,
+        catalog: &Catalog,
+        view: &View,
+        by_id: &BTreeMap<EntityId, &EntityView>,
+    ) {
+        let tick = view.tick;
+        let content = self.content.clone();
+        let flights = view
+            .battle
+            .missiles
+            .iter()
+            .map(|m| {
+                (
+                    Part::Missile,
+                    m.id,
+                    m.source,
+                    Some(m.target),
+                    m.definition,
+                    &m.origin,
+                    &m.destination,
+                    m.launched,
+                    m.impact,
+                )
+            })
+            .chain(view.battle.shells.iter().map(|s| {
+                (
+                    Part::Shell,
+                    s.id,
+                    s.source,
+                    None,
+                    s.definition,
+                    &s.origin,
+                    &s.target,
+                    s.launched,
+                    s.impact,
+                )
+            }));
+        let mut live: BTreeSet<(Part, u32)> = BTreeSet::new();
+        let mut events: Vec<WeaponCue> = Vec::new();
+        for (part, id, source, target, definition, origin, destination, launched, impact) in flights
+        {
+            live.insert((part, id));
+            let Some(look) = content.look(catalog.id(definition).as_str()) else {
+                continue;
+            };
+            let end = {
+                let (x, z) = cells(destination.position);
+                let lift = if part == Part::Shell {
+                    SHELL_IMPACT_HEIGHT
+                } else {
+                    MISSILE_IMPACT_HEIGHT
+                };
+                Vec3::new(
+                    x as f32,
+                    self.floor(destination.position, destination.surface.as_deref())
+                        + lift
+                        + destination.elevation_cm as f32 / 100.0,
+                    z as f32,
+                )
+            };
+            if let Some(effect) = look
+                .launch_effect
+                .as_ref()
+                .and_then(|e| self.effects.find(e.as_str()))
+                && tick >= launched
+                && tick <= launched + 2
+                && self.fired.get(&(part, id)) != Some(&launched)
+            {
+                self.fired.insert((part, id), launched);
+                let start = self
+                    .origins
+                    .get(&(part, id))
+                    .filter(|(l, _)| *l == launched)
+                    .map(|o| o.1)
+                    .or_else(|| {
+                        self.launch_socket(source, look.projectile_socket.as_deref(), by_id)
+                    })
+                    .unwrap_or_else(|| {
+                        let (x, z) = cells(origin.position);
+                        Vec3::new(
+                            x as f32,
+                            self.floor(origin.position, origin.surface.as_deref())
+                                + LAUNCH_HEIGHT
+                                + origin.elevation_cm as f32 / 100.0,
+                            z as f32,
+                        )
+                    });
+                let flight = f64::from(impact.saturating_sub(launched).max(1));
+                events.push((
+                    effect,
+                    start,
+                    end,
+                    flight,
+                    target.map(|t| t.0),
+                    id,
+                    launched,
+                    true,
+                ));
+            }
+            if part == Part::Missile
+                && tick >= impact
+                && self.struck.get(&id) != Some(&launched)
+                && let Some(effect) = look
+                    .impact_effect
+                    .as_ref()
+                    .and_then(|e| self.effects.find(e.as_str()))
+            {
+                self.struck.insert(id, launched);
+                events.push((effect, end, end, 0.0, None, id, impact, false));
+            }
+        }
+        for (effect, from, at, flight, target, id, at_tick, launch) in events {
+            let play = Play {
+                effect,
+                tick: f64::from(at_tick),
+                seed: id.wrapping_mul(0x9e37_79b1) ^ at_tick,
+                at,
+                from: Some(from),
+                radius: None,
+            };
+            if launch {
+                self.effects.play_flight(play, flight, target);
+            } else {
+                self.effects.play(play);
+            }
+        }
+        self.fired.retain(|k, _| live.contains(k));
+        self.struck
+            .retain(|k, _| live.contains(&(Part::Missile, *k)));
     }
 
     /// World position of a shooter's projectile socket in its current pose.

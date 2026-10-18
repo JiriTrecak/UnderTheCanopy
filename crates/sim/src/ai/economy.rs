@@ -937,6 +937,9 @@ fn run(p: &mut Planner) {
         choices.sort_by(|a, b| a.1.total_cmp(&b.1).then(a.0.cmp(&b.0)));
         for (d, _) in choices {
             let dd = catalog.get(d);
+            if dd.max_owned.is_some_and(|m| count(d) as u32 >= m) {
+                continue;
+            }
             let producer = barracks.iter().find(|b| {
                 f.def(b)
                     .behaviors

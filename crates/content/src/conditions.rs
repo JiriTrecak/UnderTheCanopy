@@ -98,6 +98,8 @@ pub struct TargetFilter {
     pub natures: Option<Vec<UnitNature>>,
     pub min_level: Option<u32>,
     pub max_level: Option<u32>,
+    /// `true` buildings only, `false` units only (repairs that also mend structures).
+    pub buildings: Option<bool>,
 }
 
 impl TargetFilter {

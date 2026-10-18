@@ -820,7 +820,9 @@ pub fn resolve_casters(ctx: &mut Ctx, state: &mut State) {
             } else if spell.delivery.is_some() {
                 deliveries::launch(ctx, state, &access.actor, &p);
             } else {
-                apply(ctx, state, &access.actor, &p);
+                if !persistent::delayed(spell) {
+                    apply(ctx, state, &access.actor, &p);
+                }
                 if spell.persistent.is_some() {
                     persistent::start(ctx, state, &access.actor, &p);
                 }

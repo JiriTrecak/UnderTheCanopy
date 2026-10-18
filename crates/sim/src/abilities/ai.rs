@@ -34,6 +34,8 @@ struct World<'a> {
     caster: &'a Actor,
     ability: AbilityId,
     corpses: &'a [CorpseView],
+    /// How near an enemy must be for a self buff to be worth it, thousandths of a cell.
+    threat: i64,
     /// Every operation chooses its recipients from the units as the earlier operations
     /// left them (the player AI); otherwise operations without a query choose from the
     /// units as they were when the cast began, as the old scorer did (autocast and camps,
@@ -89,7 +91,12 @@ fn reach(spell: &Ability, rank: u8) -> i64 {
 fn threats(w: &World, observed: &[Actor]) -> bool {
     observed
         .iter()
-        .any(|t| w.side(t) == Side::Enemy && actor::within(t.position, w.caster.position, 24_000))
+        .any(|t| w.side(t) == Side::Enemy && actor::within(t.position, w.caster.position, w.threat))
+}
+
+/// The threat radius of a binding's AI policy, thousandths of a cell.
+fn threat_of(ai: Option<&canopy_content::abilities::AbilityAi>) -> i64 {
+    i64::from(ai.and_then(|a| a.threat_radius).unwrap_or(24)) * 1000
 }
 
 /// The score of casting `spell` at `aim` (old `abilityAimScore`).
@@ -465,6 +472,7 @@ fn score(
                     }
                     Effect::ReleaseContained(_)
                     | Effect::Teleport(_)
+                    | Effect::Pull(_)
                     | Effect::Vision(_)
                     | Effect::Revive(_) => {}
                 }
@@ -914,6 +922,7 @@ pub fn ambient(ctx: &mut Ctx, state: &mut State) {
             let preference =
                 b.ai.as_ref()
                     .map_or(AiPreference::WoundedAlly, |a| a.preference);
+            let threat = threat_of(b.ai.as_ref());
             let visible_corpses = corpses::visible(ctx, state, &caster);
             let pool: Vec<Actor> = if spell.targeting.kind == TargetingKind::Caster {
                 vec![caster.clone()]
@@ -947,6 +956,7 @@ pub fn ambient(ctx: &mut Ctx, state: &mut State) {
                     caster: &caster,
                     ability: b.ability,
                     corpses: &visible_corpses,
+                    threat,
                     sequential: false,
                 };
                 candidates.push((
@@ -977,6 +987,7 @@ pub fn ambient(ctx: &mut Ctx, state: &mut State) {
                     caster: &caster,
                     ability: b.ability,
                     corpses: &visible_corpses,
+                    threat,
                     sequential: false,
                 };
                 candidates.push((
@@ -1018,6 +1029,7 @@ pub fn player_score(
     observed: &[Actor],
     preference: AiPreference,
     corpses: &[CorpseView],
+    threat_radius: Option<u32>,
 ) -> f64 {
     let w = World {
         ctx,
@@ -1025,6 +1037,7 @@ pub fn player_score(
         caster,
         ability,
         corpses,
+        threat: i64::from(threat_radius.unwrap_or(24)) * 1000,
         sequential: true,
     };
     score(&w, ctx.ability(ability), rank, aim, observed, preference)

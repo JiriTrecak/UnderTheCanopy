@@ -152,6 +152,7 @@ pub fn advance(ctx: &mut Ctx) {
             if e.owner != owner {
                 continue;
             }
+            crate::abilities::research_ranks(ctx.catalog, std::slice::from_ref(&entry.id), e);
             let bonus = hp_bonus(ctx.catalog, &entry.id, ctx.catalog.id(e.definition));
             if let Some(hp) = e.hp.as_mut()
                 && *hp > 0

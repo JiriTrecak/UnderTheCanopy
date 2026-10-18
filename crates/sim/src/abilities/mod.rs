@@ -17,6 +17,7 @@
 
 pub mod actor;
 pub mod ai;
+pub mod barriers;
 pub mod cast;
 pub mod corpses;
 pub mod deliveries;
@@ -91,6 +92,37 @@ pub fn equip_new(catalog: &Catalog, e: &mut Entity) {
         let q = crate::items::equipment(e);
         q.slots = vec![None; inventory.slots as usize];
     }
+}
+
+/// Raises `e`'s ability ranks to what its owner's `research` grants its definition
+/// (`abilityRanks`); returns whether any rank rose.
+pub fn research_ranks(catalog: &Catalog, research: &[canopy_content::Id], e: &mut Entity) -> bool {
+    let (Some(policy), Some(caster)) = (catalog.spells.caster(e.definition), e.caster.as_mut())
+    else {
+        return false;
+    };
+    let id = catalog.id(e.definition);
+    let mut raised = false;
+    for r in research
+        .iter()
+        .filter_map(|r| catalog.content.rules.research.get(r.as_str()))
+    {
+        for effect in r.effects.iter().filter(|x| x.units.contains(id)) {
+            for (binding, &rank) in effect.ability_ranks.iter().flatten() {
+                let Some(index) = policy.bindings.iter().position(|b| &b.id == binding) else {
+                    continue;
+                };
+                let rank = rank.min(u32::from(u8::MAX)) as u8;
+                if let Some(current) = caster.ranks.get_mut(index)
+                    && *current < rank
+                {
+                    *current = rank;
+                    raised = true;
+                }
+            }
+        }
+    }
+    raised
 }
 
 /// The links block, created on demand.

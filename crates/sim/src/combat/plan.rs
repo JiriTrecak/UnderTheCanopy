@@ -286,6 +286,7 @@ fn plan_unit(
                     u.contained.is_some() || u.garrison.is_some() || u.release.is_some()
                 })
                 || !senses.weapon_eligible(e, t)
+                || too_close(senses, spatial, e, t)
                 || !senses.perceives(state, e, t)
                 || (!forced && !senses.hostile(e, t))
         }
@@ -467,6 +468,13 @@ fn remember(state: &mut State, id: EntityId, target: EntityId) {
 /// The nearest hostile body the unit's weapon can hit and that it perceives, by distance
 /// then id (old `closestTarget`). With `weapon_reach` distances are between body edges
 /// (in reach of the weapon), else from the unit's centre.
+/// Whether `t` stands inside `e`'s weapon's minimum range (siege weapons cannot hit it).
+fn too_close(senses: &Senses, spatial: &Spatial, e: &Entity, t: &Entity) -> bool {
+    senses
+        .weapon(e)
+        .is_some_and(|w| w.min_range > 0.0 && spatial.body_range(e, t) < w.min_range * w.min_range)
+}
+
 #[allow(clippy::too_many_arguments)]
 fn closest(
     senses: &Senses,
@@ -507,7 +515,10 @@ fn closest(
         {
             continue;
         }
-        if !senses.weapon_eligible(actor, t) || !senses.perceives(state, actor, t) {
+        if !senses.weapon_eligible(actor, t)
+            || too_close(senses, spatial, actor, t)
+            || !senses.perceives(state, actor, t)
+        {
             continue;
         }
         best = Some((distance, candidate));

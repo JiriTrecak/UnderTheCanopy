@@ -415,6 +415,7 @@ impl World {
         // movement.
         let s = step!("garrisons");
         crate::garrisons::tick(&mut self.state, &self.catalog, &mut self.motion.spatial);
+        crate::garrisons::staff(&mut ctx!(), &mut self.state);
         crate::items::inventory::plan(&mut ctx!(), &mut self.state);
         drop(s);
         let s = step!("combat plan");
