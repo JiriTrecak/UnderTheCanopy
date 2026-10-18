@@ -85,6 +85,8 @@ struct MaterialFragment {
     color: vec4f,
     owner: vec4f,
     front: bool,
+    // Per-instance multiplier of the albedo (foliage variation); white leaves it as authored.
+    tint: vec3f,
 }
 
 // Lit colour and coverage of one fragment; alpha 0 means discard.
@@ -93,7 +95,8 @@ fn shade_material(f: MaterialFragment) -> vec4f {
     let world_dy = dpdy(f.world);
     let uv_dx = dpdx(f.uv);
     let uv_dy = dpdy(f.uv);
-    let base = albedo_of(f.uv, f.color, f.owner);
+    let authored = albedo_of(f.uv, f.color, f.owner);
+    let base = vec4f(authored.rgb * f.tint, authored.a);
     let mr = textureSample(metal_rough_texture, material_sampler, f.uv);
     // Maps a material lacks are not sampled (uniform branches on its parameters).
     var emissive = vec3f(0.0);

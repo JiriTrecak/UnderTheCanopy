@@ -2,15 +2,15 @@
   "name": "Amberleaf Forest",
   "daylight": "temperate",
   "light": {
-    "sunTint": "#ffe2c0",
+    "sunTint": "#ffeedd",
     "sunStrength": 1.6,
     "sunDirection": 120,
     "sunHeight": 34,
     "ambientTint": "#bba58f",
-    "ambientStrength": 0.7,
+    "ambientStrength": 0.9,
     "skyTint": "#c9b49a",
     "bounceTint": "#9c7a5a",
-    "fillStrength": 0.75,
+    "fillStrength": 0.95,
     "shadowSoftness": 2.0
   },
   "canopy": {
@@ -30,10 +30,10 @@
     "saturation": 1.0,
     "highlightShoulder": 0.6,
     "shadowTint": "#3d3530",
-    "highlightTint": "#ffdcae",
+    "highlightTint": "#fff0dc",
     "splitStrength": 0.35,
     "shadowLift": 0.02,
-    "vignette": 0.45,
+    "vignette": 0.5,
     "daytimeLut": "asset.texture.woodland-daytime-grades/data.json#day",
     "daytimeLutStrength": 0
   },
@@ -44,9 +44,9 @@
     "radius": 4
   },
   "contact": {
-    "strength": 0.4,
-    "radius": 1.2,
-    "bias": 0.07
+    "strength": 0.95,
+    "radius": 2.2,
+    "bias": 0.05
   },
   "atmosphere": {
     "enabled": true,
@@ -88,10 +88,10 @@
       "blend": -1
     },
     "stones": {
-      "albedo": "asset.terrain.pebble-trail",
-      "normal": "asset.terrain.pebble-normal",
-      "tiling": 0.4,
-      "blend": 0.25
+      "albedo": "asset.terrain.lookdev-wet-soil",
+      "normal": "asset.terrain.lookdev-wet-soil-normal",
+      "tiling": 0.3,
+      "blend": 0.3
     },
     "rock": {
       "albedo": "asset.terrain.woodland-rock",

@@ -55,6 +55,8 @@ struct PointLight {
 @group(0) @binding(7) var fog_sampler: sampler;
 // Scenery cutaway mask (cutaway.rs): r the covering unit's view depth, g its weight.
 @group(0) @binding(8) var cutaway_mask: texture_2d<f32>;
+// The world's frame shade (shade.rs): 0 lit as authored, 1 black; per terrain vertex.
+@group(0) @binding(9) var shade_map: texture_2d<f32>;
 
 fn time_seconds() -> f32 {
     return frame.eye.w;
@@ -101,9 +103,19 @@ fn apply_fog(world: vec3f, color: vec3f) -> vec3f {
     return mix(vec3f(gray) * vec3f(0.82, 0.91, 1.0), color, smoothstep(0.25, 0.85, light)) * light;
 }
 
+// How much of a surface's light the map's frame shade leaves at a world position: the
+// painted darkening that keeps a map's non-playable frame below its playable ground.
+fn frame_shade(world: vec3f) -> f32 {
+    if (frame.cutaway.y < 0.5) {
+        return 1.0;
+    }
+    let uv = (world.xz - frame.cutaway.z + 0.5) * frame.cutaway.w;
+    return 1.0 - textureSampleLevel(shade_map, fog_sampler, uv, 0.0).r;
+}
+
 fn scene_out(color: vec4f, world: vec3f) -> SceneOut {
     var out: SceneOut;
-    out.color = vec4f(apply_fog(world, color.rgb), color.a);
+    out.color = vec4f(apply_fog(world, color.rgb * frame_shade(world)), color.a);
     out.depth = encode_depth(view_depth(world));
     return out;
 }

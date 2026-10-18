@@ -10,7 +10,7 @@ For each item: joins the meshes, puts the pivot at the centre of the base (lowes
 scales to the requested size, decimates to the triangle budget, shrinks every texture,
 tones the base colour (darker / less saturated, as the art direction's frame asks), and writes
 `<out>/<name>/` with geometry.glb (textures embedded), source.blend and asset.json."""
-import bpy, json, os, sys
+import bpy, json, math, os, sys
 import numpy as np
 
 argv = sys.argv[sys.argv.index('--') + 1:]
@@ -44,6 +44,13 @@ def process(item):
         if o != obj:
             bpy.data.objects.remove(o, do_unlink=True)
     bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    import mathutils
+    if 'lay' in item:
+        # Lay a standing piece down (degrees about X, Y, Z), then squash its height.
+        rx, ry, rz = (math.radians(a) for a in item['lay'])
+        obj.data.transform(mathutils.Euler((rx, ry, rz)).to_matrix().to_4x4())
+    if 'squash' in item:
+        obj.data.transform(mathutils.Matrix.Diagonal((1.0, 1.0, item['squash'], 1.0)))
 
     # Pivot: centre of the footprint, lowest point on the ground (Blender is Z-up).
     co = np.array([v.co[:] for v in obj.data.vertices])

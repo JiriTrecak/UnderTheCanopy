@@ -54,8 +54,11 @@ pub struct GlowTerm {
 /// Visible-list slots are aligned so a dynamic offset can reach them.
 const SLOT_ALIGN: u32 = 64;
 const MODEL_STRIDE: u64 = 256;
-/// Shorter instances cast no shadow (old `SHADOW_MIN_HEIGHT`).
+/// Shorter instances cast no shadow (old `SHADOW_MIN_HEIGHT`); the live models keep it.
 pub const SHADOW_MIN_HEIGHT: f32 = 0.75;
+/// Scenery is cut lower: low ground clutter (curled leaves, acorns, fern sprigs) needs its
+/// small shadows to read as depth from the play camera.
+pub const STATIC_SHADOW_MIN_HEIGHT: f32 = 0.2;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
@@ -356,7 +359,7 @@ impl StaticsGpu {
                     sphere: world_sphere(&t, center, radius).to_array(),
                     info: [
                         model_index as u32,
-                        u32::from(casts && height * scale_y >= SHADOW_MIN_HEIGHT),
+                        u32::from(casts && height * scale_y >= STATIC_SHADOW_MIN_HEIGHT),
                         0,
                         0,
                     ],

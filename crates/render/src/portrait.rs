@@ -282,6 +282,7 @@ impl PortraitGpu {
             point_lights: 0,
             fog: None,
             cutaway: false,
+            shade: None,
         });
         queue.write_buffer(&self.frame_buffer, 0, bytemuck::bytes_of(&uniform));
     }

@@ -1,0 +1,8 @@
+{
+  "id": "scenery.lookdev-litter-oak",
+  "name": "lookdev litter oak",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.lookdev-litter-oak",
+  "editorHidden": true
+}

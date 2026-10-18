@@ -113,6 +113,10 @@ fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
     f.color = in.color;
     f.owner = instances[in.instance].color;
     f.front = front;
+    f.tint = vec3f(1.0);
+    if (has(FOLIAGE)) {
+        f.tint = foliage_variation(instances[in.instance]);
+    }
     if (cut_away(in.instance, in.clip.xy, in.world)) {
         discard;
     }
@@ -121,6 +125,18 @@ fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
         discard;
     }
     return scene_out(shaded, in.world);
+}
+
+// Foliage variation: every instance of a foliage model gets its own value and warmth from
+// a hash of where it stands, so a field of one leaf or fern model never reads as a
+// repeated pattern. Value ±18 %, a shift between cooler-green-brown and warmer-red.
+fn foliage_variation(inst: Instance) -> vec3f {
+    let at = vec2f(inst.r0.w, inst.r2.w);
+    let h1 = fract(sin(dot(at, vec2f(12.9898, 78.233))) * 43758.5453);
+    let h2 = fract(sin(dot(at, vec2f(39.3468, 11.135))) * 24634.6345);
+    let value = 0.82 + 0.36 * h1;
+    let warm = h2 * 2.0 - 1.0;
+    return value * vec3f(1.0 + 0.08 * warm, 1.0, 1.0 - 0.14 * warm);
 }
 
 // The scenery cutaway (cutaway.rs, old `sceneryCutaway`): a canopy model at least 7.5 m

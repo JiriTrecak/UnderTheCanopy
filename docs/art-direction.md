@@ -174,7 +174,9 @@ The target is unchanged: 60 FPS on a base M1 with about 400 units (plan). Most o
 
 ### The look-dev map (2026-10-18)
 
-`base/maps/showcase/lookdev-fall.utcm` rebuilds `art/styles/target-fall-wide-map.jpg` in the engine with **no engine code**, on today's cell terrain, scenery and water. The buildings are left out, as the scene's subject is the environment.
+**Target:** `art/styles/target-fall-lookdev.jpg`. An earlier version of this section compared against `target-fall-wide-map.jpg`, a different generation with another layout, and called the result close. It was not. The layout is now traced from the right frame.
+
+`base/maps/showcase/lookdev-fall.utcm` rebuilds that frame on today's cell terrain, scenery and water, plus the renderer additions of D63 (ground-clutter shadows, foliage variation, a painted frame shade). The buildings are left out, as the scene's subject is the environment.
 
 **Rendering it:**
 - Map: `tools/maps/lookdev_fall.py`. It runs on Blender's bundled Python, which has numpy.

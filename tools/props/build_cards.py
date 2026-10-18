@@ -22,7 +22,8 @@ spec = json.load(open(argv[0]))
 OUT = spec['out']
 
 
-TONE, SATURATION = 1.0, 1.0
+TONE, SATURATION, ROUGHNESS = 1.0, 1.0, 0.85
+TINT = (1.0, 1.0, 1.0)
 
 
 def key_image(path, name, size=512):
@@ -55,7 +56,7 @@ def key_image(path, name, size=512):
     rgb = np.where(solid[..., None], rgb, fill)
     # Tone towards the target's value range: a little darker and less saturated.
     grey = rgb.mean(axis=2, keepdims=True)
-    rgb = (grey + (rgb - grey) * SATURATION) * TONE
+    rgb = (grey + (rgb - grey) * SATURATION) * TONE * np.array(TINT, dtype=np.float32)
     hh, ww = rgb.shape[:2]
     out = bpy.data.images.new(name, ww, hh, alpha=True)
     out.pixels[:] = np.concatenate([rgb, alpha[..., None]], axis=2).ravel()
@@ -79,15 +80,17 @@ def material(name, image):
     cut.inputs[1].default_value = 0.5
     nt.links.new(tex.outputs['Alpha'], cut.inputs[0])
     nt.links.new(cut.outputs['Value'], bsdf.inputs['Alpha'])
-    bsdf.inputs['Roughness'].default_value = 0.85
+    bsdf.inputs['Roughness'].default_value = ROUGHNESS
     mat.use_backface_culling = False
     mat.surface_render_method = 'DITHERED'
     return mat
 
 
-def card(bm, aspect, length, curl, lift, rng, transform):
-    """One subdivided card: length along +Z, width by aspect; curled across, lifted at the tip."""
-    nx, nz = 3, 4
+def card(bm, aspect, length, curl, lift, rng, transform, subdivisions=(3, 4), arch=False):
+    """One subdivided card lying in X/Y (Blender is Z-up), its length along +Y from -length/2
+    (or from 0 when `arch`), curled across its width. A leaf lifts towards its tip; an arched
+    frond rises from its base and droops towards its tip."""
+    nx, nz = subdivisions
     width = length * aspect
     verts = []
     uv_layer = bm.loops.layers.uv.verify()
@@ -95,11 +98,14 @@ def card(bm, aspect, length, curl, lift, rng, transform):
         row = []
         for i in range(nx + 1):
             u, v = i / nx, j / nz
-            x = (u - 0.5) * width
-            z = (v - 0.5) * length
-            y = curl * (2 * (u - 0.5)) ** 2 * width + lift * v * v * length + 0.01
-            # Blender is Z-up: the card lies in X/Y, its height above the ground is Z.
-            p = transform @ __import__('mathutils').Vector((x, z, y))
+            x = (u - 0.5) * width * (1.0 - 0.35 * v if arch else 1.0)
+            if arch:
+                y = v * length
+                h = lift * length * math.sin(math.pi * 0.85 * v) + curl * (2 * (u - 0.5)) ** 2 * width
+            else:
+                y = (v - 0.5) * length
+                h = curl * (2 * (u - 0.5)) ** 2 * width + lift * v * v * length
+            p = transform @ __import__('mathutils').Vector((x, y, h + 0.01))
             row.append((bm.verts.new(p), (u, v)))
         verts.append(row)
     for j in range(nz):
@@ -112,9 +118,11 @@ def card(bm, aspect, length, curl, lift, rng, transform):
 
 def build(item):
     import mathutils
-    global TONE, SATURATION
+    global TONE, SATURATION, ROUGHNESS, TINT
     name = item['name']
     TONE, SATURATION = item.get('tone', 1.0), item.get('saturation', 1.0)
+    ROUGHNESS = item.get('roughness', 0.85)
+    TINT = tuple(item.get('tint', (1.0, 1.0, 1.0)))
     bpy.ops.wm.read_factory_settings(use_empty=True)
     image, aspect = key_image(item['image'], name + '_albedo')
     mat = material(name, image)
@@ -126,19 +134,30 @@ def build(item):
     count = item.get('count', 1)
     size = item['size']
     spread = item.get('spread', 0.0)
+    kind = item['kind']
     for k in range(count):
         length = size * rng.uniform(0.75, 1.15)
-        if item['kind'] == 'fern':
-            curl, lift = rng.uniform(0.03, 0.07), rng.uniform(0.2, 0.32)
-            tilt = 0.0
+        if kind == 'fern':
+            # Fronds radiate from the centre and arch off the ground (a bushy fern).
+            lift, curl = rng.uniform(0.22, 0.38), rng.uniform(0.03, 0.08)
+            yaw = 2 * math.pi * k / count + rng.uniform(-0.35, 0.35)
+            rot = mathutils.Matrix.Rotation(yaw, 4, 'Z')
+            card(bm, aspect, length, curl, lift, rng, rot, (3, 6), arch=True)
+            continue
+        if kind == 'litter':
+            # Small single leaves: some flat, some curled, some tipped up on an edge.
+            curl, lift = rng.uniform(0.04, 0.2), rng.uniform(0.0, 0.12)
+            tilt = rng.uniform(-0.6, 0.6) if rng.random() < 0.35 else rng.uniform(-0.12, 0.12)
+            subdivisions = (2, 2)
         else:
             curl, lift = rng.uniform(0.02, 0.07), rng.uniform(0.0, 0.03)
             tilt = rng.uniform(-0.05, 0.05)
+            subdivisions = (3, 4)
         ang = rng.uniform(0, 2 * math.pi)
         r = spread * math.sqrt(rng.random()) if k else 0.0
-        offset = mathutils.Vector((math.cos(ang) * r, math.sin(ang) * r, k * 0.012))
+        offset = mathutils.Vector((math.cos(ang) * r, math.sin(ang) * r, k * 0.012 + abs(tilt) * length * 0.3))
         rot = mathutils.Matrix.Rotation(rng.uniform(0, 2 * math.pi), 4, 'Z') @ mathutils.Matrix.Rotation(tilt, 4, 'X')
-        card(bm, aspect, length, curl, lift, rng, mathutils.Matrix.Translation(offset) @ rot)
+        card(bm, aspect, length, curl, lift, rng, mathutils.Matrix.Translation(offset) @ rot, subdivisions)
     bm.to_mesh(mesh)
     bm.free()
     mesh.materials.append(mat)

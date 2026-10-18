@@ -8,8 +8,8 @@
       "mainFort": "start.player.1/main-fort",
       "player": 1,
       "setup": "setup.beetles",
-      "x": 205.5,
-      "z": 197.5
+      "x": 181.5,
+      "z": 253.5
     }
   ],
   "entities": [
@@ -18,7 +18,7 @@
       "id": "lookdev.hero",
       "owner": "player.1",
       "position": {
-        "x": 210.0,
+        "x": 186.0,
         "y": 283.0
       },
       "rotation": 200.0
@@ -28,6 +28,10 @@
     "paint": [
       {
         "material": "asset.terrain.lookdev-litter-sparse",
+        "variants": false
+      },
+      {
+        "material": "asset.terrain.lookdev-wet-soil",
         "variants": false
       }
     ],

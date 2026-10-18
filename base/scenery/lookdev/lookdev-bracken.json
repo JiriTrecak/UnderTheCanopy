@@ -1,0 +1,8 @@
+{
+  "id": "scenery.lookdev-bracken",
+  "name": "lookdev bracken",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.lookdev-bracken",
+  "editorHidden": true
+}

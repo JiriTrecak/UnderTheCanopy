@@ -187,6 +187,7 @@ struct FrameBindings {
     canopy_view: wgpu::TextureView,
     dummy_shadow: wgpu::TextureView,
     cutaway_view: wgpu::TextureView,
+    shade: crate::shade::ShadeGpu,
 }
 
 impl FrameBindings {
@@ -240,6 +241,10 @@ impl FrameBindings {
                 wgpu::BindGroupEntry {
                     binding: 8,
                     resource: wgpu::BindingResource::TextureView(&self.cutaway_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 9,
+                    resource: wgpu::BindingResource::TextureView(&self.shade.view),
                 },
             ],
         })
@@ -382,6 +387,7 @@ impl Renderer {
             canopy_view,
             dummy_shadow,
             cutaway_view: cutaway_texture.create_view(&Default::default()),
+            shade: crate::shade::ShadeGpu::none(device, queue),
         };
         let frame_group = bindings.group(
             device,
@@ -575,6 +581,21 @@ impl Renderer {
         self.forest = None;
         self.ripples.clear();
         self.world_bytes = 0;
+        self.bindings.shade = match world
+            .terrain
+            .as_ref()
+            .and_then(|t| Some((t, t.shade.as_ref()?)))
+        {
+            Some((desc, values)) => crate::shade::ShadeGpu::new(
+                &gpu.device,
+                &gpu.queue,
+                desc.origin,
+                desc.vertices(),
+                values,
+            ),
+            None => crate::shade::ShadeGpu::none(&gpu.device, &gpu.queue),
+        };
+        self.rebind_frame(gpu);
         if let Some(desc) = &world.terrain {
             let terrain = TerrainGpu::new(
                 &gpu.device,
@@ -679,38 +700,43 @@ impl Renderer {
     pub fn set_fog(&mut self, gpu: &Gpu, fog: Option<crate::fog::FogCells<'_>>) {
         let _span = tracing::trace_span!("fog_upload").entered();
         if self.fog.update(&gpu.device, &gpu.queue, fog) {
-            self.frame_group = self.bindings.group(
+            self.rebind_frame(gpu);
+        }
+    }
+
+    /// Rebuilds the frame bind groups after a texture they hold changed.
+    fn rebind_frame(&mut self, gpu: &Gpu) {
+        self.frame_group = self.bindings.group(
+            &gpu.device,
+            &self.frame_layout,
+            "frame",
+            &self.frame_buffer,
+            &self.light_buffer,
+            &self.shadow_view,
+            &self.fog.view,
+        );
+        self.shadow_frame_group = self.bindings.group(
+            &gpu.device,
+            &self.frame_layout,
+            "shadow frame",
+            &self.shadow_frame_buffer,
+            &self.light_buffer,
+            &self.bindings.dummy_shadow,
+            &self.fog.view,
+        );
+        if let Some(minimap) = &mut self.minimap {
+            minimap.rebind(&gpu.device, &self.fog.view);
+        }
+        if let Some((portrait, group)) = &mut self.portrait {
+            *group = self.bindings.group(
                 &gpu.device,
                 &self.frame_layout,
-                "frame",
-                &self.frame_buffer,
-                &self.light_buffer,
-                &self.shadow_view,
-                &self.fog.view,
-            );
-            self.shadow_frame_group = self.bindings.group(
-                &gpu.device,
-                &self.frame_layout,
-                "shadow frame",
-                &self.shadow_frame_buffer,
+                "portrait frame",
+                &portrait.frame_buffer,
                 &self.light_buffer,
                 &self.bindings.dummy_shadow,
                 &self.fog.view,
             );
-            if let Some(minimap) = &mut self.minimap {
-                minimap.rebind(&gpu.device, &self.fog.view);
-            }
-            if let Some((portrait, group)) = &mut self.portrait {
-                *group = self.bindings.group(
-                    &gpu.device,
-                    &self.frame_layout,
-                    "portrait frame",
-                    &portrait.frame_buffer,
-                    &self.light_buffer,
-                    &self.bindings.dummy_shadow,
-                    &self.fog.view,
-                );
-            }
         }
     }
 
@@ -993,6 +1019,7 @@ impl Renderer {
                 .filter(|_| !self.baking)
                 .map(|r| r.size()),
             cutaway: self.cutaway.active,
+            shade: self.bindings.shade.placement,
         });
         queue.write_buffer(&self.frame_buffer, 0, bytemuck::bytes_of(&uniform));
         queue.write_buffer(

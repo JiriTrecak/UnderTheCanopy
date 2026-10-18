@@ -131,6 +131,8 @@ pub struct TerrainDesc {
     pub layers: Vec<TerrainLayer>,
     pub grid: TextureGrid,
     pub surroundings: Option<Surroundings>,
+    /// The map's frame shade per vertex, `(span + 1)²`, 0 to 1 ([`crate::shade`]).
+    pub shade: Option<Vec<f32>>,
 }
 
 impl TerrainDesc {
@@ -542,6 +544,7 @@ mod tests {
                 cells: [(span + 8) / 5, (span + 8) / 5],
             },
             surroundings: None,
+            shade: None,
         }
     }
 

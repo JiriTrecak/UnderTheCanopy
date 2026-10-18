@@ -111,6 +111,11 @@ pub struct TerrainData {
     /// `f32` rock coverage per vertex, 0 to 1.
     pub rock: Grid,
     pub paint: Vec<PaintLayer>,
+    /// `f32` frame shade per vertex, 0 (lit as authored) to 1 (black): the painted darkening
+    /// that keeps a map's non-playable frame below its playable ground. Optional
+    /// (`terrain/shade.grid`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shade: Option<Grid>,
 }
 
 /// The saved scene: committed terrain plus placed objects. Procedural layers are editor-only
@@ -187,6 +192,8 @@ pub struct DecodedTerrain {
     pub rock: Vec<f32>,
     pub paint: Vec<DecodedPaint>,
     pub texture: TextureLayout,
+    /// The frame shade per vertex, when the map has one.
+    pub shade: Option<Vec<f32>>,
 }
 
 impl TerrainData {
@@ -264,6 +271,15 @@ impl TerrainData {
         decode_floats(&self.rock, self.vertex_count()).map_err(|m| grid_error("rock", m))
     }
 
+    pub fn shade(&self) -> Result<Option<Vec<f32>>, GridError> {
+        self.shade
+            .as_ref()
+            .map(|grid| {
+                decode_floats(grid, self.vertex_count()).map_err(|m| grid_error("shade", m))
+            })
+            .transpose()
+    }
+
     pub fn water_flow(&self) -> Result<Vec<WaterFlow>, GridError> {
         let bytes = self
             .water_flow
@@ -317,6 +333,7 @@ impl TerrainData {
                 .map(|i| self.paint(i))
                 .collect::<Result<_, _>>()?,
             texture: self.texture_layout(),
+            shade: self.shade()?,
         })
     }
 
@@ -339,6 +356,9 @@ impl TerrainData {
         );
         floats("grass".into(), &self.grass, 0.0, 1.0);
         floats("rock".into(), &self.rock, 0.0, 1.0);
+        if let Some(shade) = &self.shade {
+            floats("shade".into(), shade, 0.0, 1.0);
+        }
         for (i, layer) in self.paint.iter().enumerate() {
             floats(format!("paint.{i}"), &layer.weights, 0.0, 1.0);
         }

@@ -106,6 +106,7 @@ fn vs_main(in: VertexIn, @builtin(instance_index) id: u32) -> VsOut {
 fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
     let actor = actors[in.instance];
     var f: MaterialFragment;
+    f.tint = vec3f(1.0);
     f.frag = in.clip;
     f.world = in.world;
     f.normal = in.normal;

@@ -18,6 +18,7 @@ pub mod portrait;
 pub mod post;
 pub mod quality;
 pub mod renderer;
+pub mod shade;
 pub mod shader;
 pub mod shadow;
 pub mod statics;

@@ -30,7 +30,8 @@ pub struct FrameUniform {
     pub counts: [u32; 4],
     /// x: 1 / fog size, y: fog on (0/1), z: fog size.
     pub fog: [f32; 4],
-    /// x: scenery cutaway on (0/1) ([`crate::cutaway`]).
+    /// x: scenery cutaway on (0/1) ([`crate::cutaway`]); y: frame shade on (0/1), z: world x
+    /// and z of the shade's vertex 0, w: 1 / shade vertices per side ([`crate::shade`]).
     pub cutaway: [f32; 4],
 }
 
@@ -69,6 +70,8 @@ pub struct FrameParams<'a> {
     pub fog: Option<u32>,
     /// Some unit covers the scenery cutaway's mask.
     pub cutaway: bool,
+    /// The world's frame shade: origin of vertex 0 and vertices per side; `None` without.
+    pub shade: Option<(f32, u32)>,
 }
 
 impl FrameUniform {
@@ -115,7 +118,15 @@ impl FrameUniform {
             fog: p.fog.map_or([0.0; 4], |size| {
                 [1.0 / size.max(1) as f32, 1.0, size as f32, 0.0]
             }),
-            cutaway: [if p.cutaway { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0],
+            cutaway: match p.shade {
+                Some((origin, vertices)) => [
+                    if p.cutaway { 1.0 } else { 0.0 },
+                    1.0,
+                    origin,
+                    1.0 / vertices.max(1) as f32,
+                ],
+                None => [if p.cutaway { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0],
+            },
         }
     }
 
@@ -189,6 +200,7 @@ pub fn layout(device: &wgpu::Device) -> wgpu::BindGroupLayout {
                 count: None,
             },
             texture(8, wgpu::TextureSampleType::Float { filterable: false }),
+            texture(9, wgpu::TextureSampleType::Float { filterable: true }),
         ],
     })
 }

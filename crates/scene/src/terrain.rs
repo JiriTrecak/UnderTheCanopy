@@ -492,6 +492,7 @@ pub fn build(
             haze_color: s.haze_color.linear().to_array(),
             haze: [s.haze_start, s.haze_end],
         }),
+        shade: decoded.shade,
     };
     Ok((terrain, water))
 }

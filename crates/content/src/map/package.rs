@@ -6,7 +6,7 @@
 //! ├─ map.json          size, biome, starts, placements, camps, environment, mission
 //! │                    (without its script), terrain metadata and the ordered paint layers
 //! ├─ scenery.json      {"objects": […]}: placed scenery, in placement order
-//! ├─ terrain/          heights, water-heights, water-flow, grass, rock,
+//! ├─ terrain/          heights, water-heights, water-flow, grass, rock, (shade),
 //! │                    paint-<n>-weights and paint-<n>-variants (.grid, see [`super::grid`])
 //! ├─ mission.lua       the mission script, when there is a mission
 //! └─ preview.webp      the menus' picture
@@ -182,6 +182,10 @@ pub fn load_package(package: &Package) -> Result<UtcMap, Errors> {
             _ => terrain.rock = grid,
         }
     }
+    // The frame shade is optional: read only when the package has it.
+    if package.read_bytes(&grid_path("shade")).is_ok() {
+        terrain.shade = Some(read_grid("shade", Element::F32, (vertices, vertices)));
+    }
     for (i, layer) in terrain.paint.iter_mut().enumerate() {
         let n = i + 1;
         layer.weights = read_grid(
@@ -307,6 +311,9 @@ pub fn write(map: &UtcMap, id: &str, version: &str, dir: &Path) -> std::io::Resu
     )?;
     write_grid("grass", &terrain.grass, Element::F32, (vertices, vertices))?;
     write_grid("rock", &terrain.rock, Element::F32, (vertices, vertices))?;
+    if let Some(shade) = &terrain.shade {
+        write_grid("shade", shade, Element::F32, (vertices, vertices))?;
+    }
     for (i, layer) in terrain.paint.iter().enumerate() {
         let n = i + 1;
         write_grid(

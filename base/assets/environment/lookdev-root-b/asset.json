@@ -1,0 +1,38 @@
+{
+  "id": "asset.models.environment.lookdev-root-b",
+  "name": "lookdev root b",
+  "kind": "prop",
+  "tags": [
+    "lookdev",
+    "autumn",
+    "procedural"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "license": "Procedural Blender geometry (tools/props/build_roots.py) with an ImageGen (gpt-image-2) bark texture."
+}

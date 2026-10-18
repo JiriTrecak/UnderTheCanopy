@@ -387,6 +387,7 @@ mod tests {
                 cells: [17, 17],
             },
             surroundings: None,
+            shade: None,
         }
     }
 

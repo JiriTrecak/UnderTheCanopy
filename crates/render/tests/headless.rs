@@ -258,6 +258,7 @@ fn terrain() -> TerrainDesc {
             cells: [9, 9],
         },
         surroundings: None,
+        shade: None,
     }
 }
 

@@ -558,3 +558,12 @@ The economy becomes two resources:
 Wood and its costs go away. The engine keeps felling for now (content is input); the base game simply stops using it.
 
 **Tree walls are solid**: no unit passes through vegetation that forms a wall, so players never have to think about it.
+
+## D63. Renderer additions for the forest floor (2026-10-18, Jiri asked to build it — review: visible)
+
+Three renderer changes, made while bringing the fall look-dev map (`base/maps/showcase/lookdev-fall.utcm`) towards its target frame (`art/styles/target-fall-lookdev.jpg`, docs/art-direction.md):
+- **Ground clutter casts shadows.** Scenery now casts a shadow from 0.2 m of height (`STATIC_SHADOW_MIN_HEIGHT`), down from the old 0.75 m, so curled leaves, acorns and fern sprigs read as depth from the play camera. Live models keep 0.75 m. Shipped maps with low foliage get more small shadows. Cost on the look-dev map (16k instances, M4 Max): the shadow pass rose from 0.2 to about 0.9 ms. (review: visible)
+- **Foliage varies per instance.** Every instance of a foliage material gets its own value (±18 %) and warmth from a hash of where it stands, so a field of one leaf or fern model doesn't read as a pattern. It is in `statics.wgsl` (`foliage_variation`); units and buildings are untouched. (review: visible)
+- **A map may paint a frame shade.** `terrain/shade.grid` (optional, f32 per vertex, 0 lit to 1 black) darkens every forward surface where it is painted, via `frame_shade` in `scene_out`. It is how a map keeps its non-playable frame below its playable ground (the army-first rule of D61). The map format reads and writes it when present; maps without one are unchanged.
+
+Not done yet, from the same comparison: specular glints on wet ground and water, and a reflection term for still water. The third-person camera shows the world beyond the unit's sight in the fog of war's grey.
