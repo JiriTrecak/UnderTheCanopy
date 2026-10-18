@@ -317,6 +317,8 @@ pub fn launch_shell(
         viewers: viewers(senses, state, ea, eb),
         resolved: false,
     };
+    let mut shell = shell;
+    crate::abilities::barriers::intercept_shell(senses, state, &mut shell);
     state.counters.shell += 1;
     state.combat.shells.push(shell);
 }

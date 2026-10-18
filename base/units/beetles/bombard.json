@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.ants-bombardier",
   "selectionClass": "army",
   "body": {
-    "maxHp": 560,
+    "maxHp": 640,
     "armor": 2,
     "armorType": "heavy"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 50,
+      "damage": 56,
       "damageType": "siege",
       "range": 30,
       "cooldownTicks": 140,
@@ -43,14 +43,14 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 280
+        "amount": 260
       },
       {
         "item": "item.root",
-        "amount": 60
+        "amount": 40
       }
     ],
-    "workTicks": 1360
+    "workTicks": 1280
   },
   "requires": [
     "building.beetles.great-bastion"

@@ -80,6 +80,8 @@ struct Duel {
     trained: [BTreeMap<String, u32>; 2],
     /// Per player: (minute, what) as buildings first stand complete and research finishes.
     milestones: [Vec<(f64, String)>; 2],
+    /// Every two minutes, per player: workers, army units, the army's cost, banked goods.
+    snapshots: Vec<(u32, [String; 2])>,
 }
 
 fn duel(
@@ -114,11 +116,43 @@ fn duel(
     let mut milestones: [Vec<(f64, String)>; 2] = Default::default();
     let mut built: [std::collections::BTreeSet<String>; 2] = Default::default();
     let mut learned: [usize; 2] = [0, 0];
+    let mut snapshots = Vec::new();
+    // Army losses per side (summons aside): to camp creatures, to players.
+    let mut alive_at: BTreeMap<u32, (usize, canopy_sim::entity::Milli)> = BTreeMap::new();
+    let mut losses = [[0u32; 2]; 2];
     let mut ticks = 0;
     for tick in 0..cap {
         world.step();
         ticks = tick + 1;
         if tick % 40 == 0 {
+            let mut now: BTreeMap<u32, (usize, canopy_sim::entity::Milli)> = BTreeMap::new();
+            let mut creeps: Vec<canopy_sim::entity::Milli> = Vec::new();
+            for e in world.state().entities.iter() {
+                if e.unit.is_none() || !e.hp.is_some_and(|h| h > 0) {
+                    continue;
+                }
+                let canopy_content::placement::Owner::Player(p) = e.owner else {
+                    creeps.push(e.position);
+                    continue;
+                };
+                let d = world.catalog().get(e.definition);
+                let summoned = e.links.as_ref().is_some_and(|l| l.summoned.is_some());
+                if d.behaviors.combat.is_some() && d.behaviors.work.is_none() && !summoned {
+                    let side = players.iter().position(|&x| x == p).unwrap_or(0);
+                    now.insert(e.id.0, (side, e.position));
+                }
+            }
+            for (id, (side, at)) in &alive_at {
+                if !now.contains_key(id) {
+                    // Lost to creeps when a camp creature stands within 14 cells.
+                    let by_creeps = creeps.iter().any(|c| {
+                        let (dx, dy) = (i64::from(c.x - at.x), i64::from(c.y - at.y));
+                        dx * dx + dy * dy < 14_000 * 14_000
+                    });
+                    losses[*side][usize::from(!by_creeps)] += 1;
+                }
+            }
+            alive_at = now;
             for e in world.state().entities.iter() {
                 let canopy_content::placement::Owner::Player(p) = e.owner else {
                     continue;
@@ -136,6 +170,91 @@ fn duel(
                 {
                     milestones[side].push((f64::from(tick) / 2400.0, id));
                 }
+            }
+            if tick % 4800 == 0 && tick > 0 {
+                let catalog = world.catalog();
+                let line = |p: u8| {
+                    let owner = canopy_content::placement::Owner::Player(p);
+                    let (mut workers, mut army, mut value) = (0, 0, 0);
+                    let mut kinds: BTreeMap<String, u32> = BTreeMap::new();
+                    for e in world.state().entities.iter() {
+                        let d = catalog.get(e.definition);
+                        if e.owner != owner || e.unit.is_none() || !e.hp.is_some_and(|hp| hp > 0) {
+                            continue;
+                        }
+                        if d.behaviors.work.is_some() {
+                            workers += 1;
+                        } else if d.behaviors.combat.is_some() {
+                            army += 1;
+                            let mut name =
+                                d.id.as_str().rsplit('.').next().unwrap_or("").to_string();
+                            if d.is_hero() {
+                                name += &format!("L{}", canopy_sim::stats::level(catalog, e));
+                            }
+                            *kinds.entry(name).or_default() += 1;
+                            value += d
+                                .creation
+                                .as_ref()
+                                .map_or(0, |c| c.items().iter().map(|i| i.amount).sum::<u32>());
+                        }
+                    }
+                    let wallet = world.state().wallets.get(&owner);
+                    let bank = |item: &str| {
+                        wallet
+                            .and_then(|w| w.iter().find(|(i, _)| i.as_str() == item))
+                            .map_or(0, |(_, &n)| n)
+                    };
+                    let summaries = world.ai_summaries();
+                    let doing = summaries
+                        .iter()
+                        .find(|s| s.player == p)
+                        .map(|s| {
+                            let last: Vec<String> = s
+                                .trace
+                                .iter()
+                                .rev()
+                                .filter(|t| {
+                                    std::env::var("DUEL_ALL").is_ok()
+                                        || t.accepted != Some(true)
+                                        || !t.reason.contains("fight")
+                                })
+                                .take(if std::env::var("DUEL_ALL").is_ok() {
+                                    40
+                                } else {
+                                    3
+                                })
+                                .map(|t| {
+                                    format!(
+                                        "{}{}",
+                                        t.reason,
+                                        if t.accepted == Some(false) {
+                                            " (refused)"
+                                        } else {
+                                            ""
+                                        }
+                                    )
+                                })
+                                .collect();
+                            format!("{} / {}", s.plan.economy, last.join("; "))
+                        })
+                        .unwrap_or_default();
+                    let kinds: Vec<String> =
+                        kinds.iter().map(|(k, n)| format!("{k}×{n}")).collect();
+                    format!(
+                        "{workers}w {army}u worth {value}, bank {}a {}s ({}) [{doing}]",
+                        bank("item.amber"),
+                        bank("item.root"),
+                        kinds.join(" ")
+                    )
+                };
+                let [l0, l1] = [line(players[0]), line(players[1])];
+                snapshots.push((
+                    tick / 2400,
+                    [
+                        format!("{l0} lost to creeps/players {:?}", losses[0]),
+                        format!("{l1} lost {:?}", losses[1]),
+                    ],
+                ));
             }
             for (side, &p) in players.iter().enumerate() {
                 let done = world
@@ -171,6 +290,7 @@ fn duel(
         winner,
         trained,
         milestones,
+        snapshots,
     }
 }
 
@@ -229,6 +349,9 @@ fn main() -> Result<(), String> {
                     .map(|(m, id)| format!("{m:.1} {}", id.rsplit('.').next().unwrap_or(id)))
                     .collect();
                 println!("    player {} milestones: {}", side + 1, list.join(", "));
+            }
+            for (minute, sides) in &r.snapshots {
+                println!("    {minute:>3} min: {} | {}", sides[0], sides[1]);
             }
         }
     }

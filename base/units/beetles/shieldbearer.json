@@ -6,8 +6,8 @@
   "icon": "asset.portraits.units.ants-queensguard",
   "selectionClass": "army",
   "body": {
-    "maxHp": 620,
-    "armor": 3,
+    "maxHp": 520,
+    "armor": 2,
     "armorType": "heavy"
   },
   "vision": 32,
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 17,
+      "damage": 15,
       "damageType": "melee",
       "range": 0.6,
       "cooldownTicks": 60,
@@ -61,10 +61,10 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 195
+        "amount": 185
       }
     ],
-    "workTicks": 1080
+    "workTicks": 1000
   },
   "level": 1,
   "supplyCost": 2,

@@ -205,7 +205,8 @@ fn cast_one(
         {
             continue;
         }
-        // An active toggle stays on.
+        // An active toggle stays on while the fight is near; a stance with a declared
+        // threat radius (a locked shield wall, a slowing barrier) comes down without one.
         if spell.persistent.as_ref().is_some_and(|p| p.toggle)
             && state
                 .abilities
@@ -213,6 +214,22 @@ fn cast_one(
                 .iter()
                 .any(|i| i.source.0 == k.id && i.ability == d.ability)
         {
+            if let Some(radius) = ai.threat_radius {
+                let reach = i64::from(radius + radius / 2) * 1000;
+                let near = observed.iter().any(|t| {
+                    t.unit
+                        && f.get(t.id.0).is_some_and(|k| k.hostile == Some(true))
+                        && abilities::actor::within(t.position, me.position, reach)
+                });
+                if !near
+                    && b.emit(
+                        cast_action(k.id, &d.id, cast::Aim::Unit(me.id)),
+                        "Lower a toggled stance with no enemy near",
+                    )
+                {
+                    return true;
+                }
+            }
             continue;
         }
         let range = library::value(spell, rank, &spell.targeting.range) as f64;

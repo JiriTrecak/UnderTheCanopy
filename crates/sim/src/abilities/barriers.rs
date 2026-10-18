@@ -3,12 +3,16 @@
 //!
 //! A missile is tested once, when it leaves: if its path from the shooter to the target
 //! enters a hostile barrier's circle through the pane's arc, it flies only as far as the
-//! pane and lands there without a hit. Shooters standing inside the pane's circle shoot
-//! past it. Spells and shells are never stopped.
+//! pane and lands there without a hit; a shell bursts against the pane instead of on the
+//! units behind it. Shooters standing inside the pane's circle shoot past it. Spells are
+//! never stopped.
 
 use super::{actor, statuses};
 use crate::{
-    combat::{Senses, projectiles::Missile},
+    combat::{
+        Senses,
+        projectiles::{Missile, Shell},
+    },
     entity::{Entity, Milli},
     state::State,
 };
@@ -61,12 +65,18 @@ pub fn entry(
     ((p.0 * facing.0 + p.1 * facing.1) / r >= cos_half - 1e-9).then_some(t)
 }
 
-/// Stops `m` at the first hostile barrier its path crosses from the front (see the
-/// module documentation).
-pub fn intercept(senses: &Senses, state: &State, m: &mut Missile) {
+/// The first hostile barrier on the way from `from` to `to` for missiles of `owner`: the
+/// share of the way, the point and its floor.
+fn first_pane(
+    senses: &Senses,
+    state: &State,
+    owner: canopy_content::placement::Owner,
+    from: Milli,
+    to: Milli,
+) -> Option<(f64, Milli, Option<String>)> {
     let tick = state.tick;
     let cells = |p: Milli| (f64::from(p.x) / 1000.0, f64::from(p.y) / 1000.0);
-    let (origin, destination) = (cells(m.origin.position), cells(m.destination.position));
+    let (origin, destination) = (cells(from), cells(to));
     let mut best: Option<(f64, Milli, Option<String>)> = None;
     for w in state.entities.iter() {
         if w.statuses.is_empty()
@@ -74,7 +84,7 @@ pub fn intercept(senses: &Senses, state: &State, m: &mut Missile) {
             || w.unit.as_ref().is_none_or(|u| {
                 u.contained.is_some() || u.garrison.is_some() || u.release.is_some()
             })
-            || !senses.opponents(m.owner, None, w.owner, actor::camp(w))
+            || !senses.opponents(owner, None, w.owner, actor::camp(w))
         {
             continue;
         }
@@ -100,7 +110,19 @@ pub fn intercept(senses: &Senses, state: &State, m: &mut Missile) {
         };
         best = Some((t, at, w.surface.clone()));
     }
-    let Some((t, at, surface)) = best else {
+    best
+}
+
+/// Stops `m` at the first hostile barrier its path crosses from the front (see the
+/// module documentation).
+pub fn intercept(senses: &Senses, state: &State, m: &mut Missile) {
+    let Some((t, at, surface)) = first_pane(
+        senses,
+        state,
+        m.owner,
+        m.origin.position,
+        m.destination.position,
+    ) else {
         return;
     };
     let flight = m.impact.saturating_sub(m.launched);
@@ -115,6 +137,23 @@ pub fn intercept(senses: &Senses, state: &State, m: &mut Missile) {
     };
     m.impact = m.launched + ((f64::from(flight) * t).ceil() as u32).max(1);
     m.blocked = true;
+}
+
+/// Bursts a shell on the first hostile pane on its way: it lands there instead, its
+/// splash going off against the pane rather than the units behind it.
+pub fn intercept_shell(senses: &Senses, state: &State, s: &mut Shell) {
+    let Some((t, at, surface)) =
+        first_pane(senses, state, s.owner, s.origin.position, s.target.position)
+    else {
+        return;
+    };
+    let flight = s.impact.saturating_sub(s.launched);
+    s.target = crate::combat::projectiles::Aim {
+        position: at,
+        surface,
+        elevation_cm: 0,
+    };
+    s.impact = s.launched + ((f64::from(flight) * t).ceil() as u32).max(1);
 }
 
 #[cfg(test)]

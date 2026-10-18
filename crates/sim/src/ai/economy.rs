@@ -155,14 +155,20 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
             })
             .unwrap_or(0.0);
         let home = f.home;
+        // Rings grow with the footprint and reach further out, so large buildings still
+        // find room once the base around the hall fills up.
+        let half = d
+            .footprint
+            .as_ref()
+            .map_or(0.0, |fp| f64::from(fp.width.max(fp.depth)) / 2.0);
         for _ in 0..f.rules.limits.placement_candidates {
-            let k = self.b.s.placement_cursor % 192;
+            let k = self.b.s.placement_cursor % 320;
             self.b.s.placement_cursor = self.b.s.placement_cursor.wrapping_add(1);
             let ring = k / 32;
             let angle = f64::from(k % 32) * std::f64::consts::PI / 16.0;
             let radius = match near {
                 Some(n) => f64::from(n.radius).min(near_radius + f64::from(ring % 3)),
-                None => 14.0 + f64::from(ring) * 6.0,
+                None => 10.0 + half + f64::from(ring) * 6.0,
             };
             let cursor = Pt::new(
                 origin.x + crate::math::cos(angle) * radius,
@@ -780,7 +786,9 @@ fn run(p: &mut Planner) {
             .filter_map(|b| f.own_entity(b)?.research.as_ref())
             .flat_map(|r| r.queue.iter().map(|q| &q.id))
             .collect();
-        for b in &ready {
+        // One research at a time across the colony, so a race with many research
+        // buildings still spends on its army first.
+        for b in ready.iter().filter(|_| pending.is_empty()) {
             let Some(queue) = f.own_entity(b).and_then(|e| e.research.as_ref()) else {
                 continue;
             };
@@ -948,10 +956,22 @@ fn run(p: &mut Planner) {
                     .is_some_and(|prod| prod.outputs.contains(&dd.id))
                     && f.queue(b).len() < 2
             });
+            // Saving is worth it only when every good is at least half there: waiting on
+            // a scarce good (substance far out) while the plentiful one piles up starves
+            // the army.
+            let near = items(dd).iter().all(|c| {
+                let held = reserve
+                    .iter()
+                    .find(|(i, _)| *i == c.item)
+                    .map_or(0, |(_, n)| *n);
+                2 * i64::from(f.balance(c.item.as_str()))
+                    >= i64::from(c.amount) + 2 * i64::from(held)
+            });
             if producer.is_some()
                 && f.available(dd.requires.as_deref())
                 && army.len() as u32 >= a.minimum
                 && !f.can_afford(dd, &reserve)
+                && near
                 && items(dd)
                     .iter()
                     .all(|c| f.balance(c.item.as_str()) >= c.amount || f.accepts(c.item.as_str()))

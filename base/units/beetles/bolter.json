@@ -6,8 +6,8 @@
   "icon": "asset.portraits.units.ants-leaf-archer",
   "selectionClass": "army",
   "body": {
-    "maxHp": 470,
-    "armor": 1,
+    "maxHp": 420,
+    "armor": 0,
     "armorType": "light"
   },
   "vision": 32,
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 12,
+      "damage": 11,
       "damageType": "piercing",
       "range": 17,
       "cooldownTicks": 40,
@@ -39,10 +39,10 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 200
+        "amount": 180
       }
     ],
-    "workTicks": 1080
+    "workTicks": 1000
   },
   "level": 1,
   "supplyCost": 2,

@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.ants-amber-adept",
   "selectionClass": "army",
   "body": {
-    "maxHp": 420,
+    "maxHp": 400,
     "armor": 1,
     "armorType": "light"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 15,
+      "damage": 10,
       "damageType": "spell",
       "range": 15,
       "cooldownTicks": 64,
@@ -30,9 +30,9 @@
         "speed": 60
       },
       "chain": {
-        "bounces": 2,
+        "bounces": 1,
         "radius": 5.0,
-        "retentionPermille": 650
+        "retentionPermille": 500
       }
     },
     "movement": {
@@ -86,14 +86,14 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 215
+        "amount": 200
       },
       {
         "item": "item.root",
-        "amount": 50
+        "amount": 30
       }
     ],
-    "workTicks": 1200
+    "workTicks": 1120
   },
   "requires": [
     "building.beetles.great-bastion"

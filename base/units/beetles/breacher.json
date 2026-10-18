@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.ants-thornblade",
   "selectionClass": "army",
   "body": {
-    "maxHp": 780,
+    "maxHp": 760,
     "armor": 3,
     "armorType": "heavy"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 32,
+      "damage": 28,
       "damageType": "siege",
       "range": 0.8,
       "cooldownTicks": 72,
@@ -32,7 +32,7 @@
         "cooldownTicks": 400,
         "durationTicks": 100,
         "speedPermille": 1900,
-        "damagePermille": 2000
+        "damagePermille": 1500
       }
     },
     "movement": {
@@ -64,14 +64,14 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 250
+        "amount": 235
       },
       {
         "item": "item.root",
-        "amount": 40
+        "amount": 25
       }
     ],
-    "workTicks": 1240
+    "workTicks": 1160
   },
   "requires": [
     "building.beetles.great-bastion"

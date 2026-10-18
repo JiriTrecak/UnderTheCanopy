@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.ants-winglancer",
   "selectionClass": "army",
   "body": {
-    "maxHp": 400,
+    "maxHp": 420,
     "armor": 1,
     "armorType": "light"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 15,
+      "damage": 14,
       "damageType": "piercing",
       "range": 12,
       "cooldownTicks": 48,
@@ -65,14 +65,14 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 230
+        "amount": 215
       },
       {
         "item": "item.root",
-        "amount": 50
+        "amount": 30
       }
     ],
-    "workTicks": 1200
+    "workTicks": 1120
   },
   "requires": [
     "building.beetles.great-bastion"
