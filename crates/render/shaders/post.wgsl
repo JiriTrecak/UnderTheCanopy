@@ -83,6 +83,43 @@ fn contact_shade(uv: vec2f, depth: f32) -> f32 {
     return sum / weight;
 }
 
+// Depth of field for close cameras: the world beyond a few dozen metres goes soft, as a
+// small creature's eye focused near it would see the forest, and the third-person view
+// reads as tiny against giant scenery. Off at RTS pitches (the view fade). A golden-angle
+// disk over the scene, each tap weighted by its own blur so the sharp foreground never
+// smears into the background.
+const DOF_START: f32 = 40.0;
+const DOF_FULL: f32 = 260.0;
+const DOF_RADIUS: f32 = 0.0075;
+const DOF_TAPS: i32 = 20;
+
+fn close_view() -> f32 {
+    return clamp((view.forward.y + 0.65) / 0.3, 0.0, 1.0);
+}
+
+fn blur_of(depth: f32) -> f32 {
+    return smoothstep(DOF_START, DOF_FULL, min(depth, 4000.0));
+}
+
+fn depth_of_field(uv: vec2f, color: vec3f, depth: f32, close: f32) -> vec3f {
+    let blur = blur_of(depth) * close;
+    if (blur < 0.01) {
+        return color;
+    }
+    let radius = DOF_RADIUS * blur * vec2f(view.scene.y * view.scene.z, 1.0);
+    var sum = color;
+    var weight = 1.0;
+    for (var i = 0; i < DOF_TAPS; i++) {
+        let r = sqrt((f32(i) + 0.5) / f32(DOF_TAPS));
+        let a = f32(i) * 2.39996;
+        let tuv = uv + vec2f(cos(a), sin(a)) * r * radius;
+        let w = blur_of(depth_at_uv(tuv));
+        sum += textureSampleLevel(scene, linear_sampler, tuv, 0.0).rgb * w;
+        weight += w;
+    }
+    return mix(color, sum / weight, blur);
+}
+
 // The haze upsampled the same way.
 fn haze_at(uv: vec2f, depth: f32) -> vec4f {
     let size = post.sizes.zw;
@@ -91,16 +128,31 @@ fn haze_at(uv: vec2f, depth: f32) -> vec4f {
     let f = pixel - base;
     var sum = vec4f(0.0);
     var weight = 0.0;
+    var nearest = vec4f(0.0, 0.0, 0.0, 1.0);
+    var nearest_gap = 1e30;
+    // Depth differences count relative to the distance, so far views (close cameras looking
+    // along the forest) keep their edges; a pixel no texel matches takes the closest one.
+    let tolerance = max(0.67, min(depth, 4000.0) * 0.03);
     for (var y = 0; y < 2; y++) {
         for (var x = 0; x < 2; x++) {
             let offset = vec2f(f32(x), f32(y));
             let tuv = (base + offset + 0.5) / size;
             let bilinear = mix(1.0 - f, f, offset);
-            let w = bilinear.x * bilinear.y * exp(-abs(depth_at_uv(tuv) - depth) * 1.5) + 0.00001;
+            // Beyond 4 km is sky (haze.wgsl), resolved edge pixels included.
+            let gap = abs(min(depth_at_uv(tuv), 4000.0) - min(depth, 4000.0));
+            let w = bilinear.x * bilinear.y * exp(-gap / tolerance);
             let texel = clamp(vec2i(base + offset), vec2i(0), vec2i(size) - 1);
-            sum += textureLoad(haze_map, texel, 0) * w;
+            let value = textureLoad(haze_map, texel, 0);
+            sum += value * w;
             weight += w;
+            if (gap < nearest_gap) {
+                nearest_gap = gap;
+                nearest = value;
+            }
         }
+    }
+    if (weight < 0.001) {
+        return nearest;
     }
     return sum / weight;
 }
@@ -109,6 +161,10 @@ fn haze_at(uv: vec2f, depth: f32) -> vec4f {
 fn fs_main(in: FullscreenOut) -> @location(0) vec4f {
     var hdr = scene_color(in.uv, in.clip.xy);
     let effects = post.effects;
+    let close = close_view();
+    if (close > 0.0) {
+        hdr = depth_of_field(in.uv, hdr, depth_at_uv(in.uv), close);
+    }
     if (effects.x > 0.0 || effects.y > 0.0 || effects.z > 0.0) {
         let depth = depth_at_uv(in.uv);
         if (effects.x > 0.0) {

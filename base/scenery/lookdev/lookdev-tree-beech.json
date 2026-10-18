@@ -1,0 +1,8 @@
+{
+  "id": "scenery.lookdev-tree-beech",
+  "name": "Look-dev giant beech",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.lookdev-tree-beech",
+  "editorHidden": true
+}

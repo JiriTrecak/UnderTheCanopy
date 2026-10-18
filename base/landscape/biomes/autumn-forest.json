@@ -51,15 +51,17 @@
   "atmosphere": {
     "enabled": true,
     "color": "#8a6a4a",
-    "density": 0.0,
-    "shaftDensity": 0.0012,
+    "density": 0.0005,
+    "shaftDensity": 0.007,
     "baseHeight": 0.5,
-    "heightFalloff": 22,
-    "sunStrength": 1.4,
+    "heightFalloff": 24,
+    "sunStrength": 1.8,
     "noiseScale": 0.05,
     "noiseStrength": 0.8,
     "driftSpeed": 0.35,
-    "sunTint": "#ffd6a0"
+    "sunTint": "#ffd6a0",
+    "overheadStrength": 0.08,
+    "shaftElevation": 72
   },
   "terrain": {
     "soil": {
@@ -105,36 +107,35 @@
   "surroundings": {
     "floorTexture": "asset.terrain.lookdev-litter",
     "floorColor": "#6a4a32",
-    "hazeColor": "#5a4632",
-    "hazeStart": 260,
-    "hazeEnd": 1500,
+    "hazeColor": "#7a5c3c",
+    "hazeStart": 120,
+    "hazeEnd": 900,
     "forest": {
-      "trunk": "scenery.mega-oak-trunk",
-      "mushroom": "scenery.mega-mushroom",
-      "log": "scenery.mega-fallen-log",
+      "trunk": "scenery.lookdev-trunk",
       "limbTexture": "asset.textures.forest-giants-bark",
       "rings": [
         {
-          "distance": 48,
-          "spacing": 92,
-          "height": 155
+          "distance": 140,
+          "spacing": 95,
+          "height": 200
         },
         {
-          "distance": 145,
+          "distance": 240,
           "spacing": 110,
-          "height": 195
+          "height": 240
         },
         {
-          "distance": 270,
+          "distance": 360,
           "spacing": 120,
-          "height": 240
+          "height": 280
         }
       ],
       "leafColors": [
-        "#ad6128",
-        "#ce952e",
-        "#7c8131",
-        "#7a4226"
+        "#9a5422",
+        "#c08a2a",
+        "#6e6a2a",
+        "#6a3a1e",
+        "#b8702a"
       ],
       "leafSpacing": 16,
       "leafLength": 24
@@ -143,5 +144,12 @@
   "groundCover": {
     "radius": 0.0,
     "strength": 0.0
+  },
+  "motes": {
+    "dust": 3000,
+    "dustBrightness": 8.0,
+    "leaves": 260,
+    "leafTexture": "asset.models.environment.lookdev-litter-maple/geometry.glb#material0.base",
+    "leafSize": 1.1
   }
 }

@@ -168,6 +168,10 @@ fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
         let vein = 1.0 - smoothstep(0.018, 0.045, abs(fract(in.uv.y * 6.0 - abs(in.uv.x - 0.5) * 3.0) - 0.5));
         color *= 0.83 + 0.09 * sin(in.uv.y * 3.14159) + midrib * 0.22 + vein * 0.07;
         color += albedo * forest.sun.rgb * (0.07 + 0.16 * glow);
+        // Seen from below, a leaf the sun shines through glows (thin foliage transmits);
+        // the canopy reads as a lit ceiling, not a brown sheet.
+        let through = max(0.0, dot(-n, frame.sun_direction.xyz));
+        color += albedo * forest.sun.rgb * through * 0.55 * (1.0 - distance_haze * 0.82);
     }
     return scene_out(vec4f(color, 1.0), in.world);
 }

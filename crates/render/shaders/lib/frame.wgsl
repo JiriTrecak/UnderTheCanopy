@@ -25,7 +25,7 @@ struct Frame {
     canopy_offset: vec4f,
     // x: 1/resolution, y: filter radius (texels), z: normal offset (world), w: depth bias
     shadow: vec4f,
-    // rgb: background; w: unused
+    // rgb: background; w: view fade (0 at RTS pitches, 1 near the horizon)
     background: vec4f,
     // rgb: haze colour; z/w unused; x of haze_range: start, y: end
     haze: vec4f,
@@ -58,6 +58,11 @@ struct PointLight {
 // The world's frame shade (shade.rs): 0 lit as authored, 1 black; per terrain vertex.
 @group(0) @binding(9) var shade_map: texture_2d<f32>;
 
+// How close to the horizon the camera looks: 0 at RTS pitches, 1 for close cameras.
+fn view_fade() -> f32 {
+    return frame.background.w;
+}
+
 fn time_seconds() -> f32 {
     return frame.eye.w;
 }
@@ -87,10 +92,12 @@ fn fog_light(world: vec3f) -> f32 {
         return 1.0;
     }
     let uv = (world.xz + 0.5) * frame.fog.x;
-    if (any(uv < vec2f(0.0)) || any(uv > vec2f(1.0))) {
-        return 0.0;
-    }
-    return textureSampleLevel(fog_map, fog_sampler, uv, 0.0).r;
+    let inside = clamp(uv, vec2f(0.0), vec2f(1.0));
+    let fog = textureSampleLevel(fog_map, fog_sampler, inside, 0.0).r;
+    // Beyond the map nobody can explore: the surrounding forest comes out of the edge's
+    // fog over its first ring's clearance, so close cameras see it.
+    let outside = length((uv - inside) * frame.fog.z);
+    return mix(fog, 1.0, smoothstep(8.0, 48.0, outside));
 }
 
 // The old fog look: explored ground desaturates and cools, unexplored goes black.

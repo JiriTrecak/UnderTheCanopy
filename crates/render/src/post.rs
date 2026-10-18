@@ -104,6 +104,8 @@ struct HazeUniform {
     shape: [f32; 4],
     noise: [f32; 4],
     wind: [f32; 4],
+    /// x: sine of the shafts' own elevation, y: 1 when they have one (else the sun's).
+    beam: [f32; 4],
 }
 
 struct Target {
@@ -937,13 +939,22 @@ impl PostStack {
                     a.sun_strength,
                     self.haze_steps as f32,
                 ],
-                noise: [a.noise_scale, a.noise_strength, a.drift_speed, 0.0],
+                noise: [
+                    a.noise_scale,
+                    a.noise_strength,
+                    a.drift_speed,
+                    a.overhead_strength,
+                ],
                 wind: [
                     a.wind[0],
                     a.wind[1],
                     1.0 / raw.size[0] as f32,
                     1.0 / raw.size[1] as f32,
                 ],
+                beam: match a.shaft_elevation {
+                    Some(e) => [e.to_radians().sin(), 1.0, 0.0, 0.0],
+                    None => [0.0; 4],
+                },
             };
             queue.write_buffer(&self.haze_buffer, 0, bytemuck::bytes_of(&uniform));
         }

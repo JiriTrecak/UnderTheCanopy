@@ -14,6 +14,7 @@ pub mod frame;
 pub mod graph;
 pub mod material;
 pub mod minimap;
+pub mod motes;
 pub mod portrait;
 pub mod post;
 pub mod quality;

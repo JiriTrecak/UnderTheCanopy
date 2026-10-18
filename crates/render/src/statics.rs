@@ -741,7 +741,13 @@ impl StaticsGpu {
             primitive: wgpu::PrimitiveState::default(),
             depth_stencil: Some(targets::shadow_depth()),
             multisample: wgpu::MultisampleState::default(),
-            fragment: None,
+            // Only to cut giants at the shadow ceiling (statics.wgsl `fs_depth`).
+            fragment: Some(wgpu::FragmentState {
+                module: &module,
+                entry_point: Some("fs_depth"),
+                compilation_options: Default::default(),
+                targets: &[],
+            }),
             multiview_mask: None,
             cache: None,
         });

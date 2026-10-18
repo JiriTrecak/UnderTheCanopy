@@ -1,0 +1,46 @@
+{
+  "id": "asset.models.environment.lookdev-tree-oak",
+  "name": "lookdev tree oak",
+  "kind": "tree",
+  "tags": [
+    "lookdev",
+    "autumn",
+    "tripo",
+    "imagegen"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "wind": {
+      "mode": "tree",
+      "strength": 0.04,
+      "speed": 0.8,
+      "stiffness": 0.95
+    },
+    "groundContact": {
+      "mode": "pivot"
+    },
+    "canopy": true
+  },
+  "license": "Tripo (text to 3D) trunk and limbs with ImageGen (gpt-image-2) leaf sprays, dressed by tools/props/build_tree.py."
+}

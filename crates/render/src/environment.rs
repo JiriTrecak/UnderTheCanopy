@@ -191,6 +191,25 @@ pub struct BiomeConfig {
     pub surroundings: Surroundings,
     /// Grass coverage added around foliage (and trees) when the map is compiled.
     pub ground_cover: GroundCover,
+    /// Ambient dust in the light and falling leaves (motes.rs); none by default.
+    #[serde(default)]
+    pub motes: Option<Motes>,
+}
+
+/// A biome's ambient motes.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Motes {
+    /// Dust motes glinting where light falls through the canopy (close cameras).
+    pub dust: u32,
+    /// Brightness of the dust in the light.
+    pub dust_brightness: f32,
+    /// Leaves drifting down around the view.
+    pub leaves: u32,
+    /// Pack texture of one falling leaf, alpha-masked (needed with leaves).
+    pub leaf_texture: Option<String>,
+    /// Leaf size in metres.
+    pub leaf_size: f32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
@@ -277,9 +296,22 @@ pub struct Atmosphere {
     pub noise_scale: f32,
     pub noise_strength: f32,
     pub drift_speed: f32,
+    /// Share of the haze and shafts kept at RTS pitches (1 by default): a forest can keep
+    /// its beams for close cameras, where they are the scene, and leave the army clear.
+    #[serde(default = "one")]
+    pub overhead_strength: f32,
+    /// Elevation of the light shafts in degrees, when they fall from the canopy's gaps more
+    /// steeply than the sun (light from above under a low sun); they then follow the gaps
+    /// alone, not the sun's shadows. `None`: along the sun.
+    #[serde(default)]
+    pub shaft_elevation: Option<f32>,
     /// Drift of the mist noise (x, z); the old game's calm-weather wind by default.
     #[serde(default = "calm_wind")]
     pub wind: [f32; 2],
+}
+
+fn one() -> f32 {
+    1.0
 }
 
 fn calm_wind() -> [f32; 2] {
@@ -568,6 +600,19 @@ impl BiomeConfig {
         range("atmosphere.noiseScale", a.noise_scale, 0.01, 0.5)?;
         range("atmosphere.noiseStrength", a.noise_strength, 0.0, 1.0)?;
         range("atmosphere.driftSpeed", a.drift_speed, 0.0, 3.0)?;
+        range("atmosphere.overheadStrength", a.overhead_strength, 0.0, 1.0)?;
+        if let Some(e) = a.shaft_elevation {
+            range("atmosphere.shaftElevation", e, 10.0, 90.0)?;
+        }
+        if let Some(m) = &self.motes {
+            range("motes.dust", m.dust as f32, 0.0, 8192.0)?;
+            range("motes.dustBrightness", m.dust_brightness, 0.0, 20.0)?;
+            range("motes.leaves", m.leaves as f32, 0.0, 2048.0)?;
+            range("motes.leafSize", m.leaf_size, 0.05, 10.0)?;
+            if m.leaves > 0 && m.leaf_texture.is_none() {
+                return Err("motes.leaves needs motes.leafTexture".into());
+            }
+        }
         range(
             "atmosphere.wind",
             a.wind[0].abs().max(a.wind[1].abs()),
@@ -1039,6 +1084,8 @@ mod tests {
                 noise_scale: 0.09,
                 noise_strength: 0.65,
                 drift_speed: 0.35,
+                overhead_strength: 1.0,
+                shaft_elevation: None,
                 wind: calm_wind(),
             },
             terrain: TerrainLayers {
@@ -1062,6 +1109,7 @@ mod tests {
                 radius: 1.3,
                 strength: 0.8,
             },
+            motes: None,
         }
     }
 

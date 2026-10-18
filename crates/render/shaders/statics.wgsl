@@ -117,7 +117,7 @@ fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
     if (has(FOLIAGE)) {
         f.tint = foliage_variation(instances[in.instance]);
     }
-    if (cut_away(in.instance, in.clip.xy, in.world)) {
+    if (cut_away(in.instance, in.clip.xy, in.world) || above_rts(in.instance, in.clip.xy, in.world)) {
         discard;
     }
     let shaded = shade_material(f);
@@ -169,19 +169,58 @@ fn cut_away(id: u32, frag: vec2f, world: vec3f) -> bool {
     return dither_discard(amount, frag);
 }
 
+// Giants above the RTS view: a canopy model's parts more than `RTS_CEILING` above its base
+// stipple away as the camera pitches down (the surroundings' rule, surroundings.wgsl), so a
+// tree can rise into the canopy for close cameras without covering the map from above.
+// Shadows keep the whole tree, so its crown still shades the ground.
+const RTS_CEILING: f32 = 75.0;
+
+fn above_rts(id: u32, frag: vec2f, world: vec3f) -> bool {
+    if (model.wind.z <= 0.0) {
+        return false;
+    }
+    if (world.y - instances[id].r1.w < RTS_CEILING) {
+        return false;
+    }
+    return dither_discard(1.0 - view_fade(), frag);
+}
+
 // --- Shadows -------------------------------------------------------------------------
 
+struct DepthOut {
+    @builtin(position) clip: vec4f,
+    // Height above the instance's base (the giants' shadow ceiling).
+    @location(0) height: f32,
+}
+
 @vertex
-fn vs_depth(@location(0) position: vec4f, @builtin(instance_index) slot: u32) -> @builtin(position) vec4f {
+fn vs_depth(@location(0) position: vec4f, @builtin(instance_index) slot: u32) -> DepthOut {
     let inst = instances[visible[slot]];
     let m = Affine(inst.r0, inst.r1, inst.r2);
     let placed = place(m, position.xyz, vec4f(0.0), false);
-    return frame.view_proj * vec4f(placed.world, 1.0);
+    var out: DepthOut;
+    out.clip = frame.view_proj * vec4f(placed.world, 1.0);
+    out.height = placed.world.y - inst.r1.w;
+    return out;
+}
+
+// A giant's parts above the RTS ceiling cast no shadow: the playable ground's light is the
+// map's (and the drifting canopy's), never a crown's; the bole below keeps its long shadow.
+fn above_shadow_ceiling(height: f32) -> bool {
+    return model.wind.z > 0.0 && height > RTS_CEILING;
+}
+
+@fragment
+fn fs_depth(in: DepthOut) {
+    if (above_shadow_ceiling(in.height)) {
+        discard;
+    }
 }
 
 struct MaskedOut {
     @builtin(position) clip: vec4f,
     @location(0) uv: vec2f,
+    @location(1) height: f32,
 }
 
 @vertex
@@ -192,12 +231,13 @@ fn vs_masked(in: VertexIn, @builtin(instance_index) slot: u32) -> MaskedOut {
     var out: MaskedOut;
     out.clip = frame.view_proj * vec4f(placed.world, 1.0);
     out.uv = model.uv.xy + in.uv * model.uv.zw;
+    out.height = placed.world.y - inst.r1.w;
     return out;
 }
 
 @fragment
 fn fs_masked(in: MaskedOut) {
-    if (masked_out(in.uv)) {
+    if (masked_out(in.uv) || above_shadow_ceiling(in.height)) {
         discard;
     }
 }

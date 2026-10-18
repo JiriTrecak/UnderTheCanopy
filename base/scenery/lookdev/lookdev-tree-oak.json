@@ -1,0 +1,8 @@
+{
+  "id": "scenery.lookdev-tree-oak",
+  "name": "Look-dev giant oak",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.lookdev-tree-oak",
+  "editorHidden": true
+}

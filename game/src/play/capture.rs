@@ -79,10 +79,15 @@ pub fn run(
         },
     )?;
     let seat = me.map_or(Seat::Observer, Seat::Player);
+    // Sandbox maps show revealed to a local player, as in the game (`run.rs`).
+    let shown = (loaded.sandbox && me.is_some()).then_some(Seat::Observer);
     let content = game.world.catalog().content.clone();
     let catalog = Arc::new(Catalog::new(content.clone()));
     let commands = game.session.commands();
     let (mut newest, mut view0) = sim::present(&game.world, &mut game.presenter, seat);
+    if let Some(shown) = shown {
+        newest = sim::present(&game.world, &mut game.presenter, shown).0;
+    }
     let mut previous = None;
     let step = |game: &mut world::Match,
                 newest: &mut canopy_scene::live::Presentation,
@@ -94,7 +99,7 @@ pub fn run(
             &mut game.session,
             &mut game.presenter,
             seat,
-            None,
+            shown,
         )
         .with_context(|| format!("the local session stopped at tick {}", game.world.tick()))?;
         *previous = Some(std::mem::replace(newest, advanced.presentation));

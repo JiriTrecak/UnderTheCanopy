@@ -230,6 +230,20 @@ The target is unchanged: 60 FPS on a base M1 with about 400 units (plan). Most o
 - statics LOD for the giant props;
 - art for the surroundings forest at this quality, for third person.
 
+### The canopy (2026-10-18, D64)
+
+The same forest serves two cameras. From the RTS view it is a calm frame around a lit clearing; the canopy shows only as its moving shade and a whisper of light in the air. From the third-person view (J) it is a cathedral: giant oak and beech columns rising into a backlit ceiling, autumn saplings at ant height swaying in the wind, steep beams falling from the canopy's gaps, dust glinting in them, leaves spiralling down, and the distant forest soft with depth of field.
+
+What the scene uses for it:
+- **Giants:** Tripo trunks and bare limbs (oak, beech), dressed with leaf-spray cards by `tools/props/build_tree.py`. They dissolve above 75 m at RTS pitches and cast no crown shadow on the playable ground.
+- **Saplings:** a Tripo sapling with the same cards, 20 m tall, in the frame away from the clearing's rim.
+- **Leaf sprays:** gpt-image cut-outs of autumn oak, maple and beech twigs.
+- **Light:** `atmosphere.shaftElevation` 72° for beams from above, `overheadStrength` 0.08 for the RTS view, thin mist.
+- **Motes:** dust in the beams and falling maple leaves (`motes` in the biome).
+- **Surroundings:** the biome's distant rings now use the look-dev trunk, without the old fly agarics and logs, with a warmer haze.
+
+Still to do: the overhead leaf sheet beyond the map is the old procedural one; a painted far-forest backdrop; leaf litter that piles where the falling leaves land is not attempted.
+
 ## Open questions
 
 - **Human leftovers as landmarks** (a lost button, a nail, a coin)? They show scale instantly but are a lore choice.

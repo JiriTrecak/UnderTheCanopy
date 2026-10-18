@@ -1,0 +1,8 @@
+{
+  "id": "scenery.lookdev-sapling",
+  "name": "Look-dev sapling",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.lookdev-sapling",
+  "editorHidden": true
+}

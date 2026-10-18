@@ -48,6 +48,8 @@ pub struct Environment {
     pub post: PostLook,
     /// R8 canopy openings where shafts scatter, [`OPENINGS_SIZE`]².
     pub openings: Vec<u8>,
+    /// Ambient dust and falling leaves.
+    pub motes: Option<crate::environment::Motes>,
 }
 
 impl Environment {
@@ -73,6 +75,7 @@ impl Environment {
             openings: crate::environment::canopy_openings(&biome.canopy, OPENINGS_SIZE),
             lighting: resolved,
             shadow: lighting.shadow,
+            motes: biome.motes.clone(),
         }
     }
 }
@@ -293,6 +296,7 @@ pub struct Renderer {
     actors: Option<ActorsGpu>,
     water: Option<WaterGpu>,
     forest: Option<ForestGpu>,
+    motes: Option<crate::motes::MotesGpu>,
     ripples: Ripples,
     ui: Option<crate::ui::UiLayer>,
     timer: Option<GpuTimer>,
@@ -458,6 +462,7 @@ impl Renderer {
             actors: None,
             water: None,
             forest: None,
+            motes: None,
             ripples: Ripples::new(),
             ui: None,
             timer: None,
@@ -579,6 +584,7 @@ impl Renderer {
         self.statics = None;
         self.water = None;
         self.forest = None;
+        self.motes = None;
         self.ripples.clear();
         self.world_bytes = 0;
         self.bindings.shade = match world
@@ -633,6 +639,18 @@ impl Renderer {
                 )?;
                 self.world_bytes += gpu_forest.bytes;
                 self.forest = Some(gpu_forest);
+            }
+            if let Some(motes) = &self.environment.motes {
+                let gpu_motes = crate::motes::MotesGpu::new(
+                    &gpu.device,
+                    &gpu.queue,
+                    gpu.features,
+                    pack,
+                    motes,
+                    &self.frame_layout,
+                )?;
+                self.world_bytes += gpu_motes.bytes;
+                self.motes = Some(gpu_motes);
             }
         }
         let statics = StaticsGpu::new(
@@ -1127,6 +1145,20 @@ impl Renderer {
         if let Some(forest) = &mut self.forest {
             forest.prepare(queue, camera, sun.0, sun.1);
         }
+        if let Some(motes) = &mut self.motes {
+            let atmosphere = &self.environment.post.atmosphere;
+            let tint = atmosphere
+                .sun_tint
+                .unwrap_or(crate::environment::DEFAULT_SHAFT_TINT)
+                .linear();
+            motes.prepare(
+                queue,
+                camera,
+                seconds,
+                sun.0 * tint * sun.1.min(2.5),
+                atmosphere.shaft_elevation,
+            );
+        }
         let grade = &lighting.grade;
         self.post.prepare(
             queue,
@@ -1279,6 +1311,9 @@ impl Renderer {
                     if let Some(actors) = &self.actors {
                         report.draws += actors.draw_forward(&mut rp, &self.frame_group);
                     }
+                    if let Some(motes) = &self.motes {
+                        report.draws += motes.draw_leaves(&mut rp, &self.frame_group);
+                    }
                     if let Some(forest) = &self.forest {
                         report.draws += forest.draw(&mut rp, &self.frame_group);
                     }
@@ -1293,6 +1328,9 @@ impl Renderer {
                     }
                     report.draws += self.world_ui.draw_ground(&mut rp, &self.frame_group);
                     report.draws += self.effects.draw(&mut rp, &self.frame_group);
+                    if let Some(motes) = &self.motes {
+                        report.draws += motes.draw_dust(&mut rp, &self.frame_group);
+                    }
                 }
                 (passes::CONTACT, PassKind::Render) => {
                     report.draws +=

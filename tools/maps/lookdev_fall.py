@@ -251,6 +251,33 @@ def build_scenery():
                         or fields(x + dx * along, z + dz * along)[2].max() > 0.05):
                     continue  # nor into the pool, whose bed drops away under them
                 add(roots[kind], x + dx * start, z + dz * start, scale_root, math.atan2(-dx, -dz))
+    # Whole giant trees for close cameras (their crowns dissolve above the RTS view, D63):
+    # one rising out of each giant trunk, a ring in the frame and a ring beyond the map, so
+    # the third-person view stands in a forest whichever way it looks.
+    trees = ['scenery.lookdev-tree-oak', 'scenery.lookdev-tree-beech']
+    for asset, px, py, scale, yaw in GIANTS:
+        if 'trunk' in asset:
+            x, z = to_world(px, py)
+            add(trees[0], x, z, scale * rng.uniform(0.9, 1.1), rng.uniform(0, 2 * math.pi))
+    for radius, count, jitter in ((185.0, 12, 25.0), (300.0, 18, 40.0)):
+        for k in range(count):
+            a = 2 * math.pi * (k + rng.uniform(-0.3, 0.3)) / count
+            r = radius + rng.uniform(-jitter, jitter)
+            x, z = FOCUS[0] + math.cos(a) * r, FOCUS[1] + math.sin(a) * r
+            asset, s = trees[rng.integers(2)], rng.uniform(0.75, 1.2)
+            if (float(signed_distance(np.array(x), np.array(z), OPEN)) < 30.0
+                    or float(fields(np.array(x), np.array(z))[2]) > 0.05):
+                continue
+            add(asset, x, z, s, rng.uniform(0, 2 * math.pi))
+    # Saplings: the leafy, wind-swayed trees an ant walks among, in the frame near the rim.
+    placed = 0
+    while placed < 28:
+        x, z = FOCUS[0] + rng.uniform(-200, 200), FOCUS[1] + rng.uniform(-170, 170)
+        d = float(signed_distance(np.array(x), np.array(z), OPEN))
+        if d < 20.0 or d > 80.0 or float(fields(np.array(x), np.array(z))[2]) > 0.02:
+            continue
+        add('scenery.lookdev-sapling', x, z, rng.uniform(0.7, 1.4), rng.uniform(0, 2 * math.pi))
+        placed += 1
     # Amber crystals stand in their craters (render-only: no mine entity, whose foundation
     # would flatten the crater).
     for i, (px, py) in enumerate(AMBER):

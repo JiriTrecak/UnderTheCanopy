@@ -145,6 +145,7 @@ pub fn all() -> Vec<(&'static str, &'static [Module], &'static str)> {
             LIT,
             include_str!("../shaders/surroundings.wgsl"),
         ),
+        ("motes", LIT, include_str!("../shaders/motes.wgsl")),
     ]
 }
 

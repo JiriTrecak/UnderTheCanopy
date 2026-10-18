@@ -41,9 +41,10 @@ impl CameraMode {
 const THIRD_PERSON_LOOK_UP: f32 = 10.0 * std::f32::consts::PI / 180.0;
 /// Blend from the previous view when the pose changes (old default `transitionMs`).
 pub const TRANSITION_SECONDS: f32 = 0.35;
-/// Close cameras' planes (old near 0.08, far 180).
+/// Close cameras' planes (old near 0.08, far 180; far 1600 so the surrounding forest and
+/// its canopy, up to about 600 m beyond the map, stand on the horizon).
 pub const NEAR: f32 = 0.08;
-pub const FAR: f32 = 180.0;
+pub const FAR: f32 = 1600.0;
 
 /// The unit a close camera follows, as drawn.
 #[derive(Debug, Clone, Copy, PartialEq)]

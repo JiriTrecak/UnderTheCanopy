@@ -24,6 +24,8 @@ pub struct FrameUniform {
     pub canopy: [f32; 4],
     pub canopy_offset: [f32; 4],
     pub shadow: [f32; 4],
+    /// rgb: background; w: the camera's view fade (0 at RTS pitches, 1 near the horizon,
+    /// [`crate::surroundings::view_fade`]).
     pub background: [f32; 4],
     pub haze: [f32; 4],
     pub haze_range: [f32; 4],
@@ -111,7 +113,7 @@ impl FrameUniform {
                 0.025,
                 0.0004,
             ],
-            background: v4(l.background, 0.0),
+            background: v4(l.background, crate::surroundings::view_fade(p.camera)),
             haze: v4(p.haze, 0.0),
             haze_range: [p.haze_range[0], p.haze_range[1], 0.0, 0.0],
             counts: [p.point_lights, 0, 0, 0],
