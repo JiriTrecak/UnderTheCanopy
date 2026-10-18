@@ -1,0 +1,32 @@
+{
+  "id": "effect.buildings.forge-fire",
+  "name": "Forge furnace light",
+  "description": "Flickering firelight spilling out of a working furnace. Loops while the building works (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "firelight",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#ff8a35",
+      "accent": "#ffb060",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 11,
+      "height": 0,
+      "intensity": 14,
+      "motion": {
+        "opacity": {
+          "periodTicks": 7,
+          "min": 0.65,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

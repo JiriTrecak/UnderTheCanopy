@@ -651,6 +651,7 @@ impl EffectEvaluator {
                         opacity.clamp(0.0, 1.0) * 0.999,
                     ],
                     shadow_only: false,
+                    activity: 0.0,
                 });
             }
             Motion::Light => {
@@ -804,6 +805,7 @@ impl EffectEvaluator {
                     if opacity >= 1.0 { 1.0 } else { opacity },
                 ],
                 shadow_only: false,
+                activity: 0.0,
             });
         } else {
             let mut e = base;

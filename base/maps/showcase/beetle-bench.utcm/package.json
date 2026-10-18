@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "beetle-bench",
+  "kind": "map",
+  "name": "Bench: Beetles",
+  "description": "A sandbox for reviewing beetle buildings and their work states.",
+  "version": "1.0.0",
+  "dependencies": {
+    "base": ">=0.3.5"
+  }
+}

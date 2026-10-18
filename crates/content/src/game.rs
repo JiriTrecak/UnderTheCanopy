@@ -490,6 +490,22 @@ pub struct DefinitionPresentation {
     /// Share of the cast animation at which a spell lands.
     pub cast_contact: Option<f64>,
     pub camera_anchor: Option<CameraAnchor>,
+    /// A building's effects at work (D65): smoke while it works, sparks on a strike.
+    pub effects: Option<Vec<StateEffect>>,
+}
+
+/// An effect a building plays from one of its model's sockets: looping for as long as
+/// the model is in `state` (`work` or `spawn`), or once whenever its clip crosses the
+/// animation event `event`. Exactly one of `state` and `event`.
+#[skip_serializing_none]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct StateEffect {
+    pub effect: Id,
+    pub state: Option<String>,
+    pub event: Option<String>,
+    /// Socket name (`capabilities.sockets`); the model's origin without one.
+    pub socket: Option<String>,
 }
 
 impl Definition {
@@ -809,6 +825,7 @@ pub struct RenderAsset {
     pub sockets: Option<Vec<Socket>>,
     pub cast_contact: Option<f64>,
     pub scenery_asset: Option<String>,
+    pub effects: Option<Vec<StateEffect>>,
 }
 
 fn default_anchor_distance() -> f64 {
@@ -855,6 +872,7 @@ impl RenderAsset {
             sockets: None,
             cast_contact: None,
             scenery_asset: None,
+            effects: None,
         }
     }
 }

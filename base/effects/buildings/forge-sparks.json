@@ -1,0 +1,64 @@
+{
+  "id": "effect.buildings.forge-sparks",
+  "name": "Forge anvil sparks",
+  "description": "A burst of sparks and a flash where the hammer strikes the anvil.",
+  "durationTicks": 24,
+  "loop": false,
+  "layers": [
+    {
+      "id": "sparks",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 18,
+        "rate": 14,
+        "speed": 6.5,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 75,
+        "gravity": 12,
+        "drag": 0.3,
+        "spawnRadius": 0.15,
+        "startSize": 0.3,
+        "endSize": 0.04,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#ffc65a",
+      "accent": "#fff0b0",
+      "durationTicks": 20,
+      "count": 22,
+      "size": 0.22,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "flash",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#ffb055",
+      "accent": "#ffd090",
+      "durationTicks": 5,
+      "count": 1,
+      "size": 7,
+      "height": 0.3,
+      "intensity": 8
+    }
+  ]
+}

@@ -13,6 +13,8 @@ const HAS_OCCLUSION_MAP: u32 = 32u;
 const PAINTED: u32 = 64u;
 const ALPHA_MASK: u32 = 128u;
 const ALPHA_BLEND: u32 = 256u;
+// Emission alive only while the instance works: light.w pulse rate, glow_to.w flow.
+const ACTIVE: u32 = 512u;
 
 struct Material {
     base_color: vec4f,
@@ -20,7 +22,7 @@ struct Material {
     emissive: vec4f,
     // roughness, metalness, alpha cutoff, occlusion strength
     params: vec4f,
-    // backside lighting, crown normal weight, team source max, 0
+    // backside lighting, crown normal weight, team source max, active pulse rate (Hz)
     light: vec4f,
     // rgb: colour without an owner
     team_default: vec4f,
@@ -30,7 +32,7 @@ struct Material {
     glow: vec4f,
     // per term: albedo weights xyz, w: smoothstep start
     glow_terms: array<vec4f, 3>,
-    // smoothstep ends per term
+    // smoothstep ends per term; w: active flow (texture lengths per second along V)
     glow_to: vec4f,
 }
 
@@ -87,6 +89,8 @@ struct MaterialFragment {
     front: bool,
     // Per-instance multiplier of the albedo (foliage variation); white leaves it as authored.
     tint: vec3f,
+    // How much the instance works, 0 at rest to 1 (ACTIVE materials, D65).
+    activity: f32,
 }
 
 // Lit colour and coverage of one fragment; alpha 0 means discard.
@@ -101,7 +105,16 @@ fn shade_material(f: MaterialFragment) -> vec4f {
     // Maps a material lacks are not sampled (uniform branches on its parameters).
     var emissive = vec3f(0.0);
     if (any(material.emissive.rgb != vec3f(0.0))) {
-        emissive = textureSample(emissive_texture, material_sampler, f.uv).rgb * material.emissive.rgb;
+        if (has(ACTIVE)) {
+            // Dark at rest; while working it streams along the texture and pulses.
+            let t = time_seconds();
+            let flow = vec2f(0.0, -t * material.glow_to.w);
+            let pulse = 0.72 + 0.28 * sin(t * 6.2831853 * material.light.w);
+            emissive = textureSample(emissive_texture, material_sampler, f.uv + flow).rgb
+                * material.emissive.rgb * f.activity * pulse;
+        } else {
+            emissive = textureSample(emissive_texture, material_sampler, f.uv).rgb * material.emissive.rgb;
+        }
     }
     var alpha = base.a;
     if (has(ALPHA_MASK)) {

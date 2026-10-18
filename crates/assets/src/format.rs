@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 /// First bytes of every pack.
 pub const MAGIC: [u8; 8] = *b"CANOPYPK";
 /// Version of the pack layout and of every metadata type.
-pub const FORMAT_VERSION: u32 = 2;
+pub const FORMAT_VERSION: u32 = 3;
 /// Alignment of blobs and of every array inside one.
 pub const ALIGN: usize = 16;
 /// Rate at which clips are baked, in frames per second.
@@ -288,7 +288,19 @@ pub struct Material {
     pub team_color: Option<TeamColor>,
     pub normal_scale: f32,
     pub occlusion_strength: f32,
+    /// Emission that lives only while its model works (D65).
+    pub active: Option<ActiveGlow>,
     pub textures: MaterialTextures,
+}
+
+/// A material whose emission is off while its model rests and comes alive while it
+/// works: scaled by the instance's activity, pulsing and flowing along the texture.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct ActiveGlow {
+    /// Pulses per second.
+    pub pulse: f32,
+    /// Texture lengths per second the emission streams along V.
+    pub flow: f32,
 }
 
 /// Player colour on a material: `albedo' = mix(albedo, sqrt(max(albedo.rgb) / source_max) ·

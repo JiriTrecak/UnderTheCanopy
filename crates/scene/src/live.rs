@@ -27,7 +27,8 @@
 
 use crate::{
     animation::{
-        CONTACT, CastTimeline, Poses, TICK_SECONDS, UnitAnimation, UnitInputs, attack_phase,
+        BuildingAnimation, CONTACT, CastTimeline, Poses, TICK_SECONDS, UnitAnimation, UnitInputs,
+        attack_phase,
     },
     damage::{Damaged, Fires},
     effects::{
@@ -41,7 +42,7 @@ use canopy_content::map::UtcMap;
 use canopy_content::{
     Content,
     effects::VisualLayer,
-    game::{ConstructionPresentation, Creation, Definition, Kind, WorkAnimation},
+    game::{ConstructionPresentation, Creation, Definition, Kind, RenderAsset, WorkAnimation},
     placement::Owner,
 };
 use canopy_sim::{
@@ -111,6 +112,8 @@ pub struct Actor {
     /// A ground unit that wakes water: its walking surface (0 the ground, `n` the deck
     /// [`deck_index`] `n − 1`) and height above it.
     pub walker: Option<(u32, f32)>,
+    /// How much a building works, 0 at rest to 1: its active emission (D65).
+    pub activity: f32,
 }
 
 /// The walking surface number of a deck name (0: the ground; unknown decks walk the
@@ -161,6 +164,7 @@ impl Actor {
             snap: false,
             body: None,
             walker: None,
+            activity: 0.0,
         }
     }
 }
@@ -378,6 +382,18 @@ struct Tracked {
     seen: u32,
 }
 
+/// A built building's animation and the state effects it is playing (D65).
+#[derive(Debug, Clone)]
+struct BuildingTrack {
+    model: u32,
+    animation: Option<BuildingAnimation>,
+    /// Cues of looping state effects, by the effect's index in the presentation.
+    cues: BTreeMap<usize, Vec<u32>>,
+    /// Eases towards 1 while it works and back to 0 at rest.
+    activity: f32,
+    seen: u32,
+}
+
 #[derive(Debug, Clone)]
 struct Corpse {
     actor: Actor,
@@ -475,6 +491,7 @@ pub struct Presenter {
     appearance: BTreeMap<EntityId, (Option<String>, f64)>,
     construction: BTreeMap<String, ConstructionPresentation>,
     units: BTreeMap<EntityId, Tracked>,
+    buildings: BTreeMap<EntityId, BuildingTrack>,
     corpses: BTreeMap<EntityId, Corpse>,
     origins: BTreeMap<(Part, u32), (u32, Vec3)>,
     projectiles: BTreeMap<String, Vec<Layer>>,
@@ -647,6 +664,7 @@ impl Presenter {
             appearance,
             construction,
             units: BTreeMap::new(),
+            buildings: BTreeMap::new(),
             corpses: BTreeMap::new(),
             origins: BTreeMap::new(),
             projectiles: BTreeMap::new(),
@@ -1303,6 +1321,9 @@ impl Presenter {
                         scale,
                     ));
                     hide = !show_body;
+                    if e.public.construction.is_none() && !info.missing {
+                        self.animate_building(e, asset, model, &info, &mut actor, &mut posed, tick);
+                    }
                     // Built buildings in sight burn when damaged (deposits and mines do not).
                     let max_hp = e
                         .combat
@@ -1347,6 +1368,18 @@ impl Presenter {
         }
 
         // Units that left the view: deaths in sight become corpses; the rest vanish.
+        let stale: Vec<EntityId> = self
+            .buildings
+            .iter()
+            .filter(|(_, b)| b.seen != tick)
+            .map(|(&id, _)| id)
+            .collect();
+        for id in stale {
+            let track = self.buildings.remove(&id).expect("listed");
+            for cues in track.cues.values() {
+                self.effects.stop(cues);
+            }
+        }
         let gone: Vec<EntityId> = self
             .units
             .keys()
@@ -1595,6 +1628,116 @@ impl Presenter {
     /// The icon asset of an item definition.
     fn icon_of(&self, item: canopy_sim::catalog::Def) -> String {
         self.item_icons.get(&item).cloned().unwrap_or_default()
+    }
+
+    /// A built building at work (D65): its rest, work and spawn clips from what anyone
+    /// sees of it (busy, finished cycles), its sockets for effects, the looping effects of
+    /// its current state and the one-shot effects of the clip events it crossed. A
+    /// remembered building rests: what it does out of sight is not shown.
+    #[allow(clippy::too_many_arguments)]
+    fn animate_building(
+        &mut self,
+        e: &EntityView,
+        asset: &RenderAsset,
+        model: u32,
+        info: &Arc<ModelInfo>,
+        actor: &mut Actor,
+        posed: &mut BTreeMap<u32, Posed>,
+        tick: u32,
+    ) {
+        let id = e.id();
+        let work = e.work.as_ref();
+        let busy = !e.remembered && work.is_some_and(|w| w.busy);
+        let cycles = work.map_or(0, |w| w.cycles);
+        let track = self.buildings.entry(id).or_insert_with(|| BuildingTrack {
+            model,
+            animation: BuildingAnimation::new(info),
+            cues: BTreeMap::new(),
+            activity: 0.0,
+            seen: tick,
+        });
+        if track.model != model {
+            for cues in std::mem::take(&mut track.cues).values() {
+                self.effects.stop(cues);
+            }
+            track.model = model;
+            track.animation = BuildingAnimation::new(info);
+        }
+        track.seen = tick;
+        let Some(animation) = &mut track.animation else {
+            return;
+        };
+        let events = animation.step(info, busy, cycles);
+        actor.poses = animation.animator.poses(info);
+        let (clip, time) = animation.animator.current();
+        let state = animation.animator.state().to_owned();
+        // Machinery spins up and winds down over about half a second.
+        let working = if state == crate::animation::building_states::IDLE {
+            0.0
+        } else {
+            1.0
+        };
+        track.activity += (working - track.activity).clamp(-0.06, 0.06);
+        actor.activity = track.activity;
+        posed.insert(
+            id.0,
+            Posed {
+                info: info.clone(),
+                clip: Some((clip, time)),
+                position: actor.position,
+                rotation: actor.rotation,
+                scale: actor.scale,
+            },
+        );
+        let Some(effects) = asset.effects.as_ref() else {
+            return;
+        };
+        let at = |socket: Option<&String>| -> Vec3 {
+            let node = socket.map(|s| {
+                asset
+                    .sockets
+                    .iter()
+                    .flatten()
+                    .find(|k| &k.name == s)
+                    .map_or(s.as_str(), |k| k.node.as_str())
+            });
+            node.and_then(|n| info.socket(n, clip, time))
+                .map_or(actor.position, |m| {
+                    actor.position + actor.rotation * (affine_point(&m, Vec3::ZERO) * actor.scale)
+                })
+        };
+        for (k, effect) in effects.iter().enumerate() {
+            let Some(index) = self.effects.find(effect.effect.as_str()) else {
+                continue;
+            };
+            let seed = id.0.wrapping_mul(0x9e37_79b1) ^ tick ^ (k as u32).wrapping_mul(7919);
+            let play = |director: &mut EffectDirector| {
+                director.play(Play {
+                    effect: index,
+                    tick: f64::from(tick),
+                    seed,
+                    at: at(effect.socket.as_ref()),
+                    from: None,
+                    radius: None,
+                })
+            };
+            if let Some(wanted) = &effect.state {
+                let active = !e.remembered && *wanted == state;
+                let playing = track.cues.get(&k).is_some_and(|c| !c.is_empty());
+                if active && !playing {
+                    let cues = play(&mut self.effects);
+                    track.cues.insert(k, cues);
+                } else if !active && playing {
+                    let cues = track.cues.remove(&k).unwrap_or_default();
+                    self.effects.stop(&cues);
+                }
+            } else if let Some(event) = &effect.event
+                && !e.remembered
+                && events.iter().any(|n| n == event)
+            {
+                play(&mut self.effects);
+            }
+        }
     }
 
     /// Construction dust on a rising scaffold (old `ConstructionScaffold.update`): three

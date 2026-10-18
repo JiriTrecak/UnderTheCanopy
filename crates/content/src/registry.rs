@@ -513,6 +513,26 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
     if matches!(d.kind, Kind::Unit | Kind::Building) && d.body.is_none() {
         check.fail(at, "body required");
     }
+    for e in d
+        .presentation
+        .iter()
+        .flat_map(|p| p.effects.iter().flatten())
+    {
+        match (&e.state, &e.event) {
+            (Some(state), None) if matches!(state.as_str(), "work" | "spawn") => {}
+            (Some(state), None) => {
+                check.fail(at, format!("unknown effect state {state}: work or spawn"))
+            }
+            (None, Some(_)) => {}
+            _ => check.fail(
+                at,
+                "a presentation effect needs exactly one of state and event",
+            ),
+        }
+        if d.kind != Kind::Building {
+            check.fail(at, "presentation effects are for buildings");
+        }
+    }
     if let Some(body) = &d.body {
         if rules
             .damage_multipliers

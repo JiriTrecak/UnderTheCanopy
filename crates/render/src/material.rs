@@ -18,6 +18,8 @@ const FLAG_OCCLUSION_MAP: u32 = 32;
 const FLAG_PAINTED: u32 = 64;
 const FLAG_ALPHA_MASK: u32 = 128;
 const FLAG_ALPHA_BLEND: u32 = 256;
+/// Emission alive only while the instance works (`ActiveGlow`, D65).
+const FLAG_ACTIVE: u32 = 512;
 
 /// Mirrors `Material` in `shaders/lib/material.wgsl`.
 #[repr(C)]
@@ -254,6 +256,9 @@ impl Textures {
         if material.painted {
             flags |= FLAG_PAINTED;
         }
+        if material.active.is_some() {
+            flags |= FLAG_ACTIVE;
+        }
         match material.alpha {
             AlphaMode::Mask => flags |= FLAG_ALPHA_MASK,
             AlphaMode::Blend => flags |= FLAG_ALPHA_BLEND,
@@ -282,7 +287,7 @@ impl Textures {
                     0.0
                 },
                 team.map_or(1.0, |t| t.source_max),
-                0.0,
+                material.active.map_or(0.0, |a| a.pulse),
             ],
             team_default: team.map_or([1.0; 4], |t| {
                 [t.default[0], t.default[1], t.default[2], 1.0]
@@ -304,9 +309,13 @@ impl Textures {
                 g.terms
                     .map(|t| [t.weights[0], t.weights[1], t.weights[2], t.from])
             }),
-            glow_to: glow.map_or([1.0; 4], |g| {
-                [g.terms[0].to, g.terms[1].to, g.terms[2].to, 0.0]
-            }),
+            glow_to: {
+                let mut to = glow.map_or([1.0; 4], |g| {
+                    [g.terms[0].to, g.terms[1].to, g.terms[2].to, 0.0]
+                });
+                to[3] = material.active.map_or(0.0, |a| a.flow);
+                to
+            },
         };
         let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("material"),

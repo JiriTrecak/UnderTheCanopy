@@ -1,0 +1,91 @@
+{
+  "id": "asset.models.buildings.beetles-shell-forge",
+  "name": "Shell Forge",
+  "kind": "building",
+  "tags": [
+    "beetles",
+    "tripo",
+    "animated",
+    "team-mask"
+  ],
+  "race": "beetles",
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_tripo_part_1",
+        "TC_tripo_part_7",
+        "TC_tripo_part_0",
+        "TC_tripo_part_9",
+        "TC_tripo_part_11",
+        "TC_tripo_part_8"
+      ]
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "work",
+        "clip": "work",
+        "loop": true,
+        "events": [
+          {
+            "name": "strike",
+            "time": 0.6
+          },
+          {
+            "name": "strike",
+            "time": 1.4
+          }
+        ]
+      }
+    ],
+    "blocker": {
+      "shape": "box",
+      "size": [
+        12,
+        12
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 6,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 1,
+    "healthHeight": 8.5
+  },
+  "shading": "building",
+  "license": "Generated with Tripo (image and text to 3D, segmentation) from an ImageGen (gpt-image-2) concept for Under the Canopy; animated by tools/buildings/shell_forge.py."
+}

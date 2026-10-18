@@ -47,8 +47,9 @@ use std::{
 
 /// Live cues at once; further events are not shown (old player: 64 per player).
 pub const MAX_CUES: usize = 256;
-/// Effect lights at once (old `EffectLights` pool).
-pub const MAX_LIGHTS: usize = 4;
+/// Effect lights at once (old `EffectLights` pool of 4; the renderer's budget since
+/// buildings light their work, D65).
+pub const MAX_LIGHTS: usize = canopy_render::effects::MAX_EFFECT_LIGHTS;
 /// Effect model instances at once (old `EFFECT_MODEL_LIMITS.instances`).
 pub const MAX_MODELS: usize = 16;
 /// Triangles of every effect model at once (old `EFFECT_MODEL_LIMITS.triangles`).

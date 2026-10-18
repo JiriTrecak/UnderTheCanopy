@@ -186,6 +186,7 @@ fn model_blob() -> Vec<u8> {
         team_color: None,
         normal_scale: 1.0,
         occlusion_strength: 1.0,
+        active: None,
         textures: MaterialTextures::default(),
     };
     let meta = ModelMeta {

@@ -40,6 +40,12 @@ pub struct PublicWork {
     pub pose: Option<WorkPose>,
     /// Workers assigned to a harvest building (a mine).
     pub site: Option<Workforce>,
+    /// A building is at work: training, researching, upgrading or reviving, and not
+    /// paused or blocked. Everyone who sees it sees that it works, never at what (its
+    /// animation and effects, D65).
+    pub busy: bool,
+    /// Training cycles the building has finished: a unit stepped out when it grows.
+    pub cycles: u32,
 }
 
 /// A worker's job as its owner's command card sees it.
@@ -326,11 +332,29 @@ pub fn public(
     });
     let cargo = e.unit.as_ref().and_then(|u| u.work.cargo.clone());
     let pose = pose(state, catalog, e, tick, at_goal);
-    (cargo.is_some() || pose.is_some() || site.is_some()).then_some(PublicWork {
-        cargo,
-        pose,
-        site,
-    })
+    let producing = e.production.as_ref().is_some_and(|p| {
+        !p.paused
+            && p.active.is_some()
+            && matches!(
+                p.status,
+                Status::Training | Status::Planting | Status::Upgrading | Status::RevivingHero
+            )
+    });
+    let busy = e.construction.is_none()
+        && (producing
+            || e.research.as_ref().is_some_and(|r| !r.queue.is_empty())
+            || e.upgrade.is_some()
+            || e.revival.as_ref().is_some_and(|r| !r.queue.is_empty()));
+    let cycles = e.production.as_ref().map_or(0, |p| p.produced);
+    (cargo.is_some() || pose.is_some() || site.is_some() || busy || cycles > 0).then_some(
+        PublicWork {
+            cargo,
+            pose,
+            site,
+            busy,
+            cycles,
+        },
+    )
 }
 
 fn progress(done: u32, total: u32) -> Progress {

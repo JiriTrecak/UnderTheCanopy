@@ -89,6 +89,8 @@ pub struct ActorInstance {
     pub tint: [f32; 4],
     /// Drawn into the sun's shadow only: the body a first-person camera looks out of.
     pub shadow_only: bool,
+    /// How much the model works, 0 at rest to 1: drives its active emission (D65).
+    pub activity: f32,
 }
 
 /// The tint of models drawn as they are.
@@ -106,6 +108,7 @@ impl ActorInstance {
             pose_count: 0,
             tint: NO_TINT,
             shadow_only: false,
+            activity: 0.0,
         }
     }
 
@@ -1249,7 +1252,7 @@ fn stage(
             .owner_color
             .map_or([0.0; 4], |c| [c[0], c[1], c[2], 1.0]),
         palette: [*palette_len, model.joints, 0, 0],
-        look: [instance.opacity, 0.0, 0.0, 0.0],
+        look: [instance.opacity, instance.activity, 0.0, 0.0],
         tint: instance.tint,
     });
     let mut job = SkinJob {

@@ -1,0 +1,58 @@
+{
+  "biome": "autumn-forest",
+  "sandbox": true,
+  "camps": [],
+  "size": 256,
+  "playerStarts": [
+    {
+      "mainFort": "start.player.1/main-fort",
+      "player": 1,
+      "setup": "setup.beetles",
+      "x": 113.5,
+      "z": 129.5
+    }
+  ],
+  "entities": [
+    {
+      "definition": "building.beetles.bastion",
+      "id": "bench.hall",
+      "owner": "player.1",
+      "initialState": {
+        "construction": "complete",
+        "inventory": {
+          "item.amber": 20000,
+          "item.wood": 20000
+        }
+      },
+      "position": {
+        "x": 113.5,
+        "y": 129.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.beetles.shell-forge",
+      "id": "bench.forge",
+      "owner": "player.1",
+      "initialState": {
+        "construction": "complete"
+      },
+      "position": {
+        "x": 137.5,
+        "y": 125.5
+      },
+      "rotation": 0.0
+    }
+  ],
+  "terrain": {
+    "paint": [],
+    "textureGrid": {
+      "cellSize": 5,
+      "origin": [
+        -0.5,
+        -0.5
+      ]
+    },
+    "waterProfiles": []
+  }
+}

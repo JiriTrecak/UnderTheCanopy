@@ -65,6 +65,7 @@ Authority: `crates/content/src/assets/package.rs` (formats and the registries bu
   - `groundContact`: `pivot` or `terrain`;
   - `wind`, `canopy`, `blocker`, `vegetationClearance`, `dimensions`.
 - `shading: "building"` gives a structure the building material; the default is prop.
+- **Buildings at work** (D65): a building model may declare the states `idle` (its rest pose: a still clip, nothing moves), `work` (loops while it works) and `spawn` (once per trained unit). Moving parts are rigid nodes, not skins; event `time` is seconds into the clip. A material's glTF extra `activeGlow: {pulse, flow}` makes its emission dark at rest and alive while the building works. Built by `tools/buildings/<building>.py` from a segmented Tripo model; review on the `beetle-bench` map.
 
 **Ground textures** (`terrain-material`) carry `terrain`: tile size, atlas, channel roles and packed runtime tiles.
 

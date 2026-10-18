@@ -374,6 +374,86 @@ pub struct UnitAnimation {
     first: bool,
 }
 
+/// A building's states (D65). A building at rest holds its `idle` pose and nothing moves;
+/// it plays `work` for as long as it trains, researches, upgrades or revives, and `spawn`
+/// once whenever a training cycle ends. Motion is the signal that something happens.
+pub mod building_states {
+    pub const IDLE: &str = "idle";
+    pub const WORK: &str = "work";
+    pub const SPAWN: &str = "spawn";
+}
+
+/// Fade between a building's rest and its work, in clip seconds: machinery starting up
+/// and winding down rather than snapping.
+pub const BUILDING_FADE: f32 = 0.45;
+
+/// A building's animation: rest, work and spawn from its public activity.
+#[derive(Debug, Clone, PartialEq)]
+pub struct BuildingAnimation {
+    pub animator: Animator,
+    cycles: Option<u32>,
+}
+
+impl BuildingAnimation {
+    /// `None` unless the model has a rest pose and something to play.
+    pub fn new(model: &ModelInfo) -> Option<Self> {
+        use building_states::*;
+        if !model.has(IDLE) || !(model.has(WORK) || model.has(SPAWN)) {
+            return None;
+        }
+        Some(Self {
+            animator: Animator::new(model)?,
+            cycles: None,
+        })
+    }
+
+    /// One tick: picks the state from `busy` and the finished training `cycles`, advances
+    /// the clock, and returns the clip events crossed this tick (for effects).
+    pub fn step(&mut self, model: &ModelInfo, busy: bool, cycles: u32) -> Vec<String> {
+        use building_states::*;
+        let spawned = self.cycles.is_some_and(|c| cycles > c);
+        let first = self.cycles.is_none();
+        self.cycles = Some(cycles);
+        let a = &mut self.animator;
+        if spawned && model.has(SPAWN) {
+            a.set_state(model, SPAWN, true, BUILDING_FADE);
+        } else if a.state() != SPAWN {
+            let wanted = if busy && model.has(WORK) { WORK } else { IDLE };
+            a.set_state(
+                model,
+                wanted,
+                false,
+                if first { 0.0 } else { BUILDING_FADE },
+            );
+        }
+        let state = a.state().to_owned();
+        let (clip, before) = a.current();
+        a.update(model, if first { 0.0 } else { TICK_SECONDS });
+        let (after_clip, after) = a.current();
+        let duration = model.duration(clip);
+        if after_clip != clip || duration <= 0.0 || state == IDLE {
+            return Vec::new();
+        }
+        let (from, to) = (before / duration, after / duration);
+        model
+            .state(&state)
+            .map(|s| {
+                s.events
+                    .iter()
+                    .filter(|(_, t)| {
+                        if to >= from {
+                            *t > from && *t <= to
+                        } else {
+                            *t > from || *t <= to
+                        }
+                    })
+                    .map(|(name, _)| name.clone())
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+}
+
 /// What the animation decided beyond the pose.
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct Decision {
@@ -560,6 +640,7 @@ mod tests {
             clip,
             looping,
             contact,
+            events: Vec::new(),
         };
         let states = [
             ("idle", state(0, true, None)),
@@ -860,5 +941,54 @@ mod tests {
             },
         );
         assert_eq!(u.animator.state(), "idle");
+    }
+
+    /// A forge-like building: a rest pose, a work loop striking twice a cycle, a spawn.
+    fn building() -> ModelInfo {
+        let state = |clip: u16, looping: bool, events: &[(&str, f32)]| StateInfo {
+            clip,
+            looping,
+            contact: None,
+            events: events.iter().map(|(n, t)| ((*n).to_owned(), *t)).collect(),
+        };
+        ModelInfo {
+            name: "building".into(),
+            clips: vec![clip("idle", 0.1), clip("work", 1.5), clip("spawn", 1.0)],
+            states: [
+                ("idle", state(0, true, &[])),
+                ("work", state(1, true, &[("strike", 0.3), ("strike", 0.8)])),
+                ("spawn", state(2, false, &[])),
+            ]
+            .into_iter()
+            .map(|(n, s)| (n.to_owned(), s))
+            .collect(),
+            ..ModelInfo::default()
+        }
+    }
+
+    #[test]
+    fn buildings_rest_until_busy_and_strike_on_their_events() {
+        let m = building();
+        let mut b = BuildingAnimation::new(&m).unwrap();
+        for _ in 0..40 {
+            assert!(b.step(&m, false, 0).is_empty());
+        }
+        assert_eq!(b.animator.state(), "idle");
+        // Two strikes per 1.5 s clip at 1.5× speed: about two strikes a second.
+        let strikes: usize = (0..80).map(|_| b.step(&m, true, 0).len()).sum();
+        assert_eq!(b.animator.state(), "work");
+        assert!(
+            (3..=5).contains(&strikes),
+            "{strikes} strikes in two seconds"
+        );
+        // A finished cycle plays the spawn once, then work resumes.
+        b.step(&m, true, 1);
+        assert_eq!(b.animator.state(), "spawn");
+        for _ in 0..40 {
+            b.step(&m, true, 1);
+        }
+        assert_eq!(b.animator.state(), "work");
+        b.step(&m, false, 1);
+        assert_eq!(b.animator.state(), "idle");
     }
 }

@@ -269,6 +269,7 @@ fn look(model: Option<&RenderAsset>, d: &Definition) -> RenderAsset {
         look.impact_effect = p.impact_effect.clone();
         look.cast_contact = p.cast_contact;
         look.camera_anchor = p.camera_anchor.clone();
+        look.effects = p.effects.clone();
     }
     look
 }

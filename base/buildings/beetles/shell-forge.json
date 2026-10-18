@@ -2,7 +2,7 @@
   "id": "building.beetles.shell-forge",
   "name": "Shell Forge",
   "description": "Forges stronger weapons and armor for the beetle colony. Completed research benefits existing and future units.",
-  "model": "asset.models.buildings.beetles-shell-foundry",
+  "model": "asset.models.buildings.beetles-shell-forge",
   "icon": "asset.portraits.buildings.beetles-shell-foundry",
   "body": {
     "maxHp": 1100,
@@ -49,5 +49,39 @@
   },
   "category": "category.build",
   "level": 1,
-  "modelScale": 1
+  "modelScale": 1,
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.forge-fire",
+        "state": "work",
+        "socket": "socket_furnace"
+      },
+      {
+        "effect": "effect.buildings.forge-magic",
+        "state": "work",
+        "socket": "socket_tank"
+      },
+      {
+        "effect": "effect.buildings.forge-smoke",
+        "state": "work",
+        "socket": "socket_chimney_a"
+      },
+      {
+        "effect": "effect.buildings.forge-smoke",
+        "state": "work",
+        "socket": "socket_chimney_b"
+      },
+      {
+        "effect": "effect.buildings.forge-smoke",
+        "state": "work",
+        "socket": "socket_chimney_c"
+      },
+      {
+        "effect": "effect.buildings.forge-sparks",
+        "event": "strike",
+        "socket": "socket_anvil"
+      }
+    ]
+  }
 }

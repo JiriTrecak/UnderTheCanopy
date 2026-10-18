@@ -22,7 +22,7 @@ struct Actor {
     color: vec4f,
     // palette base, joints, 0, 0
     palette: vec4u,
-    // opacity (screen-door below 1), 0, 0, 0
+    // opacity (screen-door below 1), activity (0 rest … 1 working), 0, 0
     look: vec4f,
     // multiplies the shaded colour (rgb) and coverage (a): effect models
     tint: vec4f,
@@ -107,6 +107,7 @@ fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
     let actor = actors[in.instance];
     var f: MaterialFragment;
     f.tint = vec3f(1.0);
+    f.activity = actor.look.y;
     f.frag = in.clip;
     f.world = in.world;
     f.normal = in.normal;

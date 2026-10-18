@@ -1,0 +1,93 @@
+{
+  "id": "effect.buildings.forge-smoke",
+  "name": "Forge chimney smoke",
+  "description": "Soft smoke and a few embers rising from a working forge chimney. Loops while the building works (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "smoke",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 110,
+        "rate": 1,
+        "speed": 1.6,
+        "speedVariation": 0.35,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 12,
+        "gravity": 0,
+        "drag": 0.25,
+        "spawnRadius": 0.25,
+        "startSize": 1.4,
+        "endSize": 4.5,
+        "spin": 0.25,
+        "fadeIn": 0.1,
+        "fadeOut": 0.8
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#8a7c6c",
+      "accent": "#a39484",
+      "durationTicks": 80,
+      "count": 8,
+      "size": 0.9,
+      "height": 0,
+      "blend": "normal",
+      "intensity": 1.0,
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "embers",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 34,
+        "rate": 1,
+        "speed": 2.6,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 25,
+        "gravity": 0,
+        "drag": 0.4,
+        "spawnRadius": 0.2,
+        "startSize": 0.16,
+        "endSize": 0.0,
+        "spin": 1,
+        "fadeIn": 0.05,
+        "fadeOut": 0.6
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#ffb24a",
+      "accent": "#ffe08a",
+      "durationTicks": 80,
+      "count": 3,
+      "size": 0.12,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 1.4,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

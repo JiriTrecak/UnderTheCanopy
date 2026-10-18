@@ -24,6 +24,8 @@ pub struct StateInfo {
     pub looping: bool,
     /// Normalised time of the first `hit` or `release` event, the contact point.
     pub contact: Option<f32>,
+    /// Every authored event: name and normalised time.
+    pub events: Vec<(String, f32)>,
 }
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -79,6 +81,11 @@ impl ModelInfo {
                         clip: s.clip as u16,
                         looping: s.looping,
                         contact,
+                        events: s
+                            .events
+                            .iter()
+                            .map(|e| (e.name.clone(), e.time.clamp(0.0, 1.0)))
+                            .collect(),
                     },
                 )
             })

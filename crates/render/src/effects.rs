@@ -18,8 +18,9 @@ pub const MAX_EMITTERS: usize = 2048;
 pub const MAX_PARTS: usize = 16384;
 /// Ribbon segments a frame may draw.
 pub const MAX_RIBBONS: usize = 4096;
-/// Effect lights at once (old `EffectLights`: a fixed pool of 4).
-pub const MAX_EFFECT_LIGHTS: usize = 4;
+/// Effect lights at once (old `EffectLights`: a fixed pool of 4; 8 since buildings light
+/// their work, D65).
+pub const MAX_EFFECT_LIGHTS: usize = 8;
 /// Parts of one emitter (the part index has 8 bits).
 pub const MAX_EMITTER_PARTS: u32 = 256;
 

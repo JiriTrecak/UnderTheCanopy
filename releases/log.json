@@ -6,7 +6,8 @@
       "Look-dev: Fall has a canopy: giant trees rise into it in the third-person view, light falls through it in beams with dust and drifting leaves, and the distant forest goes soft with depth of field."
     ],
     "improved": [
-      "Look-dev: Fall now has a painted forest floor around its clearing, sun glints on its shallow ford, and amber that sits in a crater."
+      "Look-dev: Fall now has a painted forest floor around its clearing, sun glints on its shallow ford, and amber that sits in a crater.",
+      "The beetles' Shell Forge has a new model that comes alive while it researches: the furnace glows, the chimneys smoke and the hammer strikes the anvil in a shower of sparks; at rest it stands still."
     ],
     "fixed": [],
     "knownIssues": []

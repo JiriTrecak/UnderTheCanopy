@@ -127,6 +127,7 @@ pub fn interpolate(
             pose_count: poses.count,
             tint: canopy_render::actors::NO_TINT,
             shadow_only: false,
+            activity: actor.activity,
         });
     }
 }
@@ -169,6 +170,7 @@ mod tests {
             snap: false,
             body: None,
             walker: None,
+            activity: 0.0,
         };
         a.poses.loops[0] = 1.0;
         a

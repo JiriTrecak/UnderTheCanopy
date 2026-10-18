@@ -9,10 +9,10 @@ use crate::{
     texture::{AlphaPolicy, ColorSpace, Encoding, TextureParams},
 };
 use canopy_assets::{
-    Aabb, AlphaMode, AnimationEvent, AnimationState, BlobBuilder, Blocker, BlockerShape,
-    CLIP_FRAME_RATE, Clip, DepthStream, EntryKind, GroundContact, IndexFormat, Joint, Lod,
-    Material, MaterialModel, MaterialTextures, ModelMeta, Prototype, Section, Skeleton, SkinVertex,
-    Socket, TeamColor, Vertex, VertexColor, Wind, WindMode,
+    Aabb, ActiveGlow, AlphaMode, AnimationEvent, AnimationState, BlobBuilder, Blocker,
+    BlockerShape, CLIP_FRAME_RATE, Clip, DepthStream, EntryKind, GroundContact, IndexFormat, Joint,
+    Lod, Material, MaterialModel, MaterialTextures, ModelMeta, Prototype, Section, Skeleton,
+    SkinVertex, Socket, TeamColor, Vertex, VertexColor, Wind, WindMode,
 };
 use canopy_content::assets::models::{self, PublishedModel};
 use serde_json::Value;
@@ -67,6 +67,7 @@ const READ_EXTRAS: &[&str] = &[
     "vertexColorUsage",
     "crownNormal",
     "snowSurface",
+    "activeGlow",
 ];
 /// Extras of shading paths the native renderer drops (renderer §7, Q5 and Q6).
 const RETIRED_EXTRAS: &[&str] = &[
@@ -1209,6 +1210,7 @@ fn default_material(skinned: bool, has_colors: bool) -> Material {
         team_color: None,
         normal_scale: 1.0,
         occlusion_strength: 1.0,
+        active: None,
         textures: MaterialTextures::default(),
     }
 }
@@ -1482,6 +1484,10 @@ fn cook_material(
         team_color,
         normal_scale,
         occlusion_strength,
+        active: x.get("activeGlow").map(|g| ActiveGlow {
+            pulse: g.get("pulse").and_then(Value::as_f64).unwrap_or(0.0) as f32,
+            flow: g.get("flow").and_then(Value::as_f64).unwrap_or(0.0) as f32,
+        }),
         textures: out,
     }
 }
