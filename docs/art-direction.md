@@ -32,19 +32,31 @@ What we don't take: sci-fi hard surfaces, neon, and its budget (its recommended 
 - **Playable ground** is a calm, smooth, almost uniform realistic surface. It has low contrast, a slightly muted colour and only soft, large-scale variation: just enough detail to sell the illusion of a real surface. It never carries busy texture or scattered objects.
 - **Non-playable areas**, such as trunks, roots, ferns and the map border, carry the rich detail, and are still a little darker and less saturated than the units.
 - **Units and buildings** are by far the most saturated, sharpest and highest-contrast things on screen.
+- **No noise anywhere (Jiri, 2026-10-18).** Surfaces are clean: no grain, speckle, dust-like pixels or sparkle. Detail lives in medium-scale forms (bark grooves, roots, leaf veins, pebble shapes), not in high-frequency texture. Frost is a soft, smooth coat on upward-facing surfaces, never thousands of crystals. For the engine this means:
+  - texture detail filtered and capped by mip level;
+  - no high-frequency glints or sparkle in materials;
+  - anti-aliasing and post effects tuned so nothing shimmers in motion.
+
+  `art/styles/target-frost-cliff.jpg` shows the level.
 
 The rest of this section serves that rule.
 
 - **Light.** Late-afternoon sun, low and warm (amber), with cool teal-blue shadows. The canopy breaks the sun into patches that drift slowly (a light pattern multiplied into the sun term). The tone mapper gets a shoulder instead of today's clip (D31).
 - **Ground.** Moss, compacted soil, leaf litter and needle dust as soft, muted materials: height-blended layers and gentle detail normals, never dense grass geometry. Litter, pebbles and twigs belong to the non-playable areas.
-- **Biome keys.**
+- **Biomes swap only ground, frame and light (tested 2026-10-18).** The same frame, with the same beetle base, amber and workers, was re-dressed in five biomes. In every one, the base and the amber stayed the clear focus: `art/styles/target-frost-base.jpg` and `target-biome-light-forest.jpg`, `-dark-forest.jpg`, `-corrupted.jpg`, `-fall.jpg`. A biome is therefore three things over shared units, buildings and resources:
+  - a calm ground material;
+  - a frame set (vegetation and the colossal trunk);
+  - lighting with a colour grade.
 
-  | Biome | Hues | Notes |
-  |---|---|---|
-  | Vibrant forest | moss green, ochre litter, amber light | |
-  | Autumn | rust, copper, slate shadow | |
-  | Deep forest | dark teal, shafts, glowing fungi | the darkest biome, where dark fantasy shows most |
-  | Frozen | frost blue, bark brown | |
+  Frame props can be shared across biomes through tinting and the frost coat. Corrupted magic stays magenta-violet, never blue, so blue players keep reading.
+
+  | Biome | Ground | Frame | Light |
+  |---|---|---|---|
+  | Light forest | fresh light-green moss, pale sandy patches | young ferns, clover, anemones, pale bark | warm, soft, high sun |
+  | Dark forest | dark green-grey moss and soil | black-green ferns, near-black trunk, faint teal fungi | one cool pool of light on the play area, the rest dark |
+  | Corrupted | grey-violet ash with faint glowing purple veins | twisted black-purple roots, withered ferns, magenta-glowing fungi and motes | dim violet with a cold rim |
+  | Fall | cool grey-brown compacted soil, faint litter | gold, copper and rust leaf litter, orange mushrooms, acorns | low golden sun |
+  | Frost | pale grey-blue frost | frosted ferns, oak leaves, mushrooms, trunk | cold, clear, low sun |
 
 - **Colour reserved for meaning.** Amber is the resource and glows, so the ground never uses saturated orange-yellow. Team colours belong to units and buildings only.
 - **Ground memory.** Trails through moss, scorches, ichor splatter, crushed litter.
