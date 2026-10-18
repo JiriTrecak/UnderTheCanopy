@@ -90,8 +90,12 @@ fn contact_shade(uv: vec2f, depth: f32) -> f32 {
 // smears into the background.
 const DOF_START: f32 = 40.0;
 const DOF_FULL: f32 = 260.0;
-const DOF_RADIUS: f32 = 0.0075;
-const DOF_TAPS: i32 = 20;
+const DOF_RADIUS: f32 = 0.006;
+const DOF_TAPS: i32 = 24;
+
+fn dof_luminance(c: vec3f) -> f32 {
+    return dot(c, vec3f(0.2126, 0.7152, 0.0722));
+}
 
 fn close_view() -> f32 {
     return clamp((view.forward.y + 0.65) / 0.3, 0.0, 1.0);
@@ -101,20 +105,26 @@ fn blur_of(depth: f32) -> f32 {
     return smoothstep(DOF_START, DOF_FULL, min(depth, 4000.0));
 }
 
-fn depth_of_field(uv: vec2f, color: vec3f, depth: f32, close: f32) -> vec3f {
+fn depth_of_field(uv: vec2f, frag: vec2f, color: vec3f, depth: f32, close: f32) -> vec3f {
     let blur = blur_of(depth) * close;
     if (blur < 0.01) {
         return color;
     }
     let radius = DOF_RADIUS * blur * vec2f(view.scene.y * view.scene.z, 1.0);
-    var sum = color;
-    var weight = 1.0;
+    // The disk turns per pixel, so its taps never line up into a repeated pattern, and
+    // bright taps count less (a Karis average), so a single glint cannot stamp copies of
+    // itself across the blur.
+    let spin = fract(52.9829189 * fract(dot(floor(frag), vec2f(0.06711056, 0.00583715)))) * 6.2831853;
+    let centre = 1.0 / (1.0 + dof_luminance(color));
+    var sum = color * centre;
+    var weight = centre;
     for (var i = 0; i < DOF_TAPS; i++) {
         let r = sqrt((f32(i) + 0.5) / f32(DOF_TAPS));
-        let a = f32(i) * 2.39996;
+        let a = f32(i) * 2.39996 + spin;
         let tuv = uv + vec2f(cos(a), sin(a)) * r * radius;
-        let w = blur_of(depth_at_uv(tuv));
-        sum += textureSampleLevel(scene, linear_sampler, tuv, 0.0).rgb * w;
+        let tap = textureSampleLevel(scene, linear_sampler, tuv, 0.0).rgb;
+        let w = blur_of(depth_at_uv(tuv)) / (1.0 + dof_luminance(tap));
+        sum += tap * w;
         weight += w;
     }
     return mix(color, sum / weight, blur);
@@ -163,7 +173,7 @@ fn fs_main(in: FullscreenOut) -> @location(0) vec4f {
     let effects = post.effects;
     let close = close_view();
     if (close > 0.0) {
-        hdr = depth_of_field(in.uv, hdr, depth_at_uv(in.uv), close);
+        hdr = depth_of_field(in.uv, in.clip.xy, hdr, depth_at_uv(in.uv), close);
     }
     if (effects.x > 0.0 || effects.y > 0.0 || effects.z > 0.0) {
         let depth = depth_at_uv(in.uv);

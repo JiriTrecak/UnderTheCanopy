@@ -14,8 +14,11 @@ use canopy_assets::Pack;
 use glam::Vec3;
 use wgpu::util::DeviceExt;
 
-/// Half size of the dust field ahead of a close camera (metres).
-const DUST_FIELD: f32 = 30.0;
+/// The dust field ahead of a close camera: its centre's distance and half size (metres),
+/// so the dust floats from a few metres out to just before depth of field softens the
+/// view (post.wgsl), where blurred bright points would read as discs.
+const DUST_AHEAD: f32 = 18.0;
+const DUST_FIELD: f32 = 14.0;
 /// Height of the leaves' field above the camera's target (metres).
 const LEAF_HEIGHT: f32 = 50.0;
 
@@ -208,7 +211,7 @@ impl MotesGpu {
         let forward = (camera.target - camera.eye).normalize_or_zero();
         let right = forward.cross(Vec3::Y).normalize_or(Vec3::X);
         let up = right.cross(forward).normalize_or(Vec3::Y);
-        let dust = camera.eye + forward * DUST_FIELD;
+        let dust = camera.eye + forward * DUST_AHEAD;
         let field = 110.0 + (60.0 - 110.0) * close;
         let c = &self.config;
         let uniform = MotesUniform {

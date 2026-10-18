@@ -52,7 +52,7 @@
     "enabled": true,
     "color": "#8a6a4a",
     "density": 0.0005,
-    "shaftDensity": 0.007,
+    "shaftDensity": 0.0035,
     "baseHeight": 0.5,
     "heightFalloff": 24,
     "sunStrength": 1.8,
@@ -146,8 +146,8 @@
     "strength": 0.0
   },
   "motes": {
-    "dust": 3000,
-    "dustBrightness": 8.0,
+    "dust": 1000,
+    "dustBrightness": 2.0,
     "leaves": 260,
     "leafTexture": "asset.models.environment.lookdev-litter-maple/geometry.glb#material0.base",
     "leafSize": 1.1

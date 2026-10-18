@@ -83,7 +83,7 @@ fn fs_march(in: FullscreenOut) -> @location(0) vec4f {
     }
     // Close cameras look along the forest floor: the light hangs in the whole view, the
     // sky included, out to where the haze takes over.
-    let reach = mix(96.0, 420.0, close);
+    let reach = mix(96.0, 260.0, close);
     let end = world_at(in.uv, select(depth, reach, sky));
     let origin = view.eye.xyz;
     let ray = normalize(end - origin);

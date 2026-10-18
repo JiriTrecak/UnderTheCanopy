@@ -90,13 +90,17 @@ fn vs_dust(@builtin(vertex_index) vertex: u32, @builtin(instance_index) index: u
     let edge = abs(p - motes.dust.xyz) / half;
     let fade = 1.0 - smoothstep(0.7, 1.0, max(edge.x, max(edge.y, edge.z)));
     let twinkle = 0.55 + 0.45 * sin(t * (1.3 + seed.x * 2.0) + phase.y);
-    let size = 0.08 + 0.12 * seed.z;
+    // A mote is a glint of one or two pixels wherever it floats: its size follows its
+    // distance, and none come close enough to the lens to swell into a disc.
+    let distance = length(p - frame.eye.xyz);
+    let size = distance * (0.0012 + 0.0012 * seed.z);
+    let near = smoothstep(3.0, 7.0, distance);
     let c = corner(vertex);
     var out: DustOut;
     out.world = p + (motes.right.xyz * c.x + motes.up.xyz * c.y) * size;
     out.clip = frame.view_proj * vec4f(out.world, 1.0);
     out.quad = c;
-    out.glow = fade * twinkle * motes.counts.w;
+    out.glow = fade * near * twinkle * motes.counts.w;
     out.centre = p;
     if (out.glow < 0.002) {
         out.clip = vec4f(0.0, 0.0, -1.0, 1.0);
