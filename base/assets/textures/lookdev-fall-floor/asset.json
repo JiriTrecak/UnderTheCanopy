@@ -19,5 +19,5 @@
       "format": "png"
     }
   ],
-  "license": "Original ImageGen (gpt-image-2) painting for Under the Canopy, cut to the map by tools/terrain/build_overlay.py."
+  "license": "Original ImageGen (gpt-image-2) painting and leaf sheets for Under the Canopy, cut and scattered by tools/terrain/build_overlay.py."
 }

@@ -182,7 +182,7 @@ def build_grids():
     flow[in_ford, 3] = 1
     # Frame shade: nothing on the playable ground, deepening into the frame, so the frame
     # sits below the clearing in value as in the target.
-    shade = 0.45 * smoothstep(6.0, 40.0, rim + (fbm(x, z, 20, 71) - 0.5) * 10.0)
+    shade = 0.45 * smoothstep(14.0, 45.0, rim + (fbm(x, z, 20, 71) - 0.5) * 10.0)
     # The target's top edge sinks into the giants' shadow: darker towards the far side.
     _, z_far = to_world(W / 2, 0)
     _, z_near = to_world(W / 2, 200)
