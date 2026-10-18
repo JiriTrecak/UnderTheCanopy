@@ -597,3 +597,15 @@ A building at rest holds still: no animation, no glow, no smoke. The moment it t
 - **Forest magic is blue-purple** (Jiri): contained and living magic in buildings (the forge's quench tank, the Rootworks' sap) glows blue to violet, never green; fire stays orange. (review: visible)
 
 Art pipeline for it (Jiri: base models come from Tripo, never invented): gpt-image concept per state → Tripo image to 3D of the idle concept → Tripo segmentation into parts → `tools/buildings/<building>.py` in Blender (team mask from the blue plates into each part's base-colour alpha, active glow from the dark interior texels of the glowing parts, moving parts as their own nodes with Euler clips, sockets) → `tools/buildings/kit.py` exports clips as actions (glTF imports use quaternions; meshes with textured materials need UVs or the exporter writes −1). The whole pipeline, for any agent, is the `canopy-buildings` skill.
+
+## D66. Beetles build on a substance network (2026-10-18, Jiri — review: felt)
+
+The forest runs on **substance**, its magic, and each race relates to it differently. Ants use it directly and it changes their bodies. Bees transform with it through blood and ritual. Beetles never take it in: they use it only through technology, which is fully powered by it and depends on it. Their bodies stay plain chitin; substance shows only inside their machines (glass tanks, coils, canisters, exhaust), blue to violet (D65). Getting stronger is a better machine, never a mutation. Race design is a clean slate: the ant roster was a test and constrains nothing. Root (D62) is the raw substance tapped from the world.
+
+**The network**, StarCraft's pylon power made beetle plumbing. It decides where beetles build and which buildings work, never how strong a unit is in a fight (a positional combat bonus was rejected as unbalanceable).
+- **Sources and nodes.** The beetle main hall and the Rootworks are sources. The **Brood Den** is the node: it gives supply and extends the network, with a **generous radius**, well beyond a pylon's few cells.
+- **Placement.** Every other beetle building must be placed inside the network.
+- **Unpowered buildings stop working.** Production and research pause until power returns. The building stays standing.
+- **Towers need power** and are clearly stronger than other races' towers, to offset not being able to push them forward for harassment.
+- **No pipes are drawn.** The network shows as an overlay only while a building is being placed (or when the grid is shown).
+- **Open:** whether dens must chain to the network or can stand alone, and any further race mechanic. To be settled when the network is designed.
