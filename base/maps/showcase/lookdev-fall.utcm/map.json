@@ -27,7 +27,7 @@
   "terrain": {
     "paint": [
       {
-        "material": "asset.terrain.lookdev-litter-sparse",
+        "material": "asset.terrain.lookdev-debris",
         "variants": false
       },
       {

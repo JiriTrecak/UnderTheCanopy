@@ -216,6 +216,12 @@ The target is unchanged: 60 FPS on a base M1 with about 400 units (plan). Most o
 - **Third person.** The fog of war greys everything beyond the unit's sight. Beyond the map there is still only haze and the old surroundings forest; the trunks there have no art at this quality yet.
 - **Amber crater rim.** The target's rim is a crumbly, lighter soil ring.
 
+**Transitions, Warcraft-style (2026-10-18).** The band where clean soil meets the litter, and the rim of the ford, is a dark debris layer that breaks up into clumps and speckle. It is built the way Warcraft III builds tileset transitions:
+- **The atlas.** An atlas ground (`asset.terrain.lookdev-debris`, made by `tools/terrain/build_atlas.py` from one seamless gpt-image texture) has 16 corner-transition tiles, one per combination of covered cell corners, and 48 full-tile variants. The engine already picks a tile per texture cell from the four corners' paint (`atlas_codes`), as the Warcraft imports do.
+- **Seamless meeting.** Every tile's border is the same self-tiling content, so any two tiles meet without a seam.
+- **The edges.** They come from noise periodic over one tile and fade out where a tile is fully covered or empty. A speckle dither thins the debris out instead of ending it on a line.
+- **What to watch.** One shape per corner combination repeats every texture cell (5 m on this map), as Warcraft's tiles do. More variants per corner combination would need the engine to pick among them.
+
 **Engine work this points to** (each a visible change to discuss first):
 - a playable-area darkening of the frame;
 - per-instance tint, so one leaf set covers more variety;

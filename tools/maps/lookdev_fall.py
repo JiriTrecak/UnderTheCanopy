@@ -159,7 +159,11 @@ def build_grids():
     cx, cz = np.meshgrid(c, c)
     _, cford, cpool = fields(cx, cz)
     rim = signed_distance(x, z, OPEN)
-    sparse = smoothstep(-14.0, -2.0, rim + (fbm(x, z, 7, 53) - 0.5) * 8.0) * (1.0 - pool) * (1.0 - ford)
+    # The debris band (a Warcraft-style transition atlas): from about 12 m inside the
+    # clearing out under the leaf litter, and a ring around the ford.
+    band = smoothstep(-24.0, -9.0, rim + (fbm(x, z, 9, 53) - 0.5) * 12.0)
+    ford_rim = 1.0 - smoothstep(0.5, 5.0, signed_distance(x, z, FORD) + (fbm(x, z, 6, 57) - 0.5) * 5.0)
+    sparse = np.clip(np.maximum(band, ford_rim) * (1.0 - pool), 0.0, 1.0)
     # Wet, darker soil in a ragged band around the ford.
     ford_edge = signed_distance(x, z, FORD)
     wet = 0.25 * (1.0 - smoothstep(-0.5, 3.0, ford_edge + (fbm(x, z, 5, 61) - 0.5) * 4.0)) * open_
@@ -371,7 +375,7 @@ def build_map():
              'position': {'x': float(math.floor(to_world(560, 860)[0])), 'y': float(math.floor(to_world(560, 860)[1]))},
              'rotation': 200.0},
         ],
-        'terrain': {'paint': [{'material': 'asset.terrain.lookdev-litter-sparse', 'variants': False},
+        'terrain': {'paint': [{'material': 'asset.terrain.lookdev-debris', 'variants': False},
                               {'material': 'asset.terrain.lookdev-wet-soil', 'variants': False}], 'textureGrid': {'cellSize': 5, 'origin': [-0.5, -0.5]}, 'waterProfiles': ['water.fall-ford']},
     }
 

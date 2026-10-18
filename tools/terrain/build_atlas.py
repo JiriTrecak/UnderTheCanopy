@@ -40,12 +40,16 @@ def periodic_noise(rng, size, octaves=((2, 0.55), (4, 0.3), (8, 0.15))):
     y, x = np.mgrid[0:size, 0:size] / size
     out = np.zeros((size, size), np.float32)
     for freq, amp in octaves:
-        for _ in range(4):
-            kx, ky = rng.integers(-freq, freq + 1, 2)
+        # Many integer wave vectors around the ring |k| ≈ freq keep it periodic and even
+        # in every direction.
+        waves = 10
+        for i in range(waves):
+            angle = np.pi * i / waves + rng.uniform(0, np.pi / waves)
+            kx, ky = int(round(freq * np.cos(angle))), int(round(freq * np.sin(angle)))
             if kx == 0 and ky == 0:
                 kx = freq
             phase = rng.uniform(0, 2 * np.pi)
-            out += amp * np.cos(2 * np.pi * (kx * x + ky * y) + phase) / 2.0
+            out += amp * np.cos(2 * np.pi * (kx * x + ky * y) + phase) / np.sqrt(waves)
     return out
 
 
@@ -93,6 +97,7 @@ def main():
     p.add_argument('--normal', type=float, default=4.0)
     p.add_argument('--edge', type=float, default=0.18, help='softness of transition edges')
     p.add_argument('--scale', type=float, default=0.35, help='image pixels → tile pixels')
+    p.add_argument('--tone', type=float, default=1.0, help='brightness multiplier')
     p.add_argument('--tags', default='autumn')
     a = p.parse_args()
     rng = np.random.default_rng(7)
@@ -102,7 +107,7 @@ def main():
     h, w = src.shape[:2]
     small_w = max(TILE * 2, int(w * a.scale))
     buf = oiio.ImageBufAlgo.resize(oiio.ImageBuf(a.image), roi=oiio.ROI(0, small_w, 0, small_w, 0, 1, 0, 3))
-    src = np.ascontiguousarray(buf.get_pixels(oiio.FLOAT)[:, :, :3], dtype=np.float32)
+    src = np.ascontiguousarray(buf.get_pixels(oiio.FLOAT)[:, :, :3], dtype=np.float32) * a.tone
     n = src.shape[0]
 
     def crop(i):
@@ -119,6 +124,10 @@ def main():
     alpha = np.zeros((SIZE, SIZE), np.float32)
     noise = periodic_noise(rng, TILE)
     noise2 = periodic_noise(rng, TILE, ((6, 0.5), (12, 0.35), (24, 0.15)))
+    # Fine speckle, periodic over a tile: per-texel random values, lightly smoothed.
+    speckle = rng.random((TILE, TILE)).astype(np.float32)
+    speckle = (speckle + np.roll(speckle, 1, 0) + np.roll(speckle, 1, 1)) / 3.0
+    speckle = (speckle - speckle.min()) / (speckle.max() - speckle.min())
     u = (np.arange(TILE) + 0.5) / TILE
     gx, gy = np.meshgrid(u, u)
     for t in range(COLS * ROWS):
@@ -131,8 +140,16 @@ def main():
         field = (nw * (1 - gx) * (1 - gy) + ne * gx * (1 - gy) + sw * (1 - gx) * gy + se * gx * gy)
         # Ragged edge: large wobble plus fine debris speckle; a corner tile's coverage
         # still reaches exactly its covered corners.
-        f = field + 0.42 * noise + 0.12 * noise2
-        alpha[cy:cy + TILE, cx:cx + TILE] = np.clip((f - 0.5) / a.edge + 0.5, 0.0, 1.0)
+        # The noise only moves the edge: it fades where the field is fully 0 or 1, so a
+        # tile is empty away from its covered corners and full near them.
+        middle = np.clip(4.0 * field * (1.0 - field), 0.0, 1.0) ** 0.6
+        f = field + (0.55 * noise + 0.2 * noise2) * middle
+        cover = np.clip((f - 0.5) / a.edge + 0.5, 0.0, 1.0)
+        # Debris thins out as scattered specks rather than ending on a line: in the
+        # transition, fine periodic speckle decides which texels keep their debris.
+        edge_zone = np.clip(4.0 * cover * (1.0 - cover), 0.0, 1.0)
+        dithered = np.clip((cover - 0.5 + (speckle - 0.5) * 1.1) * 3.0 + 0.5, 0.0, 1.0)
+        alpha[cy:cy + TILE, cx:cx + TILE] = cover * (1.0 - edge_zone) + dithered * edge_zone
 
     lum = to_linear(albedo) @ np.array([0.2126, 0.7152, 0.0722], np.float32)
     # Height per tile; blur lightly inside each tile.
