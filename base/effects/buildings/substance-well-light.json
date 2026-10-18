@@ -1,0 +1,55 @@
+{
+  "id": "effect.buildings.substance-well-light",
+  "name": "Substance Well column light",
+  "description": "Violet light pulsing out of the Substance Well's column with each pump stroke while workers gather (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "light",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#b89cff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 12,
+      "height": 0,
+      "intensity": 14,
+      "motion": {
+        "opacity": {
+          "periodTicks": 80,
+          "min": 0.5,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "aura",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#c8b4ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 3.2,
+      "height": 0,
+      "intensity": 0.45,
+      "motion": {
+        "opacity": {
+          "periodTicks": 80,
+          "min": 0.4,
+          "max": 0.9,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

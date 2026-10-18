@@ -1,0 +1,101 @@
+{
+  "id": "effect.buildings.alembic-discharge",
+  "name": "Alembic spire discharge",
+  "description": "A bright violet discharge from the Alembic's coil spire as a specialist finishes training.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#b89cff",
+      "accent": "#e6dcff",
+      "durationTicks": 10,
+      "count": 1,
+      "size": 18,
+      "height": 0.3,
+      "intensity": 28
+    },
+    {
+      "id": "bloom",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#9a74ff",
+      "accent": "#efe8ff",
+      "durationTicks": 14,
+      "count": 1,
+      "size": 4.5,
+      "height": 0,
+      "intensity": 1.0
+    },
+    {
+      "id": "rays",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "streaks",
+      "colour": "#e6dcff",
+      "accent": "#8a5cff",
+      "durationTicks": 18,
+      "count": 10,
+      "size": 0.22,
+      "height": 1.5,
+      "intensity": 1.1,
+      "spread": 3.5,
+      "length": 2.4,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "burst",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 26,
+        "rate": 40,
+        "speed": 8,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 150,
+        "gravity": 6,
+        "drag": 0.9,
+        "spawnRadius": 0.4,
+        "startSize": 0.4,
+        "endSize": 0.03,
+        "spin": 2,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#e0d4ff",
+      "accent": "#8a5cff",
+      "durationTicks": 30,
+      "count": 40,
+      "size": 0.2,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 3.2,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

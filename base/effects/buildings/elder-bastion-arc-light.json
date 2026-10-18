@@ -1,0 +1,32 @@
+{
+  "id": "effect.buildings.elder-bastion-arc-light",
+  "name": "Elder Bastion arc light",
+  "description": "A flickering violet arc light over the Elder Bastion's reactor cap, where the arcs from the horns strike, while it works (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "arc-light",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#9a74ff",
+      "accent": "#d2c2ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 12,
+      "height": 0,
+      "intensity": 10,
+      "motion": {
+        "opacity": {
+          "periodTicks": 3,
+          "min": 0.35,
+          "max": 1.0,
+          "easing": "bounce"
+        }
+      }
+    }
+  ]
+}

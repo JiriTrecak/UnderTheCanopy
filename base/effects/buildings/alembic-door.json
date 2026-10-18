@@ -1,0 +1,79 @@
+{
+  "id": "effect.buildings.alembic-door",
+  "name": "Alembic door flash",
+  "description": "A violet flash and a spray of motes at the head of the Alembic's steps as a trained specialist steps out.",
+  "durationTicks": 36,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#a585ff",
+      "accent": "#e6dcff",
+      "durationTicks": 12,
+      "count": 1,
+      "size": 10,
+      "height": 1.0,
+      "intensity": 16
+    },
+    {
+      "id": "bloom",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#e6dcff",
+      "durationTicks": 16,
+      "count": 1,
+      "size": 3.4,
+      "height": 0,
+      "intensity": 1.1
+    },
+    {
+      "id": "motes",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 30,
+        "rate": 24,
+        "speed": 3.2,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": -1.5,
+        "drag": 1.0,
+        "spawnRadius": 0.6,
+        "startSize": 0.32,
+        "endSize": 0.03,
+        "spin": 2,
+        "fadeIn": 0.0,
+        "fadeOut": 0.6
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#e0d4ff",
+      "accent": "#8a5cff",
+      "durationTicks": 32,
+      "count": 24,
+      "size": 0.18,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.6,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

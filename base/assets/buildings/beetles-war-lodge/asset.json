@@ -1,0 +1,109 @@
+{
+  "id": "asset.models.buildings.beetles-war-lodge",
+  "name": "War Lodge",
+  "kind": "building",
+  "tags": [
+    "beetles",
+    "tripo",
+    "animated",
+    "team-mask"
+  ],
+  "race": "beetles",
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_war_lodge"
+      ]
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "work",
+        "clip": "work",
+        "loop": true,
+        "events": [
+          {
+            "name": "clang",
+            "time": 0.3
+          },
+          {
+            "name": "clang",
+            "time": 1.1
+          },
+          {
+            "name": "clang",
+            "time": 1.9
+          },
+          {
+            "name": "clang",
+            "time": 2.7
+          },
+          {
+            "name": "clang",
+            "time": 3.5
+          }
+        ]
+      },
+      {
+        "semantic": "spawn",
+        "clip": "spawn",
+        "loop": false,
+        "events": [
+          {
+            "name": "gate",
+            "time": 0.1
+          }
+        ]
+      }
+    ],
+    "blocker": {
+      "shape": "box",
+      "size": [
+        16,
+        16
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 8,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 1,
+    "healthHeight": 12.8
+  },
+  "shading": "building",
+  "license": "Generated with Tripo (image to 3D, segmentation) from an ImageGen (gpt-image-2) concept for Under the Canopy; animated by tools/buildings/war_lodge.py."
+}

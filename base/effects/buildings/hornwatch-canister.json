@@ -1,0 +1,97 @@
+{
+  "id": "effect.buildings.hornwatch-canister",
+  "name": "Hornwatch power canister",
+  "description": "Blue-violet shimmer of the substance in a firing Hornwatch's power canister: a pulsing light and motes drifting up the glass. Loops while the tower works (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "light",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#b89cff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 6,
+      "height": 0,
+      "intensity": 6,
+      "motion": {
+        "opacity": {
+          "periodTicks": 26,
+          "min": 0.55,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "aura",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#c8b4ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 2.2,
+      "height": 0,
+      "intensity": 0.4,
+      "motion": {
+        "opacity": {
+          "periodTicks": 26,
+          "min": 0.45,
+          "max": 0.9,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "motes",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 44,
+        "rate": 1,
+        "speed": 0.9,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 20,
+        "gravity": 0,
+        "drag": 0.2,
+        "spawnRadius": 0.8,
+        "startSize": 0.24,
+        "endSize": 0.0,
+        "spin": 1,
+        "fadeIn": 0.2,
+        "fadeOut": 0.6
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#9b7bff",
+      "accent": "#e0d4ff",
+      "durationTicks": 80,
+      "count": 7,
+      "size": 0.18,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

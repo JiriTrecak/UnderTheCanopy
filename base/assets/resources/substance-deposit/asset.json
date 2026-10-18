@@ -1,0 +1,57 @@
+{
+  "id": "asset.models.resources.substance-deposit",
+  "name": "Substance Deposit",
+  "kind": "prop",
+  "tags": [
+    "original",
+    "neutral",
+    "woodland",
+    "resource",
+    "substance",
+    "tripo"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "blocker": {
+      "shape": "box",
+      "size": [
+        8,
+        8
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 4,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 1,
+    "healthHeight": 5.9
+  },
+  "license": "Original artwork for Under the Canopy: concept by gpt-image-2, model by Tripo (image to 3D), made game-ready by tools/props/substance_deposit.py."
+}

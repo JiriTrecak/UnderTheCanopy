@@ -1,0 +1,51 @@
+{
+  "id": "effect.buildings.ancestor-shrine-motes",
+  "name": "Ancestor Shrine motes",
+  "description": "Violet motes rising round the ancestor's shell while the shrine trains or revives a hero (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "motes",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 90,
+        "rate": 18,
+        "speed": 1.5,
+        "speedVariation": 0.45,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 14,
+        "gravity": 0,
+        "drag": 0.15,
+        "spawnRadius": 2.3,
+        "startSize": 0.5,
+        "endSize": 0.06,
+        "spin": 1.5,
+        "fadeIn": 0.15,
+        "fadeOut": 0.55
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#a07cff",
+      "accent": "#e6dcff",
+      "durationTicks": 80,
+      "count": 44,
+      "size": 0.3,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.6,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

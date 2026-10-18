@@ -1,0 +1,32 @@
+{
+  "id": "effect.buildings.elder-bastion-light",
+  "name": "Elder Bastion reactor light",
+  "description": "A strong, slowly surging blue-violet light from the Elder Bastion's reactor column, washing the shell, horns and wall. Loops while the hall works (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#b89cff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 24,
+      "height": 0,
+      "intensity": 13,
+      "motion": {
+        "opacity": {
+          "periodTicks": 50,
+          "min": 0.65,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

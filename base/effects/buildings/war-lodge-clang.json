@@ -1,0 +1,119 @@
+{
+  "id": "effect.buildings.war-lodge-clang",
+  "name": "War Lodge hammer clang",
+  "description": "The War Lodge's drill hammers clashing over the shield: a bright flash, a spray of sparks and a little burst of iron grit. Plays on the work clip's `clang` event, once per strike.",
+  "durationTicks": 36,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#ffb055",
+      "accent": "#ffd690",
+      "durationTicks": 5,
+      "count": 1,
+      "size": 8,
+      "height": 0,
+      "intensity": 10
+    },
+    {
+      "id": "core",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#ffc76a",
+      "accent": "#fff6d8",
+      "durationTicks": 4,
+      "count": 1,
+      "size": 1.6,
+      "height": 0,
+      "intensity": 0.9
+    },
+    {
+      "id": "sparks",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 22,
+        "rate": 26,
+        "speed": 7.5,
+        "speedVariation": 0.55,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 85,
+        "gravity": 13,
+        "drag": 0.35,
+        "spawnRadius": 0.2,
+        "startSize": 0.3,
+        "endSize": 0.04,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#ffc65a",
+      "accent": "#fff0b0",
+      "durationTicks": 24,
+      "count": 26,
+      "size": 0.22,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "grit",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 34,
+        "rate": 8,
+        "speed": 1.6,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 90,
+        "gravity": 1.2,
+        "drag": 1.6,
+        "spawnRadius": 0.35,
+        "startSize": 0.5,
+        "endSize": 1.5,
+        "spin": 0.4,
+        "fadeIn": 0.05,
+        "fadeOut": 0.7
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#8a8780",
+      "accent": "#b4b0a8",
+      "durationTicks": 36,
+      "count": 8,
+      "size": 0.5,
+      "height": 0,
+      "blend": "normal",
+      "intensity": 0.8,
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

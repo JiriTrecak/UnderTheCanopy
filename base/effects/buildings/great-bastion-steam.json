@@ -1,0 +1,51 @@
+{
+  "id": "effect.buildings.great-bastion-steam",
+  "name": "Great Bastion boiler steam",
+  "description": "A steady plume of white steam venting from the cap of each of the Great Bastion's four boiler towers. Loops while the hall works (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "steam",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 80,
+        "rate": 3,
+        "speed": 1.6,
+        "speedVariation": 0.35,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 14,
+        "gravity": -0.2,
+        "drag": 0.3,
+        "spawnRadius": 0.3,
+        "startSize": 0.6,
+        "endSize": 3.0,
+        "spin": 0.3,
+        "fadeIn": 0.12,
+        "fadeOut": 0.8
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#c8ccd2",
+      "accent": "#eef0f4",
+      "durationTicks": 80,
+      "count": 10,
+      "size": 0.6,
+      "height": 0,
+      "blend": "normal",
+      "intensity": 0.6,
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

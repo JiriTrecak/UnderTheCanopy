@@ -1,0 +1,50 @@
+{
+  "id": "effect.buildings.great-bastion-vent",
+  "name": "Great Bastion boiler vent",
+  "description": "A sharp white puff of steam blown from a boiler tower's cap as its tank swells with pressure. Plays on the work clip's `vent-<tower>` events, which go round the four towers in turn.",
+  "durationTicks": 64,
+  "loop": false,
+  "layers": [
+    {
+      "id": "puff",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 56,
+        "rate": 16,
+        "speed": 3.8,
+        "speedVariation": 0.45,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 20,
+        "gravity": -0.4,
+        "drag": 1.4,
+        "spawnRadius": 0.2,
+        "startSize": 0.7,
+        "endSize": 3.2,
+        "spin": 0.4,
+        "fadeIn": 0.03,
+        "fadeOut": 0.7
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#e2dfe6",
+      "accent": "#f8f7fa",
+      "durationTicks": 58,
+      "count": 16,
+      "size": 0.8,
+      "height": 0,
+      "blend": "normal",
+      "intensity": 1.0,
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

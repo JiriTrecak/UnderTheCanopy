@@ -1,0 +1,145 @@
+{
+  "id": "asset.models.buildings.beetles-great-bastion",
+  "name": "Great Bastion",
+  "kind": "building",
+  "tags": [
+    "beetles",
+    "tripo",
+    "animated",
+    "team-mask"
+  ],
+  "race": "beetles",
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_great_bastion"
+      ]
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "work",
+        "clip": "work",
+        "loop": true,
+        "events": [
+          {
+            "name": "vent-fl",
+            "time": 0.367
+          },
+          {
+            "name": "rivet",
+            "time": 0.4
+          },
+          {
+            "name": "vent-bl",
+            "time": 1.1
+          },
+          {
+            "name": "rivet-2",
+            "time": 1.4
+          },
+          {
+            "name": "vent-br",
+            "time": 1.833
+          },
+          {
+            "name": "rivet",
+            "time": 2.4
+          },
+          {
+            "name": "vent-fr",
+            "time": 2.567
+          },
+          {
+            "name": "vent-fl",
+            "time": 3.3
+          },
+          {
+            "name": "rivet-2",
+            "time": 3.4
+          },
+          {
+            "name": "vent-bl",
+            "time": 4.033
+          },
+          {
+            "name": "rivet",
+            "time": 4.4
+          },
+          {
+            "name": "vent-br",
+            "time": 4.767
+          },
+          {
+            "name": "rivet-2",
+            "time": 5.4
+          },
+          {
+            "name": "vent-fr",
+            "time": 5.5
+          }
+        ]
+      },
+      {
+        "semantic": "spawn",
+        "clip": "spawn",
+        "loop": false,
+        "events": [
+          {
+            "name": "gate",
+            "time": 0.067
+          }
+        ]
+      }
+    ],
+    "blocker": {
+      "shape": "box",
+      "size": [
+        20,
+        20
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 10,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 1,
+    "healthHeight": 11.6
+  },
+  "shading": "building",
+  "license": "Generated with Tripo (image to 3D, segmentation) from an ImageGen (gpt-image-2) concept for Under the Canopy; animated by tools/buildings/great_bastion.py."
+}

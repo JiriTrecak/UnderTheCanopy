@@ -1,0 +1,84 @@
+{
+  "id": "asset.models.buildings.beetles-brood-den",
+  "name": "Brood Den",
+  "kind": "building",
+  "tags": [
+    "beetles",
+    "tripo",
+    "animated",
+    "team-mask",
+    "supply",
+    "network-node"
+  ],
+  "race": "beetles",
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_brood_den"
+      ]
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "work",
+        "clip": "work",
+        "loop": true,
+        "events": [
+          {
+            "name": "vent",
+            "time": 1.667
+          }
+        ]
+      }
+    ],
+    "blocker": {
+      "shape": "box",
+      "size": [
+        8,
+        8
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 4,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 1,
+    "healthHeight": 5.7
+  },
+  "shading": "building",
+  "license": "Generated with Tripo (image to 3D, segmentation) from an ImageGen (gpt-image-2) concept for Under the Canopy; animated by tools/buildings/brood_den.py."
+}

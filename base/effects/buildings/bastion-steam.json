@@ -1,0 +1,93 @@
+{
+  "id": "effect.buildings.bastion-steam",
+  "name": "Bastion tank steam",
+  "description": "Steam venting in soft puffs from the cap of a Bastion tank tower while the hall trains or upgrades (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "steam",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 86,
+        "rate": 4,
+        "speed": 1.8,
+        "speedVariation": 0.35,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 12,
+        "gravity": -0.25,
+        "drag": 0.3,
+        "spawnRadius": 0.3,
+        "startSize": 0.8,
+        "endSize": 3.4,
+        "spin": 0.3,
+        "fadeIn": 0.1,
+        "fadeOut": 0.8
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#cfd2d8",
+      "accent": "#f2f3f6",
+      "durationTicks": 80,
+      "count": 14,
+      "size": 0.8,
+      "height": 0,
+      "blend": "normal",
+      "intensity": 0.7,
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "wisps",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 40,
+        "rate": 3,
+        "speed": 2.4,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 18,
+        "gravity": 0,
+        "drag": 0.4,
+        "spawnRadius": 0.25,
+        "startSize": 0.22,
+        "endSize": 0.0,
+        "spin": 1.2,
+        "fadeIn": 0.1,
+        "fadeOut": 0.6
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#a07cff",
+      "accent": "#e6dcff",
+      "durationTicks": 80,
+      "count": 6,
+      "size": 0.2,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.2,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "id": "asset.models.buildings.beetles-alembic",
+  "name": "Alembic",
+  "kind": "building",
+  "tags": [
+    "beetles",
+    "tripo",
+    "animated",
+    "team-mask"
+  ],
+  "race": "beetles",
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_alembic"
+      ]
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "work",
+        "clip": "work",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "spawn",
+        "clip": "spawn",
+        "loop": false,
+        "events": [
+          {
+            "name": "discharge",
+            "time": 0.3
+          }
+        ]
+      }
+    ],
+    "blocker": {
+      "shape": "box",
+      "size": [
+        12,
+        12
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 6,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 1,
+    "healthHeight": 13.5
+  },
+  "shading": "building",
+  "license": "Generated with Tripo (image to 3D, segmentation) from an ImageGen (gpt-image-2) concept for Under the Canopy; stretched to its footprint and animated by tools/buildings/alembic.py."
+}

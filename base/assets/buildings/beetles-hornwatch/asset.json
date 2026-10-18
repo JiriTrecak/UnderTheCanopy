@@ -1,0 +1,94 @@
+{
+  "id": "asset.models.buildings.beetles-hornwatch",
+  "name": "Hornwatch",
+  "kind": "building",
+  "tags": [
+    "beetles",
+    "tripo",
+    "animated",
+    "team-mask",
+    "tower"
+  ],
+  "race": "beetles",
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_hornwatch"
+      ]
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "work",
+        "clip": "work",
+        "loop": true,
+        "events": [
+          {
+            "name": "fire",
+            "time": 0.067
+          }
+        ]
+      },
+      {
+        "semantic": "attack",
+        "clip": "attack",
+        "loop": false,
+        "events": [
+          {
+            "name": "fire",
+            "time": 0.067
+          }
+        ]
+      }
+    ],
+    "blocker": {
+      "shape": "box",
+      "size": [
+        8,
+        8
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 4,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 1,
+    "healthHeight": 9.3
+  },
+  "shading": "building",
+  "license": "Generated with Tripo (image to 3D, segmentation) from an ImageGen (gpt-image-2) concept for Under the Canopy; animated by tools/buildings/hornwatch.py."
+}
