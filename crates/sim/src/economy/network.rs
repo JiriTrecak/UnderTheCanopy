@@ -214,11 +214,8 @@ fn standing(e: &Entity) -> bool {
 pub fn hints(catalog: &Catalog, setup: &crate::setup::MatchSetup) -> BTreeMap<Owner, String> {
     use canopy_content::game::{Creation, Kind};
     let rules = &catalog.content.rules;
-    let mut out = BTreeMap::new();
-    for slot in &setup.slots {
-        let race = slot.race.as_deref().unwrap_or(&rules.default_race);
-        let roster = rules.races.get(race).map(|r| &r.roster);
-        let pick = catalog
+    let cheapest = |roster: Option<&Vec<Id>>| {
+        catalog
             .content
             .definitions
             .iter()
@@ -238,8 +235,15 @@ pub fn hints(catalog: &Catalog, setup: &crate::setup::MatchSetup) -> BTreeMap<Ow
                     .map(|c| c.amount)
                     .sum();
                 (cost, d.id.clone())
-            });
-        if let Some(d) = pick {
+            })
+    };
+    let mut out = BTreeMap::new();
+    for slot in &setup.slots {
+        let race = slot.race.as_deref().unwrap_or(&rules.default_race);
+        let roster = rules.races.get(race).map(|r| &r.roster);
+        // A seat playing buildings of another race (a sandbox, a mission) still gets
+        // a name: any race's cheapest node.
+        if let Some(d) = cheapest(roster).or_else(|| cheapest(None)) {
             out.insert(Owner::Player(slot.player), d.name.clone());
         }
     }

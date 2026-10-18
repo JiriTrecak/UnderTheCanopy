@@ -19,6 +19,8 @@
 //! | `look:x,z` · `look-selection` | the camera |
 //! | `ticks:n` | simulates `n` ticks (commands sent so far apply) |
 //! | `chat:<text>` | says a line |
+//! | `network[:off]` | shows the power network on the ground, as the debug overlay does (D66) |
+//! | `destroy:<text>` | destroys the own buildings whose definition id contains `<text>` |
 
 use super::{
     Play,
@@ -360,6 +362,30 @@ pub fn run(
                 }
             }
             "chat" => play.say(arg),
+            "network" => play.show_network = arg != "off",
+            "destroy" => {
+                let targets: Vec<u32> = k
+                    .view
+                    .entities
+                    .iter()
+                    .filter(|e| k.own(e) && k.alive(e) && k.is_building(e))
+                    .filter(|e| k.def(e).id.as_str().contains(arg))
+                    .map(|e| e.id().0)
+                    .collect();
+                for id in targets {
+                    let target = canopy_sim::entity::EntityId(id);
+                    let state = game.world.state_mut();
+                    state.combat.scripted.push(canopy_sim::combat::ScriptedHit {
+                        target,
+                        source: None,
+                        amount: 1,
+                    });
+                    if let Some(e) = state.entities.get_mut(target) {
+                        e.hp = Some(1);
+                    }
+                }
+                step(&mut game, &mut newest, &mut view0, &mut previous)?;
+            }
             "ping" => {
                 let p = pair(arg)?;
                 play.ping(p[0], p[1]);
