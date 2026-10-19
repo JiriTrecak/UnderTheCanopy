@@ -105,6 +105,7 @@
   "presentation": {
     "projectile": "effect.units.juggernaut-shell",
     "projectileSocket": "socket_projectile",
+    "launchEffect": "effect.units.juggernaut-trail",
     "impactEffect": "effect.units.juggernaut-impact",
     "effects": [
       {

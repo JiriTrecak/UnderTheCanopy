@@ -43,6 +43,10 @@ pub struct Emitter {
     pub spin: f64,
     pub fade_in: f64,
     pub fade_out: f64,
+    /// Seconds of motion each particle is drawn along: sparks stretch into streaks along
+    /// their velocity (0 or absent: round sprites).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stretch: Option<f64>,
 }
 
 #[derive(
@@ -311,6 +315,9 @@ pub struct VisualLayer {
     /// Follow the bound actor; beams track both ends.
     pub follow: Option<bool>,
     pub intensity: Option<f64>,
+    /// How much the bright centre of each additive sprite burns white (0–1): hot cores
+    /// with the layer's colour at the fringe.
+    pub core: Option<f64>,
     pub spread: Option<f64>,
     pub length: Option<f64>,
     pub trail: Option<Trail>,

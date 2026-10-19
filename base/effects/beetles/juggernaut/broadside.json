@@ -1,8 +1,8 @@
 {
   "id": "effect.beetles.broadside",
   "name": "Broadside",
-  "description": "A rolling barrage: three fireballs walk across the target area with sparks and smoke.",
-  "durationTicks": 60,
+  "description": "A rolling barrage: three fireballs walk across the target area with shock rings, hot fragments, smoke and scorched ground.",
+  "durationTicks": 240,
   "loop": false,
   "layers": [
     {
@@ -110,20 +110,99 @@
       "startTick": 0
     },
     {
+      "id": "glint",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffd08a",
+      "accent": "#ffffff",
+      "durationTicks": 6,
+      "count": 1,
+      "size": 4.5,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.6,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "shock",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffd9a0",
+      "accent": "#ffffff",
+      "durationTicks": 16,
+      "count": 1,
+      "size": 8.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.6,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 32,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "shock2",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffd9a0",
+      "accent": "#ffffff",
+      "durationTicks": 14,
+      "count": 1,
+      "size": 6.0,
+      "height": 0.12,
+      "startTick": 6,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.6,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 28,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
       "id": "sparks",
       "enabled": true,
       "shape": "particles",
-      "colour": "#ffc65a",
-      "accent": "#fff0b0",
+      "colour": "#ffa040",
+      "accent": "#ffd9a0",
       "durationTicks": 24,
       "count": 40,
-      "size": 0.3,
+      "size": 0.09,
       "height": 0.0,
       "startTick": 0,
       "blend": "additive",
-      "intensity": 3.0,
+      "intensity": 5.0,
+      "core": 0.6,
       "texture": {
-        "asset": "asset.effects.holy-light-spark",
+        "asset": "asset.effects.beetles.spark",
         "role": "image",
         "index": 1
       },
@@ -131,7 +210,7 @@
         "mode": "burst",
         "lifetimeTicks": 22,
         "rate": 40,
-        "speed": 11,
+        "speed": 13,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
@@ -140,13 +219,14 @@
         },
         "coneDegrees": 85,
         "gravity": 18,
-        "drag": 0.4,
+        "drag": 0.7,
         "spawnRadius": 0.15,
-        "startSize": 0.3,
-        "endSize": 0.045,
+        "startSize": 0.09,
+        "endSize": 0.0405,
         "spin": 0,
         "fadeIn": 0.0,
-        "fadeOut": 0.5
+        "fadeOut": 0.55,
+        "stretch": 0.05
       }
     },
     {
@@ -189,16 +269,24 @@
       }
     },
     {
-      "id": "shock",
+      "id": "scorch",
       "enabled": true,
-      "shape": "ring",
-      "colour": "#ffd9a0",
+      "shape": "billboard",
+      "colour": "#ffffff",
       "accent": "#ffffff",
-      "durationTicks": 18,
+      "durationTicks": 240,
       "count": 1,
       "size": 6.0,
-      "height": 0.06,
-      "blend": "additive"
+      "height": 0.05,
+      "startTick": 4,
+      "orientation": "ground",
+      "blend": "normal",
+      "intensity": 0.85,
+      "texture": {
+        "asset": "asset.effects.beetles.scorch",
+        "role": "image",
+        "index": 1
+      }
     }
   ]
 }

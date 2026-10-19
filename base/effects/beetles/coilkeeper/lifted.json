@@ -13,9 +13,13 @@
       "accent": "#c9b8ff",
       "durationTicks": 40,
       "count": 1,
-      "size": 1.6,
+      "size": 1.4,
       "height": 0.6,
+      "startTick": 0,
       "blend": "additive",
+      "orientation": "camera",
+      "intensity": 0.6,
+      "core": 0.8,
       "sustain": true,
       "motion": {
         "opacity": {
@@ -34,22 +38,23 @@
       "accent": "#efe8ff",
       "durationTicks": 40,
       "count": 4,
-      "size": 0.18,
+      "size": 0.05,
       "height": 0.6,
-      "sustain": true,
+      "startTick": 0,
       "blend": "additive",
+      "intensity": 3.0,
+      "core": 0.6,
       "texture": {
-        "asset": "asset.effects.holy-light-spark",
+        "asset": "asset.effects.beetles.spark",
         "role": "image",
         "index": 1
       },
-      "intensity": 3.0,
       "emitter": {
         "mode": "continuous",
         "lifetimeTicks": 10,
         "rate": 4,
-        "speed": 2.5,
-        "speedVariation": 0.4,
+        "speed": 3,
+        "speedVariation": 0.5,
         "direction": {
           "x": 0,
           "y": 1,
@@ -57,14 +62,16 @@
         },
         "coneDegrees": 180,
         "gravity": 0,
-        "drag": 0.5,
+        "drag": 0.7,
         "spawnRadius": 0.8,
-        "startSize": 0.18,
-        "endSize": 0.03,
+        "startSize": 0.05,
+        "endSize": 0.022500000000000003,
         "spin": 0,
         "fadeIn": 0.0,
-        "fadeOut": 0.5
-      }
+        "fadeOut": 0.55,
+        "stretch": 0.05
+      },
+      "sustain": true
     }
   ]
 }

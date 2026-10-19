@@ -35,6 +35,8 @@ pub struct Mount<'a> {
     pub position: Vec3,
     pub rotation: Quat,
     pub scale: Vec3,
+    /// A turret's bearing: sockets on the turret turn with it.
+    pub aim: Option<f32>,
 }
 
 impl Mount<'_> {
@@ -51,7 +53,10 @@ impl Mount<'_> {
         self.info
             .socket_or_rest(node, self.clip.0, self.clip.1)
             .map_or(self.position, |m| {
-                self.position + self.rotation * (affine_point(&m, Vec3::ZERO) * self.scale)
+                let local = self
+                    .info
+                    .aimed(node, affine_point(&m, Vec3::ZERO), self.aim);
+                self.position + self.rotation * (local * self.scale)
             })
     }
 }
@@ -170,6 +175,7 @@ mod tests {
             size: 1.0,
             height: 0.0,
             intensity: None,
+            core: 0.0,
             spread: None,
             length: None,
             arc_height: 0.0,
@@ -183,6 +189,7 @@ mod tests {
             emitter: None,
             cue_motion: None,
             trail: None,
+            rain: None,
         }
     }
 
@@ -272,6 +279,7 @@ mod tests {
             position: Vec3::new(x, 0.0, 0.0),
             rotation: Quat::IDENTITY,
             scale: Vec3::splat(scale),
+            aim: None,
         }
     }
 

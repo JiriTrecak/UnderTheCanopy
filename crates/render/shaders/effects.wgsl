@@ -33,6 +33,8 @@ struct Emitter {
     e3: vec4f,
     // fade out, sustained, burst, spark power
     e4: vec4f,
+    // white-hot core (0–1), streak seconds along the velocity
+    e5: vec4f,
 }
 
 struct Ribbon {
@@ -74,6 +76,9 @@ const K_SPARK: u32 = 9u;
 const K_FLAME: u32 = 10u;
 const K_SMOKE: u32 = 11u;
 const K_DUST: u32 = 12u;
+const K_RAIN: u32 = 13u;
+const K_RAIN_SPLASH: u32 = 14u;
+const K_RAIN_FLASH: u32 = 15u;
 
 const F_TEXTURED: u32 = 1u;
 const F_GROUND: u32 = 2u;
@@ -142,14 +147,26 @@ fn flip_rect(e: Emitter, age: f32, seed: f32) -> vec4f {
 
 struct Part {
     local: vec3f,
-    // quad scale (sprites: full size; spheres and discs: radius)
+    // quad scale (sprites: full size; spheres and discs: radius); with an axis, x is the
+    // width and y the length along it
     scale: vec2f,
+    // world direction the quad's length follows on screen (zero: none, the quad spins)
+    axis: vec3f,
     rotation: f32,
     color: vec3f,
     alpha: f32,
     visible: bool,
     flip_age: f32,
     flip_seed: f32,
+}
+
+// Where rain drop `i` of `count` lands (xyz, in the cue's frame) and how late it launches
+// (w, seconds).
+fn drop_of(e: Emitter, i: u32, count: u32) -> vec4f {
+    let seed = e.ints.w + i * 7919u;
+    let angle = (f32(i) + noise(seed + 1u) * 0.6) * GOLDEN + noise(e.ints.w) * TAU;
+    let radius = sqrt((f32(i) + noise(seed + 2u)) / f32(max(count, 1u))) * e.shape.z;
+    return vec4f(cos(angle) * radius, 0.02, sin(angle) * radius, noise(seed + 3u) * e.e1.x);
 }
 
 fn evaluate(e: Emitter, i: u32) -> Part {
@@ -165,6 +182,7 @@ fn evaluate(e: Emitter, i: u32) -> Part {
     var p: Part;
     p.local = vec3f(0.0);
     p.scale = vec2f(size);
+    p.axis = vec3f(0.0);
     p.rotation = select(0.0, e.motion.y, (flags & F_SPIN) != 0u);
     p.color = e.color.rgb;
     p.alpha = e.color.a;
@@ -229,8 +247,22 @@ fn evaluate(e: Emitter, i: u32) -> Part {
             let angle = noise(seed + 4u) * TAU;
             let radius = sqrt(noise(seed + 5u)) * e.e2.z;
             p.local = vec3f(cos(angle) * radius, height, sin(angle) * radius) + velocity * travel;
-            p.local.y += 0.5 * e.e1.w * age * age;
+            // Gravity pulls down (negative values lift: steam, embers).
+            p.local.y -= 0.5 * e.e1.w * age * age;
             p.scale = vec2f(e.e3.x + (e.e3.y - e.e3.x) * life);
+            if (e.e5.y > 0.0) {
+                // A streak: the sprite spans the last `stretch` seconds of its path, its
+                // head at the particle.
+                let now = velocity * select(1.0, exp(-drag * age), drag > 0.0)
+                    - vec3f(0.0, e.e1.w * age, 0.0);
+                let trail = rotate(e.rotation, now) * e.e5.y;
+                let reach = length(trail);
+                if (reach > 1e-4) {
+                    p.axis = trail / reach;
+                    p.scale.y += reach;
+                    p.local -= now * e.e5.y * 0.5;
+                }
+            }
             let fade_in = select(1.0, min(1.0, life / e.e3.w), e.e3.w > 0.0);
             let fade_out = select(1.0, min(1.0, (1.0 - life) / e.e4.x), e.e4.x > 0.0);
             p.alpha = fade_in * fade_out * e.color.a;
@@ -242,7 +274,10 @@ fn evaluate(e: Emitter, i: u32) -> Part {
         }
         case K_MISSILE, K_WAVEFRONT: {
             p.scale = vec2f(size, size * len);
-            if (kind == K_MISSILE && (flags & F_TEXTURED) != 0u) {
+            if (kind == K_MISSILE && len > 1.01) {
+                // An elongated head (a tracer): its length along the flight.
+                p.axis = e.rotation.xyz;
+            } else if (kind == K_MISSILE && (flags & F_TEXTURED) != 0u) {
                 p.rotation = t * 8.0;
             }
         }
@@ -353,6 +388,60 @@ fn evaluate(e: Emitter, i: u32) -> Part {
             p.flip_seed = noise(seed + 10u);
             p.flip_age = life;
         }
+        case K_RAIN, K_RAIN_SPLASH, K_RAIN_FLASH: {
+            // shape: 0, fall height, spread, shard length; motion.w: seconds since the cue
+            // started; e0: the path's back direction (unit), fall seconds; e1: launch
+            // delay, impact seconds, impact spread, impact height; e2: impact size,
+            // impact count, drops. Old `updateRain`: drops land on a golden-angle disc, each
+            // launching up to the delay late; a shard's tip meets its landing point.
+            let impacts = max(u32(e.e2.y), 1u);
+            var drop = i;
+            var j = 0u;
+            if (kind == K_RAIN_SPLASH) {
+                drop = i / impacts;
+                j = i % impacts;
+            }
+            let d = drop_of(e, drop, max(u32(e.e2.z), 1u));
+            let age = e.motion.w - d.w;
+            let fall = max(e.e0.w, 1e-4);
+            let back = e.e0.xyz;
+            let landing = d.xyz;
+            if (kind == K_RAIN) {
+                let flight = age / fall;
+                p.visible = age >= 0.0 && flight < 1.0;
+                let scale = 0.8 + noise(e.ints.w + drop * 97u + 4u) * 0.35;
+                let long = size * len * scale;
+                p.local = landing + back * (height * (1.0 - flight) + long * 0.5);
+                p.scale = vec2f(size * scale, long);
+                p.axis = back;
+                p.alpha = min(1.0, age * 80.0) * e.color.a;
+                p.flip_age = age;
+                p.flip_seed = noise(e.ints.w + drop * 97u);
+                break;
+            }
+            let impact = max(e.e1.y, 1e-4);
+            let q = (age - fall) / impact;
+            p.visible = q >= 0.0 && q < 1.0;
+            if (kind == K_RAIN_FLASH) {
+                p.local = landing + vec3f(0.0, 0.05, 0.0);
+                p.scale = vec2f(e.e1.z * (0.35 + q));
+                p.alpha = pow(max(1.0 - q, 0.0), 3.0) * 0.9 * e.color.a;
+                break;
+            }
+            let angle = f32(j) * GOLDEN + f32(drop) * 1.7;
+            let speed = 0.55 + noise(e.ints.w + drop * 37u + j * 97u) * 0.45;
+            p.local = landing + vec3f(
+                cos(angle) * e.e1.z * q * speed,
+                0.08 + e.e1.w * 4.0 * q * (1.0 - q) * speed,
+                sin(angle) * e.e1.z * q * speed,
+            );
+            p.scale = vec2f(e.e2.x * (1.0 - q * 0.6), e.e2.x * (1.4 - q * 0.6));
+            p.alpha = pow(max(1.0 - q, 0.0), 1.5) * e.color.a;
+            p.rotation = angle + q * 3.0;
+            p.color = mix(e.color.rgb, e.accent.rgb, q);
+            p.flip_age = age - fall;
+            p.flip_seed = noise(e.ints.w + drop * 97u + j);
+        }
         default: {}
     }
     if (kind <= K_PILLAR && kind != K_EMITTER) {
@@ -382,6 +471,9 @@ fn mask_of(e: Emitter) -> u32 {
     if (kind == K_SMOKE || kind == K_DUST) {
         return M_SMOKE;
     }
+    if (kind == K_RAIN_FLASH) {
+        return M_GLOW;
+    }
     if ((flags & F_FRESNEL) != 0u) {
         return M_FRESNEL;
     }
@@ -396,6 +488,8 @@ struct VsOut {
     @location(2) color: vec4f,
     @location(3) rect: vec4f,
     @location(4) @interpolate(flat) mask: vec2u,
+    // white-hot core
+    @location(5) @interpolate(flat) core: f32,
 }
 
 const CORNERS = array<vec2f, 6>(
@@ -430,8 +524,7 @@ fn vs_quad(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> 
     // Textured quads are 1×1 scaled (half the scale each way); spheres and discs have
     // radius 1.
     let half = select(p.scale, p.scale * 0.5, mask == M_TEXTURE);
-    let flat_disc = mask == M_RING || mask == M_GLOW;
-    if ((flags & F_GROUND) != 0u || flat_disc) {
+    if ((flags & F_GROUND) != 0u || kind == K_RAIN_FLASH) {
         // Lying on the ground: the quad's x along the spin (or the direction of travel),
         // its y towards −z, turned by the root.
         var ax = vec3f(cos(p.rotation), 0.0, -sin(p.rotation));
@@ -446,6 +539,14 @@ fn vs_quad(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> 
             ay = rotate(e.rotation, ay);
         }
         offset = ax * c.x * half.x + ay * c.y * half.y;
+    } else if (dot(p.axis, p.axis) > 0.0) {
+        // Along an axis (streaks, rain): the quad's length follows the axis as the eye sees
+        // it, its width across.
+        var along = vec2f(dot(p.axis, view.right.xyz), dot(p.axis, view.up.xyz));
+        along = select(vec2f(0.0, 1.0), normalize(along), dot(along, along) > 1e-8);
+        let across = vec2f(-along.y, along.x);
+        let r = across * c.x * half.x + along * c.y * half.y;
+        offset = view.right.xyz * r.x + view.up.xyz * r.y;
     } else {
         let s = sin(p.rotation);
         let co = cos(p.rotation);
@@ -466,6 +567,7 @@ fn vs_quad(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> 
         out.rect = flip_rect(e, p.flip_age, p.flip_seed);
     }
     out.mask = vec2u(mask, flags);
+    out.core = e.e5.x;
     return out;
 }
 
@@ -493,6 +595,7 @@ fn vs_pillar(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -
     out.color = vec4f(p.color, p.alpha);
     out.rect = vec4f(1.0, 1.0, 0.0, 0.0);
     out.mask = vec2u(M_PILLAR, e.ints.y);
+    out.core = e.e5.x;
     return out;
 }
 
@@ -585,6 +688,17 @@ fn fs_main(in: VsOut) -> SceneOut {
     }
     if (alpha <= 0.0) {
         discard;
+    }
+    if (in.core > 0.0 && !normal_blend) {
+        // A white-hot core: where the sprite is densest its colour burns towards white at
+        // its brightest channel, so sparks read crisp with their colour at the fringe.
+        var density = alpha / max(in.color.a, 1e-4);
+        if (in.mask.x == M_SPHERE || in.mask.x == M_FRESNEL || in.mask.x == M_GLOW) {
+            density = 1.0 - smoothstep(0.0, 0.8, r);
+        }
+        let heat = in.core * smoothstep(0.35, 0.95, density);
+        let peak = max(color.r, max(color.g, color.b));
+        color = mix(color, vec3f(peak), heat);
     }
     return scene_out(vec4f(color, alpha), in.world);
 }

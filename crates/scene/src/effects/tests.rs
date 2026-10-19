@@ -29,6 +29,7 @@ fn layer(motion: Motion, primitive: Primitive) -> EffectLayer {
         size: 2.0,
         height: 0.5,
         intensity: None,
+        core: 0.0,
         spread: None,
         length: None,
         arc_height: 0.0,
@@ -42,6 +43,7 @@ fn layer(motion: Motion, primitive: Primitive) -> EffectLayer {
         emitter: None,
         cue_motion: None,
         trail: None,
+        rain: None,
     }
 }
 
@@ -314,6 +316,7 @@ fn draws_follow_textures_not_effect_counts() {
         spin: 0.0,
         fade_in: 0.0,
         fade_out: 0.0,
+        stretch: 0.0,
     });
     let mut d = director(
         vec![

@@ -14,7 +14,7 @@
       "durationTicks": 80,
       "count": 1,
       "size": 1.8,
-      "height": 1.0,
+      "height": 0.1,
       "blend": "additive",
       "sustain": true,
       "motion": {
@@ -34,22 +34,23 @@
       "accent": "#c9b8ff",
       "durationTicks": 80,
       "count": 6,
-      "size": 0.2,
+      "size": 0.05,
       "height": 1.0,
-      "sustain": true,
+      "startTick": 0,
       "blend": "additive",
+      "intensity": 3.5,
+      "core": 0.6,
       "texture": {
-        "asset": "asset.effects.holy-light-spark",
+        "asset": "asset.effects.beetles.spark",
         "role": "image",
         "index": 1
       },
-      "intensity": 3.0,
       "emitter": {
         "mode": "continuous",
         "lifetimeTicks": 12,
         "rate": 6,
-        "speed": 3.5,
-        "speedVariation": 0.4,
+        "speed": 4.5,
+        "speedVariation": 0.5,
         "direction": {
           "x": 0,
           "y": 1,
@@ -57,14 +58,16 @@
         },
         "coneDegrees": 120,
         "gravity": 8,
-        "drag": 0.5,
+        "drag": 0.7,
         "spawnRadius": 0.6,
-        "startSize": 0.2,
-        "endSize": 0.03,
+        "startSize": 0.05,
+        "endSize": 0.022500000000000003,
         "spin": 0,
         "fadeIn": 0.0,
-        "fadeOut": 0.5
-      }
+        "fadeOut": 0.55,
+        "stretch": 0.05
+      },
+      "sustain": true
     },
     {
       "id": "steam",

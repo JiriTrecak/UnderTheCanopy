@@ -1,0 +1,38 @@
+{
+  "id": "effect.units.bombard-trail",
+  "name": "Bombard shell trail",
+  "description": "A burning fuse riding the shell up its arc, trailing embers and a violet glow.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "tracer",
+      "enabled": true,
+      "shape": "missile",
+      "colour": "#ffa040",
+      "accent": "#ffd9a0",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 0.45,
+      "height": 0,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 4.0,
+      "core": 1.0,
+      "length": 1.6,
+      "trail": {
+        "durationTicks": 14,
+        "maxPoints": 12,
+        "width": 0.32,
+        "colour": "#ff7a2a",
+        "opacity": 1.0,
+        "breakDistance": 6
+      },
+      "arcHeight": 9
+    }
+  ]
+}

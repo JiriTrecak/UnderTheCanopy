@@ -6,28 +6,49 @@
   "loop": false,
   "layers": [
     {
+      "id": "glint",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffc65a",
+      "accent": "#ffffff",
+      "durationTicks": 4,
+      "count": 1,
+      "size": 0.9,
+      "height": 1.2,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.6,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
       "id": "sparks",
       "enabled": true,
       "shape": "particles",
       "colour": "#ffc65a",
       "accent": "#fff0b0",
-      "durationTicks": 14,
+      "durationTicks": 12,
       "count": 8,
-      "size": 0.18,
+      "size": 0.05,
       "height": 1.2,
       "startTick": 0,
       "blend": "additive",
-      "intensity": 3.0,
+      "intensity": 5.0,
+      "core": 0.6,
       "texture": {
-        "asset": "asset.effects.holy-light-spark",
+        "asset": "asset.effects.beetles.spark",
         "role": "image",
         "index": 1
       },
       "emitter": {
         "mode": "burst",
-        "lifetimeTicks": 12,
+        "lifetimeTicks": 10,
         "rate": 8,
-        "speed": 4,
+        "speed": 5,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
@@ -35,28 +56,16 @@
           "z": 0
         },
         "coneDegrees": 80,
-        "gravity": 14.0,
-        "drag": 0.4,
+        "gravity": 16,
+        "drag": 0.7,
         "spawnRadius": 0.15,
-        "startSize": 0.18,
-        "endSize": 0.027,
+        "startSize": 0.05,
+        "endSize": 0.022500000000000003,
         "spin": 0,
         "fadeIn": 0.0,
-        "fadeOut": 0.5
+        "fadeOut": 0.55,
+        "stretch": 0.05
       }
-    },
-    {
-      "id": "flash",
-      "enabled": true,
-      "shape": "light",
-      "colour": "#ffc65a",
-      "accent": "#fff0b0",
-      "durationTicks": 5,
-      "count": 1,
-      "size": 2.5,
-      "height": 1.2,
-      "intensity": 2.0,
-      "startTick": 0
     }
   ]
 }

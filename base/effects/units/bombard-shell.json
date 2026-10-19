@@ -1,17 +1,20 @@
 {
   "id": "effect.units.bombard-shell",
   "name": "Bombard shell",
-  "description": "The Bombard's lobbed shell in flight: an iron shell with a brass nose and a glowing violet substance core, a hot streak and a grey smoke trail behind it (geometry_2 of the Bombard's model), on the authoritative mortar flight; its arc is editable here.",
+  "description": "The mortar shell (geometry 2 of the Bombard asset).",
   "durationTicks": 40,
   "loop": false,
   "layers": [
     {
       "id": "body",
-      "sustain": false,
       "enabled": true,
-      "startTick": 0,
-      "anchor": "target",
       "shape": "missile",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 1.0,
+      "height": 0,
       "arcHeight": 9,
       "model": {
         "asset": "asset.models.units.beetles-bombard",
@@ -22,13 +25,7 @@
           "y": 0,
           "z": 0
         }
-      },
-      "colour": "#ffffff",
-      "accent": "#ffffff",
-      "durationTicks": 40,
-      "count": 1,
-      "size": 1,
-      "height": 0
+      }
     }
   ]
 }

@@ -47,6 +47,9 @@ pub struct ModelInfo {
     pub missing: bool,
     /// Triangles of every section.
     pub triangles: u32,
+    /// A `turret` node an aim turns: its pivot (model x, z) and, by socket, whether the
+    /// socket turns with it.
+    pub turret: Option<([f32; 2], Vec<bool>)>,
 }
 
 impl ModelInfo {
@@ -106,7 +109,37 @@ impl ModelInfo {
             rest_max: meta.rest_bounds.max,
             missing: false,
             triangles: meta.sections.iter().map(|s| s.index_count / 3).sum(),
+            turret: meta
+                .skeleton
+                .as_ref()
+                .and_then(canopy_render::actors::Turret::of)
+                .map(|t| {
+                    let on = meta
+                        .sockets
+                        .iter()
+                        .map(|s| s.joint.is_some_and(|j| t.contains(j)))
+                        .collect();
+                    (t.pivot, on)
+                }),
         }
+    }
+
+    /// A model-space point of socket `node` turned by a turret's `aim` when the socket
+    /// sits on the turret.
+    pub fn aimed(&self, node: &str, point: glam::Vec3, aim: Option<f32>) -> glam::Vec3 {
+        let (Some(aim), Some((pivot, on))) = (aim, &self.turret) else {
+            return point;
+        };
+        let turns = self
+            .sockets
+            .iter()
+            .position(|s| s == node)
+            .is_some_and(|i| on.get(i).copied().unwrap_or(false));
+        if !turns {
+            return point;
+        }
+        let p = glam::Vec3::new(pivot[0], 0.0, pivot[1]);
+        p + glam::Quat::from_rotation_y(aim) * (point - p)
     }
 
     /// Whether the model is animated by gameplay states (a character).

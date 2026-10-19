@@ -89,6 +89,7 @@
   "presentation": {
     "projectile": "effect.beetles.steamwing-bolt",
     "projectileSocket": "socket_projectile",
+    "launchEffect": "effect.beetles.steamwing-tracer",
     "impactEffect": "effect.beetles.steamwing-impact",
     "effects": [
       {

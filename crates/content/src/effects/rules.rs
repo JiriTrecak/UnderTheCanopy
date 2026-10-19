@@ -63,9 +63,9 @@ pub(crate) fn layer_problems(layer: &VisualLayer) -> Vec<&'static str> {
         if shape == Mesh {
             layer.model.is_some()
         } else {
-            layer.model.is_none() || shape == Missile
+            layer.model.is_none() || is(&[Missile, Rain])
         },
-        "Models require mesh or missile layers; mesh layers require a model",
+        "Models require mesh, missile or rain layers; mesh layers require a model",
     );
     require(
         layer.model.is_none() || layer.texture.is_none(),
@@ -109,8 +109,24 @@ pub(crate) fn layer_problems(layer: &VisualLayer) -> Vec<&'static str> {
         "This layer does not accept textures",
     );
     require(
-        !is(&[Billboard, Streaks, Rain]) || layer.texture.is_some(),
+        !is(&[Billboard, Streaks]) || layer.texture.is_some(),
         "This layer requires a texture",
+    );
+    require(
+        shape != Rain || layer.texture.is_some() || layer.model.is_some(),
+        "Rain requires a texture or a model",
+    );
+    require(
+        layer.core.is_none_or(|c| (0.0..=1.0).contains(&c)),
+        "Core must be between zero and one",
+    );
+    require(
+        layer
+            .emitter
+            .as_ref()
+            .and_then(|e| e.stretch)
+            .is_none_or(|s| (0.0..=1.0).contains(&s)),
+        "Stretch must be between zero and one second",
     );
     if let Some(sound) = &layer.sound {
         require(
@@ -225,8 +241,13 @@ mod tests {
             ),
             (
                 json!({"shape": "mesh"}),
-                "Models require mesh or missile layers; mesh layers require a model",
+                "Models require mesh, missile or rain layers; mesh layers require a model",
             ),
+            (
+                json!({"shape": "rain"}),
+                "Rain requires a texture or a model",
+            ),
+            (json!({"core": 1.5}), "Core must be between zero and one"),
             (
                 json!({"shape": "sound"}),
                 "Sound layers require audio settings; other shapes do not",

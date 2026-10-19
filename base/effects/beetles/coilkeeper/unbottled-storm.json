@@ -103,7 +103,8 @@
       "height": 16,
       "sustain": true,
       "follow": true,
-      "blend": "additive"
+      "blend": "additive",
+      "intensity": 0.22
     },
     {
       "id": "swirl",
@@ -112,26 +113,24 @@
       "colour": "#c9b8ff",
       "accent": "#ffffff",
       "durationTicks": 240,
-      "count": 24,
-      "size": 0.3,
-      "height": 0.3,
-      "sustain": true,
-      "follow": true,
+      "count": 28,
+      "size": 0.08,
+      "height": 0.0,
+      "startTick": 0,
       "blend": "additive",
+      "intensity": 3.5,
+      "core": 0.6,
       "texture": {
-        "asset": "asset.effects.holy-light-spark",
+        "asset": "asset.effects.beetles.spark",
         "role": "image",
         "index": 1
       },
-      "intensity": 3.5,
-      "distribution": "disc",
-      "spread": 12.0,
       "emitter": {
         "mode": "continuous",
         "lifetimeTicks": 30,
-        "rate": 24,
-        "speed": 3.5,
-        "speedVariation": 0.4,
+        "rate": 28,
+        "speed": 4.5,
+        "speedVariation": 0.5,
         "direction": {
           "x": 0,
           "y": 1,
@@ -139,14 +138,17 @@
         },
         "coneDegrees": 30,
         "gravity": -5.0,
-        "drag": 0.5,
+        "drag": 0.7,
         "spawnRadius": 12.0,
-        "startSize": 0.3,
-        "endSize": 0.05,
+        "startSize": 0.08,
+        "endSize": 0.036000000000000004,
         "spin": 0,
         "fadeIn": 0.0,
-        "fadeOut": 0.5
-      }
+        "fadeOut": 0.55,
+        "stretch": 0.07
+      },
+      "sustain": true,
+      "follow": true
     },
     {
       "id": "light",

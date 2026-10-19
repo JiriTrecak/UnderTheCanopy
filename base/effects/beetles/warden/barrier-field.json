@@ -55,15 +55,19 @@
       "accent": "#c9b8ff",
       "durationTicks": 80,
       "count": 1,
-      "size": 4.2,
-      "height": 1.4,
+      "size": 3.4,
+      "height": 1.6,
+      "startTick": 0,
       "blend": "additive",
+      "orientation": "camera",
+      "intensity": 0.32,
+      "core": 0.2,
       "sustain": true,
       "motion": {
         "opacity": {
           "periodTicks": 40,
-          "min": 0.3,
-          "max": 0.6,
+          "min": 0.5,
+          "max": 1.0,
           "easing": "sine"
         }
       }

@@ -19,20 +19,41 @@
       "startTick": 0
     },
     {
-      "id": "sparks",
+      "id": "glint",
       "enabled": true,
-      "shape": "particles",
-      "colour": "#ffc65a",
-      "accent": "#fff0b0",
-      "durationTicks": 16,
-      "count": 18,
-      "size": 0.22,
+      "shape": "billboard",
+      "colour": "#ffa040",
+      "accent": "#ffffff",
+      "durationTicks": 6,
+      "count": 1,
+      "size": 2.2,
       "height": 1.0,
       "startTick": 0,
       "blend": "additive",
-      "intensity": 3.0,
+      "intensity": 2.6,
+      "core": 0.9,
       "texture": {
-        "asset": "asset.effects.holy-light-spark",
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "sparks",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffa040",
+      "accent": "#ffd9a0",
+      "durationTicks": 16,
+      "count": 18,
+      "size": 0.07,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 5.0,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
         "role": "image",
         "index": 1
       },
@@ -40,7 +61,7 @@
         "mode": "burst",
         "lifetimeTicks": 14,
         "rate": 18,
-        "speed": 6,
+        "speed": 8,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
@@ -48,14 +69,15 @@
           "z": 0
         },
         "coneDegrees": 80,
-        "gravity": 14.0,
-        "drag": 0.4,
+        "gravity": 14,
+        "drag": 0.7,
         "spawnRadius": 0.15,
-        "startSize": 0.22,
-        "endSize": 0.033,
+        "startSize": 0.07,
+        "endSize": 0.03150000000000001,
         "spin": 0,
         "fadeIn": 0.0,
-        "fadeOut": 0.5
+        "fadeOut": 0.55,
+        "stretch": 0.05
       }
     },
     {

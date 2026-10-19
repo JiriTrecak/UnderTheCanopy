@@ -982,7 +982,7 @@ def write_units(W, fx_):
                     shell={'flightTicks': 46, 'radius': 2.5, 'slowPermille': 0, 'slowTicks': 0}),
              8, train(260, 40, 25), 3, (2.2, 7.0, 5.0), 1.4, level=2, requires=[T2], nature='mechanical',
              presentation={'projectile': 'effect.units.bombard-shell', 'projectileSocket': 'socket_muzzle',
-                           'impactEffect': 'effect.units.bombard-impact',
+                           'launchEffect': 'effect.units.bombard-trail', 'impactEffect': 'effect.units.bombard-impact',
                            'effects': [{'effect': 'effect.units.bombard-launch', 'event': 'release',
                                         'socket': 'socket_muzzle'}]}))
 
@@ -994,6 +994,7 @@ def write_units(W, fx_):
              movement_extra={'locomotion': 'air', 'flightHeight': 7},
              abilities=caster(10, 0, [binding('flak-beam', 'ability.beetles.flak-beam', 1, None, None)]),
              presentation={'projectile': 'effect.beetles.steamwing-bolt', 'projectileSocket': 'socket_projectile',
+                           'launchEffect': 'effect.beetles.steamwing-tracer',
                            'impactEffect': 'effect.beetles.steamwing-impact',
                            'effects': [{'effect': 'effect.beetles.steamwing-muzzle', 'event': 'release', 'socket': 'socket_projectile'},
                                        {'effect': 'effect.beetles.steamwing-exhaust', 'state': 'walk', 'socket': 'socket_exhaust_b'},
@@ -1010,6 +1011,7 @@ def write_units(W, fx_):
                  binding('broadside', 'ability.beetles.broadside', 1, 'Q', 1, interval=40),
                  binding('furnace-plating', 'ability.beetles.furnace-plating', 1, None, None)]),
              presentation={'projectile': 'effect.units.juggernaut-shell', 'projectileSocket': 'socket_projectile',
+                           'launchEffect': 'effect.units.juggernaut-trail',
                            'impactEffect': 'effect.units.juggernaut-impact',
                            'effects': [{'effect': 'effect.units.juggernaut-muzzle', 'event': 'release', 'socket': 'socket_muzzle_l'},
                                        {'effect': 'effect.units.juggernaut-muzzle', 'event': 'release', 'socket': 'socket_muzzle_r'},

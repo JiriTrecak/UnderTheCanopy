@@ -9,9 +9,13 @@ struct Pose {
 }
 
 struct Job {
-    // palette base, joints, poses, 0
+    // palette base, joints, poses, aimed (1)
     header: vec4u,
     poses: array<Pose, 3>,
+    // joints the aim turns, a bit each
+    mask: array<vec4u, 2>,
+    // cos, sin of the aim, pivot x, z
+    aim: vec4f,
 }
 
 @group(0) @binding(0) var<storage, read> jobs: array<Job>;
@@ -44,6 +48,19 @@ fn skin(@builtin(global_invocation_id) id: vec3u) {
         r0 += mix(clips[a], clips[b], t) * w;
         r1 += mix(clips[a + 1u], clips[b + 1u], t) * w;
         r2 += mix(clips[a + 2u], clips[b + 2u], t) * w;
+    }
+    let word = job.mask[joint / 128u][(joint % 128u) / 32u];
+    if (job.header.w == 1u && (word & (1u << (joint % 32u))) != 0u) {
+        // A turret aims: turn about the vertical axis through its pivot.
+        let c = job.aim.x;
+        let s = job.aim.y;
+        let p = job.aim.zw;
+        let a0 = r0;
+        let a2 = r2;
+        r0 = c * a0 + s * a2;
+        r2 = -s * a0 + c * a2;
+        r0.w += p.x - (c * p.x + s * p.y);
+        r2.w += p.y - (-s * p.x + c * p.y);
     }
     let out = (job.header.x + joint) * 3u;
     palette[out] = r0;

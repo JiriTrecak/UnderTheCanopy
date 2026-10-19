@@ -1,7 +1,7 @@
 {
   "id": "effect.coilkeeper.unbottled-shatter",
   "name": "The lantern shatters",
-  "description": "Glass and substance burst from the broken lantern: a blinding violet-white flash and a ring of shards.",
+  "description": "Glass and substance burst from the broken lantern: a blinding violet-white star, spinning glass shards, hot violet streaks and two shock rings.",
   "durationTicks": 40,
   "loop": false,
   "layers": [
@@ -19,40 +19,110 @@
       "startTick": 0
     },
     {
-      "id": "glass",
+      "id": "star",
       "enabled": true,
-      "shape": "burst",
-      "colour": "#dfe8ff",
+      "shape": "billboard",
+      "colour": "#e6dcff",
       "accent": "#ffffff",
-      "durationTicks": 12,
-      "count": 24,
-      "size": 2.6,
-      "height": 1.6,
-      "blend": "additive"
+      "durationTicks": 9,
+      "count": 1,
+      "size": 9.0,
+      "height": 1.8,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.2,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      }
     },
     {
-      "id": "shards",
+      "id": "burst",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#8f66ff",
+      "accent": "#ffffff",
+      "durationTicks": 6,
+      "count": 1,
+      "size": 6.0,
+      "height": 1.8,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.4,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.flash",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "glass",
       "enabled": true,
       "shape": "particles",
-      "colour": "#c9d8ff",
-      "accent": "#ffffff",
-      "durationTicks": 24,
-      "count": 50,
-      "size": 0.3,
+      "colour": "#dfe6ff",
+      "accent": "#c9b8ff",
+      "durationTicks": 26,
+      "count": 36,
+      "size": 0.36,
       "height": 1.6,
       "startTick": 0,
       "blend": "additive",
-      "intensity": 3.0,
+      "intensity": 2.6,
+      "core": 0.7,
       "texture": {
-        "asset": "asset.effects.holy-light-spark",
+        "asset": "asset.effects.beetles.shard",
         "role": "image",
         "index": 1
       },
       "emitter": {
         "mode": "burst",
-        "lifetimeTicks": 22,
-        "rate": 50,
-        "speed": 14,
+        "lifetimeTicks": 24,
+        "rate": 36,
+        "speed": 13,
+        "speedVariation": 0.55,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": 16.0,
+        "drag": 0.5,
+        "spawnRadius": 0.3,
+        "startSize": 0.36,
+        "endSize": 0.216,
+        "spin": 12.0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.45
+      }
+    },
+    {
+      "id": "streaks",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#8f66ff",
+      "accent": "#efe8ff",
+      "durationTicks": 22,
+      "count": 48,
+      "size": 0.09,
+      "height": 1.6,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 4.5,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 20,
+        "rate": 48,
+        "speed": 17,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
@@ -60,40 +130,74 @@
           "z": 0
         },
         "coneDegrees": 180,
-        "gravity": 10,
-        "drag": 0.4,
+        "gravity": 8,
+        "drag": 0.7,
         "spawnRadius": 0.15,
-        "startSize": 0.3,
-        "endSize": 0.045,
+        "startSize": 0.09,
+        "endSize": 0.0405,
         "spin": 0,
         "fadeIn": 0.0,
-        "fadeOut": 0.5
+        "fadeOut": 0.55,
+        "stretch": 0.05
       }
     },
     {
       "id": "wave",
       "enabled": true,
-      "shape": "ring",
+      "shape": "billboard",
       "colour": "#c9b8ff",
       "accent": "#ffffff",
-      "durationTicks": 22,
+      "durationTicks": 20,
       "count": 1,
-      "size": 14.0,
-      "height": 0.06,
-      "blend": "additive"
+      "size": 16.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.2,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 40,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
     },
     {
       "id": "wave2",
       "enabled": true,
-      "shape": "ring",
+      "shape": "billboard",
       "colour": "#8a5cff",
-      "accent": "#c9b8ff",
-      "durationTicks": 28,
+      "accent": "#ffffff",
+      "durationTicks": 26,
       "count": 1,
-      "size": 10.0,
-      "height": 0.06,
+      "size": 11.0,
+      "height": 0.14,
+      "startTick": 6,
+      "orientation": "ground",
       "blend": "additive",
-      "startTick": 6
+      "intensity": 1.6,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 52,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
     }
   ]
 }

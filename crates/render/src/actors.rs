@@ -91,6 +91,9 @@ pub struct ActorInstance {
     pub shadow_only: bool,
     /// How much the model works, 0 at rest to 1: drives its active emission (D65).
     pub activity: f32,
+    /// Turns the model's `turret` node (and everything on it) this many radians about its
+    /// own vertical axis, counterclockwise seen from above: a tower aiming at its target.
+    pub aim: Option<f32>,
 }
 
 /// The tint of models drawn as they are.
@@ -109,6 +112,7 @@ impl ActorInstance {
             tint: NO_TINT,
             shadow_only: false,
             activity: 0.0,
+            aim: None,
         }
     }
 
@@ -142,8 +146,58 @@ struct ActorGpu {
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
 struct SkinJob {
+    /// palette base, joints, poses, aimed (1)
     header: [u32; 4],
     poses: [[u32; 4]; MAX_POSES],
+    /// Joints that turn with the aim (a bit each, 256 joints).
+    mask: [[u32; 4]; 2],
+    /// cos, sin of the aim, pivot x, z (model space).
+    aim: [f32; 4],
+}
+
+/// The joints of a model's `turret` node and everything on it, and its pivot.
+#[derive(Debug, Clone, Copy)]
+pub struct Turret {
+    pub mask: [[u32; 4]; 2],
+    pub pivot: [f32; 2],
+}
+
+/// The node an aim turns.
+pub const TURRET_NODE: &str = "turret";
+
+impl Turret {
+    /// Whether joint `j` turns with the turret.
+    pub fn contains(&self, j: u32) -> bool {
+        let j = j as usize;
+        j < 256 && self.mask[j / 128][(j % 128) / 32] & (1 << (j % 32)) != 0
+    }
+
+    /// The `turret` joint of a skeleton and its descendants, if it has one.
+    pub fn of(skeleton: &canopy_assets::Skeleton) -> Option<Self> {
+        let joints = &skeleton.joints;
+        let root = joints.iter().position(|j| j.name == TURRET_NODE)?;
+        let mut mask = [[0u32; 4]; 2];
+        for (i, _) in joints.iter().enumerate().take(256) {
+            let mut at = Some(i as u32);
+            let mut hops = 0;
+            while let Some(j) = at {
+                if j as usize == root {
+                    mask[i / 128][(i % 128) / 32] |= 1 << (i % 32);
+                    break;
+                }
+                at = joints.get(j as usize).and_then(|k| k.parent);
+                hops += 1;
+                if hops > joints.len() {
+                    break;
+                }
+            }
+        }
+        let origin = joints[root].origin;
+        Some(Self {
+            mask,
+            pivot: [origin[0], origin[2]],
+        })
+    }
 }
 
 struct ClipRange {
@@ -176,6 +230,8 @@ struct GpuModel {
     /// Bind-pose bounds.
     rest: (Vec3, Vec3),
     animated: bool,
+    /// The joints an aim turns (towers).
+    turret: Option<Turret>,
     casts: bool,
 }
 
@@ -818,6 +874,7 @@ impl ActorsGpu {
                 Vec3::from_array(meta.rest_bounds.max),
             ),
             animated,
+            turret: meta.skeleton.as_ref().and_then(Turret::of),
         })
     }
 
@@ -1258,7 +1315,14 @@ fn stage(
     let mut job = SkinJob {
         header: [*palette_len, model.joints, 0, 0],
         poses: [[0; 4]; MAX_POSES],
+        mask: [[0; 4]; 2],
+        aim: [1.0, 0.0, 0.0, 0.0],
     };
+    if let (Some(turret), Some(aim)) = (model.turret, instance.aim) {
+        job.header[3] = 1;
+        job.mask = turret.mask;
+        job.aim = [aim.cos(), aim.sin(), turret.pivot[0], turret.pivot[1]];
+    }
     if model.animated {
         let used = usize::from(instance.pose_count).min(MAX_POSES);
         let total: f32 = instance.poses[..used]

@@ -13,13 +13,14 @@
       "accent": "#ffd9a0",
       "durationTicks": 16,
       "count": 6,
-      "size": 0.3,
+      "size": 0.08,
       "height": 0.0,
       "startTick": 0,
       "blend": "additive",
-      "intensity": 3.0,
+      "intensity": 5.0,
+      "core": 0.6,
       "texture": {
-        "asset": "asset.effects.holy-light-spark",
+        "asset": "asset.effects.beetles.spark",
         "role": "image",
         "index": 1
       },
@@ -27,7 +28,7 @@
         "mode": "burst",
         "lifetimeTicks": 14,
         "rate": 6,
-        "speed": 2.5,
+        "speed": 3,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
@@ -36,13 +37,14 @@
         },
         "coneDegrees": 25,
         "gravity": -4,
-        "drag": 0.4,
+        "drag": 0.7,
         "spawnRadius": 0.15,
-        "startSize": 0.3,
-        "endSize": 0.045,
+        "startSize": 0.08,
+        "endSize": 0.036000000000000004,
         "spin": 0,
         "fadeIn": 0.0,
-        "fadeOut": 0.5
+        "fadeOut": 0.55,
+        "stretch": 0.08
       }
     }
   ]

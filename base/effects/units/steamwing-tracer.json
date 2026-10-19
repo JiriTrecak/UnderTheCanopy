@@ -1,0 +1,64 @@
+{
+  "id": "effect.beetles.steamwing-tracer",
+  "name": "Steamwing beam",
+  "description": "A searing violet beam from the emitter to the target for an instant, and a hot tracer riding the bolt.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "halo",
+      "enabled": true,
+      "shape": "beam",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 4,
+      "count": 1,
+      "size": 0.9,
+      "height": 0.0,
+      "blend": "additive",
+      "spread": 0.12,
+      "intensity": 0.4
+    },
+    {
+      "id": "beam",
+      "enabled": true,
+      "shape": "beam",
+      "colour": "#b89cff",
+      "accent": "#ffffff",
+      "durationTicks": 4,
+      "count": 1,
+      "size": 0.22,
+      "height": 0.0,
+      "blend": "additive",
+      "spread": 0.08
+    },
+    {
+      "id": "tracer",
+      "enabled": true,
+      "shape": "missile",
+      "colour": "#c4a8ff",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 0.26,
+      "height": 0,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 5.0,
+      "core": 1.0,
+      "length": 8,
+      "trail": {
+        "durationTicks": 6,
+        "maxPoints": 12,
+        "width": 0.14,
+        "colour": "#8a5cff",
+        "opacity": 1.0,
+        "breakDistance": 6
+      }
+    }
+  ]
+}

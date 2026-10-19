@@ -230,10 +230,12 @@ fn model_blob() -> Vec<u8> {
                 Joint {
                     name: "base".into(),
                     parent: None,
+                    origin: [0.0; 3],
                 },
                 Joint {
                     name: "top".into(),
                     parent: Some(0),
+                    origin: [0.0, 1.0, 0.0],
                 },
             ],
         }),

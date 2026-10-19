@@ -42,6 +42,12 @@ pub mod kind {
     pub const SMOKE: u32 = 11;
     /// Dust of a melee hit (D46).
     pub const DUST: u32 = 12;
+    /// Falling rain shards: one part per drop.
+    pub const RAIN: u32 = 13;
+    /// Splash fragments where rain lands: `impact count` parts per drop.
+    pub const RAIN_SPLASH: u32 = 14;
+    /// The flash on the ground where a drop lands: one part per drop.
+    pub const RAIN_FLASH: u32 = 15;
 }
 
 /// Emitter flags (`ints[1]`), mirroring `F_*` in effects.wgsl.
@@ -74,9 +80,11 @@ pub struct Emitter {
     pub e2: [f32; 4],
     pub e3: [f32; 4],
     pub e4: [f32; 4],
+    /// Every kind: white-hot core (0–1), streak seconds along the velocity, 0, 0.
+    pub e5: [f32; 4],
 }
 
-const _: () = assert!(std::mem::size_of::<Emitter>() == 224);
+const _: () = assert!(std::mem::size_of::<Emitter>() == 240);
 
 /// A ribbon quad. Mirrors `Ribbon` in effects.wgsl.
 #[repr(C)]

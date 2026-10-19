@@ -9,9 +9,9 @@
 //! runtime from the cooked models.
 
 use canopy_assets::{
-    CookedAttachment, CookedCueMotion, CookedEffect, CookedEmitter, CookedFlipbook, CookedModel,
-    CookedPulse, CookedTrail, Easing, EffectBlend, EffectLayer, EffectTable, FlipbookPlay, Motion,
-    Primitive,
+    CookedAttachment, CookedCueMotion, CookedEffect, CookedEmitter, CookedFlipbook, CookedImpact,
+    CookedModel, CookedPulse, CookedRain, CookedTrail, Easing, EffectBlend, EffectLayer,
+    EffectTable, FlipbookPlay, Motion, Primitive,
 };
 use canopy_content::{
     assets::Manifest,
@@ -86,11 +86,12 @@ fn pulse(p: &fx::Pulse) -> CookedPulse {
 }
 
 /// The primitive and motion of an authored shape (old `EffectPlayer.makeParticle`: any
-/// textured layer facing the ground is a flat quad, untextured rings and glows lie flat,
-/// other untextured parts are soft spheres).
+/// textured layer facing the ground is a flat quad, untextured rings and glows lie flat
+/// unless turned to the camera, other untextured parts are soft spheres).
 pub fn classify(layer: &VisualLayer) -> (Primitive, Motion) {
     let textured = layer.texture.is_some();
     let ground = layer.orientation == Some(Orientation::Ground);
+    let camera = layer.orientation == Some(Orientation::Camera);
     let flat = |untextured_flat: bool| {
         if (textured && ground) || (!textured && untextured_flat) {
             Primitive::Decal
@@ -103,8 +104,10 @@ pub fn classify(layer: &VisualLayer) -> (Primitive, Motion) {
         Shape::Burst => (flat(false), Motion::Burst),
         Shape::Streaks => (flat(false), Motion::Streaks),
         Shape::Particles => (flat(false), Motion::Emitter),
-        Shape::Ring => (flat(true), Motion::Ring),
-        Shape::Glow => (flat(true), Motion::Glow),
+        // Untextured rings and glows lie flat unless explicitly turned to the camera (a
+        // glow in the air reads as a soft orb, not a floating disc).
+        Shape::Ring => (flat(!camera), Motion::Ring),
+        Shape::Glow => (flat(!camera), Motion::Glow),
         Shape::Pillar => (Primitive::Particle, Motion::Pillar),
         Shape::Missile if layer.model.is_some() => (Primitive::Mesh, Motion::Missile),
         Shape::Missile => (flat(false), Motion::Missile),
@@ -113,7 +116,7 @@ pub fn classify(layer: &VisualLayer) -> (Primitive, Motion) {
         Shape::Light => (Primitive::Light, Motion::Light),
         Shape::Sound => (Primitive::Sound, Motion::Sound),
         Shape::Beam => (Primitive::Particle, Motion::Beam),
-        Shape::Rain => (Primitive::Particle, Motion::Unsupported),
+        Shape::Rain => (Primitive::Particle, Motion::Rain),
     }
 }
 
@@ -126,12 +129,6 @@ fn layer(
 ) -> EffectLayer {
     let at = format!("{}/{}", effect.id.as_str(), l.id);
     let (primitive, motion) = classify(l);
-    if motion == Motion::Unsupported {
-        warnings.push(format!(
-            "{at}: {:?} layers are converted but not drawn yet (no shipped effect uses them)",
-            l.shape
-        ));
-    }
     let texture = l.texture.as_ref().and_then(|t| {
         let found = output(manifest, t.asset.as_str(), "image", t.index);
         if found.is_none() {
@@ -187,6 +184,7 @@ fn layer(
         size: l.size as f32,
         height: l.height as f32,
         intensity: l.intensity.map(|v| v as f32),
+        core: l.core.unwrap_or(0.0).clamp(0.0, 1.0) as f32,
         spread: l.spread.map(|v| v as f32),
         length: l.length.map(|v| v as f32),
         arc_height: l.arc_height.unwrap_or(0.0) as f32,
@@ -243,6 +241,7 @@ fn layer(
                 spin: e.spin as f32,
                 fade_in: e.fade_in as f32,
                 fade_out: e.fade_out as f32,
+                stretch: e.stretch.unwrap_or(0.0).max(0.0) as f32,
             }
         }),
         cue_motion: l.motion.as_ref().map(|m| CookedCueMotion {
@@ -266,6 +265,38 @@ fn layer(
             color: linear(&t.colour),
             opacity: t.opacity as f32,
             break_distance: t.break_distance as f32,
+        }),
+        rain: (l.shape == Shape::Rain).then(|| rain(l)),
+    }
+}
+
+/// How a rain layer falls (old `fallDirection`: the fall leans `fallAngleDegrees` from
+/// vertical towards `fallAzimuthDegrees`).
+fn rain(l: &VisualLayer) -> CookedRain {
+    let angle = l
+        .fall_angle_degrees
+        .unwrap_or(0.0)
+        .clamp(0.0, 89.0)
+        .to_radians();
+    let azimuth = l.fall_azimuth_degrees.unwrap_or(0.0).to_radians();
+    let back = [
+        azimuth.cos() * angle.tan(),
+        1.0,
+        azimuth.sin() * angle.tan(),
+    ];
+    let n = (back[0] * back[0] + back[1] * back[1] + back[2] * back[2]).sqrt();
+    CookedRain {
+        speed: l.fall_speed.unwrap_or(1.0).max(0.05) as f32,
+        launch_delay: (l.launch_delay_ms.unwrap_or(0.0).max(0.0) / 1000.0) as f32,
+        back: back.map(|v| (v / n) as f32),
+        impact: l.impact.as_ref().map(|i| CookedImpact {
+            duration: seconds(i.duration_ticks.max(1)),
+            count: i.count,
+            size: i.size as f32,
+            spread: i.spread as f32,
+            height: i.height as f32,
+            color: linear(&i.colour),
+            accent: linear(&i.accent),
         }),
     }
 }
@@ -353,17 +384,14 @@ mod tests {
             "gravity": -1, "drag": 2, "spawnRadius": 0.5, "startSize": 0.2, "endSize": 0,
             "spin": 1, "fadeIn": 0.1, "fadeOut": 0.5
         });
+        let mut rain = base("rain");
+        rain["fallSpeed"] = json!(2.0);
+        rain["fallAngleDegrees"] = json!(45.0);
+        rain["texture"] = json!({"asset": "asset.test.image", "role": "image", "index": 1});
         let mut off = base("ring");
         off["id"] = json!("off");
         off["enabled"] = json!(false);
-        let layers = json!([
-            base("ring"),
-            base("burst"),
-            ground,
-            emitter,
-            base("rain"),
-            off
-        ]);
+        let layers = json!([base("ring"), base("burst"), ground, emitter, rain, off]);
         let manifest: Manifest =
             serde_json::from_value(json!({"version": 1, "records": []})).unwrap();
         let converted = convert(&[effect(layers)], &manifest);
@@ -388,7 +416,15 @@ mod tests {
         assert!(!emitter.burst && (emitter.lifetime - 0.75).abs() < 1e-6);
         assert_eq!(emitter.direction, [0.0, 1.0, 0.0]);
         assert!((emitter.cone - std::f32::consts::FRAC_PI_2).abs() < 1e-6);
-        assert_eq!(e.layers[4].motion, Motion::Unsupported);
+        let rain = &e.layers[4];
+        assert_eq!(rain.motion, Motion::Rain);
+        let fall = rain.rain.as_ref().unwrap();
+        assert!((fall.speed - 2.0).abs() < 1e-6);
+        assert!(
+            (fall.back[0] - std::f32::consts::FRAC_1_SQRT_2).abs() < 1e-5,
+            "{fall:?}"
+        );
+        // Two missing images (the decal and the rain).
         assert_eq!(converted.warnings.len(), 2, "{:?}", converted.warnings);
     }
 
