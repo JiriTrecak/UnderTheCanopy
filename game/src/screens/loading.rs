@@ -103,6 +103,7 @@ fn dev(
             biome: spec.biome.as_deref(),
             crowd: spec.crowd,
             gallery: false,
+            only: None,
             colors: spec.colors.clone(),
             races: spec.races.clone(),
             human: spec.human,
