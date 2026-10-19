@@ -61,13 +61,13 @@
         "role": "image",
         "index": 1
       },
-      "intensity": 3.0,
+      "intensity": 4.0,
       "trail": {
         "durationTicks": 8,
         "maxPoints": 12,
         "width": 0.12,
-        "colour": "#dde6ff",
-        "opacity": 0.85,
+        "colour": "#7f9bff",
+        "opacity": 0.95,
         "breakDistance": 6
       }
     }

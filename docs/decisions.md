@@ -646,3 +646,15 @@ Jiri asked for icons for everything with one identity driving them. Every icon (
 - **256 × 256 PNG** (was 128): at 1080p a command button shows 48 px, HiDPI doubles it, and the hero bar and mission portraits are larger.
 - **Portraits get a 0.85 gamma lift** at install, building portraits a 5 % crop of empty margins: black chitin on the HUD's near-black slots sank at 48 px.
 - **Replaced in place where an id existed**, so references keep working; new ids follow `asset.portraits.units.<race>-<unit>`, `asset.portraits.buildings.<race>-<building>`, `asset.icons.ability-<race>-<caster>-<ability>` and `asset.icons.research-<race>-<research>`. The tool is `tools/icons/icons.py`; each icon keeps its request in `generation.json`.
+
+## D68. The beetle roster's open calls (2026-10-19, Claude while Jiri was away — review: felt)
+
+Choices made while building the race from [beetles](beetles.md):
+- **Specialist Training**: Adept unlocks each specialist's second ability (Static Field, Field Repair, Bulwark Pulse); Master raises every specialist ability to its second rank and needs the Elder Bastion.
+- **Levelled forge research**: Weapon Edges and Bolt Calibre +12 % attack damage per level, Plating +2 armour per level for all troops and machines; level II needs level I and the Great Bastion, level III level II and the Elder Bastion. Research may now require research.
+- **Towers fight through their own crew** (`garrison.crew`) instead of a building weapon: the Hornwatch's gunner and the Arc Tower's coil are units standing in the lookout, so towers reuse unit combat, research and effects; the Hornwatch gunner (24 damage, ground and air) outclasses an ant tower's archer.
+- **The Warden's pane stops missiles and shells from the front**, not spells: it counters archers, bolts and bombardiers, never magic.
+- **Lock Shields roots** the Shieldbearer (a mode, as the spec says); the computer lowers it again once no enemy is near.
+- **The Elder Bastion needs an Engine Yard**; the Juggernaut is one at a time (`maxOwned`).
+- **The Hornbreaker keeps his kit** with numbers raised: Steadfast also gives 1/2/3 armour, Horn Rush stuns 1/1.5/2 s.
+- **Balance**: beetle troops are slow (speed 10, ants 12), cost 2–3 supply and more amber, and are about 2.3× an ant soldier's health; tier 2 and the machines cost Substance. Measured with `ai_duels` on Echo Isles and Amberleaf Crossing (6 seeds, both seats): beetles beat ants 13 of 24 (ants 9, 2 at the hour cap); beetles as player 1 won 12 of 12 and as player 2 1 of 12, a seat bias the mixed matchups show and the ant mirror much less. The computer's macro (placement in the network, research pacing, wells) changed for this; see the commit notes.
