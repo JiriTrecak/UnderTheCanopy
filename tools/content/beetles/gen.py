@@ -11,8 +11,8 @@ import json
 
 S = 40  # ticks per second
 import os
-HP_SCALE = float(os.environ.get('HP_SCALE', '1.15'))
-DMG_SCALE = float(os.environ.get('DMG_SCALE', '1.15'))
+HP_SCALE = float(os.environ.get('HP_SCALE', '1.2'))
+DMG_SCALE = float(os.environ.get('DMG_SCALE', '1.2'))
 COST_SCALE = float(os.environ.get('COST_SCALE', '1'))
 HEROES = ('hornbreaker', 'forgemaster', 'coilkeeper')
 

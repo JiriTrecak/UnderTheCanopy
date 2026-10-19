@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.beetles-bolter",
   "selectionClass": "army",
   "body": {
-    "maxHp": 480,
+    "maxHp": 500,
     "armor": 0,
     "armorType": "light"
   },

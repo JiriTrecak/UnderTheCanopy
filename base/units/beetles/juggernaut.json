@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.beetles-juggernaut",
   "selectionClass": "army",
   "body": {
-    "maxHp": 3450,
+    "maxHp": 3600,
     "armor": 6,
     "armorType": "heavy"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 71,
+      "damage": 74,
       "damageType": "siege",
       "range": 22,
       "cooldownTicks": 96,

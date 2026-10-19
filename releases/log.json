@@ -35,7 +35,8 @@
       "The Hornwatch turns its turret to face its target, and the Hornwatch and Arc Tower flash and discharge on every shot",
       "Computer opponents search the map with their whole army for the last enemy buildings, so a won match ends",
       "Computer opponents add production when goods pile up, learn every hero ability before raising ranks, learn and cast ultimates first, and keep buffs and shields for fights",
-      "Beetles build up more slowly: their troops and machines train longer, the Great and Elder Bastion, Alembic and Engine Yard cost more, and their troops have a little less health and damage"
+      "Beetles build up more slowly: their troops and machines train longer, the Great and Elder Bastion, Alembic and Engine Yard cost more, and their troops have a little less health and damage",
+      "Beetle troops are a little sturdier and hit a little harder, so beetles hold their own against ants"
     ],
     "fixed": [
       "Sparks and shrapnel from spells and weapons fall instead of flying up, and steam rises",

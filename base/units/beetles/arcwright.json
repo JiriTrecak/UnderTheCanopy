@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.beetles-arcwright",
   "selectionClass": "army",
   "body": {
-    "maxHp": 460,
+    "maxHp": 480,
     "armor": 1,
     "armorType": "light"
   },

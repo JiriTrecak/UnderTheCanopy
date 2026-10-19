@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.beetles-mender",
   "selectionClass": "army",
   "body": {
-    "maxHp": 510,
+    "maxHp": 530,
     "armor": 1,
     "armorType": "light"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 9,
+      "damage": 10,
       "damageType": "piercing",
       "range": 14,
       "cooldownTicks": 60,

@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.beetles-breacher",
   "selectionClass": "army",
   "body": {
-    "maxHp": 870,
+    "maxHp": 910,
     "armor": 3,
     "armorType": "heavy"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 32,
+      "damage": 34,
       "damageType": "siege",
       "range": 0.8,
       "cooldownTicks": 72,

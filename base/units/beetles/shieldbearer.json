@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.beetles-shieldbearer",
   "selectionClass": "army",
   "body": {
-    "maxHp": 600,
+    "maxHp": 620,
     "armor": 2,
     "armorType": "heavy"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 17,
+      "damage": 18,
       "damageType": "melee",
       "range": 0.6,
       "cooldownTicks": 60,

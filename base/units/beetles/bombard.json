@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.beetles-bombard",
   "selectionClass": "army",
   "body": {
-    "maxHp": 740,
+    "maxHp": 770,
     "armor": 2,
     "armorType": "heavy"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 64,
+      "damage": 67,
       "damageType": "siege",
       "range": 30,
       "cooldownTicks": 140,

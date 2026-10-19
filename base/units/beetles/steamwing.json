@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.beetles-steamwing",
   "selectionClass": "army",
   "body": {
-    "maxHp": 480,
+    "maxHp": 500,
     "armor": 1,
     "armorType": "light"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 16,
+      "damage": 17,
       "damageType": "piercing",
       "range": 12,
       "cooldownTicks": 48,
