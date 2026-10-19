@@ -8,14 +8,93 @@
     {
       "id": "wave",
       "enabled": true,
-      "shape": "ring",
+      "shape": "billboard",
       "colour": "#c9b8ff",
       "accent": "#ffffff",
-      "durationTicks": 16,
+      "durationTicks": 14,
       "count": 1,
-      "size": 4.5,
-      "height": 0.4,
-      "blend": "additive"
+      "size": 5.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.6,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 28,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "glint",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#8f66ff",
+      "accent": "#ffffff",
+      "durationTicks": 6,
+      "count": 1,
+      "size": 3.0,
+      "height": 1.4,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.6,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "sparks",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#8f66ff",
+      "accent": "#b49cff",
+      "durationTicks": 14,
+      "count": 12,
+      "size": 0.06,
+      "height": 1.2,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 5.0,
+      "core": 0.35,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 12,
+        "rate": 12,
+        "speed": 6,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 140,
+        "gravity": 4,
+        "drag": 0.7,
+        "spawnRadius": 0.15,
+        "startSize": 0.06,
+        "endSize": 0.027,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55,
+        "stretch": 0.05
+      }
     },
     {
       "id": "flash",
@@ -29,46 +108,6 @@
       "height": 1.2,
       "intensity": 7.0,
       "startTick": 0
-    },
-    {
-      "id": "sparks",
-      "enabled": true,
-      "shape": "particles",
-      "colour": "#9a78ff",
-      "accent": "#efe8ff",
-      "durationTicks": 16,
-      "count": 12,
-      "size": 0.2,
-      "height": 1.2,
-      "startTick": 0,
-      "blend": "additive",
-      "intensity": 3.0,
-      "texture": {
-        "asset": "asset.effects.holy-light-spark",
-        "role": "image",
-        "index": 1
-      },
-      "emitter": {
-        "mode": "burst",
-        "lifetimeTicks": 14,
-        "rate": 12,
-        "speed": 4,
-        "speedVariation": 0.5,
-        "direction": {
-          "x": 0,
-          "y": 1,
-          "z": 0
-        },
-        "coneDegrees": 80,
-        "gravity": 14.0,
-        "drag": 0.4,
-        "spawnRadius": 0.15,
-        "startSize": 0.2,
-        "endSize": 0.03,
-        "spin": 0,
-        "fadeIn": 0.0,
-        "fadeOut": 0.5
-      }
     }
   ]
 }

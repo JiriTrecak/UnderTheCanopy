@@ -78,8 +78,9 @@ pub enum Motion {
     Model,
     Light,
     Sound,
-    /// Shapes no shipped effect uses (rain): converted, not drawn yet.
-    Unsupported,
+    /// Shards (or models) falling from `height` onto points spread over a disc, each
+    /// splashing on landing (`EffectLayer::rain`).
+    Rain,
     /// A crackling line from the origin to the target: ribbon segments that jitter
     /// sideways by `spread` and redraw fifteen times a second.
     Beam,
@@ -136,6 +137,7 @@ pub struct CookedEmitter {
     pub direction: [f32; 3],
     /// Half-angle of the cone, radians.
     pub cone: f32,
+    /// Downward acceleration, metres per second squared (negative lifts).
     pub gravity: f32,
     pub drag: f32,
     pub spawn_radius: f32,
@@ -145,6 +147,33 @@ pub struct CookedEmitter {
     pub spin: f32,
     pub fade_in: f32,
     pub fade_out: f32,
+    /// Seconds of motion each particle spans: a streak along its velocity (0: round).
+    pub stretch: f32,
+}
+
+/// Splashes where a rain drop lands.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CookedImpact {
+    /// Seconds.
+    pub duration: f32,
+    pub count: u32,
+    pub size: f32,
+    pub spread: f32,
+    pub height: f32,
+    pub color: [f32; 3],
+    pub accent: [f32; 3],
+}
+
+/// How a rain layer's drops fall.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CookedRain {
+    /// Fall speed multiplier: the fall lasts the layer's duration divided by it.
+    pub speed: f32,
+    /// Most seconds a drop may launch late.
+    pub launch_delay: f32,
+    /// Unit vector from a drop's landing point back up its path.
+    pub back: [f32; 3],
+    pub impact: Option<CookedImpact>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -232,6 +261,8 @@ pub struct EffectLayer {
     pub height: f32,
     /// Opacity (or light intensity) multiplier; `None` uses the shape's default.
     pub intensity: Option<f32>,
+    /// How much the bright centre of each sprite burns white (0–1).
+    pub core: f32,
     pub spread: Option<f32>,
     pub length: Option<f32>,
     pub arc_height: f32,
@@ -248,4 +279,5 @@ pub struct EffectLayer {
     pub emitter: Option<CookedEmitter>,
     pub cue_motion: Option<CookedCueMotion>,
     pub trail: Option<CookedTrail>,
+    pub rain: Option<CookedRain>,
 }

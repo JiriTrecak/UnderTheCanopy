@@ -1,86 +1,164 @@
 {
   "id": "effect.coilkeeper.overload",
   "name": "Overload",
-  "description": "The target's mana caves in, then detonates in a violet blast.",
+  "description": "The target's mana caves in, then detonates in a violet blast: a collapsing ring, a white-violet star, a shock ring and a storm of hot streaks.",
   "durationTicks": 36,
   "loop": false,
   "layers": [
     {
       "id": "implode",
       "enabled": true,
+      "shape": "billboard",
+      "colour": "#c9b8ff",
+      "accent": "#ffffff",
+      "durationTicks": 8,
+      "count": 1,
+      "size": 4.0,
+      "height": 0.12,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.8,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 16,
+          "min": 0.12,
+          "max": 1.0,
+          "easing": "sine",
+          "phase": 0.5
+        }
+      }
+    },
+    {
+      "id": "gather",
+      "enabled": true,
       "shape": "glow",
       "colour": "#8a5cff",
       "accent": "#c9b8ff",
-      "durationTicks": 10,
+      "durationTicks": 8,
       "count": 1,
-      "size": 2.6,
+      "size": 1.2,
       "height": 1.2,
-      "blend": "additive"
+      "startTick": 0,
+      "blend": "additive",
+      "orientation": "camera",
+      "intensity": 0.9,
+      "core": 0.8
     },
     {
       "id": "blast",
       "enabled": true,
-      "shape": "burst",
-      "colour": "#c9b8ff",
+      "shape": "billboard",
+      "colour": "#d8c8ff",
       "accent": "#ffffff",
-      "durationTicks": 12,
-      "count": 14,
-      "size": 3.0,
-      "height": 1.0,
+      "durationTicks": 8,
+      "count": 1,
+      "size": 5.5,
+      "height": 1.2,
+      "startTick": 6,
       "blend": "additive",
-      "startTick": 6
+      "intensity": 3.0,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "burst",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#8f66ff",
+      "accent": "#ffffff",
+      "durationTicks": 5,
+      "count": 1,
+      "size": 4.0,
+      "height": 1.2,
+      "startTick": 6,
+      "blend": "additive",
+      "intensity": 2.4,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.flash",
+        "role": "image",
+        "index": 1
+      }
     },
     {
       "id": "wave",
       "enabled": true,
-      "shape": "ring",
-      "colour": "#8a5cff",
-      "accent": "#c9b8ff",
+      "shape": "billboard",
+      "colour": "#c9b8ff",
+      "accent": "#ffffff",
       "durationTicks": 16,
       "count": 1,
-      "size": 4.5,
-      "height": 0.06,
+      "size": 9.0,
+      "height": 0.1,
+      "startTick": 6,
+      "orientation": "ground",
       "blend": "additive",
-      "startTick": 6
+      "intensity": 2.0,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 32,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
     },
     {
       "id": "sparks",
       "enabled": true,
       "shape": "particles",
-      "colour": "#9a78ff",
-      "accent": "#efe8ff",
-      "durationTicks": 22,
-      "count": 30,
-      "size": 0.3,
+      "colour": "#8f66ff",
+      "accent": "#b49cff",
+      "durationTicks": 20,
+      "count": 40,
+      "size": 0.08,
       "height": 1.0,
       "startTick": 6,
       "blend": "additive",
-      "intensity": 3.0,
+      "intensity": 4.5,
+      "core": 0.35,
       "texture": {
-        "asset": "asset.effects.holy-light-spark",
+        "asset": "asset.effects.beetles.spark",
         "role": "image",
         "index": 1
       },
       "emitter": {
         "mode": "burst",
-        "lifetimeTicks": 20,
-        "rate": 30,
-        "speed": 10,
+        "lifetimeTicks": 18,
+        "rate": 40,
+        "speed": 15,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
           "y": 1,
           "z": 0
         },
-        "coneDegrees": 120,
-        "gravity": 14.0,
-        "drag": 0.4,
+        "coneDegrees": 180,
+        "gravity": 6,
+        "drag": 0.7,
         "spawnRadius": 0.15,
-        "startSize": 0.3,
-        "endSize": 0.045,
+        "startSize": 0.08,
+        "endSize": 0.036000000000000004,
         "spin": 0,
         "fadeIn": 0.0,
-        "fadeOut": 0.5
+        "fadeOut": 0.55,
+        "stretch": 0.05
       }
     },
     {

@@ -32,7 +32,7 @@ UNIT_ART = {
     'forgemaster': ('asset.models.units.beetles-forgemaster', 'asset.portraits.units.beetles-forgemaster'),
     'coilkeeper': ('asset.models.units.beetles-coilkeeper', 'asset.portraits.units.beetles-coilkeeper'),
     # Stand-ins: no model of their own yet.
-    'bolt-turret': ('asset.models.buildings.beetles-hornwatch', 'asset.portraits.buildings.beetles-hornwatch'),
+    'bolt-turret': ('asset.models.units.beetles-bolt-turret', 'asset.portraits.buildings.beetles-hornwatch'),
     'hornwatch-gunner': ('asset.models.units.beetles-bolter', 'asset.portraits.units.beetles-bolter'),
     'arc-coil': ('asset.models.units.beetles-arcwright', 'asset.portraits.units.beetles-arcwright'),
 }
@@ -47,22 +47,22 @@ BUILDING_ART = {
     'engine-yard': ('asset.models.buildings.beetles-engine-yard', 'asset.portraits.buildings.beetles-engine-yard', 1.0),
     'hornwatch': ('asset.models.buildings.beetles-hornwatch', 'asset.portraits.buildings.beetles-hornwatch', 1.0),
     # Stand-in: the Hornwatch until the Arc Tower has its own model.
-    'arc-tower': ('asset.models.buildings.beetles-hornwatch', 'asset.portraits.buildings.beetles-hornwatch', 1.08),
+    'arc-tower': ('asset.models.buildings.beetles-arc-tower', 'asset.portraits.buildings.beetles-hornwatch', 1.0),
     'ancestor-shrine': ('asset.models.buildings.beetles-ancestor-shrine', 'asset.portraits.buildings.beetles-ancestor-shrine', 1.0),
 }
 ICON = {
     'lock-shields': 'asset.icons.ability-beetles-shieldbearer-lock-shields',
-    'armor-breaker': 'asset.icons.ability-beetles-breacher-charge',
+    'armor-breaker': 'asset.icons.ability-beetles-breacher-armor-breaker',
     'arc-surge': 'asset.icons.ability-beetles-arcwright-arc',
-    'static-field': 'asset.icons.spell-entangling-roots',
+    'static-field': 'asset.icons.ability-beetles-arcwright-static-field',
     'mend': 'asset.icons.ability-beetles-mender-patch',
     'field-repair': 'asset.icons.ability-beetles-mender-repair',
-    'patch-up': 'asset.icons.ability-beetles-mender-repair',
+    'patch-up': 'asset.icons.ability-beetles-tinker-patch-up',
     'barrier-field': 'asset.icons.ability-beetles-warden-field',
-    'bulwark-pulse': 'asset.icons.ability-ants-marshal-carapace',
-    'flak-beam': 'asset.icons.item-tempest-antennae',
-    'broadside': 'asset.icons.ability-ants-marshal-crownfall',
-    'furnace-plating': 'asset.icons.item-barkguard',
+    'bulwark-pulse': 'asset.icons.ability-beetles-warden-bulwark-pulse',
+    'flak-beam': 'asset.icons.ability-beetles-steamwing-flak-beam',
+    'broadside': 'asset.icons.ability-beetles-juggernaut-broadside',
+    'furnace-plating': 'asset.icons.ability-beetles-juggernaut-furnace-plating',
     'bolt-turret': 'asset.icons.ability-beetles-forgemaster-bolt-turret',
     'overclock': 'asset.icons.ability-beetles-forgemaster-overclock',
     'field-forge': 'asset.icons.ability-beetles-forgemaster-field-forge',
@@ -73,16 +73,17 @@ ICON = {
     'unbottled': 'asset.icons.ability-beetles-coilkeeper-unbottled',
 }
 RESEARCH_ICON = {
-    'weapon-edges': 'asset.icons.research-ants-driving-spear',
-    'bolt-calibre': 'asset.icons.research-ants-broadheads',
-    'plating': 'asset.icons.research-ants-reinforced-carapace',
+    # Levelled research: one icon per level, plain iron (I), brass (II), substance glass (III).
+    'weapon-edges': [f'asset.icons.research-beetles-weapon-edges-{n}' for n in (1, 2, 3)],
+    'bolt-calibre': [f'asset.icons.research-beetles-bolt-calibre-{n}' for n in (1, 2, 3)],
+    'plating': [f'asset.icons.research-beetles-plating-{n}' for n in (1, 2, 3)],
     'interlocking-shields': 'asset.icons.research-beetles-interlocking-shields',
     'drum-magazines': 'asset.icons.research-beetles-drum-magazines',
     'heavy-pistons': 'asset.icons.research-beetles-heavy-pistons',
     'adept': 'asset.icons.research-beetles-specialist-training-adept',
     'master': 'asset.icons.research-beetles-specialist-training-master',
     'fragmentation-shells': 'asset.icons.research-beetles-fragmentation-shells',
-    'riveted-hulls': 'asset.icons.research-ants-campaign-harness',
+    'riveted-hulls': [f'asset.icons.research-beetles-riveted-hulls-{n}' for n in (1, 2)],
     'afterburners': 'asset.icons.research-beetles-afterburners',
     'pressure-mains': 'asset.icons.research-beetles-pressure-mains',
 }
@@ -517,7 +518,10 @@ BUILDING_FX = {
         }
     ]
 }
-BUILDING_FX['arc-tower'] = BUILDING_FX['hornwatch']
+BUILDING_FX['arc-tower'] = [
+    {'effect': 'effect.buildings.arc-tower-coil', 'state': 'attack', 'socket': 'socket_coil'},
+    {'effect': 'effect.buildings.arc-tower-discharge', 'event': 'fire', 'socket': 'socket_muzzle'},
+]
 
 HALL = 'building.beetles.bastion'
 T2 = 'building.beetles.great-bastion'
@@ -938,7 +942,7 @@ def write_units(W, fx_):
                     charge={'minRange': 10, 'maxRange': 28, 'cooldownTicks': 400, 'durationTicks': 100,
                             'speedPermille': 1900, 'damagePermille': 1500}),
              10, train(235, 25, 22), 3, (2.0, 5.6, 4.4), 2.9, level=2, requires=[T2],
-             abilities=caster(10, 0, [binding('armor-breaker', 'ability.beetles.armor-breaker', 1, None, None,
+             abilities=caster(10, 0, [binding('armor-breaker', 'ability.beetles.armor-breaker', 1, 'Q', 1,
                                               controls=('player', 'ai', 'scenario'))]),
              presentation={'impactEffect': W['drill'], 'cameraAnchor': {'height': 1.6, 'forward': 0.2, 'distance': 7}}))
 
@@ -982,7 +986,7 @@ def write_units(W, fx_):
                     shell={'flightTicks': 46, 'radius': 2.5, 'slowPermille': 0, 'slowTicks': 0}),
              8, train(260, 40, 25), 3, (2.2, 7.0, 5.0), 1.4, level=2, requires=[T2], nature='mechanical',
              presentation={'projectile': 'effect.units.bombard-shell', 'projectileSocket': 'socket_muzzle',
-                           'impactEffect': 'effect.units.bombard-impact',
+                           'launchEffect': 'effect.units.bombard-trail', 'impactEffect': 'effect.units.bombard-impact',
                            'effects': [{'effect': 'effect.units.bombard-launch', 'event': 'release',
                                         'socket': 'socket_muzzle'}]}))
 
@@ -992,8 +996,9 @@ def write_units(W, fx_):
              weapon(14, 'piercing', 12, 48, 22, 10, 10, 0.75, projectile={'speed': 70}, targets=['ground', 'air']),
              16, train(215, 30, 22), 3, (2.2, 5.5, 5.5), 2.2, level=2, requires=[T2], nature='mechanical',
              movement_extra={'locomotion': 'air', 'flightHeight': 7},
-             abilities=caster(10, 0, [binding('flak-beam', 'ability.beetles.flak-beam', 1, None, None)]),
+             abilities=caster(10, 0, [binding('flak-beam', 'ability.beetles.flak-beam', 1, 'Q', 1)]),
              presentation={'projectile': 'effect.beetles.steamwing-bolt', 'projectileSocket': 'socket_projectile',
+                           'launchEffect': 'effect.beetles.steamwing-tracer',
                            'impactEffect': 'effect.beetles.steamwing-impact',
                            'effects': [{'effect': 'effect.beetles.steamwing-muzzle', 'event': 'release', 'socket': 'socket_projectile'},
                                        {'effect': 'effect.beetles.steamwing-exhaust', 'state': 'walk', 'socket': 'socket_exhaust_b'},
@@ -1008,8 +1013,9 @@ def write_units(W, fx_):
              max_owned=1,
              abilities=caster(160, 0.8, [
                  binding('broadside', 'ability.beetles.broadside', 1, 'Q', 1, interval=40),
-                 binding('furnace-plating', 'ability.beetles.furnace-plating', 1, None, None)]),
+                 binding('furnace-plating', 'ability.beetles.furnace-plating', 1, 'W', 2)]),
              presentation={'projectile': 'effect.units.juggernaut-shell', 'projectileSocket': 'socket_projectile',
+                           'launchEffect': 'effect.units.juggernaut-trail',
                            'impactEffect': 'effect.units.juggernaut-impact',
                            'effects': [{'effect': 'effect.units.juggernaut-muzzle', 'event': 'release', 'socket': 'socket_muzzle_l'},
                                        {'effect': 'effect.units.juggernaut-muzzle', 'event': 'release', 'socket': 'socket_muzzle_r'},
@@ -1023,12 +1029,13 @@ def write_units(W, fx_):
 
     # Summons and crews: no supply, no player control.
     turret_body = (1.5, 4.6, 3.4)
-    for name, title, hp, dmg in (('bolt-turret', 'Bolt Turret', 320, 16), ('bolt-turret-mk2', 'Bolt Turret Mk II', 420, 22)):
+    for name, title, hp, dmg, scale in (('bolt-turret', 'Bolt Turret', 320, 16, 2.4),
+                                        ('bolt-turret-mk2', 'Bolt Turret Mk II', 420, 22, 2.75)):
         d = unit('bolt-turret', title,
                  'A brass repeater turret deployed by the Forgemaster. Shoots ground and air units; it runs down after 40 seconds.',
                  body(hp, 3, 'heavy'),
                  weapon(dmg, 'piercing', 16, 36, 18, 8, 8, 0.75, projectile={'speed': 44}, targets=['ground', 'air']),
-                 None, None, 0, turret_body, 0.5, nature='mechanical', sets=(), selection=None, vision=24,
+                 None, None, 0, turret_body, scale, nature='mechanical', sets=(), selection=None, vision=24,
                  presentation=bolter_fx)
         d['id'] = u(name)
         put(d)
@@ -1265,7 +1272,7 @@ def write_research():
             gate = {None: '', T2: ' Requires a Great Bastion.', T3: ' Requires an Elder Bastion.'}[hall]
             requires = [x for x in (hall, prev) if x]
             name = f'{key}-{i + 1}'
-            rid = put(name, name, f'{label} {roman}', f'{what} (level {roman}; levels add up).{gate}', icon,
+            rid = put(name, name, f'{label} {roman}', f'{what} (level {roman}; levels add up).{gate}', icon[i],
                       prio - i, cost(amber, substance), seconds, [dict({'units': units}, **effect_of())],
                       requires=requires or None)
             forge.append(rid)
@@ -1304,10 +1311,10 @@ def write_research():
                            {'units': [u('juggernaut')], 'maxHp': 450}]
     put('riveted-hulls-1', 'riveted-hulls-1', 'Riveted Hulls I',
         'Machines gain health: Bombards +100, Steamwings +80, the Juggernaut +450.',
-        RESEARCH_ICON['riveted-hulls'], 70, cost(150, 30), 45, machines_hp())
+        RESEARCH_ICON['riveted-hulls'][0], 70, cost(150, 30), 45, machines_hp())
     put('riveted-hulls-2', 'riveted-hulls-2', 'Riveted Hulls II',
         'Machines gain the same again: Bombards +100, Steamwings +80, the Juggernaut +450. Requires an Elder Bastion.',
-        RESEARCH_ICON['riveted-hulls'], 69, cost(225, 75), 60, machines_hp(),
+        RESEARCH_ICON['riveted-hulls'][1], 69, cost(225, 75), 60, machines_hp(),
         requires=[T3, r('riveted-hulls-1')])
     put('afterburners', 'afterburners', 'Afterburners', 'Steamwings fly 30% faster.',
         RESEARCH_ICON['afterburners'], 60, cost(150, 30), 40,

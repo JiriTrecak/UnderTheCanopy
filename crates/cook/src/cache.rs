@@ -21,7 +21,7 @@ use std::{
 };
 
 /// Bump whenever cooked output for the same input changes.
-pub const COOK_VERSION: u32 = 3;
+pub const COOK_VERSION: u32 = 4;
 
 const LFS_POINTER: &[u8] = b"version https://git-lfs.github.com/spec/";
 

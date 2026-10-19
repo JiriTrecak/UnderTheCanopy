@@ -90,6 +90,15 @@ pub fn interpolate(
         let previous = older
             .get(j)
             .filter(|p| p.key == actor.key && p.model == actor.model && !actor.snap);
+        let aim = match (previous.and_then(|p| p.aim), actor.aim) {
+            (Some(from), Some(to)) => {
+                // The shorter way round.
+                let turn = (to - from + std::f32::consts::PI).rem_euclid(std::f32::consts::TAU)
+                    - std::f32::consts::PI;
+                Some(from + turn * t)
+            }
+            (_, aim) => aim,
+        };
         let (position, rotation, scale, opacity, poses) = match previous {
             Some(p) => {
                 let mut ra = p.rotation;
@@ -128,6 +137,7 @@ pub fn interpolate(
             tint: canopy_render::actors::NO_TINT,
             shadow_only: false,
             activity: actor.activity,
+            aim,
         });
     }
 }
@@ -171,6 +181,7 @@ mod tests {
             body: None,
             walker: None,
             activity: 0.0,
+            aim: None,
         };
         a.poses.loops[0] = 1.0;
         a

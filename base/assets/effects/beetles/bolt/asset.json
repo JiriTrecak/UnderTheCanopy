@@ -1,0 +1,28 @@
+{
+  "id": "asset.models.effects.beetles-bolt",
+  "name": "Repeater bolt",
+  "kind": "prop",
+  "tags": [
+    "effect",
+    "beetles",
+    "projectile"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "license": "Original procedural effect art for Under the Canopy (tools/content/beetles/gen_art.py). A brass repeater bolt with a substance head."
+}

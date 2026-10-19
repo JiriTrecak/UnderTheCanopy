@@ -67,6 +67,7 @@
   "presentation": {
     "projectile": "effect.units.bombard-shell",
     "projectileSocket": "socket_muzzle",
+    "launchEffect": "effect.units.bombard-trail",
     "impactEffect": "effect.units.bombard-impact",
     "effects": [
       {

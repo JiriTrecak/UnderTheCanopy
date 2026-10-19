@@ -81,18 +81,18 @@ One file each, `effects/<free folders>/<name>.json`, reusable by any number of a
 
 Required on every layer: `id` (unique in the effect), `shape`, `colour`, `accent` (`#rrggbb`), `durationTicks` (positive, to 400), `count` (positive, to 128), `size` (0.01–20), `height` (0–30, offset above the anchor; actor and flight heights are added by the runtime).
 
-Optional: `name`, `enabled` (true), `sustain` (false; keep alive until the owner ends), `startTick` (0, delay), `anchor` (`target` default, or `source`), `offset {x,y,z}`, `blend` (`additive`|`normal`), `orientation` (`camera`|`ground`), `follow` (track the anchored actor; beams track both actors), `intensity`, `spread`, `length`, `distribution` (`point`|`disc`), `motion`, `attachment`, `texture`, `flipbook`, plus shape-specific fields below.
+Optional: `name`, `enabled` (true), `sustain` (false; keep alive until the owner ends), `startTick` (0, delay), `anchor` (`target` default, or `source`), `offset {x,y,z}`, `blend` (`additive`|`normal`), `orientation` (`camera`|`ground`), `follow` (track the anchored actor; beams track both actors), `intensity`, `core` (0–1: the dense centre of each additive sprite burns white, so sparks read crisp with their colour at the fringe), `spread`, `length`, `distribution` (`point`|`disc`), `motion`, `attachment`, `texture`, `flipbook`, plus shape-specific fields below.
 
 | Shape | Use | Rules |
 |---|---|---|
-| `ring` | Ground ring; grows over a finite life (fixed size when sustained/`durationFrom`) | no texture |
-| `glow` | Soft light pool or orb | no texture |
+| `ring` | Ground ring; grows over a finite life (fixed size when sustained/`durationFrom`); `orientation: camera` stands it up facing the eye | no texture |
+| `glow` | Soft light pool on the ground; `orientation: camera` makes it an orb in the air (a glow at a socket otherwise reads as a floating disc) | no texture |
 | `pillar` | Vertical column; `height` is its height | no texture |
 | `burst` | Radial flash of `count` sprites | texture optional |
 | `billboard` | Textured sprite; `orientation: ground` for ground glyphs | texture required |
 | `streaks` | Textured streak sprites | texture required |
 | `light` | Point light; `size` = reach; at most 4 lights render at once | no texture |
-| `rain` | Falling shards over `spread`: `fallSpeed` 0.25–8, `launchDelayMs` 0–500, `fallAngleDegrees` 0–70, `fallAzimuthDegrees`, `impact {durationTicks, count, size, spread, height, colour, accent}` | texture required; fall/impact fields only here |
+| `rain` | `count` shards falling from `height` onto a golden-angle disc of radius `spread` over `durationTicks ÷ fallSpeed` (with `durationFrom` they land as the delivery ends): `fallSpeed` 0.25–8, `launchDelayMs` 0–500 (each drop up to this late), `fallAngleDegrees` 0–70, `fallAzimuthDegrees`, `length` (shard length × size, 1.8), `impact {durationTicks, count, size, spread, height, colour, accent}` (a flash and splash fragments where each lands). A `model` instead of a texture drops the model itself (a falling crucible) | texture or model required; fall/impact fields only here |
 | `missile` | Travels origin→point over its duration (use `durationFrom: delivery`); follows the authoritative delivery; `arcHeight`; may carry a `model` instead of a texture | `trail`, `arcHeight` |
 | `beam` | Line between origin and point; `follow: true` tracks both actors (omit for fixed chain-hop flashes) | no texture, no attachment |
 | `wavefront` | Travelling front for line deliveries | texture optional, `trail` |
@@ -100,7 +100,7 @@ Optional: `name`, `enabled` (true), `sustain` (false; keep alive until the owner
 | `sound` | Positional audio | `sound` required (and only here) |
 | `mesh` | A 3D model | `model` required |
 
-Cross-field rules (`effects/rules.rs`): `trail` only on missile/wavefront; `flipbook` needs a texture; `model` only on mesh or missile and never with `texture`; `arcHeight` only on missile; `attachment` not on rain/missile/beam/wavefront; `motion` only on ring/glow/billboard/light/mesh; textures only on burst/billboard/streaks/rain/missile/wavefront/particles; billboard/streaks/rain need one.
+Cross-field rules (`effects/rules.rs`): `trail` only on missile/wavefront; `flipbook` needs a texture; `model` only on mesh, missile or rain and never with `texture`; `arcHeight` only on missile; `attachment` not on rain/missile/beam/wavefront; `motion` only on ring/glow/billboard/light/mesh; textures only on burst/billboard/streaks/rain/missile/wavefront/particles; billboard/streaks need one, rain a texture or a model.
 
 ### Asset references
 
@@ -112,7 +112,7 @@ Layers name files of asset folders (`assets/…/<asset>/`) by `{asset, role, ind
 
 ### Other sub-objects
 
-- `emitter`: `{mode: burst|continuous, lifetimeTicks (positive), rate (≥1), speed, speedVariation 0–1, direction {x,y,z} each −1…1, coneDegrees 0–180, gravity −40…40, drag 0–10, spawnRadius 0–20, startSize, endSize, spin, fadeIn 0–1, fadeOut 0–1}`. All fields required.
+- `emitter`: `{mode: burst|continuous, lifetimeTicks (positive), rate (≥1), speed, speedVariation 0–1, direction {x,y,z} each −1…1, coneDegrees 0–180, gravity −40…40 (pulls down; negative lifts steam and embers), drag 0–10, spawnRadius 0–20, startSize, endSize, spin, fadeIn 0–1, fadeOut 0–1, stretch?}`. All fields but `stretch` required. `stretch` (0–1 s, optional) draws each particle along the last `stretch` seconds of its path: sparks become streaks along their velocity.
 - `motion`: `{rotation?: {periodTicks, direction: clockwise|counterclockwise, phaseDegrees?}, scale?: pulse, opacity?: pulse}`, pulse = `{periodTicks, min, max (≥ min; opacity ≤ 1), easing: sine|smoothstep|bounce, phase? 0–1}`. Periods positive. 320 ticks = 8 s.
 - `attachment`: `{socket, fallback: origin|hide, inheritRotation}`. Socket names come from the model's `asset.json` (`capabilities.sockets`); never guess bone names. `follow: true` tracks the animated socket; false captures its first pose.
 - `trail`: `{durationTicks (positive, to 80), maxPoints 2–64, width, colour, opacity 0–1, breakDistance}`. A soft ribbon behind a missile or wavefront, removed with its delivery.

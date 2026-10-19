@@ -598,8 +598,9 @@ pub struct StateEffect {
 impl StateEffect {
     /// A building's states (D65): `idle` while it rests (complete, nothing to do), `work`
     /// while it trains, researches, upgrades, revives or is gathered from, `spawn` once
-    /// per trained unit, `always` whenever it stands complete in sight.
-    pub const BUILDING_STATES: &[&str] = &["idle", "work", "spawn", "always"];
+    /// per trained unit, `attack` once per shot of a tower's crew, `always` whenever it
+    /// stands complete in sight.
+    pub const BUILDING_STATES: &[&str] = &["idle", "work", "spawn", "attack", "always"];
     /// A unit's states: its animation states, `move` (walking, running, carrying or
     /// charging), `cast` (any cast in progress) and `always` (while it is in sight).
     pub const UNIT_STATES: &[&str] = &[

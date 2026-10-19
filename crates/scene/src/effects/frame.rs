@@ -135,11 +135,7 @@ pub fn cue_time(table: &EffectTable, cue: &CueView, tick: f64) -> Option<CueTime
         elapsed
     };
     let persistent = layer.sustain || cue.status_lifetime;
-    let lifetime = cue.duration
-        + layer
-            .emitter
-            .as_ref()
-            .map_or(0.0, |e| seconds_ticks(e.lifetime));
+    let lifetime = cue.duration + tail_ticks(layer);
     if !persistent && !effect.looping && cue.flight.is_none() && elapsed >= lifetime {
         return None;
     }
@@ -154,6 +150,40 @@ pub fn cue_time(table: &EffectTable, cue: &CueView, tick: f64) -> Option<CueTime
         local: tick_seconds(local) as f32,
         persistent,
     })
+}
+
+/// Ticks a layer keeps showing after its duration: its particles' lifetime, or rain's
+/// late launches and splashes.
+pub fn tail_ticks(layer: &EffectLayer) -> f64 {
+    let emitter = layer
+        .emitter
+        .as_ref()
+        .map_or(0.0, |e| seconds_ticks(e.lifetime));
+    let rain = layer.rain.as_ref().map_or(0.0, |r| {
+        seconds_ticks(r.launch_delay) + r.impact.as_ref().map_or(0.0, |i| seconds_ticks(i.duration))
+    });
+    emitter + rain
+}
+
+/// Visual-only stable randomness, the same as `noise` in effects.wgsl.
+pub fn noise(seed: u32) -> f32 {
+    let mut n = seed;
+    n = (n ^ (n >> 16)).wrapping_mul(0x045d_9f3b);
+    n = (n ^ (n >> 16)).wrapping_mul(0x045d_9f3b);
+    n ^= n >> 16;
+    (n >> 8) as f32 / 16_777_216.0
+}
+
+/// Where rain drop `i` of `count` lands relative to its root, and how many seconds late it
+/// launches (`drop_of` in effects.wgsl).
+pub fn rain_drop(seed: u32, i: u32, count: u32, spread: f32, delay: f32) -> (Vec3, f32) {
+    let s = seed.wrapping_add(i.wrapping_mul(7919));
+    let angle = (i as f32 + noise(s.wrapping_add(1)) * 0.6) * 2.399_963 + noise(seed) * TAU;
+    let radius = ((i as f32 + noise(s.wrapping_add(2))) / count.max(1) as f32).sqrt() * spread;
+    (
+        Vec3::new(angle.cos() * radius, 0.02, angle.sin() * radius),
+        noise(s.wrapping_add(3)) * delay,
+    )
 }
 
 /// Keeps the `n` nearest of `(distance, index)` pairs, nearest first.
@@ -612,7 +642,7 @@ impl EffectEvaluator {
         if texture.is_some() {
             flags |= flag::TEXTURED;
         }
-        if l.primitive == Primitive::Decal && texture.is_some() {
+        if l.primitive == Primitive::Decal {
             flags |= flag::GROUND;
         }
         if l.cue_motion.as_ref().is_some_and(|m| m.rotation.is_some()) {
@@ -641,6 +671,7 @@ impl EffectEvaluator {
             ],
             motion: [motion.scale, motion.rotation, phase(cue.seed), time.local],
             ints: [0, flags, 1, cue.seed.wrapping_mul(7919)],
+            e5: [l.core, 0.0, 0.0, 0.0],
             flip: flip.map_or([1, 1, 0, 1], |f| [f.columns, f.rows, f.first, f.frames]),
             times: [
                 flip.map_or(0.0, |f| f.frame_time),
@@ -655,7 +686,8 @@ impl EffectEvaluator {
             ..Emitter::default()
         };
         match l.motion {
-            Motion::Sound | Motion::Unsupported => {}
+            Motion::Sound => {}
+            Motion::Rain => self.rain(cue, l, time, base, blend, texture, eye, out, models),
             Motion::Beam => {
                 let opacity = (envelope(time.t, time.persistent)
                     * motion.opacity
@@ -702,6 +734,7 @@ impl EffectEvaluator {
                     ],
                     shadow_only: false,
                     activity: 0.0,
+                    aim: None,
                 });
             }
             Motion::Light => {
@@ -742,6 +775,7 @@ impl EffectEvaluator {
                     if em.burst { 1.0 } else { 0.0 },
                     0.0,
                 ];
+                e.e5[1] = em.stretch;
                 let count = e.ints[2];
                 self.push(out, e, count, Geometry::Quad, blend, texture, eye);
             }
@@ -794,6 +828,114 @@ impl EffectEvaluator {
                 self.push(out, e, count, geometry, blend, texture, eye);
             }
         }
+    }
+
+    /// A rain layer: shards (or models) falling onto a disc, a flash and splash fragments
+    /// where each lands (old `updateRain`).
+    #[allow(clippy::too_many_arguments)]
+    fn rain(
+        &mut self,
+        cue: &CueView,
+        l: &EffectLayer,
+        time: CueTime,
+        base: Emitter,
+        blend: Blend,
+        texture: Option<u32>,
+        eye: Option<Vec3>,
+        out: &mut EffectFrame,
+        models: &mut Vec<ActorInstance>,
+    ) {
+        let Some(rain) = &l.rain else { return };
+        let drops = l.count.min(MAX_EMITTER_PARTS);
+        let fall = tick_seconds(cue.duration) as f32;
+        let spread = cue.spread.unwrap_or(1.0);
+        let impact = rain.impact.as_ref();
+        let mut e = base;
+        e.shape[2] = spread;
+        e.shape[3] = l.length.unwrap_or(1.8);
+        e.color[3] = l.intensity.unwrap_or(1.0);
+        e.e0 = [rain.back[0], rain.back[1], rain.back[2], fall];
+        e.e1 = [
+            rain.launch_delay,
+            impact.map_or(1.0, |i| i.duration),
+            impact.map_or(0.0, |i| i.spread),
+            impact.map_or(0.0, |i| i.height),
+        ];
+        e.e2 = [
+            impact.map_or(0.0, |i| i.size),
+            impact.map_or(1, |i| i.count) as f32,
+            drops as f32,
+            0.0,
+        ];
+        if let (Some((model, clip)), Some(m)) = (cue.model, &l.model) {
+            // Model rain: each drop is the model, upright, turning slowly as it falls.
+            let back = Vec3::from_array(rain.back);
+            let (speed, looping) = m.animation.as_ref().map_or((1.0, false), |a| (a.1, a.2));
+            for i in 0..drops {
+                let (landing, delay) = rain_drop(e.ints[3], i, drops, spread, rain.launch_delay);
+                let age = time.local - delay;
+                let flight = age / fall.max(1e-4);
+                if !(0.0..1.0).contains(&flight) {
+                    continue;
+                }
+                let at = cue.root + cue.rotation * (landing + back * (l.height * (1.0 - flight)));
+                let turn = Quat::from_euler(
+                    EulerRot::XYZ,
+                    m.rotation[0],
+                    m.rotation[1] + age * 1.4 + noise(e.ints[3] ^ i) * TAU,
+                    m.rotation[2] + 0.35 * (age * 2.3).sin(),
+                );
+                let (count, pose) = model_pose(clip, age, speed, looping);
+                let mut poses = [Pose::default(); MAX_POSES];
+                poses[0] = pose;
+                models.push(ActorInstance {
+                    model,
+                    transform: Mat4::from_scale_rotation_translation(
+                        Vec3::splat(cue.size),
+                        Quat::from_rotation_arc(Vec3::Y, back) * turn,
+                        at,
+                    ),
+                    owner_color: None,
+                    opacity: 1.0,
+                    poses,
+                    pose_count: count,
+                    tint: [l.color[0], l.color[1], l.color[2], 1.0],
+                    shadow_only: false,
+                    activity: 1.0,
+                    aim: None,
+                });
+            }
+        } else {
+            let mut shards = e;
+            shards.ints[0] = kind::RAIN;
+            shards.ints[2] = drops;
+            self.push(out, shards, drops, Geometry::Quad, blend, texture, eye);
+        }
+        let Some(i) = impact else { return };
+        let mut flash = e;
+        flash.ints[0] = kind::RAIN_FLASH;
+        flash.ints[1] &= !(flag::TEXTURED | flag::GROUND | flag::SPIN);
+        flash.ints[2] = drops;
+        flash.color = v4(Vec3::from_array(i.color), e.color[3]);
+        flash.flip = [1, 1, 0, 1];
+        flash.times[0] = 0.0;
+        self.push(
+            out,
+            flash,
+            drops,
+            Geometry::Quad,
+            Blend::Additive,
+            None,
+            eye,
+        );
+        let fragments = (drops * i.count).min(MAX_EMITTER_PARTS);
+        let mut splash = e;
+        splash.ints[0] = kind::RAIN_SPLASH;
+        splash.ints[1] &= !flag::GROUND;
+        splash.ints[2] = fragments;
+        splash.color = v4(Vec3::from_array(i.color), e.color[3]);
+        splash.accent = v4(Vec3::from_array(i.accent), e.accent[3]);
+        self.push(out, splash, fragments, Geometry::Quad, blend, texture, eye);
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -856,6 +998,7 @@ impl EffectEvaluator {
                 ],
                 shadow_only: false,
                 activity: 0.0,
+                aim: None,
             });
         } else {
             let mut e = base;

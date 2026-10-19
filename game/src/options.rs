@@ -10,9 +10,9 @@
 //! canopy capture-screens --out <folder> [--size <w>x<h>] [--scale <s>] [--only releases|multiplayer|editor|feedback|replays]
 //!                         [--data <folder>]
 //! canopy shot --map <id> --camera <x,z,zoom[,yaw] | battle[,zoom]> --out <png>
-//!             [--tick <n>] [--players <n>] [--races <race,…>] [--crowd <n> | --gallery] [--colors <i,j,…>] [--size <w>x<h>]
+//!             [--tick <n>] [--players <n>] [--races <race,…>] [--crowd <n> | --gallery [--only <text>]] [--colors <i,j,…>] [--size <w>x<h>]
 //!             [--hour <h>] [--time <s>] [--frames <n>] [--no-shadows] [--pitch <deg>]
-//!             [--movers <n>] [--effect <id>[,<age>[,<radius>]]]… [--viewer <slot>]
+//!             [--movers <n>] [--effect <id>[,<age>[,<radius>]]]… [--kill <text>[,<ticks>]] [--viewer <slot>]
 //!             [--select all|player:<slot>|<id,…>] [--health damaged|always|selected]
 //!             [--damage <percent>[,<percent>…]] [--data <folder>] [graphics]
 //!             [--play | --observe] [--input <script>] (the HUD; see `play::capture`)
@@ -170,6 +170,8 @@ pub struct Options {
     pub crowd: Option<u32>,
     /// One of every unit and building instead of a match (review captures).
     pub gallery: bool,
+    /// The gallery shows only definitions whose id contains this (`--only beetles`).
+    pub only: Option<String>,
     /// Player colour index of each slot (`config/players.json`).
     pub colors: Option<Vec<usize>>,
     /// Race of each slot in order (`--races beetles,ants`); the start's own when absent.
@@ -201,6 +203,9 @@ pub struct Options {
     /// A dev tool for reviewing damage effects: before a shot's tick, every built building
     /// is set to these shares of its health (percent, in turn by entity id).
     pub damage: Vec<f32>,
+    /// A dev tool for reviewing deaths: `ticks` before a shot's tick, every unit whose
+    /// definition id contains the text dies (its death clip and its effects).
+    pub kill: Option<(String, u32)>,
     /// A shot of the match with the HUD from player 1's seat (`--play`) or the
     /// spectator's (`--observe`), after the `--input` script (`play::capture`).
     pub play: bool,
@@ -251,6 +256,7 @@ impl Options {
             tick: 0,
             crowd: None,
             gallery: false,
+            only: None,
             colors: None,
             camera: None,
             hour: None,
@@ -263,6 +269,7 @@ impl Options {
             biome: None,
             effects: Vec::new(),
             damage: Vec::new(),
+            kill: None,
             viewer: None,
             select: Selection::None,
             health: canopy_scene::world_ui::HealthBars::Damaged,
@@ -318,6 +325,7 @@ impl Options {
                 }
                 "--tick" => options.tick = value("--tick")?.parse().context("--tick")?,
                 "--gallery" => options.gallery = true,
+                "--only" => options.only = Some(value("--only")?),
                 "--crowd" => options.crowd = Some(value("--crowd")?.parse().context("--crowd")?),
                 "--races" => {
                     let text = value("--races")?;
@@ -391,6 +399,17 @@ impl Options {
                         bail!("--damage takes health shares of 1–100 percent");
                     }
                 }
+                "--kill" => {
+                    let text = value("--kill")?;
+                    let (which, ticks) = text.split_once(',').unwrap_or((&text, "40"));
+                    options.kill = Some((
+                        which.trim().to_owned(),
+                        ticks
+                            .trim()
+                            .parse()
+                            .context("--kill <text>[,<ticks before>]")?,
+                    ));
+                }
                 "--health" => {
                     use canopy_scene::world_ui::HealthBars;
                     options.health = match value("--health")?.as_str() {
@@ -410,7 +429,7 @@ impl Options {
                     size = [w.parse().context("--size")?, h.parse().context("--size")?];
                 }
                 other => bail!(
-                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --races, --tick, --crowd, --gallery, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --preset, --lod-pixels, --shadow-map, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --effect, --viewer, --select, --health, --damage, --play, --observe, --input)"
+                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --races, --tick, --crowd, --gallery, --only, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --preset, --lod-pixels, --shadow-map, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --effect, --viewer, --select, --health, --damage, --kill, --play, --observe, --input)"
                 ),
             }
             first = false;

@@ -1,28 +1,52 @@
 {
   "id": "effect.buildings.brood-den-pressure",
-  "name": "Brood Den pressure light",
-  "description": "A faint blue-violet light from the den's back-lit gauge, swelling and ebbing with the pressure while the den works (D65).",
+  "name": "Brood Den pressure",
+  "description": "The den's back-lit gauge glows blue-violet, swelling and ebbing with the pressure while it powers the network (D65, D66).",
   "durationTicks": 80,
   "loop": true,
   "layers": [
     {
       "id": "glow",
-      "sustain": true,
       "enabled": true,
-      "startTick": 0,
-      "anchor": "target",
       "shape": "light",
       "colour": "#8a5cff",
       "accent": "#b89cff",
       "durationTicks": 80,
       "count": 1,
-      "size": 5,
-      "height": 0,
-      "intensity": 4,
+      "size": 5.0,
+      "height": 0.0,
+      "intensity": 4.0,
+      "startTick": 0,
+      "sustain": true,
       "motion": {
         "opacity": {
           "periodTicks": 40,
           "min": 0.45,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "dial",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 0.9,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "additive",
+      "orientation": "camera",
+      "intensity": 0.7,
+      "core": 0.8,
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 40,
+          "min": 0.4,
           "max": 1.0,
           "easing": "sine"
         }

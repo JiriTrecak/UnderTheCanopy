@@ -1,0 +1,18 @@
+{
+  "id": "asset.effects.beetles.glint",
+  "name": "Beetle glint",
+  "kind": "texture",
+  "tags": [
+    "effect",
+    "beetles",
+    "particle"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original procedural effect art for Under the Canopy (tools/content/beetles/gen_art.py). A four-point star glint for flashes and impacts."
+}

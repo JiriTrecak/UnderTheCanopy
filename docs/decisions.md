@@ -658,3 +658,15 @@ Choices made while building the race from [beetles](beetles.md):
 - **The Elder Bastion needs an Engine Yard**; the Juggernaut is one at a time (`maxOwned`).
 - **The Hornbreaker keeps his kit** with numbers raised: Steadfast also gives 1/2/3 armour, Horn Rush stuns 1/1.5/2 s.
 - **Balance**: beetle troops are slow (speed 10, ants 12), cost 2–3 supply and more amber, and are about 2.3× an ant soldier's health; tier 2 and the machines cost Substance. Measured with `ai_duels` on Echo Isles and Amberleaf Crossing (6 seeds, both seats): beetles beat ants 13 of 24 (ants 9, 2 at the hour cap); beetles as player 1 won 12 of 12 and as player 2 1 of 12, a seat bias the mixed matchups show and the ant mirror much less. The computer's macro (placement in the network, research pacing, wells) changed for this; see the commit notes.
+
+## D69. Beetle effects read crisp at the game camera (2026-10-19, Claude while Jiri was away — review: visible)
+
+Jiri: "don't be stingy with particle effects … I want these effects crisp and visible". Every beetle weapon, spell, machine and tower effect is rebuilt (`tools/content/beetles/gen_effects.py`) from procedural art (`gen_art.py`: spark, glint, muzzle flash, glass shard, shock ring, molten pool, scorch, a brass bolt, the Forgemaster's crucible) instead of soft untextured bursts, which drew as flat white discs.
+- **Engine (all races may use them):** an emitter's `stretch` draws particles as streaks along their velocity; a layer's `core` burns the dense centre of additive sprites white with the colour at the fringe; elongated missile heads follow their flight; rain layers draw (they were converted but ignored), including model rain; untextured rings and glows authored `orientation: camera` stand up instead of lying flat.
+- **Gravity pulls down.** The renderer added emitter gravity upwards (as the old player did), so every authored "falling" spark and shrapnel flew up and steam sank; every author, ants included, wrote positive gravity meaning down. Now it does. (Visible on ant effects too: the Crownfall shrapnel and Faultline splinters now fall.)
+- **Lights**: fast weapons flash with sprites, not lights; heavy guns, impacts and spells keep theirs (three of the eight effect lights are free of working machines).
+- **Towers** play their model's `attack` clip on each shot of their crew (its `fire` events play the shot's effect), and a node named `turret` turns towards the crew's target (skinning turns the turret's joints about its rest origin; sockets on it turn with it). The pack format records each joint's rest origin and each socket's joint (format 4).
+- **A network node works while it powers the network** (D66): the Brood Den's gauge glows and its stack vents.
+- **Death clip events play their effects** (the Juggernaut's crash).
+- Forgefall's crucible is now a falling iron crucible with a comet tail over the warning circle, landing on the `impact` event in a fireball, shock rings, molten splashes and a pool of cooling metal.
+

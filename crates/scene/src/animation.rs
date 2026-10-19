@@ -432,7 +432,12 @@ pub mod building_states {
     pub const IDLE: &str = "idle";
     pub const WORK: &str = "work";
     pub const SPAWN: &str = "spawn";
+    /// A tower's shot (its crew fired).
+    pub const ATTACK: &str = "attack";
 }
+
+/// A tower's shot cuts in almost at once (clip seconds).
+pub const ATTACK_FADE: f32 = 0.04;
 
 /// Fade between a building's rest and its work, in clip seconds: machinery starting up
 /// and winding down rather than snapping.
@@ -449,7 +454,7 @@ impl BuildingAnimation {
     /// `None` unless the model has a rest pose and something to play.
     pub fn new(model: &ModelInfo) -> Option<Self> {
         use building_states::*;
-        if !model.has(IDLE) || !(model.has(WORK) || model.has(SPAWN)) {
+        if !model.has(IDLE) || !(model.has(WORK) || model.has(SPAWN) || model.has(ATTACK)) {
             return None;
         }
         Some(Self {
@@ -458,17 +463,20 @@ impl BuildingAnimation {
         })
     }
 
-    /// One tick: picks the state from `busy` and the finished training `cycles`, advances
-    /// the clock, and returns the clip events crossed this tick (for effects).
-    pub fn step(&mut self, model: &ModelInfo, busy: bool, cycles: u32) -> Vec<String> {
+    /// One tick: picks the state from `busy`, the finished training `cycles` and whether
+    /// its crew `fired` (a tower's `attack`, once per shot), advances the clock, and
+    /// returns the clip events crossed this tick (for effects).
+    pub fn step(&mut self, model: &ModelInfo, busy: bool, cycles: u32, fired: bool) -> Vec<String> {
         use building_states::*;
         let spawned = self.cycles.is_some_and(|c| cycles > c);
         let first = self.cycles.is_none();
         self.cycles = Some(cycles);
         let a = &mut self.animator;
-        if spawned && model.has(SPAWN) {
+        if fired && model.has(ATTACK) {
+            a.set_state(model, ATTACK, true, ATTACK_FADE);
+        } else if spawned && model.has(SPAWN) {
             a.set_state(model, SPAWN, true, BUILDING_FADE);
-        } else if a.state() != SPAWN {
+        } else if a.state() != SPAWN && a.state() != ATTACK {
             let wanted = if busy && model.has(WORK) { WORK } else { IDLE };
             a.set_state(
                 model,
@@ -1028,24 +1036,53 @@ mod tests {
         let m = building();
         let mut b = BuildingAnimation::new(&m).unwrap();
         for _ in 0..40 {
-            assert!(b.step(&m, false, 0).is_empty());
+            assert!(b.step(&m, false, 0, false).is_empty());
         }
         assert_eq!(b.animator.state(), "idle");
         // Two strikes per 1.5 s clip at 1.5× speed: about two strikes a second.
-        let strikes: usize = (0..80).map(|_| b.step(&m, true, 0).len()).sum();
+        let strikes: usize = (0..80).map(|_| b.step(&m, true, 0, false).len()).sum();
         assert_eq!(b.animator.state(), "work");
         assert!(
             (3..=5).contains(&strikes),
             "{strikes} strikes in two seconds"
         );
         // A finished cycle plays the spawn once, then work resumes.
-        b.step(&m, true, 1);
+        b.step(&m, true, 1, false);
         assert_eq!(b.animator.state(), "spawn");
         for _ in 0..40 {
-            b.step(&m, true, 1);
+            b.step(&m, true, 1, false);
         }
         assert_eq!(b.animator.state(), "work");
-        b.step(&m, false, 1);
+        b.step(&m, false, 1, false);
+        assert_eq!(b.animator.state(), "idle");
+    }
+
+    #[test]
+    fn towers_fire_once_per_shot_of_their_crew() {
+        let mut m = building();
+        m.clips.push(clip("attack", 0.8));
+        m.states.insert(
+            "attack".into(),
+            StateInfo {
+                clip: 3,
+                looping: false,
+                contact: None,
+                events: vec![("fire".into(), 0.1)],
+                nominal_speed: None,
+            },
+        );
+        let mut b = BuildingAnimation::new(&m).unwrap();
+        b.step(&m, false, 0, false);
+        // Each shot restarts the clip and crosses `fire` once; between shots it rests.
+        let mut fired = 0;
+        for tick in 0..60 {
+            let events = b.step(&m, false, 0, tick % 20 == 0);
+            fired += events.iter().filter(|e| *e == "fire").count();
+        }
+        assert_eq!(fired, 3);
+        for _ in 0..40 {
+            b.step(&m, false, 0, false);
+        }
         assert_eq!(b.animator.state(), "idle");
     }
 

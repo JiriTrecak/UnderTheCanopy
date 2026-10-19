@@ -6,56 +6,66 @@
   "loop": false,
   "layers": [
     {
-      "id": "sparks",
+      "id": "glint",
       "enabled": true,
-      "shape": "particles",
-      "colour": "#9a78ff",
-      "accent": "#efe8ff",
-      "durationTicks": 12,
-      "count": 6,
-      "size": 0.18,
+      "shape": "billboard",
+      "colour": "#8f66ff",
+      "accent": "#ffffff",
+      "durationTicks": 4,
+      "count": 1,
+      "size": 1.0,
       "height": 0.8,
       "startTick": 0,
       "blend": "additive",
-      "intensity": 3.0,
+      "intensity": 2.6,
+      "core": 0.9,
       "texture": {
-        "asset": "asset.effects.holy-light-spark",
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "sparks",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#8f66ff",
+      "accent": "#b49cff",
+      "durationTicks": 10,
+      "count": 6,
+      "size": 0.05,
+      "height": 0.8,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 5.0,
+      "core": 0.35,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
         "role": "image",
         "index": 1
       },
       "emitter": {
         "mode": "burst",
-        "lifetimeTicks": 10,
+        "lifetimeTicks": 8,
         "rate": 6,
-        "speed": 3.5,
+        "speed": 5,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
           "y": 1,
           "z": 0
         },
-        "coneDegrees": 80,
-        "gravity": 14.0,
-        "drag": 0.4,
+        "coneDegrees": 140,
+        "gravity": 4,
+        "drag": 0.7,
         "spawnRadius": 0.15,
-        "startSize": 0.18,
-        "endSize": 0.027,
+        "startSize": 0.05,
+        "endSize": 0.022500000000000003,
         "spin": 0,
         "fadeIn": 0.0,
-        "fadeOut": 0.5
+        "fadeOut": 0.55,
+        "stretch": 0.05
       }
-    },
-    {
-      "id": "pop",
-      "enabled": true,
-      "shape": "burst",
-      "colour": "#c9b8ff",
-      "accent": "#ffffff",
-      "durationTicks": 5,
-      "count": 3,
-      "size": 0.5,
-      "height": 0.8,
-      "blend": "additive"
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
   "id": "effect.forgemaster.forgefall-warning",
   "name": "Forgefall warning",
-  "description": "A blazing warning circle and sigil on the ground while the crucible is in the air; it falls in the last half second.",
+  "description": "A blazing warning circle and turning sigil while the crucible is in the air; in the last three quarters of a second the iron crucible itself falls out of the canopy, brimming with molten metal and trailing fire.",
   "durationTicks": 60,
   "loop": false,
   "layers": [
@@ -82,15 +82,89 @@
     {
       "id": "crucible",
       "enabled": true,
-      "shape": "pillar",
+      "shape": "rain",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 30,
+      "count": 1,
+      "size": 3.0,
+      "height": 26,
+      "startTick": 30,
+      "spread": 0.01,
+      "fallSpeed": 1,
+      "fallAngleDegrees": 12,
+      "fallAzimuthDegrees": 200,
+      "model": {
+        "asset": "asset.models.effects.beetles-crucible",
+        "role": "geometry",
+        "index": 1,
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "id": "comet",
+      "enabled": true,
+      "shape": "rain",
       "colour": "#ff8a2a",
       "accent": "#ffd9a0",
-      "durationTicks": 24,
+      "durationTicks": 30,
       "count": 1,
       "size": 2.6,
-      "height": 28,
-      "startTick": 36,
-      "blend": "additive"
+      "height": 26,
+      "startTick": 30,
+      "spread": 0.01,
+      "fallSpeed": 1,
+      "fallAngleDegrees": 12,
+      "fallAzimuthDegrees": 200,
+      "length": 4.2,
+      "blend": "additive",
+      "intensity": 2.4,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "offset": {
+        "x": 0,
+        "y": 2.2,
+        "z": 0
+      }
+    },
+    {
+      "id": "embers",
+      "enabled": true,
+      "shape": "rain",
+      "colour": "#ffa040",
+      "accent": "#ffd9a0",
+      "durationTicks": 30,
+      "count": 14,
+      "size": 0.18,
+      "height": 26,
+      "startTick": 30,
+      "spread": 1.6,
+      "fallSpeed": 1,
+      "launchDelayMs": 260,
+      "fallAngleDegrees": 12,
+      "fallAzimuthDegrees": 200,
+      "length": 6,
+      "blend": "additive",
+      "intensity": 3.0,
+      "core": 0.8,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "offset": {
+        "x": 0,
+        "y": 1.0,
+        "z": 0
+      }
     },
     {
       "id": "heat",
@@ -101,14 +175,14 @@
       "durationTicks": 24,
       "count": 1,
       "size": 3.5,
-      "height": 0.4,
+      "height": 0.08,
       "blend": "additive",
       "startTick": 36,
       "motion": {
         "scale": {
-          "periodTicks": 24,
-          "min": 0.4,
-          "max": 1.4,
+          "periodTicks": 48,
+          "min": 0.3,
+          "max": 1.2,
           "easing": "smoothstep"
         }
       }

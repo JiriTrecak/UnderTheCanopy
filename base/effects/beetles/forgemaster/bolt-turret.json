@@ -52,13 +52,14 @@
       "accent": "#fff0b0",
       "durationTicks": 18,
       "count": 22,
-      "size": 0.24,
+      "size": 0.07,
       "height": 0.0,
       "startTick": 0,
       "blend": "additive",
-      "intensity": 3.0,
+      "intensity": 5.0,
+      "core": 0.35,
       "texture": {
-        "asset": "asset.effects.holy-light-spark",
+        "asset": "asset.effects.beetles.spark",
         "role": "image",
         "index": 1
       },
@@ -66,7 +67,7 @@
         "mode": "burst",
         "lifetimeTicks": 16,
         "rate": 22,
-        "speed": 7,
+        "speed": 9,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
@@ -74,14 +75,35 @@
           "z": 0
         },
         "coneDegrees": 80,
-        "gravity": 14.0,
-        "drag": 0.4,
+        "gravity": 16,
+        "drag": 0.7,
         "spawnRadius": 0.15,
-        "startSize": 0.24,
-        "endSize": 0.036,
+        "startSize": 0.07,
+        "endSize": 0.03150000000000001,
         "spin": 0,
         "fadeIn": 0.0,
-        "fadeOut": 0.5
+        "fadeOut": 0.55,
+        "stretch": 0.05
+      }
+    },
+    {
+      "id": "glint",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffc65a",
+      "accent": "#ffffff",
+      "durationTicks": 6,
+      "count": 1,
+      "size": 2.4,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.6,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
       }
     },
     {
@@ -100,14 +122,31 @@
     {
       "id": "ring",
       "enabled": true,
-      "shape": "ring",
+      "shape": "billboard",
       "colour": "#ffc65a",
-      "accent": "#fff0b0",
-      "durationTicks": 14,
+      "accent": "#ffffff",
+      "durationTicks": 12,
       "count": 1,
-      "size": 3.0,
-      "height": 0.06,
-      "blend": "additive"
+      "size": 3.6,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.6,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 24,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
     }
   ]
 }

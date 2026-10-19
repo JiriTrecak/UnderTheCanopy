@@ -1,0 +1,18 @@
+{
+  "id": "asset.effects.beetles.scorch",
+  "name": "Beetle scorch mark",
+  "kind": "texture",
+  "tags": [
+    "effect",
+    "beetles",
+    "particle"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original procedural effect art for Under the Canopy (tools/content/beetles/gen_art.py). A soot scorch mark for the ground (normal blending)."
+}

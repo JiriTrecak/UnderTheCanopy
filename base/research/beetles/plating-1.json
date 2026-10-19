@@ -2,7 +2,7 @@
   "id": "research.beetles.plating-1",
   "name": "Plating I",
   "description": "Beetle troops and machines gain 2 armor (level I; levels add up).",
-  "icon": "asset.icons.research-ants-reinforced-carapace",
+  "icon": "asset.icons.research-beetles-plating-1",
   "priority": 80,
   "items": [
     {

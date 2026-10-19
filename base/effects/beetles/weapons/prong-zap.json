@@ -6,14 +6,41 @@
   "loop": false,
   "layers": [
     {
-      "id": "arc",
+      "id": "halo",
       "enabled": true,
       "shape": "beam",
       "colour": "#5b7bff",
       "accent": "#b8c8ff",
+      "durationTicks": 5,
+      "count": 1,
+      "size": 0.8,
+      "height": 0.0,
+      "blend": "additive",
+      "spread": 0.3,
+      "intensity": 0.35
+    },
+    {
+      "id": "arc",
+      "enabled": true,
+      "shape": "beam",
+      "colour": "#7f9bff",
+      "accent": "#b8c8ff",
       "durationTicks": 6,
       "count": 1,
-      "size": 0.4,
+      "size": 0.3,
+      "height": 0.0,
+      "blend": "additive",
+      "spread": 0.3
+    },
+    {
+      "id": "core",
+      "enabled": true,
+      "shape": "beam",
+      "colour": "#eef2ff",
+      "accent": "#ffffff",
+      "durationTicks": 5,
+      "count": 1,
+      "size": 0.1,
       "height": 0.0,
       "blend": "additive",
       "spread": 0.3
@@ -21,15 +48,22 @@
     {
       "id": "flash",
       "enabled": true,
-      "shape": "light",
+      "shape": "billboard",
       "colour": "#5b7bff",
-      "accent": "#b8c8ff",
+      "accent": "#ffffff",
       "durationTicks": 4,
       "count": 1,
-      "size": 3.0,
-      "height": 0.2,
-      "intensity": 4.0,
+      "size": 1.3,
+      "height": 0.0,
       "startTick": 0,
+      "blend": "additive",
+      "intensity": 1.8,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      },
       "anchor": "source"
     }
   ]

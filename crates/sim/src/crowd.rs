@@ -36,16 +36,50 @@ fn aligned(d: &Definition, x: f64, z: f64) -> Point {
 /// skirmish rules keep it in the match. Returns the match setup (eight human slots, no
 /// computer players).
 pub fn crowd(map: &mut UtcMap, content: &Content, per_player: u32) -> Result<MatchSetup, String> {
-    let race = content
-        .rules
-        .races
-        .get(&content.rules.default_race)
-        .ok_or("the default race is missing")?;
-    let fighters: Vec<&canopy_content::Id> = race
-        .roster
-        .iter()
-        .filter(|id| {
-            content.definition(id.as_str()).is_some_and(|d| {
+    crowd_of(map, content, per_player, &[])
+}
+
+/// A crowd battle of the given races, one player each (`canopy shot --crowd N --races
+/// beetles,ants`): each player's soldiers come from its own race, and its towers (buildings
+/// crewed by their own gunner) stand on the flanks of its soldiers with the race's
+/// smallest network source behind them to power them. A review scenario for weapons and
+/// towers; without races it is [`crowd`].
+pub fn crowd_of(
+    map: &mut UtcMap,
+    content: &Content,
+    per_player: u32,
+    races: &[String],
+) -> Result<MatchSetup, String> {
+    let players = if races.is_empty() {
+        PLAYERS
+    } else {
+        races.len().min(usize::from(PLAYERS)) as u8
+    };
+    let race_of = |player: u8| {
+        let id = races
+            .get(usize::from(player))
+            .unwrap_or(&content.rules.default_race);
+        content
+            .rules
+            .races
+            .get(id)
+            .ok_or_else(|| format!("no race {id}"))
+    };
+    let n = map.player_starts.len().max(1) as f64;
+    let cx = map.player_starts.iter().map(|s| s.x).sum::<f64>() / n;
+    let cz = map.player_starts.iter().map(|s| s.z).sum::<f64>() / n;
+    let side = (f64::from(per_player)).sqrt().ceil() as u32;
+    for player in 0..players {
+        let race = race_of(player)?;
+        let roster: Vec<&Definition> = race
+            .roster
+            .iter()
+            .filter_map(|id| content.definition(id.as_str()))
+            .collect();
+        let fighters: Vec<&Definition> = roster
+            .iter()
+            .copied()
+            .filter(|d| {
                 d.kind == Kind::Unit
                     && !d.is_hero()
                     && d.behaviors.combat.is_some()
@@ -54,39 +88,79 @@ pub fn crowd(map: &mut UtcMap, content: &Content, per_player: u32) -> Result<Mat
                         .look(d.id.as_str())
                         .is_some_and(|a| a.character.is_some())
             })
-        })
-        .collect();
-    if fighters.is_empty() {
-        return Err("the default race has no soldiers".into());
-    }
-    // A colony without buildings is defeated at once (skirmish rules).
-    let shelter = race
-        .roster
-        .iter()
-        .filter_map(|id| content.definition(id.as_str()))
-        .filter(|d| d.kind == Kind::Building)
-        .min_by_key(|d| d.footprint.as_ref().map_or(u32::MAX, |f| f.width * f.depth))
-        .ok_or("the default race has no building")?;
-    let n = map.player_starts.len().max(1) as f64;
-    let cx = map.player_starts.iter().map(|s| s.x).sum::<f64>() / n;
-    let cz = map.player_starts.iter().map(|s| s.z).sum::<f64>() / n;
-    let side = (f64::from(per_player)).sqrt().ceil() as u32;
-    for player in 0..PLAYERS {
-        let angle = f64::from(player) / f64::from(PLAYERS) * std::f64::consts::TAU;
+            .collect();
+        if fighters.is_empty() {
+            return Err("the race has no soldiers".into());
+        }
+        // A colony without buildings is defeated at once (skirmish rules).
+        let area = |d: &&Definition| d.footprint.as_ref().map_or(u32::MAX, |f| f.width * f.depth);
+        let shelter = roster
+            .iter()
+            .copied()
+            .filter(|d| d.kind == Kind::Building)
+            .min_by_key(area)
+            .ok_or("the race has no building")?;
+        let angle = f64::from(player) / f64::from(players) * std::f64::consts::TAU;
         let (dx, dz) = (math::sin(angle), math::cos(angle));
-        let (gx, gz) = (cx + dx * 24.0, cz + dz * 24.0);
+        // Chosen races meet within weapon range of each other at once.
+        let reach = if races.is_empty() { 24.0 } else { 13.0 };
+        let (gx, gz) = (cx + dx * reach, cz + dz * reach);
         let facing = math::atan2(-dx, -dz).to_degrees().rem_euclid(360.0);
-        map.entities.push(Placement {
-            activation: None,
-            id: format!("crowd-{player}-shelter"),
-            map_knowledge: None,
-            definition: shelter.id.clone(),
-            position: aligned(shelter, gx + dx * 22.0, gz + dz * 22.0),
-            rotation: 0.0,
-            owner: Owner::Player(player),
-            initial_state: None,
-            appearance: None,
-        });
+        let mut building = |id: String, d: &Definition, x: f64, z: f64| {
+            map.entities.push(Placement {
+                activation: None,
+                id,
+                map_knowledge: None,
+                definition: d.id.clone(),
+                position: aligned(d, x, z),
+                rotation: 0.0,
+                owner: Owner::Player(player),
+                initial_state: None,
+                appearance: None,
+            });
+        };
+        building(
+            format!("crowd-{player}-shelter"),
+            shelter,
+            gx + dx * 22.0,
+            gz + dz * 22.0,
+        );
+        if !races.is_empty() {
+            let towers: Vec<&Definition> = roster
+                .iter()
+                .copied()
+                .filter(|d| {
+                    d.kind == Kind::Building
+                        && d.garrison.as_ref().is_some_and(|g| g.crew.is_some())
+                })
+                .collect();
+            let source = roster
+                .iter()
+                .copied()
+                .filter(|d| {
+                    d.network
+                        .as_ref()
+                        .is_some_and(|n| n.role == canopy_content::game::NetworkRole::Source)
+                })
+                .min_by_key(area);
+            if let Some(source) = source.filter(|_| !towers.is_empty()) {
+                building(
+                    format!("crowd-{player}-source"),
+                    source,
+                    gx + dx * 14.0 + dz * 16.0,
+                    gz + dz * 14.0 - dx * 16.0,
+                );
+            }
+            for (k, tower) in towers.iter().enumerate() {
+                let across = if k % 2 == 0 { 1.0 } else { -1.0 } * (10.0 + 9.0 * (k / 2) as f64);
+                building(
+                    format!("crowd-{player}-tower-{k}"),
+                    tower,
+                    gx + dz * across - dx * 2.0,
+                    gz - dx * across - dz * 2.0,
+                );
+            }
+        }
         for i in 0..per_player {
             let (row, column) = (i / side, i % side);
             // Rows step away from the centre, columns across.
@@ -95,7 +169,9 @@ pub fn crowd(map: &mut UtcMap, content: &Content, per_player: u32) -> Result<Mat
             // One unit per navigation cell, so none waits to be placed.
             let x = (gx + dz * across * 1.5 + dx * back * 1.5).round();
             let z = (gz - dx * across * 1.5 + dz * back * 1.5).round();
-            let definition = fighters[(i as usize + player as usize) % fighters.len()].clone();
+            let definition = fighters[(i as usize + player as usize) % fighters.len()]
+                .id
+                .clone();
             map.entities.push(Placement {
                 activation: None,
                 id: format!("crowd-{player}-{i}"),
@@ -115,14 +191,14 @@ pub fn crowd(map: &mut UtcMap, content: &Content, per_player: u32) -> Result<Mat
     }
     Ok(MatchSetup {
         seed: 1,
-        slots: (0..PLAYERS)
+        slots: (0..players)
             .map(|player| Slot {
                 player,
                 kind: SlotKind::Human,
                 name: None,
                 team: None,
                 hero: None,
-                race: None,
+                race: races.get(usize::from(player)).cloned(),
             })
             .collect(),
     })
@@ -132,8 +208,14 @@ pub fn crowd(map: &mut UtcMap, content: &Content, per_player: u32) -> Result<Mat
 /// of the starts: units first, then buildings, each in id order, all owned by player 0
 /// (neutrals by nobody), facing south. A review scenario for captures (`canopy shot
 /// --gallery`): every model at once, to compare looks before and after a change. Returns
-/// the match setup (player 0 human, nobody else).
-pub fn gallery(map: &mut UtcMap, content: &Content) -> Result<MatchSetup, String> {
+/// the match setup (player 0 human, nobody else). With `only`, just the definitions whose
+/// id contains it (one race's roster).
+pub fn gallery(
+    map: &mut UtcMap,
+    content: &Content,
+    only: Option<&str>,
+) -> Result<MatchSetup, String> {
+    let kept = |d: &&Definition| only.is_none_or(|text| d.id.as_str().contains(text));
     let in_roster = |id: &str| {
         content
             .rules
@@ -148,11 +230,13 @@ pub fn gallery(map: &mut UtcMap, content: &Content) -> Result<MatchSetup, String
         .definitions
         .iter()
         .filter(|d| d.kind == Kind::Unit)
+        .filter(kept)
         .collect();
     let buildings: Vec<&Definition> = content
         .definitions
         .iter()
         .filter(|d| d.kind == Kind::Building)
+        .filter(kept)
         .collect();
     let owner = |d: &Definition| {
         if in_roster(d.id.as_str()) {
@@ -161,25 +245,41 @@ pub fn gallery(map: &mut UtcMap, content: &Content) -> Result<MatchSetup, String
             Owner::Nobody
         }
     };
-    // Units: rows of 12, 6 cells apart, north of the middle.
+    // Units: rows of 12 north of the middle (clear of a main hall standing there), each unit given room by its formation
+    // spacing (at least 6 cells), so large machines don't overlap their neighbours.
     const UNIT_COLUMNS: usize = 12;
-    for (i, d) in units.iter().enumerate() {
-        let (row, column) = (i / UNIT_COLUMNS, i % UNIT_COLUMNS);
-        map.entities.push(Placement {
-            activation: None,
-            id: format!("gallery-unit-{i}"),
-            map_knowledge: None,
-            definition: d.id.clone(),
-            position: Point {
-                x: cx + (column as f64 - (UNIT_COLUMNS as f64 - 1.0) / 2.0) * 6.0,
-                y: cz - 8.0 - row as f64 * 6.0,
-                surface: None,
-            },
-            rotation: 180.0,
-            owner: owner(d),
-            initial_state: None,
-            appearance: None,
-        });
+    let room = |d: &Definition| {
+        d.dimensions
+            .as_ref()
+            .map_or(6.0, |m| (m.formation_spacing * 2.0).max(6.0))
+    };
+    let mut z = cz - 16.0;
+    for (r, row) in units.chunks(UNIT_COLUMNS).enumerate() {
+        let width: f64 = row.iter().map(|d| room(d)).sum();
+        let depth = row.iter().map(|d| room(d)).fold(6.0, f64::max);
+        z -= depth / 2.0;
+        let mut x = cx - width / 2.0;
+        for (c, d) in row.iter().enumerate() {
+            let i = r * UNIT_COLUMNS + c;
+            x += room(d) / 2.0;
+            map.entities.push(Placement {
+                activation: None,
+                id: format!("gallery-unit-{i}"),
+                map_knowledge: None,
+                definition: d.id.clone(),
+                position: Point {
+                    x: x.round(),
+                    y: z.round(),
+                    surface: None,
+                },
+                rotation: 180.0,
+                owner: owner(d),
+                initial_state: None,
+                appearance: None,
+            });
+            x += room(d) / 2.0;
+        }
+        z -= depth / 2.0;
     }
     // Buildings: rows of 6, 20 cells apart, south of the middle.
     const BUILDING_COLUMNS: usize = 6;

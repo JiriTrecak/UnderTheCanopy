@@ -312,6 +312,9 @@ pub fn cook(source: &ModelSource, glb: &[u8], diags: &mut Diagnostics) -> Option
         .map(|&(node, _)| Joint {
             name: nodes[node].name.clone(),
             parent: ancestor_in(&nodes, node, &palette),
+            origin: (fold * rest[node])
+                .transform_point([0.0; 3])
+                .map(|v| v as f32),
         })
         .collect();
     let sockets = sockets(source, &nodes, &order, diags);
@@ -485,6 +488,11 @@ pub fn cook(source: &ModelSource, glb: &[u8], diags: &mut Diagnostics) -> Option
                 name: s.name.clone(),
                 node: nodes[s.node].name.clone(),
                 rest: m.to_3x4(),
+                joint: palette
+                    .iter()
+                    .position(|(p, _)| *p == s.node)
+                    .map(|i| i as u32)
+                    .or_else(|| ancestor_in(&nodes, s.node, &palette)),
             })
             .collect(),
         wind,

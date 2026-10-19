@@ -1,7 +1,7 @@
 {
   "id": "effect.beetles.weapons.bolt",
   "name": "Pressure bolt",
-  "description": "A brass bolt from a pressure repeater.",
+  "description": "A brass bolt with a glowing substance head.",
   "durationTicks": 40,
   "loop": false,
   "layers": [
@@ -13,11 +13,11 @@
       "accent": "#ffffff",
       "durationTicks": 40,
       "count": 1,
-      "size": 0.8,
+      "size": 0.9,
       "height": 0,
       "arcHeight": 0.0,
       "model": {
-        "asset": "asset.models.effects.amber-bolt",
+        "asset": "asset.models.effects.beetles-bolt",
         "role": "geometry",
         "index": 1,
         "rotation": {

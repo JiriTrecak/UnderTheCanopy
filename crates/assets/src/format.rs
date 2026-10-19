@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 /// First bytes of every pack.
 pub const MAGIC: [u8; 8] = *b"CANOPYPK";
 /// Version of the pack layout and of every metadata type.
-pub const FORMAT_VERSION: u32 = 3;
+pub const FORMAT_VERSION: u32 = 4;
 /// Alignment of blobs and of every array inside one.
 pub const ALIGN: usize = 16;
 /// Rate at which clips are baked, in frames per second.
@@ -329,6 +329,8 @@ pub struct MaterialTextures {
 pub struct Joint {
     pub name: String,
     pub parent: Option<u32>,
+    /// The joint's node origin in model space at rest: the pivot a turret turns about.
+    pub origin: [f32; 3],
 }
 
 /// The joint palette of an animated model. Rigidly animated nodes are joints too, so
@@ -375,6 +377,8 @@ pub struct Socket {
     pub node: String,
     /// Transform in model space at rest.
     pub rest: Matrix3x4,
+    /// The joint it moves with (its own node's, or its nearest animated ancestor's).
+    pub joint: Option<u32>,
 }
 
 /// Sway: `bend = position.w` (see [`Vertex`]);

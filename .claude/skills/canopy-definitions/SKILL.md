@@ -55,7 +55,7 @@ Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a
   - `cameraAnchor`;
   - and, when they differ from the model's own `display`, `healthHeight` and `character` (animation profile);
   - `effects`, `[{effect, state | event, socket}]` (D65): an effect looping from a model socket while the building or unit is in `state`, or played once whenever its clip crosses `event` (a clip event of the model's `capabilities.animations`). `socket` is a declared socket name or a model node named `socket*`. Looping effects follow their socket as the model moves.
-    - Building states: `work` (it trains, researches, upgrades, revives, or workers gather from it), `spawn` (once per trained unit), `idle` (resting, complete), `always` (complete, in sight). Example: `base/buildings/beetles/shell-forge.json`.
+    - Building states: `work` (it trains, researches, upgrades, revives, or workers gather from it), `spawn` (once per trained unit), `attack` (a tower's model plays its attack clip, once per shot of its crew), `idle` (resting, complete), `always` (complete, in sight). Example: `base/buildings/beetles/shell-forge.json`.
     - Unit states: `move` (walking, running, carrying or charging), `attack`, `cast` (any cast), `idle`, `always`, or any engine animation state (`walk`, `run`, `charge`, `hit`, `carry`, `carry_walk`, `carry_run`, `build`, `chop`).
     - A unit's `activeGlow` materials light while it moves, fights, casts or works.
 

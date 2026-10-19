@@ -43,7 +43,10 @@ use canopy_content::map::UtcMap;
 use canopy_content::{
     Content,
     effects::VisualLayer,
-    game::{ConstructionPresentation, Creation, Definition, Kind, RenderAsset, WorkAnimation},
+    game::{
+        ConstructionPresentation, Creation, Definition, Kind, RenderAsset, Socket, StateEffect,
+        WorkAnimation,
+    },
     placement::Owner,
 };
 use canopy_sim::{
@@ -115,6 +118,8 @@ pub struct Actor {
     pub walker: Option<(u32, f32)>,
     /// How much a building or unit works, 0 at rest to 1: its active emission (D65).
     pub activity: f32,
+    /// A tower's turret yaw in model space (radians), when it has one.
+    pub aim: Option<f32>,
 }
 
 /// The walking surface number of a deck name (0: the ground; unknown decks walk the
@@ -166,6 +171,7 @@ impl Actor {
             body: None,
             walker: None,
             activity: 0.0,
+            aim: None,
         }
     }
 }
@@ -383,9 +389,12 @@ struct Tracked {
     floor: Option<f32>,
     garrison: Option<EntityId>,
     seen: u32,
-    /// Its state effects, and the activity of its active glow (D65).
+    /// Its state effects, and the activity of its active glow (D65); the asset's effects
+    /// and sockets, kept for its death clip's events.
     cues: StateCues,
     activity: f32,
+    effects: Option<Arc<[StateEffect]>>,
+    sockets: Option<Arc<[Socket]>>,
     /// Where it stood when last presented (tick, cells), and its smoothed ground speed
     /// (metres per second) while moving: stride-matched gaits.
     ground: Option<(u32, f64, f64)>,
@@ -404,7 +413,21 @@ struct BuildingTrack {
     /// Eases towards 1 while it works and back to 0 at rest.
     activity: f32,
     seen: u32,
+    /// A turret's bearing in model space (radians).
+    aim: f32,
 }
+
+/// What a tower's crew does this tick.
+#[derive(Debug, Clone, Copy, Default)]
+struct Tower {
+    /// A shot left this tick.
+    fired: bool,
+    /// Where its target stands (cells).
+    target: Option<[f32; 2]>,
+}
+
+/// Radians a turret turns per tick (about 7 a second).
+const TURRET_TURN: f32 = 0.18;
 
 #[derive(Debug, Clone)]
 struct Corpse {
@@ -412,6 +435,11 @@ struct Corpse {
     animation: Option<UnitAnimation>,
     died: u32,
     fall: Option<(f32, f32)>,
+    /// The asset's effects and sockets: events of the death clip play them (a machine's
+    /// crash).
+    effects: Option<Arc<[StateEffect]>>,
+    sockets: Option<Arc<[Socket]>>,
+    cues: StateCues,
 }
 
 /// A projectile effect layer as drawn.
@@ -917,6 +945,26 @@ impl Presenter {
         let mut fighting: Vec<[f32; 2]> = Vec::new();
         let by_id: BTreeMap<EntityId, &EntityView> =
             view.entities.iter().map(|e| (e.id(), e)).collect();
+        // Towers fight through their crew (D68): what each lookout's crew aims at, and
+        // whether it fired this tick, for the tower's attack clip and turret.
+        let mut towers: BTreeMap<EntityId, Tower> = BTreeMap::new();
+        for a in &view.entities {
+            let Some(combat) = a.combat.as_ref() else {
+                continue;
+            };
+            let (Some(host), Some(attack)) = (combat.garrison, combat.attack.as_ref()) else {
+                continue;
+            };
+            let target = attack
+                .target
+                .and_then(|t| by_id.get(&t))
+                .map(|t| cells(t.public.position));
+            let tower = towers.entry(host).or_default();
+            tower.fired |= attack.impact == tick;
+            if tower.target.is_none() {
+                tower.target = target.map(|(x, z)| [x as f32, z as f32]);
+            }
+        }
         // Who swings at whom (the first released swing), for the direction of hit sparks.
         let mut attackers: BTreeMap<EntityId, (f64, f64)> = BTreeMap::new();
         for a in &view.entities {
@@ -1116,9 +1164,13 @@ impl Presenter {
                         activity: 0.0,
                         ground: None,
                         speed: None,
+                        effects: None,
+                        sockets: None,
                     });
                     if tracked.asset != asset_id || tracked.model != model {
                         tracked.asset = asset_id.clone();
+                        tracked.effects = asset.effects.as_deref().map(Arc::from);
+                        tracked.sockets = asset.sockets.as_deref().map(Arc::from);
                         tracked.model = model;
                         tracked.animation = UnitAnimation::new(&info);
                         tracked.cues.stop(&mut self.effects);
@@ -1306,6 +1358,7 @@ impl Presenter {
                             position,
                             rotation: actor.rotation,
                             scale: actor.scale,
+                            aim: None,
                         };
                         tracked.cues.update(
                             &mut self.effects,
@@ -1447,9 +1500,14 @@ impl Presenter {
                     ));
                     hide = !show_body;
                     if e.public.construction.is_none() && !info.missing {
+                        // A network node pressurises the network while it powers it (D66).
+                        let node = d
+                            .network
+                            .as_ref()
+                            .is_some_and(|n| n.role == canopy_content::game::NetworkRole::Node);
                         self.animate_building(
                             e,
-                            asset,
+                            (asset, node, towers.get(&id).copied()),
                             model,
                             &info,
                             &mut actor,
@@ -1539,10 +1597,20 @@ impl Presenter {
                     animation,
                     died: tick,
                     fall: tracked.floor.map(|f| (tracked.actor.position.y, f)),
+                    effects: tracked.effects,
+                    sockets: tracked.sockets,
+                    cues: StateCues::default(),
                 },
             );
         }
-        self.corpses.retain(|_, c| tick < c.died + CORPSE_TICKS);
+        let effects = &mut self.effects;
+        self.corpses.retain(|_, c| {
+            let keep = tick < c.died + CORPSE_TICKS;
+            if !keep {
+                c.cues.stop(effects);
+            }
+            keep
+        });
         let corpse_ids: Vec<EntityId> = self.corpses.keys().copied().collect();
         for id in corpse_ids {
             let model_info = {
@@ -1550,10 +1618,51 @@ impl Presenter {
                 self.catalog.shared(c.actor.model)
             };
             let c = self.corpses.get_mut(&id).expect("listed");
+            let mut events = Vec::new();
             if tick > c.died
                 && let Some(a) = &mut c.animation
             {
+                let before = a.animator.current();
                 a.animator.update(&model_info, TICK_SECONDS);
+                if a.animator.state() == crate::animation::states::DEATH {
+                    events = crate::animation::crossed(
+                        &model_info,
+                        crate::animation::states::DEATH,
+                        before,
+                        a.animator.current(),
+                    );
+                }
+            }
+            if let Some(effects) = c.effects.as_deref()
+                && !events.is_empty()
+            {
+                // The death clip's events play their effects (a machine's crash).
+                let _span = tracing::trace_span!("death_events").entered();
+                let mount = Mount {
+                    info: &model_info,
+                    sockets: c.sockets.as_deref(),
+                    clip: c
+                        .animation
+                        .as_ref()
+                        .map_or((0, 0.0), |a| a.animator.current()),
+                    position: c.actor.position,
+                    rotation: c.actor.rotation,
+                    scale: c.actor.scale,
+                    aim: None,
+                };
+                c.cues.update(
+                    &mut self.effects,
+                    effects,
+                    id.0,
+                    tick,
+                    &Doing {
+                        shown: true,
+                        in_state: &|_| false,
+                        events: &events,
+                    },
+                    &mount,
+                    &mut moves,
+                );
             }
             if let Some(a) = &c.animation {
                 c.actor.poses = a.animator.poses(&model_info);
@@ -1775,7 +1884,7 @@ impl Presenter {
     fn animate_building(
         &mut self,
         e: &EntityView,
-        asset: &RenderAsset,
+        (asset, node, tower): (&RenderAsset, bool, Option<Tower>),
         model: u32,
         info: &Arc<ModelInfo>,
         actor: &mut Actor,
@@ -1786,7 +1895,10 @@ impl Presenter {
         let id = e.id();
         let work = e.work.as_ref();
         let shown = !e.remembered;
-        let busy = shown && work.is_some_and(|w| w.busy);
+        // A network node works for as long as it powers its disc: it is complete and stands
+        // inside the network (its gauge pressurises and its stack vents, D66).
+        let unpowered = work.is_some_and(|w| w.unpowered);
+        let busy = shown && (work.is_some_and(|w| w.busy) || (node && !unpowered));
         let cycles = work.map_or(0, |w| w.cycles);
         let track = self.buildings.entry(id).or_insert_with(|| BuildingTrack {
             model,
@@ -1794,6 +1906,7 @@ impl Presenter {
             cues: StateCues::default(),
             activity: 0.0,
             seen: tick,
+            aim: 0.0,
         });
         if track.model != model {
             track.cues.stop(&mut self.effects);
@@ -1801,9 +1914,24 @@ impl Presenter {
             track.animation = BuildingAnimation::new(info);
         }
         track.seen = tick;
+        // A tower's turret turns towards what its crew shoots at, at a machine's pace, and
+        // holds its bearing when the fight ends.
+        let fired = shown && tower.is_some_and(|t| t.fired);
+        if info.turret.is_some() {
+            if let Some([tx, tz]) = tower.and_then(|t| t.target).filter(|_| shown) {
+                let to = actor.position;
+                let world = (tx - to.x).atan2(tz - to.z);
+                let (yaw, _, _) = actor.rotation.to_euler(EulerRot::YXZ);
+                let turn = (world - yaw - track.aim + std::f32::consts::PI)
+                    .rem_euclid(std::f32::consts::TAU)
+                    - std::f32::consts::PI;
+                track.aim += turn.clamp(-TURRET_TURN, TURRET_TURN);
+            }
+            actor.aim = Some(track.aim);
+        }
         let (events, clip) = match &mut track.animation {
             Some(animation) => {
-                let events = animation.step(info, busy, cycles);
+                let events = animation.step(info, busy, cycles, fired);
                 actor.poses = animation.animator.poses(info);
                 (events, Some(animation.animator.current()))
             }
@@ -1839,6 +1967,7 @@ impl Presenter {
             position: actor.position,
             rotation: actor.rotation,
             scale: actor.scale,
+            aim: actor.aim,
         };
         track.cues.update(
             &mut self.effects,

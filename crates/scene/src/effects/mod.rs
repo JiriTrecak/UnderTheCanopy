@@ -298,7 +298,9 @@ struct Cue {
     follow: bool,
     travels: bool,
     light: bool,
+    /// Effect model triangles and instances it draws.
     triangles: u32,
+    instances: u32,
 }
 
 /// A play outside ability events (shell impacts, construction dust, tools).
@@ -503,7 +505,7 @@ impl EffectDirector {
                         continue;
                     };
                     for (layer, l) in table.effects[effect].layers.iter().enumerate() {
-                        if l.primitive == Primitive::Sound || l.motion == Motion::Unsupported {
+                        if l.primitive == Primitive::Sound {
                             continue;
                         }
                         recipes.push(Recipe {
@@ -686,21 +688,31 @@ impl EffectDirector {
         }
         let mut model = None;
         let mut triangles = 0;
+        let mut model_instances = 0;
         if let Some(m) = &l.model {
             let found = self.models.get(&m.model)?;
             if found.triangles > MAX_TRIANGLES_PER_MODEL {
                 tracing::warn!(model = %m.model, "effect model exceeds 10,000 triangles");
                 return None;
             }
+            // Model rain draws the model once per drop.
+            let instances = if l.motion == Motion::Rain {
+                l.count.max(1)
+            } else {
+                1
+            };
             let (count, used) = self
                 .cues
                 .iter()
                 .filter(|c| c.triangles > 0)
-                .fold((0, 0), |(n, t), c| (n + 1, t + c.triangles));
-            if count >= MAX_MODELS || used + found.triangles > MAX_MODEL_TRIANGLES {
+                .fold((0, 0), |(n, t), c| (n + c.instances, t + c.triangles));
+            if count + instances > MAX_MODELS as u32
+                || used + found.triangles * instances > MAX_MODEL_TRIANGLES
+            {
                 return None;
             }
-            triangles = found.triangles.max(1);
+            triangles = found.triangles.max(1) * instances;
+            model_instances = instances;
             let clip = m.animation.as_ref().and_then(|(name, _, _)| {
                 found
                     .clips
@@ -715,7 +727,16 @@ impl EffectDirector {
             duration = d;
         }
         let period = seconds_ticks(effect_def.duration);
-        let start = trigger.tick + seconds_ticks(l.start);
+        let mut start = trigger.tick + seconds_ticks(l.start);
+        if let Some(rain) = &l.rain {
+            // Rain falls its duration over its fall speed; a delivery's rain starts late
+            // so its drops land as the delivery ends (old player).
+            let fall = duration / f64::from(rain.speed.max(0.05));
+            if duration_from {
+                start += duration - fall;
+            }
+            duration = fall;
+        }
         let finite_end =
             (recipe.is_some() && !status_lifetime && (l.sustain || effect_def.looping))
                 .then_some(start + if duration_from { duration } else { period });
@@ -773,6 +794,7 @@ impl EffectDirector {
             travels: l.motion.travels(),
             light,
             triangles,
+            instances: model_instances,
         });
         Some(id)
     }
@@ -801,7 +823,7 @@ impl EffectDirector {
         };
         for layer in 0..layers {
             let l = &self.table.effects[play.effect].layers[layer];
-            if l.primitive == Primitive::Sound || l.motion == Motion::Unsupported {
+            if l.primitive == Primitive::Sound {
                 continue;
             }
             started.extend(self.emit(&trigger, None, Some((play.effect, layer))));
@@ -833,7 +855,7 @@ impl EffectDirector {
         };
         for layer in 0..layers {
             let l = &self.table.effects[play.effect].layers[layer];
-            if l.primitive == Primitive::Sound || l.motion == Motion::Unsupported {
+            if l.primitive == Primitive::Sound {
                 continue;
             }
             started.extend(self.emit(&trigger, None, Some((play.effect, layer))));
@@ -877,7 +899,7 @@ impl EffectDirector {
             status: None,
         };
         for (layer, l) in effect.layers.iter().enumerate() {
-            if l.primitive == Primitive::Sound || l.motion == Motion::Unsupported {
+            if l.primitive == Primitive::Sound {
                 continue;
             }
             let light = l.primitive == Primitive::Light;
@@ -1361,11 +1383,7 @@ impl EffectDirector {
             if persistent || effect.looping || v.flight.is_some() {
                 return true;
             }
-            let lifetime = v.duration
-                + l.emitter
-                    .as_ref()
-                    .map_or(0.0, |e| seconds_ticks(e.lifetime));
-            tick - v.start < lifetime
+            tick - v.start < v.duration + frame::tail_ticks(l)
         });
     }
 

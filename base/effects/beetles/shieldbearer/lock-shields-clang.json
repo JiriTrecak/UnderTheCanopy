@@ -6,28 +6,49 @@
   "loop": false,
   "layers": [
     {
+      "id": "glint",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#5b7bff",
+      "accent": "#ffffff",
+      "durationTicks": 5,
+      "count": 1,
+      "size": 1.6,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.6,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
       "id": "sparks",
       "enabled": true,
       "shape": "particles",
       "colour": "#ffc65a",
       "accent": "#fff0b0",
-      "durationTicks": 16,
-      "count": 14,
-      "size": 0.2,
-      "height": 0.0,
+      "durationTicks": 14,
+      "count": 12,
+      "size": 0.07,
+      "height": 0.8,
       "startTick": 0,
       "blend": "additive",
-      "intensity": 3.0,
+      "intensity": 5.0,
+      "core": 0.35,
       "texture": {
-        "asset": "asset.effects.holy-light-spark",
+        "asset": "asset.effects.beetles.spark",
         "role": "image",
         "index": 1
       },
       "emitter": {
         "mode": "burst",
-        "lifetimeTicks": 14,
-        "rate": 14,
-        "speed": 5,
+        "lifetimeTicks": 12,
+        "rate": 12,
+        "speed": 7,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
@@ -35,14 +56,15 @@
           "z": 0
         },
         "coneDegrees": 80,
-        "gravity": 14.0,
-        "drag": 0.4,
+        "gravity": 16,
+        "drag": 0.7,
         "spawnRadius": 0.15,
-        "startSize": 0.2,
-        "endSize": 0.03,
+        "startSize": 0.07,
+        "endSize": 0.03150000000000001,
         "spin": 0,
         "fadeIn": 0.0,
-        "fadeOut": 0.5
+        "fadeOut": 0.55,
+        "stretch": 0.05
       }
     },
     {
@@ -85,17 +107,33 @@
       }
     },
     {
-      "id": "flash",
+      "id": "ring",
       "enabled": true,
-      "shape": "light",
+      "shape": "billboard",
       "colour": "#5b7bff",
-      "accent": "#b8c8ff",
-      "durationTicks": 6,
+      "accent": "#ffffff",
+      "durationTicks": 10,
       "count": 1,
-      "size": 4.0,
-      "height": 0.8,
-      "intensity": 5.0,
-      "startTick": 0
+      "size": 3.2,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.2,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 20,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
     }
   ]
 }

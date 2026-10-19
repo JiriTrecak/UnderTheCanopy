@@ -46,28 +46,51 @@
       "anchor": "source"
     },
     {
+      "id": "flash",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#5b7bff",
+      "accent": "#ffffff",
+      "durationTicks": 3,
+      "count": 1,
+      "size": 0.9,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 1.6,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      },
+      "anchor": "source"
+    },
+    {
       "id": "tracer",
       "enabled": true,
       "shape": "missile",
-      "colour": "#7f9bff",
-      "accent": "#dde6ff",
+      "colour": "#8fa6ff",
+      "accent": "#ffffff",
       "durationTicks": 40,
       "count": 1,
-      "size": 0.25,
+      "size": 0.13,
       "height": 0,
       "blend": "additive",
       "texture": {
-        "asset": "asset.effects.holy-light-spark",
+        "asset": "asset.effects.beetles.spark",
         "role": "image",
         "index": 1
       },
       "intensity": 4.0,
+      "core": 1.0,
+      "length": 7,
       "trail": {
-        "durationTicks": 8,
+        "durationTicks": 5,
         "maxPoints": 12,
-        "width": 0.12,
-        "colour": "#7f9bff",
-        "opacity": 0.95,
+        "width": 0.06,
+        "colour": "#5b7bff",
+        "opacity": 1.0,
         "breakDistance": 6
       }
     }

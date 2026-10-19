@@ -1,0 +1,38 @@
+{
+  "id": "effect.units.juggernaut-trail",
+  "name": "Juggernaut shell trail",
+  "description": "A glowing shell trailing fire across the field.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "tracer",
+      "enabled": true,
+      "shape": "missile",
+      "colour": "#ffa040",
+      "accent": "#ffd9a0",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 0.55,
+      "height": 0,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 4.5,
+      "core": 1.0,
+      "length": 2.2,
+      "trail": {
+        "durationTicks": 12,
+        "maxPoints": 12,
+        "width": 0.4,
+        "colour": "#ff6a1a",
+        "opacity": 1.0,
+        "breakDistance": 6
+      },
+      "arcHeight": 4.5
+    }
+  ]
+}

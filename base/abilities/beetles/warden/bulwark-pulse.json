@@ -69,7 +69,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.icons.ability-ants-marshal-carapace",
+    "icon": "asset.icons.ability-beetles-warden-bulwark-pulse",
     "animations": {
       "prepare": "cast",
       "release": "cast",

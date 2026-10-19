@@ -1,18 +1,21 @@
 {
   "id": "effect.beetles.steamwing-bolt",
   "name": "Steamwing substance bolt",
-  "description": "The violet bolt the Steamwing's chin emitter fires: a white-violet core in a violet glow with a tapering streak behind it (the model is geometry 2 of the Steamwing asset). Straight, fast, no arc.",
+  "description": "The violet bolt the Steamwing's chin emitter fires (geometry 2 of the Steamwing asset). Straight, fast, no arc.",
   "durationTicks": 40,
   "loop": false,
   "layers": [
     {
-      "id": "bolt",
-      "sustain": false,
+      "id": "body",
       "enabled": true,
-      "startTick": 0,
-      "anchor": "target",
       "shape": "missile",
-      "arcHeight": 0,
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 1.0,
+      "height": 0,
+      "arcHeight": 0.0,
       "model": {
         "asset": "asset.models.units.beetles-steamwing",
         "role": "geometry",
@@ -22,20 +25,6 @@
           "y": 0,
           "z": 0
         }
-      },
-      "colour": "#b89cff",
-      "accent": "#efe6ff",
-      "durationTicks": 40,
-      "count": 1,
-      "size": 1,
-      "height": 0,
-      "trail": {
-        "durationTicks": 8,
-        "maxPoints": 16,
-        "width": 0.22,
-        "colour": "#9a6cff",
-        "opacity": 0.7,
-        "breakDistance": 8
       }
     }
   ]

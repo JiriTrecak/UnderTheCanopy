@@ -2,7 +2,7 @@
   "id": "building.beetles.arc-tower",
   "name": "Arc Tower",
   "description": "A Hornwatch refitted with a substance coil: its arcs deal 30 spell damage and jump to three more enemies. Requires an Elder Bastion.",
-  "model": "asset.models.buildings.beetles-hornwatch",
+  "model": "asset.models.buildings.beetles-arc-tower",
   "icon": "asset.portraits.buildings.beetles-hornwatch",
   "body": {
     "maxHp": 1100,
@@ -27,16 +27,16 @@
   "behaviors": {},
   "level": 3,
   "power": "required",
-  "modelScale": 1.08,
+  "modelScale": 1.0,
   "presentation": {
     "effects": [
       {
-        "effect": "effect.buildings.hornwatch-canister",
-        "state": "work",
-        "socket": "socket_canister"
+        "effect": "effect.buildings.arc-tower-coil",
+        "state": "attack",
+        "socket": "socket_coil"
       },
       {
-        "effect": "effect.buildings.hornwatch-muzzle",
+        "effect": "effect.buildings.arc-tower-discharge",
         "event": "fire",
         "socket": "socket_muzzle"
       }
