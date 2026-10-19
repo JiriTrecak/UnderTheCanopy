@@ -14,7 +14,7 @@ A Warcraft III–style RTS on the forest floor, being rebuilt natively in Rust. 
 ## Release notes
 
 - **Note every player-visible change** you complete in `releases/log.json` with `just release-note --kind added|improved|fixed|knownIssues --text "Concise player-facing change"`. It is the one shared log: keep other agents' notes, don't start other changelogs, don't invent changes or test results. Internal-only work needs no note.
-- **Never prepare or publish a release without the user's intent to release**; ordinary work only maintains Unreleased. Routine releases are patches; `0.X.0` milestones need an agreed major upgrade and `--milestone`. Read [docs/releases.md](docs/releases.md) before release, publishing or updater work, and never show, commit or upload the updater's signing key.
+- **Never prepare or publish a release without the user's intent to release**; ordinary work only maintains Unreleased. Jiri releases with `/release-new-version` (skill `release-new-version`, the checklist for docs/releases.md); `/build-game` and `/run-game` build the game and start it for him. Routine releases are patches; `0.X.0` milestones need an agreed major upgrade and `--milestone`. Read [docs/releases.md](docs/releases.md) before release, publishing or updater work, and never show, commit or upload the updater's signing key.
 
 ## Engineering rules
 
