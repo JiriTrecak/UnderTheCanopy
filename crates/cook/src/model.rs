@@ -82,6 +82,11 @@ const RETIRED_EXTRAS: &[&str] = &[
 /// The material name the old game recolours when no capability lists slots.
 const LEGACY_TEAM_SLOT: &str = "TC_TeamColor";
 
+/// How far a pivot-standing model's rest pose may sit above its pivot: a share of its height,
+/// and at least [`FLOAT_MIN`] metres.
+const FLOAT_TOLERANCE: f64 = 0.03;
+const FLOAT_MIN: f64 = 0.05;
+
 pub fn cook(source: &ModelSource, glb: &[u8], diags: &mut Diagnostics) -> Option<CookedModel> {
     let gltf = match gltf::Gltf::from_slice(glb) {
         Ok(gltf) => gltf,
@@ -350,6 +355,19 @@ pub fn cook(source: &ModelSource, glb: &[u8], diags: &mut Diagnostics) -> Option
 
     // Bounds: rest, every baked frame (per-joint boxes), and wind sway.
     let rest_bounds = bounds(stream.positions.iter().copied());
+    // A model that stands on its pivot must stand on it: its rest pose's lowest point is at
+    // the ground, within a few centimetres. A floating model is an export mistake (a stray
+    // object measured as the feet, a lifted root), never intended, so it fails the cook
+    // instead of reaching the game.
+    if ground == GroundContact::Pivot {
+        let (low, height) = (rest_bounds.0[1], rest_bounds.1[1] - rest_bounds.0[1]);
+        if low > (height * FLOAT_TOLERANCE).max(FLOAT_MIN) {
+            diags.error(format!(
+                "stands {low:.2} m above its pivot at rest (of {height:.2} m): ground the model, \
+                 its lowest point at the origin"
+            ));
+        }
+    }
     let mut culling = rest_bounds;
     if animated {
         let joint_boxes = joint_bounds(&stream, palette.len());

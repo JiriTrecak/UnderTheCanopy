@@ -113,6 +113,14 @@ Optional fields:
 }
 ```
 
+## Grounding
+
+A model with `groundContact: {"mode": "pivot"}` stands on its pivot: its rest pose's lowest
+point must be at the origin (within 3 % of its height, at least 5 cm). The cook refuses a
+model that floats above it, so `just cook` and `just check` fail instead of the game showing
+units in the air. Ground the model in its tool (its feet at the origin), or set
+`transform.pivot` to the height of its lowest point.
+
 ## Reviewing art
 
 AGENTS.md has the unit readability rules: check at game zoom, from above, and in every player colour.

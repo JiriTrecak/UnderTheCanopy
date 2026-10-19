@@ -5,7 +5,8 @@
 Tripo Studio makes the unit from its A-pose reference (image to 3D, textured, about 10k
 faces), rigs it (humanoid, Mixamo skeleton) and retargets preset clips onto it; the export is
 one GLB with the skeleton and every clip. Here:
-- the unit is scaled to `height` metres, its feet on the ground, facing -Y (glTF +Z);
+- the unit is scaled to `height` metres, its feet on the ground, facing -Y (glTF +Z); only the
+  meshes skinned to the rig are kept and measured (the cook refuses a model that floats);
 - the team colour becomes a mask in the base colour's alpha: the concepts' royal-blue plates;
 - Tripo's clips are renamed to the game's animation semantics (idle, walk, run, attack, hit,
   death, cast, ...) and the attack clip gets its contact event;
@@ -33,10 +34,15 @@ LOOPS = set(SPEC.get('loops', ['idle', 'walk', 'run', 'carry', 'carry_walk', 'ca
 kit.reset()
 bpy.ops.import_scene.gltf(filepath=SPEC['glb'])
 scene = bpy.context.scene
-meshes = [o for o in scene.objects if o.type == 'MESH']
 rigs = [o for o in scene.objects if o.type == 'ARMATURE']
 assert rigs, 'the GLB has no skeleton'
 rig = rigs[0]
+# Tripo's exports carry a stray icosphere at the origin: anything not skinned to the rig goes,
+# so only the body is measured (it once lifted every unit by half its height).
+for o in [o for o in scene.objects if o.type == 'MESH' and o.parent is not rig]:
+    print('removing stray', o.name)
+    bpy.data.objects.remove(o, do_unlink=True)
+meshes = [o for o in scene.objects if o.type == 'MESH']
 
 # --- Scale and ground: measure the rest pose, scale the armature root.
 scene.frame_set(0)

@@ -101,7 +101,7 @@
   "display": {
     "scale": 2,
     "character": "base",
-    "healthHeight": 2.6
+    "healthHeight": 1.25
   },
   "license": "Generated with Tripo (image to 3D, auto-rig, preset animations) from an ImageGen (gpt-image-2) concept for Under the Canopy; prepared by tools/units/tripo_unit.py."
 }

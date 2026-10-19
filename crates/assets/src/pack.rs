@@ -12,6 +12,7 @@ use std::{
     fs::File,
     io::{Read, Seek, SeekFrom},
     path::{Path, PathBuf},
+    sync::Mutex,
 };
 
 /// Bytes with 16-byte alignment, so arrays inside can be cast in place.
@@ -35,7 +36,10 @@ impl AlignedBytes {
 
 enum Source {
     Memory(AlignedBytes),
-    File(PathBuf),
+    /// The file opened, held for the pack's life: entries are read from this file even when
+    /// a newer pack replaces the path (a cook while the game runs renames a new pack over
+    /// it), never from a different file through this one's index.
+    File(PathBuf, Mutex<File>),
 }
 
 /// An opened pack: the index, and either every byte ([`Pack::load`]) or the file to read
@@ -88,7 +92,11 @@ impl Pack {
         let mut index = vec![0; header.index_len as usize];
         file.read_exact(&mut index).map_err(io)?;
         let entries = parse_index(&index, len)?;
-        Ok(Self::new(Source::File(path.to_owned()), header, entries))
+        Ok(Self::new(
+            Source::File(path.to_owned(), Mutex::new(file)),
+            header,
+            entries,
+        ))
     }
 
     /// The header of a pack file without reading anything else, or `None` when the file
@@ -139,14 +147,14 @@ impl Pack {
             Source::Memory(bytes) => {
                 BlobBytes::Borrowed(slice(bytes.bytes(), entry.offset, entry.len, &entry.name)?)
             }
-            Source::File(path) => {
+            Source::File(path, file) => {
                 let io = |source| Error::Io {
                     path: path.clone(),
                     source,
                 };
-                let mut file = File::open(path).map_err(io)?;
+                let mut file = file.lock().unwrap_or_else(|poison| poison.into_inner());
                 file.seek(SeekFrom::Start(entry.offset)).map_err(io)?;
-                BlobBytes::Owned(AlignedBytes::read(&mut file, entry.len as usize).map_err(io)?)
+                BlobBytes::Owned(AlignedBytes::read(&mut *file, entry.len as usize).map_err(io)?)
             }
         };
         Blob::new(&entry.name, entry.kind, bytes)
