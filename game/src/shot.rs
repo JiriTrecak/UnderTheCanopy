@@ -106,6 +106,7 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
             players: options.players,
             crowd: options.crowd,
             gallery: options.gallery,
+            only: options.only.as_deref(),
             colors: options.colors.clone(),
             races: options.races.clone(),
             biome: options.biome.as_deref(),

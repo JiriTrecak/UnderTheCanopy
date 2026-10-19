@@ -57,7 +57,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.icons.item-barkguard",
+    "icon": "asset.icons.ability-beetles-juggernaut-furnace-plating",
     "animations": {
       "prepare": "idle",
       "release": "idle",

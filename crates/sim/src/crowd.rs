@@ -132,8 +132,14 @@ pub fn crowd(map: &mut UtcMap, content: &Content, per_player: u32) -> Result<Mat
 /// of the starts: units first, then buildings, each in id order, all owned by player 0
 /// (neutrals by nobody), facing south. A review scenario for captures (`canopy shot
 /// --gallery`): every model at once, to compare looks before and after a change. Returns
-/// the match setup (player 0 human, nobody else).
-pub fn gallery(map: &mut UtcMap, content: &Content) -> Result<MatchSetup, String> {
+/// the match setup (player 0 human, nobody else). With `only`, just the definitions whose
+/// id contains it (one race's roster).
+pub fn gallery(
+    map: &mut UtcMap,
+    content: &Content,
+    only: Option<&str>,
+) -> Result<MatchSetup, String> {
+    let kept = |d: &&Definition| only.is_none_or(|text| d.id.as_str().contains(text));
     let in_roster = |id: &str| {
         content
             .rules
@@ -148,11 +154,13 @@ pub fn gallery(map: &mut UtcMap, content: &Content) -> Result<MatchSetup, String
         .definitions
         .iter()
         .filter(|d| d.kind == Kind::Unit)
+        .filter(kept)
         .collect();
     let buildings: Vec<&Definition> = content
         .definitions
         .iter()
         .filter(|d| d.kind == Kind::Building)
+        .filter(kept)
         .collect();
     let owner = |d: &Definition| {
         if in_roster(d.id.as_str()) {
@@ -161,25 +169,41 @@ pub fn gallery(map: &mut UtcMap, content: &Content) -> Result<MatchSetup, String
             Owner::Nobody
         }
     };
-    // Units: rows of 12, 6 cells apart, north of the middle.
+    // Units: rows of 12 north of the middle (clear of a main hall standing there), each unit given room by its formation
+    // spacing (at least 6 cells), so large machines don't overlap their neighbours.
     const UNIT_COLUMNS: usize = 12;
-    for (i, d) in units.iter().enumerate() {
-        let (row, column) = (i / UNIT_COLUMNS, i % UNIT_COLUMNS);
-        map.entities.push(Placement {
-            activation: None,
-            id: format!("gallery-unit-{i}"),
-            map_knowledge: None,
-            definition: d.id.clone(),
-            position: Point {
-                x: cx + (column as f64 - (UNIT_COLUMNS as f64 - 1.0) / 2.0) * 6.0,
-                y: cz - 8.0 - row as f64 * 6.0,
-                surface: None,
-            },
-            rotation: 180.0,
-            owner: owner(d),
-            initial_state: None,
-            appearance: None,
-        });
+    let room = |d: &Definition| {
+        d.dimensions
+            .as_ref()
+            .map_or(6.0, |m| (m.formation_spacing * 2.0).max(6.0))
+    };
+    let mut z = cz - 16.0;
+    for (r, row) in units.chunks(UNIT_COLUMNS).enumerate() {
+        let width: f64 = row.iter().map(|d| room(d)).sum();
+        let depth = row.iter().map(|d| room(d)).fold(6.0, f64::max);
+        z -= depth / 2.0;
+        let mut x = cx - width / 2.0;
+        for (c, d) in row.iter().enumerate() {
+            let i = r * UNIT_COLUMNS + c;
+            x += room(d) / 2.0;
+            map.entities.push(Placement {
+                activation: None,
+                id: format!("gallery-unit-{i}"),
+                map_knowledge: None,
+                definition: d.id.clone(),
+                position: Point {
+                    x: x.round(),
+                    y: z.round(),
+                    surface: None,
+                },
+                rotation: 180.0,
+                owner: owner(d),
+                initial_state: None,
+                appearance: None,
+            });
+            x += room(d) / 2.0;
+        }
+        z -= depth / 2.0;
     }
     // Buildings: rows of 6, 20 cells apart, south of the middle.
     const BUILDING_COLUMNS: usize = 6;

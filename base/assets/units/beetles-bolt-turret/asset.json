@@ -1,0 +1,84 @@
+{
+  "id": "asset.models.units.beetles-bolt-turret",
+  "name": "Bolt Turret",
+  "kind": "unit",
+  "tags": [
+    "beetles",
+    "machine",
+    "summon",
+    "tripo",
+    "animated",
+    "team-mask"
+  ],
+  "race": "beetles",
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_beetles-bolt-turret"
+      ]
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "attack",
+        "clip": "attack",
+        "loop": false,
+        "events": [
+          {
+            "name": "release",
+            "time": 0.1
+          }
+        ]
+      },
+      {
+        "semantic": "hit",
+        "clip": "hit",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "death",
+        "clip": "death",
+        "loop": false,
+        "events": []
+      }
+    ],
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 2,
+    "character": "base",
+    "healthHeight": 1.12
+  },
+  "license": "Generated with Tripo (image to 3D) from an ImageGen (gpt-image-2) concept for Under the Canopy; prepared and animated by tools/units/bolt_turret.py."
+}

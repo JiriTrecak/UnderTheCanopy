@@ -67,6 +67,10 @@
             "ai",
             "scenario"
           ],
+          "command": {
+            "hotkey": "W",
+            "column": 2
+          },
           "ai": {
             "preference": "enemy",
             "intervalTicks": 20

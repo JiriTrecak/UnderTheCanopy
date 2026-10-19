@@ -56,7 +56,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.icons.ability-beetles-mender-repair",
+    "icon": "asset.icons.ability-beetles-tinker-patch-up",
     "animations": {
       "prepare": "build",
       "release": "build",

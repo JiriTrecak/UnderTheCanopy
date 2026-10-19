@@ -58,7 +58,7 @@
   },
   "onRelease": [],
   "presentation": {
-    "icon": "asset.icons.item-tempest-antennae",
+    "icon": "asset.icons.ability-beetles-steamwing-flak-beam",
     "animations": {
       "prepare": "idle",
       "release": "idle",
