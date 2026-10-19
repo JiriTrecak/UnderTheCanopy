@@ -74,6 +74,7 @@ pub fn run(
             crowd: None,
             gallery: false,
             colors: options.colors.clone(),
+            races: options.races.clone(),
             biome: options.biome.as_deref(),
             human: me,
             content: None,

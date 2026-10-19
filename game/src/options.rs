@@ -1,7 +1,7 @@
 //! Command-line options.
 //!
 //! ```text
-//! canopy [--data <folder>] [--no-vsync] [--map <id> | --spectate <id>] [--players <n>]
+//! canopy [--data <folder>] [--no-vsync] [--map <id> | --spectate <id>] [--players <n>] [--races <race,…>]
 //!        [--tick <n>] [--camera <x,z,zoom[,yaw]>] [--hour <h>] [graphics]
 //! canopy edit [--data <folder>]  (opens the editor; docs/editor.md)
 //! canopy mcp [--data <folder>]   (the editor's MCP server without a window)
@@ -10,7 +10,7 @@
 //! canopy capture-screens --out <folder> [--size <w>x<h>] [--scale <s>] [--only releases|multiplayer|editor|feedback|replays]
 //!                         [--data <folder>]
 //! canopy shot --map <id> --camera <x,z,zoom[,yaw] | battle[,zoom]> --out <png>
-//!             [--tick <n>] [--players <n>] [--crowd <n> | --gallery] [--colors <i,j,…>] [--size <w>x<h>]
+//!             [--tick <n>] [--players <n>] [--races <race,…>] [--crowd <n> | --gallery] [--colors <i,j,…>] [--size <w>x<h>]
 //!             [--hour <h>] [--time <s>] [--frames <n>] [--no-shadows] [--pitch <deg>]
 //!             [--movers <n>] [--effect <id>[,<age>[,<radius>]]]… [--viewer <slot>]
 //!             [--select all|player:<slot>|<id,…>] [--health damaged|always|selected]
@@ -172,6 +172,8 @@ pub struct Options {
     pub gallery: bool,
     /// Player colour index of each slot (`config/players.json`).
     pub colors: Option<Vec<usize>>,
+    /// Race of each slot in order (`--races beetles,ants`); the start's own when absent.
+    pub races: Option<Vec<String>>,
     pub camera: Option<CameraChoice>,
     /// Hour of the day; the map's own when absent.
     pub hour: Option<f32>,
@@ -245,6 +247,7 @@ impl Options {
             map: None,
             spectate: false,
             players: None,
+            races: None,
             tick: 0,
             crowd: None,
             gallery: false,
@@ -316,6 +319,10 @@ impl Options {
                 "--tick" => options.tick = value("--tick")?.parse().context("--tick")?,
                 "--gallery" => options.gallery = true,
                 "--crowd" => options.crowd = Some(value("--crowd")?.parse().context("--crowd")?),
+                "--races" => {
+                    let text = value("--races")?;
+                    options.races = Some(text.split(',').map(|r| r.trim().to_string()).collect());
+                }
                 "--colors" => {
                     let text = value("--colors")?;
                     let colors = text
@@ -403,7 +410,7 @@ impl Options {
                     size = [w.parse().context("--size")?, h.parse().context("--size")?];
                 }
                 other => bail!(
-                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --tick, --crowd, --gallery, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --preset, --lod-pixels, --shadow-map, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --effect, --viewer, --select, --health, --damage, --play, --observe, --input)"
+                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --races, --tick, --crowd, --gallery, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --preset, --lod-pixels, --shadow-map, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --effect, --viewer, --select, --health, --damage, --play, --observe, --input)"
                 ),
             }
             first = false;

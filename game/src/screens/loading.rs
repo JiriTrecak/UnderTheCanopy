@@ -29,6 +29,7 @@ pub struct DevSpec {
     pub biome: Option<String>,
     pub crowd: Option<u32>,
     pub colors: Option<Vec<usize>>,
+    pub races: Option<Vec<String>>,
     /// The local player's slot (`--map`); `None` spectates (`--spectate`).
     pub human: Option<u8>,
     /// Trying an ability with this unit (the editor's encounter).
@@ -103,6 +104,7 @@ fn dev(
             crowd: spec.crowd,
             gallery: false,
             colors: spec.colors.clone(),
+            races: spec.races.clone(),
             human: spec.human,
             content: Some(data.content.clone()),
             encounter: spec.encounter.as_deref(),

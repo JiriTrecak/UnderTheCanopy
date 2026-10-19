@@ -366,6 +366,7 @@ impl Game {
                 biome: None,
                 crowd: None,
                 colors: None,
+                races: None,
                 human: Some(0),
                 encounter,
             },
