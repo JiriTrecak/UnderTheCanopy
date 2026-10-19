@@ -7,6 +7,7 @@ use super::{
     Active, Ctx, JobKind, QueueEntry, Rally, Status, alive, coarse, distance2,
     harvest::{can_assign_gather, harvest_item, set_regrowth},
     jobs::{self, Spec},
+    lane::{self, Lane},
     ready, sites, stock,
     supply::{self, Cache},
     work::{abandon, workers},
@@ -19,38 +20,8 @@ use crate::{
 };
 use canopy_content::game::{Creation, ProductionMode};
 
-/// Which kind of work is next in a building's shared lane (old `workplaceHead`): the
-/// queue entry with the smaller id, training or revival.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Lane {
-    Production,
-    Revival,
-}
-
-pub fn lane(e: &crate::entity::Entity) -> Option<Lane> {
-    let production = e
-        .production
-        .as_ref()
-        .and_then(|p| p.queue.first())
-        .map(|q| q.id);
-    let revival = e
-        .revival
-        .as_ref()
-        .and_then(|r| r.queue.first())
-        .map(|q| q.id);
-    match (production, revival) {
-        (None, None) => None,
-        (None, Some(_)) => Some(Lane::Revival),
-        (Some(_), None) => Some(Lane::Production),
-        (Some(p), Some(r)) => Some(if p < r {
-            Lane::Production
-        } else {
-            Lane::Revival
-        }),
-    }
-}
-
-/// Entries in the shared lane (old `workplaceQueueSize`).
+/// Training and revival entries, which share the workplace's capacity (old
+/// `workplaceQueueSize`); research has its own (D72).
 pub fn lane_size(e: &crate::entity::Entity) -> usize {
     e.production.as_ref().map_or(0, |p| p.queue.len())
         + e.revival.as_ref().map_or(0, |r| r.queue.len())
@@ -173,9 +144,26 @@ pub fn start_workplace(ctx: &mut Ctx, b: EntityId, supply: &mut Cache) {
         set_status(ctx, b, Status::Unpowered);
         return;
     }
-    if lane(e) == Some(Lane::Revival) {
-        set_status(ctx, b, Status::RevivingHero);
-        return;
+    // The building works on what was queued first (D72).
+    match lane::head(e) {
+        Some(Lane::Revival) => {
+            set_status(ctx, b, Status::RevivingHero);
+            return;
+        }
+        // Automatic output is not queued: it runs beside research.
+        Some(Lane::Research)
+            if ctx
+                .catalog
+                .get(e.definition)
+                .behaviors
+                .production
+                .as_ref()
+                .is_some_and(|p| p.mode == ProductionMode::Queued) =>
+        {
+            set_status(ctx, b, Status::Researching);
+            return;
+        }
+        _ => {}
     }
     let Some((def, queue)) = head(ctx, b) else {
         set_status(ctx, b, Status::Idle);
@@ -414,6 +402,10 @@ pub fn advance_training(ctx: &mut Ctx) {
         let Some(active) = p.active.as_ref() else {
             continue;
         };
+        // Queued training waits while an earlier item leads the building's queue (D72).
+        if active.queue.is_some() && lane::head(e) != Some(Lane::Production) {
+            continue;
+        }
         let Some(Creation::Train { work_ticks, .. }) = &ctx.catalog.get(active.definition).creation
         else {
             continue;
@@ -557,8 +549,7 @@ fn enqueue(ctx: &mut Ctx, b: EntityId, def: Def) -> bool {
         return false;
     };
     stock::admit(ctx.state, b, &reservation);
-    let id = ctx.state.counters.queue;
-    ctx.state.counters.queue += 1;
+    let id = lane::next(ctx.state);
     ctx.state
         .entities
         .get_mut(b)

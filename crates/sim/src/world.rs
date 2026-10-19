@@ -872,6 +872,7 @@ impl World {
             ));
         }
         let mut state = save.state;
+        crate::economy::lane::order_legacy(&mut state);
         let sight = SpellSight {
             catalog: catalog.clone(),
         };
@@ -940,6 +941,7 @@ impl World {
             .check(&save.state.ai, &save.pending)
             .map_err(SetupError)?;
         let mut state = save.state;
+        crate::economy::lane::order_legacy(&mut state);
         let vision = Vision::restore(
             &mut state,
             &self.catalog,

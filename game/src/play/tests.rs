@@ -1448,3 +1448,66 @@ fn a_building_that_can_research_shows_its_training_queue_after_reselection() {
         "{sent:?}"
     );
 }
+
+#[test]
+fn the_queue_panel_shows_one_queue_in_the_order_queued() {
+    use crate::sim::economy_fixture as ef;
+    use canopy_ui::{ActionKind, Modifiers, PointerButton};
+    let mut world = ef::world(&ef::sandbox(vec![
+        ef::place("nexus", ef::NEXUS, 19.5, 19.5),
+        ef::place("shop", ef::WORKSHOP, 29.5, 21.5),
+        ef::place("house", ef::HOUSE, 61.5, 61.5),
+    ]));
+    ef::fund(&mut world, ef::P1, ef::AMBER, 500);
+    let shop = ef::id(&world, "shop");
+    // Research, then two units (D72): the research works, the units wait in order.
+    let research = serde_json::json!({"type": "research", "actor": shop, "research": ef::AMPLIFY});
+    let produce = serde_json::json!({"type": "produce", "actor": shop, "definition": ef::SOLDIER});
+    assert_eq!(ef::try_command(&mut world, research), None);
+    assert_eq!(ef::try_command(&mut world, produce.clone()), None);
+    assert_eq!(ef::try_command(&mut world, produce), None);
+    ef::run(&mut world, 2);
+    let units: Vec<u32> = ef::get(&world, shop)
+        .production
+        .as_ref()
+        .unwrap()
+        .queue
+        .iter()
+        .map(|q| q.id)
+        .collect();
+    assert_eq!(units.len(), 2);
+    let mut h = Harness::on(world, 0, [29.5, 21.5]);
+    let mut ui = shipped_ui();
+    let mut hud = super::hud::Hud::new();
+    h.click(shop);
+    hud.update(&mut ui, &h.play);
+    let label = ui
+        .find("hud/dock/selection/copy/task/meter/label")
+        .and_then(|l| ui.text(l))
+        .unwrap_or_default()
+        .to_owned();
+    assert!(label.starts_with("Amplify ·"), "{label}");
+    // The tiles are the waiting units, first queued first; each cancels its own.
+    for (tile, unit) in units.iter().enumerate() {
+        hud.act(
+            &mut ui,
+            &mut h.play,
+            vec![canopy_ui::Action {
+                node: None,
+                path: Some("hud/dock/selection/queue".into()),
+                name: Some("queue".into()),
+                index: Some(tile),
+                kind: ActionKind::Click {
+                    button: PointerButton::Primary,
+                    modifiers: Modifiers::default(),
+                    count: 1,
+                },
+            }],
+        );
+        let sent = h.take();
+        assert!(
+            matches!(sent.as_slice(), [Action::Cancel { actor, queue: Some(q) }] if *actor == shop && q == unit),
+            "{sent:?}"
+        );
+    }
+}

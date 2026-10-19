@@ -1,7 +1,11 @@
 //! Colony-wide research bought at buildings (old `Research`, `src/sim/game/research.ts`)
 //! and the effects the economy owns.
 
-use super::{Ctx, ResearchEntry, alive, ready, stock, supply};
+use super::{
+    Ctx, ResearchEntry, alive,
+    lane::{self, Lane},
+    ready, stock, supply,
+};
 use crate::{catalog::Catalog, entity::EntityId, state::FactKind};
 use canopy_content::Id;
 
@@ -44,6 +48,7 @@ pub fn enqueue(ctx: &mut Ctx, b: EntityId, id: &Id) -> Result<(), String> {
         return Err("Insufficient resources".into());
     };
     stock::pay(ctx.state, &payment);
+    let order = lane::next(ctx.state);
     ctx.state
         .entities
         .get_mut(b)
@@ -53,6 +58,7 @@ pub fn enqueue(ctx: &mut Ctx, b: EntityId, id: &Id) -> Result<(), String> {
         .push(ResearchEntry {
             id: id.clone(),
             progress: 0,
+            order,
         });
     Ok(())
 }
@@ -102,8 +108,9 @@ fn hp_bonus(catalog: &Catalog, research: &Id, unit: &Id) -> u32 {
         })
 }
 
-/// Step 9 (old `Research.tick`): each building's first research advances; on completion
-/// the colony learns it and living units gain its health.
+/// Step 9 (old `Research.tick`): each building's first research advances when it leads the
+/// building's queue (D72); on completion the colony learns it and living units gain its
+/// health.
 pub fn advance(ctx: &mut Ctx) {
     let tick = ctx.state.tick;
     for b in ctx.index.buildings.clone() {
@@ -115,6 +122,7 @@ pub fn advance(ctx: &mut Ctx) {
             || e.construction.is_some()
             || e.upgrade.is_some()
             || ctx.network.unpowered(b)
+            || lane::head(e) != Some(Lane::Research)
         {
             continue;
         }

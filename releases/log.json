@@ -2,7 +2,9 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [],
-    "improved": [],
+    "improved": [
+      "A building works on one thing at a time: research waits for the units queued before it, and units for the research, as in Warcraft III. Its queue panel shows training, research and revivals in the order you queued them."
+    ],
     "fixed": [],
     "knownIssues": []
   },

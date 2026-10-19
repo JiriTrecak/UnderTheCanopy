@@ -737,3 +737,24 @@ Jiri: rebuild Echo Isles in the autumn design, trees replaced by impassable dark
 - **Two new atlases** in the debris family (`tools/terrain/build_atlas.py`, gpt-image sources): `asset.terrain.autumn-moss` and `asset.terrain.autumn-needles`.
 - **Measured** (ai_duels, Echo Isles, 8 seeds a seat): every match but one finished (one hit the hour cap); both sides build wells and beetles keep their network. Beetles won 2 of 16 against ants, against 5 of 16 on the summer map with the same numbers; per Jiri, no per-map balancing.
 - **Open**: no giant trees (in woods this narrow their trunks would cover playable ground); lone pines leave small closed spots; the map's preview shows the closed cells with a fine hatch.
+
+## D72. One queue per building (2026-10-19, Jiri — review: felt)
+
+Jiri: "We need one queue per building." A building's training, research and hero revivals all advanced at once, so a War Lodge researched while it trained at full speed, which neither Warcraft III nor StarCraft allows. Now a building works on one thing at a time, in the order the player queued them (`economy::lane`).
+
+- **Order.** Training and revival entries already took their id from the match's queue counter (training and revival shared a lane before). Research entries now take an `order` from the same counter. A building's head is the smallest of its three queues' heads; only it advances. When it finishes or is cancelled, the next item goes on, whatever its kind. Each kind keeps its own list, each in queued order. A workplace whose queue research leads shows the status "Researching".
+- **Unchanged.** An upgrade still holds training, research and revival. Automatic production (planting, a building's own automatic output) is not queued and runs beside the queue. Pausing a workplace pauses its training and revivals as before; research ignores the pause as before.
+- **Capacity.** Kept per kind: training and revivals count together against their `queueCapacity` (as before), research against `research.queueCapacity`. One shared capacity would change every building's numbers in content; the separate caps are safe because only the head advances anyway.
+- **Saves and replays.** The order lives in the entities, so saves and replay keyframes resume exactly. A save from before has no `order` on research (serde default 0); loading (`World::restore`, `rewind`) numbers such research after everything queued, so it waits for the training queued with it.
+- **HUD.** The selected building's panel shows one queue: the working item with progress, then the waiting items as tiles in queued order (training, research and revival mixed), each cancelling on click. The observer panel shows progress only for each building's working item. A building is busy (D65) for research or revival only while that leads its queue.
+- **AI.** Research at a building that trains holds its training up, so the AI researches at such a building only with no training queued there and nothing it trains wanted now (army below plan, workers below need) that no other building could train. It queues no training at a building with research queued, and counts a researching barracks as saturated when deciding to add production. Research-only buildings research as before.
+- **Measured** (`ai_duels`, Echo Isles, 4 seeds; wins for player 1–player 2, mean minutes):
+
+  | Pairing | Before | After |
+  |---|---|---|
+  | Beetles vs ants | 1–3, 21.8 | 2–2, 24.6 |
+  | Ants vs beetles | 4–0, 24.2 | 2–2, 31.3 |
+  | Ant mirror | 2–2, 24.4 | 2–2, 24.4 (identical) |
+
+  Every match finished (the longest 52 minutes, under the hour cap). The AI chose research 42 → 37 and 56 → 41 times across the two beetle–ant pairings.
+- **Open:** beetle research moving out of the production halls into a research building is content work under way separately (`tools/content/beetles/gen.py`).
