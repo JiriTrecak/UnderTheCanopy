@@ -38,7 +38,8 @@
       "Computer opponents add production when goods pile up, learn every hero ability before raising ranks, learn and cast ultimates first, and keep buffs and shields for fights",
       "Beetles build up more slowly: their troops and machines train longer, the Great and Elder Bastion, Alembic and Engine Yard cost more, and their troops have a little less health and damage",
       "Beetle troops are a little sturdier and hit a little harder, so beetles hold their own against ants",
-      "Echo Isles is now an autumn forest map: dark leaf-strewn woods, pine needles and moss on the open ground, calm shallows and dark pools"
+      "Echo Isles is now an autumn forest map: dark leaf-strewn woods, pine needles and moss on the open ground, calm shallows and dark pools",
+      "Levelled research shows one level at a time: once Plating I is queued, its button turns into Plating II, waiting for the first to finish"
     ],
     "fixed": [
       "Sparks and shrapnel from spells and weapons fall instead of flying up, and steam rises",

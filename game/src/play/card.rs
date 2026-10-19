@@ -16,9 +16,10 @@ use crate::settings::Chord;
 use canopy_content::{
     Id,
     abilities::{Activation, TargetingKind},
-    game::{ActionPlacement, Creation, Definition, Kind},
+    game::{ActionPlacement, Creation, Definition, Kind, Research},
 };
 use canopy_sim::{Action, abilities::library};
+use std::collections::BTreeMap;
 
 /// What pressing a command does.
 #[derive(Debug, Clone, PartialEq)]
@@ -265,6 +266,44 @@ pub fn prerequisite(k: &Knowledge, requires: Option<&[Id]>, done: &[String]) -> 
     (!missing.is_empty()).then(|| format!("Requires {}", missing.join(", ")))
 }
 
+/// Whether research `id` of a building's `outputs` shows on its card: a level whose previous
+/// one (`follows`) is not yet queued, under way or done stays hidden, and a level whose next
+/// one already shows gives it its place.
+fn chain_shows(
+    id: &str,
+    outputs: &[Id],
+    rules: &BTreeMap<Id, Research>,
+    started: &dyn Fn(&str) -> bool,
+) -> bool {
+    let follows = |r: &str| {
+        rules
+            .get(r)
+            .and_then(|r| r.follows.as_ref())
+            .map(Id::as_str)
+    };
+    if follows(id).is_some_and(|previous| !started(previous)) {
+        return false;
+    }
+    let next = outputs.iter().find(|o| follows(o.as_str()) == Some(id));
+    next.is_none_or(|_| !started(id))
+}
+
+/// The first level of the chain research `id` belongs to, among `outputs`.
+fn chain_head<'a>(
+    id: &'a str,
+    outputs: &'a [Id],
+    rules: &'a BTreeMap<Id, Research>,
+) -> Option<&'a str> {
+    let mut head = id;
+    for _ in 0..outputs.len() {
+        match rules.get(head).and_then(|r| r.follows.as_ref()) {
+            Some(previous) if outputs.iter().any(|o| o == previous) => head = previous.as_str(),
+            _ => return Some(head),
+        }
+    }
+    Some(head)
+}
+
 /// Spendable amount of each good.
 fn available(k: &Knowledge, item: &str) -> u32 {
     k.view
@@ -468,10 +507,16 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
                 .as_ref()
                 .map(|c| c.research.iter().map(|r| r.as_str()).collect())
                 .unwrap_or_default();
+            // Chains (`follows`) show one level at a time, in their first level's slot.
+            let started = |id: &str| researched.contains(&id) || queued.contains(&id);
+            let rules = &k.content.rules.research;
             for id in &policy.outputs {
-                let Some(rule) = k.content.rules.research.get(id.as_str()) else {
+                let Some(rule) = rules.get(id.as_str()) else {
                     continue;
                 };
+                if !chain_shows(id.as_str(), &policy.outputs, rules, &started) {
+                    continue;
+                }
                 let mut c = Command::new(
                     format!("research:{id}"),
                     &rule.name,
@@ -490,6 +535,9 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
                         queue: false,
                     },
                 );
+                c.priority = chain_head(id.as_str(), &policy.outputs, rules)
+                    .and_then(|head| rules.get(head))
+                    .map_or(rule.priority, |head| head.priority);
                 c.costs = item_costs(k, &rule.items);
                 c.reason = if researched.contains(&id.as_str()) {
                     Some("Already researched".into())
@@ -1197,6 +1245,52 @@ pub fn shortcut<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_research_chain_shows_one_level_at_a_time() {
+        let level = |follows: Option<&str>| Research {
+            name: String::new(),
+            description: String::new(),
+            icon: Id::new("asset.icon").unwrap(),
+            priority: 0,
+            requires: None,
+            follows: follows.map(|f| Id::new(f).unwrap()),
+            items: Vec::new(),
+            work_ticks: 1,
+            effects: Vec::new(),
+        };
+        let ids = ["research.a-1", "research.a-2", "research.a-3", "research.b"];
+        let rules: BTreeMap<Id, Research> = [
+            (ids[0], level(None)),
+            (ids[1], level(Some(ids[0]))),
+            (ids[2], level(Some(ids[1]))),
+            (ids[3], level(None)),
+        ]
+        .into_iter()
+        .map(|(id, r)| (Id::new(id).unwrap(), r))
+        .collect();
+        let outputs: Vec<Id> = ids.iter().map(|id| Id::new(*id).unwrap()).collect();
+        let shown = |started: &[&str]| -> Vec<&str> {
+            let started = |id: &str| started.contains(&id);
+            ids.into_iter()
+                .filter(|id| chain_shows(id, &outputs, &rules, &started))
+                .collect()
+        };
+        assert_eq!(shown(&[]), ["research.a-1", "research.b"]);
+        // Level I queued or under way: level II takes its place.
+        assert_eq!(shown(&["research.a-1"]), ["research.a-2", "research.b"]);
+        assert_eq!(
+            shown(&["research.a-1", "research.a-2"]),
+            ["research.a-3", "research.b"]
+        );
+        // The last level stays, done.
+        let all = ["research.a-1", "research.a-2", "research.a-3", "research.b"];
+        assert_eq!(shown(&all), ["research.a-3", "research.b"]);
+        assert_eq!(
+            chain_head("research.a-3", &outputs, &rules),
+            Some("research.a-1")
+        );
+    }
 
     fn cmd(
         id: &str,

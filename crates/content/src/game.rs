@@ -764,6 +764,11 @@ pub struct Research {
     pub icon: Id,
     pub priority: i64,
     pub requires: Option<Vec<Id>>,
+    /// The previous level of a research chain (Plating I before Plating II). The command
+    /// card shows a chain one level at a time in its first level's slot: this level stays
+    /// hidden until the previous one is queued, under way or done, then takes its place
+    /// (disabled until the previous one is done). It must also be in `requires`.
+    pub follows: Option<Id>,
     pub items: Vec<Cost>,
     pub work_ticks: u32,
     pub effects: Vec<ResearchEffect>,

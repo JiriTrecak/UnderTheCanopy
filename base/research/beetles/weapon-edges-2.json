@@ -8,6 +8,7 @@
     "building.beetles.great-bastion",
     "research.beetles.weapon-edges-1"
   ],
+  "follows": "research.beetles.weapon-edges-1",
   "items": [
     {
       "item": "item.amber",

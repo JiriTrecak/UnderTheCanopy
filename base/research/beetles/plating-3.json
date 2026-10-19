@@ -8,6 +8,7 @@
     "building.beetles.elder-bastion",
     "research.beetles.plating-2"
   ],
+  "follows": "research.beetles.plating-2",
   "items": [
     {
       "item": "item.amber",

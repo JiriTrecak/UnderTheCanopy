@@ -259,6 +259,23 @@ fn research(check: &mut Checker) {
             check.definition(&location, cost.item.as_str(), Kind::Item);
         }
         // A research may require buildings and earlier research (levels I–III).
+        if let Some(previous) = &research.follows {
+            if !content.rules.research.contains_key(previous.as_str()) {
+                check.fail(&location, format!("follows unknown research {previous}"));
+            } else if !research.requires.iter().flatten().any(|r| r == previous) {
+                check.fail(
+                    &location,
+                    format!("follows {previous}, which it must also require"),
+                );
+            } else if content
+                .rules
+                .research
+                .iter()
+                .any(|(other, r)| other != id && r.follows.as_ref() == Some(previous))
+            {
+                check.fail(&location, format!("{previous} has two next levels"));
+            }
+        }
         for prerequisite in research.requires.iter().flatten() {
             if content.rules.research.contains_key(prerequisite.as_str()) {
                 if prerequisite.as_str() == id.as_str() {

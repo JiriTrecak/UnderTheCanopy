@@ -8,6 +8,7 @@
     "building.beetles.elder-bastion",
     "research.beetles.specialist-training-adept"
   ],
+  "follows": "research.beetles.specialist-training-adept",
   "items": [
     {
       "item": "item.amber",

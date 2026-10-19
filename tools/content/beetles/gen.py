@@ -1242,11 +1242,13 @@ def write_buildings(research_ids):
 def write_research():
     ids = {}
 
-    def put(key, name, title, description, icon, priority, items, seconds, effects, requires=None):
+    def put(key, name, title, description, icon, priority, items, seconds, effects, requires=None, follows=None):
         rid = r(name)
         d = {'id': rid, 'name': title, 'description': description, 'icon': icon, 'priority': priority}
         if requires:
             d['requires'] = requires
+        if follows:
+            d['follows'] = follows  # the previous level: the card shows the chain one level at a time
         d['items'] = items
         d['workTicks'] = int(seconds * S)
         d['effects'] = effects
@@ -1274,7 +1276,7 @@ def write_research():
             name = f'{key}-{i + 1}'
             rid = put(name, name, f'{label} {roman}', f'{what} (level {roman}; levels add up).{gate}', icon[i],
                       prio - i, cost(amber, substance), seconds, [dict({'units': units}, **effect_of())],
-                      requires=requires or None)
+                      requires=requires or None, follows=prev)
             forge.append(rid)
             prev = rid
     ids['forge'] = forge
@@ -1302,7 +1304,7 @@ def write_research():
         [{'units': [u('arcwright')], 'abilityRanks': {'arc-surge': 2, 'static-field': 2}},
          {'units': [u('mender')], 'abilityRanks': {'mend': 2, 'field-repair': 2}},
          {'units': [u('warden')], 'abilityRanks': {'barrier-field': 2, 'bulwark-pulse': 2}}],
-        requires=[T3, r('specialist-training-adept')])
+        requires=[T3, r('specialist-training-adept')], follows=r('specialist-training-adept'))
     put('fragmentation-shells', 'fragmentation-shells', 'Fragmentation Shells',
         'Bombard and Juggernaut shells burst wider: blast radius grows to 3.5 units and they slow survivors by 25% for 2 seconds.',
         RESEARCH_ICON['fragmentation-shells'], 75, cost(175, 50), 50,
@@ -1315,7 +1317,7 @@ def write_research():
     put('riveted-hulls-2', 'riveted-hulls-2', 'Riveted Hulls II',
         'Machines gain the same again: Bombards +100, Steamwings +80, the Juggernaut +450. Requires an Elder Bastion.',
         RESEARCH_ICON['riveted-hulls'][1], 69, cost(225, 75), 60, machines_hp(),
-        requires=[T3, r('riveted-hulls-1')])
+        requires=[T3, r('riveted-hulls-1')], follows=r('riveted-hulls-1'))
     put('afterburners', 'afterburners', 'Afterburners', 'Steamwings fly 30% faster.',
         RESEARCH_ICON['afterburners'], 60, cost(150, 30), 40,
         [{'units': [u('steamwing')], 'moveSpeedPermille': 300}])

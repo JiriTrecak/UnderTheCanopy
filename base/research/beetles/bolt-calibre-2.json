@@ -8,6 +8,7 @@
     "building.beetles.great-bastion",
     "research.beetles.bolt-calibre-1"
   ],
+  "follows": "research.beetles.bolt-calibre-1",
   "items": [
     {
       "item": "item.amber",
