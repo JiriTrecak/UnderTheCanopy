@@ -392,6 +392,7 @@ fn damage_effects_take_a_capped_share_after_the_cues() {
         size: 1.0,
         severity: (i % 10) as f32 / 9.0,
         seed: i,
+        rank: (i % 4) as u8,
     }));
     let events = [event(1, 0, EventKind::Released, 1)];
     let snapshot = step(&mut d, 5, &events);
@@ -419,6 +420,19 @@ fn damage_effects_take_a_capped_share_after_the_cues() {
             .iter()
             .filter(|e| e.ints[0] == kind::DUST)
             .all(|e| e.position[0] < DRAWN_HIT_DUST as f32)
+    );
+    // More burn than are drawn: each building's first flame, the nearest buildings first.
+    let drawn: Vec<f32> = frame
+        .emitters
+        .iter()
+        .filter(|e| e.ints[0] == kind::FLAME)
+        .map(|e| e.position[2])
+        .collect();
+    assert_eq!(drawn.len(), DRAWN_FIRES);
+    assert!(
+        drawn
+            .iter()
+            .all(|&z| z % 4.0 == 0.0 && z < 4.0 * DRAWN_FIRES as f32)
     );
     // Flames come last, over the smoke; one fire light at most.
     let last = frame.draws.last().unwrap();

@@ -256,6 +256,8 @@ pub struct Fire {
     /// How badly the building burns, 0–1: denser, darker smoke.
     pub severity: f32,
     pub seed: u32,
+    /// Its place in its building's ignition order (0: the first to burn).
+    pub rank: u8,
 }
 
 /// One sample of a blade ribbon.

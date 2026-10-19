@@ -8,8 +8,9 @@
 //! draw per group in view.
 //!
 //! The damage effects (D46) come after every cue, so spells always have the budgets
-//! first: the nearest [`DRAWN_FIRES`] fire points and [`DRAWN_HIT_DUST`] dust bursts to the
-//! eye, within [`DAMAGE_PARTS`] parts, and one flickering light for the worst fire near the
+//! first: [`DRAWN_FIRES`] fire points (every burning building's first before any second,
+//! the nearest first) and the [`DRAWN_HIT_DUST`] dust bursts nearest the eye, within
+//! [`DAMAGE_PARTS`] parts, and one flickering light for the worst fire near the
 //! eye when a light is left.
 
 use super::{
@@ -539,6 +540,8 @@ impl EffectEvaluator {
             );
             room -= HIT_DUST_PARTS as usize;
         }
+        // Every burning building's first flame before any building's second, the nearest
+        // first within each rank: when more burn than are drawn, each still shows its damage.
         let fires: Vec<Fire> = {
             let nearest = &mut self.nearest;
             nearest.clear();
@@ -548,7 +551,14 @@ impl EffectEvaluator {
                     .enumerate()
                     .map(|(i, f)| (distance(f.position), i as u32)),
             );
-            keep_nearest(nearest, DRAWN_FIRES);
+            let rank = |i: u32| b.fires[i as usize].rank;
+            nearest.sort_unstable_by(|x, y| {
+                rank(x.1)
+                    .cmp(&rank(y.1))
+                    .then(x.0.total_cmp(&y.0))
+                    .then(x.1.cmp(&y.1))
+            });
+            nearest.truncate(DRAWN_FIRES);
             nearest.iter().map(|&(_, i)| b.fires[i as usize]).collect()
         };
         let time = (tick_seconds(tick) % FIRE_CLOCK) as f32;

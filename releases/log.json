@@ -49,7 +49,9 @@
       "Dark forest edges are now solid: units can no longer walk or build where the ground looks impassable",
       "Beetle units stand on the ground instead of floating above it",
       "Units stay over their selection circle: walking, running and carrying no longer pull the model ahead of where the unit really is",
-      "A Substance deposit stays visible while its Well is being built: the scaffold rises around it and the finished Well takes its place"
+      "A Substance deposit stays visible while its Well is being built: the scaffold rises around it and the finished Well takes its place",
+      "A selected building that can both train and research, such as the Bastion, again shows its training queue and progress",
+      "Damaged buildings of every race visibly burn from the first tenth of lost health, with flames that read at game zoom on the large beetle buildings"
     ],
     "knownIssues": []
   },
