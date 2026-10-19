@@ -2,6 +2,8 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [
+      "0.4 is the first milestone since the native rebuild: the beetles join the ants as a second complete, playable race; the forest runs on a new economy of amber and Substance, pumped from wells on contested deposits; and Echo Isles shows the game's new autumn forest look.",
+      "The road to 0.4, the 0.3 series in one place: the native game for Apple Silicon Macs (0.3.0), Warcraft-style lobbies and teaming up against the computer (0.3.2), smooth movement (0.3.4), a smarter computer opponent and your own maps (0.3.5), the game's own editor with twelve classic Warcraft III battlefields and Amberleaf Crossing (0.3.6), and replays with in-game feedback (0.3.7).",
       "A look-dev showcase map, Look-dev: Fall, previews the new forest-floor look: giant trunks, leaf litter, mushrooms, a shallow ford, a deep pool and glowing amber",
       "Look-dev: Fall has a canopy: giant trees rise into it in the third-person view, light falls through it in beams with dust and drifting leaves, and the distant forest goes soft with depth of field.",
       "Beetles build on a substance network: their halls power the ground around them and Brood Dens extend it in a chain. War Lodges, Shell Forges, Hornwatches and Ancestor Shrines must be placed inside it and stop working while cut off; placing one shows the network on the ground, and a dark building shows a struck-bolt badge.",
@@ -53,7 +55,9 @@
       "A selected building that can both train and research, such as the Bastion, again shows its training queue and progress",
       "Damaged buildings of every race visibly burn from the first tenth of lost health, with flames that read at game zoom on the large beetle buildings"
     ],
-    "knownIssues": []
+    "knownIssues": [
+      "The beetles and the ants are not balanced against each other yet: in computer matches the beetles win fewer than half their games. A balance pass follows."
+    ]
   },
   "releases": [
     {
