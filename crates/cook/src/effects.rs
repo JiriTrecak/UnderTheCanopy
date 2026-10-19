@@ -112,7 +112,8 @@ pub fn classify(layer: &VisualLayer) -> (Primitive, Motion) {
         Shape::Mesh => (Primitive::Mesh, Motion::Model),
         Shape::Light => (Primitive::Light, Motion::Light),
         Shape::Sound => (Primitive::Sound, Motion::Sound),
-        Shape::Rain | Shape::Beam => (Primitive::Particle, Motion::Unsupported),
+        Shape::Beam => (Primitive::Particle, Motion::Beam),
+        Shape::Rain => (Primitive::Particle, Motion::Unsupported),
     }
 }
 

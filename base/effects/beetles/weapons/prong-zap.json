@@ -13,9 +13,10 @@
       "accent": "#b8c8ff",
       "durationTicks": 6,
       "count": 1,
-      "size": 0.24,
+      "size": 0.4,
       "height": 0.0,
-      "blend": "additive"
+      "blend": "additive",
+      "spread": 0.3
     },
     {
       "id": "flash",

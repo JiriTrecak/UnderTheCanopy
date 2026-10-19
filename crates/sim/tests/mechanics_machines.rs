@@ -243,6 +243,55 @@ fn a_field_barrier_stops_missiles_from_the_front_only() {
 }
 
 #[test]
+fn shells_burst_against_a_field_barrier() {
+    for shielded in [true, false] {
+        let spec = barrier_spec();
+        let content = content_with(
+            if shielded { "pane-shell" } else { "open-shell" },
+            &spec,
+            |g| {
+                let combat = &mut definition_mut(g, "unit.archer")["behaviors"]["combat"];
+                combat.as_object_mut().expect("combat").remove("projectile");
+                combat["shell"] =
+                    json!({"flightTicks": 30, "radius": 1.2, "slowPermille": 0, "slowTicks": 0});
+                combat["damageType"] = json!("damage.blade");
+            },
+        );
+        let mut world = world_with(
+            content,
+            vec![
+                placed("c", "unit.caster", 100.0, 100.0, 1),
+                placed("x", "unit.archer", 100.0, 108.0, 2),
+            ],
+        );
+        let (c, x) = (id(&world, "c"), id(&world, "x"));
+        command(
+            &mut world,
+            1,
+            json!({"type": "hold", "actors": [c], "append": null}),
+        );
+        run(&mut world, 2);
+        if shielded {
+            cast_at(&mut world, 1, c, "field", c);
+            run(&mut world, 4);
+            command(
+                &mut world,
+                1,
+                json!({"type": "hold", "actors": [c], "append": null}),
+            );
+        }
+        run(&mut world, 1);
+        attack(&mut world, 2, x, c);
+        run(&mut world, 200);
+        if shielded {
+            assert_eq!(hp(&world, "c"), 150, "every shell bursts on the pane");
+        } else {
+            assert!(hp(&world, "c") < 150, "without the pane the shells land");
+        }
+    }
+}
+
+#[test]
 fn a_vortex_pulls_enemies_toward_its_caster() {
     let mut spec = Spec::default();
     let mut vortex = spell(

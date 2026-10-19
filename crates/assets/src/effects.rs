@@ -78,8 +78,11 @@ pub enum Motion {
     Model,
     Light,
     Sound,
-    /// Shapes no shipped effect uses (rain, beam): converted, not drawn yet.
+    /// Shapes no shipped effect uses (rain): converted, not drawn yet.
     Unsupported,
+    /// A crackling line from the origin to the target: ribbon segments that jitter
+    /// sideways by `spread` and redraw fifteen times a second.
+    Beam,
 }
 
 impl Motion {

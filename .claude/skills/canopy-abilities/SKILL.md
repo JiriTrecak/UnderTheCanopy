@@ -158,7 +158,7 @@ Errors read `<package>/<path> · <id>: <message>`, e.g. `base/abilities/example/
 | File | Contents |
 |---|---|
 | `reference/definition.md` | Every ability field and enum, ranges, targeting, filters, conditions, cast, delivery, persistent, aura, autocast, weaponCast, combatModifiers, templates, triggers, programs, recipients and cross-field rules. |
-| `reference/operations.md` | All 16 operations, every status field and modifier, scale and record. |
+| `reference/operations.md` | All 17 operations, every status field and modifier, scale and record. |
 | `reference/runtime.md` | Cast lifecycle, what caster/target mean in each context, recipient selection, program order, deliveries, persistent instances, auras, statuses, triggers, combat modifiers, AI and autocast, unit bindings, engine limits. |
 | `reference/presentation.md` | The `presentation` object, effect bindings, the event catalogue with payloads, effect files, layers per shape, asset references, budgets. |
 | `reference/examples.md` | Complete abilities and effects: single target with branch, areas, channels, projectile, chain, line, aura, persistent zone, toggle, buffs and debuffs, stacking marks, summons and factories, transformations, movement and charge, passive reactions, revival. |

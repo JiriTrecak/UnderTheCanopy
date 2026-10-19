@@ -17,6 +17,7 @@ Every entry in `onRelease`, a trigger's `operations`, a branch arm or `statuses`
 | `revive` | Return the fallen holder hero (death trigger) | `revivalStarted`, then `revived`/`revivalCancelled` |
 | `split` | Replace the caster with linked member units | `splitStarted`, `splitEnded` |
 | `teleport` | Move units with clearance | `teleported` |
+| `pull` | Drag units a step toward an anchor (vortexes) | none |
 | `vision` | Temporary fog-of-war sensor | `visionCreated` |
 | `convert` | Permanent ownership transfer | `converted` |
 | `contain` | Swallow units into the source | `contained`, `digested`, `releasedContained` |
@@ -72,6 +73,7 @@ Shared fields: `target`, `query?`, `filter?`, `amount`, `scale?`, `record?`.
 | `ethereal` | Cannot attack with weapons and takes no non-spell damage; still visible, collidable and spell-targetable. |
 | `damageTakenPermille` | Map of 1–16 damage type IDs to 0–5000 (1000 = unchanged). Strongest increase and strongest decrease per type combine once. |
 | `periodic` | `{intervalTicks ≥1, damage, damageType}`: damage every interval, first tick one interval after application. |
+| `barrier` | `{radius 1–16, arcDegrees 10–360}`: a field pane `radius` ahead of the holder, centred on its facing. Hostile weapon missiles whose path enters the pane's circle through its arc stop there without a hit; hostile shells burst on the pane instead. Shooters inside the circle shoot out; spells pass; a stunned holder's pane is down. |
 | `concealment` | `{fadeTicks 0–400, breakOnAttack, breakOnCast, attackBonus (0)}`: hidden from enemies after the fade unless detected; allies see a faded model. `attackBonus` is added to the revealing attack. Area effects still hit concealed units. |
 | `detectionRadius` | 1–64: reveals concealed enemies within radius (needs ordinary sight). |
 | `form` | `{asset?, scale 0.25–3 (1), opacity 0.1–1 (1), combatProfile?, movement?}`. `asset` is a model asset id (an asset with geometry). `combatProfile` is an armed unit definition that supplies weapon damage/range/timing/projectile. `movement: {locomotion: ground\|air, flightHeight 1–30 (air only)}` changes navigation, collision class and targeting; ground forces landing. Latest form wins; expiry reveals the previous/original form. Body size never changes. Units only. |
@@ -121,6 +123,10 @@ Only inside a `death` trigger without `executor`: `{id, target: "caster", amount
 ## teleport
 
 `{target, query?, filter?, amount (landing search radius 0–12), destination: point|caster|target, preserveOffset}`. Moves each recipient unit to the destination (point needs point aim; target needs unit aim and follows the target's current position) with spatial clearance; `preserveOffset` keeps group formation relative to the caster. Clears movement/attack orders; other units' pending casts are cancelled. Units that cannot land stay. When a caster self-teleport is the first operation, a missing landing rejects the cast before costs.
+
+## pull
+
+`{target, query?, filter?, amount, toward: caster|target|point, minDistance (0, world units, to 32)}`. Moves each living unit recipient `amount` hundredths of a world unit toward the anchor (the caster's current position, the aim unit's, or the aim point), never closer than `minDistance` and only onto ground its body could stand on (other bodies may crowd). It stops the recipient's route and swing; orders resume afterwards. Pair it with a `persistent` caster anchor and a short interval for a vortex. No event; bind the persistent `wave` or the operations around it.
 
 ## vision
 

@@ -166,6 +166,49 @@ fn keep_nearest(pairs: &mut Vec<(f32, u32)>, n: usize) {
 }
 
 /// Visual-only phase of a seed (old `cast · 0.7` radians), wrapped.
+/// A beam layer as ribbon segments from the cue's origin to its destination: a zigzag
+/// whose joints jitter sideways by up to the cue's spread (0.3 without one), tapering to
+/// the ends and redrawn fifteen times a second, so arcs crackle.
+fn beam(cue: &CueView, l: &EffectLayer, age: f32, opacity: f32, out: &mut EffectFrame) {
+    let (a, b) = (cue.origin, cue.destination);
+    let length = a.distance(b);
+    if length < 1e-3 || opacity <= 0.0 {
+        return;
+    }
+    let dir = (b - a) / length;
+    let side = dir.cross(Vec3::Y).try_normalize().unwrap_or(Vec3::X);
+    let up = side.cross(dir);
+    let jitter = cue.spread.unwrap_or(0.3);
+    let joints = ((length / 1.5).ceil() as u32).clamp(2, 12);
+    let flicker = (age * 15.0).floor() as u32;
+    let unit = |h: u32| f32::from((h & 0xffff) as u16) / 65535.0 * 2.0 - 1.0;
+    let point = |i: u32| {
+        let k = i as f32 / joints as f32;
+        let p = a.lerp(b, k);
+        if i == 0 || i == joints {
+            return p;
+        }
+        let h = cue.seed.wrapping_mul(0x9e37_79b1)
+            ^ flicker.wrapping_mul(0x85eb_ca6b)
+            ^ i.wrapping_mul(0xc2b2_ae35);
+        let h = (h ^ (h >> 15)).wrapping_mul(0x2c1b_3c6d);
+        let taper = (4.0 * k * (1.0 - k)).sqrt();
+        p + (side * unit(h) + up * unit(h >> 16)) * jitter * taper
+    };
+    let mut from = point(0);
+    for i in 1..=joints {
+        if out.ribbons.len() >= MAX_RIBBONS {
+            return;
+        }
+        let to = point(i);
+        let mut quad = RibbonQuad::segment(from.to_array(), 1.0, to.to_array(), 1.0, cue.size);
+        quad.color = v4(Vec3::from_array(l.color), 0.0);
+        quad.look = [opacity, 0.0, 0.0, 0.0];
+        out.ribbons.push(quad);
+        from = to;
+    }
+}
+
 fn phase(seed: u32) -> f32 {
     (f64::from(seed) * 0.7).rem_euclid(std::f64::consts::TAU) as f32
 }
@@ -613,6 +656,13 @@ impl EffectEvaluator {
         };
         match l.motion {
             Motion::Sound | Motion::Unsupported => {}
+            Motion::Beam => {
+                let opacity = (envelope(time.t, time.persistent)
+                    * motion.opacity
+                    * l.intensity.unwrap_or(1.0))
+                .clamp(0.0, 1.0);
+                beam(cue, l, time.age, opacity, out);
+            }
             Motion::Missile | Motion::Wavefront => {
                 self.travel(cue, l, time, base, flags, blend, texture, eye, out, models)
             }

@@ -87,6 +87,8 @@ struct Duel {
     snapshots: Vec<(u32, [String; 2])>,
     /// Per player: how often the AI decided each thing.
     decisions: [BTreeMap<String, u32>; 2],
+    /// Per player: abilities released, by id.
+    casts: [BTreeMap<String, u32>; 2],
     /// Per player: the most finished buildings on resources (`placementOn`) at once.
     wells: [u32; 2],
     /// Per player and good: gathered, spent.
@@ -132,6 +134,8 @@ fn duel(
     // Every AI decision of the match, counted by reason (and refusals).
     let mut decisions: [BTreeMap<String, u32>; 2] = Default::default();
     let mut decided: [u32; 2] = [0, 0];
+    // Abilities released per side, by ability id.
+    let mut casts: [BTreeMap<String, u32>; 2] = Default::default();
     // Army losses per side (summons aside): to camp creatures, to players.
     let mut alive_at: BTreeMap<u32, (usize, canopy_sim::entity::Milli)> = BTreeMap::new();
     let mut losses = [[0u32; 2]; 2];
@@ -147,6 +151,24 @@ fn duel(
     for tick in 0..cap {
         world.step();
         ticks = tick + 1;
+        for event in world.drain_events() {
+            if event.kind != canopy_sim::abilities::EventKind::Released {
+                continue;
+            }
+            let owner = world.state().entities.get(event.caster).map(|e| e.owner);
+            let side = match owner {
+                Some(canopy_content::placement::Owner::Player(p)) => {
+                    players.iter().position(|&x| x == p)
+                }
+                _ => None,
+            };
+            if let Some(side) = side {
+                let id = world.catalog().content.abilities.abilities[usize::from(event.ability.0)]
+                    .id
+                    .to_string();
+                *casts[side].entry(id).or_default() += 1;
+            }
+        }
         let from = next_fact;
         for f in world.state().facts.iter().filter(|f| f.id >= from) {
             next_fact = f.id + 1;
@@ -424,6 +446,7 @@ fn duel(
         milestones,
         snapshots,
         decisions,
+        casts,
         wells,
         goods,
         network,
@@ -502,6 +525,10 @@ fn main() -> Result<(), String> {
                     .map(|(m, id)| format!("{m:.1} {}", id.rsplit('.').next().unwrap_or(id)))
                     .collect();
                 println!("    player {} milestones: {}", side + 1, list.join(", "));
+            }
+            for (side, cast) in r.casts.iter().enumerate() {
+                let list: Vec<String> = cast.iter().map(|(k, n)| format!("{k}×{n}")).collect();
+                println!("    player {} casts: {}", side + 1, list.join(" "));
             }
             for (side, made) in r.decisions.iter().enumerate() {
                 let mut list: Vec<(&String, &u32)> = made.iter().collect();

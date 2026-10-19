@@ -46,10 +46,11 @@ Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a
 ```
 
 - **Required:** `model` (an asset or scenery id: what it is drawn with), `icon` (an icon asset), `body`, `dimensions`.
-- **Unit-only:** `supplyCost`.
+- **Unit-only:** `supplyCost`; `maxOwned` (at most that many living or in training per player: one Juggernaut at a time).
 - **`presentation`** says how *this* unit shows its model:
   - `projectile` and `projectileSocket` (the missile's visual effect and the model node it leaves from);
-  - `impactEffect` (where shells land);
+  - `launchEffect`: a full effect played as each missile or shell leaves, from the projectile socket to the target and lasting the flight: muzzle flash, steam, a tracer `missile` layer with a `trail`, or a `beam` to the target;
+  - `impactEffect` (where its shells and missiles land, and where its melee blows strike);
   - `castContact` (share of the cast animation at which a spell lands);
   - `cameraAnchor`;
   - and, when they differ from the model's own `display`, `healthHeight` and `character` (animation profile);
@@ -68,6 +69,7 @@ Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a
 - **Heroes:** `"hero": true`, `supplyCost` 4, `behaviors.progression` (levels) and `behaviors.abilities` (bindings). Keep them under `units/<race>/heroes/`.
 - **Size** (`modelScale`, with `dimensions` to match: the selection circle and health bar follow them, D58). A regular infantry unit such as the Warrior is 1×; heroes and large tier-3 units about 2×. Neutral creeps grow with their `level`: size (the average of rendered height and footprint) is the Warrior's × (1 + 1.4 × (level − 1) / 8), so level 1 is Warrior-sized and level 9 is 2.4×; body radius 1.5 × that factor (at most 3.0), formation spacing 13/6 of the radius, height the rendered height. Measure a model with `just cook --inspect <asset id>` (its rest bounds).
 - **Behaviours** (all optional): `movement`, `combat` (with `projectile`, `shell` or `charge`), `work` (workers: `carryCapacity`, `builds`, `harvests`), `storage`, `production`, `research`, `inventory`, `progression`, `abilities`, `revival`, `playerControl`, `campDefense`.
+- **`combat` extras:** `chain {bounces 1–8, radius 1–32, retentionPermille}` makes each missile jump on to the nearest other visible enemy it has not hit, keeping that share of the damage (arcs); `minRange` (body edges) is the reach inside which the weapon cannot fire (siege mortars); a unit then picks targets further out.
 
 ## A building
 
@@ -97,6 +99,7 @@ Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a
 - **`command`** places the building on the workers' command card.
 - **`supplyProvided`** is building-only.
 - **`upgrade`** turns one building into another; both need the same behaviours and footprint.
+- **`garrison.crew`** (a unit id) staffs a lookout with its own gunner: whenever the building stands complete, that unit stands in it, shoots from it and takes no orders; it goes with the building, and an upgrade to a tower with another crew swaps it. The crew is a ranged unit with no `playerControl` and no supply (`selectable: false` keeps it out of selections).
 - **`placementNear`** (`{source, radius}`) keeps a building within `radius` cells of a standing resource of `source`.
 - **`placementOn`** (`{source}`) places a building exactly on a standing resource of `source`, as StarCraft's refinery on its geyser (D62): the placement snaps onto it, the footprints must be equal, and when the building falls the resource is left intact. The base game's Substance Wells (`building.<race>.substance-well`) stand on Substance Deposits this way and are their own drop-off for Substance. A building placed on a resource still obeys `power` if it declares it; the beetles' well declares none and is a network source instead:
 
@@ -205,6 +208,8 @@ Goods the economy counts are items with `"currency": true` and a `harvest` creat
   "effects": [{"units": ["unit.example.spearman"], "damagePermille": 250}]
 }
 ```
+
+Research `requires` may name buildings and earlier research (levels I–III: II requires I and the tier-2 hall). Effect fields, each for the listed `units`: `maxHp`, `armor`, `damagePermille`, `attackSpeedPermille`, `moveSpeedPermille`, `splashRadius` and `splashSlowPermille` (shells), `chargeCooldownPermille` (charges), `treeWorkRate` (workers), `abilityRanks` (`{bindingId: rank}`: raises that binding to at least the rank, on living and future units — 1 unlocks an ability trained at rank 0), and `networkRadius` (for buildings with a `network`).
 
 ```json loot-pool
 {

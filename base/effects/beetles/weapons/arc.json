@@ -13,9 +13,10 @@
       "accent": "#efe8ff",
       "durationTicks": 8,
       "count": 1,
-      "size": 0.32,
+      "size": 0.55,
       "height": 0.0,
-      "blend": "additive"
+      "blend": "additive",
+      "spread": 0.45
     },
     {
       "id": "core",
@@ -25,9 +26,10 @@
       "accent": "#ffffff",
       "durationTicks": 6,
       "count": 1,
-      "size": 0.12,
+      "size": 0.2,
       "height": 0.0,
-      "blend": "additive"
+      "blend": "additive",
+      "spread": 0.45
     },
     {
       "id": "flash",

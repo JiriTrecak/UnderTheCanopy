@@ -120,6 +120,7 @@ All fields optional; omission accepts both:
 | `natures` | Distinct subset of `organic`, `undead`, `mechanical` (units default to organic; buildings have no nature, so they fail a nature filter). |
 | `locomotion` | Distinct subset of `ground`, `air` (current, including flight forms). |
 | `minLevel`, `maxLevel` | Inclusive unit level bounds, min ≤ max (units without progression are level 1). |
+| `buildings` | `true` buildings only, `false` units only (a repair that mends machines and structures uses two operations). |
 
 ## Conditions (`targeting.condition`, `branch.condition`)
 
@@ -158,12 +159,14 @@ Delivery cannot combine with `cast.channel`, `persistent` or `activation: passiv
 
 ## persistent
 
-`{durationTicks, intervalTicks, anchor: point|caster|target, endsWithCaster (default true), tetherRange?, upkeepMana (default 0), toggle (default false)}`.
+`{durationTicks, intervalTicks, anchor: point|caster|target, endsWithCaster (default true), tetherRange?, upkeepMana (default 0), toggle (default false), delayTicks (0), pulse?}`.
 
 - Active, direct (no delivery/channel). `onRelease` runs at release and then every `intervalTicks` until `durationTicks` elapses.
 - `anchor: target` requires unit targeting; `tetherRange` (≥1, to 128) requires `anchor: target`.
 - `toggle: true` requires self targeting, `anchor: caster` and `endsWithCaster: true`; recasting while active switches it off at no cost. Use duration 144000 for "until toggled off".
 - `upkeepMana` is paid per pulse after the first; failure to pay ends the instance.
+- `delayTicks`: the release program waits this long after the release (a warning: bind `released` with the warning effect), then runs once with an `impact` event at the anchor; the duration and the pulses count from then. Not with toggles.
+- `pulse`: 1–8 operations every later pulse runs instead of `onRelease` (a crucible's slam, then its burning pool).
 
 ## aura
 
