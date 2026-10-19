@@ -1380,3 +1380,71 @@ fn the_idle_worker_button_selects_an_idle_worker() {
     assert_eq!(selected.len(), 1);
     assert!(idle.contains(&selected[0]));
 }
+
+#[test]
+fn a_building_that_can_research_shows_its_training_queue_after_reselection() {
+    use crate::sim::economy_fixture as ef;
+    use canopy_ui::{ActionKind, Modifiers, PointerButton};
+    let mut world = ef::world(&ef::sandbox(vec![
+        ef::place("nexus", ef::NEXUS, 19.5, 19.5),
+        ef::place("shop", ef::WORKSHOP, 29.5, 21.5),
+        ef::place("house", ef::HOUSE, 61.5, 61.5),
+    ]));
+    ef::fund(&mut world, ef::P1, ef::AMBER, 500);
+    let shop = ef::id(&world, "shop");
+    let produce = serde_json::json!({"type": "produce", "actor": shop, "definition": ef::SOLDIER});
+    assert_eq!(ef::try_command(&mut world, produce), None);
+    ef::run(&mut world, 2);
+    let mut h = Harness::on(world, 0, [29.5, 21.5]);
+    let mut ui = shipped_ui();
+    let mut hud = super::hud::Hud::new();
+    let task = |ui: &canopy_ui::Ui| {
+        let label = ui.find("hud/dock/selection/copy/task/meter/label")?;
+        ui.text(label).map(str::to_owned)
+    };
+    // It trains while its research queue stands empty: the soldier is the task, every
+    // time it is selected.
+    let queue = ui.find("hud/dock/selection/queue").expect("the queue");
+    for _ in 0..2 {
+        h.click(shop);
+        assert_eq!(h.play.selection.ids(), [shop]);
+        hud.update(&mut ui, &h.play);
+        let label = task(&ui).unwrap_or_default();
+        assert!(label.contains(ef::SOLDIER), "{label}");
+        assert!(ui.count(queue) > 0);
+        let ground = h.pixel(36.0, 27.0);
+        h.click_px(ground, Button::Left);
+        assert!(h.play.selection.ids().is_empty());
+        hud.update(&mut ui, &h.play);
+        assert_eq!(ui.count(queue), 0);
+    }
+    // Researching too: the soldier stays the task and the research waits in the tiles.
+    let research = serde_json::json!({"type": "research", "actor": shop, "research": ef::AMPLIFY});
+    assert_eq!(ef::try_command(&mut h.world, research), None);
+    h.refresh();
+    h.click(shop);
+    hud.update(&mut ui, &h.play);
+    let label = task(&ui).unwrap_or_default();
+    assert!(label.contains(ef::SOLDIER), "{label}");
+    // Its tile cancels the research.
+    hud.act(
+        &mut ui,
+        &mut h.play,
+        vec![canopy_ui::Action {
+            node: None,
+            path: Some("hud/dock/selection/queue".into()),
+            name: Some("queue".into()),
+            index: Some(0),
+            kind: ActionKind::Click {
+                button: PointerButton::Primary,
+                modifiers: Modifiers::default(),
+                count: 1,
+            },
+        }],
+    );
+    let sent = h.take();
+    assert!(
+        matches!(sent.as_slice(), [Action::CancelResearch { actor, .. }] if *actor == shop),
+        "{sent:?}"
+    );
+}

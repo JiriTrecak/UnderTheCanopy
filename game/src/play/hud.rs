@@ -753,20 +753,8 @@ impl Hud {
         let work = e.private.as_ref().map(|p| &*p.economy);
         let mut status: Option<String> = None;
         if let Some(w) = work {
-            if let Some(research) = &w.research {
-                for r in &research.queue {
-                    let rule = k.content.rules.research.get(r.id.as_str());
-                    self.queue.push(QueueEntry {
-                        icon: rule.map_or(String::new(), |x| x.icon.to_string()),
-                        name: rule.map_or(r.id.to_string(), |x| x.name.clone()),
-                        progress: rule.map(|x| r.progress as f32 / x.work_ticks.max(1) as f32),
-                        cancel: own.then(|| Action::CancelResearch {
-                            actor: fid,
-                            research: r.id.clone(),
-                        }),
-                    });
-                }
-            } else if let Some(p) = &w.production {
+            // A building can train and research at once (both queues run): it lists both.
+            if let Some(p) = &w.production {
                 for q in &p.queue {
                     let od = k.catalog.get(q.definition);
                     let active = p.active.as_ref().filter(|a| a.queue == Some(q.id));
@@ -783,6 +771,22 @@ impl Hud {
                         cancel: own.then_some(Action::Cancel {
                             actor: fid,
                             queue: Some(q.id),
+                        }),
+                    });
+                }
+            }
+            if let Some(research) = &w.research {
+                for (i, r) in research.queue.iter().enumerate() {
+                    let rule = k.content.rules.research.get(r.id.as_str());
+                    self.queue.push(QueueEntry {
+                        icon: rule.map_or(String::new(), |x| x.icon.to_string()),
+                        name: rule.map_or(r.id.to_string(), |x| x.name.clone()),
+                        progress: rule
+                            .filter(|_| i == 0)
+                            .map(|x| r.progress as f32 / x.work_ticks.max(1) as f32),
+                        cancel: own.then(|| Action::CancelResearch {
+                            actor: fid,
+                            research: r.id.clone(),
                         }),
                     });
                 }
