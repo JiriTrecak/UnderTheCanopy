@@ -27,9 +27,15 @@
       "The computer opponent keeps its Substance Wells defended, raises towers over its workers when raided, places powered buildings inside its network before extending it, and no longer stalls on research or upgrades it cannot start yet.",
       "The Forgemaster's Bolt Turret and the Arc Tower have their own models: a horned brass repeater on a tripod and a towering substance coil that lights up when it fires",
       "Beetle Wardens carry a glowing violet barrier pane, so they stand out in an army at a glance",
-      "Every beetle ability and research now has its own icon: Static Field, Bulwark Pulse, Broadside, Furnace Plating, Flak Beam, Patch Up and Armor Breaker are new, and Weapon Edges, Bolt Calibre, Plating and Riveted Hulls show one icon per level instead of borrowed ant art."
+      "Every beetle ability and research now has its own icon: Static Field, Bulwark Pulse, Broadside, Furnace Plating, Flak Beam, Patch Up and Armor Breaker are new, and Weapon Edges, Bolt Calibre, Plating and Riveted Hulls show one icon per level instead of borrowed ant art.",
+      "Beetle weapons and spells are crisp and readable: hot violet tracers and muzzle flashes on every volley, sparks that streak, star-bright impacts, shock rings and glass shards instead of soft white blobs",
+      "Forgefall drops a real iron crucible out of the canopy, trailing fire, onto a pool of molten metal",
+      "The Hornwatch turns its turret to face its target, and the Hornwatch and Arc Tower flash and discharge on every shot"
     ],
-    "fixed": [],
+    "fixed": [
+      "Sparks and shrapnel from spells and weapons fall instead of flying up, and steam rises",
+      "The Brood Den pressurises while it powers the network, and the Juggernaut crashes down in a burst of sparks and dust when destroyed"
+    ],
     "knownIssues": []
   },
   "releases": [

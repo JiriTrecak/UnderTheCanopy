@@ -1057,6 +1057,35 @@ mod tests {
         assert_eq!(b.animator.state(), "idle");
     }
 
+    #[test]
+    fn towers_fire_once_per_shot_of_their_crew() {
+        let mut m = building();
+        m.clips.push(clip("attack", 0.8));
+        m.states.insert(
+            "attack".into(),
+            StateInfo {
+                clip: 3,
+                looping: false,
+                contact: None,
+                events: vec![("fire".into(), 0.1)],
+                nominal_speed: None,
+            },
+        );
+        let mut b = BuildingAnimation::new(&m).unwrap();
+        b.step(&m, false, 0, false);
+        // Each shot restarts the clip and crosses `fire` once; between shots it rests.
+        let mut fired = 0;
+        for tick in 0..60 {
+            let events = b.step(&m, false, 0, tick % 20 == 0);
+            fired += events.iter().filter(|e| *e == "fire").count();
+        }
+        assert_eq!(fired, 3);
+        for _ in 0..40 {
+            b.step(&m, false, 0, false);
+        }
+        assert_eq!(b.animator.state(), "idle");
+    }
+
     /// A walker: a 1 s walk loop stepping at a quarter and three quarters, its stride
     /// authored at 2 m/s, and an attack releasing at 0.4.
     fn walker(nominal: Option<f32>) -> ModelInfo {

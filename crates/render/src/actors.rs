@@ -1372,6 +1372,31 @@ mod tests {
     use super::*;
 
     #[test]
+    fn a_turret_turns_its_node_and_everything_on_it() {
+        let joint = |name: &str, parent: Option<u32>, origin: [f32; 3]| canopy_assets::Joint {
+            name: name.into(),
+            parent,
+            origin,
+        };
+        let skeleton = canopy_assets::Skeleton {
+            joints: vec![
+                joint("plinth", None, [0.0; 3]),
+                joint("barrel", Some(2), [0.0, 2.3, 0.4]),
+                joint(TURRET_NODE, Some(0), [-0.1, 5.4, 0.2]),
+                joint("canister", Some(0), [2.8, 2.9, 0.0]),
+            ],
+        };
+        let turret = Turret::of(&skeleton).unwrap();
+        assert!(turret.contains(1) && turret.contains(2));
+        assert!(!turret.contains(0) && !turret.contains(3));
+        assert_eq!(turret.pivot, [-0.1, 0.2]);
+        let plain = canopy_assets::Skeleton {
+            joints: vec![joint("plinth", None, [0.0; 3])],
+        };
+        assert!(Turret::of(&plain).is_none());
+    }
+
+    #[test]
     fn clip_times_map_to_baked_frames() {
         // 1 s at 30 Hz: 31 frames, the last at exactly 1 s.
         assert_eq!(clip_frames(31, 1.0, 0.0), (0, 1, 0.0));

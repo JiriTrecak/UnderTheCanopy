@@ -85,6 +85,37 @@ fn apply_damage(options: &Options, game: &mut world::Match) {
     }
 }
 
+/// `--kill`: every living unit whose definition id contains `which` dies on the next tick
+/// (a scripted hit), so death clips and their effects can be reviewed. A dev tool: it
+/// edits the match state.
+fn apply_kill(which: &str, game: &mut world::Match) {
+    use canopy_content::game::Kind;
+    let world = &mut game.world;
+    let catalog = world.catalog();
+    let targets: Vec<canopy_sim::entity::EntityId> = world
+        .state()
+        .entities
+        .iter()
+        .filter(|e| e.hp.is_some_and(|hp| hp > 0))
+        .filter(|e| {
+            let d = catalog.get(e.definition);
+            d.kind == Kind::Unit && d.id.as_str().contains(which)
+        })
+        .map(|e| e.id)
+        .collect();
+    let state = world.state_mut();
+    for target in targets {
+        state.combat.scripted.push(canopy_sim::combat::ScriptedHit {
+            target,
+            source: None,
+            amount: 1,
+        });
+        if let Some(e) = state.entities.get_mut(target) {
+            e.hp = Some(1);
+        }
+    }
+}
+
 pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Result<()> {
     if options.play || options.observe {
         return crate::play::capture::run(
@@ -132,6 +163,11 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
         if game.world.tick() + 1 == options.tick {
             play_effects(options, &loaded, &mut game)?;
             apply_damage(options, &mut game);
+        }
+        if let Some((which, before)) = &options.kill
+            && game.world.tick() + before == options.tick
+        {
+            apply_kill(which, &mut game);
         }
         let Some(advanced) = sim::advance(
             &mut game.world,

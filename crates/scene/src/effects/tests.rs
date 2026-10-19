@@ -426,3 +426,75 @@ fn damage_effects_take_a_capped_share_after_the_cues() {
     assert_eq!(frame.emitters[(first >> 8) as usize].ints[0], kind::FLAME);
     assert!(frame.lights.len() <= 1);
 }
+
+#[test]
+fn rain_falls_its_duration_over_its_speed_and_lands_with_the_delivery() {
+    let mut rain = layer(Motion::Rain, Primitive::Particle);
+    rain.start = 0.0;
+    rain.duration = 0.5;
+    rain.count = 6;
+    rain.texture = Some("shard.png".into());
+    rain.spread = Some(3.0);
+    rain.rain = Some(canopy_assets::CookedRain {
+        speed: 2.0,
+        launch_delay: 0.1,
+        back: [0.0, 1.0, 0.0],
+        impact: Some(canopy_assets::CookedImpact {
+            duration: 0.25,
+            count: 4,
+            size: 0.2,
+            spread: 1.0,
+            height: 0.5,
+            color: [1.0; 3],
+            accent: [1.0; 3],
+        }),
+    });
+    let mut d = director(
+        vec![effect("effect.test.rain", false, vec![rain])],
+        json!([
+            {"id": "a", "effect": "effect.test.rain", "event": "released", "anchor": "target"},
+            {"id": "b", "effect": "effect.test.rain", "event": "projectile", "anchor": "target",
+             "durationFrom": "delivery"},
+        ]),
+    );
+    let mut delivered = event(2, 0, EventKind::Projectile, 8);
+    delivered.duration_ticks = Some(40);
+    let events = [event(1, 0, EventKind::Released, 7), delivered];
+    let snapshot = step(&mut d, 0, &events);
+    let (plain, timed) = (&snapshot.cues[0], &snapshot.cues[1]);
+    // 20 ticks over a fall speed of 2: a 10-tick fall from the event.
+    assert_eq!((plain.start, plain.duration), (0.0, 10.0));
+    // The delivery's 40 ticks fall in 20, starting late so the drops land as it ends.
+    assert_eq!((timed.start, timed.duration), (20.0, 20.0));
+    // A drop may launch 4 ticks late and splashes for 10 more.
+    let table = d.effect_table().clone();
+    assert!(cue_time(&table, plain, 23.9).is_some());
+    assert!(cue_time(&table, plain, 24.0).is_none());
+    // Shards, flashes and splashes: three emitters, a part per drop and per fragment.
+    let mut evaluator = EffectEvaluator::new(table);
+    let mut frame = EffectFrame::default();
+    let mut models = Vec::new();
+    let only = EffectSnapshot {
+        cues: vec![plain.clone()],
+        ..snapshot.clone()
+    };
+    evaluator.frame(None, &only, 1.0, 5.0, None, &mut frame, &mut models);
+    use canopy_render::effects::kind;
+    let kinds: Vec<u32> = frame.emitters.iter().map(|e| e.ints[0]).collect();
+    assert_eq!(kinds, [kind::RAIN, kind::RAIN_FLASH, kind::RAIN_SPLASH]);
+    assert_eq!(frame.parts.len(), 6 + 6 + 24);
+}
+
+#[test]
+fn rain_drops_land_on_their_disc() {
+    for i in 0..16 {
+        let (landing, delay) = super::frame::rain_drop(77, i, 16, 4.0, 0.2);
+        assert!(landing.x.hypot(landing.z) <= 4.0 + 1e-4, "{landing:?}");
+        assert!((0.0..=0.2).contains(&delay));
+    }
+    // The same seed lands the same way (the shader hashes alike).
+    assert_eq!(
+        super::frame::rain_drop(77, 3, 16, 4.0, 0.2),
+        super::frame::rain_drop(77, 3, 16, 4.0, 0.2)
+    );
+}
