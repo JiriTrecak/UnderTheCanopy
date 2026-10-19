@@ -42,7 +42,7 @@ MOLTEN = art('molten')
 SCORCH = art('scorch')
 
 SUBSTANCE = '#8f66ff'  # violet sparks
-SUBSTANCE_HOT = '#efe8ff'
+SUBSTANCE_HOT = '#b49cff'
 EMBER = '#ffa040'
 
 
@@ -63,7 +63,7 @@ def tracer(colour, accent, size=0.3, length=10.0, width=0.18, trail=6, trail_col
 
 
 def streaks(id_, colour=SUBSTANCE, accent=SUBSTANCE_HOT, count=12, speed=9.0, size=0.08, lifetime=12, gravity=12.0,
-            cone=80, direction=(0, 1, 0), height=0.0, start=0, stretch=0.05, core=0.6, intensity=5.0, spawn=0.15,
+            cone=80, direction=(0, 1, 0), height=0.0, start=0, stretch=0.05, core=0.35, intensity=5.0, spawn=0.15,
             drag=0.7, anchor=None, mode='burst', rate=None, duration=None, sustain=False, follow=None):
     """Hot sparks drawn as streaks along their velocity, white at the core."""
     e = emitter(mode, lifetime, rate or count, speed, variation=0.5, direction=direction, cone=cone, gravity=gravity,

@@ -71,7 +71,7 @@
       "enabled": true,
       "shape": "particles",
       "colour": "#8f66ff",
-      "accent": "#efe8ff",
+      "accent": "#b49cff",
       "durationTicks": 10,
       "count": 6,
       "size": 0.06,
@@ -79,7 +79,7 @@
       "startTick": 0,
       "blend": "additive",
       "intensity": 5.0,
-      "core": 0.6,
+      "core": 0.35,
       "texture": {
         "asset": "asset.effects.beetles.spark",
         "role": "image",
