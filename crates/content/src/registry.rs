@@ -903,6 +903,24 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
             );
         }
     }
+    if let Some(income) = &d.income {
+        let currency = check
+            .definition(at, income.item.as_str(), Kind::Item)
+            .is_some_and(|i| i.currency == Some(true));
+        if d.kind != Kind::Building || !currency || income.amount == 0 || income.interval_ticks == 0
+        {
+            check.fail(
+                at,
+                "income requires a building, a currency item and a positive amount and interval",
+            );
+        }
+    }
+    if let Some(color) = d.presentation.as_ref().and_then(|p| p.color.as_deref()) {
+        let hex = color.strip_prefix('#').unwrap_or("");
+        if d.kind != Kind::Item || hex.len() != 6 || u32::from_str_radix(hex, 16).is_err() {
+            check.fail(at, "presentation color is an item's #rrggbb");
+        }
+    }
     if d.harvesting.as_ref().is_some_and(|h| h.needs_building())
         && !content
             .definitions

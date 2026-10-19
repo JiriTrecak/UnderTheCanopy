@@ -3,8 +3,8 @@
 //! (research), a sanctuary (revival and heroes) and a forester (plants trees); felled
 //! trees, an amber mine, and an endless spring tapped by a well built on it; a power
 //! network (D66): a nexus and the well (sources), a pylon (node) and a workshop that
-//! needs power (trains soldiers, researches a wider network). No shipped
-//! content.
+//! needs power (trains soldiers, researches a wider network); a pump on the spring and
+//! an engine that needs power, both earning by themselves (`income`). No shipped content.
 #![allow(dead_code)]
 
 use canopy_content::{
@@ -48,6 +48,14 @@ pub const NEXUS: &str = "building.test.nexus";
 pub const PYLON: &str = "building.test.pylon";
 pub const WORKSHOP: &str = "building.test.workshop";
 pub const AMPLIFY: &str = "research.test.amplify";
+/// Built on the spring like the well, but pumps essence by itself: no worker gathers.
+pub const PUMP: &str = "building.test.pump";
+/// Makes amber by itself, but only while powered.
+pub const ENGINE: &str = "building.test.engine";
+pub const PUMP_AMOUNT: u32 = 7;
+pub const PUMP_TICKS: u32 = 30;
+pub const ENGINE_AMOUNT: u32 = 3;
+pub const ENGINE_TICKS: u32 = 10;
 /// Network radii of the nexus and the pylon, and what the research adds.
 pub const NEXUS_RADIUS: u32 = 16;
 pub const PYLON_RADIUS: u32 = 12;
@@ -183,6 +191,20 @@ fn game() -> Value {
                     "storage": {"capacity": 1000, "accepts": [ESSENCE], "dropoff": true},
                 },
             })),
+            definition(PUMP, "building", json!({
+                "placementOn": {"source": SPRING},
+                "income": {"item": ESSENCE, "amount": PUMP_AMOUNT, "intervalTicks": PUMP_TICKS},
+                "body": body(200), "footprint": {"width": 4, "depth": 4}, "entrance": {"x": 0.5, "y": 2.5},
+                "creation": {"method": "construct", "items": [cost(AMBER, 20)],
+                    "workTicks": 20, "workAnimation": "build"},
+                "behaviors": {"playerControl": {}},
+            })),
+            definition(ENGINE, "building", json!({
+                "power": "required",
+                "income": {"item": AMBER, "amount": ENGINE_AMOUNT, "intervalTicks": ENGINE_TICKS},
+                "body": body(200), "footprint": {"width": 4, "depth": 4}, "entrance": {"x": 0.5, "y": 2.5},
+                "behaviors": {"playerControl": {}},
+            })),
             definition(WORKER, "unit", json!({
                 "body": body(100), "supplyCost": 1, "vision": 10, "dimensions": dimensions,
                 "creation": {"method": "train", "items": [cost(AMBER, 10)], "workTicks": 20},
@@ -190,7 +212,7 @@ fn game() -> Value {
                     "playerControl": {},
                     "movement": {"speed": 4, "walkSpeed": 2, "idleWander": true},
                     "work": {"carryCapacity": 5,
-                        "builds": [HALL, HOUSE, BARRACKS, FORGE, SANCTUARY, FORESTER, PYLON, WORKSHOP, WELL],
+                        "builds": [HALL, HOUSE, BARRACKS, FORGE, SANCTUARY, FORESTER, PYLON, WORKSHOP, WELL, PUMP],
                         "harvests": [WOOD, AMBER, ESSENCE]},
                 },
             })),

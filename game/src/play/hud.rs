@@ -822,7 +822,23 @@ impl Hud {
             }
             status = w.status.clone().filter(|s| !s.is_empty());
         }
-        if let Some(site) = e.work.as_ref().and_then(|w| w.site) {
+        // A building that makes goods by itself says what it makes (D62: a well).
+        if let Some(income) = &d.income
+            && e.public.construction.is_none()
+        {
+            let item = k
+                .content
+                .definition(income.item.as_str())
+                .map_or(income.item.as_str(), |i| i.name.as_str());
+            let seconds = f64::from(income.interval_ticks) / 40.0;
+            status = Some(format!("+{} {item} every {seconds} s", income.amount));
+        }
+        if let Some(site) = e
+            .work
+            .as_ref()
+            .and_then(|w| w.site)
+            .filter(|s| s.recommended > 0)
+        {
             status = Some(format!(
                 "{} workers · {} recommended{}",
                 site.workers,

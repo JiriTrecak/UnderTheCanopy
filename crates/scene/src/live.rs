@@ -221,6 +221,27 @@ pub struct Presentation {
     pub fog: Option<canopy_sim::view::FogView>,
     /// Units and buildings the world UI may mark, by id.
     pub bodies: Vec<Body>,
+    /// Goods that arrived in the viewer's stock in the last [`POP_TICKS`], oldest first.
+    pub pops: Vec<Pop>,
+}
+
+/// Ticks a delivery's floating text lives: it rises and fades over them.
+pub const POP_TICKS: u32 = 48;
+
+/// A delivery's text colour for an item that declares none (`#rrggbb`).
+const POP_INK: u32 = 0xf2dfb1;
+
+/// Goods arriving in the viewer's own stock, shown as a "+N" rising where they arrived:
+/// a worker's load at the drop-off, a building's income above it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Pop {
+    /// Where the text starts (world metres).
+    pub position: Vec3,
+    pub text: String,
+    /// The item's colour (linear).
+    pub color: [f32; 3],
+    /// The presented tick it arrived on.
+    pub tick: u32,
 }
 
 /// A rally point (cells) of a producer.
@@ -560,6 +581,10 @@ pub struct Presenter {
     hulls: BTreeMap<u32, Option<Arc<Hull>>>,
     /// The tick presented last (melee blows landed since then throw dust).
     last_tick: Option<u32>,
+    /// Deliveries still rising (`Presentation::pops`).
+    pops: Vec<Pop>,
+    /// Item colours (linear) by item id, from the items' `presentation.color`.
+    item_colors: BTreeMap<String, [f32; 3]>,
     /// The world jumped (a replay seek): the next presentation rebuilds the hidden trees
     /// from the world instead of from the change since the last one.
     jumped: bool,
@@ -744,6 +769,24 @@ impl Presenter {
             fires: Fires::default(),
             hulls: BTreeMap::new(),
             last_tick: None,
+            pops: Vec::new(),
+            item_colors: world
+                .catalog()
+                .content
+                .definitions
+                .iter()
+                .filter(|d| d.kind == Kind::Item)
+                .filter_map(|d| {
+                    let hex = d
+                        .presentation
+                        .as_ref()?
+                        .color
+                        .as_deref()?
+                        .strip_prefix('#')?;
+                    let rgb = u32::from_str_radix(hex, 16).ok()?;
+                    Some((d.id.to_string(), crate::world_ui::linear(rgb)))
+                })
+                .collect(),
             jumped: false,
         };
         presenter.preload(world);
@@ -833,6 +876,7 @@ impl Presenter {
         self.missile_poses.clear();
         self.fires = Fires::default();
         self.last_tick = None;
+        self.pops.clear();
         self.effects.reset();
         self.jumped = true;
     }
@@ -1751,6 +1795,7 @@ impl Presenter {
             }
         }
         self.previous = actors.iter().map(|a| (a.key, a.position)).collect();
+        self.deliveries(view, &bodies, tick);
         Presentation {
             tick,
             models: self.catalog.names().clone(),
@@ -1761,6 +1806,40 @@ impl Presenter {
             effects,
             fog: view.fog.clone(),
             bodies,
+            pops: self.pops.clone(),
+        }
+    }
+
+    /// Goods that reached a player's own stock this tick rise as "+N" where they arrived
+    /// (above the worker who carried them in, or above the building whose income they
+    /// are), in the item's colour. Only a player's own, and only what they see: an
+    /// observer is shown none.
+    fn deliveries(&mut self, view: &View, bodies: &[Body], tick: u32) {
+        self.pops
+            .retain(|p| p.tick <= tick && tick < p.tick + POP_TICKS);
+        let Some(owner) = view.owner else {
+            return;
+        };
+        let body = |id: EntityId| {
+            bodies
+                .iter()
+                .find(|b| b.id == id.0 && !b.remembered && b.hp.is_none_or(|hp| hp > 0))
+        };
+        for d in view.deliveries.iter().filter(|d| d.owner == owner) {
+            let Some(b) = d.carrier.and_then(body).or_else(|| body(d.store)) else {
+                continue;
+            };
+            let color = self
+                .item_colors
+                .get(d.item.as_str())
+                .copied()
+                .unwrap_or_else(|| crate::world_ui::linear(POP_INK));
+            self.pops.push(Pop {
+                position: b.position + Vec3::Y * (b.height + 0.4),
+                text: format!("+{}", d.amount),
+                color,
+                tick,
+            });
         }
     }
 

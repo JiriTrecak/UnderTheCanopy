@@ -13,6 +13,7 @@
 pub mod command;
 pub mod construction;
 pub mod harvest;
+pub mod income;
 pub mod index;
 pub mod jobs;
 pub mod network;
@@ -273,8 +274,10 @@ pub struct Delivery {
     pub owner: Owner,
     pub item: Id,
     pub amount: u32,
-    /// The drop-off.
+    /// The drop-off, or the building whose income it is.
     pub store: EntityId,
+    /// The worker that carried it in (none for a building's income).
+    pub carrier: Option<EntityId>,
 }
 
 /// Lookups compiled once from content and the match setup.
@@ -463,6 +466,7 @@ pub fn advance(ctx: &mut Ctx) {
     harvest::advance_regrowth(ctx);
     upgrade::advance(ctx);
     research::advance(ctx);
+    income::advance(ctx);
 }
 
 pub(crate) fn alive(e: &Entity) -> bool {

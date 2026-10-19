@@ -913,12 +913,12 @@ def write_units(W, fx_):
                  'impactEffect': W['bolt_hit']}
 
     put(unit('worker', 'Tinker',
-             'Gathers amber and substance, builds and repairs beetle buildings, and patches machines with Patch Up. Uses 1 supply.',
+             'Gathers amber, builds and repairs beetle buildings, and patches machines with Patch Up. Uses 1 supply.',
              body(280, 1, 'light'), None, 11, train(100, 0, 15), 1, (1.5, 4.8, 3.25), 2.4,
              selection='worker', sets=('behavior-set.worker',),
              abilities=caster(60, 0.6, [binding('patch-up', 'ability.beetles.patch-up', 1, 'Q', 1,
                                                 preference='wounded-ally', interval=20)]),
-             extra_behaviors={'work': {'carryCapacity': 10, 'harvests': ['item.amber', 'item.root'], 'builds': [
+             extra_behaviors={'work': {'carryCapacity': 10, 'harvests': ['item.amber'], 'builds': [
                  HALL, b('brood-den'), b('war-lodge'), b('shell-forge'), b('hornwatch'), b('ancestor-shrine'),
                  b('alembic'), b('engine-yard'), b('substance-well')]}},
              vision=28, movement_extra={'walkSpeed': 6}))

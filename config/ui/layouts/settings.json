@@ -28,6 +28,7 @@
               { "id": "tab-graphics", "kind": "button", "class": "st-tab", "text": "Graphics", "action": "settings.tab", "checked": true },
               { "id": "tab-audio", "kind": "button", "class": "st-tab", "text": "Audio", "action": "settings.tab" },
               { "id": "tab-interface", "kind": "button", "class": "st-tab", "text": "Interface", "action": "settings.tab" },
+              { "id": "tab-gameplay", "kind": "button", "class": "st-tab", "text": "Gameplay", "action": "settings.tab" },
               { "id": "tab-keys", "kind": "button", "class": "st-tab", "text": "Keyboard", "action": "settings.tab" },
               { "id": "tab-network", "kind": "button", "class": "st-tab", "text": "Multiplayer", "action": "settings.tab" }
             ]
@@ -156,6 +157,13 @@
               },
               { "id": "health-bars", "kind": "checkbox", "class": "check", "text": "Always show health bars", "action": "settings.health-bars" },
               { "id": "tooltips", "kind": "checkbox", "class": "check", "text": "Show tooltips", "action": "settings.tooltips" }
+            ]
+          },
+          {
+            "id": "gameplay", "class": "st-page", "visible": false,
+            "children": [
+              { "id": "delivery-text", "kind": "checkbox", "class": "check", "text": "Show resource deliveries", "action": "settings.delivery-text" },
+              { "kind": "label", "class": "settings-note", "text": "Amber your workers bring in and Substance your wells pump rise as floating numbers where they arrive." }
             ]
           },
           {

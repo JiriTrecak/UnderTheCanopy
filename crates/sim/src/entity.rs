@@ -219,6 +219,9 @@ pub struct Entity {
     pub links: Option<Box<crate::abilities::Links>>,
     /// Hero item slots and item effects (`items`).
     pub equipment: Option<Box<crate::items::Equipment>>,
+    /// Ticks towards a building's next income (`economy::income`).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub income: u32,
 }
 
 /// Entities ordered by id with O(1) lookup. Removal leaves a hole that later compaction
@@ -354,6 +357,7 @@ mod tests {
             statuses: Vec::new(),
             links: None,
             equipment: None,
+            income: 0,
         }
     }
 

@@ -142,6 +142,8 @@ pub struct WorldUi {
     /// The power network's discs (x, z, radius) while placing a building that needs it
     /// or while the debug overlay shows it (D66).
     pub network: Vec<[f32; 3]>,
+    /// Deliveries into the viewer's stock rise as "+N" text (a setting).
+    pub deliveries: bool,
 }
 
 /// A ground ring (world units).
@@ -237,6 +239,8 @@ pub struct Play {
     pub keymap: Keymap,
     /// Health bars over every unit unless a hold narrows them (a setting).
     pub always_health_bars: bool,
+    /// Deliveries into the player's stock rise as "+N" text (a setting).
+    pub delivery_text: bool,
     /// The power network shows on the ground at all times (debug overlay, D66).
     pub show_network: bool,
     /// Commands sent, newest last (debug overlay).
@@ -287,6 +291,7 @@ impl Play {
             name: None,
             keymap: Keymap::default(),
             always_health_bars: false,
+            delivery_text: true,
             show_network: false,
             sent: Vec::new(),
             camera_mode: follow::CameraMode::Rts,
@@ -746,6 +751,7 @@ impl Play {
             aim: self.aim(),
             tree: self.tree_ring(),
             network: self.network_discs(),
+            deliveries: self.delivery_text,
         }
     }
 

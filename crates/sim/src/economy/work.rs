@@ -376,6 +376,7 @@ pub fn deposit(ctx: &mut Ctx, worker: EntityId, store: EntityId) {
             item: cargo.item,
             amount: cargo.amount,
             store,
+            carrier: Some(worker),
         });
     }
 }

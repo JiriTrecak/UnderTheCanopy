@@ -366,6 +366,37 @@ pub fn networked_content() -> Arc<Content> {
         .clone()
 }
 
+/// The same content with a well that pumps essence by itself (`income`, as the base
+/// game's Substance Wells): no worker harvests essence and the spring takes nobody.
+pub fn pumping_content() -> Arc<Content> {
+    static CONTENT: OnceLock<Arc<Content>> = OnceLock::new();
+    CONTENT
+        .get_or_init(|| {
+            let mut game = game();
+            let definitions = game["definitions"].as_array_mut().expect("definitions");
+            for d in definitions.iter_mut() {
+                match d["id"].as_str().expect("id") {
+                    WELL => {
+                        d["income"] = json!({"item": ESSENCE, "amount": 5, "intervalTicks": 20});
+                    }
+                    SPRING => {
+                        d["harvesting"]["activeWorkers"] = json!(0);
+                        d["harvesting"]["recommendedWorkers"] = json!(0);
+                    }
+                    WORKER => d["behaviors"]["work"]["harvests"] = json!([AMBER]),
+                    _ => {}
+                }
+            }
+            load(game, "sim-ai-pumping")
+        })
+        .clone()
+}
+
+/// A world on [`pumping_content`].
+pub fn pumping_world(map: &UtcMap, both: bool) -> World {
+    World::new(pumping_content(), map, setup(both)).unwrap_or_else(|e| panic!("{e}"))
+}
+
 fn load(game: Value, folder_name: &str) -> Arc<Content> {
     let mut folder = DataFolder::new(
         game,

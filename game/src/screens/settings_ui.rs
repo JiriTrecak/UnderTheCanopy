@@ -18,14 +18,16 @@ pub enum Tab {
     Graphics,
     Audio,
     Interface,
+    Gameplay,
     Keys,
     Network,
 }
 
-const TABS: [(Tab, &str, &str); 5] = [
+const TABS: [(Tab, &str, &str); 6] = [
     (Tab::Graphics, "tab-graphics", "graphics"),
     (Tab::Audio, "tab-audio", "audio"),
     (Tab::Interface, "tab-interface", "interface"),
+    (Tab::Gameplay, "tab-gameplay", "gameplay"),
     (Tab::Keys, "tab-keys", "keys"),
     (Tab::Network, "tab-network", "network"),
 ];
@@ -173,6 +175,11 @@ impl SettingsUi {
             settings.hud.always_show_health_bars,
         );
         widgets::checked(ui, "settings/interface/tooltips", settings.hud.tooltips);
+        widgets::checked(
+            ui,
+            "settings/gameplay/delivery-text",
+            settings.gameplay.delivery_text,
+        );
         if self.fresh {
             widgets::text(ui, "settings/interface/name", &settings.player_name);
             widgets::text(ui, "settings/keys/search", &self.filter);
@@ -399,6 +406,11 @@ impl SettingsUi {
                 if let Some(on) = toggled(&action.kind) {
                     settings.hud.always_show_health_bars = on;
                     c.hud = true;
+                }
+            }
+            "settings.delivery-text" => {
+                if let Some(on) = toggled(&action.kind) {
+                    settings.gameplay.delivery_text = on;
                 }
             }
             "settings.tooltips" => {

@@ -1,7 +1,7 @@
 {
   "id": "item.root",
   "name": "Substance",
-  "description": "The forest's raw magic, drawn from contested Substance Deposits. Workers carry it into the Substance Well built on the deposit.",
+  "description": "The forest's raw magic, drawn from contested Substance Deposits. A Substance Well built on a deposit pumps it by itself.",
   "model": "asset.models.cargo.root",
   "icon": "asset.icons.resource-root",
   "stackLimit": 16,
@@ -15,5 +15,8 @@
     "amount": 10
   },
   "currency": true,
+  "presentation": {
+    "color": "#b9a2ff"
+  },
   "displayOrder": 30
 }

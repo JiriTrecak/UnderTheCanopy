@@ -70,11 +70,23 @@ pub struct Start {
 }
 
 /// Player settings the match follows.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Options {
     pub keymap: Keymap,
     /// Health bars over every unit by default.
     pub always_health_bars: bool,
+    /// Deliveries into the player's stock rise as "+N" text.
+    pub delivery_text: bool,
+}
+
+impl Default for Options {
+    fn default() -> Self {
+        Self {
+            keymap: Keymap::default(),
+            always_health_bars: false,
+            delivery_text: true,
+        }
+    }
 }
 
 /// What the match borrows from the game around it each frame.
@@ -402,6 +414,7 @@ impl InMatch {
     pub fn set_options(&mut self, options: &Options) {
         self.play.keymap = options.keymap.clone();
         self.play.always_health_bars = options.always_health_bars;
+        self.play.delivery_text = options.delivery_text;
     }
 
     /// Plugs a render target another system draws into the HUD: `"@minimap"` or
@@ -1123,6 +1136,7 @@ pub(crate) fn world_ui_input(
             .tree
             .map(|r| [r.position[0], r.position[1], r.radius]),
         network: world_ui.network.clone(),
+        deliveries: world_ui.deliveries,
         ..WorldUiInput::default()
     }
 }

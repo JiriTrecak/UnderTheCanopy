@@ -40,9 +40,10 @@ pub struct PublicWork {
     pub pose: Option<WorkPose>,
     /// Workers assigned to a harvest building (a mine).
     pub site: Option<Workforce>,
-    /// A building is at work: training, researching, upgrading, reviving or gathered from
-    /// (workers assigned to it as a harvest site), and not paused or blocked. Everyone who
-    /// sees it sees that it works, never at what (its animation and effects, D65).
+    /// A building is at work: training, researching, upgrading, reviving, earning its
+    /// income or gathered from (workers assigned to it as a harvest site), and not paused
+    /// or blocked. Everyone who sees it sees that it works, never at what (its animation
+    /// and effects, D65).
     pub busy: bool,
     /// Training cycles the building has finished: a unit stepped out when it grows.
     pub cycles: u32,
@@ -387,10 +388,13 @@ pub fn public(
     let unpowered = views.unpowered.contains(&e.id);
     // A harvest building works while workers gather from it (a well pumps, D65).
     let gathered = site.is_some_and(|s| s.workers > 0);
+    // A building with income works for as long as it earns (D62: a well pumps by itself).
+    let earning = d.income.is_some() && e.owner != Owner::Nobody && alive(e);
     let busy = e.construction.is_none()
         && !unpowered
         && (producing
             || gathered
+            || earning
             || e.research.as_ref().is_some_and(|r| !r.queue.is_empty())
             || e.upgrade.is_some()
             || e.revival.as_ref().is_some_and(|r| !r.queue.is_empty()));

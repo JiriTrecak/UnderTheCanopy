@@ -485,6 +485,17 @@ pub struct PlacementOn {
     pub source: Id,
 }
 
+/// Goods a building makes by itself (D62: a Substance Well pumps its deposit): while it
+/// stands complete (and powered, when it needs power, D66) it adds `amount` of `item` to
+/// its owner's stock every `intervalTicks`. The item is a currency.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Income {
+    pub item: Id,
+    pub amount: u32,
+    pub interval_ticks: u32,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum SelectionClass {
@@ -551,6 +562,8 @@ pub struct Definition {
     /// Buildings that only work inside the power network (D66).
     pub power: Option<Power>,
     pub placement_on: Option<PlacementOn>,
+    /// Goods the building makes by itself while it stands complete.
+    pub income: Option<Income>,
     pub creation: Option<Creation>,
     pub behaviors: Behaviors,
 }
@@ -577,6 +590,9 @@ pub struct DefinitionPresentation {
     pub camera_anchor: Option<CameraAnchor>,
     /// A building's effects at work (D65): smoke while it works, sparks on a strike.
     pub effects: Option<Vec<StateEffect>>,
+    /// An item's colour (`#rrggbb`) where amounts of it show in the world: the floating
+    /// text of a delivery.
+    pub color: Option<String>,
 }
 
 /// An effect a building or unit plays from one of its model's sockets: looping for as
@@ -597,7 +613,7 @@ pub struct StateEffect {
 
 impl StateEffect {
     /// A building's states (D65): `idle` while it rests (complete, nothing to do), `work`
-    /// while it trains, researches, upgrades, revives or is gathered from, `spawn` once
+    /// while it trains, researches, upgrades, revives, earns or is gathered from, `spawn` once
     /// per trained unit, `attack` once per shot of a tower's crew, `always` whenever it
     /// stands complete in sight.
     pub const BUILDING_STATES: &[&str] = &["idle", "work", "spawn", "attack", "always"];
