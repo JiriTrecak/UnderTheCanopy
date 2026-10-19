@@ -1,0 +1,51 @@
+{
+  "id": "effect.buildings.ant-great-nest-motes",
+  "name": "Great Nest motes",
+  "description": "Blue-violet motes rising out of the ring between the Great Nest's twin spires while the hall raises workers or upgrades (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "motes",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 90,
+        "rate": 16,
+        "speed": 1.3,
+        "speedVariation": 0.45,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 14,
+        "gravity": 0,
+        "drag": 0.15,
+        "spawnRadius": 1.8,
+        "startSize": 0.5,
+        "endSize": 0.05,
+        "spin": 1.5,
+        "fadeIn": 0.15,
+        "fadeOut": 0.55
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#8f7bff",
+      "accent": "#dcd4ff",
+      "durationTicks": 80,
+      "count": 44,
+      "size": 0.3,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.8,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

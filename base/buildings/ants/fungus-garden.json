@@ -1,0 +1,67 @@
+{
+  "id": "building.ants.fungus-garden",
+  "name": "Fungus Garden",
+  "description": "The colony's substance lab, a living fungus cathedral: researches one-off mutations for its castes.",
+  "model": "asset.models.buildings.ants-fungus-garden",
+  "icon": "asset.portraits.buildings.ants-fungus-garden",
+  "body": {
+    "maxHp": 1100,
+    "armor": 5,
+    "armorType": "structure"
+  },
+  "vision": 14,
+  "footprint": {
+    "width": 12,
+    "depth": 12
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 6.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 175
+      },
+      {
+        "item": "item.root",
+        "amount": 100
+      }
+    ],
+    "workTicks": 1800,
+    "workAnimation": "build"
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "category": "category.build-advanced",
+  "requires": [
+    "building.ants.great-mound"
+  ],
+  "level": 2,
+  "command": {
+    "priority": 40,
+    "category": "category.build-advanced"
+  },
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.ant-fungus-garden-glow",
+        "state": "work",
+        "socket": "socket_gills"
+      },
+      {
+        "effect": "effect.buildings.ant-fungus-garden-spores",
+        "state": "work",
+        "socket": "socket_gills"
+      },
+      {
+        "effect": "effect.buildings.ant-fungus-garden-puff",
+        "event": "spores",
+        "socket": "socket_gills"
+      }
+    ]
+  }
+}

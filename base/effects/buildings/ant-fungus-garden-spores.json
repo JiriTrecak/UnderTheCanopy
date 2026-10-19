@@ -1,0 +1,51 @@
+{
+  "id": "effect.buildings.ant-fungus-garden-spores",
+  "name": "Fungus Garden spores",
+  "description": "Glowing blue-violet spores drifting down out of the Fungus Garden's gills while it researches (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "spores",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 110,
+        "rate": 10,
+        "speed": 0.45,
+        "speedVariation": 0.45,
+        "direction": {
+          "x": 0,
+          "y": -1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": 0.12,
+        "drag": 0.3,
+        "spawnRadius": 2.6,
+        "startSize": 0.32,
+        "endSize": 0.08,
+        "spin": 0.8,
+        "fadeIn": 0.2,
+        "fadeOut": 0.5
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#a58cff",
+      "accent": "#e2d9ff",
+      "durationTicks": 80,
+      "count": 40,
+      "size": 0.25,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.4,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

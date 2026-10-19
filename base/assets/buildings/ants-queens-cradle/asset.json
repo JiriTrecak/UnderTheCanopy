@@ -1,0 +1,88 @@
+{
+  "id": "asset.models.buildings.ants-queens-cradle",
+  "name": "Queen's Cradle",
+  "kind": "building",
+  "tags": [
+    "ants",
+    "tripo",
+    "team-mask",
+    "animated",
+    "reliquary"
+  ],
+  "race": "ants",
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_ants_queens_cradle_body",
+        "TC_ants_queens_cradle_amber"
+      ]
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "work",
+        "clip": "work",
+        "loop": true,
+        "events": [
+          {
+            "name": "stir",
+            "time": 0.733
+          },
+          {
+            "name": "stir",
+            "time": 3.733
+          }
+        ]
+      }
+    ],
+    "blocker": {
+      "shape": "box",
+      "size": [
+        16,
+        16
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 8,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 1,
+    "healthHeight": 9.8
+  },
+  "shading": "building",
+  "license": "Generated with Tripo (image to 3D, segmentation) from an ImageGen (gpt-image-2) concept for Under the Canopy; made game-ready and animated by tools/buildings/ant_building.py with tools/buildings/ants/queens-cradle.json."
+}

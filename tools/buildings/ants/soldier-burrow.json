@@ -1,0 +1,123 @@
+{
+  "name": "ants-soldier-burrow",
+  "title": "Soldier Burrow",
+  "width": 12,
+  "footprint": 12,
+  "tags": [
+    "barracks"
+  ],
+  "cap": [
+    "mandible-left",
+    "mandible-right"
+  ],
+  "cut": 0.035,
+  "glow": [
+    {
+      "on": "body",
+      "classes": [
+        "blossoms"
+      ],
+      "pulse": 0.7,
+      "strength": 4.0
+    }
+  ],
+  "moves": [
+    {
+      "node": "mandible-left",
+      "parts": [
+        "tripo_part_20"
+      ],
+      "hinge": "top",
+      "kind": "open",
+      "axis": "y",
+      "amp": 16,
+      "hold": 0.35
+    },
+    {
+      "node": "mandible-right",
+      "parts": [
+        "tripo_part_25"
+      ],
+      "hinge": "top",
+      "kind": "open",
+      "axis": "y",
+      "amp": -16,
+      "hold": 0.35
+    },
+    {
+      "node": "banner-left",
+      "parts": [
+        "tripo_part_62"
+      ],
+      "hinge": "top",
+      "kind": "sway",
+      "axis": "y",
+      "amp": 5,
+      "period": 2.0
+    },
+    {
+      "node": "banner-right",
+      "parts": [
+        "tripo_part_21"
+      ],
+      "hinge": "top",
+      "kind": "sway",
+      "axis": "y",
+      "amp": 5,
+      "period": 2.0,
+      "phase": 0.25
+    }
+  ],
+  "work": {
+    "frames": 120,
+    "events": [
+      {
+        "name": "snap",
+        "frame": 116
+      }
+    ]
+  },
+  "spawn": {
+    "frames": 60,
+    "moves": [
+      {
+        "node": "mandible-left",
+        "parts": [
+          "tripo_part_20"
+        ],
+        "hinge": "top",
+        "kind": "open",
+        "axis": "y",
+        "amp": 22,
+        "hold": 0.4
+      },
+      {
+        "node": "mandible-right",
+        "parts": [
+          "tripo_part_25"
+        ],
+        "hinge": "top",
+        "kind": "open",
+        "axis": "y",
+        "amp": -22,
+        "hold": 0.4
+      }
+    ],
+    "events": [
+      {
+        "name": "release",
+        "frame": 20
+      }
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_gate",
+      "point": [
+        0,
+        -6.0,
+        1.6
+      ]
+    }
+  ]
+}

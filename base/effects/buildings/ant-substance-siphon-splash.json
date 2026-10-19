@@ -1,0 +1,51 @@
+{
+  "id": "effect.buildings.ant-substance-siphon-splash",
+  "name": "Substance Siphon splash",
+  "description": "Glowing droplets leaping off the Siphon's pool each time the spires bow to pour.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "droplets",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 34,
+        "rate": 20,
+        "speed": 2.2,
+        "speedVariation": 0.45,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 35,
+        "gravity": 6,
+        "drag": 0.2,
+        "spawnRadius": 1.1,
+        "startSize": 0.22,
+        "endSize": 0.05,
+        "spin": 1.5,
+        "fadeIn": 0.05,
+        "fadeOut": 0.5
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#b89cff",
+      "accent": "#f0eaff",
+      "durationTicks": 36,
+      "count": 20,
+      "size": 0.18,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.8,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

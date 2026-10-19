@@ -1,0 +1,89 @@
+{
+  "id": "asset.models.buildings.ants-substance-siphon",
+  "name": "Substance Siphon",
+  "kind": "building",
+  "tags": [
+    "ants",
+    "tripo",
+    "team-mask",
+    "animated",
+    "resource",
+    "substance"
+  ],
+  "race": "ants",
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_ants_substance_siphon_body",
+        "TC_ants_substance_siphon_pool"
+      ]
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "work",
+        "clip": "work",
+        "loop": true,
+        "events": [
+          {
+            "name": "pour",
+            "time": 0.5
+          },
+          {
+            "name": "pour",
+            "time": 2.5
+          }
+        ]
+      }
+    ],
+    "blocker": {
+      "shape": "box",
+      "size": [
+        8,
+        8
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 4,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 1,
+    "healthHeight": 6.7
+  },
+  "shading": "building",
+  "license": "Generated with Tripo (image to 3D, segmentation) from an ImageGen (gpt-image-2) concept for Under the Canopy; made game-ready and animated by tools/buildings/ant_building.py with tools/buildings/ants/substance-siphon.json."
+}

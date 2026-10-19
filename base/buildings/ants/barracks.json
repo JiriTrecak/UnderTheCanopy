@@ -1,9 +1,9 @@
 {
   "id": "building.ants.barracks",
-  "name": "Barracks",
-  "description": "Trains the colony’s infantry and ranged troops.",
-  "model": "asset.models.buildings.ants-leaf-garrison",
-  "icon": "asset.portraits.buildings.ants-leaf-garrison",
+  "name": "Soldier Burrow",
+  "description": "Trains the colony’s soldiers, who march out between the mandibles of its giant ant-head gate.",
+  "model": "asset.models.buildings.ants-soldier-burrow",
+  "icon": "asset.portraits.buildings.ants-soldier-burrow",
   "body": {
     "maxHp": 1200,
     "armor": 5,
@@ -62,9 +62,27 @@
   },
   "category": "category.build-advanced",
   "level": 1,
-  "modelScale": 1.25,
   "command": {
     "category": "category.build",
     "priority": 80
+  },
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.ant-soldier-burrow-glow",
+        "state": "work",
+        "socket": "socket_gate"
+      },
+      {
+        "effect": "effect.buildings.ant-soldier-burrow-snap",
+        "event": "snap",
+        "socket": "socket_gate"
+      },
+      {
+        "effect": "effect.buildings.ant-soldier-burrow-release",
+        "event": "release",
+        "socket": "socket_gate"
+      }
+    ]
   }
 }

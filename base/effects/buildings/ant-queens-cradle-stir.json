@@ -1,0 +1,51 @@
+{
+  "id": "effect.buildings.ant-queens-cradle-stir",
+  "name": "Queen's Cradle stir",
+  "description": "A slow swell of amber and violet motes from the resin block each time the queen within stirs.",
+  "durationTicks": 50,
+  "loop": false,
+  "layers": [
+    {
+      "id": "motes",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 60,
+        "rate": 22,
+        "speed": 1.6,
+        "speedVariation": 0.45,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 60,
+        "gravity": 0.0,
+        "drag": 0.15,
+        "spawnRadius": 2.0,
+        "startSize": 0.5,
+        "endSize": 0.05,
+        "spin": 1.5,
+        "fadeIn": 0.15,
+        "fadeOut": 0.55
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#ffb347",
+      "accent": "#b89cff",
+      "durationTicks": 50,
+      "count": 22,
+      "size": 0.32,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.4,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

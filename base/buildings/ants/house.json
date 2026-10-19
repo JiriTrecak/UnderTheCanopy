@@ -1,9 +1,9 @@
 {
   "id": "building.ants.house",
-  "name": "Mound",
-  "description": "A compact colony mound that provides 8 supply when completed.",
-  "model": "asset.models.buildings.ants-silk-brood-house",
-  "icon": "asset.portraits.buildings.ants-silk-brood-house",
+  "name": "Brood Mound",
+  "description": "A spiral tunnel shaft of packed clay leading down into the colony: provides 8 supply when completed.",
+  "model": "asset.models.buildings.ants-brood-mound",
+  "icon": "asset.portraits.buildings.ants-brood-mound",
   "body": {
     "maxHp": 600,
     "armor": 3,
@@ -35,8 +35,26 @@
   "behaviors": {},
   "level": 1,
   "supplyProvided": 8,
-  "modelScale": 1.1,
   "command": {
     "priority": 90
+  },
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.ant-brood-mound-motes",
+        "state": "work",
+        "socket": "socket_shaft"
+      },
+      {
+        "effect": "effect.buildings.ant-brood-mound-glow",
+        "state": "work",
+        "socket": "socket_shaft"
+      },
+      {
+        "effect": "effect.buildings.ant-brood-mound-puff",
+        "event": "bloom",
+        "socket": "socket_shaft"
+      }
+    ]
   }
 }

@@ -1,0 +1,84 @@
+{
+  "id": "asset.models.buildings.ants-great-nest",
+  "name": "Great Nest",
+  "kind": "building",
+  "tags": [
+    "ants",
+    "tripo",
+    "team-mask",
+    "animated",
+    "main-hall",
+    "tunnel"
+  ],
+  "race": "ants",
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_ants_great_nest_body"
+      ]
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "work",
+        "clip": "work",
+        "loop": true,
+        "events": [
+          {
+            "name": "bloom",
+            "time": 2.5
+          }
+        ]
+      }
+    ],
+    "blocker": {
+      "shape": "box",
+      "size": [
+        20,
+        20
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 10,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 1,
+    "healthHeight": 13.9
+  },
+  "shading": "building",
+  "license": "Generated with Tripo (image to 3D, segmentation) from an ImageGen (gpt-image-2) concept for Under the Canopy; made game-ready and animated by tools/buildings/ant_building.py with tools/buildings/ants/great-nest.json."
+}

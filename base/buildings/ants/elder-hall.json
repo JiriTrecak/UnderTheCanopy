@@ -1,9 +1,9 @@
 {
   "id": "building.ants.elder-hall",
-  "name": "Elder Hall",
-  "description": "Tier 3 Acorn Hall. Supports a roster of three distinct heroes.",
-  "model": "asset.models.buildings.ants-queensguard-hall",
-  "icon": "asset.portraits.buildings.ants-queensguard-hall",
+  "name": "Queen's Chamber",
+  "description": "The colony's crowned heart, where the queen's spire beats with violet light: stores resources, raises workers, provides 15 supply and supports three heroes.",
+  "model": "asset.models.buildings.ants-queens-chamber",
+  "icon": "asset.portraits.buildings.ants-queens-chamber",
   "body": {
     "maxHp": 3000,
     "armor": 6,
@@ -45,5 +45,28 @@
   "level": 3,
   "supplyProvided": 15,
   "heroCapacity": 3,
-  "modelScale": 1.25
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.ant-queens-chamber-heart",
+        "state": "work",
+        "socket": "socket_heart"
+      },
+      {
+        "effect": "effect.buildings.ant-queens-chamber-glow",
+        "state": "work",
+        "socket": "socket_gate"
+      },
+      {
+        "effect": "effect.buildings.ant-queens-chamber-motes",
+        "state": "work",
+        "socket": "socket_crown"
+      },
+      {
+        "effect": "effect.buildings.ant-queens-chamber-bloom",
+        "event": "bloom",
+        "socket": "socket_crown"
+      }
+    ]
+  }
 }

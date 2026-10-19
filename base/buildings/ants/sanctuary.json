@@ -1,9 +1,9 @@
 {
   "id": "building.ants.sanctuary",
-  "name": "Amber Sanctuary",
-  "description": "Calls fallen heroes back to the colony, preserving their experience, abilities and inventory.",
-  "model": "asset.placeholder.missing-model",
-  "icon": "asset.portraits.buildings.ants-amber-sanctuary",
+  "name": "Royal Chamber",
+  "description": "A clay throne hall under a royal-blue canopy: raises the colony’s heroes and calls the fallen back with their experience, abilities and inventory.",
+  "model": "asset.models.buildings.ants-royal-chamber",
+  "icon": "asset.portraits.buildings.ants-royal-chamber",
   "body": {
     "maxHp": 1000,
     "armor": 5,
@@ -73,6 +73,17 @@
     "priority": 70
   },
   "presentation": {
-    "healthHeight": 4.9
+    "effects": [
+      {
+        "effect": "effect.buildings.ant-royal-chamber-glow",
+        "state": "work",
+        "socket": "socket_throne"
+      },
+      {
+        "effect": "effect.buildings.ant-royal-chamber-motes",
+        "state": "work",
+        "socket": "socket_crown"
+      }
+    ]
   }
 }

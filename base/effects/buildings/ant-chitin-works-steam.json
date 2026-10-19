@@ -1,0 +1,93 @@
+{
+  "id": "effect.buildings.ant-chitin-works-steam",
+  "name": "Chitin Works resin steam",
+  "description": "Warm steam curling off the hot resin basin while the Chitin Works researches (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "steam",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 100,
+        "rate": 2.2,
+        "speed": 0.9,
+        "speedVariation": 0.35,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 18,
+        "gravity": -0.15,
+        "drag": 0.3,
+        "spawnRadius": 1.2,
+        "startSize": 0.9,
+        "endSize": 2.8,
+        "spin": 0.25,
+        "fadeIn": 0.15,
+        "fadeOut": 0.8
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#d8cbb8",
+      "accent": "#efe6d8",
+      "durationTicks": 80,
+      "count": 10,
+      "size": 0.8,
+      "height": 0,
+      "blend": "normal",
+      "intensity": 0.55,
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "embers",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 60,
+        "rate": 5,
+        "speed": 1.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 25,
+        "gravity": -0.25,
+        "drag": 0.2,
+        "spawnRadius": 1.1,
+        "startSize": 0.16,
+        "endSize": 0.03,
+        "spin": 1.5,
+        "fadeIn": 0.1,
+        "fadeOut": 0.5
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#ffb347",
+      "accent": "#ffe2a8",
+      "durationTicks": 80,
+      "count": 12,
+      "size": 0.12,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.4,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

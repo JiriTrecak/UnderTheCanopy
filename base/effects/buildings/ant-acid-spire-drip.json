@@ -1,0 +1,51 @@
+{
+  "id": "effect.buildings.ant-acid-spire-drip",
+  "name": "Acid Spire drip",
+  "description": "A spit of glowing violet acid from a spire's mouth as it recoils, dripping down its flank.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "motes",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 34,
+        "rate": 10,
+        "speed": 1.4,
+        "speedVariation": 0.45,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": 9.0,
+        "drag": 0.2,
+        "spawnRadius": 0.25,
+        "startSize": 0.35,
+        "endSize": 0.12,
+        "spin": 1.5,
+        "fadeIn": 0.15,
+        "fadeOut": 0.55
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#9a6cff",
+      "accent": "#d8ccff",
+      "durationTicks": 40,
+      "count": 10,
+      "size": 0.22,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

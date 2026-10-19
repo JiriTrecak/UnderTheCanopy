@@ -1,0 +1,74 @@
+{
+  "name": "ants-brood-mound",
+  "title": "Brood Mound",
+  "width": 8,
+  "footprint": 8,
+  "tags": [
+    "tunnel"
+  ],
+  "cut": 0.1,
+  "glow": [
+    {
+      "on": "body",
+      "classes": [
+        "blossoms"
+      ],
+      "pulse": 0.6,
+      "strength": 4.0
+    }
+  ],
+  "moves": [
+    {
+      "node": "drape",
+      "parts": [
+        "tripo_part_27"
+      ],
+      "hinge": "top",
+      "kind": "open",
+      "axis": "x",
+      "amp": -12,
+      "hold": 0.25
+    },
+    {
+      "node": "shaft",
+      "parts": [
+        "tripo_part_1"
+      ],
+      "hinge": "bottom",
+      "kind": "pulse",
+      "amp": 4,
+      "period": 2.0,
+      "phase": 0.1
+    }
+  ],
+  "work": {
+    "frames": 120,
+    "events": [
+      {
+        "name": "bloom",
+        "frame": 60
+      }
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_shaft",
+      "point": [
+        0.96,
+        -0.16,
+        3.0
+      ]
+    }
+  ],
+  "floor": {
+    "point": [
+      0.96,
+      -0.16,
+      0.1
+    ],
+    "radius": 3.0
+  },
+  "cap": [
+    "shaft"
+  ]
+}

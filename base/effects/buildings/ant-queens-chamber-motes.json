@@ -1,0 +1,51 @@
+{
+  "id": "effect.buildings.ant-queens-chamber-motes",
+  "name": "Queen's Chamber motes",
+  "description": "Blue-violet motes drifting up off the Queen's Chamber's crown of petals while the hall works (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "motes",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 90,
+        "rate": 12,
+        "speed": 1.1,
+        "speedVariation": 0.45,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 14,
+        "gravity": 0,
+        "drag": 0.15,
+        "spawnRadius": 1.0,
+        "startSize": 0.5,
+        "endSize": 0.05,
+        "spin": 1.5,
+        "fadeIn": 0.15,
+        "fadeOut": 0.55
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#8f7bff",
+      "accent": "#dcd4ff",
+      "durationTicks": 80,
+      "count": 34,
+      "size": 0.3,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.8,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "name": "ants-nest",
+  "title": "Nest",
+  "width": 20,
+  "footprint": 20,
+  "tags": [
+    "main-hall",
+    "tunnel"
+  ],
+  "glow": [
+    {
+      "on": "body",
+      "classes": [
+        "blossoms"
+      ],
+      "pulse": 0.6,
+      "strength": 2.6
+    }
+  ],
+  "moves": [
+    {
+      "node": "banner-left",
+      "parts": [
+        "tripo_part_26"
+      ],
+      "hinge": "top",
+      "kind": "sway",
+      "axis": "y",
+      "amp": 12,
+      "period": 2.0
+    },
+    {
+      "node": "banner-right",
+      "parts": [
+        "tripo_part_13"
+      ],
+      "hinge": "top",
+      "kind": "sway",
+      "axis": "y",
+      "amp": 12,
+      "period": 2.0,
+      "phase": 0.25
+    },
+    {
+      "node": "crown",
+      "parts": [
+        "tripo_part_8"
+      ],
+      "hinge": "bottom",
+      "kind": "pulse",
+      "amp": 4,
+      "period": 2.0
+    }
+  ],
+  "work": {
+    "frames": 120,
+    "events": [
+      {
+        "name": "bloom",
+        "frame": 30
+      }
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_crown",
+      "node": "crown",
+      "at": "top",
+      "offset": [
+        0,
+        0,
+        0.4
+      ]
+    },
+    {
+      "name": "socket_gate",
+      "point": [
+        0,
+        -6.5,
+        2.0
+      ]
+    }
+  ],
+  "cap": [
+    "crown"
+  ]
+}

@@ -1,0 +1,192 @@
+{
+  "name": "ants-acid-spire",
+  "title": "Acid Spire",
+  "width": 8,
+  "footprint": 8,
+  "tags": [
+    "tower"
+  ],
+  "glow": [
+    {
+      "on": "body",
+      "classes": [
+        "blossoms",
+        "dark"
+      ],
+      "pulse": 0.8,
+      "strength": 4.0
+    }
+  ],
+  "moves": [
+    {
+      "node": "spire-centre",
+      "parts": [
+        "tripo_part_0"
+      ],
+      "hinge": "bottom",
+      "kind": "nod",
+      "axis": "y",
+      "amp": 3,
+      "period": 1.5
+    },
+    {
+      "node": "spire-right",
+      "parts": [
+        "tripo_part_5"
+      ],
+      "hinge": "bottom",
+      "kind": "nod",
+      "axis": "y",
+      "amp": 3,
+      "period": 1.5,
+      "phase": 0.33
+    },
+    {
+      "node": "spire-left",
+      "parts": [
+        "tripo_part_6"
+      ],
+      "hinge": "bottom",
+      "kind": "nod",
+      "axis": "y",
+      "amp": 2.5,
+      "period": 1.5,
+      "phase": 0.67
+    },
+    {
+      "node": "banner",
+      "parts": [
+        "tripo_part_8",
+        "tripo_part_28"
+      ],
+      "hinge": "top",
+      "kind": "sway",
+      "axis": "y",
+      "amp": 6,
+      "period": 2.0
+    }
+  ],
+  "work": {
+    "frames": 180,
+    "events": [
+      {
+        "name": "spit-centre",
+        "frame": 11
+      },
+      {
+        "name": "spit-left",
+        "frame": 26
+      },
+      {
+        "name": "spit-right",
+        "frame": 41
+      },
+      {
+        "name": "spit-centre",
+        "frame": 56
+      },
+      {
+        "name": "spit-left",
+        "frame": 71
+      },
+      {
+        "name": "spit-right",
+        "frame": 86
+      },
+      {
+        "name": "spit-centre",
+        "frame": 101
+      },
+      {
+        "name": "spit-left",
+        "frame": 116
+      },
+      {
+        "name": "spit-right",
+        "frame": 131
+      },
+      {
+        "name": "spit-centre",
+        "frame": 146
+      },
+      {
+        "name": "spit-left",
+        "frame": 161
+      },
+      {
+        "name": "spit-right",
+        "frame": 176
+      }
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_mouth_centre",
+      "node": "spire-centre",
+      "at": "top",
+      "offset": [
+        0,
+        -1.0,
+        -1.8
+      ]
+    },
+    {
+      "name": "socket_mouth_left",
+      "node": "spire-left",
+      "at": "top",
+      "offset": [
+        -0.6,
+        -0.8,
+        -1.6
+      ]
+    },
+    {
+      "name": "socket_mouth_right",
+      "node": "spire-right",
+      "at": "top",
+      "offset": [
+        0.6,
+        -0.8,
+        -1.6
+      ]
+    }
+  ],
+  "cut": 0.1,
+  "cap": [
+    "spire-centre",
+    "spire-right",
+    "spire-left"
+  ],
+  "attack": {
+    "frames": 20,
+    "moves": [
+      {
+        "node": "spire-centre",
+        "kind": "open",
+        "axis": "x",
+        "amp": 5,
+        "hold": 0.1
+      },
+      {
+        "node": "spire-left",
+        "kind": "open",
+        "axis": "x",
+        "amp": 4,
+        "hold": 0.1
+      },
+      {
+        "node": "spire-right",
+        "kind": "open",
+        "axis": "x",
+        "amp": 4,
+        "hold": 0.1
+      }
+    ],
+    "events": [
+      {
+        "name": "spit",
+        "frame": 5
+      }
+    ]
+  }
+}

@@ -1,9 +1,9 @@
 {
   "id": "building.ants.fort",
-  "name": "Queensguard Hall",
-  "description": "The colony main hall stores resources, trains workers and provides 15 supply.",
-  "model": "asset.models.buildings.ants-queensguard-hall",
-  "icon": "asset.portraits.buildings.ants-queensguard-hall",
+  "name": "Nest",
+  "description": "The colony main hall: stores resources, raises workers, provides 15 supply and is a tunnel mound.",
+  "model": "asset.models.buildings.ants-nest",
+  "icon": "asset.portraits.buildings.ants-nest",
   "body": {
     "maxHp": 1800,
     "armor": 5,
@@ -70,9 +70,27 @@
   },
   "supplyProvided": 15,
   "heroCapacity": 1,
-  "modelScale": 1.25,
   "command": {
     "category": "category.build",
     "priority": 100
+  },
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.ant-nest-motes",
+        "state": "work",
+        "socket": "socket_crown"
+      },
+      {
+        "effect": "effect.buildings.ant-nest-glow",
+        "state": "work",
+        "socket": "socket_gate"
+      },
+      {
+        "effect": "effect.buildings.ant-nest-bloom",
+        "event": "bloom",
+        "socket": "socket_crown"
+      }
+    ]
   }
 }

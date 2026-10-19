@@ -1,0 +1,51 @@
+{
+  "id": "effect.buildings.ant-deep-gallery-motes",
+  "name": "Deep Gallery wing motes",
+  "description": "Blue-violet motes shed by the Deep Gallery's beating wings while it trains (D65).",
+  "durationTicks": 60,
+  "loop": true,
+  "layers": [
+    {
+      "id": "motes",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 80,
+        "rate": 9,
+        "speed": 0.8,
+        "speedVariation": 0.45,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 50,
+        "gravity": 0.1,
+        "drag": 0.3,
+        "spawnRadius": 2.4,
+        "startSize": 0.34,
+        "endSize": 0.05,
+        "spin": 1.0,
+        "fadeIn": 0.15,
+        "fadeOut": 0.55
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#a58cff",
+      "accent": "#e2d9ff",
+      "durationTicks": 60,
+      "count": 26,
+      "size": 0.25,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.4,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "ants-deep-gallery",
+  "title": "Deep Gallery",
+  "width": 12,
+  "footprint": 12,
+  "cap": ["wing-left", "wing-right"],
+  "tags": ["specialists"],
+  "cut": 0.16,
+  "glow": [
+    {"on": "body", "classes": ["amber"], "color": [1.0, 0.6, 0.18], "pulse": 0.6, "strength": 3.0},
+    {"on": "wing-left", "classes": ["blossoms"], "pulse": 0.5, "strength": 3.0},
+    {"on": "wing-right", "classes": ["blossoms"], "pulse": 0.5, "strength": 3.0}
+  ],
+  "moves": [
+    {"node": "wing-left", "parts": ["tripo_part_20", "tripo_part_58", "tripo_part_66"], "hinge": "bottom", "hinge_offset": [0.87, -0.4, 0], "kind": "open", "axis": "y", "amp": -14, "hold": 0.1},
+    {"node": "wing-right", "parts": ["tripo_part_31", "tripo_part_64", "tripo_part_63"], "hinge": "bottom", "hinge_offset": [-0.87, -0.4, 0], "kind": "open", "axis": "y", "amp": 14, "hold": 0.1}
+  ],
+  "work": {"frames": 60, "events": [{"name": "beat", "frame": 30}]},
+  "sockets": [
+    {"name": "socket_pots", "point": [0, -5.6, 1.6]},
+    {"name": "socket_wings", "point": [0, 0.6, 7.6]}
+  ]
+}

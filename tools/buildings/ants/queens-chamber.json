@@ -1,0 +1,117 @@
+{
+  "name": "ants-queens-chamber",
+  "title": "Queen's Chamber",
+  "width": 20,
+  "footprint": 20,
+  "tags": [
+    "main-hall",
+    "tunnel"
+  ],
+  "cut": 0.1,
+  "glow": [
+    {
+      "on": "body",
+      "classes": [
+        "blossoms"
+      ],
+      "pulse": 0.6,
+      "strength": 4.0
+    },
+    {
+      "on": "crown",
+      "classes": [
+        "blossoms"
+      ],
+      "pulse": 1.0,
+      "strength": 7.0
+    }
+  ],
+  "moves": [
+    {
+      "node": "banner-left",
+      "parts": [
+        "tripo_part_27"
+      ],
+      "hinge": "bottom",
+      "kind": "sway",
+      "axis": "y",
+      "amp": 6,
+      "period": 2.0
+    },
+    {
+      "node": "banner-right",
+      "parts": [
+        "tripo_part_22"
+      ],
+      "hinge": "bottom",
+      "kind": "sway",
+      "axis": "y",
+      "amp": 6,
+      "period": 2.0,
+      "phase": 0.25
+    },
+    {
+      "node": "banner-hang",
+      "parts": [
+        "tripo_part_73"
+      ],
+      "hinge": "top",
+      "kind": "sway",
+      "axis": "y",
+      "amp": 6,
+      "period": 2.0,
+      "phase": 0.5
+    },
+    {
+      "node": "crown",
+      "parts": [
+        "tripo_part_24",
+        "tripo_part_35",
+        "tripo_part_52",
+        "tripo_part_80"
+      ],
+      "hinge": "bottom",
+      "kind": "pulse",
+      "axis": "z",
+      "amp": 3,
+      "period": 2.0
+    }
+  ],
+  "work": {
+    "frames": 120,
+    "events": [
+      {
+        "name": "bloom",
+        "frame": 60
+      }
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_crown",
+      "node": "crown",
+      "at": "top",
+      "offset": [
+        0,
+        0,
+        0.3
+      ]
+    },
+    {
+      "name": "socket_heart",
+      "node": "crown",
+      "at": "centre"
+    },
+    {
+      "name": "socket_gate",
+      "point": [
+        0,
+        -4.8,
+        1.6
+      ]
+    }
+  ],
+  "cap": [
+    "crown"
+  ]
+}

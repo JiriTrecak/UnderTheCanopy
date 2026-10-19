@@ -1,9 +1,9 @@
 {
   "id": "building.ants.great-mound",
-  "name": "Great Acorn Hall",
-  "description": "The colony main hall stores resources, trains workers and provides 15 supply.",
-  "model": "asset.models.buildings.ants-queensguard-hall",
-  "icon": "asset.portraits.buildings.ants-queensguard-hall",
+  "name": "Great Nest",
+  "description": "The colony hall grown to twin spires: stores resources, raises workers, provides 15 supply and is a tunnel mound.",
+  "model": "asset.models.buildings.ants-great-nest",
+  "icon": "asset.portraits.buildings.ants-great-nest",
   "body": {
     "maxHp": 2400,
     "armor": 6,
@@ -59,5 +59,23 @@
     ],
     "workTicks": 4000
   },
-  "modelScale": 1.25
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.ant-great-nest-motes",
+        "state": "work",
+        "socket": "socket_crown"
+      },
+      {
+        "effect": "effect.buildings.ant-great-nest-glow",
+        "state": "work",
+        "socket": "socket_gate"
+      },
+      {
+        "effect": "effect.buildings.ant-great-nest-bloom",
+        "event": "bloom",
+        "socket": "socket_crown"
+      }
+    ]
+  }
 }

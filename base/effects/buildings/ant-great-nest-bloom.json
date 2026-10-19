@@ -1,0 +1,51 @@
+{
+  "id": "effect.buildings.ant-great-nest-bloom",
+  "name": "Great Nest bloom",
+  "description": "A puff of glowing pollen out of the Great Nest's spire ring at the height of each breath of its crown.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "motes",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 50,
+        "rate": 32,
+        "speed": 2.0,
+        "speedVariation": 0.45,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": 0,
+        "drag": 0.15,
+        "spawnRadius": 1.4,
+        "startSize": 0.45,
+        "endSize": 0.05,
+        "spin": 1.5,
+        "fadeIn": 0.15,
+        "fadeOut": 0.55
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#b39cff",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 32,
+      "size": 0.3,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.8,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

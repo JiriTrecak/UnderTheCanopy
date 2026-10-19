@@ -1,0 +1,32 @@
+{
+  "id": "effect.buildings.ant-brood-mound-glow",
+  "name": "Brood Mound shaft glow",
+  "description": "Violet light welling up inside the Brood Mound's tunnel shaft while it works (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#c4b2ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 4,
+      "height": 0,
+      "intensity": 4,
+      "motion": {
+        "opacity": {
+          "periodTicks": 80,
+          "min": 0.55,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "id": "effect.buildings.ant-substance-siphon-pool",
+  "name": "Substance Siphon pool light",
+  "description": "Soft violet light breathing over the Siphon's pool of raw substance, which glows even at rest (the D65 exception for raw substance).",
+  "durationTicks": 90,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#c4b2ff",
+      "durationTicks": 90,
+      "count": 1,
+      "size": 5,
+      "height": 0.4,
+      "intensity": 3,
+      "motion": {
+        "opacity": {
+          "periodTicks": 90,
+          "min": 0.75,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

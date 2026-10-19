@@ -1,0 +1,32 @@
+{
+  "id": "effect.buildings.ant-nest-glow",
+  "name": "Nest gate glow",
+  "description": "Soft violet light breathing in the Nest's tunnel gate while the hall works (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#c4b2ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 7,
+      "height": 0,
+      "intensity": 5,
+      "motion": {
+        "opacity": {
+          "periodTicks": 40,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "ants-scent-hall",
+  "title": "Scent Hall",
+  "width": 12,
+  "footprint": 12,
+  "tags": ["pheromone", "specialists"],
+  "cut": 0.12,
+  "glow": [
+    {"on": "body", "classes": ["blossoms"], "pulse": 0.6, "strength": 3.0}
+  ],
+  "moves": [
+    {"node": "petals-left", "parts": ["tripo_part_13", "tripo_part_21"], "hinge": "bottom", "hinge_offset": [0.8, 0, 0], "kind": "open", "axis": "y", "amp": -13, "hold": 0.3},
+    {"node": "petals-right", "parts": ["tripo_part_16", "tripo_part_24"], "hinge": "bottom", "hinge_offset": [-0.8, 0, 0], "kind": "open", "axis": "y", "amp": 13, "hold": 0.3},
+    {"node": "petals-front", "parts": ["tripo_part_36", "tripo_part_49", "tripo_part_25"], "hinge": "bottom", "hinge_offset": [0, 0.8, 0], "kind": "open", "axis": "x", "amp": 8, "hold": 0.3},
+    {"node": "petals-back", "parts": ["tripo_part_37", "tripo_part_39", "tripo_part_59", "tripo_part_56", "tripo_part_84", "tripo_part_77", "tripo_part_67"], "hinge": "bottom", "hinge_offset": [0, -0.8, 0], "kind": "open", "axis": "x", "amp": -8, "hold": 0.3}
+  ],
+  "work": {"frames": 90, "events": [{"name": "scent", "frame": 32}]},
+  "sockets": [
+    {"name": "socket_throat", "point": [0, -0.13, 13.6]},
+    {"name": "socket_gate", "point": [0, -7.2, 1.6]}
+  ]
+}

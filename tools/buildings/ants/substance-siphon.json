@@ -1,0 +1,123 @@
+{
+  "name": "ants-substance-siphon",
+  "title": "Substance Siphon",
+  "width": 8,
+  "footprint": 8,
+  "tags": [
+    "resource",
+    "substance"
+  ],
+  "cap": [
+    "spire-left",
+    "spire-right"
+  ],
+  "glow": [
+    {
+      "on": "body",
+      "classes": [
+        "blossoms"
+      ],
+      "pulse": 0.7,
+      "strength": 4.0
+    },
+    {
+      "on": "pool",
+      "classes": [
+        "all"
+      ],
+      "always": true,
+      "team": false,
+      "strength": 0.9
+    }
+  ],
+  "pieces": [
+    {
+      "node": "pool",
+      "parts": [
+        "tripo_part_32"
+      ]
+    }
+  ],
+  "moves": [
+    {
+      "node": "spire-left",
+      "parts": [
+        "tripo_part_0",
+        "tripo_part_9",
+        "tripo_part_60",
+        "tripo_part_62"
+      ],
+      "hinge": "bottom",
+      "hinge_offset": [
+        0,
+        0,
+        4.0
+      ],
+      "kind": "nod",
+      "axis": "y",
+      "amp": 4.5,
+      "period": 2.0
+    },
+    {
+      "node": "spire-right",
+      "parts": [
+        "tripo_part_3",
+        "tripo_part_22",
+        "tripo_part_29"
+      ],
+      "hinge": "bottom",
+      "kind": "nod",
+      "axis": "y",
+      "amp": -4.5,
+      "period": 2.0,
+      "phase": 0.0,
+      "hinge_offset": [
+        -1.0,
+        0,
+        0.6
+      ]
+    }
+  ],
+  "work": {
+    "frames": 120,
+    "events": [
+      {
+        "name": "pour",
+        "frame": 15
+      },
+      {
+        "name": "pour",
+        "frame": 75
+      }
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_pool",
+      "point": [
+        0.18,
+        -0.34,
+        4.1
+      ]
+    },
+    {
+      "name": "socket_spout_left",
+      "node": "spire-left",
+      "at": [
+        -1.5,
+        -0.46,
+        8.7
+      ]
+    },
+    {
+      "name": "socket_spout_right",
+      "node": "spire-right",
+      "at": [
+        2.9,
+        -0.46,
+        8.6
+      ]
+    }
+  ],
+  "cut": 0.12
+}

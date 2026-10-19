@@ -5,7 +5,8 @@
       "Beetles now have a steel, brass and violet-magic HUD frame and resource ribbon; Ants keep their woodland interface."
     ],
     "improved": [
-      "A building works on one thing at a time: research waits for the units queued before it, and units for the research, as in Warcraft III. Its queue panel shows training, research and revivals in the order you queued them."
+      "A building works on one thing at a time: research waits for the units queued before it, and units for the research, as in Warcraft III. Its queue panel shows training, research and revivals in the order you queued them.",
+      "Ant buildings are rebuilt as sculpted sand-clay spire cathedrals with royal-blue drapes and glowing blossoms; each one animates while it works (swaying banners, opening mandibles, a dipping blade, a breathing crown)"
     ],
     "fixed": [],
     "knownIssues": []

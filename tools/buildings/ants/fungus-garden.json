@@ -1,0 +1,131 @@
+{
+  "name": "ants-fungus-garden",
+  "title": "Fungus Garden",
+  "width": 12,
+  "footprint": 12,
+  "cap": [
+    "cap"
+  ],
+  "tags": [
+    "research",
+    "substance-lab"
+  ],
+  "cut": 0.12,
+  "glow": [
+    {
+      "on": "body",
+      "classes": [
+        "blossoms"
+      ],
+      "pulse": 0.5,
+      "strength": 3.0
+    },
+    {
+      "on": "cap",
+      "classes": [
+        "navy",
+        "blossoms"
+      ],
+      "team": false,
+      "pulse": 0.5,
+      "strength": 3.0
+    }
+  ],
+  "moves": [
+    {
+      "node": "cap",
+      "parts": [
+        "tripo_part_8",
+        "tripo_part_22",
+        "tripo_part_41",
+        "tripo_part_46",
+        "tripo_part_73",
+        "tripo_part_59",
+        "tripo_part_87",
+        "tripo_part_108",
+        "tripo_part_83",
+        "tripo_part_91",
+        "tripo_part_71",
+        "tripo_part_86",
+        "tripo_part_118",
+        "tripo_part_70",
+        "tripo_part_107",
+        "tripo_part_76",
+        "tripo_part_103",
+        "tripo_part_127",
+        "tripo_part_42",
+        "tripo_part_39",
+        "tripo_part_102",
+        "tripo_part_99"
+      ],
+      "hinge": "bottom",
+      "kind": "pulse",
+      "amp": 6,
+      "period": 4.0
+    },
+    {
+      "node": "cap",
+      "parts": [],
+      "kind": "sway",
+      "axis": "y",
+      "amp": 3,
+      "period": 4.0,
+      "phase": 0.25
+    },
+    {
+      "node": "banner-left",
+      "parts": [
+        "tripo_part_27"
+      ],
+      "hinge": "top",
+      "kind": "sway",
+      "axis": "y",
+      "amp": 10,
+      "period": 2.0
+    },
+    {
+      "node": "banner-right",
+      "parts": [
+        "tripo_part_49"
+      ],
+      "hinge": "top",
+      "kind": "sway",
+      "axis": "y",
+      "amp": 10,
+      "period": 2.0,
+      "phase": 0.25
+    }
+  ],
+  "work": {
+    "frames": 120,
+    "events": [
+      {
+        "name": "spores",
+        "frame": 30
+      }
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_gills",
+      "node": "cap",
+      "at": "bottom",
+      "offset": [
+        0,
+        0,
+        1.6
+      ]
+    },
+    {
+      "name": "socket_gate",
+      "point": [
+        0,
+        -6.6,
+        1.6
+      ]
+    }
+  ],
+  "drop": [
+    "tripo_part_113"
+  ]
+}

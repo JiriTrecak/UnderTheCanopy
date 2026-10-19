@@ -1,0 +1,138 @@
+{
+  "id": "asset.models.buildings.ants-acid-spire",
+  "name": "Acid Spire",
+  "kind": "building",
+  "tags": [
+    "ants",
+    "tripo",
+    "team-mask",
+    "animated",
+    "tower"
+  ],
+  "race": "ants",
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_ants_acid_spire_body"
+      ]
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "work",
+        "clip": "work",
+        "loop": true,
+        "events": [
+          {
+            "name": "spit-centre",
+            "time": 0.367
+          },
+          {
+            "name": "spit-left",
+            "time": 0.867
+          },
+          {
+            "name": "spit-right",
+            "time": 1.367
+          },
+          {
+            "name": "spit-centre",
+            "time": 1.867
+          },
+          {
+            "name": "spit-left",
+            "time": 2.367
+          },
+          {
+            "name": "spit-right",
+            "time": 2.867
+          },
+          {
+            "name": "spit-centre",
+            "time": 3.367
+          },
+          {
+            "name": "spit-left",
+            "time": 3.867
+          },
+          {
+            "name": "spit-right",
+            "time": 4.367
+          },
+          {
+            "name": "spit-centre",
+            "time": 4.867
+          },
+          {
+            "name": "spit-left",
+            "time": 5.367
+          },
+          {
+            "name": "spit-right",
+            "time": 5.867
+          }
+        ]
+      },
+      {
+        "semantic": "attack",
+        "clip": "attack",
+        "loop": false,
+        "events": [
+          {
+            "name": "spit",
+            "time": 0.167
+          }
+        ]
+      }
+    ],
+    "blocker": {
+      "shape": "box",
+      "size": [
+        8,
+        8
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 4,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 1,
+    "healthHeight": 8.2
+  },
+  "shading": "building",
+  "license": "Generated with Tripo (image to 3D, segmentation) from an ImageGen (gpt-image-2) concept for Under the Canopy; made game-ready and animated by tools/buildings/ant_building.py with tools/buildings/ants/acid-spire.json."
+}

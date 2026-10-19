@@ -1,0 +1,67 @@
+{
+  "id": "building.ants.scent-hall",
+  "name": "Scent Hall",
+  "description": "The colony's pheromone hall, a clay spire crowned by a great flower: home of the pheromone specialists.",
+  "model": "asset.models.buildings.ants-scent-hall",
+  "icon": "asset.portraits.buildings.ants-scent-hall",
+  "body": {
+    "maxHp": 1100,
+    "armor": 5,
+    "armorType": "structure"
+  },
+  "vision": 14,
+  "footprint": {
+    "width": 12,
+    "depth": 12
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 6.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 175
+      },
+      {
+        "item": "item.root",
+        "amount": 100
+      }
+    ],
+    "workTicks": 1800,
+    "workAnimation": "build"
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "category": "category.build-advanced",
+  "requires": [
+    "building.ants.great-mound"
+  ],
+  "level": 2,
+  "command": {
+    "priority": 40,
+    "category": "category.build-advanced"
+  },
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.ant-scent-hall-mist",
+        "state": "work",
+        "socket": "socket_throat"
+      },
+      {
+        "effect": "effect.buildings.ant-scent-hall-glow",
+        "state": "work",
+        "socket": "socket_throat"
+      },
+      {
+        "effect": "effect.buildings.ant-scent-hall-scent",
+        "event": "scent",
+        "socket": "socket_throat"
+      }
+    ]
+  }
+}

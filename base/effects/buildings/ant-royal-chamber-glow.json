@@ -1,0 +1,32 @@
+{
+  "id": "effect.buildings.ant-royal-chamber-glow",
+  "name": "Royal Chamber throne glow",
+  "description": "Violet light breathing on the throne under the Royal Chamber's arch while it raises or revives a hero (D65).",
+  "durationTicks": 120,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#c4b2ff",
+      "durationTicks": 120,
+      "count": 1,
+      "size": 7,
+      "height": 0,
+      "intensity": 6,
+      "motion": {
+        "opacity": {
+          "periodTicks": 60,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

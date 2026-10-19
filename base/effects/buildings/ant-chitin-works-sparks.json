@@ -1,0 +1,65 @@
+{
+  "id": "effect.buildings.ant-chitin-works-sparks",
+  "name": "Chitin Works blade dip",
+  "description": "Amber resin droplets and sparks flying up where the mandible blade plunges into the resin basin.",
+  "durationTicks": 30,
+  "loop": false,
+  "layers": [
+    {
+      "id": "sparks",
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 22,
+        "rate": 20,
+        "speed": 5.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 65,
+        "gravity": 11,
+        "drag": 0.3,
+        "spawnRadius": 0.25,
+        "startSize": 0.26,
+        "endSize": 0.04,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "stretch": 0.04
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#ffc65a",
+      "accent": "#fff0b0",
+      "durationTicks": 24,
+      "count": 20,
+      "size": 0.2,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "flash",
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#ffb055",
+      "accent": "#ffd090",
+      "durationTicks": 6,
+      "count": 1,
+      "size": 6,
+      "height": 0.3,
+      "intensity": 4
+    }
+  ]
+}

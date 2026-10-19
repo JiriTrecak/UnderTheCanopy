@@ -1,0 +1,109 @@
+{
+  "name": "ants-royal-chamber",
+  "title": "Royal Chamber",
+  "width": 12,
+  "footprint": 12,
+  "tags": [
+    "heroes"
+  ],
+  "glow": [
+    {
+      "on": "body",
+      "classes": [
+        "blossoms"
+      ],
+      "pulse": 0.5,
+      "strength": 3.5
+    },
+    {
+      "on": "throne",
+      "classes": [
+        "blossoms",
+        "dark"
+      ],
+      "pulse": 0.6,
+      "strength": 4.5
+    }
+  ],
+  "pieces": [
+    {
+      "node": "throne",
+      "parts": [
+        "tripo_part_30"
+      ]
+    }
+  ],
+  "moves": [
+    {
+      "node": "banner-left",
+      "parts": [
+        "tripo_part_16"
+      ],
+      "hinge": "top",
+      "kind": "sway",
+      "axis": "y",
+      "amp": 7,
+      "period": 2.0
+    },
+    {
+      "node": "banner-right",
+      "parts": [
+        "tripo_part_32"
+      ],
+      "hinge": "top",
+      "kind": "sway",
+      "axis": "y",
+      "amp": 7,
+      "period": 2.0,
+      "phase": 0.25
+    },
+    {
+      "node": "canopy",
+      "parts": [
+        "tripo_part_0",
+        "tripo_part_28",
+        "tripo_part_4",
+        "tripo_part_6",
+        "tripo_part_17",
+        "tripo_part_20",
+        "tripo_part_19",
+        "tripo_part_35",
+        "tripo_part_49",
+        "tripo_part_18",
+        "tripo_part_13"
+      ],
+      "hinge": "bottom",
+      "kind": "pulse",
+      "amp": 3,
+      "period": 3.0,
+      "axis": "z"
+    }
+  ],
+  "work": {
+    "frames": 180,
+    "events": []
+  },
+  "sockets": [
+    {
+      "name": "socket_throne",
+      "node": "throne",
+      "at": "centre",
+      "offset": [
+        0,
+        -0.6,
+        0.4
+      ]
+    },
+    {
+      "name": "socket_crown",
+      "point": [
+        -0.1,
+        1.45,
+        12.0
+      ]
+    }
+  ],
+  "cap": [
+    "canopy"
+  ]
+}

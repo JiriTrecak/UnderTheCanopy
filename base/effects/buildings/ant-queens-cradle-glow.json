@@ -1,0 +1,32 @@
+{
+  "id": "effect.buildings.ant-queens-cradle-glow",
+  "name": "Queen's Cradle amber glow",
+  "description": "Warm amber light breathing out of the Cradle's resin block while the queen within stirs (D65).",
+  "durationTicks": 240,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#ffb347",
+      "accent": "#ffd9a0",
+      "durationTicks": 240,
+      "count": 1,
+      "size": 9,
+      "height": 0,
+      "intensity": 6,
+      "motion": {
+        "opacity": {
+          "periodTicks": 120,
+          "min": 0.45,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

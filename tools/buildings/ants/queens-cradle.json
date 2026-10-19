@@ -1,0 +1,123 @@
+{
+  "name": "ants-queens-cradle",
+  "title": "Queen's Cradle",
+  "width": 16,
+  "footprint": 16,
+  "tags": [
+    "reliquary"
+  ],
+  "glow": [
+    {
+      "on": "body",
+      "classes": [
+        "blossoms"
+      ],
+      "pulse": 0.5,
+      "strength": 3.5
+    },
+    {
+      "on": "amber",
+      "classes": [
+        "amber"
+      ],
+      "color": [
+        1.0,
+        0.6,
+        0.18
+      ],
+      "pulse": 0.33,
+      "strength": 3.0
+    }
+  ],
+  "moves": [
+    {
+      "node": "amber",
+      "parts": [
+        "tripo_part_4",
+        "tripo_part_8",
+        "tripo_part_9",
+        "tripo_part_12",
+        "tripo_part_17",
+        "tripo_part_19",
+        "tripo_part_21"
+      ],
+      "hinge": "bottom",
+      "kind": "pulse",
+      "axis": "z",
+      "amp": 4,
+      "period": 3.0
+    },
+    {
+      "node": "banner",
+      "parts": [
+        "tripo_part_15"
+      ],
+      "hinge": "top",
+      "kind": "sway",
+      "axis": "y",
+      "amp": 8,
+      "period": 2.0
+    },
+    {
+      "node": "tail-left",
+      "parts": [
+        "tripo_part_28"
+      ],
+      "hinge": "top",
+      "kind": "sway",
+      "axis": "x",
+      "amp": 8,
+      "period": 3.0
+    },
+    {
+      "node": "tail-right",
+      "parts": [
+        "tripo_part_27"
+      ],
+      "hinge": "top",
+      "kind": "sway",
+      "axis": "x",
+      "amp": 8,
+      "period": 3.0,
+      "phase": 0.5
+    }
+  ],
+  "work": {
+    "frames": 180,
+    "events": [
+      {
+        "name": "stir",
+        "frame": 22
+      },
+      {
+        "name": "stir",
+        "frame": 112
+      }
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_amber",
+      "node": "amber",
+      "at": "top",
+      "offset": [
+        0,
+        0,
+        0.2
+      ]
+    },
+    {
+      "name": "socket_queen",
+      "node": "amber",
+      "at": "centre",
+      "offset": [
+        0,
+        -1.5,
+        0.8
+      ]
+    }
+  ],
+  "cap": [
+    "amber"
+  ]
+}

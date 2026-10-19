@@ -1,0 +1,32 @@
+{
+  "id": "effect.buildings.ant-deep-gallery-glow",
+  "name": "Deep Gallery honey glow",
+  "description": "Warm amber light breathing from the Deep Gallery's honey pots at its gate while it trains (D65).",
+  "durationTicks": 60,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#ffb347",
+      "accent": "#ffd9a0",
+      "durationTicks": 60,
+      "count": 1,
+      "size": 6,
+      "height": 0,
+      "intensity": 4.5,
+      "motion": {
+        "opacity": {
+          "periodTicks": 60,
+          "min": 0.55,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

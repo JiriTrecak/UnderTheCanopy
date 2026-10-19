@@ -1,0 +1,104 @@
+{
+  "name": "ants-chitin-works",
+  "title": "Chitin Works",
+  "width": 12,
+  "footprint": 12,
+  "tags": [
+    "forge",
+    "research"
+  ],
+  "cap": [
+    "blade",
+    "rope"
+  ],
+  "glow": [
+    {
+      "on": "body",
+      "classes": [
+        "blossoms"
+      ],
+      "pulse": 0.7,
+      "strength": 4.0
+    },
+    {
+      "on": "resin",
+      "classes": [
+        "all"
+      ],
+      "color": [
+        1.0,
+        0.6,
+        0.18
+      ],
+      "team": false,
+      "pulse": 0.5,
+      "strength": 0.8
+    }
+  ],
+  "pieces": [
+    {
+      "node": "resin",
+      "parts": [
+        "tripo_part_42",
+        "tripo_part_54"
+      ]
+    }
+  ],
+  "moves": [
+    {
+      "node": "blade",
+      "parts": [
+        "tripo_part_26"
+      ],
+      "hinge": "top",
+      "kind": "bob",
+      "amp": 0.8,
+      "period": 2.0
+    },
+    {
+      "node": "rope",
+      "parts": [
+        "tripo_part_17",
+        "tripo_part_53"
+      ],
+      "hinge": "top",
+      "kind": "pulse",
+      "axis": "z",
+      "amp": -22.6,
+      "period": 2.0
+    }
+  ],
+  "work": {
+    "frames": 120,
+    "events": [
+      {
+        "name": "dip",
+        "frame": 45
+      },
+      {
+        "name": "dip",
+        "frame": 105
+      }
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_resin",
+      "point": [
+        0.81,
+        -0.79,
+        3.2
+      ]
+    },
+    {
+      "name": "socket_blade",
+      "node": "blade",
+      "at": "bottom",
+      "offset": [
+        0,
+        0,
+        0.3
+      ]
+    }
+  ]
+}

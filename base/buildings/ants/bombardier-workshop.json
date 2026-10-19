@@ -1,9 +1,9 @@
 {
   "id": "building.ants.bombardier-workshop",
-  "name": "Bombardier Workshop",
-  "description": "Equips free workers with Substance-loaded mortars. Requires a Great Mound; each Bombardier consumes Amber, Wood, Substance and one worker.",
-  "model": "asset.models.buildings.ants-bombardier-workshop",
-  "icon": "asset.portraits.buildings.ants-bombardier-workshop",
+  "name": "Deep Gallery",
+  "description": "Raises the colony's specialised castes: equips free workers as Substance-loaded Bombardiers. Requires a Great Mound.",
+  "model": "asset.models.buildings.ants-deep-gallery",
+  "icon": "asset.portraits.buildings.ants-deep-gallery",
   "body": {
     "maxHp": 1400,
     "armor": 5,
@@ -58,9 +58,27 @@
     "building.ants.great-mound"
   ],
   "level": 2,
-  "modelScale": 1.15,
   "command": {
     "category": "category.build-advanced",
     "priority": 100
+  },
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.ant-deep-gallery-glow",
+        "state": "work",
+        "socket": "socket_pots"
+      },
+      {
+        "effect": "effect.buildings.ant-deep-gallery-motes",
+        "state": "work",
+        "socket": "socket_wings"
+      },
+      {
+        "effect": "effect.buildings.ant-deep-gallery-beat",
+        "event": "beat",
+        "socket": "socket_wings"
+      }
+    ]
   }
 }

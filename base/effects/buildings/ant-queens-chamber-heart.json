@@ -1,0 +1,32 @@
+{
+  "id": "effect.buildings.ant-queens-chamber-heart",
+  "name": "Queen's Chamber heart",
+  "description": "A violet heart-light beating in the Queen's Chamber's crowned spire while the hall works (D65).",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#9a6bff",
+      "accent": "#c9b8ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 8,
+      "height": 0,
+      "intensity": 7,
+      "motion": {
+        "opacity": {
+          "periodTicks": 80,
+          "min": 0.35,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

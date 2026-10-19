@@ -1,9 +1,9 @@
 {
   "id": "building.ants.substance-well",
-  "name": "Substance Well",
-  "description": "Built on a Substance Deposit. Pumps 10 Substance every 5 seconds by itself; no workers needed. When it falls, the deposit remains.",
-  "model": "asset.models.buildings.ants-rootworks",
-  "icon": "asset.portraits.buildings.ants-rootworks",
+  "name": "Substance Siphon",
+  "description": "Built on a Substance Deposit: its clay spires bow to pour raw substance into a glowing pool. Pumps 10 Substance every 5 seconds by itself; no workers needed. When it falls, the deposit remains.",
+  "model": "asset.models.buildings.ants-substance-siphon",
+  "icon": "asset.portraits.buildings.ants-substance-siphon",
   "body": {
     "maxHp": 1000,
     "armor": 5,
@@ -51,9 +51,32 @@
   },
   "category": "category.build",
   "level": 1,
-  "modelScale": 0.73,
   "command": {
     "priority": 25,
     "category": "category.build"
+  },
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.ant-substance-siphon-pool",
+        "state": "always",
+        "socket": "socket_pool"
+      },
+      {
+        "effect": "effect.buildings.ant-substance-siphon-stream",
+        "state": "work",
+        "socket": "socket_spout_left"
+      },
+      {
+        "effect": "effect.buildings.ant-substance-siphon-stream",
+        "state": "work",
+        "socket": "socket_spout_right"
+      },
+      {
+        "effect": "effect.buildings.ant-substance-siphon-splash",
+        "event": "pour",
+        "socket": "socket_pool"
+      }
+    ]
   }
 }

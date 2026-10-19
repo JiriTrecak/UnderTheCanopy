@@ -1,9 +1,9 @@
 {
   "id": "building.ants.tower",
-  "name": "Watchtower",
-  "description": "A raised acorn lookout for one Archer. Right-click it with an Archer to enter; fire from the top using that unit’s own weapon and upgrades.",
-  "model": "asset.models.buildings.ants-watchtower",
-  "icon": "asset.portraits.buildings.ants-watchtower",
+  "name": "Acid Spire",
+  "description": "Three clay spires full of violet acid. Right-click it with an Archer to enter; fire from the top using that unit’s own weapon and upgrades.",
+  "model": "asset.models.buildings.ants-acid-spire",
+  "icon": "asset.portraits.buildings.ants-acid-spire",
   "body": {
     "maxHp": 500,
     "armor": 2,
@@ -43,9 +43,47 @@
     "height": 5.8,
     "lookoutRadius": 1.35
   },
-  "modelScale": 1.25,
   "command": {
     "priority": 90,
     "category": "category.build-advanced"
+  },
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.ant-acid-spire-glow",
+        "state": "work",
+        "socket": "socket_mouth_centre"
+      },
+      {
+        "effect": "effect.buildings.ant-acid-spire-drip",
+        "event": "spit-centre",
+        "socket": "socket_mouth_centre"
+      },
+      {
+        "effect": "effect.buildings.ant-acid-spire-drip",
+        "event": "spit-left",
+        "socket": "socket_mouth_left"
+      },
+      {
+        "effect": "effect.buildings.ant-acid-spire-drip",
+        "event": "spit-right",
+        "socket": "socket_mouth_right"
+      },
+      {
+        "effect": "effect.buildings.ant-acid-spire-drip",
+        "event": "spit",
+        "socket": "socket_mouth_centre"
+      },
+      {
+        "effect": "effect.buildings.ant-acid-spire-drip",
+        "event": "spit",
+        "socket": "socket_mouth_left"
+      },
+      {
+        "effect": "effect.buildings.ant-acid-spire-drip",
+        "event": "spit",
+        "socket": "socket_mouth_right"
+      }
+    ]
   }
 }

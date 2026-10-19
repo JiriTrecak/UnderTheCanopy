@@ -1,9 +1,9 @@
 {
   "id": "building.ants.ironroot-forge",
   "name": "Chitin Works",
-  "description": "Researches permanent improvements for the colony. Existing and future units benefit from completed research.",
-  "model": "asset.models.buildings.ants-chitin-workshop",
-  "icon": "asset.portraits.buildings.ants-chitin-workshop",
+  "description": "A resin forge where a hanging mandible blade is tempered in glowing amber; researches permanent improvements for the colony.",
+  "model": "asset.models.buildings.ants-chitin-works",
+  "icon": "asset.portraits.buildings.ants-chitin-works",
   "body": {
     "maxHp": 1100,
     "armor": 5,
@@ -46,9 +46,27 @@
   },
   "category": "category.build",
   "level": 1,
-  "modelScale": 1.25,
   "command": {
     "priority": 30,
     "category": "category.build"
+  },
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.ant-chitin-works-glow",
+        "state": "work",
+        "socket": "socket_resin"
+      },
+      {
+        "effect": "effect.buildings.ant-chitin-works-steam",
+        "state": "work",
+        "socket": "socket_resin"
+      },
+      {
+        "effect": "effect.buildings.ant-chitin-works-sparks",
+        "event": "dip",
+        "socket": "socket_blade"
+      }
+    ]
   }
 }

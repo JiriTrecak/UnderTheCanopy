@@ -1,0 +1,67 @@
+{
+  "id": "building.ants.queens-cradle",
+  "name": "Queen's Cradle",
+  "description": "A reliquary of sculpted clay around a block of living amber, where a Reaver Queen sleeps until the colony wakes her.",
+  "model": "asset.models.buildings.ants-queens-cradle",
+  "icon": "asset.portraits.buildings.ants-queens-cradle",
+  "body": {
+    "maxHp": 1400,
+    "armor": 5,
+    "armorType": "structure"
+  },
+  "vision": 14,
+  "footprint": {
+    "width": 16,
+    "depth": 16
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 8.5
+  },
+  "creation": {
+    "method": "construct",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 250
+      },
+      {
+        "item": "item.root",
+        "amount": 200
+      }
+    ],
+    "workTicks": 2400,
+    "workAnimation": "build"
+  },
+  "behaviorSets": [
+    "behavior-set.player-building"
+  ],
+  "category": "category.build-advanced",
+  "requires": [
+    "building.ants.elder-hall"
+  ],
+  "level": 3,
+  "command": {
+    "priority": 60,
+    "category": "category.build-advanced"
+  },
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.ant-queens-cradle-glow",
+        "state": "work",
+        "socket": "socket_queen"
+      },
+      {
+        "effect": "effect.buildings.ant-queens-cradle-motes",
+        "state": "work",
+        "socket": "socket_amber"
+      },
+      {
+        "effect": "effect.buildings.ant-queens-cradle-stir",
+        "event": "stir",
+        "socket": "socket_amber"
+      }
+    ]
+  }
+}

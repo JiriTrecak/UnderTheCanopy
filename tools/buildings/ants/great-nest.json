@@ -1,0 +1,93 @@
+{
+  "name": "ants-great-nest",
+  "title": "Great Nest",
+  "width": 20,
+  "footprint": 20,
+  "tags": [
+    "main-hall",
+    "tunnel"
+  ],
+  "glow": [
+    {
+      "on": "body",
+      "classes": [
+        "blossoms"
+      ],
+      "pulse": 0.6,
+      "strength": 4.0
+    }
+  ],
+  "moves": [
+    {
+      "node": "crown",
+      "parts": [
+        "tripo_part_0",
+        "tripo_part_1",
+        "tripo_part_41",
+        "tripo_part_63",
+        "tripo_part_31",
+        "tripo_part_65",
+        "tripo_part_73",
+        "tripo_part_32",
+        "tripo_part_48",
+        "tripo_part_62",
+        "tripo_part_56"
+      ],
+      "hinge": "bottom",
+      "kind": "pulse",
+      "amp": 3,
+      "period": 2.0
+    },
+    {
+      "node": "banner-left",
+      "parts": [
+        "tripo_part_59"
+      ],
+      "hinge": "bottom",
+      "kind": "sway",
+      "axis": "y",
+      "amp": 6,
+      "period": 2.0
+    },
+    {
+      "node": "banner-right",
+      "parts": [
+        "tripo_part_19"
+      ],
+      "hinge": "bottom",
+      "kind": "sway",
+      "axis": "y",
+      "amp": 6,
+      "period": 2.0,
+      "phase": 0.25
+    }
+  ],
+  "work": {
+    "frames": 120,
+    "events": [
+      {
+        "name": "bloom",
+        "frame": 75
+      }
+    ]
+  },
+  "sockets": [
+    {
+      "name": "socket_crown",
+      "node": "crown",
+      "at": "centre"
+    },
+    {
+      "name": "socket_gate",
+      "point": [
+        0.16,
+        -4.9,
+        1.6
+      ]
+    }
+  ],
+  "cut": 0.1,
+  "cap": [
+    "crown"
+  ]
+}

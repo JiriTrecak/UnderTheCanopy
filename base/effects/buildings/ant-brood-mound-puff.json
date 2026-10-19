@@ -1,0 +1,51 @@
+{
+  "id": "effect.buildings.ant-brood-mound-puff",
+  "name": "Brood Mound puff",
+  "description": "A breath of glowing motes out of the Brood Mound's shaft each time its drape billows.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "motes",
+      "sustain": false,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 50,
+        "rate": 18,
+        "speed": 1.6,
+        "speedVariation": 0.45,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 35,
+        "gravity": 0,
+        "drag": 0.15,
+        "spawnRadius": 0.7,
+        "startSize": 0.35,
+        "endSize": 0.05,
+        "spin": 1.5,
+        "fadeIn": 0.15,
+        "fadeOut": 0.55
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#b39cff",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 18,
+      "size": 0.3,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.8,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}
