@@ -395,9 +395,11 @@ pub fn public(
         && (producing
             || gathered
             || earning
-            || e.research.as_ref().is_some_and(|r| !r.queue.is_empty())
-            || e.upgrade.is_some()
-            || e.revival.as_ref().is_some_and(|r| !r.queue.is_empty()));
+            || matches!(
+                super::lane::head(e),
+                Some(super::lane::Lane::Research | super::lane::Lane::Revival)
+            )
+            || e.upgrade.is_some());
     let cycles = e.production.as_ref().map_or(0, |p| p.produced);
     (cargo.is_some() || pose.is_some() || site.is_some() || busy || cycles > 0 || unpowered)
         .then_some(PublicWork {

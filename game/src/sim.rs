@@ -500,6 +500,7 @@ pub struct Producing {
 /// What `player`'s buildings are making now, the furthest along first.
 fn production(world: &World, player: u8) -> Vec<Producing> {
     use canopy_content::game::Creation;
+    use canopy_sim::economy::lane::Item;
     let state = world.state();
     let catalog = world.catalog();
     let content = &catalog.content;
@@ -526,60 +527,62 @@ fn production(world: &World, player: u8) -> Vec<Producing> {
             continue;
         }
         let d = catalog.get(e.definition);
-        if let Some(p) = &e.production {
-            for q in &p.queue {
-                let od = catalog.get(q.definition);
-                let total = od.creation.as_ref().map_or(1, |c| match c {
-                    Creation::Train { work_ticks, .. }
-                    | Creation::Construct { work_ticks, .. }
-                    | Creation::Harvest { work_ticks, .. }
-                    | Creation::Plant { work_ticks, .. } => *work_ticks,
-                });
-                let progress = p
-                    .active
-                    .as_ref()
-                    .filter(|a| a.queue == Some(q.id))
-                    .map(|a| (a.progress as f32 / total.max(1) as f32).clamp(0.0, 1.0));
-                add(od.icon.as_str(), &od.name, progress);
+        let upgrade = e.upgrade.as_ref().zip(d.upgrade.as_ref());
+        // One queue per building (D72): only its first item is under way, and none while
+        // it upgrades.
+        for (i, item) in canopy_sim::economy::lane::of(e).into_iter().enumerate() {
+            let working = i == 0 && upgrade.is_none();
+            let fraction = |done: u32, total: u32| {
+                working.then(|| (done as f32 / total.max(1) as f32).clamp(0.0, 1.0))
+            };
+            match item {
+                Item::Training(q) => {
+                    let od = catalog.get(q.definition);
+                    let total = od.creation.as_ref().map_or(1, |c| match c {
+                        Creation::Train { work_ticks, .. }
+                        | Creation::Construct { work_ticks, .. }
+                        | Creation::Harvest { work_ticks, .. }
+                        | Creation::Plant { work_ticks, .. } => *work_ticks,
+                    });
+                    let progress = e
+                        .production
+                        .as_ref()
+                        .and_then(|p| p.active.as_ref())
+                        .filter(|a| a.queue == Some(q.id))
+                        .and_then(|a| fraction(a.progress, total));
+                    add(od.icon.as_str(), &od.name, progress);
+                }
+                Item::Research(entry) => {
+                    let rule = content.rules.research.get(entry.id.as_str());
+                    add(
+                        rule.map_or("", |x| x.icon.as_str()),
+                        rule.map_or(entry.id.as_str(), |x| x.name.as_str()),
+                        fraction(entry.progress, rule.map_or(1, |x| x.work_ticks)),
+                    );
+                }
+                Item::Revival(r) => {
+                    let hero = state
+                        .entities
+                        .get(r.hero)
+                        .map(|h| catalog.get(h.definition));
+                    let total = d.behaviors.revival.as_ref().map_or(1, |policy| {
+                        policy.work_ticks + policy.work_ticks_per_level * r.level.saturating_sub(1)
+                    });
+                    add(
+                        hero.map_or("", |h| h.icon.as_str()),
+                        &format!("Revive {}", hero.map_or("hero", |h| h.name.as_str())),
+                        fraction(r.progress, total),
+                    );
+                }
             }
         }
-        if let Some(r) = &e.research {
-            for (i, entry) in r.queue.iter().enumerate() {
-                let rule = content.rules.research.get(entry.id.as_str());
-                let progress = (i == 0).then(|| {
-                    rule.map_or(0.0, |x| {
-                        (entry.progress as f32 / x.work_ticks.max(1) as f32).clamp(0.0, 1.0)
-                    })
-                });
-                add(
-                    rule.map_or("", |x| x.icon.as_str()),
-                    rule.map_or(entry.id.as_str(), |x| x.name.as_str()),
-                    progress,
-                );
-            }
-        }
-        if let (Some(up), Some(rule)) = (&e.upgrade, &d.upgrade) {
+        if let Some((up, rule)) = upgrade {
             let target = content.definition(rule.target.as_str());
             add(
                 target.map_or("", |t| t.icon.as_str()),
                 &format!("{} upgrade", target.map_or("", |t| t.name.as_str())),
                 Some((up.progress as f32 / rule.work_ticks.max(1) as f32).clamp(0.0, 1.0)),
             );
-        }
-        if let (Some(revival), Some(policy)) = (&e.revival, &d.behaviors.revival) {
-            for r in &revival.queue {
-                let hero = state
-                    .entities
-                    .get(r.hero)
-                    .map(|h| catalog.get(h.definition));
-                let total =
-                    policy.work_ticks + policy.work_ticks_per_level * r.level.saturating_sub(1);
-                add(
-                    hero.map_or("", |h| h.icon.as_str()),
-                    &format!("Revive {}", hero.map_or("hero", |h| h.name.as_str())),
-                    Some((r.progress as f32 / total.max(1) as f32).clamp(0.0, 1.0)),
-                );
-            }
         }
     }
     out.sort_by(|a, b| {

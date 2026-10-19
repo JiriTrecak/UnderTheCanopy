@@ -1,13 +1,15 @@
 //! Hero revival at buildings (old `Revival` building queue, `src/sim/game/revival.ts`,
-//! `content/revival.ts`). Revival shares the training lane of its workplace: the entry with
-//! the smaller queue id goes first.
+//! `content/revival.ts`). Revival shares the building's one queue with training and
+//! research: what was queued first goes first (D72), and it shares training's capacity.
 //!
 //! Heroes fall in combat and are kept as fallen entities ([`crate::heroes::retain`]);
 //! revival brings the same entity back; ability returns (`spellReturn`) live in
 //! [`crate::abilities::world_ops`].
 
 use super::{
-    Ctx, RevivalEntry, alive, production, ready, stock,
+    Ctx, RevivalEntry, alive,
+    lane::{self, Lane},
+    production, ready, stock,
     supply::{self, colony},
 };
 use crate::{
@@ -123,8 +125,7 @@ pub fn enqueue(ctx: &mut Ctx, b: EntityId, hero: EntityId) -> Result<(), String>
         return Err("Insufficient resources".into());
     };
     stock::pay(ctx.state, &payment);
-    let id = ctx.state.counters.queue;
-    ctx.state.counters.queue += 1;
+    let id = lane::next(ctx.state);
     ctx.state
         .entities
         .get_mut(b)
@@ -187,7 +188,7 @@ pub fn advance(ctx: &mut Ctx) {
             || e.construction.is_some()
             || e.upgrade.is_some()
             || e.production.as_ref().is_some_and(|p| p.paused)
-            || production::lane(e) != Some(production::Lane::Revival)
+            || lane::head(e) != Some(Lane::Revival)
             || !ready(e, tick)
             || ctx.network.unpowered(b)
         {

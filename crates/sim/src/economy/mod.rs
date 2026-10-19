@@ -16,6 +16,7 @@ pub mod harvest;
 pub mod income;
 pub mod index;
 pub mod jobs;
+pub mod lane;
 pub mod network;
 pub mod production;
 pub mod research;
@@ -128,6 +129,8 @@ impl Felling {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QueueEntry {
+    /// Its place in the building's queue (D72): drawn from the match's queue counter, so
+    /// the smaller id was queued first.
     pub id: u32,
     pub definition: Def,
 }
@@ -171,6 +174,8 @@ pub enum Status {
     NoReachableResource,
     UnitLimitReached,
     SupplyBlocked,
+    /// Research queued before the next unit is under way (D72).
+    Researching,
     DeploymentBlocked,
     /// Needs power and stands outside its owner's network (D66).
     Unpowered,
@@ -191,6 +196,7 @@ impl Status {
             Self::Planting => "Planting".into(),
             Self::NoReachableResource => "No reachable eligible resource".into(),
             Self::UnitLimitReached => "Unit limit reached".into(),
+            Self::Researching => "Researching".into(),
             Self::SupplyBlocked => match supply {
                 Some(name) => format!("Supply blocked — build a {name} or free supply"),
                 None => "Supply blocked — free supply".into(),
@@ -234,9 +240,15 @@ impl Default for Production {
 pub struct ResearchEntry {
     pub id: Id,
     pub progress: u32,
+    /// Its place in the building's queue among training and revivals (D72), from the
+    /// same counter as their ids. Saves from before D72 have none (0): loading numbers
+    /// them after everything else queued ([`lane::order_legacy`]).
+    #[serde(default)]
+    pub order: u32,
 }
 
-/// Research paid for at a building; the head progresses.
+/// Research paid for at a building; the head progresses when it leads the building's
+/// queue (D72).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ResearchQueue {
@@ -255,6 +267,7 @@ pub struct UpgradeTask {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RevivalEntry {
+    /// Its place in the building's queue (D72), as [`QueueEntry::id`].
     pub id: u32,
     pub hero: EntityId,
     pub level: u32,
@@ -456,7 +469,8 @@ pub fn assign(ctx: &mut Ctx) {
 }
 
 /// Step 9 (old `Revival.tick`, `Economy.advance`, `BuildingUpgrades.tick`,
-/// `Research.tick`): revivals, jobs, training and regrowth, upgrades, research.
+/// `Research.tick`): revivals, jobs, training and regrowth, upgrades, research. Of a
+/// building's training, research and revivals only the one queued first advances (D72).
 pub fn advance(ctx: &mut Ctx) {
     let _span = tracing::trace_span!("economy advance").entered();
     ctx.deliveries.clear();

@@ -17,7 +17,7 @@ use super::{
 };
 use crate::settings::Chord;
 use canopy_content::{game::Kind, placement::Owner};
-use canopy_sim::{Action, view::EntityView};
+use canopy_sim::{Action, economy::lane::Item, view::EntityView};
 use canopy_ui::{ActionKind, Color, Cost, NodeId, PointerButton, Tooltip, Ui};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -792,61 +792,77 @@ impl Hud {
         let work = e.private.as_ref().map(|p| &*p.economy);
         let mut status: Option<String> = None;
         if let Some(w) = work {
-            // A building can train and research at once (both queues run): it lists both.
-            if let Some(p) = &w.production {
-                for q in &p.queue {
-                    let od = k.catalog.get(q.definition);
-                    let active = p.active.as_ref().filter(|a| a.queue == Some(q.id));
-                    let total = od.creation.as_ref().map_or(1, |c| match c {
-                        canopy_content::game::Creation::Train { work_ticks, .. }
-                        | canopy_content::game::Creation::Construct { work_ticks, .. }
-                        | canopy_content::game::Creation::Harvest { work_ticks, .. }
-                        | canopy_content::game::Creation::Plant { work_ticks, .. } => *work_ticks,
-                    });
-                    self.queue.push(QueueEntry {
-                        icon: od.icon.to_string(),
-                        name: od.name.clone(),
-                        progress: active.map(|a| a.progress as f32 / total.max(1) as f32),
-                        cancel: own.then_some(Action::Cancel {
-                            actor: fid,
-                            queue: Some(q.id),
-                        }),
-                    });
-                }
+            // One queue in the building's order (D73): training, research and revivals
+            // mixed as queued. Only the first is under way.
+            let items = canopy_sim::economy::lane::items(
+                w.production.as_ref(),
+                w.research.as_ref(),
+                w.revival.as_ref(),
+            );
+            for (i, item) in items.iter().enumerate() {
+                let first = i == 0;
+                self.queue.push(match item {
+                    Item::Training(q) => {
+                        let od = k.catalog.get(q.definition);
+                        let active = w
+                            .production
+                            .as_ref()
+                            .and_then(|p| p.active.as_ref())
+                            .filter(|a| a.queue == Some(q.id));
+                        let total = od.creation.as_ref().map_or(1, |c| match c {
+                            canopy_content::game::Creation::Train { work_ticks, .. }
+                            | canopy_content::game::Creation::Construct { work_ticks, .. }
+                            | canopy_content::game::Creation::Harvest { work_ticks, .. }
+                            | canopy_content::game::Creation::Plant { work_ticks, .. } => {
+                                *work_ticks
+                            }
+                        });
+                        QueueEntry {
+                            icon: od.icon.to_string(),
+                            name: od.name.clone(),
+                            progress: active
+                                .filter(|_| first)
+                                .map(|a| a.progress as f32 / total.max(1) as f32),
+                            cancel: own.then_some(Action::Cancel {
+                                actor: fid,
+                                queue: Some(q.id),
+                            }),
+                        }
+                    }
+                    Item::Research(r) => {
+                        let rule = k.content.rules.research.get(r.id.as_str());
+                        QueueEntry {
+                            icon: rule.map_or(String::new(), |x| x.icon.to_string()),
+                            name: rule.map_or(r.id.to_string(), |x| x.name.clone()),
+                            progress: rule
+                                .filter(|_| first)
+                                .map(|x| r.progress as f32 / x.work_ticks.max(1) as f32),
+                            cancel: own.then(|| Action::CancelResearch {
+                                actor: fid,
+                                research: r.id.clone(),
+                            }),
+                        }
+                    }
+                    Item::Revival(r) => {
+                        let hero = k.entity(r.hero.0).map(|h| k.def(h));
+                        let total = d.behaviors.revival.as_ref().map_or(1, |policy| {
+                            policy.work_ticks
+                                + policy.work_ticks_per_level * r.level.saturating_sub(1)
+                        });
+                        QueueEntry {
+                            icon: hero.map_or(String::new(), |h| h.icon.to_string()),
+                            name: format!("Revive {}", hero.map_or("hero", |h| h.name.as_str())),
+                            progress: first.then(|| r.progress as f32 / total.max(1) as f32),
+                            cancel: own.then_some(Action::CancelRevival {
+                                actor: fid,
+                                hero: r.hero.0,
+                            }),
+                        }
+                    }
+                });
             }
-            if let Some(research) = &w.research {
-                for (i, r) in research.queue.iter().enumerate() {
-                    let rule = k.content.rules.research.get(r.id.as_str());
-                    self.queue.push(QueueEntry {
-                        icon: rule.map_or(String::new(), |x| x.icon.to_string()),
-                        name: rule.map_or(r.id.to_string(), |x| x.name.clone()),
-                        progress: rule
-                            .filter(|_| i == 0)
-                            .map(|x| r.progress as f32 / x.work_ticks.max(1) as f32),
-                        cancel: own.then(|| Action::CancelResearch {
-                            actor: fid,
-                            research: r.id.clone(),
-                        }),
-                    });
-                }
-            }
-            if let (Some(revival), Some(policy)) = (&w.revival, &d.behaviors.revival) {
-                for r in &revival.queue {
-                    let hero = k.entity(r.hero.0).map(|h| k.def(h));
-                    let total =
-                        policy.work_ticks + policy.work_ticks_per_level * r.level.saturating_sub(1);
-                    self.queue.push(QueueEntry {
-                        icon: hero.map_or(String::new(), |h| h.icon.to_string()),
-                        name: format!("Revive {}", hero.map_or("hero", |h| h.name.as_str())),
-                        progress: Some(r.progress as f32 / total.max(1) as f32),
-                        cancel: own.then_some(Action::CancelRevival {
-                            actor: fid,
-                            hero: r.hero.0,
-                        }),
-                    });
-                }
-            }
-            // The active task: an upgrade, else the active entry, else the first.
+            // The working task: an upgrade (everything queued waits), else the first
+            // queued item.
             if let (Some(up), Some(rule)) = (&w.upgrade, &d.upgrade) {
                 let target = k.content.definition(rule.target.as_str());
                 self.active = Some(QueueEntry {
@@ -856,12 +872,7 @@ impl Hud {
                     cancel: own.then_some(Action::CancelUpgrade { actor: fid }),
                 });
             } else if !self.queue.is_empty() {
-                let i = self
-                    .queue
-                    .iter()
-                    .position(|q| q.progress.is_some())
-                    .unwrap_or(0);
-                self.active = Some(self.queue.remove(i));
+                self.active = Some(self.queue.remove(0));
             }
             status = w.status.clone().filter(|s| !s.is_empty());
         }

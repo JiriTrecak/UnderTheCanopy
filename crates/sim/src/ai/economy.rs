@@ -1126,7 +1126,11 @@ fn run(p: &mut Planner) {
                 continue;
             };
             let e = f.own_entity(hall);
-            if e.is_some_and(|e| e.upgrade.is_some()) || f.queue(hall).len() >= 2 {
+            // A worker queued behind research would wait for it (D72).
+            if e.is_some_and(|e| e.upgrade.is_some())
+                || f.queue(hall).len() >= 2
+                || f.researching(hall)
+            {
                 continue;
             }
             let Some(d) = get(output) else {
@@ -1430,13 +1434,52 @@ fn run(p: &mut Planner) {
             .filter_map(|b| f.own_entity(b)?.research.as_ref())
             .flat_map(|r| r.queue.iter().map(|q| &q.id))
             .collect();
+        // A building works on one thing at a time (D72): research at a building that
+        // trains holds its training up. It researches there only with nothing queued to
+        // train and nothing it trains wanted now that no other building could train.
+        let army_plan = p.b.s.plan.army as usize;
+        let holds_up = |b: &Known| -> bool {
+            let Some(prod) = f
+                .def(b)
+                .behaviors
+                .production
+                .as_ref()
+                .filter(|prod| prod.mode == ProductionMode::Queued)
+            else {
+                return false;
+            };
+            if !f.queue(b).is_empty() {
+                return true;
+            }
+            prod.outputs.iter().any(|id| {
+                let Some(o) = get(id) else {
+                    return false;
+                };
+                let wanted = if o.behaviors.work.is_some() {
+                    ((workers.len() + worker_queues.len()) as u32) < income_need
+                } else {
+                    rules.composition.iter().any(|c| &c.definition == id)
+                        && army.len() + queues.len() < army_plan
+                };
+                wanted
+                    && !ready.iter().any(|other| {
+                        other.id != b.id
+                            && !f.researching(other)
+                            && f.def(other)
+                                .behaviors
+                                .production
+                                .as_ref()
+                                .is_some_and(|op| op.outputs.contains(id))
+                    })
+            })
+        };
         // One research at a time across the colony, so a race with many research
         // buildings still spends on its army first.
         for b in ready.iter().filter(|_| pending.is_empty() && !saving) {
             let Some(queue) = f.own_entity(b).and_then(|e| e.research.as_ref()) else {
                 continue;
             };
-            if !queue.queue.is_empty() {
+            if !queue.queue.is_empty() || holds_up(b) {
                 continue;
             }
             let outputs = f
@@ -1638,6 +1681,7 @@ fn run(p: &mut Planner) {
                     .as_ref()
                     .is_some_and(|prod| prod.outputs.contains(&dd.id))
                     && f.queue(b).len() < 2
+                    && !f.researching(b)
             });
             // Saving is worth it only when every good is at least half there: waiting on
             // a scarce good (substance far out) while the plentiful one piles up starves
@@ -1738,7 +1782,10 @@ fn run(p: &mut Planner) {
                     .count()
             })
     };
-    let saturated = barracks.iter().all(|b| f.queue(b).len() >= 2);
+    // A researching barracks trains nothing until it is done (D72).
+    let saturated = barracks
+        .iter()
+        .all(|b| f.queue(b).len() >= 2 || f.researching(b));
     if let Some(d) = producers
         .iter()
         .copied()

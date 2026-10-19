@@ -4,7 +4,9 @@
     "added": [
       "Beetles now have a steel, brass and violet-magic HUD frame and resource ribbon; Ants keep their woodland interface."
     ],
-    "improved": [],
+    "improved": [
+      "A building works on one thing at a time: research waits for the units queued before it, and units for the research, as in Warcraft III. Its queue panel shows training, research and revivals in the order you queued them."
+    ],
     "fixed": [],
     "knownIssues": []
   },

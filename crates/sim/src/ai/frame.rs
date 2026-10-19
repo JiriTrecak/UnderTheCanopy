@@ -405,6 +405,13 @@ impl<'a> Frame<'a> {
         self.production(k).map_or(&[], |p| p.queue.as_slice())
     }
 
+    /// Research is queued at an own building: training queued there waits for it (D72).
+    pub fn researching(&self, k: &Known<'a>) -> bool {
+        self.own_entity(k)
+            .and_then(|e| e.research.as_ref())
+            .is_some_and(|r| !r.queue.is_empty())
+    }
+
     pub fn casting(&self, k: &Known<'a>) -> bool {
         self.own_entity(k).is_some_and(|e| powers::casting(self, e))
     }
