@@ -24,7 +24,8 @@
       "Units can show their own effects: muzzle blasts, footstep dust and exhaust follow their animations, and machines' glowing parts light up while they move, fight or cast.",
       "Buildings and resource deposits can glow and mist at rest, and a building that workers gather from works visibly while they do.",
       "The beetles' Substance Well and the Substance Deposit have their own models: the well fills the deposit exactly, seeps at rest, and pumps and arcs while workers gather from it.",
-      "The computer opponent keeps its Substance Wells defended, raises towers over its workers when raided, places powered buildings inside its network before extending it, and no longer stalls on research or upgrades it cannot start yet."
+      "The computer opponent keeps its Substance Wells defended, raises towers over its workers when raided, places powered buildings inside its network before extending it, and no longer stalls on research or upgrades it cannot start yet.",
+      "Every beetle ability and research now has its own icon: Static Field, Bulwark Pulse, Broadside, Furnace Plating, Flak Beam, Patch Up and Armor Breaker are new, and Weapon Edges, Bolt Calibre, Plating and Riveted Hulls show one icon per level instead of borrowed ant art."
     ],
     "fixed": [],
     "knownIssues": []

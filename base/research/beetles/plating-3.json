@@ -2,7 +2,7 @@
   "id": "research.beetles.plating-3",
   "name": "Plating III",
   "description": "Beetle troops and machines gain 2 armor (level III; levels add up). Requires an Elder Bastion.",
-  "icon": "asset.icons.research-ants-reinforced-carapace",
+  "icon": "asset.icons.research-beetles-plating-3",
   "priority": 78,
   "requires": [
     "building.beetles.elder-bastion",

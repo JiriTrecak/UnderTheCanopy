@@ -1,0 +1,12 @@
+{
+  "n": 2,
+  "anchors": {
+    "research": [".asset-work/concepts/buildings/refs/icons/anchor-research.png"]
+  },
+  "items": [
+    {"name": "b-research-riveted-hulls-1-v3", "kind": "research", "faction": "beetles", "refs": [".asset-work/concepts/buildings/unit-juggernaut-1.png"],
+     "subject": "RIVETED HULLS I (machines gain health, tier one of two, the plainer): a round, domed section of a war machine's boiler hull, like a slice of a big iron sphere, with a small round porthole window and two plain iron seam bands, each lined with a row of big round iron rivets. PLAIN DARK GREY IRON ONLY: no blue paint, no brass, no glass glow. It must read as a machine's hull, clearly not a shoulder plate or armour pauldron."},
+    {"name": "b-research-riveted-hulls-2-v3", "kind": "research", "faction": "beetles", "refs": [".asset-work/concepts/buildings/unit-juggernaut-1.png"],
+     "subject": "RIVETED HULLS II (machines gain health, tier two of two): the same domed boiler-hull section of a war machine, now reinforced: royal-blue painted plates riveted over the grey iron, thick polished brass seam bands with double rows of big brass rivets, and a brass-rimmed porthole window. It must read as a machine's hull, clearly not a shoulder plate or armour pauldron."}
+  ]
+}

@@ -52,17 +52,17 @@ BUILDING_ART = {
 }
 ICON = {
     'lock-shields': 'asset.icons.ability-beetles-shieldbearer-lock-shields',
-    'armor-breaker': 'asset.icons.ability-beetles-breacher-charge',
+    'armor-breaker': 'asset.icons.ability-beetles-breacher-armor-breaker',
     'arc-surge': 'asset.icons.ability-beetles-arcwright-arc',
-    'static-field': 'asset.icons.spell-entangling-roots',
+    'static-field': 'asset.icons.ability-beetles-arcwright-static-field',
     'mend': 'asset.icons.ability-beetles-mender-patch',
     'field-repair': 'asset.icons.ability-beetles-mender-repair',
-    'patch-up': 'asset.icons.ability-beetles-mender-repair',
+    'patch-up': 'asset.icons.ability-beetles-tinker-patch-up',
     'barrier-field': 'asset.icons.ability-beetles-warden-field',
-    'bulwark-pulse': 'asset.icons.ability-ants-marshal-carapace',
-    'flak-beam': 'asset.icons.item-tempest-antennae',
-    'broadside': 'asset.icons.ability-ants-marshal-crownfall',
-    'furnace-plating': 'asset.icons.item-barkguard',
+    'bulwark-pulse': 'asset.icons.ability-beetles-warden-bulwark-pulse',
+    'flak-beam': 'asset.icons.ability-beetles-steamwing-flak-beam',
+    'broadside': 'asset.icons.ability-beetles-juggernaut-broadside',
+    'furnace-plating': 'asset.icons.ability-beetles-juggernaut-furnace-plating',
     'bolt-turret': 'asset.icons.ability-beetles-forgemaster-bolt-turret',
     'overclock': 'asset.icons.ability-beetles-forgemaster-overclock',
     'field-forge': 'asset.icons.ability-beetles-forgemaster-field-forge',
@@ -73,16 +73,17 @@ ICON = {
     'unbottled': 'asset.icons.ability-beetles-coilkeeper-unbottled',
 }
 RESEARCH_ICON = {
-    'weapon-edges': 'asset.icons.research-ants-driving-spear',
-    'bolt-calibre': 'asset.icons.research-ants-broadheads',
-    'plating': 'asset.icons.research-ants-reinforced-carapace',
+    # Levelled research: one icon per level, plain iron (I), brass (II), substance glass (III).
+    'weapon-edges': [f'asset.icons.research-beetles-weapon-edges-{n}' for n in (1, 2, 3)],
+    'bolt-calibre': [f'asset.icons.research-beetles-bolt-calibre-{n}' for n in (1, 2, 3)],
+    'plating': [f'asset.icons.research-beetles-plating-{n}' for n in (1, 2, 3)],
     'interlocking-shields': 'asset.icons.research-beetles-interlocking-shields',
     'drum-magazines': 'asset.icons.research-beetles-drum-magazines',
     'heavy-pistons': 'asset.icons.research-beetles-heavy-pistons',
     'adept': 'asset.icons.research-beetles-specialist-training-adept',
     'master': 'asset.icons.research-beetles-specialist-training-master',
     'fragmentation-shells': 'asset.icons.research-beetles-fragmentation-shells',
-    'riveted-hulls': 'asset.icons.research-ants-campaign-harness',
+    'riveted-hulls': [f'asset.icons.research-beetles-riveted-hulls-{n}' for n in (1, 2)],
     'afterburners': 'asset.icons.research-beetles-afterburners',
     'pressure-mains': 'asset.icons.research-beetles-pressure-mains',
 }
@@ -1265,7 +1266,7 @@ def write_research():
             gate = {None: '', T2: ' Requires a Great Bastion.', T3: ' Requires an Elder Bastion.'}[hall]
             requires = [x for x in (hall, prev) if x]
             name = f'{key}-{i + 1}'
-            rid = put(name, name, f'{label} {roman}', f'{what} (level {roman}; levels add up).{gate}', icon,
+            rid = put(name, name, f'{label} {roman}', f'{what} (level {roman}; levels add up).{gate}', icon[i],
                       prio - i, cost(amber, substance), seconds, [dict({'units': units}, **effect_of())],
                       requires=requires or None)
             forge.append(rid)
@@ -1304,10 +1305,10 @@ def write_research():
                            {'units': [u('juggernaut')], 'maxHp': 450}]
     put('riveted-hulls-1', 'riveted-hulls-1', 'Riveted Hulls I',
         'Machines gain health: Bombards +100, Steamwings +80, the Juggernaut +450.',
-        RESEARCH_ICON['riveted-hulls'], 70, cost(150, 30), 45, machines_hp())
+        RESEARCH_ICON['riveted-hulls'][0], 70, cost(150, 30), 45, machines_hp())
     put('riveted-hulls-2', 'riveted-hulls-2', 'Riveted Hulls II',
         'Machines gain the same again: Bombards +100, Steamwings +80, the Juggernaut +450. Requires an Elder Bastion.',
-        RESEARCH_ICON['riveted-hulls'], 69, cost(225, 75), 60, machines_hp(),
+        RESEARCH_ICON['riveted-hulls'][1], 69, cost(225, 75), 60, machines_hp(),
         requires=[T3, r('riveted-hulls-1')])
     put('afterburners', 'afterburners', 'Afterburners', 'Steamwings fly 30% faster.',
         RESEARCH_ICON['afterburners'], 60, cost(150, 30), 40,

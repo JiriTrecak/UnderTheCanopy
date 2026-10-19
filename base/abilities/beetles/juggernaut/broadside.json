@@ -50,7 +50,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.icons.ability-ants-marshal-crownfall",
+    "icon": "asset.icons.ability-beetles-juggernaut-broadside",
     "animations": {
       "prepare": "attack",
       "release": "attack",

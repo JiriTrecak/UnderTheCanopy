@@ -67,7 +67,7 @@
   ],
   "onRelease": [],
   "presentation": {
-    "icon": "asset.icons.ability-beetles-breacher-charge",
+    "icon": "asset.icons.ability-beetles-breacher-armor-breaker",
     "animations": {
       "prepare": "idle",
       "release": "idle",
