@@ -1,65 +1,74 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [
-      "0.4 is the first milestone since the native rebuild: the beetles join the ants as a second complete, playable race; the forest runs on a new economy of amber and Substance, pumped from wells on contested deposits; and Echo Isles shows the game's new autumn forest look.",
-      "The road to 0.4, the 0.3 series in one place: the native game for Apple Silicon Macs (0.3.0), Warcraft-style lobbies and teaming up against the computer (0.3.2), smooth movement (0.3.4), a smarter computer opponent and your own maps (0.3.5), the game's own editor with twelve classic Warcraft III battlefields and Amberleaf Crossing (0.3.6), and replays with in-game feedback (0.3.7).",
-      "A look-dev showcase map, Look-dev: Fall, previews the new forest-floor look: giant trunks, leaf litter, mushrooms, a shallow ford, a deep pool and glowing amber",
-      "Look-dev: Fall has a canopy: giant trees rise into it in the third-person view, light falls through it in beams with dust and drifting leaves, and the distant forest goes soft with depth of field.",
-      "Beetles build on a substance network: their halls power the ground around them and Brood Dens extend it in a chain. War Lodges, Shell Forges, Hornwatches and Ancestor Shrines must be placed inside it and stop working while cut off; placing one shows the network on the ground, and a dark building shows a struck-bolt badge.",
-      "Substance Wells: build one on top of a Substance Deposit, as a refinery sits on its geyser, and it pumps Substance into your stock by itself, about 120 a minute, while it stands; no workers needed. The deposit never runs dry and stands again when its well falls.",
-      "The beetles are a complete race: Bastion tiers up to the Elder Bastion, War Lodge, Shell Forge, Alembic, Engine Yard, Hornwatch and Arc Tower, Ancestor Shrine; Tinkers, Shieldbearers, Bolters, Breachers, Arcwrights, Menders, Wardens, Bombards, Steamwings and the one-at-a-time Juggernaut, with tiered forge research and lodge, alembic and yard upgrades.",
-      "Two new beetle heroes beside the Hornbreaker: the Forgemaster deploys Bolt Turrets, Overclocks allies, keeps a Field Forge burning and calls down Forgefall, a crucible that slams into a warning circle and leaves a molten pool; the Coilkeeper lashes chains of violet lightning, Overloads enemy mana, Recharges allies and, once, goes Unbottled into a storm that drags enemies in and lifts them off the ground.",
-      "Wardens raise a field barrier that stops enemy arrows and bolts from the front and makes shells burst against it; Shieldbearers lock shields into an armoured wall; Arcwright arcs and the Arc Tower jump between enemies; Bombards cannot fire at anything close.",
-      "Beetle weapons have muzzle flashes, steam, violet tracers and sparks on every shot, and drill sparks and impact dust in melee.",
-      "Skirmish lets you pick each player's colour, as the multiplayer lobby does",
-      "Amber your workers bring in and Substance your wells pump rise as floating numbers where they arrive. Turn them off under Settings, Gameplay."
-    ],
-    "improved": [
-      "Look-dev: Fall now has a painted forest floor around its clearing, sun glints on its shallow ford, and amber that sits in a crater.",
-      "The beetles' Shell Forge has a new model that comes alive while it researches: the furnace glows, the chimneys smoke and the hammer strikes the anvil in a shower of sparks; at rest it stands still.",
-      "The Shell Forge is larger, sized against the main hall like a Warcraft III Blacksmith, fills its footprint and no longer sits on a patch of dirt.",
-      "The second resource, Root, is now called Substance (a working name).",
-      "Every icon in one hand-painted style: new portraits, ability and research icons for the beetles, the ants, neutral creatures and items redrawn to match, and new command, armour and resource icons.",
-      "Trees are no longer a resource: wood is gone from every cost. Basic buildings and units cost a little more amber, and advancing your hall and the tier-2 roster costs Substance instead. Tree walls still block the way.",
-      "Echo Isles has two Substance Deposits between the bases to fight over, and every other skirmish map has one near each start.",
-      "Computer players build Substance Wells, spend Substance, and attack an enemy's well when they have none of their own.",
-      "Beetle Substance Wells also power the ground around them, so beetles can build out by a well they hold; the well itself needs no power and goes wherever its deposit is.",
-      "Units can show their own effects: muzzle blasts, footstep dust and exhaust follow their animations, and machines' glowing parts light up while they move, fight or cast.",
-      "Buildings and resource deposits can glow and mist at rest, and work visibly while they produce.",
-      "The beetles' Substance Well and the Substance Deposit have their own models: the well fills the deposit exactly, seeps at rest, and pumps and arcs while it works.",
-      "The computer opponent keeps its Substance Wells defended, raises towers over its workers when raided, places powered buildings inside its network before extending it, and no longer stalls on research or upgrades it cannot start yet.",
-      "Computer opponents build a new hall at the next amber field before theirs runs dry, clearing the creeps that guard it, and defend their outlying halls",
-      "Computer opponents start with a varied hero instead of always the first one",
-      "The Forgemaster's Bolt Turret and the Arc Tower have their own models: a horned brass repeater on a tripod and a towering substance coil that lights up when it fires",
-      "Beetle Wardens carry a glowing violet barrier pane, so they stand out in an army at a glance",
-      "Every beetle ability and research now has its own icon: Static Field, Bulwark Pulse, Broadside, Furnace Plating, Flak Beam, Patch Up and Armor Breaker are new, and Weapon Edges, Bolt Calibre, Plating and Riveted Hulls show one icon per level instead of borrowed ant art.",
-      "Beetle weapons and spells are crisp and readable: hot violet tracers and muzzle flashes on every volley, sparks that streak, star-bright impacts, shock rings and glass shards instead of soft white blobs",
-      "Forgefall drops a real iron crucible out of the canopy, trailing fire, onto a pool of molten metal",
-      "The Hornwatch turns its turret to face its target, and the Hornwatch and Arc Tower flash and discharge on every shot",
-      "Computer opponents search the map with their whole army for the last enemy buildings, so a won match ends",
-      "Computer opponents add production when goods pile up, learn every hero ability before raising ranks, learn and cast ultimates first, and keep buffs and shields for fights",
-      "Beetles build up more slowly but hit harder: their troops and machines train longer and the Great and Elder Bastion, Alembic and Engine Yard cost more, while their troops are sturdier and deal more damage, so beetles hold their own against ants.",
-      "Echo Isles is now an autumn forest map: dark leaf-strewn woods, pine needles and moss on the open ground, calm shallows and dark pools",
-      "Levelled research shows one level at a time: once Plating I is queued, its button turns into Plating II, waiting for the first to finish"
-    ],
-    "fixed": [
-      "Sparks and shrapnel from spells and weapons fall instead of flying up, and steam rises",
-      "The Brood Den pressurises while it powers the network, and the Juggernaut crashes down in a burst of sparks and dust when destroyed",
-      "Computer opponents no longer favour one side of a map when they look for building sites",
-      "Matches between computer opponents no longer stall when both run out of amber",
-      "Dark forest edges are now solid: units can no longer walk or build where the ground looks impassable",
-      "Beetle units stand on the ground instead of floating above it",
-      "Units stay over their selection circle: walking, running and carrying no longer pull the model ahead of where the unit really is",
-      "A Substance deposit stays visible while its Well is being built: the scaffold rises around it and the finished Well takes its place",
-      "A selected building that can both train and research, such as the Bastion, again shows its training queue and progress",
-      "Damaged buildings of every race visibly burn from the first tenth of lost health, with flames that read at game zoom on the large beetle buildings"
-    ],
-    "knownIssues": [
-      "The beetles and the ants are not balanced against each other yet: in computer matches the beetles win fewer than half their games. A balance pass follows."
-    ]
+    "added": [],
+    "improved": [],
+    "fixed": [],
+    "knownIssues": []
   },
   "releases": [
+    {
+      "added": [
+        "0.4 is the first milestone since the native rebuild: the beetles join the ants as a second complete, playable race; the forest runs on a new economy of amber and Substance, pumped from wells on contested deposits; and Echo Isles shows the game's new autumn forest look.",
+        "The road to 0.4, the 0.3 series in one place: the native game for Apple Silicon Macs (0.3.0), Warcraft-style lobbies and teaming up against the computer (0.3.2), smooth movement (0.3.4), a smarter computer opponent and your own maps (0.3.5), the game's own editor with twelve classic Warcraft III battlefields and Amberleaf Crossing (0.3.6), and replays with in-game feedback (0.3.7).",
+        "A look-dev showcase map, Look-dev: Fall, previews the new forest-floor look: giant trunks, leaf litter, mushrooms, a shallow ford, a deep pool and glowing amber",
+        "Look-dev: Fall has a canopy: giant trees rise into it in the third-person view, light falls through it in beams with dust and drifting leaves, and the distant forest goes soft with depth of field.",
+        "Beetles build on a substance network: their halls power the ground around them and Brood Dens extend it in a chain. War Lodges, Shell Forges, Hornwatches and Ancestor Shrines must be placed inside it and stop working while cut off; placing one shows the network on the ground, and a dark building shows a struck-bolt badge.",
+        "Substance Wells: build one on top of a Substance Deposit, as a refinery sits on its geyser, and it pumps Substance into your stock by itself, about 120 a minute, while it stands; no workers needed. The deposit never runs dry and stands again when its well falls.",
+        "The beetles are a complete race: Bastion tiers up to the Elder Bastion, War Lodge, Shell Forge, Alembic, Engine Yard, Hornwatch and Arc Tower, Ancestor Shrine; Tinkers, Shieldbearers, Bolters, Breachers, Arcwrights, Menders, Wardens, Bombards, Steamwings and the one-at-a-time Juggernaut, with tiered forge research and lodge, alembic and yard upgrades.",
+        "Two new beetle heroes beside the Hornbreaker: the Forgemaster deploys Bolt Turrets, Overclocks allies, keeps a Field Forge burning and calls down Forgefall, a crucible that slams into a warning circle and leaves a molten pool; the Coilkeeper lashes chains of violet lightning, Overloads enemy mana, Recharges allies and, once, goes Unbottled into a storm that drags enemies in and lifts them off the ground.",
+        "Wardens raise a field barrier that stops enemy arrows and bolts from the front and makes shells burst against it; Shieldbearers lock shields into an armoured wall; Arcwright arcs and the Arc Tower jump between enemies; Bombards cannot fire at anything close.",
+        "Beetle weapons have muzzle flashes, steam, violet tracers and sparks on every shot, and drill sparks and impact dust in melee.",
+        "Skirmish lets you pick each player's colour, as the multiplayer lobby does",
+        "Amber your workers bring in and Substance your wells pump rise as floating numbers where they arrive. Turn them off under Settings, Gameplay."
+      ],
+      "improved": [
+        "Look-dev: Fall now has a painted forest floor around its clearing, sun glints on its shallow ford, and amber that sits in a crater.",
+        "The beetles' Shell Forge has a new model that comes alive while it researches: the furnace glows, the chimneys smoke and the hammer strikes the anvil in a shower of sparks; at rest it stands still.",
+        "The Shell Forge is larger, sized against the main hall like a Warcraft III Blacksmith, fills its footprint and no longer sits on a patch of dirt.",
+        "The second resource, Root, is now called Substance (a working name).",
+        "Every icon in one hand-painted style: new portraits, ability and research icons for the beetles, the ants, neutral creatures and items redrawn to match, and new command, armour and resource icons.",
+        "Trees are no longer a resource: wood is gone from every cost. Basic buildings and units cost a little more amber, and advancing your hall and the tier-2 roster costs Substance instead. Tree walls still block the way.",
+        "Echo Isles has two Substance Deposits between the bases to fight over, and every other skirmish map has one near each start.",
+        "Computer players build Substance Wells, spend Substance, and attack an enemy's well when they have none of their own.",
+        "Beetle Substance Wells also power the ground around them, so beetles can build out by a well they hold; the well itself needs no power and goes wherever its deposit is.",
+        "Units can show their own effects: muzzle blasts, footstep dust and exhaust follow their animations, and machines' glowing parts light up while they move, fight or cast.",
+        "Buildings and resource deposits can glow and mist at rest, and work visibly while they produce.",
+        "The beetles' Substance Well and the Substance Deposit have their own models: the well fills the deposit exactly, seeps at rest, and pumps and arcs while it works.",
+        "The computer opponent keeps its Substance Wells defended, raises towers over its workers when raided, places powered buildings inside its network before extending it, and no longer stalls on research or upgrades it cannot start yet.",
+        "Computer opponents build a new hall at the next amber field before theirs runs dry, clearing the creeps that guard it, and defend their outlying halls",
+        "Computer opponents start with a varied hero instead of always the first one",
+        "The Forgemaster's Bolt Turret and the Arc Tower have their own models: a horned brass repeater on a tripod and a towering substance coil that lights up when it fires",
+        "Beetle Wardens carry a glowing violet barrier pane, so they stand out in an army at a glance",
+        "Every beetle ability and research now has its own icon: Static Field, Bulwark Pulse, Broadside, Furnace Plating, Flak Beam, Patch Up and Armor Breaker are new, and Weapon Edges, Bolt Calibre, Plating and Riveted Hulls show one icon per level instead of borrowed ant art.",
+        "Beetle weapons and spells are crisp and readable: hot violet tracers and muzzle flashes on every volley, sparks that streak, star-bright impacts, shock rings and glass shards instead of soft white blobs",
+        "Forgefall drops a real iron crucible out of the canopy, trailing fire, onto a pool of molten metal",
+        "The Hornwatch turns its turret to face its target, and the Hornwatch and Arc Tower flash and discharge on every shot",
+        "Computer opponents search the map with their whole army for the last enemy buildings, so a won match ends",
+        "Computer opponents add production when goods pile up, learn every hero ability before raising ranks, learn and cast ultimates first, and keep buffs and shields for fights",
+        "Beetles build up more slowly but hit harder: their troops and machines train longer and the Great and Elder Bastion, Alembic and Engine Yard cost more, while their troops are sturdier and deal more damage, so beetles hold their own against ants.",
+        "Echo Isles is now an autumn forest map: dark leaf-strewn woods, pine needles and moss on the open ground, calm shallows and dark pools",
+        "Levelled research shows one level at a time: once Plating I is queued, its button turns into Plating II, waiting for the first to finish"
+      ],
+      "fixed": [
+        "Sparks and shrapnel from spells and weapons fall instead of flying up, and steam rises",
+        "The Brood Den pressurises while it powers the network, and the Juggernaut crashes down in a burst of sparks and dust when destroyed",
+        "Computer opponents no longer favour one side of a map when they look for building sites",
+        "Matches between computer opponents no longer stall when both run out of amber",
+        "Dark forest edges are now solid: units can no longer walk or build where the ground looks impassable",
+        "Beetle units stand on the ground instead of floating above it",
+        "Units stay over their selection circle: walking, running and carrying no longer pull the model ahead of where the unit really is",
+        "A Substance deposit stays visible while its Well is being built: the scaffold rises around it and the finished Well takes its place",
+        "A selected building that can both train and research, such as the Bastion, again shows its training queue and progress",
+        "Damaged buildings of every race visibly burn from the first tenth of lost health, with flames that read at game zoom on the large beetle buildings"
+      ],
+      "knownIssues": [
+        "The beetles and the ants are not balanced against each other yet: in computer matches the beetles win fewer than half their games. A balance pass follows."
+      ],
+      "version": "0.4.0",
+      "publishedAt": "2026-10-19T12:30:15.888Z",
+      "title": "The beetles"
+    },
     {
       "added": [
         "Submit feedback from the main menu or the game menu: describe a bug, idea or balance problem and it is sent with a screenshot of what you were looking at; reports written offline are sent later.",
