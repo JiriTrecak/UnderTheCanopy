@@ -312,7 +312,7 @@ def glb(path, primitives, materials=None, name='crucible'):
         'nodes': [{'name': name, 'mesh': 0}],
         'meshes': [{'name': name, 'primitives': prims}],
         'materials': materials or [
-            {'name': 'iron', 'doubleSided': True, 'pbrMetallicRoughness': {'baseColorFactor': [0.16, 0.14, 0.13, 1], 'metallicFactor': 0.85,
+            {'name': 'iron', 'doubleSided': True, 'pbrMetallicRoughness': {'baseColorFactor': [0.08, 0.075, 0.07, 1], 'metallicFactor': 0.7,
                                                       'roughnessFactor': 0.45}},
             {'name': 'molten', 'doubleSided': True, 'pbrMetallicRoughness': {'baseColorFactor': [1.0, 0.5, 0.12, 1], 'metallicFactor': 0.0,
                                                         'roughnessFactor': 0.6},

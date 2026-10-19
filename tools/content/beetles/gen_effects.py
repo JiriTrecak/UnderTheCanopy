@@ -345,6 +345,27 @@ def build_machines():
             streaks('sparks', count=12, speed=9, size=0.08, lifetime=12, gravity=10, cone=60),
             puffs('steam', count=4, speed=1.6, size=0.9, height=0.0, lifetime=40, rise=-1.6),
         ]))
+    # Arc Tower: the crown jumps and the sphere discharges on every arc its coil throws.
+    add_at('buildings/arc-tower-discharge', effect(
+        'effect.buildings.arc-tower-discharge', 'Arc Tower discharge',
+        "The Arc Tower's sphere discharges on the clip's `fire` event: a violet-white star, a crown of crackling "
+        'streaks and a thin ring of field energy.', 30, [
+            flash('light', VIOLET, VIOLET_LIGHT, 9.0, 9.0, duration=6, height=0.0),
+            glint('star', '#c4a8ff', 3.4, duration=6, intensity=2.6),
+            orb('sphere', VIOLET, VIOLET_LIGHT, 1.6, 8, height=0.0, intensity=0.9),
+            streaks('crackle', count=18, speed=8, size=0.07, lifetime=10, gravity=0, cone=180, drag=2.0),
+            layer('ring', 'ring', VIOLET_LIGHT, WHITE, 10, 1, 2.6, 0, blend='additive', orientation='camera',
+                  intensity=1.2),
+        ]))
+    add_at('buildings/arc-tower-coil', effect(
+        'effect.buildings.arc-tower-coil', 'Arc Tower coil charge',
+        'While the tower fights, substance surges through its glass coil: a violet glow and sparks climbing it.',
+        40, [
+            orb('glow', VIOLET, VIOLET_LIGHT, 1.4, 40, height=0.0, sustain=True, intensity=0.6,
+                motion={'opacity': pulse(8, 0.5, 1.0)}),
+            streaks('climb', count=6, speed=2.5, size=0.05, lifetime=12, gravity=-6, cone=20, spawn=0.4,
+                    mode='continuous', duration=40, sustain=True, stretch=0.06, intensity=3.5),
+        ], loop=True))
     # Brood Den: while it pressurises the network, its gauge glows and pulses.
     add_at('buildings/brood-den-pressure', effect(
         'effect.buildings.brood-den-pressure', 'Brood Den pressure',
@@ -562,7 +583,7 @@ def build_heroes():
                    motion={'rotation': {'periodTicks': 120, 'direction': 'clockwise'}, 'opacity': pulse(10, 0.45, 0.9)}),
             flash('glow', FIRE, FIRE_LIGHT, 8.0, 3.0, duration=60, height=1.0, sustain=True,
                   motion={'opacity': pulse(10, 0.4, 1.0)}),
-            layer('crucible', 'rain', WHITE, WHITE, 30, 1, 2.4, 26, startTick=30, spread=0.01, fallSpeed=1,
+            layer('crucible', 'rain', WHITE, WHITE, 30, 1, 3.0, 26, startTick=30, spread=0.01, fallSpeed=1,
                   fallAngleDegrees=12, fallAzimuthDegrees=200,
                   model={'asset': 'asset.models.effects.beetles-crucible', 'role': 'geometry', 'index': 1,
                          'rotation': {'x': 0, 'y': 0, 'z': 0}}),

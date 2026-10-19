@@ -140,7 +140,13 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
     let pack = Arc::new(Pack::open(&pack_path).with_context(|| pack_path.display().to_string())?);
     let look = Look::load(&paths.data, spec.biome.unwrap_or(map.biome()))?;
     let setup = match spec.crowd {
-        Some(n) => canopy_sim::crowd::crowd(&mut map, &content, n).map_err(|e| anyhow!(e))?,
+        Some(n) => canopy_sim::crowd::crowd_of(
+            &mut map,
+            &content,
+            n,
+            spec.races.as_deref().unwrap_or_default(),
+        )
+        .map_err(|e| anyhow!(e))?,
         None if spec.gallery => {
             canopy_sim::crowd::gallery(&mut map, &content, spec.only).map_err(|e| anyhow!(e))?
         }

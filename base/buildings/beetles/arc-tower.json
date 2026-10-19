@@ -31,13 +31,13 @@
   "presentation": {
     "effects": [
       {
-        "effect": "effect.buildings.hornwatch-canister",
-        "state": "work",
+        "effect": "effect.buildings.arc-tower-coil",
+        "state": "attack",
         "socket": "socket_coil"
       },
       {
-        "effect": "effect.buildings.hornwatch-canister",
-        "state": "work",
+        "effect": "effect.buildings.arc-tower-discharge",
+        "event": "fire",
         "socket": "socket_muzzle"
       }
     ]

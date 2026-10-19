@@ -1,0 +1,77 @@
+{
+  "id": "effect.buildings.arc-tower-coil",
+  "name": "Arc Tower coil charge",
+  "description": "While the tower fights, substance surges through its glass coil: a violet glow and sparks climbing it.",
+  "durationTicks": 40,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 1.4,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "additive",
+      "orientation": "camera",
+      "intensity": 0.6,
+      "core": 0.8,
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 8,
+          "min": 0.5,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "climb",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#8f66ff",
+      "accent": "#efe8ff",
+      "durationTicks": 40,
+      "count": 6,
+      "size": 0.05,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.5,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 12,
+        "rate": 6,
+        "speed": 2.5,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 20,
+        "gravity": -6,
+        "drag": 0.7,
+        "spawnRadius": 0.4,
+        "startSize": 0.05,
+        "endSize": 0.022500000000000003,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55,
+        "stretch": 0.06
+      },
+      "sustain": true
+    }
+  ]
+}

@@ -519,8 +519,8 @@ BUILDING_FX = {
     ]
 }
 BUILDING_FX['arc-tower'] = [
-    {'effect': 'effect.buildings.hornwatch-canister', 'state': 'work', 'socket': 'socket_coil'},
-    {'effect': 'effect.buildings.hornwatch-canister', 'state': 'work', 'socket': 'socket_muzzle'},
+    {'effect': 'effect.buildings.arc-tower-coil', 'state': 'attack', 'socket': 'socket_coil'},
+    {'effect': 'effect.buildings.arc-tower-discharge', 'event': 'fire', 'socket': 'socket_muzzle'},
 ]
 
 HALL = 'building.beetles.bastion'
