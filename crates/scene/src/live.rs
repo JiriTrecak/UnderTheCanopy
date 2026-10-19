@@ -1021,8 +1021,34 @@ impl Presenter {
         let mut bodies: Vec<Body> = Vec::new();
         let mut health: BTreeMap<EntityId, u32> = BTreeMap::new();
         let mut building: BTreeSet<EntityId> = BTreeSet::new();
-        // A deposit under a building placed on it is drawn as that building (D62).
-        let covered = view.covered(catalog);
+        // A deposit under a building placed on it is drawn as that building (D62), once the
+        // building shows: under its scaffold the deposit stays until the building is revealed.
+        let mut covered = view.covered(catalog);
+        if !covered.is_empty() {
+            let rising: BTreeSet<(i32, i32)> = view
+                .entities
+                .iter()
+                .filter_map(|e| {
+                    let d = catalog.get(e.definition());
+                    d.placement_on.as_ref()?;
+                    let progress = e.public.construction?;
+                    let style = self.construction.get(d.id.as_str())?;
+                    let total = match &d.creation {
+                        Some(Creation::Construct { work_ticks, .. }) if *work_ticks > 0 => {
+                            *work_ticks
+                        }
+                        _ => return None,
+                    };
+                    let (_, revealed) =
+                        construction_pose(f64::from(progress) / f64::from(total), style);
+                    (!revealed).then_some((e.public.position.x, e.public.position.y))
+                })
+                .collect();
+            covered.retain(|id| {
+                view.entity(*id)
+                    .is_none_or(|e| !rising.contains(&(e.public.position.x, e.public.position.y)))
+            });
+        }
 
         for e in &view.entities {
             let id = e.id();
