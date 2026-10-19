@@ -28,7 +28,7 @@ fn set_experience(world: &mut World, hero: u32, experience: u32) {
 }
 
 #[test]
-fn heroes_learn_new_ranks_first_then_in_the_heros_order() {
+fn heroes_learn_the_latest_unlocked_ability_first_then_in_the_heros_order() {
     let mut world = world(&skirmish(vec![], vec![]), false);
     let hero = all_of(&world, P1, HERO)[0];
     // Level 1: two abilities open at the same level and rank; the hero's first listed wins.
@@ -36,7 +36,7 @@ fn heroes_learn_new_ranks_first_then_in_the_heros_order() {
     assert_eq!(ranks(&world, hero), [1, 0, 0]);
     run(&mut world, 60);
     assert_eq!(ranks(&world, hero), [1, 0, 0], "one rank per level");
-    // Level 2 unlocks the ward: newly unlocked ranks come before older ones.
+    // Level 2 unlocks the ward: the latest unlocked ability comes before older ones.
     set_experience(&mut world, hero, 80);
     run_until(&mut world, 100, |w| ranks(w, hero)[WARD_BINDING] == 1);
     assert_eq!(ranks(&world, hero)[RUSH_BINDING], 0);

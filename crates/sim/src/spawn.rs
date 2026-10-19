@@ -6,7 +6,7 @@
 use crate::{
     catalog::{Catalog, Def},
     entity::{Construction, Entity, EntityId, LooseItem, Milli, Resource, Unit},
-    setup::{MatchSetup, Slot},
+    setup::{MatchSetup, Slot, SlotKind},
     state::State,
     terrain::{
         CellBounds, Terrain,
@@ -44,7 +44,21 @@ pub fn placements(
     terrain: &Terrain,
     setup: &MatchSetup,
 ) -> Result<Placements, String> {
-    expand(map, &catalog.content, terrain, &setup.slots)
+    expand(map, &catalog.content, terrain, &setup.slots, setup.seed)
+}
+
+/// The starting hero of a computer seat that chose none: one of the setup's choices,
+/// drawn from the match seed and the seat, so computer opponents vary their heroes.
+fn computer_hero(setup: &StartingSetup, seed: u32, player: u8) -> Option<&str> {
+    let choices = &setup.hero.as_ref()?.choices;
+    let mut x = seed ^ (u32::from(player) + 1).wrapping_mul(0x9e37_79b1);
+    x ^= x >> 16;
+    x = x.wrapping_mul(0x7feb_352d);
+    x ^= x >> 15;
+    x = x.wrapping_mul(0x846c_a68b);
+    x ^= x >> 16;
+    let n = u32::try_from(choices.len()).ok().filter(|&n| n > 0)?;
+    choices.get((x % n) as usize).map(Id::as_str)
 }
 
 fn expand(
@@ -52,6 +66,7 @@ fn expand(
     content: &Content,
     terrain: &Terrain,
     slots: &[Slot],
+    seed: u32,
 ) -> Result<Placements, String> {
     let rules = &content.rules;
     for slot in slots {
@@ -110,7 +125,13 @@ fn expand(
                 appearance: None,
             });
             let rotation = formation_rotation(start, setup, &resources, content);
-            let hero = slot.and_then(|s| s.hero.as_deref());
+            let hero = slot.and_then(|s| {
+                s.hero.as_deref().or_else(|| {
+                    (s.kind == SlotKind::Ai)
+                        .then(|| computer_hero(setup, seed, s.player))
+                        .flatten()
+                })
+            });
             for (index, (definition, (ox, oy))) in starting_units(setup, hero)?.enumerate() {
                 let (x, y) = starting_unit_position(start.x, start.z, rotation, ox, oy)?;
                 let id = format!("{prefix}/unit-{:03}", index + 1);
@@ -683,20 +704,20 @@ struct Body<'a> {
 /// and standing resources share no cell on the same floor; unit bodies stay on the map,
 /// off static footprints, and apart from each other.
 fn occupancy(map: &UtcMap, content: &Content, terrain: &Terrain) -> Result<(), String> {
-    // Every start seated, with the default race.
+    // Every start seated, with the default race and hero (as a person would sit).
     let every: Vec<Slot> = map
         .player_starts
         .iter()
         .map(|s| Slot {
             player: s.player.saturating_sub(1),
-            kind: crate::setup::SlotKind::Ai,
+            kind: SlotKind::Human,
             name: None,
             team: None,
             hero: None,
             race: None,
         })
         .collect();
-    let placements = expand(map, content, terrain, &every)?.list;
+    let placements = expand(map, content, terrain, &every, 0)?.list;
     let size = terrain.size();
     let limit = f64::from(size) - 0.5;
     let layered = placements.iter().any(|p| p.position.surface.is_some());
@@ -842,14 +863,14 @@ pub fn untangle(
         .iter()
         .map(|s| Slot {
             player: s.player.saturating_sub(1),
-            kind: crate::setup::SlotKind::Ai,
+            kind: SlotKind::Human,
             name: None,
             team: None,
             hero: None,
             race: None,
         })
         .collect();
-    let placements = expand(map, content, terrain, &every)?.list;
+    let placements = expand(map, content, terrain, &every, 0)?.list;
     if placements.iter().any(|p| p.position.surface.is_some()) {
         return Ok((Vec::new(), Vec::new()));
     }

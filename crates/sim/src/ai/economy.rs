@@ -6,7 +6,7 @@
 use super::{
     Beat,
     frame::Known,
-    geography::{Pt, dist},
+    geography::{Compass, Pt, dist},
     placement::{placeable, snap},
     state::site_key,
 };
@@ -21,6 +21,7 @@ use crate::{
 use canopy_content::{
     Id,
     game::{Cost, Creation, Definition, Kind, ProductionMode},
+    placement::Owner,
 };
 use std::collections::BTreeMap;
 
@@ -167,19 +168,17 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
             .footprint
             .as_ref()
             .map_or(0.0, |fp| f64::from(fp.width.max(fp.depth)) / 2.0);
+        let compass = f.geo.compass(f.home);
         for _ in 0..f.rules.limits.placement_candidates {
             let k = self.b.s.placement_cursor % 320;
             self.b.s.placement_cursor = self.b.s.placement_cursor.wrapping_add(1);
             let ring = k / 32;
-            let angle = f64::from(k % 32) * std::f64::consts::PI / 16.0;
+            let (cx, cy) = compass.direction(k % 32, 32);
             let radius = match near {
                 Some(n) => f64::from(n.radius).min(near_radius + f64::from(ring % 3)),
                 None => 10.0 + half + f64::from(ring) * 6.0,
             };
-            let cursor = Pt::new(
-                origin.x + crate::math::cos(angle) * radius,
-                origin.y + crate::math::sin(angle) * radius,
-            );
+            let cursor = Pt::new(origin.x + cx * radius, origin.y + cy * radius);
             if let Some(action) = self.site(def, worker, cursor) {
                 return self.emit(action, reason);
             }
@@ -193,12 +192,12 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
                 let reach = (field.radius as f64 / 1000.0 - half - 1.0).max(0.0);
                 for (ring, share) in [0.35, 0.6, 0.85, 1.0].into_iter().enumerate() {
                     for k in 0..16 {
-                        let angle = (f64::from(k) + 0.5 * ring as f64) * std::f64::consts::PI / 8.0;
-                        let p = Pt::new(
-                            centre.x + crate::math::cos(angle) * reach * share,
-                            centre.y + crate::math::sin(angle) * reach * share,
-                        );
-                        inside.push((dist(p, origin), p));
+                        let stagger = 0.5 * (ring % 2) as f64 * std::f64::consts::PI / 8.0;
+                        let (cx, cy) = compass.turn(Compass::step(k, 16) + stagger);
+                        let p =
+                            Pt::new(centre.x + cx * reach * share, centre.y + cy * reach * share);
+                        // Centimetres: equal distances stay in the compass's order.
+                        inside.push(((dist(p, origin) * 100.0).round(), p));
                     }
                 }
             }
@@ -307,14 +306,12 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
         let extent = Extent::of(d.footprint.as_ref());
         let half = extent.width.max(extent.depth) / 2.0;
         let mut candidates: Vec<(f64, Pt)> = Vec::new();
+        let compass = f.geo.compass(f.home);
         for &(centre, radius) in &fields {
             let reach = (radius - half - 1.0).max(0.0);
             for k in 0..16 {
-                let angle = f64::from(k) * std::f64::consts::PI / 8.0;
-                let p = Pt::new(
-                    centre.x + crate::math::cos(angle) * reach,
-                    centre.y + crate::math::sin(angle) * reach,
-                );
+                let (cx, cy) = compass.direction(k, 16);
+                let p = Pt::new(centre.x + cx * reach, centre.y + cy * reach);
                 let score = match toward {
                     Some(t) => dist(p, t),
                     None => -fields
@@ -322,7 +319,7 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
                         .map(|&(o, _)| dist(p, o))
                         .fold(f64::INFINITY, f64::min),
                 };
-                candidates.push((score, p));
+                candidates.push(((score * 100.0).round(), p));
             }
         }
         candidates.sort_by(|a, b| a.0.total_cmp(&b.0));
@@ -348,7 +345,7 @@ fn harvest_source(d: &Definition) -> Option<&Id> {
 }
 
 /// Soldiers per further well: one well first, then one more for every this many.
-const SOLDIERS_PER_WELL: usize = 10;
+pub(super) const SOLDIERS_PER_WELL: usize = 10;
 
 /// The next building to place on a resource (`placementOn`, a Substance Well, D62) and
 /// the deposit for it: while the colony holds fewer than it wants (one, and one more for
@@ -491,6 +488,263 @@ fn wells(p: &mut Planner, defs: &[Def], army: usize) -> bool {
     ) {
         p.b.s.inspected.insert("economy:well".into(), f.tick + 1200);
         return true;
+    }
+    false
+}
+
+/// A field claimed by a new main drop-off: the hall to build and the middle of the
+/// field's harvest sites.
+#[derive(Debug, Clone, Copy)]
+pub(super) struct Expansion {
+    pub hall: Def,
+    pub point: Pt,
+    /// Strength of the camps not yet cleared that hold the field.
+    pub guard: f64,
+}
+
+/// Goods each gatherer's field must still hold near the colony's drop-offs (about six
+/// minutes of its trips); below that a new hall goes up at the next field, so the colony
+/// never runs dry.
+const EXPANSION_RESERVE_PER_GATHERER: u32 = 600;
+/// Harvest sites this close together form one field.
+const FIELD_RADIUS: f64 = 16.0;
+/// Camps this close to a field hold it.
+pub(super) const GUARD_RADIUS: f64 = 24.0;
+
+/// The next field to claim (any race, from its data): the cheapest drop-off that trains
+/// workers and declares the good gathered around it (`storage.gathering`), once the known
+/// sources of that good near the colony's drop-offs run low. The field is the nearest
+/// reachable one away from the colony's drop-offs, every other start and known enemy
+/// buildings, and not seen spent, counting the strength of the camps that hold it as
+/// distance; the hall waits until the army has cleared them.
+pub(super) fn expansion(
+    f: &super::frame::Frame,
+    camps: &BTreeMap<String, super::state::CampMemory>,
+) -> Option<Expansion> {
+    let catalog = f.catalog();
+    let builds: Vec<&Id> = f
+        .workers
+        .iter()
+        .flat_map(|&w| {
+            f.def(f.at(w))
+                .behaviors
+                .work
+                .iter()
+                .flat_map(|work| &work.builds)
+        })
+        .collect();
+    let trains_worker = |d: &Definition| {
+        d.behaviors.production.as_ref().is_some_and(|prod| {
+            prod.outputs.iter().any(|id| {
+                f.find(id.as_str())
+                    .is_some_and(|o| catalog.get(o).behaviors.work.is_some())
+            })
+        })
+    };
+    let (hall, gathering) = builds
+        .iter()
+        .filter_map(|id| f.find(id.as_str()))
+        .filter_map(|d| {
+            let dd = catalog.get(d);
+            let storage = dd.behaviors.storage.as_ref()?;
+            (storage.dropoff == Some(true) && trains_worker(dd))
+                .then_some((d, storage.gathering.as_ref()?))
+        })
+        .min_by_key(|&(d, _)| {
+            (
+                items(catalog.get(d)).iter().map(|c| c.amount).sum::<u32>(),
+                d,
+            )
+        })?;
+    let source = f
+        .find(gathering.item.as_str())
+        .and_then(|i| harvest_source(catalog.get(i)))
+        .and_then(|s| f.find(s.as_str()))?;
+    let reach = gathering.radius;
+    if f.buildings
+        .iter()
+        .any(|&i| f.at(i).construction && f.at(i).def == hall)
+    {
+        return None;
+    }
+    let halls: Vec<Pt> = f
+        .buildings
+        .iter()
+        .map(|&i| f.at(i))
+        .filter(|b| {
+            f.def(b)
+                .behaviors
+                .storage
+                .as_ref()
+                .is_some_and(|s| s.dropoff == Some(true) && s.accepts.contains(&gathering.item))
+        })
+        .map(|b| b.p)
+        .collect();
+    let near_hall = |p: Pt| halls.iter().any(|&h| dist(h, p) < reach);
+    let remaining: u32 = f
+        .resources
+        .iter()
+        .map(|&i| f.at(i))
+        .filter(|r| r.def == source && near_hall(r.p))
+        .filter_map(|r| r.resource.map(|r| r.amount))
+        .sum();
+    let gatherers = f
+        .workers
+        .iter()
+        .map(|&i| f.at(i))
+        .filter(|w| {
+            matches!(f.order(w), Some(Order::Gather { target })
+                if f.get(target.0).is_some_and(|r| r.def == source))
+        })
+        .count() as u32;
+    if remaining >= EXPANSION_RESERVE_PER_GATHERER * gatherers.max(8) {
+        return None;
+    }
+    // Fields: each harvest site joins the first field whose middle is near, in map order.
+    let mut fields: Vec<(f64, f64, u32)> = Vec::new();
+    for r in f.geo.resources.iter().filter(|r| r.definition == source) {
+        let joined = fields.iter_mut().find(|(x, y, n)| {
+            let middle = Pt::new(*x / f64::from(*n), *y / f64::from(*n));
+            dist(middle, r.point) < FIELD_RADIUS
+        });
+        match joined {
+            Some((x, y, n)) => {
+                *x += r.point.x;
+                *y += r.point.y;
+                *n += 1;
+            }
+            None => fields.push((r.point.x, r.point.y, 1)),
+        }
+    }
+    let enemy_buildings: Vec<Pt> = f
+        .all
+        .iter()
+        .filter(|e| {
+            e.owner != Owner::Nobody
+                && e.owner != f.me
+                && e.hostile != Some(false)
+                && f.def(e).kind == Kind::Building
+                && e.alive()
+        })
+        .map(|e| e.p)
+        .collect();
+    let spent = |p: Pt| {
+        f.visible(p)
+            && !f.resources.iter().map(|&i| f.at(i)).any(|r| {
+                r.def == source
+                    && dist(r.p, p) < FIELD_RADIUS
+                    && r.resource.is_some_and(|r| r.amount > 0)
+            })
+    };
+    let guard = |p: Pt| -> f64 {
+        f.geo
+            .camps
+            .iter()
+            .filter(|c| {
+                dist(c.point, p) < GUARD_RADIUS
+                    && camps
+                        .get(&c.id)
+                        .is_none_or(|m| m.status != super::state::CampStatus::Cleared)
+            })
+            .map(|c| {
+                c.composition
+                    .iter()
+                    .map(|&d| f.nominal_power(f.definition(d), None, None, None, None))
+                    .sum::<f64>()
+            })
+            .sum()
+    };
+    fields
+        .into_iter()
+        .map(|(x, y, n)| Pt::new(x / f64::from(n), y / f64::from(n)))
+        .filter(|&p| {
+            !near_hall(p)
+                && f.geo.connected(f.home, p)
+                && !f
+                    .geo
+                    .starts
+                    .iter()
+                    .any(|&s| dist(s, f.home) > 24.0 && dist(s, p) < reach)
+                && !enemy_buildings.iter().any(|&b| dist(b, p) < reach)
+                && !spent(p)
+        })
+        .map(|p| (p, guard(p)))
+        .min_by(|a, b| {
+            let score = |(p, g): (Pt, f64)| dist(p, f.home) + g * 0.6;
+            score(*a)
+                .total_cmp(&score(*b))
+                .then(a.0.x.total_cmp(&b.0.x))
+                .then(a.0.y.total_cmp(&b.0.y))
+        })
+        .map(|(point, guard)| Expansion { hall, point, guard })
+}
+
+/// Claims the next field (see [`expansion`]): a worker walks out to see it, and once it is
+/// in sight and clear of hostiles the hall goes up beside it, nearest home first.
+fn expand(p: &mut Planner, e: Expansion) -> bool {
+    let f = p.b.f;
+    let d = f.definition(e.hall);
+    if !f.can_afford(d, &[]) || f.buildings.iter().any(|&i| f.at(i).construction) {
+        return false;
+    }
+    // Camp creatures or enemies holding it are the army's to clear first (strategy).
+    if e.guard > 0.0 || f.hostiles.iter().any(|&h| dist(f.at(h).p, e.point) < 20.0) {
+        return false;
+    }
+    let Some(worker) = p.builder(d) else {
+        return false;
+    };
+    if !f.visible(e.point) {
+        if p.b
+            .s
+            .inspected
+            .get("economy:expansion")
+            .is_some_and(|&t| t > f.tick)
+        {
+            return false;
+        }
+        let Some(index) = f.index_of(worker) else {
+            return false;
+        };
+        let destination = f.nearest_safe(e.point, &[index]);
+        if p.emit(
+            Action::Move {
+                actors: vec![worker],
+                destination: f.geo.cell_point(destination),
+                attack_move: None,
+                append: None,
+            },
+            "Send a worker to see the next field",
+        ) {
+            p.b.s
+                .inspected
+                .insert("economy:expansion".into(), f.tick + 1600);
+            return true;
+        }
+        return false;
+    }
+    let half = d
+        .footprint
+        .as_ref()
+        .map_or(0.0, |fp| f64::from(fp.width.max(fp.depth)) / 2.0);
+    let compass = f.geo.compass(f.home);
+    // The nearest ring the field's clearance allows, on the side facing home first.
+    for ring in 0..6 {
+        let radius = half + 8.0 + f64::from(ring) * 3.0;
+        let mut sites: Vec<(f64, Pt)> = (0..32)
+            .map(|k| {
+                let (x, y) = compass.direction(k, 32);
+                let q = Pt::new(e.point.x + x * radius, e.point.y + y * radius);
+                // Centimetres: equal distances stay in the compass's order.
+                ((dist(q, f.home) * 100.0).round(), q)
+            })
+            .collect();
+        sites.sort_by(|a, b| a.0.total_cmp(&b.0));
+        for &(_, cursor) in &sites {
+            if let Some(action) = p.site(e.hall, worker, cursor) {
+                return p.emit(action, "Expand to a new field");
+            }
+        }
     }
     false
 }
@@ -953,8 +1207,38 @@ fn run(p: &mut Planner) {
         definitions.iter().any(|x| needs(&x.requires))
             || content.rules.research.values().any(|r| needs(&r.requires))
     };
-    let payable = |costs: &[Cost]| costs.iter().all(|c| f.balance(c.item.as_str()) >= c.amount);
     let threatened = f.hostiles.iter().any(|&i| dist(f.at(i).p, f.home) < 32.0);
+    // A colony without a well (lost, or never built) puts one back as soon as a free
+    // deposit is safe and home is quiet, whatever its army: it cannot advance without one
+    // (D62).
+    if workers.len() as u32 >= w.minimum
+        && !threatened
+        && !buildings.iter().any(|b| f.def(b).placement_on.is_some())
+        && wells(p, &defs, army.len())
+    {
+        return;
+    }
+    // A colony whose fields run low claims the next one before anything else; the goods
+    // for the hall are kept from recruits meanwhile.
+    if let Some(e) = expansion(f, &p.b.s.camps) {
+        if expand(p, e) {
+            return;
+        }
+        for c in items(catalog.get(e.hall)) {
+            add_max(&mut promised, &c.item, c.amount);
+        }
+    }
+    // Upgrades and research leave the goods promised to queued training and a wanted
+    // hall alone.
+    let payable = |costs: &[Cost]| {
+        costs.iter().all(|c| {
+            let held = promised
+                .iter()
+                .find(|(i, _)| *i == c.item)
+                .map_or(0, |(_, n)| *n);
+            f.balance(c.item.as_str()) >= c.amount + held
+        })
+    };
     // Invest only after a fighting force exists and no observed enemy threatens home.
     if army.len() >= 4 && workers.len() as u32 >= w.minimum && !threatened {
         if let (Some(r), Some(t)) = (recruit, trainer) {
@@ -1036,18 +1320,24 @@ fn run(p: &mut Planner) {
                 }
             }
         }
+        // Advanced production comes before research: a missing one the colony cannot pay
+        // for yet is saved for instead of researching (research would spend the scarce
+        // good it waits on).
+        let mut saving = false;
         for &d in &producers {
             let dd = catalog.get(d);
             if dd.requires.as_ref().is_some_and(|r| !r.is_empty())
                 && f.available(dd.requires.as_deref())
                 && !buildings.iter().any(|b| b.def == d)
-                && p.build(
+            {
+                if p.build(
                     d,
                     &format!("Unlock advanced production at {}", dd.name),
                     f.home,
-                )
-            {
-                return;
+                ) {
+                    return;
+                }
+                saving |= !f.can_afford(dd, &promised);
             }
         }
         // The research building: one that only researches (halls and barracks research
@@ -1079,7 +1369,7 @@ fn run(p: &mut Planner) {
             .collect();
         // One research at a time across the colony, so a race with many research
         // buildings still spends on its army first.
-        for b in ready.iter().filter(|_| pending.is_empty()) {
+        for b in ready.iter().filter(|_| pending.is_empty() && !saving) {
             let Some(queue) = f.own_entity(b).and_then(|e| e.research.as_ref()) else {
                 continue;
             };

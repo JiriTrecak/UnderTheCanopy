@@ -64,6 +64,58 @@ pub fn dist(a: Pt, b: Pt) -> f64 {
     (dx * dx + dy * dy).sqrt()
 }
 
+/// A base's own frame for site searches: `front` points from home to the middle of the
+/// map's starts, and `hand` turns the first sidesteps away from home's nearest resource.
+/// Searches stepping through it reach the same sites at every start of a mirrored or
+/// rotated map, where fixed world directions (east first, rows from the top) favoured
+/// some starts over others.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Compass {
+    front: (f64, f64),
+    hand: f64,
+}
+
+impl Compass {
+    /// The frame of a base at `home` facing `middle`, its first sidesteps turning away
+    /// from `resource` (the nearest), so mirrored starts turn the mirrored way.
+    pub fn facing(home: Pt, middle: Pt, resource: Option<Pt>) -> Self {
+        let (dx, dy) = (middle.x - home.x, middle.y - home.y);
+        let d = (dx * dx + dy * dy).sqrt();
+        let front = if d < 1.0 {
+            (1.0, 0.0)
+        } else {
+            (dx / d, dy / d)
+        };
+        let cross = resource.map_or(0.0, |r| front.0 * (r.y - home.y) - front.1 * (r.x - home.x));
+        Compass {
+            front,
+            hand: if cross > 0.0 { -1.0 } else { 1.0 },
+        }
+    }
+
+    /// The unit direction of step `k` of `n` around the circle, in the order front,
+    /// one step to the hand side, one step to the other, two steps, and so on.
+    pub fn direction(self, k: u32, n: u32) -> (f64, f64) {
+        self.turn(Self::step(k, n))
+    }
+
+    /// The angle (radians, towards the hand side when positive) of step `k` of `n`.
+    pub fn step(k: u32, n: u32) -> f64 {
+        let n = n.max(1);
+        let k = k % n;
+        let side = if k % 2 == 1 { 1.0 } else { -1.0 };
+        f64::from(k.div_ceil(2)) * side * std::f64::consts::TAU / f64::from(n)
+    }
+
+    /// The front turned by `angle` radians towards the hand side.
+    pub fn turn(self, angle: f64) -> (f64, f64) {
+        let angle = angle * self.hand;
+        let (c, s) = (crate::math::cos(angle), crate::math::sin(angle));
+        let (x, y) = self.front;
+        (x * c - y * s, x * s + y * c)
+    }
+}
+
 /// A neutral camp the map shows: where it is and who guards it.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CampSite {
@@ -195,6 +247,26 @@ impl Geography {
 
     pub fn layered(&self) -> bool {
         self.terrain.surfaces().is_some()
+    }
+
+    /// The search frame of a base at `home` (see [`Compass`]).
+    pub fn compass(&self, home: Pt) -> Compass {
+        let n = self.starts.len().max(1) as f64;
+        let middle = if self.starts.len() > 1 {
+            Pt::new(
+                self.starts.iter().map(|s| s.x).sum::<f64>() / n,
+                self.starts.iter().map(|s| s.y).sum::<f64>() / n,
+            )
+        } else {
+            let c = f64::from(self.size) / 2.0;
+            Pt::new(c, c)
+        };
+        let resource = self
+            .resources
+            .iter()
+            .map(|r| r.point)
+            .min_by(|a, b| dist(*a, home).total_cmp(&dist(*b, home)));
+        Compass::facing(home, middle, resource)
     }
 
     /// The cell of a point, halves rounded up; may run into the next row at the edge as
@@ -329,4 +401,33 @@ fn ground_regions(terrain: &Terrain) -> Vec<u32> {
         }
     }
     regions
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Mirrored and rotated starts search the mirrored and rotated sites in the same
+    /// order, so no start of a symmetric map is favoured.
+    #[test]
+    fn mirrored_starts_search_mirrored_sites() {
+        let close =
+            |a: (f64, f64), b: (f64, f64)| (a.0 - b.0).abs() < 1e-9 && (a.1 - b.1).abs() < 1e-9;
+        let middle = Pt::new(300.0, 200.0);
+        // Mirrored across x = 300: the resource sits below both halls.
+        let west = Compass::facing(Pt::new(100.0, 200.0), middle, Some(Pt::new(104.0, 176.0)));
+        let east = Compass::facing(Pt::new(500.0, 200.0), middle, Some(Pt::new(496.0, 176.0)));
+        // Turned half round the middle.
+        let south = Compass::facing(Pt::new(300.0, 0.0), middle, Some(Pt::new(276.0, 4.0)));
+        let north = Compass::facing(Pt::new(300.0, 400.0), middle, Some(Pt::new(324.0, 396.0)));
+        for k in 0..32 {
+            let (w, e) = (west.direction(k, 32), east.direction(k, 32));
+            assert!(close(w, (-e.0, e.1)), "step {k}: {w:?} mirrors {e:?}");
+            let (s, n) = (south.direction(k, 32), north.direction(k, 32));
+            assert!(close(s, (-n.0, -n.1)), "step {k}: {s:?} turns into {n:?}");
+        }
+        // The first sidestep turns away from the resource.
+        let side = west.direction(1, 32);
+        assert!(side.1 > 0.0, "{side:?}");
+    }
 }

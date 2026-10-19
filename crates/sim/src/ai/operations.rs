@@ -358,6 +358,8 @@ pub fn strategy(b: &mut Beat) {
         })
         .collect();
     let xp_needed = s.plan.hero_xp_needed;
+    // The field the economy wants next: camps holding it are worth clearing.
+    let field = super::economy::expansion(f, &s.camps);
     struct Candidate<'c> {
         site: &'c super::geography::CampSite,
         strength: f64,
@@ -418,7 +420,8 @@ pub fn strategy(b: &mut Beat) {
                 let unlocks =
                     f.geo.resources.iter().any(|r| {
                         contested.contains(&r.definition) && dist(r.point, c.point) < 16.0
-                    });
+                    }) || field
+                        .is_some_and(|e| dist(e.point, c.point) < super::economy::GUARD_RADIUS);
                 let empty = s
                     .camps
                     .get(&c.id)
@@ -461,16 +464,61 @@ pub fn strategy(b: &mut Beat) {
         .filter(|e| f.def(e).placement_on.is_some())
         .collect();
     let guarded = |e: &Known| enemy_army(e.p);
-    if well_less
+    // A colony that wants a further well while the enemy holds every other deposit
+    // contests one once its army is as large as the stage of the match asks and a match
+    // for what guards it.
+    let own_wells = f
+        .buildings
+        .iter()
+        .filter(|&&i| f.def(f.at(i)).placement_on.is_some())
+        .count();
+    let deposits = f
+        .geo
+        .resources
+        .iter()
+        .filter(|r| {
+            catalog
+                .get(r.definition)
+                .harvesting
+                .as_ref()
+                .is_some_and(|h| h.needs_building())
+        })
+        .count();
+    let wanted_wells = (1 + f.army.len() / super::economy::SOLDIERS_PER_WELL).min(deposits);
+    let held = |r: &super::geography::ResourceSite| {
+        f.all
+            .iter()
+            .any(|b| b.alive() && dist(b.p, r.point) < 0.01 && f.def(b).placement_on.is_some())
+    };
+    let all_held = f
+        .geo
+        .resources
+        .iter()
+        .filter(|r| {
+            catalog
+                .get(r.definition)
+                .harvesting
+                .as_ref()
+                .is_some_and(|h| h.needs_building())
+        })
+        .all(held);
+    let contest =
+        !well_less && own_wells < wanted_wells && all_held && f.army.len() as u32 >= wanted;
+    if (well_less || contest)
         && f.army.len() as u32 >= rules.army.minimum
         && let Some(target) = wells
             .iter()
             .copied()
             .min_by(|a, b| guarded(a).total_cmp(&guarded(b)).then(a.id.cmp(&b.id)))
-        && (power >= guarded(target) * 0.8 || f.army.len() as u32 >= wanted)
+        && (power >= guarded(target) * if contest { 1.0 } else { 0.8 }
+            || (well_less && f.army.len() as u32 >= wanted))
     {
         assault(s, target);
-        s.plan.reason = "Break an enemy well to free its deposit".into();
+        s.plan.reason = if contest {
+            "Contest a deposit the enemy holds".into()
+        } else {
+            "Break an enemy well to free its deposit".into()
+        };
         return;
     }
     if let Some(&target) = buildings.first()
@@ -566,12 +614,14 @@ pub fn operations(b: &mut Beat) {
     let home = f.home;
     let near = |a: &Known, d: f64| f.hostiles.iter().any(|&h| dist(f.at(h).p, a.p) < d);
     let army: Vec<&Known> = f.army.iter().map(|&i| f.at(i)).collect();
-    // Wells out on their deposits are part of the economy too: raiders there are threats.
+    // Wells out on their deposits and halls at further fields are part of the economy
+    // too: raiders there are threats.
     let wells: Vec<Pt> = f
         .buildings
         .iter()
         .map(|&i| f.at(i))
         .filter(|b| f.def(b).placement_on.is_some())
+        .chain(f.stores.iter().map(|&i| f.at(i)))
         .map(|b| b.p)
         .collect();
     let threats: Vec<&Known> = f

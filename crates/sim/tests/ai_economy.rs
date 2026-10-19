@@ -197,3 +197,49 @@ fn a_networked_colony_builds_inside_its_network_and_its_well_on_the_deposit() {
     let m = memory(&world, 0);
     assert_eq!(m.metrics.rejected, 0, "{:?}", m.trace);
 }
+
+#[test]
+fn a_colony_whose_field_runs_low_builds_a_hall_at_the_next_field() {
+    let far = vec![
+        place_for("far-1", MINE, "none", 113.5, 53.5),
+        place_for("far-2", MINE, "none", 121.5, 53.5),
+    ];
+    let mut world = world(&skirmish(far, vec![]), false);
+    // The home field is nearly spent.
+    for e in world.state_mut().entities.iter_mut() {
+        if matches!(e.placement.as_deref(), Some("mine-1" | "mine-2"))
+            && let Some(r) = e.resource.as_mut()
+        {
+            r.amount = 400;
+        }
+    }
+    let field = (117.5, 53.5);
+    let at_field = |w: &World, id: u32| {
+        let p = get(w, id).position;
+        let (dx, dy) = (
+            f64::from(p.x) / 1000.0 - field.0,
+            f64::from(p.y) / 1000.0 - field.1,
+        );
+        complete(w, id) && dx * dx + dy * dy < 30.0 * 30.0
+    };
+    for _ in 0..20_000 {
+        if all_of(&world, P1, HALL)
+            .iter()
+            .any(|&h| at_field(&world, h))
+        {
+            break;
+        }
+        world.step();
+    }
+    let m = memory(&world, 0);
+    assert!(
+        all_of(&world, P1, HALL)
+            .iter()
+            .any(|&h| at_field(&world, h)),
+        "a second hall stands at the far field: {:?} {:?} {:?}",
+        world.state().outcome,
+        world.tick(),
+        m.trace
+    );
+    assert_eq!(m.metrics.rejected, 0, "{:?}", m.trace);
+}

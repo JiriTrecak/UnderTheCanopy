@@ -363,8 +363,12 @@ fn score(
                         } else {
                             -10.0
                         };
+                        // Buffs and shields on allies (and anything on oneself) are worth
+                        // their mana only with a threat near; out of a fight they would
+                        // spend what the next fight needs.
                         if friendly
-                            && spell.targeting.kind == TargetingKind::Caster
+                            && (spell.targeting.kind == TargetingKind::Caster
+                                || s.polarity == Polarity::Positive)
                             && !near_threats
                         {
                             benefit = 0.0;

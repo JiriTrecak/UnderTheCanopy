@@ -154,15 +154,23 @@ pub fn placeable(f: &Frame, def: Def, p: Pt, rotation: i32) -> bool {
     if !geo.connected(f.home, door) || geo.index(door).is_some_and(|i| f.blocked(i)) {
         return false;
     }
-    // Outposts check a local approach: a home-centred flood would reject every remote
-    // resource site.
-    let approach = if d.placement_near.is_some() {
-        f.nearest_safe(Pt::new(p.x, p.y + 12.0), &[])
+    // Outposts and sites far from home (a hall at a further field) check a local approach
+    // from the side facing home: a home-centred flood would reject every remote site.
+    let remote = d.placement_near.is_some() || dist(p, f.home) > REMOTE_SITE;
+    let approach = if remote {
+        let (dx, dy) = (f.home.x - p.x, f.home.y - p.y);
+        let d = (dx * dx + dy * dy).sqrt().max(1.0);
+        let reach = extent.width.max(extent.depth) / 2.0 + 4.0;
+        f.nearest_safe(Pt::new(p.x + dx / d * reach, p.y + dy / d * reach), &[])
     } else {
         f.home
     };
-    door_reachable(f, &cells, approach, door, d.placement_near.is_some())
+    door_reachable(f, &cells, approach, door, remote)
 }
+
+/// Sites farther than this from home check their doorway from nearby: the home-centred
+/// flood reaches about this far.
+const REMOTE_SITE: f64 = 40.0;
 
 /// Whether the footprint keeps out of every known resource's construction clearance.
 fn resource_clear(f: &Frame, candidate: &CellBounds) -> bool {

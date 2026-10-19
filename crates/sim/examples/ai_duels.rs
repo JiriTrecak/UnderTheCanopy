@@ -6,6 +6,13 @@
 //!     [--minutes 60] [--races ants,beetles] [--maps echo-isles,amberleaf-crossing] [--log]
 //! ```
 //!
+//! `--swap` trades the two starts' places, so player 1 starts where player 2 would: it
+//! tells a seat bias (player order) from a map one (start positions).
+//!
+//! `--mirror-camps 1|2` makes the creeps fair: every camp on the other start's side
+//! becomes the mirror image of its partner on that start's side (a mirror across the
+//! starts' midline when they share a row, else a point mirror about their midpoint).
+//!
 //! `--log` also prints each player's milestones: when each kind of building first stands
 //! complete and when each research finishes.
 //!
@@ -28,6 +35,8 @@ struct Args {
     races: [Option<String>; 2],
     maps: Vec<String>,
     log: bool,
+    swap: bool,
+    mirror_camps: Option<usize>,
 }
 
 fn args() -> Result<Args, String> {
@@ -38,6 +47,8 @@ fn args() -> Result<Args, String> {
         races: [None, None],
         maps: Vec::new(),
         log: false,
+        swap: false,
+        mirror_camps: None,
     };
     let mut it = std::env::args().skip(1);
     while let Some(flag) = it.next() {
@@ -53,6 +64,14 @@ fn args() -> Result<Args, String> {
             }
             "--maps" => out.maps = value()?.split(',').map(|m| m.trim().to_string()).collect(),
             "--log" => out.log = true,
+            "--swap" => out.swap = true,
+            "--mirror-camps" => {
+                out.mirror_camps = Some(
+                    value()?
+                        .parse()
+                        .map_err(|e| format!("--mirror-camps: {e}"))?,
+                )
+            }
             other => return Err(format!("unknown option {other}")),
         }
     }
@@ -74,16 +93,73 @@ fn farthest(map: &UtcMap) -> [u8; 2] {
     best.1
 }
 
+/// Replaces the camps nearer the other start with mirror images of those nearer start
+/// `side` (one-based, of the two kept starts).
+fn mirror(map: &mut UtcMap, side: usize) {
+    let [a, b] = [&map.player_starts[0], &map.player_starts[1]];
+    let (keep, other) = if side == 1 { (a, b) } else { (b, a) };
+    let (keep, other) = ((keep.x, keep.z), (other.x, other.z));
+    let (cx, cz) = ((keep.0 + other.0) / 2.0, (keep.1 + other.1) / 2.0);
+    let row = (keep.1 - other.1).abs() < 1.0;
+    let flip = |x: f64, z: f64| {
+        if row {
+            (2.0 * cx - x, z)
+        } else {
+            (2.0 * cx - x, 2.0 * cz - z)
+        }
+    };
+    let d = |p: (f64, f64), q: (f64, f64)| (p.0 - q.0).hypot(p.1 - q.1);
+    let ours = |c: &canopy_content::placement::Camp| {
+        let h = (c.home.x, c.home.y);
+        d(h, keep) + 1.0 < d(h, other)
+    };
+    let sources: Vec<canopy_content::placement::Camp> =
+        map.camps.iter().filter(|c| ours(c)).cloned().collect();
+    let mut removed = std::collections::BTreeSet::new();
+    let mut added = Vec::new();
+    for camp in map.camps.iter_mut().filter(|c| !ours(c)) {
+        let m = flip(camp.home.x, camp.home.y);
+        let Some(partner) = sources
+            .iter()
+            .min_by(|p, q| d((p.home.x, p.home.y), m).total_cmp(&d((q.home.x, q.home.y), m)))
+            .filter(|p| d((p.home.x, p.home.y), m) < 12.0)
+        else {
+            continue;
+        };
+        removed.extend(camp.members.iter().cloned());
+        let mut members = Vec::new();
+        for id in &partner.members {
+            let Some(e) = map.entities.iter().find(|e| &e.id == id) else {
+                continue;
+            };
+            let mut e = e.clone();
+            (e.position.x, e.position.y) = flip(e.position.x, e.position.y);
+            e.id = format!("{}.mirrored", e.id);
+            members.push(e.id.clone());
+            added.push(e);
+        }
+        let id = camp.id.clone();
+        *camp = partner.clone();
+        camp.id = id;
+        (camp.home.x, camp.home.y) = flip(partner.home.x, partner.home.y);
+        camp.members = members;
+    }
+    map.entities.retain(|e| !removed.contains(&e.id));
+    map.entities.extend(added);
+}
+
 struct Duel {
     map: String,
     seed: u32,
     ticks: u32,
     winner: Option<u8>,
+    /// Per player: the starting hero.
+    started: [String; 2],
     /// Per player: units trained by definition.
     trained: [BTreeMap<String, u32>; 2],
     /// Per player: (minute, what) as buildings first stand complete and research finishes.
     milestones: [Vec<(f64, String)>; 2],
-    /// Every two minutes, per player: workers, army units, the army's cost, banked goods.
+    /// Every two minutes (or `DUEL_EVERY` seconds), per player and keyed by second: workers, army units, the army's cost, banked goods.
     snapshots: Vec<(u32, [String; 2])>,
     /// Per player: how often the AI decided each thing.
     decisions: [BTreeMap<String, u32>; 2],
@@ -104,10 +180,20 @@ fn duel(
     seed: u32,
     cap: u32,
     races: &[Option<String>; 2],
+    swap: bool,
+    mirror_camps: Option<usize>,
 ) -> Duel {
     let pair = farthest(map);
     let mut map = map.clone();
     map.player_starts.retain(|s| pair.contains(&s.player));
+    if let Some(side) = mirror_camps {
+        mirror(&mut map, side);
+    }
+    if swap && let [a, b] = map.player_starts.as_mut_slice() {
+        std::mem::swap(&mut a.x, &mut b.x);
+        std::mem::swap(&mut a.z, &mut b.z);
+        std::mem::swap(&mut a.rotation, &mut b.rotation);
+    }
     let players: Vec<u8> = map.player_starts.iter().map(|s| s.player - 1).collect();
     let setup = MatchSetup {
         seed,
@@ -129,6 +215,10 @@ fn duel(
     let mut trained: [BTreeMap<String, u32>; 2] = Default::default();
     let mut milestones: [Vec<(f64, String)>; 2] = Default::default();
     let mut built: [std::collections::BTreeSet<String>; 2] = Default::default();
+    // Main halls seen standing, by entity id (the first one is the start's).
+    let mut halls: [std::collections::BTreeSet<u32>; 2] = Default::default();
+    // The hero each side starts with.
+    let mut started: [String; 2] = Default::default();
     let mut learned: [usize; 2] = [0, 0];
     let mut snapshots = Vec::new();
     // Every AI decision of the match, counted by reason (and refusals).
@@ -144,6 +234,11 @@ fn duel(
     let mut network = [(0u32, 0u32, 0u32); 2];
     let mut goods: [BTreeMap<String, (u32, u32)>; 2] = Default::default();
     let mut next_fact = 0;
+    // Snapshot interval: two minutes, or DUEL_EVERY seconds.
+    let every: u32 = std::env::var("DUEL_EVERY")
+        .ok()
+        .and_then(|v| v.parse::<u32>().ok())
+        .map_or(4800, |s| (s * 40).max(40));
     let side_of = |o: canopy_content::placement::Owner| match o {
         canopy_content::placement::Owner::Player(p) => players.iter().position(|&x| x == p),
         canopy_content::placement::Owner::Nobody => None,
@@ -281,19 +376,37 @@ fn duel(
                 };
                 let side = players.iter().position(|&x| x == p).unwrap_or(0);
                 let id = world.catalog().id(e.definition).to_string();
-                if e.unit.is_some() && seen.insert(e.id.0) && tick > 0 {
-                    *trained[side].entry(id.clone()).or_default() += 1;
+                if e.unit.is_some() && seen.insert(e.id.0) {
+                    if tick > 0 {
+                        *trained[side].entry(id.clone()).or_default() += 1;
+                    } else if world.catalog().get(e.definition).is_hero() {
+                        started[side] = id.rsplit('.').next().unwrap_or("").to_string();
+                    }
                 }
                 if e.unit.is_none()
                     && e.construction.is_none()
                     && e.hp.is_some_and(|hp| hp > 0)
                     && tick > 0
-                    && built[side].insert(id.clone())
                 {
-                    milestones[side].push((f64::from(tick) / 2400.0, id));
+                    if built[side].insert(id.clone()) {
+                        halls[side].insert(e.id.0);
+                        milestones[side].push((f64::from(tick) / 2400.0, id));
+                    } else if world
+                        .catalog()
+                        .get(e.definition)
+                        .behaviors
+                        .storage
+                        .as_ref()
+                        .is_some_and(|s| s.dropoff == Some(true) && s.gathering.is_some())
+                        && halls[side].insert(e.id.0)
+                    {
+                        // A further main hall: an expansion.
+                        milestones[side]
+                            .push((f64::from(tick) / 2400.0, format!("{id} (another)")));
+                    }
                 }
             }
-            if tick % 4800 == 0 && tick > 0 {
+            if tick % every == 0 && tick > 0 {
                 let catalog = world.catalog();
                 let line = |p: u8| {
                     let owner = canopy_content::placement::Owner::Player(p);
@@ -403,7 +516,7 @@ fn duel(
                 };
                 let [l0, l1] = [line(players[0]), line(players[1])];
                 snapshots.push((
-                    tick / 2400,
+                    tick / 40,
                     [
                         format!("{l0} lost to creeps/players {:?}", losses[0]),
                         format!("{l1} lost {:?}", losses[1]),
@@ -442,6 +555,7 @@ fn duel(
         seed,
         ticks,
         winner,
+        started,
         trained,
         milestones,
         snapshots,
@@ -475,7 +589,8 @@ fn main() -> Result<(), String> {
             .map(|(m, seed)| {
                 let content = content.clone();
                 let races = &args.races;
-                s.spawn(move || duel(content, m, seed, cap, races))
+                let (swap, mirror_camps) = (args.swap, args.mirror_camps);
+                s.spawn(move || duel(content, m, seed, cap, races, swap, mirror_camps))
             })
             .collect();
         handles
@@ -503,7 +618,12 @@ fn main() -> Result<(), String> {
                 .iter()
                 .map(|(id, n)| format!("{}×{n}", id.rsplit('.').next().unwrap_or(id)))
                 .collect();
-            println!("    player {}: {}", side + 1, list.join(" "));
+            println!(
+                "    player {} ({}): {}",
+                side + 1,
+                r.started[side],
+                list.join(" ")
+            );
             let goods: Vec<String> = r.goods[side]
                 .iter()
                 .map(|(id, (got, spent))| {
@@ -537,7 +657,13 @@ fn main() -> Result<(), String> {
                 println!("    player {} decisions: {}", side + 1, list.join("; "));
             }
             for (minute, sides) in &r.snapshots {
-                println!("    {minute:>3} min: {} | {}", sides[0], sides[1]);
+                println!(
+                    "    {:>2}:{:02}: {} | {}",
+                    minute / 60,
+                    minute % 60,
+                    sides[0],
+                    sides[1]
+                );
             }
         }
     }

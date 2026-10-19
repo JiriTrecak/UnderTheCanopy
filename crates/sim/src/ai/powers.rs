@@ -125,8 +125,10 @@ pub fn ability_actions(b: &mut Beat) {
         }
         let level = f.stats(k).map_or(1, |s| s.level);
         let rank_of = |index: usize| caster_state.ranks.get(index).copied().unwrap_or(0);
-        // Learn through the ordinary command: newly unlocked ranks first, then breadth,
-        // then the order the hero lists its abilities in; no ability names in the planner.
+        // Learn through the ordinary command: breadth first (an ability not yet known,
+        // the one unlocked latest first, so an ultimate comes as soon as it may), then
+        // newly unlocked ranks, then the order the hero lists its abilities in; no ability
+        // names in the planner.
         let spent: u32 = policy
             .bindings
             .iter()
@@ -142,7 +144,9 @@ pub fn ability_actions(b: &mut Beat) {
                 (d.allows(Control::Ai) && required <= level).then_some((index, d, required))
             })
             .min_by(|a, b| {
-                b.2.cmp(&a.2)
+                (rank_of(b.0) == 0)
+                    .cmp(&(rank_of(a.0) == 0))
+                    .then(b.2.cmp(&a.2))
                     .then(rank_of(a.0).cmp(&rank_of(b.0)))
                     .then(a.0.cmp(&b.0))
             });
