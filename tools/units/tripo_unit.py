@@ -9,7 +9,8 @@ one GLB with the skeleton and every clip. Here:
   meshes skinned to the rig are kept and measured (the cook refuses a model that floats);
 - the team colour becomes a mask in the base colour's alpha: the concepts' royal-blue plates;
 - Tripo's clips are renamed to the game's animation semantics (idle, walk, run, attack, hit,
-  death, cast, ...) and the attack clip gets its contact event;
+  death, cast, ...) and the attack clip gets its contact event; every clip but death plays in
+  place (tools/units/tripo_in_place.py: their root motion would carry the model off its unit);
 - the asset is written with tools/buildings/kit.py's exporter.
 
 spec.json: {"glb": path, "name": "beetles-bolter", "title": "Bolter", "height": 2.0,
@@ -24,6 +25,9 @@ import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'buildings'))
 import kit  # noqa: E402
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from tripo_in_place import in_place  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SPEC = json.load(open(sys.argv[sys.argv.index('--') + 1]))
@@ -203,6 +207,9 @@ for semantic, act in keep.items():
         at = event_frames.get('cast', (end - start) * 0.5)
         events = [{'name': 'cast', 'time': round(at / kit.FPS, 3)}]
     animations.append({'semantic': semantic, 'clip': semantic, 'loop': semantic in LOOPS, 'events': events})
+
+# Tripo's presets carry root motion; the game moves the unit, so every clip plays in place.
+in_place(rig)
 
 faces = sum(len(o.data.polygons) for o in meshes)
 print('faces', faces)

@@ -109,6 +109,8 @@ struct Rerun {
     me: Option<u8>,
     kind: MatchKind,
     origin: Origin,
+    /// Palette colours by player number, when not their own (skirmish).
+    colors: Option<Vec<usize>>,
 }
 
 struct Loading {
@@ -657,7 +659,7 @@ impl Game {
             camera: None,
             groups: None,
             start_tick: 0,
-            colors: None,
+            colors: rerun.colors.clone(),
             watching: None,
         };
         // A restart plays the same scenario again: map, players, teams and seed (old
@@ -669,7 +671,7 @@ impl Game {
             me: rerun.me,
             resume: None,
             session: None,
-            colors: None,
+            colors: rerun.colors.clone(),
             replay: None,
             map_path: None,
         }));
@@ -691,6 +693,7 @@ impl Game {
             setup,
             kind: MatchKind::Skirmish,
             origin: Origin::Skirmish,
+            colors: self.skirmish.colors(),
         });
     }
 
@@ -730,6 +733,7 @@ impl Game {
             origin: Origin::Missions {
                 campaign: campaign.to_string(),
             },
+            colors: None,
         });
     }
 
@@ -769,6 +773,7 @@ impl Game {
             me: meta.player,
             kind,
             origin: origin.clone(),
+            colors: None,
         });
         let start = PendingStart {
             kind,
@@ -1418,10 +1423,15 @@ impl Game {
                     }
                 }
             }
-            "skirmish.controller" | "skirmish.team" | "skirmish.race" | "skirmish.hero" => {
+            "skirmish.controller"
+            | "skirmish.team"
+            | "skirmish.race"
+            | "skirmish.hero"
+            | "skirmish.color" => {
                 if let (Some(slot), Some(option)) = (action.index, selected) {
                     let field = name.trim_start_matches("skirmish.");
-                    self.skirmish.choose(&data, field, slot, option);
+                    let colors = self.palette.len();
+                    self.skirmish.choose(&data, field, slot, option, colors);
                 }
             }
             "skirmish.start" if clicked => self.start_skirmish(),

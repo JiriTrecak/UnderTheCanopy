@@ -36,7 +36,8 @@
             { "id": "controller", "kind": "dropdown", "class": "sk-select", "action": "skirmish.controller", "options": ["Human", "AI"] },
             { "id": "team", "kind": "dropdown", "class": "sk-select", "action": "skirmish.team", "options": ["No team"] },
             { "id": "race", "kind": "dropdown", "class": "sk-select", "action": "skirmish.race", "options": [] },
-            { "id": "hero", "kind": "dropdown", "class": "sk-select", "action": "skirmish.hero", "options": [] }
+            { "id": "hero", "kind": "dropdown", "class": "sk-select", "action": "skirmish.hero", "options": [] },
+            { "id": "color", "kind": "dropdown", "class": "sk-select", "action": "skirmish.color", "options": [] }
           ]
         }
       ]

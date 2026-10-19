@@ -86,6 +86,11 @@ const LEGACY_TEAM_SLOT: &str = "TC_TeamColor";
 /// and at least [`FLOAT_MIN`] metres.
 const FLOAT_TOLERANCE: f64 = 0.03;
 const FLOAT_MIN: f64 = 0.05;
+/// How far a clip's skeleton may stand off across the ground from where the unit stands, on
+/// average or from its first frame to its last: a share of the model's height, and at least
+/// [`TRAVEL_MIN`] metres. Sways and lunges that return stay well inside it.
+const TRAVEL_TOLERANCE: f64 = 0.15;
+const TRAVEL_MIN: f64 = 0.15;
 
 pub fn cook(source: &ModelSource, glb: &[u8], diags: &mut Diagnostics) -> Option<CookedModel> {
     let gltf = match gltf::Gltf::from_slice(glb) {
@@ -366,6 +371,43 @@ pub fn cook(source: &ModelSource, glb: &[u8], diags: &mut Diagnostics) -> Option
                 "stands {low:.2} m above its pivot at rest (of {height:.2} m): ground the model, \
                  its lowest point at the origin"
             ));
+        }
+        // Units move by the simulation, not by their clips: a clip whose skeleton drifts or
+        // stands off across the ground (root motion, as preset walk and run clips carry)
+        // draws the model away from where the unit is, and it snaps back every loop. A strike
+        // that lunges and returns is fine; a death may fall where it falls.
+        let width = palette.len();
+        for (animation, frames, matrices, _) in &baked {
+            if !skinned || animation.name == "death" || *frames == 0 {
+                continue;
+            }
+            for (j, joint) in joints
+                .iter()
+                .enumerate()
+                .filter(|(_, j)| j.parent.is_none())
+            {
+                let o = joint.origin.map(f64::from);
+                let offset = |f: usize| {
+                    let p = matrices[f * width + j].transform_point(o);
+                    [p[0] - o[0], p[2] - o[2]]
+                };
+                let mean = (0..*frames)
+                    .map(|f| offset(f)[0].hypot(offset(f)[1]))
+                    .sum::<f64>()
+                    / *frames as f64;
+                let (a, b) = (offset(0), offset(*frames - 1));
+                let drift = (b[0] - a[0]).hypot(b[1] - a[1]);
+                let limit = (height * TRAVEL_TOLERANCE).max(TRAVEL_MIN);
+                if mean > limit || drift > limit {
+                    diags.error(format!(
+                        "clip {} carries the model across the ground ({mean:.2} m off on average, \
+                         {drift:.2} m from start to end, of {height:.2} m): animate in place, the \
+                         unit's position moves it",
+                        animation.name
+                    ));
+                    break;
+                }
+            }
         }
     }
     let mut culling = rest_bounds;

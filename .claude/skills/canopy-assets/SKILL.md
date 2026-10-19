@@ -121,6 +121,13 @@ model that floats above it, so `just cook` and `just check` fail instead of the 
 units in the air. Ground the model in its tool (its feet at the origin), or set
 `transform.pivot` to the height of its lowest point.
 
+Clips play in place: the simulation moves a unit, so a skinned model's clips (all but `death`)
+must not carry its skeleton across the ground. The cook refuses a clip whose root stands off
+more than 15 % of the model's height on average or drifts that far from start to end (preset
+walk and run clips carry root motion; a lunge that returns is fine). Fix a Blender source with
+`tools/units/tripo_in_place.py` (re-exports it), or a GLB that must not be re-exported with
+`tools/units/glb_in_place.py` (edits only the root's keys).
+
 ## Reviewing art
 
 AGENTS.md has the unit readability rules: check at game zoom, from above, and in every player colour.

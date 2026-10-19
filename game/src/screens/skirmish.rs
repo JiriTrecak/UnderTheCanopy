@@ -1,6 +1,6 @@
 //! Skirmish setup (old `src/ui/menu/skirmish.ts`): a battlefield from the map library,
 //! every start filled by a human (at most one) or a computer player, each with a race,
-//! a starting hero and a team.
+//! a starting hero, a team and a colour.
 //!
 //! Teams (D20): every slot has one; "No team" lets the simulation give the slot a team
 //! of its own (free for all). The old screen had no team choice.
@@ -21,6 +21,8 @@ pub struct SlotChoice {
     pub race: String,
     pub hero: Option<String>,
     pub team: Option<u8>,
+    /// Palette colour (`config/players.json`); the player number's own when `None`.
+    pub color: Option<u8>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -71,6 +73,7 @@ impl Skirmish {
                     race,
                     hero,
                     team: kept.and_then(|s| s.team),
+                    color: kept.and_then(|s| s.color),
                 }
             })
             .collect();
@@ -110,6 +113,46 @@ impl Skirmish {
             .iter()
             .find(|s| s.human)
             .map(|s| s.player.saturating_sub(1))
+    }
+
+    /// The colour slot `i` shows: its choice or its player number's own.
+    pub fn color(&self, i: usize) -> u8 {
+        self.slots
+            .get(i)
+            .map_or(0, |s| s.color.unwrap_or(s.player.saturating_sub(1)))
+    }
+
+    /// Colours slot `row` may take out of `count`: its own and those no other slot has.
+    pub fn free_colors(&self, row: usize, count: usize) -> Vec<u8> {
+        let taken: Vec<u8> = (0..self.slots.len())
+            .filter(|&i| i != row)
+            .map(|i| self.color(i))
+            .collect();
+        (0..count.min(usize::from(u8::MAX)) as u8)
+            .filter(|c| !taken.contains(c))
+            .collect()
+    }
+
+    /// Gives slot `i` the `option`-th of its free colours out of `count`.
+    pub fn set_color(&mut self, i: usize, option: usize, count: usize) {
+        if let Some(&c) = self.free_colors(i, count).get(option)
+            && let Some(s) = self.slots.get_mut(i)
+        {
+            s.color = Some(c);
+        }
+    }
+
+    /// Palette colours by player number (as the lobby's), when any slot chose its own.
+    pub fn colors(&self) -> Option<Vec<usize>> {
+        self.slots.iter().any(|s| s.color.is_some()).then(|| {
+            let mut by_player: Vec<usize> = (0..8).collect();
+            for (i, slot) in self.slots.iter().enumerate() {
+                if let Some(c) = by_player.get_mut(usize::from(slot.player.saturating_sub(1))) {
+                    *c = usize::from(self.color(i));
+                }
+            }
+            by_player
+        })
     }
 
     /// The frozen match: slots in start order, the human named.
@@ -162,7 +205,7 @@ impl Skirmish {
             let ui = &mut host.ui;
             if let Some(badge) = ui.find(&format!("{base}/badge")) {
                 ui.set_text(badge, &slot.player.to_string());
-                ui.set_color(badge, Some(palette.badge(slot.player.saturating_sub(1))));
+                ui.set_color(badge, Some(palette.badge(self.color(i))));
             }
             widgets::text(
                 ui,
@@ -197,10 +240,15 @@ impl Skirmish {
                 .and_then(|h| heroes.iter().position(|x| &x.0 == h))
                 .unwrap_or(0);
             widgets::options(ui, &format!("{base}/hero"), &hero_names, hero);
+            let colors = self.free_colors(i, palette.len());
+            let color_names: Vec<String> = colors.iter().map(|&c| palette.name(c)).collect();
+            let color = colors.iter().position(|&c| c == self.color(i)).unwrap_or(0);
+            widgets::options(ui, &format!("{base}/color"), &color_names, color);
+            widgets::enabled(ui, &format!("{base}/color"), color_names.len() > 1);
             for part in ["controller", "team"] {
                 widgets::enabled(ui, &format!("{base}/{part}"), !sandbox);
             }
-            for part in ["race", "hero"] {
+            for part in ["race", "hero", "color"] {
                 widgets::visible(ui, &format!("{base}/{part}"), !sandbox);
             }
             widgets::enabled(ui, &format!("{base}/hero"), hero_names.len() > 1);
@@ -242,7 +290,14 @@ impl Skirmish {
     }
 
     /// Applies a dropdown choice; `field` is the action's last word.
-    pub fn choose(&mut self, data: &GameData, field: &str, slot: usize, option: usize) {
+    pub fn choose(
+        &mut self,
+        data: &GameData,
+        field: &str,
+        slot: usize,
+        option: usize,
+        colors: usize,
+    ) {
         match field {
             "controller" => self.set_human(slot, option == 0),
             "team" => {
@@ -256,6 +311,7 @@ impl Skirmish {
                     self.set_race(data, slot, &id);
                 }
             }
+            "color" => self.set_color(slot, option, colors),
             "hero" => {
                 if let Some(s) = self.slots.get_mut(slot) {
                     let (heroes, _) = widgets::heroes(data, &s.race);
@@ -280,6 +336,7 @@ mod tests {
             race: "r".into(),
             hero: None,
             team: None,
+            color: None,
         }
     }
 
@@ -314,5 +371,22 @@ mod tests {
             ),
             canopy_sim::teams::Relation::Ally
         );
+    }
+
+    #[test]
+    fn each_colour_goes_to_one_slot_and_reaches_the_match_by_player() {
+        let mut s = Skirmish {
+            map: Some("m".into()),
+            slots: vec![slot(1, true), slot(2, false)],
+        };
+        assert_eq!(s.colors(), None, "own colours: nothing to pass on");
+        // Slot 2 may not take slot 1's colour (0).
+        assert!(!s.free_colors(1, 8).contains(&0));
+        let gold = s.free_colors(1, 8).iter().position(|&c| c == 5).unwrap();
+        s.set_color(1, gold, 8);
+        assert_eq!(s.color(1), 5);
+        assert!(!s.free_colors(0, 8).contains(&5));
+        let colors = s.colors().unwrap();
+        assert_eq!((colors[0], colors[1]), (0, 5));
     }
 }

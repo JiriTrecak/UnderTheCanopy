@@ -200,7 +200,7 @@ def main():
     # Ground: litter in the frame and, faintly, where summer grass was; rock where rock was.
     litter = smoothstep(-1.5, 1.0, signed)
     # Rock where the summer had rock or cliff faces (the biome's rock, not Warcraft's tiles).
-    rock = np.clip(np.maximum(lrok * 0.85, cliff) * 0.8 - (fbm(x, z, 4, 51) - 0.5) * 0.8, 0, 0.75)
+    rock = np.clip(np.maximum(lrok * 0.85, cliff) * (0.8 + (fbm(x, z, 4, 51) - 0.5) * 0.8), 0, 0.75)
     # The debris band: the frame's rim breaking up onto the soil (atlas corners pick the
     # tiles, so the masks below are near-binary).
     band = (signed + (fbm(x, z, 7, 17) - 0.5) * 3.0 > -3.0) & (signed < 2.0)
@@ -364,6 +364,14 @@ def main():
     write_grid(os.path.join(t, 'water-flow.grid'), flow, 3)
     write_grid(os.path.join(t, 'grass.grid'), litter.astype('<f4'), 1)
     write_grid(os.path.join(t, 'rock.grid'), rock.astype('<f4'), 1)
+    # The renderer draws at most four ground layers a cell (the biome's soil, litter, rock and
+    # waterbed count): the paint layers never overlap one another, in priority debris, wet
+    # soil, moss, needles, and the open-ground ones stay off rock and the frame's litter.
+    bare = (rock < 0.05) & (litter < 0.05)
+    debris = np.where(above < 0.6, 0.0, debris)  # the shore is the wet soil's: no fifth layer there
+    damp = np.where(debris > 0, 0.0, damp)
+    moss = np.where((debris > 0) | (damp > 0.05) | ~bare, 0.0, moss)
+    needles = np.where((debris > 0) | (damp > 0.05) | (moss > 0) | ~bare, 0.0, needles)
     layers = [needles, moss, debris, damp]
     for n, layer in enumerate(layers, 1):
         write_grid(os.path.join(t, 'paint-%d-weights.grid' % n), layer.astype('<f4'), 1)
