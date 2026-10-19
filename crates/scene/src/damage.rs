@@ -12,8 +12,9 @@ use crate::{effects::Fire, obstruction::Hull};
 use glam::{Mat4, Quat, Vec3};
 use std::{collections::BTreeMap, sync::Arc};
 
-/// Buildings at or above this share of their health do not burn.
-pub const FIRE_THRESHOLD: f32 = 0.75;
+/// Buildings at or above this share of their health do not burn: a building that has
+/// lost a tenth of its health shows it.
+pub const FIRE_THRESHOLD: f32 = 0.9;
 /// At or below this share the fires are at their worst.
 pub const FIRE_WORST: f32 = 0.15;
 /// Fire spots of the largest buildings (the smallest have two).
@@ -197,12 +198,16 @@ impl Fires {
                 fires.push(Fire {
                     entity: b.entity,
                     position: b.position + b.rotation * local,
+                    // A new flame starts at 70 % of its size, so the first one reads at game
+                    // zoom on the largest and darkest buildings; at worst it is as large as
+                    // ever.
                     size: size
-                        * (0.45 + 0.55 * grown)
-                        * (0.75 + 0.5 * level)
+                        * (0.7 + 0.3 * grown)
+                        * (0.85 + 0.4 * level)
                         * (0.85 + 0.3 * random(seed, 99)),
                     severity: level,
                     seed,
+                    rank: k.min(usize::from(u8::MAX)) as u8,
                 });
             }
         }
