@@ -230,4 +230,6 @@ Shared files belong to the lead session. Propose changes to them; don't edit the
 - `docs/decisions.md`;
 - `releases/log.json` (only through `just release-note`, which merges).
 
+Cook into `target/cooked-<building>` if you need your own pack, and delete it when your building lands (`just tidy` removes leftovers; AGENTS.md, Disk). Delete your raw Tripo exports and render series from your scratchpad once the model is in the repository.
+
 Don't run the map scripts; they rewrite whole maps. One Tripo account is shared: generate, segment and export your own models only, and name exports `<race>-<building>-*.glb` so they don't collide in the receiver's folder. Ask Jiri for each image upload through the lead session, batched where possible.

@@ -25,6 +25,13 @@ A Warcraft III–style RTS on the forest floor, being rebuilt natively in Rust. 
 - **Dependencies** ([structure](docs/structure.md)): crates never depend on `game/`; `canopy-render` never sees simulation types.
 - `just check` (format, clippy with warnings denied, tests) passes before every commit.
 
+## Disk
+
+Several agents build in this checkout, and Cargo never deletes old builds: `target/` once reached 433 GB. No old builds are kept.
+- `just tidy` purges per-agent cook folders (`target/cooked-*`), `target/ci`, `target/tmp` and the incremental caches, and a whole profile once it passes 40 GB. `just check` runs it first.
+- Cook into `target/cooked` only. If parallel work needs its own pack, cook into `target/cooked-<name>` and delete it as soon as the work lands; `just tidy` removes any left over.
+- Your scratchpad holds only what you still need. Delete raw exports (Tripo GLBs, image batches), render series and data copies once their result is in the repository, and before you end a task.
+
 ## Visual previews
 
 Use neutral zinc for model previews and review benches: background `#18181b`, ground and panels `#27272a`, controls and borders `#52525b`. Avoid green or olive stages. Verify units at normal game zoom from the overhead camera and from directly above, in every player colour including white and dark.

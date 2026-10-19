@@ -44,7 +44,7 @@ cook *args:
     cargo run -q -p canopy-cook -- --data "{{justfile_directory()}}" --out "{{justfile_directory()}}/target/cooked" {{args}}
 
 # The gate before every commit (no CI, D50): formatting, lints, tests, the match server
-check:
+check: tidy
     cargo fmt --all --check
     cargo clippy --workspace --all-targets -- -D warnings
     if [ -d server/node_modules ]; then cd server && npm run -s check && npm test --silent; fi
@@ -52,6 +52,26 @@ check:
 
 test *args:
     cargo test --workspace {{args}}
+
+# Per-agent cook folders, scratch targets and the compiler's incremental caches always go;
+# a whole profile once it passes 40 GB of stale builds. Everything regenerates on the next
+# build.
+# Purge old builds (AGENTS.md, Disk); `just check` runs it first
+[unix]
+tidy:
+    #!/bin/sh
+    cd "{{justfile_directory()}}/target" 2>/dev/null || exit 0
+    rm -rf cooked-* ci tmp debug/incremental release/incremental
+    for profile in debug release; do
+        if [ -d "$profile" ] && [ "$(du -sk "$profile" | cut -f1)" -gt 41943040 ]; then
+            echo "tidy: $profile is over 40 GB of builds; cleaning it"
+            rm -rf "$profile/deps" "$profile/build" "$profile/.fingerprint" "$profile/examples"
+        fi
+    done
+
+[windows]
+tidy:
+    $t = Join-Path "{{justfile_directory()}}" "target"; if (Test-Path $t) { Get-ChildItem $t -Directory | Where-Object { $_.Name -like "cooked-*" -or $_.Name -in @("ci", "tmp") } | Remove-Item -Recurse -Force; foreach ($p in "debug", "release") { $d = Join-Path $t $p; Remove-Item (Join-Path $d "incremental") -Recurse -Force -ErrorAction SilentlyContinue; if ((Test-Path $d) -and ((Get-ChildItem $d -Recurse -File | Measure-Object Length -Sum).Sum -gt 40GB)) { "tidy: $p is over 40 GB of builds; cleaning it"; foreach ($s in "deps", "build", ".fingerprint", "examples") { Remove-Item (Join-Path $d $s) -Recurse -Force -ErrorAction SilentlyContinue } } } }
 
 # Build the platform package (.app on macOS, NSIS installer on Windows)
 package:
