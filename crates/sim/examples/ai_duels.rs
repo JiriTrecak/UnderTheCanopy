@@ -85,6 +85,8 @@ struct Duel {
     milestones: [Vec<(f64, String)>; 2],
     /// Every two minutes, per player: workers, army units, the army's cost, banked goods.
     snapshots: Vec<(u32, [String; 2])>,
+    /// Per player: how often the AI decided each thing.
+    decisions: [BTreeMap<String, u32>; 2],
     /// Per player: the most finished buildings on resources (`placementOn`) at once.
     wells: [u32; 2],
     /// Per player and good: gathered, spent.
@@ -127,6 +129,9 @@ fn duel(
     let mut built: [std::collections::BTreeSet<String>; 2] = Default::default();
     let mut learned: [usize; 2] = [0, 0];
     let mut snapshots = Vec::new();
+    // Every AI decision of the match, counted by reason (and refusals).
+    let mut decisions: [BTreeMap<String, u32>; 2] = Default::default();
+    let mut decided: [u32; 2] = [0, 0];
     // Army losses per side (summons aside): to camp creatures, to players.
     let mut alive_at: BTreeMap<u32, (usize, canopy_sim::entity::Milli)> = BTreeMap::new();
     let mut losses = [[0u32; 2]; 2];
@@ -202,6 +207,24 @@ fn duel(
             }
         }
         if tick % 40 == 0 {
+            for s in world.ai_summaries() {
+                let Some(side) = players.iter().position(|&x| x == s.player) else {
+                    continue;
+                };
+                for t in s.trace.iter().filter(|t| t.tick >= decided[side]) {
+                    let key = format!(
+                        "{}{}",
+                        t.reason,
+                        if t.accepted == Some(false) {
+                            " (refused)"
+                        } else {
+                            ""
+                        }
+                    );
+                    *decisions[side].entry(key).or_default() += 1;
+                }
+                decided[side] = tick + 1;
+            }
             let mut now: BTreeMap<u32, (usize, canopy_sim::entity::Milli)> = BTreeMap::new();
             let mut creeps: Vec<canopy_sim::entity::Milli> = Vec::new();
             for e in world.state().entities.iter() {
@@ -275,6 +298,37 @@ fn duel(
                                 .map_or(0, |c| c.items().iter().map(|i| i.amount).sum::<u32>());
                         }
                     }
+                    // Buildings: unpowered (!) or under construction (~).
+                    let mut built: Vec<String> = Vec::new();
+                    for e in world.state().entities.iter() {
+                        let d = catalog.get(e.definition);
+                        if e.owner != owner || e.unit.is_some() || !e.hp.is_some_and(|hp| hp > 0) {
+                            continue;
+                        }
+                        let mark = if e.construction.is_some() {
+                            "~"
+                        } else if world.economy().network().unpowered(e.id) {
+                            "!"
+                        } else {
+                            ""
+                        };
+                        let queued = e.production.as_ref().map_or(0, |q| q.queue.len());
+                        let status = e
+                            .production
+                            .as_ref()
+                            .filter(|_| queued > 0)
+                            .map(|q| format!("{:?}", q.status))
+                            .unwrap_or_default();
+                        built.push(format!(
+                            "{mark}{}{}",
+                            d.id.as_str().rsplit('.').next().unwrap_or(""),
+                            if queued > 0 {
+                                format!("[{queued} {status}]")
+                            } else {
+                                String::new()
+                            }
+                        ));
+                    }
                     let wallet = world.state().wallets.get(&owner);
                     let bank = |item: &str| {
                         wallet
@@ -318,10 +372,11 @@ fn duel(
                     let kinds: Vec<String> =
                         kinds.iter().map(|(k, n)| format!("{k}×{n}")).collect();
                     format!(
-                        "{workers}w {army}u worth {value}, bank {}a {}s ({}) [{doing}]",
+                        "{workers}w {army}u worth {value}, bank {}a {}s ({}) {{{}}} [{doing}]",
                         bank("item.amber"),
                         bank("item.root"),
-                        kinds.join(" ")
+                        kinds.join(" "),
+                        built.join(" ")
                     )
                 };
                 let [l0, l1] = [line(players[0]), line(players[1])];
@@ -368,6 +423,7 @@ fn duel(
         trained,
         milestones,
         snapshots,
+        decisions,
         wells,
         goods,
         network,
@@ -446,6 +502,12 @@ fn main() -> Result<(), String> {
                     .map(|(m, id)| format!("{m:.1} {}", id.rsplit('.').next().unwrap_or(id)))
                     .collect();
                 println!("    player {} milestones: {}", side + 1, list.join(", "));
+            }
+            for (side, made) in r.decisions.iter().enumerate() {
+                let mut list: Vec<(&String, &u32)> = made.iter().collect();
+                list.sort_by(|a, b| b.1.cmp(a.1).then(a.0.cmp(b.0)));
+                let list: Vec<String> = list.iter().map(|(k, n)| format!("{n}× {k}")).collect();
+                println!("    player {} decisions: {}", side + 1, list.join("; "));
             }
             for (minute, sides) in &r.snapshots {
                 println!("    {minute:>3} min: {} | {}", sides[0], sides[1]);

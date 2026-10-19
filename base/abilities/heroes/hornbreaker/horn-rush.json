@@ -1,7 +1,7 @@
 {
   "id": "ability.hornbreaker.horn-rush",
   "name": "Horn Rush",
-  "description": "Charge a visible ground enemy, respecting terrain and other bodies. On contact deal 70/115/160 spell damage and stun for 0.75/1/1.25 seconds. Blocked, interrupted or escaped charges do not hit.",
+  "description": "Charge a visible ground enemy, respecting terrain and other bodies. On contact deal 90/140/190 spell damage and stun for 1/1.5/2 seconds. Blocked, interrupted or escaped charges do not hit.",
   "activation": "targeted",
   "delivery": {
     "kind": "charge",
@@ -12,23 +12,23 @@
     {
       "range": 20,
       "mana": 55,
-      "cooldown": 480,
-      "damage": 70,
-      "stun": 30
-    },
-    {
-      "range": 20,
-      "mana": 55,
-      "cooldown": 480,
-      "damage": 115,
+      "cooldown": 400,
+      "damage": 90,
       "stun": 40
     },
     {
       "range": 20,
       "mana": 55,
-      "cooldown": 480,
-      "damage": 160,
-      "stun": 50
+      "cooldown": 400,
+      "damage": 140,
+      "stun": 60
+    },
+    {
+      "range": 20,
+      "mana": 55,
+      "cooldown": 400,
+      "damage": 190,
+      "stun": 80
     }
   ],
   "targeting": {

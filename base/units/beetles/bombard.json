@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.beetles-bombard",
   "selectionClass": "army",
   "body": {
-    "maxHp": 640,
+    "maxHp": 830,
     "armor": 2,
     "armorType": "heavy"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 56,
+      "damage": 73,
       "damageType": "siege",
       "range": 30,
       "cooldownTicks": 140,
@@ -50,7 +50,7 @@
         "amount": 40
       }
     ],
-    "workTicks": 1280
+    "workTicks": 1000
   },
   "requires": [
     "building.beetles.great-bastion"
@@ -59,11 +59,11 @@
   "supplyCost": 3,
   "unitNature": "mechanical",
   "dimensions": {
-    "radius": 1.8,
-    "height": 3.0,
-    "formationSpacing": 4.5
+    "radius": 2.2,
+    "height": 7.0,
+    "formationSpacing": 5.0
   },
-  "modelScale": 1.0,
+  "modelScale": 1.4,
   "presentation": {
     "projectile": "effect.units.bombard-shell",
     "projectileSocket": "socket_muzzle",

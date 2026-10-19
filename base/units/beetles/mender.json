@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.beetles-mender",
   "selectionClass": "army",
   "body": {
-    "maxHp": 440,
+    "maxHp": 570,
     "armor": 1,
     "armorType": "light"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 8,
+      "damage": 10,
       "damageType": "piercing",
       "range": 14,
       "cooldownTicks": 60,
@@ -88,7 +88,7 @@
         "amount": 25
       }
     ],
-    "workTicks": 1000
+    "workTicks": 800
   },
   "requires": [
     "building.beetles.great-bastion"

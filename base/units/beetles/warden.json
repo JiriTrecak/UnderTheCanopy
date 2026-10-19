@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.beetles-warden",
   "selectionClass": "army",
   "body": {
-    "maxHp": 640,
+    "maxHp": 830,
     "armor": 2,
     "armorType": "heavy"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 13,
+      "damage": 17,
       "damageType": "spell",
       "range": 6,
       "cooldownTicks": 56,
@@ -89,7 +89,7 @@
         "amount": 30
       }
     ],
-    "workTicks": 1120
+    "workTicks": 880
   },
   "requires": [
     "building.beetles.great-bastion"

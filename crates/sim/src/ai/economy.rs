@@ -185,6 +185,29 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
             }
         }
         if d.power.is_some() {
+            // A building that needs power looks inside the powered discs before the
+            // network grows: nearest home first, so the base stays compact.
+            let mut inside: Vec<(f64, Pt)> = Vec::new();
+            for field in f.input.economy().network().fields(f.me) {
+                let centre = Pt::new(f64::from(field.x) / 1000.0, f64::from(field.y) / 1000.0);
+                let reach = (field.radius as f64 / 1000.0 - half - 1.0).max(0.0);
+                for (ring, share) in [0.35, 0.6, 0.85, 1.0].into_iter().enumerate() {
+                    for k in 0..16 {
+                        let angle = (f64::from(k) + 0.5 * ring as f64) * std::f64::consts::PI / 8.0;
+                        let p = Pt::new(
+                            centre.x + crate::math::cos(angle) * reach * share,
+                            centre.y + crate::math::sin(angle) * reach * share,
+                        );
+                        inside.push((dist(p, origin), p));
+                    }
+                }
+            }
+            inside.sort_by(|a, b| a.0.total_cmp(&b.0));
+            for &(_, cursor) in inside.iter().take(96) {
+                if let Some(action) = self.site(def, worker, cursor) {
+                    return self.emit(action, reason);
+                }
+            }
             return self.extend_network(None);
         }
         false
@@ -1002,6 +1025,7 @@ fn run(p: &mut Planner) {
             if useful_upgrade(bd)
                 && f.own_entity(b).is_some_and(|e| e.upgrade.is_none())
                 && payable(&upgrade.items)
+                && get(&upgrade.target).is_some_and(|t| f.available(t.requires.as_deref()))
             {
                 let name = get(&upgrade.target).map_or("", |t| t.name.as_str());
                 if p.emit(
@@ -1015,6 +1039,7 @@ fn run(p: &mut Planner) {
         for &d in &producers {
             let dd = catalog.get(d);
             if dd.requires.as_ref().is_some_and(|r| !r.is_empty())
+                && f.available(dd.requires.as_deref())
                 && !buildings.iter().any(|b| b.def == d)
                 && p.build(
                     d,
@@ -1025,12 +1050,17 @@ fn run(p: &mut Planner) {
                 return;
             }
         }
-        let forge = defs
-            .iter()
-            .copied()
-            .find(|&d| catalog.get(d).behaviors.research.is_some());
+        // The research building: one that only researches (halls and barracks research
+        // too, but come by their own way), the first not yet standing that may be built.
+        let forge = defs.iter().copied().find(|&d| {
+            let dd = catalog.get(d);
+            dd.behaviors.research.is_some()
+                && dd.behaviors.production.is_none()
+                && dd.behaviors.storage.is_none()
+                && f.available(dd.requires.as_deref())
+                && !buildings.iter().any(|b| b.def == d)
+        });
         if let Some(forge) = forge
-            && !buildings.iter().any(|b| b.def == forge)
             && p.build(
                 forge,
                 &format!(
@@ -1114,8 +1144,10 @@ fn run(p: &mut Planner) {
         let upgrade = ready.iter().find_map(|b| {
             let bd = f.def(b);
             let u = bd.upgrade.as_ref()?;
-            (f.own_entity(b).is_some_and(|e| e.upgrade.is_none()) && useful_upgrade(bd))
-                .then_some(u)
+            (f.own_entity(b).is_some_and(|e| e.upgrade.is_none())
+                && useful_upgrade(bd)
+                && get(&u.target).is_some_and(|t| f.available(t.requires.as_deref())))
+            .then_some(u)
         });
         let next = outpost
             .or_else(|| {
@@ -1144,6 +1176,39 @@ fn run(p: &mut Planner) {
             .unwrap_or(&[]);
         for c in investment {
             add_max(&mut reserve, &c.item, c.amount);
+        }
+    }
+    // A tower that crews itself (`garrison.crew`) guards the workers: one once the army
+    // stands, more while raiders come to the base.
+    let tower = defs.iter().copied().find(|&d| {
+        let dd = catalog.get(d);
+        dd.garrison.as_ref().is_some_and(|g| g.crew.is_some())
+            && f.available(dd.requires.as_deref())
+    });
+    if let Some(tower) = tower {
+        let standing = buildings
+            .iter()
+            .filter(|b| f.def(b).garrison.as_ref().is_some_and(|g| g.crew.is_some()))
+            .count();
+        let raided = f
+            .hostiles
+            .iter()
+            .map(|&i| f.at(i))
+            .any(|e| e.unit && f.def(e).behaviors.combat.is_some() && dist(e.p, f.home) < 40.0);
+        let wanted = if raided { 3 } else { 1 };
+        let mine = f.nearest_resource(f.home, |r| {
+            !r.remembered && f.def(r).kind == Kind::Building && dist(r.p, f.home) < 40.0
+        });
+        let origin = mine.map_or(f.home, |m| {
+            let m = f.at(m).p;
+            Pt::new((m.x + f.home.x) / 2.0, (m.y + f.home.y) / 2.0)
+        });
+        if army.len() >= 3
+            && standing < wanted
+            && f.can_afford(catalog.get(tower), &promised)
+            && p.build(tower, "Raise a tower over the workers", origin)
+        {
+            return;
         }
     }
     // Army production is independent of the worker pool.
@@ -1293,13 +1358,19 @@ fn run(p: &mut Planner) {
     {
         return;
     }
-    // Add throughput only once the existing barracks queues are saturated.
-    if barracks.len() < 3.min(1 + army.len() / 12)
-        && barracks.iter().all(|b| f.queue(b).len() >= 2)
-        && let Some(d) = producers
+    // Add throughput only once the existing barracks queues are saturated, sooner when
+    // goods pile up faster than slow, costly training spends them.
+    let banked = |d: Def| {
+        items(catalog.get(d))
             .iter()
-            .copied()
-            .find(|&d| f.can_afford(catalog.get(d), &promised))
+            .all(|c| f.balance(c.item.as_str()) >= 3 * c.amount.max(100))
+    };
+    if barracks.iter().all(|b| f.queue(b).len() >= 2)
+        && let Some(d) = producers.iter().copied().find(|&d| {
+            f.can_afford(catalog.get(d), &promised)
+                && (barracks.len() < 3.min(1 + army.len() / 12)
+                    || (barracks.len() < 3 && banked(d)))
+        })
         && p.build(d, "Add production throughput to match income", f.home)
     {
         return;

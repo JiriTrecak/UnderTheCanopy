@@ -1,7 +1,7 @@
 {
   "id": "ability.coilkeeper.arc-lash",
   "name": "Arc Lash",
-  "description": "Violet lightning leaps between up to 5 enemies, dealing 85/125/165 spell damage and losing 15% on each jump.",
+  "description": "Violet lightning leaps between up to 5 enemies, dealing 75/105/135 spell damage and losing 15% on each jump.",
   "activation": "targeted",
   "delivery": {
     "kind": "chain",
@@ -13,13 +13,13 @@
   },
   "ranks": [
     {
-      "damage": 85
+      "damage": 75
     },
     {
-      "damage": 125
+      "damage": 105
     },
     {
-      "damage": 165
+      "damage": 135
     }
   ],
   "targeting": {
@@ -38,11 +38,11 @@
     "recoverTicks": 8,
     "cost": {
       "resource": "mana",
-      "amount": 85,
+      "amount": 90,
       "commit": "release"
     },
     "cooldown": {
-      "ticks": 320,
+      "ticks": 400,
       "start": "release",
       "scope": "ability"
     },

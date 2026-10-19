@@ -65,7 +65,7 @@
             "time": 1.967
           }
         ],
-        "nominalSpeed": 7.0
+        "nominalSpeed": 3.684
       },
       {
         "semantic": "run",
@@ -81,7 +81,7 @@
             "time": 1.967
           }
         ],
-        "nominalSpeed": 7.0
+        "nominalSpeed": 3.684
       },
       {
         "semantic": "attack",

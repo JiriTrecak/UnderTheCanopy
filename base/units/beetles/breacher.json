@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.beetles-breacher",
   "selectionClass": "army",
   "body": {
-    "maxHp": 760,
+    "maxHp": 990,
     "armor": 3,
     "armorType": "heavy"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 28,
+      "damage": 36,
       "damageType": "siege",
       "range": 0.8,
       "cooldownTicks": 72,
@@ -71,7 +71,7 @@
         "amount": 25
       }
     ],
-    "workTicks": 1160
+    "workTicks": 880
   },
   "requires": [
     "building.beetles.great-bastion"

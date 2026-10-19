@@ -566,11 +566,24 @@ pub fn operations(b: &mut Beat) {
     let home = f.home;
     let near = |a: &Known, d: f64| f.hostiles.iter().any(|&h| dist(f.at(h).p, a.p) < d);
     let army: Vec<&Known> = f.army.iter().map(|&i| f.at(i)).collect();
+    // Wells out on their deposits are part of the economy too: raiders there are threats.
+    let wells: Vec<Pt> = f
+        .buildings
+        .iter()
+        .map(|&i| f.at(i))
+        .filter(|b| f.def(b).placement_on.is_some())
+        .map(|b| b.p)
+        .collect();
     let threats: Vec<&Known> = f
         .hostiles
         .iter()
         .map(|&i| f.at(i))
-        .filter(|e| e.unit && dist(e.p, home) < 30.0)
+        .filter(|e| {
+            e.unit
+                && (dist(e.p, home) < 30.0
+                    || (f.def(e).behaviors.combat.is_some()
+                        && wells.iter().any(|&w| dist(e.p, w) < 18.0)))
+        })
         .collect();
     let threat_power: f64 = threats.iter().map(|e| f.power(e)).sum();
     let local: Vec<&Known> = army

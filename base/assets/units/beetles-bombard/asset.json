@@ -57,14 +57,14 @@
         "clip": "walk",
         "loop": true,
         "events": [],
-        "nominalSpeed": 4.0
+        "nominalSpeed": 2.857
       },
       {
         "semantic": "run",
         "clip": "walk",
         "loop": true,
         "events": [],
-        "nominalSpeed": 4.0
+        "nominalSpeed": 2.857
       },
       {
         "semantic": "attack",

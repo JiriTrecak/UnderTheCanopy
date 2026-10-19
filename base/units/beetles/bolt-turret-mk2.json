@@ -36,11 +36,11 @@
   "supplyCost": 0,
   "unitNature": "mechanical",
   "dimensions": {
-    "radius": 1.2,
-    "height": 3.0,
-    "formationSpacing": 2.6
+    "radius": 1.5,
+    "height": 4.6,
+    "formationSpacing": 3.4
   },
-  "modelScale": 0.32,
+  "modelScale": 0.5,
   "presentation": {
     "projectile": "effect.beetles.weapons.bolt",
     "projectileSocket": "socket_projectile",

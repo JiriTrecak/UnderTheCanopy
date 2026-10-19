@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.beetles-steamwing",
   "selectionClass": "army",
   "body": {
-    "maxHp": 420,
+    "maxHp": 550,
     "armor": 1,
     "armorType": "light"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 14,
+      "damage": 18,
       "damageType": "piercing",
       "range": 12,
       "cooldownTicks": 48,
@@ -72,7 +72,7 @@
         "amount": 30
       }
     ],
-    "workTicks": 1120
+    "workTicks": 880
   },
   "requires": [
     "building.beetles.great-bastion"
@@ -81,11 +81,11 @@
   "supplyCost": 3,
   "unitNature": "mechanical",
   "dimensions": {
-    "radius": 1.8,
-    "height": 3.5,
-    "formationSpacing": 5.0
+    "radius": 2.2,
+    "height": 5.5,
+    "formationSpacing": 5.5
   },
-  "modelScale": 1.0,
+  "modelScale": 2.2,
   "presentation": {
     "projectile": "effect.beetles.steamwing-bolt",
     "projectileSocket": "socket_projectile",

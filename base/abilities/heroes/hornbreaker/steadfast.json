@@ -1,7 +1,7 @@
 {
   "id": "ability.hornbreaker.steadfast",
   "name": "Steadfast Aura",
-  "description": "Nearby allied units regenerate 1/2/3 additional health per second within four grid cells. Only the strongest copy applies. Ends when the Hornbreaker falls or an ally leaves the aura.",
+  "description": "Nearby allied units regenerate 2/3/4 additional health per second and gain 1/2/3 armor within four grid cells. Only the strongest copy applies. Ends when the Hornbreaker falls or an ally leaves the aura.",
   "activation": "passive",
   "aura": {
     "radius": 16,
@@ -9,13 +9,16 @@
   },
   "ranks": [
     {
-      "regen": 1
+      "regen": 2,
+      "armor": 1
     },
     {
-      "regen": 2
+      "regen": 3,
+      "armor": 2
     },
     {
-      "regen": 3
+      "regen": 4,
+      "armor": 3
     }
   ],
   "targeting": {
@@ -63,6 +66,9 @@
       "rankedModifiers": {
         "healthRegenPerSecond": {
           "rankParameter": "regen"
+        },
+        "armor": {
+          "rankParameter": "armor"
         }
       },
       "lifetime": "duration"

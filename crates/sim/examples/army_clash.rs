@@ -8,7 +8,8 @@
 //! ```
 //!
 //! Each side attack-moves through the other's start; `--ai` lets the abilities' AI cast
-//! (both sides are AI players that only fight). Costs are the units' creation bills.
+//! (both sides are AI players that only fight; heroes learn as they would), and
+//! `--hero-xp` starts every hero with that much experience. Costs are the units' bills.
 #![allow(clippy::disallowed_methods)] // wall-clock timing
 
 use canopy_content::{Content, Id, map::UtcMap, placement::Owner};
@@ -76,6 +77,7 @@ struct Args {
     seeds: u32,
     research: [Vec<String>; 2],
     ai: bool,
+    hero_xp: u32,
 }
 
 fn args() -> Args {
@@ -86,6 +88,7 @@ fn args() -> Args {
         seeds: 4,
         research: [Vec::new(), Vec::new()],
         ai: false,
+        hero_xp: 0,
     };
     let mut it = std::env::args().skip(1);
     while let Some(flag) = it.next() {
@@ -98,6 +101,7 @@ fn args() -> Args {
             "--research-a" => out.research[0] = value().split(',').map(str::to_string).collect(),
             "--research-b" => out.research[1] = value().split(',').map(str::to_string).collect(),
             "--ai" => out.ai = true,
+            "--hero-xp" => out.hero_xp = value().parse().expect("experience"),
             other => panic!("unknown option {other}"),
         }
     }
@@ -128,9 +132,13 @@ fn main() {
                     } else {
                         row as f64 * 4.0
                     };
-                    entities.push(json!({"id": format!("s{side}.{n}"), "definition": id,
+                    let mut e = json!({"id": format!("s{side}.{n}"), "definition": id,
                         "position": {"x": x + dx, "y": 116.0 + col as f64 * 4.0 + (seed % 2) as f64},
-                        "rotation": if side == 0 { 90 } else { 270 }, "owner": format!("player.{}", side + 1)}));
+                        "rotation": if side == 0 { 90 } else { 270 }, "owner": format!("player.{}", side + 1)});
+                    if content.definition(id).is_some_and(|d| d.is_hero()) && args.hero_xp > 0 {
+                        e["initialState"] = json!({"experience": args.hero_xp});
+                    }
+                    entities.push(e);
                     n += 1;
                 }
             }
