@@ -307,6 +307,7 @@ pub fn run(
             "releases" => releases(&mut rig)?,
             "multiplayer" => multiplayer(&mut rig)?,
             "editor" => editor(&mut rig, &paths)?,
+            "settings" => settings_tabs(&mut rig)?,
             "replays" => {
                 start_skirmish(&mut rig)?;
                 rig.until("the match", Duration::from_secs(180), |g| g.flow.in_match())?;
@@ -342,7 +343,7 @@ pub fn run(
                 feedback_match(&mut rig)?;
             }
             other => anyhow::bail!(
-                "unknown capture group {other} (releases, multiplayer, editor, feedback, replays)"
+                "unknown capture group {other} (releases, multiplayer, editor, settings, feedback, replays)"
             ),
         }
         let _ = std::fs::remove_dir_all(&user);
@@ -832,6 +833,7 @@ fn settings_tabs(rig: &mut Rig) -> Result<()> {
     for (tab, name) in [
         (Tab::Audio, "settings-audio"),
         (Tab::Interface, "settings-interface"),
+        (Tab::Gameplay, "settings-gameplay"),
     ] {
         rig.game.settings_ui.tab = tab;
         rig.settle(0.1);

@@ -5,7 +5,7 @@
 //!
 //! Selection belongs to the game: it fills a [`WorldUiInput`] every frame.
 
-use crate::live::Body;
+use crate::live::{Body, POP_TICKS, Pop};
 use canopy_assets::Pack;
 use canopy_content::Content;
 use canopy_render::{
@@ -91,6 +91,8 @@ pub struct WorldUiInput {
     pub tree: Option<[f32; 3]>,
     /// The power network to show (D66): its discs (x, z, radius), drawn as one field.
     pub network: Vec<[f32; 3]>,
+    /// Goods arriving in the viewer's stock rise as floating "+N" text (a setting).
+    pub deliveries: bool,
 }
 
 impl Default for WorldUiInput {
@@ -107,6 +109,7 @@ impl Default for WorldUiInput {
             aim: None,
             tree: None,
             network: Vec::new(),
+            deliveries: true,
         }
     }
 }
@@ -326,16 +329,28 @@ impl LabelFont {
 
     /// Glyph quads of `text` with the line's top left at `at` (physical pixels).
     fn draw(&self, out: &mut WorldUiFrame, text: &str, at: [f32; 2], color: [f32; 4]) {
+        self.draw_sized(out, text, at, color, 1.0);
+    }
+
+    /// [`Self::draw`] at `size` times the label size (the atlas is sampled smoothly).
+    fn draw_sized(
+        &self,
+        out: &mut WorldUiFrame,
+        text: &str,
+        at: [f32; 2],
+        color: [f32; 4],
+        size: f32,
+    ) {
         let mut pen = at[0];
-        let baseline = at[1] + self.ascent;
+        let baseline = at[1] + self.ascent * size;
         for c in text.chars() {
             let Some(g) = self.glyphs.get(&c) else {
                 continue;
             };
             if g.size[0] > 0.0 {
-                let x0 = (pen + g.left).round();
-                let y0 = (baseline - g.top).round();
-                let (x1, y1) = (x0 + g.size[0], y0 + g.size[1]);
+                let x0 = (pen + g.left * size).round();
+                let y0 = (baseline - g.top * size).round();
+                let (x1, y1) = (x0 + g.size[0] * size, y0 + g.size[1] * size);
                 let v = |x: f32, y: f32, u: f32, w: f32| OverlayVertex {
                     position: [x, y],
                     uv: [u, w],
@@ -350,7 +365,7 @@ impl LabelFont {
                     v(x0, y1, g.uv[0], g.uv[3]),
                 ]);
             }
-            pen += g.advance;
+            pen += g.advance * size;
         }
     }
 }
@@ -783,7 +798,66 @@ impl WorldUi {
             }
         }
     }
+
+    /// Deliveries into the viewer's stock over everything else: each "+N" starts where
+    /// the goods arrived, rises and fades over [`POP_SECONDS`]. `pops` pairs each with
+    /// its age in seconds.
+    pub fn pops(
+        &self,
+        pops: &[(&Pop, f32)],
+        camera: &CameraView,
+        size: [u32; 2],
+        scale: f32,
+        out: &mut WorldUiFrame,
+    ) {
+        let Some(font) = &self.font else {
+            return;
+        };
+        let s = scale;
+        for &(pop, age) in pops {
+            let t = age / POP_SECONDS;
+            if !(0.0..1.0).contains(&t) {
+                continue;
+            }
+            let Some(anchor) = project(camera, size, pop.position) else {
+                continue;
+            };
+            // Quick to rise, then drifting; fully there for the first half, then fading.
+            let rise = POP_RISE * s * (1.0 - (1.0 - t) * (1.0 - t));
+            let alpha = if t < 0.45 {
+                1.0
+            } else {
+                let f = (t - 0.45) / 0.55;
+                1.0 - f * f
+            };
+            let width = font.width(&pop.text) * POP_SIZE;
+            let at = [
+                anchor.x - width * 0.5,
+                anchor.y - rise - font.line * POP_SIZE * 0.5,
+            ];
+            // A dark rim keeps the colour readable on bright ground and foliage.
+            let rim = [0.0, 0.0, 0.0, 0.8 * alpha];
+            for (dx, dy) in [(-1.0, 0.0), (1.0, 0.0), (0.0, -1.0), (0.0, 1.0), (1.0, 1.0)] {
+                font.draw_sized(
+                    out,
+                    &pop.text,
+                    [at[0] + dx * s, at[1] + dy * s],
+                    rim,
+                    POP_SIZE,
+                );
+            }
+            let [r, g, b] = pop.color;
+            font.draw_sized(out, &pop.text, at, [r, g, b, alpha], POP_SIZE);
+        }
+    }
 }
+
+/// Seconds a delivery's "+N" rises and fades (the presenter keeps it [`POP_TICKS`]).
+pub const POP_SECONDS: f32 = POP_TICKS as f32 / 40.0;
+/// CSS pixels it rises.
+const POP_RISE: f32 = 36.0;
+/// Its size against the label font.
+const POP_SIZE: f32 = 1.5;
 
 fn solid(out: &mut WorldUiFrame, [x0, y0, x1, y1]: [f32; 4], color: [f32; 4]) {
     let v = |x: f32, y: f32| OverlayVertex {

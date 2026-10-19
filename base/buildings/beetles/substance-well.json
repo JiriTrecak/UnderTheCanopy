@@ -1,7 +1,7 @@
 {
   "id": "building.beetles.substance-well",
   "name": "Substance Well",
-  "description": "Built on a Substance Deposit. Workers gather Substance from it and carry it straight in; two workers saturate it. When it falls, the deposit remains.",
+  "description": "Built on a Substance Deposit. Pumps 10 Substance every 5 seconds by itself; no workers needed. When it falls, the deposit remains.",
   "model": "asset.models.buildings.beetles-substance-well",
   "icon": "asset.portraits.buildings.beetles-substance-well",
   "body": {
@@ -43,6 +43,11 @@
   },
   "placementOn": {
     "source": "building.neutral.corrupted-root"
+  },
+  "income": {
+    "item": "item.root",
+    "amount": 10,
+    "intervalTicks": 200
   },
   "network": {
     "role": "source",

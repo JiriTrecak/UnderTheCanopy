@@ -1,7 +1,7 @@
 {
   "id": "unit.beetles.worker",
   "name": "Tinker",
-  "description": "Gathers amber and substance, builds and repairs beetle buildings, and patches machines with Patch Up. Uses 1 supply.",
+  "description": "Gathers amber, builds and repairs beetle buildings, and patches machines with Patch Up. Uses 1 supply.",
   "model": "asset.models.units.beetles-tinker",
   "icon": "asset.portraits.units.beetles-worker",
   "selectionClass": "worker",
@@ -46,8 +46,7 @@
     "work": {
       "carryCapacity": 10,
       "harvests": [
-        "item.amber",
-        "item.root"
+        "item.amber"
       ],
       "builds": [
         "building.beetles.bastion",

@@ -1112,6 +1112,7 @@ pub fn insert(state: &mut State, catalog: &Catalog, spawn: Spawn) -> EntityId {
         statuses: Vec::new(),
         links: None,
         equipment: None,
+        income: 0,
     };
     // A complete body starts at full health for its level and its owner's research,
     // unless the placement says otherwise.

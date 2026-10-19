@@ -168,6 +168,45 @@ fn a_colony_builds_a_well_on_a_deposit_and_gathers_through_it() {
 }
 
 #[test]
+fn a_colony_builds_a_pumping_well_and_leaves_it_to_earn_alone() {
+    let spring = place_for("spring", SPRING, "none", 67.5, 35.5);
+    let mut world = pumping_world(&skirmish(vec![spring], vec![]), false);
+    let held = |w: &World| {
+        w.state()
+            .wallets
+            .get(&P1)
+            .and_then(|s| s.get(ESSENCE))
+            .copied()
+            .unwrap_or(0)
+    };
+    run_until(&mut world, 30_000, |w| held(w) >= 20);
+    let well = all_of(&world, P1, WELL);
+    assert_eq!(well.len(), 1, "one well");
+    // Nobody is sent to the spring or the well: the well pumps by itself.
+    let spring = world
+        .state()
+        .entities
+        .iter()
+        .find(|e| e.placement.as_deref() == Some("spring"))
+        .expect("spring")
+        .id
+        .0;
+    let sent = world
+        .state()
+        .entities
+        .iter()
+        .filter_map(|e| match e.unit.as_ref()?.order {
+            Some(canopy_sim::orders::Order::Gather { target }) => Some(target.0),
+            _ => None,
+        })
+        .filter(|&t| t == spring || t == well[0])
+        .count();
+    assert_eq!(sent, 0, "no worker gathers at the well");
+    let m = memory(&world, 0);
+    assert_eq!(m.metrics.rejected, 0, "{:?}", m.trace);
+}
+
+#[test]
 fn a_networked_colony_builds_inside_its_network_and_its_well_on_the_deposit() {
     // Outside the hall's disc: the well, a source, needs no power to stand there.
     let spring = place_for("spring", SPRING, "none", 67.5, 35.5);

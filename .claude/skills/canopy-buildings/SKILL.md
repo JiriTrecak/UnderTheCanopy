@@ -169,7 +169,7 @@ Gotchas:
 In `base/buildings/<race>/<building>.json`:
 - `model`, `footprint`, `entrance`;
 - `presentation.effects`: a list of `{effect, state, socket}` for effects that loop while in that state, or `{effect, event, socket}` for one-shots on a clip event. States:
-  - `work`: while it trains, researches, upgrades, revives, or workers gather from it (a well pumps while gathered);
+  - `work`: while it trains, researches, upgrades, revives, earns its `income` (a well pumps), or workers gather from it;
   - `spawn`: once per trained unit;
   - `idle`: while it rests, complete;
   - `always`: whenever it stands complete in sight (raw substance that glows even at rest).

@@ -1,4 +1,4 @@
-//! The player's settings: graphics, audio, HUD, keyboard shortcuts, the multiplayer
+//! The player's settings: graphics, audio, HUD, gameplay, keyboard shortcuts, the multiplayer
 //! server and the player name, kept as `settings.json` in the user folder (D6) and
 //! applied as they change.
 //!
@@ -285,6 +285,23 @@ impl Hud {
     }
 }
 
+/// How the match shows what happens in it.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Gameplay {
+    /// Goods arriving in the player's stock rise as "+N" where they arrive: a worker's
+    /// load at the hall, a well's Substance.
+    pub delivery_text: bool,
+}
+
+impl Default for Gameplay {
+    fn default() -> Self {
+        Self {
+            delivery_text: true,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Multiplayer {
@@ -300,6 +317,7 @@ pub struct Settings {
     pub graphics: Graphics,
     pub audio: AudioSettings,
     pub hud: Hud,
+    pub gameplay: Gameplay,
     pub keys: KeyBindings,
     pub multiplayer: Multiplayer,
 }
@@ -312,6 +330,7 @@ impl Default for Settings {
             graphics: Graphics::default(),
             audio: AudioSettings::default(),
             hud: Hud::default(),
+            gameplay: Gameplay::default(),
             keys: KeyBindings::default(),
             multiplayer: Multiplayer::default(),
         }

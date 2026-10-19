@@ -43,6 +43,9 @@ pub struct LiveScene {
     bodies: Vec<(u32, [f32; 2], glam::Vec3)>,
     /// Building foundations of the latest frame (D44).
     foundations: Vec<canopy_render::terrain::foundations::Foundation>,
+    /// Deliveries rising in the latest frame, and the (interpolated) tick it shows.
+    pops: Vec<canopy_scene::live::Pop>,
+    pop_tick: f64,
     /// An entity whose model is not drawn (the first-person camera's own body).
     pub hidden_entity: Option<u32>,
 }
@@ -201,6 +204,21 @@ impl LiveScene {
             seconds,
             &mut self.world_ui_frame,
         );
+        if self.world_ui_input.deliveries && !self.pops.is_empty() {
+            let tick = self.pop_tick;
+            let aged: Vec<(&canopy_scene::live::Pop, f32)> = self
+                .pops
+                .iter()
+                .map(|p| (p, ((tick - f64::from(p.tick)) / 40.0) as f32))
+                .collect();
+            ui.pops(
+                &aged,
+                camera,
+                renderer.size(),
+                scale,
+                &mut self.world_ui_frame,
+            );
+        }
         if ui.atlases_dirty {
             let (glyphs, icons) = ui.atlases(scale);
             renderer.set_world_ui_atlases(gpu, glyphs, icons);
@@ -340,6 +358,11 @@ impl LiveScene {
         self.keys.clear();
         self.keys.extend(b.actors.iter().map(|a| a.key));
         self.ui_bodies.clone_from(&b.bodies);
+        self.pops.clone_from(&b.pops);
+        self.pop_tick = match a {
+            Some(a) => f64::from(a.tick) + f64::from(t) * f64::from(b.tick - a.tick),
+            None => f64::from(b.tick),
+        };
         canopy_scene::live::foundations(&b.bodies, &mut self.foundations);
         renderer.set_foundations(gpu, &self.foundations);
         if let Some(evaluator) = &mut self.effects {

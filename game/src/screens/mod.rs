@@ -2604,6 +2604,7 @@ fn play_options(settings: &Settings, catalog: &[keys::Entry]) -> PlayOptions {
     PlayOptions {
         keymap: Keymap::new(&settings.keys, catalog),
         always_health_bars: settings.hud.always_show_health_bars,
+        delivery_text: settings.gameplay.delivery_text,
     }
 }
 

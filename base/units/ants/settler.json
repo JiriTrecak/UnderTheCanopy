@@ -1,7 +1,7 @@
 {
   "id": "unit.ants.settler",
   "name": "Worker",
-  "description": "Gather resources and construct buildings. Trained at the main hall; uses 1 supply.",
+  "description": "Gathers amber and constructs buildings. Trained at the main hall; uses 1 supply.",
   "model": "asset.models.units.ants-colony-worker",
   "icon": "asset.portraits.units.ants-colony-worker",
   "selectionClass": "worker",
@@ -17,8 +17,7 @@
   "behaviors": {
     "work": {
       "harvests": [
-        "item.amber",
-        "item.root"
+        "item.amber"
       ],
       "builds": [
         "building.ants.fort",

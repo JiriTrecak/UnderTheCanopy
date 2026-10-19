@@ -15,5 +15,8 @@
     "amount": 10
   },
   "currency": true,
+  "presentation": {
+    "color": "#ffc93c"
+  },
   "displayOrder": 10
 }

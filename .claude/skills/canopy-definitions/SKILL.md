@@ -55,7 +55,7 @@ Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a
   - `cameraAnchor`;
   - and, when they differ from the model's own `display`, `healthHeight` and `character` (animation profile);
   - `effects`, `[{effect, state | event, socket}]` (D65): an effect looping from a model socket while the building or unit is in `state`, or played once whenever its clip crosses `event` (a clip event of the model's `capabilities.animations`). `socket` is a declared socket name or a model node named `socket*`. Looping effects follow their socket as the model moves.
-    - Building states: `work` (it trains, researches, upgrades, revives, or workers gather from it), `spawn` (once per trained unit), `attack` (a tower's model plays its attack clip, once per shot of its crew), `idle` (resting, complete), `always` (complete, in sight). Example: `base/buildings/beetles/shell-forge.json`.
+    - Building states: `work` (it trains, researches, upgrades, revives, earns its `income`, or workers gather from it), `spawn` (once per trained unit), `attack` (a tower's model plays its attack clip, once per shot of its crew), `idle` (resting, complete), `always` (complete, in sight). Example: `base/buildings/beetles/shell-forge.json`.
     - Unit states: `move` (walking, running, carrying or charging), `attack`, `cast` (any cast), `idle`, `always`, or any engine animation state (`walk`, `run`, `charge`, `hit`, `carry`, `carry_walk`, `carry_run`, `build`, `chop`).
     - A unit's `activeGlow` materials light while it moves, fights, casts or works.
 
@@ -101,13 +101,14 @@ Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a
 - **`upgrade`** turns one building into another; both need the same behaviours and footprint.
 - **`garrison.crew`** (a unit id) staffs a lookout with its own gunner: whenever the building stands complete, that unit stands in it, shoots from it and takes no orders; it goes with the building, and an upgrade to a tower with another crew swaps it. The crew is a ranged unit with no `playerControl` and no supply (`selectable: false` keeps it out of selections).
 - **`placementNear`** (`{source, radius}`) keeps a building within `radius` cells of a standing resource of `source`.
-- **`placementOn`** (`{source}`) places a building exactly on a standing resource of `source`, as StarCraft's refinery on its geyser (D62): the placement snaps onto it, the footprints must be equal, and when the building falls the resource is left intact. The base game's Substance Wells (`building.<race>.substance-well`) stand on Substance Deposits this way and are their own drop-off for Substance. A building placed on a resource still obeys `power` if it declares it; the beetles' well declares none and is a network source instead:
+- **`placementOn`** (`{source}`) places a building exactly on a standing resource of `source`, as StarCraft's refinery on its geyser (D62): the placement snaps onto it, the footprints must be equal, and when the building falls the resource is left intact. The base game's Substance Wells (`building.<race>.substance-well`) stand on Substance Deposits this way and pump Substance by themselves (`income`, below); no worker gathers there. A building placed on a resource still obeys `power` if it declares it; the beetles' well declares none and is a network source instead.
+- **`income`** (`{item, amount, intervalTicks}`) makes a building earn by itself: while it stands complete and alive, held by a player, and powered if it declares `power` (D66), it adds `amount` of `item` (a currency) to its owner's stock every `intervalTicks`. An unpowered building holds its count and goes on where it stopped. It works (D65 `work` state) for as long as it earns, its card says what it makes, and its owner sees each payment rise as "+N" above it. The base wells make 10 Substance every 200 ticks (120 a minute):
 
 ```json building
 {
   "id": "building.example.well",
   "name": "Well",
-  "description": "Built on a deposit; workers carry what they gather straight in.",
+  "description": "Built on a deposit; pumps Substance by itself.",
   "model": "asset.models.buildings.ants-rootworks",
   "icon": "asset.portraits.buildings.ants-rootworks",
   "body": {"maxHp": 1000, "armor": 5, "armorType": "structure"},
@@ -116,13 +117,14 @@ Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a
   "creation": {"method": "construct", "items": [{"item": "item.amber", "amount": 150}], "workTicks": 1600, "workAnimation": "build"},
   "behaviorSets": ["behavior-set.player-building"],
   "behaviors": {"storage": {"capacity": 100000, "accepts": ["item.root"], "dropoff": true}},
-  "placementOn": {"source": "building.neutral.corrupted-root"}
+  "placementOn": {"source": "building.neutral.corrupted-root"},
+  "income": {"item": "item.root", "amount": 10, "intervalTicks": 200}
 }
 ```
 
 ## A deposit
 
-A harvested building (a mine, a deposit) has a `yield` and a `harvesting` policy: `activeWorkers` gather at once, `recommendedWorkers` saturate it, `searchRadius` is how far gatherers look for another of its kind. `needsBuilding: true` lets workers gather only through a finished building placed on it (`placementOn`), and only its owner's; `endless: true` never runs out (loads leave the yield as it is). The Substance Deposit (`building.neutral.corrupted-root`) is both.
+A harvested building (a mine, a deposit) has a `yield` and a `harvesting` policy: `activeWorkers` gather at once, `recommendedWorkers` saturate it, `searchRadius` is how far gatherers look for another of its kind. `needsBuilding: true` lets workers gather only through a finished building placed on it (`placementOn`), and only its owner's; `endless: true` never runs out (loads leave the yield as it is). Which workers gather a deposit is the workers' `work.harvests`: the base game's workers harvest Amber only, so the Substance Deposit (`building.neutral.corrupted-root`, needs a building, endless) takes no gatherers (`recommendedWorkers: 0`) and pays only through its well's `income`. A deposit some worker harvests looks like this:
 
 ```json building
 {
@@ -174,7 +176,7 @@ StarCraft's pylon power, as content: a race whose buildings need power places th
 }
 ```
 
-Goods the economy counts are items with `"currency": true` and a `harvest` creation. The base game has two (D62): Amber (`item.amber`, finite mines at the base) and Substance (`item.root`, endless deposits out in the world). Trees are no resource in the base game; the engine still fells and plants harvestable trees for content that wants them.
+Goods the economy counts are items with `"currency": true` and a `harvest` creation. The base game has two (D62): Amber (`item.amber`, finite mines at the base, carried in by workers) and Substance (`item.root`, endless deposits out in the world, pumped by the wells on them). An item's `presentation.color` (`"#rrggbb"`) is the colour its amounts rise in where they reach a player's stock (Amber gold, Substance blue-violet); without one they rise in the label cream. Trees are no resource in the base game; the engine still fells and plants harvestable trees for content that wants them.
 
 ## Race, research, loot pool, behaviour set
 

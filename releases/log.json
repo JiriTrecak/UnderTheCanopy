@@ -10,7 +10,8 @@
       "Two new beetle heroes beside the Hornbreaker: the Forgemaster deploys Bolt Turrets, Overclocks allies, keeps a Field Forge burning and calls down Forgefall, a crucible that slams into a warning circle and leaves a molten pool; the Coilkeeper lashes chains of violet lightning, Overloads enemy mana, Recharges allies and, once, goes Unbottled into a storm that drags enemies in and lifts them off the ground.",
       "Wardens raise a field barrier that stops enemy arrows and bolts from the front and makes shells burst against it; Shieldbearers lock shields into an armoured wall; Arcwright arcs and the Arc Tower jump between enemies; Bombards cannot fire at anything close.",
       "Beetle weapons have muzzle flashes, steam, violet tracers and sparks on every shot, and drill sparks and impact dust in melee.",
-      "Skirmish lets you pick each player's colour, as the multiplayer lobby does"
+      "Skirmish lets you pick each player's colour, as the multiplayer lobby does",
+      "Amber your workers bring in and Substance your wells pump rise as floating numbers where they arrive. Turn them off under Settings, Gameplay."
     ],
     "improved": [
       "Look-dev: Fall now has a painted forest floor around its clearing, sun glints on its shallow ford, and amber that sits in a crater.",
@@ -39,7 +40,8 @@
       "Beetles build up more slowly: their troops and machines train longer, the Great and Elder Bastion, Alembic and Engine Yard cost more, and their troops have a little less health and damage",
       "Beetle troops are a little sturdier and hit a little harder, so beetles hold their own against ants",
       "Echo Isles is now an autumn forest map: dark leaf-strewn woods, pine needles and moss on the open ground, calm shallows and dark pools",
-      "Levelled research shows one level at a time: once Plating I is queued, its button turns into Plating II, waiting for the first to finish"
+      "Levelled research shows one level at a time: once Plating I is queued, its button turns into Plating II, waiting for the first to finish",
+      "Substance Wells pump Substance by themselves, about 120 a minute each: no workers needed, for every race."
     ],
     "fixed": [
       "Sparks and shrapnel from spells and weapons fall instead of flying up, and steam rises",
