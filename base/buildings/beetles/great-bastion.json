@@ -54,11 +54,11 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 600
+        "amount": 650
       },
       {
         "item": "item.root",
-        "amount": 150
+        "amount": 250
       }
     ],
     "workTicks": 4000

@@ -190,7 +190,18 @@ fn cast_one(
         }
     };
     let here = Pt::of(me.position, None);
-    for (index, d) in policy.bindings.iter().enumerate() {
+    // Abilities learned later (an ultimate) are tried first: a cheaper spell cast first
+    // would spend the mana the strongest one needs.
+    let unlocked_at = |d: &library::BindingDecl| {
+        d.learning
+            .as_ref()
+            .and_then(|l| l.first().copied())
+            .unwrap_or(0)
+    };
+    let mut order: Vec<(usize, &library::BindingDecl)> =
+        policy.bindings.iter().enumerate().collect();
+    order.sort_by(|a, b| unlocked_at(b.1).cmp(&unlocked_at(a.1)).then(a.0.cmp(&b.0)));
+    for (index, d) in order {
         let Some(ai) = d.ai.as_ref().filter(|_| d.allows(Control::Ai)) else {
             continue;
         };

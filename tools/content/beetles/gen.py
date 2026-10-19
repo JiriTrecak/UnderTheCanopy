@@ -11,8 +11,8 @@ import json
 
 S = 40  # ticks per second
 import os
-HP_SCALE = float(os.environ.get('HP_SCALE', '1.3'))
-DMG_SCALE = float(os.environ.get('DMG_SCALE', '1.3'))
+HP_SCALE = float(os.environ.get('HP_SCALE', '1.15'))
+DMG_SCALE = float(os.environ.get('DMG_SCALE', '1.15'))
 COST_SCALE = float(os.environ.get('COST_SCALE', '1'))
 HEROES = ('hornbreaker', 'forgemaster', 'coilkeeper')
 
@@ -925,7 +925,7 @@ def write_units(W, fx_):
 
     put(unit('shieldbearer', 'Shieldbearer',
              'Front-line tank behind a riveted tower shield, swinging a piston hammer. Lock Shields braces it in place for heavy armor. Slow and stubborn; uses 2 supply.',
-             body(520, 2, 'heavy'), weapon(15, 'melee', 0.6, 60, 20, 14, 12), 10, train(185, 0, 18), 2, infantry,
+             body(520, 2, 'heavy'), weapon(15, 'melee', 0.6, 60, 20, 14, 12), 10, train(185, 0, 22), 2, infantry,
              2.6, abilities=caster(10, 0, [binding('lock-shields', 'ability.beetles.lock-shields', 1, 'Q', 1,
                                                     threat=7, interval=20)]),
              presentation={'impactEffect': W['bash']}))
@@ -933,7 +933,7 @@ def write_units(W, fx_):
     put(unit('bolter', 'Bolter',
              'Multi-barrel pressure repeater fed from a back canister: rapid bolts against ground and air. Uses 2 supply.',
              body(420, 0, 'light'), weapon(11, 'piercing', 17, 40, 22, 10, 10, 0.75, projectile={'speed': 40}),
-             10, train(180, 0, 18), 2, infantry, 2.5, presentation=bolter_fx))
+             10, train(180, 0, 22), 2, infantry, 2.5, presentation=bolter_fx))
 
     put(unit('breacher', 'Breacher',
              'Siege drill arm and clamp. Breaks buildings and armor, and charges in from range. Every strike cracks armor. Requires a Great Bastion; uses 3 supply.',
@@ -941,7 +941,7 @@ def write_units(W, fx_):
              weapon(28, 'siege', 0.8, 72, 20, 16, 14,
                     charge={'minRange': 10, 'maxRange': 28, 'cooldownTicks': 400, 'durationTicks': 100,
                             'speedPermille': 1900, 'damagePermille': 1500}),
-             10, train(235, 25, 22), 3, (2.0, 5.6, 4.4), 2.9, level=2, requires=[T2],
+             10, train(235, 25, 26), 3, (2.0, 5.6, 4.4), 2.9, level=2, requires=[T2],
              abilities=caster(10, 0, [binding('armor-breaker', 'ability.beetles.armor-breaker', 1, 'Q', 1,
                                               controls=('player', 'ai', 'scenario'))]),
              presentation={'impactEffect': W['drill'], 'cameraAnchor': {'height': 1.6, 'forward': 0.2, 'distance': 7}}))
@@ -951,7 +951,7 @@ def write_units(W, fx_):
              body(400, 1, 'light'),
              weapon(10, 'spell', 15, 64, 20, 16, 12, 0.75, projectile={'speed': 60},
                     chain={'bounces': 1, 'radius': 5.0, 'retentionPermille': 500}),
-             10, train(200, 30, 22), 3, infantry, 2.7, level=2, requires=[T2],
+             10, train(200, 30, 26), 3, infantry, 2.7, level=2, requires=[T2],
              abilities=caster(220, 1.0, [
                  binding('arc-surge', 'ability.beetles.arc-surge', 1, 'Q', 1),
                  binding('static-field', 'ability.beetles.static-field', 0, 'W', 2)]),
@@ -961,7 +961,7 @@ def write_units(W, fx_):
     put(unit('mender', 'Mender',
              'Field medic with a pressure syringe-gun and a welding torch. Mends beetles and machines; Field Repair after Specialist Training. Requires a Great Bastion; uses 2 supply.',
              body(440, 1, 'light'), weapon(8, 'piercing', 14, 60, 18, 14, 10, 0.75, projectile={'speed': 34}),
-             10, train(170, 25, 20), 2, infantry, 2.4, level=2, requires=[T2],
+             10, train(170, 25, 24), 2, infantry, 2.4, level=2, requires=[T2],
              abilities=caster(240, 1.2, [
                  binding('mend', 'ability.beetles.mend', 1, 'Q', 1, preference='wounded-ally', interval=16),
                  binding('field-repair', 'ability.beetles.field-repair', 0, 'W', 2, preference='wounded-ally',
@@ -972,7 +972,7 @@ def write_units(W, fx_):
     put(unit('warden', 'Warden',
              'Carries a barrier projector: a curved violet pane that stops enemy missiles and shells from the front. Bulwark Pulse after Specialist Training. Requires a Great Bastion; uses 3 supply.',
              body(640, 2, 'heavy'), weapon(13, 'spell', 6, 56, 18, 12, 10, 0.75, projectile={'speed': 70}),
-             10, train(215, 30, 22), 3, (1.8, 5.2, 4.0), 2.6, level=2, requires=[T2],
+             10, train(215, 30, 26), 3, (1.8, 5.2, 4.0), 2.6, level=2, requires=[T2],
              abilities=caster(200, 1.2, [
                  binding('barrier-field', 'ability.beetles.barrier-field', 1, 'Q', 1, threat=26),
                  binding('bulwark-pulse', 'ability.beetles.bulwark-pulse', 0, 'W', 2, preference='wounded-ally')]),
@@ -984,7 +984,7 @@ def write_units(W, fx_):
              body(640, 2, 'heavy'),
              weapon(56, 'siege', 30, 140, 32, 24, 20, 0.75, minRange=7.0,
                     shell={'flightTicks': 46, 'radius': 2.5, 'slowPermille': 0, 'slowTicks': 0}),
-             8, train(260, 40, 25), 3, (2.2, 7.0, 5.0), 1.4, level=2, requires=[T2], nature='mechanical',
+             8, train(260, 40, 30), 3, (2.2, 7.0, 5.0), 1.4, level=2, requires=[T2], nature='mechanical',
              presentation={'projectile': 'effect.units.bombard-shell', 'projectileSocket': 'socket_muzzle',
                            'launchEffect': 'effect.units.bombard-trail', 'impactEffect': 'effect.units.bombard-impact',
                            'effects': [{'effect': 'effect.units.bombard-launch', 'event': 'release',
@@ -994,7 +994,7 @@ def write_units(W, fx_):
              'Boiler-winged flyer: a scout and anti-air harasser whose chin emitter fires violet bolts at ground and air. Flak Beam adds damage against flyers. Requires a Great Bastion; uses 3 supply.',
              body(420, 1, 'light'),
              weapon(14, 'piercing', 12, 48, 22, 10, 10, 0.75, projectile={'speed': 70}, targets=['ground', 'air']),
-             16, train(215, 30, 22), 3, (2.2, 5.5, 5.5), 2.2, level=2, requires=[T2], nature='mechanical',
+             16, train(215, 30, 26), 3, (2.2, 5.5, 5.5), 2.2, level=2, requires=[T2], nature='mechanical',
              movement_extra={'locomotion': 'air', 'flightHeight': 7},
              abilities=caster(10, 0, [binding('flak-beam', 'ability.beetles.flak-beam', 1, 'Q', 1)]),
              presentation={'projectile': 'effect.beetles.steamwing-bolt', 'projectileSocket': 'socket_projectile',
@@ -1009,7 +1009,7 @@ def write_units(W, fx_):
              body(3000, 6, 'heavy'),
              weapon(62, 'siege', 22, 96, 26, 20, 18, 0.75,
                     shell={'flightTicks': 30, 'radius': 2.8, 'slowPermille': 0, 'slowTicks': 0}),
-             7, train(600, 150, 50), 8, (2.5, 13.0, 6.5), 1.9, level=4, requires=[T3], nature='mechanical',
+             7, train(600, 150, 60), 8, (2.5, 13.0, 6.5), 1.9, level=4, requires=[T3], nature='mechanical',
              max_owned=1,
              abilities=caster(160, 0.8, [
                  binding('broadside', 'ability.beetles.broadside', 1, 'Q', 1, interval=40),
@@ -1161,7 +1161,7 @@ def write_buildings(research_ids):
                  network=('source', 32), power=False,
                  behaviors={'storage': hall_storage, 'production': tinkers,
                             'research': {'outputs': [research_ids['pressure-mains']], 'queueCapacity': 1}},
-                 upgrade={'target': T2, 'items': cost(400, 75), 'workTicks': 80 * S},
+                 upgrade={'target': T2, 'items': cost(450, 150), 'workTicks': 80 * S},
                  extra={'heroCapacity': 1}))
     put(building('great-bastion', 'Great Bastion',
                  'Hall tier 2: unlocks the Alembic, the Engine Yard and tier-2 troops, a second hero and level II research. Researches Pressure Mains; upgrades to the Elder Bastion.',
@@ -1169,7 +1169,7 @@ def write_buildings(research_ids):
                  network=('source', 32), power=False,
                  behaviors={'storage': hall_storage, 'production': tinkers,
                             'research': {'outputs': [research_ids['pressure-mains']], 'queueCapacity': 1}},
-                 upgrade={'target': T3, 'items': cost(600, 150), 'workTicks': 100 * S},
+                 upgrade={'target': T3, 'items': cost(650, 250), 'workTicks': 100 * S},
                  extra={'heroCapacity': 2}))
     put(building('elder-bastion', 'Elder Bastion',
                  'Hall tier 3, upgraded once an Engine Yard stands: unlocks the Juggernaut, level III research, Specialist Training Master, the Arc Tower and a third hero.',
@@ -1203,14 +1203,14 @@ def write_buildings(research_ids):
     put(forge)
     put(building('alembic', 'Alembic',
                  'Distillery of the specialists who handle substance through devices: trains Arcwrights, Menders and Wardens and researches Specialist Training. Requires a Great Bastion.',
-                 1150, 4, 12, construct(200, 40, 45), requires=[T2], category='category.build-advanced', priority=90,
+                 1150, 4, 12, construct(225, 75, 50), requires=[T2], category='category.build-advanced', priority=90,
                  behaviors={'storage': bills(800),
                             'production': {'mode': 'queued', 'outputs': [u('arcwright'), u('mender'), u('warden')],
                                            'workerSlots': 0, 'queueCapacity': 6},
                             'research': {'outputs': [research_ids['adept'], research_ids['master']], 'queueCapacity': 2}}))
     put(building('engine-yard', 'Engine Yard',
                  'Machine works: builds Bombards, Steamwings and the Juggernaut, and researches Fragmentation Shells, Riveted Hulls and Afterburners. Requires a Great Bastion.',
-                 1600, 5, 16, construct(250, 50, 55), requires=[T2], category='category.build-advanced', priority=80,
+                 1600, 5, 16, construct(275, 100, 60), requires=[T2], category='category.build-advanced', priority=80,
                  behaviors={'storage': bills(1200),
                             'production': {'mode': 'queued', 'outputs': [u('bombard'), u('steamwing'), u('juggernaut')],
                                            'workerSlots': 0, 'queueCapacity': 6},

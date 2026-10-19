@@ -670,3 +670,54 @@ Jiri: "don't be stingy with particle effects … I want these effects crisp and 
 - **Death clip events play their effects** (the Juggernaut's crash).
 - Forgefall's crucible is now a falling iron crucible with a comet tail over the warning circle, landing on the `impact` event in a fireball, shock rings, molten splashes and a pool of cooling metal.
 
+
+## D70. Fair computer opponents that finish their matches; beetle balance (2026-10-19, Claude while Jiri was away — review: felt)
+
+The beetles won 12 of 12 duels from the first start and 1 of 12 from the second. Measured with `ai_duels` (new `--swap`, `--mirror-camps`, `--heroes` and `DUEL_EVERY`).
+- **What caused the seat bias.**
+  - With the starts swapped, the bias followed the start, not the player number, so the cause was positional.
+  - The AI's site searches used fixed world directions. Its powered-disc search (centred on the hall, every candidate on a ring at the same distance) and its network candidates always tried east first. A beetle base therefore grew towards the enemy from one start and towards the map edge from the other. The beetles' solo mining differed by about 10 % between the Echo Isles starts.
+  - Both maps' creep camps are not symmetric between the two sides. Their terrain is only about 90 % mirrored, so some start effect stays on these maps.
+  - Ants on the same maps showed per-map start effects of both signs.
+- **Searches use each base's own compass.** The front points from home to the middle of the starts. Sidesteps turn first away from home's nearest resource, so mirrored and rotated starts search mirrored sites. Equal distances keep the compass order. Remote sites check their doorway from nearby.
+- **Expansions.** When the known amber near a colony's drop-offs falls below about six minutes of its gatherers' trips, the colony:
+  - picks the nearest field away from every start and enemy building, counting the strength of the camps holding it as distance;
+  - keeps the goods for its hall;
+  - sends a worker to see the field;
+  - has the army clear the camps holding it;
+  - builds the hall there.
+  Raiders at outlying halls are threats. Echo Isles' home amber (13,500) ran dry around minute 13, and that had been the beetle mirror's stall.
+- **Wells.** A colony that lost its last well rebuilds it whatever its army. A colony that wants another well while the enemy holds every deposit contests one once its army is large enough.
+- **Spending.**
+  - Missing advanced production is saved for before research.
+  - Research and upgrades leave promised goods alone.
+  - A colony with goods piling up (three times the cost of a recruit) adds production, up to six buildings, and runs a second or third foundation at once.
+  - Network growth and failed site searches back off (one node at a time).
+- **Heroes and spells.**
+  - Heroes learn every ability before raising ranks, the latest unlocked first, so an ultimate comes at its level.
+  - Casting tries the latest-unlocked ability first.
+  - Positive statuses on allies score only with a threat within the binding's threat radius.
+  - Computer seats that chose no hero draw one of the setup's choices from the seed.
+- **Finishing.** Late, or with a full army, and with no enemy building known, the army stops farming camps. With every start seen, it searches as a whole, longest-unseen first, on two rings around every start and at every resource site.
+- **Beetle numbers** (`tools/content/beetles/gen.py`):
+  - Troops and machines train 4–10 s longer.
+  - Great Bastion 450 amber + 150 Substance (was 400 + 75); Elder Bastion 650 + 250 (was 600 + 150); Alembic 225 + 75; Engine Yard 275 + 100.
+  - Troop health and damage scale 1.15 (was 1.3).
+- **Measured** (final tree, 8 seeds per seat per map, `ai_duels --maps echo-isles,amberleaf-crossing`):
+
+  | Pairing | Result |
+  |---|---|
+  | Beetles from start A vs ants | Echo 1 of 8, Amberleaf 2 of 8 |
+  | Beetles from start B vs ants | Echo 4 of 8, Amberleaf 3 of 8 |
+  | Beetle mirror | 16 of 16 finished (start A 13–3) |
+  | Ant mirror | 16 of 16 finished, 7–9 |
+
+  - Beetles won 10 of 32 against ants. Jiri: don't balance for one side or one map yet.
+  - The cap no longer ends any match.
+  - Earlier rounds put the health and damage scale's crossing near 1.1: 1.0 won about 27 %, the old costs at 1.15 about 68 %.
+  - Machines were trained in 28 of 96 player-games.
+- **Open**:
+  - The Juggernaut is rarely reached (games end before the Elder Bastion), so Broadside goes uncast.
+  - Unbottled and Field Repair are seldom cast.
+  - The maps' camps are not mirrored.
+  - The beetles' per-seat and per-map win rates are outside 40–60 %.

@@ -208,7 +208,9 @@ pub struct Memory {
     /// First sight of each hostile in view, by id.
     pub contacts: BTreeMap<u32, u32>,
     /// Timers by key (old `inspected`): `reject:<command>`, `start:<x>:<y>`, `item:<id>`,
-    /// `replacement:<id>`, `economy:rebalance` and stalled mission keys.
+    /// `replacement:<id>`, `economy:rebalance`, `economy:well`, `economy:expansion`,
+    /// `economy:had-well` (when a well last stood), `economy:extend:<id>`,
+    /// `economy:nosite:<id>` and stalled mission keys.
     pub inspected: BTreeMap<String, u32>,
     /// Building sites refused by the simulation, until a tick.
     pub failed_sites: BTreeMap<String, u32>,

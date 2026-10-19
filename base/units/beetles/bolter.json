@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.beetles-bolter",
   "selectionClass": "army",
   "body": {
-    "maxHp": 550,
+    "maxHp": 480,
     "armor": 0,
     "armorType": "light"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 14,
+      "damage": 13,
       "damageType": "piercing",
       "range": 17,
       "cooldownTicks": 40,
@@ -42,7 +42,7 @@
         "amount": 180
       }
     ],
-    "workTicks": 720
+    "workTicks": 880
   },
   "level": 1,
   "supplyCost": 2,

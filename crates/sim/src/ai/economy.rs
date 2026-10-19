@@ -138,11 +138,15 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
     fn build(&mut self, def: Def, reason: &str, origin: Pt) -> bool {
         let f = self.b.f;
         let d = f.definition(def);
+        let nosite = format!("economy:nosite:{}", d.id);
+        if self.b.s.inspected.get(&nosite).is_some_and(|&t| t > f.tick) {
+            return false;
+        }
         let Some(worker) = self.builder(d) else {
             return false;
         };
         if !f.can_afford(d, &[])
-            || f.buildings.iter().any(|&i| f.at(i).construction)
+            || !site_free(f, d)
             || f.buildings.len() as u32 >= f.catalog().content.rules.max_buildings
         {
             return false;
@@ -207,8 +211,27 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
                     return self.emit(action, reason);
                 }
             }
-            return self.extend_network(None);
+            // A building that still finds no site after the network grew for it waits a
+            // while instead of laying den after den.
+            let key = format!("economy:extend:{}", d.id);
+            let extended = self.b.s.inspected.get(&key).is_none_or(|&t| t <= f.tick)
+                && self.extend_network(None);
+            if extended {
+                self.b.s.inspected.insert(key, f.tick + EXTEND_RETRY_TICKS);
+            } else {
+                self.b
+                    .s
+                    .inspected
+                    .insert(nosite, f.tick + NO_SITE_RETRY_TICKS);
+            }
+            return extended;
         }
+        // No site anywhere near: the next searches for it wait a little, so a colony
+        // with goods to spare does not search the same full base every beat.
+        self.b
+            .s
+            .inspected
+            .insert(nosite, f.tick + NO_SITE_RETRY_TICKS);
         false
     }
 
@@ -283,8 +306,13 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
             return false;
         };
         let d = catalog.get(node);
-        if f.buildings.iter().any(|&i| f.at(i).construction)
+        // One node at a time: a rich colony building several things at once would
+        // otherwise lay a den for every site it failed to find.
+        if !site_free(f, d)
             || f.buildings.len() as u32 >= catalog.content.rules.max_buildings
+            || f.buildings
+                .iter()
+                .any(|&i| f.at(i).construction && f.at(i).def == node)
         {
             return false;
         }
@@ -331,6 +359,38 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
         }
         false
     }
+}
+
+/// How long a building that grew the network without finding a site waits before it
+/// grows the network again.
+const EXTEND_RETRY_TICKS: u32 = 2400;
+
+/// How long a building that found no site waits before it searches again.
+const NO_SITE_RETRY_TICKS: u32 = 400;
+
+/// The memory key of a colony that has owned a well.
+const HAD_WELL: &str = "economy:had-well";
+
+/// Most production buildings a colony adds for goods that pile up.
+const MAX_PRODUCERS: usize = 6;
+
+/// Most foundations a colony keeps going at once.
+const MAX_SITES: usize = 3;
+
+/// Whether the colony may start `d` now: one foundation at a time, and another beside it
+/// only while the goods pile up (twice its cost banked in every good), up to
+/// [`MAX_SITES`].
+fn site_free(f: &super::frame::Frame, d: &Definition) -> bool {
+    let sites = f
+        .buildings
+        .iter()
+        .filter(|&&i| f.at(i).construction)
+        .count();
+    sites == 0
+        || (sites < MAX_SITES
+            && items(d)
+                .iter()
+                .all(|c| f.balance(c.item.as_str()) >= 2 * c.amount.max(100)))
 }
 
 fn bill(costs: &[Cost]) -> Bill {
@@ -409,7 +469,7 @@ fn wells(p: &mut Planner, defs: &[Def], army: usize) -> bool {
         return false;
     };
     let d = f.definition(def);
-    if !f.can_afford(d, &[]) || f.buildings.iter().any(|&i| f.at(i).construction) {
+    if !f.can_afford(d, &[]) || !site_free(f, d) {
         return false;
     }
     let builds = |w: &Known| {
@@ -684,7 +744,7 @@ pub(super) fn expansion(
 fn expand(p: &mut Planner, e: Expansion) -> bool {
     let f = p.b.f;
     let d = f.definition(e.hall);
-    if !f.can_afford(d, &[]) || f.buildings.iter().any(|&i| f.at(i).construction) {
+    if !f.can_afford(d, &[]) || !site_free(f, d) {
         return false;
     }
     // Camp creatures or enemies holding it are the army's to clear first (strategy).
@@ -1208,12 +1268,15 @@ fn run(p: &mut Planner) {
             || content.rules.research.values().any(|r| needs(&r.requires))
     };
     let threatened = f.hostiles.iter().any(|&i| dist(f.at(i).p, f.home) < 32.0);
-    // A colony without a well (lost, or never built) puts one back as soon as a free
-    // deposit is safe and home is quiet, whatever its army: it cannot advance without one
-    // (D62).
-    if workers.len() as u32 >= w.minimum
+    // A colony that lost its last well puts one back as soon as a free deposit is safe
+    // and home is quiet, whatever its army: it cannot advance without one (D62). The
+    // first well still waits for a fighting force (below).
+    let has_well = buildings.iter().any(|b| f.def(b).placement_on.is_some());
+    if has_well {
+        p.b.s.inspected.insert(HAD_WELL.into(), tick);
+    } else if p.b.s.inspected.contains_key(HAD_WELL)
+        && workers.len() as u32 >= w.minimum
         && !threatened
-        && !buildings.iter().any(|b| f.def(b).placement_on.is_some())
         && wells(p, &defs, army.len())
     {
         return;
@@ -1655,12 +1718,36 @@ fn run(p: &mut Planner) {
             .iter()
             .all(|c| f.balance(c.item.as_str()) >= 3 * c.amount.max(100))
     };
-    if barracks.iter().all(|b| f.queue(b).len() >= 2)
-        && let Some(d) = producers.iter().copied().find(|&d| {
+    // The recruits a producer could train from the goods piled up (three of each).
+    let piled_outputs = |d: Def| {
+        catalog
+            .get(d)
+            .behaviors
+            .production
+            .as_ref()
+            .map_or(0, |prod| {
+                prod.outputs
+                    .iter()
+                    .filter_map(&get)
+                    .filter(|o| {
+                        f.available(o.requires.as_deref())
+                            && items(o)
+                                .iter()
+                                .all(|c| f.balance(c.item.as_str()) >= 3 * c.amount)
+                    })
+                    .count()
+            })
+    };
+    let saturated = barracks.iter().all(|b| f.queue(b).len() >= 2);
+    if let Some(d) = producers
+        .iter()
+        .copied()
+        .filter(|&d| {
             f.can_afford(catalog.get(d), &promised)
-                && (barracks.len() < 3.min(1 + army.len() / 12)
-                    || (barracks.len() < 3 && banked(d)))
+                && ((saturated && barracks.len() < 3.min(1 + army.len() / 12))
+                    || (barracks.len() < MAX_PRODUCERS && banked(d) && piled_outputs(d) > 0))
         })
+        .max_by_key(|&d| (piled_outputs(d), std::cmp::Reverse(d)))
         && p.build(d, "Add production throughput to match income", f.home)
     {
         return;

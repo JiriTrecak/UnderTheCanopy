@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.beetles-bombard",
   "selectionClass": "army",
   "body": {
-    "maxHp": 830,
+    "maxHp": 740,
     "armor": 2,
     "armorType": "heavy"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 73,
+      "damage": 64,
       "damageType": "siege",
       "range": 30,
       "cooldownTicks": 140,
@@ -50,7 +50,7 @@
         "amount": 40
       }
     ],
-    "workTicks": 1000
+    "workTicks": 1200
   },
   "requires": [
     "building.beetles.great-bastion"

@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.beetles-steamwing",
   "selectionClass": "army",
   "body": {
-    "maxHp": 550,
+    "maxHp": 480,
     "armor": 1,
     "armorType": "light"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 18,
+      "damage": 16,
       "damageType": "piercing",
       "range": 12,
       "cooldownTicks": 48,
@@ -76,7 +76,7 @@
         "amount": 30
       }
     ],
-    "workTicks": 880
+    "workTicks": 1040
   },
   "requires": [
     "building.beetles.great-bastion"

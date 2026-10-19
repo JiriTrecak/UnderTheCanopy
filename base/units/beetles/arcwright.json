@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.beetles-arcwright",
   "selectionClass": "army",
   "body": {
-    "maxHp": 520,
+    "maxHp": 460,
     "armor": 1,
     "armorType": "light"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 13,
+      "damage": 12,
       "damageType": "spell",
       "range": 15,
       "cooldownTicks": 64,
@@ -93,7 +93,7 @@
         "amount": 30
       }
     ],
-    "workTicks": 880
+    "workTicks": 1040
   },
   "requires": [
     "building.beetles.great-bastion"

@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.beetles-juggernaut",
   "selectionClass": "army",
   "body": {
-    "maxHp": 3900,
+    "maxHp": 3450,
     "armor": 6,
     "armorType": "heavy"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 81,
+      "damage": 71,
       "damageType": "siege",
       "range": 22,
       "cooldownTicks": 96,
@@ -91,7 +91,7 @@
         "amount": 150
       }
     ],
-    "workTicks": 2000
+    "workTicks": 2400
   },
   "requires": [
     "building.beetles.elder-bastion"

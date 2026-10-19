@@ -6,6 +6,9 @@
 //!     [--minutes 60] [--races ants,beetles] [--maps echo-isles,amberleaf-crossing] [--log]
 //! ```
 //!
+//! `--heroes a,b` starts the players with those heroes (unit ids; empty for the
+//! computer's own pick).
+//!
 //! `--swap` trades the two starts' places, so player 1 starts where player 2 would: it
 //! tells a seat bias (player order) from a map one (start positions).
 //!
@@ -33,6 +36,7 @@ struct Args {
     seeds: u32,
     minutes: u32,
     races: [Option<String>; 2],
+    heroes: [Option<String>; 2],
     maps: Vec<String>,
     log: bool,
     swap: bool,
@@ -45,6 +49,7 @@ fn args() -> Result<Args, String> {
         seeds: 4,
         minutes: 60,
         races: [None, None],
+        heroes: [None, None],
         maps: Vec::new(),
         log: false,
         swap: false,
@@ -61,6 +66,13 @@ fn args() -> Result<Args, String> {
                 let v = value()?;
                 let mut parts = v.split(',').map(|s| Some(s.trim().to_string()));
                 out.races = [parts.next().flatten(), parts.next().flatten()];
+            }
+            "--heroes" => {
+                let v = value()?;
+                let mut parts = v
+                    .split(',')
+                    .map(|s| Some(s.trim().to_string()).filter(|s| !s.is_empty()));
+                out.heroes = [parts.next().flatten(), parts.next().flatten()];
             }
             "--maps" => out.maps = value()?.split(',').map(|m| m.trim().to_string()).collect(),
             "--log" => out.log = true,
@@ -174,15 +186,8 @@ struct Duel {
     network: [(u32, u32, u32); 2],
 }
 
-fn duel(
-    content: Arc<Content>,
-    map: &UtcMap,
-    seed: u32,
-    cap: u32,
-    races: &[Option<String>; 2],
-    swap: bool,
-    mirror_camps: Option<usize>,
-) -> Duel {
+fn duel(content: Arc<Content>, map: &UtcMap, seed: u32, cap: u32, args: &Args) -> Duel {
+    let (races, swap, mirror_camps) = (&args.races, args.swap, args.mirror_camps);
     let pair = farthest(map);
     let mut map = map.clone();
     map.player_starts.retain(|s| pair.contains(&s.player));
@@ -205,7 +210,7 @@ fn duel(
                 kind: SlotKind::Ai,
                 name: None,
                 team: None,
-                hero: None,
+                hero: args.heroes[i].clone(),
                 race: races[i].clone(),
             })
             .collect(),
@@ -588,9 +593,8 @@ fn main() -> Result<(), String> {
             .flat_map(|m| (1..=args.seeds).map(move |seed| (m, seed)))
             .map(|(m, seed)| {
                 let content = content.clone();
-                let races = &args.races;
-                let (swap, mirror_camps) = (args.swap, args.mirror_camps);
-                s.spawn(move || duel(content, m, seed, cap, races, swap, mirror_camps))
+                let args = &args;
+                s.spawn(move || duel(content, m, seed, cap, args))
             })
             .collect();
         handles

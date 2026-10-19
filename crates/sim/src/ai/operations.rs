@@ -118,7 +118,14 @@ pub fn observe(f: &Frame, s: &mut Memory) {
             known.status = CampStatus::Cleared;
         }
     }
-    for &p in &f.geo.starts {
+    for p in f
+        .geo
+        .starts
+        .iter()
+        .copied()
+        .chain(f.geo.resources.iter().map(|r| r.point))
+        .chain(search_ring(f))
+    {
         if dist(p, f.home) > 20.0 && f.visible(p) {
             s.inspected.insert(start_key(p), tick);
         }
@@ -212,6 +219,31 @@ const STALL_RETRY_TICKS: u32 = 2400;
 /// The memory key of a given-up operation target (`inspected`, until a tick).
 fn stalled_key(key: &str) -> String {
     format!("stalled:{key}")
+}
+
+/// How far around a start a search for a hidden enemy looks: two rings of points.
+const SEARCH_RINGS: [f64; 2] = [40.0, 72.0];
+/// Points per search ring.
+const SEARCH_POINTS: u32 = 12;
+
+/// Points around every start a search for a hidden enemy visits.
+fn search_ring(f: &Frame) -> Vec<Pt> {
+    let mut points = Vec::new();
+    for &c in &f.geo.starts {
+        for radius in SEARCH_RINGS {
+            for k in 0..SEARCH_POINTS {
+                let angle = f64::from(k) * std::f64::consts::TAU / f64::from(SEARCH_POINTS);
+                points.push(
+                    Pt::new(
+                        c.x + crate::math::cos(angle) * radius,
+                        c.y + crate::math::sin(angle) * radius,
+                    )
+                    .rounded(),
+                );
+            }
+        }
+    }
+    points
 }
 
 /// How far out the army stages, and the home guard stands.
@@ -451,6 +483,32 @@ pub fn strategy(b: &mut Beat) {
             2400,
         );
     };
+    // A colony whose fields run dry cannot wait for its hero's experience or a well: the
+    // army clears the camp holding the next field as soon as it is a match for it.
+    if let Some(e) = field.filter(|e| e.guard > 0.0)
+        && f.army.len() as u32 >= rules.army.minimum
+        && e.guard * f64::from(rules.army.camp_permille) <= power * 1000.0
+        && let Some(c) = f
+            .geo
+            .camps
+            .iter()
+            .filter(|c| {
+                dist(c.point, e.point) < super::economy::GUARD_RADIUS
+                    && f.geo.connected(f.home, c.point)
+                    && s.camps
+                        .get(&c.id)
+                        .is_none_or(|m| m.status != CampStatus::Cleared && m.retry <= tick)
+            })
+            .min_by(|a, b| {
+                dist(a.point, e.point)
+                    .total_cmp(&dist(b.point, e.point))
+                    .then(a.id.cmp(&b.id))
+            })
+    {
+        mission(f, s, MissionKind::Camp, c.id.clone(), c.point, 2400);
+        s.plan.reason = format!("Clear {} from the next field", c.id);
+        return;
+    }
     // Without a well of its own the colony cannot advance (D62), so waiting only makes it
     // weaker: an enemy building on a deposit is broken once the army is a match for what
     // was seen guarding it (or is as large as the stage of the match asks), to free it.
@@ -530,9 +588,12 @@ pub fn strategy(b: &mut Beat) {
         s.plan.reason = "Use the trained army to pressure known enemy infrastructure".into();
         return;
     }
+    // Late, or with a full army, and no enemy building known: finding the enemy comes
+    // before farming camps for experience, so a won match is finished.
+    let search = buildings.is_empty() && (late || full);
     if hero.is_some()
         && let Some(c) = best
-        && (xp_needed > 0 || c.unlocks)
+        && (c.unlocks || (xp_needed > 0 && !search))
     {
         mission(
             f,
@@ -567,6 +628,20 @@ pub fn strategy(b: &mut Beat) {
             .get(&start_key(*p))
             .map_or(-1, |&t| i64::from(t))
     };
+    // Every start seen and no enemy building known: the enemy lives on around a start or
+    // at a further field, so the ground around the starts and the resource sites are
+    // searched too, the longest unseen first.
+    if starts.iter().all(|p| inspected(p) >= 0) {
+        let around = search_ring(f);
+        starts.extend(
+            around
+                .into_iter()
+                .chain(f.geo.resources.iter().map(|r| r.point))
+                .filter(|&p| {
+                    f.geo.inside(p) && dist(p, f.home) > 24.0 && f.geo.connected(f.home, p)
+                }),
+        );
+    }
     starts.sort_by(|a, b| {
         inspected(a)
             .cmp(&inspected(b))
@@ -575,8 +650,14 @@ pub fn strategy(b: &mut Beat) {
             .then(a.y.total_cmp(&b.y))
     });
     if let Some(&p) = starts.first() {
-        mission(f, s, MissionKind::Scout, start_key(p), p, 2400);
-        s.plan.reason = "Locate the opponent using possible starting sites".into();
+        if search {
+            // The whole army searches, so what it finds it also finishes.
+            mission(f, s, MissionKind::Assault, start_key(p), p, 2400);
+            s.plan.reason = "Search for the hidden enemy with the army".into();
+        } else {
+            mission(f, s, MissionKind::Scout, start_key(p), p, 2400);
+            s.plan.reason = "Locate the opponent using possible starting sites".into();
+        }
     } else {
         mission(
             f,

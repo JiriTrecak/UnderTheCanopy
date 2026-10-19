@@ -23,14 +23,14 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 250
+        "amount": 275
       },
       {
         "item": "item.root",
-        "amount": 50
+        "amount": 100
       }
     ],
-    "workTicks": 2200,
+    "workTicks": 2400,
     "workAnimation": "build"
   },
   "requires": [
