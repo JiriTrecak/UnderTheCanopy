@@ -43,12 +43,6 @@
       ],
       "workerSlots": 0,
       "queueCapacity": 6
-    },
-    "research": {
-      "outputs": [
-        "research.beetles.pressure-mains"
-      ],
-      "queueCapacity": 1
     }
   },
   "level": 3,

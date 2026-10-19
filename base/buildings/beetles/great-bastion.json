@@ -1,7 +1,7 @@
 {
   "id": "building.beetles.great-bastion",
   "name": "Great Bastion",
-  "description": "Hall tier 2: unlocks the Alembic, the Engine Yard and tier-2 troops, a second hero and level II research. Researches Pressure Mains; upgrades to the Elder Bastion.",
+  "description": "Hall tier 2: unlocks the Alembic, the Engine Yard and tier-2 troops, a second hero, level II research and Pressure Mains at the Brood Dens. Upgrades to the Elder Bastion.",
   "model": "asset.models.buildings.beetles-great-bastion",
   "icon": "asset.portraits.buildings.beetles-great-bastion",
   "body": {
@@ -40,12 +40,6 @@
       ],
       "workerSlots": 0,
       "queueCapacity": 6
-    },
-    "research": {
-      "outputs": [
-        "research.beetles.pressure-mains"
-      ],
-      "queueCapacity": 1
     }
   },
   "level": 2,
