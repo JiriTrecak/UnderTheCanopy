@@ -1190,6 +1190,18 @@ fn races(check: &mut Checker) {
     for profile in &profiles {
         let location = format!("rules.races.{}", profile.id);
         let race = profile.race;
+        if let Some(hud) = &race.hud {
+            for (field, image) in [("frame", &hud.frame), ("resources", &hud.resources)] {
+                if let Some(image) = image
+                    && content.image_path(image.as_str()).is_none()
+                {
+                    check.fail(
+                        format!("{location}.hud.{field}"),
+                        format!("HUD art must reference an image ({image})"),
+                    );
+                }
+            }
+        }
         if let Some(construction) = &race.construction {
             check.model(
                 &location,

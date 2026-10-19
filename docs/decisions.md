@@ -737,3 +737,12 @@ Jiri: rebuild Echo Isles in the autumn design, trees replaced by impassable dark
 - **Two new atlases** in the debris family (`tools/terrain/build_atlas.py`, gpt-image sources): `asset.terrain.autumn-moss` and `asset.terrain.autumn-needles`.
 - **Measured** (ai_duels, Echo Isles, 8 seeds a seat): every match but one finished (one hit the hour cap); both sides build wells and beetles keep their network. Beetles won 2 of 16 against ants, against 5 of 16 on the summer map with the same numbers; per Jiri, no per-map balancing.
 - **Open**: no giant trees (in woods this narrow their trunks would cover playable ground); lone pines leave small closed spots; the map's preview shows the closed cells with a fine hatch.
+
+## D72. Race-specific HUD art (2026-10-19, Jiri requested — review: visible)
+
+Jiri asked for a Beetles magic-and-machine version of the woodland command-card border, selected by the race being played, and explicitly included the separate amber/Substance/supply ribbon.
+
+- Ants retain their original woodland dock and resource ribbon. Beetles receive matching blackened carapace steel, brass and contained violet glass art, generated from the existing layout and the Beetles' in-game models. Controls, panel positions and resource icons keep their existing layout.
+- Race definitions own optional `hud.frame` and `hud.resources` image asset references, checked by content validation. Runtime code names no shipped race or asset. The local slot's race in the frozen match setup selects the pair; omitted race uses the rules' default. Observers use the default race. Missing HUD fields restore the UI theme. Selecting foreign units or changing fog perspective does not change the player's interface.
+- The UI can replace a styled background texture while retaining its size and inset; the override survives hot reload and can be cleared. Both normal play and offscreen play captures use the same race configuration path.
+- Review captures: [Ants](captures/race-hud/ants-skirmish.png) and [Beetles](captures/race-hud/beetles-skirmish.png), real two-player Echo Isles skirmishes at tick 80, 1920×1080, with the local workers selected.

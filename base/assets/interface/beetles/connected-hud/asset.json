@@ -1,0 +1,22 @@
+{
+  "id": "asset.interface.beetles.connected-hud",
+  "name": "Beetles Connected HUD",
+  "kind": "interface",
+  "race": "beetles",
+  "tags": [
+    "beetles-interface"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "license": "Original Under the Canopy interface artwork generated with built-in ImageGen."
+}

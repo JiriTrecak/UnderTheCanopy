@@ -71,6 +71,8 @@ Node fields: `id`, `kind`, `class`, `style`, `text`, `image`, `value`, `min`/`ma
 
 The shipped HUD (`layouts/hud.json`, templates in `common.json`) reproduces the old woodland dock: connected frame art, minimap, portrait, name, stats, vitals with bar rims, satchel inventory, 4 × 3 command card, resource ribbon and hero bar, scaled by `transform: scale(0.65)` like the old `--hud-scale`. `layouts/gallery.json` shows the remaining widgets in the old menu and settings styles.
 
+Races may supply `hud: {frame, resources}` in their package definition. Both fields are image asset ids: the connected dock and the separate resource ribbon above the command grid. The local seat's race in the match setup chooses them once when the match opens, including saved and multiplayer matches; selection and fog perspective do not change it. Observers use the default race. Missing fields keep the theme's art. The Ants use the woodland pair; the Beetles use steel, brass and contained violet magic, with the same layout and controls. Background texture overrides survive UI hot reloads.
+
 ## Text and fonts
 
 Font roles map to family stacks; the first family present wins. `system-ui`, `serif`, `sans-serif` and `monospace` name the platform's fonts.

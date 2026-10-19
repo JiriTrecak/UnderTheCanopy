@@ -885,9 +885,19 @@ pub struct ConstructionPresentation {
 pub struct Race {
     pub name: String,
     pub description: String,
+    pub hud: Option<RaceHud>,
     pub construction: Option<ConstructionPresentation>,
     pub starting_setup: Option<StartingSetup>,
     pub roster: Vec<Id>,
+}
+
+/// Optional interface art; absent pieces keep the UI theme's default.
+#[skip_serializing_none]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RaceHud {
+    pub frame: Option<Id>,
+    pub resources: Option<Id>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]

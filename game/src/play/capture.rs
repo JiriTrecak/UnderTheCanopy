@@ -584,6 +584,7 @@ pub fn run(
         },
     )?;
     let mut hud = Hud::new();
+    hud.configure(&game.world.catalog().content, game.world.setup(), me);
     hud.minimap_area = loaded.scene.minimap;
     hud.palette = loaded
         .scene

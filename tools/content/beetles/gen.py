@@ -1333,6 +1333,8 @@ def write_race():
     race = {
         'id': 'beetles',
         'name': 'Beetles',
+        'hud': {'frame': 'asset.interface.beetles.connected-hud',
+                'resources': 'asset.interface.beetles.resource-ribbon'},
         'description': 'Slow, stubborn and territorial: expensive, durable troops and machines that run on substance they never let touch them.',
         'startingSetup': {
             'fort': HALL,

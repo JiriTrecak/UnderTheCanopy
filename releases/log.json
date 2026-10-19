@@ -1,7 +1,9 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [],
+    "added": [
+      "Beetles now have a steel, brass and violet-magic HUD frame and resource ribbon; Ants keep their woodland interface."
+    ],
     "improved": [],
     "fixed": [],
     "knownIssues": []

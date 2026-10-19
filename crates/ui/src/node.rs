@@ -160,6 +160,7 @@ pub(crate) struct Overrides {
     pub checked: Option<bool>,
     pub value: Option<f32>,
     pub image: Option<Option<ImageKey>>,
+    pub background_image: Option<ImageKey>,
     pub color: Option<Option<Color>>,
     pub tooltip: Option<Option<Arc<Tooltip>>>,
     pub hotkey: Option<Option<Hotkey>>,
@@ -970,6 +971,12 @@ impl Ui {
                 }
             }
         });
+    }
+
+    /// Replaces a styled background's texture, preserving its size and inset.
+    /// `None` restores the theme background. Survives layout hot reloads.
+    pub fn set_background_image(&mut self, id: NodeId, image: Option<ImageKey>) {
+        self.with(id, |t, n| t.node_mut(n).set.background_image = image);
     }
 
     /// Overrides a node's fill colour (bar fills, sweeps) or background.

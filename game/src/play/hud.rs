@@ -55,6 +55,7 @@ pub fn health_color(ratio: f32) -> Color {
 
 struct Nodes {
     root: NodeId,
+    dock: NodeId,
     heroes: NodeId,
     hint: NodeId,
     outcome: NodeId,
@@ -101,6 +102,7 @@ impl Nodes {
     fn find(ui: &Ui) -> Option<Self> {
         Some(Self {
             root: find(ui, "hud")?,
+            dock: find(ui, "hud/dock")?,
             heroes: find(ui, "hud/heroes")?,
             hint: find(ui, "hud/hint")?,
             outcome: find(ui, "hud/outcome")?,
@@ -159,6 +161,7 @@ pub type Palette = Vec<[u8; 3]>;
 
 pub struct Hud {
     nodes: Option<Nodes>,
+    appearance: [Option<String>; 2],
     requests: BTreeSet<String>,
     /// The portrait shows the live render target `@portrait` instead of the icon.
     pub live_portrait: bool,
@@ -198,6 +201,7 @@ impl Hud {
     pub fn new() -> Self {
         Self {
             nodes: None,
+            appearance: [None, None],
             requests: BTreeSet::new(),
             live_portrait: false,
             minimap: false,
@@ -220,6 +224,34 @@ impl Hud {
     /// Image names used since the last call that the game has to register.
     pub fn take_image_requests(&mut self) -> Vec<String> {
         std::mem::take(&mut self.requests).into_iter().collect()
+    }
+
+    /// Uses the local seat's starting race, independent of selection or fog perspective.
+    /// Observers use the default race; missing art falls back to the UI theme.
+    pub fn configure(
+        &mut self,
+        content: &canopy_content::Content,
+        setup: &canopy_sim::MatchSetup,
+        me: Option<u8>,
+    ) {
+        let race = me
+            .and_then(|me| setup.slots.iter().find(|slot| slot.player == me))
+            .and_then(|slot| slot.race.as_deref())
+            .unwrap_or(&content.rules.default_race);
+        let hud = content
+            .rules
+            .races
+            .get(race)
+            .and_then(|race| race.hud.as_ref());
+        self.appearance = [
+            hud.and_then(|h| h.frame.as_ref()),
+            hud.and_then(|h| h.resources.as_ref()),
+        ]
+        .map(|asset| {
+            asset
+                .and_then(|id| content.image_path(id.as_str()))
+                .map(str::to_owned)
+        });
     }
 
     fn image(&mut self, ui: &mut Ui, k: &Knowledge, icon: &str) -> Option<canopy_ui::ImageKey> {
@@ -247,6 +279,13 @@ impl Hud {
             return;
         };
         let k = play.knowledge().clone();
+        for (node, path) in [n.dock, n.resources].into_iter().zip(&self.appearance) {
+            let image = path.as_ref().map(|path| {
+                self.requests.insert(path.clone());
+                ui.image_key(path)
+            });
+            ui.set_background_image(node, image);
+        }
         self.messages(ui, &n, play, &k);
         self.resources(ui, &n, &k);
         self.heroes(ui, &n, play, &k);
@@ -1805,4 +1844,52 @@ pub(super) fn revival(k: &Knowledge, hero: u32) -> Option<Option<u32>> {
         let left = total.saturating_sub(entry.progress);
         Some(Some((f64::from(left) * 0.025).ceil() as u32))
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::sim::ai_fixture as fx;
+    use serde_json::json;
+
+    #[test]
+    fn hud_art_follows_the_local_slot_and_resets_between_matches() {
+        let world = fx::world(&fx::skirmish(vec![], vec![]), false);
+        let mut content = (*world.catalog().content).clone();
+        for name in ["wood", "metal"] {
+            for piece in ["frame", "resources"] {
+                content.manifest.records.push(
+                    serde_json::from_value(canopy_content::testing::image(&format!(
+                        "test.{name}.{piece}"
+                    )))
+                    .unwrap(),
+                );
+            }
+            content.rules.races.insert(name.into(), serde_json::from_value(json!({
+                "name": name, "description": "Fixture", "roster": [],
+                "hud": {"frame": format!("test.{name}.frame"), "resources": format!("test.{name}.resources")}
+            })).unwrap());
+        }
+        content.rules.default_race = "wood".into();
+        // Slot numbers deliberately differ from vector indices.
+        let setup = serde_json::from_value(json!({"seed": 1, "slots": [
+            {"player": 7, "kind": "human", "race": "metal"},
+            {"player": 3, "kind": "ai"}
+        ]}))
+        .unwrap();
+        let mut hud = Hud::new();
+        hud.configure(&content, &setup, Some(7));
+        let expected = |name: &str| {
+            ["frame", "resources"]
+                .map(|piece| Some(format!("assets/library/test.{name}.{piece}/image.png")))
+        };
+        assert_eq!(hud.appearance, expected("metal"));
+        hud.configure(&content, &setup, Some(3));
+        assert_eq!(hud.appearance, expected("wood"));
+        hud.configure(&content, &setup, None);
+        assert_eq!(hud.appearance, expected("wood"));
+        content.rules.races.get_mut("wood").unwrap().hud = None;
+        hud.configure(&content, &setup, Some(3));
+        assert_eq!(hud.appearance, [None, None]);
+    }
 }

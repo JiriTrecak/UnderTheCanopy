@@ -1,6 +1,10 @@
 {
   "id": "ants",
   "name": "Ants",
+  "hud": {
+    "frame": "image.woodland-connected-hud",
+    "resources": "asset.interface.woodland.resource-ribbon"
+  },
   "description": "Versatile colony with quick infantry and a broad combined-arms roster.",
   "startingSetup": {
     "fort": "building.ants.fort",

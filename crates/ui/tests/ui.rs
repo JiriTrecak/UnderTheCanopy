@@ -438,6 +438,35 @@ fn tooltips_wait_then_switch_at_once() {
 // --- Data ---------------------------------------------------------------------------
 
 #[test]
+fn background_texture_switches_preserve_layout_reload_and_restore_the_theme() {
+    let layout = r#"{"visible":true,"templates":{"tip":{}},"root":{"children":[{"id":"panel","style":{
+        "width":"240px","height":"80px","background-image":"frame",
+        "background-size":"100% 100%","background-inset":"-4px"
+    }}]}}"#;
+    let mut ui = Ui::new(config(THEME, layout), fonts()).unwrap();
+    ui.set_viewport(400, 200, 1.0);
+    ui.register_image("frame", ImageDesc::new(TextureId(100), 240.0, 80.0));
+    let other = ui.register_image("other", ImageDesc::new(TextureId(101), 480.0, 160.0));
+    let panel = ui.find("test/panel").unwrap();
+    ui.frame(0.0);
+    let original = ui.rect(panel);
+    let original_quad = ui.draw_list().quads[0].rect;
+    ui.set_background_image(panel, Some(other));
+    ui.frame(0.0);
+    assert_eq!(ui.rect(panel), original);
+    assert_eq!(ui.draw_list().quads[0].rect, original_quad);
+    assert!(ui.draw_list().textures().any(|t| t == TextureId(101)));
+    assert!(!ui.draw_list().textures().any(|t| t == TextureId(100)));
+    ui.reload(config(THEME, layout)).unwrap();
+    ui.frame(0.0);
+    assert!(ui.draw_list().textures().any(|t| t == TextureId(101)));
+    ui.set_background_image(ui.find("test/panel").unwrap(), None);
+    ui.frame(0.0);
+    assert!(ui.draw_list().textures().any(|t| t == TextureId(100)));
+    assert!(!ui.draw_list().textures().any(|t| t == TextureId(101)));
+}
+
+#[test]
 fn hot_reload_keeps_game_values() {
     let mut ui = ui();
     let label = ui.find("test/label").unwrap();

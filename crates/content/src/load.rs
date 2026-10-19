@@ -392,6 +392,20 @@ impl Content {
         self.asset_index.get(id).map(|&i| &self.render_assets[i])
     }
 
+    /// A published image, including interface assets without a world render binding.
+    pub fn image_path(&self, id: &str) -> Option<&str> {
+        self.asset(id).and_then(|a| a.image.as_deref()).or_else(|| {
+            self.manifest
+                .records
+                .iter()
+                .find(|r| r.id.as_str() == id)?
+                .outputs
+                .iter()
+                .find(|o| o.role == assets::OutputRole::Image)
+                .map(|o| o.path.as_str())
+        })
+    }
+
     /// How definition `id` is drawn: its model with its presentation applied.
     pub fn look(&self, id: &str) -> Option<&RenderAsset> {
         self.definition_index.get(id).map(|&i| &self.looks[i])

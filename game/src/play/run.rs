@@ -220,6 +220,8 @@ impl InMatch {
         live.world_ui_input.viewer = start.me;
         renderer.bake_minimap(gpu, loaded.scene.size, loaded.scene.minimap, MINIMAP_PIXELS);
         renderer.set_portrait(gpu, None, PORTRAIT_PIXELS);
+        let mut hud = Hud::new();
+        hud.configure(&content, game.world.setup(), start.me);
         let sim = SimThread::start_with(
             game.world,
             game.session,
@@ -242,7 +244,6 @@ impl InMatch {
         for (slot, ids) in start.groups.iter().flatten().enumerate() {
             play.groups.assign(slot, ids);
         }
-        let mut hud = Hud::new();
         hud.minimap_area = loaded.scene.minimap;
         hud.players = players;
         hud.palette = loaded

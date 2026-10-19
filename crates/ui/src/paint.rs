@@ -232,7 +232,12 @@ impl Ctx<'_, '_> {
         self.p.set_clip(n.clip);
         let state = self.state(index);
         let style = &n.spec.style;
-        let vis = style.visual_for(state);
+        let mut vis = style.visual_for(state);
+        if let Some(image) = n.set.background_image
+            && let Some(background) = &mut vis.to_mut().background_image
+        {
+            background.image = Some(image);
+        }
         let mut fx = fx.apply(&vis);
         fx.opacity *= n.opacity;
         if fx.opacity <= 0.002 {
