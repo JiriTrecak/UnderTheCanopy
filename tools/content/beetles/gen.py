@@ -32,7 +32,7 @@ UNIT_ART = {
     'forgemaster': ('asset.models.units.beetles-forgemaster', 'asset.portraits.units.beetles-forgemaster'),
     'coilkeeper': ('asset.models.units.beetles-coilkeeper', 'asset.portraits.units.beetles-coilkeeper'),
     # Stand-ins: no model of their own yet.
-    'bolt-turret': ('asset.models.buildings.beetles-hornwatch', 'asset.portraits.buildings.beetles-hornwatch'),
+    'bolt-turret': ('asset.models.units.beetles-bolt-turret', 'asset.portraits.buildings.beetles-hornwatch'),
     'hornwatch-gunner': ('asset.models.units.beetles-bolter', 'asset.portraits.units.beetles-bolter'),
     'arc-coil': ('asset.models.units.beetles-arcwright', 'asset.portraits.units.beetles-arcwright'),
 }
@@ -47,7 +47,7 @@ BUILDING_ART = {
     'engine-yard': ('asset.models.buildings.beetles-engine-yard', 'asset.portraits.buildings.beetles-engine-yard', 1.0),
     'hornwatch': ('asset.models.buildings.beetles-hornwatch', 'asset.portraits.buildings.beetles-hornwatch', 1.0),
     # Stand-in: the Hornwatch until the Arc Tower has its own model.
-    'arc-tower': ('asset.models.buildings.beetles-hornwatch', 'asset.portraits.buildings.beetles-hornwatch', 1.08),
+    'arc-tower': ('asset.models.buildings.beetles-arc-tower', 'asset.portraits.buildings.beetles-hornwatch', 1.0),
     'ancestor-shrine': ('asset.models.buildings.beetles-ancestor-shrine', 'asset.portraits.buildings.beetles-ancestor-shrine', 1.0),
 }
 ICON = {
@@ -517,7 +517,10 @@ BUILDING_FX = {
         }
     ]
 }
-BUILDING_FX['arc-tower'] = BUILDING_FX['hornwatch']
+BUILDING_FX['arc-tower'] = [
+    {'effect': 'effect.buildings.hornwatch-canister', 'state': 'work', 'socket': 'socket_coil'},
+    {'effect': 'effect.buildings.hornwatch-canister', 'state': 'work', 'socket': 'socket_muzzle'},
+]
 
 HALL = 'building.beetles.bastion'
 T2 = 'building.beetles.great-bastion'
@@ -1023,12 +1026,13 @@ def write_units(W, fx_):
 
     # Summons and crews: no supply, no player control.
     turret_body = (1.5, 4.6, 3.4)
-    for name, title, hp, dmg in (('bolt-turret', 'Bolt Turret', 320, 16), ('bolt-turret-mk2', 'Bolt Turret Mk II', 420, 22)):
+    for name, title, hp, dmg, scale in (('bolt-turret', 'Bolt Turret', 320, 16, 2.4),
+                                        ('bolt-turret-mk2', 'Bolt Turret Mk II', 420, 22, 2.75)):
         d = unit('bolt-turret', title,
                  'A brass repeater turret deployed by the Forgemaster. Shoots ground and air units; it runs down after 40 seconds.',
                  body(hp, 3, 'heavy'),
                  weapon(dmg, 'piercing', 16, 36, 18, 8, 8, 0.75, projectile={'speed': 44}, targets=['ground', 'air']),
-                 None, None, 0, turret_body, 0.5, nature='mechanical', sets=(), selection=None, vision=24,
+                 None, None, 0, turret_body, scale, nature='mechanical', sets=(), selection=None, vision=24,
                  presentation=bolter_fx)
         d['id'] = u(name)
         put(d)
