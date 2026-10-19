@@ -52,6 +52,10 @@
             "ai",
             "scenario"
           ],
+          "command": {
+            "hotkey": "Q",
+            "column": 1
+          },
           "ai": {
             "preference": "enemy",
             "intervalTicks": 20

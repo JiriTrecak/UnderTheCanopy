@@ -79,7 +79,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.icons.spell-entangling-roots",
+    "icon": "asset.icons.ability-beetles-arcwright-static-field",
     "animations": {
       "prepare": "cast",
       "release": "cast",

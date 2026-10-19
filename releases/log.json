@@ -26,7 +26,8 @@
       "The beetles' Substance Well and the Substance Deposit have their own models: the well fills the deposit exactly, seeps at rest, and pumps and arcs while workers gather from it.",
       "The computer opponent keeps its Substance Wells defended, raises towers over its workers when raided, places powered buildings inside its network before extending it, and no longer stalls on research or upgrades it cannot start yet.",
       "The Forgemaster's Bolt Turret and the Arc Tower have their own models: a horned brass repeater on a tripod and a towering substance coil that lights up when it fires",
-      "Beetle Wardens carry a glowing violet barrier pane, so they stand out in an army at a glance"
+      "Beetle Wardens carry a glowing violet barrier pane, so they stand out in an army at a glance",
+      "Every beetle ability and research now has its own icon: Static Field, Bulwark Pulse, Broadside, Furnace Plating, Flak Beam, Patch Up and Armor Breaker are new, and Weapon Edges, Bolt Calibre, Plating and Riveted Hulls show one icon per level instead of borrowed ant art."
     ],
     "fixed": [],
     "knownIssues": []
