@@ -55,6 +55,7 @@ The terrain covers the playable square plus a 16-cell halo on every side:
 | `water-flow.grid` | 4 bytes per cell | x, z (128 still), foam, profile (0 = the biome's water) |
 | `grass.grid`, `rock.grid` | f32 per vertex | 0 to 1 |
 | `shade.grid` (optional) | f32 per vertex | 0 lit to 1 black: the frame shade (D63) |
+| `blocked.grid` (optional) | u8 per cell | nonzero: closed, never walked or built on (D71). Paint it from the same mask as the dark frame: what looks impassable must be |
 | `paint-<n>-weights.grid` | f32 per vertex | 0 to 1 |
 | `paint-<n>-variants.grid` | u8 per texture cell | atlas variant |
 

@@ -1,5 +1,5 @@
 {
-  "biome": "vibrant-forest",
+  "biome": "autumn-forest",
   "camps": [
     {
       "aggression": "players",
@@ -1613,36 +1613,20 @@
   "terrain": {
     "paint": [
       {
-        "material": "asset.terrain.warcraft-ldrt",
-        "variants": true
+        "material": "asset.terrain.autumn-needles",
+        "variants": false
       },
       {
-        "material": "asset.terrain.warcraft-ldro",
-        "variants": true
+        "material": "asset.terrain.autumn-moss",
+        "variants": false
       },
       {
-        "material": "asset.terrain.warcraft-ldrg",
-        "variants": true
+        "material": "asset.terrain.lookdev-debris",
+        "variants": false
       },
       {
-        "material": "asset.terrain.warcraft-lrok",
-        "variants": true
-      },
-      {
-        "material": "asset.terrain.warcraft-lgrs",
-        "variants": true
-      },
-      {
-        "material": "asset.terrain.warcraft-lgrd",
-        "variants": true
-      },
-      {
-        "material": "asset.terrain.warcraft-zsan",
-        "variants": true
-      },
-      {
-        "material": "asset.terrain.warcraft-cliff-cldi",
-        "variants": true
+        "material": "asset.terrain.lookdev-wet-soil",
+        "variants": false
       }
     ],
     "textureGrid": {
@@ -1652,6 +1636,14 @@
         -0.5
       ]
     },
-    "waterProfiles": []
+    "waterProfiles": [
+      "water.fall-shallows"
+    ]
+  },
+  "landscape": {
+    "environment": {
+      "hour": 15.5,
+      "playing": false
+    }
   }
 }

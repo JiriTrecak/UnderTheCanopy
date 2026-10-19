@@ -1,7 +1,7 @@
 //! A map's preview for the map picker (`preview.webp` in its package), the old game's
 //! illustrated atlas (`scripts/maps/atlas.ts` there): elevation shading, water by depth,
-//! ground paint, woodland darkening the ground around trees, and symbols for amber
-//! deposits, camps and player starts.
+//! ground paint, woodland darkening the ground around trees and over a map's closed frame,
+//! and symbols for amber deposits, camps and player starts.
 
 use canopy_content::map::{MAP_HALO, UtcMap};
 
@@ -105,6 +105,19 @@ pub fn render(map: &UtcMap, trees: &dyn Fn(&str) -> bool) -> Result<image::RgbaI
                 }
                 let i = vertex(x as f32, z as f32);
                 woods[i] = woods[i].max((0.8 * (1.0 - d / radius) * 2.0).min(1.0));
+            }
+        }
+    }
+    // A map's closed frame (terrain/blocked.grid) reads as woodland too.
+    if let Some(blocked) = &terrain.blocked {
+        let span = terrain.span as usize;
+        for z in 0..span {
+            for x in 0..span {
+                if blocked[z * span + x] {
+                    for (dx, dz) in [(0, 0), (1, 0), (0, 1), (1, 1)] {
+                        woods[(z + dz) * side + x + dx] = 1.0;
+                    }
+                }
             }
         }
     }

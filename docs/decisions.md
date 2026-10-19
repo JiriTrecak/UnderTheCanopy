@@ -721,3 +721,13 @@ The beetles won 12 of 12 duels from the first start and 1 of 12 from the second.
   - Unbottled and Field Repair are seldom cast.
   - The maps' camps are not mirrored.
   - The beetles' per-seat and per-map win rates are outside 40–60 %.
+
+## D71. The autumn Echo Isles; what looks impassable is (2026-10-19, Jiri asked for both — review: visible)
+
+Jiri: rebuild Echo Isles in the autumn design, trees replaced by impassable dark ground, with the new water and textures; the dark frame on the look-dev map let units through, and "the areas that look impossible should be impossible"; one or two more ground textures so the floor isn't uniform, built as the same 16-corner atlases.
+
+- **Closed cells.** A map may carry `terrain/blocked.grid` (u8 per cell, halo included): nonzero cells are never walkable or buildable (`Terrain::compile`), with the playable area and water. The map format reads and writes it; the editor's preview darkens it as woodland. A tool that paints a dark frame writes this grid from the same mask, so the frame is as solid as it looks. The look-dev map now does (`tools/maps/lookdev_fall.py`, the clearing's rim); its warrior can no longer walk into the frame.
+- **Echo Isles** (`tools/maps/autumn_echo.py`, rerun from the summer map at 8335a30): every height, water level, start, camp, amber site and deposit is unchanged. The pine walls become the frame: their footprints, with gaps narrower than four cells closed into one wood, turn to dark leaf litter, frame shade (55–75 %) and closed cells, dressed with ferns, bracken, shrubs, mushrooms, roots, leaves and saplings the pines' height; leaves and acorns stay on the closed side. Every start keeps its building room (8×8 foundation sites within 50 cells: 6,092 and 5,403, against 6,035 and 5,329 before). Ground: the biome's soil with pine needles where the summer grass was and broad patches of moss in it, a debris band along the frame, wet soil along the shores, rock on the old cliffs. Water a unit can wade is `water.fall-shallows` (a calm, pale ford); deeper water is the biome's dark pool. Afternoon light (15.5 h).
+- **Two new atlases** in the debris family (`tools/terrain/build_atlas.py`, gpt-image sources): `asset.terrain.autumn-moss` and `asset.terrain.autumn-needles`.
+- **Measured** (ai_duels, Echo Isles, 8 seeds a seat): every match but one finished (one hit the hour cap); both sides build wells and beetles keep their network. Beetles won 2 of 16 against ants, against 5 of 16 on the summer map with the same numbers; per Jiri, no per-map balancing.
+- **Open**: no giant trees (in woods this narrow their trunks would cover playable ground); lone pines leave small closed spots; the map's preview shows the closed cells with a fine hatch.

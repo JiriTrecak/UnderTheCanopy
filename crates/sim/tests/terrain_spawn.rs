@@ -5,7 +5,7 @@ mod terrain_fixture;
 
 use canopy_sim::{World, entity::Milli};
 use serde_json::{Value, json};
-use terrain_fixture::{content, map, object, parse, setup, terrain};
+use terrain_fixture::{SIZE, content, map, object, parse, setup, terrain};
 
 /// Starts a match and runs the map's playability checks (an authoring gate, not part of
 /// starting a match).
@@ -312,6 +312,44 @@ fn starts_must_reach_each_other_on_foot() {
     let error = walled(false).unwrap_err();
     assert!(error.contains("cannot be reached"), "{error}");
     walled(true).unwrap();
+}
+
+#[test]
+fn a_maps_closed_cells_are_neither_walked_nor_built_on() {
+    // A closed band across the map (its painted frame) with one opening.
+    let span = (SIZE as i32 + 32) as usize;
+    let closed = |x: i32, z: i32| (120..=130).contains(&x) && !(100..=112).contains(&z);
+    let blocked: Vec<u8> = (0..span * span)
+        .map(|i| {
+            u8::from(closed(
+                i as i32 % span as i32 - 16,
+                i as i32 / span as i32 - 16,
+            ))
+        })
+        .collect();
+    let mut document = map();
+    document["authoring"]["terrain"]["blocked"] = json!(terrain_fixture::base64(&blocked));
+    let parsed = parse(document);
+    let terrain = canopy_sim::terrain::Terrain::compile(&parsed, &content()).unwrap();
+    let walkable = |x: i64, z: i64| terrain.walkable(terrain.cell(x, z).unwrap());
+    assert!(!walkable(125, 50) && !walkable(120, 200) && !walkable(130, 113));
+    assert!(walkable(125, 106) && walkable(119, 50) && walkable(131, 50));
+    // The opening keeps both starts connected; closing it cuts them apart.
+    let world = World::new(content(), &parsed, setup(2))
+        .map_err(|e| e.0)
+        .unwrap();
+    canopy_sim::spawn::connected(&parsed, world.terrain()).unwrap();
+    let sealed: Vec<u8> = (0..span * span)
+        .map(|i| u8::from((120..=130).contains(&(i as i32 % span as i32 - 16))))
+        .collect();
+    let mut document = map();
+    document["authoring"]["terrain"]["blocked"] = json!(terrain_fixture::base64(&sealed));
+    let parsed = parse(document);
+    let world = World::new(content(), &parsed, setup(2))
+        .map_err(|e| e.0)
+        .unwrap();
+    let error = canopy_sim::spawn::connected(&parsed, world.terrain()).unwrap_err();
+    assert!(error.contains("cannot be reached"), "{error}");
 }
 
 #[test]

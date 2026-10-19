@@ -37,7 +37,7 @@ use canopy_content::{
     assets::{self, Blocker, SceneryEntry},
     conditions::Locomotion,
     game::Kind,
-    map::{GridError, UtcMap},
+    map::{GridError, MAP_HALO, UtcMap},
 };
 use std::{collections::BTreeMap, sync::Arc};
 
@@ -97,8 +97,12 @@ impl Terrain {
         let mut heights = Vec::with_capacity(size * size);
         let mut water = Vec::with_capacity(size * size);
         let mut walkable = Vec::with_capacity(size * size);
-        // Outside the playable area the ground is scenery: nothing walks or builds there.
+        // Outside the playable area the ground is scenery: nothing walks or builds there;
+        // nor on the cells the map closes (its painted frame).
         let area = map.playable_area();
+        let closed = data.blocked()?;
+        let span = data.span() as usize;
+        let halo = MAP_HALO as usize;
         for y in 0..size {
             for x in 0..size {
                 let inside = area.contains(x as f64 + 0.5, y as f64 + 0.5);
@@ -107,7 +111,12 @@ impl Terrain {
                 let surface = round_half_up(field.water_at(fx, fy) * 100.0) as i16;
                 heights.push(ground);
                 water.push(surface);
-                walkable.push(inside && i32::from(ground) >= i32::from(surface) - WADING_DEPTH_CM);
+                let open = closed
+                    .as_ref()
+                    .is_none_or(|c| !c[(y + halo) * span + x + halo]);
+                walkable.push(
+                    inside && open && i32::from(ground) >= i32::from(surface) - WADING_DEPTH_CM,
+                );
             }
         }
         let collision = Collision::new(content);

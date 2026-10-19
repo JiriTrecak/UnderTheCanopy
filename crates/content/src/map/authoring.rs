@@ -130,6 +130,12 @@ pub struct TerrainData {
     /// (`terrain/shade.grid`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub shade: Option<Grid>,
+    /// `u8` per cell (halo included), nonzero where the ground is closed: nothing walks or
+    /// builds there. How a map makes its painted frame as solid as it looks: the tool that
+    /// paints the dark frame writes this from the same mask. Optional
+    /// (`terrain/blocked.grid`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub blocked: Option<Grid>,
     /// The map's painted ground, when it has one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub overlay: Option<TerrainOverlay>,
@@ -211,6 +217,8 @@ pub struct DecodedTerrain {
     pub texture: TextureLayout,
     /// The frame shade per vertex, when the map has one.
     pub shade: Option<Vec<f32>>,
+    /// Closed cells (halo included), when the map has them.
+    pub blocked: Option<Vec<bool>>,
     pub overlay: Option<TerrainOverlay>,
 }
 
@@ -298,6 +306,18 @@ impl TerrainData {
             .transpose()
     }
 
+    /// Whether each cell (halo included, row by row) is closed, when the map says.
+    pub fn blocked(&self) -> Result<Option<Vec<bool>>, GridError> {
+        self.blocked
+            .as_ref()
+            .map(|grid| {
+                grid.exactly(self.cell_count())
+                    .map(|bytes| bytes.iter().map(|&b| b != 0).collect())
+                    .map_err(|m| grid_error("blocked", m))
+            })
+            .transpose()
+    }
+
     pub fn water_flow(&self) -> Result<Vec<WaterFlow>, GridError> {
         let bytes = self
             .water_flow
@@ -352,6 +372,7 @@ impl TerrainData {
                 .collect::<Result<_, _>>()?,
             texture: self.texture_layout(),
             shade: self.shade()?,
+            blocked: self.blocked()?,
             overlay: self.overlay.clone(),
         })
     }
@@ -380,6 +401,9 @@ impl TerrainData {
         }
         for (i, layer) in self.paint.iter().enumerate() {
             floats(format!("paint.{i}"), &layer.weights, 0.0, 1.0);
+        }
+        if let Some(Err(message)) = self.blocked.as_ref().map(|g| g.exactly(self.cell_count())) {
+            errors.push(grid_error("blocked", message));
         }
         let profiles = self.water_profiles.len();
         match self.water_flow.exactly(self.cell_count() * 4) {

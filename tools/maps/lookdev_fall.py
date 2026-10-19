@@ -187,8 +187,14 @@ def build_grids():
     _, z_far = to_world(W / 2, 0)
     _, z_near = to_world(W / 2, 200)
     shade = np.maximum(shade, 0.4 * smoothstep(z_near, z_far, z) * smoothstep(0.0, 8.0, rim))
+    # The frame is closed (terrain/blocked.grid): every cell whose centre is on the frame
+    # side of the clearing's (wobbled) rim, the same line the litter and the leaves follow,
+    # so nothing that reads as frame is walked or built on.
+    centres = np.arange(SPAN, dtype=np.float64) - HALO + 0.5
+    cell_open, _, _ = fields(*np.meshgrid(centres, centres))
+    blocked = (cell_open < 0.5).astype(np.uint8)
     return (heights.astype('<f4'), water.astype('<f4'), litter.astype('<f4'), np.zeros_like(heights, dtype='<f4'),
-            flow, sparse.astype('<f4'), wet.astype('<f4'), shade.astype('<f4'))
+            flow, sparse.astype('<f4'), wet.astype('<f4'), shade.astype('<f4'), blocked)
 
 # ------------------------------------------------------------------ scenery
 
@@ -461,7 +467,7 @@ def main():
     with open(os.path.join(OUT, 'map.json'), 'w') as f:
         json.dump(build_map(), f, indent=2)
         f.write('\n')
-    heights, water, litter, zero, flow, sparse, wet, shade = build_grids()
+    heights, water, litter, zero, flow, sparse, wet, shade, blocked = build_grids()
     t = os.path.join(OUT, 'terrain')
     write_grid(os.path.join(t, 'heights.grid'), heights, 1, SIDE)
     write_grid(os.path.join(t, 'water-heights.grid'), water, 1, SIDE)
@@ -471,6 +477,7 @@ def main():
     write_grid(os.path.join(t, 'paint-1-weights.grid'), sparse, 1, SIDE)
     write_grid(os.path.join(t, 'paint-2-weights.grid'), wet, 1, SIDE)
     write_grid(os.path.join(t, 'shade.grid'), shade, 1, SIDE)
+    write_grid(os.path.join(t, 'blocked.grid'), blocked, 2, SPAN)
     scenery = build_scenery()
     with open(os.path.join(OUT, 'scenery.json'), 'w') as f:
         json.dump({'objects': scenery}, f, indent=2, ensure_ascii=False)

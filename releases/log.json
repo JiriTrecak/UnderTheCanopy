@@ -36,13 +36,15 @@
       "Computer opponents search the map with their whole army for the last enemy buildings, so a won match ends",
       "Computer opponents add production when goods pile up, learn every hero ability before raising ranks, learn and cast ultimates first, and keep buffs and shields for fights",
       "Beetles build up more slowly: their troops and machines train longer, the Great and Elder Bastion, Alembic and Engine Yard cost more, and their troops have a little less health and damage",
-      "Beetle troops are a little sturdier and hit a little harder, so beetles hold their own against ants"
+      "Beetle troops are a little sturdier and hit a little harder, so beetles hold their own against ants",
+      "Echo Isles is now an autumn forest map: dark leaf-strewn woods, pine needles and moss on the open ground, calm shallows and dark pools"
     ],
     "fixed": [
       "Sparks and shrapnel from spells and weapons fall instead of flying up, and steam rises",
       "The Brood Den pressurises while it powers the network, and the Juggernaut crashes down in a burst of sparks and dust when destroyed",
       "Computer opponents no longer favour one side of a map when they look for building sites",
-      "Matches between computer opponents no longer stall when both run out of amber"
+      "Matches between computer opponents no longer stall when both run out of amber",
+      "Dark forest edges are now solid: units can no longer walk or build where the ground looks impassable"
     ],
     "knownIssues": []
   },
