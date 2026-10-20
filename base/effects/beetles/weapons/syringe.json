@@ -155,7 +155,6 @@
       "count": 12,
       "size": 0.28,
       "height": 0,
-      "rides": "tracer",
       "blend": "additive",
       "intensity": 1.3,
       "texture": {
@@ -185,7 +184,8 @@
         "fadeOut": 0.6,
         "space": "world",
         "inheritVelocity": 0.1
-      }
+      },
+      "rides": "tracer"
     },
     {
       "id": "drops",

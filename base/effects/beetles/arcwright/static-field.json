@@ -1,65 +1,243 @@
 {
   "id": "effect.beetles.static-field",
   "name": "Static field",
-  "description": "A crackling violet field on the ground: a turning glyph, a bright rim and sparks that never stop.",
+  "description": "Charged ground: a dark patch with a low violet haze clinging to it, and a carpet of short sparks leaping across it in every direction, little stars popping where they land.",
   "durationTicks": 200,
   "loop": false,
   "layers": [
     {
-      "id": "rim",
+      "id": "shade",
       "enabled": true,
-      "shape": "ring",
-      "colour": "#8a5cff",
-      "accent": "#c9b8ff",
+      "shape": "billboard",
+      "colour": "#120824",
+      "accent": "#120824",
       "durationTicks": 200,
       "count": 1,
-      "size": 8.0,
+      "size": 9.0,
       "height": 0.06,
-      "blend": "additive",
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "normal",
+      "intensity": 0.6,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "sustain": true
+    },
+    {
+      "id": "haze",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 200,
+      "count": 30,
+      "size": 1.4,
+      "height": 0.2,
       "sustain": true,
-      "intensity": 0.9,
-      "motion": {
-        "opacity": {
-          "periodTicks": 20,
-          "min": 0.6,
-          "max": 1.0,
-          "easing": "sine"
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "ramp": [
+        {
+          "at": 0.0,
+          "colour": "#1c0c40"
+        },
+        {
+          "at": 0.3,
+          "colour": "#5a2ad8"
+        },
+        {
+          "at": 0.6,
+          "colour": "#9a74ff"
+        },
+        {
+          "at": 0.85,
+          "colour": "#dccfff"
+        },
+        {
+          "at": 1.0,
+          "colour": "#ffffff"
+        }
+      ],
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 40,
+        "rate": 12,
+        "speed": 0.4,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": -0.3,
+        "drag": 1.0,
+        "spawnRadius": 3.6,
+        "startSize": 1.4,
+        "endSize": 2.0,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 2.0
+          }
+        ],
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0.5
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.2,
+            "value": 0.6
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0.1
+          },
+          {
+            "at": 1,
+            "value": 0.75
+          }
+        ],
+        "heatOverLife": [
+          {
+            "at": 0,
+            "value": 0.9
+          },
+          {
+            "at": 1,
+            "value": 0.4
+          }
+        ],
+        "turbulence": {
+          "strength": 0.8,
+          "scale": 1.5,
+          "speed": 1.5
         }
       }
     },
     {
-      "id": "glyph",
+      "id": "crackle",
       "enabled": true,
-      "shape": "billboard",
-      "colour": "#8a5cff",
+      "shape": "particles",
+      "colour": "#c4b0ff",
       "accent": "#ffffff",
       "durationTicks": 200,
-      "count": 1,
-      "size": 9.0,
-      "height": 0.08,
+      "count": 80,
+      "size": 0.13,
+      "height": 0.15,
       "startTick": 0,
-      "orientation": "ground",
       "blend": "additive",
-      "intensity": 1.9800000000000002,
-      "core": 0.3,
+      "intensity": 6.0,
+      "core": 0.35,
       "texture": {
-        "asset": "asset.effects.beetles.arc-sigil",
+        "asset": "asset.effects.beetles.spark",
         "role": "image",
         "index": 1
       },
-      "motion": {
-        "rotation": {
-          "periodTicks": 160,
-          "direction": "clockwise"
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 5,
+        "rate": 140,
+        "speed": 10.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
         },
-        "opacity": {
-          "periodTicks": 80,
-          "min": 0.7,
-          "max": 1.0,
-          "easing": "sine"
-        }
+        "coneDegrees": 89,
+        "gravity": 0,
+        "drag": 0.7,
+        "spawnRadius": 3.6,
+        "startSize": 0.13,
+        "endSize": 0.0585,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55,
+        "stretch": 0.1
       },
       "sustain": true
+    },
+    {
+      "id": "pops",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#d8ccff",
+      "accent": "#ffffff",
+      "durationTicks": 200,
+      "count": 30,
+      "size": 1.0,
+      "height": 0.25,
+      "sustain": true,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 3.6,
+      "core": 0.9,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 4,
+        "rate": 50,
+        "speed": 0.0,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 0,
+        "gravity": 0.0,
+        "drag": 0.5,
+        "spawnRadius": 3.8,
+        "startSize": 1.0,
+        "endSize": 0.2,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.6
+      }
     },
     {
       "id": "strike",
@@ -67,10 +245,10 @@
       "shape": "billboard",
       "colour": "#e0d6ff",
       "accent": "#ffffff",
-      "durationTicks": 8,
+      "durationTicks": 7,
       "count": 1,
-      "size": 7.0,
-      "height": 3.5,
+      "size": 5.0,
+      "height": 2.5,
       "startTick": 0,
       "blend": "additive",
       "intensity": 3.5200000000000005,
@@ -90,69 +268,6 @@
       }
     },
     {
-      "id": "star",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#e0d6ff",
-      "accent": "#ffffff",
-      "durationTicks": 7,
-      "count": 1,
-      "size": 4.0,
-      "height": 1.0,
-      "startTick": 0,
-      "blend": "additive",
-      "intensity": 3.0,
-      "core": 0.9,
-      "texture": {
-        "asset": "asset.effects.beetles.glint",
-        "role": "image",
-        "index": 1
-      }
-    },
-    {
-      "id": "crackle",
-      "enabled": true,
-      "shape": "particles",
-      "colour": "#9a78ff",
-      "accent": "#b49cff",
-      "durationTicks": 200,
-      "count": 14,
-      "size": 0.06,
-      "height": 0.2,
-      "startTick": 0,
-      "blend": "additive",
-      "intensity": 5.0,
-      "core": 0.35,
-      "texture": {
-        "asset": "asset.effects.beetles.spark",
-        "role": "image",
-        "index": 1
-      },
-      "emitter": {
-        "mode": "continuous",
-        "lifetimeTicks": 10,
-        "rate": 14,
-        "speed": 3.5,
-        "speedVariation": 0.5,
-        "direction": {
-          "x": 0,
-          "y": 1,
-          "z": 0
-        },
-        "coneDegrees": 80,
-        "gravity": 4,
-        "drag": 0.7,
-        "spawnRadius": 3.6,
-        "startSize": 0.06,
-        "endSize": 0.027,
-        "spin": 0,
-        "fadeIn": 0.0,
-        "fadeOut": 0.55,
-        "stretch": 0.05
-      },
-      "sustain": true
-    },
-    {
       "id": "light",
       "enabled": true,
       "shape": "light",
@@ -160,14 +275,14 @@
       "accent": "#c9b8ff",
       "durationTicks": 200,
       "count": 1,
-      "size": 7.0,
-      "height": 1.0,
-      "intensity": 3.0,
+      "size": 6.0,
+      "height": 0.6,
+      "intensity": 2.0,
       "startTick": 0,
       "sustain": true,
       "motion": {
         "opacity": {
-          "periodTicks": 12,
+          "periodTicks": 5,
           "min": 0.5,
           "max": 1.0,
           "easing": "sine"

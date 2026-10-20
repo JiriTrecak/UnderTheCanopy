@@ -1,76 +1,130 @@
 {
   "id": "effect.coilkeeper.unbottled-storm",
   "name": "Unbottled storm",
-  "description": "A violet storm around the Coilkeeper for six seconds: a turning vortex on the ground, a swirling column and constant crackle.",
+  "description": "A violet tornado around the Coilkeeper for six seconds: the ground darkens under it, glowing haze spirals up and inward around the eye, shards of light whirl in it, and the storm's edge burns where it starts to drag.",
   "durationTicks": 240,
   "loop": false,
   "layers": [
     {
-      "id": "vortex",
+      "id": "shadow",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#120824",
+      "accent": "#120824",
+      "durationTicks": 240,
+      "count": 1,
+      "size": 22.0,
+      "height": 0.06,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "normal",
+      "intensity": 0.6,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "sustain": true,
+      "follow": true
+    },
+    {
+      "id": "spiral",
       "enabled": true,
       "shape": "billboard",
       "colour": "#8a5cff",
       "accent": "#c9b8ff",
       "durationTicks": 240,
       "count": 1,
-      "size": 22.0,
-      "height": 0.08,
+      "size": 24.0,
+      "height": 0.1,
+      "sustain": true,
+      "follow": true,
       "orientation": "ground",
       "blend": "additive",
+      "intensity": 1.3,
       "texture": {
-        "asset": "asset.effects.marshal.cadence-wheel",
+        "asset": "asset.effects.vfx.vortex",
         "role": "image",
         "index": 1
       },
-      "sustain": true,
-      "follow": true,
       "motion": {
         "rotation": {
-          "periodTicks": 60,
+          "periodTicks": 50,
           "direction": "counterclockwise"
-        },
-        "opacity": {
-          "periodTicks": 20,
-          "min": 0.5,
-          "max": 0.9,
-          "easing": "sine"
         }
       }
     },
     {
-      "id": "inner",
+      "id": "spiral-inner",
       "enabled": true,
       "shape": "billboard",
       "colour": "#c9b8ff",
       "accent": "#ffffff",
       "durationTicks": 240,
       "count": 1,
-      "size": 13.5,
-      "height": 0.08,
-      "startTick": 0,
+      "size": 12.0,
+      "height": 0.14,
+      "sustain": true,
+      "follow": true,
       "orientation": "ground",
       "blend": "additive",
-      "intensity": 2.16,
-      "core": 0.3,
+      "intensity": 1.1,
       "texture": {
-        "asset": "asset.effects.beetles.arc-sigil",
+        "asset": "asset.effects.vfx.vortex",
         "role": "image",
         "index": 1
       },
       "motion": {
         "rotation": {
-          "periodTicks": 40,
-          "direction": "clockwise"
-        },
-        "opacity": {
-          "periodTicks": 80,
-          "min": 0.7,
-          "max": 1.0,
-          "easing": "sine"
+          "periodTicks": 26,
+          "direction": "counterclockwise"
         }
-      },
+      }
+    },
+    {
+      "id": "sweep",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c9b8ff",
+      "accent": "#8a5cff",
+      "durationTicks": 240,
+      "count": 90,
+      "size": 0.26,
+      "height": 0.3,
       "sustain": true,
-      "follow": true
+      "follow": true,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 2.6,
+      "core": 0.8,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 30,
+        "rate": 120,
+        "speed": 0.0,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 0,
+        "gravity": 0.0,
+        "drag": 0.5,
+        "spawnRadius": 13.0,
+        "startSize": 0.26,
+        "endSize": 0.2,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "spawnInner": 0.8,
+        "orbit": 260,
+        "pull": 0.9
+      }
     },
     {
       "id": "edge",
@@ -95,75 +149,15 @@
       }
     },
     {
-      "id": "column",
-      "enabled": true,
-      "shape": "pillar",
-      "colour": "#8a5cff",
-      "accent": "#c9b8ff",
-      "durationTicks": 240,
-      "count": 1,
-      "size": 1.8,
-      "height": 14.0,
-      "startTick": 0,
-      "blend": "additive",
-      "intensity": 0.375,
-      "sustain": true,
-      "follow": true
-    },
-    {
-      "id": "swirl",
-      "enabled": true,
-      "shape": "particles",
-      "colour": "#c9b8ff",
-      "accent": "#ffffff",
-      "durationTicks": 240,
-      "count": 28,
-      "size": 0.1,
-      "height": 0.0,
-      "startTick": 0,
-      "blend": "additive",
-      "intensity": 3.5,
-      "core": 0.35,
-      "texture": {
-        "asset": "asset.effects.beetles.spark",
-        "role": "image",
-        "index": 1
-      },
-      "emitter": {
-        "mode": "continuous",
-        "lifetimeTicks": 30,
-        "rate": 28,
-        "speed": 4.5,
-        "speedVariation": 0.5,
-        "direction": {
-          "x": 0,
-          "y": 1,
-          "z": 0
-        },
-        "coneDegrees": 30,
-        "gravity": -5.0,
-        "drag": 0.7,
-        "spawnRadius": 12.0,
-        "startSize": 0.1,
-        "endSize": 0.045000000000000005,
-        "spin": 0,
-        "fadeIn": 0.0,
-        "fadeOut": 0.55,
-        "stretch": 0.07
-      },
-      "sustain": true,
-      "follow": true
-    },
-    {
-      "id": "haze",
+      "id": "funnel",
       "enabled": true,
       "shape": "particles",
       "colour": "#ffffff",
       "accent": "#ffffff",
       "durationTicks": 240,
-      "count": 40,
-      "size": 2.0,
-      "height": 0.6,
+      "count": 90,
+      "size": 2.6,
+      "height": 0.4,
       "sustain": true,
       "follow": true,
       "blend": "additive",
@@ -205,39 +199,45 @@
       ],
       "emitter": {
         "mode": "continuous",
-        "lifetimeTicks": 50,
-        "rate": 30,
-        "speed": 1.2,
+        "lifetimeTicks": 48,
+        "rate": 60,
+        "speed": 0.0,
         "speedVariation": 0.4,
         "direction": {
           "x": 0,
           "y": 1,
           "z": 0
         },
-        "coneDegrees": 40,
-        "gravity": -1.0,
-        "drag": 1.0,
-        "spawnRadius": 11.0,
-        "startSize": 2.0,
-        "endSize": 3.0,
+        "coneDegrees": 0,
+        "gravity": -5.0,
+        "drag": 0.0,
+        "spawnRadius": 3.5,
+        "startSize": 2.6,
+        "endSize": 4.0,
         "spin": 0,
         "fadeIn": 0.0,
         "fadeOut": 0.5,
-        "spawnInner": 0.5,
+        "spawnInner": 0.2,
+        "orbit": 230,
+        "pull": 0.5,
         "sizeOverLife": [
           {
             "at": 0,
-            "value": 1.2
+            "value": 1.6
+          },
+          {
+            "at": 0.4,
+            "value": 3.4
           },
           {
             "at": 1,
-            "value": 3.2
+            "value": 4.4
           }
         ],
         "additiveOverLife": [
           {
             "at": 0,
-            "value": 0.8
+            "value": 0.6
           },
           {
             "at": 1,
@@ -250,7 +250,11 @@
             "value": 0
           },
           {
-            "at": 0.2,
+            "at": 0.15,
+            "value": 0.75
+          },
+          {
+            "at": 0.7,
             "value": 0.55
           },
           {
@@ -261,29 +265,85 @@
         "erosionOverLife": [
           {
             "at": 0,
-            "value": 0.1
+            "value": 0.05
           },
           {
             "at": 1,
-            "value": 0.75
+            "value": 0.7
           }
         ],
         "heatOverLife": [
           {
             "at": 0,
-            "value": 0.9
+            "value": 1.25
           },
           {
             "at": 1,
-            "value": 0.4
+            "value": 0.7
           }
-        ],
-        "turbulence": {
-          "strength": 1.5,
-          "scale": 3.0,
-          "speed": 1.0
-        }
+        ]
       }
+    },
+    {
+      "id": "shards",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c9b8ff",
+      "accent": "#ffffff",
+      "durationTicks": 240,
+      "count": 90,
+      "size": 0.3,
+      "height": 0.6,
+      "sustain": true,
+      "follow": true,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 3.0,
+      "core": 0.9,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 40,
+        "rate": 100,
+        "speed": 0.0,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 0,
+        "gravity": -6.0,
+        "drag": 0.5,
+        "spawnRadius": 12.0,
+        "startSize": 0.3,
+        "endSize": 0.18,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "spawnInner": 0.3,
+        "orbit": 300,
+        "pull": 0.85
+      }
+    },
+    {
+      "id": "eye",
+      "enabled": true,
+      "shape": "pillar",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 240,
+      "count": 1,
+      "size": 2.2,
+      "height": 16.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 0.675,
+      "sustain": true,
+      "follow": true
     },
     {
       "id": "light",

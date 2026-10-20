@@ -1,23 +1,41 @@
 {
   "id": "effect.coilkeeper.recharge",
   "name": "Recharge",
-  "description": "A column of violet light and a rising ring as substance flows back into allies.",
-  "durationTicks": 40,
+  "description": "A lantern-light rain: violet droplets of substance fall over the area, each landing with a small flash, and a glyph glows on the ground while motes rise.",
+  "durationTicks": 50,
   "loop": false,
   "layers": [
     {
-      "id": "pillar",
+      "id": "rain",
       "enabled": true,
-      "shape": "pillar",
-      "colour": "#8a5cff",
-      "accent": "#efe8ff",
-      "durationTicks": 26,
-      "count": 1,
-      "size": 3.0,
-      "height": 14.0,
-      "startTick": 0,
+      "shape": "rain",
+      "colour": "#c9b8ff",
+      "accent": "#ffffff",
+      "durationTicks": 30,
+      "count": 48,
+      "size": 0.28,
+      "height": 9.0,
+      "spread": 6.0,
+      "fallSpeed": 1.2,
+      "launchDelayMs": 500,
+      "length": 3.0,
       "blend": "additive",
-      "intensity": 1.35
+      "intensity": 2.6,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "impact": {
+        "durationTicks": 10,
+        "count": 3,
+        "size": 0.16,
+        "spread": 0.8,
+        "height": 0.3,
+        "colour": "#c9b8ff",
+        "accent": "#ffffff"
+      }
     },
     {
       "id": "glyph",
@@ -25,14 +43,14 @@
       "shape": "billboard",
       "colour": "#5b7bff",
       "accent": "#ffffff",
-      "durationTicks": 40,
+      "durationTicks": 50,
       "count": 1,
       "size": 10.5,
       "height": 0.08,
       "startTick": 0,
       "orientation": "ground",
       "blend": "additive",
-      "intensity": 2.16,
+      "intensity": 1.9800000000000002,
       "core": 0.3,
       "texture": {
         "asset": "asset.effects.beetles.arc-sigil",
@@ -53,98 +71,52 @@
       }
     },
     {
-      "id": "ring",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#c9b8ff",
-      "accent": "#ffffff",
-      "durationTicks": 22,
-      "count": 1,
-      "size": 12.0,
-      "height": 0.1,
-      "startTick": 0,
-      "orientation": "ground",
-      "blend": "additive",
-      "intensity": 2.0,
-      "core": 0.6,
-      "texture": {
-        "asset": "asset.effects.beetles.ring",
-        "role": "image",
-        "index": 1
-      },
-      "motion": {
-        "scale": {
-          "periodTicks": 44,
-          "min": 0.18,
-          "max": 1.0,
-          "easing": "sine"
-        }
-      }
-    },
-    {
-      "id": "glow",
-      "enabled": true,
-      "shape": "glow",
-      "colour": "#8a5cff",
-      "accent": "#c9b8ff",
-      "durationTicks": 24,
-      "count": 1,
-      "size": 6.0,
-      "height": 0.1,
-      "blend": "additive",
-      "intensity": 0.8
-    },
-    {
       "id": "motes",
       "enabled": true,
       "shape": "particles",
       "colour": "#c9b8ff",
-      "accent": "#ffffff",
-      "durationTicks": 40,
-      "count": 60,
-      "size": 0.3,
+      "accent": "#8a5cff",
+      "durationTicks": 42,
+      "count": 40,
+      "size": 0.24,
       "height": 0.2,
+      "startTick": 10,
       "blend": "additive",
+      "intensity": 2.4,
+      "core": 0.7,
       "texture": {
         "asset": "asset.effects.vfx.mote",
         "role": "image",
         "index": 1
       },
-      "intensity": 2.6,
-      "core": 0.8,
       "emitter": {
         "mode": "burst",
         "lifetimeTicks": 40,
-        "rate": 60,
-        "speed": 3.0,
-        "speedVariation": 0.4,
+        "rate": 40,
+        "speed": 0.6,
+        "speedVariation": 0.6,
         "direction": {
           "x": 0,
           "y": 1,
           "z": 0
         },
-        "coneDegrees": 20,
-        "gravity": -3.5,
-        "drag": 0.5,
+        "coneDegrees": 30,
+        "gravity": -3.0,
+        "drag": 1.0,
         "spawnRadius": 6.0,
-        "startSize": 0.3,
-        "endSize": 0.08,
+        "startSize": 0.24,
+        "endSize": 0.072,
         "spin": 0,
         "fadeIn": 0.0,
         "fadeOut": 0.5,
-        "spawnInner": 0.2,
-        "turbulence": {
-          "strength": 0.6,
-          "scale": 1.5,
-          "speed": 2.0
-        },
+        "spawnInner": 0.1,
         "opacityOverLife": [
           {
             "at": 0,
             "value": 0
           },
           {
-            "at": 0.1,
+            "at": 0.15,
             "value": 1
           },
           {
@@ -155,7 +127,12 @@
             "at": 1,
             "value": 0
           }
-        ]
+        ],
+        "turbulence": {
+          "strength": 0.5,
+          "scale": 1.2,
+          "speed": 2.0
+        }
       }
     },
     {
@@ -164,12 +141,12 @@
       "shape": "light",
       "colour": "#8a5cff",
       "accent": "#c9b8ff",
-      "durationTicks": 10,
+      "durationTicks": 14,
       "count": 1,
       "size": 9.0,
       "height": 1.0,
-      "intensity": 7.0,
-      "startTick": 0
+      "intensity": 6.0,
+      "startTick": 8
     }
   ]
 }

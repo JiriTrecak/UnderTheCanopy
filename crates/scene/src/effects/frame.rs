@@ -1017,6 +1017,7 @@ impl EffectEvaluator {
                     cue.root.y - l.offset[1] - ROOT_LIFT,
                 ];
                 e.e8 = e8;
+                e.e9 = [em.orbit, em.pull, 0.0, 0.0];
                 if em.world {
                     e.ints[1] |= flag::WORLD;
                     let end = cue

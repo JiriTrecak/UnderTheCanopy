@@ -20,6 +20,8 @@ BLAST_RING = tex('blast-ring')
 MOTE = tex('mote')
 WAKE = tex('wake')
 BOLT = tex('bolt')
+VORTEX = tex('vortex')
+SHELL = tex('shell')
 WHITE = '#ffffff'
 # Four still variants of a 2 × 2 atlas, one picked per particle.
 VARIANTS = {'columns': 2, 'rows': 2, 'firstFrame': 0, 'frames': 4, 'frameTicks': 400, 'mode': 'once',
@@ -96,8 +98,10 @@ def motes(id_, rides, colour, accent, rate, size, lifetime, *, additive=True, sp
     if turbulence:
         e['turbulence'] = turbulence
     alive = count or max(4, min(128, int(rate * lifetime / 40 + 2)))
-    l = layer(id_, 'particles', colour, accent, FLIGHT, alive, size, 0, rides=rides,
+    l = layer(id_, 'particles', colour, accent, FLIGHT, alive, size, 0,
               blend='additive' if additive else 'normal', intensity=intensity, texture=texture, emitter=e)
+    if rides:
+        l['rides'] = rides
     if core:
         l['core'] = core
     return l
@@ -187,5 +191,109 @@ def lightning(id_, colour, accent, width, duration, *, spread=0.6, forks=3, heig
     """A crackling bolt between the cue's ends: a textured beam that wanders and forks."""
     l = layer(id_, 'beam', colour, accent, duration, 1, width, height, blend='additive' if additive else 'normal',
               texture=BOLT, spread=spread, forks=forks, intensity=intensity)
+    l.update(extra)
+    return l
+
+
+# ----- impact recipes (WC3 patterns: Thunder Clap, War Stomp, Storm Bolt, Flame Strike) ---------
+
+def ramp_blast(id_, ramp, count, size, speed, *, lifetime=24, height=1.0, flat=False, start=0, spawn=0.6,
+               heat=None, cool='#4a3c80', cold='#2e2a40', hot=0.6, additive=0.75):
+    """A burst of ramp-coloured puffs born glowing that cool into covering haze: a fireball
+    (fire ramp), a substance blast, a holy flare. `flat` throws a ring along the ground,
+    cooler, so its overlapping puffs stay coloured instead of merging into a white disc."""
+    if heat is None:
+        heat = 0.8 if flat else 0.95
+    e = emitter('burst', lifetime, count, speed, variation=0.3 if flat else 0.5, cone=88 if flat else 180,
+                drag=3.0, gravity=-0.6, spawn=spawn, start=size, end=size * 2,
+                sizeOverLife=keys((0, size * 0.6), (0.15, size * 1.4), (1, size * 2.6)),
+                colourOverLife=colours((0, WHITE), (hot, WHITE), (min(0.95, hot + 0.3), cool), (1, cold)),
+                additiveOverLife=keys((0, additive), (hot, additive - 0.1), (min(0.95, hot + 0.3), 0.2)),
+                opacityOverLife=keys((0, 0), (0.04, 0.9), (0.6, 0.7), (1, 0)),
+                erosionOverLife=keys((0, 0.05), (0.5, 0.2), (1, 0.85)),
+                heatOverLife=keys((0, heat), (0.4, 0.8), (1, 0.45)),
+                turbulence={'strength': size * 0.3, 'scale': 2.0, 'speed': 2.0})
+    if flat:
+        e['coneInnerDegrees'] = 78
+        e['spawnInner'] = 0.4
+    return layer(id_, 'particles', WHITE, WHITE, 3, count, size, height, startTick=start, blend='additive',
+                 texture=PUFF, flipbook=VARIANTS, ramp=ramp, emitter=e)
+
+
+def spark_spray(id_, colour, accent, count, speed, *, size=0.12, lifetime=12, height=0.4, start=0, intensity=3.5,
+                texture=MOTE):
+    """Thunder Clap's flat radial spray: hot streaks thrown out along the ground."""
+    e = emitter('burst', lifetime, count, speed, variation=0.35, cone=89, drag=2.5, spawn=0.6, start=size,
+                end=size * 0.4, fade_out=0.6, coneInnerDegrees=80, stretch=0.05)
+    return layer(id_, 'particles', colour, accent, lifetime + 2, count, size, height, startTick=start,
+                 blend='additive', intensity=intensity, core=0.8, texture=texture, emitter=e)
+
+
+def dust_ring(id_, colour, accent, count, size, speed, *, lifetime=40, start=0, opacity=0.6, height=0.3):
+    """War Stomp's ground dust: puffs racing out flat along the ground, swelling and settling."""
+    e = emitter('burst', lifetime, count, speed, variation=0.35, cone=89, drag=2.6, gravity=-0.2, spawn=1.0,
+                start=size, end=size * 3, coneInnerDegrees=82, spawnInner=0.5,
+                sizeOverLife=keys((0, size), (1, size * 3.2)),
+                opacityOverLife=keys((0, 0), (0.1, opacity), (1, 0)),
+                erosionOverLife=keys((0, 0), (1, 0.7)))
+    return layer(id_, 'particles', colour, accent, 3, count, size, height, startTick=start, blend='normal',
+                 texture=PUFF, flipbook=VARIANTS, soft=0.8, emitter=e)
+
+
+def debris(id_, colour, accent, count, size, speed, *, lifetime=44, start=0, height=0.5, cone=50):
+    """Chunks thrown up in a cone that land and stop (Inferno's rocks)."""
+    e = emitter('burst', lifetime, count, speed, variation=0.5, cone=cone, gravity=22.0, drag=0.3, spawn=0.6,
+                start=size, end=size * 0.9, spin=8, fade_out=0.15, coneInnerDegrees=cone * 0.4,
+                collide={'friction': 0.8})
+    return layer(id_, 'particles', colour, accent, lifetime + 2, count, size, height, startTick=start,
+                 blend='normal', texture=CHUNK, flipbook=VARIANTS, emitter=e)
+
+
+def rising_motes(id_, colour, accent, count, size, spread, *, lifetime=40, start=0, rise=3.0, mode='burst',
+                 duration=None, sustain=False, follow=None, intensity=2.4, height=0.2):
+    """Motes of light drifting up and swirling (heals, buffs, auras)."""
+    e = emitter(mode, lifetime, count, 0.6, variation=0.6, cone=30, gravity=-rise, drag=1.0, spawn=spread,
+                start=size, end=size * 0.3, spawnInner=0.1,
+                opacityOverLife=keys((0, 0), (0.15, 1), (0.7, 0.8), (1, 0)),
+                turbulence={'strength': 0.5, 'scale': 1.2, 'speed': 2.0})
+    l = layer(id_, 'particles', colour, accent, duration or lifetime + 2, count, size, height, startTick=start,
+              blend='additive', intensity=intensity, core=0.7, texture=MOTE, emitter=e)
+    if sustain:
+        l['sustain'] = True
+    if follow is not None:
+        l['follow'] = follow
+    return l
+
+
+def decal(id_, texture, colour, size, duration, *, start=0, height=0.05, blend='normal', intensity=0.9,
+          pop=0.04, hold=0.6):
+    """A ground mark that appears fast, holds and fades (WC3's UberSplat envelope)."""
+    return layer(id_, 'billboard', colour, colour, duration, 1, size, height, startTick=start,
+                 orientation='ground', blend=blend, intensity=intensity, texture=texture,
+                 opacityOverLife=keys((0, 0), (pop, 1), (hold, 0.95), (1, 0)),
+                 scaleOverLife=keys((0, 0.7), (pop * 2, 1.0), (1, 1.04)))
+
+
+def dust_wall(id_, colour, accent, rate, size, *, lifetime=34, height=0.3, duration=FLIGHT, sustain=False):
+    """Shockwave's dust wall: puffs kicked up behind something moving along the ground, left
+    hanging where they rose (world space; the layer follows its unit or rides a path)."""
+    e = emitter('continuous', lifetime, rate, 2.5, variation=0.6, cone=70, gravity=-0.5, drag=2.0, spawn=1.2,
+                start=size, end=size * 2.5, space='world', inheritVelocity=0.15,
+                sizeOverLife=keys((0, size * 0.6), (1, size * 2.6)),
+                opacityOverLife=keys((0, 0), (0.12, 0.6), (1, 0)),
+                erosionOverLife=keys((0, 0), (1, 0.7)),
+                turbulence={'strength': 0.6, 'scale': 2.0, 'speed': 1.0})
+    l = layer(id_, 'particles', colour, accent, duration, max(8, min(128, int(rate * lifetime / 40 + 4))), size,
+              height, blend='normal', texture=PUFF, flipbook=VARIANTS, soft=0.8, emitter=e)
+    if sustain:
+        l['sustain'] = True
+    return l
+
+
+def shade(id_, colour, size, duration, *, opacity=0.5, start=0, height=0.06, **extra):
+    """A soft dark patch on the ground: darkens it under a threat so the spell's light reads
+    on bright ground (normal blend, soft edge)."""
+    l = layer(id_, 'billboard', colour, colour, duration, 1, size, height, startTick=start, orientation='ground',
+              blend='normal', intensity=opacity, texture=MOTE)
     l.update(extra)
     return l

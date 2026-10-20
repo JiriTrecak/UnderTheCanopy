@@ -1,53 +1,10 @@
 {
   "id": "effect.beetles.lock-shields",
   "name": "Locked shields",
-  "description": "A blue-violet ring and a steady glow around a shieldbearer bracing behind a locked tower shield.",
+  "description": "A shieldbearer braced behind its locked tower shield: a steady blue shield sigil at its feet and a few blue motes drifting up.",
   "durationTicks": 80,
   "loop": true,
   "layers": [
-    {
-      "id": "ring",
-      "enabled": true,
-      "shape": "ring",
-      "colour": "#5b7bff",
-      "accent": "#b8c8ff",
-      "durationTicks": 80,
-      "count": 1,
-      "size": 2.8,
-      "height": 0.06,
-      "blend": "additive",
-      "sustain": true,
-      "intensity": 0.8,
-      "motion": {
-        "opacity": {
-          "periodTicks": 40,
-          "min": 0.6,
-          "max": 1.0,
-          "easing": "sine"
-        }
-      }
-    },
-    {
-      "id": "glow",
-      "enabled": true,
-      "shape": "glow",
-      "colour": "#5b7bff",
-      "accent": "#b8c8ff",
-      "durationTicks": 80,
-      "count": 1,
-      "size": 2.4,
-      "height": 0.1,
-      "blend": "additive",
-      "sustain": true,
-      "motion": {
-        "scale": {
-          "periodTicks": 40,
-          "min": 0.9,
-          "max": 1.08,
-          "easing": "sine"
-        }
-      }
-    },
     {
       "id": "plate",
       "enabled": true,
@@ -56,7 +13,7 @@
       "accent": "#b8c8ff",
       "durationTicks": 80,
       "count": 1,
-      "size": 3.6,
+      "size": 2.8,
       "height": 0.08,
       "orientation": "ground",
       "blend": "additive",
@@ -70,11 +27,77 @@
       "motion": {
         "opacity": {
           "periodTicks": 60,
-          "min": 0.5,
-          "max": 0.9,
+          "min": 0.6,
+          "max": 0.95,
           "easing": "sine"
         }
       }
+    },
+    {
+      "id": "motes",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#b8c8ff",
+      "accent": "#5b7bff",
+      "durationTicks": 80,
+      "count": 3,
+      "size": 0.14,
+      "height": 0.2,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.0,
+      "core": 0.7,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 30,
+        "rate": 3,
+        "speed": 0.6,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 30,
+        "gravity": -1.5,
+        "drag": 1.0,
+        "spawnRadius": 0.8,
+        "startSize": 0.14,
+        "endSize": 0.042,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "spawnInner": 0.1,
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.15,
+            "value": 1
+          },
+          {
+            "at": 0.7,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "turbulence": {
+          "strength": 0.5,
+          "scale": 1.2,
+          "speed": 2.0
+        }
+      },
+      "sustain": true
     }
   ]
 }

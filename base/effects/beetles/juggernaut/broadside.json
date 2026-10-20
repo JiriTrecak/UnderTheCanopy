@@ -1,60 +1,641 @@
 {
   "id": "effect.beetles.broadside",
   "name": "Broadside",
-  "description": "A rolling barrage: three fireballs walk across the target area with shock rings, hot fragments, smoke and scorched ground.",
+  "description": "A walking barrage: three shells land one after another across the area, each a fireball throwing up rocks and leaving its own scorch, with sparks and smoke drifting over them.",
   "durationTicks": 240,
   "loop": false,
   "layers": [
     {
       "id": "blast1",
       "enabled": true,
+      "shape": "particles",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 3,
+      "count": 20,
+      "size": 1.9,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "ramp": [
+        {
+          "at": 0.0,
+          "colour": "#3a1206"
+        },
+        {
+          "at": 0.25,
+          "colour": "#b8320a"
+        },
+        {
+          "at": 0.5,
+          "colour": "#ff7a1a"
+        },
+        {
+          "at": 0.75,
+          "colour": "#ffc04a"
+        },
+        {
+          "at": 1.0,
+          "colour": "#fff4d0"
+        }
+      ],
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 26,
+        "rate": 20,
+        "speed": 7.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": -0.6,
+        "drag": 3.0,
+        "spawnRadius": 0.6,
+        "startSize": 1.9,
+        "endSize": 3.8,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 1.14
+          },
+          {
+            "at": 0.15,
+            "value": 2.6599999999999997
+          },
+          {
+            "at": 1,
+            "value": 4.9399999999999995
+          }
+        ],
+        "colourOverLife": [
+          {
+            "at": 0,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.6,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.8999999999999999,
+            "colour": "#5a463c"
+          },
+          {
+            "at": 1,
+            "colour": "#33302e"
+          }
+        ],
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 0.75
+          },
+          {
+            "at": 0.6,
+            "value": 0.65
+          },
+          {
+            "at": 0.8999999999999999,
+            "value": 0.2
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.04,
+            "value": 0.9
+          },
+          {
+            "at": 0.6,
+            "value": 0.7
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0.05
+          },
+          {
+            "at": 0.5,
+            "value": 0.2
+          },
+          {
+            "at": 1,
+            "value": 0.85
+          }
+        ],
+        "heatOverLife": [
+          {
+            "at": 0,
+            "value": 0.95
+          },
+          {
+            "at": 0.4,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0.45
+          }
+        ],
+        "turbulence": {
+          "strength": 0.57,
+          "scale": 2.0,
+          "speed": 2.0
+        }
+      },
+      "offset": {
+        "x": 0.0,
+        "y": 0,
+        "z": 0.0
+      }
+    },
+    {
+      "id": "rocks1",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#5a4836",
+      "accent": "#3a2c20",
+      "durationTicks": 46,
+      "count": 10,
+      "size": 0.5,
+      "height": 0.5,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.vfx.chunk",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 44,
+        "rate": 10,
+        "speed": 11.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": 22.0,
+        "drag": 0.3,
+        "spawnRadius": 0.6,
+        "startSize": 0.5,
+        "endSize": 0.45,
+        "spin": 8,
+        "fadeIn": 0.0,
+        "fadeOut": 0.15,
+        "coneInnerDegrees": 16.0,
+        "collide": {
+          "friction": 0.8
+        }
+      },
+      "offset": {
+        "x": 0.0,
+        "y": 0,
+        "z": 0.0
+      }
+    },
+    {
+      "id": "scorch1",
+      "enabled": true,
       "shape": "billboard",
       "colour": "#ffffff",
       "accent": "#ffffff",
-      "durationTicks": 32,
+      "durationTicks": 220,
       "count": 1,
-      "size": 5.5,
-      "height": 1.2,
-      "startTick": 0,
+      "size": 4.0,
+      "height": 0.05,
+      "startTick": 1,
+      "orientation": "ground",
       "blend": "normal",
-      "flipbook": {
-        "columns": 4,
-        "rows": 4,
-        "firstFrame": 0,
-        "frames": 16,
-        "frameTicks": 2,
-        "mode": "once",
-        "randomStart": false
-      },
+      "intensity": 0.85,
       "texture": {
-        "asset": "asset.effects.ants.resin-burst",
+        "asset": "asset.effects.beetles.scorch",
         "role": "image",
         "index": 1
+      },
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": 0.04,
+          "value": 1
+        },
+        {
+          "at": 0.6,
+          "value": 0.95
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ],
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.7
+        },
+        {
+          "at": 0.08,
+          "value": 1.0
+        },
+        {
+          "at": 1,
+          "value": 1.04
+        }
+      ],
+      "offset": {
+        "x": 0.0,
+        "y": 0,
+        "z": 0.0
+      }
+    },
+    {
+      "id": "glint1",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffd08a",
+      "accent": "#ffffff",
+      "durationTicks": 5,
+      "count": 1,
+      "size": 3.2,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.6,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      },
+      "offset": {
+        "x": 0.0,
+        "y": 0,
+        "z": 0.0
+      }
+    },
+    {
+      "id": "flash1",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 12,
+      "count": 1,
+      "size": 7.0,
+      "height": 1.0,
+      "intensity": 6.0,
+      "startTick": 0,
+      "offset": {
+        "x": 0.0,
+        "y": 0,
+        "z": 0.0
       }
     },
     {
       "id": "blast2",
       "enabled": true,
+      "shape": "particles",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 3,
+      "count": 20,
+      "size": 1.9,
+      "height": 1.0,
+      "startTick": 7,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "ramp": [
+        {
+          "at": 0.0,
+          "colour": "#3a1206"
+        },
+        {
+          "at": 0.25,
+          "colour": "#b8320a"
+        },
+        {
+          "at": 0.5,
+          "colour": "#ff7a1a"
+        },
+        {
+          "at": 0.75,
+          "colour": "#ffc04a"
+        },
+        {
+          "at": 1.0,
+          "colour": "#fff4d0"
+        }
+      ],
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 26,
+        "rate": 20,
+        "speed": 7.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": -0.6,
+        "drag": 3.0,
+        "spawnRadius": 0.6,
+        "startSize": 1.9,
+        "endSize": 3.8,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 1.14
+          },
+          {
+            "at": 0.15,
+            "value": 2.6599999999999997
+          },
+          {
+            "at": 1,
+            "value": 4.9399999999999995
+          }
+        ],
+        "colourOverLife": [
+          {
+            "at": 0,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.6,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.8999999999999999,
+            "colour": "#5a463c"
+          },
+          {
+            "at": 1,
+            "colour": "#33302e"
+          }
+        ],
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 0.75
+          },
+          {
+            "at": 0.6,
+            "value": 0.65
+          },
+          {
+            "at": 0.8999999999999999,
+            "value": 0.2
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.04,
+            "value": 0.9
+          },
+          {
+            "at": 0.6,
+            "value": 0.7
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0.05
+          },
+          {
+            "at": 0.5,
+            "value": 0.2
+          },
+          {
+            "at": 1,
+            "value": 0.85
+          }
+        ],
+        "heatOverLife": [
+          {
+            "at": 0,
+            "value": 0.95
+          },
+          {
+            "at": 0.4,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0.45
+          }
+        ],
+        "turbulence": {
+          "strength": 0.57,
+          "scale": 2.0,
+          "speed": 2.0
+        }
+      },
+      "offset": {
+        "x": 2.2,
+        "y": 0,
+        "z": 1.4
+      }
+    },
+    {
+      "id": "rocks2",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#5a4836",
+      "accent": "#3a2c20",
+      "durationTicks": 46,
+      "count": 10,
+      "size": 0.5,
+      "height": 0.5,
+      "startTick": 7,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.vfx.chunk",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 44,
+        "rate": 10,
+        "speed": 11.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": 22.0,
+        "drag": 0.3,
+        "spawnRadius": 0.6,
+        "startSize": 0.5,
+        "endSize": 0.45,
+        "spin": 8,
+        "fadeIn": 0.0,
+        "fadeOut": 0.15,
+        "coneInnerDegrees": 16.0,
+        "collide": {
+          "friction": 0.8
+        }
+      },
+      "offset": {
+        "x": 2.2,
+        "y": 0,
+        "z": 1.4
+      }
+    },
+    {
+      "id": "scorch2",
+      "enabled": true,
       "shape": "billboard",
       "colour": "#ffffff",
       "accent": "#ffffff",
-      "durationTicks": 32,
+      "durationTicks": 220,
       "count": 1,
-      "size": 5.0,
-      "height": 1.2,
-      "startTick": 6,
+      "size": 4.0,
+      "height": 0.05,
+      "startTick": 8,
+      "orientation": "ground",
       "blend": "normal",
-      "flipbook": {
-        "columns": 4,
-        "rows": 4,
-        "firstFrame": 0,
-        "frames": 16,
-        "frameTicks": 2,
-        "mode": "once",
-        "randomStart": false
-      },
+      "intensity": 0.85,
       "texture": {
-        "asset": "asset.effects.ants.resin-burst",
+        "asset": "asset.effects.beetles.scorch",
+        "role": "image",
+        "index": 1
+      },
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": 0.04,
+          "value": 1
+        },
+        {
+          "at": 0.6,
+          "value": 0.95
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ],
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.7
+        },
+        {
+          "at": 0.08,
+          "value": 1.0
+        },
+        {
+          "at": 1,
+          "value": 1.04
+        }
+      ],
+      "offset": {
+        "x": 2.2,
+        "y": 0,
+        "z": 1.4
+      }
+    },
+    {
+      "id": "glint2",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffd08a",
+      "accent": "#ffffff",
+      "durationTicks": 5,
+      "count": 1,
+      "size": 3.2,
+      "height": 1.0,
+      "startTick": 7,
+      "blend": "additive",
+      "intensity": 2.6,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
         "role": "image",
         "index": 1
       },
@@ -65,28 +646,325 @@
       }
     },
     {
+      "id": "flash2",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 12,
+      "count": 1,
+      "size": 7.0,
+      "height": 1.0,
+      "intensity": 6.0,
+      "startTick": 7,
+      "offset": {
+        "x": 2.2,
+        "y": 0,
+        "z": 1.4
+      }
+    },
+    {
       "id": "blast3",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 3,
+      "count": 20,
+      "size": 1.9,
+      "height": 1.0,
+      "startTick": 14,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "ramp": [
+        {
+          "at": 0.0,
+          "colour": "#3a1206"
+        },
+        {
+          "at": 0.25,
+          "colour": "#b8320a"
+        },
+        {
+          "at": 0.5,
+          "colour": "#ff7a1a"
+        },
+        {
+          "at": 0.75,
+          "colour": "#ffc04a"
+        },
+        {
+          "at": 1.0,
+          "colour": "#fff4d0"
+        }
+      ],
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 26,
+        "rate": 20,
+        "speed": 7.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": -0.6,
+        "drag": 3.0,
+        "spawnRadius": 0.6,
+        "startSize": 1.9,
+        "endSize": 3.8,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 1.14
+          },
+          {
+            "at": 0.15,
+            "value": 2.6599999999999997
+          },
+          {
+            "at": 1,
+            "value": 4.9399999999999995
+          }
+        ],
+        "colourOverLife": [
+          {
+            "at": 0,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.6,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.8999999999999999,
+            "colour": "#5a463c"
+          },
+          {
+            "at": 1,
+            "colour": "#33302e"
+          }
+        ],
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 0.75
+          },
+          {
+            "at": 0.6,
+            "value": 0.65
+          },
+          {
+            "at": 0.8999999999999999,
+            "value": 0.2
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.04,
+            "value": 0.9
+          },
+          {
+            "at": 0.6,
+            "value": 0.7
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0.05
+          },
+          {
+            "at": 0.5,
+            "value": 0.2
+          },
+          {
+            "at": 1,
+            "value": 0.85
+          }
+        ],
+        "heatOverLife": [
+          {
+            "at": 0,
+            "value": 0.95
+          },
+          {
+            "at": 0.4,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0.45
+          }
+        ],
+        "turbulence": {
+          "strength": 0.57,
+          "scale": 2.0,
+          "speed": 2.0
+        }
+      },
+      "offset": {
+        "x": -2.0,
+        "y": 0,
+        "z": -1.6
+      }
+    },
+    {
+      "id": "rocks3",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#5a4836",
+      "accent": "#3a2c20",
+      "durationTicks": 46,
+      "count": 10,
+      "size": 0.5,
+      "height": 0.5,
+      "startTick": 14,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.vfx.chunk",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 44,
+        "rate": 10,
+        "speed": 11.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": 22.0,
+        "drag": 0.3,
+        "spawnRadius": 0.6,
+        "startSize": 0.5,
+        "endSize": 0.45,
+        "spin": 8,
+        "fadeIn": 0.0,
+        "fadeOut": 0.15,
+        "coneInnerDegrees": 16.0,
+        "collide": {
+          "friction": 0.8
+        }
+      },
+      "offset": {
+        "x": -2.0,
+        "y": 0,
+        "z": -1.6
+      }
+    },
+    {
+      "id": "scorch3",
       "enabled": true,
       "shape": "billboard",
       "colour": "#ffffff",
       "accent": "#ffffff",
-      "durationTicks": 32,
+      "durationTicks": 220,
       "count": 1,
-      "size": 5.0,
-      "height": 1.2,
-      "startTick": 12,
+      "size": 4.0,
+      "height": 0.05,
+      "startTick": 15,
+      "orientation": "ground",
       "blend": "normal",
-      "flipbook": {
-        "columns": 4,
-        "rows": 4,
-        "firstFrame": 0,
-        "frames": 16,
-        "frameTicks": 2,
-        "mode": "once",
-        "randomStart": false
-      },
+      "intensity": 0.85,
       "texture": {
-        "asset": "asset.effects.ants.resin-burst",
+        "asset": "asset.effects.beetles.scorch",
+        "role": "image",
+        "index": 1
+      },
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": 0.04,
+          "value": 1
+        },
+        {
+          "at": 0.6,
+          "value": 0.95
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ],
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.7
+        },
+        {
+          "at": 0.08,
+          "value": 1.0
+        },
+        {
+          "at": 1,
+          "value": 1.04
+        }
+      ],
+      "offset": {
+        "x": -2.0,
+        "y": 0,
+        "z": -1.6
+      }
+    },
+    {
+      "id": "glint3",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffd08a",
+      "accent": "#ffffff",
+      "durationTicks": 5,
+      "count": 1,
+      "size": 3.2,
+      "height": 1.0,
+      "startTick": 14,
+      "blend": "additive",
+      "intensity": 2.6,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
         "role": "image",
         "index": 1
       },
@@ -97,94 +975,21 @@
       }
     },
     {
-      "id": "flash",
+      "id": "flash3",
       "enabled": true,
       "shape": "light",
       "colour": "#ff8a2a",
       "accent": "#ffd9a0",
-      "durationTicks": 18,
+      "durationTicks": 12,
       "count": 1,
-      "size": 12.0,
+      "size": 7.0,
       "height": 1.0,
-      "intensity": 9.0,
-      "startTick": 0
-    },
-    {
-      "id": "glint",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#ffd08a",
-      "accent": "#ffffff",
-      "durationTicks": 6,
-      "count": 1,
-      "size": 4.5,
-      "height": 1.0,
-      "startTick": 0,
-      "blend": "additive",
-      "intensity": 2.6,
-      "core": 0.9,
-      "texture": {
-        "asset": "asset.effects.beetles.glint",
-        "role": "image",
-        "index": 1
-      }
-    },
-    {
-      "id": "shock",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#ffd9a0",
-      "accent": "#ffffff",
-      "durationTicks": 16,
-      "count": 1,
-      "size": 8.0,
-      "height": 0.1,
-      "startTick": 0,
-      "orientation": "ground",
-      "blend": "additive",
-      "intensity": 1.6,
-      "core": 0.6,
-      "texture": {
-        "asset": "asset.effects.beetles.ring",
-        "role": "image",
-        "index": 1
-      },
-      "motion": {
-        "scale": {
-          "periodTicks": 32,
-          "min": 0.18,
-          "max": 1.0,
-          "easing": "sine"
-        }
-      }
-    },
-    {
-      "id": "shock2",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#ffd9a0",
-      "accent": "#ffffff",
-      "durationTicks": 14,
-      "count": 1,
-      "size": 6.0,
-      "height": 0.12,
-      "startTick": 6,
-      "orientation": "ground",
-      "blend": "additive",
-      "intensity": 1.6,
-      "core": 0.6,
-      "texture": {
-        "asset": "asset.effects.beetles.ring",
-        "role": "image",
-        "index": 1
-      },
-      "motion": {
-        "scale": {
-          "periodTicks": 28,
-          "min": 0.18,
-          "max": 1.0,
-          "easing": "sine"
-        }
+      "intensity": 6.0,
+      "startTick": 14,
+      "offset": {
+        "x": -2.0,
+        "y": 0,
+        "z": -1.6
       }
     },
     {
@@ -193,8 +998,8 @@
       "shape": "particles",
       "colour": "#ffa040",
       "accent": "#ffd9a0",
-      "durationTicks": 24,
-      "count": 40,
+      "durationTicks": 22,
+      "count": 30,
       "size": 0.09,
       "height": 0.0,
       "startTick": 0,
@@ -208,9 +1013,9 @@
       },
       "emitter": {
         "mode": "burst",
-        "lifetimeTicks": 22,
-        "rate": 40,
-        "speed": 13,
+        "lifetimeTicks": 20,
+        "rate": 30,
+        "speed": 12,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
@@ -235,11 +1040,11 @@
       "shape": "particles",
       "colour": "#5d5a58",
       "accent": "#a09c98",
-      "durationTicks": 54,
+      "durationTicks": 64,
       "count": 10,
       "size": 2.2,
       "height": 0.4,
-      "startTick": 4,
+      "startTick": 6,
       "blend": "normal",
       "texture": {
         "asset": "asset.effects.construction-dust",
@@ -248,9 +1053,9 @@
       },
       "emitter": {
         "mode": "burst",
-        "lifetimeTicks": 50,
+        "lifetimeTicks": 60,
         "rate": 10,
-        "speed": 2.2,
+        "speed": 2.0,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
@@ -260,7 +1065,7 @@
         "coneDegrees": 90,
         "gravity": -0.8,
         "drag": 1.6,
-        "spawnRadius": 2.5,
+        "spawnRadius": 2.6,
         "startSize": 1.1,
         "endSize": 3.5200000000000005,
         "spin": 0,
@@ -269,58 +1074,88 @@
       }
     },
     {
-      "id": "scorch",
+      "id": "dust",
       "enabled": true,
-      "shape": "billboard",
-      "colour": "#ffffff",
-      "accent": "#ffffff",
-      "durationTicks": 240,
-      "count": 1,
-      "size": 6.0,
-      "height": 0.05,
-      "startTick": 4,
-      "orientation": "ground",
+      "shape": "particles",
+      "colour": "#cdb894",
+      "accent": "#e0d0b0",
+      "durationTicks": 3,
+      "count": 24,
+      "size": 1.4,
+      "height": 0.3,
+      "startTick": 2,
       "blend": "normal",
-      "intensity": 0.85,
       "texture": {
-        "asset": "asset.effects.beetles.scorch",
-        "role": "image",
-        "index": 1
-      }
-    },
-    {
-      "id": "steam",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#d8d2cc",
-      "accent": "#ffffff",
-      "durationTicks": 26,
-      "count": 1,
-      "size": 12.0,
-      "height": 1.0,
-      "startTick": 4,
-      "blend": "additive",
-      "intensity": 0.8,
-      "core": 0.4,
-      "texture": {
-        "asset": "asset.effects.beetles.steam-burst",
+        "asset": "asset.effects.vfx.puff",
         "role": "image",
         "index": 1
       },
-      "motion": {
-        "scale": {
-          "periodTicks": 52,
-          "min": 0.4,
-          "max": 1.1,
-          "easing": "smoothstep"
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "soft": 0.8,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 40,
+        "rate": 24,
+        "speed": 12.0,
+        "speedVariation": 0.35,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
         },
-        "opacity": {
-          "periodTicks": 52,
-          "min": 0.0,
-          "max": 1.0,
-          "easing": "sine",
-          "phase": 0.5
-        }
+        "coneDegrees": 89,
+        "gravity": -0.2,
+        "drag": 2.6,
+        "spawnRadius": 1.0,
+        "startSize": 1.4,
+        "endSize": 4.199999999999999,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "coneInnerDegrees": 82,
+        "spawnInner": 0.5,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 1.4
+          },
+          {
+            "at": 1,
+            "value": 4.4799999999999995
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.1,
+            "value": 0.5
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 1,
+            "value": 0.7
+          }
+        ]
       }
     }
   ]

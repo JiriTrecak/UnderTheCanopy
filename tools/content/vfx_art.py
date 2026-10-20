@@ -15,7 +15,11 @@ to its dense centre:
 - `mote`: a soft round mote with a dense heart: sparkles, droplets, embers, glowing heads;
 - `wake`: a soft band repeating along its length, faintly streaked: the air wake of a
   thorn or a bolt (ribbons);
-- `bolt`: lightning: a hot jagged core in a soft glow, repeating along its length (beams).
+- `bolt`: lightning: a hot jagged core in a soft glow, repeating along its length (beams);
+- `vortex`: four spiral arms winding in to an empty eye: storms, whirlpools, drains (turn it
+  with `motion.rotation`);
+- `shell`: a force shell seen face on: a bright rim and a faint hexagon lattice bulging across
+  it, for shields and barriers (camera-facing).
 """
 import json
 import math
@@ -166,8 +170,8 @@ def blast_ring(i, j, w, h):
     streak = fbm(math.cos(angle) * 6 + 3, math.sin(angle) * 6 + 1, 811, 4)
     front = 0.86 + (streak - 0.5) * 0.08
     lead = 1 - smooth(front - 0.02, front + 0.03, r)
-    tail = smooth(front - 0.45 - 0.25 * streak, front - 0.04, r)
-    alpha = lead * tail * (0.6 + 0.5 * streak)
+    tail = smooth(front - 0.26 - 0.14 * streak, front - 0.03, r)
+    alpha = lead * tail ** 1.5 * (0.55 + 0.5 * streak)
     value = 0.4 + 0.6 * smooth(front - 0.3, front - 0.02, r)
     return value, value, value, min(1.0, alpha)
 
@@ -203,6 +207,59 @@ def bolt(i, j, w, h):
     return value, value, value, alpha
 
 
+def vortex(i, j, w, h):
+    u = (i + 0.5) / w * 2 - 1
+    v = 1 - (j + 0.5) / h * 2
+    r = math.hypot(u, v)
+    angle = math.atan2(v, u)
+    # Four logarithmic arms: the phase winds with the log of the radius.
+    phase = angle * 4 + math.log(max(r, 1e-3)) * 7.0
+    arm = 0.5 + 0.5 * math.cos(phase + (fbm(u * 3 + 5, v * 3, 1301, 3) - 0.5) * 2.0)
+    arm = smooth(0.35, 0.95, arm)
+    body = smooth(0.08, 0.3, r) * (1 - smooth(0.7, 1.0, r))
+    streak = 0.75 + 0.25 * fbm(math.cos(angle) * 4 + r * 6, math.sin(angle) * 4, 1307, 3)
+    alpha = arm * body * streak
+    value = 0.7 + 0.3 * (1 - r)
+    return value, value, value, min(1.0, alpha)
+
+
+def hex_edge(x, y):
+    """Distance to the nearest edge of a unit hexagon lattice (0 on an edge, about 0.5 at a centre)."""
+    q = (2 / 3) * x
+    r = (-1 / 3) * x + (math.sqrt(3) / 3) * y
+    # Cube rounding to the cell, then the hexagon distance from its centre.
+    cx, cz = q, r
+    cy = -cx - cz
+    rx, ry, rz = round(cx), round(cy), round(cz)
+    dx, dy, dz = abs(rx - cx), abs(ry - cy), abs(rz - cz)
+    if dx > dy and dx > dz:
+        rx = -ry - rz
+    elif dy > dz:
+        ry = -rx - rz
+    else:
+        rz = -rx - ry
+    px, py = x - 1.5 * rx, y - math.sqrt(3) * (rz + rx / 2)
+    ax, ay = abs(px), abs(py)
+    d = max(ay, ax * math.sqrt(3) / 2 + ay * 0.5) / (math.sqrt(3) / 2)
+    return 1 - d
+
+
+def shell(i, j, w, h):
+    u = (i + 0.5) / w * 2 - 1
+    v = 1 - (j + 0.5) / h * 2
+    r = math.hypot(u, v)
+    if r >= 1:
+        return 0, 0, 0, 0
+    # The lattice bulges like a sphere: cells shrink towards the rim.
+    z = math.sqrt(1 - r * r)
+    edge = hex_edge(u / (0.35 + 0.65 * z) * 4.2, v / (0.35 + 0.65 * z) * 4.2)
+    lattice = math.exp(-(edge / 0.07) ** 2)
+    rim = (1 - z) ** 3
+    alpha = min(1.0, rim * 1.4 + lattice * (0.25 + 0.6 * (1 - z)) + 0.06) * (1 - smooth(0.96, 1.0, r))
+    value = 0.7 + 0.3 * max(rim, lattice)
+    return value, value, value, alpha
+
+
 TEXTURES = {
     'puff': ('Cloud puff', 256, 256, atlas(256, 2, puff),
              'Four billowing cloud puffs (2 × 2): fire, smoke and dust, bright and dense at the heart.'),
@@ -217,6 +274,10 @@ TEXTURES = {
              'A soft round mote with a dense heart: sparkles, droplets, embers and glowing heads.'),
     'wake': ('Air wake', 128, 32, lambda i, j: wake(i, j, 128, 32),
              'A soft band repeating along its length, faintly streaked: the air wake behind a thorn or bolt.'),
+    'vortex': ('Vortex', 256, 256, lambda i, j: vortex(i, j, 256, 256),
+               'Four spiral arms winding in to an empty eye: storms, whirlpools, drains.'),
+    'shell': ('Force shell', 256, 256, lambda i, j: shell(i, j, 256, 256),
+              'A force shell seen face on: a bright rim and a faint bulging hexagon lattice.'),
     'bolt': ('Lightning bolt', 256, 64, lambda i, j: bolt(i, j, 256, 64),
              'Lightning: a hot jagged core in a soft glow, repeating along its length (beam strips).'),
 }

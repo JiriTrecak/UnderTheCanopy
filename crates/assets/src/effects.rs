@@ -225,6 +225,10 @@ pub struct CookedEmitter {
     pub turbulence: Option<[f32; 3]>,
     /// Friction on landing (None: falls through the ground).
     pub collide: Option<f32>,
+    /// Radians a second around the emitter's upright axis.
+    pub orbit: f32,
+    /// Share of the distance to the axis closed over life (negative: pushed out).
+    pub pull: f32,
 }
 
 /// Splashes where a rain drop lands.

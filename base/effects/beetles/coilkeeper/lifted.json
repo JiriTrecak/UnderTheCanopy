@@ -1,10 +1,191 @@
 {
   "id": "effect.coilkeeper.lifted",
   "name": "Lifted",
-  "description": "A violet glow and sparks around an enemy held up in the storm.",
+  "description": "An enemy held up in the storm: a small violet twister spins up under it from a dark patch on the ground and a ring of motes whirls around it, crackling.",
   "durationTicks": 40,
   "loop": true,
   "layers": [
+    {
+      "id": "whirl",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c9b8ff",
+      "accent": "#8a5cff",
+      "durationTicks": 40,
+      "count": 40,
+      "size": 0.3,
+      "height": 1.0,
+      "sustain": true,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 3.0,
+      "core": 0.8,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 30,
+        "rate": 40,
+        "speed": 0.0,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 0,
+        "gravity": 0.0,
+        "drag": 0.5,
+        "spawnRadius": 2.0,
+        "startSize": 0.3,
+        "endSize": 0.16,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "spawnInner": 0.85,
+        "orbit": 480,
+        "stretch": 0.05
+      }
+    },
+    {
+      "id": "updraft",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 40,
+      "size": 0.7,
+      "height": 0.0,
+      "sustain": true,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "ramp": [
+        {
+          "at": 0.0,
+          "colour": "#1c0c40"
+        },
+        {
+          "at": 0.3,
+          "colour": "#5a2ad8"
+        },
+        {
+          "at": 0.6,
+          "colour": "#9a74ff"
+        },
+        {
+          "at": 0.85,
+          "colour": "#dccfff"
+        },
+        {
+          "at": 1.0,
+          "colour": "#ffffff"
+        }
+      ],
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 26,
+        "rate": 36,
+        "speed": 2.6,
+        "speedVariation": 0.3,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 6,
+        "gravity": 0.0,
+        "drag": 0.0,
+        "spawnRadius": 0.7,
+        "startSize": 0.5,
+        "endSize": 1.1,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "spawnInner": 0.3,
+        "orbit": 420,
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0.5
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.2,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0.1
+          },
+          {
+            "at": 1,
+            "value": 0.7
+          }
+        ],
+        "heatOverLife": [
+          {
+            "at": 0,
+            "value": 1.2
+          },
+          {
+            "at": 1,
+            "value": 0.6
+          }
+        ]
+      }
+    },
+    {
+      "id": "shadow",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#120824",
+      "accent": "#120824",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 3.4,
+      "height": 0.06,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "normal",
+      "intensity": 0.7,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "sustain": true
+    },
     {
       "id": "glow",
       "enabled": true,
@@ -13,8 +194,8 @@
       "accent": "#c9b8ff",
       "durationTicks": 40,
       "count": 1,
-      "size": 1.4,
-      "height": 0.6,
+      "size": 1.8,
+      "height": 0.8,
       "startTick": 0,
       "blend": "additive",
       "orientation": "camera",
@@ -38,8 +219,8 @@
       "accent": "#b49cff",
       "durationTicks": 40,
       "count": 4,
-      "size": 0.05,
-      "height": 0.6,
+      "size": 0.07,
+      "height": 0.8,
       "startTick": 0,
       "blend": "additive",
       "intensity": 3.0,
@@ -64,8 +245,8 @@
         "gravity": 0,
         "drag": 0.7,
         "spawnRadius": 0.8,
-        "startSize": 0.05,
-        "endSize": 0.022500000000000003,
+        "startSize": 0.07,
+        "endSize": 0.03150000000000001,
         "spin": 0,
         "fadeIn": 0.0,
         "fadeOut": 0.55,

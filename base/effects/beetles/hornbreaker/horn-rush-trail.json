@@ -1,7 +1,7 @@
 {
   "id": "effect.hornbreaker.horn-rush-trail",
   "name": "Horn rush",
-  "description": "The Hornbreaker thunders forward: dust thrown up behind him and sparks off his horn.",
+  "description": "A charge you can follow: a wall of dust kicked up behind the Hornbreaker, a furrow scraped into the ground and sparks struck off his horn.",
   "durationTicks": 40,
   "loop": false,
   "layers": [
@@ -9,41 +9,170 @@
       "id": "dust",
       "enabled": true,
       "shape": "particles",
-      "colour": "#c8b090",
-      "accent": "#efe2c8",
+      "colour": "#9a8262",
+      "accent": "#7a6a50",
       "durationTicks": 40,
-      "count": 6,
-      "size": 1.2,
-      "height": 0.2,
-      "startTick": 0,
+      "count": 42,
+      "size": 1.5,
+      "height": 0.3,
       "blend": "normal",
       "texture": {
-        "asset": "asset.effects.construction-dust",
+        "asset": "asset.effects.vfx.puff",
         "role": "image",
         "index": 1
       },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "soft": 0.8,
       "emitter": {
         "mode": "continuous",
-        "lifetimeTicks": 26,
-        "rate": 6,
-        "speed": 2.2,
-        "speedVariation": 0.5,
+        "lifetimeTicks": 34,
+        "rate": 45,
+        "speed": 2.5,
+        "speedVariation": 0.6,
         "direction": {
           "x": 0,
           "y": 1,
           "z": 0
         },
         "coneDegrees": 70,
-        "gravity": -0.4,
-        "drag": 1.6,
-        "spawnRadius": 0.3,
-        "startSize": 0.6,
-        "endSize": 1.92,
+        "gravity": -0.5,
+        "drag": 2.0,
+        "spawnRadius": 1.2,
+        "startSize": 1.5,
+        "endSize": 3.75,
         "spin": 0,
-        "fadeIn": 0.1,
-        "fadeOut": 0.7
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "space": "world",
+        "inheritVelocity": 0.15,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 0.8999999999999999
+          },
+          {
+            "at": 1,
+            "value": 3.9000000000000004
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.12,
+            "value": 0.6
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 1,
+            "value": 0.7
+          }
+        ],
+        "turbulence": {
+          "strength": 0.6,
+          "scale": 2.0,
+          "speed": 1.0
+        }
       },
       "follow": true
+    },
+    {
+      "id": "furrow",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#4a3c2e",
+      "accent": "#5a4a3a",
+      "durationTicks": 40,
+      "count": 40,
+      "size": 0.9,
+      "height": 0.02,
+      "follow": true,
+      "blend": "normal",
+      "orientation": "ground",
+      "texture": {
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "soft": 0.0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 70,
+        "rate": 26,
+        "speed": 0.0,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 0,
+        "gravity": 0.0,
+        "drag": 0.5,
+        "spawnRadius": 0.4,
+        "startSize": 0.9,
+        "endSize": 1.1,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "space": "world",
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.05,
+            "value": 0.55
+          },
+          {
+            "at": 0.6,
+            "value": 0.45
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 1.2
+          }
+        ]
+      }
     },
     {
       "id": "sparks",
@@ -52,8 +181,8 @@
       "colour": "#ffc65a",
       "accent": "#fff0b0",
       "durationTicks": 40,
-      "count": 10,
-      "size": 0.08,
+      "count": 12,
+      "size": 0.1,
       "height": 1.6,
       "startTick": 0,
       "blend": "additive",
@@ -67,7 +196,7 @@
       "emitter": {
         "mode": "continuous",
         "lifetimeTicks": 12,
-        "rate": 10,
+        "rate": 12,
         "speed": 5,
         "speedVariation": 0.5,
         "direction": {
@@ -79,28 +208,14 @@
         "gravity": 14,
         "drag": 0.7,
         "spawnRadius": 0.6,
-        "startSize": 0.08,
-        "endSize": 0.036000000000000004,
+        "startSize": 0.1,
+        "endSize": 0.045000000000000005,
         "spin": 0,
         "fadeIn": 0.0,
         "fadeOut": 0.55,
         "stretch": 0.05
       },
       "follow": true
-    },
-    {
-      "id": "wake",
-      "enabled": true,
-      "shape": "ring",
-      "colour": "#ffd890",
-      "accent": "#fff3d6",
-      "durationTicks": 40,
-      "count": 1,
-      "size": 3.2,
-      "height": 0.06,
-      "blend": "additive",
-      "follow": true,
-      "intensity": 0.6
     }
   ]
 }

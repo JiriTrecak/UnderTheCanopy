@@ -1,28 +1,71 @@
 {
   "id": "effect.beetles.lock-shields-clang",
   "name": "Shields lock",
-  "description": "Sparks and a vent of steam as the shield clamps lock.",
+  "description": "The clamps bite: a steel clang-star, sparks spraying along the ground, dust kicked up and a vent of steam.",
   "durationTicks": 30,
   "loop": false,
   "layers": [
     {
-      "id": "glint",
+      "id": "clang",
       "enabled": true,
       "shape": "billboard",
       "colour": "#cfe0ff",
       "accent": "#ffffff",
       "durationTicks": 6,
       "count": 1,
-      "size": 2.6,
-      "height": 1.0,
+      "size": 2.8,
+      "height": 0.9,
       "startTick": 0,
       "blend": "additive",
-      "intensity": 3.0,
+      "intensity": 3.2,
       "core": 0.9,
       "texture": {
         "asset": "asset.effects.beetles.glint",
         "role": "image",
         "index": 1
+      }
+    },
+    {
+      "id": "spray",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#fff0b0",
+      "accent": "#ffc65a",
+      "durationTicks": 14,
+      "count": 24,
+      "size": 0.11,
+      "height": 0.3,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.5,
+      "core": 0.8,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 12,
+        "rate": 24,
+        "speed": 12.0,
+        "speedVariation": 0.35,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 89,
+        "gravity": 0.0,
+        "drag": 2.5,
+        "spawnRadius": 0.6,
+        "startSize": 0.11,
+        "endSize": 0.044000000000000004,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.6,
+        "coneInnerDegrees": 80,
+        "stretch": 0.05
       }
     },
     {
@@ -32,7 +75,7 @@
       "colour": "#ffc65a",
       "accent": "#fff0b0",
       "durationTicks": 14,
-      "count": 18,
+      "count": 12,
       "size": 0.08,
       "height": 0.8,
       "startTick": 0,
@@ -47,8 +90,8 @@
       "emitter": {
         "mode": "burst",
         "lifetimeTicks": 12,
-        "rate": 18,
-        "speed": 8,
+        "rate": 12,
+        "speed": 7,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
@@ -68,6 +111,87 @@
       }
     },
     {
+      "id": "dust",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#cdb894",
+      "accent": "#e0d0b0",
+      "durationTicks": 28,
+      "count": 6,
+      "size": 0.9,
+      "height": 0.2,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 26,
+        "rate": 6,
+        "speed": 3.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": -0.5,
+        "drag": 2.0,
+        "spawnRadius": 0.3,
+        "startSize": 0.9,
+        "endSize": 2.16,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 0.54
+          },
+          {
+            "at": 1,
+            "value": 2.16
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.1,
+            "value": 0.5
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 1,
+            "value": 0.6
+          }
+        ]
+      }
+    },
+    {
       "id": "steam",
       "enabled": true,
       "shape": "billboard",
@@ -75,8 +199,8 @@
       "accent": "#ffffff",
       "durationTicks": 20,
       "count": 1,
-      "size": 4.800000000000001,
-      "height": 0.6,
+      "size": 3.9000000000000004,
+      "height": 0.9,
       "startTick": 0,
       "blend": "additive",
       "intensity": 1.1199999999999999,
@@ -99,68 +223,6 @@
           "max": 1.0,
           "easing": "sine",
           "phase": 0.5
-        }
-      }
-    },
-    {
-      "id": "gear",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#5b7bff",
-      "accent": "#ffffff",
-      "durationTicks": 30,
-      "count": 1,
-      "size": 3.5999999999999996,
-      "height": 0.08,
-      "startTick": 0,
-      "orientation": "ground",
-      "blend": "additive",
-      "intensity": 1.8,
-      "core": 0.3,
-      "texture": {
-        "asset": "asset.effects.beetles.gear-sigil",
-        "role": "image",
-        "index": 1
-      },
-      "motion": {
-        "rotation": {
-          "periodTicks": 90,
-          "direction": "clockwise"
-        },
-        "scale": {
-          "periodTicks": 48,
-          "min": 0.55,
-          "max": 1.0,
-          "easing": "smoothstep"
-        }
-      }
-    },
-    {
-      "id": "ring",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#b8c8ff",
-      "accent": "#ffffff",
-      "durationTicks": 12,
-      "count": 1,
-      "size": 5.0,
-      "height": 0.1,
-      "startTick": 0,
-      "orientation": "ground",
-      "blend": "additive",
-      "intensity": 1.8,
-      "core": 0.6,
-      "texture": {
-        "asset": "asset.effects.beetles.ring",
-        "role": "image",
-        "index": 1
-      },
-      "motion": {
-        "scale": {
-          "periodTicks": 24,
-          "min": 0.18,
-          "max": 1.0,
-          "easing": "sine"
         }
       }
     }

@@ -407,6 +407,54 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
         image::ExtendedColorType::Rgba8,
     )
     .with_context(|| out.display().to_string())?;
+    if let Some((count, step)) = options.sequence {
+        // The same view `step` ticks later, `count − 1` times: the match (and every effect
+        // in it) keeps playing.
+        for k in 1..count {
+            for _ in 0..step.max(1) {
+                let Some(advanced) = sim::advance(
+                    &mut game.world,
+                    &mut game.session,
+                    &mut game.presenter,
+                    seat,
+                    None,
+                ) else {
+                    anyhow::bail!("the local session stopped at tick {}", game.world.tick());
+                };
+                previous = Some(std::mem::replace(&mut newest, advanced.presentation));
+            }
+            live.show(
+                &mut renderer,
+                &gpu,
+                &loaded.pack,
+                previous.as_ref(),
+                &newest,
+                1.0,
+            );
+            live.draw_world_ui(
+                &mut renderer,
+                &gpu,
+                &camera_view,
+                &loaded.scene,
+                options.time,
+            );
+            renderer.render(&gpu, &camera_view, options.time, &capture.view, Some(&copy));
+            gpu.device.poll(wgpu::PollType::wait_indefinitely())?;
+            let frame = capture.read(&gpu.device)?;
+            let path = out.with_file_name(format!(
+                "{}-{k:03}.png",
+                out.file_stem().and_then(|s| s.to_str()).unwrap_or("shot")
+            ));
+            image::save_buffer(
+                &path,
+                &frame,
+                size[0],
+                size[1],
+                image::ExtendedColorType::Rgba8,
+            )
+            .with_context(|| path.display().to_string())?;
+        }
+    }
 
     let spec = CameraSpec {
         x: camera.focus[0],

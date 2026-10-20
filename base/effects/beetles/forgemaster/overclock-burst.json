@@ -1,162 +1,252 @@
 {
   "id": "effect.forgemaster.overclock-burst",
   "name": "Overclock",
-  "description": "A burst of heat as the governor is pulled.",
-  "durationTicks": 24,
+  "description": "The governor is pulled: an exhaust flame roars up off the unit, steam blasts out of its sides and a hiss of sparks sprays off it.",
+  "durationTicks": 26,
   "loop": false,
   "layers": [
     {
-      "id": "column",
-      "enabled": true,
-      "shape": "pillar",
-      "colour": "#ff8a2a",
-      "accent": "#fff3d6",
-      "durationTicks": 16,
-      "count": 1,
-      "size": 1.8,
-      "height": 9.0,
-      "startTick": 0,
-      "blend": "additive",
-      "intensity": 1.7999999999999998
-    },
-    {
-      "id": "flash",
-      "enabled": true,
-      "shape": "light",
-      "colour": "#ff8a2a",
-      "accent": "#ffd9a0",
-      "durationTicks": 10,
-      "count": 1,
-      "size": 7.0,
-      "height": 1.0,
-      "intensity": 8.0,
-      "startTick": 0
-    },
-    {
-      "id": "glint",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#fff3d6",
-      "accent": "#ffffff",
-      "durationTicks": 7,
-      "count": 1,
-      "size": 3.4,
-      "height": 1.0,
-      "startTick": 0,
-      "blend": "additive",
-      "intensity": 3.0,
-      "core": 0.9,
-      "texture": {
-        "asset": "asset.effects.beetles.glint",
-        "role": "image",
-        "index": 1
-      }
-    },
-    {
-      "id": "ring",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#ffd9a0",
-      "accent": "#ffffff",
-      "durationTicks": 12,
-      "count": 1,
-      "size": 5.0,
-      "height": 0.1,
-      "startTick": 0,
-      "orientation": "ground",
-      "blend": "additive",
-      "intensity": 1.8,
-      "core": 0.6,
-      "texture": {
-        "asset": "asset.effects.beetles.ring",
-        "role": "image",
-        "index": 1
-      },
-      "motion": {
-        "scale": {
-          "periodTicks": 24,
-          "min": 0.18,
-          "max": 1.0,
-          "easing": "sine"
-        }
-      }
-    },
-    {
-      "id": "sparks",
+      "id": "roar",
       "enabled": true,
       "shape": "particles",
-      "colour": "#ffa040",
-      "accent": "#ffd9a0",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
       "durationTicks": 16,
       "count": 26,
-      "size": 0.08,
+      "size": 0.8,
       "height": 1.0,
-      "startTick": 0,
       "blend": "additive",
-      "intensity": 4.5,
-      "core": 0.35,
       "texture": {
-        "asset": "asset.effects.beetles.spark",
+        "asset": "asset.effects.vfx.puff",
         "role": "image",
         "index": 1
       },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "ramp": [
+        {
+          "at": 0.0,
+          "colour": "#3a1206"
+        },
+        {
+          "at": 0.25,
+          "colour": "#b8320a"
+        },
+        {
+          "at": 0.5,
+          "colour": "#ff7a1a"
+        },
+        {
+          "at": 0.75,
+          "colour": "#ffc04a"
+        },
+        {
+          "at": 1.0,
+          "colour": "#fff4d0"
+        }
+      ],
       "emitter": {
-        "mode": "burst",
-        "lifetimeTicks": 14,
-        "rate": 26,
-        "speed": 9,
-        "speedVariation": 0.5,
+        "mode": "continuous",
+        "lifetimeTicks": 12,
+        "rate": 120,
+        "speed": 9.0,
+        "speedVariation": 0.4,
         "direction": {
           "x": 0,
           "y": 1,
           "z": 0
         },
-        "coneDegrees": 80,
-        "gravity": 14,
-        "drag": 0.7,
-        "spawnRadius": 0.15,
-        "startSize": 0.08,
-        "endSize": 0.036000000000000004,
+        "coneDegrees": 10,
+        "gravity": 0.0,
+        "drag": 1.0,
+        "spawnRadius": 0.25,
+        "startSize": 0.7,
+        "endSize": 0.3,
         "spin": 0,
         "fadeIn": 0.0,
-        "fadeOut": 0.55,
+        "fadeOut": 0.5,
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 1
+          },
+          {
+            "at": 1,
+            "value": 0.5
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 1
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "heatOverLife": [
+          {
+            "at": 0,
+            "value": 1.35
+          },
+          {
+            "at": 1,
+            "value": 0.6
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0.05
+          },
+          {
+            "at": 1,
+            "value": 0.7
+          }
+        ]
+      }
+    },
+    {
+      "id": "vents",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#e8ecf2",
+      "accent": "#ffffff",
+      "durationTicks": 24,
+      "count": 10,
+      "size": 0.7,
+      "height": 0.9,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 20,
+        "rate": 10,
+        "speed": 6.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 1,
+          "y": 0.15,
+          "z": 0
+        },
+        "coneDegrees": 20,
+        "gravity": -1.0,
+        "drag": 1.6,
+        "spawnRadius": 0.3,
+        "startSize": 0.35,
+        "endSize": 1.1199999999999999,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      }
+    },
+    {
+      "id": "vents-2",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#e8ecf2",
+      "accent": "#ffffff",
+      "durationTicks": 24,
+      "count": 10,
+      "size": 0.7,
+      "height": 0.9,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 20,
+        "rate": 10,
+        "speed": 6.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": -1,
+          "y": 0.15,
+          "z": 0
+        },
+        "coneDegrees": 20,
+        "gravity": -1.0,
+        "drag": 1.6,
+        "spawnRadius": 0.3,
+        "startSize": 0.35,
+        "endSize": 1.1199999999999999,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      }
+    },
+    {
+      "id": "spray",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#fff0b0",
+      "accent": "#ffa040",
+      "durationTicks": 14,
+      "count": 30,
+      "size": 0.12,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.5,
+      "core": 0.8,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 12,
+        "rate": 30,
+        "speed": 13.0,
+        "speedVariation": 0.35,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 89,
+        "gravity": 0.0,
+        "drag": 2.5,
+        "spawnRadius": 0.6,
+        "startSize": 0.12,
+        "endSize": 0.048,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.6,
+        "coneInnerDegrees": 80,
         "stretch": 0.05
       }
     },
     {
-      "id": "steam",
+      "id": "flash",
       "enabled": true,
-      "shape": "billboard",
-      "colour": "#e8ecf2",
-      "accent": "#ffffff",
-      "durationTicks": 22,
+      "shape": "light",
+      "colour": "#ff5a1a",
+      "accent": "#ffd9a0",
+      "durationTicks": 12,
       "count": 1,
-      "size": 5.4,
-      "height": 0.8,
-      "startTick": 0,
-      "blend": "additive",
-      "intensity": 1.1199999999999999,
-      "core": 0.4,
-      "texture": {
-        "asset": "asset.effects.beetles.steam-burst",
-        "role": "image",
-        "index": 1
-      },
-      "motion": {
-        "scale": {
-          "periodTicks": 44,
-          "min": 0.4,
-          "max": 1.1,
-          "easing": "smoothstep"
-        },
-        "opacity": {
-          "periodTicks": 44,
-          "min": 0.0,
-          "max": 1.0,
-          "easing": "sine",
-          "phase": 0.5
-        }
-      }
+      "size": 5.0,
+      "height": 1.6,
+      "intensity": 5.0,
+      "startTick": 0
     }
   ]
 }

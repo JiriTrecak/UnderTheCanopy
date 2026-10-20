@@ -51,6 +51,8 @@ struct Emitter {
     e7: vec4f,
     // inner cone (rad), inner spawn share, erosion softness, ground height (world y)
     e8: vec4f,
+    // orbit (rad/s), pull over life, 0, 0
+    e9: vec4f,
 }
 
 struct Ribbon {
@@ -402,6 +404,18 @@ fn evaluate(e: Emitter, i: u32) -> Part {
             p.local = spawn + velocity * travel_of(drag, age);
             // Gravity pulls down (negative values lift: steam, embers).
             p.local.y -= 0.5 * e.e1.w * age * age;
+            if (e.e9.x != 0.0 || e.e9.y != 0.0) {
+                // Swirl around the upright axis and draw in (or push out) over life.
+                let turn = e.e9.x * age;
+                let c = cos(turn);
+                let s = sin(turn);
+                let squeeze = max(0.0, 1.0 - e.e9.y * life01);
+                p.local = vec3f(
+                    (c * p.local.x - s * p.local.z) * squeeze,
+                    p.local.y,
+                    (s * p.local.x + c * p.local.z) * squeeze,
+                );
+            }
             if (e.e7.x > 0.0) {
                 // Swirling drift through a noise field, growing in as the particle lives.
                 let field = (p.base + p.local) / max(e.e7.y, 1e-3) + vec3f(noise(seed + 7u) * 0.35);

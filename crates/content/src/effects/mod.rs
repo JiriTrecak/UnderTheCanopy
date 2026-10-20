@@ -94,6 +94,14 @@ pub struct Emitter {
     /// Particles land on the ground under the emitter instead of falling through it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub collide: Option<Collide>,
+    /// Degrees a second particles swirl around the emitter's upright axis (negative:
+    /// clockwise): vortexes, storms, auras.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub orbit: Option<f64>,
+    /// How far particles are drawn in towards the emitter's axis over their life (0–1:
+    /// all the way at the end; negative pushes out): implosions, gathering, converging.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pull: Option<f64>,
 }
 
 #[derive(

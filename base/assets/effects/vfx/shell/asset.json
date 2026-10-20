@@ -1,0 +1,18 @@
+{
+  "id": "asset.effects.vfx.shell",
+  "name": "Force shell",
+  "kind": "texture",
+  "tags": [
+    "effect",
+    "vfx",
+    "particle"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original procedural effect art for Under the Canopy (tools/content/vfx_art.py). A force shell seen face on: a bright rim and a faint bulging hexagon lattice."
+}

@@ -207,6 +207,11 @@ pub(crate) fn layer_problems(layer: &VisualLayer) -> Vec<&'static str> {
             "Inherited velocity, inner spawn, erosion softness and friction are between zero and one",
         );
         require(
+            e.pull.is_none_or(|p| (-1.0..=1.0).contains(&p))
+                && e.orbit.is_none_or(|o| o.abs() <= 3600.0),
+            "Pull is between minus one and one, orbit at most 3600 degrees a second",
+        );
+        require(
             e.cone_inner_degrees
                 .is_none_or(|c| c >= 0.0 && c <= e.cone_degrees),
             "The inner cone must lie within the cone",

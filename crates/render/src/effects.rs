@@ -127,9 +127,11 @@ pub struct Emitter {
     pub e7: [f32; 4],
     /// Inner cone (rad), inner spawn share, erosion softness, ground height (world y).
     pub e8: [f32; 4],
+    /// Orbit (rad/s), pull over life, 0, 0.
+    pub e9: [f32; 4],
 }
 
-const _: () = assert!(std::mem::size_of::<Emitter>() == 304);
+const _: () = assert!(std::mem::size_of::<Emitter>() == 320);
 
 impl Emitter {
     /// No curves, no path, no landing, the default softness.

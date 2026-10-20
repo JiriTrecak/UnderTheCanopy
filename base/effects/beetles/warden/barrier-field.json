@@ -1,77 +1,103 @@
 {
   "id": "effect.beetles.barrier-field",
   "name": "Barrier field",
-  "description": "The violet pane of a field projector: a bright rim around the warden and a shimmering dome.",
+  "description": "The field projector held up: a shimmering violet hexagon dome over the warden, its light on the ground.",
   "durationTicks": 80,
   "loop": true,
   "layers": [
     {
-      "id": "rim",
+      "id": "dome",
       "enabled": true,
-      "shape": "ring",
-      "colour": "#8a5cff",
-      "accent": "#efe8ff",
+      "shape": "billboard",
+      "colour": "#c9b8ff",
+      "accent": "#ffffff",
       "durationTicks": 80,
       "count": 1,
-      "size": 4.4,
-      "height": 0.3,
-      "blend": "additive",
+      "size": 5.0,
+      "height": 1.6,
       "sustain": true,
+      "orientation": "camera",
+      "blend": "additive",
       "intensity": 0.9,
+      "texture": {
+        "asset": "asset.effects.vfx.shell",
+        "role": "image",
+        "index": 1
+      },
       "motion": {
         "opacity": {
           "periodTicks": 30,
-          "min": 0.6,
-          "max": 1.0,
+          "min": 0.55,
+          "max": 0.9,
           "easing": "sine"
         }
       }
     },
     {
-      "id": "inner",
+      "id": "motes",
       "enabled": true,
-      "shape": "ring",
-      "colour": "#5b7bff",
-      "accent": "#b8c8ff",
+      "shape": "particles",
+      "colour": "#c9b8ff",
+      "accent": "#8a5cff",
       "durationTicks": 80,
-      "count": 1,
-      "size": 3.6,
-      "height": 1.4,
-      "blend": "additive",
-      "sustain": true,
-      "motion": {
-        "opacity": {
-          "periodTicks": 40,
-          "min": 0.25,
-          "max": 0.55,
-          "easing": "sine"
-        }
-      }
-    },
-    {
-      "id": "dome",
-      "enabled": true,
-      "shape": "glow",
-      "colour": "#8a5cff",
-      "accent": "#c9b8ff",
-      "durationTicks": 80,
-      "count": 1,
-      "size": 3.4,
-      "height": 1.6,
+      "count": 4,
+      "size": 0.14,
+      "height": 0.2,
       "startTick": 0,
       "blend": "additive",
-      "orientation": "camera",
-      "intensity": 0.32,
-      "core": 0.2,
-      "sustain": true,
-      "motion": {
-        "opacity": {
-          "periodTicks": 40,
-          "min": 0.5,
-          "max": 1.0,
-          "easing": "sine"
+      "intensity": 2.0,
+      "core": 0.7,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 30,
+        "rate": 4,
+        "speed": 0.6,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 30,
+        "gravity": -1.5,
+        "drag": 1.0,
+        "spawnRadius": 2.0,
+        "startSize": 0.14,
+        "endSize": 0.042,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "spawnInner": 0.1,
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.15,
+            "value": 1
+          },
+          {
+            "at": 0.7,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "turbulence": {
+          "strength": 0.5,
+          "scale": 1.2,
+          "speed": 2.0
         }
-      }
+      },
+      "sustain": true
     },
     {
       "id": "light",

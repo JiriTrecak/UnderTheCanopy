@@ -1,109 +1,284 @@
 {
   "id": "effect.forgemaster.overclock",
   "name": "Overclocked",
-  "description": "An overclocked unit runs hot: an orange glow, violet sparks thrown off and steam venting.",
+  "description": "Redline: the overclocked unit runs hot and sheds a trail of sparks and heat behind it wherever it goes, an exhaust flame flickering off its back and steam venting.",
   "durationTicks": 80,
   "loop": true,
   "layers": [
     {
-      "id": "heat",
-      "enabled": true,
-      "shape": "glow",
-      "colour": "#ff8a2a",
-      "accent": "#ffd9a0",
-      "durationTicks": 80,
-      "count": 1,
-      "size": 2.4,
-      "height": 0.1,
-      "blend": "additive",
-      "sustain": true,
-      "intensity": 0.8,
-      "motion": {
-        "opacity": {
-          "periodTicks": 10,
-          "min": 0.5,
-          "max": 1.0,
-          "easing": "sine"
-        }
-      }
-    },
-    {
-      "id": "gear",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#ff8a2a",
-      "accent": "#ffffff",
-      "durationTicks": 80,
-      "count": 1,
-      "size": 2.7,
-      "height": 0.08,
-      "startTick": 0,
-      "orientation": "ground",
-      "blend": "additive",
-      "intensity": 1.4400000000000002,
-      "core": 0.3,
-      "texture": {
-        "asset": "asset.effects.beetles.gear-sigil",
-        "role": "image",
-        "index": 1
-      },
-      "motion": {
-        "rotation": {
-          "periodTicks": 60,
-          "direction": "clockwise"
-        },
-        "opacity": {
-          "periodTicks": 80,
-          "min": 0.7,
-          "max": 1.0,
-          "easing": "sine"
-        }
-      },
-      "sustain": true,
-      "follow": true
-    },
-    {
-      "id": "sparks",
+      "id": "trail",
       "enabled": true,
       "shape": "particles",
-      "colour": "#ffc65a",
-      "accent": "#fff0b0",
+      "colour": "#fff0b0",
+      "accent": "#ffa040",
       "durationTicks": 80,
-      "count": 10,
-      "size": 0.07,
-      "height": 1.0,
-      "startTick": 0,
+      "count": 40,
+      "size": 0.14,
+      "height": 0.8,
+      "sustain": true,
+      "follow": true,
       "blend": "additive",
-      "intensity": 4.5,
-      "core": 0.35,
       "texture": {
         "asset": "asset.effects.beetles.spark",
         "role": "image",
         "index": 1
       },
+      "intensity": 3.5,
+      "core": 0.8,
       "emitter": {
         "mode": "continuous",
-        "lifetimeTicks": 12,
-        "rate": 10,
-        "speed": 5,
-        "speedVariation": 0.5,
+        "lifetimeTicks": 18,
+        "rate": 50,
+        "speed": 1.6,
+        "speedVariation": 0.4,
         "direction": {
           "x": 0,
           "y": 1,
           "z": 0
         },
-        "coneDegrees": 120,
-        "gravity": 8,
-        "drag": 0.7,
+        "coneDegrees": 180,
+        "gravity": 9.0,
+        "drag": 0.8,
         "spawnRadius": 0.6,
-        "startSize": 0.07,
-        "endSize": 0.03150000000000001,
+        "startSize": 0.14,
+        "endSize": 0.05,
         "spin": 0,
         "fadeIn": 0.0,
-        "fadeOut": 0.55,
-        "stretch": 0.06
+        "fadeOut": 0.5,
+        "space": "world",
+        "stretch": 0.04
+      }
+    },
+    {
+      "id": "heat",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 80,
+      "count": 24,
+      "size": 0.8,
+      "height": 0.8,
+      "sustain": true,
+      "follow": true,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
       },
-      "sustain": true
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "ramp": [
+        {
+          "at": 0.0,
+          "colour": "#3a1206"
+        },
+        {
+          "at": 0.25,
+          "colour": "#b8320a"
+        },
+        {
+          "at": 0.5,
+          "colour": "#ff7a1a"
+        },
+        {
+          "at": 0.75,
+          "colour": "#ffc04a"
+        },
+        {
+          "at": 1.0,
+          "colour": "#fff4d0"
+        }
+      ],
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 20,
+        "rate": 20,
+        "speed": 0.6,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 60,
+        "gravity": -1.5,
+        "drag": 1.0,
+        "spawnRadius": 0.6,
+        "startSize": 0.8,
+        "endSize": 0.4,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "space": "world",
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 0.5
+          },
+          {
+            "at": 0.3,
+            "value": 0.9
+          },
+          {
+            "at": 1,
+            "value": 0.4
+          }
+        ],
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 0.85
+          },
+          {
+            "at": 1,
+            "value": 0.4
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.15,
+            "value": 0.6
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0.1
+          },
+          {
+            "at": 1,
+            "value": 0.8
+          }
+        ],
+        "heatOverLife": [
+          {
+            "at": 0,
+            "value": 1.0
+          },
+          {
+            "at": 1,
+            "value": 0.4
+          }
+        ]
+      }
+    },
+    {
+      "id": "exhaust",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 80,
+      "count": 20,
+      "size": 0.5,
+      "height": 1.6,
+      "sustain": true,
+      "follow": true,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "ramp": [
+        {
+          "at": 0.0,
+          "colour": "#3a1206"
+        },
+        {
+          "at": 0.25,
+          "colour": "#b8320a"
+        },
+        {
+          "at": 0.5,
+          "colour": "#ff7a1a"
+        },
+        {
+          "at": 0.75,
+          "colour": "#ffc04a"
+        },
+        {
+          "at": 1.0,
+          "colour": "#fff4d0"
+        }
+      ],
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 8,
+        "rate": 30,
+        "speed": 4.5,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 12,
+        "gravity": 0.0,
+        "drag": 0.5,
+        "spawnRadius": 0.15,
+        "startSize": 0.45,
+        "endSize": 0.15,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 1
+          },
+          {
+            "at": 1,
+            "value": 0.6
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0.9
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "heatOverLife": [
+          {
+            "at": 0,
+            "value": 1.3
+          },
+          {
+            "at": 1,
+            "value": 0.6
+          }
+        ]
+      }
     },
     {
       "id": "steam",
@@ -143,28 +318,8 @@
         "fadeIn": 0.1,
         "fadeOut": 0.7
       },
-      "sustain": true
-    },
-    {
-      "id": "ring",
-      "enabled": true,
-      "shape": "ring",
-      "colour": "#ff8a2a",
-      "accent": "#ffd9a0",
-      "durationTicks": 80,
-      "count": 1,
-      "size": 1.8,
-      "height": 0.06,
-      "blend": "additive",
       "sustain": true,
-      "motion": {
-        "opacity": {
-          "periodTicks": 10,
-          "min": 0.4,
-          "max": 0.9,
-          "easing": "sine"
-        }
-      }
+      "follow": true
     }
   ]
 }

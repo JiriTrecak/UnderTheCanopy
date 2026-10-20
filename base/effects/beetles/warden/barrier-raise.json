@@ -1,71 +1,56 @@
 {
   "id": "effect.beetles.barrier-raise",
   "name": "Barrier raised",
-  "description": "The projector flares as its pane comes up.",
+  "description": "The projector flares and its pane snaps up: the hexagon dome flashes bright as it grows into place, sparks shed off its rim.",
   "durationTicks": 24,
   "loop": false,
   "layers": [
     {
-      "id": "wave",
+      "id": "pane",
       "enabled": true,
       "shape": "billboard",
-      "colour": "#c9b8ff",
+      "colour": "#e0d6ff",
       "accent": "#ffffff",
       "durationTicks": 14,
       "count": 1,
-      "size": 8.0,
-      "height": 0.1,
-      "startTick": 0,
-      "orientation": "ground",
+      "size": 5.0,
+      "height": 1.6,
+      "orientation": "camera",
       "blend": "additive",
-      "intensity": 2.0,
-      "core": 0.6,
+      "intensity": 2.2,
       "texture": {
-        "asset": "asset.effects.beetles.ring",
+        "asset": "asset.effects.vfx.shell",
         "role": "image",
         "index": 1
       },
-      "motion": {
-        "scale": {
-          "periodTicks": 28,
-          "min": 0.18,
-          "max": 1.0,
-          "easing": "sine"
-        }
-      }
-    },
-    {
-      "id": "glyph",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#8a5cff",
-      "accent": "#ffffff",
-      "durationTicks": 24,
-      "count": 1,
-      "size": 6.0,
-      "height": 0.08,
-      "startTick": 0,
-      "orientation": "ground",
-      "blend": "additive",
-      "intensity": 1.8,
-      "core": 0.3,
-      "texture": {
-        "asset": "asset.effects.beetles.arc-sigil",
-        "role": "image",
-        "index": 1
-      },
-      "motion": {
-        "rotation": {
-          "periodTicks": 120,
-          "direction": "clockwise"
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.3
         },
-        "scale": {
-          "periodTicks": 48,
-          "min": 0.55,
-          "max": 1.0,
-          "easing": "smoothstep"
+        {
+          "at": 0.4,
+          "value": 1.05
+        },
+        {
+          "at": 1,
+          "value": 1.0
         }
-      }
+      ],
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 1
+        },
+        {
+          "at": 0.5,
+          "value": 1
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ]
     },
     {
       "id": "glint",
@@ -73,10 +58,10 @@
       "shape": "billboard",
       "colour": "#e0d6ff",
       "accent": "#ffffff",
-      "durationTicks": 7,
+      "durationTicks": 6,
       "count": 1,
-      "size": 4.0,
-      "height": 1.4,
+      "size": 3.0,
+      "height": 1.6,
       "startTick": 0,
       "blend": "additive",
       "intensity": 3.0,
@@ -96,7 +81,7 @@
       "durationTicks": 14,
       "count": 18,
       "size": 0.08,
-      "height": 1.2,
+      "height": 1.6,
       "startTick": 0,
       "blend": "additive",
       "intensity": 4.5,
@@ -110,17 +95,17 @@
         "mode": "burst",
         "lifetimeTicks": 12,
         "rate": 18,
-        "speed": 7,
+        "speed": 6,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
           "y": 1,
           "z": 0
         },
-        "coneDegrees": 140,
-        "gravity": 4,
+        "coneDegrees": 180,
+        "gravity": 6,
         "drag": 0.7,
-        "spawnRadius": 0.15,
+        "spawnRadius": 2.0,
         "startSize": 0.08,
         "endSize": 0.036000000000000004,
         "spin": 0,
@@ -137,9 +122,9 @@
       "accent": "#c9b8ff",
       "durationTicks": 8,
       "count": 1,
-      "size": 7.0,
-      "height": 1.2,
-      "intensity": 8.0,
+      "size": 6.0,
+      "height": 1.4,
+      "intensity": 6.0,
       "startTick": 0
     }
   ]

@@ -219,7 +219,6 @@
       "count": 17,
       "size": 0.14,
       "height": 0,
-      "rides": "tracer",
       "blend": "additive",
       "intensity": 3.0,
       "texture": {
@@ -251,6 +250,7 @@
         "inheritVelocity": 0.1,
         "stretch": 0.03
       },
+      "rides": "tracer",
       "core": 0.8
     }
   ]

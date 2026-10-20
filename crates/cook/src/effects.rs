@@ -270,6 +270,8 @@ fn layer(
                     .turbulence
                     .map(|t| [t.strength as f32, t.scale as f32, t.speed as f32]),
                 collide: e.collide.map(|c| c.friction as f32),
+                orbit: (e.orbit.unwrap_or(0.0) as f32).to_radians(),
+                pull: e.pull.unwrap_or(0.0) as f32,
             }
         }),
         cue_motion: l.motion.as_ref().map(|m| CookedCueMotion {

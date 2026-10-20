@@ -1,112 +1,156 @@
 {
   "id": "effect.beetles.mend",
   "name": "Mend",
-  "description": "Blue-violet tonic glows up through the patient while white steam vents from the patched seams.",
-  "durationTicks": 40,
+  "description": "Tonic restores the patient: blue bubbles rise up through it and pop above, a soft blue pulse, and white steam escapes from its seams.",
+  "durationTicks": 44,
   "loop": false,
   "layers": [
     {
-      "id": "column",
-      "enabled": true,
-      "shape": "pillar",
-      "colour": "#5b7bff",
-      "accent": "#e4ebff",
-      "durationTicks": 20,
-      "count": 1,
-      "size": 1.6,
-      "height": 7.0,
-      "startTick": 0,
-      "blend": "additive",
-      "intensity": 1.5
-    },
-    {
-      "id": "gear",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#5b7bff",
-      "accent": "#ffffff",
-      "durationTicks": 32,
-      "count": 1,
-      "size": 3.3000000000000003,
-      "height": 0.08,
-      "startTick": 0,
-      "orientation": "ground",
-      "blend": "additive",
-      "intensity": 1.8,
-      "core": 0.3,
-      "texture": {
-        "asset": "asset.effects.beetles.gear-sigil",
-        "role": "image",
-        "index": 1
-      },
-      "motion": {
-        "rotation": {
-          "periodTicks": 200,
-          "direction": "clockwise"
-        },
-        "scale": {
-          "periodTicks": 48,
-          "min": 0.55,
-          "max": 1.0,
-          "easing": "smoothstep"
-        }
-      }
-    },
-    {
-      "id": "glow",
+      "id": "pulse",
       "enabled": true,
       "shape": "glow",
       "colour": "#5b7bff",
       "accent": "#b8c8ff",
-      "durationTicks": 30,
+      "durationTicks": 24,
       "count": 1,
-      "size": 2.2,
+      "size": 2.4,
       "height": 1.0,
       "startTick": 0,
       "blend": "additive",
       "orientation": "camera",
-      "intensity": 1.0,
-      "core": 0.8
+      "intensity": 0.3,
+      "core": 0.2,
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.6
+        },
+        {
+          "at": 0.3,
+          "value": 1.0
+        },
+        {
+          "at": 1,
+          "value": 1.2
+        }
+      ],
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": 0.2,
+          "value": 1
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ]
     },
     {
-      "id": "motes",
+      "id": "bubbles",
       "enabled": true,
       "shape": "particles",
-      "colour": "#b8c6ff",
-      "accent": "#ffffff",
+      "colour": "#7f9cff",
+      "accent": "#c8d4ff",
       "durationTicks": 36,
-      "count": 18,
-      "size": 0.24,
-      "height": 0.3,
+      "count": 22,
+      "size": 0.3,
+      "height": 0.2,
       "blend": "additive",
       "texture": {
-        "asset": "asset.effects.beetles.spark",
+        "asset": "asset.effects.vfx.mote",
         "role": "image",
         "index": 1
       },
-      "intensity": 4.0,
-      "core": 0.8,
+      "intensity": 2.2,
+      "core": 0.15,
       "emitter": {
-        "mode": "burst",
-        "lifetimeTicks": 30,
-        "rate": 18,
-        "speed": 3.0,
+        "mode": "continuous",
+        "lifetimeTicks": 26,
+        "rate": 30,
+        "speed": 2.2,
         "speedVariation": 0.4,
         "direction": {
           "x": 0,
           "y": 1,
           "z": 0
         },
-        "coneDegrees": 30,
-        "gravity": -3.0,
-        "drag": 0.5,
-        "spawnRadius": 0.8,
-        "startSize": 0.24,
-        "endSize": 0.06,
+        "coneDegrees": 8,
+        "gravity": -1.0,
+        "drag": 0.6,
+        "spawnRadius": 0.6,
+        "startSize": 0.18,
+        "endSize": 0.36,
         "spin": 0,
         "fadeIn": 0.0,
-        "fadeOut": 0.5
+        "fadeOut": 0.5,
+        "turbulence": {
+          "strength": 0.5,
+          "scale": 1.5,
+          "speed": 2.0
+        },
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.15,
+            "value": 1
+          },
+          {
+            "at": 0.85,
+            "value": 0.9
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ]
       }
+    },
+    {
+      "id": "pops",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#d8e0ff",
+      "accent": "#ffffff",
+      "durationTicks": 10,
+      "count": 10,
+      "size": 0.12,
+      "height": 2.6,
+      "blend": "additive",
+      "intensity": 1.6,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 8,
+        "rate": 10,
+        "speed": 2.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 120,
+        "gravity": 0.0,
+        "drag": 1.5,
+        "spawnRadius": 0.2,
+        "startSize": 0.12,
+        "endSize": 0.024,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.6
+      },
+      "core": 0.6
     },
     {
       "id": "steam",
@@ -116,8 +160,8 @@
       "accent": "#ffffff",
       "durationTicks": 32,
       "count": 4,
-      "size": 0.8,
-      "height": 0.6,
+      "size": 0.7,
+      "height": 0.8,
       "startTick": 0,
       "blend": "normal",
       "texture": {
@@ -140,25 +184,12 @@
         "gravity": -1.8,
         "drag": 1.6,
         "spawnRadius": 0.3,
-        "startSize": 0.4,
-        "endSize": 1.2800000000000002,
+        "startSize": 0.35,
+        "endSize": 1.1199999999999999,
         "spin": 0,
         "fadeIn": 0.1,
         "fadeOut": 0.7
       }
-    },
-    {
-      "id": "flash",
-      "enabled": true,
-      "shape": "light",
-      "colour": "#5b7bff",
-      "accent": "#b8c8ff",
-      "durationTicks": 10,
-      "count": 1,
-      "size": 5.0,
-      "height": 1.0,
-      "intensity": 6.0,
-      "startTick": 0
     }
   ]
 }

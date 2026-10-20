@@ -1,150 +1,10 @@
 {
   "id": "effect.beetles.bulwark-pulse",
   "name": "Bulwark pulse",
-  "description": "A blue shockwave of field energy rolling out from the warden.",
+  "description": "A field pulse: a blue wave of field energy rolls out over the ground from the warden, a bright front racing ahead of it, sparks skittering outward.",
   "durationTicks": 30,
   "loop": false,
   "layers": [
-    {
-      "id": "wave",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#b8c8ff",
-      "accent": "#ffffff",
-      "durationTicks": 20,
-      "count": 1,
-      "size": 16.0,
-      "height": 0.1,
-      "startTick": 0,
-      "orientation": "ground",
-      "blend": "additive",
-      "intensity": 2.2,
-      "core": 0.6,
-      "texture": {
-        "asset": "asset.effects.beetles.ring",
-        "role": "image",
-        "index": 1
-      },
-      "motion": {
-        "scale": {
-          "periodTicks": 40,
-          "min": 0.18,
-          "max": 1.0,
-          "easing": "sine"
-        }
-      }
-    },
-    {
-      "id": "wave2",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#c9b8ff",
-      "accent": "#ffffff",
-      "durationTicks": 16,
-      "count": 1,
-      "size": 11.0,
-      "height": 0.4,
-      "startTick": 4,
-      "orientation": "ground",
-      "blend": "additive",
-      "intensity": 1.8,
-      "core": 0.6,
-      "texture": {
-        "asset": "asset.effects.beetles.ring",
-        "role": "image",
-        "index": 1
-      },
-      "motion": {
-        "scale": {
-          "periodTicks": 32,
-          "min": 0.18,
-          "max": 1.0,
-          "easing": "sine"
-        }
-      }
-    },
-    {
-      "id": "gear",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#5b7bff",
-      "accent": "#ffffff",
-      "durationTicks": 30,
-      "count": 1,
-      "size": 12.0,
-      "height": 0.08,
-      "startTick": 0,
-      "orientation": "ground",
-      "blend": "additive",
-      "intensity": 2.16,
-      "core": 0.3,
-      "texture": {
-        "asset": "asset.effects.beetles.gear-sigil",
-        "role": "image",
-        "index": 1
-      },
-      "motion": {
-        "rotation": {
-          "periodTicks": 90,
-          "direction": "clockwise"
-        },
-        "scale": {
-          "periodTicks": 48,
-          "min": 0.55,
-          "max": 1.0,
-          "easing": "smoothstep"
-        }
-      }
-    },
-    {
-      "id": "column",
-      "enabled": true,
-      "shape": "pillar",
-      "colour": "#5b7bff",
-      "accent": "#e4ebff",
-      "durationTicks": 20,
-      "count": 1,
-      "size": 2.4,
-      "height": 10.0,
-      "startTick": 0,
-      "blend": "additive",
-      "intensity": 1.5
-    },
-    {
-      "id": "steam",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#e8ecf2",
-      "accent": "#ffffff",
-      "durationTicks": 22,
-      "count": 1,
-      "size": 9.0,
-      "height": 0.8,
-      "startTick": 0,
-      "blend": "additive",
-      "intensity": 1.1199999999999999,
-      "core": 0.4,
-      "texture": {
-        "asset": "asset.effects.beetles.steam-burst",
-        "role": "image",
-        "index": 1
-      },
-      "motion": {
-        "scale": {
-          "periodTicks": 44,
-          "min": 0.4,
-          "max": 1.1,
-          "easing": "smoothstep"
-        },
-        "opacity": {
-          "periodTicks": 44,
-          "min": 0.0,
-          "max": 1.0,
-          "easing": "sine",
-          "phase": 0.5
-        }
-      }
-    },
     {
       "id": "glint",
       "enabled": true,
@@ -153,7 +13,7 @@
       "accent": "#ffffff",
       "durationTicks": 7,
       "count": 1,
-      "size": 4.6,
+      "size": 3.6,
       "height": 1.2,
       "startTick": 0,
       "blend": "additive",
@@ -166,44 +26,243 @@
       }
     },
     {
-      "id": "sparks",
+      "id": "field-wave",
       "enabled": true,
       "shape": "particles",
-      "colour": "#8fa6ff",
-      "accent": "#b8c8ff",
-      "durationTicks": 14,
-      "count": 18,
-      "size": 0.07,
-      "height": 1.0,
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 3,
+      "count": 90,
+      "size": 1.3,
+      "height": 0.6,
       "startTick": 0,
       "blend": "additive",
-      "intensity": 5.0,
-      "core": 0.35,
       "texture": {
-        "asset": "asset.effects.beetles.spark",
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "ramp": [
+        {
+          "at": 0.0,
+          "colour": "#0c1a40"
+        },
+        {
+          "at": 0.3,
+          "colour": "#2a4ad8"
+        },
+        {
+          "at": 0.6,
+          "colour": "#6f8cff"
+        },
+        {
+          "at": 0.85,
+          "colour": "#d6e0ff"
+        },
+        {
+          "at": 1.0,
+          "colour": "#ffffff"
+        }
+      ],
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 28,
+        "rate": 90,
+        "speed": 26.0,
+        "speedVariation": 0.3,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 88,
+        "gravity": -0.6,
+        "drag": 3.0,
+        "spawnRadius": 0.8,
+        "startSize": 1.3,
+        "endSize": 2.6,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 0.78
+          },
+          {
+            "at": 0.15,
+            "value": 1.8199999999999998
+          },
+          {
+            "at": 1,
+            "value": 3.3800000000000003
+          }
+        ],
+        "colourOverLife": [
+          {
+            "at": 0,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.6,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.8999999999999999,
+            "colour": "#4a5aa0"
+          },
+          {
+            "at": 1,
+            "colour": "#2a3060"
+          }
+        ],
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 0.75
+          },
+          {
+            "at": 0.6,
+            "value": 0.65
+          },
+          {
+            "at": 0.8999999999999999,
+            "value": 0.2
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.04,
+            "value": 0.9
+          },
+          {
+            "at": 0.6,
+            "value": 0.7
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0.05
+          },
+          {
+            "at": 0.5,
+            "value": 0.2
+          },
+          {
+            "at": 1,
+            "value": 0.85
+          }
+        ],
+        "heatOverLife": [
+          {
+            "at": 0,
+            "value": 0.8
+          },
+          {
+            "at": 0.4,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0.45
+          }
+        ],
+        "turbulence": {
+          "strength": 0.39,
+          "scale": 2.0,
+          "speed": 2.0
+        },
+        "coneInnerDegrees": 78,
+        "spawnInner": 0.4
+      }
+    },
+    {
+      "id": "front",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#b8c8ff",
+      "accent": "#ffffff",
+      "durationTicks": 18,
+      "count": 1,
+      "size": 16.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.8,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 36,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "spray",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#b8c8ff",
+      "accent": "#5b7bff",
+      "durationTicks": 14,
+      "count": 50,
+      "size": 0.14,
+      "height": 0.6,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.5,
+      "core": 0.8,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
         "role": "image",
         "index": 1
       },
       "emitter": {
         "mode": "burst",
         "lifetimeTicks": 12,
-        "rate": 18,
-        "speed": 9,
-        "speedVariation": 0.5,
+        "rate": 50,
+        "speed": 26.0,
+        "speedVariation": 0.35,
         "direction": {
           "x": 0,
-          "y": 0.2,
+          "y": 1,
           "z": 0
         },
-        "coneDegrees": 100,
-        "gravity": 2,
-        "drag": 0.7,
-        "spawnRadius": 0.15,
-        "startSize": 0.07,
-        "endSize": 0.03150000000000001,
+        "coneDegrees": 89,
+        "gravity": 0.0,
+        "drag": 2.5,
+        "spawnRadius": 0.6,
+        "startSize": 0.14,
+        "endSize": 0.05600000000000001,
         "spin": 0,
         "fadeIn": 0.0,
-        "fadeOut": 0.55,
+        "fadeOut": 0.6,
+        "coneInnerDegrees": 80,
         "stretch": 0.05
       }
     },
@@ -215,9 +274,9 @@
       "accent": "#b8c8ff",
       "durationTicks": 10,
       "count": 1,
-      "size": 9.0,
+      "size": 8.0,
       "height": 1.2,
-      "intensity": 8.0,
+      "intensity": 6.0,
       "startTick": 0
     }
   ]

@@ -1,7 +1,7 @@
 {
   "id": "effect.beetles.broadside-fire",
   "name": "Broadside salvo",
-  "description": "Both cannons roar at once.",
+  "description": "Both cannons roar at once: muzzle flashes, a gout of fire and a thick cloud of gunsmoke.",
   "durationTicks": 30,
   "loop": false,
   "layers": [
@@ -13,9 +13,9 @@
       "accent": "#ffd9a0",
       "durationTicks": 8,
       "count": 1,
-      "size": 10.0,
+      "size": 8.0,
       "height": 3.0,
-      "intensity": 10.0,
+      "intensity": 8.0,
       "startTick": 0
     },
     {
@@ -26,7 +26,7 @@
       "accent": "#ffffff",
       "durationTicks": 5,
       "count": 1,
-      "size": 5.0,
+      "size": 4.0,
       "height": 3.0,
       "startTick": 0,
       "blend": "additive",
@@ -39,87 +39,170 @@
       }
     },
     {
-      "id": "steam",
+      "id": "blast",
       "enabled": true,
-      "shape": "billboard",
-      "colour": "#e8ecf2",
+      "shape": "particles",
+      "colour": "#ffffff",
       "accent": "#ffffff",
-      "durationTicks": 24,
-      "count": 1,
-      "size": 9.0,
-      "height": 2.4,
-      "startTick": 0,
-      "blend": "additive",
-      "intensity": 1.1199999999999999,
-      "core": 0.4,
-      "texture": {
-        "asset": "asset.effects.beetles.steam-burst",
-        "role": "image",
-        "index": 1
-      },
-      "motion": {
-        "scale": {
-          "periodTicks": 48,
-          "min": 0.4,
-          "max": 1.1,
-          "easing": "smoothstep"
-        },
-        "opacity": {
-          "periodTicks": 48,
-          "min": 0.0,
-          "max": 1.0,
-          "easing": "sine",
-          "phase": 0.5
-        }
-      }
-    },
-    {
-      "id": "ring",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#ffd9a0",
-      "accent": "#ffffff",
-      "durationTicks": 14,
-      "count": 1,
-      "size": 8.0,
-      "height": 0.1,
-      "startTick": 0,
-      "orientation": "ground",
-      "blend": "additive",
-      "intensity": 1.8,
-      "core": 0.6,
-      "texture": {
-        "asset": "asset.effects.beetles.ring",
-        "role": "image",
-        "index": 1
-      },
-      "motion": {
-        "scale": {
-          "periodTicks": 28,
-          "min": 0.18,
-          "max": 1.0,
-          "easing": "sine"
-        }
-      }
-    },
-    {
-      "id": "glint",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#ffa040",
-      "accent": "#ffffff",
-      "durationTicks": 6,
-      "count": 1,
-      "size": 4.5,
+      "durationTicks": 3,
+      "count": 12,
+      "size": 1.1,
       "height": 3.0,
       "startTick": 0,
       "blend": "additive",
-      "intensity": 2.6,
-      "core": 0.9,
       "texture": {
-        "asset": "asset.effects.beetles.glint",
+        "asset": "asset.effects.vfx.puff",
         "role": "image",
         "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "ramp": [
+        {
+          "at": 0.0,
+          "colour": "#3a1206"
+        },
+        {
+          "at": 0.25,
+          "colour": "#b8320a"
+        },
+        {
+          "at": 0.5,
+          "colour": "#ff7a1a"
+        },
+        {
+          "at": 0.75,
+          "colour": "#ffc04a"
+        },
+        {
+          "at": 1.0,
+          "colour": "#fff4d0"
+        }
+      ],
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 16,
+        "rate": 12,
+        "speed": 7.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": -0.6,
+        "drag": 3.0,
+        "spawnRadius": 0.6,
+        "startSize": 1.1,
+        "endSize": 2.2,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 0.66
+          },
+          {
+            "at": 0.15,
+            "value": 1.54
+          },
+          {
+            "at": 1,
+            "value": 2.8600000000000003
+          }
+        ],
+        "colourOverLife": [
+          {
+            "at": 0,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.6,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.8999999999999999,
+            "colour": "#5a463c"
+          },
+          {
+            "at": 1,
+            "colour": "#33302e"
+          }
+        ],
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 0.75
+          },
+          {
+            "at": 0.6,
+            "value": 0.65
+          },
+          {
+            "at": 0.8999999999999999,
+            "value": 0.2
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.04,
+            "value": 0.9
+          },
+          {
+            "at": 0.6,
+            "value": 0.7
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0.05
+          },
+          {
+            "at": 0.5,
+            "value": 0.2
+          },
+          {
+            "at": 1,
+            "value": 0.85
+          }
+        ],
+        "heatOverLife": [
+          {
+            "at": 0,
+            "value": 0.95
+          },
+          {
+            "at": 0.4,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0.45
+          }
+        ],
+        "turbulence": {
+          "strength": 0.33,
+          "scale": 2.0,
+          "speed": 2.0
+        }
       }
     },
     {
@@ -129,7 +212,7 @@
       "colour": "#ffa040",
       "accent": "#ffd9a0",
       "durationTicks": 16,
-      "count": 20,
+      "count": 16,
       "size": 0.08,
       "height": 3.0,
       "startTick": 0,
@@ -144,8 +227,8 @@
       "emitter": {
         "mode": "burst",
         "lifetimeTicks": 14,
-        "rate": 20,
-        "speed": 12,
+        "rate": 16,
+        "speed": 11,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
@@ -170,8 +253,8 @@
       "shape": "particles",
       "colour": "#55524f",
       "accent": "#9a9590",
-      "durationTicks": 44,
-      "count": 10,
+      "durationTicks": 48,
+      "count": 12,
       "size": 1.8,
       "height": 3.0,
       "startTick": 1,
@@ -183,8 +266,8 @@
       },
       "emitter": {
         "mode": "burst",
-        "lifetimeTicks": 40,
-        "rate": 10,
+        "lifetimeTicks": 44,
+        "rate": 12,
         "speed": 3.0,
         "speedVariation": 0.5,
         "direction": {

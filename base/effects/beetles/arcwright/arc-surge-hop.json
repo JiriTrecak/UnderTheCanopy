@@ -1,77 +1,49 @@
 {
   "id": "effect.beetles.arc-surge-hop",
   "name": "Arc surge hop",
-  "description": "A thick violet arc that jumps from victim to victim, flashing on each.",
-  "durationTicks": 18,
+  "description": "Violet lightning jumping from victim to victim, thinner than the Coilkeeper's, a spark on each.",
+  "durationTicks": 16,
   "loop": false,
   "layers": [
     {
-      "id": "halo",
+      "id": "arc-bolt",
       "enabled": true,
       "shape": "beam",
-      "colour": "#8a5cff",
-      "accent": "#c9b8ff",
-      "durationTicks": 8,
+      "colour": "#b49cff",
+      "accent": "#8a5cff",
+      "durationTicks": 9,
       "count": 1,
-      "size": 1.5,
+      "size": 1.2000000000000002,
       "height": 1.2,
-      "blend": "additive",
-      "spread": 0.6,
-      "intensity": 0.35
-    },
-    {
-      "id": "arc",
-      "enabled": true,
-      "shape": "beam",
-      "colour": "#9a74ff",
-      "accent": "#efe8ff",
-      "durationTicks": 10,
-      "count": 1,
-      "size": 0.55,
-      "height": 1.2,
-      "blend": "additive",
-      "spread": 0.6
-    },
-    {
-      "id": "core",
-      "enabled": true,
-      "shape": "beam",
-      "colour": "#f8f4ff",
-      "accent": "#ffffff",
-      "durationTicks": 8,
-      "count": 1,
-      "size": 0.16,
-      "height": 1.2,
-      "blend": "additive",
-      "spread": 0.6
-    },
-    {
-      "id": "bolt",
-      "enabled": true,
-      "shape": "billboard",
-      "colour": "#efe8ff",
-      "accent": "#ffffff",
-      "durationTicks": 8,
-      "count": 1,
-      "size": 5.5,
-      "height": 2.75,
-      "startTick": 0,
-      "blend": "additive",
-      "intensity": 4.16,
-      "core": 0.6,
+      "blend": "normal",
       "texture": {
-        "asset": "asset.effects.beetles.lightning",
+        "asset": "asset.effects.vfx.bolt",
         "role": "image",
         "index": 1
       },
-      "motion": {
-        "opacity": {
-          "periodTicks": 4,
-          "min": 0.55,
-          "max": 1.0,
-          "easing": "sine"
-        }
-      }
+      "spread": 0.7,
+      "forks": 2,
+      "intensity": 2.3400000000000003
+    },
+    {
+      "id": "arc-core",
+      "enabled": true,
+      "shape": "beam",
+      "colour": "#ffffff",
+      "accent": "#e6deff",
+      "durationTicks": 9,
+      "count": 1,
+      "size": 0.27999999999999997,
+      "height": 1.2,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.vfx.bolt",
+        "role": "image",
+        "index": 1
+      },
+      "spread": 0.7,
+      "forks": 0,
+      "intensity": 1.8
     },
     {
       "id": "glint",
@@ -81,7 +53,7 @@
       "accent": "#ffffff",
       "durationTicks": 6,
       "count": 1,
-      "size": 3.2,
+      "size": 2.4,
       "height": 1.0,
       "startTick": 0,
       "blend": "additive",
@@ -100,7 +72,7 @@
       "colour": "#8f66ff",
       "accent": "#b49cff",
       "durationTicks": 14,
-      "count": 20,
+      "count": 14,
       "size": 0.08,
       "height": 1.0,
       "startTick": 0,
@@ -115,8 +87,8 @@
       "emitter": {
         "mode": "burst",
         "lifetimeTicks": 12,
-        "rate": 20,
-        "speed": 10,
+        "rate": 14,
+        "speed": 9,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
@@ -143,9 +115,9 @@
       "accent": "#c9b8ff",
       "durationTicks": 6,
       "count": 1,
-      "size": 6.0,
+      "size": 4.0,
       "height": 1.0,
-      "intensity": 8.0,
+      "intensity": 5.0,
       "startTick": 0
     }
   ]
