@@ -73,6 +73,9 @@ pub struct Command {
     pub alternate: Option<Action>,
     pub actors: Vec<u32>,
     pub activate: Activate,
+    /// A passive ability: shown at full brightness like a ready command (its icon carries
+    /// the passive frame), but pressing it does nothing.
+    pub passive: bool,
 }
 
 impl Command {
@@ -106,6 +109,7 @@ impl Command {
             alternate: None,
             actors: Vec::new(),
             activate,
+            passive: false,
         }
     }
 }
@@ -981,6 +985,7 @@ fn spells(
             });
         }
         c.cooldown = (remaining > 0).then_some((remaining, total.max(1)));
+        c.passive = passive;
         c.reason = if passive {
             Some("Passive ability".into())
         } else if casting {

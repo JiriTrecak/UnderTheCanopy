@@ -12,7 +12,6 @@
     "src": ".asset-work/concepts/buildings/icon-ability-ants-general-war-column-1.png",
     "kind": "passive",
     "background": "passive",
-    "frame": "passive",
     "level": 0
   }
 }

@@ -9,6 +9,7 @@ Runs on Blender's bundled Python, which has numpy and OpenImageIO:
     "$PY" tools/icons/icons.py candidates tools/icons/specs/commands.json <sheet.png> [name ...]
     "$PY" tools/icons/icons.py pick tools/icons/specs/commands.json command-move=1 ...
     "$PY" tools/icons/icons.py recompose [folder prefix]
+    "$PY" tools/icons/icons.py mark
     "$PY" tools/icons/icons.py sheet <out.png> <cell px> <columns> <image>...
 
 **requests** turns a spec into one request file per icon for `tools/buildings/concept.sh`
@@ -23,7 +24,7 @@ palette (`FACTIONS`), then the subject; the subject's concept goes first in `ref
 Icons are painted with a real transparent background (`MODEL`), their glows semi-transparent,
 and the background is the game's own: **pick** keeps the chosen image as the asset's
 `source.png` (a working file) and composes `image.png` over the type's background from
-`BACKGROUNDS` (or the item's `background`), with the type's marks (`finish`). Changing a background, say for every command, is one edit of
+`BACKGROUNDS` (or the item's `background`), with the research level marks (`finish`). Changing a background, say for every command, is one edit of
 `BACKGROUNDS` and a **recompose**, which rebuilds every `image.png` from its foreground and the
 choices kept in its `generation.json`.
 
@@ -31,6 +32,9 @@ choices kept in its `generation.json`.
 level's name) and `level` is painted from the previous level's chosen image, in the same
 pose, size and framing, with only its materials improved, so request it once the previous
 level is picked. `level` also draws that many gold diamonds.
+
+**mark** draws the HUD's passive mark (`passive_mark`), the one sign that an ability is
+passive: the icons themselves carry none.
 
 **install** is the older path for cut-outs (resources): `[{"src", "dir", "id", "name",
 "tags", "race"?, "key"?, "alpha"?, "crop"?, "request"?}]`; `key` cuts an image generated on
@@ -73,7 +77,7 @@ KINDS = {
     'hero': """ICON TYPE: HERO PORTRAIT. Like a unit portrait but closer and grander: the head and its unique crown shape (horn, helm, halo) fill the upper two thirds, a slightly low heroic angle from the front-left. Behind the head, one soft golden glow (part of the icon, semi-transparent, fading out well inside the frame), bright enough that the dark crown shape reads sharply against it.""",
     'building': """ICON TYPE: BUILDING PORTRAIT. The whole building seen from the front-left at about 35 degrees from above, as in the reference, centred and filling about 85% of the frame's width. No ground, base plate or scenery: it stands on nothing. Simplify it: keep its outline and its two or three biggest features, drop small ornament. A soft warm amber glow behind the building's top, fading out.""",
     'ability': """ICON TYPE: ACTIVE ABILITY. Show the ONE object, body part or effect that does the action, in close-up, the way Warcraft III does (Storm Bolt is the thrown hammer, Thunder Clap the hoof striking the ground, Holy Light a burst of light): never the caster's whole body, never a battle scene. A diagonal pose gives it motion. A soft glow of the ability's energy colour may sit close around the subject, fading out.""",
-    'passive': """ICON TYPE: PASSIVE OR AURA. A calm, still, symmetric emblem seen from the front, centred: the one object that stands for the lasting effect. No motion, no action. A faint, quiet glow of its energy colour close behind it at most (the game adds the passive frame).""",
+    'passive': """ICON TYPE: PASSIVE OR AURA. A calm, still, symmetric emblem seen from the front, centred: the one object that stands for the lasting effect. No motion, no action. A faint, quiet glow of its energy colour close behind it at most. Keep the top-left corner calm (the game draws its passive mark there).""",
     'research-grown': """ICON TYPE: RESEARCH (an upgrade of a living colony). A still life of the one improved grown thing (a mandible, a chitin needle, a carapace plate, a wing, a sac, a tunnel mouth) alone, close-up, angled diagonally, floating. Ant research is grown and secreted, never machines or metal. No glow unless the subject itself glows (the game adds the level marks).""",
     'research': """ICON TYPE: RESEARCH (an upgrade). A still life of the one improved piece of equipment alone, close-up, angled diagonally, floating. Research reads as engineering: a better machine part, never a mutation. No glow unless the subject itself glows (the game adds the level marks).""",
     'resource': """ICON TYPE: RESOURCE, a CUT-OUT: it sits on the HUD's resource ribbon and in cost rows, as small as 24 pixels, so it keeps its transparency and gets no background. The resource itself as one compact object, centred, filling about 85% of the frame, with a thin dark outline all around it and no glow, haze or shadow outside the outline.""",
@@ -104,7 +108,6 @@ BACKGROUNDS = {
     'item': ((18, 15, 18), (6, 5, 6)),
 }
 KIND_BACKGROUND = {'unit': 'portrait', 'machine': 'portrait', 'hero': 'portrait', 'resource': 'none'}
-KIND_FRAME = {'passive': 'passive'}
 
 
 def requests(spec_path, out, only=()):
@@ -160,6 +163,9 @@ def flood(seed, passable):
         region = grown
 
 
+GOLD = np.array([0.93, 0.78, 0.42], np.float32)
+
+
 def background(name, size=SIZE):
     centre, corner = (np.array(c, np.float32) / 255.0 for c in BACKGROUNDS[name])
     t = (np.arange(size, dtype=np.float32) + 0.5) / size
@@ -169,18 +175,18 @@ def background(name, size=SIZE):
     return centre * (1 - k[:, :, None]) + corner * k[:, :, None]
 
 
-def compose(foreground, bg_name, frame=None, level=0):
-    """`image.png` from a straight-alpha foreground over a library background, with marks;
-    background `none` keeps the cut-out (resources)."""
+def compose(foreground, bg_name, level=0):
+    """`image.png` from a straight-alpha foreground over a library background, with the
+    research level marks; background `none` keeps the cut-out (resources)."""
     if bg_name == 'none':
         return foreground
     fg = foreground.get_pixels(oiio.FLOAT)
     a = fg[:, :, 3:4]
-    rgb = fg[:, :, :3] * a + background(bg_name, fg.shape[0]) * (1 - a)
-    size = rgb.shape[0]
+    size = fg.shape[0]
+    rgb = fg[:, :, :3] * a + background(bg_name, size) * (1 - a)
     buf = oiio.ImageBuf(oiio.ImageSpec(size, size, 3, oiio.FLOAT))
     buf.set_pixels(oiio.ROI(0, size, 0, size, 0, 1, 0, 3), np.ascontiguousarray(rgb, np.float32))
-    return finish(buf, frame, level)
+    return finish(buf, level)
 
 
 def key_white(buf):
@@ -238,8 +244,6 @@ def resized(buf, size):
     return oiio.ImageBufAlgo.unpremult(out) if n == 4 else out
 
 
-GOLD = np.array([0.93, 0.78, 0.42], np.float32)
-BRONZE = np.array([0.55, 0.46, 0.30], np.float32)
 
 
 def coverage(inside, size, ss=4):
@@ -249,24 +253,17 @@ def coverage(inside, size, ss=4):
     return inside(x, y).astype(np.float32).reshape(size, ss, size, ss).mean(axis=(1, 3))
 
 
-def finish(buf, frame=None, level=0):
-    """The category marks the generator paints itself, so they are identical on every icon:
-    `frame: "passive"` darkens a border band with a thin bronze line inside it (Warcraft III's
-    passive frame: the icon reads as not pressable), `level` 1–3 draws that many gold
-    diamonds in the top-left corner (a research's level)."""
-    if not frame and not level:
+def finish(buf, level=0):
+    """The research level, drawn by the tool so it is identical on every icon: `level` 1–3
+    draws that many gold diamonds in the top-left corner. (Passives carry no mark in the
+    image: the HUD draws its passive mark over the cell.)"""
+    if not level:
         return buf
     img = buf.get_pixels(oiio.FLOAT)
     n = img.shape[2]
     rgb = img[:, :, :3]
     size = rgb.shape[0]
     u = size / 256.0
-    if frame == 'passive':
-        edge = lambda x, y: np.minimum(np.minimum(x, y), np.minimum(size - x, size - y))
-        band = coverage(lambda x, y: edge(x, y) < 18 * u, size)[:, :, None]
-        line = coverage(lambda x, y: (edge(x, y) > 12 * u) & (edge(x, y) < 16 * u), size)[:, :, None]
-        rgb = rgb * (1 - 0.72 * band)
-        rgb = rgb * (1 - line) + BRONZE * line
     for i in range(level):
         cx, cy, r = (30 + 34 * i) * u, 30 * u, 15 * u
         outline = coverage(lambda x, y: np.abs(x - cx) + np.abs(y - cy) < r + 5 * u, size)[:, :, None]
@@ -322,7 +319,7 @@ def pick(spec_path, picks):
         record = {k: request[k] for k in ('slug', 'model', 'size', 'quality', 'background', 'references', 'prompt') if k in request}
         record['install'] = {'src': src, 'kind': it['kind'],
                              'background': it.get('background', KIND_BACKGROUND.get(it['kind'], it['kind'])),
-                             'frame': it.get('frame', KIND_FRAME.get(it['kind'])), 'level': it.get('level', 0)}
+                             'level': it.get('level', 0)}
         with open(os.path.join(d, 'generation.json'), 'w') as f:
             json.dump(record, f, indent=2)
             f.write('\n')
@@ -337,7 +334,7 @@ def rebuild(d):
     """`image.png` from the folder's foreground and the choices in its generation.json."""
     choice = json.load(open(os.path.join(d, 'generation.json')))['install']
     fg = oiio.ImageBuf(os.path.join(d, 'source.png'))
-    img = compose(fg, choice['background'], choice.get('frame'), choice.get('level', 0))
+    img = compose(fg, choice['background'], choice.get('level', 0))
     img.set_write_format(oiio.UINT8)
     img.write(os.path.join(d, 'image.png'))
 
@@ -366,7 +363,7 @@ def candidates(spec_path, out, only=()):
         while os.path.exists(os.path.join(outputs, f'icon-{it["name"]}-{n}.png')):
             fg = resized(load(os.path.join(outputs, f'icon-{it["name"]}-{n}.png'), alpha=True), SIZE)
             bg = it.get('background', KIND_BACKGROUND.get(it['kind'], it['kind']))
-            img = compose(fg, bg, it.get('frame', KIND_FRAME.get(it['kind'])), it.get('level', 0))
+            img = compose(fg, bg, it.get('level', 0))
             px = img.get_pixels(oiio.FLOAT)
             if px.shape[2] == 4:  # a cut-out: over the sheet's colour
                 px = px[:, :, :3] * px[:, :, 3:] + np.array([24, 24, 27], np.float32) / 255.0 * (1 - px[:, :, 3:])
@@ -391,6 +388,40 @@ def candidates(spec_path, out, only=()):
     buf = oiio.ImageBuf(oiio.ImageSpec(w, h, 3, oiio.UINT8))
     buf.set_pixels(oiio.ROI(0, w, 0, h, 0, 1, 0, 3), canvas)
     buf.write(out)
+
+
+MARK = 'base/assets/interface/hud-passive-mark'
+
+
+def passive_mark(size=64):
+    """The HUD's passive mark: a white pulse (a dot inside two rings) with a soft dark halo
+    so it reads over any icon. One colour, so the HUD can tint or dim it (an aura switched
+    off). Written as the interface asset `asset.interface.hud.passive-mark`."""
+    t = (np.arange(size * 4, dtype=np.float32) + 0.5) / (size * 4)
+    x, y = np.meshgrid(t, t)
+    r = np.hypot(x - 0.5, y - 0.5)
+    shape = (r < 0.12) | (np.abs(r - 0.265) < 0.055) | (np.abs(r - 0.415) < 0.05)
+    white = shape.astype(np.float32).reshape(size, 4, size, 4).mean(axis=(1, 3))
+    halo = np.zeros_like(white)
+    for dy in range(-2, 3):
+        for dx in range(-2, 3):
+            halo = np.maximum(halo, np.roll(np.roll(white, dy, 0), dx, 1) * (1 - 0.18 * (abs(dx) + abs(dy))))
+    alpha = np.maximum(white, 0.65 * halo)
+    rgb = np.repeat((white / np.maximum(alpha, 1e-3))[:, :, None], 3, axis=2)
+    out = np.concatenate([np.clip(rgb, 0, 1), alpha[:, :, None]], axis=2).astype(np.float32)
+    d = os.path.join(ROOT, MARK)
+    os.makedirs(d, exist_ok=True)
+    buf = oiio.ImageBuf(oiio.ImageSpec(size, size, 4, oiio.FLOAT))
+    buf.set_pixels(oiio.ROI(0, size, 0, size, 0, 1, 0, 4), out)
+    buf.set_write_format(oiio.UINT8)
+    buf.write(os.path.join(d, 'image.png'))
+    asset = {'id': 'asset.interface.hud.passive-mark', 'name': 'Passive mark', 'kind': 'interface',
+             'tags': ['interface', 'hud'], 'resources': [{'role': 'image', 'index': 1, 'format': 'png'}],
+             'license': 'Original artwork for Under the Canopy, drawn by tools/icons/icons.py.'}
+    with open(os.path.join(d, 'asset.json'), 'w') as f:
+        json.dump(asset, f, indent=2)
+        f.write('\n')
+    print(asset['id'], '->', MARK)
 
 
 def install(plan_path):
@@ -445,6 +476,8 @@ if __name__ == '__main__':
         pick(args[0], args[1:])
     elif cmd == 'candidates':
         candidates(args[0], args[1], args[2:])
+    elif cmd == 'mark':
+        passive_mark()
     elif cmd == 'recompose':
         recompose(*args[:1])
     elif cmd == 'install':

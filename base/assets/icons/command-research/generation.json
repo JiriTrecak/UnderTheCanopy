@@ -10,7 +10,6 @@
     "src": ".asset-work/concepts/buildings/icon-command-research-1.png",
     "kind": "command",
     "background": "command",
-    "frame": null,
     "level": 0
   }
 }

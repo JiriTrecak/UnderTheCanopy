@@ -1109,6 +1109,9 @@ impl Hud {
                 if let Some(cd) = ui.find_in(cell, "cooldown") {
                     ui.set_visible(cd, false);
                 }
+                if let Some(mark) = ui.find_in(cell, "passive") {
+                    ui.set_visible(mark, false);
+                }
                 ui.set_checked(cell, false);
                 ui.set_enabled(cell, false);
                 ui.set_tooltip(cell, None);
@@ -1118,10 +1121,15 @@ impl Hud {
                 let key = self.image(ui, k, c.icon.as_str());
                 ui.set_image(icon, key);
             }
+            // A passive shows its mark instead of a hotkey: pressing it does nothing.
             if let Some(key) = ui.find_in(cell, "key") {
-                ui.set_text(key, &c.chord.as_ref().map(Chord::label).unwrap_or_default());
+                let label = c.chord.as_ref().filter(|_| !c.passive).map(Chord::label);
+                ui.set_text(key, &label.unwrap_or_default());
             }
-            ui.set_enabled(cell, c.enabled());
+            if let Some(mark) = ui.find_in(cell, "passive") {
+                ui.set_visible(mark, c.passive);
+            }
+            ui.set_enabled(cell, c.enabled() || c.passive);
             ui.set_checked(
                 cell,
                 c.autocast == Some(true) || armed.as_deref() == Some(c.id.as_str()),
@@ -1197,7 +1205,9 @@ impl Hud {
     fn tooltip(&mut self, ui: &mut Ui, k: &Knowledge, c: &Command) -> Tooltip {
         let costs = self.cost_rows(ui, k, &c.costs);
         let mut body = vec![escape(&c.description)];
-        if let Some(r) = &c.reason {
+        if c.passive {
+            body.push("[color=#d9c27a]Passive[/color]".into());
+        } else if let Some(r) = &c.reason {
             body.push(format!("[color=#ff8a65]{}[/color]", escape(r)));
         }
         if c.actors.len() > 1 {

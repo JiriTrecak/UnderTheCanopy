@@ -28,6 +28,7 @@
           "children": [{ "id": "seconds", "kind": "label", "class": "cooldown-text" }]
         },
         { "class": "slot-rim" },
+        { "id": "passive", "class": "passive-mark", "visible": false },
         { "id": "key", "kind": "label", "class": "kbd" }
       ]
     },

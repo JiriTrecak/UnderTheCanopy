@@ -12,7 +12,6 @@
     "src": ".asset-work/concepts/buildings/icon-building-ants-fungus-garden-1.png",
     "kind": "building",
     "background": "building",
-    "frame": null,
     "level": 0
   }
 }

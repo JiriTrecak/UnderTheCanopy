@@ -1,0 +1,17 @@
+{
+  "id": "asset.interface.hud.passive-mark",
+  "name": "Passive mark",
+  "kind": "interface",
+  "tags": [
+    "interface",
+    "hud"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original artwork for Under the Canopy, drawn by tools/icons/icons.py."
+}

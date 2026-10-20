@@ -10,7 +10,6 @@
     "src": ".asset-work/concepts/buildings/icon-deposit-substance-1.png",
     "kind": "building",
     "background": "building",
-    "frame": null,
     "level": 0
   }
 }

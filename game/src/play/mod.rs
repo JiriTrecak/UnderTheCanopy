@@ -1459,6 +1459,9 @@ impl Play {
     }
 
     pub fn activate(&mut self, c: &Command, queue: bool) {
+        if c.passive {
+            return;
+        }
         if let Activate::Menu(category) = &c.activate {
             self.menu = category.clone();
             self.page = 0;

@@ -139,13 +139,15 @@ Every icon in the game (portraits, abilities, research, items, resources, comman
 | Type | Subject | Background | Mark the tool adds |
 |---|---|---|---|
 | Active ability (and autocast, toggles) | the acting object, diagonal; a glow of its energy colour close around it | near-black violet | — |
-| Passive and aura | a still, frontal, symmetric emblem | near-black neutral | dark border band with a bronze line (Warcraft III's passive frame) |
+| Passive and aura | a still, frontal, symmetric emblem; the top-left corner kept calm | near-black neutral | none in the image: the HUD draws a white pulse mark in the cell's top-left corner |
 | Research | one improved part as a still life | near-black steel (beetles), umber (ants) | 1–3 gold diamonds top-left for the level |
 | Command and stat | one near-monochrome steel symbol, the same look for all | near-black slate | — |
 | Unit, machine and hero portrait | the head about half the frame, three-quarter view, its one signature feature; a warm (hero: golden) glow behind the head | near-black warm | — |
 | Building | the whole building simplified to its two or three biggest features | near-black warm | — |
 | Item | the object, diagonal, a faint glow of its own colour | near-black | — |
 | Resource | the resource with a thin dark outline | none: a cut-out for the resource ribbon | — |
+
+**Passives are marked by the HUD, not the icon** (Jiri): a passive is drawn at full brightness like a ready command, with one white pulse mark (a dot inside two rings, `asset.interface.hud.passive-mark`, drawn by `icons.py mark`) in its top-left corner and no hotkey. One colour and no frame, so the HUD can later dim it for an aura that is switched off.
 
 **Upgrade lines get better, not different.** Each level of a research line is the same object in the same pose and size, painted from the previous level's chosen image; only its materials improve (beetles: plain iron → polished steel and brass → royal-blue enamel with a violet substance-glass core; ants: plain chitin → hardened with gold and amber → royal with violet substance veins). The gold diamonds say the level.
 

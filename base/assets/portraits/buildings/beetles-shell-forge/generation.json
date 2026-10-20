@@ -12,7 +12,6 @@
     "src": ".asset-work/concepts/buildings/icon-building-beetles-shell-forge-2.png",
     "kind": "building",
     "background": "building",
-    "frame": null,
     "level": 0
   }
 }
