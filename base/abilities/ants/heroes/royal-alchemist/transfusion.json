@@ -95,15 +95,22 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.ants.kit.cast-substance",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
         "id": "draw",
-        "effect": "effect.ants.kit.transfusion",
+        "effect": "effect.ants.kit.transfusion-draw",
         "event": "drained",
-        "anchor": "target",
+        "anchor": "caster",
         "lifetime": "finite"
       },
       {
         "id": "pour",
-        "effect": "effect.ants.kit.transfusion",
+        "effect": "effect.ants.kit.transfusion-pour",
         "event": "healed",
         "anchor": "target",
         "lifetime": "finite"

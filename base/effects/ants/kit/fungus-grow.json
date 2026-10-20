@@ -1,0 +1,79 @@
+{
+  "id": "effect.ants.kit.fungus-grow",
+  "name": "Fungus grows",
+  "description": "The ring bursts out of the soil.",
+  "durationTicks": 30,
+  "loop": false,
+  "layers": [
+    {
+      "id": "shock",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#c9b0ff",
+      "accent": "#ffffff",
+      "durationTicks": 18,
+      "count": 1,
+      "size": 11.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.6,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 36,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "spores",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c9b0ff",
+      "accent": "#f6f0ff",
+      "durationTicks": 34,
+      "count": 20,
+      "size": 0.52,
+      "height": 0.6,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.16,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.petal",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 30,
+        "rate": 20,
+        "speed": 1.2,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": -3.0,
+        "drag": 1.2,
+        "spawnRadius": 4.0,
+        "startSize": 0.52,
+        "endSize": 0.26,
+        "spin": 2.0,
+        "fadeIn": 0.15,
+        "fadeOut": 0.6
+      }
+    }
+  ]
+}

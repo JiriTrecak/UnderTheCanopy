@@ -150,7 +150,8 @@
       "height": 1.4,
       "forward": 0.2,
       "distance": 9
-    }
+    },
+    "impactEffect": "effect.ants.kit.hit-reaver"
   },
   "underground": false
 }

@@ -76,6 +76,20 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.ants.kit.cast-scent",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
+        "id": "grow",
+        "effect": "effect.ants.kit.fungus-grow",
+        "event": "released",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
         "id": "zone",
         "effect": "effect.ants.kit.fungus",
         "event": "released",

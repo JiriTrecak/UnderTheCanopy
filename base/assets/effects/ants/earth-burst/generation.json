@@ -1,0 +1,10 @@
+{
+  "slug": "fx-ant-earth-burst",
+  "size": "1024x1024",
+  "n": 1,
+  "quality": "high",
+  "references": [],
+  "prompt": "Use case: a single visual-effect texture for a stylised Warcraft III: Reforged-like RTS (Under the Canopy, insect armies on the forest floor). It is drawn with ADDITIVE blending, so the background must be PURE BLACK (#000000) everywhere outside the shape, with no vignette, no floor, no scenery, no text. Hand-painted, glowing, clean bold readable shapes, soft glowing edges that fade smoothly to pure black, centred, filling about 85% of the square. Bio-magic of an ant colony: luminous blue-violet (#8a5cff to #c9b8ff) light with touches of warm gold, never green. SUBJECT: a BURST of warm sandy earth and dust bursting upward and outward from the ground, clumps of clay and a ring of dust, lit warm gold from inside with a hint of violet glow at the centre.",
+  "chosen": 1,
+  "install": "black crushed by 0.035, brightness only (layers tint it), alpha from brightness, 512 px"
+}

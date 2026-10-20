@@ -81,6 +81,13 @@
         "event": "contained",
         "anchor": "target",
         "lifetime": "finite"
+      },
+      {
+        "id": "digest",
+        "effect": "effect.ants.kit.digest",
+        "event": "digested",
+        "anchor": "target",
+        "lifetime": "finite"
       }
     ]
   }

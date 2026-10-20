@@ -71,6 +71,20 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.ants.kit.cast-scent",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
+        "id": "lay",
+        "effect": "effect.ants.kit.trail-lay",
+        "event": "released",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
         "id": "zone",
         "effect": "effect.ants.kit.trail",
         "event": "released",

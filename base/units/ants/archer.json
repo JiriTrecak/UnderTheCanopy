@@ -78,6 +78,7 @@
   "modelScale": 2.4,
   "presentation": {
     "projectile": "effect.weapon.thorn",
-    "projectileSocket": "socket_projectile"
+    "projectileSocket": "socket_projectile",
+    "impactEffect": "effect.ants.kit.hit-needle"
   }
 }

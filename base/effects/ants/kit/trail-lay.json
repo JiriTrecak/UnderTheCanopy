@@ -1,0 +1,79 @@
+{
+  "id": "effect.ants.kit.trail-lay",
+  "name": "Trail laid",
+  "description": "The trail blooms where it is laid.",
+  "durationTicks": 30,
+  "loop": false,
+  "layers": [
+    {
+      "id": "shock",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#9f8cff",
+      "accent": "#ffffff",
+      "durationTicks": 18,
+      "count": 1,
+      "size": 10.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.4,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 36,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "puff",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#9f8cff",
+      "accent": "#ffffff",
+      "durationTicks": 34,
+      "count": 6,
+      "size": 2.52,
+      "height": 0.5,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 1.26,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.mist",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 30,
+        "rate": 6,
+        "speed": 0.8,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": -0.3,
+        "drag": 1.2,
+        "spawnRadius": 3.0,
+        "startSize": 2.52,
+        "endSize": 1.26,
+        "spin": 0.6,
+        "fadeIn": 0.15,
+        "fadeOut": 0.6
+      }
+    }
+  ]
+}

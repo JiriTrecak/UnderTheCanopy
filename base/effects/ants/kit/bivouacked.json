@@ -1,0 +1,54 @@
+{
+  "id": "effect.ants.kit.bivouacked",
+  "name": "Bivouac",
+  "description": "A dome of amber chitin over each ant in the fortress.",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "dome",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffc870",
+      "accent": "#ffffff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 5.1,
+      "height": 1.2,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 1.6,
+      "core": 0.4,
+      "texture": {
+        "asset": "asset.effects.ants.shell",
+        "role": "image",
+        "index": 1
+      },
+      "sustain": true,
+      "follow": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 60,
+          "min": 0.55,
+          "max": 0.9,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#ffe08a",
+      "accent": "#fff0c0",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 2.0,
+      "height": 0.06,
+      "blend": "additive",
+      "sustain": true,
+      "follow": true,
+      "intensity": 0.6
+    }
+  ]
+}

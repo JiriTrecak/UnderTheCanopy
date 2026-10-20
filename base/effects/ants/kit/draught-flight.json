@@ -1,0 +1,37 @@
+{
+  "id": "effect.ants.kit.draught-flight",
+  "name": "Volatile draught",
+  "description": "A flask of glowing violet liquid arcs through the air.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flask",
+      "enabled": true,
+      "shape": "missile",
+      "colour": "#b49cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 0.6,
+      "height": 0,
+      "arcHeight": 3.0,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 4.0,
+      "core": 1.0,
+      "trail": {
+        "durationTicks": 10,
+        "maxPoints": 16,
+        "width": 0.25,
+        "colour": "#8a5cff",
+        "opacity": 0.9,
+        "breakDistance": 6
+      }
+    }
+  ]
+}

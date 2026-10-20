@@ -1,0 +1,23 @@
+{
+  "id": "effect.ants.kit.digest",
+  "name": "Digestion",
+  "description": "A pulse of violet light from the Reaver Queen's belly.",
+  "durationTicks": 16,
+  "loop": false,
+  "layers": [
+    {
+      "id": "pulse",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 16,
+      "count": 1,
+      "size": 2.0,
+      "height": 1.0,
+      "blend": "additive",
+      "orientation": "camera",
+      "intensity": 0.8
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "id": "effect.ants.kit.jelly-beam",
+  "name": "Royal jelly",
+  "description": "A ribbon of golden light from the Queen to the one she feeds.",
+  "durationTicks": 18,
+  "loop": false,
+  "layers": [
+    {
+      "id": "beam",
+      "enabled": true,
+      "shape": "beam",
+      "colour": "#ffe08a",
+      "accent": "#fff0c0",
+      "durationTicks": 18,
+      "count": 1,
+      "size": 0.9,
+      "height": 1.6,
+      "blend": "additive",
+      "follow": true,
+      "intensity": 2.0
+    },
+    {
+      "id": "core",
+      "enabled": true,
+      "shape": "beam",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 14,
+      "count": 1,
+      "size": 0.25,
+      "height": 1.6,
+      "blend": "additive",
+      "follow": true
+    }
+  ]
+}

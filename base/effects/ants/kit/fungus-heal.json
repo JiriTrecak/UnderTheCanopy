@@ -1,0 +1,64 @@
+{
+  "id": "effect.ants.kit.fungus-heal",
+  "name": "Fungus healing",
+  "description": "Healing spores rise around a unit.",
+  "durationTicks": 30,
+  "loop": false,
+  "layers": [
+    {
+      "id": "motes",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c9b0ff",
+      "accent": "#f6f0ff",
+      "durationTicks": 34,
+      "count": 8,
+      "size": 0.48,
+      "height": 0.3,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.16,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.petal",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 30,
+        "rate": 8,
+        "speed": 1.2,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": -3.0,
+        "drag": 1.2,
+        "spawnRadius": 0.8,
+        "startSize": 0.48,
+        "endSize": 0.24,
+        "spin": 2.0,
+        "fadeIn": 0.15,
+        "fadeOut": 0.6
+      }
+    },
+    {
+      "id": "column",
+      "enabled": true,
+      "shape": "pillar",
+      "colour": "#c9b0ff",
+      "accent": "#f6f0ff",
+      "durationTicks": 24,
+      "count": 1,
+      "size": 0.8,
+      "height": 3.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 1.2000000000000002
+    }
+  ]
+}

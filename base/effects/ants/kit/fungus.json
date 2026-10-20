@@ -1,0 +1,121 @@
+{
+  "id": "effect.ants.kit.fungus",
+  "name": "Fungus circle",
+  "description": "A fairy ring of glowing fungus grows and breathes healing light.",
+  "durationTicks": 400,
+  "loop": false,
+  "layers": [
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#c9b0ff",
+      "accent": "#ffffff",
+      "durationTicks": 400,
+      "count": 1,
+      "size": 17.6,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.7,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.fungus-ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 960,
+          "direction": "clockwise"
+        },
+        "opacity": {
+          "periodTicks": 80,
+          "min": 0.7,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      },
+      "sustain": true
+    },
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#c9b0ff",
+      "accent": "#f6f0ff",
+      "durationTicks": 400,
+      "count": 1,
+      "size": 8.0,
+      "height": 0.1,
+      "blend": "additive",
+      "sustain": true,
+      "intensity": 0.35
+    },
+    {
+      "id": "spores",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c9b0ff",
+      "accent": "#f6f0ff",
+      "durationTicks": 400,
+      "count": 6,
+      "size": 0.4,
+      "height": 0.6,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.16,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.petal",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 60,
+        "rate": 6,
+        "speed": 1.2,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": -1.6,
+        "drag": 1.2,
+        "spawnRadius": 4.5,
+        "startSize": 0.4,
+        "endSize": 0.2,
+        "spin": 2.0,
+        "fadeIn": 0.15,
+        "fadeOut": 0.6
+      },
+      "sustain": true
+    },
+    {
+      "id": "glow",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#c9b0ff",
+      "accent": "#f6f0ff",
+      "durationTicks": 400,
+      "count": 1,
+      "size": 9,
+      "height": 1.0,
+      "intensity": 1.6,
+      "startTick": 0,
+      "sustain": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 80,
+          "min": 0.5,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

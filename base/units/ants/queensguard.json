@@ -94,8 +94,9 @@
     "height": 6.4,
     "formationSpacing": 4.4
   },
-  "modelScale": 3.0,
+  "modelScale": 4.2,
   "presentation": {
-    "castContact": 0.5
+    "castContact": 0.5,
+    "impactEffect": "effect.ants.kit.hit-heavy"
   }
 }

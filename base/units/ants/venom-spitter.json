@@ -61,7 +61,9 @@
   },
   "modelScale": 1.6,
   "presentation": {
-    "projectile": "effect.weapon.thorn"
+    "projectile": "effect.weapon.thorn",
+    "impactEffect": "effect.ants.kit.hit-sting",
+    "launchEffect": "effect.ants.kit.spit-muzzle"
   },
   "selectable": false
 }

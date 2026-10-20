@@ -67,6 +67,14 @@
           "rankParameter": "boost"
         }
       }
+    },
+    {
+      "op": "status",
+      "target": "caster",
+      "id": "columnSource",
+      "amount": 1,
+      "polarity": "positive",
+      "dispel": false
     }
   ],
   "presentation": {
@@ -85,6 +93,14 @@
         "anchor": "target",
         "lifetime": "status",
         "statusId": "column"
+      },
+      {
+        "id": "source",
+        "effect": "effect.ants.kit.column-source",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "columnSource"
       }
     ]
   }

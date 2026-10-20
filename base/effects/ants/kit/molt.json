@@ -1,0 +1,128 @@
+{
+  "id": "effect.ants.kit.molt",
+  "name": "Molt",
+  "description": "The old carapace bursts open: a shell of light shatters, blue flash, shards.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "shell",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#5b7bff",
+      "accent": "#ffffff",
+      "durationTicks": 20,
+      "count": 1,
+      "size": 9.0,
+      "height": 1.6,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.5600000000000005,
+      "core": 0.4,
+      "texture": {
+        "asset": "asset.effects.ants.shell",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 40,
+          "min": 1.0,
+          "max": 1.5,
+          "easing": "smoothstep"
+        },
+        "opacity": {
+          "periodTicks": 40,
+          "min": 0.0,
+          "max": 1.0,
+          "easing": "sine",
+          "phase": 0.5
+        }
+      }
+    },
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#5b7bff",
+      "accent": "#c8d4ff",
+      "durationTicks": 16,
+      "count": 1,
+      "size": 12,
+      "height": 1.5,
+      "intensity": 4.0,
+      "startTick": 0
+    },
+    {
+      "id": "shards",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c8d4ff",
+      "accent": "#ffffff",
+      "durationTicks": 22,
+      "count": 24,
+      "size": 0.12,
+      "height": 1.2,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "core": 0.35,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 20,
+        "rate": 24,
+        "speed": 9,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 100,
+        "gravity": 14,
+        "drag": 0.7,
+        "spawnRadius": 0.15,
+        "startSize": 0.12,
+        "endSize": 0.054,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55,
+        "stretch": 0.05
+      }
+    },
+    {
+      "id": "shock",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#5b7bff",
+      "accent": "#ffffff",
+      "durationTicks": 16,
+      "count": 1,
+      "size": 8.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.6,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 32,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

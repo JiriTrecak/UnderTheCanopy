@@ -1,0 +1,127 @@
+{
+  "id": "effect.ants.kit.trail",
+  "name": "Scent trail",
+  "description": "A pheromone trail: a turning scent glyph on the ground and drifting violet scent.",
+  "durationTicks": 480,
+  "loop": false,
+  "layers": [
+    {
+      "id": "glyph",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#9f8cff",
+      "accent": "#ffffff",
+      "durationTicks": 480,
+      "count": 1,
+      "size": 17.6,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.3400000000000003,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.pheromone-sigil",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 480,
+          "direction": "clockwise"
+        },
+        "opacity": {
+          "periodTicks": 80,
+          "min": 0.7,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      },
+      "sustain": true
+    },
+    {
+      "id": "scent",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#9f8cff",
+      "accent": "#ffffff",
+      "durationTicks": 480,
+      "count": 4,
+      "size": 2.2399999999999998,
+      "height": 0.5,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 0.9900000000000001,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.mist",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 60,
+        "rate": 4,
+        "speed": 0.8,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": -0.3,
+        "drag": 1.2,
+        "spawnRadius": 4.0,
+        "startSize": 2.2399999999999998,
+        "endSize": 1.1199999999999999,
+        "spin": 0.6,
+        "fadeIn": 0.15,
+        "fadeOut": 0.6
+      },
+      "sustain": true
+    },
+    {
+      "id": "motes",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#9f8cff",
+      "accent": "#efe6ff",
+      "durationTicks": 480,
+      "count": 4,
+      "size": 0.44,
+      "height": 0.6,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.16,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.petal",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 50,
+        "rate": 4,
+        "speed": 1.2,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": -2.0,
+        "drag": 1.2,
+        "spawnRadius": 4.5,
+        "startSize": 0.44,
+        "endSize": 0.22,
+        "spin": 2.0,
+        "fadeIn": 0.15,
+        "fadeOut": 0.6
+      },
+      "sustain": true
+    }
+  ]
+}

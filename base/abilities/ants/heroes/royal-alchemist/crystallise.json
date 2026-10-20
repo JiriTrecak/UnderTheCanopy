@@ -107,6 +107,20 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.ants.kit.cast-substance",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
+        "id": "form",
+        "effect": "effect.ants.kit.crystal-form",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
         "id": "crystal",
         "effect": "effect.ants.kit.crystal",
         "event": "statusApplied",

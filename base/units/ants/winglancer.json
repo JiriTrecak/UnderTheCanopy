@@ -84,6 +84,7 @@
   },
   "modelScale": 2.4,
   "presentation": {
-    "castContact": 0.4722222222222222
+    "castContact": 0.4722222222222222,
+    "impactEffect": "effect.ants.kit.hit-needle"
   }
 }

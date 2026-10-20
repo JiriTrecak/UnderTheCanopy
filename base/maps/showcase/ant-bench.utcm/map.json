@@ -1,7 +1,29 @@
 {
   "biome": "autumn-forest",
   "sandbox": true,
-  "camps": [],
+  "camps": [
+    {
+      "aggression": "players",
+      "aggroRange": 10,
+      "home": {
+        "x": 126.0,
+        "y": 124.0
+      },
+      "id": "bench.camp",
+      "leash": 24,
+      "lootPool": "loot.camp.easy",
+      "members": [
+        "bench.camp.0",
+        "bench.camp.1",
+        "bench.camp.2",
+        "bench.camp.3",
+        "bench.camp.4",
+        "bench.camp.5",
+        "bench.camp.6",
+        "bench.camp.7"
+      ]
+    }
+  ],
   "size": 256,
   "playerStarts": [
     {
@@ -90,7 +112,7 @@
       "owner": "player.1",
       "position": {
         "x": 56.0,
-        "y": 120.0
+        "y": 116.0
       },
       "rotation": 0.0
     },
@@ -100,7 +122,7 @@
       "owner": "player.1",
       "position": {
         "x": 62.0,
-        "y": 120.0
+        "y": 116.0
       },
       "rotation": 0.0
     },
@@ -110,7 +132,7 @@
       "owner": "player.1",
       "position": {
         "x": 68.0,
-        "y": 120.0
+        "y": 116.0
       },
       "rotation": 0.0
     },
@@ -120,7 +142,7 @@
       "owner": "player.1",
       "position": {
         "x": 74.0,
-        "y": 120.0
+        "y": 116.0
       },
       "rotation": 0.0
     },
@@ -130,7 +152,7 @@
       "owner": "player.1",
       "position": {
         "x": 80.0,
-        "y": 120.0
+        "y": 116.0
       },
       "rotation": 0.0
     },
@@ -140,7 +162,7 @@
       "owner": "player.1",
       "position": {
         "x": 56.0,
-        "y": 126.0
+        "y": 122.0
       },
       "rotation": 0.0
     },
@@ -150,7 +172,7 @@
       "owner": "player.1",
       "position": {
         "x": 62.0,
-        "y": 126.0
+        "y": 122.0
       },
       "rotation": 0.0
     },
@@ -160,7 +182,7 @@
       "owner": "player.1",
       "position": {
         "x": 68.0,
-        "y": 126.0
+        "y": 122.0
       },
       "rotation": 0.0
     },
@@ -170,7 +192,7 @@
       "owner": "player.1",
       "position": {
         "x": 74.0,
-        "y": 126.0
+        "y": 122.0
       },
       "rotation": 0.0
     },
@@ -180,7 +202,7 @@
       "owner": "player.1",
       "position": {
         "x": 80.0,
-        "y": 126.0
+        "y": 122.0
       },
       "rotation": 0.0
     },
@@ -190,7 +212,7 @@
       "owner": "player.1",
       "position": {
         "x": 56.0,
-        "y": 132.0
+        "y": 128.0
       },
       "rotation": 0.0
     },
@@ -200,7 +222,7 @@
       "owner": "player.1",
       "position": {
         "x": 62.0,
-        "y": 132.0
+        "y": 128.0
       },
       "rotation": 0.0
     },
@@ -210,19 +232,148 @@
       "owner": "player.1",
       "position": {
         "x": 68.0,
-        "y": 132.0
+        "y": 128.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.thornblade",
+      "id": "bench.army.13",
+      "owner": "player.1",
+      "position": {
+        "x": 74.0,
+        "y": 128.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.burster",
+      "id": "bench.army.14",
+      "owner": "player.1",
+      "position": {
+        "x": 80.0,
+        "y": 128.0
       },
       "rotation": 0.0
     },
     {
       "definition": "unit.ants.queen",
-      "id": "bench.army.13",
+      "id": "bench.hero.0",
       "owner": "player.1",
+      "initialState": {
+        "experience": 5200
+      },
       "position": {
-        "x": 74.0,
-        "y": 132.0
+        "x": 60.0,
+        "y": 150.0
       },
       "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.royal-alchemist",
+      "id": "bench.hero.1",
+      "owner": "player.1",
+      "initialState": {
+        "experience": 5200
+      },
+      "position": {
+        "x": 74.0,
+        "y": 150.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.marshal",
+      "id": "bench.hero.2",
+      "owner": "player.1",
+      "initialState": {
+        "experience": 5200
+      },
+      "position": {
+        "x": 88.0,
+        "y": 150.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.barkguard",
+      "id": "bench.camp.0",
+      "owner": "none",
+      "position": {
+        "x": 120.0,
+        "y": 118.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.barkguard",
+      "id": "bench.camp.1",
+      "owner": "none",
+      "position": {
+        "x": 126.0,
+        "y": 118.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.barkguard",
+      "id": "bench.camp.2",
+      "owner": "none",
+      "position": {
+        "x": 132.0,
+        "y": 118.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.barkguard",
+      "id": "bench.camp.3",
+      "owner": "none",
+      "position": {
+        "x": 120.0,
+        "y": 124.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.thorn-slinger",
+      "id": "bench.camp.4",
+      "owner": "none",
+      "position": {
+        "x": 126.0,
+        "y": 124.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.thorn-slinger",
+      "id": "bench.camp.5",
+      "owner": "none",
+      "position": {
+        "x": 132.0,
+        "y": 124.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.thorn-slinger",
+      "id": "bench.camp.6",
+      "owner": "none",
+      "position": {
+        "x": 120.0,
+        "y": 130.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.briar-hulk",
+      "id": "bench.camp.7",
+      "owner": "none",
+      "position": {
+        "x": 126.0,
+        "y": 130.0
+      },
+      "rotation": 180.0
     }
   ],
   "terrain": {

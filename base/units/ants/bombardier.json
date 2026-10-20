@@ -66,7 +66,7 @@
   "presentation": {
     "projectile": "effect.weapon.nectar",
     "projectileSocket": "socket_projectile",
-    "impactEffect": "effect.ants.resin-explosion",
+    "impactEffect": "effect.ants.kit.glob-impact",
     "castContact": 0.3076923076923077
   },
   "underground": false

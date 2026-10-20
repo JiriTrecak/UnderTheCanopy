@@ -13,6 +13,8 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'beetles'))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import ant_effects as antfx  # noqa: E402  (tools/content/ants/ant_effects.py)
 from gen_common import (BASE, WRITTEN, write, remove, cost, rp, cast, self_aim, unit_aim, point_aim, anims, fx,
                         ability, passive, binding, layer, emitter, flash, ring, glow, burst, pulse, effect, puffs,
                         sparks, VIOLET, VIOLET_LIGHT, WHITE, DUST_TEX, SPARK_TEX)
@@ -75,105 +77,18 @@ def taken(permille, types=PHYSICAL + ('spell',)):
     return {t: permille for t in types}
 
 
-# ----- effects ------------------------------------------------------------------------------
-
 FX = {}
 
 
-def put_fx(key, e):
-    FX[key] = e['id']
-    write('effects/ants/kit/' + e['id'].split('.', 2)[2] + '.json', e)
-
-
-def motes(id_, colour, accent, count=8, height=1.6, rise=2.2, lifetime=30, spawn=1.0, size=0.18, mode='burst',
-          duration=None):
-    return layer(id_, 'particles', colour, accent, duration or lifetime + 2, count, size, height, blend='additive',
-                 texture=SPARK_TEX, intensity=1.6,
-                 emitter=emitter(mode, lifetime, count, rise, variation=0.4, direction=(0, 1, 0), cone=25,
-                                 gravity=0.0, drag=1.0, spawn=spawn, start=size, end=size * 0.2, fade_in=0.1,
-                                 fade_out=0.7))
-
-
-def status_glow(key, name, colour, accent, size=2.2):
-    """A soft ring and motes on a unit while a status lasts."""
-    put_fx(key, effect('effect.ants.kit.' + key, name, name + ' on a unit, for as long as it lasts.', 80, [
-        ring('ring', colour, accent, size, 80, sustain=True, follow=True, intensity=0.45,
-             motion={'opacity': pulse(40, 0.5, 1.0)}),
-        motes('motes', colour, accent, count=4, lifetime=40, spawn=size * 0.4, mode='continuous', duration=80)],
-        loop=True))
-
-
-def pop(key, name, colour, accent, size=3.0, light=True):
-    """A one-off flash at a unit: a ring, a burst and light."""
-    layers = [ring('ring', colour, accent, size, 20, intensity=0.8),
-              burst('burst', colour, accent, 10, size * 0.5, 18, height=1.0),
-              motes('motes', colour, accent, count=10, lifetime=24, spawn=size * 0.3)]
-    if light:
-        layers.append(flash('light', colour, accent, size * 2.5, 2.0, duration=10, height=1.5))
-    put_fx(key, effect('effect.ants.kit.' + key, name, name + '.', 26, layers))
-
-
-def zone(key, name, colour, accent, radius, ticks):
-    """A ground zone that lasts its ability's duration: a sustained ring, glow and rising motes."""
-    put_fx(key, effect('effect.ants.kit.' + key, name, name + ': the zone on the ground while it lasts.', ticks, [
-        ring('edge', colour, accent, radius * 2, ticks, sustain=True, intensity=0.6,
-             motion={'opacity': pulse(60, 0.6, 1.0)}),
-        glow('pool', colour, accent, radius * 1.6, ticks, height=0.1, sustain=True, intensity=0.25),
-        motes('motes', colour, accent, count=10, lifetime=50, spawn=radius * 0.8, mode='continuous', duration=ticks,
-              rise=1.4)]))
-
-
-def splash(key, name, colour, accent, radius):
-    """A burst of liquid light filling an area."""
-    put_fx(key, effect('effect.ants.kit.' + key, name, name + '.', 34, [
-        flash('light', colour, accent, radius * 3, 3.0, duration=12, height=1.5),
-        ring('shock', colour, accent, radius * 2, 24, intensity=1.0),
-        burst('burst', colour, accent, 18, radius * 0.6, 26, height=1.0),
-        sparks('drops', colour, accent, count=26, speed=8.0, size=0.3, lifetime=26, gravity=16.0, cone=75),
-        puffs('mist', colour, accent, count=8, speed=1.4, size=radius * 0.5, height=0.5, lifetime=34,
-              blend='additive')]))
-
-
 def build_effects():
-    status_glow('frenzy', 'Frenzy', SCENT, SCENT_LIGHT, 1.6)
-    status_glow('barbed', 'Barbed', VIOLET, VIOLET_LIGHT, 1.8)
-    splash('burst', 'Substance burst', VIOLET, VIOLET_LIGHT, 4.0)
-    status_glow('guarded', 'Guarded', AMBER, AMBER_LIGHT, 1.8)
-    status_glow('guard', 'Guard', AMBER, AMBER_LIGHT, 3.0)
-    status_glow('plugged', 'Plugged', BLUE, BLUE_LIGHT, 2.6)
-    pop('found', 'Founding', AMBER, AMBER_LIGHT, 5.0)
-    pop('agony-hit', 'Agony strike', VIOLET, WHITE, 2.4)
-    status_glow('agony', 'Agony', CRIMSON, VIOLET_LIGHT, 1.8)
-    zone('trail', 'Scent trail', SCENT, SCENT_LIGHT, 5.0, 12 * S)
-    status_glow('trailed', 'On the trail', SCENT, SCENT_LIGHT, 1.4)
-    pop('alarm', 'Alarm', ALARM, ALARM_LIGHT, 9.0)
-    status_glow('alarmed', 'Alarmed', ALARM, ALARM_LIGHT, 1.6)
-    zone('panic', 'Panic', VIOLET, SCENT_LIGHT, 5.0, 3 * S)
-    status_glow('panicked', 'Panicked', VIOLET, SCENT_LIGHT, 1.4)
-    zone('fungus', 'Fungus circle', FUNGUS, FUNGUS_LIGHT, 5.0, 10 * S)
-    pop('fungus-heal', 'Fungus healing', FUNGUS, FUNGUS_LIGHT, 1.6, light=False)
-    zone('spores', 'Spore cloud', FUNGUS, FUNGUS_LIGHT, 5.0, 8 * S)
-    status_glow('choked', 'Choking spores', FUNGUS, FUNGUS_LIGHT, 1.4)
-    pop('devour', 'Devour', VIOLET, VIOLET_LIGHT, 3.0)
-    pop('rampage', 'Rampage', AMBER, WHITE, 4.0)
-    status_glow('presence', 'Royal presence', BLUE, BLUE_LIGHT, 1.4)
-    pop('molt', 'Molt', BLUE, BLUE_LIGHT, 4.0)
-    status_glow('molting', 'Fresh carapace', BLUE, BLUE_LIGHT, 3.0)
-    pop('jelly', 'Royal jelly', AMBER, AMBER_LIGHT, 2.4)
-    status_glow('jellied', 'Royal jelly', AMBER, AMBER_LIGHT, 1.6)
-    status_glow('one-body', 'One body', SCENT, SCENT_LIGHT, 1.4)
-    pop('exodus', 'Exodus', VIOLET, VIOLET_LIGHT, 4.0)
-    splash('draught', 'Volatile draught', VIOLET, VIOLET_LIGHT, 4.0)
-    pop('transfusion', 'Transfusion', CRIMSON, VIOLET_LIGHT, 2.0)
-    status_glow('crystal', 'Crystallised', VIOLET, WHITE, 2.0)
-    zone('overdose', 'Overdose', VIOLET, VIOLET_LIGHT, 6.0, 30)
-    status_glow('overdosed', 'Overdosed', VIOLET, VIOLET_LIGHT, 1.8)
-    pop('charge-hit', 'Mandible charge', AMBER, WHITE, 2.6)
-    status_glow('marked', 'Marked prey', CRIMSON, ALARM_LIGHT, 1.8)
-    status_glow('column', 'War column', BLUE, BLUE_LIGHT, 1.4)
-    pop('bivouac', 'Bivouac', AMBER, AMBER_LIGHT, 8.0)
-    status_glow('bivouacked', 'Bivouac', AMBER, AMBER_LIGHT, 2.0)
-    pop('tunnel', 'Tunnel mouth', AMBER, AMBER_LIGHT, 2.4, light=False)
+    shutil_rmtree(BASE + 'effects/ants/kit')
+    FX.update(antfx.build())
+
+
+def shutil_rmtree(path):
+    import shutil
+    if os.path.isdir(path):
+        shutil.rmtree(path)
 
 
 # ----- unit abilities -----------------------------------------------------------------------
@@ -238,7 +153,8 @@ def unit_abilities():
           'damageTakenPermille': {t: rp('taken') for t in PHYSICAL}},
          {'op': 'status', 'target': 'caster', 'id': 'guarding', 'amount': 1, 'polarity': 'positive', 'dispel': False}],
         icon('major-guard'),
-        [fx('guard', FX['guard'], 'statusApplied', lifetime='status', statusId='guarding')],
+        [fx('guard', FX['guard'], 'statusApplied', lifetime='status', statusId='guarding'),
+         fx('guarded', FX['guarded'], 'statusApplied', lifetime='status', statusId='guarded')],
         aura={'radius': 6, 'meleeOnly': False}) | {'targeting': self_aim() | {'filter': SMALL}})
 
     put_ability('major/plug', ability(
@@ -249,7 +165,8 @@ def unit_abilities():
           'lifetime': 'instance', 'modifiers': {'rooted': True, 'armor': 5},
           'damageTakenPermille': {'piercing': 500, 'siege': 700}}],
         icon('major-plug'),
-        [fx('plug', FX['plugged'], 'statusApplied', lifetime='status', statusId='plugged')],
+        [fx('slam', FX['plug-slam'], 'statusApplied', statusId='plugged'),
+         fx('plug', FX['plug'], 'statusApplied', lifetime='status', statusId='plugged')],
         persistent={'durationTicks': 144000, 'intervalTicks': 40, 'anchor': 'caster', 'endsWithCaster': True,
                     'upkeepMana': 0, 'toggle': True}))
 
@@ -264,7 +181,8 @@ def unit_abilities():
          {'op': 'status', 'target': 'target', 'id': 'agony', 'amount': rp('linger'), 'polarity': 'negative',
           'dispel': True, 'modifiers': {'moveSpeedPermille': -300}, 'damageTakenPermille': taken(1250)}],
         icon('bullet-agony'),
-        [fx('hit', FX['agony-hit'], 'damaged'),
+        [fx('windup', FX['cast-substance'], 'accepted', anchor='caster'),
+         fx('hit', FX['agony-hit'], 'damaged'),
          fx('agony', FX['agony'], 'statusApplied', lifetime='status', statusId='agony')],
         animations=anims('attack', 'attack', 'idle')))
 
@@ -282,7 +200,8 @@ def unit_abilities():
         [{'op': 'status', 'target': 'target', 'id': 'trailed', 'amount': 30, 'polarity': 'positive', 'dispel': True,
           'modifiers': {'moveSpeedPermille': 350}}],
         icon('herald-trail'),
-        [fx('zone', FX['trail'], 'released'),
+        [fx('windup', FX['cast-scent'], 'accepted', anchor='caster'),
+         fx('lay', FX['trail-lay'], 'released'), fx('zone', FX['trail'], 'released'),
          fx('trailed', FX['trailed'], 'statusApplied', lifetime='status', statusId='trailed')],
         persistent={'durationTicks': 12 * S, 'intervalTicks': 20, 'anchor': 'point', 'endsWithCaster': False,
                     'upkeepMana': 0, 'toggle': False}))
@@ -296,7 +215,8 @@ def unit_abilities():
           'id': 'alarmed', 'amount': 6 * S, 'polarity': 'positive', 'dispel': True,
           'modifiers': {'damagePermille': 350, 'attackSpeedPermille': 150}}],
         icon('herald-alarm'),
-        [fx('alarm', FX['alarm'], 'released', anchor='caster'),
+        [fx('windup', FX['cast-war'], 'accepted', anchor='caster'),
+         fx('alarm', FX['alarm'], 'released', anchor='caster'),
          fx('alarmed', FX['alarmed'], 'statusApplied', lifetime='status', statusId='alarmed')]))
 
     put_ability('herald/panic', ability(
@@ -307,7 +227,8 @@ def unit_abilities():
           'polarity': 'negative', 'dispel': True, 'disarm': True, 'silence': True,
           'modifiers': {'moveSpeedPermille': -200}}],
         icon('herald-panic'),
-        [fx('cloud', FX['panic'], 'released'),
+        [fx('windup', FX['cast-scent'], 'accepted', anchor='caster'),
+         fx('cloud', FX['panic'], 'released'),
          fx('panicked', FX['panicked'], 'statusApplied', lifetime='status', statusId='panicked')]))
 
     put_ability('gardener/fungus-circle', ability(
@@ -317,7 +238,9 @@ def unit_abilities():
         [{'op': 'heal', 'target': 'target', 'filter': {'maxLevel': 4}, 'amount': 15},
          {'op': 'heal', 'target': 'target', 'filter': {'heroes': True}, 'amount': 15}],
         icon('gardener-fungus-circle'),
-        [fx('zone', FX['fungus'], 'released'), fx('heal', FX['fungus-heal'], 'healed')],
+        [fx('windup', FX['cast-scent'], 'accepted', anchor='caster'),
+         fx('grow', FX['fungus-grow'], 'released'), fx('zone', FX['fungus'], 'released'),
+         fx('heal', FX['fungus-heal'], 'healed')],
         persistent={'durationTicks': 10 * S, 'intervalTicks': S, 'anchor': 'point', 'endsWithCaster': False,
                     'upkeepMana': 0, 'toggle': False}))
 
@@ -328,7 +251,8 @@ def unit_abilities():
         [{'op': 'status', 'target': 'target', 'id': 'choked', 'amount': 30, 'polarity': 'negative', 'dispel': True,
           'modifiers': {'attackSpeedPermille': -400, 'moveSpeedPermille': -200}}],
         icon('gardener-spore-cloud'),
-        [fx('zone', FX['spores'], 'released'),
+        [fx('windup', FX['cast-scent'], 'accepted', anchor='caster'),
+         fx('zone', FX['spores'], 'released'),
          fx('choked', FX['choked'], 'statusApplied', lifetime='status', statusId='choked')],
         persistent={'durationTicks': 8 * S, 'intervalTicks': 20, 'anchor': 'point', 'endsWithCaster': False,
                     'upkeepMana': 0, 'toggle': False}))
@@ -341,7 +265,7 @@ def unit_abilities():
         [{'op': 'contain', 'target': 'target', 'id': 'devoured', 'amount': 10 * S, 'lifetime': 'duration',
           'capacity': 1, 'digestion': {'intervalTicks': S, 'damage': 35, 'damageType': 'spell'}},
          {'op': 'heal', 'target': 'caster', 'amount': 300}],
-        icon('reaver-devour'), [fx('devour', FX['devour'], 'contained')],
+        icon('reaver-devour'), [fx('devour', FX['devour'], 'contained'), fx('digest', FX['digest'], 'digested')],
         animations=anims('attack', 'attack', 'idle')))
 
     put_ability('reaver-queen/rampage', ability(
@@ -354,7 +278,8 @@ def unit_abilities():
          {'op': 'status', 'target': 'target',
           'query': {'center': 'target', 'radius': 4, 'relations': ['enemy'], 'maxTargets': 16},
           'id': 'trampled', 'amount': 30, 'heroDuration': 15, 'polarity': 'negative', 'dispel': True, 'stun': True}],
-        icon('reaver-rampage'), [fx('hit', FX['rampage'], 'impact')],
+        icon('reaver-rampage'), [fx('run', FX['rampage-run'], 'projectile', anchor='caster', durationFrom='delivery'),
+                                   fx('hit', FX['rampage'], 'impact')],
         delivery={'kind': 'charge', 'speed': 34, 'maxTicks': 80},
         animations=anims('run', 'run', 'attack')))
 
@@ -363,9 +288,12 @@ def unit_abilities():
         'Ants within 10 units of the Reaver Queen attack 15% faster.',
         [{}],
         [{'op': 'status', 'target': 'target', 'id': 'presence', 'amount': 1, 'polarity': 'positive', 'dispel': False,
-          'modifiers': {'attackSpeedPermille': 150}}],
+          'modifiers': {'attackSpeedPermille': 150}},
+         {'op': 'status', 'target': 'caster', 'id': 'presenceSource', 'amount': 1, 'polarity': 'positive',
+          'dispel': False}],
         icon('reaver-royal-presence'),
-        [fx('presence', FX['presence'], 'statusApplied', lifetime='status', statusId='presence')],
+        [fx('presence', FX['presence'], 'statusApplied', lifetime='status', statusId='presence'),
+         fx('source', FX['presence-source'], 'statusApplied', lifetime='status', statusId='presenceSource')],
         aura={'radius': 10, 'meleeOnly': False}))
 
     put_ability('reaver-queen/molt', ability(
@@ -377,7 +305,8 @@ def unit_abilities():
          {'op': 'status', 'target': 'caster', 'id': 'molting', 'amount': 10 * S, 'polarity': 'positive',
           'dispel': False, 'modifiers': {'moveSpeedPermille': 300, 'armor': -3}}],
         icon('reaver-molt'),
-        [fx('molt', FX['molt'], 'healed'),
+        [fx('windup', FX['cast-substance'], 'accepted', anchor='caster'),
+         fx('molt', FX['molt'], 'healed'),
          fx('fresh', FX['molting'], 'statusApplied', lifetime='status', statusId='molting')]))
 
     put_ability('venom-spire/corrosion', passive(
@@ -395,7 +324,8 @@ def unit_abilities():
         'The Alate lands, sheds its wings and becomes a Brood Mound where it stands: a new tunnel mound and 8 supply. The Alate is used up.',
         'targeted', [{}], self_aim(), cast(60, 0, 0, 0),
         [{'op': 'found', 'target': 'caster', 'building': MOUND, 'consume': True}],
-        icon('found'), [fx('rise', FX['found'], 'summoned')], animations=anims('cast', 'cast', 'idle')))
+        icon('found'), [fx('windup', FX['cast-royal'], 'accepted', anchor='caster'), fx('rise', FX['found'], 'summoned')],
+        animations=anims('cast', 'cast', 'idle')))
 
     put_ability('reaver-queen/ravenous', passive(
         'ability.ants.ravenous', 'Ravenous',
@@ -414,7 +344,7 @@ def hero_abilities():
         'targeted', [{'cooldown': 90 * S}, {'cooldown': 70 * S}, {'cooldown': 50 * S}],
         point_aim(['ally'], 10, 1) | {'allowSelf': True}, cast(40, 8, 125, rp('cooldown')),
         [{'op': 'found', 'target': 'point', 'building': MOUND}],
-        icon('found'), [fx('rise', FX['found'], 'summoned')]))
+        icon('found'), [fx('windup', FX['cast-royal'], 'accepted', anchor='caster'), fx('rise', FX['found'], 'summoned')]))
 
     put_ability('heroes/queen/royal-jelly', ability(
         'ability.ants.royal-jelly', 'Royal Jelly',
@@ -425,7 +355,9 @@ def hero_abilities():
          {'op': 'status', 'target': 'target', 'id': 'jellied', 'amount': 10 * S, 'polarity': 'positive',
           'dispel': True, 'rankedModifiers': {'damagePermille': rp('boost')}}],
         icon('queen-royal-jelly'),
-        [fx('jelly', FX['jelly'], 'healed'),
+        [fx('windup', FX['cast-royal'], 'accepted', anchor='caster'),
+         fx('beam', FX['jelly-beam'], 'released', anchor='caster'),
+         fx('jelly', FX['jelly'], 'statusApplied', statusId='jellied'),
          fx('jellied', FX['jellied'], 'statusApplied', lifetime='status', statusId='jellied')]))
 
     put_ability('heroes/queen/one-body', passive(
@@ -433,23 +365,26 @@ def hero_abilities():
         'The colony is one body: allies within 9 units of the Queen take 8/12/16% less damage.',
         [{'taken': 920}, {'taken': 880}, {'taken': 840}],
         [{'op': 'status', 'target': 'target', 'id': 'one-body', 'amount': 1, 'polarity': 'positive', 'dispel': False,
-          'damageTakenPermille': {t: rp('taken') for t in PHYSICAL + ('spell',)}}],
+          'damageTakenPermille': {t: rp('taken') for t in PHYSICAL + ('spell',)}},
+         {'op': 'status', 'target': 'caster', 'id': 'oneBodySource', 'amount': 1, 'polarity': 'positive',
+          'dispel': False}],
         icon('queen-one-body'),
-        [fx('one', FX['one-body'], 'statusApplied', lifetime='status', statusId='one-body')],
+        [fx('one', FX['one-body'], 'statusApplied', lifetime='status', statusId='one-body'),
+         fx('source', FX['one-body-source'], 'statusApplied', lifetime='status', statusId='oneBodySource')],
         aura={'radius': 9, 'meleeOnly': False}))
 
     put_ability('heroes/queen/exodus', ability(
         'ability.ants.exodus', 'Exodus',
-        'Ultimate. Choose any friendly building: after 2 seconds, the Queen and up to 32 allied units within 10 units of her sink underground and come up beside it.',
+        'Ultimate. Choose any friendly unit or building: after 2 seconds, the Queen and up to 32 allied units within 10 units of her sink underground and come up beside it.',
         'targeted', [{'cooldown': 120 * S}],
-        unit_aim(['ally'], 4096, includeBuildings=True, filter={'buildings': True}), cast(80, 8, 200, 120 * S),
+        unit_aim(['ally'], 4096, includeBuildings=True), cast(80, 8, 200, 120 * S),
         [{'op': 'teleport', 'target': 'target',
           'query': {'center': 'caster', 'radius': 10, 'relations': ['ally'], 'allowSelf': False,
                     'maxTargets': 32},
           'filter': {'buildings': False}, 'amount': 12, 'destination': 'target', 'preserveOffset': True},
          {'op': 'teleport', 'target': 'caster', 'amount': 12, 'destination': 'target', 'preserveOffset': False}],
         icon('queen-exodus'),
-        [fx('sink', FX['exodus'], 'accepted', anchor='caster'), fx('rise', FX['exodus'], 'teleported')]))
+        [fx('sink', FX['exodus-gather'], 'accepted', anchor='caster'), fx('rise', FX['exodus-rise'], 'teleported')]))
 
     put_ability('heroes/royal-alchemist/volatile-draught', ability(
         'ability.ants.volatile-draught', 'Volatile Draught',
@@ -460,7 +395,9 @@ def hero_abilities():
           'query': {'center': 'target', 'radius': 4, 'relations': ['enemy'], 'maxTargets': 16},
           'amount': rp('damage'), 'damageType': 'spell'},
          {'op': 'damage', 'target': 'target', 'amount': rp('damage'), 'damageType': 'spell'}],
-        icon('alchemist-volatile-draught'), [fx('burst', FX['draught'], 'impact')],
+        icon('alchemist-volatile-draught'), [fx('windup', FX['cast-substance'], 'accepted', anchor='caster'),
+                                              fx('flight', FX['draught-flight'], 'projectile', durationFrom='delivery'),
+                                              fx('burst', FX['draught'], 'impact'), fx('burn', FX['draught-hit'], 'damaged')],
         delivery={'kind': 'projectile', 'speed': 26}))
 
     put_ability('heroes/royal-alchemist/transfusion', ability(
@@ -475,7 +412,8 @@ def hero_abilities():
                     'order': 'lowest-health'},
           'amount': 0, 'scale': {'source': 'result', 'id': 'drawn', 'stat': 'applied', 'permille': 1000}}],
         icon('alchemist-transfusion'),
-        [fx('draw', FX['transfusion'], 'drained'), fx('pour', FX['transfusion'], 'healed')]))
+        [fx('windup', FX['cast-substance'], 'accepted', anchor='caster'), fx('draw', FX['transfusion-draw'], 'drained', anchor='caster'),
+         fx('pour', FX['transfusion-pour'], 'healed')]))
 
     put_ability('heroes/royal-alchemist/crystallise', ability(
         'ability.ants.crystallise', 'Crystallise',
@@ -488,7 +426,8 @@ def hero_abilities():
           'else': [{'op': 'status', 'target': 'target', 'id': 'sheltered', 'amount': rp('hold'),
                     'polarity': 'positive', 'dispel': True, 'stun': True, 'modifiers': {'invulnerable': True}}]}],
         icon('alchemist-crystallise'),
-        [fx('crystal', FX['crystal'], 'statusApplied', lifetime='status', statusId='crystal'),
+        [fx('windup', FX['cast-substance'], 'accepted', anchor='caster'), fx('form', FX['crystal-form'], 'statusApplied'),
+         fx('crystal', FX['crystal'], 'statusApplied', lifetime='status', statusId='crystal'),
          fx('shelter', FX['crystal'], 'statusApplied', lifetime='status', statusId='sheltered')]))
 
     put_ability('heroes/royal-alchemist/overdose', ability(
@@ -501,7 +440,8 @@ def hero_abilities():
           'rankedModifiers': {'attackSpeedPermille': rp('haste'), 'damagePermille': rp('power')},
           'periodic': {'intervalTicks': S, 'damage': 10, 'damageType': 'spell'}}],
         icon('alchemist-overdose'),
-        [fx('pour', FX['overdose'], 'released'),
+        [fx('windup', FX['cast-substance'], 'accepted', anchor='caster'),
+         fx('pour', FX['overdose'], 'released'),
          fx('swell', FX['overdosed'], 'statusApplied', lifetime='status', statusId='overdosed')]))
 
     put_ability('heroes/general/mandible-charge', ability(
@@ -512,7 +452,8 @@ def hero_abilities():
         [{'op': 'damage', 'target': 'target', 'amount': rp('damage'), 'damageType': 'hero'},
          {'op': 'status', 'target': 'target', 'id': 'seized', 'amount': rp('stun'), 'polarity': 'negative',
           'dispel': True, 'stun': True}],
-        icon('general-mandible-charge'), [fx('hit', FX['charge-hit'], 'impact')],
+        icon('general-mandible-charge'), [fx('run', FX['charge-trail'], 'projectile', anchor='caster', durationFrom='delivery'),
+                                           fx('hit', FX['charge-hit'], 'impact')],
         delivery={'kind': 'charge', 'speed': 36, 'maxTicks': 80},
         animations=anims('run', 'run', 'attack')))
 
@@ -524,16 +465,20 @@ def hero_abilities():
         [{'op': 'status', 'target': 'target', 'id': 'marked', 'amount': 12 * S, 'polarity': 'negative',
           'dispel': True, 'damageTakenPermille': {t: rp('taken') for t in PHYSICAL + ('spell',)}}],
         icon('general-mark-prey'),
-        [fx('mark', FX['marked'], 'statusApplied', lifetime='status', statusId='marked')]))
+        [fx('windup', FX['cast-war'], 'accepted', anchor='caster'), fx('hit', FX['mark-hit'], 'statusApplied'),
+         fx('mark', FX['marked'], 'statusApplied', lifetime='status', statusId='marked')]))
 
     put_ability('heroes/general/war-column', passive(
         'ability.ants.war-column', 'War Column',
         'Allies within 10 units of the General move 8/12/16% faster and deal 8/12/16% more damage.',
         [{'boost': 80}, {'boost': 120}, {'boost': 160}],
         [{'op': 'status', 'target': 'target', 'id': 'column', 'amount': 1, 'polarity': 'positive', 'dispel': False,
-          'rankedModifiers': {'moveSpeedPermille': rp('boost'), 'damagePermille': rp('boost')}}],
+          'rankedModifiers': {'moveSpeedPermille': rp('boost'), 'damagePermille': rp('boost')}},
+         {'op': 'status', 'target': 'caster', 'id': 'columnSource', 'amount': 1, 'polarity': 'positive',
+          'dispel': False}],
         icon('general-war-column'),
-        [fx('column', FX['column'], 'statusApplied', lifetime='status', statusId='column')],
+        [fx('column', FX['column'], 'statusApplied', lifetime='status', statusId='column'),
+         fx('source', FX['column-source'], 'statusApplied', lifetime='status', statusId='columnSource')],
         aura={'radius': 10, 'meleeOnly': False}))
 
     put_ability('heroes/general/bivouac', ability(
@@ -547,7 +492,8 @@ def hero_abilities():
           'dispel': False, 'modifiers': {'rooted': True, 'meleeReflectionPermille': 350},
           'damageTakenPermille': {t: rp('taken') for t in PHYSICAL + ('spell',)}}],
         icon('general-bivouac'),
-        [fx('lock', FX['bivouac'], 'released', anchor='caster'),
+        [fx('windup', FX['cast-war'], 'accepted', anchor='caster'),
+         fx('lock', FX['bivouac'], 'released', anchor='caster'),
          fx('fort', FX['bivouacked'], 'statusApplied', lifetime='status', statusId='bivouac')]))
 
 
@@ -670,7 +616,8 @@ def ordered(d):
 
 
 def unit(rel, *, name, description, body_, combat, speed, creation, supply, level, requires=None, abilities=None,
-         movement=None, max_owned=None, presentation=None, base=None, extra_behaviors=None, underground=None):
+         movement=None, max_owned=None, presentation=None, base=None, extra_behaviors=None, underground=None,
+         scale=None):
     """Patches the gameplay of an existing definition (its art and presentation stay)."""
     d = load(base or rel)
     d['name'] = name
@@ -695,6 +642,8 @@ def unit(rel, *, name, description, body_, combat, speed, creation, supply, leve
         d['maxOwned'] = max_owned
     if presentation is not None:
         d['presentation'] = presentation
+    if scale:
+        d['modelScale'] = scale
     d.pop('underground', None)
     if underground is not None and ENGINE:
         d['underground'] = underground
@@ -734,7 +683,7 @@ def write_units(builds):
     unit('units/ants/queensguard.json', name='Major',
          description='The colony\'s armoured tank, with a huge armoured head and a great shield. Guard: small ants beside it take less damage. Plug: it plants its head like a door and holds. Requires a Great Nest; uses 3 supply.',
          body_=body(960, 4, 'heavy'), combat=weapon(24, 'melee', 0.8, 64, 20, 14, 12), speed=9,
-         creation=train(230, 60, 28), supply=3, level=2, requires=[T2],
+         creation=train(230, 60, 28), supply=3, level=2, requires=[T2], scale=4.2,
          abilities=caster(10, 0, [passive_binding('guard', 'ability.ants.guard'),
                                   binding('plug', 'ability.ants.plug', 1, 'Q', 1, threat=7)]))
     bomb = load('units/ants/bombardier.json')
@@ -803,7 +752,7 @@ def write_units(builds):
     def hero(rel, base, name, description, levels, combat, speed, regen, bindings, order, presentation=None):
         d = unit(rel, base=base, name=name, description=description,
                  body_=body(levels[0]['maxHp'], levels[0]['armor'], 'hero'), combat=combat, speed=speed,
-                 creation=train(425, 75, 55), supply=4, level=1,
+                 creation=train(425, 75, 55), supply=4, level=1, scale=6.0,
                  abilities=caster(levels[0]['maxMana'], regen, bindings), presentation=presentation)
         d['behaviors']['progression'] = d['behaviors'].get('progression', {}) | {'experienceRadius': 40, 'levels': levels}
         d['hero'] = True
@@ -929,6 +878,24 @@ def write_buildings(research):
              behaviors=royal | bills(100000) | {'production': royal['production'] | {'outputs': [QUEEN, ALCHEMIST, GENERAL]}})
 
 
+def weapon_effects():
+    """Every ant blow lands with weight: an impact (and a spit at the mouth) per weapon."""
+    hits = {'warrior': ('hit-bite', None), 'archer': ('hit-needle', None), 'queensguard': ('hit-heavy', None),
+            'bombardier': ('glob-impact', None), 'winglancer': ('hit-needle', None), 'thornblade': ('hit-sting', None),
+            'banneret': ('hit-sting', None), 'nectarist': ('hit-sting', None), 'reaver-queen': ('hit-reaver', None),
+            'heroes/marshal': ('hit-heavy', None), 'heroes/queen': ('hit-sting', None),
+            'heroes/royal-alchemist': ('hit-sting', None), 'spire-spitter': ('hit-needle', 'spit-muzzle'),
+            'venom-spitter': ('hit-sting', 'spit-muzzle')}
+    for name, (impact, launch) in hits.items():
+        rel = 'units/ants/' + name + '.json'
+        d = load(rel)
+        pres = d.get('presentation', {}) | {'impactEffect': FX[impact]}
+        if launch:
+            pres['launchEffect'] = FX[launch]
+        d['presentation'] = pres
+        write(rel, ordered(d))
+
+
 def write_race():
     race = load('races/ants.json')
     race['description'] = ('One body, ten thousand legs: a swarm of cheap, fast castes that travels underground between its '
@@ -966,6 +933,7 @@ def main():
     builds = [NEST, MOUND, BURROW, WORKS, GARDEN, SCENT_HALL, GALLERY, CRADLE, SPIRE, ROYAL, SIPHON]
     write_units(builds)
     write_buildings(research)
+    weapon_effects()
     write_race()
     print(len(WRITTEN), 'files')
 

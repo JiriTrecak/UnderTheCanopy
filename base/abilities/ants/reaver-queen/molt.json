@@ -73,6 +73,13 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.ants.kit.cast-substance",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
         "id": "molt",
         "effect": "effect.ants.kit.molt",
         "event": "healed",

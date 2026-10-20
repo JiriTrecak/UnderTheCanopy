@@ -1,0 +1,159 @@
+{
+  "id": "effect.ants.kit.exodus-gather",
+  "name": "Exodus",
+  "description": "The colony gathers to go under: a great royal sigil opens around the Queen and a column of violet light rises.",
+  "durationTicks": 80,
+  "loop": false,
+  "layers": [
+    {
+      "id": "sigil",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#b49cff",
+      "accent": "#ffffff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 35.2,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.8800000000000003,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.royal-sigil",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 200,
+          "direction": "clockwise"
+        },
+        "scale": {
+          "periodTicks": 48,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "smoothstep"
+        }
+      }
+    },
+    {
+      "id": "pillar",
+      "enabled": true,
+      "shape": "pillar",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 3.0,
+      "height": 14.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.0999999999999996
+    },
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 20,
+      "height": 3.0,
+      "intensity": 4.0,
+      "startTick": 0,
+      "motion": {
+        "opacity": {
+          "periodTicks": 20,
+          "min": 0.5,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "motes",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 64,
+      "count": 40,
+      "size": 0.6,
+      "height": 0.3,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.16,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.petal",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 60,
+        "rate": 40,
+        "speed": 1.2,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": -3.0,
+        "drag": 1.2,
+        "spawnRadius": 8.0,
+        "startSize": 0.6,
+        "endSize": 0.3,
+        "spin": 2.0,
+        "fadeIn": 0.15,
+        "fadeOut": 0.6
+      }
+    },
+    {
+      "id": "earth",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c8a070",
+      "accent": "#ffffff",
+      "durationTicks": 64,
+      "count": 10,
+      "size": 3.36,
+      "height": 0.5,
+      "startTick": 30,
+      "blend": "additive",
+      "intensity": 0.9,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.mist",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 60,
+        "rate": 10,
+        "speed": 0.8,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": -0.3,
+        "drag": 1.2,
+        "spawnRadius": 8.0,
+        "startSize": 3.36,
+        "endSize": 1.68,
+        "spin": 0.6,
+        "fadeIn": 0.15,
+        "fadeOut": 0.6
+      }
+    }
+  ]
+}

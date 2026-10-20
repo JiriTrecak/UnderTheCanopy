@@ -1,0 +1,130 @@
+{
+  "id": "effect.ants.kit.overdose",
+  "name": "Overdose",
+  "description": "The Alchemist pours out her substance: a vast violet sigil, a column of light, a wave and a rain of liquid light.",
+  "durationTicks": 60,
+  "loop": false,
+  "layers": [
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 30,
+      "count": 1,
+      "size": 22,
+      "height": 3.0,
+      "intensity": 6.0,
+      "startTick": 0
+    },
+    {
+      "id": "sigil",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#b49cff",
+      "accent": "#ffffff",
+      "durationTicks": 60,
+      "count": 1,
+      "size": 25.6,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 3.24,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.royal-sigil",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 160,
+          "direction": "clockwise"
+        },
+        "scale": {
+          "periodTicks": 48,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "smoothstep"
+        }
+      }
+    },
+    {
+      "id": "pillar",
+      "enabled": true,
+      "shape": "pillar",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 46,
+      "count": 1,
+      "size": 3.4,
+      "height": 16.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.4000000000000004
+    },
+    {
+      "id": "wave",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#b49cff",
+      "accent": "#ffffff",
+      "durationTicks": 22,
+      "count": 1,
+      "size": 16.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.4,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 44,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "rain",
+      "enabled": true,
+      "shape": "rain",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 30,
+      "count": 40,
+      "size": 0.24,
+      "height": 9.0,
+      "spread": 6.0,
+      "fallSpeed": 1.2,
+      "launchDelayMs": 400,
+      "length": 3.0,
+      "blend": "additive",
+      "intensity": 2.6,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "impact": {
+        "durationTicks": 12,
+        "count": 3,
+        "size": 0.16,
+        "spread": 0.6,
+        "height": 0.2,
+        "colour": "#8a5cff",
+        "accent": "#c9b8ff"
+      }
+    }
+  ]
+}

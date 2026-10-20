@@ -1,0 +1,166 @@
+{
+  "id": "effect.ants.kit.found",
+  "name": "Founding",
+  "description": "A new mound bursts up out of the earth: a spray of soil, a golden flash, rising petals.",
+  "durationTicks": 50,
+  "loop": false,
+  "layers": [
+    {
+      "id": "earth",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#f2dcb4",
+      "accent": "#ffffff",
+      "durationTicks": 26,
+      "count": 1,
+      "size": 24.0,
+      "height": 2.4,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.2,
+      "core": 0.4,
+      "texture": {
+        "asset": "asset.effects.ants.earth-burst",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 52,
+          "min": 0.7,
+          "max": 1.2,
+          "easing": "smoothstep"
+        },
+        "opacity": {
+          "periodTicks": 52,
+          "min": 0.0,
+          "max": 1.0,
+          "easing": "sine",
+          "phase": 0.5
+        }
+      }
+    },
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ffe08a",
+      "accent": "#fff0c0",
+      "durationTicks": 18,
+      "count": 1,
+      "size": 14,
+      "height": 2.0,
+      "intensity": 4.0,
+      "startTick": 0
+    },
+    {
+      "id": "shock",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffe08a",
+      "accent": "#ffffff",
+      "durationTicks": 20,
+      "count": 1,
+      "size": 12.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.8,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 40,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "dust",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c8a070",
+      "accent": "#f2dcb4",
+      "durationTicks": 40,
+      "count": 14,
+      "size": 1.6,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 36,
+        "rate": 14,
+        "speed": 4.5,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 85,
+        "gravity": -0.5,
+        "drag": 1.6,
+        "spawnRadius": 2.0,
+        "startSize": 0.8,
+        "endSize": 2.5600000000000005,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      }
+    },
+    {
+      "id": "petals",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffe08a",
+      "accent": "#fff0c0",
+      "durationTicks": 50,
+      "count": 18,
+      "size": 0.6,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.16,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.petal",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 46,
+        "rate": 18,
+        "speed": 1.2,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": -2.6,
+        "drag": 1.2,
+        "spawnRadius": 3.0,
+        "startSize": 0.6,
+        "endSize": 0.3,
+        "spin": 2.0,
+        "fadeIn": 0.15,
+        "fadeOut": 0.6
+      }
+    }
+  ]
+}

@@ -101,6 +101,13 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.ants.kit.cast-war",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
         "id": "lock",
         "effect": "effect.ants.kit.bivouac",
         "event": "released",

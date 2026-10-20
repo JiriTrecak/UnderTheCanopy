@@ -1,0 +1,127 @@
+{
+  "id": "effect.ants.kit.devour",
+  "name": "Devour",
+  "description": "Huge mandibles close: a great slash, a gulp of violet light and mist.",
+  "durationTicks": 36,
+  "loop": false,
+  "layers": [
+    {
+      "id": "slash",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#b49cff",
+      "accent": "#ffffff",
+      "durationTicks": 14,
+      "count": 1,
+      "size": 10.5,
+      "height": 1.6,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.5200000000000005,
+      "core": 0.4,
+      "texture": {
+        "asset": "asset.effects.ants.slash",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 28,
+          "min": 0.7,
+          "max": 1.2,
+          "easing": "smoothstep"
+        },
+        "opacity": {
+          "periodTicks": 28,
+          "min": 0.0,
+          "max": 1.0,
+          "easing": "sine",
+          "phase": 0.5
+        }
+      }
+    },
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 14,
+      "count": 1,
+      "size": 12,
+      "height": 1.2,
+      "intensity": 4.0,
+      "startTick": 0
+    },
+    {
+      "id": "gulp",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#8a5cff",
+      "accent": "#ffffff",
+      "durationTicks": 38,
+      "count": 8,
+      "size": 1.9599999999999997,
+      "height": 0.5,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 1.26,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.mist",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 34,
+        "rate": 8,
+        "speed": 0.8,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": -0.3,
+        "drag": 1.2,
+        "spawnRadius": 1.2,
+        "startSize": 1.9599999999999997,
+        "endSize": 0.9799999999999999,
+        "spin": 0.6,
+        "fadeIn": 0.15,
+        "fadeOut": 0.6
+      }
+    },
+    {
+      "id": "shock",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#8a5cff",
+      "accent": "#ffffff",
+      "durationTicks": 14,
+      "count": 1,
+      "size": 5.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.4,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 28,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

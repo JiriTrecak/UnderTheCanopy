@@ -93,6 +93,14 @@
     },
     "effects": [
       {
+        "id": "run",
+        "effect": "effect.ants.kit.rampage-run",
+        "event": "projectile",
+        "anchor": "caster",
+        "lifetime": "finite",
+        "durationFrom": "delivery"
+      },
+      {
         "id": "hit",
         "effect": "effect.ants.kit.rampage",
         "event": "impact",

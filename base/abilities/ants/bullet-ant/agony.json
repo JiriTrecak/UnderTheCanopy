@@ -95,6 +95,13 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.ants.kit.cast-substance",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
         "id": "hit",
         "effect": "effect.ants.kit.agony-hit",
         "event": "damaged",

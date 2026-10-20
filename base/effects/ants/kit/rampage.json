@@ -1,0 +1,160 @@
+{
+  "id": "effect.ants.kit.rampage",
+  "name": "Rampage impact",
+  "description": "She crashes into the enemy: earth bursts, a shock ring, a great slash.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "earth",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#f2dcb4",
+      "accent": "#ffffff",
+      "durationTicks": 22,
+      "count": 1,
+      "size": 16.5,
+      "height": 1.8,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.2,
+      "core": 0.4,
+      "texture": {
+        "asset": "asset.effects.ants.earth-burst",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 44,
+          "min": 0.7,
+          "max": 1.1,
+          "easing": "smoothstep"
+        },
+        "opacity": {
+          "periodTicks": 44,
+          "min": 0.0,
+          "max": 1.0,
+          "easing": "sine",
+          "phase": 0.5
+        }
+      }
+    },
+    {
+      "id": "slash",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffc870",
+      "accent": "#ffffff",
+      "durationTicks": 14,
+      "count": 1,
+      "size": 12.0,
+      "height": 1.8,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.5200000000000005,
+      "core": 0.4,
+      "texture": {
+        "asset": "asset.effects.ants.slash",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 28,
+          "min": 0.7,
+          "max": 1.0,
+          "easing": "smoothstep"
+        },
+        "opacity": {
+          "periodTicks": 28,
+          "min": 0.0,
+          "max": 1.0,
+          "easing": "sine",
+          "phase": 0.5
+        }
+      }
+    },
+    {
+      "id": "shock",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffc870",
+      "accent": "#ffffff",
+      "durationTicks": 18,
+      "count": 1,
+      "size": 10.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.0,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 36,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "dust",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c8a070",
+      "accent": "#f2dcb4",
+      "durationTicks": 32,
+      "count": 10,
+      "size": 1.2,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 28,
+        "rate": 10,
+        "speed": 4.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 85,
+        "gravity": -0.4,
+        "drag": 1.6,
+        "spawnRadius": 0.3,
+        "startSize": 0.6,
+        "endSize": 1.92,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      }
+    },
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ffc870",
+      "accent": "#fff0c0",
+      "durationTicks": 12,
+      "count": 1,
+      "size": 10,
+      "height": 1.2,
+      "intensity": 3.0,
+      "startTick": 0
+    }
+  ]
+}

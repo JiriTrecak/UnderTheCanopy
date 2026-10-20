@@ -1,0 +1,278 @@
+{
+  "id": "effect.ants.kit.burst",
+  "name": "Substance burst",
+  "description": "The sac ruptures: a blinding violet flash, a crown of liquid light, droplets raining down, a shock ring and a glowing pool that fades.",
+  "durationTicks": 90,
+  "loop": false,
+  "layers": [
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 16,
+      "count": 1,
+      "size": 14,
+      "height": 1.5,
+      "intensity": 6.0,
+      "startTick": 0
+    },
+    {
+      "id": "splash",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#b49cff",
+      "accent": "#ffffff",
+      "durationTicks": 20,
+      "count": 1,
+      "size": 15.0,
+      "height": 2.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.84,
+      "core": 0.4,
+      "texture": {
+        "asset": "asset.effects.ants.liquid-splash",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 40,
+          "min": 0.7,
+          "max": 1.2,
+          "easing": "smoothstep"
+        },
+        "opacity": {
+          "periodTicks": 40,
+          "min": 0.0,
+          "max": 1.0,
+          "easing": "sine",
+          "phase": 0.5
+        }
+      }
+    },
+    {
+      "id": "blast",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 32,
+      "count": 1,
+      "size": 6.0,
+      "height": 1.4,
+      "blend": "additive",
+      "flipbook": {
+        "columns": 4,
+        "rows": 4,
+        "firstFrame": 0,
+        "frames": 16,
+        "frameTicks": 2,
+        "mode": "once",
+        "randomStart": false
+      },
+      "texture": {
+        "asset": "asset.effects.ants.resin-burst",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 1.2
+    },
+    {
+      "id": "shock",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#b49cff",
+      "accent": "#ffffff",
+      "durationTicks": 16,
+      "count": 1,
+      "size": 9.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.2,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 32,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "shock2",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#8a5cff",
+      "accent": "#ffffff",
+      "durationTicks": 22,
+      "count": 1,
+      "size": 6.0,
+      "height": 0.1,
+      "startTick": 4,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.6,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 44,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "drops",
+      "enabled": true,
+      "shape": "rain",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 18,
+      "count": 20,
+      "size": 0.22,
+      "height": 4.0,
+      "spread": 4.0,
+      "fallSpeed": 1.4,
+      "launchDelayMs": 150,
+      "length": 2.5,
+      "blend": "additive",
+      "intensity": 2.6,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "impact": {
+        "durationTicks": 12,
+        "count": 4,
+        "size": 0.16,
+        "spread": 0.7,
+        "height": 0.2,
+        "colour": "#8a5cff",
+        "accent": "#c9b8ff"
+      }
+    },
+    {
+      "id": "spray",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#b49cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 22,
+      "count": 36,
+      "size": 0.1,
+      "height": 0.6,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 4.0,
+      "core": 0.35,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 20,
+        "rate": 36,
+        "speed": 12,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 75,
+        "gravity": 18,
+        "drag": 0.7,
+        "spawnRadius": 0.15,
+        "startSize": 0.1,
+        "endSize": 0.045000000000000005,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55,
+        "stretch": 0.05
+      }
+    },
+    {
+      "id": "mist",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#8a5cff",
+      "accent": "#ffffff",
+      "durationTicks": 54,
+      "count": 8,
+      "size": 2.2399999999999998,
+      "height": 0.5,
+      "startTick": 2,
+      "blend": "additive",
+      "intensity": 1.26,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.mist",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 50,
+        "rate": 8,
+        "speed": 0.8,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": -0.3,
+        "drag": 1.2,
+        "spawnRadius": 1.6,
+        "startSize": 2.2399999999999998,
+        "endSize": 1.1199999999999999,
+        "spin": 0.6,
+        "fadeIn": 0.15,
+        "fadeOut": 0.6
+      }
+    },
+    {
+      "id": "pool",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 90,
+      "count": 1,
+      "size": 4.0,
+      "height": 0.06,
+      "blend": "additive",
+      "intensity": 0.6,
+      "motion": {
+        "opacity": {
+          "periodTicks": 180,
+          "min": 0.0,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

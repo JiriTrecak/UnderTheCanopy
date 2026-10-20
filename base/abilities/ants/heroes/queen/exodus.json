@@ -1,7 +1,7 @@
 {
   "id": "ability.ants.exodus",
   "name": "Exodus",
-  "description": "Ultimate. Choose any friendly building: after 2 seconds, the Queen and up to 32 allied units within 10 units of her sink underground and come up beside it.",
+  "description": "Ultimate. Choose any friendly unit or building: after 2 seconds, the Queen and up to 32 allied units within 10 units of her sink underground and come up beside it.",
   "activation": "targeted",
   "ranks": [
     {
@@ -18,10 +18,7 @@
     "allowSelf": false,
     "range": 4096,
     "outOfRange": "reject",
-    "includeBuildings": true,
-    "filter": {
-      "buildings": true
-    }
+    "includeBuildings": true
   },
   "cast": {
     "prepareTicks": 80,
@@ -84,14 +81,14 @@
     "effects": [
       {
         "id": "sink",
-        "effect": "effect.ants.kit.exodus",
+        "effect": "effect.ants.kit.exodus-gather",
         "event": "accepted",
         "anchor": "caster",
         "lifetime": "finite"
       },
       {
         "id": "rise",
-        "effect": "effect.ants.kit.exodus",
+        "effect": "effect.ants.kit.exodus-rise",
         "event": "teleported",
         "anchor": "target",
         "lifetime": "finite"

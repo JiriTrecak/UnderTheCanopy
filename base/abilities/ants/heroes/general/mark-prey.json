@@ -84,6 +84,20 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.ants.kit.cast-war",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
+        "id": "hit",
+        "effect": "effect.ants.kit.mark-hit",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
         "id": "mark",
         "effect": "effect.ants.kit.marked",
         "event": "statusApplied",

@@ -1,0 +1,89 @@
+{
+  "id": "effect.ants.kit.panicked",
+  "name": "Panicked",
+  "description": "Panicked: worn for as long as it lasts.",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#8a5cff",
+      "accent": "#efe6ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 1.0,
+      "height": 0.06,
+      "blend": "additive",
+      "sustain": true,
+      "follow": true,
+      "intensity": 0.55,
+      "motion": {
+        "opacity": {
+          "periodTicks": 40,
+          "min": 0.55,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "pool",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#efe6ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 0.9,
+      "height": 0.08,
+      "blend": "additive",
+      "sustain": true,
+      "follow": true,
+      "intensity": 0.3
+    },
+    {
+      "id": "motes",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#8a5cff",
+      "accent": "#efe6ff",
+      "durationTicks": 80,
+      "count": 4,
+      "size": 0.44,
+      "height": 0.6,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 1.8,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.petal",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 44,
+        "rate": 4,
+        "speed": 1.2,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": -1.4,
+        "drag": 1.2,
+        "spawnRadius": 0.4,
+        "startSize": 0.44,
+        "endSize": 0.22,
+        "spin": 2.0,
+        "fadeIn": 0.15,
+        "fadeOut": 0.6
+      },
+      "sustain": true
+    }
+  ]
+}

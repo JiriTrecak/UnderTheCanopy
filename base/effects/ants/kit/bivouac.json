@@ -1,0 +1,137 @@
+{
+  "id": "effect.ants.kit.bivouac",
+  "name": "Bivouac",
+  "description": "The army locks into a living fortress: a great crest on the ground, a column of amber light, a shock and dust.",
+  "durationTicks": 60,
+  "loop": false,
+  "layers": [
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ffc870",
+      "accent": "#fff0c0",
+      "durationTicks": 30,
+      "count": 1,
+      "size": 20,
+      "height": 3.0,
+      "intensity": 5.0,
+      "startTick": 0
+    },
+    {
+      "id": "crest",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffe08a",
+      "accent": "#ffffff",
+      "durationTicks": 60,
+      "count": 1,
+      "size": 25.6,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 3.24,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.crest",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 640,
+          "direction": "clockwise"
+        },
+        "scale": {
+          "periodTicks": 48,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "smoothstep"
+        }
+      }
+    },
+    {
+      "id": "pillar",
+      "enabled": true,
+      "shape": "pillar",
+      "colour": "#ffc870",
+      "accent": "#fff0c0",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 3.0,
+      "height": 12.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.0999999999999996
+    },
+    {
+      "id": "shock",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffe08a",
+      "accent": "#ffffff",
+      "durationTicks": 20,
+      "count": 1,
+      "size": 15.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.2,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 40,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "dust",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c8a070",
+      "accent": "#f2dcb4",
+      "durationTicks": 38,
+      "count": 16,
+      "size": 1.4,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 34,
+        "rate": 16,
+        "speed": 4.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 85,
+        "gravity": -0.4,
+        "drag": 1.6,
+        "spawnRadius": 4.0,
+        "startSize": 0.7,
+        "endSize": 2.2399999999999998,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      }
+    }
+  ]
+}

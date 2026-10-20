@@ -1,0 +1,23 @@
+{
+  "id": "asset.effects.ants.pheromone-sigil",
+  "name": "Ant pheromone glyph",
+  "kind": "texture",
+  "tags": [
+    "ants",
+    "spell-effects",
+    "generated"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "generation",
+      "index": 1,
+      "format": "json"
+    }
+  ],
+  "license": "Original artwork for Under the Canopy: gpt-image-2, painted on black for additive blending."
+}

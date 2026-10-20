@@ -54,6 +54,14 @@
       "modifiers": {
         "attackSpeedPermille": 150
       }
+    },
+    {
+      "op": "status",
+      "target": "caster",
+      "id": "presenceSource",
+      "amount": 1,
+      "polarity": "positive",
+      "dispel": false
     }
   ],
   "presentation": {
@@ -72,6 +80,14 @@
         "anchor": "target",
         "lifetime": "status",
         "statusId": "presence"
+      },
+      {
+        "id": "source",
+        "effect": "effect.ants.kit.presence-source",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "presenceSource"
       }
     ]
   }

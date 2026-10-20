@@ -274,11 +274,12 @@
     "height": 9.6,
     "formationSpacing": 6.5
   },
-  "modelScale": 4.0,
+  "modelScale": 6.0,
   "presentation": {
     "projectile": "effect.weapon.nectar",
     "projectileSocket": "socket_projectile",
-    "castContact": 0.5
+    "castContact": 0.5,
+    "impactEffect": "effect.ants.kit.hit-sting"
   },
   "displayOrder": 1
 }

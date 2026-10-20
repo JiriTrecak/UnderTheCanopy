@@ -66,6 +66,13 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.ants.kit.cast-scent",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
         "id": "cloud",
         "effect": "effect.ants.kit.panic",
         "event": "released",

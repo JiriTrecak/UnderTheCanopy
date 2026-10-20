@@ -76,6 +76,14 @@
           "rankParameter": "taken"
         }
       }
+    },
+    {
+      "op": "status",
+      "target": "caster",
+      "id": "oneBodySource",
+      "amount": 1,
+      "polarity": "positive",
+      "dispel": false
     }
   ],
   "presentation": {
@@ -94,6 +102,14 @@
         "anchor": "target",
         "lifetime": "status",
         "statusId": "one-body"
+      },
+      {
+        "id": "source",
+        "effect": "effect.ants.kit.one-body-source",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "oneBodySource"
       }
     ]
   }

@@ -84,6 +84,13 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.ants.kit.cast-substance",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
         "id": "pour",
         "effect": "effect.ants.kit.overdose",
         "event": "released",

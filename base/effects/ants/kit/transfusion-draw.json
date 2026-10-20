@@ -1,0 +1,78 @@
+{
+  "id": "effect.ants.kit.transfusion-draw",
+  "name": "Transfusion",
+  "description": "A crimson stream drawn out of the enemy towards the Alchemist.",
+  "durationTicks": 24,
+  "loop": false,
+  "layers": [
+    {
+      "id": "beam",
+      "enabled": true,
+      "shape": "beam",
+      "colour": "#ff4f6a",
+      "accent": "#ffd0d8",
+      "durationTicks": 24,
+      "count": 1,
+      "size": 0.9,
+      "height": 1.4,
+      "blend": "additive",
+      "follow": true,
+      "intensity": 2.0
+    },
+    {
+      "id": "core",
+      "enabled": true,
+      "shape": "beam",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 20,
+      "count": 1,
+      "size": 0.25,
+      "height": 1.4,
+      "blend": "additive",
+      "follow": true
+    },
+    {
+      "id": "blood",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ff4f6a",
+      "accent": "#ffd0d8",
+      "durationTicks": 18,
+      "count": 12,
+      "size": 0.08,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 5.0,
+      "core": 0.35,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 16,
+        "rate": 12,
+        "speed": 4,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 50,
+        "gravity": -2,
+        "drag": 0.7,
+        "spawnRadius": 0.15,
+        "startSize": 0.08,
+        "endSize": 0.036000000000000004,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55,
+        "stretch": 0.05
+      }
+    }
+  ]
+}

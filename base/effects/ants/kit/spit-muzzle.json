@@ -1,0 +1,73 @@
+{
+  "id": "effect.ants.kit.spit-muzzle",
+  "name": "Spit",
+  "description": "A spit of violet venom from the spitter's mouth.",
+  "durationTicks": 16,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#b49cff",
+      "accent": "#ffffff",
+      "durationTicks": 4,
+      "count": 1,
+      "size": 1.4,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.4,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      },
+      "anchor": "source"
+    },
+    {
+      "id": "spray",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 10,
+      "count": 5,
+      "size": 0.05,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 5.0,
+      "core": 0.35,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 8,
+        "rate": 5,
+        "speed": 6,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 30,
+        "gravity": 6,
+        "drag": 0.7,
+        "spawnRadius": 0.15,
+        "startSize": 0.05,
+        "endSize": 0.022500000000000003,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55,
+        "stretch": 0.05
+      },
+      "anchor": "source"
+    }
+  ]
+}

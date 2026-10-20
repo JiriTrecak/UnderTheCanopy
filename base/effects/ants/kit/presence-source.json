@@ -1,0 +1,124 @@
+{
+  "id": "effect.ants.kit.presence-source",
+  "name": "Royal presence",
+  "description": "Royal presence: worn for as long as it lasts.",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#5b7bff",
+      "accent": "#c8d4ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 3.0,
+      "height": 0.06,
+      "blend": "additive",
+      "sustain": true,
+      "follow": true,
+      "intensity": 0.55,
+      "motion": {
+        "opacity": {
+          "periodTicks": 40,
+          "min": 0.55,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "pool",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#5b7bff",
+      "accent": "#c8d4ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 2.7,
+      "height": 0.08,
+      "blend": "additive",
+      "sustain": true,
+      "follow": true,
+      "intensity": 0.3
+    },
+    {
+      "id": "motes",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#5b7bff",
+      "accent": "#c8d4ff",
+      "durationTicks": 80,
+      "count": 4,
+      "size": 0.44,
+      "height": 0.6,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 1.8,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.petal",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 44,
+        "rate": 4,
+        "speed": 1.2,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": -1.4,
+        "drag": 1.2,
+        "spawnRadius": 1.2000000000000002,
+        "startSize": 0.44,
+        "endSize": 0.22,
+        "spin": 2.0,
+        "fadeIn": 0.15,
+        "fadeOut": 0.6
+      },
+      "sustain": true
+    },
+    {
+      "id": "sigil",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#5b7bff",
+      "accent": "#ffffff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 10.560000000000002,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.8,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.royal-sigil",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 320,
+          "direction": "clockwise"
+        },
+        "opacity": {
+          "periodTicks": 80,
+          "min": 0.7,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      },
+      "sustain": true,
+      "follow": true
+    }
+  ]
+}

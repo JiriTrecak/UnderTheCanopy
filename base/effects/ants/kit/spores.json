@@ -1,0 +1,127 @@
+{
+  "id": "effect.ants.kit.spores",
+  "name": "Spore cloud",
+  "description": "A choking cloud of violet spores hangs over the ground.",
+  "durationTicks": 320,
+  "loop": false,
+  "layers": [
+    {
+      "id": "cloud",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c9b0ff",
+      "accent": "#ffffff",
+      "durationTicks": 320,
+      "count": 6,
+      "size": 3.9199999999999995,
+      "height": 0.5,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 1.26,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.mist",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 70,
+        "rate": 6,
+        "speed": 0.8,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": -0.3,
+        "drag": 1.2,
+        "spawnRadius": 4.5,
+        "startSize": 3.9199999999999995,
+        "endSize": 1.9599999999999997,
+        "spin": 0.6,
+        "fadeIn": 0.15,
+        "fadeOut": 0.6
+      },
+      "sustain": true
+    },
+    {
+      "id": "spores",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c9b0ff",
+      "accent": "#f6f0ff",
+      "durationTicks": 320,
+      "count": 6,
+      "size": 0.36,
+      "height": 0.6,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.16,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.petal",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 60,
+        "rate": 6,
+        "speed": 1.2,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": -0.6,
+        "drag": 1.2,
+        "spawnRadius": 4.5,
+        "startSize": 0.36,
+        "endSize": 0.18,
+        "spin": 2.0,
+        "fadeIn": 0.15,
+        "fadeOut": 0.6
+      },
+      "sustain": true
+    },
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#c9b0ff",
+      "accent": "#ffffff",
+      "durationTicks": 320,
+      "count": 1,
+      "size": 16.0,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.4400000000000002,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.fungus-ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 960,
+          "direction": "clockwise"
+        },
+        "opacity": {
+          "periodTicks": 80,
+          "min": 0.7,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      },
+      "sustain": true
+    }
+  ]
+}

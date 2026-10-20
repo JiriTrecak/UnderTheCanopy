@@ -1,0 +1,97 @@
+{
+  "id": "effect.ants.kit.plug-slam",
+  "name": "Plug slam",
+  "description": "The Major slams its head down: shock and dust.",
+  "durationTicks": 24,
+  "loop": false,
+  "layers": [
+    {
+      "id": "shock",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffe08a",
+      "accent": "#ffffff",
+      "durationTicks": 16,
+      "count": 1,
+      "size": 7.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.8,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 32,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "dust",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c8a070",
+      "accent": "#f2dcb4",
+      "durationTicks": 26,
+      "count": 8,
+      "size": 1.0,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 22,
+        "rate": 8,
+        "speed": 2.8,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 85,
+        "gravity": -0.4,
+        "drag": 1.6,
+        "spawnRadius": 0.3,
+        "startSize": 0.5,
+        "endSize": 1.6,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      }
+    },
+    {
+      "id": "glint",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffe08a",
+      "accent": "#ffffff",
+      "durationTicks": 6,
+      "count": 1,
+      "size": 3.0,
+      "height": 1.2,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.6,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

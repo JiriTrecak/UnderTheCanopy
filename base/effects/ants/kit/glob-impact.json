@@ -1,0 +1,126 @@
+{
+  "id": "effect.ants.kit.glob-impact",
+  "name": "Nectar glob",
+  "description": "A glob of glowing nectar bursts: an amber splash, droplets and a sticky pool.",
+  "durationTicks": 60,
+  "loop": false,
+  "layers": [
+    {
+      "id": "splash",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffc870",
+      "accent": "#ffffff",
+      "durationTicks": 16,
+      "count": 1,
+      "size": 6.300000000000001,
+      "height": 0.8,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.5600000000000005,
+      "core": 0.4,
+      "texture": {
+        "asset": "asset.effects.ants.liquid-splash",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 32,
+          "min": 0.7,
+          "max": 1.1,
+          "easing": "smoothstep"
+        },
+        "opacity": {
+          "periodTicks": 32,
+          "min": 0.0,
+          "max": 1.0,
+          "easing": "sine",
+          "phase": 0.5
+        }
+      }
+    },
+    {
+      "id": "shock",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffc870",
+      "accent": "#ffffff",
+      "durationTicks": 16,
+      "count": 1,
+      "size": 6.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.4,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 32,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "drops",
+      "enabled": true,
+      "shape": "rain",
+      "colour": "#ffc870",
+      "accent": "#fff0c0",
+      "durationTicks": 14,
+      "count": 12,
+      "size": 0.2,
+      "height": 2.5,
+      "spread": 3.0,
+      "fallSpeed": 1.6,
+      "launchDelayMs": 120,
+      "length": 2,
+      "blend": "additive",
+      "intensity": 2.2,
+      "core": 0.8,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "impact": {
+        "durationTicks": 10,
+        "count": 3,
+        "size": 0.14,
+        "spread": 0.6,
+        "height": 0.2,
+        "colour": "#ffc870",
+        "accent": "#fff0c0"
+      }
+    },
+    {
+      "id": "pool",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#ffc870",
+      "accent": "#fff0c0",
+      "durationTicks": 60,
+      "count": 1,
+      "size": 3.0,
+      "height": 0.06,
+      "blend": "additive",
+      "intensity": 0.5,
+      "motion": {
+        "opacity": {
+          "periodTicks": 120,
+          "min": 0.0,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

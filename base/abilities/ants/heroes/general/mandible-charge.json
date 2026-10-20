@@ -92,6 +92,14 @@
     },
     "effects": [
       {
+        "id": "run",
+        "effect": "effect.ants.kit.charge-trail",
+        "event": "projectile",
+        "anchor": "caster",
+        "lifetime": "finite",
+        "durationFrom": "delivery"
+      },
+      {
         "id": "hit",
         "effect": "effect.ants.kit.charge-hit",
         "event": "impact",

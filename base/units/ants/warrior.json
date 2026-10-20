@@ -69,5 +69,8 @@
     "height": 4.8,
     "formationSpacing": 3.25
   },
-  "modelScale": 2.4
+  "modelScale": 2.4,
+  "presentation": {
+    "impactEffect": "effect.ants.kit.hit-bite"
+  }
 }

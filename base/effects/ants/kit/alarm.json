@@ -1,0 +1,169 @@
+{
+  "id": "effect.ants.kit.alarm",
+  "name": "Alarm",
+  "description": "The Herald sounds the alarm: a blaze of amber light, two waves of scent racing out, a column of fire-coloured light.",
+  "durationTicks": 44,
+  "loop": false,
+  "layers": [
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ffa850",
+      "accent": "#fff0c0",
+      "durationTicks": 18,
+      "count": 1,
+      "size": 18,
+      "height": 2.0,
+      "intensity": 5.0,
+      "startTick": 0
+    },
+    {
+      "id": "column",
+      "enabled": true,
+      "shape": "pillar",
+      "colour": "#ffa850",
+      "accent": "#fff0c0",
+      "durationTicks": 30,
+      "count": 1,
+      "size": 2.4,
+      "height": 9.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 1.7999999999999998
+    },
+    {
+      "id": "wave",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffa850",
+      "accent": "#ffffff",
+      "durationTicks": 22,
+      "count": 1,
+      "size": 18.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.2,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 44,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "wave2",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffe08a",
+      "accent": "#ffffff",
+      "durationTicks": 26,
+      "count": 1,
+      "size": 13.0,
+      "height": 0.1,
+      "startTick": 6,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.6,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 52,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "glyph",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffa850",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 19.200000000000003,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.52,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.pheromone-sigil",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 320,
+          "direction": "clockwise"
+        },
+        "scale": {
+          "periodTicks": 48,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "smoothstep"
+        }
+      }
+    },
+    {
+      "id": "embers",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffa850",
+      "accent": "#fff0c0",
+      "durationTicks": 26,
+      "count": 30,
+      "size": 0.1,
+      "height": 0.5,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.5,
+      "core": 0.35,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 24,
+        "rate": 30,
+        "speed": 7,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": -6,
+        "drag": 0.7,
+        "spawnRadius": 2.0,
+        "startSize": 0.1,
+        "endSize": 0.045000000000000005,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55,
+        "stretch": 0.05
+      }
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "id": "effect.ants.kit.jelly",
+  "name": "Royal jelly",
+  "description": "Golden light pours down on the unit: a pillar, a flash, petals and a ring of gold.",
+  "durationTicks": 50,
+  "loop": false,
+  "layers": [
+    {
+      "id": "pillar",
+      "enabled": true,
+      "shape": "pillar",
+      "colour": "#ffe08a",
+      "accent": "#fff0c0",
+      "durationTicks": 34,
+      "count": 1,
+      "size": 2.8,
+      "height": 14.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.4000000000000004
+    },
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ffe08a",
+      "accent": "#fff0c0",
+      "durationTicks": 20,
+      "count": 1,
+      "size": 14,
+      "height": 2.0,
+      "intensity": 5.0,
+      "startTick": 0
+    },
+    {
+      "id": "sigil",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffe08a",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 14.4,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.8800000000000003,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.royal-sigil",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 320,
+          "direction": "clockwise"
+        },
+        "scale": {
+          "periodTicks": 48,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "smoothstep"
+        }
+      }
+    },
+    {
+      "id": "shock",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffe08a",
+      "accent": "#ffffff",
+      "durationTicks": 18,
+      "count": 1,
+      "size": 10.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.0,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 36,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "petals",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffe08a",
+      "accent": "#fff0c0",
+      "durationTicks": 44,
+      "count": 24,
+      "size": 0.6,
+      "height": 0.4,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.16,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.petal",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 40,
+        "rate": 24,
+        "speed": 1.2,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": -3.0,
+        "drag": 1.2,
+        "spawnRadius": 2.0,
+        "startSize": 0.6,
+        "endSize": 0.3,
+        "spin": 2.0,
+        "fadeIn": 0.15,
+        "fadeOut": 0.6
+      }
+    },
+    {
+      "id": "star",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#fff0c0",
+      "accent": "#ffffff",
+      "durationTicks": 10,
+      "count": 1,
+      "size": 5.0,
+      "height": 3.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

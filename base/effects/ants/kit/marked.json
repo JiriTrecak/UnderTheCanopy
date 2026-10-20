@@ -1,0 +1,74 @@
+{
+  "id": "effect.ants.kit.marked",
+  "name": "Marked prey",
+  "description": "A crimson hunting-scent glyph turns under the marked enemy and a mark of light hangs above it.",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glyph",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ff4f6a",
+      "accent": "#ffffff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 6.720000000000001,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.52,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.pheromone-sigil",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 160,
+          "direction": "clockwise"
+        },
+        "opacity": {
+          "periodTicks": 80,
+          "min": 0.7,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      },
+      "sustain": true,
+      "follow": true
+    },
+    {
+      "id": "mark",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ff4f6a",
+      "accent": "#ffffff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 1.8,
+      "height": 3.6,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.2,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      },
+      "sustain": true,
+      "follow": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 30,
+          "min": 0.5,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

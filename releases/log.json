@@ -14,7 +14,9 @@
       "The beetle Bombard is about a third smaller and the Juggernaut half its former size, so they no longer dwarf the army",
       "Ant units have new models and portraits that read from above: the Worker, a stocky biting Raider, the needle-firing Needler, the armoured Major, a swollen amber Honeypot, the winged Alate, the Bullet Ant and the General, each animated as it walks, fights, casts and dies",
       "The ants' Herald and Gardener have new six-legged models that walk on all six legs, and the Royal Alchemist hero has its model",
-      "Computer ant players found mounds near the front and send their armies through the tunnels"
+      "Computer ant players found mounds near the front and send their armies through the tunnels",
+      "Every ant spell has its own visible cast and landing: casters glow and draw a sigil as they wind up, and hero spells raise pillars of light, so you can see who cast what",
+      "Ant heroes and the Major stand larger on the field, and every ant weapon lands with its own hit effect"
     ],
     "fixed": [],
     "knownIssues": []

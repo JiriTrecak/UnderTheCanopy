@@ -57,6 +57,13 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.ants.kit.cast-royal",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
         "id": "rise",
         "effect": "effect.ants.kit.found",
         "event": "summoned",

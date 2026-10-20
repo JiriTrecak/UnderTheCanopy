@@ -76,8 +76,16 @@
     },
     "effects": [
       {
+        "id": "slam",
+        "effect": "effect.ants.kit.plug-slam",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "finite",
+        "statusId": "plugged"
+      },
+      {
         "id": "plug",
-        "effect": "effect.ants.kit.plugged",
+        "effect": "effect.ants.kit.plug",
         "event": "statusApplied",
         "anchor": "target",
         "lifetime": "status",

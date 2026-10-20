@@ -104,6 +104,7 @@
   "presentation": {
     "projectile": "effect.weapon.nectar",
     "projectileSocket": "socket_projectile",
-    "castContact": 0.5
+    "castContact": 0.5,
+    "impactEffect": "effect.ants.kit.hit-sting"
   }
 }

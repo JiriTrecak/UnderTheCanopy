@@ -1,0 +1,71 @@
+{
+  "id": "effect.ants.kit.hit-needle",
+  "name": "Needle hit",
+  "description": "A chitin needle strikes: a violet star and splinters.",
+  "durationTicks": 20,
+  "loop": false,
+  "layers": [
+    {
+      "id": "glint",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#8a5cff",
+      "accent": "#ffffff",
+      "durationTicks": 5,
+      "count": 1,
+      "size": 1.6,
+      "height": 0.4,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.6,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "splinters",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#b49cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 12,
+      "count": 8,
+      "size": 0.06,
+      "height": 0.4,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 5.0,
+      "core": 0.35,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 10,
+        "rate": 8,
+        "speed": 7,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": 12,
+        "drag": 0.7,
+        "spawnRadius": 0.15,
+        "startSize": 0.06,
+        "endSize": 0.027,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55,
+        "stretch": 0.05
+      }
+    }
+  ]
+}

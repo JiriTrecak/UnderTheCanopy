@@ -1,0 +1,180 @@
+{
+  "id": "effect.ants.kit.draught",
+  "name": "Volatile draught",
+  "description": "The flask shatters: a crown of violet liquid, droplets raining over the area, a flash and a shock ring.",
+  "durationTicks": 60,
+  "loop": false,
+  "layers": [
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 16,
+      "count": 1,
+      "size": 14,
+      "height": 1.5,
+      "intensity": 5.0,
+      "startTick": 0
+    },
+    {
+      "id": "splash",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#b49cff",
+      "accent": "#ffffff",
+      "durationTicks": 20,
+      "count": 1,
+      "size": 16.5,
+      "height": 1.8,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.84,
+      "core": 0.4,
+      "texture": {
+        "asset": "asset.effects.ants.liquid-splash",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 40,
+          "min": 0.7,
+          "max": 1.2,
+          "easing": "smoothstep"
+        },
+        "opacity": {
+          "periodTicks": 40,
+          "min": 0.0,
+          "max": 1.0,
+          "easing": "sine",
+          "phase": 0.5
+        }
+      }
+    },
+    {
+      "id": "shock",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#b49cff",
+      "accent": "#ffffff",
+      "durationTicks": 18,
+      "count": 1,
+      "size": 10.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.0,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 36,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "drops",
+      "enabled": true,
+      "shape": "rain",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 18,
+      "count": 22,
+      "size": 0.22,
+      "height": 4.0,
+      "spread": 4.0,
+      "fallSpeed": 1.4,
+      "launchDelayMs": 150,
+      "length": 2.5,
+      "blend": "additive",
+      "intensity": 2.6,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "impact": {
+        "durationTicks": 12,
+        "count": 4,
+        "size": 0.16,
+        "spread": 0.7,
+        "height": 0.2,
+        "colour": "#8a5cff",
+        "accent": "#c9b8ff"
+      }
+    },
+    {
+      "id": "mist",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#8a5cff",
+      "accent": "#ffffff",
+      "durationTicks": 54,
+      "count": 10,
+      "size": 2.52,
+      "height": 0.5,
+      "startTick": 2,
+      "blend": "additive",
+      "intensity": 1.26,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.mist",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 50,
+        "rate": 10,
+        "speed": 0.8,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": -0.3,
+        "drag": 1.2,
+        "spawnRadius": 3.0,
+        "startSize": 2.52,
+        "endSize": 1.26,
+        "spin": 0.6,
+        "fadeIn": 0.15,
+        "fadeOut": 0.6
+      }
+    },
+    {
+      "id": "pool",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 60,
+      "count": 1,
+      "size": 4.5,
+      "height": 0.06,
+      "blend": "additive",
+      "intensity": 0.6,
+      "motion": {
+        "opacity": {
+          "periodTicks": 120,
+          "min": 0.0,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

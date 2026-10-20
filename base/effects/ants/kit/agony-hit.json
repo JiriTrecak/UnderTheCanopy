@@ -1,0 +1,148 @@
+{
+  "id": "effect.ants.kit.agony-hit",
+  "name": "Agony strike",
+  "description": "The sting lands: a violet starburst, a shock and a flash of pain.",
+  "durationTicks": 30,
+  "loop": false,
+  "layers": [
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#b49cff",
+      "accent": "#ffffff",
+      "durationTicks": 12,
+      "count": 1,
+      "size": 10,
+      "height": 1.2,
+      "intensity": 4.5,
+      "startTick": 0
+    },
+    {
+      "id": "star",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#b49cff",
+      "accent": "#ffffff",
+      "durationTicks": 10,
+      "count": 1,
+      "size": 6.0,
+      "height": 1.2,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.4,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "slash",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#b49cff",
+      "accent": "#ffffff",
+      "durationTicks": 12,
+      "count": 1,
+      "size": 7.5,
+      "height": 1.2,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.2,
+      "core": 0.4,
+      "texture": {
+        "asset": "asset.effects.ants.slash",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 24,
+          "min": 0.7,
+          "max": 1.0,
+          "easing": "smoothstep"
+        },
+        "opacity": {
+          "periodTicks": 24,
+          "min": 0.0,
+          "max": 1.0,
+          "easing": "sine",
+          "phase": 0.5
+        }
+      }
+    },
+    {
+      "id": "shock",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ff4f6a",
+      "accent": "#ffffff",
+      "durationTicks": 16,
+      "count": 1,
+      "size": 8.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.0,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 32,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "venom",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 16,
+      "count": 18,
+      "size": 0.08,
+      "height": 0.8,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 5.0,
+      "core": 0.35,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 14,
+        "rate": 18,
+        "speed": 8,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 100,
+        "gravity": 10,
+        "drag": 0.7,
+        "spawnRadius": 0.15,
+        "startSize": 0.08,
+        "endSize": 0.036000000000000004,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55,
+        "stretch": 0.05
+      }
+    }
+  ]
+}

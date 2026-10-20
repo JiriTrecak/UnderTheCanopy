@@ -82,11 +82,26 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.ants.kit.cast-royal",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
+        "id": "beam",
+        "effect": "effect.ants.kit.jelly-beam",
+        "event": "released",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
         "id": "jelly",
         "effect": "effect.ants.kit.jelly",
-        "event": "healed",
+        "event": "statusApplied",
         "anchor": "target",
-        "lifetime": "finite"
+        "lifetime": "finite",
+        "statusId": "jellied"
       },
       {
         "id": "jellied",

@@ -87,9 +87,31 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.ants.kit.cast-substance",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
+        "id": "flight",
+        "effect": "effect.ants.kit.draught-flight",
+        "event": "projectile",
+        "anchor": "target",
+        "lifetime": "finite",
+        "durationFrom": "delivery"
+      },
+      {
         "id": "burst",
         "effect": "effect.ants.kit.draught",
         "event": "impact",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
+        "id": "burn",
+        "effect": "effect.ants.kit.draught-hit",
+        "event": "damaged",
         "anchor": "target",
         "lifetime": "finite"
       }

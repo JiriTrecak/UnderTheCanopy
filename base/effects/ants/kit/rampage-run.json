@@ -1,0 +1,50 @@
+{
+  "id": "effect.ants.kit.rampage-run",
+  "name": "Rampage",
+  "description": "The Reaver Queen charges, throwing dust behind her.",
+  "durationTicks": 80,
+  "loop": false,
+  "layers": [
+    {
+      "id": "dust",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c8a070",
+      "accent": "#f2dcb4",
+      "durationTicks": 80,
+      "count": 10,
+      "size": 1.2,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 30,
+        "rate": 10,
+        "speed": 1.6,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": -0.3,
+        "drag": 1.6,
+        "spawnRadius": 1.0,
+        "startSize": 0.6,
+        "endSize": 1.92,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      },
+      "follow": true,
+      "anchor": "source"
+    }
+  ]
+}

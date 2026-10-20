@@ -1,0 +1,51 @@
+{
+  "id": "effect.ants.kit.draught-hit",
+  "name": "Burnt by venom",
+  "description": "Violet droplets sizzle on a unit.",
+  "durationTicks": 20,
+  "loop": false,
+  "layers": [
+    {
+      "id": "sizzle",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 16,
+      "count": 6,
+      "size": 0.07,
+      "height": 0.8,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 5.0,
+      "core": 0.35,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 14,
+        "rate": 6,
+        "speed": 3,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 30,
+        "gravity": -3,
+        "drag": 0.7,
+        "spawnRadius": 0.15,
+        "startSize": 0.07,
+        "endSize": 0.03150000000000001,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55,
+        "stretch": 0.05
+      }
+    }
+  ]
+}

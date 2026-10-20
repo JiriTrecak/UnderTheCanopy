@@ -1,0 +1,112 @@
+{
+  "id": "effect.ants.kit.hit-reaver",
+  "name": "Reaver blow",
+  "description": "The Reaver Queen's blades: a great slash, shock and dust.",
+  "durationTicks": 30,
+  "loop": false,
+  "layers": [
+    {
+      "id": "slash",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffc870",
+      "accent": "#ffffff",
+      "durationTicks": 12,
+      "count": 1,
+      "size": 5.4,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.5600000000000005,
+      "core": 0.4,
+      "texture": {
+        "asset": "asset.effects.ants.slash",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 24,
+          "min": 0.7,
+          "max": 1.1,
+          "easing": "smoothstep"
+        },
+        "opacity": {
+          "periodTicks": 24,
+          "min": 0.0,
+          "max": 1.0,
+          "easing": "sine",
+          "phase": 0.5
+        }
+      }
+    },
+    {
+      "id": "shock",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffc870",
+      "accent": "#ffffff",
+      "durationTicks": 16,
+      "count": 1,
+      "size": 6.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.6,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 32,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "dust",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c8a070",
+      "accent": "#f2dcb4",
+      "durationTicks": 30,
+      "count": 8,
+      "size": 1.0,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 26,
+        "rate": 8,
+        "speed": 3.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 85,
+        "gravity": -0.4,
+        "drag": 1.6,
+        "spawnRadius": 0.3,
+        "startSize": 0.5,
+        "endSize": 1.6,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      }
+    }
+  ]
+}

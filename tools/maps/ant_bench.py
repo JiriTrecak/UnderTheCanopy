@@ -22,7 +22,13 @@ MOUND = (231.5, 127.5)
 BUILDINGS = [('building.ants.barracks', 'burrow', (29.5, 101.5)), ('building.ants.scent-hall', 'scent', (49.5, 101.5)),
              ('building.ants.sanctuary', 'royal', (29.5, 157.5)), ('building.ants.house', 'mound', MOUND)]
 ARMY = ([('unit.ants.warrior', 6)] + [('unit.ants.archer', 3)] + [('unit.ants.queensguard', 1)]
-        + [('unit.ants.banneret', 1), ('unit.ants.nectarist', 1), ('unit.ants.winglancer', 1), ('unit.ants.queen', 1)])
+        + [('unit.ants.banneret', 1), ('unit.ants.nectarist', 1), ('unit.ants.winglancer', 1), ('unit.ants.queen', 1),
+           ('unit.ants.royal-alchemist', 1), ('unit.ants.marshal', 1), ('unit.ants.thornblade', 1),
+           ('unit.ants.burster', 1)])
+HEROES = ('unit.ants.queen', 'unit.ants.royal-alchemist', 'unit.ants.marshal')
+# A creep camp for the ants' spells to land on (sandbox maps hold one player).
+TARGETS = [('unit.neutral.barkguard', 4), ('unit.neutral.thorn-slinger', 3), ('unit.neutral.briar-hulk', 1)]
+CAMP = (126.0, 124.0)
 
 
 def write_grid(path, data, code, side):
@@ -48,7 +54,9 @@ def main():
     game = {
         'biome': 'autumn-forest',
         'sandbox': True,
-        'camps': [],
+        'camps': [{'aggression': 'players', 'aggroRange': 10, 'home': {'x': CAMP[0], 'y': CAMP[1]}, 'id': 'bench.camp',
+                   'leash': 24, 'lootPool': 'loot.camp.easy',
+                   'members': [f'bench.camp.{i}' for i in range(sum(n for _, n in TARGETS))]}],
         'size': SIZE,
         'playerStarts': [{'mainFort': 'start.player.1/main-fort', 'player': 1, 'setup': 'setup.ants',
                           'x': START[0], 'z': START[1]}],
@@ -63,9 +71,18 @@ def main():
              'initialState': {'construction': 'complete'} | ({'inventory': {'item.root': 20000}} if name == 'royal' else {}),
              'position': {'x': p[0], 'y': p[1]}, 'rotation': 0.0} for d, name, p in BUILDINGS
         ] + [
+            # Heroes come at full experience, so every ability can be learned and tried.
             {'definition': d, 'id': f'bench.army.{i}', 'owner': 'player.1',
-             'position': {'x': 56.0 + 6.0 * (i % 5), 'y': 120.0 + 6.0 * (i // 5)}, 'rotation': 0.0}
-            for i, d in enumerate(d for d, n in ARMY for _ in range(n))
+             'position': {'x': 56.0 + 6.0 * (i % 5), 'y': 116.0 + 6.0 * (i // 5)}, 'rotation': 0.0}
+            for i, d in enumerate(d for d, n in ARMY for _ in range(n) if d not in HEROES)
+        ] + [
+            {'definition': d, 'id': f'bench.hero.{i}', 'owner': 'player.1', 'initialState': {'experience': 5200},
+             'position': {'x': 60.0 + 14.0 * i, 'y': 150.0}, 'rotation': 0.0}
+            for i, d in enumerate(HEROES)
+        ] + [
+            {'definition': d, 'id': f'bench.camp.{i}', 'owner': 'none',
+             'position': {'x': CAMP[0] - 6.0 + 6.0 * (i % 3), 'y': CAMP[1] - 6.0 + 6.0 * (i // 3)}, 'rotation': 180.0}
+            for i, d in enumerate(d for d, n in TARGETS for _ in range(n))
         ],
         'terrain': {'paint': [], 'textureGrid': {'cellSize': 5, 'origin': [-0.5, -0.5]}, 'waterProfiles': []},
     }
