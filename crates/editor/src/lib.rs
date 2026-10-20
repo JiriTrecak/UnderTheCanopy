@@ -26,6 +26,7 @@ pub mod theme;
 mod warcraft;
 mod watch;
 mod widgets;
+mod world;
 
 pub use document::Command;
 pub use library::Kind;
@@ -217,6 +218,21 @@ impl Editor {
         self.shell.set_map_tool(name);
     }
 
+    /// Shows the open map in the block editor (D80) or the classic one (captures).
+    pub fn set_map_editor(&mut self, blocks: bool) {
+        self.shell.set_map_editor(blocks);
+    }
+
+    /// Blocks out the open map from its heights (captures).
+    pub fn block_out_map(&mut self) {
+        self.shell.block_out_map();
+    }
+
+    /// The block editor's tool by name: raise, level, paint, ramp, cut (captures).
+    pub fn set_block_tool(&mut self, name: &str) {
+        self.shell.set_block_tool(name);
+    }
+
     /// Takes back every step (captures).
     pub fn undo_all(&mut self) {
         self.shell.undo_all();
@@ -240,6 +256,12 @@ impl Editor {
     /// Opens the element with this id in its editor (captures).
     pub fn open(&mut self, id: &str) {
         self.shell.open_id(id);
+    }
+
+    /// Opens the document at `path` in its editor (captures), such as a map's
+    /// `maps/skirmish/echo-isles.utcm/map.json`.
+    pub fn open_document(&mut self, path: &str) {
+        self.shell.reveal_document(path);
     }
 
     /// Opens ability `id` on its stage (captures).

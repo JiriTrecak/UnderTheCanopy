@@ -3,6 +3,7 @@
 
 pub mod actors;
 pub mod bench;
+pub mod blockout;
 pub mod camera;
 pub mod capture;
 pub mod cutaway;

@@ -105,6 +105,8 @@ pub struct World {
     pub water_textures: WaterTextures,
     /// The forest around the map (needs `terrain`).
     pub forest: Option<ForestDesc>,
+    /// A blockout drawn as blocks (D80; the editor's block view, usually without terrain).
+    pub blockout: Option<crate::blockout::BlockoutMesh>,
 }
 
 /// Measurements of one frame.
@@ -297,6 +299,7 @@ pub struct Renderer {
     water: Option<WaterGpu>,
     forest: Option<ForestGpu>,
     motes: Option<crate::motes::MotesGpu>,
+    blockout: Option<crate::blockout::BlockoutGpu>,
     ripples: Ripples,
     ui: Option<crate::ui::UiLayer>,
     timer: Option<GpuTimer>,
@@ -464,6 +467,7 @@ impl Renderer {
             water: None,
             forest: None,
             motes: None,
+            blockout: None,
             ripples: Ripples::new(),
             ui: None,
             timer: None,
@@ -588,6 +592,7 @@ impl Renderer {
         self.water = None;
         self.forest = None;
         self.motes = None;
+        self.blockout = None;
         self.ripples.clear();
         self.world_bytes = 0;
         self.bindings.shade = match world
@@ -655,6 +660,11 @@ impl Renderer {
                 self.world_bytes += gpu_motes.bytes;
                 self.motes = Some(gpu_motes);
             }
+        }
+        if let Some(mesh) = &world.blockout {
+            self.blockout =
+                crate::blockout::BlockoutGpu::new(&gpu.device, mesh, &self.frame_layout);
+            self.world_bytes += self.blockout.as_ref().map_or(0, |b| b.bytes);
         }
         let statics = StaticsGpu::new(
             &gpu.device,
@@ -1314,6 +1324,9 @@ impl Renderer {
                     });
                     if let Some(terrain) = &self.terrain {
                         report.draws += terrain.draw_forward(&mut rp, &self.frame_group);
+                    }
+                    if let Some(blockout) = &self.blockout {
+                        report.draws += blockout.draw(&mut rp, &self.frame_group);
                     }
                     if let Some(statics) = &self.statics {
                         report.draws += statics.draw_forward(&mut rp, &self.frame_group);

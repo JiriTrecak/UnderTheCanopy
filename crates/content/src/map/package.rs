@@ -190,6 +190,11 @@ pub fn load_package(package: &Package) -> Result<UtcMap, Errors> {
     if package.read_bytes(&grid_path("blocked")).is_ok() {
         terrain.blocked = Some(read_grid("blocked", Element::U8, (span, span)));
     }
+    // And the blockout (D80).
+    if package.read_bytes(&grid_path("blocks")).is_ok() {
+        let columns = span / super::blocks::BLOCK;
+        terrain.blocks = Some(read_grid("blocks", Element::Rgba8, (columns, columns)));
+    }
     for (i, layer) in terrain.paint.iter_mut().enumerate() {
         let n = i + 1;
         layer.weights = read_grid(
@@ -326,6 +331,10 @@ pub fn write(map: &UtcMap, id: &str, version: &str, dir: &Path) -> std::io::Resu
     }
     if let Some(blocked) = &terrain.blocked {
         write_grid("blocked", blocked, Element::U8, (span, span))?;
+    }
+    if let Some(blocks) = &terrain.blocks {
+        let columns = span / super::blocks::BLOCK;
+        write_grid("blocks", blocks, Element::Rgba8, (columns, columns))?;
     }
     for (i, layer) in terrain.paint.iter().enumerate() {
         let n = i + 1;

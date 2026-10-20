@@ -289,6 +289,7 @@ pub fn build(
             water: Some(water),
             water_textures: look.water.textures(),
             forest,
+            blockout: None,
         },
         hour,
         size: map.size,

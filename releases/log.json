@@ -1,7 +1,9 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [],
+    "added": [
+      "Editor: a block editor for maps. Shape a map in 4×4-cell blocks (raise, level, ramps, diagonal cuts, water and impassable ground) and its cliffs, water and closed ground follow; Test in game plays it."
+    ],
     "improved": [],
     "fixed": [],
     "knownIssues": []

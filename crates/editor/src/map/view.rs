@@ -38,7 +38,13 @@ pub fn matrices(camera: &Camera, ground: f32, aspect: f32) -> (Vec3, Vec3, Mat4)
 }
 
 /// The world point under screen point `p` of `rect`, on the map's ground.
-fn pick(session: &Session, view_projection: Mat4, eye: Vec3, rect: Rect, p: Pos2) -> Option<Vec3> {
+pub(crate) fn pick(
+    session: &Session,
+    view_projection: Mat4,
+    eye: Vec3,
+    rect: Rect,
+    p: Pos2,
+) -> Option<Vec3> {
     let map = session.map.as_ref()?;
     let ndc = vec2(
         (p.x - rect.left()) / rect.width() * 2.0 - 1.0,
@@ -77,7 +83,7 @@ fn pick(session: &Session, view_projection: Mat4, eye: Vec3, rect: Rect, p: Pos2
 }
 
 /// World → screen point in `rect`.
-fn project(view_projection: Mat4, rect: Rect, p: Vec3) -> Option<Pos2> {
+pub(crate) fn project(view_projection: Mat4, rect: Rect, p: Vec3) -> Option<Pos2> {
     let clip = view_projection * p.extend(1.0);
     if clip.w <= 0.0 {
         return None;
@@ -471,7 +477,7 @@ pub struct Docs {
     pub scenery: Value,
 }
 
-fn step(session: &Session, label: &str, commands: Vec<Command>) -> Edit {
+pub(crate) fn step(session: &Session, label: &str, commands: Vec<Command>) -> Edit {
     Edit {
         label: label.to_string(),
         context: Context {
@@ -546,46 +552,7 @@ pub fn show(
     // Camera: right or middle drag pans, Alt-drag turns, scroll zooms, arrows move.
     let input = ui.input(|i| i.clone());
     let shift = input.modifiers.shift;
-    if response.dragged_by(egui::PointerButton::Secondary)
-        || response.dragged_by(egui::PointerButton::Middle)
-    {
-        let d = response.drag_delta();
-        let k = session.camera.distance / rect.height().max(1.0) * 1.6;
-        let (s, c) = session.camera.yaw.sin_cos();
-        if input.modifiers.alt {
-            session.camera.yaw -= d.x * 0.01;
-            session.camera.pitch = (session.camera.pitch + d.y * 0.005).clamp(0.35, 1.5);
-        } else {
-            session.camera.focus[0] -= (d.x * c + d.y * s) * k;
-            session.camera.focus[1] -= (-d.x * s + d.y * c) * k;
-        }
-    }
-    if response.hovered() {
-        let scroll = input.smooth_scroll_delta.y;
-        if scroll != 0.0 {
-            session.camera.distance = (session.camera.distance * (-scroll * 0.002).exp())
-                .clamp(15.0, map.size as f32 * 1.6);
-        }
-        let speed = session.camera.distance * input.stable_dt * 0.9;
-        let (s, c) = session.camera.yaw.sin_cos();
-        for (key, dx, dz) in [
-            (egui::Key::ArrowLeft, -1.0, 0.0),
-            (egui::Key::ArrowRight, 1.0, 0.0),
-            (egui::Key::ArrowUp, 0.0, -1.0),
-            (egui::Key::ArrowDown, 0.0, 1.0),
-        ] {
-            if input.key_down(key) {
-                session.camera.focus[0] += (dx * c + dz * s) * speed;
-                session.camera.focus[1] += (-dx * s + dz * c) * speed;
-            }
-        }
-    }
-    let size = map.size as f32;
-    session.camera.focus = [
-        session.camera.focus[0].clamp(0.0, size),
-        session.camera.focus[1].clamp(0.0, size),
-    ];
-
+    navigate(&input, &response, rect, &mut session.camera, map.size);
     let pointer = response.hover_pos().or(response.interact_pointer_pos());
     let hit = pointer.and_then(|p| pick(session, view_projection, eye, rect, p));
     let tool = session.tools.tool;
@@ -1079,4 +1046,54 @@ pub fn place(
         }
         _ => None,
     })
+}
+
+/// The viewport camera's controls: right or middle drag pans, Alt-drag turns, scroll
+/// zooms, arrows move; the focus stays over the map.
+pub(crate) fn navigate(
+    input: &egui::InputState,
+    response: &egui::Response,
+    rect: Rect,
+    camera: &mut Camera,
+    map_size: u32,
+) {
+    if response.dragged_by(egui::PointerButton::Secondary)
+        || response.dragged_by(egui::PointerButton::Middle)
+    {
+        let d = response.drag_delta();
+        let k = camera.distance / rect.height().max(1.0) * 1.6;
+        let (s, c) = camera.yaw.sin_cos();
+        if input.modifiers.alt {
+            camera.yaw -= d.x * 0.01;
+            camera.pitch = (camera.pitch + d.y * 0.005).clamp(0.35, 1.5);
+        } else {
+            camera.focus[0] -= (d.x * c + d.y * s) * k;
+            camera.focus[1] -= (-d.x * s + d.y * c) * k;
+        }
+    }
+    if response.hovered() {
+        let scroll = input.smooth_scroll_delta.y;
+        if scroll != 0.0 {
+            camera.distance =
+                (camera.distance * (-scroll * 0.002).exp()).clamp(15.0, map_size as f32 * 1.6);
+        }
+        let speed = camera.distance * input.stable_dt * 0.9;
+        let (s, c) = camera.yaw.sin_cos();
+        for (key, dx, dz) in [
+            (egui::Key::ArrowLeft, -1.0, 0.0),
+            (egui::Key::ArrowRight, 1.0, 0.0),
+            (egui::Key::ArrowUp, 0.0, -1.0),
+            (egui::Key::ArrowDown, 0.0, 1.0),
+        ] {
+            if input.key_down(key) {
+                camera.focus[0] += (dx * c + dz * s) * speed;
+                camera.focus[1] += (-dx * s + dz * c) * speed;
+            }
+        }
+    }
+    let size = map_size as f32;
+    camera.focus = [
+        camera.focus[0].clamp(0.0, size),
+        camera.focus[1].clamp(0.0, size),
+    ];
 }

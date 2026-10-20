@@ -139,6 +139,11 @@ pub struct TerrainData {
     /// The map's painted ground, when it has one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub overlay: Option<TerrainOverlay>,
+    /// The blockout the heights, water and closed cells were made from (D80), 4 bytes per
+    /// 4 × 4-cell column, halo included ([`super::blocks`]). Optional
+    /// (`terrain/blocks.grid`); the simulation never reads it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub blocks: Option<Grid>,
 }
 
 /// The saved scene: committed terrain plus placed objects. Procedural layers are editor-only
@@ -404,6 +409,13 @@ impl TerrainData {
         }
         if let Some(Err(message)) = self.blocked.as_ref().map(|g| g.exactly(self.cell_count())) {
             errors.push(grid_error("blocked", message));
+        }
+        if let Some(Err(message)) = self
+            .blocks
+            .as_ref()
+            .map(|g| super::blocks::Blocks::decode(g, self.size))
+        {
+            errors.push(grid_error("blocks", message));
         }
         let profiles = self.water_profiles.len();
         match self.water_flow.exactly(self.cell_count() * 4) {

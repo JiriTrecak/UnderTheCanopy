@@ -10,6 +10,7 @@
 //! per-grid helpers turn them into typed buffers.
 
 mod authoring;
+pub mod blocks;
 mod check;
 pub mod grid;
 mod library;

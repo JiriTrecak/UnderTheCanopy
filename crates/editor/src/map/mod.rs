@@ -37,16 +37,36 @@ fn colors(look: &Look) -> Vec<[f32; 3]> {
 }
 
 /// Builds the editor's scene of `map`.
-pub fn build(map: &UtcMap, content: &Content, pack: &Pack, look: &Look) -> Result<Scene, String> {
-    let (terrain, water) = canopy_scene::terrain::build(map, &content.landscape, &look.biome)?;
-    let forest = look
-        .biome
-        .surroundings
-        .forest
-        .as_ref()
-        .map(|f| canopy_scene::forest(f, &look.biome, map.size, pack))
-        .transpose()
-        .map_err(|e| e.to_string())?;
+/// `blocks`: draw the map's blocks (D80) instead of its terrain, water and scenery, when
+/// it has them.
+pub fn build(
+    map: &UtcMap,
+    content: &Content,
+    pack: &Pack,
+    look: &Look,
+    blocks: bool,
+) -> Result<Scene, String> {
+    let blockout = blocks
+        .then(|| {
+            let terrain = &map.authoring.terrain;
+            canopy_content::map::blocks::Blocks::decode(terrain.blocks.as_ref()?, terrain.size).ok()
+        })
+        .flatten()
+        .map(|b| crate::world::mesh::mesh(&b));
+    let (terrain, water, forest) = if blockout.is_some() {
+        (None, None, None)
+    } else {
+        let (terrain, water) = canopy_scene::terrain::build(map, &content.landscape, &look.biome)?;
+        let forest = look
+            .biome
+            .surroundings
+            .forest
+            .as_ref()
+            .map(|f| canopy_scene::forest(f, &look.biome, map.size, pack))
+            .transpose()
+            .map_err(|e| e.to_string())?;
+        (Some(terrain), Some(water), forest)
+    };
     let field = HeightField::decode(&map.authoring.terrain).map_err(|e| format!("{e:?}"))?;
     let ground = |x: f64, z: f64| field.sample(x, z);
     let scenery: BTreeMap<String, canopy_assets::SceneryPrototype> = pack
@@ -63,7 +83,12 @@ pub fn build(map: &UtcMap, content: &Content, pack: &Pack, look: &Look) -> Resul
         .filter_map(|a| Some((a.id.to_string(), a.scenery.as_ref()?.to_string())))
         .collect();
     let mut statics = Vec::new();
-    for object in map.authoring.objects.iter().filter(|o| o.visible) {
+    for object in map
+        .authoring
+        .objects
+        .iter()
+        .filter(|o| o.visible && blockout.is_none())
+    {
         let id = by_model.get(&object.asset).unwrap_or(&object.asset);
         let Some(prototype) = scenery.get(id) else {
             continue;
@@ -171,14 +196,15 @@ pub fn build(map: &UtcMap, content: &Content, pack: &Pack, look: &Look) -> Resul
         .map_or(12.0, |l| l.environment.hour as f32);
     Ok(Scene {
         world: World {
-            terrain: Some(terrain),
+            terrain,
             statics,
             glows: look.glows.by_model(content).map_err(|e| e.to_string())?,
             point_lights: Vec::new(),
             actor_models: models,
-            water: Some(water),
+            water,
             water_textures: look.water.textures(),
             forest,
+            blockout,
         },
         actors,
         biome: map.biome().to_string(),
@@ -237,6 +263,19 @@ pub struct Session {
     pub tools: tools::Tools,
     /// The last step came from this session's own stroke: its map already shows it.
     pub own: bool,
+    /// Which editor shows the map: the block editor (D80) or the classic brushes.
+    pub editor: Editor,
+    pub blocks: crate::world::State,
+}
+
+/// The editors a map opens in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Editor {
+    /// The block editor (D80).
+    #[default]
+    Blocks,
+    /// The brush editor of M3.
+    Classic,
 }
 
 impl Session {
@@ -253,6 +292,8 @@ impl Session {
             camera: Camera::over(640),
             tools: tools::Tools::default(),
             own: false,
+            editor: Editor::default(),
+            blocks: Default::default(),
         }
     }
 

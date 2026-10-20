@@ -868,3 +868,12 @@ D67's family made every ability glow in its energy colour on a smoky, bright bac
 - **Review:** `tools/icons/review.html` (published as an artifact with its own vote store) shows every icon at 46 and 22 px with a yay or nay and a comment; nays are repainted from the comment, and a repainted icon asks for a new vote. Each icon folder keeps its painted foreground (`source.png`) and request (`generation.json`) as working files.
 - **Unused icons are removed:** the 64 icon folders no data referenced any more (the old ant race's abilities, research and portraits, and the art the new command icons replaced) are deleted; the UI examples show icons in use.
 - **The rules live in the `canopy-icons` skill** (Jiri: "all future icons follow this"): style, per-type rules, the tool's commands, upgrade lines, the review loop and the lessons from Jiri's votes, loaded before any icon is made or changed.
+
+## D80. Maps are blocked out in 3D, and the world is generated from the blocks (2026-10-20, Jiri)
+
+Jiri: authoring must be fast for people, not scripts; a campaign needs many maps and camps. A map should be drawn as its shape (cubes you raise, ramps you drop) and everything else generated from it, seeded, so the generator can be polished "to oblivion" and every map gains from it.
+
+- **Blocks.** A map is authored as columns of blocks, **4 × 4 cells** each (the building lattice, so cliffs line up with foundations; 1 × 1 detail may come later), stacked in whole cliff levels (3 m). **2.5D**: one walkable surface per column; overhangs and arches later, as bridges are today. **Diagonal blocks** cut a column along a diagonal so outlines can run at 45°.
+- **Cliffs are not drawn**: they are where two columns' levels meet. Ramps, water and impassable ground are kinds of block; landmarks (giant trees, boulders) will be multi-block placeholders.
+- **The simulation reads only what the blocks make**: heights, water and closed cells, derived deterministically and saved in the map, so a map plays the same forever. The look will be regenerated from the blocks and a seed at load, never stored.
+- **Order**: the blockout editor alone first, to get the feel (this decision's first build); then the generator (ground, cliffs, frame, water dressing); then landmarks and set pieces for the campaign. Echo Isles is converted first.

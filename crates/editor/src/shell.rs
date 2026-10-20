@@ -669,7 +669,14 @@ impl Shell {
             }
         }
         let started = Instant::now();
-        match crate::map::build(map, &content, &resources.pack, &resources.looks[&biome]) {
+        let blocks = session.editor == crate::map::Editor::Blocks;
+        match crate::map::build(
+            map,
+            &content,
+            &resources.pack,
+            &resources.looks[&biome],
+            blocks,
+        ) {
             Ok(scene) => {
                 session.scene = Some(Arc::new(scene));
                 session.version += 1;
@@ -1002,7 +1009,7 @@ impl Shell {
         });
     }
 
-    fn reveal_document(&mut self, document: &str) {
+    pub(crate) fn reveal_document(&mut self, document: &str) {
         if let Some(editor) = Kind::of_document(document) {
             self.reveal(&Context {
                 editor,
@@ -2034,6 +2041,46 @@ impl Shell {
                 .find(|t| t.name().eq_ignore_ascii_case(name)),
         ) {
             session.tools.tool = *tool;
+        }
+    }
+
+    fn active_map_root(&mut self) -> Option<String> {
+        self.active_document()
+            .and_then(|d| crate::map::root_of(&d).map(str::to_string))
+    }
+
+    /// Shows the open map in the block editor or the classic one (captures).
+    pub fn set_map_editor(&mut self, blocks: bool) {
+        if let Some(root) = self.active_map_root()
+            && let Some(session) = self.maps.get_mut(&root)
+        {
+            session.editor = if blocks {
+                crate::map::Editor::Blocks
+            } else {
+                crate::map::Editor::Classic
+            };
+            session.stale = true;
+        }
+    }
+
+    /// Blocks out the open map from its heights (captures; the panel's button).
+    pub fn block_out_map(&mut self) {
+        let edit = self
+            .active_map_root()
+            .and_then(|root| self.maps.get_mut(&root))
+            .and_then(crate::world::block_out);
+        if let Some(edit) = edit {
+            self.run(edit);
+        }
+    }
+
+    /// The block editor's tool by name (captures).
+    pub fn set_block_tool(&mut self, name: &str) {
+        if let Some(root) = self.active_map_root()
+            && let Some(session) = self.maps.get_mut(&root)
+        {
+            session.blocks.tool =
+                crate::world::BlockTool::named(name).unwrap_or(session.blocks.tool);
         }
     }
 

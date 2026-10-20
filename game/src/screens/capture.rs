@@ -307,6 +307,7 @@ pub fn run(
             "releases" => releases(&mut rig)?,
             "multiplayer" => multiplayer(&mut rig)?,
             "editor" => editor(&mut rig, &paths)?,
+            "blocks" => blocks(&mut rig, &paths)?,
             "settings" => settings_tabs(&mut rig)?,
             "replays" => {
                 start_skirmish(&mut rig)?;
@@ -388,6 +389,81 @@ pub fn run(
 
 /// The editor offscreen: an empty editor, documents open, the assistant open, and a
 /// library of several collections.
+/// The block editor (D80) on Echo Isles: blocked out from its heights, then a raised
+/// area, a ramp and a diagonal cut.
+fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
+    use canopy_editor::{Editor, Kind};
+    let format = CAPTURE_FORMAT.remove_srgb_suffix();
+    let mut editor = Editor::headless(&rig.gpu, format, crate::app::editor_setup(paths));
+    let ui_scale = rig.scale;
+    let frame = |editor: &mut Editor, rig: &mut Rig, events: Vec<egui::Event>| {
+        editor.run_headless_with(rig.size, rig.scale, &rig.gpu, events);
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    let settle = |editor: &mut Editor, rig: &mut Rig, n: usize| {
+        for _ in 0..n {
+            editor.run_headless(rig.size, rig.scale, &rig.gpu);
+            std::thread::sleep(Duration::from_millis(25));
+        }
+    };
+    let shoot = |editor: &mut Editor, rig: &mut Rig, name: &str| -> Result<()> {
+        let mut encoder = rig
+            .gpu
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        editor.paint(&mut encoder, &rig.target.ui_view);
+        rig.gpu.queue.submit([encoder.finish()]);
+        rig.save(name)
+    };
+    let point = move |x: f32, y: f32| egui::pos2(x / ui_scale, y / ui_scale);
+    let press = |p: egui::Pos2, pressed: bool| egui::Event::PointerButton {
+        pos: p,
+        button: egui::PointerButton::Primary,
+        pressed,
+        modifiers: egui::Modifiers::NONE,
+    };
+    let drag = |editor: &mut Editor, rig: &mut Rig, from: (f32, f32), to: (f32, f32)| {
+        let a = point(from.0, from.1);
+        frame(editor, rig, vec![egui::Event::PointerMoved(a)]);
+        frame(editor, rig, vec![press(a, true)]);
+        for i in 1..=12 {
+            let t = i as f32 / 12.0;
+            let p = point(from.0 + (to.0 - from.0) * t, from.1 + (to.1 - from.1) * t);
+            frame(editor, rig, vec![egui::Event::PointerMoved(p)]);
+        }
+        frame(editor, rig, vec![press(point(to.0, to.1), false)]);
+        frame(editor, rig, vec![]);
+    };
+    let click = |editor: &mut Editor, rig: &mut Rig, at: (f32, f32)| {
+        let p = point(at.0, at.1);
+        frame(editor, rig, vec![egui::Event::PointerMoved(p)]);
+        frame(editor, rig, vec![press(p, true)]);
+        frame(editor, rig, vec![press(p, false)]);
+        frame(editor, rig, vec![]);
+    };
+    editor.select(Kind::Maps);
+    editor.open_document("maps/skirmish/echo-isles.utcm/map.json");
+    settle(&mut editor, rig, 60);
+    editor.set_map_editor(true);
+    editor.block_out_map();
+    settle(&mut editor, rig, 40);
+    shoot(&mut editor, rig, "editor-blocks")?;
+    editor.show_problems(true);
+    settle(&mut editor, rig, 4);
+    shoot(&mut editor, rig, "editor-blocks-problems")?;
+    editor.show_problems(false);
+    editor.set_block_tool("raise");
+    drag(&mut editor, rig, (900.0, 560.0), (1040.0, 640.0));
+    editor.set_block_tool("ramp");
+    click(&mut editor, rig, (1050.0, 600.0));
+    editor.set_block_tool("cut");
+    click(&mut editor, rig, (895.0, 555.0));
+    settle(&mut editor, rig, 30);
+    shoot(&mut editor, rig, "editor-blocks-edited")?;
+    editor.undo_all();
+    Ok(())
+}
+
 fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
     use canopy_editor::{Editor, Kind};
     let format = CAPTURE_FORMAT.remove_srgb_suffix();
@@ -549,6 +625,7 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
         frame(editor, rig, vec![]);
     };
     editor.undo_all();
+    editor.set_map_editor(false);
     editor.set_map_tool("cliff");
     drag(&mut editor, rig, (760.0, 640.0), (1000.0, 700.0));
     editor.set_map_tool("trees");
