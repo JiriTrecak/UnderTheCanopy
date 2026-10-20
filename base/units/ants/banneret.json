@@ -1,9 +1,9 @@
 {
   "id": "unit.ants.banneret",
-  "name": "Banneret",
-  "description": "Standard bearer. Rallies nearby allies for increased attack damage and defends itself with a baton.",
-  "model": "asset.models.units.ants-banneret",
-  "icon": "asset.portraits.units.ants-banneret",
+  "name": "Herald",
+  "description": "A six-legged herald under a crown of feathers. Rallies nearby allies for increased attack damage and defends itself with its staff.",
+  "model": "asset.models.units.ants-herald",
+  "icon": "asset.portraits.units.ants-herald",
   "selectionClass": "army",
   "body": {
     "maxHp": 440,
@@ -74,6 +74,6 @@
   },
   "modelScale": 3.3,
   "presentation": {
-    "castContact": 0.325
+    "castContact": 0.5
   }
 }

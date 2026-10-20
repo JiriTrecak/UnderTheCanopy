@@ -1,0 +1,280 @@
+{
+  "id": "unit.ants.royal-alchemist",
+  "name": "Royal Alchemist",
+  "description": "The colony's alchemist on six legs, carrying flasks of violet substance on her back and one raised in her hand.",
+  "model": "asset.models.units.ants-royal-alchemist",
+  "icon": "asset.portraits.units.ants-royal-alchemist",
+  "hero": true,
+  "level": 1,
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 700,
+    "armor": 2,
+    "armorType": "hero"
+  },
+  "vision": 36,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 31,
+      "damageType": "hero",
+      "range": 0.6,
+      "cooldownTicks": 73,
+      "aggroRange": 20,
+      "attack": {
+        "windupTicks": 18,
+        "recoveryTicks": 14,
+        "rangeBuffer": 0.6
+      }
+    },
+    "progression": {
+      "experienceRadius": 40,
+      "levels": [
+        {
+          "experience": 0,
+          "maxHp": 700,
+          "damage": 31,
+          "armor": 2,
+          "maxMana": 225,
+          "cooldownTicks": 73,
+          "healthRegenPerSecond": 1.45,
+          "manaRegenPerSecond": 0.76
+        },
+        {
+          "experience": 160,
+          "maxHp": 775,
+          "damage": 34,
+          "armor": 3,
+          "maxMana": 240,
+          "cooldownTicks": 72,
+          "healthRegenPerSecond": 1.6,
+          "manaRegenPerSecond": 0.81
+        },
+        {
+          "experience": 400,
+          "maxHp": 850,
+          "damage": 37,
+          "armor": 3,
+          "maxMana": 270,
+          "cooldownTicks": 69,
+          "healthRegenPerSecond": 1.75,
+          "manaRegenPerSecond": 0.91
+        },
+        {
+          "experience": 720,
+          "maxHp": 925,
+          "damage": 40,
+          "armor": 4,
+          "maxMana": 285,
+          "cooldownTicks": 68,
+          "healthRegenPerSecond": 1.9,
+          "manaRegenPerSecond": 0.96
+        },
+        {
+          "experience": 1120,
+          "maxHp": 1000,
+          "damage": 43,
+          "armor": 4,
+          "maxMana": 315,
+          "cooldownTicks": 66,
+          "healthRegenPerSecond": 2.05,
+          "manaRegenPerSecond": 1.06
+        },
+        {
+          "experience": 1600,
+          "maxHp": 1075,
+          "damage": 46,
+          "armor": 4,
+          "maxMana": 330,
+          "cooldownTicks": 65,
+          "healthRegenPerSecond": 2.2,
+          "manaRegenPerSecond": 1.11
+        },
+        {
+          "experience": 2160,
+          "maxHp": 1150,
+          "damage": 49,
+          "armor": 5,
+          "maxMana": 360,
+          "cooldownTicks": 63,
+          "healthRegenPerSecond": 2.35,
+          "manaRegenPerSecond": 1.21
+        },
+        {
+          "experience": 2800,
+          "maxHp": 1225,
+          "damage": 52,
+          "armor": 5,
+          "maxMana": 375,
+          "cooldownTicks": 63,
+          "healthRegenPerSecond": 2.5,
+          "manaRegenPerSecond": 1.26
+        },
+        {
+          "experience": 3520,
+          "maxHp": 1300,
+          "damage": 55,
+          "armor": 6,
+          "maxMana": 405,
+          "cooldownTicks": 61,
+          "healthRegenPerSecond": 2.65,
+          "manaRegenPerSecond": 1.36
+        },
+        {
+          "experience": 4320,
+          "maxHp": 1375,
+          "damage": 58,
+          "armor": 6,
+          "maxMana": 420,
+          "cooldownTicks": 60,
+          "healthRegenPerSecond": 2.8,
+          "manaRegenPerSecond": 1.41
+        },
+        {
+          "experience": 5200,
+          "maxHp": 1450,
+          "damage": 61,
+          "armor": 6,
+          "maxMana": 450,
+          "cooldownTicks": 59,
+          "healthRegenPerSecond": 2.95,
+          "manaRegenPerSecond": 1.51
+        }
+      ]
+    },
+    "inventory": {
+      "slots": 4,
+      "pickupRange": 1.5
+    },
+    "abilities": {
+      "maxMana": 225,
+      "manaRegenPerSecond": 0.76,
+      "bindings": [
+        {
+          "id": "faultline",
+          "ability": "ability.marshal.faultline",
+          "initialRank": 0,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "Q",
+            "column": 1
+          },
+          "learning": {
+            "requiredLevels": [
+              1,
+              3,
+              5
+            ]
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        },
+        {
+          "id": "rally",
+          "ability": "ability.marshal.rally",
+          "initialRank": 0,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "W",
+            "column": 2
+          },
+          "learning": {
+            "requiredLevels": [
+              1,
+              3,
+              5
+            ]
+          },
+          "ai": {
+            "preference": "wounded-ally",
+            "intervalTicks": 20
+          }
+        },
+        {
+          "id": "carapace",
+          "ability": "ability.marshal.carapace",
+          "initialRank": 0,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "E",
+            "column": 3
+          },
+          "learning": {
+            "requiredLevels": [
+              1,
+              3,
+              5
+            ]
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        },
+        {
+          "id": "crownfall",
+          "ability": "ability.marshal.crownfall",
+          "initialRank": 0,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "R",
+            "column": 4
+          },
+          "learning": {
+            "requiredLevels": [
+              5,
+              8
+            ]
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        }
+      ]
+    },
+    "movement": {
+      "speed": 13
+    }
+  },
+  "supplyCost": 4,
+  "dimensions": {
+    "radius": 3,
+    "height": 9.6,
+    "formationSpacing": 6.5
+  },
+  "modelScale": 4.0,
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 475
+      }
+    ],
+    "workTicks": 2200
+  },
+  "presentation": {
+    "castContact": 0.5
+  }
+}

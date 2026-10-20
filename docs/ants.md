@@ -113,14 +113,17 @@ Known gaps: buildings without production or research (Brood Mound, Fungus Garden
 
 ## Unit models
 
-Every ant unit is a Tripo model of its picked concept, rigged and animated in Tripo, then made game-ready by `tools/units/tripo_unit.py` (scale, ground, team mask, in-place clips). The two body plans take different paths:
+Every ant unit is a Tripo model of its picked concept, rigged and animated in Tripo, then made game-ready by `tools/units/tripo_unit.py` (scale, ground, team mask, in-place clips). The three body plans take different paths:
 - **Ant creatures** (Worker, Raider, Needler, Burster, Honeypot, Alate, Bullet Ant, Reaver Queen) use Tripo's creature rig, whose only motion is its walk. `tools/units/ant_creature.py` adds the rest from the bones' roles: run, a breathing idle, a bite, sting, spit or slam attack, a recoil, rearing to cast, and a death roll. Creatures are sized by their footprint, not their height, so long-legged ones don't dwarf the rest.
 - **Humanoids** (Major, Queen, General) use Tripo's Mixamo rig and presets: walk, run, slash, hit, fall and cast. Tripo's export leaves idle presets out, so `tools/units/humanoid_idle.py` adds a breathing idle.
+- **Centaurs** (Herald, Gardener, Royal Alchemist: an upright torso on six ant legs) get two legs from Tripo whatever rig type is chosen. `tools/units/ant_centaur.py` keeps Tripo's humanoid rig and presets for the torso and replaces the lower body: it finds the six feet where the mesh meets the ground, follows each leg up the mesh to the body, adds two bones per leg and a body bone, skins them, and keys a tripod gait into walk and run (front and back legs of one side step with the middle leg of the other). It adds an idle and a death (legs curl, the body sinks); the biped's hips and arm pumping are damped so the body stays level and staffs don't sweep the legs. Its docstring has the per-unit options and the three units' commands. Their `tripo_unit.py` specs set `keepViolet`, so the violet substance (flasks, mushrooms, flowers) stays out of the team mask.
 
-The definitions keep the old ids: `unit.ants.settler` is the Worker, `warrior` the Raider, `archer` the Needler, `queensguard` the Major, `bombardier` the Honeypot, `winglancer` the Alate, `thornblade` the Bullet Ant, and `marshal` the General. Stats and abilities are unchanged. The Burster, Reaver Queen and Queen are new definitions. They show in the gallery but nothing trains them yet, because their abilities aren't designed.
+The definitions keep the old ids: `unit.ants.settler` is the Worker, `warrior` the Raider, `archer` the Needler, `queensguard` the Major, `bombardier` the Honeypot, `winglancer` the Alate, `thornblade` the Bullet Ant, `marshal` the General, `banneret` the Herald and `nectarist` the Gardener. Stats and abilities are unchanged. The Burster, Reaver Queen, Queen and Royal Alchemist (`unit.ants.royal-alchemist`, a hero shaped like the Queen) are new definitions. They show in the gallery but nothing trains them yet, because their abilities aren't designed.
 
 Known gaps:
-- The Herald, Gardener and Royal Alchemist are six-legged centaurs. Tripo rigs them as two-legged bipeds whatever rig type is chosen, so they still need a rig of their own. Until then `banneret` and `nectarist` keep their old models; their portraits are ready (`asset.portraits.units.ants-herald`, `-gardener`, `-royal-alchemist`).
+- The Gardener's Tripo skeleton missed its torso (it sat inside the basket; a second rig ran its spine up one side), so it has a small skeleton of its own (`--upper`) and every clip is keyed in Blender: a swaying walk, the staff drawn back and flung, the staff raised to cast. Its arms move less freely than the Mixamo humanoids'.
+- The Herald's back legs disappear under its cape, so only their lower half steps.
+- The Herald and Gardener keep the Banneret's and Nectarist's abilities; their designed ones (Trail, Alarm, Fungus Circle, ...) aren't built yet.
 - The Honeypot and Bullet Ant show little team colour: their concepts carry almost no blue.
 - The Raider shows little: its fins came out of Tripo more bronze than blue.
 

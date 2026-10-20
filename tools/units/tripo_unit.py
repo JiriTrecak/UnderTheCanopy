@@ -16,7 +16,8 @@ one GLB with the skeleton and every clip. Here:
 spec.json: {"glb": path, "name": "beetles-bolter", "title": "Bolter", "height": 2.0,
   "clips": {"idle": "idle", "walk": "walk", "attack": "shoot", ...}  (semantic -> Tripo clip),
   "attackEvent": {"name": "hit" | "release", "share": 0.55}, "healthHeight": 2.3,
-  "tags": [...], "loops": ["idle", "walk", "run", ...]}"""
+  "tags": [...], "loops": ["idle", "walk", "run", ...],
+  "keepViolet": true  (the ants' violet substance stays out of the team mask; royal blue only)}"""
 import json, os, sys
 
 import bpy
@@ -86,6 +87,8 @@ for mat in {m for o in meshes for m in o.data.materials if m and m.use_nodes}:
     rgb = px[:, :, :3]
     blue = rgb[:, :, 2] - np.maximum(rgb[:, :, 0], rgb[:, :, 1])
     mask = np.clip((blue - 0.04) / 0.1, 0.0, 1.0) * (rgb[:, :, 2] > 0.08)
+    if SPEC.get('keepViolet'):  # violet substance (red above green) is not a team plate
+        mask *= 1.0 - np.clip((rgb[:, :, 0] - rgb[:, :, 1] - 0.02) / 0.04, 0.0, 1.0)
     if mask.mean() < 0.002:
         continue
     img = bpy.data.images.new(mat.name + '-team', w, h, alpha=True)
