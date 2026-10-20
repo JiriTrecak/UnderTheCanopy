@@ -6,43 +6,44 @@
   "loop": false,
   "layers": [
     {
-      "id": "halo",
+      "id": "arc-bolt",
       "enabled": true,
       "shape": "beam",
-      "colour": "#8a5cff",
-      "accent": "#c9b8ff",
-      "durationTicks": 5,
+      "colour": "#b49cff",
+      "accent": "#8a5cff",
+      "durationTicks": 7,
       "count": 1,
-      "size": 1.3,
+      "size": 1.5,
       "height": 2.4,
-      "blend": "additive",
-      "spread": 0.6,
-      "intensity": 0.35
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.vfx.bolt",
+        "role": "image",
+        "index": 1
+      },
+      "spread": 0.9,
+      "forks": 3,
+      "intensity": 2.3400000000000003
     },
     {
-      "id": "arc",
+      "id": "arc-core",
       "enabled": true,
       "shape": "beam",
-      "colour": "#9a74ff",
-      "accent": "#efe8ff",
-      "durationTicks": 6,
+      "colour": "#ffffff",
+      "accent": "#e6deff",
+      "durationTicks": 7,
       "count": 1,
-      "size": 0.45,
+      "size": 0.35,
       "height": 2.4,
       "blend": "additive",
-      "spread": 0.6
-    },
-    {
-      "id": "core",
-      "enabled": true,
-      "shape": "beam",
-      "colour": "#faf8ff",
-      "accent": "#ffffff",
-      "durationTicks": 5,
-      "count": 1,
-      "size": 0.12,
-      "height": 2.4,
-      "blend": "additive"
+      "texture": {
+        "asset": "asset.effects.vfx.bolt",
+        "role": "image",
+        "index": 1
+      },
+      "spread": 0.9,
+      "forks": 0,
+      "intensity": 1.8
     },
     {
       "id": "bolt",

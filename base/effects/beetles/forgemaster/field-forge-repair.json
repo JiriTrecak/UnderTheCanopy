@@ -1,23 +1,23 @@
 {
   "id": "effect.forgemaster.field-forge-repair",
   "name": "Forge repair",
-  "description": "Small weld sparks where the field forge mends plating.",
-  "durationTicks": 20,
+  "description": "Rivets hammered home where the field forge mends plating: three quick hammer strikes, each a white-hot glint and a spray of sparks, and a fleck of brass bouncing off.",
+  "durationTicks": 24,
   "loop": false,
   "layers": [
     {
-      "id": "glint",
+      "id": "strike-0",
       "enabled": true,
       "shape": "billboard",
       "colour": "#fff0b0",
       "accent": "#ffffff",
-      "durationTicks": 5,
+      "durationTicks": 4,
       "count": 1,
-      "size": 1.4,
-      "height": 1.2,
+      "size": 2.2,
+      "height": 1.1,
       "startTick": 0,
       "blend": "additive",
-      "intensity": 2.6,
+      "intensity": 3.4,
       "core": 0.9,
       "texture": {
         "asset": "asset.effects.beetles.glint",
@@ -26,18 +26,58 @@
       }
     },
     {
-      "id": "sparks",
+      "id": "strike-1",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#fff0b0",
+      "accent": "#ffffff",
+      "durationTicks": 4,
+      "count": 1,
+      "size": 2.2,
+      "height": 1.25,
+      "startTick": 5,
+      "blend": "additive",
+      "intensity": 3.4,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "strike-2",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#fff0b0",
+      "accent": "#ffffff",
+      "durationTicks": 4,
+      "count": 1,
+      "size": 2.2,
+      "height": 1.4000000000000001,
+      "startTick": 10,
+      "blend": "additive",
+      "intensity": 3.4,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "sparks-0",
       "enabled": true,
       "shape": "particles",
       "colour": "#ffc65a",
       "accent": "#fff0b0",
-      "durationTicks": 12,
-      "count": 10,
-      "size": 0.07,
-      "height": 1.2,
+      "durationTicks": 14,
+      "count": 12,
+      "size": 0.1,
+      "height": 1.1,
       "startTick": 0,
       "blend": "additive",
-      "intensity": 4.0,
+      "intensity": 4.5,
       "core": 0.35,
       "texture": {
         "asset": "asset.effects.beetles.spark",
@@ -46,26 +86,175 @@
       },
       "emitter": {
         "mode": "burst",
-        "lifetimeTicks": 10,
-        "rate": 10,
-        "speed": 5,
+        "lifetimeTicks": 12,
+        "rate": 12,
+        "speed": 6,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
           "y": 1,
           "z": 0
         },
-        "coneDegrees": 80,
+        "coneDegrees": 70,
         "gravity": 16,
         "drag": 0.7,
         "spawnRadius": 0.15,
-        "startSize": 0.07,
-        "endSize": 0.03150000000000001,
+        "startSize": 0.1,
+        "endSize": 0.045000000000000005,
         "spin": 0,
         "fadeIn": 0.0,
         "fadeOut": 0.55,
         "stretch": 0.05
       }
+    },
+    {
+      "id": "sparks-1",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffc65a",
+      "accent": "#fff0b0",
+      "durationTicks": 14,
+      "count": 12,
+      "size": 0.1,
+      "height": 1.25,
+      "startTick": 5,
+      "blend": "additive",
+      "intensity": 4.5,
+      "core": 0.35,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 12,
+        "rate": 12,
+        "speed": 6,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": 16,
+        "drag": 0.7,
+        "spawnRadius": 0.15,
+        "startSize": 0.1,
+        "endSize": 0.045000000000000005,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55,
+        "stretch": 0.05
+      }
+    },
+    {
+      "id": "sparks-2",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffc65a",
+      "accent": "#fff0b0",
+      "durationTicks": 14,
+      "count": 12,
+      "size": 0.1,
+      "height": 1.4000000000000001,
+      "startTick": 10,
+      "blend": "additive",
+      "intensity": 4.5,
+      "core": 0.35,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 12,
+        "rate": 12,
+        "speed": 6,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": 16,
+        "drag": 0.7,
+        "spawnRadius": 0.15,
+        "startSize": 0.1,
+        "endSize": 0.045000000000000005,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55,
+        "stretch": 0.05
+      }
+    },
+    {
+      "id": "rivets",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#d8b070",
+      "accent": "#8a6a3a",
+      "durationTicks": 46,
+      "count": 3,
+      "size": 0.16,
+      "height": 1.2,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.vfx.chunk",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 44,
+        "rate": 3,
+        "speed": 4.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 60,
+        "gravity": 22.0,
+        "drag": 0.3,
+        "spawnRadius": 0.6,
+        "startSize": 0.16,
+        "endSize": 0.14400000000000002,
+        "spin": 8,
+        "fadeIn": 0.0,
+        "fadeOut": 0.15,
+        "coneInnerDegrees": 24.0,
+        "collide": {
+          "friction": 0.8
+        }
+      }
+    },
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ffc65a",
+      "accent": "#fff0b0",
+      "durationTicks": 14,
+      "count": 1,
+      "size": 3.0,
+      "height": 1.2,
+      "intensity": 3.0,
+      "startTick": 0
     }
   ]
 }

@@ -1,0 +1,18 @@
+{
+  "id": "asset.effects.vfx.ash",
+  "name": "Ash flakes",
+  "kind": "texture",
+  "tags": [
+    "effect",
+    "vfx",
+    "particle"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original procedural effect art for Under the Canopy (tools/content/vfx_art.py). Four ragged ash flakes (2 × 2)."
+}

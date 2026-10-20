@@ -106,7 +106,7 @@
       "shape": "particles",
       "colour": "#dfe6ff",
       "accent": "#c9b8ff",
-      "durationTicks": 26,
+      "durationTicks": 42,
       "count": 36,
       "size": 0.36,
       "height": 1.6,
@@ -121,7 +121,7 @@
       },
       "emitter": {
         "mode": "burst",
-        "lifetimeTicks": 24,
+        "lifetimeTicks": 40,
         "rate": 36,
         "speed": 13,
         "speedVariation": 0.55,
@@ -142,6 +142,342 @@
       }
     },
     {
+      "id": "fireball",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 3,
+      "count": 24,
+      "size": 1.8,
+      "height": 2.0,
+      "startTick": 0,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "ramp": [
+        {
+          "at": 0.0,
+          "colour": "#1c0c40"
+        },
+        {
+          "at": 0.3,
+          "colour": "#5a2ad8"
+        },
+        {
+          "at": 0.6,
+          "colour": "#9a74ff"
+        },
+        {
+          "at": 0.85,
+          "colour": "#dccfff"
+        },
+        {
+          "at": 1.0,
+          "colour": "#ffffff"
+        }
+      ],
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 28,
+        "rate": 24,
+        "speed": 7.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": -0.6,
+        "drag": 3.0,
+        "spawnRadius": 0.6,
+        "startSize": 1.8,
+        "endSize": 3.6,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 1.08
+          },
+          {
+            "at": 0.15,
+            "value": 2.52
+          },
+          {
+            "at": 1,
+            "value": 4.680000000000001
+          }
+        ],
+        "colourOverLife": [
+          {
+            "at": 0,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.6,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.9,
+            "colour": "#7a64c0"
+          },
+          {
+            "at": 1,
+            "colour": "#4a3c80"
+          }
+        ],
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 0.8
+          },
+          {
+            "at": 0.6,
+            "value": 0.7
+          },
+          {
+            "at": 0.9,
+            "value": 0.3
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.04,
+            "value": 0.9
+          },
+          {
+            "at": 0.6,
+            "value": 0.7
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0.05
+          },
+          {
+            "at": 0.5,
+            "value": 0.2
+          },
+          {
+            "at": 1,
+            "value": 0.85
+          }
+        ],
+        "heatOverLife": [
+          {
+            "at": 0,
+            "value": 1.05
+          },
+          {
+            "at": 0.4,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0.45
+          }
+        ],
+        "turbulence": {
+          "strength": 0.54,
+          "scale": 2.0,
+          "speed": 2.0
+        }
+      }
+    },
+    {
+      "id": "wave",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 3,
+      "count": 140,
+      "size": 1.8,
+      "height": 0.6,
+      "startTick": 0,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "ramp": [
+        {
+          "at": 0.0,
+          "colour": "#1c0c40"
+        },
+        {
+          "at": 0.3,
+          "colour": "#5a2ad8"
+        },
+        {
+          "at": 0.6,
+          "colour": "#9a74ff"
+        },
+        {
+          "at": 0.85,
+          "colour": "#dccfff"
+        },
+        {
+          "at": 1.0,
+          "colour": "#ffffff"
+        }
+      ],
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 34,
+        "rate": 140,
+        "speed": 34.0,
+        "speedVariation": 0.3,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 88,
+        "gravity": -0.6,
+        "drag": 3.0,
+        "spawnRadius": 1.2,
+        "startSize": 1.8,
+        "endSize": 3.6,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 1.08
+          },
+          {
+            "at": 0.15,
+            "value": 2.52
+          },
+          {
+            "at": 1,
+            "value": 4.680000000000001
+          }
+        ],
+        "colourOverLife": [
+          {
+            "at": 0,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.6,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.9,
+            "colour": "#7a64c0"
+          },
+          {
+            "at": 1,
+            "colour": "#4a3c80"
+          }
+        ],
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 0.8
+          },
+          {
+            "at": 0.6,
+            "value": 0.7
+          },
+          {
+            "at": 0.9,
+            "value": 0.3
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.04,
+            "value": 0.9
+          },
+          {
+            "at": 0.6,
+            "value": 0.7
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0.05
+          },
+          {
+            "at": 0.5,
+            "value": 0.2
+          },
+          {
+            "at": 1,
+            "value": 0.85
+          }
+        ],
+        "heatOverLife": [
+          {
+            "at": 0,
+            "value": 1.05
+          },
+          {
+            "at": 0.4,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0.45
+          }
+        ],
+        "turbulence": {
+          "strength": 0.54,
+          "scale": 2.0,
+          "speed": 2.0
+        },
+        "coneInnerDegrees": 78,
+        "spawnInner": 0.4
+      }
+    },
+    {
       "id": "streaks",
       "enabled": true,
       "shape": "particles",
@@ -149,7 +485,7 @@
       "accent": "#b49cff",
       "durationTicks": 22,
       "count": 48,
-      "size": 0.09,
+      "size": 0.1,
       "height": 1.6,
       "startTick": 0,
       "blend": "additive",
@@ -175,8 +511,8 @@
         "gravity": 8,
         "drag": 0.7,
         "spawnRadius": 0.15,
-        "startSize": 0.09,
-        "endSize": 0.0405,
+        "startSize": 0.1,
+        "endSize": 0.045000000000000005,
         "spin": 0,
         "fadeIn": 0.0,
         "fadeOut": 0.55,
@@ -184,33 +520,47 @@
       }
     },
     {
-      "id": "wave",
+      "id": "wave-ring",
       "enabled": true,
       "shape": "billboard",
       "colour": "#c9b8ff",
       "accent": "#ffffff",
       "durationTicks": 20,
       "count": 1,
-      "size": 16.0,
+      "size": 20.0,
       "height": 0.1,
-      "startTick": 0,
       "orientation": "ground",
       "blend": "additive",
-      "intensity": 2.2,
-      "core": 0.6,
+      "intensity": 1.8,
       "texture": {
-        "asset": "asset.effects.beetles.ring",
+        "asset": "asset.effects.vfx.blast-ring",
         "role": "image",
         "index": 1
       },
-      "motion": {
-        "scale": {
-          "periodTicks": 40,
-          "min": 0.18,
-          "max": 1.0,
-          "easing": "sine"
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.1
+        },
+        {
+          "at": 0.25,
+          "value": 0.7
+        },
+        {
+          "at": 1,
+          "value": 1.0
         }
-      }
+      ],
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 1
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ]
     },
     {
       "id": "wave2",

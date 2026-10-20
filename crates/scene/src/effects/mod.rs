@@ -27,7 +27,7 @@ pub mod frame;
 #[cfg(test)]
 mod tests;
 
-use canopy_assets::{EffectTable, Motion, Pack, Primitive};
+use canopy_assets::{EffectLayer, EffectTable, Motion, Pack, Primitive};
 use canopy_content::{
     Content,
     abilities::Presentation,
@@ -45,8 +45,13 @@ use std::{
     sync::Arc,
 };
 
-/// Live cues at once; further events are not shown (old player: 64 per player).
+/// Live cues of ability events at once; further events are not shown (old player: 64
+/// per player).
 pub const MAX_CUES: usize = 256;
+/// Live cues of plays outside ability events at once (weapon launches with their trails,
+/// impacts, building states): their own budget, so a big battle's arrows never hide a
+/// spell.
+pub const MAX_PLAY_CUES: usize = 768;
 /// Effect lights at once (old `EffectLights` pool of 4; the renderer's budget since
 /// buildings light their work, D65).
 pub const MAX_LIGHTS: usize = canopy_render::effects::MAX_EFFECT_LIGHTS;
@@ -218,6 +223,26 @@ pub struct CueView {
     /// Mesh layers: the model's index in the live model catalog, and its clip with the
     /// clip's length.
     pub model: Option<(u32, Option<(u16, f32)>)>,
+    /// Layers riding another layer's path (`EffectLayer::rides`): that layer and its
+    /// timing.
+    pub ride: Option<Ride>,
+    /// When the delivery or missile a riding layer rode ended (it stops emitting; its
+    /// particles live out their lives).
+    pub ride_end: Option<f64>,
+    /// World-space emitters following a unit: where they stood each tick, newest last.
+    pub history: Option<Arc<[TrailPoint]>>,
+}
+
+/// The layer a riding layer follows, as it was started for the same event.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Ride {
+    pub layer: u16,
+    /// Tick the ridden layer starts on and ticks it lasts (a rain layer: its fall).
+    pub start: f64,
+    pub duration: f64,
+    /// The ridden layer's offset from the anchor and its spread.
+    pub offset: Vec3,
+    pub spread: f32,
 }
 
 /// A hit spark burst (old `ImpactEffects`).
@@ -299,6 +324,12 @@ struct Cue {
     offset: Vec3,
     follow: bool,
     travels: bool,
+    /// Rides another layer's path (which `travels` when that layer does).
+    riding: bool,
+    /// The layer whose path decides where the cue is (itself, or the layer it rides).
+    path_layer: u16,
+    /// World-space emitter following a unit: its recent positions.
+    history: Option<VecDeque<TrailPoint>>,
     light: bool,
     /// Effect model triangles and instances it draws.
     triangles: u32,
@@ -650,9 +681,15 @@ impl EffectDirector {
                 // Standalone plays bind no `sizeFrom`/`spreadFrom` (old `EffectPlayer.play`
                 // ignored its radius, shell impacts included).
                 (None, Some((e, l))) => {
-                    let layer = &self.table.effects[e].layers[l];
-                    // Weapon flights pass their duration to travelling layers only.
-                    let flight = trigger.duration.is_some() && layer.motion.travels();
+                    let effect = &self.table.effects[e];
+                    let layer = &effect.layers[l];
+                    let path = layer
+                        .rides
+                        .and_then(|r| effect.layers.get(usize::from(r)))
+                        .unwrap_or(layer);
+                    // Weapon flights pass their duration to travelling layers (and the
+                    // layers riding them) only.
+                    let flight = trigger.duration.is_some() && path.motion.travels();
                     (e, l, layer.at_source, false, flight, false, false)
                 }
                 (None, None) => return None,
@@ -680,7 +717,18 @@ impl EffectDirector {
         {
             return None;
         }
-        if self.cues.len() >= MAX_CUES {
+        let (room, live) = if recipe.is_some() {
+            (
+                MAX_CUES,
+                self.cues.iter().filter(|c| c.recipe.is_some()).count(),
+            )
+        } else {
+            (
+                MAX_PLAY_CUES,
+                self.cues.iter().filter(|c| c.recipe.is_none()).count(),
+            )
+        };
+        if live >= room {
             tracing::debug!("effect cue budget reached");
             return None;
         }
@@ -724,21 +772,38 @@ impl EffectDirector {
             });
             model = Some((found.index, clip));
         }
-        let mut duration = seconds_ticks(l.duration);
-        if duration_from && let Some(d) = trigger.duration {
-            duration = d;
-        }
-        let period = seconds_ticks(effect_def.duration);
-        let mut start = trigger.tick + seconds_ticks(l.start);
-        if let Some(rain) = &l.rain {
-            // Rain falls its duration over its fall speed; a delivery's rain starts late
-            // so its drops land as the delivery ends (old player).
-            let fall = duration / f64::from(rain.speed.max(0.05));
-            if duration_from {
-                start += duration - fall;
+        // A layer's start and length: rain falls its duration over its fall speed; a
+        // delivery's rain starts late so its drops land as the delivery ends (old player).
+        let timing = |l: &EffectLayer| {
+            let mut duration = seconds_ticks(l.duration);
+            if duration_from && let Some(d) = trigger.duration {
+                duration = d;
             }
-            duration = fall;
-        }
+            let mut start = trigger.tick + seconds_ticks(l.start);
+            if let Some(rain) = &l.rain {
+                let fall = duration / f64::from(rain.speed.max(0.05));
+                if duration_from {
+                    start += duration - fall;
+                }
+                duration = fall;
+            }
+            (start, duration)
+        };
+        let (start, duration) = timing(l);
+        let period = seconds_ticks(effect_def.duration);
+        let ridden = l
+            .rides
+            .and_then(|r| effect_def.layers.get(usize::from(r)).map(|rl| (r, rl)));
+        let ride = ridden.map(|(r, rl)| {
+            let (start, duration) = timing(rl);
+            Ride {
+                layer: r,
+                start,
+                duration,
+                offset: Vec3::from_array(rl.offset),
+                spread: rl.spread.unwrap_or(1.0),
+            }
+        });
         let finite_end =
             (recipe.is_some() && !status_lifetime && (l.sustain || effect_def.looping))
                 .then_some(start + if duration_from { duration } else { period });
@@ -781,6 +846,9 @@ impl EffectDirector {
                 flight: None,
                 trail: None,
                 model,
+                ride,
+                ride_end: None,
+                history: None,
             },
             recipe: recipe.map(|r| r as u32),
             ability: trigger.ability,
@@ -793,7 +861,12 @@ impl EffectDirector {
             base,
             offset,
             follow: l.follow,
-            travels: l.motion.travels(),
+            travels: ridden.map_or(l.motion, |(_, rl)| rl.motion).travels(),
+            riding: ridden.is_some(),
+            path_layer: ridden.map_or(layer_index as u16, |(r, _)| r),
+            history: (l.follow && ridden.is_none() && l.emitter.as_ref().is_some_and(|e| e.world)
+                || l.follow && l.motion == Motion::Ribbon)
+                .then(VecDeque::new),
             light,
             triangles,
             instances: model_instances,
@@ -867,7 +940,18 @@ impl EffectDirector {
 
     /// Ends the given cues.
     pub fn stop(&mut self, cues: &[u32]) {
-        self.cues.retain(|c| !cues.contains(&c.view.id));
+        let now = f64::from(self.last_tick);
+        self.cues.retain_mut(|c| {
+            if !cues.contains(&c.view.id) {
+                return true;
+            }
+            // Riding layers stop emitting; what they left behind lives on.
+            if c.riding {
+                c.view.ride_end.get_or_insert(now);
+                return true;
+            }
+            false
+        });
     }
 
     /// The table index of an effect id.
@@ -1110,7 +1194,7 @@ impl EffectDirector {
         self.returns(tick, &seen.returns);
         self.shells(tick, &seen.shells);
         self.expire(f64::from(tick));
-        self.place(scene);
+        self.place(tick, scene);
         self.cues.sort_by_key(|c| c.view.id);
         let now = f64::from(tick);
         self.sparks
@@ -1238,11 +1322,16 @@ impl EffectDirector {
         let live: BTreeSet<u32> = deliveries.iter().map(|d| d.cast).collect();
         // Travelling layers of ability effects show only while their delivery (or the
         // weapon missile carrying their cast) flies.
-        self.cues.retain(|c| {
-            !c.travels
-                || c.recipe.is_none()
-                || c.cast
-                    .is_some_and(|cast| live.contains(&cast) || scene.missile_pose(cast).is_some())
+        let now = f64::from(tick);
+        self.cues.retain_mut(|c| {
+            let flying = c
+                .cast
+                .is_some_and(|cast| live.contains(&cast) || scene.missile_pose(cast).is_some());
+            if c.riding && c.travels && !flying && c.view.flight.is_some() {
+                // The delivery it rode ended: it stops emitting.
+                c.view.ride_end.get_or_insert(now);
+            }
+            !c.travels || c.recipe.is_none() || c.riding || flying
         });
         self.trails.retain(|cast, _| live.contains(cast));
         for d in deliveries {
@@ -1286,10 +1375,10 @@ impl EffectDirector {
             for c in self
                 .cues
                 .iter_mut()
-                .filter(|c| c.cast == Some(d.cast) && c.travels)
+                .filter(|c| c.cast == Some(d.cast) && c.travels && c.view.ride_end.is_none())
             {
                 let height = table.effects[usize::from(c.view.effect)].layers
-                    [usize::from(c.view.layer)]
+                    [usize::from(c.path_layer)]
                 .height;
                 c.view.flight = Some(Flight {
                     position: d.position + Vec3::Y * height,
@@ -1382,6 +1471,9 @@ impl EffectDirector {
             let effect = &table.effects[usize::from(v.effect)];
             let l = &effect.layers[usize::from(v.layer)];
             let persistent = l.sustain || v.status_lifetime;
+            if let Some(end) = v.ride_end {
+                return tick - end < frame::tail_ticks(l);
+            }
             if persistent || effect.looping || v.flight.is_some() {
                 return true;
             }
@@ -1389,17 +1481,19 @@ impl EffectDirector {
         });
     }
 
-    /// Moves following cues onto their anchors, sockets and missiles.
-    fn place(&mut self, scene: &dyn EffectScene) {
+    /// Moves following cues onto their anchors, sockets and missiles; world-space
+    /// emitters following a unit remember where it went.
+    fn place(&mut self, tick: u32, scene: &dyn EffectScene) {
         let table = self.table.clone();
         for c in &mut self.cues {
-            let l = &table.effects[usize::from(c.view.effect)].layers[usize::from(c.view.layer)];
+            let own = &table.effects[usize::from(c.view.effect)].layers[usize::from(c.view.layer)];
+            let l = &table.effects[usize::from(c.view.effect)].layers[usize::from(c.path_layer)];
             if c.follow
                 && let Some(anchor) = c.entity.and_then(|e| scene.anchor(e))
             {
                 c.view.root = anchor + c.offset + Vec3::Y * ROOT_LIFT;
             }
-            if let Some(a) = &l.attachment {
+            if let Some(a) = &own.attachment {
                 match c.entity.and_then(|e| scene.socket(e, &a.socket)) {
                     Some((position, rotation)) => {
                         let rotation = if a.inherit_rotation {
@@ -1421,14 +1515,16 @@ impl EffectDirector {
                 }
             }
             if c.travels {
-                // Missiles home on their anchored unit.
+                // Missiles home on their anchored unit (at the cue's own height: a riding
+                // layer adds the ridden layer's lift itself).
                 if l.motion == Motion::Missile
                     && let Some(anchor) = c.entity.and_then(|e| scene.anchor(e))
                 {
-                    c.view.destination = anchor + Vec3::Y * l.height;
+                    c.view.destination = anchor + Vec3::Y * own.height;
                 }
                 // A weapon missile carrying the cast leads (old `deliveryPose`).
                 if let Some(cast) = c.cast
+                    && c.view.ride_end.is_none()
                     && let Some((position, direction)) = scene.missile_pose(cast)
                 {
                     c.view.flight = Some(Flight {
@@ -1436,6 +1532,25 @@ impl EffectDirector {
                         direction,
                     });
                 }
+            }
+            if let Some(history) = &mut c.history {
+                let now = f64::from(tick);
+                let keep = frame::tail_ticks(own)
+                    + own
+                        .ribbon
+                        .as_ref()
+                        .map_or(0.0, |r| seconds_ticks(r.duration))
+                    + 2.0;
+                if history.back().is_none_or(|p| p.tick < now) {
+                    history.push_back(TrailPoint {
+                        tick: now,
+                        position: c.view.root,
+                    });
+                }
+                while history.front().is_some_and(|p| now - p.tick > keep) {
+                    history.pop_front();
+                }
+                c.view.history = Some(history.iter().copied().collect());
             }
         }
     }

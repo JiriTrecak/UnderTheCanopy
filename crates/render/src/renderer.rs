@@ -421,7 +421,8 @@ impl Renderer {
             &environment.grade,
             &environment.openings,
         );
-        let effects = EffectsGpu::new(device, queue, gpu.features, &frame_layout);
+        let mut effects = EffectsGpu::new(device, queue, gpu.features, &frame_layout);
+        effects.bind_depth(device, &targets.linear_resolved);
         let world_ui = WorldUiGpu::new(device, queue, &frame_layout);
         let mut renderer = Self {
             graph,
@@ -523,6 +524,8 @@ impl Renderer {
         let scene = quality.scene_size(self.output_size);
         if scene != self.targets.size {
             self.targets = Targets::new(&gpu.device, scene);
+            self.effects
+                .bind_depth(&gpu.device, &self.targets.linear_resolved);
         }
         let resolution = quality.shadow_resolution(&self.environment.shadow);
         if resolution != self.shadow_resolution {
@@ -696,6 +699,11 @@ impl Renderer {
         self.effects
             .load_textures(&gpu.device, &gpu.queue, pack, names);
         self.world_bytes = self.world_bytes + self.effects.bytes - before.min(self.effects.bytes);
+    }
+
+    /// Loads the effects' curve blocks (see [`EffectsGpu::load_curves`]).
+    pub fn load_effect_curves(&mut self, gpu: &Gpu, curves: &[[f32; 4]]) {
+        self.effects.load_curves(&gpu.device, &gpu.queue, curves);
     }
 
     /// The effects of the next frame (particles, decals, ribbons, lights). Effect meshes
@@ -951,6 +959,8 @@ impl Renderer {
         }
         self.output_size = size;
         self.targets = Targets::new(&gpu.device, self.quality.scene_size(size));
+        self.effects
+            .bind_depth(&gpu.device, &self.targets.linear_resolved);
         self.rebuild(gpu);
     }
 
@@ -1327,9 +1337,31 @@ impl Renderer {
                         report.draws += actors.draw_transparent(&mut rp, &self.frame_group);
                     }
                     report.draws += self.world_ui.draw_ground(&mut rp, &self.frame_group);
-                    report.draws += self.effects.draw(&mut rp, &self.frame_group);
                     if let Some(motes) = &self.motes {
                         report.draws += motes.draw_dust(&mut rp, &self.frame_group);
+                    }
+                }
+                (passes::EFFECTS, PassKind::Render) => {
+                    // Over the resolved scene, reading its depth (soft particles); nothing
+                    // to load or store when no effect shows.
+                    if self.effects.has_draws() || writes.is_some() {
+                        let mut rp = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                            label: Some(passes::EFFECTS),
+                            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                                view: &self.targets.resolved,
+                                depth_slice: None,
+                                resolve_target: None,
+                                ops: wgpu::Operations {
+                                    load: wgpu::LoadOp::Load,
+                                    store: wgpu::StoreOp::Store,
+                                },
+                            })],
+                            depth_stencil_attachment: None,
+                            timestamp_writes: writes,
+                            occlusion_query_set: None,
+                            multiview_mask: None,
+                        });
+                        report.draws += self.effects.draw(&mut rp, &self.frame_group);
                     }
                 }
                 (passes::CONTACT, PassKind::Render) => {

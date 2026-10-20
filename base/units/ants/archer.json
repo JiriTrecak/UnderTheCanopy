@@ -79,6 +79,7 @@
   "presentation": {
     "projectile": "effect.weapon.thorn",
     "projectileSocket": "socket_projectile",
-    "impactEffect": "effect.ants.kit.hit-needle"
+    "impactEffect": "effect.ants.kit.hit-needle",
+    "launchEffect": "effect.weapons.thorn-flight"
   }
 }

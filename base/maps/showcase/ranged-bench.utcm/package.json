@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "ranged-bench",
+  "kind": "map",
+  "name": "Bench: Ranged attacks",
+  "description": "Every ranged unit and tower facing every ranged forest creature, for reviewing projectiles, trails and impacts.",
+  "version": "1.0.0",
+  "dependencies": {
+    "base": ">=0.4.0"
+  }
+}

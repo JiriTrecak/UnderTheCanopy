@@ -1,45 +1,24 @@
 {
   "id": "effect.forgemaster.field-forge",
   "name": "Field forge",
-  "description": "A warm forge ring around the Forgemaster with embers drifting up.",
+  "description": "An ally within the field forge: a small dark-brass gear turning at its feet and forge sparks floating up around it.",
   "durationTicks": 80,
   "loop": true,
   "layers": [
     {
-      "id": "ring",
-      "enabled": true,
-      "shape": "ring",
-      "colour": "#ff8a2a",
-      "accent": "#ffd9a0",
-      "durationTicks": 80,
-      "count": 1,
-      "size": 9.5,
-      "height": 0.06,
-      "blend": "additive",
-      "sustain": true,
-      "motion": {
-        "opacity": {
-          "periodTicks": 60,
-          "min": 0.25,
-          "max": 0.5,
-          "easing": "sine"
-        }
-      }
-    },
-    {
-      "id": "glyph",
+      "id": "gear",
       "enabled": true,
       "shape": "billboard",
-      "colour": "#ffc65a",
+      "colour": "#b07a2a",
       "accent": "#ffffff",
       "durationTicks": 80,
       "count": 1,
-      "size": 5.1,
+      "size": 2.25,
       "height": 0.08,
       "startTick": 0,
       "orientation": "ground",
       "blend": "additive",
-      "intensity": 1.08,
+      "intensity": 0.63,
       "core": 0.3,
       "texture": {
         "asset": "asset.effects.beetles.gear-sigil",
@@ -58,48 +37,75 @@
           "easing": "sine"
         }
       },
-      "sustain": true
+      "sustain": true,
+      "follow": true
     },
     {
-      "id": "embers",
+      "id": "sparks",
       "enabled": true,
       "shape": "particles",
-      "colour": "#ff8a2a",
-      "accent": "#ffd9a0",
+      "colour": "#ffd9a0",
+      "accent": "#ffa040",
       "durationTicks": 80,
-      "count": 4,
-      "size": 0.12,
-      "height": 0.4,
-      "sustain": true,
+      "count": 5,
+      "size": 0.14,
+      "height": 0.2,
+      "startTick": 0,
       "blend": "additive",
+      "intensity": 2.8,
+      "core": 0.7,
       "texture": {
-        "asset": "asset.effects.beetles.spark",
+        "asset": "asset.effects.vfx.mote",
         "role": "image",
         "index": 1
       },
-      "intensity": 3.0,
-      "core": 0.7,
       "emitter": {
         "mode": "continuous",
         "lifetimeTicks": 30,
-        "rate": 4,
-        "speed": 1.4,
-        "speedVariation": 0.4,
+        "rate": 5,
+        "speed": 0.6,
+        "speedVariation": 0.6,
         "direction": {
           "x": 0,
           "y": 1,
           "z": 0
         },
-        "coneDegrees": 25,
-        "gravity": -1.5,
-        "drag": 0.5,
-        "spawnRadius": 1.6,
-        "startSize": 0.12,
-        "endSize": 0.03,
+        "coneDegrees": 30,
+        "gravity": -2.5,
+        "drag": 1.0,
+        "spawnRadius": 0.9,
+        "startSize": 0.14,
+        "endSize": 0.042,
         "spin": 0,
         "fadeIn": 0.0,
-        "fadeOut": 0.5
-      }
+        "fadeOut": 0.5,
+        "spawnInner": 0.1,
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.15,
+            "value": 1
+          },
+          {
+            "at": 0.7,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "turbulence": {
+          "strength": 0.5,
+          "scale": 1.2,
+          "speed": 2.0
+        }
+      },
+      "sustain": true,
+      "follow": true
     }
   ]
 }

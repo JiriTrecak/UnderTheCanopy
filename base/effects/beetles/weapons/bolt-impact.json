@@ -105,6 +105,49 @@
         "fadeIn": 0.1,
         "fadeOut": 0.7
       }
+    },
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#8a5cff",
+      "accent": "#ffffff",
+      "durationTicks": 8,
+      "count": 1,
+      "size": 3.0,
+      "height": 0.08,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 0.9,
+      "texture": {
+        "asset": "asset.effects.vfx.blast-ring",
+        "role": "image",
+        "index": 1
+      },
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.2
+        },
+        {
+          "at": 0.3,
+          "value": 0.75
+        },
+        {
+          "at": 1,
+          "value": 1.0
+        }
+      ],
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 1
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ]
     }
   ]
 }

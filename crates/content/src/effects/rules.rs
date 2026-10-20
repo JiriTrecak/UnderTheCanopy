@@ -1,6 +1,6 @@
 //! Cross-field rules of the effect format.
 
-use super::{Pulse, Shape, VisualEffect, VisualLayer};
+use super::{ColourKey, CurveKey, Pulse, Shape, VisualEffect, VisualLayer};
 use crate::error::Error;
 use std::collections::BTreeSet;
 
@@ -35,6 +35,15 @@ pub(crate) fn check(
             let location = format!("{at}/layers/{}", layer.id);
             for problem in layer_problems(layer) {
                 fail(&location, problem);
+            }
+            if let Some(rides) = &layer.rides {
+                let ridden = effect.layers.iter().find(|l| &l.id == rides);
+                if !ridden.is_some_and(|l| matches!(l.shape, Shape::Missile | Shape::Rain)) {
+                    fail(
+                        &location,
+                        "Rides must name a missile or rain layer of the same effect",
+                    );
+                }
             }
         }
     }
@@ -104,10 +113,127 @@ pub(crate) fn layer_problems(layer: &VisualLayer) -> Vec<&'static str> {
     require(
         layer.texture.is_none()
             || is(&[
-                Burst, Billboard, Streaks, Rain, Missile, Wavefront, Particles,
+                Burst, Billboard, Streaks, Rain, Missile, Wavefront, Particles, Ribbon, Beam,
             ]),
         "This layer does not accept textures",
     );
+    require(
+        (shape == Ribbon) == layer.ribbon.is_some(),
+        "Ribbon layers require ribbon settings; other shapes do not",
+    );
+    require(
+        layer.rides.is_none() || is(&[Particles, Ribbon]),
+        "Only particle and ribbon layers ride other layers",
+    );
+    require(
+        layer.ramp.is_none() || layer.texture.is_some(),
+        "Ramps colour a texture",
+    );
+    require(
+        layer
+            .forks
+            .is_none_or(|f| shape == Beam && layer.texture.is_some() && f <= 8),
+        "Forks belong to textured beams, at most eight",
+    );
+    require(
+        layer.soft.is_none_or(|s| (0.0..=10.0).contains(&s)),
+        "Softness must be between zero and ten metres",
+    );
+    require(
+        (layer.opacity_over_life.is_none() && layer.scale_over_life.is_none())
+            || !is(&[Sound, Particles, Ribbon]),
+        "Particles and ribbons take their curves from their emitter or ribbon settings",
+    );
+    let unit =
+        |keys: &Option<Vec<CurveKey>>| keys.as_ref().is_none_or(|k| values_within(k, 0.0, 1.0));
+    let colour_keys = [
+        layer.ramp.as_ref(),
+        layer
+            .emitter
+            .as_ref()
+            .and_then(|e| e.colour_over_life.as_ref()),
+        layer
+            .ribbon
+            .as_ref()
+            .and_then(|r| r.colour_over_life.as_ref()),
+    ];
+    require(
+        colour_keys.iter().flatten().all(|k| colour_keys_ok(k)),
+        "Colour keys need one to eight increasing times in 0–1 and #rrggbb colours",
+    );
+    let mut curves: Vec<&Option<Vec<CurveKey>>> =
+        vec![&layer.opacity_over_life, &layer.scale_over_life];
+    if let Some(e) = &layer.emitter {
+        curves.extend([
+            &e.opacity_over_life,
+            &e.size_over_life,
+            &e.additive_over_life,
+            &e.erosion_over_life,
+            &e.heat_over_life,
+        ]);
+    }
+    if let Some(r) = &layer.ribbon {
+        curves.extend([
+            &r.opacity_over_life,
+            &r.width_over_life,
+            &r.additive_over_life,
+        ]);
+    }
+    require(
+        curves.iter().all(|c| c.as_ref().is_none_or(|k| keys_ok(k))),
+        "Curves need one to eight keys at increasing times in 0–1",
+    );
+    let unit_curves = [
+        unit(&layer.opacity_over_life),
+        layer.emitter.as_ref().is_none_or(|e| {
+            unit(&e.opacity_over_life) && unit(&e.additive_over_life) && unit(&e.erosion_over_life)
+        }),
+        layer
+            .ribbon
+            .as_ref()
+            .is_none_or(|r| unit(&r.opacity_over_life) && unit(&r.additive_over_life)),
+    ];
+    require(
+        unit_curves.iter().all(|ok| *ok),
+        "Opacity, additive and erosion curves stay between zero and one",
+    );
+    if let Some(e) = &layer.emitter {
+        let fraction = |v: Option<f64>| v.is_none_or(|v| (0.0..=1.0).contains(&v));
+        require(
+            fraction(e.inherit_velocity)
+                && fraction(e.spawn_inner)
+                && fraction(e.erosion_softness)
+                && fraction(e.collide.map(|c| c.friction)),
+            "Inherited velocity, inner spawn, erosion softness and friction are between zero and one",
+        );
+        require(
+            e.pull.is_none_or(|p| (-1.0..=1.0).contains(&p))
+                && e.orbit.is_none_or(|o| o.abs() <= 3600.0),
+            "Pull is between minus one and one, orbit at most 3600 degrees a second",
+        );
+        require(
+            e.cone_inner_degrees
+                .is_none_or(|c| c >= 0.0 && c <= e.cone_degrees),
+            "The inner cone must lie within the cone",
+        );
+        require(
+            e.turbulence
+                .is_none_or(|t| t.strength >= 0.0 && t.scale > 0.0 && t.speed >= 0.0),
+            "Turbulence needs a positive scale and no negative strength or speed",
+        );
+        require(
+            e.size_over_life
+                .as_ref()
+                .is_none_or(|k| k.iter().all(|k| k.value >= 0.0)),
+            "Sizes cannot be negative",
+        );
+    }
+    if let Some(r) = &layer.ribbon {
+        require(
+            r.width > 0.0 && r.tile.is_none_or(|t| t > 0.0),
+            "Ribbon width and tile must be positive",
+        );
+    }
     require(
         !is(&[Billboard, Streaks]) || layer.texture.is_some(),
         "This layer requires a texture",
@@ -171,6 +297,7 @@ pub(crate) fn layer_problems(layer: &VisualLayer) -> Vec<&'static str> {
         layer.emitter.as_ref().map(|e| e.lifetime_ticks),
         layer.impact.as_ref().map(|i| i.duration_ticks),
         layer.trail.as_ref().map(|t| t.duration_ticks),
+        layer.ribbon.as_ref().map(|r| r.duration_ticks),
     ];
     if ticks.into_iter().flatten().any(|t| t == 0) {
         problems.push("Durations must be positive");
@@ -202,6 +329,30 @@ pub(crate) fn layer_problems(layer: &VisualLayer) -> Vec<&'static str> {
         problems.push("Colours must be #rrggbb");
     }
     problems
+}
+
+/// One to eight keys at increasing times within 0–1.
+fn keys_ok(keys: &[CurveKey]) -> bool {
+    times_ok(keys.iter().map(|k| k.at))
+}
+
+fn colour_keys_ok(keys: &[ColourKey]) -> bool {
+    times_ok(keys.iter().map(|k| k.at)) && keys.iter().all(|k| is_colour(&k.colour))
+}
+
+fn times_ok(times: impl ExactSizeIterator<Item = f64>) -> bool {
+    let n = times.len();
+    let mut last = -1.0;
+    (1..=8).contains(&n)
+        && times.into_iter().all(|t| {
+            let ok = (0.0..=1.0).contains(&t) && t > last;
+            last = t;
+            ok
+        })
+}
+
+fn values_within(keys: &[CurveKey], low: f64, high: f64) -> bool {
+    keys.iter().all(|k| (low..=high).contains(&k.value))
 }
 
 /// `#rrggbb`, either case.
@@ -263,6 +414,30 @@ mod tests {
                 "Opacity cannot exceed one",
             ),
             (
+                json!({"forks": 2}),
+                "Forks belong to textured beams, at most eight",
+            ),
+            (
+                json!({"shape": "ribbon"}),
+                "Ribbon layers require ribbon settings; other shapes do not",
+            ),
+            (
+                json!({"rides": "drop"}),
+                "Only particle and ribbon layers ride other layers",
+            ),
+            (
+                json!({"ramp": [{"at": 0, "colour": "#000000"}]}),
+                "Ramps colour a texture",
+            ),
+            (
+                json!({"opacityOverLife": [{"at": 0.5, "value": 1}, {"at": 0.2, "value": 0}]}),
+                "Curves need one to eight keys at increasing times in 0–1",
+            ),
+            (
+                json!({"opacityOverLife": [{"at": 0, "value": 2}]}),
+                "Opacity, additive and erosion curves stay between zero and one",
+            ),
+            (
                 json!({"shape": "particles", "texture": {"asset": "asset.test.spark", "role": "image", "index": 1},
                     "flipbook": {"columns": 2, "rows": 2, "firstFrame": 2, "frames": 3, "frameTicks": 1, "mode": "loop", "randomStart": false},
                     "emitter": {"mode": "burst", "lifetimeTicks": 10, "rate": 5, "speed": 1, "speedVariation": 0, "direction": {"x": 0, "y": 1, "z": 0},
@@ -274,6 +449,23 @@ mod tests {
             let problems = layer_problems(&layer(extra.clone()));
             assert_eq!(problems, [expected], "{extra}");
         }
+    }
+
+    #[test]
+    fn riders_need_a_travelling_layer() {
+        let effect: VisualEffect = serde_json::from_value(json!({"id": "effect.test.fall", "name": "Fall",
+            "durationTicks": 10, "layers": [
+                {"id": "glow", "shape": "glow", "colour": "#ffffff", "accent": "#ffffff", "durationTicks": 10, "count": 1, "size": 1, "height": 0},
+                {"id": "fire", "shape": "ribbon", "rides": "glow", "colour": "#ffffff", "accent": "#ffffff", "durationTicks": 10,
+                 "count": 1, "size": 1, "height": 0, "ribbon": {"durationTicks": 8, "width": 1}}]}))
+        .unwrap();
+        let mut errors = Vec::new();
+        check(&[effect], &std::collections::BTreeMap::new(), &mut errors);
+        let messages: Vec<_> = errors.iter().map(|e| e.message.as_str()).collect();
+        assert_eq!(
+            messages,
+            ["Rides must name a missile or rain layer of the same effect"]
+        );
     }
 
     #[test]

@@ -43,7 +43,9 @@
   "supplyCost": 1,
   "modelScale": 3.1,
   "presentation": {
-    "projectile": "effect.weapon.thorn",
-    "projectileSocket": "socket_projectile"
+    "projectile": "effect.weapon.silk",
+    "projectileSocket": "socket_projectile",
+    "launchEffect": "effect.weapons.silk-flight",
+    "impactEffect": "effect.weapons.splinter-hit"
   }
 }

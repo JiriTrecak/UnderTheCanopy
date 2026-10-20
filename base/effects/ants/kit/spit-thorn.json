@@ -1,0 +1,177 @@
+{
+  "id": "effect.ants.kit.spit-thorn",
+  "name": "Spit and thorn",
+  "description": "A violet spit at the mouth and the faint wake of the thorn it throws.",
+  "durationTicks": 40,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flash",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#b49cff",
+      "accent": "#ffffff",
+      "durationTicks": 4,
+      "count": 1,
+      "size": 1.4,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.4,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      },
+      "anchor": "source"
+    },
+    {
+      "id": "spray",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 10,
+      "count": 5,
+      "size": 0.05,
+      "height": 0.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 5.0,
+      "core": 0.35,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 8,
+        "rate": 5,
+        "speed": 6,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 30,
+        "gravity": 6,
+        "drag": 0.7,
+        "spawnRadius": 0.15,
+        "startSize": 0.05,
+        "endSize": 0.022500000000000003,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55,
+        "stretch": 0.05
+      },
+      "anchor": "source"
+    },
+    {
+      "id": "path",
+      "enabled": true,
+      "shape": "missile",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 0.1,
+      "height": 0,
+      "arcHeight": 0.65,
+      "intensity": 0.0
+    },
+    {
+      "id": "wake",
+      "enabled": true,
+      "shape": "ribbon",
+      "colour": "#fbf6ea",
+      "accent": "#fbf6ea",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 1.0,
+      "height": 0,
+      "rides": "path",
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.vfx.wake",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 0.85,
+      "ribbon": {
+        "durationTicks": 8,
+        "width": 0.42,
+        "tile": 1.2,
+        "scroll": 0.0,
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 1
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "widthOverLife": [
+          {
+            "at": 0,
+            "value": 0.6
+          },
+          {
+            "at": 0.15,
+            "value": 1
+          },
+          {
+            "at": 1,
+            "value": 0.35
+          }
+        ]
+      }
+    },
+    {
+      "id": "dust",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#e2d6be",
+      "accent": "#cfc2a6",
+      "durationTicks": 40,
+      "count": 12,
+      "size": 0.28,
+      "height": 0,
+      "blend": "normal",
+      "intensity": 0.7,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 14,
+        "rate": 30,
+        "speed": 0.4,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": 0.0,
+        "drag": 1.5,
+        "spawnRadius": 0.12,
+        "startSize": 0.28,
+        "endSize": 0.07,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.6,
+        "space": "world",
+        "inheritVelocity": 0.1
+      },
+      "rides": "path"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "asset.effects.vfx.vortex",
+  "name": "Vortex",
+  "kind": "texture",
+  "tags": [
+    "effect",
+    "vfx",
+    "particle"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original procedural effect art for Under the Canopy (tools/content/vfx_art.py). Four spiral arms winding in to an empty eye: storms, whirlpools, drains."
+}

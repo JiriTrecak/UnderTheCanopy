@@ -60,6 +60,8 @@ pub enum Motion {
     Billboard,
     /// Sparks flung out on a golden-angle spiral.
     Burst,
+    /// A textured strip along the path of its emitter (`EffectLayer::ribbon`).
+    Ribbon,
     /// Sparks rising in columns, fading in and out.
     Streaks,
     /// Stateless emitter particles (`EffectLayer::emitter`).
@@ -119,11 +121,65 @@ pub struct CookedFlipbook {
     pub frame_time: f32,
     pub play: FlipbookPlay,
     pub random_start: bool,
+    /// The frames span each particle's life (`frame_time` unused).
+    pub over_life: bool,
+    /// Cross-fades each frame into the next.
+    pub blend: bool,
+}
+
+/// A curve over a life (0–1): `(at, value)` keys at increasing times; the value holds
+/// before the first and after the last key and blends linearly between.
+pub type Curve = Vec<(f32, f32)>;
+/// A colour curve over a life or a ramp: `(at, linear rgb)` keys.
+pub type ColourCurve = Vec<(f32, [f32; 3])>;
+
+/// Samples a curve at `t`.
+pub fn sample_curve(keys: &[(f32, f32)], t: f32) -> f32 {
+    sample(keys, t, |a, b, k| a + (b - a) * k).unwrap_or(1.0)
+}
+
+/// Samples a colour curve at `t`.
+pub fn sample_colours(keys: &[(f32, [f32; 3])], t: f32) -> [f32; 3] {
+    sample(keys, t, |a: [f32; 3], b: [f32; 3], k| {
+        std::array::from_fn(|i| a[i] + (b[i] - a[i]) * k)
+    })
+    .unwrap_or([1.0; 3])
+}
+
+fn sample<T: Copy>(keys: &[(f32, T)], t: f32, lerp: impl Fn(T, T, f32) -> T) -> Option<T> {
+    let first = keys.first()?;
+    if t <= first.0 {
+        return Some(first.1);
+    }
+    for pair in keys.windows(2) {
+        let ((a, va), (b, vb)) = (pair[0], pair[1]);
+        if t <= b {
+            return Some(lerp(va, vb, (t - a) / (b - a).max(1e-6)));
+        }
+    }
+    keys.last().map(|k| k.1)
+}
+
+/// A textured strip along an emitter's path.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CookedRibbon {
+    /// Seconds a point stays.
+    pub duration: f32,
+    pub width: f32,
+    /// Metres per texture repeat (0: the texture stretches over the whole strip).
+    pub tile: f32,
+    /// Texture repeats per second streaming backwards.
+    pub scroll: f32,
+    /// Over the strip's age (0 head, 1 tail).
+    pub colour: Option<ColourCurve>,
+    pub opacity: Option<Curve>,
+    pub width_curve: Option<Curve>,
+    pub additive: Option<Curve>,
 }
 
 /// A stateless emitter: each particle's position is a function of its index, the cue's
-/// seed and its age.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+/// seed and its age (and, in world space, of where its emitter was when it was born).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CookedEmitter {
     /// Every particle is born at the start (otherwise `rate` per second, recycled).
     pub burst: bool,
@@ -149,6 +205,30 @@ pub struct CookedEmitter {
     pub fade_out: f32,
     /// Seconds of motion each particle spans: a streak along its velocity (0: round).
     pub stretch: f32,
+    /// Particles stay where they were born (a moving emitter leaves a trail).
+    pub world: bool,
+    /// Share of the emitter's velocity a world-space particle keeps.
+    pub inherit: f32,
+    /// Inner half-angle of the cone, radians.
+    pub cone_inner: f32,
+    /// Share of the spawn radius left empty at the centre.
+    pub spawn_inner: f32,
+    /// Over each particle's life.
+    pub colour: Option<ColourCurve>,
+    pub opacity: Option<Curve>,
+    pub size: Option<Curve>,
+    pub additive: Option<Curve>,
+    pub erosion: Option<Curve>,
+    pub erosion_softness: f32,
+    pub heat: Option<Curve>,
+    /// Strength (m), cell size (m), churn (1/s).
+    pub turbulence: Option<[f32; 3]>,
+    /// Friction on landing (None: falls through the ground).
+    pub collide: Option<f32>,
+    /// Radians a second around the emitter's upright axis.
+    pub orbit: f32,
+    /// Share of the distance to the axis closed over life (negative: pushed out).
+    pub pull: f32,
 }
 
 /// Splashes where a rain drop lands.
@@ -280,4 +360,35 @@ pub struct EffectLayer {
     pub cue_motion: Option<CookedCueMotion>,
     pub trail: Option<CookedTrail>,
     pub rain: Option<CookedRain>,
+    /// Index (among the effect's layers) of the travelling layer whose path this layer's
+    /// emitter rides.
+    pub rides: Option<u16>,
+    pub ribbon: Option<CookedRibbon>,
+    /// Colours the texture's brightness.
+    pub ramp: Option<ColourCurve>,
+    /// Opacity and scale over the layer's life (replace the envelope and growth).
+    pub opacity_curve: Option<Curve>,
+    pub scale_curve: Option<Curve>,
+    /// Metres over which sprites fade into what is behind them (0: hard); `None` is the
+    /// primitive's default (0.4 m; ground decals cut hard).
+    pub soft: Option<f32>,
+    /// Textured beams: branches forking off the bolt.
+    pub forks: u32,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn curves_hold_outside_their_keys_and_blend_between() {
+        let keys = [(0.2, 1.0), (0.6, 3.0), (1.0, 0.0)];
+        assert_eq!(sample_curve(&keys, 0.0), 1.0);
+        assert!((sample_curve(&keys, 0.4) - 2.0).abs() < 1e-6);
+        assert!((sample_curve(&keys, 0.8) - 1.5).abs() < 1e-6);
+        assert_eq!(sample_curve(&keys, 1.0), 0.0);
+        assert_eq!(sample_curve(&[], 0.5), 1.0);
+        let colours = [(0.0, [0.0, 0.0, 0.0]), (1.0, [1.0, 0.5, 0.0])];
+        assert_eq!(sample_colours(&colours, 0.5), [0.5, 0.25, 0.0]);
+    }
 }

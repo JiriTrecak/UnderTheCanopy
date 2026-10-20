@@ -24,15 +24,364 @@
       "intensity": 4.5,
       "core": 1.0,
       "length": 2.2,
-      "trail": {
-        "durationTicks": 12,
-        "maxPoints": 12,
-        "width": 0.4,
-        "colour": "#ff6a1a",
-        "opacity": 1.0,
-        "breakDistance": 6
-      },
       "arcHeight": 4.5
+    },
+    {
+      "id": "fire",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 34,
+      "size": 1.5,
+      "height": 0,
+      "rides": "tracer",
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "ramp": [
+        {
+          "at": 0.0,
+          "colour": "#3a1206"
+        },
+        {
+          "at": 0.25,
+          "colour": "#b8320a"
+        },
+        {
+          "at": 0.5,
+          "colour": "#ff7a1a"
+        },
+        {
+          "at": 0.75,
+          "colour": "#ffc04a"
+        },
+        {
+          "at": 1.0,
+          "colour": "#fff4d0"
+        }
+      ],
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 16,
+        "rate": 80,
+        "speed": 0.6,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": 0.0,
+        "drag": 1.5,
+        "spawnRadius": 0.15,
+        "startSize": 1.5,
+        "endSize": 3.0,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "space": "world",
+        "inheritVelocity": 0.1,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 1.0499999999999998
+          },
+          {
+            "at": 0.25,
+            "value": 1.9500000000000002
+          },
+          {
+            "at": 1,
+            "value": 3.3000000000000003
+          }
+        ],
+        "colourOverLife": [
+          {
+            "at": 0,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.5,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.85,
+            "colour": "#5a463c"
+          },
+          {
+            "at": 1,
+            "colour": "#33302e"
+          }
+        ],
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 0.75
+          },
+          {
+            "at": 0.5,
+            "value": 0.6
+          },
+          {
+            "at": 0.85,
+            "value": 0
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.08,
+            "value": 1
+          },
+          {
+            "at": 0.6,
+            "value": 0.7
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 1,
+            "value": 0.7
+          }
+        ],
+        "heatOverLife": [
+          {
+            "at": 0,
+            "value": 1.3
+          },
+          {
+            "at": 1,
+            "value": 0.35
+          }
+        ],
+        "turbulence": {
+          "strength": 0.44999999999999996,
+          "scale": 1.2,
+          "speed": 1.5
+        }
+      }
+    },
+    {
+      "id": "smoke",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#3e3a36",
+      "accent": "#7a746c",
+      "durationTicks": 40,
+      "count": 39,
+      "size": 1.7,
+      "height": 0,
+      "rides": "tracer",
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 50,
+        "rate": 30,
+        "speed": 0.4,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": -0.6,
+        "drag": 1.2,
+        "spawnRadius": 0.1,
+        "startSize": 1.7,
+        "endSize": 5.1,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "space": "world",
+        "inheritVelocity": 0.05,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 1.02
+          },
+          {
+            "at": 0.2,
+            "value": 2.04
+          },
+          {
+            "at": 1,
+            "value": 5.1
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.1,
+            "value": 0.5
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 1,
+            "value": 0.6
+          }
+        ],
+        "turbulence": {
+          "strength": 0.85,
+          "scale": 1.5,
+          "speed": 1.0
+        }
+      }
+    },
+    {
+      "id": "embers",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffa040",
+      "accent": "#a02a08",
+      "durationTicks": 40,
+      "count": 20,
+      "size": 0.16,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 3.5,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 18,
+        "rate": 40,
+        "speed": 1.6,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": 6.0,
+        "drag": 1.5,
+        "spawnRadius": 0.12,
+        "startSize": 0.16,
+        "endSize": 0.04,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.6,
+        "space": "world",
+        "inheritVelocity": 0.1,
+        "stretch": 0.04
+      },
+      "rides": "tracer",
+      "core": 0.8
+    },
+    {
+      "id": "heat",
+      "enabled": true,
+      "shape": "ribbon",
+      "colour": "#ffd9a0",
+      "accent": "#ff5a14",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 1.0,
+      "height": 0,
+      "rides": "tracer",
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.vfx.flame-strip",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 1.0,
+      "ribbon": {
+        "durationTicks": 6,
+        "width": 1.4,
+        "tile": 1.6,
+        "scroll": 4.0,
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 1
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "widthOverLife": [
+          {
+            "at": 0,
+            "value": 0.6
+          },
+          {
+            "at": 0.15,
+            "value": 1
+          },
+          {
+            "at": 1,
+            "value": 0.35
+          }
+        ],
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 0.65
+          },
+          {
+            "at": 1,
+            "value": 0.95
+          }
+        ]
+      }
     }
   ]
 }

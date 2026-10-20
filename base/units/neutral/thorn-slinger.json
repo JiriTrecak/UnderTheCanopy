@@ -44,6 +44,8 @@
   "modelScale": 2.87,
   "presentation": {
     "projectile": "effect.weapon.arrow",
-    "projectileSocket": "socket_projectile"
+    "projectileSocket": "socket_projectile",
+    "launchEffect": "effect.weapons.thorn-flight",
+    "impactEffect": "effect.weapons.splinter-hit"
   }
 }

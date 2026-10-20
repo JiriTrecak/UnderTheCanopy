@@ -1,0 +1,175 @@
+{
+  "id": "effect.weapons.splinter-hit",
+  "name": "Splinter hit",
+  "description": "A thorn or arrow strikes: a puff of dust and a spray of splinters that land.",
+  "durationTicks": 30,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flare",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#fff2d6",
+      "accent": "#ffffff",
+      "durationTicks": 3,
+      "count": 1,
+      "size": 1.6,
+      "height": 0.6,
+      "blend": "additive",
+      "intensity": 1.3,
+      "core": 0.8,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.5
+        },
+        {
+          "at": 0.3,
+          "value": 1.0
+        },
+        {
+          "at": 1,
+          "value": 1.2
+        }
+      ],
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 1
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "splinters",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#a88a62",
+      "accent": "#7a6448",
+      "durationTicks": 26,
+      "count": 8,
+      "size": 0.26,
+      "height": 0.6,
+      "blend": "normal",
+      "intensity": 1.6,
+      "texture": {
+        "asset": "asset.effects.vfx.chunk",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 24,
+        "rate": 8,
+        "speed": 5.5,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": 16,
+        "drag": 1.5,
+        "spawnRadius": 0.2,
+        "startSize": 0.26,
+        "endSize": 0.052000000000000005,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.6,
+        "collide": {
+          "friction": 0.8
+        }
+      }
+    },
+    {
+      "id": "dust",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c8b89a",
+      "accent": "#b0a084",
+      "durationTicks": 26,
+      "count": 4,
+      "size": 0.9,
+      "height": 0.3,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 24,
+        "rate": 4,
+        "speed": 2.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": -0.5,
+        "drag": 2.0,
+        "spawnRadius": 0.3,
+        "startSize": 0.9,
+        "endSize": 2.16,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 0.54
+          },
+          {
+            "at": 1,
+            "value": 2.16
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.1,
+            "value": 0.5
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 1,
+            "value": 0.6
+          }
+        ]
+      }
+    }
+  ]
+}

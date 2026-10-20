@@ -63,7 +63,7 @@
   "presentation": {
     "projectile": "effect.weapon.thorn",
     "impactEffect": "effect.ants.kit.hit-sting",
-    "launchEffect": "effect.ants.kit.spit-muzzle"
+    "launchEffect": "effect.ants.kit.spit-venom"
   },
   "selectable": false
 }

@@ -122,7 +122,7 @@ The bright cartoon image `art/styles/forest-settlement.png` is no longer the tar
 
 ## Icons
 
-Every icon in the game (portraits, abilities, research, items, resources, commands, stats) reads at a glance at HUD size and shows exactly what it does (2026-10-20, Jiri: "clean icons that exactly represent what is happening, with the right amount of detail", D76; replaces D67's effect-heavy family). The models are Warcraft III's icons (one painted object in close-up) and StarCraft II's (plain backgrounds, one shared look for commands).
+Every icon in the game (portraits, abilities, research, items, resources, commands, stats) reads at a glance at HUD size and shows exactly what it does (2026-10-20, Jiri: "clean icons that exactly represent what is happening, with the right amount of detail", D79; replaces D67's effect-heavy family). The models are Warcraft III's icons (one painted object in close-up) and StarCraft II's (plain backgrounds, one shared look for commands).
 
 **The HUD's size sets the rules.** At 1080p the command card shows an icon at 46 px, a group's unit cards at about 34 px, the hero bar at 58 px, status badges at 22 px; HiDPI doubles them. Every icon is designed to read at 32 px.
 

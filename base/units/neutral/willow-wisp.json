@@ -43,7 +43,8 @@
   "supplyCost": 1,
   "modelScale": 4.58,
   "presentation": {
-    "projectile": "effect.weapon.thorn",
-    "projectileSocket": "socket_projectile"
+    "projectileSocket": "socket_projectile",
+    "launchEffect": "effect.neutral.willow-wisp-bolt",
+    "impactEffect": "effect.neutral.willow-wisp-burst"
   }
 }

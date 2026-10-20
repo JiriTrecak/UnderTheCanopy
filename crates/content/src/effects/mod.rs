@@ -44,9 +44,131 @@ pub struct Emitter {
     pub fade_in: f64,
     pub fade_out: f64,
     /// Seconds of motion each particle is drawn along: sparks stretch into streaks along
-    /// their velocity (0 or absent: round sprites).
+    /// their velocity (0 or absent: round sprites). Ground-facing particles stretch along
+    /// the ground.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stretch: Option<f64>,
+    /// Where particles live once born: `local` (default) moves the whole cloud with its
+    /// emitter; `world` leaves each particle where it was born, so a moving emitter (a
+    /// following unit, or the layer it `rides`) leaves a trail.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub space: Option<EmitterSpace>,
+    /// Share (0–1) of the moving emitter's velocity each world-space particle keeps.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inherit_velocity: Option<f64>,
+    /// Directions start this far from `direction` (degrees, below `coneDegrees`): with
+    /// an upward direction, 80–90 throws a flat ring outwards.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cone_inner_degrees: Option<f64>,
+    /// Particles are born no nearer the centre than this share (0–1) of `spawnRadius`:
+    /// a ring instead of a disc.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spawn_inner: Option<f64>,
+    /// Colour over each particle's life (replaces `colour` → `accent`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub colour_over_life: Option<Vec<ColourKey>>,
+    /// Opacity over each particle's life, 0–1 (replaces `fadeIn` and `fadeOut`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub opacity_over_life: Option<Vec<CurveKey>>,
+    /// Size over each particle's life, metres (replaces `startSize` → `endSize`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size_over_life: Option<Vec<CurveKey>>,
+    /// How additive each particle is over its life, 0 (alpha-blended: darkens) to 1
+    /// (adds light): fire that is born glowing and turns into smoke.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub additive_over_life: Option<Vec<CurveKey>>,
+    /// Erosion over each particle's life, 0–1: texels whose alpha falls below it vanish,
+    /// so sprites break up from their thin edges instead of fading evenly.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub erosion_over_life: Option<Vec<CurveKey>>,
+    /// Width of the eroding edge (0–1, default 0.1).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub erosion_softness: Option<f64>,
+    /// Multiplies the texture's brightness before the layer's `ramp` colours it, over
+    /// each particle's life: a falling value cools fire from its white core to red.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub heat_over_life: Option<Vec<CurveKey>>,
+    /// Smooth swirling drift.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub turbulence: Option<Turbulence>,
+    /// Particles land on the ground under the emitter instead of falling through it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub collide: Option<Collide>,
+    /// Degrees a second particles swirl around the emitter's upright axis (negative:
+    /// clockwise): vortexes, storms, auras.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub orbit: Option<f64>,
+    /// How far particles are drawn in towards the emitter's axis over their life (0–1:
+    /// all the way at the end; negative pushes out): implosions, gathering, converging.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pull: Option<f64>,
+}
+
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, schemars::JsonSchema,
+)]
+#[serde(rename_all = "camelCase")]
+pub enum EmitterSpace {
+    #[default]
+    Local,
+    World,
+}
+
+/// A value at a point of a life (`at`, 0–1). Keys are in increasing `at`; values hold
+/// before the first key and after the last, and blend linearly between.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct CurveKey {
+    pub at: f64,
+    pub value: f64,
+}
+
+/// A colour at a point of a life or of a ramp (`at`, 0–1).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ColourKey {
+    pub at: f64,
+    pub colour: String,
+}
+
+/// Smooth swirling drift: a noise field of cells `scale` metres wide, churning `speed`
+/// times a second, pushing particles up to `strength` metres off their path.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Turbulence {
+    pub strength: f64,
+    pub scale: f64,
+    pub speed: f64,
+}
+
+/// Landing on the ground: `friction` 0 slides on, 1 stops where it lands.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Collide {
+    pub friction: f64,
+}
+
+/// A textured strip drawn along the path of its emitter (the layer it `rides`, or the
+/// unit it follows): a fire trail behind a falling anvil or an arrow.
+#[skip_serializing_none]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Ribbon {
+    /// How long a point of the strip stays, ticks.
+    pub duration_ticks: u32,
+    /// Width at the head, metres.
+    pub width: f64,
+    /// Metres of strip per repeat of the texture (absent: the texture stretches over the
+    /// whole strip).
+    pub tile: Option<f64>,
+    /// Texture repeats per second the pattern streams backwards along the strip.
+    pub scroll: Option<f64>,
+    /// Over the strip's age (0 at the head, 1 at the tail): colour (replaces `colour` →
+    /// `accent`), opacity, width (× `width`) and additivity (0–1).
+    pub colour_over_life: Option<Vec<ColourKey>>,
+    pub opacity_over_life: Option<Vec<CurveKey>>,
+    pub width_over_life: Option<Vec<CurveKey>>,
+    pub additive_over_life: Option<Vec<CurveKey>>,
 }
 
 #[derive(
@@ -76,6 +198,7 @@ pub enum Shape {
     Particles,
     Sound,
     Mesh,
+    Ribbon,
 }
 
 /// The literal `"geometry"`.
@@ -263,6 +386,12 @@ pub struct Flipbook {
     pub frame_ticks: u32,
     pub mode: FlipbookMode,
     pub random_start: bool,
+    /// The frames span each particle's life (`frameTicks` is ignored).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub over_life: Option<bool>,
+    /// Cross-fades each frame into the next.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub blend: Option<bool>,
 }
 
 /// A published image output (`<asset>/image[_<index>].*`).
@@ -323,6 +452,24 @@ pub struct VisualLayer {
     pub trail: Option<Trail>,
     pub flipbook: Option<Flipbook>,
     pub texture: Option<LayerTexture>,
+    /// Particle and ribbon layers: the id of a missile or rain layer of the same effect
+    /// whose path this layer's emitter rides.
+    pub rides: Option<String>,
+    /// Ribbon layers: the strip.
+    pub ribbon: Option<Ribbon>,
+    /// Colours the texture's brightness (0 black … 1 white) through this ramp, then
+    /// multiplies by the layer's colour: one grey sprite gives a white core, an orange
+    /// body and a red rim.
+    pub ramp: Option<Vec<ColourKey>>,
+    /// Opacity and scale over the layer's life (replace the default fade in and out and
+    /// the shape's growth): a mark that appears, holds and fades.
+    pub opacity_over_life: Option<Vec<CurveKey>>,
+    pub scale_over_life: Option<Vec<CurveKey>>,
+    /// Soft particles: metres over which sprites fade where they meet the ground, units
+    /// and buildings (default 0.4; 0 cuts hard).
+    pub soft: Option<f64>,
+    /// Beam layers with a texture (lightning): branches forking off the bolt (0–8).
+    pub forks: Option<u32>,
 }
 
 fn enabled() -> bool {

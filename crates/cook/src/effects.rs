@@ -9,9 +9,9 @@
 //! runtime from the cooked models.
 
 use canopy_assets::{
-    CookedAttachment, CookedCueMotion, CookedEffect, CookedEmitter, CookedFlipbook, CookedImpact,
-    CookedModel, CookedPulse, CookedRain, CookedTrail, Easing, EffectBlend, EffectLayer,
-    EffectTable, FlipbookPlay, Motion, Primitive,
+    ColourCurve, CookedAttachment, CookedCueMotion, CookedEffect, CookedEmitter, CookedFlipbook,
+    CookedImpact, CookedModel, CookedPulse, CookedRain, CookedRibbon, CookedTrail, Curve, Easing,
+    EffectBlend, EffectLayer, EffectTable, FlipbookPlay, Motion, Primitive,
 };
 use canopy_content::{
     assets::Manifest,
@@ -62,6 +62,16 @@ pub fn output(manifest: &Manifest, asset: &str, role: &str, index: u32) -> Optio
             }
         })
         .map(str::to_owned)
+}
+
+fn curve(keys: &Option<Vec<fx::CurveKey>>) -> Option<Curve> {
+    keys.as_ref()
+        .map(|k| k.iter().map(|k| (k.at as f32, k.value as f32)).collect())
+}
+
+fn colours(keys: &Option<Vec<fx::ColourKey>>) -> Option<ColourCurve> {
+    keys.as_ref()
+        .map(|k| k.iter().map(|k| (k.at as f32, linear(&k.colour))).collect())
 }
 
 /// The converted table, the image entries it samples and problems found.
@@ -117,6 +127,7 @@ pub fn classify(layer: &VisualLayer) -> (Primitive, Motion) {
         Shape::Sound => (Primitive::Sound, Motion::Sound),
         Shape::Beam => (Primitive::Particle, Motion::Beam),
         Shape::Rain => (Primitive::Particle, Motion::Rain),
+        Shape::Ribbon => (Primitive::Particle, Motion::Ribbon),
     }
 }
 
@@ -210,6 +221,8 @@ fn layer(
                     fx::FlipbookMode::PingPong => FlipbookPlay::PingPong,
                 },
                 random_start: f.random_start,
+                over_life: f.over_life.unwrap_or(false),
+                blend: f.blend.unwrap_or(false),
             }),
         texture,
         model,
@@ -242,6 +255,23 @@ fn layer(
                 fade_in: e.fade_in as f32,
                 fade_out: e.fade_out as f32,
                 stretch: e.stretch.unwrap_or(0.0).max(0.0) as f32,
+                world: e.space == Some(fx::EmitterSpace::World),
+                inherit: e.inherit_velocity.unwrap_or(0.0) as f32,
+                cone_inner: (e.cone_inner_degrees.unwrap_or(0.0) as f32).to_radians(),
+                spawn_inner: e.spawn_inner.unwrap_or(0.0) as f32,
+                colour: colours(&e.colour_over_life),
+                opacity: curve(&e.opacity_over_life),
+                size: curve(&e.size_over_life),
+                additive: curve(&e.additive_over_life),
+                erosion: curve(&e.erosion_over_life),
+                erosion_softness: e.erosion_softness.unwrap_or(0.1) as f32,
+                heat: curve(&e.heat_over_life),
+                turbulence: e
+                    .turbulence
+                    .map(|t| [t.strength as f32, t.scale as f32, t.speed as f32]),
+                collide: e.collide.map(|c| c.friction as f32),
+                orbit: (e.orbit.unwrap_or(0.0) as f32).to_radians(),
+                pull: e.pull.unwrap_or(0.0) as f32,
             }
         }),
         cue_motion: l.motion.as_ref().map(|m| CookedCueMotion {
@@ -267,6 +297,32 @@ fn layer(
             break_distance: t.break_distance as f32,
         }),
         rain: (l.shape == Shape::Rain).then(|| rain(l)),
+        rides: l.rides.as_ref().and_then(|id| {
+            let found = effect
+                .layers
+                .iter()
+                .filter(|x| x.enabled)
+                .position(|x| &x.id == id);
+            if found.is_none() {
+                warnings.push(format!("{at}: rides {id}, which is disabled"));
+            }
+            found.map(|i| i as u16)
+        }),
+        ribbon: l.ribbon.as_ref().map(|r| CookedRibbon {
+            duration: seconds(r.duration_ticks.max(1)),
+            width: r.width as f32,
+            tile: r.tile.unwrap_or(0.0) as f32,
+            scroll: r.scroll.unwrap_or(0.0) as f32,
+            colour: colours(&r.colour_over_life),
+            opacity: curve(&r.opacity_over_life),
+            width_curve: curve(&r.width_over_life),
+            additive: curve(&r.additive_over_life),
+        }),
+        ramp: colours(&l.ramp),
+        opacity_curve: curve(&l.opacity_over_life),
+        scale_curve: curve(&l.scale_over_life),
+        soft: l.soft.map(|s| s as f32),
+        forks: l.forks.unwrap_or(0),
     }
 }
 

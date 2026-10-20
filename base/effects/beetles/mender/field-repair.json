@@ -1,7 +1,7 @@
 {
   "id": "effect.beetles.field-repair",
   "name": "Welding torch",
-  "description": "A white-hot weld point spraying orange sparks over the plating being repaired.",
+  "description": "A weld: a white-hot point spraying a fountain of sparks over the plating, molten drops falling and landing glowing, a wisp of smoke.",
   "durationTicks": 40,
   "loop": false,
   "layers": [
@@ -13,7 +13,7 @@
       "accent": "#ffffff",
       "durationTicks": 40,
       "count": 1,
-      "size": 1.2,
+      "size": 1.8,
       "height": 1.2,
       "startTick": 0,
       "blend": "additive",
@@ -40,8 +40,8 @@
       "colour": "#ffc65a",
       "accent": "#fff0b0",
       "durationTicks": 40,
-      "count": 20,
-      "size": 0.06,
+      "count": 30,
+      "size": 0.08,
       "height": 1.2,
       "startTick": 0,
       "blend": "additive",
@@ -55,7 +55,7 @@
       "emitter": {
         "mode": "continuous",
         "lifetimeTicks": 14,
-        "rate": 20,
+        "rate": 30,
         "speed": 7.5,
         "speedVariation": 0.5,
         "direction": {
@@ -67,12 +67,69 @@
         "gravity": 18,
         "drag": 0.7,
         "spawnRadius": 0.15,
-        "startSize": 0.06,
-        "endSize": 0.027,
+        "startSize": 0.08,
+        "endSize": 0.036000000000000004,
         "spin": 0,
         "fadeIn": 0.0,
         "fadeOut": 0.55,
         "stretch": 0.05
+      }
+    },
+    {
+      "id": "drops",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffd9a0",
+      "accent": "#ff8a2a",
+      "durationTicks": 40,
+      "count": 14,
+      "size": 0.18,
+      "height": 1.2,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 3.0,
+      "core": 0.8,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 40,
+        "rate": 12,
+        "speed": 1.0,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": 20.0,
+        "drag": 0.2,
+        "spawnRadius": 0.15,
+        "startSize": 0.18,
+        "endSize": 0.14,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "collide": {
+          "friction": 1.0
+        },
+        "colourOverLife": [
+          {
+            "at": 0,
+            "colour": "#fff0c0"
+          },
+          {
+            "at": 0.4,
+            "colour": "#ff8a2a"
+          },
+          {
+            "at": 1,
+            "colour": "#5a1a08"
+          }
+        ]
       }
     },
     {
@@ -83,9 +140,9 @@
       "accent": "#ffffff",
       "durationTicks": 40,
       "count": 1,
-      "size": 4.0,
+      "size": 3.0,
       "height": 1.2,
-      "intensity": 4.0,
+      "intensity": 3.0,
       "startTick": 0,
       "motion": {
         "opacity": {
@@ -94,6 +151,87 @@
           "max": 1.0,
           "easing": "sine"
         }
+      }
+    },
+    {
+      "id": "smoke",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#7a7470",
+      "accent": "#a8a29c",
+      "durationTicks": 32,
+      "count": 3,
+      "size": 0.6,
+      "height": 1.2,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 30,
+        "rate": 3,
+        "speed": 2.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": -1.0,
+        "drag": 2.0,
+        "spawnRadius": 0.3,
+        "startSize": 0.6,
+        "endSize": 1.44,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 0.36
+          },
+          {
+            "at": 1,
+            "value": 1.44
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.1,
+            "value": 0.35
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 1,
+            "value": 0.6
+          }
+        ]
       }
     }
   ]

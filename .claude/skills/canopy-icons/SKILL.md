@@ -1,11 +1,11 @@
 ---
 name: canopy-icons
-description: The rules and the pipeline for every Under the Canopy icon (abilities, passives, research and upgrade lines, commands, stats, unit, hero, creature and building portraits, items, resources) — Jiri's approved style (D76), the per-type rules, tools/icons/icons.py (requests, candidates, pick, recompose, mark), the review tool with yay/nay votes, and checking icons in the game. Use before making, repainting, reviewing or wiring any icon, for new content too.
+description: The rules and the pipeline for every Under the Canopy icon (abilities, passives, research and upgrade lines, commands, stats, unit, hero, creature and building portraits, items, resources) — Jiri's approved style (D79), the per-type rules, tools/icons/icons.py (requests, candidates, pick, recompose, mark), the review tool with yay/nay votes, and checking icons in the game. Use before making, repainting, reviewing or wiring any icon, for new content too.
 ---
 
 # Icons
 
-Read **canopy-assets** first (asset folders, ids, cooking). Background and history: [art direction §Icons](../../../docs/art-direction.md#icons) and D76 in [decisions](../../../docs/decisions.md).
+Read **canopy-assets** first (asset folders, ids, cooking). Background and history: [art direction §Icons](../../../docs/art-direction.md#icons) and D79 in [decisions](../../../docs/decisions.md).
 
 An icon must read at a glance at HUD size and show exactly what the thing does: Warcraft III's painted close-ups with StarCraft II's discipline. Jiri: "clean icons that exactly represent what is happening, with the right amount of detail, but not so much that they are not readable".
 

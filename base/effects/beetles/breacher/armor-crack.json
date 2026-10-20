@@ -1,80 +1,87 @@
 {
   "id": "effect.beetles.armor-crack",
   "name": "Cracked armour",
-  "description": "Orange glints and a fracture glyph on armour the drill has opened.",
+  "description": "Armour the drill has opened: an orange fracture glinting on the unit and flakes of plate falling off it.",
   "durationTicks": 40,
   "loop": true,
   "layers": [
     {
-      "id": "crack",
+      "id": "fracture",
       "enabled": true,
       "shape": "billboard",
       "colour": "#ff8a2a",
       "accent": "#ffd9a0",
       "durationTicks": 40,
       "count": 1,
-      "size": 3.2,
-      "height": 0.08,
-      "orientation": "ground",
+      "size": 1.6,
+      "height": 1.4,
+      "sustain": true,
       "blend": "additive",
+      "intensity": 1.3,
       "texture": {
         "asset": "asset.effects.marshal.crown-fracture",
         "role": "image",
         "index": 1
       },
-      "sustain": true,
-      "intensity": 1.6,
       "motion": {
         "opacity": {
-          "periodTicks": 40,
-          "min": 0.6,
+          "periodTicks": 20,
+          "min": 0.45,
           "max": 1.0,
           "easing": "sine"
         }
       }
     },
     {
-      "id": "glints",
+      "id": "flakes",
       "enabled": true,
       "shape": "particles",
-      "colour": "#ff8a2a",
-      "accent": "#ffd9a0",
+      "colour": "#c8c0b8",
+      "accent": "#8a8078",
       "durationTicks": 40,
-      "count": 5,
-      "size": 0.08,
+      "count": 6,
+      "size": 0.16,
       "height": 1.2,
-      "startTick": 0,
-      "blend": "additive",
-      "intensity": 4.0,
-      "core": 0.35,
+      "sustain": true,
+      "blend": "normal",
       "texture": {
-        "asset": "asset.effects.beetles.spark",
+        "asset": "asset.effects.vfx.chunk",
         "role": "image",
         "index": 1
       },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
       "emitter": {
         "mode": "continuous",
-        "lifetimeTicks": 14,
-        "rate": 5,
-        "speed": 1.8,
-        "speedVariation": 0.5,
+        "lifetimeTicks": 40,
+        "rate": 3,
+        "speed": 1.5,
+        "speedVariation": 0.4,
         "direction": {
           "x": 0,
           "y": 1,
           "z": 0
         },
-        "coneDegrees": 80,
-        "gravity": 6,
-        "drag": 0.7,
-        "spawnRadius": 0.6,
-        "startSize": 0.08,
-        "endSize": 0.036000000000000004,
-        "spin": 0,
+        "coneDegrees": 60,
+        "gravity": 16.0,
+        "drag": 0.3,
+        "spawnRadius": 0.5,
+        "startSize": 0.16,
+        "endSize": 0.14,
+        "spin": 6,
         "fadeIn": 0.0,
-        "fadeOut": 0.55,
-        "stretch": 0.06
-      },
-      "sustain": true
+        "fadeOut": 0.2,
+        "collide": {
+          "friction": 0.9
+        }
+      }
     }
   ]
 }

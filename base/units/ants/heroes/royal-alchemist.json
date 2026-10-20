@@ -286,7 +286,8 @@
     "projectile": "effect.weapon.nectar",
     "projectileSocket": "socket_projectile",
     "castContact": 0.5,
-    "impactEffect": "effect.ants.kit.hit-sting"
+    "impactEffect": "effect.ants.kit.nectar-hit",
+    "launchEffect": "effect.ants.kit.royal-nectar-flight"
   },
   "displayOrder": 2
 }

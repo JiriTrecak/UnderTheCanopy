@@ -12,7 +12,9 @@
 //! canopy shot --map <id> --camera <x,z,zoom[,yaw] | battle[,zoom]> --out <png>
 //!             [--tick <n>] [--players <n>] [--races <race,…>] [--crowd <n> | --gallery [--only <text>]] [--colors <i,j,…>] [--size <w>x<h>]
 //!             [--hour <h>] [--time <s>] [--frames <n>] [--no-shadows] [--pitch <deg>]
-//!             [--movers <n>] [--effect <id>[,<age>[,<radius>]]]… [--kill <text>[,<ticks>]] [--viewer <slot>]
+//!             [--movers <n>] [--sequence <frames>,<step>] [--effect <id>[,<age>[,<radius>]]]…
+//!             [--flight <id>,<age>,<metres>,<ticks>]…
+//!             [--kill <text>[,<ticks>]] [--viewer <slot>]
 //!             [--select all|player:<slot>|<id,…>] [--health damaged|always|selected]
 //!             [--damage <percent>[,<percent>…]] [--data <folder>] [graphics]
 //!             [--play | --observe] [--input <script>] (the HUD; see `play::capture`)
@@ -99,6 +101,9 @@ pub struct EffectSpec {
     pub id: String,
     pub age: u32,
     pub radius: Option<f32>,
+    /// `--flight`: a weapon launch effect flown over `(metres, ticks)` towards the focus,
+    /// as a shooter's would be.
+    pub flight: Option<(f32, u32)>,
 }
 
 impl EffectSpec {
@@ -120,6 +125,24 @@ impl EffectSpec {
             id: id.to_owned(),
             age,
             radius,
+            flight: None,
+        })
+    }
+
+    /// `--flight <id>,<age>,<metres>,<ticks>`.
+    pub fn parse_flight(text: &str) -> Result<Self> {
+        let parts: Vec<&str> = text.split(',').map(str::trim).collect();
+        let [id, age, metres, ticks] = parts[..] else {
+            bail!("--flight <id>,<age ticks>,<metres>,<flight ticks>");
+        };
+        Ok(Self {
+            id: id.to_owned(),
+            age: age.parse().context("--flight age")?,
+            radius: None,
+            flight: Some((
+                metres.parse().context("--flight metres")?,
+                ticks.parse().context("--flight ticks")?,
+            )),
         })
     }
 }
@@ -190,6 +213,9 @@ pub struct Options {
     pub pitch: Option<f32>,
     /// Synthetic bodies a shot walks through the view before capturing (ripples).
     pub movers: u32,
+    /// `--sequence <frames>,<step>`: after the shot, `frames − 1` more pictures, each `step`
+    /// ticks later (`<out>-001.png`, …): effects and fights as animations.
+    pub sequence: Option<(u32, u32)>,
     /// Another biome's look for the map (previews).
     pub biome: Option<String>,
     /// Standalone effects a shot plays at the camera's focus, in a row.
@@ -266,6 +292,7 @@ impl Options {
             quality: canopy_render::Quality::default(),
             pitch: None,
             movers: 0,
+            sequence: None,
             biome: None,
             effects: Vec::new(),
             damage: Vec::new(),
@@ -381,10 +408,23 @@ impl Options {
                     options.pitch = Some(pitch);
                 }
                 "--movers" => options.movers = value("--movers")?.parse().context("--movers")?,
+                "--sequence" => {
+                    let text = value("--sequence")?;
+                    let (frames, step) = text
+                        .split_once(',')
+                        .context("--sequence <frames>,<step ticks>")?;
+                    options.sequence = Some((
+                        frames.trim().parse().context("--sequence frames")?,
+                        step.trim().parse().context("--sequence step")?,
+                    ));
+                }
                 "--biome" => options.biome = Some(value("--biome")?),
                 "--effect" => options
                     .effects
                     .push(EffectSpec::parse(&value("--effect")?)?),
+                "--flight" => options
+                    .effects
+                    .push(EffectSpec::parse_flight(&value("--flight")?)?),
                 "--viewer" => {
                     options.viewer = Some(value("--viewer")?.parse().context("--viewer <slot>")?)
                 }
@@ -429,7 +469,7 @@ impl Options {
                     size = [w.parse().context("--size")?, h.parse().context("--size")?];
                 }
                 other => bail!(
-                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --races, --tick, --crowd, --gallery, --only, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --preset, --lod-pixels, --shadow-map, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --effect, --viewer, --select, --health, --damage, --kill, --play, --observe, --input)"
+                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --races, --tick, --crowd, --gallery, --only, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --preset, --lod-pixels, --shadow-map, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --sequence, --effect, --flight, --viewer, --select, --health, --damage, --kill, --play, --observe, --input)"
                 ),
             }
             first = false;

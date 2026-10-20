@@ -1,0 +1,135 @@
+{
+  "id": "effect.neutral.root-seer-burst",
+  "name": "Rot spore burst",
+  "description": "Where the root seer's shot lands: a flash, a ring and a burst of motes.",
+  "durationTicks": 26,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flare",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#c8f070",
+      "accent": "#ffffff",
+      "durationTicks": 5,
+      "count": 1,
+      "size": 3.0,
+      "height": 0.6,
+      "blend": "additive",
+      "intensity": 2.4,
+      "core": 0.8,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.5
+        },
+        {
+          "at": 0.3,
+          "value": 1.0
+        },
+        {
+          "at": 1,
+          "value": 1.2
+        }
+      ],
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 1
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#9a6aff",
+      "accent": "#ffffff",
+      "durationTicks": 10,
+      "count": 1,
+      "size": 3.6,
+      "height": 0.08,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.0,
+      "texture": {
+        "asset": "asset.effects.vfx.blast-ring",
+        "role": "image",
+        "index": 1
+      },
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.2
+        },
+        {
+          "at": 0.3,
+          "value": 0.75
+        },
+        {
+          "at": 1,
+          "value": 1.0
+        }
+      ],
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 1
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "motes",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c8f070",
+      "accent": "#9a6aff",
+      "durationTicks": 20,
+      "count": 14,
+      "size": 0.3,
+      "height": 0.6,
+      "blend": "additive",
+      "intensity": 1.6,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 18,
+        "rate": 14,
+        "speed": 6.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 120,
+        "gravity": 3.0,
+        "drag": 1.5,
+        "spawnRadius": 0.2,
+        "startSize": 0.3,
+        "endSize": 0.06,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.6
+      },
+      "core": 0.6
+    }
+  ]
+}

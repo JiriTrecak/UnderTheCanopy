@@ -190,6 +190,13 @@ mod tests {
             cue_motion: None,
             trail: None,
             rain: None,
+            rides: None,
+            ribbon: None,
+            ramp: None,
+            opacity_curve: None,
+            scale_curve: None,
+            soft: None,
+            forks: 0,
         }
     }
 

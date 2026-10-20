@@ -43,7 +43,8 @@
   "supplyCost": 1,
   "modelScale": 5.56,
   "presentation": {
-    "projectile": "effect.weapon.thorn",
-    "projectileSocket": "socket_projectile"
+    "projectileSocket": "socket_projectile",
+    "launchEffect": "effect.neutral.tadpole-spirit-bolt",
+    "impactEffect": "effect.neutral.tadpole-spirit-burst"
   }
 }

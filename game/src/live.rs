@@ -236,6 +236,7 @@ impl LiveScene {
     ) {
         let evaluator = EffectEvaluator::new(table);
         renderer.load_effect_textures(gpu, pack, evaluator.textures());
+        renderer.load_effect_curves(gpu, evaluator.curves());
         self.effects = Some(evaluator);
     }
 

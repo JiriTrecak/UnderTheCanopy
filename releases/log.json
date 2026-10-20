@@ -24,7 +24,12 @@
       "Computer heroes save mana for their ultimates, so Unbottled, Overdose, Exodus and the other ultimates now appear in matches against the computer",
       "Balance: Raider pairs cost 150 amber and hit harder; the General is sturdier and War Column stronger; Lock Shields, Overclock, Forgefall and Horn Rush are toned down",
       "Every icon is repainted to read at a glance: one clear subject per icon, near-invisible backgrounds, passives at full brightness with a pulse mark, gold marks for research levels, and upgrades that visibly improve the same object",
-      "A hero's Abilities sit in the eighth command slot with a count of unspent skill points, instead of a \"New spell available\" banner that showed even with no points to spend"
+      "A hero's Abilities sit in the eighth command slot with a count of unspent skill points, instead of a \"New spell available\" banner that showed even with no points to spend",
+      "Forgefall is rebuilt with new effect tools: a red-hot anvil falls trailing fire and smoke that hang in the air, lands, and sends a blast wave of fire racing out over the ground that cools into drifting ash",
+      "Spell effects fade softly where they meet the ground, units and buildings instead of cutting into them",
+      "Every ranged attack now leaves a trail: arrows and thorns a faint wake, nectar and venom glowing comet tails with falling drops, beetle bolts a violet streak, and siege shells arcs of fire and smoke",
+      "Ranged forest creatures fire their own magic: willow lights, dew bolts, bloom and spore shots in their own colours, each bursting where it lands",
+      "Every beetle spell and ability has its own look: Overload drains mana into an orb that bursts, Unbottled is a turning violet vortex, the turret assembles from swirling plates, Horn Rush bursts the earth, shields are hexagon domes and the Juggernaut's barrage walks across the ground"
     ],
     "fixed": [
       "Computer Shieldbearers no longer lock their shields from afar and stand rooted behind their own army"
