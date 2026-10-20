@@ -75,6 +75,13 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.beetles.cast.hero-arc",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
         "id": "hop",
         "effect": "effect.coilkeeper.arc-lash",
         "event": "impact",

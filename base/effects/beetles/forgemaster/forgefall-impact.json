@@ -65,6 +65,55 @@
       }
     },
     {
+      "id": "pillar",
+      "enabled": true,
+      "shape": "pillar",
+      "colour": "#ff8a2a",
+      "accent": "#fff3d6",
+      "durationTicks": 20,
+      "count": 1,
+      "size": 3.0,
+      "height": 16.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 1.7999999999999998
+    },
+    {
+      "id": "steam",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#e8dcd0",
+      "accent": "#ffffff",
+      "durationTicks": 30,
+      "count": 1,
+      "size": 18.0,
+      "height": 1.4,
+      "startTick": 3,
+      "blend": "additive",
+      "intensity": 0.96,
+      "core": 0.4,
+      "texture": {
+        "asset": "asset.effects.beetles.steam-burst",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 60,
+          "min": 0.4,
+          "max": 1.1,
+          "easing": "smoothstep"
+        },
+        "opacity": {
+          "periodTicks": 60,
+          "min": 0.0,
+          "max": 1.0,
+          "easing": "sine",
+          "phase": 0.5
+        }
+      }
+    },
+    {
       "id": "flash",
       "enabled": true,
       "shape": "light",

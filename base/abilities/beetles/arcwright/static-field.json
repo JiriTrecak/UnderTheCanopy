@@ -88,6 +88,13 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.beetles.cast.arc",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
         "id": "zone",
         "effect": "effect.beetles.static-field",
         "event": "released",

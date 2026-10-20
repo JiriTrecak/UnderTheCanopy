@@ -108,8 +108,23 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.beetles.cast.hero-war",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
+        "id": "run",
+        "effect": "effect.hornbreaker.horn-rush-trail",
+        "event": "projectile",
+        "anchor": "caster",
+        "lifetime": "finite",
+        "durationFrom": "delivery"
+      },
+      {
         "id": "impact",
-        "effect": "effect.marshal.faultline.hit",
+        "effect": "effect.hornbreaker.horn-rush-impact",
         "event": "impact",
         "anchor": "target",
         "lifetime": "finite"

@@ -98,6 +98,13 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.beetles.cast.hero-forge",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
         "id": "warning",
         "effect": "effect.forgemaster.forgefall-warning",
         "event": "released",

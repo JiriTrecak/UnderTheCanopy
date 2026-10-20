@@ -85,11 +85,11 @@
     "effects": [
       {
         "id": "aura",
-        "effect": "effect.marshal.rally.recipient",
-        "statusId": "steadfast",
+        "effect": "effect.hornbreaker.steadfast",
         "event": "statusApplied",
         "anchor": "target",
-        "lifetime": "status"
+        "lifetime": "status",
+        "statusId": "steadfast"
       }
     ]
   }

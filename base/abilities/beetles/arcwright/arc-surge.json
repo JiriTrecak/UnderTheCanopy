@@ -76,6 +76,13 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.beetles.cast.arc",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
         "id": "hop",
         "effect": "effect.beetles.arc-surge-hop",
         "event": "impact",

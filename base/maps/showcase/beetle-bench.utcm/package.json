@@ -3,7 +3,7 @@
   "id": "beetle-bench",
   "kind": "map",
   "name": "Bench: Beetles",
-  "description": "A sandbox for reviewing beetle buildings and their work states.",
+  "description": "A sandbox for reviewing beetle buildings and trying the beetle army and heroes.",
   "version": "1.0.0",
   "dependencies": {
     "base": ">=0.3.5"

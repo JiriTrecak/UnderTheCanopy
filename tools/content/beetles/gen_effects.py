@@ -131,6 +131,182 @@ def smoke(id_, colour='#5d5a58', accent='#a09c98', count=8, speed=2.2, size=1.8,
                  rise=rise, cone=cone, start=start, spawn=spawn)
 
 
+# ----- spell heft (the beetles' own painted art, asset.effects.beetles.*) --------------------
+
+GEAR = art('gear-sigil')
+ARC_GLYPH = art('arc-sigil')
+STEAM_BURST = art('steam-burst')
+BOLT = art('lightning')
+GOLD = '#ffd890'
+GOLD_LIGHT = '#fff3d6'
+STEEL = '#cfe0ff'
+
+
+def sigil(id_, texture, colour, size, duration, height=0.08, spin=320, sustain=False, start=0, intensity=1.4,
+          grow=True, follow=None, **extra):
+    """A painted glyph laid on the ground, turning slowly and blooming out from the centre. The
+    art fades towards its edges, so it is drawn larger than the area it marks."""
+    size *= 1.5
+    intensity *= 1.8
+    motion = {'rotation': {'periodTicks': spin, 'direction': 'clockwise'}}
+    if grow and not sustain:
+        motion['scale'] = {'periodTicks': max(2, min(duration, 24) * 2), 'min': 0.55, 'max': 1.0,
+                           'easing': 'smoothstep'}
+    if sustain:
+        motion['opacity'] = pulse(80, 0.7, 1.0)
+    l = layer(id_, 'billboard', colour, WHITE, duration, 1, size, height, startTick=start, orientation='ground',
+              blend='additive', intensity=intensity, core=0.3, texture=texture, motion=motion)
+    if sustain:
+        l['sustain'] = True
+    if follow is not None:
+        l['follow'] = follow
+    l.update(extra)
+    return l
+
+
+def sprite(id_, texture, colour, size, duration, height=1.0, start=0, intensity=1.6, grow=(0.6, 1.0), **extra):
+    """A camera-facing painted sprite that blooms in and fades out."""
+    l = layer(id_, 'billboard', colour, WHITE, duration, 1, size * 1.5, height, startTick=start, blend='additive',
+              intensity=intensity * 1.6, core=0.4, texture=texture,
+              motion={'scale': {'periodTicks': duration * 2, 'min': grow[0], 'max': grow[1], 'easing': 'smoothstep'},
+                      'opacity': {'periodTicks': duration * 2, 'min': 0.0, 'max': 1.0, 'easing': 'sine',
+                                  'phase': 0.5}})
+    l.update(extra)
+    return l
+
+
+def bolt(id_, colour, size, duration=6, height=None, start=0, intensity=2.2):
+    """A lightning bolt standing over the target, its foot on the ground."""
+    return layer(id_, 'billboard', colour, WHITE, duration, 1, size, size * 0.5 if height is None else height,
+                 startTick=start, blend='additive', intensity=intensity * 1.6, core=0.6, texture=BOLT,
+                 motion={'opacity': pulse(4, 0.55, 1.0)})
+
+
+def column(id_, colour, accent, size, height, duration, start=0, intensity=1.2, sustain=False, follow=None):
+    """A pillar of light: the mark of a hero spell."""
+    l = layer(id_, 'pillar', colour, accent, duration, 1, size, height, startTick=start, blend='additive',
+              intensity=intensity * 1.5)
+    if sustain:
+        l['sustain'] = True
+    if follow is not None:
+        l['follow'] = follow
+    return l
+
+
+def steam_burst(id_, size, duration=22, height=0.6, start=0, colour=STEAM, intensity=0.7):
+    """White steam blasting out of the vents, painted, blooming outward."""
+    return sprite(id_, STEAM_BURST, colour, size, duration, height=height, start=start, intensity=intensity,
+                  grow=(0.4, 1.1))
+
+
+def build_casts():
+    """Every cast shows: a wind-up at the caster while the spell is prepared (`accepted`).
+    Units gather it in their hands over a small glyph; heroes stand in a turning sigil the size
+    of a squad, with a light. Keys are used by gen.py."""
+    C = {}
+
+    def windup(key, rel, name, texture, colour, accent, sparks_, size, duration, hero=False):
+        layers = [
+            sigil('glyph', texture, colour, size * 1.8, duration, intensity=1.1 if hero else 0.9),
+            orb('hands', colour, accent, size * 0.55, duration, height=2.0 if hero else 1.4, intensity=1.3,
+                motion={'scale': pulse(duration * 2, 0.4, 1.1, 'smoothstep')}),
+            streaks('rise', sparks_[0], sparks_[1], count=14 if hero else 8, speed=3.2, size=0.08, lifetime=18,
+                    gravity=-6.0, cone=24, spawn=size * 0.55, mode='continuous', duration=duration, stretch=0.1,
+                    intensity=4.0),
+        ]
+        if hero:
+            layers += [
+                ring('rim', colour, accent, size * 2.2, duration, intensity=0.8,
+                     motion={'opacity': pulse(12, 0.5, 1.0)}),
+                flash('light', colour, accent, size * 4.0, 3.5, duration=duration, height=2.0),
+            ]
+        C[key] = add('casts/' + rel, effect('effect.beetles.cast.' + rel, name,
+                                           name + ': the caster gathers the spell.', duration, layers))
+
+    windup('cast_arc', 'arc', 'Coil wind-up', ARC_GLYPH, VIOLET, VIOLET_LIGHT, (VIOLET_LIGHT, WHITE), 1.8, 24)
+    windup('cast_forge', 'forge', 'Forge wind-up', GEAR, SPARK, SPARK_LIGHT, (EMBER, FIRE_LIGHT), 1.8, 24)
+    windup('cast_field', 'field', 'Field wind-up', GEAR, BLUE, BLUE_LIGHT, (BLUE_LIGHT, WHITE), 1.8, 24)
+    windup('cast_hero_arc', 'hero-arc', 'Coilkeeper wind-up', ARC_GLYPH, VIOLET, VIOLET_LIGHT, (VIOLET_LIGHT, WHITE), 3.0,
+           30, hero=True)
+    windup('cast_hero_forge', 'hero-forge', 'Forgemaster wind-up', GEAR, SPARK, SPARK_LIGHT, (EMBER, FIRE_LIGHT), 3.0, 30,
+           hero=True)
+    windup('cast_hero_war', 'hero-war', 'Hornbreaker wind-up', GEAR, GOLD, GOLD_LIGHT, (SPARK, SPARK_LIGHT), 3.0, 24,
+           hero=True)
+
+    # The Hornbreaker: a horned colossus of war. His spells are earth, brass and furnace heat.
+    C['rush_trail'] = add('hornbreaker/horn-rush-trail', effect(
+        'effect.hornbreaker.horn-rush-trail', 'Horn rush',
+        'The Hornbreaker thunders forward: dust thrown up behind him and sparks off his horn.', 40, [
+            puffs('dust', '#c8b090', '#efe2c8', count=6, speed=2.2, size=1.2, height=0.2, lifetime=26, rise=-0.4,
+                  cone=70, mode='continuous', duration=40).__or__({'follow': True}),
+            streaks('sparks', SPARK, SPARK_LIGHT, count=10, speed=5, size=0.08, lifetime=12, gravity=14,
+                    height=1.6, spawn=0.6, mode='continuous', duration=40, follow=True, intensity=4.0),
+            ring('wake', GOLD, GOLD_LIGHT, 3.2, 40, follow=True, intensity=0.6),
+        ]))
+    C['rush_hit'] = add('hornbreaker/horn-rush-impact', effect(
+        'effect.hornbreaker.horn-rush-impact', 'Horn rush impact',
+        'The horn lands: a white-gold star, a wide shock ring, a crack in the ground, rocks and dust.', 60, [
+            glint('star', GOLD_LIGHT, 5.0, duration=7, height=1.4, intensity=3.2),
+            sigil('crack', FRACTURE_TEX, GOLD, 4.0, 60, spin=4000, intensity=1.2),
+            shock('shock', GOLD_LIGHT, 11.0, 16, intensity=2.2),
+            shock('shock2', SPARK, 7.0, 20, start=4, height=0.12),
+            streaks('sparks', SPARK, WHITE, count=26, speed=12, size=0.09, lifetime=16, gravity=16, cone=80,
+                    height=1.0, intensity=4.5),
+            puffs('debris', '#5a4c40', '#8a7a68', count=10, speed=8, size=0.5, height=0.4, lifetime=26, rise=18,
+                  cone=55, spawn=0.8),
+            puffs('dust', '#c8b090', '#efe2c8', count=10, speed=3.4, size=1.6, height=0.2, lifetime=36, rise=-0.4,
+                  cone=85),
+            flash('light', GOLD, GOLD_LIGHT, 10.0, 8.0, duration=10, height=1.4),
+        ]))
+    C['overwhelm'] = add('hornbreaker/overwhelm-hit', effect(
+        'effect.hornbreaker.overwhelm-hit', 'Overwhelming blow',
+        'An enhanced blow: a gold slash of light, a shock ring and sparks.', 26, [
+            glint('star', GOLD_LIGHT, 3.2, duration=6, height=1.2, intensity=3.0),
+            shock('shock', GOLD, 6.0, 14, intensity=1.8),
+            streaks('sparks', SPARK, WHITE, count=14, speed=9, size=0.08, lifetime=12, gravity=14, cone=90,
+                    height=1.0, intensity=4.0),
+        ]))
+    C['steadfast'] = add('hornbreaker/steadfast', effect(
+        'effect.hornbreaker.steadfast', 'Steadfast',
+        'Allies standing with the Hornbreaker: a slow gold gear turning at their feet and a warm glow.', 80, [
+            sigil('gear', GEAR, GOLD, 2.0, 80, sustain=True, spin=480, intensity=1.0, follow=True),
+            ring('ring', GOLD, GOLD_LIGHT, 2.0, 80, sustain=True, follow=True, intensity=0.7),
+            glow('pool', GOLD, GOLD_LIGHT, 1.8, 80, height=0.08, sustain=True, follow=True, intensity=0.5,
+                 motion={'opacity': pulse(60, 0.5, 1.0)}),
+        ], loop=True))
+    C['colossus'] = add('hornbreaker/colossus', effect(
+        'effect.hornbreaker.colossus', 'Colossus',
+        'The Hornbreaker opens every furnace vent and grows: a pillar of fire and light, a great brass sigil '
+        'slamming down, steam blasting out, two shock rings and a flare that lights the battlefield.', 60, [
+            column('pillar', FIRE, GOLD_LIGHT, 3.0, 18, 36, intensity=1.2),
+            column('core', GOLD_LIGHT, WHITE, 1.0, 20, 28, intensity=1.4),
+            sigil('sigil', GEAR, GOLD, 9.0, 60, spin=180, intensity=1.6),
+            steam_burst('steam', 9.0, duration=30, height=1.2),
+            glint('star', GOLD_LIGHT, 8.0, duration=9, height=3.0, intensity=3.2),
+            shock('shock', GOLD_LIGHT, 18.0, 20, intensity=2.4),
+            shock('shock2', FIRE_LIGHT, 12.0, 26, start=6, height=0.12),
+            streaks('embers', EMBER, FIRE_LIGHT, count=46, speed=13, size=0.1, lifetime=24, gravity=10, cone=100,
+                    height=1.0, intensity=4.5),
+            flash('light', FIRE, GOLD_LIGHT, 18.0, 12.0, duration=16, height=3.0),
+        ]))
+    C['colossus_form'] = add('hornbreaker/colossus-form', effect(
+        'effect.hornbreaker.colossus-form', 'Colossus form',
+        'While the Hornbreaker is a colossus: furnace heat glowing at his feet, embers and steam pouring off him, a '
+        'brass gear turning beneath him.', 80, [
+            sigil('gear', GEAR, FIRE, 4.2, 80, sustain=True, spin=200, intensity=0.8, follow=True),
+            ring('ring', FIRE, FIRE_LIGHT, 4.4, 80, sustain=True, follow=True, intensity=0.8,
+                 motion={'opacity': pulse(20, 0.5, 1.0)}),
+            streaks('embers', EMBER, FIRE_LIGHT, count=10, speed=3.0, size=0.09, lifetime=22, gravity=-6, cone=30,
+                    spawn=1.6, mode='continuous', duration=80, sustain=True, follow=True, stretch=0.1,
+                    intensity=4.0, height=1.0),
+            puffs('steam', count=3, speed=1.6, size=1.0, height=2.4, lifetime=30, rise=-2.0, mode='continuous',
+                  duration=80).__or__({'sustain': True, 'follow': True}),
+            flash('light', FIRE, FIRE_LIGHT, 8.0, 2.4, duration=80, height=2.0, sustain=True, follow=True,
+                  motion={'opacity': pulse(16, 0.6, 1.0)}),
+        ], loop=True))
+    return C
+
+
 def build():
     """The troops' weapons (keys used by gen.py), and the machines' and Hornwatch's."""
     W = {}
@@ -393,26 +569,37 @@ def build_abilities():
     A['brace'] = add('shieldbearer/lock-shields', effect(
         'effect.beetles.lock-shields', 'Locked shields',
         'A blue-violet ring and a steady glow around a shieldbearer bracing behind a locked tower shield.', 80, [
-            ring('ring', BLUE, BLUE_LIGHT, 2.6, 80, sustain=True, motion={'opacity': pulse(40, 0.55, 0.95)}),
-            glow('glow', BLUE, BLUE_LIGHT, 2.2, 80, height=0.1, sustain=True, motion={'scale': pulse(40, 0.9, 1.08)}),
-            ground('plate', WARD_TEX, BLUE, BLUE_LIGHT, 3.2, 80, sustain=True, motion={'opacity': pulse(60, 0.35, 0.7)}),
+            ring('ring', BLUE, BLUE_LIGHT, 2.8, 80, sustain=True, intensity=0.8, motion={'opacity': pulse(40, 0.6, 1.0)}),
+            glow('glow', BLUE, BLUE_LIGHT, 2.4, 80, height=0.1, sustain=True, motion={'scale': pulse(40, 0.9, 1.08)}),
+            ground('plate', WARD_TEX, BLUE, BLUE_LIGHT, 3.6, 80, sustain=True, intensity=1.4,
+                   motion={'opacity': pulse(60, 0.5, 0.9)}),
         ], loop=True))
     A['brace_lock'] = add('shieldbearer/lock-shields-clang', effect(
         'effect.beetles.lock-shields-clang', 'Shields lock', 'Sparks and a vent of steam as the shield clamps lock.', 30, [
-            glint('glint', BLUE, 1.6, duration=5, height=1.0),
-            streaks('sparks', SPARK, SPARK_LIGHT, count=12, speed=7, size=0.07, lifetime=12, gravity=16, height=0.8),
-            puffs('steam', count=6, speed=2.4, size=0.8, height=0.2, lifetime=26, rise=-1.0, cone=100,
-                  direction=(0, 0.3, 0)),
-            shock('ring', BLUE, 3.2, 10, intensity=1.2),
+            glint('glint', STEEL, 2.6, duration=6, height=1.0, intensity=3.0),
+            streaks('sparks', SPARK, SPARK_LIGHT, count=18, speed=8, size=0.08, lifetime=12, gravity=16, height=0.8,
+                    intensity=4.5),
+            steam_burst('steam', 3.2, duration=20, height=0.6),
+            sigil('gear', GEAR, BLUE, 2.4, 30, spin=90, intensity=1.0),
+            shock('ring', BLUE_LIGHT, 5.0, 12, intensity=1.8),
         ]))
     # Breacher
     A['crack'] = add('breacher/armor-crack', effect(
         'effect.beetles.armor-crack', 'Cracked armour',
         'Orange glints and a fracture glyph on armour the drill has opened.', 40, [
-            ground('crack', FRACTURE_TEX, FIRE, FIRE_LIGHT, 2.2, 40, sustain=True, motion={'opacity': pulse(40, 0.4, 0.8)}),
-            streaks('glints', FIRE, FIRE_LIGHT, count=3, speed=1.5, size=0.06, lifetime=14, gravity=6, height=1.2,
-                    spawn=0.6, mode='continuous', duration=40, sustain=True, stretch=0.06, intensity=3.0),
+            ground('crack', FRACTURE_TEX, FIRE, FIRE_LIGHT, 3.2, 40, sustain=True, intensity=1.6,
+                   motion={'opacity': pulse(40, 0.6, 1.0)}),
+            streaks('glints', FIRE, FIRE_LIGHT, count=5, speed=1.8, size=0.08, lifetime=14, gravity=6, height=1.2,
+                    spawn=0.6, mode='continuous', duration=40, sustain=True, stretch=0.06, intensity=4.0),
         ], loop=True))
+    A['crack_hit'] = add('breacher/armor-crack-hit', effect(
+        'effect.beetles.armor-crack-hit', 'Armour cracks',
+        'The drill bites through: a hot star, a burst of plate chips and orange sparks.', 20, [
+            glint('star', FIRE_LIGHT, 2.4, duration=5, height=1.0, intensity=3.0),
+            shards('chips', '#ffe2c0', FIRE_LIGHT, count=10, speed=8, size=0.26, lifetime=16, height=1.0),
+            streaks('sparks', EMBER, FIRE_LIGHT, count=12, speed=8, size=0.07, lifetime=12, gravity=16, height=1.0,
+                    intensity=4.0),
+        ]))
     # Arcwright
     A['surge_hop'] = add('arcwright/arc-surge-hop', effect(
         'effect.beetles.arc-surge-hop', 'Arc surge hop',
@@ -420,16 +607,19 @@ def build_abilities():
             beam('halo', VIOLET, VIOLET_LIGHT, 1.5, 8, height=1.2, spread=0.6, intensity=0.35),
             beam('arc', '#9a74ff', '#efe8ff', 0.55, 10, height=1.2, spread=0.6),
             beam('core', '#f8f4ff', WHITE, 0.16, 8, height=1.2, spread=0.6),
-            glint('glint', SUBSTANCE, 2.6, duration=6, height=1.0),
-            streaks('sparks', count=16, speed=9, size=0.07, lifetime=12, height=1.0, gravity=6, cone=140),
-            flash('flash', VIOLET, VIOLET_LIGHT, 5.0, 7.0, duration=6, height=1.0),
+            bolt('bolt', '#efe8ff', 5.5, duration=8, intensity=2.6),
+            glint('glint', '#d8ccff', 3.2, duration=6, height=1.0, intensity=3.0),
+            streaks('sparks', count=20, speed=10, size=0.08, lifetime=12, height=1.0, gravity=6, cone=140,
+                    intensity=4.5),
+            flash('flash', VIOLET, VIOLET_LIGHT, 6.0, 8.0, duration=6, height=1.0),
         ]))
     A['static_zone'] = add('arcwright/static-field', effect(
         'effect.beetles.static-field', 'Static field',
         'A crackling violet field on the ground: a turning glyph, a bright rim and sparks that never stop.', 200, [
-            ring('rim', VIOLET, VIOLET_LIGHT, 4.0, 200, sustain=True, motion={'opacity': pulse(20, 0.6, 1.0)}),
-            ground('glyph', WHEEL_TEX, VIOLET, VIOLET_LIGHT, 7.6, 200, sustain=True,
-                   motion={'rotation': {'periodTicks': 160, 'direction': 'clockwise'}, 'opacity': pulse(30, 0.45, 0.8)}),
+            ring('rim', VIOLET, VIOLET_LIGHT, 8.0, 200, sustain=True, intensity=0.9, motion={'opacity': pulse(20, 0.6, 1.0)}),
+            sigil('glyph', ARC_GLYPH, VIOLET, 6.0, 200, sustain=True, spin=160, intensity=1.1),
+            bolt('strike', '#e0d6ff', 7.0, duration=8),
+            glint('star', '#e0d6ff', 4.0, duration=7, height=1.0, intensity=3.0),
             streaks('crackle', '#9a78ff', SUBSTANCE_HOT, count=14, speed=3.5, size=0.06, lifetime=10, gravity=4,
                     cone=80, spawn=3.6, mode='continuous', duration=200, sustain=True, stretch=0.05, height=0.2),
             flash('light', VIOLET, VIOLET_LIGHT, 7.0, 3.0, duration=200, height=1.0, sustain=True,
@@ -437,19 +627,22 @@ def build_abilities():
         ]))
     A['static_hit'] = add('arcwright/static-shock', effect(
         'effect.beetles.static-shock', 'Static shock', 'A small violet spark on a unit the field bites.', 14, [
-            glint('glint', SUBSTANCE, 1.0, duration=4, height=0.8),
-            streaks('sparks', count=6, speed=5, size=0.05, lifetime=8, height=0.8, gravity=4, cone=140),
+            bolt('bolt', VIOLET_LIGHT, 2.4, duration=4, intensity=1.6),
+            glint('glint', '#d8ccff', 1.6, duration=4, height=0.8),
+            streaks('sparks', count=8, speed=6, size=0.06, lifetime=8, height=0.8, gravity=4, cone=140, intensity=4.0),
         ]))
     # Mender
     A['mend'] = add('mender/mend', effect(
         'effect.beetles.mend', 'Mend',
         'Blue-violet tonic glows up through the patient while white steam vents from the patched seams.', 40, [
-            orb('glow', BLUE, BLUE_LIGHT, 1.6, 30, height=1.0, intensity=0.8),
-            layer('motes', 'particles', '#9fb2ff', WHITE, 36, 14, 0.2, 0.3, blend='additive', texture=SPARK_DOT,
-                  intensity=3.0, core=0.8, emitter=emitter('burst', 30, 14, 2.6, gravity=-3.0, spawn=0.7, start=0.2,
-                                                         end=0.05, cone=30)),
-            puffs('steam', count=4, speed=1.4, size=0.7, height=0.6, lifetime=28, rise=-1.8),
-            flash('flash', BLUE, BLUE_LIGHT, 3.5, 4.0, duration=10, height=1.0),
+            column('column', BLUE, '#e4ebff', 1.6, 7.0, 20, intensity=1.0),
+            sigil('gear', GEAR, BLUE, 2.2, 32, spin=200, intensity=1.0),
+            orb('glow', BLUE, BLUE_LIGHT, 2.2, 30, height=1.0, intensity=1.0),
+            layer('motes', 'particles', '#b8c6ff', WHITE, 36, 18, 0.24, 0.3, blend='additive', texture=SPARK_DOT,
+                  intensity=4.0, core=0.8, emitter=emitter('burst', 30, 18, 3.0, gravity=-3.0, spawn=0.8, start=0.24,
+                                                         end=0.06, cone=30)),
+            puffs('steam', count=4, speed=1.4, size=0.8, height=0.6, lifetime=28, rise=-1.8),
+            flash('flash', BLUE, BLUE_LIGHT, 5.0, 6.0, duration=10, height=1.0),
         ]))
     A['weld'] = add('mender/field-repair', effect(
         'effect.beetles.field-repair', 'Welding torch',
@@ -462,15 +655,18 @@ def build_abilities():
         ]))
     A['patch'] = add('tinker/patch-up', effect(
         'effect.beetles.patch-up', 'Patched up', 'A clatter of sparks and a puff of steam as a machine is patched.', 28, [
-            glint('glint', SPARK, 1.2, duration=5, height=1.0),
-            streaks('sparks', SPARK, SPARK_LIGHT, count=12, speed=6.5, size=0.06, lifetime=12, gravity=16, height=1.0),
-            puffs('steam', count=3, speed=1.2, size=0.7, height=0.8, lifetime=24, rise=-1.6),
+            glint('glint', SPARK_LIGHT, 2.2, duration=6, height=1.0, intensity=3.0),
+            sigil('gear', GEAR, SPARK, 2.0, 28, spin=120, intensity=1.0),
+            streaks('sparks', SPARK, SPARK_LIGHT, count=18, speed=7, size=0.08, lifetime=12, gravity=16, height=1.0,
+                    intensity=4.5),
+            steam_burst('steam', 2.4, duration=18, height=0.8),
         ]))
     # Warden
     A['barrier'] = add('warden/barrier-field', effect(
         'effect.beetles.barrier-field', 'Barrier field',
         'The violet pane of a field projector: a bright rim around the warden and a shimmering dome.', 80, [
-            ring('rim', VIOLET, '#efe8ff', 4.4, 80, height=0.3, sustain=True, motion={'opacity': pulse(30, 0.6, 1.0)}),
+            ring('rim', VIOLET, '#efe8ff', 4.4, 80, height=0.3, sustain=True, intensity=0.9,
+                 motion={'opacity': pulse(30, 0.6, 1.0)}),
             ring('inner', BLUE, BLUE_LIGHT, 3.6, 80, height=1.4, sustain=True, motion={'opacity': pulse(40, 0.25, 0.55)}),
             orb('dome', VIOLET, VIOLET_LIGHT, 3.4, 80, height=1.6, sustain=True, intensity=0.32, core=0.2,
                 motion={'opacity': pulse(40, 0.5, 1.0)}),
@@ -478,25 +674,30 @@ def build_abilities():
         ], loop=True))
     A['barrier_up'] = add('warden/barrier-raise', effect(
         'effect.beetles.barrier-raise', 'Barrier raised', 'The projector flares as its pane comes up.', 24, [
-            shock('wave', VIOLET_LIGHT, 5.0, 14),
-            glint('glint', SUBSTANCE, 3.0, duration=6, height=1.4),
-            streaks('sparks', count=12, speed=6, size=0.06, lifetime=12, height=1.2, gravity=4, cone=140),
-            flash('flash', VIOLET, VIOLET_LIGHT, 6.0, 7.0, duration=8, height=1.2),
+            shock('wave', VIOLET_LIGHT, 8.0, 14, intensity=2.0),
+            sigil('glyph', ARC_GLYPH, VIOLET, 4.0, 24, spin=120, intensity=1.0),
+            glint('glint', '#e0d6ff', 4.0, duration=7, height=1.4, intensity=3.0),
+            streaks('sparks', count=18, speed=7, size=0.08, lifetime=12, height=1.2, gravity=4, cone=140, intensity=4.5),
+            flash('flash', VIOLET, VIOLET_LIGHT, 7.0, 8.0, duration=8, height=1.2),
         ]))
     A['bulwark'] = add('warden/bulwark-pulse', effect(
         'effect.beetles.bulwark-pulse', 'Bulwark pulse', 'A blue shockwave of field energy rolling out from the warden.', 30, [
-            shock('wave', BLUE, 9.0, 20, intensity=1.8),
-            shock('wave2', VIOLET, 6.5, 16, start=4, height=0.4),
-            glint('glint', BLUE_LIGHT, 3.6, duration=7, height=1.2),
+            shock('wave', BLUE_LIGHT, 16.0, 20, intensity=2.2),
+            shock('wave2', VIOLET_LIGHT, 11.0, 16, start=4, height=0.4, intensity=1.8),
+            sigil('gear', GEAR, BLUE, 8.0, 30, spin=90, intensity=1.2),
+            column('column', BLUE, '#e4ebff', 2.4, 10.0, 20, intensity=1.0),
+            steam_burst('steam', 6.0, duration=22, height=0.8),
+            glint('glint', '#e4ebff', 4.6, duration=7, height=1.2, intensity=3.0),
             streaks('sparks', '#8fa6ff', BLUE_LIGHT, count=18, speed=9, size=0.07, lifetime=12, height=1.0, gravity=2,
                     cone=100, direction=(0, 0.2, 0)),
             flash('flash', BLUE, BLUE_LIGHT, 9.0, 8.0, duration=10, height=1.2),
         ]))
     A['ward'] = add('warden/bulwark-shield', effect(
         'effect.beetles.bulwark-shield', 'Field shield', 'A thin blue shell of field energy around a protected unit.', 60, [
-            orb('shell', BLUE, BLUE_LIGHT, 1.7, 60, height=1.1, sustain=True, intensity=0.35, core=0.2,
+            orb('shell', BLUE, BLUE_LIGHT, 2.0, 60, height=1.1, sustain=True, intensity=0.5, core=0.25,
                 motion={'opacity': pulse(30, 0.5, 1.0)}),
-            ground('ward', WARD_TEX, BLUE, BLUE_LIGHT, 2.4, 60, sustain=True, motion={'opacity': pulse(30, 0.4, 0.8)}),
+            ground('ward', WARD_TEX, BLUE, BLUE_LIGHT, 2.8, 60, sustain=True, intensity=1.4,
+                   motion={'opacity': pulse(30, 0.55, 0.95)}),
         ], loop=True))
     # Juggernaut
     A['broadside'] = add('juggernaut/broadside', effect(
@@ -513,11 +714,14 @@ def build_abilities():
             streaks('sparks', EMBER, FIRE_LIGHT, count=40, speed=13, size=0.09, lifetime=22, gravity=18, cone=85),
             smoke('smoke', count=10, speed=2.2, size=2.2, height=0.4, lifetime=50, start=4, spawn=2.5, cone=90),
             scorch('scorch', 6.0, start=4),
+            steam_burst('steam', 8.0, duration=26, height=1.0, colour='#d8d2cc', intensity=0.5, start=4),
         ]))
     A['broadside_fire'] = add('juggernaut/broadside-fire', effect(
         'effect.beetles.broadside-fire', 'Broadside salvo', 'Both cannons roar at once.', 30, [
             flash('flash', FIRE, FIRE_LIGHT, 10.0, 10.0, duration=8, height=3.0),
-            muzzle('muzzle', '#ffcf70', 4.0, duration=5, height=3.0, anchor=None),
+            muzzle('muzzle', '#ffcf70', 5.0, duration=5, height=3.0, anchor=None),
+            steam_burst('steam', 6.0, duration=24, height=2.4),
+            shock('ring', FIRE_LIGHT, 8.0, 14, intensity=1.8),
             glint('glint', EMBER, 4.5, duration=6, height=3.0),
             streaks('sparks', EMBER, FIRE_LIGHT, count=20, speed=12, size=0.08, lifetime=14, height=3.0, gravity=12),
             smoke('smoke', '#55524f', '#9a9590', count=10, speed=3.0, size=1.8, height=3.0, lifetime=40, start=1,
@@ -532,44 +736,52 @@ def build_heroes():
     H['turret'] = add('forgemaster/bolt-turret', effect(
         'effect.forgemaster.bolt-turret', 'Turret deploys',
         'The folded turret drops from the arm rig: a thump of steam, sparks and a brass flash.', 40, [
-            puffs('steam', count=10, speed=3.4, size=1.1, height=0.2, lifetime=34, rise=-0.9, cone=100,
+            column('column', SPARK, GOLD_LIGHT, 2.2, 12.0, 18, intensity=1.2),
+            sigil('gear', GEAR, SPARK, 5.0, 40, spin=90, intensity=1.3),
+            steam_burst('steam', 6.0, duration=26, height=0.8),
+            puffs('puffs', count=10, speed=3.4, size=1.1, height=0.2, lifetime=34, rise=-0.9, cone=100,
                   direction=(0, 0.3, 0)),
-            streaks('sparks', SPARK, SPARK_LIGHT, count=22, speed=9, size=0.07, lifetime=16, gravity=16),
-            glint('glint', SPARK, 2.4, duration=6, height=1.0),
-            flash('flash', SPARK, SPARK_LIGHT, 6.0, 6.0, duration=8, height=1.0),
-            shock('ring', SPARK, 3.6, 12),
+            streaks('sparks', SPARK, SPARK_LIGHT, count=30, speed=10, size=0.09, lifetime=16, gravity=16, intensity=4.5),
+            glint('glint', SPARK_LIGHT, 4.0, duration=7, height=1.0, intensity=3.0),
+            flash('flash', SPARK, SPARK_LIGHT, 9.0, 8.0, duration=10, height=1.0),
+            shock('ring', SPARK_LIGHT, 8.0, 14, intensity=2.0),
         ]))
     H['overclock'] = add('forgemaster/overclock', effect(
         'effect.forgemaster.overclock', 'Overclocked',
         'An overclocked unit runs hot: an orange glow, violet sparks thrown off and steam venting.', 80, [
-            glow('heat', FIRE, FIRE_LIGHT, 1.8, 80, height=0.1, sustain=True, motion={'opacity': pulse(10, 0.5, 1.0)}),
-            streaks('sparks', VIOLET, VIOLET_LIGHT, count=6, speed=4.5, size=0.05, lifetime=12, gravity=8, height=1.0,
-                    spawn=0.6, cone=120, mode='continuous', duration=80, sustain=True, stretch=0.05, intensity=3.5),
+            glow('heat', FIRE, FIRE_LIGHT, 2.4, 80, height=0.1, sustain=True, intensity=0.8,
+                 motion={'opacity': pulse(10, 0.5, 1.0)}),
+            sigil('gear', GEAR, FIRE, 1.8, 80, sustain=True, spin=60, intensity=0.8, follow=True),
+            streaks('sparks', SPARK, SPARK_LIGHT, count=10, speed=5, size=0.07, lifetime=12, gravity=8, height=1.0,
+                    spawn=0.6, cone=120, mode='continuous', duration=80, sustain=True, stretch=0.06, intensity=4.5),
             puffs('steam', count=3, speed=1.2, size=0.6, height=1.0, lifetime=24, rise=-1.8, mode='continuous',
                   duration=80).__or__({'sustain': True}),
             ring('ring', FIRE, FIRE_LIGHT, 1.8, 80, sustain=True, motion={'opacity': pulse(10, 0.4, 0.9)}),
         ], loop=True))
     H['overclock_on'] = add('forgemaster/overclock-burst', effect(
         'effect.forgemaster.overclock-burst', 'Overclock', 'A burst of heat as the governor is pulled.', 24, [
-            flash('flash', FIRE, FIRE_LIGHT, 5.0, 6.0, duration=8, height=1.0),
-            glint('glint', EMBER, 2.2, duration=6, height=1.0),
-            streaks('sparks', EMBER, FIRE_LIGHT, count=18, speed=8, size=0.07, lifetime=14, height=1.0, gravity=14),
-            puffs('steam', count=6, speed=2.6, size=0.8, height=0.4, lifetime=26, rise=-1.0, cone=110),
+            column('column', FIRE, GOLD_LIGHT, 1.8, 9.0, 16, intensity=1.2),
+            flash('flash', FIRE, FIRE_LIGHT, 7.0, 8.0, duration=10, height=1.0),
+            glint('glint', GOLD_LIGHT, 3.4, duration=7, height=1.0, intensity=3.0),
+            shock('ring', FIRE_LIGHT, 5.0, 12, intensity=1.8),
+            streaks('sparks', EMBER, FIRE_LIGHT, count=26, speed=9, size=0.08, lifetime=14, height=1.0, gravity=14,
+                    intensity=4.5),
+            steam_burst('steam', 3.6, duration=22, height=0.8),
         ]))
     H['forge'] = add('forgemaster/field-forge', effect(
         'effect.forgemaster.field-forge', 'Field forge',
         'A warm forge ring around the Forgemaster with embers drifting up.', 80, [
             ring('ring', FIRE, FIRE_LIGHT, 9.5, 80, height=0.06, sustain=True, motion={'opacity': pulse(60, 0.25, 0.5)}),
-            ground('glyph', WHEEL_TEX, FIRE, FIRE_LIGHT, 3.6, 80, sustain=True,
-                   motion={'rotation': {'periodTicks': 320, 'direction': 'counterclockwise'}, 'opacity': pulse(60, 0.3, 0.6)}),
+            sigil('glyph', GEAR, SPARK, 3.4, 80, sustain=True, spin=480, intensity=0.6),
             layer('embers', 'particles', FIRE, FIRE_LIGHT, 80, 4, 0.12, 0.4, sustain=True, blend='additive',
                   texture=SPARK_DOT, intensity=3.0, core=0.7,
                   emitter=emitter('continuous', 30, 4, 1.4, gravity=-1.5, spawn=1.6, start=0.12, end=0.03, cone=25)),
         ], loop=True))
     H['forge_mend'] = add('forgemaster/field-forge-repair', effect(
         'effect.forgemaster.field-forge-repair', 'Forge repair', 'Small weld sparks where the field forge mends plating.', 20, [
-            glint('glint', SPARK, 0.9, duration=4, height=1.2),
-            streaks('sparks', SPARK, SPARK_LIGHT, count=8, speed=5, size=0.05, lifetime=10, height=1.2, gravity=16),
+            glint('glint', SPARK_LIGHT, 1.4, duration=5, height=1.2),
+            streaks('sparks', SPARK, SPARK_LIGHT, count=10, speed=5, size=0.07, lifetime=10, height=1.2, gravity=16,
+                    intensity=4.0),
         ]))
     # Forgefall: the crucible is called down, warned for 1.5 s, and falls in the last 0.75 s
     # to land on the `impact` event (the ability's delayTicks: 60).
@@ -579,8 +791,7 @@ def build_heroes():
         'a second the iron crucible itself falls out of the canopy, brimming with molten metal and trailing fire.',
         60, [
             ring('ring', '#ff5a2a', FIRE_LIGHT, 5.0, 60, sustain=True, motion={'opacity': pulse(10, 0.5, 1.0)}),
-            ground('sigil', SIGIL_TEX, FIRE, FIRE_LIGHT, 10.0, 60, sustain=True,
-                   motion={'rotation': {'periodTicks': 120, 'direction': 'clockwise'}, 'opacity': pulse(10, 0.45, 0.9)}),
+            sigil('sigil', GEAR, FIRE, 8.0, 60, spin=120, intensity=1.4),
             flash('glow', FIRE, FIRE_LIGHT, 8.0, 3.0, duration=60, height=1.0, sustain=True,
                   motion={'opacity': pulse(10, 0.4, 1.0)}),
             layer('crucible', 'rain', WHITE, WHITE, 30, 1, 3.0, 26, startTick=30, spread=0.01, fallSpeed=1,
@@ -602,6 +813,8 @@ def build_heroes():
         'streaks, a scorched crater and a pillar of smoke.', 240, [
             explosion('blast', 9.0, height=2.0),
             explosion('second', 6.5, height=1.2, start=5, offset={'x': 1.5, 'y': 0, 'z': -1.0}),
+            column('pillar', FIRE, GOLD_LIGHT, 3.0, 16.0, 20, intensity=1.2),
+            steam_burst('steam', 12.0, duration=30, height=1.4, colour='#e8dcd0', intensity=0.6, start=3),
             flash('flash', '#ffb070', WHITE, 18.0, 12.0, duration=12, height=2.0),
             glint('glint', '#ffd9a0', 8.0, duration=7, height=1.4),
             shock('shock', FIRE_LIGHT, 13.0, 16, intensity=2.0),
@@ -645,9 +858,12 @@ def build_heroes():
             beam('arc', '#9a74ff', '#efe8ff', 0.6, 12, height=1.2, spread=0.7),
             beam('core', '#faf8ff', WHITE, 0.18, 10, height=1.2, spread=0.7),
             beam('fringe', BLUE, BLUE_LIGHT, 0.3, 6, height=1.3, spread=1.0),
-            glint('glint', SUBSTANCE, 3.0, duration=6, height=1.0),
-            streaks('sparks', count=20, speed=10, size=0.07, lifetime=14, height=1.0, gravity=6, cone=140),
-            flash('flash', VIOLET, VIOLET_LIGHT, 7.0, 8.0, duration=7, height=1.0),
+            bolt('bolt', '#f4f0ff', 8.0, duration=9, intensity=2.6),
+            glint('glint', '#e6deff', 4.0, duration=7, height=1.0, intensity=3.2),
+            shock('ring', VIOLET_LIGHT, 4.5, 10, intensity=1.8),
+            streaks('sparks', count=24, speed=11, size=0.08, lifetime=14, height=1.0, gravity=6, cone=140,
+                    intensity=4.5),
+            flash('flash', VIOLET, VIOLET_LIGHT, 8.0, 9.0, duration=7, height=1.0),
         ]))
     H['overload'] = add('coilkeeper/overload', effect(
         'effect.coilkeeper.overload', 'Overload',
@@ -656,7 +872,10 @@ def build_heroes():
             layer('implode', 'billboard', VIOLET_LIGHT, WHITE, 8, 1, 4.0, 0.12, orientation='ground',
                   blend='additive', intensity=1.8, core=0.6, texture=RING_ART,
                   motion={'scale': {'periodTicks': 16, 'min': 0.12, 'max': 1.0, 'easing': 'sine', 'phase': 0.5}}),
-            orb('gather', VIOLET, VIOLET_LIGHT, 1.2, 8, height=1.2, intensity=0.9),
+            orb('gather', VIOLET, VIOLET_LIGHT, 1.8, 8, height=1.2, intensity=1.2),
+            sigil('glyph', ARC_GLYPH, VIOLET, 6.0, 30, spin=60, intensity=1.3),
+            bolt('bolt', '#f4f0ff', 9.0, duration=10, start=6, intensity=2.6),
+            column('pillar', VIOLET, '#efe8ff', 2.4, 14.0, 16, start=6, intensity=1.2),
             glint('blast', '#d8c8ff', 5.5, duration=8, height=1.2, start=6, intensity=3.0),
             muzzle('burst', SUBSTANCE, 4.0, duration=5, height=1.2, anchor=None, start=6),
             shock('wave', VIOLET_LIGHT, 9.0, 16, start=6, intensity=2.0),
@@ -666,15 +885,17 @@ def build_heroes():
         ]))
     H['overload_hit'] = add('coilkeeper/overload-shrapnel', effect(
         'effect.coilkeeper.overload-shrapnel', 'Overload shrapnel', 'Violet sparks on units caught in the detonation.', 16, [
-            glint('glint', SUBSTANCE, 1.2, duration=4, height=1.0),
-            streaks('sparks', count=8, speed=6, size=0.06, lifetime=10, height=1.0, gravity=4, cone=140),
+            bolt('bolt', VIOLET_LIGHT, 2.6, duration=5, intensity=1.6),
+            glint('glint', '#d8ccff', 1.8, duration=5, height=1.0),
+            streaks('sparks', count=10, speed=6, size=0.07, lifetime=10, height=1.0, gravity=4, cone=140, intensity=4.0),
         ]))
     H['recharge'] = add('coilkeeper/recharge', effect(
         'effect.coilkeeper.recharge', 'Recharge',
         'A column of violet light and a rising ring as substance flows back into allies.', 40, [
-            layer('pillar', 'pillar', VIOLET, VIOLET_LIGHT, 24, 1, 6.0, 10, blend='additive', intensity=0.3),
-            shock('ring', VIOLET_LIGHT, 7.0, 22),
-            glow('glow', VIOLET, VIOLET_LIGHT, 5.0, 24, height=0.1),
+            column('pillar', VIOLET, '#efe8ff', 3.0, 14.0, 26, intensity=0.9),
+            sigil('glyph', ARC_GLYPH, BLUE, 7.0, 40, spin=200, intensity=1.2),
+            shock('ring', VIOLET_LIGHT, 12.0, 22, intensity=2.0),
+            glow('glow', VIOLET, VIOLET_LIGHT, 6.0, 24, height=0.1, intensity=0.8),
             layer('motes', 'particles', VIOLET_LIGHT, WHITE, 40, 24, 0.16, 0.2, blend='additive', texture=SPARK_DOT,
                   intensity=3.5, core=0.8, distribution='disc', spread=5.0,
                   emitter=emitter('burst', 34, 24, 3.0, gravity=-3.0, spawn=5.0, start=0.16, end=0.04, cone=20)
@@ -683,8 +904,9 @@ def build_heroes():
         ]))
     H['recharge_shield'] = add('coilkeeper/recharge-shield', effect(
         'effect.coilkeeper.recharge-shield', 'Charged shield', 'A violet shell crackling around a recharged ally.', 60, [
-            orb('shell', VIOLET, VIOLET_LIGHT, 1.7, 60, height=1.1, sustain=True, intensity=0.35, core=0.2,
+            orb('shell', VIOLET, VIOLET_LIGHT, 2.0, 60, height=1.1, sustain=True, intensity=0.5, core=0.25,
                 motion={'opacity': pulse(20, 0.5, 1.0)}),
+            ring('ring', VIOLET, VIOLET_LIGHT, 2.2, 60, sustain=True, intensity=0.7),
             streaks('crackle', '#9a78ff', SUBSTANCE_HOT, count=3, speed=2.5, size=0.05, lifetime=10, gravity=0,
                     height=1.1, spawn=0.9, cone=180, mode='continuous', duration=60, sustain=True, stretch=0.05,
                     intensity=3.0),
@@ -694,6 +916,8 @@ def build_heroes():
         'Glass and substance burst from the broken lantern: a blinding violet-white star, spinning glass shards, '
         'hot violet streaks and two shock rings.', 40, [
             flash('flash', '#e6dcff', WHITE, 20.0, 14.0, duration=12, height=2.0),
+            column('pillar', VIOLET, WHITE, 3.2, 20.0, 24, intensity=1.4),
+            bolt('bolt', '#efe8ff', 14.0, duration=10),
             glint('star', '#e6dcff', 9.0, duration=9, height=1.8, intensity=3.2),
             muzzle('burst', SUBSTANCE, 6.0, duration=6, height=1.8, anchor=None),
             shards('glass', count=36, speed=13, size=0.36, lifetime=24, height=1.6),
@@ -707,11 +931,9 @@ def build_heroes():
         'A violet storm around the Coilkeeper for six seconds: a turning vortex on the ground, a swirling column and constant crackle.', 240, [
             ground('vortex', WHEEL_TEX, VIOLET, VIOLET_LIGHT, 22.0, 240, sustain=True, follow=True,
                    motion={'rotation': {'periodTicks': 60, 'direction': 'counterclockwise'}, 'opacity': pulse(20, 0.5, 0.9)}),
-            ground('inner', SIGIL_TEX, VIOLET_LIGHT, WHITE, 12.0, 240, sustain=True, follow=True,
-                   motion={'rotation': {'periodTicks': 40, 'direction': 'clockwise'}, 'opacity': pulse(16, 0.4, 0.8)}),
+            sigil('inner', ARC_GLYPH, VIOLET_LIGHT, 9.0, 240, sustain=True, spin=40, intensity=1.2, follow=True),
             ring('edge', VIOLET, VIOLET_LIGHT, 14.0, 240, sustain=True, follow=True, motion={'opacity': pulse(12, 0.5, 1.0)}),
-            layer('column', 'pillar', VIOLET, VIOLET_LIGHT, 240, 1, 4.0, 16, sustain=True, follow=True, blend='additive',
-                  intensity=0.22),
+            column('column', VIOLET, VIOLET_LIGHT, 1.8, 14.0, 240, sustain=True, follow=True, intensity=0.25),
             streaks('swirl', VIOLET_LIGHT, WHITE, count=28, speed=4.5, size=0.08, lifetime=30, gravity=-5.0, cone=30,
                     spawn=12.0, mode='continuous', duration=240, sustain=True, follow=True, stretch=0.07,
                     intensity=3.5),
@@ -723,8 +945,9 @@ def build_heroes():
             beam('halo', VIOLET, VIOLET_LIGHT, 1.3, 5, height=2.4, spread=0.6, intensity=0.35),
             beam('arc', '#9a74ff', '#efe8ff', 0.45, 6, height=2.4, spread=0.6),
             beam('core', '#faf8ff', WHITE, 0.12, 5, height=2.4),
-            glint('glint', SUBSTANCE, 2.0, duration=5, height=2.4),
-            streaks('sparks', count=8, speed=7, size=0.06, lifetime=8, height=2.4, gravity=6, cone=180),
+            bolt('bolt', '#e6deff', 4.0, duration=5),
+            glint('glint', '#d8ccff', 2.6, duration=5, height=2.4, intensity=3.0),
+            streaks('sparks', count=10, speed=7, size=0.07, lifetime=8, height=2.4, gravity=6, cone=180, intensity=4.0),
         ]))
     H['lifted'] = add('coilkeeper/lifted', effect(
         'effect.coilkeeper.lifted', 'Lifted', 'A violet glow and sparks around an enemy held up in the storm.', 40, [

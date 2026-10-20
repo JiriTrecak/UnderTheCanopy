@@ -95,7 +95,7 @@
     "effects": [
       {
         "id": "mark",
-        "effect": "effect.marshal.carapace.cast",
+        "effect": "effect.hornbreaker.overwhelm-hit",
         "event": "enhancedHit",
         "anchor": "target",
         "lifetime": "finite"

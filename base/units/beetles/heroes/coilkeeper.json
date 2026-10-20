@@ -280,7 +280,7 @@
     "height": 9.6,
     "formationSpacing": 6.5
   },
-  "modelScale": 3.35,
+  "modelScale": 5.4,
   "presentation": {
     "projectileSocket": "socket_projectile",
     "launchEffect": "effect.beetles.weapons.arc",

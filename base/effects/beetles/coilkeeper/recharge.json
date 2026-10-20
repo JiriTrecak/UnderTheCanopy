@@ -10,13 +10,47 @@
       "enabled": true,
       "shape": "pillar",
       "colour": "#8a5cff",
-      "accent": "#c9b8ff",
-      "durationTicks": 24,
+      "accent": "#efe8ff",
+      "durationTicks": 26,
       "count": 1,
-      "size": 6.0,
-      "height": 10,
+      "size": 3.0,
+      "height": 14.0,
+      "startTick": 0,
       "blend": "additive",
-      "intensity": 0.3
+      "intensity": 1.35
+    },
+    {
+      "id": "glyph",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#5b7bff",
+      "accent": "#ffffff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 10.5,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.16,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.beetles.arc-sigil",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 200,
+          "direction": "clockwise"
+        },
+        "scale": {
+          "periodTicks": 48,
+          "min": 0.55,
+          "max": 1.0,
+          "easing": "smoothstep"
+        }
+      }
     },
     {
       "id": "ring",
@@ -26,12 +60,12 @@
       "accent": "#ffffff",
       "durationTicks": 22,
       "count": 1,
-      "size": 7.0,
+      "size": 12.0,
       "height": 0.1,
       "startTick": 0,
       "orientation": "ground",
       "blend": "additive",
-      "intensity": 1.6,
+      "intensity": 2.0,
       "core": 0.6,
       "texture": {
         "asset": "asset.effects.beetles.ring",
@@ -55,9 +89,10 @@
       "accent": "#c9b8ff",
       "durationTicks": 24,
       "count": 1,
-      "size": 5.0,
+      "size": 6.0,
       "height": 0.1,
-      "blend": "additive"
+      "blend": "additive",
+      "intensity": 0.8
     },
     {
       "id": "motes",

@@ -89,6 +89,13 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.beetles.cast.field",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
         "id": "lock",
         "effect": "effect.beetles.lock-shields-clang",
         "event": "statusApplied",

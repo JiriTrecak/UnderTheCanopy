@@ -76,6 +76,14 @@
     },
     "effects": [
       {
+        "id": "hit",
+        "effect": "effect.beetles.armor-crack-hit",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "finite",
+        "statusId": "cracked"
+      },
+      {
         "id": "crack",
         "effect": "effect.beetles.armor-crack",
         "event": "statusApplied",

@@ -9,16 +9,16 @@
       "id": "wave",
       "enabled": true,
       "shape": "billboard",
-      "colour": "#5b7bff",
+      "colour": "#b8c8ff",
       "accent": "#ffffff",
       "durationTicks": 20,
       "count": 1,
-      "size": 9.0,
+      "size": 16.0,
       "height": 0.1,
       "startTick": 0,
       "orientation": "ground",
       "blend": "additive",
-      "intensity": 1.8,
+      "intensity": 2.2,
       "core": 0.6,
       "texture": {
         "asset": "asset.effects.beetles.ring",
@@ -38,16 +38,16 @@
       "id": "wave2",
       "enabled": true,
       "shape": "billboard",
-      "colour": "#8a5cff",
+      "colour": "#c9b8ff",
       "accent": "#ffffff",
       "durationTicks": 16,
       "count": 1,
-      "size": 6.5,
+      "size": 11.0,
       "height": 0.4,
       "startTick": 4,
       "orientation": "ground",
       "blend": "additive",
-      "intensity": 1.6,
+      "intensity": 1.8,
       "core": 0.6,
       "texture": {
         "asset": "asset.effects.beetles.ring",
@@ -64,18 +64,100 @@
       }
     },
     {
+      "id": "gear",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#5b7bff",
+      "accent": "#ffffff",
+      "durationTicks": 30,
+      "count": 1,
+      "size": 12.0,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.16,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.beetles.gear-sigil",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 90,
+          "direction": "clockwise"
+        },
+        "scale": {
+          "periodTicks": 48,
+          "min": 0.55,
+          "max": 1.0,
+          "easing": "smoothstep"
+        }
+      }
+    },
+    {
+      "id": "column",
+      "enabled": true,
+      "shape": "pillar",
+      "colour": "#5b7bff",
+      "accent": "#e4ebff",
+      "durationTicks": 20,
+      "count": 1,
+      "size": 2.4,
+      "height": 10.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 1.5
+    },
+    {
+      "id": "steam",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#e8ecf2",
+      "accent": "#ffffff",
+      "durationTicks": 22,
+      "count": 1,
+      "size": 9.0,
+      "height": 0.8,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 1.1199999999999999,
+      "core": 0.4,
+      "texture": {
+        "asset": "asset.effects.beetles.steam-burst",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 44,
+          "min": 0.4,
+          "max": 1.1,
+          "easing": "smoothstep"
+        },
+        "opacity": {
+          "periodTicks": 44,
+          "min": 0.0,
+          "max": 1.0,
+          "easing": "sine",
+          "phase": 0.5
+        }
+      }
+    },
+    {
       "id": "glint",
       "enabled": true,
       "shape": "billboard",
-      "colour": "#b8c8ff",
+      "colour": "#e4ebff",
       "accent": "#ffffff",
       "durationTicks": 7,
       "count": 1,
-      "size": 3.6,
+      "size": 4.6,
       "height": 1.2,
       "startTick": 0,
       "blend": "additive",
-      "intensity": 2.6,
+      "intensity": 3.0,
       "core": 0.9,
       "texture": {
         "asset": "asset.effects.beetles.glint",

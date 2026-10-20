@@ -16,7 +16,10 @@
       "The ants' Herald and Gardener have new six-legged models that walk on all six legs, and the Royal Alchemist hero has its model",
       "Computer ant players found mounds near the front and send their armies through the tunnels",
       "Every ant spell has its own visible cast and landing: casters glow and draw a sigil as they wind up, and hero spells raise pillars of light, so you can see who cast what",
-      "Ant heroes and the Major stand larger on the field, and every ant weapon lands with its own hit effect"
+      "Ant heroes and the Major stand larger on the field, and every ant weapon lands with its own hit effect",
+      "Every beetle spell now shows its cast: casters wind up over a turning brass gear or arc glyph, hero spells raise pillars of fire and substance light, and lightning, steam and shock rings land with weight",
+      "The Hornbreaker has his own spell effects: a dust-throwing Horn Rush, a gold Steadfast aura and a furnace-lit Colossus form",
+      "Beetle heroes stand larger on the field, as tall as the ant heroes"
     ],
     "fixed": [],
     "knownIssues": []

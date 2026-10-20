@@ -59,6 +59,13 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.beetles.cast.forge",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
         "id": "fire",
         "effect": "effect.beetles.broadside-fire",
         "event": "released",

@@ -542,11 +542,28 @@ def r(name):
 
 # ----- abilities ---------------------------------------------------------------------------
 
+# Every cast shows a wind-up at the caster while it is prepared (gen_effects.build_casts).
+WINDUPS = {
+    'tinker/patch-up': 'cast_forge', 'shieldbearer/lock-shields': 'cast_field', 'arcwright/arc-surge': 'cast_arc',
+    'arcwright/static-field': 'cast_arc', 'mender/mend': 'cast_field', 'mender/field-repair': 'cast_forge',
+    'warden/barrier-field': 'cast_field', 'warden/bulwark-pulse': 'cast_field', 'juggernaut/broadside': 'cast_forge',
+    'forgemaster/bolt-turret': 'cast_hero_forge', 'forgemaster/overclock': 'cast_hero_forge',
+    'forgemaster/forgefall': 'cast_hero_forge', 'coilkeeper/arc-lash': 'cast_hero_arc', 'coilkeeper/overload': 'cast_hero_arc',
+    'coilkeeper/recharge': 'cast_hero_arc', 'coilkeeper/unbottled': 'cast_hero_arc',
+}
+
+
+def with_windup(rel, a, fx_):
+    if rel in WINDUPS:
+        a['presentation']['effects'].insert(0, fx('windup', fx_[WINDUPS[rel]], 'accepted', anchor='caster'))
+    return a
+
+
 def unit_abilities(fx_):
     A = {}
 
     def put(rel, a):
-        A[a['id']] = a
+        A[a['id']] = with_windup(rel, a, fx_)
         write('abilities/beetles/' + rel + '.json', a)
         return a['id']
 
@@ -579,7 +596,8 @@ def unit_abilities(fx_):
         'ability.beetles.armor-breaker', 'Armor Breaker',
         'Every drill strike cracks the target open: its armor falls by 3 for 6 seconds.',
         [{'armor': -3}], [], ICON['armor-breaker'],
-        [fx('crack', fx_['crack'], 'statusApplied', lifetime='status', statusId='cracked')],
+        [fx('hit', fx_['crack_hit'], 'statusApplied', statusId='cracked'),
+         fx('crack', fx_['crack'], 'statusApplied', lifetime='status', statusId='cracked')],
         combatModifiers={'attackBonus': {'status': 'cracked', 'amount': 0, 'manaCost': 0, 'weapon': 'melee',
                                          'blockedBySilence': False}},
         statuses=[{'op': 'status', 'target': 'target', 'id': 'cracked', 'amount': 240, 'polarity': 'negative',
@@ -685,7 +703,7 @@ def hero_abilities(fx_):
     A = {}
 
     def put(rel, a):
-        A[a['id']] = a
+        A[a['id']] = with_windup(rel, a, fx_)
         write('abilities/heroes/' + rel + '.json', a)
         return a['id']
 
@@ -1068,7 +1086,7 @@ def write_units(W, fx_):
     hero('hornbreaker', 'Hornbreaker',
          'Beetle warlord with a Hercules horn and a great hammer. Charges into battle, overwhelms a chosen enemy, steadies nearby allies and becomes a Colossus.',
          hero_levels(900, 90, 44, 4.5, 4, 200, 20, 80, 64, 1.8, 0.75),
-         weapon(44, 'hero', 0.8, 80, 20, 18, 14), 11, 3.84, 0.75,
+         weapon(44, 'hero', 0.8, 80, 20, 18, 14), 11, 6.1, 0.75,
          [binding('horn-rush', 'ability.hornbreaker.horn-rush', 0, 'Q', 1, levels=[1, 3, 5], icon='asset.icons.ability-beetles-hornbreaker-horn-rush'),
           binding('overwhelm', 'ability.hornbreaker.overwhelm', 0, 'W', 2, levels=[1, 3, 5], icon='asset.icons.ability-beetles-hornbreaker-overwhelm'),
           binding('steadfast', 'ability.hornbreaker.steadfast', 0, 'E', 3, levels=[1, 3, 5], icon='asset.icons.ability-beetles-hornbreaker-steadfast'),
@@ -1077,7 +1095,7 @@ def write_units(W, fx_):
     hero('forgemaster', 'Forgemaster',
          'Engineer hero with a smokestack helm and a back arm rig. Deploys Bolt Turrets, Overclocks allies, keeps a Field Forge burning around him and calls down Forgefall.',
          hero_levels(760, 75, 27, 3.5, 3, 240, 25, 78, 64, 1.4, 0.85),
-         weapon(27, 'hero', 13, 78, 20, 18, 14, 0.75, projectile={'speed': 40}), 11, 4.4, 0.85,
+         weapon(27, 'hero', 13, 78, 20, 18, 14, 0.75, projectile={'speed': 40}), 11, 6.6, 0.85,
          [binding('bolt-turret', 'ability.forgemaster.bolt-turret', 0, 'Q', 1, levels=[1, 3, 5]),
           binding('overclock', 'ability.forgemaster.overclock', 0, 'W', 2, levels=[1, 3, 5], threat=14),
           binding('field-forge', 'ability.forgemaster.field-forge', 0, 'E', 3, levels=[1, 3, 5]),
@@ -1088,7 +1106,7 @@ def write_units(W, fx_):
     hero('coilkeeper', 'Coilkeeper',
          'Substance savant with a coil halo and a lantern-staff. Lashes enemies with chained lightning, Overloads their mana, Recharges allies and, once, lets the substance loose: Unbottled.',
          hero_levels(640, 68, 23, 3.0, 1, 300, 32, 72, 60, 1.2, 1.05),
-         weapon(23, 'hero', 16, 72, 20, 18, 12, 0.75, projectile={'speed': 60}), 11, 3.35, 1.05,
+         weapon(23, 'hero', 16, 72, 20, 18, 12, 0.75, projectile={'speed': 60}), 11, 5.4, 1.05,
          [binding('arc-lash', 'ability.coilkeeper.arc-lash', 0, 'Q', 1, levels=[1, 3, 5]),
           binding('overload', 'ability.coilkeeper.overload', 0, 'W', 2, levels=[1, 3, 5]),
           binding('recharge', 'ability.coilkeeper.recharge', 0, 'E', 3, levels=[1, 3, 5], preference='wounded-ally'),
@@ -1356,7 +1374,7 @@ def write_race():
     write('races/beetles.json', race)
 
 
-def tune_hornbreaker():
+def tune_hornbreaker(fx_):
     # The Hornbreaker keeps his kit; Steadfast steadies the line as well as mending it.
     path = BASE + 'abilities/heroes/hornbreaker/steadfast.json'
     d = json.load(open(path))
@@ -1373,7 +1391,22 @@ def tune_hornbreaker():
     d['description'] = ('Charge a visible ground enemy, respecting terrain and other bodies. On contact deal '
                         '90/140/190 spell damage and stun for 1/1.5/2 seconds. Blocked, interrupted or '
                         'escaped charges do not hit.')
+    d['presentation']['effects'] = [
+        fx('windup', fx_['cast_hero_war'], 'accepted', anchor='caster'),
+        fx('run', fx_['rush_trail'], 'projectile', anchor='caster', durationFrom='delivery'),
+        fx('impact', fx_['rush_hit'], 'impact')]
     write('abilities/heroes/hornbreaker/horn-rush.json', d)
+    # His own effects in place of the Marshal's he borrowed.
+    for name, effects in (
+            ('colossus', [fx('windup', fx_['cast_hero_war'], 'accepted', anchor='caster'),
+                          fx('rise', fx_['colossus'], 'statusApplied', statusId='form'),
+                          fx('form', fx_['colossus_form'], 'statusApplied', lifetime='status', statusId='form')]),
+            ('overwhelm', [fx('mark', fx_['overwhelm'], 'enhancedHit')]),
+            ('steadfast', [fx('aura', fx_['steadfast'], 'statusApplied', lifetime='status', statusId='steadfast')])):
+        path = BASE + 'abilities/heroes/hornbreaker/' + name + '.json'
+        d = json.load(open(path))
+        d['presentation']['effects'] = effects
+        write('abilities/heroes/hornbreaker/' + name + '.json', d)
 
 
 def main():
@@ -1385,14 +1418,14 @@ def main():
                 'research/beetles/reinforced-carapace.json', 'research/beetles/serrated-tools.json'):
         remove(old)
     W = gen_effects.build()
-    fx_ = gen_effects.build_abilities() | gen_effects.build_heroes()
+    fx_ = gen_effects.build_abilities() | gen_effects.build_heroes() | gen_effects.build_casts()
     unit_abilities(fx_)
     hero_abilities(fx_)
     research_ids = write_research()
     write_units(W, fx_)
     write_buildings(research_ids)
     write_race()
-    tune_hornbreaker()
+    tune_hornbreaker(fx_)
     print(len(WRITTEN), 'files')
 
 

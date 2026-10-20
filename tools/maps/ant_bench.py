@@ -28,6 +28,7 @@ ARMY = ([('unit.ants.warrior', 6)] + [('unit.ants.archer', 3)] + [('unit.ants.qu
 HEROES = ('unit.ants.queen', 'unit.ants.royal-alchemist', 'unit.ants.marshal')
 # A creep camp for the ants' spells to land on (sandbox maps hold one player).
 TARGETS = [('unit.neutral.barkguard', 4), ('unit.neutral.thorn-slinger', 3), ('unit.neutral.briar-hulk', 1)]
+WELL = (47.5, 171.5)
 CAMP = (126.0, 124.0)
 
 
@@ -66,10 +67,13 @@ def main():
              'initialState': {'construction': 'complete', 'inventory': {'item.amber': 20000}},
              'position': {'x': START[0], 'y': START[1]}, 'rotation': 0.0},
         ] + [
-            # The Royal Chamber's storage holds the substance (the Nest stores amber only).
-            {'definition': d, 'id': 'bench.' + name, 'owner': 'player.1',
-             'initialState': {'construction': 'complete'} | ({'inventory': {'item.root': 20000}} if name == 'royal' else {}),
+            {'definition': d, 'id': 'bench.' + name, 'owner': 'player.1', 'initialState': {'construction': 'complete'},
              'position': {'x': p[0], 'y': p[1]}, 'rotation': 0.0} for d, name, p in BUILDINGS
+        ] + [
+            # Substance comes from a Well built on this deposit (only drop-off storage counts towards
+            # the stock, and a map cannot start with a Well standing on its deposit).
+            {'definition': 'building.neutral.corrupted-root', 'id': 'bench.deposit', 'owner': 'none',
+             'initialState': {'construction': 'complete'}, 'position': {'x': WELL[0], 'y': WELL[1]}, 'rotation': 0.0}
         ] + [
             # Heroes come at full experience, so every ability can be learned and tried.
             {'definition': d, 'id': f'bench.army.{i}', 'owner': 'player.1',

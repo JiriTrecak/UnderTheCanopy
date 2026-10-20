@@ -42,13 +42,88 @@
       "accent": "#c9b8ff",
       "durationTicks": 8,
       "count": 1,
-      "size": 1.2,
+      "size": 1.8,
       "height": 1.2,
       "startTick": 0,
       "blend": "additive",
       "orientation": "camera",
-      "intensity": 0.9,
+      "intensity": 1.2,
       "core": 0.8
+    },
+    {
+      "id": "glyph",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#8a5cff",
+      "accent": "#ffffff",
+      "durationTicks": 30,
+      "count": 1,
+      "size": 9.0,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.3400000000000003,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.beetles.arc-sigil",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 60,
+          "direction": "clockwise"
+        },
+        "scale": {
+          "periodTicks": 48,
+          "min": 0.55,
+          "max": 1.0,
+          "easing": "smoothstep"
+        }
+      }
+    },
+    {
+      "id": "bolt",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#f4f0ff",
+      "accent": "#ffffff",
+      "durationTicks": 10,
+      "count": 1,
+      "size": 9.0,
+      "height": 4.5,
+      "startTick": 6,
+      "blend": "additive",
+      "intensity": 4.16,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.lightning",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "opacity": {
+          "periodTicks": 4,
+          "min": 0.55,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "pillar",
+      "enabled": true,
+      "shape": "pillar",
+      "colour": "#8a5cff",
+      "accent": "#efe8ff",
+      "durationTicks": 16,
+      "count": 1,
+      "size": 2.4,
+      "height": 14.0,
+      "startTick": 6,
+      "blend": "additive",
+      "intensity": 1.7999999999999998
     },
     {
       "id": "blast",

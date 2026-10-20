@@ -67,6 +67,13 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.beetles.cast.field",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
         "id": "mend",
         "effect": "effect.beetles.mend",
         "event": "healed",

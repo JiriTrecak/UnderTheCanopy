@@ -17,6 +17,7 @@
       "height": 0.3,
       "blend": "additive",
       "sustain": true,
+      "intensity": 0.9,
       "motion": {
         "opacity": {
           "periodTicks": 30,

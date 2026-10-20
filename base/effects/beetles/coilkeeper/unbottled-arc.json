@@ -45,18 +45,46 @@
       "blend": "additive"
     },
     {
-      "id": "glint",
+      "id": "bolt",
       "enabled": true,
       "shape": "billboard",
-      "colour": "#8f66ff",
+      "colour": "#e6deff",
       "accent": "#ffffff",
       "durationTicks": 5,
       "count": 1,
-      "size": 2.0,
+      "size": 4.0,
+      "height": 2.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.5200000000000005,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.lightning",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "opacity": {
+          "periodTicks": 4,
+          "min": 0.55,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "glint",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#d8ccff",
+      "accent": "#ffffff",
+      "durationTicks": 5,
+      "count": 1,
+      "size": 2.6,
       "height": 2.4,
       "startTick": 0,
       "blend": "additive",
-      "intensity": 2.6,
+      "intensity": 3.0,
       "core": 0.9,
       "texture": {
         "asset": "asset.effects.beetles.glint",
@@ -71,12 +99,12 @@
       "colour": "#8f66ff",
       "accent": "#b49cff",
       "durationTicks": 10,
-      "count": 8,
-      "size": 0.06,
+      "count": 10,
+      "size": 0.07,
       "height": 2.4,
       "startTick": 0,
       "blend": "additive",
-      "intensity": 5.0,
+      "intensity": 4.0,
       "core": 0.35,
       "texture": {
         "asset": "asset.effects.beetles.spark",
@@ -86,7 +114,7 @@
       "emitter": {
         "mode": "burst",
         "lifetimeTicks": 8,
-        "rate": 8,
+        "rate": 10,
         "speed": 7,
         "speedVariation": 0.5,
         "direction": {
@@ -98,8 +126,8 @@
         "gravity": 6,
         "drag": 0.7,
         "spawnRadius": 0.15,
-        "startSize": 0.06,
-        "endSize": 0.027,
+        "startSize": 0.07,
+        "endSize": 0.03150000000000001,
         "spin": 0,
         "fadeIn": 0.0,
         "fadeOut": 0.55,

@@ -82,10 +82,7 @@
       "id": "bench.royal",
       "owner": "player.1",
       "initialState": {
-        "construction": "complete",
-        "inventory": {
-          "item.root": 20000
-        }
+        "construction": "complete"
       },
       "position": {
         "x": 29.5,
@@ -103,6 +100,19 @@
       "position": {
         "x": 231.5,
         "y": 127.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "bench.deposit",
+      "owner": "none",
+      "initialState": {
+        "construction": "complete"
+      },
+      "position": {
+        "x": 47.5,
+        "y": 171.5
       },
       "rotation": 0.0
     },

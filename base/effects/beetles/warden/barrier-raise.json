@@ -13,12 +13,12 @@
       "accent": "#ffffff",
       "durationTicks": 14,
       "count": 1,
-      "size": 5.0,
+      "size": 8.0,
       "height": 0.1,
       "startTick": 0,
       "orientation": "ground",
       "blend": "additive",
-      "intensity": 1.6,
+      "intensity": 2.0,
       "core": 0.6,
       "texture": {
         "asset": "asset.effects.beetles.ring",
@@ -35,18 +35,51 @@
       }
     },
     {
+      "id": "glyph",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#8a5cff",
+      "accent": "#ffffff",
+      "durationTicks": 24,
+      "count": 1,
+      "size": 6.0,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.8,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.beetles.arc-sigil",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 120,
+          "direction": "clockwise"
+        },
+        "scale": {
+          "periodTicks": 48,
+          "min": 0.55,
+          "max": 1.0,
+          "easing": "smoothstep"
+        }
+      }
+    },
+    {
       "id": "glint",
       "enabled": true,
       "shape": "billboard",
-      "colour": "#8f66ff",
+      "colour": "#e0d6ff",
       "accent": "#ffffff",
-      "durationTicks": 6,
+      "durationTicks": 7,
       "count": 1,
-      "size": 3.0,
+      "size": 4.0,
       "height": 1.4,
       "startTick": 0,
       "blend": "additive",
-      "intensity": 2.6,
+      "intensity": 3.0,
       "core": 0.9,
       "texture": {
         "asset": "asset.effects.beetles.glint",
@@ -61,12 +94,12 @@
       "colour": "#8f66ff",
       "accent": "#b49cff",
       "durationTicks": 14,
-      "count": 12,
-      "size": 0.06,
+      "count": 18,
+      "size": 0.08,
       "height": 1.2,
       "startTick": 0,
       "blend": "additive",
-      "intensity": 5.0,
+      "intensity": 4.5,
       "core": 0.35,
       "texture": {
         "asset": "asset.effects.beetles.spark",
@@ -76,8 +109,8 @@
       "emitter": {
         "mode": "burst",
         "lifetimeTicks": 12,
-        "rate": 12,
-        "speed": 6,
+        "rate": 18,
+        "speed": 7,
         "speedVariation": 0.5,
         "direction": {
           "x": 0,
@@ -88,8 +121,8 @@
         "gravity": 4,
         "drag": 0.7,
         "spawnRadius": 0.15,
-        "startSize": 0.06,
-        "endSize": 0.027,
+        "startSize": 0.08,
+        "endSize": 0.036000000000000004,
         "spin": 0,
         "fadeIn": 0.0,
         "fadeOut": 0.55,
@@ -104,9 +137,9 @@
       "accent": "#c9b8ff",
       "durationTicks": 8,
       "count": 1,
-      "size": 6.0,
+      "size": 7.0,
       "height": 1.2,
-      "intensity": 7.0,
+      "intensity": 8.0,
       "startTick": 0
     }
   ]

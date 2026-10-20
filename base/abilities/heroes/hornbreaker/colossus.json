@@ -121,12 +121,27 @@
     },
     "effects": [
       {
-        "id": "form",
-        "effect": "effect.core.avatar",
-        "statusId": "form",
+        "id": "windup",
+        "effect": "effect.beetles.cast.hero-war",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
+        "id": "rise",
+        "effect": "effect.hornbreaker.colossus",
         "event": "statusApplied",
         "anchor": "target",
-        "lifetime": "finite"
+        "lifetime": "finite",
+        "statusId": "form"
+      },
+      {
+        "id": "form",
+        "effect": "effect.hornbreaker.colossus-form",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "form"
       }
     ]
   }

@@ -75,6 +75,13 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.beetles.cast.hero-forge",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
         "id": "burst",
         "effect": "effect.forgemaster.overclock-burst",
         "event": "statusApplied",

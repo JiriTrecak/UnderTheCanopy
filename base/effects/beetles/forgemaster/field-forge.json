@@ -30,32 +30,35 @@
       "id": "glyph",
       "enabled": true,
       "shape": "billboard",
-      "colour": "#ff8a2a",
-      "accent": "#ffd9a0",
+      "colour": "#ffc65a",
+      "accent": "#ffffff",
       "durationTicks": 80,
       "count": 1,
-      "size": 3.6,
+      "size": 5.1,
       "height": 0.08,
+      "startTick": 0,
       "orientation": "ground",
       "blend": "additive",
+      "intensity": 1.08,
+      "core": 0.3,
       "texture": {
-        "asset": "asset.effects.marshal.cadence-wheel",
+        "asset": "asset.effects.beetles.gear-sigil",
         "role": "image",
         "index": 1
       },
-      "sustain": true,
       "motion": {
         "rotation": {
-          "periodTicks": 320,
-          "direction": "counterclockwise"
+          "periodTicks": 480,
+          "direction": "clockwise"
         },
         "opacity": {
-          "periodTicks": 60,
-          "min": 0.3,
-          "max": 0.6,
+          "periodTicks": 80,
+          "min": 0.7,
+          "max": 1.0,
           "easing": "sine"
         }
-      }
+      },
+      "sustain": true
     },
     {
       "id": "embers",

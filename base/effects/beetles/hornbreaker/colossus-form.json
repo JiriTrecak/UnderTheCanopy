@@ -1,0 +1,175 @@
+{
+  "id": "effect.hornbreaker.colossus-form",
+  "name": "Colossus form",
+  "description": "While the Hornbreaker is a colossus: furnace heat glowing at his feet, embers and steam pouring off him, a brass gear turning beneath him.",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "gear",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ff8a2a",
+      "accent": "#ffffff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 6.300000000000001,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.4400000000000002,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.beetles.gear-sigil",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 200,
+          "direction": "clockwise"
+        },
+        "opacity": {
+          "periodTicks": 80,
+          "min": 0.7,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      },
+      "sustain": true,
+      "follow": true
+    },
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 4.4,
+      "height": 0.06,
+      "blend": "additive",
+      "sustain": true,
+      "follow": true,
+      "intensity": 0.8,
+      "motion": {
+        "opacity": {
+          "periodTicks": 20,
+          "min": 0.5,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "embers",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffa040",
+      "accent": "#ffd9a0",
+      "durationTicks": 80,
+      "count": 10,
+      "size": 0.09,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 4.0,
+      "core": 0.35,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 22,
+        "rate": 10,
+        "speed": 3.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 30,
+        "gravity": -6,
+        "drag": 0.7,
+        "spawnRadius": 1.6,
+        "startSize": 0.09,
+        "endSize": 0.0405,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55,
+        "stretch": 0.1
+      },
+      "sustain": true,
+      "follow": true
+    },
+    {
+      "id": "steam",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#e8ecf2",
+      "accent": "#ffffff",
+      "durationTicks": 80,
+      "count": 3,
+      "size": 1.0,
+      "height": 2.4,
+      "startTick": 0,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.construction-dust",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 30,
+        "rate": 3,
+        "speed": 1.6,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 70,
+        "gravity": -2.0,
+        "drag": 1.6,
+        "spawnRadius": 0.3,
+        "startSize": 0.5,
+        "endSize": 1.6,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      },
+      "sustain": true,
+      "follow": true
+    },
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ff8a2a",
+      "accent": "#ffd9a0",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 8.0,
+      "height": 2.0,
+      "intensity": 2.4,
+      "startTick": 0,
+      "sustain": true,
+      "follow": true,
+      "motion": {
+        "opacity": {
+          "periodTicks": 16,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

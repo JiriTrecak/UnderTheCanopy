@@ -1,0 +1,112 @@
+{
+  "id": "effect.beetles.armor-crack-hit",
+  "name": "Armour cracks",
+  "description": "The drill bites through: a hot star, a burst of plate chips and orange sparks.",
+  "durationTicks": 20,
+  "loop": false,
+  "layers": [
+    {
+      "id": "star",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffd9a0",
+      "accent": "#ffffff",
+      "durationTicks": 5,
+      "count": 1,
+      "size": 2.4,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
+      }
+    },
+    {
+      "id": "chips",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffe2c0",
+      "accent": "#ffd9a0",
+      "durationTicks": 18,
+      "count": 10,
+      "size": 0.26,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.6,
+      "core": 0.7,
+      "texture": {
+        "asset": "asset.effects.beetles.shard",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 16,
+        "rate": 10,
+        "speed": 8,
+        "speedVariation": 0.55,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": 16.0,
+        "drag": 0.5,
+        "spawnRadius": 0.3,
+        "startSize": 0.26,
+        "endSize": 0.156,
+        "spin": 12.0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.45
+      }
+    },
+    {
+      "id": "sparks",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffa040",
+      "accent": "#ffd9a0",
+      "durationTicks": 14,
+      "count": 12,
+      "size": 0.07,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 4.0,
+      "core": 0.35,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 12,
+        "rate": 12,
+        "speed": 8,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": 16,
+        "drag": 0.7,
+        "spawnRadius": 0.15,
+        "startSize": 0.07,
+        "endSize": 0.03150000000000001,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.55,
+        "stretch": 0.05
+      }
+    }
+  ]
+}

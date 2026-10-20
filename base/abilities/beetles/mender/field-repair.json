@@ -85,6 +85,13 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.beetles.cast.forge",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
         "id": "weld",
         "effect": "effect.beetles.field-repair",
         "event": "healed",

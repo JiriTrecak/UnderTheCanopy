@@ -83,6 +83,13 @@
     },
     "effects": [
       {
+        "id": "windup",
+        "effect": "effect.beetles.cast.hero-arc",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
         "id": "flow",
         "effect": "effect.coilkeeper.recharge",
         "event": "released",

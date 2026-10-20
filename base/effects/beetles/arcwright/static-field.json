@@ -13,10 +13,11 @@
       "accent": "#c9b8ff",
       "durationTicks": 200,
       "count": 1,
-      "size": 4.0,
+      "size": 8.0,
       "height": 0.06,
       "blend": "additive",
       "sustain": true,
+      "intensity": 0.9,
       "motion": {
         "opacity": {
           "periodTicks": 20,
@@ -31,30 +32,81 @@
       "enabled": true,
       "shape": "billboard",
       "colour": "#8a5cff",
-      "accent": "#c9b8ff",
+      "accent": "#ffffff",
       "durationTicks": 200,
       "count": 1,
-      "size": 7.6,
+      "size": 9.0,
       "height": 0.08,
+      "startTick": 0,
       "orientation": "ground",
       "blend": "additive",
+      "intensity": 1.9800000000000002,
+      "core": 0.3,
       "texture": {
-        "asset": "asset.effects.marshal.cadence-wheel",
+        "asset": "asset.effects.beetles.arc-sigil",
         "role": "image",
         "index": 1
       },
-      "sustain": true,
       "motion": {
         "rotation": {
           "periodTicks": 160,
           "direction": "clockwise"
         },
         "opacity": {
-          "periodTicks": 30,
-          "min": 0.45,
-          "max": 0.8,
+          "periodTicks": 80,
+          "min": 0.7,
+          "max": 1.0,
           "easing": "sine"
         }
+      },
+      "sustain": true
+    },
+    {
+      "id": "strike",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#e0d6ff",
+      "accent": "#ffffff",
+      "durationTicks": 8,
+      "count": 1,
+      "size": 7.0,
+      "height": 3.5,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.5200000000000005,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.lightning",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "opacity": {
+          "periodTicks": 4,
+          "min": 0.55,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "star",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#e0d6ff",
+      "accent": "#ffffff",
+      "durationTicks": 7,
+      "count": 1,
+      "size": 4.0,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.0,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.glint",
+        "role": "image",
+        "index": 1
       }
     },
     {

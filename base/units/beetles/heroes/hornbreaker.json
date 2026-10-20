@@ -280,7 +280,7 @@
     "height": 9.6,
     "formationSpacing": 6.5
   },
-  "modelScale": 3.84,
+  "modelScale": 6.1,
   "presentation": {
     "impactEffect": "effect.beetles.weapons.shield-bash",
     "castContact": 0.47
