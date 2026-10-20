@@ -135,6 +135,17 @@ Layers name files of asset folders (`assets/…/<asset>/`) by `{asset, role, ind
 
 The loader enforces the cross-field rules, positive durations, counts, indexes and motion periods, emitter rate ≥ 1, trail `maxPoints` ≥ 2, `maxDistance` > `referenceDistance`, flipbook fit, pulse `max` ≥ `min`, opacity ≤ 1 and `#rrggbb` colours. Other bounds on this page are authoring limits from the old editor; stay inside them. Effect rule errors are reported as `effects · <effect id>/layers/<layer id>: …` (not by file); parse errors name the file.
 
+### The spell recipe (D76–D78)
+
+Forgefall (`effects/beetles/forgemaster/forgefall-*.json`) is the reference. Every spell gets the same treatment, scaled to its weight (hero ultimates biggest, unit abilities smaller, passives and auras quietest):
+1. **Wind-up** on `accepted` at the caster (already in place for every spell): keep it, sharpen it.
+2. **Release or telegraph**: a flash at the caster and, for delayed areas, a stable high-contrast ground footprint (the gameplay edge is the clearest element; darken the ground under big threats).
+3. **Travel**: anything that moves trails in world space (`rides`, `space: world`; `tools/content/vfx_layers.py`).
+4. **Impact**, layered and fast (flash and light 1–2 frames, a body that pops to ~80 % in 3–4 frames then spreads slowly): a ramp-coloured body (`ramp`, `heatOverLife`, partly covering with `additiveOverLife` ≈ 0.6–0.7 so it reads on sand), a ground ring or decal with `scaleOverLife`, debris or drops that land (`collide`), sparkles with `turbulence`, and a cool-down into covering smoke or motes.
+5. **Linger and status marks**: decals that appear, hold and fade (`opacityOverLife`), status loops that read as the spell's colour on the unit without hiding it.
+
+Rules of thumb: every layer earns its place; at the game camera a metre is about 10–13 px, so particles under 0.15 m and strips under 0.3 m vanish; strip and puff textures must be bright with the shape in alpha; soft particles are on by default (decals cut hard); the race palettes stay (ants: violet liquid magic, gold royalty, amber nectar, scent violet-blue; beetles: substance violet-blue, fire orange, steam white). Review each spell at the game camera on its bench (`ant-bench`, `beetle-bench`, `ranged-bench`) with `shot --play` casts, `--effect id,age` and `--flight`, against the before.
+
 ### Visual guidance
 
 - Visual sustain/loop is not a spell lifetime. A finite binding bounds sustained layers to the effect duration; status bindings end with their status. For a finite particle area, stop emission early enough that particle tails finish when the area ends.
