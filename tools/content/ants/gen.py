@@ -869,7 +869,7 @@ def queued(outputs, capacity=6):
     return {'mode': 'queued', 'outputs': outputs, 'workerSlots': 0, 'queueCapacity': capacity}
 
 
-TUNNEL = {'intervalTicks': 12, 'speed': 36}
+TUNNEL = {'intervalTicks': 12, 'speed': 60}
 
 
 def write_buildings(research):

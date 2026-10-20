@@ -71,7 +71,7 @@
   },
   "tunnel": {
     "intervalTicks": 12,
-    "speed": 36
+    "speed": 60
   },
   "requires": [
     "building.ants.bombardier-workshop"

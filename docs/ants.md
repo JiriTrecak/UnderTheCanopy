@@ -21,7 +21,7 @@ The forest runs on **substance**, its magic. Beetles keep it in glass; bees tran
 ## Economy and tunnels
 
 - **Amber** at the base, **Substance** in the world: a **Substance Siphon** is built on top of each Substance deposit, as for every race.
-- **Tunnels, the signature** (built, D74). Every mound is a tunnel entrance: the Nest and its tiers, and every Brood Mound. A unit ordered to walk somewhere travels underground automatically when a trip from the mound nearest it to the mound nearest its destination is faster than walking (by two seconds or more). It walks to the first mound and goes under at its mouth, travels underground at 36 cells a second, then comes up at the other mound and walks on.
+- **Tunnels, the signature** (built, D74). Every mound is a tunnel entrance: the Nest and its tiers, and every Brood Mound. A unit ordered to walk somewhere travels underground automatically when a trip from the mound nearest it to the mound nearest its destination is faster than walking (by two seconds or more). It walks to the first mound and goes under at its mouth, travels underground at 60 cells a second, then comes up at the other mound and walks on.
   - Each mound lets one unit under every 12 ticks (a little over three a second); the rest queue at its mouth. Wider Tunnels I and II each let 50% more through.
   - Units underground can't be seen, attacked or ordered. If the mound they are headed to falls, they come up where it stood. Units walking or queued to a fallen mound walk on.
   - A mound works (D65: its animation, glow and effects) while ants pass through it.

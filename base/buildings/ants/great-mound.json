@@ -66,7 +66,7 @@
   },
   "tunnel": {
     "intervalTicks": 12,
-    "speed": 36
+    "speed": 60
   },
   "upgrade": {
     "target": "building.ants.elder-hall",

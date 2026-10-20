@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "ant-bench",
+  "kind": "map",
+  "name": "Bench: Ants",
+  "description": "A sandbox for trying the ants: tunnels between two mounds, and an army.",
+  "version": "1.0.0",
+  "dependencies": {
+    "base": ">=0.3.5"
+  }
+}

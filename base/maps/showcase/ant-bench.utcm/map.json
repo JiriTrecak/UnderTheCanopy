@@ -1,0 +1,239 @@
+{
+  "biome": "autumn-forest",
+  "sandbox": true,
+  "camps": [],
+  "size": 256,
+  "playerStarts": [
+    {
+      "mainFort": "start.player.1/main-fort",
+      "player": 1,
+      "setup": "setup.ants",
+      "x": 29.5,
+      "z": 129.5
+    }
+  ],
+  "entities": [
+    {
+      "definition": "building.ants.fort",
+      "id": "bench.hall",
+      "owner": "player.1",
+      "initialState": {
+        "construction": "complete",
+        "inventory": {
+          "item.amber": 20000
+        }
+      },
+      "position": {
+        "x": 29.5,
+        "y": 129.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.ants.barracks",
+      "id": "bench.burrow",
+      "owner": "player.1",
+      "initialState": {
+        "construction": "complete"
+      },
+      "position": {
+        "x": 29.5,
+        "y": 101.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.ants.scent-hall",
+      "id": "bench.scent",
+      "owner": "player.1",
+      "initialState": {
+        "construction": "complete"
+      },
+      "position": {
+        "x": 49.5,
+        "y": 101.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.ants.sanctuary",
+      "id": "bench.royal",
+      "owner": "player.1",
+      "initialState": {
+        "construction": "complete",
+        "inventory": {
+          "item.root": 20000
+        }
+      },
+      "position": {
+        "x": 29.5,
+        "y": 157.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.ants.house",
+      "id": "bench.mound",
+      "owner": "player.1",
+      "initialState": {
+        "construction": "complete"
+      },
+      "position": {
+        "x": 231.5,
+        "y": 127.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "bench.army.0",
+      "owner": "player.1",
+      "position": {
+        "x": 56.0,
+        "y": 120.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "bench.army.1",
+      "owner": "player.1",
+      "position": {
+        "x": 62.0,
+        "y": 120.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "bench.army.2",
+      "owner": "player.1",
+      "position": {
+        "x": 68.0,
+        "y": 120.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "bench.army.3",
+      "owner": "player.1",
+      "position": {
+        "x": 74.0,
+        "y": 120.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "bench.army.4",
+      "owner": "player.1",
+      "position": {
+        "x": 80.0,
+        "y": 120.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "bench.army.5",
+      "owner": "player.1",
+      "position": {
+        "x": 56.0,
+        "y": 126.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "id": "bench.army.6",
+      "owner": "player.1",
+      "position": {
+        "x": 62.0,
+        "y": 126.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "id": "bench.army.7",
+      "owner": "player.1",
+      "position": {
+        "x": 68.0,
+        "y": 126.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "id": "bench.army.8",
+      "owner": "player.1",
+      "position": {
+        "x": 74.0,
+        "y": 126.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.queensguard",
+      "id": "bench.army.9",
+      "owner": "player.1",
+      "position": {
+        "x": 80.0,
+        "y": 126.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.banneret",
+      "id": "bench.army.10",
+      "owner": "player.1",
+      "position": {
+        "x": 56.0,
+        "y": 132.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.nectarist",
+      "id": "bench.army.11",
+      "owner": "player.1",
+      "position": {
+        "x": 62.0,
+        "y": 132.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.winglancer",
+      "id": "bench.army.12",
+      "owner": "player.1",
+      "position": {
+        "x": 68.0,
+        "y": 132.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.queen",
+      "id": "bench.army.13",
+      "owner": "player.1",
+      "position": {
+        "x": 74.0,
+        "y": 132.0
+      },
+      "rotation": 0.0
+    }
+  ],
+  "terrain": {
+    "paint": [],
+    "textureGrid": {
+      "cellSize": 5,
+      "origin": [
+        -0.5,
+        -0.5
+      ]
+    },
+    "waterProfiles": []
+  }
+}
