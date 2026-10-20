@@ -94,7 +94,6 @@
       "count": 30,
       "size": 0.95,
       "height": 0,
-      "rides": "path",
       "blend": "additive",
       "intensity": 1.5,
       "texture": {
@@ -125,6 +124,7 @@
         "space": "world",
         "inheritVelocity": 0.1
       },
+      "rides": "path",
       "core": 0.5
     },
     {

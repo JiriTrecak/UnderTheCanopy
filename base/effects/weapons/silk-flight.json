@@ -77,7 +77,6 @@
       "count": 13,
       "size": 0.2,
       "height": 0,
-      "rides": "path",
       "blend": "normal",
       "intensity": 0.8,
       "texture": {
@@ -107,7 +106,8 @@
         "fadeOut": 0.6,
         "space": "world",
         "inheritVelocity": 0.1
-      }
+      },
+      "rides": "path"
     }
   ]
 }
