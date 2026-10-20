@@ -1,9 +1,9 @@
 {
   "id": "unit.ants.settler",
   "name": "Worker",
-  "description": "Gathers amber and constructs buildings. Trained at the main hall; uses 1 supply.",
-  "model": "asset.models.units.ants-colony-worker",
-  "icon": "asset.portraits.units.ants-colony-worker",
+  "description": "Gathers amber and substance and builds the colony. Trained at the Nest; uses 1 supply.",
+  "model": "asset.models.units.ants-forager",
+  "icon": "asset.portraits.units.ants-forager",
   "selectionClass": "worker",
   "body": {
     "maxHp": 240,

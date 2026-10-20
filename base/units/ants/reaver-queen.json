@@ -1,0 +1,89 @@
+{
+  "id": "unit.ants.reaver-queen",
+  "name": "Reaver Queen",
+  "description": "Mutated. The colony's ultimate monster, one at a time: a long armoured body of blades that devours to stay alive.",
+  "model": "asset.models.units.ants-reaver-queen",
+  "icon": "asset.portraits.units.ants-reaver-queen",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 720,
+    "armor": 4,
+    "armorType": "heavy"
+  },
+  "vision": 32,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "combat": {
+      "damage": 26,
+      "damageType": "melee",
+      "range": 1.2,
+      "cooldownTicks": 64,
+      "aggroRange": 20,
+      "attack": {
+        "windupTicks": 16,
+        "recoveryTicks": 18,
+        "rangeBuffer": 0.75
+      }
+    },
+    "movement": {
+      "speed": 10
+    },
+    "abilities": {
+      "maxMana": 100,
+      "manaRegenPerSecond": 1,
+      "bindings": [
+        {
+          "id": "royal-guard",
+          "ability": "ability.ants.royal-guard",
+          "initialRank": 1,
+          "controls": [
+            "scenario"
+          ]
+        },
+        {
+          "id": "shield-brace",
+          "ability": "ability.ants.shield-brace",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "Q",
+            "column": 1
+          }
+        }
+      ]
+    }
+  },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 280
+      },
+      {
+        "item": "item.root",
+        "amount": 80
+      }
+    ],
+    "workTicks": 1280
+  },
+  "level": 3,
+  "supplyCost": 3,
+  "dimensions": {
+    "radius": 2,
+    "height": 6.4,
+    "formationSpacing": 4.4
+  },
+  "modelScale": 2.4,
+  "requires": [
+    "building.ants.great-mound"
+  ],
+  "presentation": {
+    "castContact": 0.5
+  }
+}

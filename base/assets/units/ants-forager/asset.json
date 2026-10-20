@@ -1,0 +1,135 @@
+{
+  "id": "asset.models.units.ants-forager",
+  "name": "Worker",
+  "kind": "unit",
+  "tags": [
+    "ants",
+    "worker",
+    "tripo",
+    "skinned"
+  ],
+  "race": "beetles",
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_ants-forager"
+      ]
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "walk",
+        "clip": "walk",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "run",
+        "clip": "run",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "attack",
+        "clip": "attack",
+        "loop": false,
+        "events": [
+          {
+            "name": "hit",
+            "time": 0.264
+          }
+        ]
+      },
+      {
+        "semantic": "hit",
+        "clip": "hit",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "death",
+        "clip": "death",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "cast",
+        "clip": "cast",
+        "loop": false,
+        "events": [
+          {
+            "name": "cast",
+            "time": 0.5
+          }
+        ]
+      },
+      {
+        "semantic": "build",
+        "clip": "build",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "chop",
+        "clip": "chop",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "carry",
+        "clip": "carry",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "carry_walk",
+        "clip": "carry_walk",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "carry_run",
+        "clip": "carry_run",
+        "loop": true,
+        "events": []
+      }
+    ],
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 2,
+    "character": "base",
+    "healthHeight": 1.35
+  },
+  "license": "Generated with Tripo (image to 3D, auto-rig, preset animations) from an ImageGen (gpt-image-2) concept for Under the Canopy; prepared by tools/units/tripo_unit.py."
+}

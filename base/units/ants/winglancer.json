@@ -1,9 +1,9 @@
 {
   "id": "unit.ants.winglancer",
-  "name": "Winglancer",
-  "description": "Fast flying lancer. Crosses rough terrain and strikes ground targets with an ivory lance; vulnerable to ranged anti-air fire.",
-  "model": "asset.models.units.ants-winglancer",
-  "icon": "asset.portraits.units.ants-winglancer",
+  "name": "Alate",
+  "description": "A fast winged ant that strikes ground targets from the air.",
+  "model": "asset.models.units.ants-alate",
+  "icon": "asset.portraits.units.ants-alate",
   "selectionClass": "army",
   "body": {
     "maxHp": 340,
@@ -58,7 +58,7 @@
     "height": 5,
     "formationSpacing": 5.5
   },
-  "modelScale": 2.5,
+  "modelScale": 2.4,
   "requires": [
     "building.ants.great-mound"
   ],

@@ -1,9 +1,9 @@
 {
   "id": "unit.ants.queensguard",
-  "name": "Queensguard",
-  "description": "Elite armored protector. Shields nearby allies and braces behind a tower shield for additional armor at reduced speed.",
-  "model": "asset.models.units.ants-queensguard",
-  "icon": "asset.portraits.units.ants-queensguard",
+  "name": "Major",
+  "description": "The colony's armoured tank, with a huge armoured head and a great shield.",
+  "model": "asset.models.units.ants-major",
+  "icon": "asset.portraits.units.ants-major",
   "selectionClass": "army",
   "body": {
     "maxHp": 720,
@@ -79,7 +79,7 @@
     "height": 6.4,
     "formationSpacing": 4.4
   },
-  "modelScale": 3.2,
+  "modelScale": 3.0,
   "requires": [
     "building.ants.great-mound"
   ],

@@ -1,9 +1,9 @@
 {
   "id": "unit.ants.thornblade",
-  "name": "Thornblade",
-  "description": "Agile paired-dagger infantry. Automatically rushes visible ground enemies; can disable autocast for controlled engagements.",
-  "model": "asset.models.units.ants-thornblade",
-  "icon": "asset.portraits.units.ants-thornblade",
+  "name": "Bullet Ant",
+  "description": "An elite duellist with a bristling mane and a fearsome sting.",
+  "model": "asset.models.units.ants-bullet-ant",
+  "icon": "asset.portraits.units.ants-bullet-ant",
   "selectionClass": "army",
   "body": {
     "maxHp": 280,

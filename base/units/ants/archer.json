@@ -1,9 +1,9 @@
 {
   "id": "unit.ants.archer",
-  "name": "Archer",
-  "description": "Ranged support. Keep enemies at a distance and protect archers with infantry.",
-  "model": "asset.models.units.ants-leaf-archer",
-  "icon": "asset.portraits.units.ants-leaf-archer",
+  "name": "Needler",
+  "description": "An ant creature bristling with chitin needles that it fires from range.",
+  "model": "asset.models.units.ants-needler",
+  "icon": "asset.portraits.units.ants-needler",
   "selectionClass": "army",
   "body": {
     "maxHp": 375,
@@ -53,7 +53,7 @@
   },
   "modelScale": 2.4,
   "presentation": {
-    "projectile": "effect.weapon.arrow",
+    "projectile": "effect.weapon.thorn",
     "projectileSocket": "socket_projectile"
   }
 }

@@ -1,9 +1,9 @@
 {
   "id": "unit.ants.marshal",
-  "name": "Ant Marshal",
-  "description": "A seasoned colony champion armed with a heavy flanged mace. Gains experience from nearby enemy defeats.",
-  "model": "asset.models.units.ants-marshal",
-  "icon": "asset.portraits.units.ants-marshal",
+  "name": "General",
+  "description": "The army-ant marshal, banner on its back and twin blades in hand. Gains experience from nearby enemy defeats.",
+  "model": "asset.models.units.ants-general",
+  "icon": "asset.portraits.units.ants-general",
   "hero": true,
   "level": 1,
   "selectionClass": "army",
@@ -263,7 +263,7 @@
     "height": 9.6,
     "formationSpacing": 6.5
   },
-  "modelScale": 4.8,
+  "modelScale": 4.0,
   "creation": {
     "method": "train",
     "items": [

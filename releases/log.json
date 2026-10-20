@@ -6,7 +6,9 @@
     ],
     "improved": [
       "A building works on one thing at a time: research waits for the units queued before it, and units for the research, as in Warcraft III. Its queue panel shows training, research and revivals in the order you queued them.",
-      "Ant buildings are rebuilt as sculpted sand-clay spire cathedrals with royal-blue drapes and glowing blossoms; each one animates while it works (swaying banners, opening mandibles, a dipping blade, a breathing crown)"
+      "Ant buildings are rebuilt as sculpted sand-clay spire cathedrals with royal-blue drapes and glowing blossoms; each one animates while it works (swaying banners, opening mandibles, a dipping blade, a breathing crown)",
+      "The beetle Bombard is about a third smaller and the Juggernaut half its former size, so they no longer dwarf the army",
+      "Ant units have new models and portraits that read from above: the Worker, a stocky biting Raider, the needle-firing Needler, the armoured Major, a swollen amber Honeypot, the winged Alate, the Bullet Ant and the General, each animated as it walks, fights, casts and dies"
     ],
     "fixed": [],
     "knownIssues": []

@@ -1,9 +1,9 @@
 {
   "id": "unit.ants.warrior",
-  "name": "Warrior",
-  "description": "Armored ant infantry. Protects the colony and fights at close range.",
-  "model": "asset.models.units.ants-cleaver-warrior",
-  "icon": "asset.portraits.units.ants-cleaver-warrior",
+  "name": "Raider",
+  "description": "A small, stocky biting ant with blade fins on its back: the colony's core melee.",
+  "model": "asset.models.units.ants-raider",
+  "icon": "asset.portraits.units.ants-raider",
   "selectionClass": "army",
   "body": {
     "maxHp": 300,

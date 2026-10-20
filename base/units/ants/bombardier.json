@@ -1,9 +1,9 @@
 {
   "id": "unit.ants.bombardier",
-  "name": "Bombardier",
-  "description": "Back-mounted mortar fires arcing shells that damage enemies in a two-cell radius and slow movement by 20% for two seconds. Shells can be dodged.",
-  "model": "asset.models.units.ants-bombardier",
-  "icon": "asset.portraits.units.ants-bombardier",
+  "name": "Honeypot",
+  "description": "Mutated: a swollen amber replete fused with its carriers. Lobs bursting globs over long range.",
+  "model": "asset.models.units.ants-honeypot",
+  "icon": "asset.portraits.units.ants-honeypot",
   "selectionClass": "army",
   "body": {
     "maxHp": 500,
@@ -62,9 +62,9 @@
     "height": 4.8,
     "formationSpacing": 5.25
   },
-  "modelScale": 3.2,
+  "modelScale": 2.4,
   "presentation": {
-    "projectile": "effect.weapon.resin-bomb",
+    "projectile": "effect.weapon.nectar",
     "projectileSocket": "socket_projectile",
     "impactEffect": "effect.ants.resin-explosion",
     "castContact": 0.3076923076923077
