@@ -15,8 +15,8 @@ pub const ICONS: &[&str] = &[
     "asset.icons.command-patrol",
     "asset.icons.command-rally",
     "asset.icons.spell-holy-light",
-    "asset.icons.spell-entangling-roots",
-    "asset.icons.spell-dispel-magic",
+    "asset.icons.ability-ants-gardener-spore-cloud",
+    "asset.icons.ability-beetles-warden-field",
     "asset.icons.command-build",
     "asset.icons.command-build-advanced",
     "asset.icons.command-cancel",
@@ -26,14 +26,15 @@ pub const ICONS: &[&str] = &[
     "asset.icons.item-firefly-pendant",
     "asset.icons.item-resin-salve",
     "asset.icons.resource-amber",
-    "asset.icons.resource-lumber",
+    "asset.portraits.resources.substance-deposit",
     "asset.icons.resource-root",
     "asset.icons.resource-supply",
     "asset.icons.stat-armor-light",
-    "asset.icons.unit-ants-hunter",
-    "asset.custom.roar-command-icon",
-    "asset.custom.web-command-icon",
-    "asset.custom.avatar-command-icon",
+    "asset.portraits.units.ants-general",
+    "asset.icons.ability-ants-general-war-column",
+    "asset.icons.ability-ants-queen-royal-jelly",
+    "asset.portraits.units.beetles-hornbreaker",
+    "asset.portraits.units.ants-herald",
 ];
 
 fn key(ui: &mut Ui, name: &str) -> ImageKey {
@@ -108,14 +109,14 @@ pub const COMMANDS: [Command; 12] = [
         costs: &[("asset.icons.resource-amber", "65")],
     },
     Command {
-        icon: "asset.icons.spell-entangling-roots",
+        icon: "asset.icons.ability-ants-gardener-spore-cloud",
         name: "Entangling Roots",
         key: "F",
         body: "Roots bind an enemy for 6 seconds, dealing 15 damage per second.\n[color=#ff8a65]Requires level 3.[/color]",
         costs: &[("asset.icons.resource-amber", "75")],
     },
     Command {
-        icon: "asset.custom.roar-command-icon",
+        icon: "asset.icons.ability-ants-general-war-column",
         name: "Warcry",
         key: "Z",
         body: "Nearby allies deal 25% more damage for 30 seconds.",
@@ -134,7 +135,7 @@ pub const COMMANDS: [Command; 12] = [
         key: "C",
         body: "Choose an advanced structure to build.",
         costs: &[
-            ("asset.icons.resource-lumber", "120"),
+            ("asset.portraits.resources.substance-deposit", "120"),
             ("asset.icons.resource-amber", "80"),
         ],
     },
@@ -237,7 +238,7 @@ pub fn populate_hud(ui: &mut Ui) {
         ("asset.icons.item-thornband", None),
         ("asset.icons.item-firefly-pendant", None),
         ("asset.icons.item-resin-salve", Some("2")),
-        ("asset.custom.web-command-icon", None),
+        ("asset.icons.ability-ants-queen-royal-jelly", None),
     ];
     ui.set_count(inventory, items.len());
     for (i, (img, count)) in items.iter().enumerate() {
@@ -253,7 +254,11 @@ pub fn populate_hud(ui: &mut Ui) {
     let resources = find(ui, "hud/dock/actions/resources");
     let rows = [
         ("asset.icons.resource-amber", "1,240", "Amber"),
-        ("asset.icons.resource-lumber", "860", "Lumber"),
+        (
+            "asset.portraits.resources.substance-deposit",
+            "860",
+            "Substance",
+        ),
         ("asset.icons.resource-root", "75", "Roots"),
         ("asset.icons.resource-supply", "38/60", "Supply"),
     ];
@@ -276,9 +281,9 @@ pub fn populate_hud(ui: &mut Ui) {
 
     let heroes = find(ui, "hud/heroes");
     let list = [
-        ("asset.icons.unit-ants-hunter", 1.0, true),
-        ("asset.custom.avatar-command-icon", 0.35, true),
-        ("asset.custom.roar-command-icon", 0.0, false),
+        ("asset.portraits.units.ants-general", 1.0, true),
+        ("asset.portraits.units.beetles-hornbreaker", 0.35, true),
+        ("asset.portraits.units.ants-herald", 0.0, false),
     ];
     ui.set_count(heroes, list.len());
     for (i, (img, hp, alive)) in list.iter().enumerate() {
