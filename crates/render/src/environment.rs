@@ -213,6 +213,9 @@ pub struct BlockLook {
     pub ice: Option<String>,
     /// Painted on ramps and along cliff tops and feet.
     pub rubble: Option<String>,
+    /// How far rubble spills out over the ground from a ramp's foot (metres).
+    #[serde(default)]
+    pub ramp_spill: f32,
     /// Closed ground's cover in the biome's grass layer (0 none, 1 full).
     #[serde(default = "one")]
     pub frame_cover: f32,
@@ -288,6 +291,9 @@ pub struct CliffLook {
     /// How much of the biome's frost the face takes (1: all).
     #[serde(default = "one")]
     pub frost: f32,
+    /// Stones along the top of the cliff, per cell of its edge.
+    #[serde(default = "top_rubble")]
+    pub top_rubble: f32,
     /// Rubble on ramps: the smallest and largest stone (metres).
     #[serde(default = "ramp_stones")]
     pub ramp_stones: [f32; 2],
@@ -305,6 +311,9 @@ pub struct CliffLook {
     pub spikes: Option<Spikes>,
     /// Roots that wind across the face and spill out over its foot, in its material.
     pub roots: Option<Roots>,
+    /// A crust of frost along the face's top, behind its lip, in the biome's cliff
+    /// material.
+    pub crown: Option<Shore>,
 }
 
 /// Roots across a face.
@@ -316,6 +325,12 @@ pub struct Roots {
     /// Thickness at the root's start (metres, radius), and its length.
     pub radius: [f32; 2],
     pub length: [f32; 2],
+    /// Their bark: pack texture entries, metres per tile, and the share of frost.
+    pub albedo: String,
+    pub normal: Option<String>,
+    pub tile: f32,
+    #[serde(default = "one")]
+    pub frost: f32,
 }
 
 /// Tufts of spikes (frozen stalks, ice) in closed ground, or along a face's top.
@@ -385,6 +400,10 @@ pub struct DecalScatter {
 
 fn talus() -> f32 {
     0.85
+}
+
+fn top_rubble() -> f32 {
+    0.3
 }
 
 fn ramp_stones() -> [f32; 2] {

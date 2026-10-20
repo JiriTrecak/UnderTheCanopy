@@ -1,10 +1,8 @@
 {
   "id": "asset.terrain.frost-roots",
-  "name": "Frosted roots face · albedo/roughness · albedo/roughness",
+  "name": "Frosted roots face · albedo/roughness",
   "kind": "terrain-material",
   "tags": [
-    "lookdev",
-    "imagegen",
     "lookdev",
     "imagegen",
     "frost"

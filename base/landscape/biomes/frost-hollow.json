@@ -65,19 +65,19 @@
     "soil": {
       "albedo": "asset.terrain.frost-ground",
       "normal": "asset.terrain.frost-ground-normal",
-      "tiling": 0.18,
+      "tiling": 0.35,
       "blend": -1
     },
     "grass": {
       "albedo": "asset.terrain.frost-litter",
       "normal": "asset.terrain.frost-litter-normal",
-      "tiling": 0.12,
+      "tiling": 0.5,
       "blend": 0.55
     },
     "dirt": {
       "albedo": "asset.terrain.frost-ice",
       "normal": "asset.terrain.frost-ice-normal",
-      "tiling": 0.06,
+      "tiling": 0.7,
       "blend": -1
     },
     "waterbed": {
@@ -89,13 +89,13 @@
     "stones": {
       "albedo": "asset.terrain.frost-rubble",
       "normal": "asset.terrain.frost-rubble-normal",
-      "tiling": 0.2,
+      "tiling": 0.6,
       "blend": 0.6
     },
     "rock": {
       "albedo": "asset.terrain.frost-stone",
       "normal": "asset.terrain.frost-stone-normal",
-      "tiling": 0.2,
+      "tiling": 0.5,
       "blend": -1,
       "edge": 1
     }
@@ -156,14 +156,15 @@
       "roughness": 0.8,
       "stone": 1.5,
       "relief": 0.75,
-      "rubble": 0.9,
-      "rampRubble": 5,
+      "rubble": 0.2,
+      "rampRubble": 0,
       "slope": 1.2,
       "wander": 0.8,
       "rampStones": [
-        0.7,
-        1.8
-      ]
+        1.2,
+        2.4
+      ],
+      "topRubble": 0.0
     },
     "decals": [
       {
@@ -223,6 +224,11 @@
         "size": [
           1.0,
           2.2
+        ],
+        "tint": [
+          1.15,
+          1.0,
+          0.86
         ]
       },
       {
@@ -234,6 +240,11 @@
         "size": [
           0.6,
           1.2
+        ],
+        "tint": [
+          1.15,
+          1.0,
+          0.86
         ]
       },
       {
@@ -241,21 +252,15 @@
         "atlas": "asset.texture.frost-ground-leaves/image.png",
         "cells": 5,
         "count": 23,
-        "density": 30.800000000000004,
+        "density": 3.3000000000000003,
         "size": [
-          0.9,
-          2.4
-        ]
-      },
-      {
-        "zone": "frameEdge",
-        "atlas": "asset.texture.frost-ground-leaves/image.png",
-        "cells": 5,
-        "count": 23,
-        "density": 17.6,
-        "size": [
-          3.0,
-          6.0
+          5.0,
+          11.0
+        ],
+        "tint": [
+          1.15,
+          1.0,
+          0.86
         ]
       },
       {
@@ -285,6 +290,11 @@
         "size": [
           2.6,
           4.6
+        ],
+        "tint": [
+          1.15,
+          1.0,
+          0.86
         ]
       },
       {
@@ -292,10 +302,15 @@
         "atlas": "asset.texture.frost-ground-leaves/image.png",
         "cells": 5,
         "count": 23,
-        "density": 13.200000000000001,
+        "density": 1.9250000000000003,
         "size": [
-          3.5,
-          6.5
+          5.0,
+          11.0
+        ],
+        "tint": [
+          1.15,
+          1.0,
+          0.86
         ]
       },
       {
@@ -346,27 +361,38 @@
             ],
             "width": 1.2
           },
-          "wander": 1.6,
+          "wander": 2.4,
           "frost": 0.35,
           "roots": {
-            "density": 1.0,
+            "density": 2.6,
             "radius": [
-              0.22,
-              0.65
+              0.1,
+              0.6
             ],
             "length": [
               4.0,
               12.0
-            ]
+            ],
+            "albedo": "asset.terrain.frost-bark/data.bin",
+            "normal": "asset.terrain.frost-bark-normal/data.bin",
+            "tile": 1.6,
+            "frost": 0.55
+          },
+          "crown": {
+            "height": 0.55,
+            "width": 2.2,
+            "stone": 0.6,
+            "rubble": 0.0
           }
         }
       }
     ],
     "shore": {
-      "height": 0.7,
+      "height": 0.45,
       "width": 2.6,
       "stone": 0.9,
       "rubble": 0.8
-    }
+    },
+    "rampSpill": 7.0
   }
 }

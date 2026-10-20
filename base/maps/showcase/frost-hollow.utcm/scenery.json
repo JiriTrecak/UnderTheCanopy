@@ -13,28 +13,52 @@
       "z": 121.0
     },
     {
-      "asset": "scenery.lookdev-mushrooms",
+      "asset": "scenery.lookdev-acorn",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "frost.1",
       "locked": false,
-      "scale": 1.7,
+      "scale": 1.05,
       "visible": true,
-      "x": 150.0,
-      "yaw": 1.2,
-      "z": 88.0
+      "x": 149.0,
+      "yaw": 1.9,
+      "z": 86.5
     },
     {
-      "asset": "scenery.lookdev-mushrooms",
+      "asset": "scenery.lookdev-acorn",
       "elevation": 0.0,
       "heightMode": "terrain",
       "id": "frost.2",
       "locked": false,
-      "scale": 1.4,
+      "scale": 0.85,
+      "visible": true,
+      "x": 156.5,
+      "yaw": 4.1,
+      "z": 90.0
+    },
+    {
+      "asset": "scenery.lookdev-acorn",
+      "elevation": 0.0,
+      "heightMode": "terrain",
+      "id": "frost.3",
+      "locked": false,
+      "scale": 1.15,
       "visible": true,
       "x": 163.0,
-      "yaw": 2.6,
-      "z": 95.0
+      "yaw": 0.2,
+      "z": 86.0
+    },
+    {
+      "asset": "scenery.lookdev-acorn",
+      "elevation": 0.0,
+      "heightMode": "terrain",
+      "id": "frost.4",
+      "locked": false,
+      "scale": 0.7,
+      "visible": true,
+      "x": 160.5,
+      "yaw": 2.8,
+      "z": 95.5
     }
   ]
 }

@@ -56,10 +56,9 @@ box('face', 56, 96, 128, 108, style=1)
 box('paint', 76, 108, 128, 124, kind='wall')
 fill('ground', [[76, 120], [100, 125], [118, 123.5], [128, 121], [128, 124], [76, 124]])
 
-# The mushroom frame on the top level east of the ramp, its cliffs roots too.
-box('level', 136, 64, 172, 100, level=2)
+# The frame of acorns east of the ramp, on the lower ground.
 box('paint', 136, 64, 172, 100, kind='wall')
-box('face', 136, 64, 172, 100, style=1)
+fill('wall', [[136, 100], [150, 103], [162, 104], [168, 100]])
 
 # The ramp: wide and diagonal, from the plateau's corner down to the south-east.
 c.call('map_blocks', map=M, op='ramp', **{'from': [129, 95]}, to=[143, 116], radius=1.6, level=2)
@@ -85,7 +84,7 @@ c.call('edit', label='Frost Hollow: one player, a warrior', commands=[
         'position': {'x': 131.0, 'y': 131.0}, 'rotation': 200.0}]},
 ])
 # Landmarks placed by hand, as the editor's props place them: the acorn at the bank's end
-# by the ramp, mushrooms in their frame.
+# by the ramp, a heap of acorns in the frame east of it.
 SC = 'maps/showcase/frost-hollow.utcm/scenery.json'
 def obj(i, asset, x, z, scale, yaw=0.0):
     return {'asset': asset, 'elevation': 0.0, 'heightMode': 'terrain', 'id': 'frost.%d' % i, 'locked': False,
@@ -93,8 +92,10 @@ def obj(i, asset, x, z, scale, yaw=0.0):
 c.call('edit', label='Frost Hollow: landmarks', commands=[
     {'op': 'set', 'document': SC, 'pointer': '/objects', 'value': [
         obj(0, 'scenery.lookdev-acorn', 123.5, 121.0, 1.8, 0.6),
-        obj(1, 'scenery.lookdev-mushrooms', 150.0, 88.0, 1.7, 1.2),
-        obj(2, 'scenery.lookdev-mushrooms', 163.0, 95.0, 1.4, 2.6),
+        obj(1, 'scenery.lookdev-acorn', 149.0, 86.5, 1.05, 1.9),
+        obj(2, 'scenery.lookdev-acorn', 156.5, 90.0, 0.85, 4.1),
+        obj(3, 'scenery.lookdev-acorn', 163.0, 86.0, 1.15, 0.2),
+        obj(4, 'scenery.lookdev-acorn', 160.5, 95.5, 0.7, 2.8),
     ]}])
 print(c.call('problems'))
 print(c.call('save'))

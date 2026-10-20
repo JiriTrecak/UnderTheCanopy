@@ -501,6 +501,15 @@ fn ground(map: &mut UtcMap, cells: &Cells, recipe: &BlockLook, biome: &BiomeConf
         }
         terrain.heights = Grid(bytes);
     }
+    // How far each cell is from the lower half of a ramp: rubble spills out of its foot.
+    let to_ramp_foot = distance(span, |i| {
+        let (x, z) = (i % span, i / span);
+        if cells.kind[i] != BlockKind::Ramp {
+            return false;
+        }
+        let h = heights_before[(z + 1).min(side - 1) * side + x + 1] / LEVEL_HEIGHT;
+        h.fract() > 1e-3 && 1.0 - h.fract() > 0.55
+    });
     let (mut cover, mut shade, mut rubble, mut ice) = (
         Vec::with_capacity(side * side),
         Vec::with_capacity(side * side),
@@ -530,7 +539,14 @@ fn ground(map: &mut UtcMap, cells: &Cells, recipe: &BlockLook, biome: &BiomeConf
                     0.0
                 }
             };
-            let r = smoothstep(3.2, 0.8, near_cliff + ragged(vx, vz, 17) * 0.9).max(ramp);
+            let spill = smoothstep(
+                recipe.ramp_spill + 1.0,
+                1.0,
+                at_vertex(&to_ramp_foot, span, vx, vz) + ragged(vx, vz, 31) * 1.8,
+            );
+            let r = smoothstep(3.2, 0.8, near_cliff + ragged(vx, vz, 17) * 0.9)
+                .max(ramp)
+                .max(spill);
             rubble.push(r);
             let shore = at_vertex(&cells.to_shore, span, vx, vz);
             ice.push(smoothstep(0.0, 0.8, shore));
@@ -683,14 +699,9 @@ fn decals(cells: &Cells, heights: &Heights, recipe: &BlockLook, seed: u64) -> Ve
     batches
 }
 
-/// Cellular noise in 3D: (distance to the nearest feature point minus the second nearest,
-/// as a 0-to-1 edge measure, and that feature's hash), on a jittered grid of `size`.
-fn stones(p: Vec3, size: f32, seed: u64) -> (f32, f32) {
-    let (edge, id, _) = stones_with_centre(p, size, Vec3::new(1.0, 1.0 / 1.6, 1.0), seed);
-    (edge, id)
-}
-
-/// [`stones`] and the distance to the stone's centre (0 at the centre, about 1 at its rim).
+/// Cellular noise in 3D on a jittered grid of `size`: the distance to the nearest feature
+/// point minus the second nearest (a 0-to-1 edge measure), that feature's hash, and the
+/// distance to its centre (0 at the centre, about 1 at its rim).
 /// `grain` stretches the stones along each axis (1: as wide as tall).
 fn stones_with_centre(p: Vec3, size: f32, grain: Vec3, seed: u64) -> (f32, f32, f32) {
     let q = p / size;
@@ -775,7 +786,7 @@ impl MeshBuilder {
                 // Rings of scales: bumps around and up the spire, offset ring by ring.
                 let ring = (t * height * 5.5 + phase).sin() * 0.5 + 0.5;
                 let around = ((a * 4.0 + t * height * 9.0 + phase).sin() * 0.5 + 0.5) * ring;
-                let radius = width * 0.5 * taper * (0.82 + 0.3 * around);
+                let radius = width * 0.5 * taper * (0.72 + 0.55 * around);
                 points.push(centre + Vec3::new(a.cos(), 0.0, a.sin()) * radius);
             }
         }
@@ -790,7 +801,7 @@ impl MeshBuilder {
                 .to_array();
             // Pale with rime (above 1 lightens the material), darker at the foot.
             let r = k / cols;
-            v.occlusion = 0.8 + 0.8 * (r as f32 / (rows - 1) as f32).sqrt();
+            v.occlusion = 0.6 + 0.55 * (r as f32 / (rows - 1) as f32).sqrt();
         }
         let p =
             |k: usize| Vec3::from_array(self.vertices[self.indices[first + k] as usize].position);
@@ -832,7 +843,8 @@ impl MeshBuilder {
             let normal = d.normalize_or(Vec3::Y);
             v.normal = normal.to_array();
             // Dark underneath, where it meets the face.
-            v.occlusion = 0.45 + 0.55 * (normal.y * 0.5 + 0.5);
+            let up = normal.y * 0.5 + 0.5;
+            v.occlusion = 0.22 + 0.95 * up * up;
         }
         let p =
             |k: usize| Vec3::from_array(self.vertices[self.indices[first + k] as usize].position);
@@ -845,40 +857,60 @@ impl MeshBuilder {
         }
     }
 
-    /// A rubble rock: a displaced octahedron sphere at `at`, `size` across.
+    /// A rubble rock at `at`, `size` across: a broken, faceted stone (a ball cut by a
+    /// handful of random planes), flatter than tall, its facets shaded flat.
     fn rock(&mut self, at: Vec3, size: f32, yaw: f32, seed: u64) {
-        let rows = 7;
-        let cols = 9;
+        let rows = 9;
+        let cols = 13;
+        let mut planes = Vec::with_capacity(9);
+        for k in 0..9u64 {
+            let (a, b) = (hash(k as i64, 1, 0, seed), hash(k as i64, 2, 0, seed));
+            let theta = a * std::f32::consts::TAU;
+            let y = b * 1.6 - 0.6;
+            let r = (1.0 - y * y).max(0.0).sqrt();
+            let n = Vec3::new(r * theta.cos(), y, r * theta.sin()).normalize_or(Vec3::Y);
+            planes.push((n, 0.36 + 0.14 * hash(k as i64, 3, 0, seed)));
+        }
         let mut points = Vec::with_capacity(rows * cols);
         for r in 0..rows {
             let phi = std::f32::consts::PI * r as f32 / (rows - 1) as f32;
             for c in 0..cols {
                 let theta = std::f32::consts::TAU * c as f32 / (cols - 1) as f32 + yaw;
                 let dir = Vec3::new(phi.sin() * theta.cos(), phi.cos(), phi.sin() * theta.sin());
-                // Angular: a few flat facets from a coarse cellular field.
-                let (edge, _) = stones(dir * 1.7 + at * 0.37, 1.0, seed);
-                let r_ = 0.5 * (0.72 + 0.5 * edge.min(0.6));
-                let squash = Vec3::new(1.0, 0.55, 0.85);
-                points.push(at + dir * r_ * size * squash);
+                // The nearest cutting plane along this direction bounds the stone.
+                let mut reach = 0.55f32;
+                for (n, d) in &planes {
+                    let along = dir.dot(*n);
+                    if along > 1e-3 {
+                        reach = reach.min(d / along);
+                    }
+                }
+                let squash = Vec3::new(1.0, 0.6, 0.85);
+                points.push(at + dir * reach * size * squash);
             }
         }
-        // The poles and the seam share points, so the rock is closed; normals point out,
-        // and the winding is turned to face them.
+        // The poles and the seam share points, so the rock is closed; the winding is
+        // turned so its faces look out.
         let base = self.vertices.len();
         let first = self.indices.len();
         self.grid(&points, rows, cols);
-        for v in &mut self.vertices[base..] {
-            let p = Vec3::from_array(v.position) - at;
-            v.normal = p.normalize_or(Vec3::Y).to_array();
-        }
-        // A triangle off the poles tells which way the grid winds.
         let tri = first + (cols - 1) * 6 * (rows / 2);
         let p = |k: usize| Vec3::from_array(self.vertices[self.indices[tri + k] as usize].position);
         let facing = (p(1) - p(0)).cross(p(2) - p(0));
-        if facing.dot((p(0) + p(1) + p(2)) / 3.0 - at) < 0.0 {
+        let outward = facing.dot((p(0) + p(1) + p(2)) / 3.0 - at) >= 0.0;
+        if !outward {
             for tri in self.indices[first..].chunks_exact_mut(3) {
                 tri.swap(1, 2);
             }
+        }
+        for v in &mut self.vertices[base..] {
+            let mut n = Vec3::from_array(v.normal);
+            if (Vec3::from_array(v.position) - at).dot(n) < 0.0 {
+                n = -n;
+            }
+            v.normal = n.to_array();
+            // Dark sides and underneath, the frosted top pale.
+            v.occlusion = 0.5 + 0.6 * n.y.max(0.0);
         }
     }
 }
@@ -1129,15 +1161,23 @@ fn face_strip(mesh: &mut MeshBuilder, s: &Segment, look: &CliffLook, seed: u64) 
             // lip, spreading at the foot; an overhang pushes the upper face out.
             let k = reach(at, s.end[0] + (s.end[1] - s.end[0]) * u, seed);
             let back = (run * k * 0.35).min(1.2);
+            let w = wander(look, at, seed);
             let (y, out) = if r == 0 {
-                (top + 0.02, -0.5 - back + look.overhang * 0.6)
+                // The lip wanders only out over the drop, so the block's straight edge
+                // stays under the face.
+                (
+                    top + 0.02,
+                    -0.5 - back + look.overhang * 0.6 + (w + look.wander * 0.75) * 0.8 - w,
+                )
             } else if r == rows - 1 {
                 (bottom - 0.3, 0.5 + run * k * 0.75)
             } else {
                 profile(look, top, bottom, (r - 1) as f32 / (rows - 3) as f32, k)
             };
-            // The whole profile wanders in and out along the face.
-            let out = out + wander(look, at, seed);
+            // The profile wanders in and out along the face: near the top only out over
+            // the drop (in front of the block's straight edge), freely towards the foot.
+            let f = r as f32 / (rows - 1) as f32;
+            let out = out + w + look.wander * 0.75 * (1.0 - f).powi(2);
             let p = Vec3::new(at.x + s.down.x * out, y, at.y + s.down.y * out);
             // Domed stones of their own depth, deep grooves between them; the lip and
             // the foot stand out less.
@@ -1205,6 +1245,79 @@ fn spikes(
     }
 }
 
+/// A low bank of crusted stones along `a`–`b`, `rim.width` across towards `across`
+/// (centred a little behind the line), on `ground`, shifted across by `shift`; loose
+/// stones beside it.
+#[allow(clippy::too_many_arguments)]
+fn rim_strip(
+    mesh: &mut MeshBuilder,
+    a: Vec2,
+    b: Vec2,
+    across: Vec2,
+    rim: &Shore,
+    ground: impl Fn(Vec2) -> f32,
+    shift: impl Fn(Vec2) -> f32,
+    seed: u64,
+    rng: &mut Rng,
+) {
+    let length = (b - a).length();
+    let grain = Vec3::new(1.0, 0.7, 1.0);
+    let cols = ((length / 0.3).ceil() as usize).max(1) + 1;
+    let rows = 7;
+    let mut grid = Vec::with_capacity(rows * cols);
+    let mut open = Vec::with_capacity(rows * cols);
+    for r in 0..rows {
+        let t = r as f32 / (rows - 1) as f32;
+        for c in 0..cols {
+            let u = c as f32 / (cols - 1) as f32;
+            let along = a + (b - a) * u;
+            let p = along + across * ((t - 0.45) * rim.width + shift(along));
+            let g = ground(p);
+            let profile = (std::f32::consts::PI * t).sin().max(0.0).powf(0.6);
+            let p3 = Vec3::new(p.x, g, p.y);
+            let (edge, id, centre) = stones_with_centre(p3, rim.stone, grain, seed);
+            let dome = 1.0 - 0.6 * (centre * centre).min(1.0);
+            let bump = rim.height * (0.3 + 0.9 * id) * dome * smoothstep(0.0, 0.25, edge);
+            // Higher and lower along its length, broken here and there.
+            let swell = noise(p.x * 0.18, p.y * 0.18, seed ^ 0x5408);
+            let swell = 0.15 + 1.5 * swell * swell;
+            let y = g - 0.06 + profile * swell * (rim.height * 0.45 + bump);
+            grid.push(Vec3::new(p.x, y, p.y));
+            open.push((0.3 + 0.7 * smoothstep(0.02, 0.3, edge)) * (0.7 + 0.3 * profile));
+        }
+    }
+    // Wound so it faces up: across × along.
+    let dir = b - a;
+    let flip = dir.x * across.y - dir.y * across.x < 0.0;
+    let base = mesh.vertices.len();
+    let first = mesh.indices.len();
+    mesh.grid(&grid, rows, cols);
+    for (v, o) in mesh.vertices[base..].iter_mut().zip(open) {
+        v.occlusion = o;
+        if v.normal[1] < 0.0 {
+            v.normal = [-v.normal[0], -v.normal[1], -v.normal[2]];
+        }
+    }
+    if flip {
+        for tri in mesh.indices[first..].chunks_exact_mut(3) {
+            tri.swap(1, 2);
+        }
+    }
+    let n = (length * rim.rubble).floor() as usize
+        + usize::from(rng.next() < (length * rim.rubble).fract());
+    for _ in 0..n {
+        let p = a + (b - a) * rng.next() + across * rng.range(-0.9, 0.9) * rim.width;
+        let size = rng.range(0.25, 0.8) * rim.stone;
+        let y = ground(p);
+        mesh.rock(
+            Vec3::new(p.x, y + size * 0.08, p.y),
+            size,
+            rng.range(0.0, std::f32::consts::TAU),
+            seed ^ rng.0,
+        );
+    }
+}
+
 /// The shore's rim: a low bank of crusted stones wherever walkable ground meets ice at
 /// about its level, along a smoothed outline of the ice.
 fn shore(mesh: &mut MeshBuilder, heights: &Heights, cells: &Cells, shore: &Shore, seed: u64) {
@@ -1222,7 +1335,6 @@ fn shore(mesh: &mut MeshBuilder, heights: &Heights, cells: &Cells, shore: &Shore
             + (noise(wx * 0.22, wz * 0.22, seed ^ 0x5407) - 0.5) * 0.35
     };
     let mut rng = Rng(seed ^ 0x5407);
-    let grain = Vec3::new(1.0, 0.7, 1.0);
     for z in 0..span - 1 {
         for x in 0..span - 1 {
             // Samples at cell centres, corners of a square between them.
@@ -1259,62 +1371,17 @@ fn shore(mesh: &mut MeshBuilder, heights: &Heights, cells: &Cells, shore: &Shore
                 if (heights.at(land.x, land.y) - heights.at(ice.x, ice.y)).abs() > 1.0 {
                     continue;
                 }
-                let cols = ((length / 0.3).ceil() as usize).max(1) + 1;
-                let rows = 7;
-                let mut grid = Vec::with_capacity(rows * cols);
-                let mut open = Vec::with_capacity(rows * cols);
-                for r in 0..rows {
-                    let t = r as f32 / (rows - 1) as f32;
-                    for c in 0..cols {
-                        let u = c as f32 / (cols - 1) as f32;
-                        let along = a + (b - a) * u;
-                        let p = along + to_ice * (t - 0.45) * shore.width;
-                        let ground = heights.at(p.x, p.y);
-                        let profile = (std::f32::consts::PI * t).sin().max(0.0).powf(0.6);
-                        let p3 = Vec3::new(p.x, ground, p.y);
-                        let (edge, id, centre) = stones_with_centre(p3, shore.stone, grain, seed);
-                        let dome = 1.0 - 0.6 * (centre * centre).min(1.0);
-                        let bump =
-                            shore.height * (0.3 + 0.9 * id) * dome * smoothstep(0.0, 0.25, edge);
-                        // Higher and lower along its length, broken here and there.
-                        let swell = 0.35 + 0.95 * noise(p.x * 0.18, p.y * 0.18, seed ^ 0x5408);
-                        let y = ground - 0.06 + profile * swell * (shore.height * 0.45 + bump);
-                        grid.push(Vec3::new(p.x, y, p.y));
-                        open.push(
-                            (0.3 + 0.7 * smoothstep(0.02, 0.3, edge)) * (0.7 + 0.3 * profile),
-                        );
-                    }
-                }
-                // Wound so it faces up: across (to the ice) × along.
-                let dir = b - a;
-                let flip = dir.x * to_ice.y - dir.y * to_ice.x < 0.0;
-                let base = mesh.vertices.len();
-                let first = mesh.indices.len();
-                mesh.grid(&grid, rows, cols);
-                for (v, o) in mesh.vertices[base..].iter_mut().zip(open) {
-                    v.occlusion = o;
-                    if v.normal[1] < 0.0 {
-                        v.normal = [-v.normal[0], -v.normal[1], -v.normal[2]];
-                    }
-                }
-                if flip {
-                    for tri in mesh.indices[first..].chunks_exact_mut(3) {
-                        tri.swap(1, 2);
-                    }
-                }
-                let n = (length * shore.rubble).floor() as usize
-                    + usize::from(rng.next() < (length * shore.rubble).fract());
-                for _ in 0..n {
-                    let p = a + (b - a) * rng.next() + to_ice * rng.range(-0.9, 0.9) * shore.width;
-                    let size = rng.range(0.25, 0.8) * shore.stone;
-                    let y = heights.at(p.x, p.y);
-                    mesh.rock(
-                        Vec3::new(p.x, y + size * 0.08, p.y),
-                        size,
-                        rng.range(0.0, std::f32::consts::TAU),
-                        seed ^ rng.0,
-                    );
-                }
+                rim_strip(
+                    mesh,
+                    a,
+                    b,
+                    to_ice,
+                    shore,
+                    |p| heights.at(p.x, p.y),
+                    |_| 0.0,
+                    seed,
+                    &mut rng,
+                );
             }
         }
     }
@@ -1330,6 +1397,14 @@ fn cliffs(heights: &Heights, cells: &Cells, recipe: &BlockLook, seed: u64) -> Ve
         .chain(recipe.faces.iter().map(|f| &f.cliff))
         .collect();
     let mut meshes: Vec<MeshBuilder> = looks
+        .iter()
+        .map(|_| MeshBuilder {
+            vertices: Vec::new(),
+            indices: Vec::new(),
+        })
+        .collect();
+    // Each face's roots, in their bark.
+    let mut barks: Vec<MeshBuilder> = looks
         .iter()
         .map(|_| MeshBuilder {
             vertices: Vec::new(),
@@ -1356,8 +1431,28 @@ fn cliffs(heights: &Heights, cells: &Cells, recipe: &BlockLook, seed: u64) -> Ve
         }
         let look = looks[k];
         face_strip(&mut meshes[k], s, look, seed ^ k as u64);
+        // A crust of pale frost along the top, behind the lip.
+        if let Some(crown) = &look.crown {
+            let drop = (s.top[0] - s.bottom[0]).max(0.5);
+            let back = 0.5 + (look.slope * drop * 0.35).min(1.2);
+            let top = s.top[0];
+            rim_strip(
+                &mut meshes[0],
+                s.a,
+                s.b,
+                -s.down,
+                crown,
+                |p| heights.at(p.x, p.y).max(top - 0.25),
+                |p| {
+                    back + crown.width * 0.25
+                        - (wander(look, p, seed ^ k as u64) + look.wander * 0.75) * 0.8
+                },
+                seed ^ 0xC20,
+                &mut rng,
+            );
+        }
         if let Some(rule) = &look.roots {
-            roots(&mut meshes[k], s, look, rule, &mut rng, seed ^ k as u64);
+            roots(&mut barks[k], s, look, rule, &mut rng, seed ^ k as u64);
         }
         // Rubble at the foot.
         let drop = (s.top[0] - s.bottom[0]).max(0.5);
@@ -1396,7 +1491,7 @@ fn cliffs(heights: &Heights, cells: &Cells, recipe: &BlockLook, seed: u64) -> Ve
                 };
                 cliff.ramp_rubble as f32 / (b * b) as f32 * fall * fall * 2.0
             } else if cells.zone_of(i, Zone::CliffTop, Some(0)) && cells.to_top[i] <= 1.5 {
-                0.3
+                cliff.top_rubble
             } else if rock {
                 0.22
             } else {
@@ -1433,9 +1528,21 @@ fn cliffs(heights: &Heights, cells: &Cells, recipe: &BlockLook, seed: u64) -> Ve
     if let Some(rim) = &recipe.shore {
         shore(&mut meshes[0], heights, cells, rim, seed);
     }
+    let bark = barks.into_iter().zip(&looks).filter_map(|(mesh, look)| {
+        let rule = look.roots.as_ref()?;
+        Some(CliffMesh {
+            vertices: mesh.vertices,
+            indices: mesh.indices,
+            albedo: rule.albedo.clone(),
+            normal: rule.normal.clone(),
+            tile: rule.tile,
+            roughness: 0.85,
+            frost: rule.frost,
+        })
+    });
     meshes
         .into_iter()
-        .zip(looks)
+        .zip(&looks)
         .map(|(mesh, look)| CliffMesh {
             vertices: mesh.vertices,
             indices: mesh.indices,
@@ -1445,6 +1552,7 @@ fn cliffs(heights: &Heights, cells: &Cells, recipe: &BlockLook, seed: u64) -> Ve
             roughness: look.roughness,
             frost: look.frost,
         })
+        .chain(bark)
         .collect()
 }
 
