@@ -27,7 +27,7 @@ struct Frame {
     shadow: vec4f,
     // rgb: background; w: view fade (0 at RTS pitches, 1 near the horizon)
     background: vec4f,
-    // rgb: haze colour; z/w unused; x of haze_range: start, y: end
+    // rgb: haze colour; z/w unused; x of haze_range: start, y: end, z: frost (0–1)
     haze: vec4f,
     haze_range: vec4f,
     // x: point light count
@@ -61,6 +61,24 @@ struct PointLight {
 // How close to the horizon the camera looks: 0 at RTS pitches, 1 for close cameras.
 fn view_fade() -> f32 {
     return frame.background.w;
+}
+
+// How frosted the biome's scenery is (0–1).
+fn frost_amount() -> f32 {
+    return frame.haze_range.z;
+}
+
+// Rime over `albedo` on a surface facing `n` at `world`: upward faces whiten with a soft,
+// patchy edge (a hash of where they are), sides keep a dusting.
+fn frosted(albedo: vec3f, n: vec3f, world: vec3f, amount: f32) -> vec3f {
+    if (amount <= 0.0) {
+        return albedo;
+    }
+    let p = floor(world * 2.3);
+    let spot = fract(sin(dot(p, vec3f(12.9898, 78.233, 37.719))) * 43758.5453);
+    let cover = smoothstep(0.3 + 0.35 * spot, 0.95, n.y) * 0.8 + 0.08;
+    let rime = vec3f(0.80, 0.85, 0.90);
+    return mix(albedo, rime, clamp(amount * cover, 0.0, 1.0));
 }
 
 fn time_seconds() -> f32 {

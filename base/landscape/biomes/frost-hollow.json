@@ -1,0 +1,320 @@
+{
+  "name": "Frost Hollow",
+  "daylight": "winter",
+  "light": {
+    "sunTint": "#f2f0ec",
+    "sunStrength": 1.15,
+    "sunDirection": 150,
+    "sunHeight": 34,
+    "ambientTint": "#c8ccd4",
+    "ambientStrength": 0.5,
+    "skyTint": "#cdd3dc",
+    "bounceTint": "#ffffff",
+    "fillStrength": 0.7,
+    "shadowSoftness": 4.0,
+    "frost": 0.3
+  },
+  "canopy": {
+    "height": 150,
+    "scale": 320,
+    "coverage": 0.45,
+    "softness": 0.22,
+    "strength": 0.12,
+    "sway": 1.2,
+    "speed": 0.35,
+    "cloudShadow": 0,
+    "seed": 731
+  },
+  "grade": {
+    "exposure": 0.95,
+    "contrast": 1.1,
+    "saturation": 0.78,
+    "highlightShoulder": 0,
+    "shadowTint": "#8c99ad",
+    "highlightTint": "#ffffff",
+    "splitStrength": 0.16,
+    "shadowLift": 0,
+    "vignette": 0.35,
+    "daytimeLut": "asset.texture.woodland-daytime-grades/data.json#winter_day",
+    "daytimeLutStrength": 0
+  },
+  "bloom": {
+    "strength": 0.025,
+    "threshold": 1.8,
+    "knee": 0.15,
+    "radius": 1.5
+  },
+  "contact": {
+    "strength": 0.7,
+    "radius": 1.8,
+    "bias": 0.07
+  },
+  "atmosphere": {
+    "enabled": false,
+    "color": "#a8bdc6",
+    "density": 0,
+    "shaftDensity": 0,
+    "baseHeight": 1,
+    "heightFalloff": 4,
+    "sunStrength": 1,
+    "noiseScale": 0.09,
+    "noiseStrength": 0.65,
+    "driftSpeed": 0.35
+  },
+  "terrain": {
+    "soil": {
+      "albedo": "asset.terrain.frost-ground",
+      "normal": "asset.terrain.frost-ground-normal",
+      "tiling": 0.18,
+      "blend": -1
+    },
+    "grass": {
+      "albedo": "asset.terrain.frost-litter",
+      "normal": "asset.terrain.frost-litter-normal",
+      "tiling": 0.12,
+      "blend": 0.55
+    },
+    "dirt": {
+      "albedo": "asset.terrain.frost-ice",
+      "normal": "asset.terrain.frost-ice-normal",
+      "tiling": 0.06,
+      "blend": -1
+    },
+    "waterbed": {
+      "albedo": "asset.terrain.woodland-riverbed",
+      "normal": "asset.terrain.woodland-riverbed-normal",
+      "tiling": 0.05,
+      "blend": -1
+    },
+    "stones": {
+      "albedo": "asset.terrain.frost-rubble",
+      "normal": "asset.terrain.frost-rubble-normal",
+      "tiling": 0.2,
+      "blend": 0.6
+    },
+    "rock": {
+      "albedo": "asset.terrain.frost-stone",
+      "normal": "asset.terrain.frost-stone-normal",
+      "tiling": 0.2,
+      "blend": -1,
+      "edge": 1
+    }
+  },
+  "water": "water.meltwater",
+  "surroundings": {
+    "floorTexture": "asset.terrain.frost-litter",
+    "floorColor": "#3a4048",
+    "hazeColor": "#9fb2c6",
+    "hazeStart": 170,
+    "hazeEnd": 850,
+    "forest": {
+      "trunk": "scenery.mega-oak-trunk",
+      "mushroom": "scenery.mega-mushroom",
+      "log": "scenery.mega-fallen-log",
+      "limbTexture": "asset.textures.forest-giants-bark",
+      "rings": [
+        {
+          "distance": 48,
+          "spacing": 92,
+          "height": 155
+        },
+        {
+          "distance": 145,
+          "spacing": 110,
+          "height": 195
+        },
+        {
+          "distance": 270,
+          "spacing": 120,
+          "height": 240
+        }
+      ],
+      "leafColors": [
+        "#729c98",
+        "#9ebbb7",
+        "#e0e6dd",
+        "#4b746d"
+      ],
+      "leafSpacing": 16,
+      "leafLength": 24
+    }
+  },
+  "groundCover": {
+    "radius": 1.3,
+    "strength": 0.8
+  },
+  "blocks": {
+    "seed": 11,
+    "ice": "asset.terrain.frost-ice",
+    "rubble": "asset.terrain.frost-rubble",
+    "frameCover": 1.0,
+    "frameShade": 0.5,
+    "cliff": {
+      "albedo": "asset.terrain.frost-stone/data.bin",
+      "normal": "asset.terrain.frost-stone-normal/data.bin",
+      "tile": 2.6,
+      "roughness": 0.8,
+      "stone": 1.5,
+      "relief": 0.75,
+      "rubble": 0.9,
+      "rampRubble": 16,
+      "spikes": {
+        "density": 14,
+        "height": [
+          1.4,
+          3.2
+        ],
+        "width": 0.35
+      },
+      "slope": 1.2
+    },
+    "decals": [
+      {
+        "zone": "ice",
+        "atlas": "asset.texture.frost-clover/image.png",
+        "cells": 6,
+        "count": 32,
+        "density": 55,
+        "size": [
+          0.8,
+          1.4
+        ],
+        "under": 0.15,
+        "clump": 0.85,
+        "tint": [
+          0.9,
+          1.12,
+          0.92
+        ]
+      },
+      {
+        "zone": "iceEdge",
+        "atlas": "asset.texture.frost-clover/image.png",
+        "cells": 6,
+        "count": 32,
+        "density": 40,
+        "size": [
+          0.8,
+          1.4
+        ],
+        "under": 0.15,
+        "clump": 0.85,
+        "tint": [
+          0.9,
+          1.12,
+          0.92
+        ]
+      },
+      {
+        "zone": "ice",
+        "atlas": "asset.texture.frost-leaves/image.png",
+        "cells": 5,
+        "count": 24,
+        "density": 1.2,
+        "size": [
+          1.2,
+          2.2
+        ],
+        "under": 0.25
+      },
+      {
+        "zone": "groundEdge",
+        "atlas": "asset.texture.frost-leaves/image.png",
+        "cells": 5,
+        "count": 24,
+        "density": 3.0,
+        "size": [
+          0.8,
+          1.8
+        ]
+      },
+      {
+        "zone": "ground",
+        "atlas": "asset.texture.frost-leaves/image.png",
+        "cells": 5,
+        "count": 24,
+        "density": 0.25,
+        "size": [
+          0.6,
+          1.2
+        ]
+      },
+      {
+        "zone": "frameEdge",
+        "atlas": "asset.texture.frost-leaves/image.png",
+        "cells": 5,
+        "count": 24,
+        "density": 14,
+        "size": [
+          0.9,
+          2.4
+        ]
+      },
+      {
+        "zone": "frameEdge",
+        "atlas": "asset.texture.frost-leaves/image.png",
+        "cells": 5,
+        "count": 24,
+        "density": 3.5,
+        "size": [
+          3.0,
+          5.5
+        ]
+      },
+      {
+        "zone": "frameEdge",
+        "atlas": "asset.texture.frost-clover/image.png",
+        "cells": 6,
+        "count": 32,
+        "density": 12,
+        "size": [
+          0.7,
+          1.3
+        ],
+        "clump": 0.6,
+        "under": 0
+      }
+    ],
+    "scatter": [
+      {
+        "zone": "frame",
+        "pieces": [
+          "scenery.lookdev-root-a",
+          "scenery.lookdev-root-b",
+          "scenery.lookdev-root-c",
+          "scenery.lookdev-root-d"
+        ],
+        "density": 1.8,
+        "scale": [
+          0.16,
+          0.26
+        ]
+      },
+      {
+        "zone": "frameEdge",
+        "pieces": [
+          "scenery.lookdev-fern",
+          "scenery.lookdev-bracken"
+        ],
+        "density": 4,
+        "scale": [
+          0.6,
+          1.0
+        ]
+      },
+      {
+        "zone": "frame",
+        "pieces": [
+          "scenery.lookdev-leaf-big-oak",
+          "scenery.lookdev-leaf-big"
+        ],
+        "density": 2.5,
+        "scale": [
+          0.45,
+          0.8
+        ]
+      }
+    ],
+    "frameRise": 2.2
+  }
+}

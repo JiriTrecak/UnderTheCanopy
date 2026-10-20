@@ -35,16 +35,19 @@ pub enum BlockKind {
     Shallow = 4,
     /// Deep water nothing walks through.
     Deep = 5,
+    /// Frozen water: walkable ice just under the column's level.
+    Ice = 6,
 }
 
 impl BlockKind {
-    pub const ALL: [BlockKind; 6] = [
+    pub const ALL: [BlockKind; 7] = [
         BlockKind::Ground,
         BlockKind::Ramp,
         BlockKind::Wall,
         BlockKind::Rock,
         BlockKind::Shallow,
         BlockKind::Deep,
+        BlockKind::Ice,
     ];
 
     pub fn from_u8(v: u8) -> Self {
@@ -59,6 +62,7 @@ impl BlockKind {
             BlockKind::Rock => "Rock",
             BlockKind::Shallow => "Shallow water",
             BlockKind::Deep => "Deep water",
+            BlockKind::Ice => "Ice",
         }
     }
 
@@ -280,6 +284,7 @@ impl Blocks {
             }
             BlockKind::Shallow => top - 0.7,
             BlockKind::Deep => top - 4.0,
+            BlockKind::Ice => top - 0.15,
             _ => top,
         }
     }

@@ -385,6 +385,7 @@ impl Stage {
                 water_textures: Default::default(),
                 forest: None,
                 blockout: None,
+                dressing: None,
             };
             if let Err(error) = self.renderer.load_world(gpu, &self.pack, &world) {
                 tracing::warn!(%error, model = %shot.model, "editor: viewport model");

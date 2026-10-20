@@ -91,6 +91,8 @@ struct MaterialFragment {
     tint: vec3f,
     // How much the instance works, 0 at rest to 1 (ACTIVE materials, D65).
     activity: f32,
+    // Rime over the albedo (0 none; scenery takes the biome's, D80).
+    frost: f32,
 }
 
 // Lit colour and coverage of one fragment; alpha 0 means discard.
@@ -149,8 +151,8 @@ fn shade_material(f: MaterialFragment) -> vec4f {
     var surface: Surface;
     surface.position = f.world;
     surface.normal = n;
-    surface.albedo = base.rgb;
-    surface.roughness = material.params.x * mr.g;
+    surface.albedo = frosted(base.rgb, n, f.world, f.frost);
+    surface.roughness = mix(material.params.x * mr.g, 0.75, f.frost * 0.5);
     surface.metalness = material.params.y * mr.b;
     surface.occlusion = occlusion;
     surface.backside = material.light.x;

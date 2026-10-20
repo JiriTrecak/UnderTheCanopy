@@ -2,7 +2,8 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [
-      "Editor: a block editor for maps. Shape a map in 4×4-cell blocks (raise, level, ramps, diagonal cuts, water and impassable ground) and its cliffs, water and closed ground follow; Test in game plays it."
+      "Editor: a block editor for maps. Shape a map in 4×4-cell blocks (raise, level, ramps, diagonal cuts, water and impassable ground) and its cliffs, water and closed ground follow; Test in game plays it.",
+      "Editor: maps shaped in blocks are dressed automatically: generated stone cliffs, ground and frame, leaf and clover decals, frozen ice, frost. Frost Hollow, a new showcase map, is built only from blocks."
     ],
     "improved": [],
     "fixed": [],

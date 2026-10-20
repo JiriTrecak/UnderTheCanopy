@@ -115,7 +115,7 @@ impl FrameUniform {
             ],
             background: v4(l.background, crate::surroundings::view_fade(p.camera)),
             haze: v4(p.haze, 0.0),
-            haze_range: [p.haze_range[0], p.haze_range[1], 0.0, 0.0],
+            haze_range: [p.haze_range[0], p.haze_range[1], l.frost, 0.0],
             counts: [p.point_lights, 0, 0, 0],
             fog: p.fog.map_or([0.0; 4], |size| {
                 [1.0 / size.max(1) as f32, 1.0, size as f32, 0.0]

@@ -194,6 +194,151 @@ pub struct BiomeConfig {
     /// Ambient dust in the light and falling leaves (motes.rs); none by default.
     #[serde(default)]
     pub motes: Option<Motes>,
+    /// How a map's blocks are dressed (D80; `canopy_scene::generate`). Maps without
+    /// blocks, or biomes without this, look as authored.
+    #[serde(default)]
+    pub blocks: Option<BlockLook>,
+}
+
+/// What the generator makes of a map's blocks in this biome: ground paint, the generated
+/// cliffs, decals and scattered scenery. Every id is data: terrain-material assets for
+/// paint, pack texture entries for the cliff and decals, scenery ids for props.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct BlockLook {
+    /// The generator's seed, mixed with each map's.
+    #[serde(default)]
+    pub seed: u32,
+    /// Painted on ice blocks.
+    pub ice: Option<String>,
+    /// Painted on ramps and along cliff tops and feet.
+    pub rubble: Option<String>,
+    /// Closed ground's cover in the biome's grass layer (0 none, 1 full).
+    #[serde(default = "one")]
+    pub frame_cover: f32,
+    /// Frame shade (0–1) deep in closed ground.
+    #[serde(default)]
+    pub frame_shade: f32,
+    /// How high closed ground mounds up inside its edge (metres; the look only: nothing
+    /// walks there).
+    #[serde(default)]
+    pub frame_rise: f32,
+    pub cliff: Option<CliffLook>,
+    /// Flat cut-outs pressed onto the ground.
+    #[serde(default)]
+    pub decals: Vec<DecalScatter>,
+    /// Scenery scattered by zone.
+    #[serde(default)]
+    pub scatter: Vec<Scatter>,
+}
+
+/// The generated cliff faces and rubble.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct CliffLook {
+    /// Pack texture entries.
+    pub albedo: String,
+    pub normal: Option<String>,
+    /// Metres one texture tile covers.
+    pub tile: f32,
+    pub roughness: f32,
+    /// Size of the stone blocks the face is broken into (metres).
+    pub stone: f32,
+    /// How far stones stand out of the face (metres).
+    pub relief: f32,
+    /// Horizontal run of the face per metre of drop (0.85: about 50°).
+    #[serde(default = "talus")]
+    pub slope: f32,
+    /// Rubble stones per metre of cliff at its foot, and on each ramp column.
+    #[serde(default)]
+    pub rubble: f32,
+    #[serde(default)]
+    pub ramp_rubble: u32,
+    /// Frosted spikes in tufts out of closed ground, in the cliff's material.
+    pub spikes: Option<Spikes>,
+}
+
+/// Tufts of spikes (frozen stalks, ice) in closed ground.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Spikes {
+    /// Tufts tried per 100 m² (about half grow).
+    pub density: f32,
+    /// Height range (metres) and width at the base.
+    pub height: [f32; 2],
+    pub width: f32,
+}
+
+/// Where on the blocks something goes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Zone {
+    /// Closed ground, away from its edge.
+    Frame,
+    /// Closed ground near walkable ground.
+    FrameEdge,
+    /// Walkable ground near closed ground.
+    GroundEdge,
+    /// Open walkable ground.
+    Ground,
+    /// Ground at a cliff's top.
+    CliffTop,
+    /// Ground at a cliff's foot.
+    CliffFoot,
+    Ramp,
+    Ice,
+    /// Ice near its shore.
+    IceEdge,
+}
+
+/// Decals of one atlas scattered over a zone.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DecalScatter {
+    pub zone: Zone,
+    /// Pack texture entry of the atlas (RGBA, cells × cells cut-outs).
+    pub atlas: String,
+    pub cells: u32,
+    /// How many of the atlas's cells are used (from the first).
+    pub count: u32,
+    /// Per 100 m².
+    pub density: f32,
+    /// Size range (metres).
+    pub size: [f32; 2],
+    /// Linear tint multiplier.
+    #[serde(default = "no_tint")]
+    pub tint: [f32; 3],
+    /// 0–1: how much ice covers them (faded towards the ice).
+    #[serde(default)]
+    pub under: f32,
+    /// 0–1: how much they gather in clumps instead of spreading evenly.
+    #[serde(default)]
+    pub clump: f32,
+}
+
+fn talus() -> f32 {
+    0.85
+}
+
+fn no_tint() -> [f32; 3] {
+    [1.0; 3]
+}
+
+/// Scenery scattered over a zone.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Scatter {
+    pub zone: Zone,
+    /// Scenery ids, picked at random.
+    pub pieces: Vec<String>,
+    /// Per 100 m².
+    pub density: f32,
+    pub scale: [f32; 2],
+    /// Metres up or down from the ground.
+    #[serde(default)]
+    pub elevation: f32,
+    /// At most this many on a map.
+    pub max: Option<u32>,
 }
 
 /// A biome's ambient motes.
@@ -228,6 +373,10 @@ pub struct BiomeLight {
     pub fill_strength: f32,
     /// Shadow filter radius in shadow-map texels.
     pub shadow_softness: f32,
+    /// Rime on the scenery (0 none, 1 white): upward faces of props, trees and generated
+    /// cliffs turn frosty; units and buildings never do (D80).
+    #[serde(default)]
+    pub frost: f32,
 }
 
 /// The dappled light of the overhead forest.
@@ -655,6 +804,8 @@ pub struct Lighting {
     /// Environment radiance SH, already scaled by its intensity.
     pub environment: [Vec3; 9],
     pub shadow_softness: f32,
+    /// Rime on the scenery ([`BiomeLight::frost`]).
+    pub frost: f32,
     pub canopy: Canopy,
     pub grade: Grade,
 }
@@ -751,6 +902,7 @@ impl Lighting {
             ],
             environment: env.irradiance.map(|c| Vec3::from_array(c) * env.intensity),
             shadow_softness: l.shadow_softness,
+            frost: l.frost,
             canopy: biome.canopy,
             grade: biome.grade.clone(),
         }
@@ -1036,6 +1188,7 @@ mod tests {
                 bounce_tint: Hex([255; 3]),
                 fill_strength: 0.8,
                 shadow_softness: 3.0,
+                frost: 0.0,
             },
             canopy: Canopy {
                 height: 140.0,
@@ -1110,6 +1263,7 @@ mod tests {
                 strength: 0.8,
             },
             motes: None,
+            blocks: None,
         }
     }
 

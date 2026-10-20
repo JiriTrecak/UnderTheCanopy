@@ -1,0 +1,83 @@
+{
+  "biome": "frost-hollow",
+  "camps": [],
+  "entities": [
+    {
+      "definition": "unit.ants.warrior",
+      "id": "frost.warrior",
+      "owner": "player.1",
+      "position": {
+        "x": 129.0,
+        "y": 131.0
+      },
+      "rotation": 200.0
+    }
+  ],
+  "playerStarts": [
+    {
+      "mainFort": "start.player.1/main-fort",
+      "player": 1,
+      "setup": "setup.ants",
+      "x": 41.5,
+      "z": 129.5
+    }
+  ],
+  "size": 256,
+  "terrain": {
+    "paint": [
+      {
+        "material": "asset.terrain.autumn-moss",
+        "variants": false
+      },
+      {
+        "material": "asset.terrain.autumn-needles",
+        "variants": false
+      },
+      {
+        "material": "asset.terrain.lookdev-debris",
+        "variants": false
+      },
+      {
+        "material": "asset.terrain.warcraft-ldrg",
+        "variants": false
+      },
+      {
+        "material": "asset.terrain.warcraft-ldro",
+        "variants": false
+      },
+      {
+        "material": "asset.terrain.warcraft-ldrt",
+        "variants": false
+      },
+      {
+        "material": "asset.terrain.warcraft-lgrd",
+        "variants": false
+      },
+      {
+        "material": "asset.terrain.warcraft-lgrs",
+        "variants": false
+      },
+      {
+        "material": "asset.terrain.warcraft-lrok",
+        "variants": false
+      },
+      {
+        "material": "asset.terrain.warcraft-zsan",
+        "variants": false
+      },
+      {
+        "material": "asset.terrain.warcraft-cliff-cldi",
+        "variants": false
+      }
+    ],
+    "textureGrid": {
+      "cellSize": 5,
+      "origin": [
+        -0.5,
+        -0.5
+      ]
+    },
+    "waterProfiles": []
+  },
+  "sandbox": true
+}

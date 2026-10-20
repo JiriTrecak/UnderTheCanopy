@@ -21,6 +21,7 @@ impl Shell {
                 Ok(json!({ "png": base64::engine::general_purpose::STANDARD.encode(png) }))
             }
             Tool::MapStroke(args) => self.map_stroke(args),
+            Tool::MapBlocks(args) => self.map_blocks(args),
             Tool::MapPreview { map } => {
                 let root = self.map_root(&map)?;
                 let image = self.write_preview(&root)?;
@@ -268,6 +269,68 @@ impl Shell {
             args.lower.unwrap_or(false),
             args.passes.unwrap_or(1).min(50),
         )?;
+        match edit {
+            Some(edit) => self.run_map_edit(&root, edit, true),
+            None => Ok(json!({ "done": "nothing changed" })),
+        }
+    }
+
+    fn map_blocks(&mut self, args: crate::mcp::MapBlocksArgs) -> Result<Value, String> {
+        use crate::world::{BlockOp, BlockTool};
+        use canopy_content::map::blocks::{BlockKind, Blocks};
+        let root = self.map_root(&args.map)?;
+        self.loaded_map(&root)?;
+        let session = self.maps.get_mut(&root).expect("loaded");
+        let op = args.op.to_lowercase();
+        let edit = if op == "flat" || op == "blockout" {
+            crate::world::block_out(session, op == "flat")
+        } else {
+            let blocks = crate::world::blocks_of(session)
+                .ok_or("The map has no blocks yet: start with op flat or blockout")?;
+            let column = |p: [f32; 2]| Blocks::column_at(&blocks, p[0], p[1]);
+            let from = args.from.ok_or("from is needed")?;
+            let to = args.to.unwrap_or(from);
+            let kind = match args.kind.as_deref().unwrap_or("ground") {
+                "ground" => BlockKind::Ground,
+                "wall" | "forest" => BlockKind::Wall,
+                "rock" => BlockKind::Rock,
+                "shallow" => BlockKind::Shallow,
+                "deep" => BlockKind::Deep,
+                "ice" => BlockKind::Ice,
+                other => {
+                    return Err(format!(
+                        "No kind {other}: ground, wall, rock, shallow, deep or ice"
+                    ));
+                }
+            };
+            let (tool, reverse) = match op.as_str() {
+                "raise" => (BlockTool::Raise, false),
+                "lower" => (BlockTool::Raise, true),
+                "level" => (BlockTool::Level, false),
+                "paint" => (BlockTool::Paint, false),
+                "ramp" => (BlockTool::Ramp, false),
+                "unramp" => (BlockTool::Ramp, true),
+                "cut" => (BlockTool::Cut, false),
+                "uncut" => (BlockTool::Cut, true),
+                other => {
+                    return Err(format!(
+                        "No op {other}: flat, blockout, raise, lower, level, paint, ramp, unramp, cut, uncut"
+                    ));
+                }
+            };
+            crate::world::apply(
+                session,
+                &BlockOp {
+                    tool,
+                    from: column(from),
+                    to: column(to),
+                    reverse,
+                    kind,
+                    level: args.level,
+                    point: args.corner,
+                },
+            )
+        };
         match edit {
             Some(edit) => self.run_map_edit(&root, edit, true),
             None => Ok(json!({ "done": "nothing changed" })),

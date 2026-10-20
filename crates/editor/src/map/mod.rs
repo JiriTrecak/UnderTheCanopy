@@ -53,10 +53,17 @@ pub fn build(
         })
         .flatten()
         .map(|b| crate::world::mesh::mesh(&b));
+    // Otherwise the world generated from the blocks, as the game builds it (D80).
+    let generated = blockout
+        .is_none()
+        .then(|| canopy_scene::generate::generate(map, &look.biome))
+        .flatten();
+    let ground_map = generated.as_ref().map_or(map, |g| &g.map);
     let (terrain, water, forest) = if blockout.is_some() {
         (None, None, None)
     } else {
-        let (terrain, water) = canopy_scene::terrain::build(map, &content.landscape, &look.biome)?;
+        let (terrain, water) =
+            canopy_scene::terrain::build(ground_map, &content.landscape, &look.biome)?;
         let forest = look
             .biome
             .surroundings
@@ -83,10 +90,15 @@ pub fn build(
         .filter_map(|a| Some((a.id.to_string(), a.scenery.as_ref()?.to_string())))
         .collect();
     let mut statics = Vec::new();
+    let generated_objects = generated
+        .as_ref()
+        .map(|g| g.objects.as_slice())
+        .unwrap_or(&[]);
     for object in map
         .authoring
         .objects
         .iter()
+        .chain(generated_objects)
         .filter(|o| o.visible && blockout.is_none())
     {
         let id = by_model.get(&object.asset).unwrap_or(&object.asset);
@@ -205,6 +217,7 @@ pub fn build(
             water_textures: look.water.textures(),
             forest,
             blockout,
+            dressing: generated.map(|g| g.dressing),
         },
         actors,
         biome: map.biome().to_string(),

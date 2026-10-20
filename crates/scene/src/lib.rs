@@ -8,6 +8,7 @@ pub mod animation;
 pub mod damage;
 pub mod effects;
 pub mod fog;
+pub mod generate;
 pub mod interpolate;
 pub mod live;
 pub mod models;
@@ -250,8 +251,11 @@ pub fn build(
         bail!("maps larger than 1024 cells are not supported (D24)");
     }
     let content: &Content = &world.catalog().content;
+    // A map shaped in blocks is dressed from them (D80).
+    let generated = generate::generate(map, &look.biome);
+    let ground_map = generated.as_ref().map_or(map, |g| &g.map);
     let (terrain, water) =
-        terrain::build(map, &content.landscape, &look.biome).map_err(anyhow::Error::msg)?;
+        terrain::build(ground_map, &content.landscape, &look.biome).map_err(anyhow::Error::msg)?;
     let forest = look
         .biome
         .surroundings
@@ -271,7 +275,12 @@ pub fn build(
         .iter()
         .map(|c| c.linear().to_array())
         .collect();
-    let scene = statics::build(world, content, map, &scenery);
+    let mut scene = statics::build(world, content, map, &scenery);
+    let mut dressing = None;
+    if let Some(generated) = generated {
+        scene.instances.extend(generated.instances(&scenery));
+        dressing = Some(generated.dressing);
+    }
     for m in &scene.missing {
         tracing::warn!(what = %m, "not shown");
     }
@@ -290,6 +299,7 @@ pub fn build(
             water_textures: look.water.textures(),
             forest,
             blockout: None,
+            dressing,
         },
         hour,
         size: map.size,

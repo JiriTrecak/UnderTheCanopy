@@ -669,7 +669,7 @@ impl Shell {
             }
         }
         let started = Instant::now();
-        let blocks = session.editor == crate::map::Editor::Blocks;
+        let blocks = session.editor == crate::map::Editor::Blocks && !session.blocks.generated;
         match crate::map::build(
             map,
             &content,
@@ -2068,7 +2068,7 @@ impl Shell {
         let edit = self
             .active_map_root()
             .and_then(|root| self.maps.get_mut(&root))
-            .and_then(crate::world::block_out);
+            .and_then(|s| crate::world::block_out(s, false));
         if let Some(edit) = edit {
             self.run(edit);
         }

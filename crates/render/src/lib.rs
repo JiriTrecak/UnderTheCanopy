@@ -8,6 +8,7 @@ pub mod camera;
 pub mod capture;
 pub mod cutaway;
 pub mod device;
+pub mod dressing;
 pub mod effects;
 pub mod environment;
 pub mod fog;

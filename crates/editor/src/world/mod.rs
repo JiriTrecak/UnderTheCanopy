@@ -88,6 +88,8 @@ pub struct State {
     pub kind: BlockKind,
     /// The column a drag began on, and where it is now.
     pub drag: Option<((i32, i32), (i32, i32))>,
+    /// Show the world generated from the blocks instead of the blocks (G).
+    pub generated: bool,
 }
 
 /// The map's blocks, when it has them.
@@ -154,9 +156,14 @@ fn commit(
     Some(step(session, label, commands))
 }
 
-/// Blocks out the session's map from its heights, water and closed ground.
-pub fn block_out(session: &mut Session) -> Option<crate::tabs::Edit> {
+/// Blocks out the session's map from its heights, water and closed ground, or as flat
+/// level-1 ground (`flat`).
+pub fn block_out(session: &mut Session, flat: bool) -> Option<crate::tabs::Edit> {
     let map = session.map.as_ref()?;
+    if flat {
+        let blocks = Blocks::flat(map.size);
+        return commit(session, "Flat blocks", blocks, |_| {});
+    }
     let starts: Vec<[f32; 2]> = map
         .player_starts
         .iter()
@@ -164,6 +171,103 @@ pub fn block_out(session: &mut Session) -> Option<crate::tabs::Edit> {
         .collect();
     let blocks = Blocks::from_terrain(&map.authoring.terrain, &starts);
     commit(session, "Block out the map", blocks, |_| {})
+}
+
+/// One block edit, as a drag of a tool does it.
+#[derive(Debug, Clone)]
+pub struct BlockOp {
+    pub tool: BlockTool,
+    /// Columns (inclusive) of the dragged area.
+    pub from: (i32, i32),
+    pub to: (i32, i32),
+    /// Shift: lower for Raise, remove for Ramp and Cut.
+    pub reverse: bool,
+    pub kind: BlockKind,
+    /// Level: the level to set (default: the level where the drag began).
+    pub level: Option<u8>,
+    /// Cut: the world point (x, z) whose nearest corner of `to` is cut.
+    pub point: Option<[f32; 2]>,
+}
+
+/// The step `op` makes of the session's blocks (none when nothing changes).
+pub fn apply(session: &mut Session, op: &BlockOp) -> Option<crate::tabs::Edit> {
+    let blocks = blocks_of(session)?;
+    let start = blocks.at(op.from.0, op.from.1);
+    let (from, to, reverse) = (op.from, op.to, op.reverse);
+    let label = match op.tool {
+        BlockTool::Raise if reverse => "Lower blocks",
+        BlockTool::Raise => "Raise blocks",
+        BlockTool::Level => "Level blocks",
+        BlockTool::Paint => "Paint blocks",
+        BlockTool::Ramp if reverse => "Remove ramps",
+        BlockTool::Ramp => "Ramps",
+        BlockTool::Cut => "Cut a block",
+    };
+    let current = blocks.clone();
+    commit(session, label, current, |blocks| match op.tool {
+        BlockTool::Raise => {
+            for (x, z) in area(from, to) {
+                if let Some(mut b) = blocks.get(x, z) {
+                    b.level = if reverse {
+                        b.level.saturating_sub(1)
+                    } else {
+                        (b.level + 1).min(MAX_LEVEL)
+                    };
+                    blocks.set(x, z, b);
+                }
+            }
+        }
+        BlockTool::Level => {
+            let level = op.level.unwrap_or(start.level).min(MAX_LEVEL);
+            for (x, z) in area(from, to) {
+                if let Some(mut b) = blocks.get(x, z) {
+                    b.level = level;
+                    blocks.set(x, z, b);
+                }
+            }
+        }
+        BlockTool::Paint => {
+            for (x, z) in area(from, to) {
+                if let Some(mut b) = blocks.get(x, z) {
+                    b.kind = op.kind;
+                    blocks.set(x, z, b);
+                }
+            }
+        }
+        BlockTool::Ramp => {
+            for (x, z) in area(from, to) {
+                if let Some(mut b) = blocks.get(x, z) {
+                    b.kind = if reverse {
+                        BlockKind::Ground
+                    } else {
+                        BlockKind::Ramp
+                    };
+                    b.cut = Cut::None;
+                    blocks.set(x, z, b);
+                }
+            }
+        }
+        BlockTool::Cut => {
+            let (x, z) = to;
+            if let (Some(mut b), Some(p)) = (blocks.get(x, z), op.point) {
+                let halo = MAP_HALO as f32;
+                let u = (p[0] + halo) / BLOCK as f32 - x as f32;
+                let v = (p[1] + halo) / BLOCK as f32 - z as f32;
+                let corner = match (u > 0.5, v > 0.5) {
+                    (false, false) => Cut::NorthWest,
+                    (true, false) => Cut::NorthEast,
+                    (true, true) => Cut::SouthEast,
+                    (false, true) => Cut::SouthWest,
+                };
+                b.cut = if reverse || b.cut == corner {
+                    Cut::None
+                } else {
+                    corner
+                };
+                blocks.set(x, z, b);
+            }
+        }
+    })
 }
 
 /// The rectangle of 4-byte samples where `new` differs from `old`, as a patch.
@@ -238,13 +342,10 @@ fn panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
         );
         ui.add_space(4.0);
         if ui.button("Block out this map").on_hover_text("Blocks from the map's heights, water and closed ground; the map's heights then follow the blocks").clicked() {
-            edit = block_out(session);
+            edit = block_out(session, false);
         }
-        if ui.button("Start from flat ground").clicked()
-            && let Some(map) = &session.map
-        {
-            let blocks = Blocks::flat(map.size);
-            edit = commit(session, "Flat blocks", blocks, |_| {});
+        if ui.button("Start from flat ground").clicked() {
+            edit = block_out(session, true);
         }
         ui.add_space(10.0);
     }
@@ -291,6 +392,21 @@ fn panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
             });
         }
     }
+    ui.add_space(12.0);
+    ui.label(eyebrow("View"));
+    ui.horizontal(|ui| {
+        for (generated, label) in [(false, "Blocks"), (true, "Generated")] {
+            if ui
+                .selectable_label(session.blocks.generated == generated, label)
+                .on_hover_text("G switches")
+                .clicked()
+                && session.blocks.generated != generated
+            {
+                session.blocks.generated = generated;
+                session.stale = true;
+            }
+        }
+    });
     ui.add_space(12.0);
     ui.label(eyebrow("Editor"));
     if ui
@@ -363,6 +479,10 @@ pub fn show(ui: &mut Ui, session: &mut Session, texture: Option<egui::TextureId>
     let input = ui.input(|i| i.clone());
     navigate(&input, &response, rect, &mut session.camera, map_size);
     if response.hovered() && !input.modifiers.command {
+        if input.key_pressed(egui::Key::G) {
+            session.blocks.generated = !session.blocks.generated;
+            session.stale = true;
+        }
         for tool in BlockTool::ALL {
             if input.key_pressed(tool.key()) {
                 session.blocks.tool = tool;
@@ -456,84 +576,16 @@ pub fn show(ui: &mut Ui, session: &mut Session, texture: Option<egui::TextureId>
         finished = Some((c, c));
     }
     if let Some((from, to)) = finished {
-        let tool = session.blocks.tool;
-        let kind = session.blocks.kind;
-        let hit_point = column.map(|(_, p)| p);
-        let start = blocks.at(from.0, from.1);
-        let label = match tool {
-            BlockTool::Raise if shift => "Lower blocks",
-            BlockTool::Raise => "Raise blocks",
-            BlockTool::Level => "Level blocks",
-            BlockTool::Paint => "Paint blocks",
-            BlockTool::Ramp if shift => "Remove ramps",
-            BlockTool::Ramp => "Ramps",
-            BlockTool::Cut => "Cut a block",
+        let op = BlockOp {
+            tool: session.blocks.tool,
+            from,
+            to,
+            reverse: shift,
+            kind: session.blocks.kind,
+            level: None,
+            point: column.map(|(_, p)| [p.x, p.z]),
         };
-        let current = blocks.clone();
-        out.edits
-            .extend(commit(session, label, current, |blocks| match tool {
-                BlockTool::Raise => {
-                    for (x, z) in area(from, to) {
-                        if let Some(mut b) = blocks.get(x, z) {
-                            b.level = if shift {
-                                b.level.saturating_sub(1)
-                            } else {
-                                (b.level + 1).min(MAX_LEVEL)
-                            };
-                            blocks.set(x, z, b);
-                        }
-                    }
-                }
-                BlockTool::Level => {
-                    for (x, z) in area(from, to) {
-                        if let Some(mut b) = blocks.get(x, z) {
-                            b.level = start.level;
-                            blocks.set(x, z, b);
-                        }
-                    }
-                }
-                BlockTool::Paint => {
-                    for (x, z) in area(from, to) {
-                        if let Some(mut b) = blocks.get(x, z) {
-                            b.kind = kind;
-                            blocks.set(x, z, b);
-                        }
-                    }
-                }
-                BlockTool::Ramp => {
-                    for (x, z) in area(from, to) {
-                        if let Some(mut b) = blocks.get(x, z) {
-                            b.kind = if shift {
-                                BlockKind::Ground
-                            } else {
-                                BlockKind::Ramp
-                            };
-                            b.cut = Cut::None;
-                            blocks.set(x, z, b);
-                        }
-                    }
-                }
-                BlockTool::Cut => {
-                    let (x, z) = to;
-                    if let (Some(mut b), Some(p)) = (blocks.get(x, z), hit_point) {
-                        let halo = MAP_HALO as f32;
-                        let u = (p.x + halo) / BLOCK as f32 - x as f32;
-                        let v = (p.z + halo) / BLOCK as f32 - z as f32;
-                        let corner = match (u > 0.5, v > 0.5) {
-                            (false, false) => Cut::NorthWest,
-                            (true, false) => Cut::NorthEast,
-                            (true, true) => Cut::SouthEast,
-                            (false, true) => Cut::SouthWest,
-                        };
-                        b.cut = if shift || b.cut == corner {
-                            Cut::None
-                        } else {
-                            corner
-                        };
-                        blocks.set(x, z, b);
-                    }
-                }
-            }));
+        out.edits.extend(apply(session, &op));
     }
     if let Some((c, _)) = column
         && let Some(b) = blocks.get(c.0, c.1)

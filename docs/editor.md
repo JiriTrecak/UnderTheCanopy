@@ -107,7 +107,9 @@ Maps are shaped in blocks, and the world will be generated from them. This first
 - **Block out this map** makes blocks from an existing map: levels from mean heights, water and closed ground by majority, ramps where the old ground was walkable between columns a level apart, flat pads at the starts. Echo Isles comes out playable but for one creep camp left behind a cliff, one ramp to fix by hand. **Start from flat ground** gives level-1 ground everywhere.
 - **The classic editor** stays one click away (Editor › Classic map editor) while the block editor does not yet place starts, amber and camps.
 - **Captures**: `canopy capture-screens --only blocks` blocks out Echo Isles and edits it.
-- **Next** (D80): the generator, starting with cliff faces, ground and the frame from the blocks; then landmarks and set pieces.
+- **Generated view** (G, or View › Generated): the world the game generates from the blocks (D80): generated cliffs, ground, decals and scattered scenery, with the biome's light. The tools edit the blocks in either view.
+- **MCP `map_blocks`**: what the block tools do (flat, blockout, raise, lower, level, paint, ramp, unramp, cut, uncut) over an area in world cells; `tools/maps/frost_hollow.py` authors a whole scene with it.
+- **Next** (D80): organic frame outlines and edge dressing, landmarks as blocks, set pieces.
 
 ## M4. The asset editor (built 2026-10-17)
 

@@ -107,6 +107,7 @@ fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
     let actor = actors[in.instance];
     var f: MaterialFragment;
     f.tint = vec3f(1.0);
+    f.frost = 0.0;
     f.activity = actor.look.y;
     f.frag = in.clip;
     f.world = in.world;

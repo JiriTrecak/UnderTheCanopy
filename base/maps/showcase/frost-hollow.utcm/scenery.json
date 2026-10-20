@@ -1,0 +1,40 @@
+{
+  "objects": [
+    {
+      "asset": "scenery.lookdev-acorn",
+      "elevation": 0.0,
+      "heightMode": "terrain",
+      "id": "frost.0",
+      "locked": false,
+      "scale": 1.89,
+      "visible": true,
+      "x": 121.7,
+      "yaw": 0.6,
+      "z": 122.4
+    },
+    {
+      "asset": "scenery.lookdev-mushrooms",
+      "elevation": 0.0,
+      "heightMode": "terrain",
+      "id": "frost.1",
+      "locked": false,
+      "scale": 0.84,
+      "visible": true,
+      "x": 149.0,
+      "yaw": 1.2,
+      "z": 94.4
+    },
+    {
+      "asset": "scenery.lookdev-mushrooms",
+      "elevation": 0.0,
+      "heightMode": "terrain",
+      "id": "frost.2",
+      "locked": false,
+      "scale": 0.7,
+      "visible": true,
+      "x": 157.4,
+      "yaw": 2.6,
+      "z": 98.6
+    }
+  ]
+}

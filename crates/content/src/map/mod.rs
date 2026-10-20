@@ -48,11 +48,12 @@ pub const MAP_SIZES: [u32; 8] = [256, 480, 512, 640, 800, 960, 1024, 2048];
 pub const MAP_HALO: u32 = 16;
 /// Biome ids. The old game defines biomes in code (`src/content/biomes.ts`), not data, and
 /// rejects a map naming any other biome.
-pub const BIOMES: [&str; 4] = [
+pub const BIOMES: [&str; 5] = [
     "vibrant-forest",
     "frozen-forest",
     "autumn-forest",
     "deep-forest",
+    "frost-hollow",
 ];
 
 /// A number that must equal `N` (format and section versions).

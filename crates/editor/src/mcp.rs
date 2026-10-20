@@ -66,6 +66,7 @@ pub enum Tool {
         scale: Option<u32>,
     },
     MapStroke(MapStrokeArgs),
+    MapBlocks(MapBlocksArgs),
     MapPlace(MapPlaceArgs),
     MapRemove(MapRemoveArgs),
     UnusedAssets,
@@ -201,7 +202,7 @@ pub struct MapCreateArgs {
     pub name: Option<String>,
     /// Cells per side: 256, 480, 512, 640, 800, 960 or 1024. 512 by default.
     pub size: Option<u32>,
-    /// vibrant-forest (the default), deep-forest, autumn-forest or frozen-forest.
+    /// vibrant-forest (the default), deep-forest, autumn-forest, frozen-forest or frost-hollow.
     pub biome: Option<String>,
     /// The folder under `maps/`; `skirmish` by default.
     pub folder: Option<String>,
@@ -219,6 +220,26 @@ struct MapPictureArgs {
     map: String,
     /// Pixels per cell, 1 to 4 (default: about 1024 pixels across).
     scale: Option<u32>,
+}
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct MapBlocksArgs {
+    /// The map: its id or its package path.
+    pub map: String,
+    /// What the block editor's tools do (D80): `flat` (blocks out the map as level-1
+    /// ground), `blockout` (blocks from its heights), raise, lower, level, paint, ramp,
+    /// unramp, cut, uncut.
+    pub op: String,
+    /// The area's corners in world cells (x, z); `to` defaults to `from`. Every block
+    /// (4 × 4 cells) the rectangle touches is changed.
+    pub from: Option<[f32; 2]>,
+    pub to: Option<[f32; 2]>,
+    /// level: the level (0–7; flat ground is 1, one level is 3 m).
+    pub level: Option<u8>,
+    /// paint: ground, wall (forest floor), rock, shallow, deep or ice.
+    pub kind: Option<String>,
+    /// cut: the corner of the block at `to` nearest this world point is cut away.
+    pub corner: Option<[f32; 2]>,
 }
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
@@ -478,6 +499,16 @@ impl Handler {
     }
 
     #[tool(
+        description = "Edits a map's blocks (D80) as the block editor's tools do, one undo step: start from flat ground or block out an existing map, then raise, lower, level, paint a kind, add or remove ramps and diagonal cuts over an area. Heights, cliffs, water and closed ground follow from the blocks; the world is generated from them."
+    )]
+    async fn map_blocks(
+        &self,
+        Parameters(args): Parameters<MapBlocksArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::MapBlocks(args)).await
+    }
+
+    #[tool(
         description = "Places what a click of the editor's tools places: an amber site, a creep camp or a player start (with its amber and a level pad), as one undo step."
     )]
     async fn map_place(
@@ -552,7 +583,7 @@ impl Handler {
 
 #[tool_handler(
     name = "Under the Canopy editor",
-    instructions = "Edits the game's base package (units, buildings, items, abilities, effects, races, rules, assets, maps) through the open editor. Find documents with list_elements, read them with read_document and their shape with document_schema, change them with edit (one undo step per call), check with problems, then save. Maps have their own tools: create_map, map_stroke, map_place, map_remove, map_info and map_picture. The canopy-* skills in the repository describe the formats."
+    instructions = "Edits the game's base package (units, buildings, items, abilities, effects, races, rules, assets, maps) through the open editor. Find documents with list_elements, read them with read_document and their shape with document_schema, change them with edit (one undo step per call), check with problems, then save. Maps have their own tools: create_map, map_blocks (the block editor, D80), map_stroke, map_place, map_remove, map_info and map_picture. The canopy-* skills in the repository describe the formats."
 )]
 impl ServerHandler for Handler {}
 

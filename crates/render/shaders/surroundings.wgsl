@@ -146,6 +146,7 @@ fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
     if (kind == KIND_LEAF) {
         albedo = inst.color.rgb * in.shade;
     }
+    albedo = frosted(albedo, n, in.world, frost_amount());
     var surface: Surface;
     surface.position = in.world;
     surface.normal = n;

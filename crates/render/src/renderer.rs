@@ -107,6 +107,8 @@ pub struct World {
     pub forest: Option<ForestDesc>,
     /// A blockout drawn as blocks (D80; the editor's block view, usually without terrain).
     pub blockout: Option<crate::blockout::BlockoutMesh>,
+    /// What the blocks are dressed with: generated cliffs and decals (D80).
+    pub dressing: Option<crate::dressing::DressingDesc>,
 }
 
 /// Measurements of one frame.
@@ -300,6 +302,7 @@ pub struct Renderer {
     forest: Option<ForestGpu>,
     motes: Option<crate::motes::MotesGpu>,
     blockout: Option<crate::blockout::BlockoutGpu>,
+    dressing: Option<crate::dressing::DressingGpu>,
     ripples: Ripples,
     ui: Option<crate::ui::UiLayer>,
     timer: Option<GpuTimer>,
@@ -468,6 +471,7 @@ impl Renderer {
             forest: None,
             motes: None,
             blockout: None,
+            dressing: None,
             ripples: Ripples::new(),
             ui: None,
             timer: None,
@@ -593,6 +597,7 @@ impl Renderer {
         self.forest = None;
         self.motes = None;
         self.blockout = None;
+        self.dressing = None;
         self.ripples.clear();
         self.world_bytes = 0;
         self.bindings.shade = match world
@@ -660,6 +665,18 @@ impl Renderer {
                 self.world_bytes += gpu_motes.bytes;
                 self.motes = Some(gpu_motes);
             }
+        }
+        if let Some(desc) = &world.dressing {
+            let dressing = crate::dressing::DressingGpu::new(
+                &gpu.device,
+                &gpu.queue,
+                gpu.features,
+                pack,
+                desc,
+                &self.frame_layout,
+            )?;
+            self.world_bytes += dressing.bytes;
+            self.dressing = Some(dressing);
         }
         if let Some(mesh) = &world.blockout {
             self.blockout =
@@ -1246,6 +1263,9 @@ impl Renderer {
                         multiview_mask: None,
                     });
                     if self.shadows {
+                        if let Some(dressing) = &self.dressing {
+                            report.draws += dressing.draw_shadow(&mut rp, &self.shadow_frame_group);
+                        }
                         if let Some(terrain) = &self.terrain {
                             report.draws += terrain.draw_shadow(&mut rp, &self.shadow_frame_group);
                         }
@@ -1327,6 +1347,10 @@ impl Renderer {
                     }
                     if let Some(blockout) = &self.blockout {
                         report.draws += blockout.draw(&mut rp, &self.frame_group);
+                    }
+                    if let Some(dressing) = &self.dressing {
+                        report.draws += dressing.draw_cliffs(&mut rp, &self.frame_group);
+                        report.draws += dressing.draw_decals(&mut rp, &self.frame_group);
                     }
                     if let Some(statics) = &self.statics {
                         report.draws += statics.draw_forward(&mut rp, &self.frame_group);

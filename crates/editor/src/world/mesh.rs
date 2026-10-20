@@ -30,6 +30,7 @@ pub fn color(block: Block) -> [f32; 3] {
         BlockKind::Rock => 0x8c8b8e,
         BlockKind::Shallow => 0x71c1d6,
         BlockKind::Deep => 0x2e6fa4,
+        BlockKind::Ice => 0xbfe3ee,
     })
 }
 
@@ -40,6 +41,7 @@ pub fn top(block: Block) -> f32 {
         + match block.kind {
             BlockKind::Shallow => -0.2,
             BlockKind::Deep => -0.4,
+            BlockKind::Ice => -0.15,
             _ => 0.0,
         }
 }
