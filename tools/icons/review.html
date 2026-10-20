@@ -1,0 +1,230 @@
+<title>Icon Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+/* A review bench: neutral zinc stage (the project's preview rule), the icons the only colour; a dense card grid scanned left to right, one verdict per card. */
+:root {
+  color-scheme: dark;
+  --stage: #18181b; --panel: #27272a; --line: #52525b; --slot: #080d09;
+  --text: #e4e4e7; --dim: #a1a1aa; --faint: #71717a;
+  --yay: #7fbf8a; --yay-bg: #7fbf8a22; --nay: #e0806a; --nay-bg: #e0806a22; --gold: #d9c27a;
+  --display: 'Spectral', Georgia, serif;
+  --body: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+body { background: var(--stage); color: var(--text); font: 14px/1.5 var(--body); margin: 0; }
+.wrap { max-width: 1440px; margin: 0 auto; padding-block: 20px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header.top { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: baseline; justify-content: space-between; }
+h1 { font: 600 28px/1.2 var(--display); margin: 0; text-wrap: balance; }
+.lede { color: var(--dim); margin: 4px 0 0; max-width: 70ch; }
+.tally { display: flex; gap: 16px; font-variant-numeric: tabular-nums; color: var(--dim); }
+.tally b { color: var(--text); font-weight: 600; }
+.tally .y b { color: var(--yay); } .tally .n b { color: var(--nay); }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; background: var(--stage); padding-block: 12px; margin-top: 8px; border-bottom: 1px solid var(--panel); display: flex; flex-direction: column; gap: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chips .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); margin-right: 4px; min-width: 56px; }
+.chip { font: 500 13px/1 var(--body); color: var(--dim); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 6px 11px; cursor: pointer; }
+.chip:hover { color: var(--text); }
+.chip[aria-pressed="true"] { background: var(--text); color: var(--stage); border-color: var(--text); }
+.chip:focus-visible, button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.chip .count { opacity: .6; margin-left: 4px; font-variant-numeric: tabular-nums; }
+input[type=search] { font: 14px var(--body); color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; min-width: 0; width: 220px; max-width: 100%; }
+.notice { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; color: var(--dim); }
+.notice[hidden] { display: none; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-top: 16px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: grid; grid-template-columns: 128px minmax(0, 1fr); gap: 12px; }
+.card.yay { border-color: var(--yay); } .card.nay { border-color: var(--nay); }
+.art { display: flex; flex-direction: column; gap: 8px; }
+.big { width: 128px; height: 128px; border-radius: 3px; display: block; background: var(--slot); }
+.small { display: flex; gap: 6px; align-items: flex-end; background: var(--slot); padding: 5px; border-radius: 3px; }
+.small img { display: block; border-radius: 1px; }
+.info { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.name { font: 600 16px/1.25 var(--display); margin: 0; overflow-wrap: anywhere; }
+.meta { font-size: 12px; color: var(--faint); display: flex; flex-wrap: wrap; gap: 4px 8px; }
+.tag { border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; }
+.tag.old { color: var(--gold); border-color: #d9c27a66; }
+.tag.again { color: var(--nay); border-color: #e0806a66; }
+.uses { font-size: 13px; color: var(--dim); margin: 0; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.uses b { color: var(--text); font-weight: 500; }
+.vote { display: flex; gap: 6px; }
+.vote button { flex: 1; font: 600 13px/1 var(--body); padding: 8px 6px; border-radius: 5px; border: 1px solid var(--line); background: transparent; color: var(--dim); cursor: pointer; }
+.vote button:disabled { cursor: not-allowed; opacity: .5; }
+.vote .y[aria-pressed="true"] { background: var(--yay-bg); color: var(--yay); border-color: var(--yay); }
+.vote .n[aria-pressed="true"] { background: var(--nay-bg); color: var(--nay); border-color: var(--nay); }
+textarea { font: 13px/1.4 var(--body); color: var(--text); background: var(--stage); border: 1px solid var(--line); border-radius: 5px; padding: 6px 8px; resize: vertical; min-height: 34px; width: 100%; box-sizing: border-box; }
+.saved { font-size: 11px; color: var(--faint); min-height: 14px; }
+.id { font: 11px var(--mono); color: var(--faint); overflow-wrap: anywhere; }
+.empty { color: var(--dim); padding: 32px 0; }
+@media (max-width: 420px) { .card { grid-template-columns: 96px minmax(0, 1fr); } .big { width: 96px; height: 96px; } }
+@media (prefers-reduced-motion: no-preference) { .card { transition: border-color .15s; } }
+</style>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Icon Review</h1>
+      <p class="lede">Every icon in the game, at command-card size (46 px and 22 px) and enlarged. Yay keeps it; Nay sends it back to be painted again, with your comment as the brief. A repainted icon asks for a new vote.</p>
+    </div>
+    <div class="tally" id="tally"></div>
+  </header>
+  <div class="bar">
+    <div class="chips" id="f-status"><span class="label">Show</span></div>
+    <div class="chips" id="f-category"><span class="label">Type</span></div>
+    <div class="chips" id="f-race"><span class="label">Race</span><input type="search" id="q" placeholder="Find an icon" aria-label="Find an icon"></div>
+  </div>
+  <p class="notice" id="notice" hidden></p>
+  <div class="grid" id="grid"><p class="empty">Loading the icons…</p></div>
+</div>
+<script>
+const state = { icons: [], reviews: {}, status: 'todo', category: 'All', race: 'All', q: '', db: null, writable: true };
+const STATUSES = [['todo', 'To review'], ['nay', 'Nay'], ['yay', 'Yay'], ['all', 'All']];
+const CATEGORIES = ['All', 'Command', 'Ability', 'Passive', 'Research', 'Portrait', 'Building', 'Item', 'Resource', 'Stat'];
+const RACES = ['All', 'Ants', 'Beetles', 'Neutral', 'Shared'];
+const pending = {}; // per-document write chain: one write at a time
+
+function verdictOf(icon) {
+  const r = state.reviews[icon.id];
+  if (!r || !r.verdict) return { verdict: null, again: !!(r && r.version && r.version !== icon.version && r.verdict), comment: r ? r.comment || '' : '' };
+  if (r.version !== icon.version) return { verdict: null, again: true, comment: r.comment || '' };
+  return { verdict: r.verdict, again: false, comment: r.comment || '' };
+}
+
+function visible() {
+  const q = state.q.trim().toLowerCase();
+  return state.icons.filter(i => {
+    const v = verdictOf(i).verdict;
+    if (state.status === 'todo' && v) return false;
+    if (state.status === 'yay' && v !== 'yay') return false;
+    if (state.status === 'nay' && v !== 'nay') return false;
+    if (state.category !== 'All' && i.category !== state.category) return false;
+    if (state.race !== 'All' && i.race !== state.race) return false;
+    if (q && !(i.name + ' ' + i.id + ' ' + i.uses.map(u => u.name).join(' ')).toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function chipRow(el, options, key, counts) {
+  el.querySelectorAll('.chip').forEach(c => c.remove());
+  const search = el.querySelector('input');
+  for (const opt of options) {
+    const [value, label] = Array.isArray(opt) ? opt : [opt, opt];
+    const b = document.createElement('button');
+    b.className = 'chip'; b.type = 'button';
+    b.setAttribute('aria-pressed', String(state[key] === value));
+    b.textContent = label;
+    if (counts && counts[value] !== undefined) { const s = document.createElement('span'); s.className = 'count'; s.textContent = counts[value]; b.append(s); }
+    b.addEventListener('click', () => { state[key] = value; render(); });
+    el.insertBefore(b, search || null);
+  }
+}
+
+function renderBars() {
+  const c = { todo: 0, nay: 0, yay: 0, all: state.icons.length };
+  let old = 0;
+  for (const i of state.icons) { const v = verdictOf(i).verdict; c[v || 'todo']++; if (i.style === 'old') old++; }
+  chipRow(document.getElementById('f-status'), STATUSES, 'status', c);
+  chipRow(document.getElementById('f-category'), CATEGORIES, 'category');
+  chipRow(document.getElementById('f-race'), RACES, 'race');
+  const t = document.getElementById('tally');
+  t.innerHTML = '';
+  for (const [cls, n, label] of [['y', c.yay, 'yay'], ['n', c.nay, 'nay'], ['', c.todo, 'to review'], ['', old, 'old style']]) {
+    const s = document.createElement('span'); s.className = cls;
+    const b = document.createElement('b'); b.textContent = n; s.append(b, ' ' + label); t.append(s);
+  }
+}
+
+function card(icon) {
+  const v = verdictOf(icon);
+  const el = document.createElement('article');
+  el.className = 'card' + (v.verdict ? ' ' + v.verdict : '');
+  const art = document.createElement('div'); art.className = 'art';
+  const big = new Image(); big.className = 'big'; big.loading = 'lazy'; big.src = icon.image + '?v=' + icon.version; big.alt = icon.name;
+  const small = document.createElement('div'); small.className = 'small';
+  for (const px of [46, 22]) { const im = new Image(px, px); im.loading = 'lazy'; im.src = big.src; im.alt = ''; small.append(im); }
+  art.append(big, small);
+  const info = document.createElement('div'); info.className = 'info';
+  const h = document.createElement('h2'); h.className = 'name'; h.textContent = icon.name;
+  const meta = document.createElement('div'); meta.className = 'meta';
+  for (const t of [icon.category, icon.race]) { const s = document.createElement('span'); s.textContent = t; meta.append(s); }
+  if (icon.style === 'old') { const s = document.createElement('span'); s.className = 'tag old'; s.textContent = 'old style'; meta.append(s); }
+  if (v.again) { const s = document.createElement('span'); s.className = 'tag again'; s.textContent = 'repainted: vote again'; meta.append(s); }
+  const uses = document.createElement('p'); uses.className = 'uses';
+  icon.uses.forEach((u, k) => { if (k) uses.append(' · '); const b = document.createElement('b'); b.textContent = u.name; uses.append(b); if (u.does) uses.append(': ' + u.does); });
+  const vote = document.createElement('div'); vote.className = 'vote';
+  const yay = document.createElement('button'); yay.type = 'button'; yay.className = 'y'; yay.textContent = 'Yay';
+  const nay = document.createElement('button'); nay.type = 'button'; nay.className = 'n'; nay.textContent = 'Nay: repaint';
+  yay.setAttribute('aria-pressed', String(v.verdict === 'yay')); nay.setAttribute('aria-pressed', String(v.verdict === 'nay'));
+  yay.disabled = nay.disabled = !state.db || !state.writable;
+  const note = document.createElement('textarea'); note.id = 'c-' + icon.id.replace(/[^a-z0-9-]/gi, '-');
+  note.placeholder = 'Comment: what to change'; note.value = v.comment; note.rows = 2; note.disabled = !state.db || !state.writable;
+  note.setAttribute('aria-label', 'Comment on ' + icon.name);
+  const saved = document.createElement('div'); saved.className = 'saved';
+  yay.addEventListener('click', () => save(icon, { verdict: v.verdict === 'yay' ? null : 'yay', comment: note.value }, saved));
+  nay.addEventListener('click', () => save(icon, { verdict: v.verdict === 'nay' ? null : 'nay', comment: note.value }, saved));
+  let timer;
+  const flush = () => { clearTimeout(timer); const r = state.reviews[icon.id] || {}; if ((r.comment || '') !== note.value) save(icon, { verdict: verdictOf(icon).verdict, comment: note.value }, saved); };
+  note.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 1200); });
+  note.addEventListener('blur', flush);
+  const id = document.createElement('div'); id.className = 'id'; id.textContent = icon.id;
+  info.append(h, meta, uses, vote, note, saved, id);
+  vote.append(yay, nay);
+  el.append(art, info);
+  return el;
+}
+
+function save(icon, { verdict, comment }, saved) {
+  if (!state.db) return;
+  const body = { version: icon.version, verdict: verdict || null, comment: comment || '', updatedAt: new Date().toISOString() };
+  state.reviews[icon.id] = body; // shown at once; the snapshot confirms it
+  saved.textContent = 'Saving…';
+  const ref = state.db.collection('reviews').doc(icon.id);
+  pending[icon.id] = (pending[icon.id] || Promise.resolve()).then(() => ref.set(body)).then(
+    () => { saved.textContent = 'Saved'; },
+    e => {
+      saved.textContent = e && e.code === 'invalid_argument' ? 'Not saved: this view can only read the votes.' : 'Not saved: ' + (e && e.message || 'try again');
+      if (e && e.code === 'invalid_argument') { state.writable = false; render(); }
+    });
+  if (verdict !== undefined) renderSoon();
+}
+
+let soon;
+function renderSoon() { clearTimeout(soon); soon = setTimeout(render, 250); }
+
+function render() {
+  renderBars();
+  const grid = document.getElementById('grid');
+  const list = visible();
+  const focused = document.activeElement && document.activeElement.id;
+  grid.innerHTML = '';
+  if (!list.length) { const p = document.createElement('p'); p.className = 'empty'; p.textContent = state.icons.length ? 'No icons match these filters.' : 'No icons yet.'; grid.append(p); return; }
+  for (const i of list) grid.append(card(i));
+  if (focused && focused.startsWith('c-')) { const el = document.getElementById(focused); if (el) el.focus(); }
+}
+
+document.getElementById('q').addEventListener('input', e => { state.q = e.target.value; render(); });
+
+async function start() {
+  try {
+    const res = await fetch('manifest.json');
+    state.icons = (await res.json()).icons;
+  } catch (e) {
+    document.getElementById('grid').innerHTML = '<p class="empty">The icon list could not be loaded.</p>';
+    return;
+  }
+  render();
+  const db = window.claude && window.claude.use ? await window.claude.use('db') : null;
+  const notice = document.getElementById('notice');
+  if (!db) { notice.hidden = false; notice.textContent = 'Votes cannot be saved in this view (sign in on claude.ai to vote). You can still browse every icon.'; render(); return; }
+  state.db = db;
+  render();
+  db.collection('reviews').onSnapshot(snap => {
+    const next = {};
+    for (const d of snap.docs) next[d.id] = d.data();
+    // Keep a local edit that is still being written.
+    for (const [k, v] of Object.entries(state.reviews)) if (pending[k] && !next[k]) next[k] = v;
+    state.reviews = next;
+    const active = document.activeElement;
+    if (!(active && active.tagName === 'TEXTAREA')) render(); else renderBars();
+  }, () => { notice.hidden = false; notice.textContent = 'Live votes stopped updating; reload the page to see the latest.'; });
+}
+start();
+</script>

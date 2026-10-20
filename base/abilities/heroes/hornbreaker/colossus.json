@@ -112,7 +112,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.custom.avatar-command-icon",
+    "icon": "asset.icons.ability-beetles-hornbreaker-colossus",
     "animations": {
       "prepare": "attack",
       "release": "attack",

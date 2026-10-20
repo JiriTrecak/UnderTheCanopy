@@ -53,7 +53,7 @@ Authority: `crates/content/src/assets/package.rs` (formats and the registries bu
 - `source`, `recipe`, `build`, `generation` and `reference` are working files. They are kept in git but never cooked or shipped.
 
 **Kinds:** `unit`, `creature`, `building`, `tree`, `foliage`, `prop`, `bridge`, `terrain-material`, `icon`, `interface`, `texture`, `audio`.
-- An icon (or a portrait) is its own asset of kind `icon` with one `image` file. Model assets don't carry portraits.
+- An icon (or a portrait) is its own asset of kind `icon` with one `image` file; `tools/icons/icons.py` also keeps the painted foreground (`source.png`) and its request (`generation.json`) beside it, so a background change is a recompose (art direction §Icons). Model assets don't carry portraits.
 
 **Model fields:**
 - `transform` is applied when cooking.

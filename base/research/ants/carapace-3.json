@@ -2,7 +2,7 @@
   "id": "research.ants.carapace-3",
   "name": "Carapace III",
   "description": "Ant troops gain 1 armor (level III; levels add up). Requires the Queen's Chamber.",
-  "icon": "asset.icons.research-ants-carapace",
+  "icon": "asset.icons.research-ants-carapace-3",
   "priority": 78,
   "requires": [
     "building.ants.elder-hall",

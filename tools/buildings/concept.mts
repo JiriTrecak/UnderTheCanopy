@@ -2,7 +2,8 @@
  * Generates building concept images (gpt-image-2) through the old Asset Studio's own provider
  * and credential store: the key never leaves them, never print it. Run through concept.sh:
  *   tools/buildings/concept.sh <request.json>
- * request.json: {slug, size, n, quality, references: [paths inside the old repository], prompt}
+ * request.json: {slug, size, n, quality, references: [paths inside the old repository], prompt,
+ *   model? (default gpt-image-2), background? ("transparent" needs gpt-image-2.5-*)}
  * Images land in the old repository's `.asset-work/concepts/buildings/` (ignored there).
  */
 import {readFile, writeFile, mkdir} from 'node:fs/promises';
@@ -20,7 +21,7 @@ const job = {
   prompt: request.prompt,
   references: (request.references ?? []).map((p: string) => ({path: p})),
   mask: request.mask ? {path: request.mask} : undefined,
-  request: {parameters: {model: 'gpt-image-2', size: request.size, quality: request.quality ?? 'high', background: request.background ?? 'opaque', output_format: 'png', n: request.n ?? 1, moderation: 'auto', stream: false}},
+  request: {parameters: {model: request.model ?? 'gpt-image-2', size: request.size, quality: request.quality ?? 'high', background: request.background ?? 'opaque', output_format: 'png', n: request.n ?? 1, moderation: 'auto', stream: false}},
 } as never;
 const started = Date.now();
 const result = await openAIProvider(root)(job, key, new AbortController().signal, async () => {});

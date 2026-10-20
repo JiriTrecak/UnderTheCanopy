@@ -1,0 +1,169 @@
+{
+ "n": 2,
+ "items": [
+  {
+   "name": "portrait-ants-major",
+   "kind": "unit",
+   "faction": "ants",
+   "dir": "base/assets/portraits/units/ants-major",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u2-major-1.png"
+   ],
+   "subject": "the MAJOR, the ants' big-headed heavy soldier: its huge domed sand-and-bronze armoured head with big glossy black eyes and short thick ivory mandibles, a royal-blue silk hood draped behind the head, the top edge of its leaf-shaped royal-blue shield at the lower left edge."
+  },
+  {
+   "name": "portrait-ants-forager",
+   "kind": "unit",
+   "faction": "ants",
+   "dir": "base/assets/portraits/units/ants-forager",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-worker-2.png"
+   ],
+   "refnote": "the first image is the unit's approved concept: keep its head, materials and colours, but paint only the head and shoulders as described below and ignore its full-body pose, legs, background and staging.",
+   "subject": "WORKER, the ants' gatherer and builder: a small rounded sand-and-bronze ant head with big glossy black eyes and short ivory mandibles, a royal-blue silk headscarf tied over its brow with one small blue flower, and rising behind the head the rim of a woven basket heaped with glowing amber nuggets. Signature feature: the amber basket behind the head. No tool."
+  },
+  {
+   "name": "portrait-ants-raider",
+   "kind": "unit",
+   "faction": "ants",
+   "dir": "base/assets/portraits/units/ants-raider",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u5-raider-zl-stocky-1.png"
+   ],
+   "refnote": "the first image is the unit's approved concept: keep its head, materials and colours, but paint only the head and shoulders as described below and ignore its full-body pose, legs, background and staging.",
+   "subject": "RAIDER, the ants' small fast biter: a small, stocky, round sand-and-bronze ant head with big glossy black eyes and oversized hooked ivory mandibles open wide, and two swept-back royal-blue blade fins rising behind the head in a V, like laid-back ears. Signature feature: the two blue blade fins. Bare chitin, no clothing."
+  },
+  {
+   "name": "portrait-ants-needler",
+   "kind": "unit",
+   "faction": "ants",
+   "dir": "base/assets/portraits/units/ants-needler",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u5-needler-hood-1.png"
+   ],
+   "refnote": "the first image is the unit's approved concept: keep its head, materials and colours, but paint only the head and shoulders as described below and ignore its full-body pose, legs, background and staging.",
+   "subject": "NEEDLER, the ants' needle shooter: a sand-and-bronze ant head with big glossy black eyes and short hooked mandibles, framed by a collar of pointed royal-blue chitin plates, and behind it a fan of seven or eight long, thick chitin needles radiating outward like a porcupine's quills, each tip glowing violet. Signature feature: the radiating quill crown with violet tips."
+  },
+  {
+   "name": "portrait-ants-alate",
+   "kind": "unit",
+   "faction": "ants",
+   "dir": "base/assets/portraits/units/ants-alate",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-alate-3.png"
+   ],
+   "refnote": "the first image is the unit's approved concept: keep its head, materials and colours, but paint only the head and shoulders as described below and ignore its full-body pose, legs, background and staging.",
+   "subject": "ALATE, the winged ant scout: a slender sand-and-bronze ant head with big glossy black eyes and curved antennae, a small blue flower at its brow, a royal-blue armoured collar with gold lines, and two pairs of large translucent blue-violet wings with gold veins spread up and out behind the head. Signature feature: the spread wings framing the head."
+  },
+  {
+   "name": "portrait-ants-gardener",
+   "kind": "unit",
+   "faction": "ants",
+   "dir": "base/assets/portraits/units/ants-gardener",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-gardener-2.png"
+   ],
+   "refnote": "the first image is the unit's approved concept: keep its head, materials and colours, but paint only the head and shoulders as described below and ignore its full-body pose, legs, background and staging.",
+   "subject": "GARDENER, the fungus healer: a sand-and-bronze ant face with big glossy black eyes in the shade of a wide, flat, pale cream mushroom cap worn like a hat, its ribbed rim edged in royal blue, a royal-blue silk hood beneath, two tiny glowing violet mushrooms sprouting at the cap's edge. Signature feature: the wide flat mushroom cap, the broadest shape in the icon. No staff."
+  },
+  {
+   "name": "portrait-ants-herald",
+   "kind": "unit",
+   "faction": "ants",
+   "dir": "base/assets/portraits/units/ants-herald",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-herald-3.png"
+   ],
+   "refnote": "the first image is the unit's approved concept: keep its head, materials and colours, but paint only the head and shoulders as described below and ignore its full-body pose, legs, background and staging.",
+   "subject": "HERALD, the pheromone caster: a sand-and-bronze ant head with big glossy black eyes inside a royal-blue helm-hood with gold trim, and above it a tall upright fan of six or seven golden feathers spreading like a peacock's crest, each tip touched with violet light. Signature feature: the tall golden feather fan. No staff."
+  },
+  {
+   "name": "portrait-ants-burster",
+   "kind": "unit",
+   "faction": "ants",
+   "dir": "base/assets/portraits/units/ants-burster",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-burster-3.png"
+   ],
+   "refnote": "the first image is the unit's approved concept: keep its head, materials and colours, but paint only the head and shoulders as described below and ignore its full-body pose, legs, background and staging.",
+   "subject": "BURSTER, a mutated ant: a small sand-and-bronze ant head with big glossy black eyes, short curved mandibles and a royal-blue silk headwrap at the lower left, dwarfed by the huge round sac of glowing violet liquid substance swelling up behind it, bound by crossing royal-blue silk straps knotted on top, light swirling inside. Signature feature: the glowing violet sac filling the upper right."
+  },
+  {
+   "name": "portrait-ants-honeypot",
+   "kind": "unit",
+   "faction": "ants",
+   "dir": "base/assets/portraits/units/ants-honeypot",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u6-honeypot-carriers-1.png"
+   ],
+   "refnote": "the first image is the unit's approved concept: keep its head, materials and colours, but paint only the head and shoulders as described below and ignore its full-body pose, legs, background and staging.",
+   "subject": "HONEYPOT, a mutated ant: one sand-and-bronze carrier ant's face with big glossy black eyes and short ivory mandibles at the bottom of the frame, and swelling above it the huge glowing amber abdomen, a translucent honey-gold globe with a puckered clay-brown mouth on top. Signature feature: the glowing amber globe. Only the one face: no ring of other ants."
+  },
+  {
+   "name": "portrait-ants-bullet-ant",
+   "kind": "unit",
+   "faction": "ants",
+   "dir": "base/assets/portraits/units/ants-bullet-ant",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u6-bullet-mane-1.png"
+   ],
+   "refnote": "the first image is the unit's approved concept: keep its head, materials and colours, but paint only the head and shoulders as described below and ignore its full-body pose, legs, background and staging.",
+   "subject": "BULLET ANT, the elite duellist: a dark red-black glossy ant head with big glossy black eyes and huge hooked ivory-gold mandibles, surrounded by a wild, thick lion's mane of golden bristles fanning out all round the head. Signature feature: the golden bristle mane. No stinger in view."
+  },
+  {
+   "name": "portrait-ants-reaver-queen",
+   "kind": "unit",
+   "faction": "ants",
+   "dir": "base/assets/portraits/units/ants-reaver-queen",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-reaver-queen-2.png"
+   ],
+   "refnote": "the first image is the unit's approved concept: keep its head, materials and colours, but paint only the head and shoulders as described below and ignore its full-body pose, legs, background and staging.",
+   "subject": "REAVER QUEEN, the mutated ultimate monster: a long, low, wedge-shaped bronze-armoured head thrust forward, small black eyes, a jaw of many long hooked bronze fangs, and rising behind it a row of tall curved blade spines, each with a glowing violet slit at its base, over a ragged royal-blue silk mantle. Signature feature: the row of blade spines with violet slits."
+  },
+  {
+   "name": "portrait-ants-general",
+   "kind": "hero",
+   "faction": "ants",
+   "dir": "base/assets/portraits/units/ants-general",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-general-2.png"
+   ],
+   "refnote": "the first image is the unit's approved concept: keep its head, materials and colours, but paint only the head and shoulders as described below and ignore its full-body pose, legs, background and staging.",
+   "subject": "GENERAL, the army-ant marshal: an armoured sand-and-bronze ant head with big glossy black eyes under a royal-blue plate helm with gold trim, small blue flowers at the shoulders, and rising tall behind the head the royal-blue banner on its back, hung from a gold crossbar with a gold finial. Signature feature: the banner over the head. At the lower left edge, only the tip of one crescent blade with a violet edge."
+  },
+  {
+   "name": "portrait-ants-queen",
+   "kind": "hero",
+   "faction": "ants",
+   "dir": "base/assets/portraits/units/ants-queen",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u2-queen-1.png"
+   ],
+   "refnote": "the first image is the unit's approved concept: keep its head, materials and colours, but paint only the head and shoulders as described below and ignore its full-body pose, legs, background and staging.",
+   "subject": "THE QUEEN, the colony's mother: a slender, elegant sand-and-bronze ant head with big glossy black eyes and fine curled antennae, crowned with a tall pointed gold crown set with one violet gem, a high royal-blue and gold collar, one translucent pale-blue wing rising behind her shoulder. Signature feature: the tall gold crown. No staff."
+  },
+  {
+   "name": "portrait-ants-royal-alchemist",
+   "kind": "hero",
+   "faction": "ants",
+   "dir": "base/assets/portraits/units/ants-royal-alchemist",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-royal-alchemist-2.png"
+   ],
+   "refnote": "the first image is the unit's approved concept: keep its head, materials and colours, but paint only the head and shoulders as described below and ignore its full-body pose, legs, background and staging.",
+   "subject": "ROYAL ALCHEMIST, the substance distiller: a sand-and-bronze ant head with big glossy black eyes, curved antennae and small violet glass lenses on her brow, a royal-blue and gold mantle, and behind her head a cluster of three big round glass orbs full of glowing violet liquid substance, cradled in gold leaf-shaped settings. Signature feature: the cluster of glowing violet orbs behind the head."
+  },
+  {
+   "name": "portrait-ants-worker",
+   "kind": "unit",
+   "faction": "ants",
+   "dir": "base/assets/portraits/units/ants-worker",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/old-ants-worker.png"
+   ],
+   "refnote": "the first image is the old game's small icon of this campaign character: keep its rust-orange chitin, its face and its costume (it belongs to an older colony than the sand-and-bronze ants), but repaint it larger, crisper and glossier; ignore its full-body pose and its low resolution.",
+   "subject": "YOUNGLING, a young colony villager: a small, slender rust-orange ant head with big black eyes, two tall thick curved antennae and small ivory mandibles, an eager upward look, a simple dusky-red leaf sash across one shoulder. Signature feature: the tall antennae on a small round head. No tool."
+  }
+ ]
+}

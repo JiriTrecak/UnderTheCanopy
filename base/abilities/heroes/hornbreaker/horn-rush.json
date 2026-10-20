@@ -99,7 +99,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.spells.marshal.faultline-icon",
+    "icon": "asset.icons.ability-beetles-hornbreaker-horn-rush",
     "animations": {
       "prepare": "attack",
       "release": "attack",

@@ -1,0 +1,257 @@
+{
+ "n": 2,
+ "items": [
+  {
+   "name": "ability-beetles-forgefall",
+   "kind": "ability",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/forgemaster-forgefall",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-forgemaster-1.png"
+   ],
+   "refnote": "the first image is the Forgemaster: use only its brass, steel and royal-blue materials; do not draw the Forgemaster.",
+   "subject": "FORGEFALL, the Forgemaster's ultimate: one huge round brass crucible, banded with riveted dark steel, plunging steeply down out of the upper left toward the lower right, tipped so one thick tongue of white-hot orange molten metal spills from its rim. Only the crucible and its pour. Energy colour: orange furnace fire."
+  },
+  {
+   "name": "ability-beetles-arc-lash",
+   "kind": "ability",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/coilkeeper-arc-lash",
+   "subject": "ARC LASH, a chain lightning spell: one thick, bold, jagged bolt of violet-white lightning that zig-zags in three sharp straight segments from the lower left to the upper right, with one bright white flash at each of its two bends where it jumps between targets. Only the bolt: no staff, no caster, no figures, no thin side branches. Energy colour: violet and white."
+  },
+  {
+   "name": "ability-beetles-overload",
+   "kind": "ability",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/coilkeeper-overload",
+   "subject": "OVERLOAD, detonating an enemy's magic: one fat round droplet of violet substance torn open from within, white-hot light blasting out of its splitting skin into one bold round explosion with a white core and a hot orange rim, two or three heavy violet drops flung outward. No lightning, no figures. Energy colour: white and hot orange."
+  },
+  {
+   "name": "ability-beetles-recharge",
+   "kind": "ability",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/coilkeeper-recharge",
+   "subject": "RECHARGE, mana and a shield for allies: one round translucent dome shield of pale ice-blue and white light, like an upturned glass bowl with a bright rim, slightly tilted, rising from a thick brass ring at its base; one broad ribbon of glowing violet substance spirals up inside it and fills it. No lightning, no lantern, no figures. Energy colour: ice-blue and white."
+  },
+  {
+   "name": "ability-beetles-unbottled",
+   "kind": "ability",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/coilkeeper-unbottled",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-coilkeeper-1.png"
+   ],
+   "refnote": "the first image is the Coilkeeper: draw only the lantern on top of her staff (brass-banded cage, domed brass cap, violet glass), keeping its design; not the beetle, her coil halo or the staff's pole.",
+   "subject": "UNBOTTLED, the Coilkeeper's ultimate: her brass lantern alone, its cage bursting open and its glass shattering outward in a few big shards, one towering twisting funnel of deep violet-and-magenta storm spiralling up out of it toward the upper left. One bold vortex: no lightning bolts, no figures. Energy colour: deep violet and magenta."
+  },
+  {
+   "name": "ability-beetles-bolt-turret",
+   "kind": "ability",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/forgemaster-bolt-turret",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-forgemaster-1.png"
+   ],
+   "refnote": "the first image is the Forgemaster: use only its brass, dark-steel and royal-blue materials; do not draw the Forgemaster.",
+   "subject": "BOLT TURRET: one squat brass repeater turret standing on three short splayed riveted steel legs, seen from the front-left, a fat revolving drum of four short dark-steel barrels aimed to the upper right behind a curved brass shield plate, one small orange muzzle flash at the top barrel. No ground, no beetle. Energy colour: brass gold."
+  },
+  {
+   "name": "ability-beetles-overclock",
+   "kind": "ability",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/forgemaster-overclock",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-forgemaster-1.png"
+   ],
+   "refnote": "the first image is the Forgemaster: use only its brass, dark-steel and royal-blue materials; do not draw the Forgemaster.",
+   "subject": "OVERCLOCK, an ally attacks and moves faster: one big round brass pressure gauge tilted diagonally, a cream-white dial face with a red sector, its thick black needle slammed hard into the red, two bold jets of white steam shooting out of the brass valve on its top. No gears behind it, no figures. Energy colour: white steam and red."
+  },
+  {
+   "name": "ability-beetles-field-forge",
+   "kind": "passive",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/forgemaster-field-forge",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-forgemaster-1.png"
+   ],
+   "refnote": "the first image is the Forgemaster: use only its brass, dark-steel and royal-blue materials; do not draw the Forgemaster.",
+   "subject": "FIELD FORGE, an aura that armours allies and mends machines: one heavy polished dark-steel anvil seen from the front, centred and still, a royal-blue riveted armour plate with brass edging lying across its face, a quiet warm golden glow close behind it. No hammer, no fire, no sparks. Energy colour: warm gold."
+  },
+  {
+   "name": "ability-beetles-horn-rush",
+   "kind": "ability",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/hornbreaker-horn-rush",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-hornbreaker-2.png"
+   ],
+   "refnote": "the first image is the Hornbreaker: draw only its great horn and the front of its gold-crowned head, keeping its shape and materials; not the beetle's body, cape or the rest of its gear.",
+   "subject": "HORN RUSH, a stunning charge: the Hornbreaker's great glossy black Hercules horn in profile, long and curving up and forward with one hook on its upper edge, rising from the front of his gold-crowned black head, thrust diagonally toward the upper right like a battering ram, one bold white-hot impact star at its tip and three short pale speed streaks behind it. Energy colour: white."
+  },
+  {
+   "name": "ability-beetles-overwhelm",
+   "kind": "passive",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/hornbreaker-overwhelm",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-hornbreaker-2.png"
+   ],
+   "refnote": "the first image is the Hornbreaker: draw only the head of its war hammer, keeping its shape and materials; not the beetle's body, cape or the rest of its gear.",
+   "subject": "OVERWHELM, blows that stack: the Hornbreaker's war-hammer head alone, level and still, seen from the side: an octagonal block of dark steel with brass end bands and a round violet glass eye in its middle, both striking faces glowing deep red, and three bold rings of deep-red light around it, one inside another. No handle below the head's socket, no target. Energy colour: deep red."
+  },
+  {
+   "name": "ability-beetles-steadfast",
+   "kind": "passive",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/hornbreaker-steadfast",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-hornbreaker-2.png"
+   ],
+   "refnote": "the first image is the Hornbreaker: draw only the royal-blue cloth with brass edging of its tabard, as a banner, and its black horn, keeping its shape and materials; not the beetle's body, cape or the rest of its gear.",
+   "subject": "STEADFAST AURA, healing and armour for nearby allies: one royal-blue war banner hanging still from a brass crossbar, seen from the front and centred, its swallow-tailed foot edged in brass, one black chitin horn fixed upright on its face, a calm warm golden glow close behind it. No pole below, no bearer. Energy colour: warm gold."
+  },
+  {
+   "name": "ability-beetles-colossus",
+   "kind": "ability",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/hornbreaker-colossus",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-hornbreaker-2.png"
+   ],
+   "refnote": "the first image is the Hornbreaker: draw only its head, horns and gold crown, keeping its shape and materials; not the beetle's body, cape or the rest of its gear.",
+   "subject": "COLOSSUS, the Hornbreaker's ultimate, becoming a living siege engine: his head and horns alone, huge, seen from a low front angle: the tall black Hercules horn and two curved side horns rising from a heavy gold crown, the head clad in thick bolted brass siege plates, one violet glass core blazing in its brow. No body, no hammer. Energy colour: brass gold and violet."
+  },
+  {
+   "name": "ability-beetles-arc",
+   "kind": "ability",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/arcwright-arc",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-arcwright-2.png"
+   ],
+   "refnote": "the first image is the Arcwright: draw only the tip of its coil lance (brass spike, brass rings around violet glass), keeping its design; not the beetle or its hands.",
+   "subject": "ARC SURGE, a chained arc from the coil lance: the Arcwright's lance tip alone, pointing from the lower left to the upper right, a pointed brass spike wound with five thick brass rings around a glowing violet glass core, one fat ball of violet-white lightning bursting off its point. No beetle, no hands, no thin branches. Energy colour: violet and white."
+  },
+  {
+   "name": "ability-beetles-static-field",
+   "kind": "ability",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/arcwright-static-field",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-arcwright-2.png"
+   ],
+   "refnote": "the first image is the Arcwright: draw only the brass spike at the end of its coil lance; not the beetle, and none of its violet.",
+   "subject": "STATIC FIELD, a charged circle that burns and slows: seen from slightly above, a brass lance spike driven point-down at the centre of one flat, wide ring of crackling pale ice-blue static lying around it like a ripple, three short bold arcs leaping up from the ring's edge. No ground, no beetle. Energy colour: ice-blue and white."
+  },
+  {
+   "name": "ability-beetles-armor-breaker",
+   "kind": "passive",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/breacher-armor-breaker",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-breacher-drill-2.png"
+   ],
+   "refnote": "the first image is the Breacher: draw only the tip of its conical spiral drill, keeping its design; not the beetle.",
+   "subject": "ARMOR BREAKER, every strike cracks armour: one thick curved dark-brown armour plate seen head-on, centred and still, split through its middle by a bold star of glowing orange cracks, the sharp tip of the Breacher's spiral-fluted dark-steel drill, ringed with brass bands, buried point-first at the star's centre. Energy colour: hot orange."
+  },
+  {
+   "name": "ability-beetles-broadside",
+   "kind": "ability",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/juggernaut-broadside",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-juggernaut-1.png"
+   ],
+   "refnote": "the first image is the Juggernaut: draw only its two front cannon barrels, keeping their royal-blue paint, rivets and brass bands; not the walker.",
+   "subject": "BROADSIDE: the Juggernaut's two heavy royal-blue cannon barrels side by side, banded with brass and riveted, pointing diagonally to the upper right, both firing in the same instant: two big bold orange-white muzzle blasts at their brass mouths. No smoke cloud, no cannonballs, no machine body. Energy colour: orange and white."
+  },
+  {
+   "name": "ability-beetles-furnace-plating",
+   "kind": "passive",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/juggernaut-furnace-plating",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-juggernaut-1.png"
+   ],
+   "refnote": "the first image is the Juggernaut: draw only one of its curved royal-blue riveted hull plates with brass edging; not the walker.",
+   "subject": "FURNACE PLATING, armour that shrugs off magic: one curved royal-blue riveted armour plate seen head-on, centred and still, with heavy brass edging and a round glowing orange furnace grille at its centre; a few violet sparks scatter harmlessly off its rim where magic broke on it. Energy colour: royal blue and orange."
+  },
+  {
+   "name": "ability-beetles-patch",
+   "kind": "ability",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/mender-patch",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-mender-1.png"
+   ],
+   "refnote": "the first image is the Mender: draw only its syringe gun, keeping the brass barrel, the glass tank and the steel needle, but its tonic glows warm gold, not blue; not the beetle.",
+   "subject": "MEND, an injection of healing tonic: the Mender's syringe gun alone, angled diagonally with its steel needle pointing to the upper right, a brass-banded barrel around a big glass tank of glowing warm golden tonic, one bright golden drop at the needle's tip. No beetle, no hands. Energy colour: warm gold."
+  },
+  {
+   "name": "ability-beetles-repair",
+   "kind": "ability",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/mender-repair",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-mender-1.png"
+   ],
+   "refnote": "the first image is the Mender: draw only its jointed brass torch arm and nozzle; not the beetle.",
+   "subject": "FIELD REPAIR, welding a machine whole: the Mender's jointed brass welding arm reaching in from the upper left, its steel nozzle firing one short fierce blue-white flame onto a dented royal-blue riveted plate, the weld seam glowing white-hot and one bold spray of orange sparks bursting from it. Energy colour: blue-white flame and orange."
+  },
+  {
+   "name": "ability-beetles-lock-shields",
+   "kind": "ability",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/shieldbearer-lock-shields",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-shieldbearer-2.png"
+   ],
+   "refnote": "the first image is the Shieldbearer: draw only its tower shield, keeping its shape and materials; not the beetle or its hammer.",
+   "subject": "LOCK SHIELDS, braced in place: the Shieldbearer's tower shield seen head-on, upright and immovable: royal-blue vertical planks, a thick riveted brass rim, a battlement-notched top edge and a round steel boss, two heavy brass clamp spikes driven down from its foot, one white spark where an arrow shatters on its face. Energy colour: cold steel-white."
+  },
+  {
+   "name": "ability-beetles-flak-beam",
+   "kind": "passive",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/steamwing-flak-beam",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-steamwing-1.png"
+   ],
+   "refnote": "the first image is the Steamwing: draw only the emitter under its nose (brass barrel, glass lens), keeping its design; not the flyer or its wings.",
+   "subject": "FLAK BEAM, a beam tuned against flyers: the Steamwing's nose emitter alone, pointing straight up, centred and still: a short brass barrel with dark-steel bands and a round glowing blue-violet glass lens at its top, one straight bold beam of blue-violet light rising from the lens. No wings, no targets. Energy colour: blue-violet."
+  },
+  {
+   "name": "ability-beetles-patch-up",
+   "kind": "ability",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/tinker-patch-up",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-tinker-1.png"
+   ],
+   "refnote": "the first image is the Tinker: draw only its giant brass adjustable wrench, keeping its design; not the beetle.",
+   "subject": "PATCH UP, bolting fresh plates onto a machine: the Tinker's giant brass adjustable wrench, angled diagonally from the lower left, its open jaws gripping one big hex bolt that fastens a bright new steel plate over a dented royal-blue hull plate, a soft warm golden glow around the bolt. No beetle, no hands. Energy colour: warm gold."
+  },
+  {
+   "name": "ability-beetles-bulwark-pulse",
+   "kind": "ability",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/warden-bulwark-pulse",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-warden-projector-1.png"
+   ],
+   "refnote": "the first image is the Warden: draw only the caged glass globe on its back, keeping its design; not the beetle or its pane.",
+   "subject": "BULWARK PULSE, shields for nearby allies: the Warden's field projector alone, a round glass globe glowing white inside a riveted brass cage with a brass cap, tilted from the front-left, releasing one wide bold ring of pale steel-blue light that expands around it. No beetle, no pane. Energy colour: steel-blue and white."
+  },
+  {
+   "name": "ability-beetles-field",
+   "kind": "ability",
+   "faction": "beetles",
+   "dir": "base/assets/icons/abilities/beetles/warden-field",
+   "refs": [
+    ".asset-work/concepts/buildings/unit-warden-projector-1.png"
+   ],
+   "refnote": "the first image is the Warden: draw only the curved violet pane in its brass frame, keeping its design; not the beetle or its globe.",
+   "subject": "BARRIER FIELD, a pane that stops missiles: the Warden's barrier pane alone, seen from the front-left: one wide, gently curved pane of translucent glowing violet substance in a thick riveted brass frame on two brass rods, two dark enemy arrows stopped dead against its face, each in one ripple ring of violet light. No beetle. Energy colour: violet."
+  }
+ ]
+}

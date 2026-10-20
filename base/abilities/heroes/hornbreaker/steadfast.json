@@ -75,7 +75,7 @@
     }
   ],
   "presentation": {
-    "icon": "asset.spells.marshal.rally-icon",
+    "icon": "asset.icons.ability-beetles-hornbreaker-steadfast",
     "animations": {
       "prepare": "attack",
       "release": "attack",

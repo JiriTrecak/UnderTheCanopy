@@ -13,6 +13,11 @@
       "format": "png"
     },
     {
+      "role": "source",
+      "index": 1,
+      "format": "png"
+    },
+    {
       "role": "generation",
       "index": 1,
       "format": "json"

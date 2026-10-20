@@ -2,7 +2,7 @@
   "id": "research.ants.mandibles-2",
   "name": "Mandibles II",
   "description": "Raiders, Majors and Bullet Ants deal 10% more attack damage (level II; levels add up). Requires a Great Nest.",
-  "icon": "asset.icons.research-ants-mandibles",
+  "icon": "asset.icons.research-ants-mandibles-2",
   "priority": 89,
   "requires": [
     "building.ants.great-mound",

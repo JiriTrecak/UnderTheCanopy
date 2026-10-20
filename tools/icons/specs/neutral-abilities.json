@@ -1,0 +1,7 @@
+{
+ "n": 2,
+ "items": [
+  {"name": "ability-neutral-holy-light", "kind": "ability", "faction": "creatures", "dir": "base/assets/icons/spell-holy-light",
+   "subject": "HOLY LIGHT, a forest seer's spell that heals an ally or sears an enemy: one gnarled hand of pale weathered bark, palm up and fingers spread, holding one bright burst of warm golden-white light that flares upward from the palm. Only the hand and its light: no seer, no staff, no leaves. Energy colour: warm gold and white."}
+ ]
+}

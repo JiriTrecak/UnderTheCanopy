@@ -85,7 +85,7 @@
   ],
   "onRelease": [],
   "presentation": {
-    "icon": "asset.custom.bash-command-icon",
+    "icon": "asset.icons.ability-beetles-hornbreaker-overwhelm",
     "animations": {
       "prepare": "attack",
       "release": "attack",

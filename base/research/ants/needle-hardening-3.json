@@ -2,7 +2,7 @@
   "id": "research.ants.needle-hardening-3",
   "name": "Needle Hardening III",
   "description": "Needlers, Honeypots, Alates and Acid Spires deal 10% more attack damage (level III; levels add up). Requires the Queen's Chamber.",
-  "icon": "asset.icons.research-ants-needle-hardening",
+  "icon": "asset.icons.research-ants-needle-hardening-3",
   "priority": 83,
   "requires": [
     "building.ants.elder-hall",

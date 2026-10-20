@@ -1,0 +1,257 @@
+{
+ "n": 2,
+ "items": [
+  {
+   "name": "building-ants-nest",
+   "kind": "building",
+   "faction": "ants",
+   "dir": "base/assets/portraits/buildings/ants-nest",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-tripo-nest-1.png"
+   ],
+   "subject": "the NEST, the ants' main hall and first tunnel mound: a broad, squat pyramid of sculpted sand-clay spires rising to one tall central spire, a huge dark arched tunnel gate in its front as the biggest feature, two royal-blue banners at its sides. Wide and low in the frame, one peak. No clay footing plate."
+  },
+  {
+   "name": "building-ants-great-nest",
+   "kind": "building",
+   "faction": "ants",
+   "dir": "base/assets/portraits/buildings/ants-great-nest",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-tripo-great-nest-1.png"
+   ],
+   "subject": "the GREAT NEST, the ants' main hall at tier two: a wide sand-clay hall whose signature is TWIN tall spires joined high up by a clay arch, an open oval hole between them, two dark arched tunnel gates side by side below, royal-blue drapes and banners. Two peaks, never one. No clay footing plate."
+  },
+  {
+   "name": "building-ants-queens-chamber",
+   "kind": "building",
+   "faction": "ants",
+   "dir": "base/assets/portraits/buildings/ants-queens-chamber",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-tripo-queens-chamber-1.png"
+   ],
+   "subject": "the QUEEN'S CHAMBER, the ants' main hall at tier three: the tallest, slenderest sand-clay needle spire, crowned at its tip by a glowing violet crown of petal points, sweeping flying arches running down from it to lower spires, long royal-blue banners, an arched tunnel gate. Tall in the frame. No clay footing plate."
+  },
+  {
+   "name": "building-ants-brood-mound",
+   "kind": "building",
+   "faction": "ants",
+   "dir": "base/assets/portraits/buildings/ants-brood-mound",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-tripo-brood-mound-1.png"
+   ],
+   "subject": "the BROOD MOUND, supply and a tunnel entrance: a low round ring of small sand-clay spires around one big deep round shaft, a spiral ramp winding down into its dark mouth, seen a little from above so the shaft opening is the biggest shape; one royal-blue drape over the shaft's lip. Low and wide. No clay footing plate."
+  },
+  {
+   "name": "building-ants-soldier-burrow",
+   "kind": "building",
+   "faction": "ants",
+   "dir": "base/assets/portraits/buildings/ants-soldier-burrow",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-tripo-soldier-burrow-1.png"
+   ],
+   "subject": "the SOLDIER BURROW, the ants' barracks: a long low sand-clay hall of ribbed spines whose front gate is a giant sculpted soldier-ant head, its two huge curved mandibles framing the dark open gateway, short antennae on top; one royal-blue war banner beside it. The ant head is the icon. No clay footing plate."
+  },
+  {
+   "name": "building-ants-chitin-works",
+   "kind": "building",
+   "faction": "ants",
+   "dir": "base/assets/portraits/buildings/ants-chitin-works",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-tripo-chitin-works-1.png"
+   ],
+   "subject": "the CHITIN WORKS, the ants' armoury: a low sand-clay workshop around a round basin of glowing golden amber resin, a tall curved clay arm rising at the back and hanging one huge pale ivory mandible blade over the basin, a royal-blue awning on one side. The hanging blade and amber basin are the icon. No clay footing plate."
+  },
+  {
+   "name": "building-ants-fungus-garden",
+   "kind": "building",
+   "faction": "ants",
+   "dir": "base/assets/portraits/buildings/ants-fungus-garden",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-tripo-fungus-garden-1.png"
+   ],
+   "subject": "the FUNGUS GARDEN, the ants' substance garden: one giant mushroom with a broad pale sand-coloured cap and glowing violet gills underneath, its thick stalk wrapped in a royal-blue sash, rising from a low round sand-clay garden wall with an arched gate. The mushroom cap is the biggest shape. No clay footing plate."
+  },
+  {
+   "name": "building-ants-scent-hall",
+   "kind": "building",
+   "faction": "ants",
+   "dir": "base/assets/portraits/buildings/ants-scent-hall",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-tripo-scent-hall-1.png"
+   ],
+   "subject": "the SCENT HALL, home of the pheromone heralds: a slender tapering sand-clay tower with an arched door at its foot, opening at the top into one huge flower of big cream petals with royal-blue tips, like a vase. A narrow tower and a wide bloom. No clay footing plate."
+  },
+  {
+   "name": "building-ants-deep-gallery",
+   "kind": "building",
+   "faction": "ants",
+   "dir": "base/assets/portraits/buildings/ants-deep-gallery",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-tripo-deep-gallery-1.png"
+   ],
+   "subject": "the DEEP GALLERY, hall of the specialised castes: a stepped sand-clay hall crowned by a pair of large translucent royal-blue insect wings spread upward like a crest, two round golden honeypot jars at its front gate, royal-blue drapes. The spread wings make the outline. No clay footing plate."
+  },
+  {
+   "name": "building-ants-royal-chamber",
+   "kind": "building",
+   "faction": "ants",
+   "dir": "base/assets/portraits/buildings/ants-royal-chamber",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-tripo-royal-chamber-1.png"
+   ],
+   "subject": "the ROYAL CHAMBER, where the ants' heroes are raised: a sand-clay pavilion under a great royal-blue silk canopy with gold trim, its wide arched front open on a tall sand-clay throne at the top of golden steps, a royal-blue carpet running down them. The canopy and throne are the icon; no statues. No clay footing plate."
+  },
+  {
+   "name": "building-ants-queens-cradle",
+   "kind": "building",
+   "faction": "ants",
+   "dir": "base/assets/portraits/buildings/ants-queens-cradle",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-tripo-queens-cradle-1.png"
+   ],
+   "subject": "the QUEEN'S CRADLE, the amber reliquary of the Reaver Queen: a low sand-clay shrine holding one big long horizontal block of glowing golden amber, a huge dormant ant queen curled inside it like a fossil, royal-blue drapes below. The glowing amber block is the biggest, brightest shape. No clay footing plate."
+  },
+  {
+   "name": "building-ants-substance-siphon",
+   "kind": "building",
+   "faction": "ants",
+   "dir": "base/assets/portraits/buildings/ants-substance-siphon",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-tripo-substance-siphon-1.png"
+   ],
+   "refnote": "the first image is the subject's approved concept: keep its design and materials, but paint the pool violet, not blue; simplify it to the icon's few big shapes and ignore its background and staging.",
+   "subject": "the SUBSTANCE SIPHON, pumping the forest's magic from a deposit: a ring of tall curved sand-clay spires bowing inward over a round pool of glowing violet liquid substance, seen a little from above so the pool is the brightest shape, royal-blue drapes on its rim. No clay footing plate."
+  },
+  {
+   "name": "building-ants-acid-spire",
+   "kind": "building",
+   "faction": "ants",
+   "dir": "base/assets/portraits/buildings/ants-acid-spire",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-tripo-acid-spire-1.png"
+   ],
+   "subject": "the ACID SPIRE, the ants' defensive tower: three short, thick sand-clay spires leaning out from one shared base, the middle one tallest, each tip open in a dark round spitting mouth; one royal-blue banner on its front. Plain and unlit: no venom, no glow. Tall in the frame. No clay footing plate."
+  },
+  {
+   "name": "building-ants-venom-spire",
+   "kind": "building",
+   "faction": "ants",
+   "dir": "base/assets/portraits/buildings/ants-venom-spire",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-tripo-acid-spire-1.png"
+   ],
+   "refnote": "the first image is the plain Acid Spire this tower grows from: keep its three-spire shape and materials, but make it the venomous upgrade described below; ignore its background and staging.",
+   "subject": "the VENOM SPIRE, the Acid Spire grown venomous: the same three leaning sand-clay spires, sharper and barbed, each mouth glowing bright violet with thick violet venom running down the spires in a few bold drips, royal-blue drapes. Tall in the frame. No clay footing plate."
+  },
+  {
+   "name": "building-beetles-bastion",
+   "kind": "building",
+   "faction": "beetles",
+   "dir": "base/assets/portraits/buildings/beetles-bastion",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/beetle-hall-t1-idle.png"
+   ],
+   "subject": "the BASTION, the beetles' main hall (tier one): a colossal armoured beetle turned into a fortress, one great smooth royal-blue domed shell with brass ribs, its black chitin head and curved brass-tipped claws at the front, two short brass-capped cupola towers at its sides. One dome, no chimneys, no horns. No plinth: it stands on nothing."
+  },
+  {
+   "name": "building-beetles-great-bastion",
+   "kind": "building",
+   "faction": "beetles",
+   "dir": "base/assets/portraits/buildings/beetles-great-bastion",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/beetle-hall-t2-idle.png"
+   ],
+   "subject": "the GREAT BASTION, the beetle main hall at tier two: the armoured beetle fortress grown larger, its royal-blue domed shell with brass ribs topped by a cluster of three tall brass chimneys, black claws at the front, a ring of four stout brass-capped towers around it. Chimneys on top, no horns. No plinth: it stands on nothing."
+  },
+  {
+   "name": "building-beetles-elder-bastion",
+   "kind": "building",
+   "faction": "beetles",
+   "dir": "base/assets/portraits/buildings/beetles-elder-bastion",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/beetle-hall-t3-idle.png"
+   ],
+   "subject": "the ELDER BASTION, the beetle main hall at tier three: the grandest armoured beetle fortress, its royal-blue domed shell crowned by a tall caged brass tower with a spike, and two great curved golden horns sweeping up on either side of it, black claws at the front. The horns make the outline. Tall in the frame. No plinth: it stands on nothing."
+  },
+  {
+   "name": "building-beetles-brood-den",
+   "kind": "building",
+   "faction": "beetles",
+   "dir": "base/assets/portraits/buildings/beetles-brood-den",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/beetle-brood-den-idle.png"
+   ],
+   "subject": "the BROOD DEN, the beetles' supply building and network node: a low round building of rounded royal-blue shell segments like a flower around a dark riveted steel dome, a big round brass pressure-gauge dial and a brass valve wheel on top. Low and wide; the gauge is the highest point. No plinth: it stands on nothing."
+  },
+  {
+   "name": "building-beetles-war-lodge",
+   "kind": "building",
+   "faction": "beetles",
+   "dir": "base/assets/portraits/buildings/beetles-war-lodge",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/beetle-war-lodge-idle.png"
+   ],
+   "subject": "the WAR LODGE, the beetles' barracks: a squat square fortress keep of dark riveted steel with a crenellated top, two round royal-blue corner towers with domed black caps and short brass horns, a big royal-blue shield crest over a steel portcullis gate. Boxy, no dome. No plinth: it stands on nothing."
+  },
+  {
+   "name": "building-beetles-shell-forge",
+   "kind": "building",
+   "faction": "beetles",
+   "dir": "base/assets/portraits/buildings/beetles-shell-forge",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/forge-idle.png"
+   ],
+   "subject": "the SHELL FORGE, the beetles' weapons and armour workshop: a royal-blue domed forge with brass ribs, three tall brass chimneys rising from its back, a big dark arched furnace mouth with a dull orange ember glow deep inside, a black anvil in front of it. No flames, no smoke. No plinth or dirt: it stands on nothing."
+  },
+  {
+   "name": "building-beetles-alembic",
+   "kind": "building",
+   "faction": "beetles",
+   "dir": "base/assets/portraits/buildings/beetles-alembic",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/beetle-alembic-idle.png"
+   ],
+   "subject": "the ALEMBIC, the beetles' distillery of substance devices: a tall royal-blue domed column topped by a stacked brass spire, flanked by four round brass-and-glass retort flasks joined to it by thick curved brass pipes, a faint violet glow inside the flasks. The flasks and pipes are the icon. No plinth: it stands on nothing."
+  },
+  {
+   "name": "building-beetles-engine-yard",
+   "kind": "building",
+   "faction": "beetles",
+   "dir": "base/assets/portraits/buildings/beetles-engine-yard",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/beetle-engine-yard-idle.png"
+   ],
+   "subject": "the ENGINE YARD, the beetles' machine works: a big royal-blue barrel-vaulted hangar roof with brass ribs over an open dark bay, a large brass gear wheel on its side, a dark steel crane gantry with a hanging hook in front, one tall steel tank. The vault and gear are the icon. No plinth: it stands on nothing."
+  },
+  {
+   "name": "building-beetles-hornwatch",
+   "kind": "building",
+   "faction": "beetles",
+   "dir": "base/assets/portraits/buildings/beetles-hornwatch",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/beetle-hornwatch-idle.png"
+   ],
+   "subject": "the HORNWATCH, the beetles' guard tower: a stout round tower of royal-blue plates and brass bands, two great curved glossy black horns rising from its sides, a heavy brass bolt-cannon barrel mounted on its top pointing up-left. Tall in the frame. No plinth: it stands on nothing."
+  },
+  {
+   "name": "building-beetles-substance-well",
+   "kind": "building",
+   "faction": "beetles",
+   "dir": "base/assets/portraits/buildings/beetles-substance-well",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/beetle-substance-well-idle.png"
+   ],
+   "subject": "the SUBSTANCE WELL, pumping the forest's magic from a deposit: a low round royal-blue and brass base with steel spikes, a tall glass column rising from its centre with raw violet substance glowing and swirling inside, a copper coil cap on top. The glowing column is the icon; a faint violet glow close round it. No plinth: it stands on nothing."
+  },
+  {
+   "name": "building-beetles-ancestor-shrine",
+   "kind": "building",
+   "faction": "beetles",
+   "dir": "base/assets/portraits/buildings/beetles-ancestor-shrine",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/beetle-ancestor-shrine-idle.png"
+   ],
+   "subject": "the ANCESTOR SHRINE, where the beetles' heroes are called: a tall stepped dark-stone and brass altar with a short stair up its front, holding a huge black ancestral beetle-shell statue upright in a tall brass frame, two royal-blue banners on brass posts. The black shell in its frame is the icon. Tall in the frame. No plinth: it stands on nothing."
+  }
+ ]
+}

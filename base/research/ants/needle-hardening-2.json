@@ -2,7 +2,7 @@
   "id": "research.ants.needle-hardening-2",
   "name": "Needle Hardening II",
   "description": "Needlers, Honeypots, Alates and Acid Spires deal 10% more attack damage (level II; levels add up). Requires a Great Nest.",
-  "icon": "asset.icons.research-ants-needle-hardening",
+  "icon": "asset.icons.research-ants-needle-hardening-2",
   "priority": 84,
   "requires": [
     "building.ants.great-mound",

@@ -1,22 +1,141 @@
 {
-  "n": 1,
-  "anchors": {},
-  "items": [
-    {"name": "c-move", "kind": "command", "subject": "MOVE: one sturdy armoured boot of dark leather with a polished steel toe cap and greave, mid-stride toward the upper right, a short soft dust trail behind its heel."},
-    {"name": "c-attack", "kind": "command", "subject": "ATTACK: a broad steel sword with a bronze crossguard and leather grip, blade pointing diagonally up to the upper right, a bright glint running along its edge."},
-    {"name": "c-stop", "kind": "command", "subject": "STOP: a round steel shield with a bronze rim and a central boss, seen head-on, filling the middle of the frame."},
-    {"name": "c-hold", "kind": "command", "subject": "HOLD POSITION: a steel-tipped spear planted upright in the ground with a small round bronze-rimmed shield leaning against its shaft."},
-    {"name": "c-patrol", "kind": "command", "subject": "PATROL: two curved bronze arrows chasing each other around a circle, forming a closed loop, with a soft warm glow in the middle."},
-    {"name": "c-follow", "kind": "command", "subject": "FOLLOW: a trail of three insect footprints pressed into dark soil, leading from the lower left to the upper right, each lit by a faint golden glow, the farthest one smallest."},
-    {"name": "c-build", "kind": "command", "subject": "BUILD: a heavy builder's hammer with a dark stone-and-bronze head and a leather-wrapped wooden handle, angled diagonally, a few wood shavings."},
-    {"name": "c-build-advanced", "kind": "command", "subject": "BUILD ADVANCED STRUCTURE: a heavy bronze-headed hammer crossed with a steel carpenter's square over a rolled-out parchment building plan."},
-    {"name": "c-produce", "kind": "command", "subject": "PRODUCE: a dark iron anvil with a glowing orange-hot piece of metal on it and a small burst of sparks."},
-    {"name": "c-rally", "kind": "command", "subject": "SET RALLY POINT: a small swallow-tailed cream cloth flag on a wooden pole planted in the ground, flapping in the wind, a soft golden glow at its base."},
-    {"name": "c-pause", "kind": "command", "subject": "PAUSE: two thick upright bronze bars side by side, polished, with bevelled edges."},
-    {"name": "c-cancel", "kind": "command", "subject": "CANCEL: a bold X of two crossed iron bars enamelled deep red, with bronze rivets at the crossing."},
-    {"name": "c-camera", "kind": "command", "subject": "CAMERA: a brass spyglass with leather bands, extended, angled diagonally, a deep blue lens glinting at its wide end."},
-
-    {"name": "s-armor-light", "kind": "command", "subject": "LIGHT ARMOUR (a stat icon): a padded brown leather jerkin with stitched seams and a few small bronze studs, seen from the front."},
-    {"name": "s-armor-heavy", "kind": "command", "subject": "HEAVY ARMOUR (a stat icon): a polished steel breastplate with layered pauldrons and bronze edging, seen from the front."},
-    {"name": "s-armor-structure", "kind": "command", "subject": "FORTIFIED (a stat icon for buildings' armour): a short section of thick fitted grey stone wall with a crenellated top and iron bands."}  ]
+ "n": 2,
+ "items": [
+  {
+   "name": "command-move",
+   "kind": "command",
+   "dir": "base/assets/icons/command-move",
+   "subject": "MOVE: one sturdy armoured boot of dark leather with a polished steel toe cap and greave, striding toward the upper right, seen from the side. Nothing else."
+  },
+  {
+   "name": "command-attack",
+   "kind": "command",
+   "dir": "base/assets/icons/command-attack",
+   "subject": "ATTACK: one broad straight sword, its blade pointing to the upper right at 45 degrees, a polished steel blade with one bright edge highlight, a simple bronze crossguard and a dark leather grip at the lower left."
+  },
+  {
+   "name": "command-stop",
+   "kind": "command",
+   "dir": "base/assets/icons/command-stop",
+   "subject": "STOP: one flat octagonal steel plate seen head-on, like a stop sign in shape, with a thick polished bronze rim and one bold horizontal bar raised across its centre."
+  },
+  {
+   "name": "command-hold",
+   "kind": "command",
+   "dir": "base/assets/icons/command-hold",
+   "subject": "HOLD POSITION: one tall steel tower shield standing upright and still, seen from the front, its pointed foot planted, a single bronze boss in its centre. Nothing else."
+  },
+  {
+   "name": "command-patrol",
+   "kind": "command",
+   "dir": "base/assets/icons/command-patrol",
+   "subject": "PATROL: two thick curved steel arrows chasing each other around an empty circle, forming one closed loop, their bronze heads bold and clear."
+  },
+  {
+   "name": "command-follow",
+   "kind": "command",
+   "dir": "base/assets/icons/command-follow",
+   "subject": "FOLLOW: two identical bold steel arrowheads, one directly behind the other with a small gap, both pointing to the upper right, the leading one slightly larger."
+  },
+  {
+   "name": "command-build",
+   "kind": "command",
+   "dir": "base/assets/icons/command-build",
+   "subject": "BUILD: one heavy builder's hammer with a dark steel head and a leather-wrapped wooden handle, angled diagonally from the lower left to the upper right."
+  },
+  {
+   "name": "command-build-advanced",
+   "kind": "command",
+   "dir": "base/assets/icons/command-build-advanced",
+   "subject": "BUILD ADVANCED STRUCTURE: one heavy steel-headed builder's hammer crossed over one bold bronze carpenter's square, forming an X."
+  },
+  {
+   "name": "command-produce",
+   "kind": "command",
+   "dir": "base/assets/icons/command-produce",
+   "subject": "PRODUCE (train a unit): one dark iron anvil seen from the front-left, a single orange-hot glowing ingot lying on it. Only the anvil and the ingot."
+  },
+  {
+   "name": "command-rally",
+   "kind": "command",
+   "dir": "base/assets/icons/command-rally",
+   "subject": "SET RALLY POINT: one small swallow-tailed cream cloth flag on a straight steel pole, the cloth streaming to the right, the pole planted upright."
+  },
+  {
+   "name": "command-pause",
+   "kind": "command",
+   "dir": "base/assets/icons/command-pause",
+   "subject": "PAUSE PRODUCTION: two thick upright polished steel bars side by side with bevelled edges and bronze end caps."
+  },
+  {
+   "name": "command-cancel",
+   "kind": "command",
+   "dir": "base/assets/icons/command-cancel",
+   "subject": "CANCEL: one bold X of two crossed thick bars enamelled deep red, with polished steel edges and one bronze rivet at the crossing."
+  },
+  {
+   "name": "command-camera",
+   "kind": "command",
+   "dir": "base/assets/icons/command-camera",
+   "subject": "JUMP CAMERA TO SELECTION: one brass spyglass, extended, angled diagonally toward the upper right, its round lens glinting deep blue."
+  },
+  {
+   "name": "command-upgrade",
+   "kind": "command",
+   "dir": "base/assets/icons/command-upgrade",
+   "subject": "UPGRADE BUILDING: one broad, thick polished steel arrow pointing straight up, with a smaller bronze chevron floating just above its tip.",
+   "id": "asset.icons.command-upgrade",
+   "title": "Upgrade"
+  },
+  {
+   "name": "command-research",
+   "kind": "command",
+   "dir": "base/assets/icons/command-research",
+   "subject": "RESEARCH: one round magnifying lens with a thick polished brass rim and a short leather-wrapped handle, angled diagonally, its glass catching one bright highlight.",
+   "id": "asset.icons.command-research",
+   "title": "Research"
+  },
+  {
+   "name": "command-garrison",
+   "kind": "command",
+   "dir": "base/assets/icons/command-garrison",
+   "subject": "GARRISON (enter a building): one stout closed arched door of dark steel-banded wood, studded with bronze rivets, seen head-on, a bold steel arrow pointing into it from the left.",
+   "id": "asset.icons.command-garrison",
+   "title": "Garrison"
+  },
+  {
+   "name": "command-unload",
+   "kind": "command",
+   "dir": "base/assets/icons/command-unload",
+   "subject": "UNLOAD (leave a building): one stout arched door of dark steel-banded wood standing open, seen head-on, a bold steel arrow pointing out of its dark doorway toward the lower right.",
+   "id": "asset.icons.command-unload",
+   "title": "Unload"
+  },
+  {
+   "name": "command-learn",
+   "kind": "command",
+   "dir": "base/assets/icons/command-learn",
+   "subject": "LEARN HERO SKILL: two thick stacked chevrons pointing up, like a rank insignia, in polished gold with steel edges.",
+   "id": "asset.icons.command-learn",
+   "title": "Learn skill"
+  },
+  {
+   "name": "stat-armor-light",
+   "kind": "command",
+   "dir": "base/assets/icons/stat-armor-light",
+   "subject": "LIGHT ARMOUR: one simple padded leather jerkin seen from the front, laced at the chest, warm brown leather with bronze buckles."
+  },
+  {
+   "name": "stat-armor-heavy",
+   "kind": "command",
+   "dir": "base/assets/icons/stat-armor-heavy",
+   "subject": "HEAVY ARMOUR: one polished steel breastplate seen from the front with bronze rivets and a raised centre ridge."
+  },
+  {
+   "name": "stat-armor-structure",
+   "kind": "command",
+   "dir": "base/assets/icons/stat-armor-structure",
+   "subject": "FORTIFIED (structure armour): one short segment of a crenellated grey stone wall, seen from the front-left, its blocks big and clean."
+  }
+ ]
 }

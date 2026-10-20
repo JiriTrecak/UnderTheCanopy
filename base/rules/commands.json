@@ -55,7 +55,7 @@
     "upgrade": {
       "name": "Upgrade building",
       "description": "Upgrade this building in place.",
-      "icon": "asset.portraits.buildings.ants-acorn-hall",
+      "icon": "asset.icons.command-upgrade",
       "priority": 110,
       "hotkey": "U"
     },
@@ -69,7 +69,7 @@
     "research": {
       "name": "Research",
       "description": "Research a permanent colony upgrade.",
-      "icon": "asset.portraits.buildings.ants-acorn-hall",
+      "icon": "asset.icons.command-research",
       "priority": 100
     },
     "cancelResearch": {
@@ -101,13 +101,13 @@
     "unload": {
       "name": "Leave watchtower",
       "description": "Release the archer at the tower entrance. A move order also leaves the lookout.",
-      "icon": "asset.icons.command-move",
+      "icon": "asset.icons.command-unload",
       "priority": 100
     },
     "garrison": {
       "name": "Enter watchtower",
       "description": "Walk to a friendly watchtower and occupy its single lookout.",
-      "icon": "asset.portraits.buildings.ants-watchtower",
+      "icon": "asset.icons.command-garrison",
       "priority": 100
     }
   },
@@ -129,7 +129,7 @@
     "category.hero.skills": {
       "name": "New spell available",
       "description": "Spend a skill point to learn or improve an ability.",
-      "icon": "asset.portraits.units.ants-marshal",
+      "icon": "asset.icons.command-learn",
       "priority": 106,
       "hotkey": "K",
       "placement": "banner"

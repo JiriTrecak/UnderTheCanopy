@@ -1,14 +1,13 @@
 {
-  "n": 2,
-  "anchors": {},
-  "items": [
-    {"name": "r-amber", "kind": "resource", "faction": "neutral",
-     "subject": "AMBER, the game's main resource: a compact cluster of three big smooth, glossy, translucent amber nuggets of warm honey-orange, glowing softly from within like hardened tree resin. Warm orange and gold only."},
-    {"name": "r-substance", "kind": "resource", "faction": "neutral",
-     "subject": "SUBSTANCE, the forest's raw magic, one of the game's two resources: a compact cluster of translucent, faceted violet-blue crystal shards growing out of a small dark root knot, glowing from within with deep violet and blue light. Never green."},
-    {"name": "r-lumber", "kind": "resource", "faction": "neutral",
-     "subject": "WOOD, a resource: a small stack of three cut twig logs bound with a cord, pale fresh-cut ends showing their rings, warm brown bark."},
-    {"name": "r-supply", "kind": "resource", "faction": "neutral",
-     "subject": "SUPPLY (how many troops a colony can feed): a small woven bark basket heaped with plump golden seeds and grains."}
-  ]
+ "n": 2,
+ "items": [
+  {"name": "resource-amber", "kind": "resource", "dir": "base/assets/icons/resource-amber",
+   "subject": "AMBER, the main resource: a compact cluster of three big smooth, glossy, translucent honey-orange amber nuggets, warm light inside them, one bright highlight on each."},
+  {"name": "resource-substance", "kind": "resource", "dir": "base/assets/icons/resource-root",
+   "subject": "SUBSTANCE, the forest's raw magic: one big round drop of luminous violet LIQUID light, glossy like a bead of water, a bright white highlight at its upper left. A liquid, never a crystal."},
+  {"name": "deposit-amber", "kind": "building", "faction": "neutral", "dir": "base/assets/portraits/resources/amber-deposit",
+   "subject": "AN AMBER DEPOSIT, the node workers mine: a low heap of big glossy, translucent honey-orange amber nuggets bulging out of a dark gnarled root, glowing warmly from within."},
+  {"name": "deposit-substance", "kind": "building", "faction": "neutral", "dir": "base/assets/portraits/resources/substance-deposit",
+   "subject": "A SUBSTANCE DEPOSIT: a split in a dark gnarled old root where luminous violet LIQUID wells up into a small round glowing pool, a few drops rising above it. A liquid, never crystals."}
+ ]
 }
