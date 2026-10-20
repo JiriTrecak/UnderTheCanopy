@@ -1,5 +1,6 @@
 # Documentation
 
+- [Agent context and code index](agent-context.md): shared Codex/Claude orientation after the Rust rewrite, current baseline, code entry points and repository skills.
 - [Status](status.md): where the rebuild stands, how to try it, decisions to review.
 - [Plan](plan.md): phase 1 milestones, targets, what is deferred.
 - [Decisions](decisions.md): the decision log.
