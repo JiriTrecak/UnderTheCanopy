@@ -580,8 +580,8 @@ def unit_abilities(fx_):
 
     put('shieldbearer/lock-shields', ability(
         'ability.beetles.lock-shields', 'Lock Shields',
-        'Toggle. Plant the tower shield and lock its clamps: the Shieldbearer cannot move and attacks 25% slower, but gains 6 armor and takes 40% less piercing damage. Interlocking Shields raises this to 10 armor and 55% less piercing damage.',
-        'targeted', [{'armor': 6, 'pierce': 600}, {'armor': 10, 'pierce': 450}],
+        'Toggle. Plant the tower shield and lock its clamps: the Shieldbearer cannot move and attacks 25% slower, but gains 4 armor and takes 30% less piercing damage. Interlocking Shields raises this to 7 armor and 45% less piercing damage.',
+        'targeted', [{'armor': 4, 'pierce': 700}, {'armor': 7, 'pierce': 550}],
         self_aim(), cast(6, 4, 0, 40),
         [{'op': 'status', 'target': 'caster', 'id': 'locked', 'amount': 80, 'polarity': 'positive', 'dispel': False,
           'lifetime': 'instance', 'modifiers': {'rooted': True, 'attackSpeedPermille': -250},
@@ -719,8 +719,8 @@ def hero_abilities(fx_):
 
     put('forgemaster/overclock', ability(
         'ability.forgemaster.overclock', 'Overclock',
-        'Pull the governor on an allied unit or machine: it attacks and moves 40/55/70% faster for 8 seconds.',
-        'targeted', [{'boost': 400}, {'boost': 550}, {'boost': 700}],
+        'Pull the governor on an allied unit or machine: it attacks and moves 30/45/60% faster for 8 seconds.',
+        'targeted', [{'boost': 300}, {'boost': 450}, {'boost': 600}],
         unit_aim(['ally'], 16, allow_self=True), cast(8, 6, 60, 360),
         [{'op': 'status', 'target': 'target', 'id': 'overclocked', 'amount': 320, 'polarity': 'positive', 'dispel': True,
           'rankedModifiers': {'attackSpeedPermille': rp('boost'), 'moveSpeedPermille': rp('boost')}}],
@@ -749,8 +749,8 @@ def hero_abilities(fx_):
 
     put('forgemaster/forgefall', ability(
         'ability.forgemaster.forgefall', 'Forgefall',
-        'Call down a crucible. After a 1.5-second warning circle it slams into a 5-radius area: 220/340 spell damage and a 1.5-second stun (half on heroes), then a pool of molten metal that burns enemies standing in it for 20/32 spell damage each half second for 6 seconds.',
-        'targeted', [{'damage': 220, 'burn': 20}, {'damage': 340, 'burn': 32}],
+        'Call down a crucible. After a 1.5-second warning circle it slams into a 5-radius area: 200/300 spell damage and a 1.5-second stun (half on heroes), then a pool of molten metal that burns enemies standing in it for 20/32 spell damage each half second for 6 seconds.',
+        'targeted', [{'damage': 200, 'burn': 20}, {'damage': 300, 'burn': 32}],
         point_aim(['enemy'], 22, 5, maxTargets=24, includeBuildings=True), cast(18, 10, 175, 3200),
         [{'op': 'damage', 'target': 'target', 'amount': rp('damage'), 'damageType': 'spell'},
          {'op': 'status', 'target': 'target', 'id': 'slammed', 'amount': 60, 'heroDuration': 30, 'polarity': 'negative',
@@ -945,7 +945,7 @@ def write_units(W, fx_):
              'Front-line tank behind a riveted tower shield, swinging a piston hammer. Lock Shields braces it in place for heavy armor. Slow and stubborn; uses 2 supply.',
              body(520, 2, 'heavy'), weapon(15, 'melee', 0.6, 60, 20, 14, 12), 10, train(185, 0, 22), 2, infantry,
              2.6, abilities=caster(10, 0, [binding('lock-shields', 'ability.beetles.lock-shields', 1, 'Q', 1,
-                                                    threat=7, interval=20)]),
+                                                    threat=3, interval=20)]),
              presentation={'impactEffect': W['bash']}))
 
     put(unit('bolter', 'Bolter',
@@ -1297,7 +1297,7 @@ def write_research():
             prev = rid
     ids['forge'] = forge
     put('interlocking-shields', 'interlocking-shields', 'Interlocking Shields',
-        'Locked shields interlock: Lock Shields gives 10 armor instead of 6 and cuts piercing damage by 55% instead of 40%.',
+        'Locked shields interlock: Lock Shields gives 7 armor instead of 4 and cuts piercing damage by 45% instead of 30%.',
         RESEARCH_ICON['interlocking-shields'], 70, cost(125, 20), 40,
         [{'units': [u('shieldbearer')], 'abilityRanks': {'lock-shields': 2}}])
     put('drum-magazines', 'drum-magazines', 'Drum Magazines',
@@ -1387,7 +1387,7 @@ def tune_hornbreaker(fx_):
     path = BASE + 'abilities/heroes/hornbreaker/horn-rush.json'
     d = json.load(open(path))
     for rank, (damage, stun) in zip(d['ranks'], ((90, 40), (140, 60), (190, 80))):
-        rank.update({'damage': damage, 'stun': stun, 'cooldown': 400})
+        rank.update({'damage': damage, 'stun': stun, 'cooldown': 560})
     d['description'] = ('Charge a visible ground enemy, respecting terrain and other bodies. On contact deal '
                         '90/140/190 spell damage and stun for 1/1.5/2 seconds. Blocked, interrupted or '
                         'escaped charges do not hit.')

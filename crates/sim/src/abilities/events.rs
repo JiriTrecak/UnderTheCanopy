@@ -106,6 +106,8 @@ pub struct Fallen {
     pub definition: crate::catalog::Def,
     pub owner: Owner,
     pub killer: Option<Owner>,
+    /// The entity that struck the lethal blow, when known.
+    pub source: Option<EntityId>,
 }
 
 /// Deaths kept for observers: the last [`EVENT_TICKS`], at most this many.

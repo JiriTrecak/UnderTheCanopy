@@ -201,6 +201,10 @@ fn cast_one(
     let mut order: Vec<(usize, &library::BindingDecl)> =
         policy.bindings.iter().enumerate().collect();
     order.sort_by(|a, b| unlocked_at(b.1).cmp(&unlocked_at(a.1)).then(a.0.cmp(&b.0)));
+    // An ultimate (unlocked latest, past the first level) that is learned and ready but
+    // short of mana keeps its cost: cheaper spells wait rather than spend it.
+    let ultimate = order.first().map_or(0, |(_, d)| unlocked_at(d)).max(2);
+    let mut reserve = 0u32;
     for (index, d) in order {
         let Some(ai) = d.ai.as_ref().filter(|_| d.allows(Control::Ai)) else {
             continue;
@@ -211,13 +215,14 @@ fn cast_one(
         }
         let rank = caster_state.ranks.get(index).copied().unwrap_or(0);
         let cost = library::value(spell, rank, &spell.cast.cost.amount).max(0) as u32;
-        if rank == 0
-            || caster_state
-                .cooldowns
-                .get(&d.ability)
-                .is_some_and(|&t| t > f.tick)
-            || caster_state.mana < cost
-        {
+        let cooling = caster_state
+            .cooldowns
+            .get(&d.ability)
+            .is_some_and(|&t| t > f.tick);
+        if rank > 0 && !cooling && caster_state.mana < cost && unlocked_at(d) >= ultimate {
+            reserve = reserve.max(cost);
+        }
+        if rank == 0 || cooling || caster_state.mana < cost + reserve {
             continue;
         }
         // An active toggle stays on while the fight is near; a stance with a declared

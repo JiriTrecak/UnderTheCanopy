@@ -46,7 +46,7 @@ use canopy_content::placement::Owner;
 use frame::{Frame, Input, Known};
 use geography::Geography;
 use navigation::{ObservedBlockers, ObservedNavigation};
-pub use rules::AiRules;
+pub use rules::{AiRules, AiStyle};
 use serde::Serialize;
 pub use state::Memory;
 use state::{MAX_PENDING, MAX_TRACE, Pending, SEQUENCE_BASE, Trace};
@@ -324,6 +324,7 @@ struct Brain {
     owner: Owner,
     /// Decides on ticks where `tick % decisionTicks == phase`.
     phase: u32,
+    race: Option<String>,
     rules: AiRules,
     blockers: RefCell<ObservedBlockers>,
     navigation: RefCell<Option<ObservedNavigation>>,
@@ -363,11 +364,13 @@ impl Brains {
             .iter()
             .enumerate()
             .map(|(index, slot)| {
-                let rules = AiRules::for_race(catalog, slot.race.as_deref());
+                let style = AiStyle::of_match(setup.seed, slot.player);
+                let rules = AiRules::for_race(catalog, slot.race.as_deref(), style);
                 Brain {
                     player: slot.player,
                     owner: Owner::Player(slot.player),
                     phase: index as u32 * rules.decision_ticks / count,
+                    race: slot.race.clone(),
                     rules,
                     blockers: RefCell::new(ObservedBlockers::new(cells)),
                     navigation: RefCell::new(None),
@@ -378,6 +381,24 @@ impl Brains {
             geography: Some(geography),
             brains,
         }
+    }
+
+    /// Plays `player` in `style` instead of the one its match seed chose (tools and
+    /// experiments; the next decision uses it).
+    pub fn restyle(&mut self, catalog: &crate::catalog::Catalog, player: u8, style: AiStyle) {
+        for b in self.brains.iter_mut().filter(|b| b.player == player) {
+            let rules = AiRules::for_race(catalog, b.race.as_deref(), style);
+            b.phase = b.phase.min(rules.decision_ticks.saturating_sub(1));
+            b.rules = rules;
+        }
+    }
+
+    /// The style each AI player plays, by player.
+    pub fn styles(&self) -> Vec<(u8, AiStyle)> {
+        self.brains
+            .iter()
+            .map(|b| (b.player, b.rules.style))
+            .collect()
     }
 
     pub fn is_empty(&self) -> bool {

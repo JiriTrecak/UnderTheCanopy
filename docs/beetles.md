@@ -63,7 +63,7 @@ Every hero has three basic abilities and an ultimate (the shared hero rules: lev
 
 **Forgemaster**, the engineer:
 - **Bolt Turret**: deploys a brass repeater turret at a target point for 40 seconds; it shoots ground and air and can be destroyed.
-- **Overclock**: an allied unit or machine attacks and moves 40% faster for 8 seconds.
+- **Overclock**: an allied unit or machine attacks and moves 30/45/60% faster for 8 seconds.
 - **Field Forge** (aura): nearby allies gain armour; nearby machines and buildings slowly repair.
 - Ultimate **Forgefall**: after a 1.5-second warning circle, a molten crucible slams into the target area: heavy damage and a short stun, then a pool of molten metal that burns enemies standing in it for 6 seconds.
 

@@ -57,7 +57,7 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
             };
             let workforce = recruit.is_some_and(|d| {
                 catalog.get(d).behaviors.work.is_some()
-                    && (f.workers.len() as u32) < f.rules.workers.minimum
+                    && (f.workers.len() as u32) < f.rules.workers_at(f.tick).minimum
             });
             let bill: Option<Bill> = match &action {
                 Action::Build { definition, .. } => f
@@ -657,7 +657,13 @@ pub(super) fn expansion(
                 if f.get(target.0).is_some_and(|r| r.def == source))
         })
         .count() as u32;
-    if remaining >= EXPANSION_RESERVE_PER_GATHERER * gatherers.max(8) {
+    // An expanding style claims its second field early (D75); otherwise a field is
+    // claimed as the first runs low.
+    let early = f
+        .rules
+        .early_expansion
+        .is_some_and(|n| f.workers.len() as u32 >= n && halls.len() < 2);
+    if !early && remaining >= EXPANSION_RESERVE_PER_GATHERER * gatherers.max(8) {
         return None;
     }
     // Fields: each harvest site joins the first field whose middle is near, in map order.
@@ -1077,7 +1083,7 @@ fn run(p: &mut Planner) {
         }
     }
     let has_producer = buildings.iter().any(|b| producers.contains(&b.def));
-    let w = &rules.workers;
+    let w = rules.workers_at(tick);
     let income_need = w.maximum.min(w.target + army.len() as u32 / 4);
     p.b.s.plan.workers = income_need;
     let pressure: f64 =
@@ -1110,7 +1116,7 @@ fn run(p: &mut Planner) {
             / rules.composition.len() as f64
     };
     let a = &rules.army;
-    let wanted = (workers.len() as u32).saturating_sub(w.minimum) * 2;
+    let wanted = (workers.len() as u32).saturating_sub(w.minimum) * rules.army_per_worker;
     let pressured = (pressure / typical.max(1.0) * 1.3).ceil() as u32;
     p.b.s.plan.army = a.maximum.min(a.minimum.max(wanted).max(pressured));
     let train_worker = |p: &mut Planner, reserve: &Bill| -> bool {
@@ -1307,7 +1313,7 @@ fn run(p: &mut Planner) {
         })
     };
     // Invest only after a fighting force exists and no observed enemy threatens home.
-    if army.len() >= 4 && workers.len() as u32 >= w.minimum && !threatened {
+    if army.len() as u32 >= rules.invest_army && workers.len() as u32 >= w.minimum && !threatened {
         if let (Some(r), Some(t)) = (recruit, trainer) {
             let rd = catalog.get(r);
             if admitted(rd)
@@ -1791,7 +1797,9 @@ fn run(p: &mut Planner) {
         .copied()
         .filter(|&d| {
             f.can_afford(catalog.get(d), &promised)
-                && ((saturated && barracks.len() < 3.min(1 + army.len() / 12))
+                && ((saturated
+                    && barracks.len()
+                        < 3.min(1 + army.len() / rules.army_per_producer.max(1) as usize))
                     || (barracks.len() < MAX_PRODUCERS && banked(d) && piled_outputs(d) > 0))
         })
         .max_by_key(|&d| (piled_outputs(d), std::cmp::Reverse(d)))
@@ -1821,7 +1829,7 @@ fn harvesting(p: &mut Planner, workers: &[&Known]) {
     let def_of = |id: &Id| f.find(id.as_str());
     let get = |id: &Id| def_of(id).map(|d| catalog.get(d));
     let free: Vec<&Known> = workers.iter().copied().filter(|w| f.free(w)).collect();
-    let reserve = (rules.workers.reserve as usize).min(workers.len().saturating_sub(2));
+    let reserve = (rules.workers_at(f.tick).reserve as usize).min(workers.len().saturating_sub(2));
     let gathering_target = |w: &Known| match f.order(w) {
         Some(Order::Gather { target }) => Some(target.0),
         _ => None,
@@ -1836,7 +1844,7 @@ fn harvesting(p: &mut Planner, workers: &[&Known]) {
         .collect();
     let pending_move = |w: &Known| f.own_unit(w).is_some_and(|u| u.work.pending_move.is_some());
     if free.len() < reserve
-        && workers.len() as u32 > rules.workers.minimum
+        && workers.len() as u32 > rules.workers_at(f.tick).minimum
         && let Some(release) = manual
             .iter()
             .filter(|w| f.cargo(w).is_none() && !pending_move(w))

@@ -58,7 +58,7 @@ Numbers are per unit; costs are amber/substance, time in seconds.
 | Unit | Tier | Cost, supply | Role | Kit |
 |---|---|---|---|---|
 | Worker | 1 | 100, 1 | Gathers, builds | Like every ant, uses the tunnels |
-| Raider | 1 | 160 for **two**, 1 each | Core melee, fast (170 hp, 15 speed) | *Frenzy* (passive): every second a Raider fights beside other small ants, they gain 6% damage, up to 24% |
+| Raider | 1 | 150 for **two**, 1 each | Core melee, fast (185 hp, 15 speed) | *Frenzy* (passive): every second a Raider fights beside other small ants, they gain 6% damage, up to 24% |
 | Needler | 1 | 150, 2 | Ranged, hits air | *Barbed Needles* (Fungus Garden): each hit lowers armor by 1 for 5 s, up to 3 |
 | Burster | 2 | 110/60, 1 | Suicide unit | **Mutated.** *Unstable*: bursts on its first bite or when it dies: 100 siege damage to enemies and buildings within 4, and 40 to allies (Volatile Sacs: 150, sparing allies). *Rupture*: burst on command. No tunnels |
 | Major | 2 | 230/60, 3 | Tank (960 hp, 4 armor) | *Guard* (aura): small ants within 6 take 15% less damage (Living Wall: 25%, and +2 armor). *Plug* (toggle): roots itself, +5 armor, half damage from missiles, 30% less from siege |
@@ -90,7 +90,7 @@ Three abilities with three ranks each (levels 1, 3, 5) and an ultimate (level 6;
 **General**, the army-ant marshal:
 - **Mandible Charge**: rushes an enemy: 80/130/180 damage and a 1/1.5/2 s stun.
 - **Mark Prey**: an enemy takes 15/25/35% more damage for 12 s.
-- **War Column** (aura): allies nearby move and hit 8/12/16% harder.
+- **War Column** (aura): allies nearby move and hit 10/15/20% harder.
 - Ultimate **Bivouac**: the General and up to 24 allies lock into a living fortress for 8/10 s: rooted, 60/70% less damage, 35% of melee damage returned.
 
 ## Research

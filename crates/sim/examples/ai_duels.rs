@@ -6,6 +6,9 @@
 //!     [--minutes 60] [--races ants,beetles] [--maps echo-isles,amberleaf-crossing] [--log]
 //! ```
 //!
+//! `--styles a,b` plays the two computer players in those styles (D75: standard, rush,
+//! expand, tech) instead of the ones the seed picks.
+//!
 //! `--heroes a,b` starts the players with those heroes (unit ids; empty for the
 //! computer's own pick).
 //!
@@ -37,6 +40,7 @@ struct Args {
     minutes: u32,
     races: [Option<String>; 2],
     heroes: [Option<String>; 2],
+    styles: [Option<canopy_sim::ai::AiStyle>; 2],
     maps: Vec<String>,
     log: bool,
     swap: bool,
@@ -50,6 +54,7 @@ fn args() -> Result<Args, String> {
         minutes: 60,
         races: [None, None],
         heroes: [None, None],
+        styles: [None, None],
         maps: Vec::new(),
         log: false,
         swap: false,
@@ -73,6 +78,13 @@ fn args() -> Result<Args, String> {
                     .split(',')
                     .map(|s| Some(s.trim().to_string()).filter(|s| !s.is_empty()));
                 out.heroes = [parts.next().flatten(), parts.next().flatten()];
+            }
+            "--styles" => {
+                let v = value()?;
+                let mut parts = v
+                    .split(',')
+                    .map(|s| canopy_sim::ai::AiStyle::parse(s.trim()));
+                out.styles = [parts.next().flatten(), parts.next().flatten()];
             }
             "--maps" => out.maps = value()?.split(',').map(|m| m.trim().to_string()).collect(),
             "--log" => out.log = true,
@@ -216,6 +228,11 @@ fn duel(content: Arc<Content>, map: &UtcMap, seed: u32, cap: u32, args: &Args) -
             .collect(),
     };
     let mut world = World::new(content, &map, setup).unwrap_or_else(|e| panic!("{e}"));
+    for (i, &p) in players.iter().enumerate() {
+        if let Some(style) = args.styles[i] {
+            world.set_ai_style(p, style);
+        }
+    }
     let mut seen = std::collections::BTreeSet::new();
     let mut trained: [BTreeMap<String, u32>; 2] = Default::default();
     let mut milestones: [Vec<(f64, String)>; 2] = Default::default();

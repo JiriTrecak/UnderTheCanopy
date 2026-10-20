@@ -470,8 +470,8 @@ def hero_abilities():
 
     put_ability('heroes/general/war-column', passive(
         'ability.ants.war-column', 'War Column',
-        'Allies within 10 units of the General move 8/12/16% faster and deal 8/12/16% more damage.',
-        [{'boost': 80}, {'boost': 120}, {'boost': 160}],
+        'Allies within 10 units of the General move 10/15/20% faster and deal 10/15/20% more damage.',
+        [{'boost': 100}, {'boost': 150}, {'boost': 200}],
         [{'op': 'status', 'target': 'target', 'id': 'column', 'amount': 1, 'polarity': 'positive', 'dispel': False,
           'rankedModifiers': {'moveSpeedPermille': rp('boost'), 'damagePermille': rp('boost')}},
          {'op': 'status', 'target': 'caster', 'id': 'columnSource', 'amount': 1, 'polarity': 'positive',
@@ -662,8 +662,8 @@ def write_units(builds):
          extra_behaviors={'work': load('units/ants/settler.json')['behaviors']['work'] | {'builds': builds}})
     unit('units/ants/warrior.json', name='Raider',
          description='The colony\'s Zergling: a small, stocky biting ant with blade fins on its back, hatched two at a time. Fast and cheap; Frenzy makes Raiders hit harder the longer they fight together. Uses 1 supply each.',
-         body_=body(170, 1, 'heavy'), combat=weapon(7, 'melee', 0.6, 36, 20, 8, 8), speed=15,
-         creation=train(160, 0, 24, **({'count': 2} if ENGINE else {})), supply=1, level=1,
+         body_=body(185, 1, 'heavy'), combat=weapon(8, 'melee', 0.6, 36, 20, 8, 8), speed=15,
+         creation=train(150, 0, 24, **({'count': 2} if ENGINE else {})), supply=1, level=1,
          abilities=caster(10, 0, [passive_binding('frenzy', 'ability.ants.frenzy')]))
     archer = load('units/ants/archer.json')
     unit('units/ants/archer.json', name='Needler',
@@ -767,7 +767,8 @@ def write_units(builds):
          ([binding('found', 'ability.ants.found-colony', 0, 'Q', 1, levels=[1, 3, 5])] if ENGINE else []) + [
           binding('royal-jelly', 'ability.ants.royal-jelly', 0, 'W', 2, levels=[1, 3, 5], preference='wounded-ally'),
           binding('one-body', 'ability.ants.one-body', 0, 'E', 3, levels=[1, 3, 5]),
-          binding('exodus', 'ability.ants.exodus', 0, 'R', 4, levels=[6], controls=('player', 'scenario'))], 1,
+          binding('exodus', 'ability.ants.exodus', 0, 'R', 4, levels=[6], interval=40)
+          | {'ai': {'preference': 'enemy', 'intervalTicks': 40, 'intent': 'reinforce'}}], 1,
          presentation={'projectile': 'effect.weapon.nectar', 'projectileSocket': 'socket_projectile', 'castContact': 0.5})
     hero('units/ants/heroes/royal-alchemist.json', None, 'Royal Alchemist',
          'Distils substance in her own body. Throws Volatile Draughts, moves life from foe to friend with Transfusion, Crystallises friend or foe and, at the last, drives the army into an Overdose.',
@@ -780,8 +781,8 @@ def write_units(builds):
          presentation={'projectile': 'effect.weapon.nectar', 'projectileSocket': 'socket_projectile', 'castContact': 0.5})
     hero('units/ants/heroes/marshal.json', None, 'General',
          'The army-ant marshal, banner on its back and twin blades in hand. Mandible Charge seizes a foe, Mark Prey sets the army on it, War Column drives the march and, at the last, the army locks into a Bivouac.',
-         hero_levels(880, 90, 40, 4.5, 3, 200, 20, 78, 64, 1.8, 0.75),
-         weapon(40, 'hero', 0.8, 78, 20, 18, 14), 12, 0.75,
+         hero_levels(900, 90, 44, 4.5, 4, 200, 20, 78, 64, 1.8, 0.75),
+         weapon(44, 'hero', 0.8, 78, 20, 18, 14), 12, 0.75,
          [binding('mandible-charge', 'ability.ants.mandible-charge', 0, 'Q', 1, levels=[1, 3, 5]),
           binding('mark-prey', 'ability.ants.mark-prey', 0, 'W', 2, levels=[1, 3, 5]),
           binding('war-column', 'ability.ants.war-column', 0, 'E', 3, levels=[1, 3, 5]),

@@ -250,6 +250,16 @@ impl World {
         }
     }
 
+    /// Plays AI `player` in `style` (tools and experiments, D75).
+    pub fn set_ai_style(&mut self, player: u8, style: ai::AiStyle) {
+        self.ai.restyle(&self.catalog, player, style);
+    }
+
+    /// The style each AI player plays, by player.
+    pub fn ai_styles(&self) -> Vec<(u8, ai::AiStyle)> {
+        self.ai.styles()
+    }
+
     /// What each AI player is doing, for the debug overlay.
     pub fn ai_summaries(&self) -> Vec<ai::Summary> {
         ai::Brains::summaries(&self.state.ai)

@@ -67,7 +67,7 @@ pub fn process(ctx: &mut crate::abilities::Ctx, state: &mut State, dead: &[Dead]
         }
     }
     for d in dead {
-        credited(ctx, state, d.id, d.lethal.map(|l| l.owner));
+        credited(ctx, state, d.id, d.lethal);
     }
 }
 
@@ -76,12 +76,12 @@ pub fn die(ctx: &mut crate::abilities::Ctx, state: &mut State, id: EntityId) {
     credited(ctx, state, id, None);
 }
 
-/// One death, the kill credited to `killer` in the observers' death log.
+/// One death, the kill credited to `lethal`'s owner in the observers' death log.
 fn credited(
     ctx: &mut crate::abilities::Ctx,
     state: &mut State,
     id: EntityId,
-    killer: Option<Owner>,
+    lethal: Option<Lethal>,
 ) {
     let Some(e) = state.entities.get(id) else {
         return;
@@ -95,7 +95,8 @@ fn credited(
         entity: id,
         definition: e.definition,
         owner: e.owner,
-        killer: killer.filter(|&k| k != Owner::Nobody),
+        killer: lethal.map(|l| l.owner).filter(|&k| k != Owner::Nobody),
+        source: lethal.map(|l| l.source),
     });
     // Abilities hear of the death and its casts end; units other than heroes drop items.
     crate::abilities::reactions::death(ctx, state, id);

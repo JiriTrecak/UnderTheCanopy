@@ -1,7 +1,7 @@
 {
   "id": "ability.beetles.lock-shields",
   "name": "Lock Shields",
-  "description": "Toggle. Plant the tower shield and lock its clamps: the Shieldbearer cannot move and attacks 25% slower, but gains 6 armor and takes 40% less piercing damage. Interlocking Shields raises this to 10 armor and 55% less piercing damage.",
+  "description": "Toggle. Plant the tower shield and lock its clamps: the Shieldbearer cannot move and attacks 25% slower, but gains 4 armor and takes 30% less piercing damage. Interlocking Shields raises this to 7 armor and 45% less piercing damage.",
   "activation": "targeted",
   "persistent": {
     "durationTicks": 144000,
@@ -13,12 +13,12 @@
   },
   "ranks": [
     {
-      "armor": 6,
-      "pierce": 600
+      "armor": 4,
+      "pierce": 700
     },
     {
-      "armor": 10,
-      "pierce": 450
+      "armor": 7,
+      "pierce": 550
     }
   ],
   "targeting": {

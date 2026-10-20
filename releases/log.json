@@ -19,9 +19,14 @@
       "Ant heroes and the Major stand larger on the field, and every ant weapon lands with its own hit effect",
       "Every beetle spell now shows its cast: casters wind up over a turning brass gear or arc glyph, hero spells raise pillars of fire and substance light, and lightning, steam and shock rings land with weight",
       "The Hornbreaker has his own spell effects: a dust-throwing Horn Rush, a gold Steadfast aura and a furnace-lit Colossus form",
-      "Beetle heroes stand larger on the field, as tall as the ant heroes"
+      "Beetle heroes stand larger on the field, as tall as the ant heroes",
+      "Computer opponents now play with personalities: some rush you early, some expand and out-produce you, some race up the tiers, and the rest play a steady all-round game",
+      "Computer heroes save mana for their ultimates, so Unbottled, Overdose, Exodus and the other ultimates now appear in matches against the computer",
+      "Balance: Raider pairs cost 150 amber and hit harder; the General is sturdier and War Column stronger; Lock Shields, Overclock, Forgefall and Horn Rush are toned down"
     ],
-    "fixed": [],
+    "fixed": [
+      "Computer Shieldbearers no longer lock their shields from afar and stand rooted behind their own army"
+    ],
     "knownIssues": []
   },
   "releases": [

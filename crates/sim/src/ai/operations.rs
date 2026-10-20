@@ -331,8 +331,12 @@ pub fn strategy(b: &mut Beat) {
     let minutes = tick / 2400;
     // After twenty minutes the numbers alone decide, so matches come to a head.
     let late = minutes >= 20;
-    let wanted =
-        (rules.army.minimum + minutes).min((rules.army.maximum / 2).max(rules.army.minimum));
+    let rushing = tick < rules.rush_until;
+    let wanted = if rushing {
+        rules.army.minimum
+    } else {
+        (rules.army.minimum + minutes).min((rules.army.maximum / 2).max(rules.army.minimum))
+    };
     // Late on, an army that stopped growing is as big as it gets: the economy fields no
     // more than its own target (which follows the workers), and nothing in training means
     // it cannot afford more. Waiting for the numbers would farm camps for the rest of the
@@ -364,7 +368,7 @@ pub fn strategy(b: &mut Beat) {
     let ready = |target: &Known| {
         let count = f.army.len() as u32;
         let stronger = || power >= enemy_army(target.p) * 1.2;
-        full || (count >= wanted && (late || stronger()))
+        full || (count >= wanted && (late || rushing || stronger()))
             || (stalled && count >= rules.army.minimum && stronger())
     };
     let contested: Vec<crate::catalog::Def> = catalog
@@ -485,7 +489,7 @@ pub fn strategy(b: &mut Beat) {
     };
     // A colony whose fields run dry cannot wait for its hero's experience or a well: the
     // army clears the camp holding the next field as soon as it is a match for it.
-    if let Some(e) = field.filter(|e| e.guard > 0.0)
+    if let Some(e) = field.filter(|e| e.guard > 0.0 && !rushing)
         && f.army.len() as u32 >= rules.army.minimum
         && e.guard * f64::from(rules.army.camp_permille) <= power * 1000.0
         && let Some(c) = f
@@ -581,8 +585,8 @@ pub fn strategy(b: &mut Beat) {
     }
     if let Some(&target) = buildings.first()
         && ready(target)
-        && !best.is_some_and(|c| c.unlocks)
-        && (level >= 3 || best.is_none() || xp_needed == 0)
+        && (rushing || !best.is_some_and(|c| c.unlocks))
+        && (level >= 3 || best.is_none() || xp_needed == 0 || rushing)
     {
         assault(s, target);
         s.plan.reason = "Use the trained army to pressure known enemy infrastructure".into();
@@ -590,10 +594,11 @@ pub fn strategy(b: &mut Beat) {
     }
     // Late, or with a full army, and no enemy building known: finding the enemy comes
     // before farming camps for experience, so a won match is finished.
-    let search = buildings.is_empty() && (late || full);
+    let search =
+        buildings.is_empty() && (late || full || (rushing && f.army.len() as u32 >= wanted));
     if hero.is_some()
         && let Some(c) = best
-        && (c.unlocks || (xp_needed > 0 && !search))
+        && ((c.unlocks && !rushing) || (xp_needed > 0 && !search))
     {
         mission(
             f,

@@ -6,7 +6,7 @@
   "icon": "asset.portraits.units.ants-raider",
   "selectionClass": "army",
   "body": {
-    "maxHp": 170,
+    "maxHp": 185,
     "armor": 1,
     "armorType": "heavy"
   },
@@ -16,7 +16,7 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 7,
+      "damage": 8,
       "damageType": "melee",
       "range": 0.6,
       "cooldownTicks": 36,
@@ -56,7 +56,7 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 160
+        "amount": 150
       }
     ],
     "workTicks": 960,

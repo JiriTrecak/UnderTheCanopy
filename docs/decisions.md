@@ -790,3 +790,33 @@ Jiri asked for the whole ant race at once: every unit, building, ability and res
   | Beetles vs ants | 3–1, 29.8 |
 
 - **Open for Jiri:** every kit and number above is Claude's; the tunnel margin, throughput and speed are first guesses, and whether a player may switch routing off stays open.
+
+## D75. Computer personalities and the AI league (2026-10-20, Jiri: strategies, rushes, "100 matches in parallel … no overpowered units" — review: felt)
+
+Jiri asked for computer players with strategies of their own (a rush, a defensive or expanding macro game, tech transitions) and for balance measured across many matches at once, with deeper analytics than wins.
+
+- **Styles** (`crates/sim/src/ai/rules.rs`, `AiStyle`): every computer player plays one of four, chosen from the match seed per player (the same on every peer; tools may set it with `World::set_ai_style`). All read the same race data; none names a unit. A style turns the existing knobs and weights the recruits by their `level`:
+
+  | Style | Workers (target/most) | Army floor | Invests at | Other |
+  |---|---|---|---|---|
+  | Standard | 16/28 | 6 | 4 fighters | as before |
+  | Rush | 10/18 | 5 | 10 fighters | level-1 recruits ×4, level 3+ ×¼; for its first 12 minutes it attacks at its floor without creeping or waiting to outmatch what it saw, ignores camps that guard resources, searches out the enemy; a producer per 3 fighters; 5 fighters per spare worker |
+  | Expand | 22/36 | 8 | 5 fighters | claims a second field at 14 workers, whatever the first holds; engages only at 1.25× |
+  | Tech | 16/28 | 7 | 2 fighters | recruits weighted by level² (up to 16×) |
+
+- **Ultimates keep their mana** (`ai/powers.rs`): a hero's ability unlocked latest (past level 1) that is learned and ready but short of mana reserves its cost; cheaper spells wait. Before, heroes spent every point on cheap spells, and the Coilkeeper's Unbottled and the Royal Alchemist's Overdose were never cast in 256 AI sides.
+- **Shieldbearers** lock their shields only in melee contact (AI threat radius 7 → 3): locked from seven cells they stood rooted behind every advance.
+- **The league** (`crates/sim/examples/ai_league.rs`): many matches on the skirmish maps in parallel (128 forty-minute matches in about seven minutes on 16 cores), cycling every race and style pairing. Its report: win rates by race, style, race × style and map; how fast styles win and lose; per unit, trained per match, enemy value killed per value trained (lethal blows credited to the striking unit's kind; deaths now carry their source entity), losses and the win rate of sides that fielded many; heroes' win rates and final levels; casts per ability. `--json` writes every match.
+- **Balance from the league** (128 forty-minute matches per round; "mixed" counts ant–beetle matches only):
+
+  | Round | Change | Mixed: ants–beetles–draws | Kill value per value trained, ants / beetles |
+  |---|---|---|---|
+  | 1 | styles; Rush attacks | 20–20–24 | 1.01 / 1.07 |
+  | 2 | ultimates keep mana; Shieldbearers lock in contact | 15–33–16 | 0.89 / 1.31 |
+  | 3 | Exodus gets the AI's reinforce intent; General 900 health, 44 damage, 4 armor; Raider 8 damage | 14–24–26 | 0.91 / 1.21 |
+  | 4 | Raider 185 health; Overclock 30/45/60%; Forgefall 200/300 | 14–28–22 | 0.93 / 1.19 |
+  | 5 | Lock Shields 4 armor and 30% less piercing (7 and 45% with Interlocking Shields); War Column 10/15/20% | 19–28–17 | 0.97 / 1.15 |
+  | 6 | Horn Rush every 14 s (was 10); Raider pair 150 amber | 19–24–21 | 0.90 / 1.22 |
+
+  Round 6 overall: ants 47%, beetles 53% of decided sides; styles 38–61% (Tech 61, Standard 58, Expand 43, Rush 38), each style winning and losing after 25–30 minutes. A rush is held by a defended base: in 56 matches with a rushing side, no rush won before minute 16 (computer opponents always defend, so an undefended rush is not measured here). Heroes, by side-matches fielding them: General 45%, Queen 51%, Royal Alchemist 54%, Coilkeeper 37%, Forgemaster 65%, Hornbreaker 66%. A hero's win rate is confounded by when it is recruited (the first hero follows display order), so these are signals for the next pass, not verdicts.
+- **Open for Jiri:** the styles' numbers and their per-match choice from the seed (a lobby choice of opponent style is for later); a third of matches still reach the 40-minute cap undecided, mostly ant sides that trade evenly but do not finish; the beetle heroes' lead.

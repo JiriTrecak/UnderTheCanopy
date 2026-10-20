@@ -50,7 +50,7 @@
           "ai": {
             "preference": "enemy",
             "intervalTicks": 20,
-            "threatRadius": 7
+            "threatRadius": 3
           }
         }
       ]

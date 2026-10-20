@@ -12,21 +12,21 @@
     {
       "range": 20,
       "mana": 55,
-      "cooldown": 400,
+      "cooldown": 560,
       "damage": 90,
       "stun": 40
     },
     {
       "range": 20,
       "mana": 55,
-      "cooldown": 400,
+      "cooldown": 560,
       "damage": 140,
       "stun": 60
     },
     {
       "range": 20,
       "mana": 55,
-      "cooldown": 400,
+      "cooldown": 560,
       "damage": 190,
       "stun": 80
     }
