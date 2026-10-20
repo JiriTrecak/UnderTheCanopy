@@ -1,7 +1,8 @@
 //! The block editor (D80): a map is shaped as columns of blocks, 4 × 4 cells each, and
-//! its heights, water and closed cells are made from them. This first version is the
-//! blockout alone, to get the feel: raise and lower, set a level, paint a kind, ramps and
-//! diagonal cuts, drawn as blocks. The generated look comes later.
+//! its heights, water and closed cells are made from them: raise and lower, set a level,
+//! paint a kind, ramps dragged from top to foot, diagonal cuts, kinds painted cell by
+//! cell, and the face each cliff takes. Block tools work on a dragged box or along a
+//! brush stroke. The Generated view (G) shows the world the biome makes of the blocks.
 //!
 //! Every edit changes the blocks, makes the map's grids from them (`Blocks::apply`) and
 //! becomes one undo step: the blocks and closed cells whole, heights and water as patches
@@ -15,9 +16,11 @@ use crate::map::view::{Out, matrices, navigate, pick, project, step};
 use crate::theme::*;
 use crate::widgets::eyebrow;
 use canopy_content::map::MAP_HALO;
-use canopy_content::map::blocks::{BLOCK, Block, BlockKind, Blocks, Cut, MAX_LEVEL};
+use canopy_content::map::blocks::{
+    BLOCK, Block, BlockKind, Blocks, Cut, MAX_LEVEL, RAMP_DIRECTIONS, ramp_direction,
+};
 use egui::{Color32, Rect, RichText, Sense, Stroke as Line, Ui, pos2};
-use glam::Vec3;
+use glam::{Vec2, Vec3};
 
 /// The block editor's tools.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -29,19 +32,25 @@ pub enum BlockTool {
     Level,
     /// The dragged area to the chosen kind.
     Paint,
-    /// Ramps (Shift: back to ground).
+    /// A ramp dragged from its top to its foot (Shift: back to ground).
     Ramp,
     /// A diagonal cut at the clicked corner (again or Shift: removed).
     Cut,
+    /// Kinds painted cell by cell (Shift: back to the block's own).
+    Cells,
+    /// The face the cliffs under the blocks take (Shift: the biome's own).
+    Face,
 }
 
 impl BlockTool {
-    const ALL: [BlockTool; 5] = [
+    const ALL: [BlockTool; 7] = [
         BlockTool::Raise,
         BlockTool::Level,
         BlockTool::Paint,
         BlockTool::Ramp,
         BlockTool::Cut,
+        BlockTool::Cells,
+        BlockTool::Face,
     ];
 
     pub fn named(name: &str) -> Option<Self> {
@@ -57,6 +66,8 @@ impl BlockTool {
             BlockTool::Paint => "Paint",
             BlockTool::Ramp => "Ramp",
             BlockTool::Cut => "Cut",
+            BlockTool::Cells => "Cells",
+            BlockTool::Face => "Face",
         }
     }
 
@@ -67,6 +78,8 @@ impl BlockTool {
             BlockTool::Paint => egui::Key::E,
             BlockTool::Ramp => egui::Key::R,
             BlockTool::Cut => egui::Key::T,
+            BlockTool::Cells => egui::Key::C,
+            BlockTool::Face => egui::Key::F,
         }
     }
 
@@ -75,28 +88,79 @@ impl BlockTool {
             BlockTool::Raise => "Drag over blocks to raise them a level (Shift lowers)",
             BlockTool::Level => "Drag from a block: the area takes its level",
             BlockTool::Paint => "Drag over blocks to make them the chosen kind",
-            BlockTool::Ramp => "Drag over blocks at a cliff's top to make ramps (Shift removes)",
+            BlockTool::Ramp => {
+                "Drag from the top of a cliff down to its foot: the ramp falls that way, the brush wide (Shift removes)"
+            }
             BlockTool::Cut => "Click near a block's corner to cut it diagonally (again removes)",
+            BlockTool::Cells => {
+                "Paint kinds cell by cell, for outlines at any angle (Shift clears)"
+            }
+            BlockTool::Face => {
+                "Drag over the blocks above a cliff to choose its face (Shift: the biome's)"
+            }
+        }
+    }
+
+    /// Whether the tool works along a stroke rather than a box.
+    fn strokes(self, brush: bool) -> bool {
+        match self {
+            BlockTool::Ramp | BlockTool::Cells => true,
+            BlockTool::Cut => false,
+            _ => brush,
         }
     }
 }
 
+/// A drag in progress: the column it began on, the one it is over, and its stroke.
+#[derive(Debug, Clone)]
+pub struct Drag {
+    pub from: (i32, i32),
+    pub to: (i32, i32),
+    pub path: Vec<[f32; 2]>,
+}
+
 /// The block editor's state in a map's session.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct State {
     pub tool: BlockTool,
+    /// The kind Paint and Cells lay down.
     pub kind: BlockKind,
-    /// The column a drag began on, and where it is now.
-    pub drag: Option<((i32, i32), (i32, i32))>,
+    pub cell_kind: BlockKind,
+    /// The face Face gives.
+    pub style: u8,
+    /// Block tools follow a brush stroke instead of a box (B).
+    pub brush: bool,
+    /// The brush's radius: blocks for block tools (0: one block), cells for Cells.
+    pub radius: u8,
+    pub cell_radius: u8,
+    pub drag: Option<Drag>,
     /// Show the world generated from the blocks instead of the blocks (G).
     pub generated: bool,
+    /// The names of the biome's faces (face style 1 onwards).
+    pub faces: Vec<String>,
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self {
+            tool: BlockTool::default(),
+            kind: BlockKind::default(),
+            cell_kind: BlockKind::Ice,
+            style: 1,
+            brush: false,
+            radius: 1,
+            cell_radius: 2,
+            drag: None,
+            generated: false,
+            faces: Vec::new(),
+        }
+    }
 }
 
 /// The map's blocks, when it has them.
 pub fn blocks_of(session: &Session) -> Option<Blocks> {
     let map = session.map.as_ref()?;
-    let terrain = &map.authoring.terrain;
-    Blocks::decode(terrain.blocks.as_ref()?, terrain.size).ok()
+    Blocks::of(&map.authoring.terrain)?.ok()
 }
 
 /// Changes the map's blocks with `change`, makes its grids from them and returns the undo
@@ -114,10 +178,11 @@ fn commit(
         terrain.heights.0.clone(),
         terrain.water_heights.0.clone(),
         terrain.blocks.clone(),
+        terrain.block_paint.clone(),
     );
     change(&mut blocks);
     blocks.apply(terrain);
-    if terrain.blocks == before.2 {
+    if terrain.blocks == before.2 && terrain.block_paint == before.3 {
         return None;
     }
     let vertices = terrain.vertices();
@@ -139,6 +204,15 @@ fn commit(
             bytes: terrain.blocked.clone().unwrap_or_default().0,
         },
     ];
+    if let Some(paint) = &terrain.block_paint {
+        commands.push(Command::Grid {
+            document: format!("{root}/terrain/block-paint.grid"),
+            element: Sample::U8,
+            width: span,
+            height: span,
+            bytes: paint.0.clone(),
+        });
+    }
     for (file, old, new) in [
         ("terrain/heights.grid", &before.0, &terrain.heights.0),
         (
@@ -187,26 +261,158 @@ pub struct BlockOp {
     pub level: Option<u8>,
     /// Cut: the world point (x, z) whose nearest corner of `to` is cut.
     pub point: Option<[f32; 2]>,
+    /// The stroke in world cells (x, z): a brush tool's line, a ramp from its top to its
+    /// foot, the cells painted (or with `fill`, the outline filled).
+    pub path: Vec<[f32; 2]>,
+    /// Block tools follow `path` instead of the box.
+    pub brush: bool,
+    /// The brush's radius: blocks for block tools, cells for Cells.
+    pub radius: f32,
+    /// Cells: fill the polygon `path` instead of painting along it.
+    pub fill: bool,
+    /// Face: the face style.
+    pub style: u8,
+}
+
+impl BlockOp {
+    /// An op over the box `from`–`to`.
+    pub fn new(tool: BlockTool, from: (i32, i32), to: (i32, i32)) -> Self {
+        Self {
+            tool,
+            from,
+            to,
+            reverse: false,
+            kind: BlockKind::Ground,
+            level: None,
+            point: None,
+            path: Vec::new(),
+            brush: false,
+            radius: 1.0,
+            fill: false,
+            style: 0,
+        }
+    }
+}
+
+/// The distance from `p` to the polyline `path`.
+fn to_path(p: Vec2, path: &[[f32; 2]]) -> f32 {
+    let points: Vec<Vec2> = path.iter().map(|q| Vec2::from_array(*q)).collect();
+    match points.as_slice() {
+        [] => f32::MAX,
+        [only] => p.distance(*only),
+        _ => points
+            .windows(2)
+            .map(|w| {
+                let (a, b) = (w[0], w[1]);
+                let ab = b - a;
+                let t = ((p - a).dot(ab) / ab.length_squared().max(1e-6)).clamp(0.0, 1.0);
+                p.distance(a + ab * t)
+            })
+            .fold(f32::MAX, f32::min),
+    }
+}
+
+/// Whether `p` lies inside the polygon `path`.
+fn inside(p: Vec2, path: &[[f32; 2]]) -> bool {
+    let mut odd = false;
+    let n = path.len();
+    for i in 0..n {
+        let (a, b) = (path[i], path[(i + n - 1) % n]);
+        if (a[1] > p.y) != (b[1] > p.y) && p.x < (b[0] - a[0]) * (p.y - a[1]) / (b[1] - a[1]) + a[0]
+        {
+            odd = !odd;
+        }
+    }
+    odd
+}
+
+/// The centre of column (`x`, `z`) in world cells.
+fn centre(x: i32, z: i32) -> Vec2 {
+    let b = BLOCK as f32;
+    let halo = MAP_HALO as f32;
+    Vec2::new((x as f32 + 0.5) * b - halo, (z as f32 + 0.5) * b - halo)
+}
+
+/// The columns an op works on: its box, or those within its brush of its stroke.
+pub fn footprint(blocks: &Blocks, op: &BlockOp) -> Vec<(i32, i32)> {
+    if !op.tool.strokes(op.brush) || op.path.is_empty() {
+        return area(op.from, op.to).collect();
+    }
+    let reach = op.radius.max(0.0) * BLOCK as f32 + BLOCK as f32 * 0.5;
+    let path = if op.tool == BlockTool::Ramp && op.path.len() > 1 {
+        vec![op.path[0], op.path[op.path.len() - 1]]
+    } else {
+        op.path.clone()
+    };
+    let (lo, hi) = path.iter().fold(
+        (Vec2::splat(f32::MAX), Vec2::splat(f32::MIN)),
+        |(lo, hi), p| (lo.min(Vec2::from_array(*p)), hi.max(Vec2::from_array(*p))),
+    );
+    let (x0, z0) = blocks.column_at(lo.x - reach, lo.y - reach);
+    let (x1, z1) = blocks.column_at(hi.x + reach, hi.y + reach);
+    area((x0, z0), (x1, z1))
+        .filter(|&(x, z)| blocks.get(x, z).is_some() && to_path(centre(x, z), &path) <= reach)
+        .collect()
+}
+
+/// The cells Cells paints: within its radius of the stroke, or inside the filled outline.
+fn cell_footprint(blocks: &Blocks, op: &BlockOp) -> Vec<(i32, i32)> {
+    let halo = MAP_HALO as i32;
+    let n = blocks.cells() as i32;
+    let reach = op.radius.max(0.5);
+    let (lo, hi) = op.path.iter().fold(
+        (Vec2::splat(f32::MAX), Vec2::splat(f32::MIN)),
+        |(lo, hi), p| (lo.min(Vec2::from_array(*p)), hi.max(Vec2::from_array(*p))),
+    );
+    if op.path.is_empty() {
+        return Vec::new();
+    }
+    let pad = if op.fill { 0.0 } else { reach + 1.0 };
+    let (x0, x1) = ((lo.x - pad).floor() as i32, (hi.x + pad).ceil() as i32);
+    let (z0, z1) = ((lo.y - pad).floor() as i32, (hi.y + pad).ceil() as i32);
+    let mut out = Vec::new();
+    for z in z0..=z1 {
+        for x in x0..=x1 {
+            let (cx, cz) = (x + halo, z + halo);
+            if cx < 0 || cz < 0 || cx >= n || cz >= n {
+                continue;
+            }
+            let p = Vec2::new(x as f32 + 0.5, z as f32 + 0.5);
+            let hit = if op.fill {
+                inside(p, &op.path)
+            } else {
+                to_path(p, &op.path) <= reach
+            };
+            if hit {
+                out.push((cx, cz));
+            }
+        }
+    }
+    out
 }
 
 /// The step `op` makes of the session's blocks (none when nothing changes).
 pub fn apply(session: &mut Session, op: &BlockOp) -> Option<crate::tabs::Edit> {
     let blocks = blocks_of(session)?;
     let start = blocks.at(op.from.0, op.from.1);
-    let (from, to, reverse) = (op.from, op.to, op.reverse);
+    let reverse = op.reverse;
     let label = match op.tool {
         BlockTool::Raise if reverse => "Lower blocks",
         BlockTool::Raise => "Raise blocks",
         BlockTool::Level => "Level blocks",
         BlockTool::Paint => "Paint blocks",
         BlockTool::Ramp if reverse => "Remove ramps",
-        BlockTool::Ramp => "Ramps",
+        BlockTool::Ramp => "Ramp",
         BlockTool::Cut => "Cut a block",
+        BlockTool::Cells if reverse => "Clear painted cells",
+        BlockTool::Cells => "Paint cells",
+        BlockTool::Face => "Cliff face",
     };
+    let columns = footprint(&blocks, op);
     let current = blocks.clone();
     commit(session, label, current, |blocks| match op.tool {
         BlockTool::Raise => {
-            for (x, z) in area(from, to) {
+            for &(x, z) in &columns {
                 if let Some(mut b) = blocks.get(x, z) {
                     b.level = if reverse {
                         b.level.saturating_sub(1)
@@ -219,7 +425,7 @@ pub fn apply(session: &mut Session, op: &BlockOp) -> Option<crate::tabs::Edit> {
         }
         BlockTool::Level => {
             let level = op.level.unwrap_or(start.level).min(MAX_LEVEL);
-            for (x, z) in area(from, to) {
+            for &(x, z) in &columns {
                 if let Some(mut b) = blocks.get(x, z) {
                     b.level = level;
                     blocks.set(x, z, b);
@@ -227,28 +433,16 @@ pub fn apply(session: &mut Session, op: &BlockOp) -> Option<crate::tabs::Edit> {
             }
         }
         BlockTool::Paint => {
-            for (x, z) in area(from, to) {
+            for &(x, z) in &columns {
                 if let Some(mut b) = blocks.get(x, z) {
                     b.kind = op.kind;
                     blocks.set(x, z, b);
                 }
             }
         }
-        BlockTool::Ramp => {
-            for (x, z) in area(from, to) {
-                if let Some(mut b) = blocks.get(x, z) {
-                    b.kind = if reverse {
-                        BlockKind::Ground
-                    } else {
-                        BlockKind::Ramp
-                    };
-                    b.cut = Cut::None;
-                    blocks.set(x, z, b);
-                }
-            }
-        }
+        BlockTool::Ramp => ramp(blocks, op, &columns),
         BlockTool::Cut => {
-            let (x, z) = to;
+            let (x, z) = op.to;
             if let (Some(mut b), Some(p)) = (blocks.get(x, z), op.point) {
                 let halo = MAP_HALO as f32;
                 let u = (p[0] + halo) / BLOCK as f32 - x as f32;
@@ -267,7 +461,95 @@ pub fn apply(session: &mut Session, op: &BlockOp) -> Option<crate::tabs::Edit> {
                 blocks.set(x, z, b);
             }
         }
+        BlockTool::Cells => {
+            let kind = (!reverse).then_some(op.kind);
+            for (cx, cz) in cell_footprint(blocks, op) {
+                blocks.paint_cell(cx, cz, kind);
+            }
+        }
+        BlockTool::Face => {
+            for &(x, z) in &columns {
+                if let Some(mut b) = blocks.get(x, z) {
+                    b.style = if reverse { 0 } else { op.style };
+                    blocks.set(x, z, b);
+                }
+            }
+        }
     })
+}
+
+/// A ramp over `columns`: from the stroke's top (its first point) towards its foot, one
+/// level down, as one region; a diagonal ramp's outer corners are cut so its ends and
+/// sides run straight. A click makes one ramp block that finds its own way down.
+fn ramp(blocks: &mut Blocks, op: &BlockOp, columns: &[(i32, i32)]) {
+    if op.reverse {
+        for &(x, z) in columns {
+            if let Some(mut b) = blocks.get(x, z)
+                && b.kind == BlockKind::Ramp
+            {
+                b.kind = BlockKind::Ground;
+                b.ramp = 0;
+                b.cut = Cut::None;
+                blocks.set(x, z, b);
+            }
+        }
+        return;
+    }
+    let (first, last) = match op.path.as_slice() {
+        [first, .., last] => (Vec2::from_array(*first), Vec2::from_array(*last)),
+        _ => (centre(op.from.0, op.from.1), centre(op.to.0, op.to.1)),
+    };
+    let fall = last - first;
+    let dir = if fall.length() < BLOCK as f32 * 0.75 {
+        0
+    } else {
+        ramp_direction(fall.x, fall.y)
+    };
+    let (tx, tz) = blocks.column_at(first.x, first.y);
+    let level = op.level.unwrap_or(blocks.at(tx, tz).level).max(1);
+    for &(x, z) in columns {
+        if let Some(mut b) = blocks.get(x, z) {
+            b.kind = BlockKind::Ramp;
+            b.level = level;
+            b.ramp = dir;
+            b.cut = Cut::None;
+            blocks.set(x, z, b);
+        }
+    }
+    if dir == 0 {
+        return;
+    }
+    let (dx, dz) = RAMP_DIRECTIONS[(dir - 1) as usize];
+    if dx == 0 || dz == 0 {
+        return;
+    }
+    let ours = |b: &Blocks, x: i32, z: i32| {
+        b.get(x, z)
+            .is_some_and(|n| n.kind == BlockKind::Ramp && n.level == level && n.ramp == dir)
+    };
+    let mut cuts = Vec::new();
+    for &(x, z) in columns {
+        // A corner where neither neighbour beside it is ramp is a tooth of the staircase
+        // the blocks make of a diagonal: those up and down the fall first, then the sides.
+        for (cx, cz) in [(dx, dz), (-dx, -dz), (dx, -dz), (-dx, dz)] {
+            if !ours(blocks, x + cx, z) && !ours(blocks, x, z + cz) {
+                let cut = match (cx, cz) {
+                    (-1, -1) => Cut::NorthWest,
+                    (1, -1) => Cut::NorthEast,
+                    (1, 1) => Cut::SouthEast,
+                    _ => Cut::SouthWest,
+                };
+                cuts.push((x, z, cut));
+                break;
+            }
+        }
+    }
+    for (x, z, cut) in cuts {
+        if let Some(mut b) = blocks.get(x, z) {
+            b.cut = cut;
+            blocks.set(x, z, b);
+        }
+    }
 }
 
 /// The rectangle of 4-byte samples where `new` differs from `old`, as a patch.
@@ -362,7 +644,47 @@ fn panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
             .size(11.0)
             .color(MUTED),
     );
-    if session.blocks.tool == BlockTool::Paint {
+    let tool = session.blocks.tool;
+    if !matches!(tool, BlockTool::Cut) {
+        ui.add_space(8.0);
+        ui.label(eyebrow("Brush"));
+        if !matches!(tool, BlockTool::Ramp | BlockTool::Cells) {
+            ui.checkbox(&mut session.blocks.brush, "Brush stroke   B")
+                .on_hover_text("Off: drag a box of blocks");
+        }
+        if tool == BlockTool::Cells {
+            let mut r = session.blocks.cell_radius;
+            ui.add(egui::Slider::new(&mut r, 1..=16).text("cells  [ ]"));
+            session.blocks.cell_radius = r;
+        } else if session.blocks.brush || tool == BlockTool::Ramp {
+            let mut r = session.blocks.radius;
+            ui.add(egui::Slider::new(&mut r, 0..=8).text("blocks  [ ]"));
+            session.blocks.radius = r;
+        }
+    }
+    if tool == BlockTool::Face {
+        ui.add_space(8.0);
+        ui.label(eyebrow("Face"));
+        let faces = session.blocks.faces.clone();
+        if faces.is_empty() {
+            ui.label(
+                RichText::new("This biome has one cliff face.")
+                    .size(11.0)
+                    .color(MUTED),
+            );
+        }
+        for (n, name) in faces.iter().enumerate() {
+            let style = n as u8 + 1;
+            if ui
+                .selectable_label(session.blocks.style == style, name)
+                .clicked()
+            {
+                session.blocks.style = style;
+            }
+        }
+    }
+    if matches!(tool, BlockTool::Paint | BlockTool::Cells) {
+        let cells = tool == BlockTool::Cells;
         ui.add_space(8.0);
         ui.label(eyebrow("Kind"));
         for (n, kind) in BlockKind::ALL.iter().enumerate() {
@@ -372,7 +694,7 @@ fn panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
             let c = mesh::color(Block {
                 level: 2,
                 kind: *kind,
-                cut: Cut::None,
+                ..Block::default()
             });
             let swatch = Color32::from_rgb(
                 (c[0].powf(1.0 / 2.2) * 255.0) as u8,
@@ -382,12 +704,17 @@ fn panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
             ui.horizontal(|ui| {
                 let (rect, _) = ui.allocate_exact_size(egui::vec2(14.0, 14.0), Sense::hover());
                 ui.painter().rect_filled(rect, 2, swatch);
-                let on = session.blocks.kind == *kind;
+                let chosen = if cells {
+                    &mut session.blocks.cell_kind
+                } else {
+                    &mut session.blocks.kind
+                };
+                let on = *chosen == *kind;
                 if ui
                     .selectable_label(on, format!("{}  {}", kind.name(), n + 1))
                     .clicked()
                 {
-                    session.blocks.kind = *kind;
+                    *chosen = *kind;
                 }
             });
         }
@@ -488,6 +815,19 @@ pub fn show(ui: &mut Ui, session: &mut Session, texture: Option<egui::TextureId>
                 session.blocks.tool = tool;
             }
         }
+        if input.key_pressed(egui::Key::B) {
+            session.blocks.brush = !session.blocks.brush;
+        }
+        let grow = i32::from(input.key_pressed(egui::Key::CloseBracket))
+            - i32::from(input.key_pressed(egui::Key::OpenBracket));
+        if grow != 0 {
+            let state = &mut session.blocks;
+            if state.tool == BlockTool::Cells {
+                state.cell_radius = (state.cell_radius as i32 + grow).clamp(1, 16) as u8;
+            } else {
+                state.radius = (state.radius as i32 + grow).clamp(0, 8) as u8;
+            }
+        }
         for (n, key) in [
             egui::Key::Num1,
             egui::Key::Num2,
@@ -495,13 +835,18 @@ pub fn show(ui: &mut Ui, session: &mut Session, texture: Option<egui::TextureId>
             egui::Key::Num4,
             egui::Key::Num5,
             egui::Key::Num6,
+            egui::Key::Num7,
         ]
         .iter()
         .enumerate()
         {
             if input.key_pressed(*key) && BlockKind::ALL[n] != BlockKind::Ramp {
-                session.blocks.kind = BlockKind::ALL[n];
-                session.blocks.tool = BlockTool::Paint;
+                if session.blocks.tool == BlockTool::Cells {
+                    session.blocks.cell_kind = BlockKind::ALL[n];
+                } else {
+                    session.blocks.kind = BlockKind::ALL[n];
+                    session.blocks.tool = BlockTool::Paint;
+                }
             }
         }
     }
@@ -553,44 +898,159 @@ pub fn show(ui: &mut Ui, session: &mut Session, texture: Option<egui::TextureId>
         }
     };
 
-    match (session.blocks.drag, column) {
-        (Some((from, _)), Some((c, _))) => {
-            session.blocks.drag = Some((from, c));
-            outline(from, c, SOFT);
+    let state = &session.blocks;
+    let strokes = state.tool.strokes(state.brush);
+    let radius = if state.tool == BlockTool::Cells {
+        state.cell_radius as f32
+    } else {
+        state.radius as f32
+    };
+    // A ring on the ground around `at`, `r` cells across.
+    let ring = |at: Vec3, r: f32, color: Color32| {
+        let points: Vec<_> = (0..=32)
+            .filter_map(|k| {
+                let a = k as f32 / 32.0 * std::f32::consts::TAU;
+                let p = Vec2::new(at.x, at.z) + Vec2::from_angle(a) * r;
+                let y = crate::map::tools::ground_at(map, p.x, p.y) + 0.1;
+                project(view_projection, rect, Vec3::new(p.x, y, p.y))
+            })
+            .collect();
+        if points.len() > 2 {
+            painter.add(egui::Shape::line(points, Line::new(1.5, color)));
         }
-        (None, Some((c, _))) => outline(c, c, Color32::from_white_alpha(200)),
+    };
+    let preview = |op: &BlockOp, color: Color32| {
+        if op.tool == BlockTool::Cells {
+            return;
+        }
+        for (x, z) in footprint(&blocks, op) {
+            outline((x, z), (x, z), color);
+        }
+    };
+    let mut op = BlockOp {
+        tool: state.tool,
+        reverse: shift,
+        kind: if state.tool == BlockTool::Cells {
+            state.cell_kind
+        } else {
+            state.kind
+        },
+        point: column.map(|(_, p)| [p.x, p.z]),
+        brush: state.brush,
+        radius,
+        style: state.style,
+        ..BlockOp::new(state.tool, (0, 0), (0, 0))
+    };
+    match (&session.blocks.drag, column) {
+        (Some(drag), Some((c, p))) => {
+            let mut drag = drag.clone();
+            drag.to = c;
+            let last = drag.path.last().copied().unwrap_or([p.x, p.z]);
+            if Vec2::from_array(last).distance(Vec2::new(p.x, p.z)) > 0.75 {
+                drag.path.push([p.x, p.z]);
+            }
+            op.from = drag.from;
+            op.to = drag.to;
+            op.path = drag.path.clone();
+            if strokes {
+                preview(&op, SOFT);
+            } else {
+                outline(drag.from, c, SOFT);
+            }
+            if op.tool == BlockTool::Cells {
+                for q in &op.path {
+                    let y = crate::map::tools::ground_at(map, q[0], q[1]);
+                    ring(
+                        Vec3::new(q[0], y, q[1]),
+                        radius.max(0.5),
+                        Color32::from_white_alpha(60),
+                    );
+                }
+            }
+            if op.tool == BlockTool::Ramp
+                && let (Some(a), Some(b)) = (
+                    drag.path.first().and_then(|q| {
+                        let y = crate::map::tools::ground_at(map, q[0], q[1]) + 0.3;
+                        project(view_projection, rect, Vec3::new(q[0], y, q[1]))
+                    }),
+                    project(view_projection, rect, p + Vec3::Y * 0.3),
+                )
+            {
+                painter.arrow(a, b - a, Line::new(2.5, Color32::from_rgb(255, 214, 120)));
+            }
+            session.blocks.drag = Some(drag);
+        }
+        (None, Some((c, p))) => match state.tool {
+            BlockTool::Cells => ring(p, radius.max(0.5), Color32::from_white_alpha(200)),
+            _ if strokes && state.tool != BlockTool::Ramp => {
+                op.from = c;
+                op.to = c;
+                op.path = vec![[p.x, p.z]];
+                preview(&op, Color32::from_white_alpha(200));
+            }
+            _ => outline(c, c, Color32::from_white_alpha(200)),
+        },
         _ => {}
     }
 
     if response.drag_started_by(egui::PointerButton::Primary)
-        && let Some((c, _)) = column
+        && let Some((c, p)) = column
     {
-        session.blocks.drag = Some((c, c));
+        session.blocks.drag = Some(Drag {
+            from: c,
+            to: c,
+            path: vec![[p.x, p.z]],
+        });
     }
     let mut finished = None;
     if response.drag_stopped_by(egui::PointerButton::Primary) {
         finished = session.blocks.drag.take();
     } else if response.clicked_by(egui::PointerButton::Primary)
-        && let Some((c, _)) = column
+        && let Some((c, p)) = column
     {
-        finished = Some((c, c));
+        finished = Some(Drag {
+            from: c,
+            to: c,
+            path: vec![[p.x, p.z]],
+        });
     }
-    if let Some((from, to)) = finished {
-        let op = BlockOp {
-            tool: session.blocks.tool,
-            from,
-            to,
-            reverse: shift,
-            kind: session.blocks.kind,
-            level: None,
-            point: column.map(|(_, p)| [p.x, p.z]),
-        };
+    if let Some(drag) = finished {
+        op.from = drag.from;
+        op.to = drag.to;
+        op.path = drag.path;
         out.edits.extend(apply(session, &op));
     }
-    if let Some((c, _)) = column
+    if let Some((c, p)) = column
         && let Some(b) = blocks.get(c.0, c.1)
     {
-        let text = format!("level {}  ·  {}", b.level, b.kind.name());
+        let halo = MAP_HALO as f32;
+        let cell = ((p.x + halo).floor() as i32, (p.z + halo).floor() as i32);
+        let mut text = format!("level {}  ·  {}", b.level, b.kind.name());
+        if let Some(kind) = blocks.painted(cell.0, cell.1) {
+            text += &format!("  ·  cell {}", kind.name());
+        }
+        if b.kind == BlockKind::Ramp && b.ramp > 0 {
+            const NAMES: [&str; 8] = [
+                "east",
+                "south-east",
+                "south",
+                "south-west",
+                "west",
+                "north-west",
+                "north",
+                "north-east",
+            ];
+            text += &format!("  ·  falls {}", NAMES[(b.ramp - 1) as usize]);
+        }
+        if b.style > 0 {
+            let name = session
+                .blocks
+                .faces
+                .get(b.style as usize - 1)
+                .cloned()
+                .unwrap_or_else(|| format!("face {}", b.style));
+            text += &format!("  ·  {name}");
+        }
         painter.text(
             rect.left_bottom() + egui::vec2(12.0, -12.0),
             egui::Align2::LEFT_BOTTOM,

@@ -1,9 +1,9 @@
 // A map's dressing (dressing.rs): the generated cliffs, textured by projection from the
 // three axes and lit like scenery, frosted with the biome; and decals, flat cut-outs on the
-// ground, lit with an upward normal, faded under ice.
+// ground, lit with an upward normal, faded under ice. Decal sheets carry their own frost.
 
 struct CliffInfo {
-    // 1 / tile, roughness, has normal map, 0
+    // 1 / tile, roughness, has normal map, frost share
     params: vec4f,
 }
 
@@ -76,7 +76,7 @@ fn fs_cliff(in: CliffOut) -> SceneOut {
     surface.position = in.world;
     surface.normal = n;
     // Grooves between stones are dark in both the albedo and the bounce they get.
-    surface.albedo = frosted(albedo.rgb, n, in.world, frost_amount()) * mix(0.35, 1.0, in.occlusion);
+    surface.albedo = frosted(albedo.rgb, n, in.world, frost_amount() * cliff.params.w) * mix(0.35, 1.0, in.occlusion);
     surface.roughness = cliff.params.y;
     surface.metalness = 0.0;
     surface.occlusion = in.occlusion;
@@ -137,7 +137,7 @@ fn fs_decal(in: DecalOut) -> SceneOut {
     var surface: Surface;
     surface.position = in.world;
     surface.normal = up;
-    surface.albedo = frosted(albedo, up, in.world, frost_amount() * (1.0 - d.under) * 0.6);
+    surface.albedo = albedo;
     surface.roughness = mix(0.8, 0.2, d.under);
     surface.metalness = 0.0;
     surface.occlusion = 1.0;

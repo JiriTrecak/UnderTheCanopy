@@ -1,8 +1,10 @@
 {
   "id": "asset.terrain.frost-ice-normal",
-  "name": "Pond ice · normal/height",
+  "name": "Pond ice · albedo/roughness · normal/height",
   "kind": "terrain-material",
   "tags": [
+    "lookdev",
+    "imagegen",
     "lookdev",
     "imagegen",
     "frost"

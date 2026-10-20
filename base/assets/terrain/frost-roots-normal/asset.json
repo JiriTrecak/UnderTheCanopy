@@ -1,0 +1,20 @@
+{
+  "id": "asset.terrain.frost-roots-normal",
+  "name": "Frosted roots face · albedo/roughness · normal/height",
+  "kind": "terrain-material",
+  "tags": [
+    "lookdev",
+    "imagegen",
+    "lookdev",
+    "imagegen",
+    "frost"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin"
+    }
+  ],
+  "license": "Original ImageGen terrain texture for Under the Canopy (gpt-image-2), made seamless and packed by tools/terrain/pack_ground.py."
+}

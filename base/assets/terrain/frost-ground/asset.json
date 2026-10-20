@@ -1,8 +1,10 @@
 {
   "id": "asset.terrain.frost-ground",
-  "name": "Frosted soil · albedo/roughness",
+  "name": "Frost snow · albedo/roughness · albedo/roughness",
   "kind": "terrain-material",
   "tags": [
+    "lookdev",
+    "imagegen",
     "lookdev",
     "imagegen",
     "frost"

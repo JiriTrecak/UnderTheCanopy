@@ -288,9 +288,15 @@ impl Shell {
             let blocks = crate::world::blocks_of(session)
                 .ok_or("The map has no blocks yet: start with op flat or blockout")?;
             let column = |p: [f32; 2]| Blocks::column_at(&blocks, p[0], p[1]);
-            let from = args.from.ok_or("from is needed")?;
+            let points = args.points.clone().unwrap_or_default();
+            let from = args
+                .from
+                .or_else(|| points.first().copied())
+                .ok_or("from (or points) is needed")?;
             let to = args.to.unwrap_or(from);
+            let clear = args.kind.as_deref() == Some("none");
             let kind = match args.kind.as_deref().unwrap_or("ground") {
+                "none" => BlockKind::Ground,
                 "ground" => BlockKind::Ground,
                 "wall" | "forest" => BlockKind::Wall,
                 "rock" => BlockKind::Rock,
@@ -299,7 +305,7 @@ impl Shell {
                 "ice" => BlockKind::Ice,
                 other => {
                     return Err(format!(
-                        "No kind {other}: ground, wall, rock, shallow, deep or ice"
+                        "No kind {other}: ground, wall, rock, shallow, deep, ice or none"
                     ));
                 }
             };
@@ -312,22 +318,37 @@ impl Shell {
                 "unramp" => (BlockTool::Ramp, true),
                 "cut" => (BlockTool::Cut, false),
                 "uncut" => (BlockTool::Cut, true),
+                "cells" | "fill" => (BlockTool::Cells, clear),
+                "uncells" => (BlockTool::Cells, true),
+                "face" => (BlockTool::Face, false),
+                "unface" => (BlockTool::Face, true),
                 other => {
                     return Err(format!(
-                        "No op {other}: flat, blockout, raise, lower, level, paint, ramp, unramp, cut, uncut"
+                        "No op {other}: flat, blockout, raise, lower, level, paint, face, unface, ramp, unramp, cut, uncut, cells, uncells, fill"
                     ));
                 }
             };
+            let path = if tool == BlockTool::Ramp {
+                vec![from, to]
+            } else {
+                points.clone()
+            };
+            if tool == BlockTool::Cells && path.is_empty() {
+                return Err("cells and fill need points".into());
+            }
             crate::world::apply(
                 session,
                 &BlockOp {
-                    tool,
-                    from: column(from),
-                    to: column(to),
                     reverse,
                     kind,
                     level: args.level,
                     point: args.corner,
+                    brush: !points.is_empty(),
+                    path,
+                    radius: args.radius.unwrap_or(1.0),
+                    fill: op == "fill",
+                    style: args.style.unwrap_or(1),
+                    ..BlockOp::new(tool, column(from), column(to))
                 },
             )
         };

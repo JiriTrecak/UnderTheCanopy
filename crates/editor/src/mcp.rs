@@ -227,17 +227,29 @@ pub struct MapBlocksArgs {
     /// The map: its id or its package path.
     pub map: String,
     /// What the block editor's tools do (D80): `flat` (blocks out the map as level-1
-    /// ground), `blockout` (blocks from its heights), raise, lower, level, paint, ramp,
-    /// unramp, cut, uncut.
+    /// ground), `blockout` (blocks from its heights), raise, lower, level, paint, face,
+    /// unface, ramp, unramp, cut, uncut, cells, uncells, fill.
+    /// - raise, lower, level, paint, face, unface: the blocks of the box `from`–`to`, or
+    ///   with `points`, those within `radius` blocks of that line.
+    /// - ramp: from its top (`from`) to its foot (`to`), `radius` blocks to each side
+    ///   (default 1); it falls one level that way. A diagonal ramp's teeth are cut.
+    /// - cells, uncells: kinds painted cell by cell within `radius` cells of `points`;
+    ///   fill: the cells inside the outline `points`, painted `kind` (`none` clears).
     pub op: String,
     /// The area's corners in world cells (x, z); `to` defaults to `from`. Every block
     /// (4 × 4 cells) the rectangle touches is changed.
     pub from: Option<[f32; 2]>,
     pub to: Option<[f32; 2]>,
-    /// level: the level (0–7; flat ground is 1, one level is 3 m).
+    /// A line or outline in world cells (x, z).
+    pub points: Option<Vec<[f32; 2]>>,
+    /// Brush radius: blocks for block ops, cells for cells.
+    pub radius: Option<f32>,
+    /// level: the level (0–7; flat ground is 1, one level is 3 m); ramp: its top level.
     pub level: Option<u8>,
-    /// paint: ground, wall (forest floor), rock, shallow, deep or ice.
+    /// paint, cells, fill: ground, wall (forest floor), rock, shallow, deep, ice (or none).
     pub kind: Option<String>,
+    /// face: the biome's face style (1 onwards; 0 is the biome's cliff).
+    pub style: Option<u8>,
     /// cut: the corner of the block at `to` nearest this world point is cut away.
     pub corner: Option<[f32; 2]>,
 }

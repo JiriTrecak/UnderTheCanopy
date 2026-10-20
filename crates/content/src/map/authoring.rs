@@ -144,6 +144,11 @@ pub struct TerrainData {
     /// (`terrain/blocks.grid`); the simulation never reads it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub blocks: Option<Grid>,
+    /// Kinds painted cell by cell over the blocks, `u8` per cell (halo included): 0 keeps
+    /// the column's kind, otherwise kind + 1 ([`super::blocks`]). Optional
+    /// (`terrain/block-paint.grid`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub block_paint: Option<Grid>,
 }
 
 /// The saved scene: committed terrain plus placed objects. Procedural layers are editor-only
@@ -416,6 +421,13 @@ impl TerrainData {
             .map(|g| super::blocks::Blocks::decode(g, self.size))
         {
             errors.push(grid_error("blocks", message));
+        }
+        if let Some(Err(message)) = self
+            .block_paint
+            .as_ref()
+            .map(|g| g.exactly(self.cell_count()))
+        {
+            errors.push(grid_error("blockPaint", message));
         }
         let profiles = self.water_profiles.len();
         match self.water_flow.exactly(self.cell_count() * 4) {

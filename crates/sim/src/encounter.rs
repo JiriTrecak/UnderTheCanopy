@@ -363,6 +363,7 @@ pub fn sandbox(entities: Vec<Placement>, camps: Vec<Camp>) -> UtcMap {
                 blocked: None,
                 overlay: None,
                 blocks: None,
+                block_paint: None,
             },
             version: Version,
             objects: Vec::new(),

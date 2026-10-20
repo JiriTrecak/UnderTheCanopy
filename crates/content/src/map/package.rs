@@ -195,6 +195,9 @@ pub fn load_package(package: &Package) -> Result<UtcMap, Errors> {
         let columns = span / super::blocks::BLOCK;
         terrain.blocks = Some(read_grid("blocks", Element::Rgba8, (columns, columns)));
     }
+    if package.read_bytes(&grid_path("block-paint")).is_ok() {
+        terrain.block_paint = Some(read_grid("block-paint", Element::U8, (span, span)));
+    }
     for (i, layer) in terrain.paint.iter_mut().enumerate() {
         let n = i + 1;
         layer.weights = read_grid(
@@ -335,6 +338,9 @@ pub fn write(map: &UtcMap, id: &str, version: &str, dir: &Path) -> std::io::Resu
     if let Some(blocks) = &terrain.blocks {
         let columns = span / super::blocks::BLOCK;
         write_grid("blocks", blocks, Element::Rgba8, (columns, columns))?;
+    }
+    if let Some(paint) = &terrain.block_paint {
+        write_grid("block-paint", paint, Element::U8, (span, span))?;
     }
     for (i, layer) in terrain.paint.iter().enumerate() {
         let n = i + 1;

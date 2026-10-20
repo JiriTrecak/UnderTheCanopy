@@ -223,13 +223,43 @@ pub struct BlockLook {
     /// walks there).
     #[serde(default)]
     pub frame_rise: f32,
+    /// The cliffs blocks of face style 0 fall as.
     pub cliff: Option<CliffLook>,
+    /// The other faces a map's blocks can choose for their cliffs (style 1 onwards).
+    #[serde(default)]
+    pub faces: Vec<Face>,
+    /// A low crusted rim where walkable ground meets ice at its level.
+    pub shore: Option<Shore>,
     /// Flat cut-outs pressed onto the ground.
     #[serde(default)]
     pub decals: Vec<DecalScatter>,
     /// Scenery scattered by zone.
     #[serde(default)]
     pub scatter: Vec<Scatter>,
+}
+
+/// A cliff face a map's blocks can choose (their face style).
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Face {
+    /// Shown in the editor.
+    pub name: String,
+    pub cliff: CliffLook,
+}
+
+/// The shore's rim: a low bank of crust and stones along the ice, in the cliff's material.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Shore {
+    /// Metres it stands above the ground.
+    pub height: f32,
+    /// Metres across.
+    pub width: f32,
+    /// Size of its stones (metres).
+    pub stone: f32,
+    /// Loose stones per metre along it.
+    #[serde(default)]
+    pub rubble: f32,
 }
 
 /// The generated cliff faces and rubble.
@@ -244,6 +274,23 @@ pub struct CliffLook {
     pub roughness: f32,
     /// Size of the stone blocks the face is broken into (metres).
     pub stone: f32,
+    /// How the stones stretch along the face, up it and out of it (1 each: round; a
+    /// small middle value lays them out flat, as roots or strata).
+    #[serde(default = "grain")]
+    pub grain: [f32; 3],
+    /// How much the face hangs out over its foot at the top (0: none).
+    #[serde(default)]
+    pub overhang: f32,
+    /// How far the face wanders in and out along its length (metres), so a cliff drawn
+    /// in straight blocks runs as an organic line.
+    #[serde(default)]
+    pub wander: f32,
+    /// How much of the biome's frost the face takes (1: all).
+    #[serde(default = "one")]
+    pub frost: f32,
+    /// Rubble on ramps: the smallest and largest stone (metres).
+    #[serde(default = "ramp_stones")]
+    pub ramp_stones: [f32; 2],
     /// How far stones stand out of the face (metres).
     pub relief: f32,
     /// Horizontal run of the face per metre of drop (0.85: about 50°).
@@ -256,12 +303,28 @@ pub struct CliffLook {
     pub ramp_rubble: u32,
     /// Frosted spikes in tufts out of closed ground, in the cliff's material.
     pub spikes: Option<Spikes>,
+    /// Roots that wind across the face and spill out over its foot, in its material.
+    pub roots: Option<Roots>,
 }
 
-/// Tufts of spikes (frozen stalks, ice) in closed ground.
+/// Roots across a face.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Roots {
+    /// Roots per metre of face.
+    pub density: f32,
+    /// Thickness at the root's start (metres, radius), and its length.
+    pub radius: [f32; 2],
+    pub length: [f32; 2],
+}
+
+/// Tufts of spikes (frozen stalks, ice) in closed ground, or along a face's top.
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Spikes {
+    /// Where they grow: the frame's edge, or for a face, the ground at its top.
+    #[serde(default = "frame_edge")]
+    pub zone: Zone,
     /// Tufts tried per 100 m² (about half grow).
     pub density: f32,
     /// Height range (metres) and width at the base.
@@ -277,6 +340,8 @@ pub enum Zone {
     Frame,
     /// Closed ground near walkable ground.
     FrameEdge,
+    /// Closed ground right at its edge (within a metre and a half).
+    Rim,
     /// Walkable ground near closed ground.
     GroundEdge,
     /// Open walkable ground.
@@ -314,10 +379,24 @@ pub struct DecalScatter {
     /// 0–1: how much they gather in clumps instead of spreading evenly.
     #[serde(default)]
     pub clump: f32,
+    /// Only where the blocks chose this face style (cliff tops and feet of that face).
+    pub face: Option<u8>,
 }
 
 fn talus() -> f32 {
     0.85
+}
+
+fn ramp_stones() -> [f32; 2] {
+    [0.35, 1.1]
+}
+
+fn grain() -> [f32; 3] {
+    [1.0, 1.0 / 1.6, 1.0]
+}
+
+fn frame_edge() -> Zone {
+    Zone::FrameEdge
 }
 
 fn no_tint() -> [f32; 3] {
@@ -339,6 +418,12 @@ pub struct Scatter {
     pub elevation: f32,
     /// At most this many on a map.
     pub max: Option<u32>,
+    /// Turned to face out of closed ground (a model's front is −z), and moved this many
+    /// metres out over the edge: plants and roots that hang over the rim.
+    #[serde(default)]
+    pub reach: Option<f32>,
+    /// Only where the blocks chose this face style.
+    pub face: Option<u8>,
 }
 
 /// A biome's ambient motes.

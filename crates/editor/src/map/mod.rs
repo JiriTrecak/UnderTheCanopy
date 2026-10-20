@@ -47,10 +47,7 @@ pub fn build(
     blocks: bool,
 ) -> Result<Scene, String> {
     let blockout = blocks
-        .then(|| {
-            let terrain = &map.authoring.terrain;
-            canopy_content::map::blocks::Blocks::decode(terrain.blocks.as_ref()?, terrain.size).ok()
-        })
+        .then(|| canopy_content::map::blocks::Blocks::of(&map.authoring.terrain)?.ok())
         .flatten()
         .map(|b| crate::world::mesh::mesh(&b));
     // Otherwise the world generated from the blocks, as the game builds it (D80).

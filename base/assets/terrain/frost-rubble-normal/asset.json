@@ -1,8 +1,10 @@
 {
   "id": "asset.terrain.frost-rubble-normal",
-  "name": "Frosted rubble · normal/height",
+  "name": "Frost rubble · albedo/roughness · normal/height",
   "kind": "terrain-material",
   "tags": [
+    "lookdev",
+    "imagegen",
     "lookdev",
     "imagegen",
     "frost"

@@ -68,15 +68,12 @@ fn frost_amount() -> f32 {
     return frame.haze_range.z;
 }
 
-// Rime over `albedo` on a surface facing `n` at `world`: upward faces whiten with a soft,
-// patchy edge (a hash of where they are), sides keep a dusting.
+// Rime over `albedo` on a surface facing `n`: upward faces whiten, sides keep a dusting.
 fn frosted(albedo: vec3f, n: vec3f, world: vec3f, amount: f32) -> vec3f {
     if (amount <= 0.0) {
         return albedo;
     }
-    let p = floor(world * 2.3);
-    let spot = fract(sin(dot(p, vec3f(12.9898, 78.233, 37.719))) * 43758.5453);
-    let cover = smoothstep(0.3 + 0.35 * spot, 0.95, n.y) * 0.8 + 0.08;
+    let cover = smoothstep(0.35, 0.95, n.y) * 0.75 + 0.08;
     let rime = vec3f(0.80, 0.85, 0.90);
     return mix(albedo, rime, clamp(amount * cover, 0.0, 1.0));
 }

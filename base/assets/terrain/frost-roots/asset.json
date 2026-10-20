@@ -1,0 +1,30 @@
+{
+  "id": "asset.terrain.frost-roots",
+  "name": "Frosted roots face · albedo/roughness · albedo/roughness",
+  "kind": "terrain-material",
+  "tags": [
+    "lookdev",
+    "imagegen",
+    "lookdev",
+    "imagegen",
+    "frost"
+  ],
+  "resources": [
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original ImageGen terrain texture for Under the Canopy (gpt-image-2), made seamless and packed by tools/terrain/pack_ground.py."
+}

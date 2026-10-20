@@ -4,8 +4,18 @@
 //! however the look generated from them changes.
 //!
 //! `terrain/blocks.grid` holds one 4-byte sample per column (halo included): level, kind,
-//! diagonal cut, and a byte kept zero. Columns run from world −[`MAP_HALO`], `BLOCK` cells
-//! apart; a 480-cell map is 128 × 128 columns.
+//! diagonal cut with a ramp's direction in its high half, and the face style its cliffs
+//! take. Columns run from world −[`MAP_HALO`], `BLOCK` cells apart; a 480-cell map is
+//! 128 × 128 columns.
+//!
+//! `terrain/block-paint.grid`, optional, paints kinds cell by cell over the columns (one
+//! byte per cell: 0 keeps the column's kind, otherwise kind + 1), so an outline that is
+//! only a change of kind, such as a shore or a frame's edge, can run at any angle; levels
+//! stay whole columns.
+//!
+//! A ramp is a region: connected ramp columns of one level and one direction slope as one
+//! plane, falling one level along their direction across the whole region, so ramps can be
+//! wide, long and diagonal.
 
 use super::{DRY_WATER_HEIGHT, MAP_HALO, TerrainData, grid::Grid};
 
@@ -126,12 +136,39 @@ impl Cut {
     }
 }
 
+/// The eight ways a ramp can fall, clockwise from +x (east); a ramp's direction byte is
+/// one of these plus one, or 0 for a ramp that finds its own way down.
+pub const RAMP_DIRECTIONS: [(i32, i32); 8] = [
+    (1, 0),
+    (1, 1),
+    (0, 1),
+    (-1, 1),
+    (-1, 0),
+    (-1, -1),
+    (0, -1),
+    (1, -1),
+];
+
+/// The ramp direction byte (1–8) nearest a vector, 0 when it is zero.
+pub fn ramp_direction(dx: f32, dz: f32) -> u8 {
+    if dx == 0.0 && dz == 0.0 {
+        return 0;
+    }
+    let a = dz.atan2(dx).rem_euclid(std::f32::consts::TAU);
+    ((a / std::f32::consts::FRAC_PI_4).round() as u8 % 8) + 1
+}
+
 /// One column.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Block {
     pub level: u8,
     pub kind: BlockKind,
     pub cut: Cut,
+    /// For a ramp: which way it falls (1–8, [`RAMP_DIRECTIONS`]), or 0 to find its own.
+    pub ramp: u8,
+    /// The face style of the cliffs below this column (0: the biome's cliff; otherwise one
+    /// of the biome's faces, from 1).
+    pub style: u8,
 }
 
 impl Block {
@@ -149,6 +186,26 @@ pub struct Blocks {
     /// Columns per side (halo included).
     pub side: u32,
     pub columns: Vec<Block>,
+    /// Kinds painted per cell over the columns (`side × BLOCK` per side; 0 keeps the
+    /// column's kind, otherwise kind + 1), when the map has any.
+    pub paint: Option<Vec<u8>>,
+}
+
+/// One ramp region's plane: heights fall one level from `s0` to `s1` along `dir` (in
+/// cells from the halo's corner).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct RampPlane {
+    pub dir: [f32; 2],
+    pub s0: f32,
+    pub s1: f32,
+}
+
+impl RampPlane {
+    /// How far down the ramp a point is (0 at the top, 1 at the foot), in cells.
+    pub fn fall(&self, cx: f32, cz: f32) -> f32 {
+        let s = cx * self.dir[0] + cz * self.dir[1];
+        ((s - self.s0) / (self.s1 - self.s0).max(0.01)).clamp(0.0, 1.0)
+    }
 }
 
 impl Blocks {
@@ -159,7 +216,46 @@ impl Blocks {
         Self {
             side,
             columns: vec![Block::ground(1); (side * side) as usize],
+            paint: None,
         }
+    }
+
+    /// The blocks of a map's terrain, with its painted cells, when it has blocks.
+    pub fn of(terrain: &TerrainData) -> Option<Result<Self, String>> {
+        let grid = terrain.blocks.as_ref()?;
+        Some(Self::decode(grid, terrain.size).and_then(|mut blocks| {
+            if let Some(paint) = &terrain.block_paint {
+                let cells = (blocks.side * BLOCK) as usize;
+                blocks.paint = Some(paint.exactly(cells * cells)?.to_vec());
+            }
+            Ok(blocks)
+        }))
+    }
+
+    /// Cells per side of the paint layer.
+    pub fn cells(&self) -> u32 {
+        self.side * BLOCK
+    }
+
+    /// The kind painted on cell (`cx`, `cz`), if any.
+    pub fn painted(&self, cx: i32, cz: i32) -> Option<BlockKind> {
+        let paint = self.paint.as_ref()?;
+        let n = self.cells() as i32;
+        let (x, z) = (cx.clamp(0, n - 1), cz.clamp(0, n - 1));
+        match paint[(z * n + x) as usize] {
+            0 => None,
+            k => Some(BlockKind::from_u8(k - 1)),
+        }
+    }
+
+    /// Paints cell (`cx`, `cz`) a kind, or clears it back to its column's (`None`).
+    pub fn paint_cell(&mut self, cx: i32, cz: i32, kind: Option<BlockKind>) {
+        let n = self.cells() as i32;
+        if cx < 0 || cz < 0 || cx >= n || cz >= n {
+            return;
+        }
+        let paint = self.paint.get_or_insert_with(|| vec![0; (n * n) as usize]);
+        paint[(cz * n + cx) as usize] = kind.map_or(0, |k| k as u8 + 1);
     }
 
     pub fn decode(grid: &Grid, size: u32) -> Result<Self, String> {
@@ -172,9 +268,12 @@ impl Blocks {
                 .map(|b| Block {
                     level: b[0].min(MAX_LEVEL),
                     kind: BlockKind::from_u8(b[1]),
-                    cut: Cut::from_u8(b[2]),
+                    cut: Cut::from_u8(b[2] & 0x0f),
+                    ramp: (b[2] >> 4).min(8),
+                    style: b[3],
                 })
                 .collect(),
+            paint: None,
         })
     }
 
@@ -182,7 +281,7 @@ impl Blocks {
         Grid(
             self.columns
                 .iter()
-                .flat_map(|b| [b.level, b.kind as u8, b.cut as u8, 0])
+                .flat_map(|b| [b.level, b.kind as u8, b.cut as u8 | (b.ramp << 4), b.style])
                 .collect(),
         )
     }
@@ -229,14 +328,112 @@ impl Blocks {
     }
 
     /// The effective column at a point (`u`, `v`) within column (`x`, `z`): itself, or
-    /// what its cut triangle takes.
+    /// what its cut triangle takes, with the kind painted on the cell there.
     pub fn sample(&self, x: i32, z: i32, u: f32, v: f32) -> Block {
         let block = self.at(x, z);
-        if block.cut.removes(u, v) {
+        let mut block = if block.cut.removes(u, v) {
             self.cut_fill(x, z, block.cut)
         } else {
             block
+        };
+        if block.kind != BlockKind::Ramp && self.paint.is_some() {
+            let b = BLOCK as i32;
+            let side = self.side as i32 - 1;
+            let cell =
+                |c: i32, f: f32| c.clamp(0, side) * b + ((f * b as f32) as i32).clamp(0, b - 1);
+            if let Some(kind) = self.painted(cell(x, u), cell(z, v))
+                && kind != BlockKind::Ramp
+            {
+                block.kind = kind;
+            }
         }
+        block
+    }
+
+    /// Every column's ramp plane (`None` off ramps): connected ramp columns of one level and
+    /// one direction share a plane that falls one level across them. A ramp left to find
+    /// its own way down falls towards its lowest side, one column at a time.
+    pub fn ramp_planes(&self) -> Vec<Option<RampPlane>> {
+        let side = self.side as i32;
+        let b = BLOCK as f32;
+        let mut planes = vec![None; self.columns.len()];
+        let mut seen = vec![false; self.columns.len()];
+        for start in 0..self.columns.len() {
+            let first = self.columns[start];
+            if first.kind != BlockKind::Ramp || seen[start] {
+                continue;
+            }
+            // The region: this column alone when it finds its own way, otherwise every
+            // ramp column joined to it at its level and direction.
+            let mut region = vec![start];
+            seen[start] = true;
+            if first.ramp != 0 {
+                let mut k = 0;
+                while k < region.len() {
+                    let i = region[k] as i32;
+                    let (x, z) = (i % side, i / side);
+                    for (dx, dz) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
+                        let (nx, nz) = (x + dx, z + dz);
+                        if nx < 0 || nz < 0 || nx >= side || nz >= side {
+                            continue;
+                        }
+                        let j = (nz * side + nx) as usize;
+                        let n = self.columns[j];
+                        if !seen[j]
+                            && n.kind == BlockKind::Ramp
+                            && n.level == first.level
+                            && n.ramp == first.ramp
+                        {
+                            seen[j] = true;
+                            region.push(j);
+                        }
+                    }
+                    k += 1;
+                }
+            }
+            let dir = if first.ramp != 0 {
+                let (dx, dz) = RAMP_DIRECTIONS[(first.ramp - 1) as usize];
+                let l = ((dx * dx + dz * dz) as f32).sqrt();
+                [dx as f32 / l, dz as f32 / l]
+            } else {
+                let i = start as i32;
+                let (dx, dz) = self.ramp_down(i % side, i / side);
+                [dx as f32, dz as f32]
+            };
+            // The plane spans the region's ramp ground along its direction: every column's
+            // corners but a cut one.
+            let (mut s0, mut s1) = (f32::MAX, f32::MIN);
+            for &i in &region {
+                let (x, z) = ((i as i32 % side) as f32, (i as i32 / side) as f32);
+                let cut = self.columns[i].cut.corner();
+                for (u, v) in [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0)] {
+                    if cut.is_some_and(|(cx, cz)| (cx > 0) == (u > 0.5) && (cz > 0) == (v > 0.5)) {
+                        continue;
+                    }
+                    let s = (x + u) * b * dir[0] + (z + v) * b * dir[1];
+                    s0 = s0.min(s);
+                    s1 = s1.max(s);
+                }
+            }
+            let plane = RampPlane { dir, s0, s1 };
+            for &i in &region {
+                planes[i] = Some(plane);
+            }
+        }
+        planes
+    }
+
+    /// A ramp column's height at (`u`, `v`) within it, on its plane.
+    pub fn ramp_height(&self, planes: &[Option<RampPlane>], x: i32, z: i32, u: f32, v: f32) -> f32 {
+        let block = self.at(x, z);
+        let top = BASE_HEIGHT + block.level as f32 * LEVEL_HEIGHT;
+        let side = self.side as i32 - 1;
+        let (cx, cz) = (x.clamp(0, side), z.clamp(0, side));
+        let Some(plane) = planes[(cz * self.side as i32 + cx) as usize] else {
+            return top;
+        };
+        let b = BLOCK as f32;
+        top - plane.fall((cx as f32 + u) * b, (cz as f32 + v) * b) * LEVEL_HEIGHT
     }
 
     /// For a ramp column: the direction (dx, dz) towards its lower side, the lowest
@@ -266,22 +463,21 @@ impl Blocks {
 
     /// The surface height a column makes at (`u`, `v`) within it (ground, bed under water).
     /// (`su`, `sv`) is the same point nudged inside the column, which decides the cut.
-    fn surface(&self, x: i32, z: i32, su: f32, sv: f32, u: f32, v: f32) -> f32 {
+    #[allow(clippy::too_many_arguments)]
+    fn surface(
+        &self,
+        planes: &[Option<RampPlane>],
+        x: i32,
+        z: i32,
+        su: f32,
+        sv: f32,
+        u: f32,
+        v: f32,
+    ) -> f32 {
         let block = self.sample(x, z, su, sv);
         let top = BASE_HEIGHT + block.level as f32 * LEVEL_HEIGHT;
         match block.kind {
-            BlockKind::Ramp => {
-                let (dx, dz) = self.ramp_down(x, z);
-                // 0 at the high edge, 1 at the low edge.
-                let t = if dx != 0 {
-                    if dx > 0 { u } else { 1.0 - u }
-                } else if dz > 0 {
-                    v
-                } else {
-                    1.0 - v
-                };
-                top - t * LEVEL_HEIGHT
-            }
+            BlockKind::Ramp => self.ramp_height(planes, x, z, u, v),
             BlockKind::Shallow => top - 0.7,
             BlockKind::Deep => top - 4.0,
             BlockKind::Ice => top - 0.15,
@@ -309,6 +505,7 @@ impl Blocks {
         let span = terrain.span();
         let mut heights = Vec::with_capacity((vertices * vertices * 4) as usize);
         let mut water = Vec::with_capacity((vertices * vertices * 4) as usize);
+        let planes = self.ramp_planes();
         let b = BLOCK as i32;
         for vz in 0..vertices as i32 {
             for vx in 0..vertices as i32 {
@@ -332,7 +529,7 @@ impl Blocks {
                         let (u, v) = (u.clamp(0.0, 1.0), v.clamp(0.0, 1.0));
                         // Sample just inside the column so a cut's diagonal edge is exact.
                         let (su, sv) = (u.clamp(0.02, 0.98), v.clamp(0.02, 0.98));
-                        h = h.max(self.surface(cx, cz, su, sv, u, v));
+                        h = h.max(self.surface(&planes, cx, cz, su, sv, u, v));
                         if let Some(level) = self.water(cx, cz, su, sv) {
                             w = Some(w.map_or(level, |o: f32| o.max(level)));
                         }
@@ -358,7 +555,15 @@ impl Blocks {
                             })
                         })
                         .map(|(cx, cz, u, v)| {
-                            self.surface(cx, cz, u.clamp(0.02, 0.98), v.clamp(0.02, 0.98), u, v)
+                            self.surface(
+                                &planes,
+                                cx,
+                                cz,
+                                u.clamp(0.02, 0.98),
+                                v.clamp(0.02, 0.98),
+                                u,
+                                v,
+                            )
                         })
                         .fold(f32::MAX, f32::min);
                 }
@@ -382,6 +587,7 @@ impl Blocks {
         terrain.water_heights = Grid(water);
         terrain.blocked = Some(Grid(blocked));
         terrain.blocks = Some(self.encode());
+        terrain.block_paint = self.paint.as_ref().map(|p| Grid(p.clone()));
     }
 
     /// Blocks that approximate an existing map: each column's level from its mean height,
@@ -537,6 +743,7 @@ mod tests {
             blocked: None,
             overlay: None,
             blocks: None,
+            block_paint: None,
         }
     }
 
@@ -579,6 +786,7 @@ mod tests {
                 level: 2,
                 kind: BlockKind::Ramp,
                 cut: Cut::None,
+                ..Block::default()
             },
         );
         assert_eq!(blocks.ramp_down(x, z), (1, 0));
@@ -608,6 +816,7 @@ mod tests {
                 level: 1,
                 kind: BlockKind::Wall,
                 cut: Cut::SouthEast,
+                ..Block::default()
             },
         );
         blocks.apply(&mut t);
@@ -623,6 +832,67 @@ mod tests {
     }
 
     #[test]
+    fn a_diagonal_ramp_region_falls_as_one_walkable_plane() {
+        let mut t = terrain(256);
+        let mut blocks = Blocks::flat(256);
+        // A plateau (level 2) north-west of a band of ramps running south-west to
+        // north-east, falling south-east to the plain.
+        for z in 10..50 {
+            for x in 10..50 {
+                let d = x + z;
+                if d < 58 {
+                    blocks.set(x, z, Block::ground(2));
+                } else if d < 62 {
+                    blocks.set(
+                        x,
+                        z,
+                        Block {
+                            level: 2,
+                            kind: BlockKind::Ramp,
+                            ramp: ramp_direction(1.0, 1.0),
+                            ..Block::default()
+                        },
+                    );
+                }
+            }
+        }
+        blocks.apply(&mut t);
+        // Along the diagonal through the band's middle, from plateau to plain.
+        let at = |k: u32| height(&t, k - MAP_HALO, k - MAP_HALO);
+        let (top, foot) = (at(100), at(140));
+        assert_eq!(top, BASE_HEIGHT + 2.0 * LEVEL_HEIGHT);
+        assert_eq!(foot, BASE_HEIGHT + LEVEL_HEIGHT);
+        for k in 100..140 {
+            let step = at(k) - at(k + 1);
+            assert!((-0.01..=0.9).contains(&step), "a step of {step} m at {k}");
+        }
+        // Across the band the plane is level: the same fall at two points on one line.
+        assert_eq!(height(&t, 110, 130), height(&t, 130, 110));
+    }
+
+    #[test]
+    fn painted_cells_take_their_kind_and_keep_the_level() {
+        let mut t = terrain(256);
+        let mut blocks = Blocks::flat(256);
+        let (x, z) = blocks.column_at(100.0, 100.0);
+        blocks.set(x, z, Block::ground(2));
+        let (cx, cz) = ((100 + MAP_HALO) as i32, (100 + MAP_HALO) as i32);
+        blocks.paint_cell(cx, cz, Some(BlockKind::Wall));
+        assert_eq!(blocks.sample(x, z, 0.1, 0.1).kind, BlockKind::Wall);
+        assert_eq!(blocks.sample(x, z, 0.1, 0.1).level, 2);
+        assert_eq!(blocks.sample(x, z, 0.6, 0.1).kind, BlockKind::Ground);
+        blocks.apply(&mut t);
+        let span = t.span();
+        let closed = |cx: u32, cz: u32| {
+            t.blocked.as_ref().unwrap().0[((cz + MAP_HALO) * span + cx + MAP_HALO) as usize] != 0
+        };
+        assert!(closed(100, 100));
+        assert!(!closed(101, 100));
+        let back = Blocks::of(&t).unwrap().unwrap();
+        assert_eq!(back.painted(cx, cz), Some(BlockKind::Wall));
+    }
+
+    #[test]
     fn blocks_survive_their_grid() {
         let mut blocks = Blocks::flat(256);
         blocks.set(
@@ -632,6 +902,8 @@ mod tests {
                 level: 5,
                 kind: BlockKind::Shallow,
                 cut: Cut::NorthEast,
+                ramp: 3,
+                style: 2,
             },
         );
         assert_eq!(Blocks::decode(&blocks.encode(), 256).unwrap(), blocks);

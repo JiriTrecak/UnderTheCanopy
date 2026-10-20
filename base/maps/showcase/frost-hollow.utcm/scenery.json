@@ -6,11 +6,11 @@
       "heightMode": "terrain",
       "id": "frost.0",
       "locked": false,
-      "scale": 1.89,
+      "scale": 1.8,
       "visible": true,
-      "x": 121.7,
+      "x": 123.5,
       "yaw": 0.6,
-      "z": 122.4
+      "z": 121.0
     },
     {
       "asset": "scenery.lookdev-mushrooms",
@@ -18,11 +18,11 @@
       "heightMode": "terrain",
       "id": "frost.1",
       "locked": false,
-      "scale": 0.84,
+      "scale": 1.7,
       "visible": true,
-      "x": 149.0,
+      "x": 150.0,
       "yaw": 1.2,
-      "z": 94.4
+      "z": 88.0
     },
     {
       "asset": "scenery.lookdev-mushrooms",
@@ -30,11 +30,11 @@
       "heightMode": "terrain",
       "id": "frost.2",
       "locked": false,
-      "scale": 0.7,
+      "scale": 1.4,
       "visible": true,
-      "x": 157.4,
+      "x": 163.0,
       "yaw": 2.6,
-      "z": 98.6
+      "z": 95.0
     }
   ]
 }

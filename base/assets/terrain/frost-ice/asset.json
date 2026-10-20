@@ -1,8 +1,10 @@
 {
   "id": "asset.terrain.frost-ice",
-  "name": "Pond ice · albedo/roughness",
+  "name": "Pond ice · albedo/roughness · albedo/roughness",
   "kind": "terrain-material",
   "tags": [
+    "lookdev",
+    "imagegen",
     "lookdev",
     "imagegen",
     "frost"

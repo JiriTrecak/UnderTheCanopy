@@ -1,16 +1,23 @@
 """Authors Frost Hollow, the block editor's look-dev scene (D80, the target frame
 `art/styles/target-frost-cliff.jpg`), through the editor's MCP tools: only what a person
-does with the block editor, raising, painting, ramps and cuts. Everything you see in it is
-generated from those blocks by the `frost-hollow` biome's recipe.
+does with the block editor, levels, kinds, a ramp, cells and faces. Everything you see in
+it is generated from those blocks by the `frost-hollow` biome's recipe.
 
-Run with the server up (`just mcp`): `python3 tools/maps/frost_hollow.py`, then save with
-the MCP `save` tool. It creates the map, so remove the package first to rebuild it.
+Run with the server up (`just mcp`): `python3 tools/maps/frost_hollow.py`. It creates the
+map, so remove the package first to rebuild it.
 
-The scene sits around (128, 128): a frosted plateau (level 2) whose east edge runs down a
-diagonal and then straight south, a frozen pond (level 1) east of it, a root bank across
-the plateau's north-west, a mushroom frame to the north-east, a leaf frame to the south-west
-and a rubble ramp at the cliff's corner down to the ice. Elsewhere the map is open ground
-for the start."""
+The scene, as Jiri drew it over the target, around (128, 128) seen from the south:
+- the top level (2) in the north-west, ending in a bank of roots (a cliff of the biome's
+  Roots face) with a closed band of roots at its foot;
+- a wide diagonal ramp down to the south-east, from the top level past the acorn;
+- the lower ground (level 1) at the same level as the frozen pond, its shore an outline at
+  a near-diagonal painted cell by cell;
+- a mushroom frame on the top level east of the ramp, a leaf frame in the south-west, a
+  rocky far bank beyond the pond.
+Elsewhere the map is open ground for the start in the west, framed by forest floor.
+
+Coordinates are world cells, found by mapping the target's pixels through the shot's
+camera (`--camera 128,128,0.7 --pitch 48`)."""
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import mcp
@@ -18,79 +25,56 @@ import mcp
 M = 'frost-hollow'
 c = mcp.Client()
 E = 0.05  # keeps an area inside the blocks it names
-# The layout is drawn at the warrior's scale in the target and scaled about it: K blocks
-# here for every block of the drawing, so the scene stands as large against a unit as the
-# target's does.
-K = 1.4
-AX, AZ = 128, 128
 
 
-def T(x, z):
-    """A drawing point, scaled about the warrior and snapped to the block lattice."""
-    s = lambda v, a: a + round((v - a) * K / 4) * 4
-    return s(x, AX), s(z, AZ)
-
-
-def blocks(op, x0, z0, x1, z1, **kw):
-    """`op` over the blocks covering drawing cells x0..x1, z0..z1."""
-    (x0, z0), (x1, z1) = T(x0, z0), T(x1, z1)
+def box(op, x0, z0, x1, z1, **kw):
+    """`op` over the blocks of world cells x0..x1, z0..z1 (block edges, multiples of 4)."""
     c.call('map_blocks', map=M, op=op, **{'from': [x0 + E, z0 + E]}, to=[x1 - E, z1 - E], **kw)
 
 
-def cut(x, z):
-    """Cuts the south-east corner of the block whose north-west corner is drawing (x, z)."""
-    x, z = T(x, z)
-    c.call('map_blocks', map=M, op='cut', **{'from': [x + 1, z + 1]}, corner=[x + 3.9, z + 3.9])
+def fill(kind, points):
+    """Paints the cells inside the outline `points` a kind."""
+    c.call('map_blocks', map=M, op='fill', points=points, kind=kind)
 
 
 c.call('create_map', id=M, name='Frost Hollow', size=256, biome='frost-hollow', folder='showcase')
 c.call('map_blocks', map=M, op='flat')
 
-# The frame everywhere around the scene; open ground in the west for the start.
-blocks('paint', -16, -16, 272, 272, kind='wall')
-blocks('paint', 8, 8, 72, 248, kind='ground')
+# Forest floor everywhere around the scene; open ground in the west for the start.
+box('paint', -16, -16, 272, 272, kind='wall')
+box('paint', 12, 12, 76, 244, kind='ground')
 
-# The pond, a level below the plateau.
-blocks('level', 136, 88, 164, 180, level=1)
-blocks('paint', 136, 88, 164, 180, kind='ice')
+# The lower ground south of the bank and east of the ramp.
+box('paint', 76, 108, 200, 180, kind='ground')
 
-# The plateau and the frame around it.
-blocks('level', 60, 72, 140, 180, level=2)
-blocks('paint', 76, 88, 140, 180, kind='ground')
-# Its east edge: a diagonal up to the north-east (one block east per block north, each
-# step's outer corner cut), then south, stepping west once.
-(ex, ez) = T(140, 124)
-for k in range(1, 5):
-    x0, z0 = ex, ez - 4 * k
-    x1 = ex + 4 * k
-    c.call('map_blocks', map=M, op='level', **{'from': [x0 + E, z0 + E]}, to=[x1 - E, z0 + 4 - E], level=2)
-    c.call('map_blocks', map=M, op='paint', **{'from': [x0 + E, z0 + E]}, to=[x1 - E, z0 + 4 - E], kind='ground')
-    c.call('map_blocks', map=M, op='cut', **{'from': [x1 - 3, z0 + 1]}, corner=[x1 - 0.1, z0 + 3.9])
-blocks('level', 136, 152, 140, 180, level=1)
-blocks('paint', 136, 152, 140, 180, kind='ice')
-cut(136, 148)
+# The top level: the north-west plateau and the ground at the ramp's head.
+box('level', 56, 64, 140, 108, level=2)
+box('paint', 60, 68, 136, 108, kind='ground')
+# The bank of roots along the plateau's south edge: its cliff takes the Roots face, and a
+# closed band of roots lies at its foot.
+box('face', 56, 96, 128, 108, style=1)
+box('paint', 76, 108, 128, 124, kind='wall')
+fill('ground', [[76, 120], [100, 125], [118, 123.5], [128, 121], [128, 124], [76, 124]])
 
-# A rubble ramp at the cliff's corner, down to the ice.
-blocks('ramp', 136, 124, 140, 128)
+# The mushroom frame on the top level east of the ramp, its cliffs roots too.
+box('level', 136, 64, 172, 100, level=2)
+box('paint', 136, 64, 172, 100, kind='wall')
+box('face', 136, 64, 172, 100, style=1)
 
-# The root bank west of the warrior; the mushroom frame north-east; the leaf frame
-# south-west; the far bank beyond the pond.
-blocks('paint', 84, 112, 124, 128, kind='wall')
-blocks('level', 136, 88, 152, 112, level=2)
-blocks('paint', 136, 88, 152, 112, kind='wall')
-blocks('paint', 60, 132, 108, 180, kind='wall')
-blocks('paint', 160, 88, 180, 180, kind='rock')
-# Corners cut so the frames' outlines run at 45° rather than in boxes.
-def cut_at(x, z, corner):
-    """Cuts the given corner (dx, dz in 0/1) of the block at drawing point (x, z)."""
-    x, z = T(x, z)
-    c.call('map_blocks', map=M, op='cut', **{'from': [x + 1, z + 1]}, corner=[x + 0.1 + 3.8 * corner[0], z + 0.1 + 3.8 * corner[1]])
-cut_at(84, 112, (0, 0))
-cut_at(84, 124, (0, 1))
-cut_at(120, 112, (1, 0))
-cut_at(104, 132, (1, 0))
-cut_at(104, 176, (1, 1))
-# One player: a sandbox scene with a warrior at the cliff, its start in the open west.
+# The ramp: wide and diagonal, from the plateau's corner down to the south-east.
+c.call('map_blocks', map=M, op='ramp', **{'from': [129, 95]}, to=[143, 116], radius=1.6, level=2)
+
+# The pond at the lower ground's level, its shore a near-diagonal outline; the rocky far
+# bank beyond it.
+fill('ice', [[170, 96], [164, 106], [158, 116], [147, 131], [139, 146], [136, 154],
+             [134, 176], [200, 176], [200, 96]])
+fill('rock', [[178, 96], [173, 110], [166, 130], [160, 150], [157, 176], [230, 176], [230, 96]])
+
+# The leaf frame in the south-west, its edge cell by cell.
+fill('wall', [[56, 133], [84, 133.5], [96, 135.5], [104, 141], [109, 148], [111, 158],
+              [112, 180], [56, 180]])
+
+# One player: a sandbox scene with a warrior at the ramp's foot, its start in the open west.
 D = 'maps/showcase/frost-hollow.utcm/map.json'
 c.call('edit', label='Frost Hollow: one player, a warrior', commands=[
     {'op': 'set', 'document': D, 'pointer': '/sandbox', 'value': True},
@@ -98,20 +82,19 @@ c.call('edit', label='Frost Hollow: one player, a warrior', commands=[
         'mainFort': 'start.player.1/main-fort', 'player': 1, 'setup': 'setup.ants', 'x': 41.5, 'z': 129.5}]},
     {'op': 'set', 'document': D, 'pointer': '/entities', 'value': [{
         'definition': 'unit.ants.warrior', 'id': 'frost.warrior', 'owner': 'player.1',
-        'position': {'x': 129.0, 'y': 131.0}, 'rotation': 200.0}]},
+        'position': {'x': 131.0, 'y': 131.0}, 'rotation': 200.0}]},
 ])
-# Landmarks placed by hand, as the editor's props place them: the acorn at the root
-# bank's end and the mushrooms north-east.
+# Landmarks placed by hand, as the editor's props place them: the acorn at the bank's end
+# by the ramp, mushrooms in their frame.
 SC = 'maps/showcase/frost-hollow.utcm/scenery.json'
 def obj(i, asset, x, z, scale, yaw=0.0):
-    x, z, scale = AX + (x - AX) * K, AZ + (z - AZ) * K, scale * K
     return {'asset': asset, 'elevation': 0.0, 'heightMode': 'terrain', 'id': 'frost.%d' % i, 'locked': False,
             'scale': scale, 'visible': True, 'x': x, 'yaw': yaw, 'z': z}
 c.call('edit', label='Frost Hollow: landmarks', commands=[
     {'op': 'set', 'document': SC, 'pointer': '/objects', 'value': [
-        obj(0, 'scenery.lookdev-acorn', 123.5, 124.0, 1.35, 0.6),
-        obj(1, 'scenery.lookdev-mushrooms', 143.0, 104.0, 0.6, 1.2),
-        obj(2, 'scenery.lookdev-mushrooms', 149.0, 107.0, 0.5, 2.6),
+        obj(0, 'scenery.lookdev-acorn', 123.5, 121.0, 1.8, 0.6),
+        obj(1, 'scenery.lookdev-mushrooms', 150.0, 88.0, 1.7, 1.2),
+        obj(2, 'scenery.lookdev-mushrooms', 163.0, 95.0, 1.4, 2.6),
     ]}])
 print(c.call('problems'))
 print(c.call('save'))

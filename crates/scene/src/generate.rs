@@ -17,7 +17,7 @@
 use canopy_content::map::blocks::{BLOCK, BlockKind, Blocks, LEVEL_HEIGHT};
 use canopy_content::map::{AuthoredObject, HeightMode, MAP_HALO, PaintLayer, UtcMap, grid::Grid};
 use canopy_render::dressing::{CliffMesh, CliffVertex, Decal, DecalBatch, DressingDesc};
-use canopy_render::environment::{BiomeConfig, BlockLook, Zone};
+use canopy_render::environment::{BiomeConfig, BlockLook, CliffLook, Roots, Shore, Spikes, Zone};
 use glam::{Vec2, Vec3};
 
 /// What the generator made: the map with its generated ground, the scenery it scattered
@@ -152,6 +152,63 @@ fn distance(span: usize, seed: impl Fn(usize) -> bool) -> Vec<f32> {
     d
 }
 
+/// [`distance`], with the label of the nearest seed carried along.
+fn distance_labeled(span: usize, seed: impl Fn(usize) -> Option<u8>) -> (Vec<f32>, Vec<u8>) {
+    let far = 1e6f32;
+    let mut label = vec![0u8; span * span];
+    let mut d: Vec<f32> = (0..span * span)
+        .map(|i| match seed(i) {
+            Some(l) => {
+                label[i] = l;
+                0.0
+            }
+            None => far,
+        })
+        .collect();
+    let (a, b) = (1.0f32, std::f32::consts::SQRT_2);
+    let relax = |d: &mut Vec<f32>, label: &mut Vec<u8>, i: usize, j: usize, w: f32| {
+        if d[j] + w < d[i] {
+            d[i] = d[j] + w;
+            label[i] = label[j];
+        }
+    };
+    for z in 0..span {
+        for x in 0..span {
+            let i = z * span + x;
+            if x > 0 {
+                relax(&mut d, &mut label, i, i - 1, a);
+            }
+            if z > 0 {
+                relax(&mut d, &mut label, i, i - span, a);
+                if x > 0 {
+                    relax(&mut d, &mut label, i, i - span - 1, b);
+                }
+                if x + 1 < span {
+                    relax(&mut d, &mut label, i, i - span + 1, b);
+                }
+            }
+        }
+    }
+    for z in (0..span).rev() {
+        for x in (0..span).rev() {
+            let i = z * span + x;
+            if x + 1 < span {
+                relax(&mut d, &mut label, i, i + 1, a);
+            }
+            if z + 1 < span {
+                relax(&mut d, &mut label, i, i + span, a);
+                if x + 1 < span {
+                    relax(&mut d, &mut label, i, i + span + 1, b);
+                }
+                if x > 0 {
+                    relax(&mut d, &mut label, i, i + span - 1, b);
+                }
+            }
+        }
+    }
+    (d, label)
+}
+
 /// Per-cell facts the zones are made from.
 struct Cells {
     span: usize,
@@ -162,6 +219,8 @@ struct Cells {
     to_top: Vec<f32>,
     to_foot: Vec<f32>,
     to_shore: Vec<f32>,
+    /// The face style of the nearest cliff (its upper column's).
+    face: Vec<u8>,
 }
 
 impl Cells {
@@ -172,6 +231,21 @@ impl Cells {
         (x >= 0.0 && z >= 0.0 && x < span && z < span).then(|| z as usize * self.span + x as usize)
     }
 
+    /// The way out of closed ground at cell `i` (down the distance to open ground).
+    fn outward(&self, i: usize) -> Vec2 {
+        let span = self.span;
+        let (x, z) = (i % span, i / span);
+        let at = |x: usize, z: usize| self.to_open[z.min(span - 1) * span + x.min(span - 1)];
+        let gx = at(x + 1, z) - at(x.saturating_sub(1), z);
+        let gz = at(x, z + 1) - at(x, z.saturating_sub(1));
+        -Vec2::new(gx, gz).normalize_or(Vec2::X)
+    }
+
+    /// `zone` at cell `i`, and when `face` is given, near a cliff of that face.
+    fn zone_of(&self, i: usize, zone: Zone, face: Option<u8>) -> bool {
+        self.zone(i, zone) && face.is_none_or(|f| self.face[i] == f)
+    }
+
     fn zone(&self, i: usize, zone: Zone) -> bool {
         let kind = self.kind[i];
         let open = !kind.closed() && !kind.water();
@@ -179,6 +253,7 @@ impl Cells {
         match zone {
             Zone::Frame => kind.closed() && self.to_open[i] > 4.0,
             Zone::FrameEdge => kind.closed() && self.to_open[i] <= 4.0,
+            Zone::Rim => kind.closed() && self.to_open[i] <= 1.5,
             Zone::GroundEdge => plain && self.to_closed[i] <= 3.0,
             Zone::Ground => {
                 plain && self.to_closed[i] > 3.0 && self.to_top[i] > 3.0 && self.to_foot[i] > 3.0
@@ -227,7 +302,7 @@ impl Heights<'_> {
 pub fn generate(map: &UtcMap, biome: &BiomeConfig) -> Option<Generated> {
     let recipe = biome.blocks.as_ref()?;
     let terrain = &map.authoring.terrain;
-    let blocks = Blocks::decode(terrain.blocks.as_ref()?, terrain.size).ok()?;
+    let blocks = Blocks::of(terrain)?.ok()?;
     let _span = tracing::info_span!("blocks_generate").entered();
     let seed = u64::from(recipe.seed) ^ u64::from(map.size).wrapping_mul(0x9E37);
     let span = terrain.span() as usize;
@@ -249,25 +324,25 @@ pub fn generate(map: &UtcMap, biome: &BiomeConfig) -> Option<Generated> {
     let mut objects = Vec::new();
     scatter(&cells, &heights, recipe, seed, &mut objects);
     let decals = decals(&cells, &heights, recipe, seed);
-    let cliff = recipe
-        .cliff
-        .as_ref()
-        .map(|look| cliffs(&heights, &cells, &blocks, look, seed));
+    let cliffs = cliffs(&heights, &cells, recipe, seed);
     Some(Generated {
         map: out,
         objects,
-        dressing: DressingDesc { cliff, decals },
+        dressing: DressingDesc { cliffs, decals },
     })
 }
 
 fn classify(blocks: &Blocks, heights: &Heights, span: usize) -> Cells {
     let b = BLOCK as usize;
     let mut kind = Vec::with_capacity(span * span);
+    let mut style = Vec::with_capacity(span * span);
     for cz in 0..span {
         for cx in 0..span {
             let u = ((cx % b) as f32 + 0.5) / b as f32;
             let v = ((cz % b) as f32 + 0.5) / b as f32;
-            kind.push(blocks.sample((cx / b) as i32, (cz / b) as i32, u, v).kind);
+            let block = blocks.sample((cx / b) as i32, (cz / b) as i32, u, v);
+            kind.push(block.kind);
+            style.push(block.style);
         }
     }
     // A cell's height: its centre's; a drop to a neighbour of more than half a level is a
@@ -281,22 +356,30 @@ fn classify(blocks: &Blocks, heights: &Heights, span: usize) -> Cells {
     };
     let mut top = vec![false; span * span];
     let mut foot = vec![false; span * span];
+    // The face of each cliff cell: the style of the column above the drop.
+    let mut face: Vec<Option<u8>> = vec![None; span * span];
     for cz in 1..span - 1 {
         for cx in 1..span - 1 {
+            let i = cz * span + cx;
             let h = centre(cx, cz);
             for (dx, dz) in [(1i32, 0i32), (-1, 0), (0, 1), (0, -1)] {
-                let n = centre((cx as i32 + dx) as usize, (cz as i32 + dz) as usize);
+                let (nx, nz) = ((cx as i32 + dx) as usize, (cz as i32 + dz) as usize);
+                let n = centre(nx, nz);
                 if h - n > LEVEL_HEIGHT * 0.4 {
-                    top[cz * span + cx] = true;
+                    top[i] = true;
+                    face[i] = Some(style[i]);
                 }
                 if n - h > LEVEL_HEIGHT * 0.4 {
-                    foot[cz * span + cx] = true;
+                    foot[i] = true;
+                    face[i] = face[i].or(Some(style[nz * span + nx]));
                 }
             }
         }
     }
     let closed = |i: usize| kind[i].closed();
+    let (_, face) = distance_labeled(span, |i| face[i]);
     Cells {
+        face,
         to_closed: distance(span, closed),
         to_open: distance(span, |i| !closed(i)),
         to_top: distance(span, |i| top[i]),
@@ -305,6 +388,36 @@ fn classify(blocks: &Blocks, heights: &Heights, span: usize) -> Cells {
         kind,
         span,
     }
+}
+
+/// A box blur of a per-cell field, `r` cells each way, two passes per axis.
+fn blur(field: &[f32], span: usize, r: usize) -> Vec<f32> {
+    let mut a = field.to_vec();
+    for _ in 0..2 {
+        for axis in 0..2 {
+            let mut b = vec![0.0; a.len()];
+            for z in 0..span {
+                for x in 0..span {
+                    let mut sum = 0.0;
+                    let mut n = 0.0;
+                    for k in -(r as i32)..=r as i32 {
+                        let (xx, zz) = if axis == 0 {
+                            (x as i32 + k, z as i32)
+                        } else {
+                            (x as i32, z as i32 + k)
+                        };
+                        if xx >= 0 && zz >= 0 && (xx as usize) < span && (zz as usize) < span {
+                            sum += a[zz as usize * span + xx as usize];
+                            n += 1.0;
+                        }
+                    }
+                    b[z * span + x] = sum / n;
+                }
+            }
+            a = b;
+        }
+    }
+    a
 }
 
 /// Bilinear sample of a per-cell field at a vertex (the mean of the four cells around it).
@@ -337,11 +450,35 @@ fn ground(map: &mut UtcMap, cells: &Cells, recipe: &BlockLook, biome: &BiomeConf
             }
         })
         .collect();
+    // Rounded: the distance into closed ground, blurred over three cells and never more
+    // than the true distance, so convex corners round off inside the frame (open ground is
+    // never covered, D71); then wandering, eating bays into the frame.
+    let blurred = blur(&into, span, 3);
+    let into: Vec<f32> = into
+        .iter()
+        .zip(&blurred)
+        .enumerate()
+        .map(|(i, (&d, &b))| {
+            let (x, z) = ((i % span) as f32, (i / span) as f32);
+            let wander = (noise(x * 0.07, z * 0.07, seed ^ 41) - 0.5) * 7.0 - 1.0;
+            if d <= 0.0 {
+                d
+            } else {
+                d.min(b + 0.6).min(d + wander.min(0.0)).max(-0.5)
+            }
+        })
+        .collect();
     let ragged = |x: usize, z: usize, salt: u64| {
         let (wx, wz) = (x as f32 - halo, z as f32 - halo);
         (noise(wx * 0.35, wz * 0.35, seed ^ salt) - 0.5) * 2.2
             + (noise(wx * 1.3, wz * 1.3, seed ^ salt ^ 7) - 0.5) * 0.8
     };
+    let heights_before: Vec<f32> = terrain
+        .heights
+        .0
+        .chunks_exact(4)
+        .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+        .collect();
     // Closed ground mounds up inside its edge (the look only: the simulation keeps the
     // heights the blocks made).
     if recipe.frame_rise > 0.0 {
@@ -373,21 +510,22 @@ fn ground(map: &mut UtcMap, cells: &Cells, recipe: &BlockLook, biome: &BiomeConf
     for vz in 0..side {
         for vx in 0..side {
             let d = at_vertex(&into, span, vx, vz);
-            // The cover's edge wanders inside the closed ground (never out over open ground,
-            // D71): it eats into the frame by up to three cells in bays and tongues.
-            let wander = (noise(vx as f32 * 0.09, vz as f32 * 0.09, seed ^ 41) - 0.5) * 6.0 - 1.4;
-            cover.push(
-                recipe.frame_cover
-                    * smoothstep(0.0, 1.6, d + wander.min(0.4) + ragged(vx, vz, 11) * 0.4),
-            );
+            cover.push(recipe.frame_cover * smoothstep(-0.2, 1.4, d + ragged(vx, vz, 11) * 1.1));
             shade.push(recipe.frame_shade * smoothstep(0.0, 6.0, d + ragged(vx, vz, 13)));
             let near_cliff =
                 at_vertex(&cells.to_top, span, vx, vz).min(at_vertex(&cells.to_foot, span, vx, vz));
+            // Rubble gathers down a ramp, towards its foot.
             let ramp = {
                 let x = vx.saturating_sub(1).min(span - 1);
                 let z = vz.saturating_sub(1).min(span - 1);
                 if cells.kind[z * span + x] == BlockKind::Ramp {
-                    1.0
+                    let h = heights_before[vz * side + vx] / LEVEL_HEIGHT;
+                    let fall = if h.fract() < 1e-3 {
+                        0.0
+                    } else {
+                        1.0 - h.fract()
+                    };
+                    smoothstep(0.35, 0.95, fall + ragged(vx, vz, 29) * 0.25)
                 } else {
                     0.0
                 }
@@ -458,18 +596,29 @@ fn scatter(
             let Some(i) = cells.at(p.x, p.y) else {
                 continue;
             };
-            if !cells.zone(i, rule.zone) {
+            if !cells.zone_of(i, rule.zone, rule.face) {
                 continue;
             }
             let piece =
                 &rule.pieces[(rng.next() * rule.pieces.len() as f32) as usize % rule.pieces.len()];
+            // Rim dressing faces out of the frame and reaches over its edge.
+            let (at, yaw) = match rule.reach {
+                Some(reach) => {
+                    let dir = Vec2::from_angle(rng.range(-0.5, 0.5)).rotate(cells.outward(i));
+                    (
+                        p + dir * reach * rng.range(0.5, 1.0),
+                        (-dir.x).atan2(-dir.y),
+                    )
+                }
+                None => (p, rng.range(0.0, std::f32::consts::TAU)),
+            };
             out.push(AuthoredObject {
                 id: format!("generated.{k}.{placed}"),
                 asset: piece.clone(),
-                x: f64::from(p.x),
-                z: f64::from(p.y),
+                x: f64::from(at.x),
+                z: f64::from(at.y),
                 elevation: f64::from(rule.elevation),
-                yaw: f64::from(rng.range(0.0, std::f32::consts::TAU)),
+                yaw: f64::from(yaw),
                 scale: f64::from(rng.range(rule.scale[0], rule.scale[1])),
                 height_mode: HeightMode::Terrain,
                 visible: true,
@@ -493,7 +642,7 @@ fn decals(cells: &Cells, heights: &Heights, recipe: &BlockLook, seed: u64) -> Ve
             let Some(i) = cells.at(p.x, p.y) else {
                 continue;
             };
-            if !cells.zone(i, rule.zone) {
+            if !cells.zone_of(i, rule.zone, rule.face) {
                 continue;
             }
             if rule.clump > 0.0 {
@@ -537,12 +686,13 @@ fn decals(cells: &Cells, heights: &Heights, recipe: &BlockLook, seed: u64) -> Ve
 /// Cellular noise in 3D: (distance to the nearest feature point minus the second nearest,
 /// as a 0-to-1 edge measure, and that feature's hash), on a jittered grid of `size`.
 fn stones(p: Vec3, size: f32, seed: u64) -> (f32, f32) {
-    let (edge, id, _) = stones_with_centre(p, size, seed);
+    let (edge, id, _) = stones_with_centre(p, size, Vec3::new(1.0, 1.0 / 1.6, 1.0), seed);
     (edge, id)
 }
 
 /// [`stones`] and the distance to the stone's centre (0 at the centre, about 1 at its rim).
-fn stones_with_centre(p: Vec3, size: f32, seed: u64) -> (f32, f32, f32) {
+/// `grain` stretches the stones along each axis (1: as wide as tall).
+fn stones_with_centre(p: Vec3, size: f32, grain: Vec3, seed: u64) -> (f32, f32, f32) {
     let q = p / size;
     let base = q.floor();
     let (mut f1, mut f2, mut id) = (9.0f32, 9.0f32, 0.0f32);
@@ -558,7 +708,7 @@ fn stones_with_centre(p: Vec3, size: f32, seed: u64) -> (f32, f32, f32) {
                     hash(i, j, k, seed ^ 2),
                 );
                 let f = c + jitter * 0.8 + 0.1;
-                let d = (q - f) * Vec3::new(1.0, 1.6, 1.0);
+                let d = (q - f) / grain;
                 let d = d.length();
                 if d < f1 {
                     f2 = f1;
@@ -605,17 +755,27 @@ impl MeshBuilder {
         }
     }
 
-    /// A spike: a tapered, slightly knobbly cone from `at`, `height` tall, leaning by `lean`.
+    /// A spike: a tall frosted spire, scaly with rings of buds, from `at`, `height` tall,
+    /// curving by `lean`.
     fn spike(&mut self, at: Vec3, height: f32, width: f32, lean: Vec2) {
-        let rows = 6;
-        let cols = 6;
+        let rows = 18;
+        let cols = 9;
+        let phase = (at.x * 3.1 + at.z * 1.7).fract() * std::f32::consts::TAU;
         let mut points = Vec::with_capacity(rows * cols);
+        let mut centres = Vec::with_capacity(rows);
         for r in 0..rows {
             let t = r as f32 / (rows - 1) as f32;
-            let radius = width * 0.5 * (1.0 - t).powf(0.8) * (1.0 + 0.25 * (t * 17.0).sin().abs());
+            // A slight bulb above the base, then a long taper to a sharp tip.
+            let taper =
+                (1.0 - t).powf(0.75) * (1.0 + 0.25 * (1.0 - (t * 6.0 - 0.6).abs()).max(0.0));
             let centre = at + Vec3::new(lean.x * t * t, height * t, lean.y * t * t);
+            centres.push(centre);
             for c in 0..cols {
                 let a = std::f32::consts::TAU * c as f32 / (cols - 1) as f32;
+                // Rings of scales: bumps around and up the spire, offset ring by ring.
+                let ring = (t * height * 5.5 + phase).sin() * 0.5 + 0.5;
+                let around = ((a * 4.0 + t * height * 9.0 + phase).sin() * 0.5 + 0.5) * ring;
+                let radius = width * 0.5 * taper * (0.82 + 0.3 * around);
                 points.push(centre + Vec3::new(a.cos(), 0.0, a.sin()) * radius);
             }
         }
@@ -623,18 +783,62 @@ impl MeshBuilder {
         let first = self.indices.len();
         self.grid(&points, rows, cols);
         for (k, v) in self.vertices[base..].iter_mut().enumerate() {
-            let r = k / cols;
-            let centre = at + Vec3::new(0.0, height * r as f32 / (rows - 1) as f32, 0.0);
-            let p = Vec3::from_array(v.position) - centre;
-            v.normal = (p.normalize_or(Vec3::Y) + Vec3::Y * 0.3)
+            let p = Vec3::from_array(v.position) - centres[k / cols];
+            // Tilted up, so the spires catch the light and the rime like the frost on them.
+            v.normal = (p.normalize_or(Vec3::Y) + Vec3::Y * 0.9)
                 .normalize()
                 .to_array();
+            // Pale with rime (above 1 lightens the material), darker at the foot.
+            let r = k / cols;
+            v.occlusion = 0.8 + 0.8 * (r as f32 / (rows - 1) as f32).sqrt();
         }
         let p =
             |k: usize| Vec3::from_array(self.vertices[self.indices[first + k] as usize].position);
         let facing = (p(1) - p(0)).cross(p(2) - p(0));
         let mid = (p(0) + p(1) + p(2)) / 3.0;
         if facing.dot(Vec3::new(mid.x - at.x, 0.0, mid.z - at.z)) < 0.0 {
+            for tri in self.indices[first..].chunks_exact_mut(3) {
+                tri.swap(1, 2);
+            }
+        }
+    }
+
+    /// A tube through `points`, `radii` thick: a root. Its rings face out; it is open at
+    /// both ends, which sink into what it lies on.
+    fn tube(&mut self, points: &[Vec3], radii: &[f32]) {
+        let n = points.len();
+        if n < 2 {
+            return;
+        }
+        let cols = 8;
+        let mut grid = Vec::with_capacity(n * cols);
+        let mut centres = Vec::with_capacity(n);
+        for k in 0..n {
+            let t =
+                (points[(k + 1).min(n - 1)] - points[k.saturating_sub(1)]).normalize_or(Vec3::X);
+            let a = t.cross(Vec3::Y).normalize_or(Vec3::Z);
+            let b = a.cross(t).normalize_or(Vec3::Y);
+            for c in 0..cols {
+                let angle = std::f32::consts::TAU * c as f32 / (cols - 1) as f32;
+                grid.push(points[k] + (a * angle.cos() + b * angle.sin()) * radii[k]);
+            }
+            centres.push(points[k]);
+        }
+        let base = self.vertices.len();
+        let first = self.indices.len();
+        self.grid(&grid, n, cols);
+        for (i, v) in self.vertices[base..].iter_mut().enumerate() {
+            let d = Vec3::from_array(v.position) - centres[i / cols];
+            let normal = d.normalize_or(Vec3::Y);
+            v.normal = normal.to_array();
+            // Dark underneath, where it meets the face.
+            v.occlusion = 0.45 + 0.55 * (normal.y * 0.5 + 0.5);
+        }
+        let p =
+            |k: usize| Vec3::from_array(self.vertices[self.indices[first + k] as usize].position);
+        let facing = (p(1) - p(0)).cross(p(2) - p(0));
+        let mid = (p(0) + p(1) + p(2)) / 3.0;
+        if facing.dot(mid - centres[0]) < 0.0 {
             for tri in self.indices[first..].chunks_exact_mut(3) {
                 tri.swap(1, 2);
             }
@@ -653,8 +857,8 @@ impl MeshBuilder {
                 let dir = Vec3::new(phi.sin() * theta.cos(), phi.cos(), phi.sin() * theta.sin());
                 // Angular: a few flat facets from a coarse cellular field.
                 let (edge, _) = stones(dir * 1.7 + at * 0.37, 1.0, seed);
-                let r_ = 0.5 * (0.8 + 0.25 * edge.min(0.6));
-                let squash = Vec3::new(1.0, 0.62, 1.0);
+                let r_ = 0.5 * (0.72 + 0.5 * edge.min(0.6));
+                let squash = Vec3::new(1.0, 0.55, 0.85);
                 points.push(at + dir * r_ * size * squash);
             }
         }
@@ -687,6 +891,71 @@ struct Segment {
     top: [f32; 2],
     bottom: [f32; 2],
     down: Vec2,
+    /// How far each end is from the nearer end of the run of face it belongs to (metres;
+    /// far for a closed loop).
+    end: [f32; 2],
+}
+
+/// Fills each segment's distances to the ends of its run: segments joined end to end with
+/// the same face (`face[i]`) form a run.
+fn runs(segments: &mut [Segment], face: &[usize]) {
+    use std::collections::BTreeMap;
+    let key = |p: Vec2| ((p.x * 64.0).round() as i64, (p.y * 64.0).round() as i64);
+    let mut at: BTreeMap<(i64, i64), Vec<usize>> = BTreeMap::new();
+    for (i, s) in segments.iter().enumerate() {
+        at.entry(key(s.a)).or_default().push(i);
+        at.entry(key(s.b)).or_default().push(i);
+    }
+    let neighbour = |i: usize, p: Vec2, at: &BTreeMap<(i64, i64), Vec<usize>>| {
+        at.get(&key(p))
+            .and_then(|v| v.iter().copied().find(|&j| j != i && face[j] == face[i]))
+    };
+    let mut seen = vec![false; segments.len()];
+    for start in 0..segments.len() {
+        if seen[start] {
+            continue;
+        }
+        // Walk back to the run's start (or round a loop), then forward along it.
+        let mut first = start;
+        let mut from = segments[start].a;
+        let mut guard = 0;
+        while let Some(j) = neighbour(first, from, &at) {
+            let s = &segments[j];
+            from = if key(s.a) == key(from) { s.b } else { s.a };
+            first = j;
+            guard += 1;
+            if first == start || guard > segments.len() {
+                break;
+            }
+        }
+        let looped = first == start && guard > 0;
+        let mut chain = Vec::new();
+        let mut i = first;
+        let mut p = from;
+        loop {
+            seen[i] = true;
+            let s = &segments[i];
+            let flip = key(s.a) != key(p);
+            chain.push((i, flip));
+            p = if flip { s.a } else { s.b };
+            match neighbour(i, p, &at) {
+                Some(j) if !seen[j] => i = j,
+                _ => break,
+            }
+        }
+        let total: f32 = chain
+            .iter()
+            .map(|&(i, _)| (segments[i].b - segments[i].a).length())
+            .sum();
+        let mut walked = 0.0;
+        for &(i, flip) in &chain {
+            let l = (segments[i].b - segments[i].a).length();
+            let e = |d: f32| if looped { 1e3 } else { d.min(total - d) };
+            let (ea, eb) = (e(walked), e(walked + l));
+            segments[i].end = if flip { [eb, ea] } else { [ea, eb] };
+            walked += l;
+        }
+    }
 }
 
 fn contours(heights: &Heights, side: usize) -> Vec<Segment> {
@@ -749,6 +1018,7 @@ fn contours(heights: &Heights, side: usize) -> Vec<Segment> {
                     top: [hi; 2],
                     bottom: [lo; 2],
                     down,
+                    end: [1e3; 2],
                 });
             }
         }
@@ -756,92 +1026,350 @@ fn contours(heights: &Heights, side: usize) -> Vec<Segment> {
     out
 }
 
-fn cliffs(
+/// Where a face's surface lies `f` of the way down it (0: under its lip, 1: its foot):
+/// its height and how far out from its contour, before stones and wander.
+fn profile(look: &CliffLook, top: f32, bottom: f32, f: f32, reach: f32) -> (f32, f32) {
+    let drop = (top - bottom).max(0.5);
+    let run = look.slope * drop * reach;
+    let back = (run * 0.35).min(1.2);
+    let curve = f.clamp(0.0, 1.0).powf(1.3);
+    let hang = look.overhang * (1.0 - f.clamp(0.0, 1.0)).powi(2);
+    (
+        top + (bottom - top) * f.clamp(0.0, 1.0),
+        -0.5 - back * 0.7 + (run * 0.95 + back * 0.7) * curve + hang,
+    )
+}
+
+/// How far a face wanders out at `at` (world noise, so faces that meet wander alike).
+fn wander(look: &CliffLook, at: Vec2, seed: u64) -> f32 {
+    (noise(at.x * 0.09, at.y * 0.09, seed ^ 0x3A1)
+        + 0.5 * noise(at.x * 0.31, at.y * 0.31, seed ^ 0x3A2)
+        - 0.75)
+        * look.wander
+}
+
+/// How far out a face reaches at `at`, `end` metres from the end of its run: tapering to
+/// a steep face at its ends, and longer and shorter along its length.
+fn reach(at: Vec2, end: f32, seed: u64) -> f32 {
+    let taper = 0.15 + 0.85 * smoothstep(0.0, 7.0, end);
+    taper * (0.7 + 0.6 * noise(at.x * 0.07, at.y * 0.07, seed ^ 0x3A3))
+}
+
+/// Roots winding across the face along segment `s`, mostly sideways and a little down,
+/// half sunk in it, and spilling out over the ground past its foot.
+fn roots(
+    mesh: &mut MeshBuilder,
+    s: &Segment,
+    look: &CliffLook,
+    rule: &Roots,
+    rng: &mut Rng,
+    seed: u64,
+) {
+    let length = (s.b - s.a).length();
+    let n = (length * rule.density).floor() as usize
+        + usize::from(rng.next() < (length * rule.density).fract());
+    let along = (s.b - s.a) / length.max(1e-4);
+    let (top, bottom) = (s.top[0], s.bottom[0]);
+    let drop = (top - bottom).max(0.5);
+    let run = look.slope * drop;
+    let face = drop.hypot(run).max(0.5);
+    for _ in 0..n {
+        let mut u = rng.next() * length;
+        let mut f = rng.range(-0.05, 0.9);
+        let side = if rng.next() < 0.5 { -1.0 } else { 1.0 };
+        let mut heading = rng.range(0.15, 0.7);
+        let total = rng.range(rule.length[0], rule.length[1]);
+        let r0 = rng.range(rule.radius[0], rule.radius[1]);
+        let steps = ((total / 0.3).ceil() as usize).max(3);
+        let mut points = Vec::with_capacity(steps);
+        let mut radii = Vec::with_capacity(steps);
+        for k in 0..steps {
+            let t = k as f32 / (steps - 1) as f32;
+            let r = r0 * (1.0 - 0.75 * t);
+            let at = s.a + along * u;
+            let e = s.end[0] + (s.end[1] - s.end[0]) * (u / length).clamp(0.0, 1.0);
+            let k = reach(at, e - u.min(0.0).abs(), seed);
+            let (y, out) = if f <= 1.0 {
+                profile(look, top, bottom, f, k)
+            } else {
+                let (_, foot_out) = profile(look, top, bottom, 1.0, k);
+                (bottom, foot_out + (f - 1.0) * face)
+            };
+            let out = out + wander(look, at, seed) + look.relief * 0.35;
+            let p = Vec3::new(at.x + s.down.x * out, y + r * 0.4, at.y + s.down.y * out);
+            points.push(p);
+            radii.push(r);
+            heading = (heading + rng.range(-0.3, 0.3)).clamp(-0.2, 1.3);
+            u += side * heading.cos() * 0.3;
+            f += heading.sin() * 0.3 / face;
+        }
+        mesh.tube(&points, &radii);
+    }
+}
+
+/// One stretch of cliff face along segment `s`, as a talus of stones from a lip on the
+/// plateau out over the lower ground, in `look`.
+fn face_strip(mesh: &mut MeshBuilder, s: &Segment, look: &CliffLook, seed: u64) {
+    let length = (s.b - s.a).length();
+    let cols = ((length / 0.33).ceil() as usize).max(1) + 1;
+    let drop = (s.top[0] - s.bottom[0]).max(0.5);
+    let run = look.slope * drop;
+    // Rows as close down the face as columns along it, however long its run.
+    let rows = ((drop.hypot(run) / 0.33).ceil() as usize).max(2) + 3;
+    let grain = Vec3::from_array(look.grain);
+    let mut points = Vec::with_capacity(rows * cols);
+    let mut open = Vec::with_capacity(rows * cols);
+    for r in 0..rows {
+        for c in 0..cols {
+            let u = c as f32 / (cols - 1) as f32;
+            let at = s.a + (s.b - s.a) * u;
+            let top = s.top[0] + (s.top[1] - s.top[0]) * u;
+            let bottom = s.bottom[0] + (s.bottom[1] - s.bottom[0]) * u;
+            // From a lip on the plateau out over the lower ground, steepest under the
+            // lip, spreading at the foot; an overhang pushes the upper face out.
+            let k = reach(at, s.end[0] + (s.end[1] - s.end[0]) * u, seed);
+            let back = (run * k * 0.35).min(1.2);
+            let (y, out) = if r == 0 {
+                (top + 0.02, -0.5 - back + look.overhang * 0.6)
+            } else if r == rows - 1 {
+                (bottom - 0.3, 0.5 + run * k * 0.75)
+            } else {
+                profile(look, top, bottom, (r - 1) as f32 / (rows - 3) as f32, k)
+            };
+            // The whole profile wanders in and out along the face.
+            let out = out + wander(look, at, seed);
+            let p = Vec3::new(at.x + s.down.x * out, y, at.y + s.down.y * out);
+            // Domed stones of their own depth, deep grooves between them; the lip and
+            // the foot stand out less.
+            let (edge, id, centre) = stones_with_centre(p, look.stone, grain, seed);
+            let face = if r == 0 || r == rows - 1 { 0.35 } else { 1.0 };
+            let dome = 1.0 - 0.55 * (centre * centre).min(1.0);
+            let bulge = look.relief * face * (0.2 + 0.8 * id) * dome * smoothstep(0.0, 0.3, edge);
+            let lift = if r == 0 { bulge * 0.4 } else { 0.0 };
+            let push = if r == 0 { 0.0 } else { bulge };
+            points.push(p + Vec3::new(s.down.x * push, lift, s.down.y * push));
+            // Dark in the grooves, and towards the foot under the overhang of stones.
+            let groove = smoothstep(0.02, 0.32, edge);
+            let foot = if r == rows - 1 {
+                0.55
+            } else {
+                1.0 - 0.3 * (r as f32 / rows as f32)
+            };
+            open.push((0.25 + 0.75 * groove) * foot * (0.8 + 0.2 * id));
+        }
+    }
+    let base = mesh.vertices.len();
+    mesh.grid(&points, rows, cols);
+    for (v, o) in mesh.vertices[base..].iter_mut().zip(open) {
+        v.occlusion = o;
+    }
+}
+
+/// Frosted spikes in tufts over `zone` (near cliffs of face `face`, when given).
+fn spikes(
+    mesh: &mut MeshBuilder,
     heights: &Heights,
     cells: &Cells,
-    blocks: &Blocks,
-    look: &canopy_render::environment::CliffLook,
+    spikes: &Spikes,
+    face: Option<u8>,
     seed: u64,
-) -> CliffMesh {
-    let _span = tracing::info_span!("blocks_cliffs").entered();
-    let mut mesh = MeshBuilder {
-        vertices: Vec::new(),
-        indices: Vec::new(),
+) {
+    let mut srng = Rng(seed ^ 0x5B1E ^ u64::from(face.unwrap_or(0)) << 8);
+    let spacing = (100.0 / spikes.density.max(0.01)).sqrt();
+    for p in candidates(cells.span, spacing, &mut srng) {
+        let Some(i) = cells.at(p.x, p.y) else {
+            continue;
+        };
+        if !cells.zone_of(i, spikes.zone, face) {
+            continue;
+        }
+        // In tufts: a few spikes around each point that passes.
+        if noise(p.x * 0.2, p.y * 0.2, seed ^ 0x77) < 0.45 {
+            continue;
+        }
+        let tuft = 3 + (srng.next() * 5.0) as usize;
+        for k in 0..tuft {
+            let at = p + Vec2::new(srng.range(-0.9, 0.9), srng.range(-0.9, 0.9));
+            // One or two tall ones in a tuft, the rest shorter.
+            let tall = if k < 2 { 1.0 } else { srng.range(0.35, 0.75) };
+            let height = srng.range(spikes.height[0], spikes.height[1]) * tall;
+            let lean = Vec2::new(srng.range(-0.06, 0.06), srng.range(-0.06, 0.06)) * height;
+            let y = heights.at(at.x, at.y) - 0.1;
+            mesh.spike(
+                Vec3::new(at.x, y, at.y),
+                height,
+                spikes.width * srng.range(0.7, 1.3),
+                lean,
+            );
+        }
+    }
+}
+
+/// The shore's rim: a low bank of crusted stones wherever walkable ground meets ice at
+/// about its level, along a smoothed outline of the ice.
+fn shore(mesh: &mut MeshBuilder, heights: &Heights, cells: &Cells, shore: &Shore, seed: u64) {
+    let span = cells.span;
+    let halo = MAP_HALO as f32;
+    let raw: Vec<f32> = cells
+        .kind
+        .iter()
+        .map(|k| f32::from(u8::from(*k == BlockKind::Ice)))
+        .collect();
+    let field = blur(&raw, span, 1);
+    let at = |x: usize, z: usize| {
+        let (wx, wz) = (x as f32 - halo, z as f32 - halo);
+        field[z.min(span - 1) * span + x.min(span - 1)]
+            + (noise(wx * 0.22, wz * 0.22, seed ^ 0x5407) - 0.5) * 0.35
     };
+    let mut rng = Rng(seed ^ 0x5407);
+    let grain = Vec3::new(1.0, 0.7, 1.0);
+    for z in 0..span - 1 {
+        for x in 0..span - 1 {
+            // Samples at cell centres, corners of a square between them.
+            let h = [at(x, z), at(x + 1, z), at(x + 1, z + 1), at(x, z + 1)];
+            let corners = [
+                Vec2::new(x as f32 + 0.5, z as f32 + 0.5),
+                Vec2::new(x as f32 + 1.5, z as f32 + 0.5),
+                Vec2::new(x as f32 + 1.5, z as f32 + 1.5),
+                Vec2::new(x as f32 + 0.5, z as f32 + 1.5),
+            ];
+            let mut points = Vec::new();
+            for e in 0..4 {
+                let (p, q) = (e, (e + 1) % 4);
+                if (h[p] > 0.5) != (h[q] > 0.5) {
+                    let f = (0.5 - h[p]) / (h[q] - h[p]);
+                    points.push(corners[p] + (corners[q] - corners[p]) * f - Vec2::splat(halo));
+                }
+            }
+            if points.len() < 2 {
+                continue;
+            }
+            let gx = (h[1] + h[2]) - (h[0] + h[3]);
+            let gz = (h[2] + h[3]) - (h[0] + h[1]);
+            let to_ice = Vec2::new(gx, gz).normalize_or(Vec2::X);
+            for pair in points.chunks_exact(2) {
+                let (a, b) = (pair[0], pair[1]);
+                let length = (b - a).length();
+                if length < 0.05 {
+                    continue;
+                }
+                // Not under a cliff: the ground and the ice about level.
+                let mid = (a + b) * 0.5;
+                let (land, ice) = (mid - to_ice * 1.2, mid + to_ice * 1.2);
+                if (heights.at(land.x, land.y) - heights.at(ice.x, ice.y)).abs() > 1.0 {
+                    continue;
+                }
+                let cols = ((length / 0.3).ceil() as usize).max(1) + 1;
+                let rows = 7;
+                let mut grid = Vec::with_capacity(rows * cols);
+                let mut open = Vec::with_capacity(rows * cols);
+                for r in 0..rows {
+                    let t = r as f32 / (rows - 1) as f32;
+                    for c in 0..cols {
+                        let u = c as f32 / (cols - 1) as f32;
+                        let along = a + (b - a) * u;
+                        let p = along + to_ice * (t - 0.45) * shore.width;
+                        let ground = heights.at(p.x, p.y);
+                        let profile = (std::f32::consts::PI * t).sin().max(0.0).powf(0.6);
+                        let p3 = Vec3::new(p.x, ground, p.y);
+                        let (edge, id, centre) = stones_with_centre(p3, shore.stone, grain, seed);
+                        let dome = 1.0 - 0.6 * (centre * centre).min(1.0);
+                        let bump =
+                            shore.height * (0.3 + 0.9 * id) * dome * smoothstep(0.0, 0.25, edge);
+                        // Higher and lower along its length, broken here and there.
+                        let swell = 0.35 + 0.95 * noise(p.x * 0.18, p.y * 0.18, seed ^ 0x5408);
+                        let y = ground - 0.06 + profile * swell * (shore.height * 0.45 + bump);
+                        grid.push(Vec3::new(p.x, y, p.y));
+                        open.push(
+                            (0.3 + 0.7 * smoothstep(0.02, 0.3, edge)) * (0.7 + 0.3 * profile),
+                        );
+                    }
+                }
+                // Wound so it faces up: across (to the ice) × along.
+                let dir = b - a;
+                let flip = dir.x * to_ice.y - dir.y * to_ice.x < 0.0;
+                let base = mesh.vertices.len();
+                let first = mesh.indices.len();
+                mesh.grid(&grid, rows, cols);
+                for (v, o) in mesh.vertices[base..].iter_mut().zip(open) {
+                    v.occlusion = o;
+                    if v.normal[1] < 0.0 {
+                        v.normal = [-v.normal[0], -v.normal[1], -v.normal[2]];
+                    }
+                }
+                if flip {
+                    for tri in mesh.indices[first..].chunks_exact_mut(3) {
+                        tri.swap(1, 2);
+                    }
+                }
+                let n = (length * shore.rubble).floor() as usize
+                    + usize::from(rng.next() < (length * shore.rubble).fract());
+                for _ in 0..n {
+                    let p = a + (b - a) * rng.next() + to_ice * rng.range(-0.9, 0.9) * shore.width;
+                    let size = rng.range(0.25, 0.8) * shore.stone;
+                    let y = heights.at(p.x, p.y);
+                    mesh.rock(
+                        Vec3::new(p.x, y + size * 0.08, p.y),
+                        size,
+                        rng.range(0.0, std::f32::consts::TAU),
+                        seed ^ rng.0,
+                    );
+                }
+            }
+        }
+    }
+}
+
+/// The cliffs, one mesh per face material: the biome's cliff (face style 0) and its faces.
+fn cliffs(heights: &Heights, cells: &Cells, recipe: &BlockLook, seed: u64) -> Vec<CliffMesh> {
+    let _span = tracing::info_span!("blocks_cliffs").entered();
+    let Some(cliff) = recipe.cliff.as_ref() else {
+        return Vec::new();
+    };
+    let looks: Vec<&CliffLook> = std::iter::once(cliff)
+        .chain(recipe.faces.iter().map(|f| &f.cliff))
+        .collect();
+    let mut meshes: Vec<MeshBuilder> = looks
+        .iter()
+        .map(|_| MeshBuilder {
+            vertices: Vec::new(),
+            indices: Vec::new(),
+        })
+        .collect();
     let mut rng = Rng(seed ^ 0xC11F);
     let side = heights.side;
-    let segments = contours(heights, side);
-    let relief = look.relief;
-    for s in &segments {
+    let mut segments = contours(heights, side);
+    // The face of the column above each drop.
+    let faces: Vec<usize> = segments
+        .iter()
+        .map(|s| {
+            let up = (s.a + s.b) * 0.5 - s.down * 1.2;
+            let style = cells.at(up.x, up.y).map_or(0, |i| cells.face[i]) as usize;
+            if style < looks.len() { style } else { 0 }
+        })
+        .collect();
+    runs(&mut segments, &faces);
+    for (s, &k) in segments.iter().zip(&faces) {
         let length = (s.b - s.a).length();
         if length < 0.05 {
             continue;
         }
-        let cols = ((length / 0.33).ceil() as usize).max(1) + 1;
-        let drop = (s.top[0] - s.bottom[0]).max(0.5);
-        let rows = ((drop / 0.3).ceil() as usize).max(2) + 3;
-        let mut points = Vec::with_capacity(rows * cols);
-        let mut open = Vec::with_capacity(rows * cols);
-        for r in 0..rows {
-            // Rows: a lip over the top, the face, a flared foot.
-            let t = r as f32 / (rows - 1) as f32;
-            for c in 0..cols {
-                let u = c as f32 / (cols - 1) as f32;
-                let at = s.a + (s.b - s.a) * u;
-                let top = s.top[0] + (s.top[1] - s.top[0]) * u;
-                let bottom = s.bottom[0] + (s.bottom[1] - s.bottom[0]) * u;
-                // A talus of stones: from a lip on the plateau out over the lower ground at
-                // about 50°, steepest under the lip, spreading at the foot.
-                let run = look.slope * drop;
-                let (y, out) = if r == 0 {
-                    (top + 0.02, -0.5 - run * 0.35)
-                } else if r == rows - 1 {
-                    (bottom - 0.3, 0.5 + run * 0.75)
-                } else {
-                    let f = (r - 1) as f32 / (rows - 3) as f32;
-                    let curve = f.powf(1.3);
-                    (
-                        top + (bottom - top) * f,
-                        -0.5 - run * 0.25 + (run * 0.95) * curve,
-                    )
-                };
-                let p = Vec3::new(at.x + s.down.x * out, y, at.y + s.down.y * out);
-                // Stones stand out of the face; the lip and the foot less so.
-                // Domed stones of their own depth, deep grooves between them.
-                let (edge, id, centre) = stones_with_centre(p, look.stone, seed);
-                let face = if r == 0 || r == rows - 1 { 0.35 } else { 1.0 };
-                let dome = 1.0 - 0.55 * (centre * centre).min(1.0);
-                let bulge = relief * face * (0.2 + 0.8 * id) * dome * smoothstep(0.0, 0.3, edge);
-                let lift = if r == 0 { bulge * 0.4 } else { 0.0 };
-                let push = if r == 0 { 0.0 } else { bulge };
-                let _ = t;
-                points.push(p + Vec3::new(s.down.x * push, lift, s.down.y * push));
-                // Dark in the grooves, and towards the foot under the overhang of stones.
-                let groove = smoothstep(0.02, 0.32, edge);
-                let foot = if r == rows - 1 {
-                    0.55
-                } else {
-                    1.0 - 0.3 * (r as f32 / rows as f32)
-                };
-                open.push((0.25 + 0.75 * groove) * foot * (0.8 + 0.2 * id));
-            }
-        }
-        let base = mesh.vertices.len();
-        mesh.grid(&points, rows, cols);
-        for (v, o) in mesh.vertices[base..].iter_mut().zip(open) {
-            v.occlusion = o;
+        let look = looks[k];
+        face_strip(&mut meshes[k], s, look, seed ^ k as u64);
+        if let Some(rule) = &look.roots {
+            roots(&mut meshes[k], s, look, rule, &mut rng, seed ^ k as u64);
         }
         // Rubble at the foot.
+        let drop = (s.top[0] - s.bottom[0]).max(0.5);
         let n = (length * look.rubble).floor() as usize
             + usize::from(rng.next() < (length * look.rubble).fract());
         for _ in 0..n {
-            let u = rng.next();
             let at = s.a
-                + (s.b - s.a) * u
+                + (s.b - s.a) * rng.next()
                 + s.down * (0.5 + look.slope * drop * 0.7 + rng.range(0.0, 1.6));
             let size = rng.range(0.45, 1.6) * (0.5 + 0.35 * look.stone);
             let y = heights.at(at.x, at.y);
-            mesh.rock(
+            meshes[k].rock(
                 Vec3::new(at.x, y + size * 0.12, at.y),
                 size,
                 rng.range(0.0, std::f32::consts::TAU),
@@ -849,22 +1377,27 @@ fn cliffs(
             );
         }
     }
-    // Rubble on ramps and a few stones along cliff tops.
+    // Rubble on ramps, a few stones along cliff tops, boulders heaped on closed rock.
     let span = cells.span;
     let halo = MAP_HALO as f32;
     let b = BLOCK as i32;
-    let _ = blocks;
     for cz in 0..span {
         for cx in 0..span {
             let i = cz * span + cx;
             let (wx, wz) = (cx as f32 - halo, cz as f32 - halo);
             let rock = cells.kind[i] == BlockKind::Rock;
             let chance = if cells.kind[i] == BlockKind::Ramp {
-                look.ramp_rubble as f32 / (b * b) as f32
-            } else if cells.zone(i, Zone::CliffTop) && cells.to_top[i] <= 1.5 {
+                // Gathered towards the foot.
+                let h = heights.at(wx + 0.5, wz + 0.5) / LEVEL_HEIGHT;
+                let fall = if h.fract() < 1e-3 {
+                    0.0
+                } else {
+                    1.0 - h.fract()
+                };
+                cliff.ramp_rubble as f32 / (b * b) as f32 * fall * fall * 2.0
+            } else if cells.zone_of(i, Zone::CliffTop, Some(0)) && cells.to_top[i] <= 1.5 {
                 0.3
             } else if rock {
-                // Closed rock is heaped with boulders.
                 0.22
             } else {
                 0.0
@@ -875,11 +1408,13 @@ fn cliffs(
             let at = Vec2::new(wx + rng.next(), wz + rng.next());
             let size = if rock {
                 rng.range(1.0, 2.8)
+            } else if cells.kind[i] == BlockKind::Ramp {
+                rng.range(cliff.ramp_stones[0], cliff.ramp_stones[1])
             } else {
                 rng.range(0.35, 1.1)
             };
             let y = heights.at(at.x, at.y);
-            mesh.rock(
+            meshes[0].rock(
                 Vec3::new(at.x, y + size * 0.1, at.y),
                 size,
                 rng.range(0.0, std::f32::consts::TAU),
@@ -887,44 +1422,30 @@ fn cliffs(
             );
         }
     }
-    // Frosted spikes standing out of closed ground near its edge.
-    if let Some(spikes) = &look.spikes {
-        let mut srng = Rng(seed ^ 0x5B1E);
-        let spacing = (100.0 / spikes.density.max(0.01)).sqrt();
-        for p in candidates(span, spacing, &mut srng) {
-            let Some(i) = cells.at(p.x, p.y) else {
-                continue;
-            };
-            if !cells.zone(i, Zone::FrameEdge) && !cells.zone(i, Zone::Frame) {
-                continue;
-            }
-            // In tufts: a few spikes around each point that passes.
-            if noise(p.x * 0.2, p.y * 0.2, seed ^ 0x77) < 0.45 {
-                continue;
-            }
-            let tuft = 3 + (srng.next() * 4.0) as usize;
-            for _ in 0..tuft {
-                let at = p + Vec2::new(srng.range(-0.6, 0.6), srng.range(-0.6, 0.6));
-                let height = srng.range(spikes.height[0], spikes.height[1]);
-                let lean = Vec2::new(srng.range(-0.15, 0.15), srng.range(-0.15, 0.15)) * height;
-                let y = heights.at(at.x, at.y) - 0.1;
-                mesh.spike(
-                    Vec3::new(at.x, y, at.y),
-                    height,
-                    spikes.width * srng.range(0.7, 1.3),
-                    lean,
-                );
-            }
+    for (k, look) in looks.iter().enumerate() {
+        if let Some(rule) = &look.spikes {
+            let near_cliff = matches!(rule.zone, Zone::CliffTop | Zone::CliffFoot);
+            let face = near_cliff.then_some(k as u8);
+            // In the biome's cliff material, pale stone, whichever face they stand on.
+            spikes(&mut meshes[0], heights, cells, rule, face, seed);
         }
     }
-    CliffMesh {
-        vertices: mesh.vertices,
-        indices: mesh.indices,
-        albedo: look.albedo.clone(),
-        normal: look.normal.clone(),
-        tile: look.tile,
-        roughness: look.roughness,
+    if let Some(rim) = &recipe.shore {
+        shore(&mut meshes[0], heights, cells, rim, seed);
     }
+    meshes
+        .into_iter()
+        .zip(looks)
+        .map(|(mesh, look)| CliffMesh {
+            vertices: mesh.vertices,
+            indices: mesh.indices,
+            albedo: look.albedo.clone(),
+            normal: look.normal.clone(),
+            tile: look.tile,
+            roughness: look.roughness,
+            frost: look.frost,
+        })
+        .collect()
 }
 
 #[cfg(test)]

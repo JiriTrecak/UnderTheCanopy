@@ -31,6 +31,8 @@ pub struct CliffMesh {
     /// Metres one texture tile covers.
     pub tile: f32,
     pub roughness: f32,
+    /// How much of the biome's frost it takes (1: all).
+    pub frost: f32,
 }
 
 /// One decal: a flat cut-out on the ground.
@@ -60,14 +62,15 @@ pub struct DecalBatch {
 /// A world's dressing.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct DressingDesc {
-    pub cliff: Option<CliffMesh>,
+    /// One mesh per face material.
+    pub cliffs: Vec<CliffMesh>,
     pub decals: Vec<DecalBatch>,
 }
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
 struct CliffUniform {
-    /// 1 / tile, roughness, has normal map, 0.
+    /// 1 / tile, roughness, has normal map, frost share.
     params: [f32; 4],
 }
 
@@ -91,7 +94,7 @@ struct GpuDecals {
 }
 
 pub struct DressingGpu {
-    cliff: Option<GpuCliff>,
+    cliffs: Vec<GpuCliff>,
     decals: Vec<GpuDecals>,
     cliff_pipeline: wgpu::RenderPipeline,
     cliff_shadow: wgpu::RenderPipeline,
@@ -216,8 +219,9 @@ impl DressingGpu {
             ],
         });
 
-        let cliff = match &desc.cliff {
-            Some(mesh) if !mesh.indices.is_empty() => {
+        let mut cliffs = Vec::new();
+        for mesh in desc.cliffs.iter().filter(|m| !m.indices.is_empty()) {
+            {
                 let (albedo, b) = upload(device, queue, features, pack, &mesh.albedo)?;
                 bytes += b;
                 let normal = match &mesh.normal {
@@ -235,7 +239,7 @@ impl DressingGpu {
                             1.0 / mesh.tile.max(0.1),
                             mesh.roughness,
                             if mesh.normal.is_some() { 1.0 } else { 0.0 },
-                            0.0,
+                            mesh.frost,
                         ],
                     }),
                     usage: wgpu::BufferUsages::UNIFORM,
@@ -273,15 +277,14 @@ impl DressingGpu {
                     usage: wgpu::BufferUsages::INDEX,
                 });
                 bytes += vertices.size() + indices.size();
-                Some(GpuCliff {
+                cliffs.push(GpuCliff {
                     vertices,
                     indices,
                     count: mesh.indices.len() as u32,
                     group,
-                })
+                });
             }
-            _ => None,
-        };
+        }
 
         let mut decals = Vec::new();
         for batch in &desc.decals {
@@ -433,7 +436,7 @@ impl DressingGpu {
             cache: None,
         });
         Ok(Self {
-            cliff,
+            cliffs,
             decals,
             cliff_pipeline,
             cliff_shadow,
@@ -448,14 +451,18 @@ impl DressingGpu {
         pass: &mut wgpu::RenderPass<'a>,
         frame: &'a wgpu::BindGroup,
     ) -> u32 {
-        let Some(c) = &self.cliff else { return 0 };
+        if self.cliffs.is_empty() {
+            return 0;
+        }
         pass.set_pipeline(&self.cliff_pipeline);
         pass.set_bind_group(0, frame, &[]);
-        pass.set_bind_group(1, &c.group, &[]);
-        pass.set_vertex_buffer(0, c.vertices.slice(..));
-        pass.set_index_buffer(c.indices.slice(..), wgpu::IndexFormat::Uint32);
-        pass.draw_indexed(0..c.count, 0, 0..1);
-        1
+        for c in &self.cliffs {
+            pass.set_bind_group(1, &c.group, &[]);
+            pass.set_vertex_buffer(0, c.vertices.slice(..));
+            pass.set_index_buffer(c.indices.slice(..), wgpu::IndexFormat::Uint32);
+            pass.draw_indexed(0..c.count, 0, 0..1);
+        }
+        self.cliffs.len() as u32
     }
 
     /// The cliffs into the shadow map.
@@ -464,14 +471,18 @@ impl DressingGpu {
         pass: &mut wgpu::RenderPass<'a>,
         frame: &'a wgpu::BindGroup,
     ) -> u32 {
-        let Some(c) = &self.cliff else { return 0 };
+        if self.cliffs.is_empty() {
+            return 0;
+        }
         pass.set_pipeline(&self.cliff_shadow);
         pass.set_bind_group(0, frame, &[]);
-        pass.set_bind_group(1, &c.group, &[]);
-        pass.set_vertex_buffer(0, c.vertices.slice(..));
-        pass.set_index_buffer(c.indices.slice(..), wgpu::IndexFormat::Uint32);
-        pass.draw_indexed(0..c.count, 0, 0..1);
-        1
+        for c in &self.cliffs {
+            pass.set_bind_group(1, &c.group, &[]);
+            pass.set_vertex_buffer(0, c.vertices.slice(..));
+            pass.set_index_buffer(c.indices.slice(..), wgpu::IndexFormat::Uint32);
+            pass.draw_indexed(0..c.count, 0, 0..1);
+        }
+        self.cliffs.len() as u32
     }
 
     /// The decals (blended over the ground, after the opaque ground); the draw count.

@@ -669,6 +669,12 @@ impl Shell {
             }
         }
         let started = Instant::now();
+        session.blocks.faces = resources.looks[&biome]
+            .biome
+            .blocks
+            .as_ref()
+            .map(|b| b.faces.iter().map(|f| f.name.clone()).collect())
+            .unwrap_or_default();
         let blocks = session.editor == crate::map::Editor::Blocks && !session.blocks.generated;
         match crate::map::build(
             map,

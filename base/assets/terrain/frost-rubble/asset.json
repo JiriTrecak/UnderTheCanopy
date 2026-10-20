@@ -1,8 +1,10 @@
 {
   "id": "asset.terrain.frost-rubble",
-  "name": "Frosted rubble · albedo/roughness",
+  "name": "Frost rubble · albedo/roughness · albedo/roughness",
   "kind": "terrain-material",
   "tags": [
+    "lookdev",
+    "imagegen",
     "lookdev",
     "imagegen",
     "frost"

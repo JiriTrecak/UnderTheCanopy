@@ -5,7 +5,7 @@
 
 use canopy_content::map::MAP_HALO;
 use canopy_content::map::blocks::{
-    BASE_HEIGHT, BLOCK, Block, BlockKind, Blocks, Cut, LEVEL_HEIGHT,
+    BASE_HEIGHT, BLOCK, Block, BlockKind, Blocks, Cut, LEVEL_HEIGHT, RampPlane,
 };
 use canopy_render::blockout::{BlockVertex, BlockoutMesh};
 use glam::Vec3;
@@ -129,22 +129,22 @@ const SIDES: [Side; 4] = [
 
 /// The height of column (`x`, `z`)'s top at its corner (`u`, `v`), on the side `side`
 /// (the half that owns that side when the column is cut).
-fn edge_height(blocks: &Blocks, x: i32, z: i32, side: (i32, i32), u: f32, v: f32) -> (f32, Block) {
+fn edge_height(
+    blocks: &Blocks,
+    planes: &[Option<RampPlane>],
+    x: i32,
+    z: i32,
+    side: (i32, i32),
+    u: f32,
+    v: f32,
+) -> (f32, Block) {
     let size = blocks.side as i32;
     if x < 0 || z < 0 || x >= size || z >= size {
         return (BASE_HEIGHT - LEVEL_HEIGHT, Block::ground(0));
     }
     let block = blocks.at(x, z);
     if block.kind == BlockKind::Ramp {
-        let (dx, dz) = blocks.ramp_down(x, z);
-        let t = if dx != 0 {
-            if dx > 0 { u } else { 1.0 - u }
-        } else if dz > 0 {
-            v
-        } else {
-            1.0 - v
-        };
-        return (top(block) - t * LEVEL_HEIGHT, block);
+        return (blocks.ramp_height(planes, x, z, u, v), block);
     }
     // A point just inside the side decides which half of a cut column owns it.
     let (su, sv) = (0.5 + side.0 as f32 * 0.49, 0.5 + side.1 as f32 * 0.49);
@@ -161,6 +161,7 @@ pub fn mesh(blocks: &Blocks) -> BlockoutMesh {
     let s = BLOCK as f32;
     let halo = MAP_HALO as f32;
     let up = Vec3::Y;
+    let planes = blocks.ramp_planes();
     for z in 0..blocks.side as i32 {
         for x in 0..blocks.side as i32 {
             let block = blocks.at(x, z);
@@ -171,7 +172,7 @@ pub fn mesh(blocks: &Blocks) -> BlockoutMesh {
             if block.kind == BlockKind::Ramp {
                 let h: Vec<f32> = corners
                     .iter()
-                    .map(|&(u, v)| edge_height(blocks, x, z, (0, 0), u, v).0)
+                    .map(|&(u, v)| edge_height(blocks, &planes, x, z, (0, 0), u, v).0)
                     .collect();
                 let p: Vec<Vec3> = corners
                     .iter()
@@ -237,15 +238,15 @@ pub fn mesh(blocks: &Blocks) -> BlockoutMesh {
             }
             // Walls where this column stands above its neighbour.
             for ((dx, dz), [ca, cb]) in SIDES {
-                let (ha, mine) = edge_height(blocks, x, z, (dx, dz), ca.0, ca.1);
-                let (hb, _) = edge_height(blocks, x, z, (dx, dz), cb.0, cb.1);
+                let (ha, mine) = edge_height(blocks, &planes, x, z, (dx, dz), ca.0, ca.1);
+                let (hb, _) = edge_height(blocks, &planes, x, z, (dx, dz), cb.0, cb.1);
                 // The neighbour's matching corners on its far side.
                 let (na, nb) = (
                     (ca.0 - dx as f32, ca.1 - dz as f32),
                     (cb.0 - dx as f32, cb.1 - dz as f32),
                 );
-                let (la, _) = edge_height(blocks, x + dx, z + dz, (-dx, -dz), na.0, na.1);
-                let (lb, _) = edge_height(blocks, x + dx, z + dz, (-dx, -dz), nb.0, nb.1);
+                let (la, _) = edge_height(blocks, &planes, x + dx, z + dz, (-dx, -dz), na.0, na.1);
+                let (lb, _) = edge_height(blocks, &planes, x + dx, z + dz, (-dx, -dz), nb.0, nb.1);
                 b.wall(
                     at(ca.0, ca.1, 0.0),
                     at(cb.0, cb.1, 0.0),
@@ -254,6 +255,37 @@ pub fn mesh(blocks: &Blocks) -> BlockoutMesh {
                     Vec3::new(dx as f32, 0.0, dz as f32),
                     color(mine),
                 );
+            }
+        }
+    }
+    // Painted cells: a tile of their kind's colour over the top they lie on.
+    if blocks.paint.is_some() {
+        let n = blocks.cells() as i32;
+        let bi = BLOCK as i32;
+        for cz in 0..n {
+            for cx in 0..n {
+                let Some(kind) = blocks.painted(cx, cz) else {
+                    continue;
+                };
+                let (x, z) = (cx / bi, cz / bi);
+                let (u, v) = (
+                    ((cx % bi) as f32 + 0.5) / BLOCK as f32,
+                    ((cz % bi) as f32 + 0.5) / BLOCK as f32,
+                );
+                let cell = blocks.sample(x, z, u, v);
+                if cell.kind == BlockKind::Ramp {
+                    continue;
+                }
+                let block = Block { kind, ..cell };
+                let y = top(block) + 0.03;
+                let (x0, z0) = (cx as f32 - halo, cz as f32 - halo);
+                let p = [
+                    Vec3::new(x0, y, z0),
+                    Vec3::new(x0, y, z0 + 1.0),
+                    Vec3::new(x0 + 1.0, y, z0 + 1.0),
+                    Vec3::new(x0 + 1.0, y, z0),
+                ];
+                b.quad(p, up, color(block));
             }
         }
     }

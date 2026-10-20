@@ -1,8 +1,10 @@
 {
   "id": "asset.terrain.frost-ground-normal",
-  "name": "Frosted soil · normal/height",
+  "name": "Frost snow · albedo/roughness · normal/height",
   "kind": "terrain-material",
   "tags": [
+    "lookdev",
+    "imagegen",
     "lookdev",
     "imagegen",
     "frost"

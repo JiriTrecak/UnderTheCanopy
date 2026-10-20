@@ -36,10 +36,14 @@ def main():
         buf.set_pixels(oiio.ROI(0, w, 0, h, 0, 1, 0, 4), shape)
         small = oiio.ImageBufAlgo.resize(buf, roi=oiio.ROI(0, nw, 0, nh, 0, 1, 0, 4)).get_pixels(oiio.FLOAT)
         rgb = small[..., :3]
-        alpha = small[..., 3:4]
+        alpha = np.clip(small[..., 3:4], 0.0, 1.0)
         colour = rgb / np.maximum(alpha, 1e-4)
         grey = colour.mean(axis=2, keepdims=True)
         colour = np.clip((grey + (colour - grey) * a.saturation) * a.tone, 0.0, 1.0)
+        # No pale fringe: soft edges darken towards the shape's shadowed rim, and the edge
+        # itself is pulled in a little.
+        colour = colour * (0.55 + 0.45 * np.clip(alpha / 0.9, 0.0, 1.0))
+        alpha = alpha ** 1.4
         small = np.concatenate([colour * alpha, alpha], -1)
         cx, cz = (i % cells) * cell + (cell - nw) // 2, (i // cells) * cell + (cell - nh) // 2
         atlas[cz:cz + nh, cx:cx + nw] = small

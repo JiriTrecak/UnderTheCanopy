@@ -24,10 +24,17 @@ sys.path.insert(0, os.path.join(ROOT, 'tools', 'maps'))
 
 
 def leaves_of(path, min_pixels=900):
-    """The separate leaves of a sheet on white: (premultiplied RGBA crops)."""
-    rgb = oiio.ImageBuf(path).get_pixels(oiio.FLOAT)[:, :, :3]
-    # Faint grey shadows on the sheet stay out: only clearly coloured pixels are leaf.
-    alpha = np.clip(((1.0 - rgb).max(axis=2) - 0.13) / 0.1, 0.0, 1.0)
+    """The separate leaves of a sheet on white, or of a transparent sheet: (premultiplied
+    RGBA crops)."""
+    pixels = oiio.ImageBuf(path).get_pixels(oiio.FLOAT)
+    rgb = pixels[:, :, :3]
+    if pixels.shape[2] == 4 and pixels[:, :, 3].min() < 0.5:
+        # OpenImageIO reads PNG alpha associated; the crops below premultiply again.
+        alpha = pixels[:, :, 3]
+        rgb = rgb / np.maximum(alpha, 1e-4)[..., None]
+    else:
+        # Faint grey shadows on the sheet stay out: only clearly coloured pixels are leaf.
+        alpha = np.clip(((1.0 - rgb).max(axis=2) - 0.13) / 0.1, 0.0, 1.0)
     solid = alpha > 0.5
     # Connected shapes by repeated min-label propagation on a half-size mask.
     small = solid[::2, ::2]
