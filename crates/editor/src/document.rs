@@ -183,18 +183,19 @@ struct GridDoc {
     value: Option<GridData>,
     saved: Option<GridData>,
     revision: u64,
-    /// (revision compared, whether it differed from the file).
-    compared: std::cell::Cell<(u64, bool)>,
+    /// (revision compared, whether it differed from the file), `None` until compared.
+    compared: std::cell::Cell<Option<(u64, bool)>>,
 }
 
 impl GridDoc {
     fn dirty(&self) -> bool {
-        let (at, dirty) = self.compared.get();
-        if at == self.revision && at != 0 {
+        if let Some((at, dirty)) = self.compared.get()
+            && at == self.revision
+        {
             return dirty;
         }
         let dirty = self.value != self.saved;
-        self.compared.set((self.revision, dirty));
+        self.compared.set(Some((self.revision, dirty)));
         dirty
     }
 }
@@ -259,6 +260,28 @@ struct Document {
     saved: Option<Value>,
     /// Counts changes, so views can cache what they derive from the value.
     revision: u64,
+    /// (revision compared, whether it differed from the file), `None` until compared:
+    /// the shell asks every frame which documents are unsaved, and comparing whole
+    /// documents is costly.
+    compared: std::cell::Cell<Option<(u64, bool)>>,
+}
+
+impl Document {
+    fn dirty(&self) -> bool {
+        if let Some((at, dirty)) = self.compared.get()
+            && at == self.revision
+        {
+            return dirty;
+        }
+        let dirty = self.value != self.saved;
+        self.compared.set(Some((self.revision, dirty)));
+        dirty
+    }
+
+    /// The saved copy changed (a save, a reload, a resolved conflict): compare again.
+    fn saved_changed(&self) {
+        self.compared.set(None);
+    }
 }
 
 /// What a change on disk did to a document ([`Store::outside_change`]).
@@ -331,6 +354,7 @@ impl Store {
                     saved: value.clone(),
                     value,
                     revision: 0,
+                    compared: std::cell::Cell::new(None),
                 },
             );
         }
@@ -376,7 +400,7 @@ impl Store {
                     saved: value.clone(),
                     value,
                     revision: 0,
-                    compared: std::cell::Cell::new((0, false)),
+                    compared: std::cell::Cell::new(None),
                 },
             );
         }
@@ -398,7 +422,7 @@ impl Store {
         canopy_content::package::Overlay(
             self.documents
                 .iter()
-                .filter(|(_, d)| d.value != d.saved)
+                .filter(|(_, d)| d.dirty())
                 .map(|(path, d)| {
                     (
                         path.clone(),
@@ -415,7 +439,7 @@ impl Store {
         let documents = self
             .documents
             .iter()
-            .filter(|(_, d)| d.value != d.saved)
+            .filter(|(_, d)| d.dirty())
             .map(|(path, d)| {
                 (
                     path.clone(),
@@ -449,9 +473,7 @@ impl Store {
         if is_grid(document) {
             return self.grids.get(document).is_some_and(GridDoc::dirty);
         }
-        self.documents
-            .get(document)
-            .is_some_and(|d| d.value != d.saved)
+        self.documents.get(document).is_some_and(Document::dirty)
     }
 
     /// Every document and grid that differs from its file, in path order.
@@ -459,7 +481,7 @@ impl Store {
         let mut out: Vec<&str> = self
             .documents
             .iter()
-            .filter(|(_, d)| d.value != d.saved)
+            .filter(|(_, d)| d.dirty())
             .map(|(p, _)| p.as_str())
             .chain(
                 self.grids
@@ -607,7 +629,7 @@ impl Store {
         if current.dirty() {
             if let Some(g) = self.grids.get_mut(path) {
                 g.saved = disk;
-                g.compared.set((0, false));
+                g.compared.set(None);
             }
             return Outside::Conflict;
         }
@@ -637,6 +659,7 @@ impl Store {
         if keep_mine {
             if let Some(d) = self.documents.get_mut(document) {
                 d.saved = disk;
+                d.saved_changed();
             }
         } else {
             self.take(document, disk);
@@ -652,6 +675,7 @@ impl Store {
             d.value = disk.clone();
             d.saved = disk;
             d.revision = self.revision;
+            d.saved_changed();
         }
         let touches = |step: &Step| step.done.iter().any(|c| c.document() == document);
         self.done.retain(|s| !touches(s));
@@ -662,7 +686,7 @@ impl Store {
     pub fn save(&mut self) -> Result<Vec<String>, Error> {
         let mut written = Vec::new();
         for (path, document) in &mut self.documents {
-            if document.value == document.saved {
+            if !document.dirty() {
                 continue;
             }
             let file = self.root.join(path);
@@ -688,6 +712,7 @@ impl Store {
                 }
             }
             document.saved = document.value.clone();
+            document.saved_changed();
             written.push(path.clone());
         }
         for (path, grid) in &mut self.grids {
@@ -710,7 +735,7 @@ impl Store {
                 None => std::fs::remove_file(&file).map_err(failed)?,
             }
             grid.saved = grid.value.clone();
-            grid.compared.set((grid.revision, false));
+            grid.compared.set(Some((grid.revision, false)));
             written.push(path.clone());
         }
         written.sort();

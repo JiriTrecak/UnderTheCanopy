@@ -447,6 +447,11 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     editor.set_map_editor(true);
     editor.block_out_map();
     settle(&mut editor, rig, 40);
+    // Frame time in the block view (the editor draws every frame it is shown).
+    let started = Instant::now();
+    settle(&mut editor, rig, 30);
+    let frame_ms = (started.elapsed().as_secs_f32() * 1000.0 - 30.0 * 25.0) / 30.0;
+    tracing::info!(frame_ms, "block view frame");
     shoot(&mut editor, rig, "editor-blocks")?;
     editor.show_problems(true);
     settle(&mut editor, rig, 4);
