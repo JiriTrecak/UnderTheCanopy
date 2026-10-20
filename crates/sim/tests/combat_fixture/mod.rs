@@ -193,6 +193,9 @@ pub fn game() -> Value {
                 "heroCapacity": 2,
                 "behaviors": {"storage": {"capacity": 10, "accepts": ["item.trinket"]}},
             }))),
+            definition("building.mound", "building", building(600, json!({
+                "tunnel": {"intervalTicks": 20, "speed": 40},
+            }))),
             definition("building.tower", "building", building(400, json!({
                 "behaviors": {"playerControl": control},
                 "garrison": {"capacity": 1, "accepts": ["unit.bowman"], "height": 6},
@@ -203,6 +206,10 @@ pub fn game() -> Value {
                 weapon(8, "damage.pierce", 10.0, 50, 14, 16, 10, 0.75),
                 json!({"projectile": {"speed": 20}}),
             ))),
+            definition("unit.brute", "unit", with(
+                fighter(0.5, 200, 2, "armor.heavy", 4.0, blade(16, 50, 12)),
+                json!({"underground": false}),
+            )),
             definition("unit.critter", "unit", camp_member(blade(6, 40, 8))),
             definition("unit.hero", "unit", hero),
             definition("unit.knight", "unit", fighter(0.5, 160, 6, "armor.heavy", 3.0, blade(14, 50, 12))),

@@ -1,0 +1,31 @@
+{
+  "id": "research.ants.carapace-1",
+  "name": "Carapace I",
+  "description": "Ant troops gain 1 armor (level I; levels add up).",
+  "icon": "asset.icons.research-ants-carapace",
+  "priority": 80,
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 125
+    }
+  ],
+  "workTicks": 1600,
+  "effects": [
+    {
+      "units": [
+        "unit.ants.warrior",
+        "unit.ants.archer",
+        "unit.ants.burster",
+        "unit.ants.queensguard",
+        "unit.ants.bombardier",
+        "unit.ants.winglancer",
+        "unit.ants.thornblade",
+        "unit.ants.banneret",
+        "unit.ants.nectarist",
+        "unit.ants.reaver-queen"
+      ],
+      "armor": 1
+    }
+  ]
+}

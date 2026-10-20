@@ -648,6 +648,7 @@ pub fn release_references(ctx: &mut Ctx, id: EntityId, cancel: bool) {
 pub fn remove(ctx: &mut Ctx, id: EntityId, cancel: bool) {
     release_references(ctx, id, cancel);
     crate::garrisons::evict(ctx.state, ctx.spatial, id);
+    crate::tunnels::collapse(ctx.state, ctx.spatial, id);
     let Some(e) = ctx.state.entities.remove(id) else {
         return;
     };

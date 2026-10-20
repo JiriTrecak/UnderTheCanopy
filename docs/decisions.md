@@ -767,3 +767,26 @@ Jiri: "We need one queue per building." A building's training, research and hero
 
   Every match finished (the longest 52 minutes, under the hour cap). The AI chose research 42 → 37 and 56 → 41 times across the two beetle–ant pairings.
 - **Open:** beetle research moving out of the production halls into a research building is content work under way separately (`tools/content/beetles/gen.py`).
+
+## D74. The ant race's gameplay: tunnels, broods and founding (2026-10-20, Jiri: "build everything … add tunnels. Surprise me" — review: felt)
+
+Jiri asked for the whole ant race at once: every unit, building, ability and research, with abilities of Claude's choosing, and the tunnels. The kits and numbers are in [docs/ants.md](ants.md) and `tools/content/ants/gen.py`, which writes them. Three engine features came with them.
+
+- **Tunnels** (`crates/sim/src/tunnels.rs`, content `tunnel` on buildings, `underground` on units, research `tunnelThroughputPermille`).
+  - When to tunnel. A unit with a move order, about to route, compares walking with a trip from the mound nearest it to the mound nearest its destination: the walk to the first mound, its queue, the underground transit and the walk from the second. Distances are straight lines. It takes the trip when that wins by two seconds. Nothing is chosen by the player; routing is automatic, as the design says.
+  - Going under. At the mouth a mound lets one unit under every `intervalTicks` (research divides it). Underground the unit is `contained` by its entry mound (hidden, untargetable, blind and unorderable like any contained unit) with its order kept. It comes up at the exit's mouth after the distance at the tunnel's `speed` plus a second, then walks on.
+  - Losing a mound. A fallen exit brings its travellers up where it stood; units walking to a fallen mound walk on.
+  - Who may use them. Units whose definition says `underground: false` (the mutated castes) never tunnel, and flyers never do.
+  - Seen from outside. A mound counts as working (D65) for two seconds after any passage, so its work animation and effects show the traffic.
+  - Saved state: per-unit `Unit::tunnel` trips and `State::tunnels` (gates, traffic), both serde; iteration is in entity-id order.
+- **Broods**: `creation.count` on a `train` creation hatches that many units for one price, each using its own supply. Queue and training supply count the whole brood. The brood deploys to separate exit cells (`sites::deployment_avoiding`). Raiders hatch in pairs.
+- **Found**: a new ability operation `{"op": "found", "target": "caster" | "point", "building", "consume"}` raises a finished building of the caster's owner at the building-lattice point nearest the anchor or one of its eight neighbours, with no builder, price or prerequisites but every ground rule of construction. The ground checks moved into `construction::ground` over a read-only `Ground` view, which `can_build` shares. A cast with no room is refused before its costs. `consume` uses the caster up. The Alate founds a Brood Mound where it lands; the Queen founds one at a point. The computer scores a Found only on the frontier: more than 64 cells from its other mounds, with no enemy near. Its Alates then found forward mounds and its armies tunnel to them; a 15-minute AI match had up to 10 ants underground at once (`computer_ants_found_mounds_and_travel_through_them`, ignored, run in release).
+- **Roster.** The test units are retired (Amber Adept, Hunter, Rootweaver, Silkwarden, Rootbreaker, Forester lodge) with their abilities and research. The Briarwatch campaign characters stay.
+- **Measured** (`ai_duels`, Echo Isles, 4 seeds; wins for player 1–player 2, mean minutes). The first pass won every match for the ants (8–0: Raider pairs were too cheap, and the computer trained 70–80 Bursters, its cheapest unit). After two balance passes (Raider pair 160 amber, Worker back to 100, Burster 110/60 with a 100 blast, Frenzy capped at 24%):
+
+  | Pairing | Result |
+  |---|---|
+  | Ants vs beetles | 2–1, one at the hour cap, 35.4 |
+  | Beetles vs ants | 3–1, 29.8 |
+
+- **Open for Jiri:** every kit and number above is Claude's; the tunnel margin, throughput and speed are first guesses, and whether a player may switch routing off stays open.

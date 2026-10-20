@@ -17,8 +17,10 @@ use crate::{
     catalog::Def,
     entity::{EntityId, Milli},
     orders::Order,
+    terrain::CellBounds,
     terrain::footprint::{
-        Extent, body_overlaps_bounds, footprint_bounds, footprint_cells, placement_geometry_error,
+        BUILDING_CELL, Extent, GRID_ORIGIN, body_overlaps_bounds, footprint_bounds,
+        footprint_cells, placement_geometry_error,
     },
     vision::Sight,
 };
@@ -26,6 +28,26 @@ use canopy_content::{
     game::{Creation, Kind},
     placement::Owner,
 };
+
+/// What the ground checks read: the match as it stands, without the right to change it.
+#[derive(Clone, Copy)]
+pub struct Ground<'a> {
+    pub state: &'a crate::state::State,
+    pub catalog: &'a crate::catalog::Catalog,
+    pub spatial: &'a crate::spatial::Spatial,
+    pub index: &'a super::Index,
+}
+
+impl Ctx<'_> {
+    pub fn ground(&self) -> Ground<'_> {
+        Ground {
+            state: self.state,
+            catalog: self.catalog,
+            spatial: self.spatial,
+            index: self.index,
+        }
+    }
+}
 
 /// A requested foundation: definition, centre in milli-cells and rotation in degrees.
 #[derive(Debug, Clone, Copy)]
@@ -177,11 +199,30 @@ pub fn can_build(
         if super::harvest::building_on(ctx, resource).is_some() {
             return Some(format!("This {name} is already built on"));
         }
-        if !door_open(ctx, def, f, rotation) {
+        if !door_open(&ctx.ground(), def, f, rotation) {
             return Some("Entrance blocked".into());
         }
         return affordable(ctx, owner, def);
     }
+    if let Some(reason) = ground(&ctx.ground(), def, f, rotation, &bounds, &on_map) {
+        return Some(reason.into());
+    }
+    affordable(ctx, owner, def)
+}
+
+/// Why the ground itself refuses `def` at `f`, whoever places it: cells that are not
+/// walkable or carry a deck, ground units in the way, a blocked deposit lane, water,
+/// a slope or a closed doorway.
+fn ground(
+    ctx: &Ground,
+    def: Def,
+    f: Foundation,
+    rotation: i32,
+    bounds: &CellBounds,
+    on_map: &[u32],
+) -> Option<&'static str> {
+    let (x, y) = f.centre();
+    let extent = Extent::of(ctx.catalog.get(def).footprint.as_ref());
     let edges = footprint_bounds(x, y, extent, f64::from(rotation));
     let decks = ctx.spatial.terrain().surfaces();
     let blocked_cell = on_map
@@ -202,29 +243,124 @@ pub fn can_build(
         })
     });
     if blocked_cell || blocked_body {
-        return Some("Placement blocked".into());
+        return Some("Placement blocked");
     }
-    if access_blocked(ctx, &bounds) {
-        return Some("Leave access around the resource deposit".into());
+    if access_blocked(ctx, bounds) {
+        return Some("Leave access around the resource deposit");
     }
     let terrain = ctx.spatial.terrain();
     let wet = on_map.iter().any(|&c| {
         i32::from(terrain.height_cm(c as usize)) <= i32::from(terrain.water_cm(c as usize)) + 10
     });
     if wet {
-        return Some("Build on dry ground".into());
+        return Some("Build on dry ground");
     }
-    if !terrain.foundation_fits(bounds) {
-        return Some("Choose flatter ground".into());
+    if !terrain.foundation_fits(*bounds) {
+        return Some("Choose flatter ground");
     }
     if !door_open(ctx, def, f, rotation) {
-        return Some("Entrance blocked".into());
+        return Some("Entrance blocked");
     }
-    affordable(ctx, owner, def)
+    None
+}
+
+/// The site nearest `at` where `owner` may found `def` without a builder, a price or
+/// prerequisites (an ant founding a tunnel mound where it lands): the building lattice
+/// point under `at`, else the first of its eight neighbours whose ground allows it.
+pub fn found_site(ctx: &Ground, owner: Owner, def: Def, at: Milli) -> Option<Foundation> {
+    let d = ctx.catalog.get(def);
+    if d.kind != Kind::Building || ctx.state.outcome.is_some() {
+        return None;
+    }
+    let buildings = ctx
+        .index
+        .buildings
+        .iter()
+        .filter_map(|&id| ctx.state.entities.get(id))
+        .filter(|e| e.owner == owner)
+        .count();
+    if buildings >= ctx.catalog.content.rules.max_buildings as usize {
+        return None;
+    }
+    let extent = Extent::of(d.footprint.as_ref());
+    let snap = |centre: f64, size: f64| {
+        GRID_ORIGIN
+            + ((centre - size / 2.0 - GRID_ORIGIN) / BUILDING_CELL).round() * BUILDING_CELL
+            + size / 2.0
+    };
+    let (cx, cy) = (
+        snap(f64::from(at.x) / 1000.0, extent.width),
+        snap(f64::from(at.y) / 1000.0, extent.depth),
+    );
+    let size = i64::from(ctx.spatial.size());
+    const STEPS: [(f64, f64); 9] = [
+        (0.0, 0.0),
+        (1.0, 0.0),
+        (-1.0, 0.0),
+        (0.0, 1.0),
+        (0.0, -1.0),
+        (1.0, 1.0),
+        (-1.0, 1.0),
+        (1.0, -1.0),
+        (-1.0, -1.0),
+    ];
+    STEPS.iter().find_map(|&(dx, dy)| {
+        let (x, y) = (cx + dx * BUILDING_CELL, cy + dy * BUILDING_CELL);
+        let point = FoundationPoint {
+            x: crate::action::HalfCells((x * 2.0).round().max(0.0) as u32),
+            y: crate::action::HalfCells((y * 2.0).round().max(0.0) as u32),
+            surface: None,
+        };
+        let f = Foundation::of(def, &point, 0);
+        let (x, y) = f.centre();
+        if placement_geometry_error(d, x, y, 0.0).is_some() {
+            return None;
+        }
+        let bounds = footprint_cells(x, y, extent, 0.0);
+        let cells: Vec<Option<u32>> = bounds
+            .cells()
+            .map(|(cx, cy)| {
+                (cx >= 0 && cy >= 0 && cx < size && cy < size).then(|| (cy * size + cx) as u32)
+            })
+            .collect();
+        if cells.iter().any(Option::is_none) {
+            return None;
+        }
+        let on_map: Vec<u32> = cells.into_iter().flatten().collect();
+        ground(ctx, def, f, 0, &bounds, &on_map)
+            .is_none()
+            .then_some(f)
+    })
+}
+
+/// Raises a finished `def` for `owner` at `site` (see [`found_site`]).
+pub fn found(ctx: &mut Ctx, owner: Owner, site: Foundation) -> EntityId {
+    let tick = ctx.state.tick;
+    let id = crate::spawn::insert(
+        ctx.state,
+        ctx.catalog,
+        crate::spawn::Spawn {
+            definition: site.def,
+            owner,
+            position: Milli {
+                x: site.x,
+                y: site.y,
+            },
+            surface: None,
+            rotation: 0,
+            placement: None,
+            initial: Default::default(),
+            complete: true,
+            ready_tick: tick + 1,
+        },
+    );
+    ctx.index.sync(ctx.state, ctx.catalog);
+    ctx.spatial.sync_entity(ctx.state, id);
+    id
 }
 
 /// Whether the foundation's doorway cell is walkable.
-fn door_open(ctx: &Ctx, def: Def, f: Foundation, rotation: i32) -> bool {
+fn door_open(ctx: &Ground, def: Def, f: Foundation, rotation: i32) -> bool {
     let size = i64::from(ctx.spatial.size());
     let door = sites::entrance(ctx.catalog, def, Milli { x: f.x, y: f.y }, rotation * 1000);
     let (dx, dy) = door.cell();
@@ -255,7 +391,7 @@ fn affordable(ctx: &Ctx, owner: Owner, def: Def) -> Option<String> {
 
 /// Whether a standing resource with a construction clearance keeps this footprint out
 /// (old `resourceBlocksCell` over every resource; only resources near enough can).
-fn access_blocked(ctx: &Ctx, bounds: &crate::terrain::CellBounds) -> bool {
+fn access_blocked(ctx: &Ground, bounds: &crate::terrain::CellBounds) -> bool {
     let reach = ctx
         .catalog
         .content

@@ -120,6 +120,7 @@ fn credited(
         crate::economy::work::release_references(&mut ectx, id, false);
     }
     crate::garrisons::evict(state, ctx.spatial, id);
+    crate::tunnels::collapse(state, ctx.spatial, id);
     let held = state.entities.get(id).expect("dead").clone();
     crate::economy::work::record_losses(state, senses.catalog, &held, false);
     if hero {

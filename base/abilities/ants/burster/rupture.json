@@ -1,0 +1,60 @@
+{
+  "id": "ability.ants.rupture",
+  "name": "Rupture",
+  "description": "Burst now, wherever the Burster stands (Unstable deals the damage).",
+  "activation": "targeted",
+  "ranks": [
+    {}
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 4,
+    "recoverTicks": 0,
+    "cost": {
+      "resource": "mana",
+      "amount": 0,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 0,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "damage",
+      "target": "caster",
+      "amount": 100000,
+      "damageType": "spell"
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-burster-rupture",
+    "animations": {
+      "prepare": "attack",
+      "release": "attack",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": []
+  }
+}

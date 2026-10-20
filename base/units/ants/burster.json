@@ -1,14 +1,14 @@
 {
   "id": "unit.ants.burster",
   "name": "Burster",
-  "description": "Mutated. A huge sloshing sac of liquid substance on legs; runs in and bursts. Too bloated for the tunnels.",
+  "description": "Mutated: a huge sloshing sac of liquid substance on legs. It bursts on its first bite, or on command, for heavy damage to enemies and buildings around it, and hurts nearby allies too. Too bloated for the tunnels. Requires a Great Nest; uses 1 supply.",
   "model": "asset.models.units.ants-burster",
   "icon": "asset.portraits.units.ants-burster",
   "selectionClass": "army",
   "body": {
-    "maxHp": 300,
-    "armor": 2,
-    "armorType": "heavy"
+    "maxHp": 220,
+    "armor": 0,
+    "armorType": "light"
   },
   "vision": 32,
   "behaviorSets": [
@@ -16,19 +16,52 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 14,
+      "damage": 10,
       "damageType": "melee",
       "range": 0.6,
-      "cooldownTicks": 54,
+      "cooldownTicks": 40,
       "aggroRange": 20,
       "attack": {
-        "windupTicks": 12,
-        "recoveryTicks": 10,
+        "windupTicks": 6,
+        "recoveryTicks": 6,
         "rangeBuffer": 0.6
       }
     },
     "movement": {
-      "speed": 12
+      "speed": 14
+    },
+    "abilities": {
+      "maxMana": 10,
+      "manaRegenPerSecond": 0,
+      "bindings": [
+        {
+          "id": "unstable",
+          "ability": "ability.ants.unstable",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        },
+        {
+          "id": "rupture",
+          "ability": "ability.ants.rupture",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "Q",
+            "column": 1
+          }
+        }
+      ]
     }
   },
   "creation": {
@@ -36,17 +69,26 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 135
+        "amount": 110
+      },
+      {
+        "item": "item.root",
+        "amount": 60
       }
     ],
     "workTicks": 800
   },
-  "level": 1,
+  "requires": [
+    "building.ants.great-mound"
+  ],
+  "level": 2,
   "supplyCost": 1,
   "dimensions": {
     "radius": 1.5,
     "height": 4.8,
     "formationSpacing": 3.25
   },
-  "modelScale": 2.4
+  "modelScale": 2.4,
+  "presentation": {},
+  "underground": false
 }

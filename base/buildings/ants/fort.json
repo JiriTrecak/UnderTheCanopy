@@ -1,7 +1,7 @@
 {
   "id": "building.ants.fort",
   "name": "Nest",
-  "description": "The colony main hall: stores resources, raises workers, provides 15 supply and is a tunnel mound.",
+  "description": "The colony's main hall and its first tunnel mound: stores goods, hatches Workers and provides 15 supply. Ants travel between mounds underground. Upgrades to the Great Nest.",
   "model": "asset.models.buildings.ants-nest",
   "icon": "asset.portraits.buildings.ants-nest",
   "body": {
@@ -54,20 +54,6 @@
     }
   },
   "level": 1,
-  "upgrade": {
-    "target": "building.ants.great-mound",
-    "items": [
-      {
-        "item": "item.amber",
-        "amount": 450
-      },
-      {
-        "item": "item.root",
-        "amount": 200
-      }
-    ],
-    "workTicks": 3200
-  },
   "supplyProvided": 15,
   "heroCapacity": 1,
   "command": {
@@ -92,5 +78,23 @@
         "socket": "socket_crown"
       }
     ]
+  },
+  "tunnel": {
+    "intervalTicks": 12,
+    "speed": 36
+  },
+  "upgrade": {
+    "target": "building.ants.great-mound",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 400
+      },
+      {
+        "item": "item.root",
+        "amount": 150
+      }
+    ],
+    "workTicks": 3200
   }
 }

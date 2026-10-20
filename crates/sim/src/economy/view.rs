@@ -390,11 +390,14 @@ pub fn public(
     let gathered = site.is_some_and(|s| s.workers > 0);
     // A building with income works for as long as it earns (D62: a well pumps by itself).
     let earning = d.income.is_some() && e.owner != Owner::Nobody && alive(e);
+    // A tunnel mound works while ants pass through it.
+    let tunnelling = state.tunnels.busy(e.id, state.tick);
     let busy = e.construction.is_none()
         && !unpowered
         && (producing
             || gathered
             || earning
+            || tunnelling
             || matches!(
                 super::lane::head(e),
                 Some(super::lane::Lane::Research | super::lane::Lane::Revival)

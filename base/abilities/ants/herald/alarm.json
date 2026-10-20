@@ -1,0 +1,91 @@
+{
+  "id": "ability.ants.alarm",
+  "name": "Alarm",
+  "description": "Sound the alarm: allied units within 9 units deal 35% more damage and attack 15% faster for 6 seconds.",
+  "activation": "targeted",
+  "ranks": [
+    {}
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 8,
+    "recoverTicks": 6,
+    "cost": {
+      "resource": "mana",
+      "amount": 120,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 1800,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "caster",
+      "query": {
+        "center": "caster",
+        "radius": 9,
+        "relations": [
+          "ally"
+        ],
+        "allowSelf": true,
+        "maxTargets": 32
+      },
+      "id": "alarmed",
+      "amount": 240,
+      "polarity": "positive",
+      "dispel": true,
+      "modifiers": {
+        "damagePermille": 350,
+        "attackSpeedPermille": 150
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-herald-alarm",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "alarm",
+        "effect": "effect.ants.kit.alarm",
+        "event": "released",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
+        "id": "alarmed",
+        "effect": "effect.ants.kit.alarmed",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "alarmed"
+      }
+    ]
+  }
+}

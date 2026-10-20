@@ -1,0 +1,25 @@
+{
+  "id": "research.ants.needle-hardening-1",
+  "name": "Needle Hardening I",
+  "description": "Needlers, Honeypots, Alates and Acid Spires deal 10% more attack damage (level I; levels add up).",
+  "icon": "asset.icons.research-ants-needle-hardening",
+  "priority": 85,
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 125
+    }
+  ],
+  "workTicks": 1600,
+  "effects": [
+    {
+      "units": [
+        "unit.ants.archer",
+        "unit.ants.bombardier",
+        "unit.ants.winglancer",
+        "unit.ants.spire-spitter"
+      ],
+      "damagePermille": 100
+    }
+  ]
+}

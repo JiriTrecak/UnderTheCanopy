@@ -1,0 +1,27 @@
+{
+  "id": "research.ants.hardened-wings",
+  "name": "Hardened Wings",
+  "description": "Alates gain 100 health and fly 20% faster.",
+  "icon": "asset.icons.research-ants-hardened-wings",
+  "priority": 60,
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 125
+    },
+    {
+      "item": "item.root",
+      "amount": 75
+    }
+  ],
+  "workTicks": 1600,
+  "effects": [
+    {
+      "units": [
+        "unit.ants.winglancer"
+      ],
+      "maxHp": 100,
+      "moveSpeedPermille": 200
+    }
+  ]
+}

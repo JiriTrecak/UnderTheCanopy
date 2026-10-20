@@ -1,0 +1,39 @@
+{
+  "id": "research.ants.pheromone-mastery",
+  "name": "Pheromone Mastery",
+  "description": "Heralds learn Panic and Gardeners learn Spore Cloud.",
+  "icon": "asset.icons.research-ants-pheromone-mastery",
+  "priority": 85,
+  "requires": [
+    "building.ants.scent-hall"
+  ],
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 150
+    },
+    {
+      "item": "item.root",
+      "amount": 100
+    }
+  ],
+  "workTicks": 2000,
+  "effects": [
+    {
+      "units": [
+        "unit.ants.banneret"
+      ],
+      "abilityRanks": {
+        "panic": 1
+      }
+    },
+    {
+      "units": [
+        "unit.ants.nectarist"
+      ],
+      "abilityRanks": {
+        "spore-cloud": 1
+      }
+    }
+  ]
+}

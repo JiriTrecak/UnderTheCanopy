@@ -1,7 +1,7 @@
 {
   "id": "building.ants.sanctuary",
   "name": "Royal Chamber",
-  "description": "A clay throne hall under a royal-blue canopy: raises the colony’s heroes and calls the fallen back with their experience, abilities and inventory.",
+  "description": "Where the colony's heroes are raised and revived: the Queen, the Royal Alchemist and the General.",
   "model": "asset.models.buildings.ants-royal-chamber",
   "icon": "asset.portraits.buildings.ants-royal-chamber",
   "body": {
@@ -53,8 +53,9 @@
     "production": {
       "mode": "queued",
       "outputs": [
-        "unit.ants.marshal",
-        "unit.ants.rootbreaker"
+        "unit.ants.queen",
+        "unit.ants.royal-alchemist",
+        "unit.ants.marshal"
       ],
       "queueCapacity": 4,
       "workerSlots": 0
@@ -62,7 +63,8 @@
     "storage": {
       "capacity": 100000,
       "accepts": [
-        "item.amber"
+        "item.amber",
+        "item.root"
       ]
     }
   },

@@ -118,6 +118,9 @@ pub struct State {
         skip_serializing_if = "crate::abilities::AbilityWorld::is_empty"
     )]
     pub abilities: crate::abilities::AbilityWorld,
+    /// When each tunnel mound lets its next unit under (`tunnels`).
+    #[serde(default, skip_serializing_if = "crate::tunnels::Tunnels::is_empty")]
+    pub tunnels: crate::tunnels::Tunnels,
     /// Map pings of the last few seconds (`Action::Ping`): presentation, outside the
     /// fingerprint, never read by the rules.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -157,6 +160,7 @@ impl State {
             ai: Vec::new(),
             abilities: crate::abilities::AbilityWorld::default(),
             pings: Vec::new(),
+            tunnels: Default::default(),
         }
     }
 

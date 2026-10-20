@@ -479,6 +479,21 @@ fn score(
                     | Effect::Pull(_)
                     | Effect::Vision(_)
                     | Effect::Revive(_) => {}
+                    // A new mound is worth it out on the frontier: far from the owner's
+                    // other mounds and with no enemy near.
+                    Effect::Found(f) => {
+                        let at = match (f.target, aim) {
+                            (canopy_content::abilities::Anchor::Point, program::Aim::Point(p)) => {
+                                *p
+                            }
+                            _ => a.map_or(caster.position, |a| a.position),
+                        };
+                        if !near_threats
+                            && crate::tunnels::frontier(w.state, w.ctx.catalog(), caster.owner, at)
+                        {
+                            benefit = 15.0;
+                        }
+                    }
                 }
                 let applied = match effect {
                     Effect::Sacrifice(_) => 1.0,

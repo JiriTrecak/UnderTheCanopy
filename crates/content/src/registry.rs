@@ -319,6 +319,21 @@ fn research(check: &mut Checker) {
                 }
                 continue;
             }
+            if effect.tunnel_throughput_permille.is_some() {
+                // A tunnel research widens mounds and does nothing else.
+                for building in &effect.units {
+                    if let Some(target) =
+                        check.definition(&location, building.as_str(), Kind::Building)
+                        && target.tunnel.is_none()
+                    {
+                        check.fail(
+                            &location,
+                            format!("tunnel research target {building} is no tunnel mound"),
+                        );
+                    }
+                }
+                continue;
+            }
             for unit in &effect.units {
                 let Some(target) = check.definition(&location, unit.as_str(), Kind::Unit) else {
                     continue;
@@ -914,6 +929,17 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
                 "income requires a building, a currency item and a positive amount and interval",
             );
         }
+    }
+    if let Some(tunnel) = &d.tunnel
+        && (d.kind != Kind::Building || tunnel.interval_ticks == 0 || tunnel.speed == 0)
+    {
+        check.fail(
+            at,
+            "a tunnel mound must be a building with a positive interval and speed",
+        );
+    }
+    if d.underground.is_some() && d.kind != Kind::Unit {
+        check.fail(at, "only units travel underground");
     }
     if let Some(color) = d.presentation.as_ref().and_then(|p| p.color.as_deref()) {
         let hex = color.strip_prefix('#').unwrap_or("");

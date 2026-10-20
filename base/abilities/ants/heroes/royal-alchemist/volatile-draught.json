@@ -1,0 +1,98 @@
+{
+  "id": "ability.ants.volatile-draught",
+  "name": "Volatile Draught",
+  "description": "Throw a flask of substance venom: it bursts on the target for 90/140/190 spell damage to every enemy within 4 units.",
+  "activation": "targeted",
+  "delivery": {
+    "kind": "projectile",
+    "speed": 26
+  },
+  "ranks": [
+    {
+      "damage": 90
+    },
+    {
+      "damage": 140
+    },
+    {
+      "damage": 190
+    }
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 16,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 10,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": 80,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 320,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "damage",
+      "target": "target",
+      "query": {
+        "center": "target",
+        "radius": 4,
+        "relations": [
+          "enemy"
+        ],
+        "maxTargets": 16
+      },
+      "amount": {
+        "rankParameter": "damage"
+      },
+      "damageType": "spell"
+    },
+    {
+      "op": "damage",
+      "target": "target",
+      "amount": {
+        "rankParameter": "damage"
+      },
+      "damageType": "spell"
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-alchemist-volatile-draught",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "burst",
+        "effect": "effect.ants.kit.draught",
+        "event": "impact",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

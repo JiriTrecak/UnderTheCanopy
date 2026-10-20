@@ -1,0 +1,373 @@
+{
+ "n": 1,
+ "anchors": {
+  "ability": [
+   ".asset-work/concepts/buildings/refs/icons/anchor-ability.png",
+   ".asset-work/concepts/buildings/refs/icons/anchor-ability-2.png"
+  ],
+  "passive": [
+   ".asset-work/concepts/buildings/refs/icons/anchor-ability.png"
+  ],
+  "building": [
+   ".asset-work/concepts/buildings/refs/icons/anchor-building.png"
+  ]
+ },
+ "items": [
+  {
+   "name": "a-raider-frenzy",
+   "kind": "passive",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u5-raider-zl-stocky-1.png"
+   ],
+   "subject": "FRENZY: a pack of small stocky ants with blue blade fins on their backs, mandibles wide, crowding together; a violet pheromone haze rising off them. Energy colour: hot violet."
+  },
+  {
+   "name": "a-needler-barbed-needles",
+   "kind": "passive",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u5-needler-hood-1.png"
+   ],
+   "subject": "BARBED NEEDLES: a single long bronze chitin needle with backward-hooked barbs and a glowing violet tip, piercing through a cracked armour plate. Energy colour: violet."
+  },
+  {
+   "name": "a-burster-rupture",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-burster-3.png"
+   ],
+   "subject": "RUPTURE: the Burster's huge sac of glowing blue-violet liquid substance bursting open in a splash-explosion of luminous violet liquid, drops flying outward. Energy colour: bright violet liquid light."
+  },
+  {
+   "name": "a-burster-unstable",
+   "kind": "passive",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-burster-3.png"
+   ],
+   "subject": "UNSTABLE: a round sac of sloshing violet liquid substance bound in royal-blue straps, glowing and trembling, a crack of light at its seam, about to burst. Energy colour: violet."
+  },
+  {
+   "name": "a-major-guard",
+   "kind": "passive",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u2-major-1.png"
+   ],
+   "subject": "GUARD: the Major's huge armoured bronze head and great leaf-shaped royal-blue shield, seen head-on, sheltering small ants behind it. Energy colour: warm amber and blue."
+  },
+  {
+   "name": "a-major-plug",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u2-major-1.png"
+   ],
+   "subject": "PLUG: the Major plants its enormous armoured head into a round clay tunnel mouth like a door, sealing it; arrows glancing off the domed head. Energy colour: steel-blue and amber."
+  },
+  {
+   "name": "a-found",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-alate-3.png"
+   ],
+   "subject": "FOUND A MOUND: a winged ant lands and sheds its translucent blue-violet wings, a small sculpted sand-clay mound spire with a glowing oval tunnel mouth rising from the earth where it lands. Energy colour: violet and warm sand."
+  },
+  {
+   "name": "a-bullet-agony",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u6-bullet-mane-1.png"
+   ],
+   "subject": "AGONY: the Bullet Ant's huge glowing violet stinger striking down, a shockwave of pain rippling out from the impact. Energy colour: searing violet and white."
+  },
+  {
+   "name": "a-bullet-giant-killer",
+   "kind": "passive",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u6-bullet-mane-1.png"
+   ],
+   "subject": "GIANT KILLER: a small dark red-black ant with a golden bristle mane facing a towering shadowed enemy, its mandibles open wide, fearless. Energy colour: gold and violet."
+  },
+  {
+   "name": "a-herald-trail",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-herald-3.png"
+   ],
+   "subject": "TRAIL: a glowing ribbon of blue-violet pheromone mist laid along the ground, ant footprints racing along it toward the horizon. Energy colour: luminous blue-violet."
+  },
+  {
+   "name": "a-herald-alarm",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-herald-3.png"
+   ],
+   "subject": "ALARM: the Herald raises its golden-feathered staff, a ring of blazing amber-red alarm pheromone bursting outward, antennae of ants around it standing up. Energy colour: blazing amber."
+  },
+  {
+   "name": "a-herald-panic",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-herald-3.png"
+   ],
+   "subject": "PANIC: a cloud of sour violet pheromone mist in which enemy silhouettes stumble back in fear, scattering. Energy colour: sickly-sweet violet."
+  },
+  {
+   "name": "a-gardener-fungus-circle",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-gardener-2.png"
+   ],
+   "subject": "FUNGUS CIRCLE: a fairy ring of small glowing pale-and-violet mushrooms sprouting from the ground in a circle, soft healing light rising from it. Energy colour: soft violet and cream."
+  },
+  {
+   "name": "a-gardener-spore-cloud",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-gardener-2.png"
+   ],
+   "subject": "SPORE CLOUD: a big pale mushroom cap releasing a dense billowing cloud of glowing violet spores. Energy colour: violet."
+  },
+  {
+   "name": "a-reaver-devour",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-reaver-queen-2.png"
+   ],
+   "subject": "DEVOUR: the Reaver Queen's enormous hooked mandibles closing around a struggling enemy silhouette, swallowing it whole. Energy colour: violet glow from her eyes."
+  },
+  {
+   "name": "a-reaver-rampage",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-reaver-queen-2.png"
+   ],
+   "subject": "RAMPAGE: the long armoured royal-blue-and-bronze Reaver Queen charging diagonally, enemies flung aside, dust and blades. Energy colour: violet and dust."
+  },
+  {
+   "name": "a-reaver-royal-presence",
+   "kind": "passive",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-reaver-queen-2.png"
+   ],
+   "subject": "ROYAL PRESENCE: the Reaver Queen's crowned armoured head seen from the front, violet glowing eyes, waves of royal authority radiating. Energy colour: royal blue and violet."
+  },
+  {
+   "name": "a-reaver-molt",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-reaver-queen-2.png"
+   ],
+   "subject": "MOLT: an old cracked bronze carapace splitting open along the back, a fresh soft glowing royal-blue body emerging from it. Energy colour: violet light."
+  },
+  {
+   "name": "a-reaver-ravenous",
+   "kind": "passive",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-reaver-queen-2.png"
+   ],
+   "subject": "RAVENOUS: the Reaver Queen's gaping mandibled maw, drooling glowing violet liquid, hungry. Energy colour: violet."
+  },
+  {
+   "name": "a-queen-royal-jelly",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u2-queen-1.png"
+   ],
+   "subject": "ROYAL JELLY: the Queen's hand offering a glowing golden drop of royal jelly, light pouring from it. Energy colour: golden amber."
+  },
+  {
+   "name": "a-queen-one-body",
+   "kind": "passive",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u2-queen-1.png"
+   ],
+   "subject": "ONE BODY: many ants linked by glowing threads of violet light into one shape, like a single body made of many. Energy colour: violet."
+  },
+  {
+   "name": "a-queen-exodus",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u2-queen-1.png"
+   ],
+   "subject": "EXODUS: a column of ants pouring down into a glowing violet tunnel mouth in the earth, swirling into the underground. Energy colour: violet."
+  },
+  {
+   "name": "a-alchemist-volatile-draught",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-royal-alchemist-2.png"
+   ],
+   "subject": "VOLATILE DRAUGHT: a glass flask of glowing violet liquid substance flying through the air, about to shatter. Energy colour: violet."
+  },
+  {
+   "name": "a-alchemist-transfusion",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-royal-alchemist-2.png"
+   ],
+   "subject": "TRANSFUSION: two streams of glowing red life and violet substance flowing through the air from one body into a flask held by the alchemist. Energy colour: crimson and violet."
+  },
+  {
+   "name": "a-alchemist-crystallise",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-royal-alchemist-2.png"
+   ],
+   "subject": "CRYSTALLISE: a figure encased in a smooth glassy shell of hardened violet liquid substance, like an insect in amber but violet. Energy colour: violet."
+  },
+  {
+   "name": "a-alchemist-overdose",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-royal-alchemist-2.png"
+   ],
+   "subject": "OVERDOSE: an ant warrior swelling with glowing violet substance, veins of light, eyes blazing, rearing in power. Energy colour: blazing violet."
+  },
+  {
+   "name": "a-general-mandible-charge",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-general-2.png"
+   ],
+   "subject": "MANDIBLE CHARGE: the General leaping forward with two curved glowing blades and wide mandibles, seizing a foe. Energy colour: violet blade-light."
+  },
+  {
+   "name": "a-general-mark-prey",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-general-2.png"
+   ],
+   "subject": "MARK PREY: a glowing violet pheromone mark, a target-like ring of scent painted on an enemy silhouette. Energy colour: violet."
+  },
+  {
+   "name": "a-general-war-column",
+   "kind": "passive",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-general-2.png"
+   ],
+   "subject": "WAR COLUMN: a marching column of armoured ants under a royal-blue banner, seen head-on, in perfect step. Energy colour: royal blue and gold."
+  },
+  {
+   "name": "a-general-bivouac",
+   "kind": "ability",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-u3-general-2.png"
+   ],
+   "subject": "BIVOUAC: a living fortress made of interlocked ants, their bodies forming walls and a dome, mandibles outward. Energy colour: amber and blue."
+  },
+  {
+   "name": "r-ants-wider-tunnels",
+   "kind": "research-grown",
+   "faction": "ants",
+   "refs": [],
+   "subject": "WIDER TUNNELS: a wide round tunnel mouth in sculpted sand clay, its walls smoothed and widened, soft violet light deep inside."
+  },
+  {
+   "name": "r-ants-mandibles",
+   "kind": "research-grown",
+   "faction": "ants",
+   "refs": [],
+   "subject": "MANDIBLES: a pair of hooked bronze chitin mandibles honed to a gleaming edge."
+  },
+  {
+   "name": "r-ants-needle-hardening",
+   "kind": "research-grown",
+   "faction": "ants",
+   "refs": [],
+   "subject": "NEEDLE HARDENING: a bundle of three long bronze chitin needles, tips hardened to a glassy violet sheen."
+  },
+  {
+   "name": "r-ants-carapace",
+   "kind": "research-grown",
+   "faction": "ants",
+   "refs": [],
+   "subject": "CARAPACE: a thick overlapping bronze carapace plate with a royal-blue painted band, layered like armour."
+  },
+  {
+   "name": "r-ants-barbed-needles",
+   "kind": "research-grown",
+   "faction": "ants",
+   "refs": [],
+   "subject": "BARBED NEEDLES: one long chitin needle with backward-hooked barbs along its shaft."
+  },
+  {
+   "name": "r-ants-volatile-sacs",
+   "kind": "research-grown",
+   "faction": "ants",
+   "refs": [],
+   "subject": "VOLATILE SACS: a glowing round sac of sloshing violet liquid substance, swollen and taut."
+  },
+  {
+   "name": "r-ants-living-wall",
+   "kind": "research-grown",
+   "faction": "ants",
+   "refs": [],
+   "subject": "LIVING WALL: a great leaf-shaped royal-blue shield fused with thick bronze chitin, reinforced."
+  },
+  {
+   "name": "r-ants-sticky-nectar",
+   "kind": "research-grown",
+   "faction": "ants",
+   "refs": [],
+   "subject": "STICKY NECTAR: a thick golden-amber drop of nectar stretching in sticky strands."
+  },
+  {
+   "name": "r-ants-pheromone-mastery",
+   "kind": "research-grown",
+   "faction": "ants",
+   "refs": [],
+   "subject": "PHEROMONE MASTERY: two feathery golden antennae with curling ribbons of violet pheromone mist between them."
+  },
+  {
+   "name": "r-ants-hardened-wings",
+   "kind": "research-grown",
+   "faction": "ants",
+   "refs": [],
+   "subject": "HARDENED WINGS: a pair of translucent blue-violet insect wings with thickened bronze veins."
+  },
+  {
+   "name": "r-ants-venom-glands",
+   "kind": "research-grown",
+   "faction": "ants",
+   "refs": [],
+   "subject": "VENOM GLANDS: a glowing violet venom gland and a hooked stinger dripping a luminous drop."
+  },
+  {
+   "name": "b-ants-venom-spire",
+   "kind": "building",
+   "faction": "ants",
+   "refs": [
+    ".asset-work/concepts/buildings/ant-tripo-acid-spire-1.png"
+   ],
+   "subject": "the VENOM SPIRE, an upgraded ant acid tower: three sculpted sand-clay spires with glowing violet venom mouths, venom dripping, royal-blue drapes, more menacing than the plain tower."
+  }
+ ]
+}

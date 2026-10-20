@@ -1,0 +1,34 @@
+{
+  "id": "research.ants.wider-tunnels-2",
+  "name": "Wider Tunnels II",
+  "description": "Every mound lets 50% more ants into the tunnels each second (level II; levels add up). Requires the Queen's Chamber.",
+  "icon": "asset.icons.research-ants-wider-tunnels",
+  "priority": 49,
+  "requires": [
+    "building.ants.elder-hall",
+    "research.ants.wider-tunnels-1"
+  ],
+  "follows": "research.ants.wider-tunnels-1",
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 175
+    },
+    {
+      "item": "item.root",
+      "amount": 100
+    }
+  ],
+  "workTicks": 2000,
+  "effects": [
+    {
+      "units": [
+        "building.ants.fort",
+        "building.ants.great-mound",
+        "building.ants.elder-hall",
+        "building.ants.house"
+      ],
+      "tunnelThroughputPermille": 500
+    }
+  ]
+}

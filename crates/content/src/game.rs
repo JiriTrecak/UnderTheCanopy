@@ -75,7 +75,13 @@ pub enum Creation {
         work_ticks: u32,
     },
     #[serde(rename_all = "camelCase")]
-    Train { items: Vec<Cost>, work_ticks: u32 },
+    Train {
+        items: Vec<Cost>,
+        work_ticks: u32,
+        /// Units hatched by one training, for its one price (the ants' Raiders come in
+        /// pairs); each still uses its own supply. Default 1.
+        count: Option<u32>,
+    },
     #[serde(rename_all = "camelCase")]
     Harvest {
         work_animation: Option<WorkAnimation>,
@@ -91,6 +97,14 @@ pub enum Creation {
 }
 
 impl Creation {
+    /// Units one training makes (1 unless a `train` creation sets `count`).
+    pub fn count(&self) -> u32 {
+        match self {
+            Creation::Train { count, .. } => count.unwrap_or(1).max(1),
+            _ => 1,
+        }
+    }
+
     pub fn items(&self) -> &[Cost] {
         match self {
             Self::Construct { items, .. }
@@ -476,6 +490,16 @@ pub enum Power {
     Required,
 }
 
+/// A tunnel mound (`Definition::tunnel`). Units ordered far away walk to their nearest
+/// mound, go under one at a time (one every `interval_ticks`; research makes it faster),
+/// travel at `speed` cells a second and come up at the mound nearest their destination.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Tunnel {
+    pub interval_ticks: u32,
+    pub speed: u32,
+}
+
 /// A building placed exactly on a standing resource of `source` (a refinery on its
 /// geyser): it snaps to the resource, covers its footprint, and leaves it intact when it
 /// is gone (D62).
@@ -564,6 +588,12 @@ pub struct Definition {
     pub placement_on: Option<PlacementOn>,
     /// Goods the building makes by itself while it stands complete.
     pub income: Option<Income>,
+    /// A tunnel mound: its owner's units travel underground between such buildings
+    /// when that is faster than walking (the ants' tunnels).
+    pub tunnel: Option<Tunnel>,
+    /// Whether this unit may travel through its owner's tunnels (default true; flyers
+    /// never do). The ants' mutated castes are too big for them.
+    pub underground: Option<bool>,
     pub creation: Option<Creation>,
     pub behaviors: Behaviors,
 }
@@ -769,6 +799,8 @@ pub struct ResearchEffect {
     /// Cells added to the network radius of the listed buildings (D66); `units` then
     /// lists buildings with a `network`.
     pub network_radius: Option<u32>,
+    /// More units a second through the listed tunnel mounds: 500 lets 50% more through.
+    pub tunnel_throughput_permille: Option<u32>,
 }
 
 #[skip_serializing_none]

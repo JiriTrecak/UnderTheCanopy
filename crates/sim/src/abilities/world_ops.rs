@@ -276,6 +276,28 @@ pub fn validate_aim(
             .collect(),
     };
     for op in candidates {
+        if let Effect::Found(f) = op {
+            let at = if f.target == Anchor::Caster {
+                c.position
+            } else {
+                point
+            };
+            let catalog = ctx.senses.catalog;
+            let def = catalog.find(f.building.as_str());
+            let index = ctx.economy.index(state, catalog);
+            let ground = crate::economy::construction::Ground {
+                state,
+                catalog,
+                spatial: ctx.spatial,
+                index,
+            };
+            if def.is_none_or(|d| {
+                crate::economy::construction::found_site(&ground, c.owner, d, at).is_none()
+            }) {
+                return Err("No room to found here");
+            }
+            continue;
+        }
         if op.query().is_some() || op.target() == Anchor::Point {
             continue;
         }
@@ -414,6 +436,23 @@ pub fn apply(ctx: &mut Ctx, state: &mut State, a: &Apply) -> i64 {
             hold(ctx, state, a.source, t, a.ability, a.rank, a.cast, k)
         }
         Effect::ReleaseContained(_) => target.map_or(0, |t| release_hosted(ctx, state, t)),
+        Effect::Found(f) => {
+            let catalog = ctx.senses.catalog;
+            let Some(def) = catalog.find(f.building.as_str()) else {
+                return 0;
+            };
+            let mut ectx = ctx.economy.ctx(state, catalog, ctx.spatial);
+            let Some(site) =
+                crate::economy::construction::found_site(&ectx.ground(), a.owner, def, point)
+            else {
+                return 0;
+            };
+            crate::economy::construction::found(&mut ectx, a.owner, site);
+            if f.consume {
+                crate::economy::work::remove(&mut ectx, a.source, false);
+            }
+            1
+        }
         Effect::Sacrifice(_) => {
             let Some(t) = target else {
                 return 0;

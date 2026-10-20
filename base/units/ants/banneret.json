@@ -1,13 +1,13 @@
 {
   "id": "unit.ants.banneret",
   "name": "Herald",
-  "description": "A six-legged herald under a crown of feathers. Rallies nearby allies for increased attack damage and defends itself with its staff.",
+  "description": "Pheromone caster with a crown of golden feathers. Trail speeds allies along the ground, Alarm drives them into a fury, and Panic, learned through Pheromone Mastery, leaves enemies unable to fight. Requires a Great Nest; uses 2 supply.",
   "model": "asset.models.units.ants-herald",
   "icon": "asset.portraits.units.ants-herald",
   "selectionClass": "army",
   "body": {
-    "maxHp": 440,
-    "armor": 2,
+    "maxHp": 420,
+    "armor": 1,
     "armorType": "light"
   },
   "vision": 36,
@@ -16,27 +16,30 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 10,
-      "damageType": "melee",
-      "range": 1,
-      "cooldownTicks": 56,
-      "aggroRange": 20,
+      "damage": 9,
+      "damageType": "spell",
+      "range": 12,
+      "cooldownTicks": 60,
+      "aggroRange": 18,
       "attack": {
         "windupTicks": 14,
-        "recoveryTicks": 16,
+        "recoveryTicks": 10,
         "rangeBuffer": 0.75
+      },
+      "projectile": {
+        "speed": 30
       }
     },
     "movement": {
-      "speed": 12
+      "speed": 11
     },
     "abilities": {
-      "maxMana": 120,
-      "manaRegenPerSecond": 1.5,
+      "maxMana": 250,
+      "manaRegenPerSecond": 1.1,
       "bindings": [
         {
-          "id": "rallying-standard",
-          "ability": "ability.ants.rallying-standard",
+          "id": "trail",
+          "ability": "ability.ants.trail",
           "initialRank": 1,
           "controls": [
             "player",
@@ -48,8 +51,46 @@
             "column": 1
           },
           "ai": {
+            "preference": "wounded-ally",
+            "intervalTicks": 40,
+            "threatRadius": 20
+          }
+        },
+        {
+          "id": "alarm",
+          "ability": "ability.ants.alarm",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "W",
+            "column": 2
+          },
+          "ai": {
             "preference": "enemy",
-            "intervalTicks": 16
+            "intervalTicks": 20,
+            "threatRadius": 10
+          }
+        },
+        {
+          "id": "panic",
+          "ability": "ability.ants.panic",
+          "initialRank": 0,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "E",
+            "column": 3
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
           }
         }
       ]
@@ -60,11 +101,18 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 175
+        "amount": 160
+      },
+      {
+        "item": "item.root",
+        "amount": 40
       }
     ],
-    "workTicks": 1000
+    "workTicks": 960
   },
+  "requires": [
+    "building.ants.great-mound"
+  ],
   "level": 2,
   "supplyCost": 2,
   "dimensions": {
@@ -74,6 +122,8 @@
   },
   "modelScale": 3.3,
   "presentation": {
-    "castContact": 0.5
+    "castContact": 0.5,
+    "projectile": "effect.weapon.nectar",
+    "projectileSocket": "socket_projectile"
   }
 }

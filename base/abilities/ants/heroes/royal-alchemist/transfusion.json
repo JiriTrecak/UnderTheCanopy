@@ -1,0 +1,113 @@
+{
+  "id": "ability.ants.transfusion",
+  "name": "Transfusion",
+  "description": "Draw 80/120/160 health out of an enemy and pour it into the most wounded ally within 12 units of the Alchemist.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "drain": 80
+    },
+    {
+      "drain": 120
+    },
+    {
+      "drain": 160
+    }
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 12,
+    "outOfRange": "reject",
+    "filter": {
+      "buildings": false
+    }
+  },
+  "cast": {
+    "prepareTicks": 10,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": 70,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 400,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "drain",
+      "target": "target",
+      "resource": "health",
+      "amount": {
+        "rankParameter": "drain"
+      },
+      "restoreCaster": false,
+      "damageType": "spell",
+      "damagePerDrainedPermille": 0,
+      "record": "drawn"
+    },
+    {
+      "op": "heal",
+      "target": "target",
+      "query": {
+        "center": "caster",
+        "radius": 12,
+        "relations": [
+          "ally"
+        ],
+        "allowSelf": true,
+        "maxTargets": 1,
+        "order": "lowest-health"
+      },
+      "amount": 0,
+      "scale": {
+        "source": "result",
+        "id": "drawn",
+        "stat": "applied",
+        "permille": 1000
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-alchemist-transfusion",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "draw",
+        "effect": "effect.ants.kit.transfusion",
+        "event": "drained",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
+        "id": "pour",
+        "effect": "effect.ants.kit.transfusion",
+        "event": "healed",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

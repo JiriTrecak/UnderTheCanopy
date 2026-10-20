@@ -5,7 +5,7 @@
     "frame": "image.woodland-connected-hud",
     "resources": "asset.interface.woodland.resource-ribbon"
   },
-  "description": "Versatile colony with quick infantry and a broad combined-arms roster.",
+  "description": "One body, ten thousand legs: a swarm of cheap, fast castes that travels underground between its mounds, with mutated monsters at the top of the colony.",
   "startingSetup": {
     "fort": "building.ants.fort",
     "inventory": {
@@ -57,10 +57,11 @@
       }
     ],
     "hero": {
-      "default": "unit.ants.marshal",
+      "default": "unit.ants.queen",
       "choices": [
-        "unit.ants.marshal",
-        "unit.ants.rootbreaker"
+        "unit.ants.queen",
+        "unit.ants.royal-alchemist",
+        "unit.ants.marshal"
       ],
       "offset": {
         "x": 0,
@@ -71,32 +72,36 @@
   "roster": [
     "unit.ants.settler",
     "unit.ants.warrior",
-    "unit.ants.thornblade",
     "unit.ants.archer",
-    "unit.ants.silkwarden",
+    "unit.ants.burster",
+    "unit.ants.queensguard",
+    "unit.ants.bombardier",
+    "unit.ants.winglancer",
+    "unit.ants.thornblade",
+    "unit.ants.banneret",
+    "unit.ants.nectarist",
+    "unit.ants.reaver-queen",
+    "unit.ants.queen",
+    "unit.ants.royal-alchemist",
+    "unit.ants.marshal",
+    "unit.ants.spire-spitter",
+    "unit.ants.venom-spitter",
+    "unit.ants.civilian",
+    "unit.ants.youngling",
     "building.ants.fort",
     "building.ants.great-mound",
     "building.ants.elder-hall",
-    "building.ants.barracks",
-    "building.ants.forester",
     "building.ants.house",
-    "building.ants.tower",
-    "unit.ants.marshal",
-    "building.ants.sanctuary",
+    "building.ants.barracks",
     "building.ants.ironroot-forge",
-    "building.ants.substance-well",
-    "unit.ants.hunter",
-    "unit.ants.bombardier",
+    "building.ants.fungus-garden",
+    "building.ants.scent-hall",
     "building.ants.bombardier-workshop",
-    "unit.ants.civilian",
-    "unit.ants.youngling",
-    "unit.ants.nectarist",
-    "unit.ants.banneret",
-    "unit.ants.amber-adept",
-    "unit.ants.queensguard",
-    "unit.ants.winglancer",
-    "unit.ants.rootweaver",
-    "unit.ants.rootbreaker"
+    "building.ants.queens-cradle",
+    "building.ants.tower",
+    "building.ants.venom-spire",
+    "building.ants.sanctuary",
+    "building.ants.substance-well"
   ],
   "construction": {
     "scaffold": "asset.models.construction.ants",

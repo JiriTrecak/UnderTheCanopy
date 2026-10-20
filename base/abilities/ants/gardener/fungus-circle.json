@@ -1,0 +1,94 @@
+{
+  "id": "ability.ants.fungus-circle",
+  "name": "Fungus Circle",
+  "description": "Grow a ring of glowing fungus for 10 seconds: allied units in it heal 15 health every second. The Reaver Queen is too far gone to be healed.",
+  "activation": "targeted",
+  "persistent": {
+    "durationTicks": 400,
+    "intervalTicks": 40,
+    "anchor": "point",
+    "endsWithCaster": false,
+    "upkeepMana": 0,
+    "toggle": false
+  },
+  "ranks": [
+    {}
+  ],
+  "targeting": {
+    "kind": "point",
+    "radius": 5,
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 14,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 10,
+    "recoverTicks": 6,
+    "cost": {
+      "resource": "mana",
+      "amount": 90,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 800,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "heal",
+      "target": "target",
+      "filter": {
+        "maxLevel": 4
+      },
+      "amount": 15
+    },
+    {
+      "op": "heal",
+      "target": "target",
+      "filter": {
+        "heroes": true
+      },
+      "amount": 15
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-gardener-fungus-circle",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "zone",
+        "effect": "effect.ants.kit.fungus",
+        "event": "released",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
+        "id": "heal",
+        "effect": "effect.ants.kit.fungus-heal",
+        "event": "healed",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

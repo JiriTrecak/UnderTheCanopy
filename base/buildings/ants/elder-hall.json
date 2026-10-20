@@ -1,7 +1,7 @@
 {
   "id": "building.ants.elder-hall",
   "name": "Queen's Chamber",
-  "description": "The colony's crowned heart, where the queen's spire beats with violet light: stores resources, raises workers, provides 15 supply and supports three heroes.",
+  "description": "Hall tier 3 and a tunnel mound: unlocks the Queen's Cradle, the Bullet Ant, the Venom Spire, level III research and Wider Tunnels II.",
   "model": "asset.models.buildings.ants-queens-chamber",
   "icon": "asset.portraits.buildings.ants-queens-chamber",
   "body": {
@@ -68,5 +68,12 @@
         "socket": "socket_crown"
       }
     ]
-  }
+  },
+  "tunnel": {
+    "intervalTicks": 12,
+    "speed": 36
+  },
+  "requires": [
+    "building.ants.bombardier-workshop"
+  ]
 }

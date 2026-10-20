@@ -1,14 +1,13 @@
 {
   "id": "unit.ants.queen",
   "name": "The Queen",
-  "description": "The colony's mother and the campaign's protagonist; a winged caster with a staff of violet flame.",
+  "description": "The colony's mother and the campaign's protagonist. Founds new mounds where she stands, feeds allies Royal Jelly, shares the colony's wounds through One Body and, at the last, leads the Exodus underground.",
   "model": "asset.models.units.ants-queen",
   "icon": "asset.portraits.units.ants-queen",
   "hero": true,
-  "level": 1,
   "selectionClass": "army",
   "body": {
-    "maxHp": 700,
+    "maxHp": 720,
     "armor": 2,
     "armorType": "hero"
   },
@@ -17,130 +16,118 @@
     "behavior-set.ground-army"
   ],
   "behaviors": {
-    "combat": {
-      "damage": 31,
-      "damageType": "hero",
-      "range": 0.6,
-      "cooldownTicks": 73,
-      "aggroRange": 20,
-      "attack": {
-        "windupTicks": 18,
-        "recoveryTicks": 14,
-        "rangeBuffer": 0.6
-      }
-    },
     "progression": {
       "experienceRadius": 40,
       "levels": [
         {
           "experience": 0,
-          "maxHp": 700,
-          "damage": 31,
+          "maxHp": 720,
+          "damage": 24,
           "armor": 2,
-          "maxMana": 225,
-          "cooldownTicks": 73,
-          "healthRegenPerSecond": 1.45,
-          "manaRegenPerSecond": 0.76
+          "maxMana": 260,
+          "cooldownTicks": 72,
+          "healthRegenPerSecond": 1.3,
+          "manaRegenPerSecond": 1.0
         },
         {
           "experience": 160,
-          "maxHp": 775,
-          "damage": 34,
-          "armor": 3,
-          "maxMana": 240,
-          "cooldownTicks": 72,
-          "healthRegenPerSecond": 1.6,
-          "manaRegenPerSecond": 0.81
+          "maxHp": 795,
+          "damage": 27,
+          "armor": 2,
+          "maxMana": 286,
+          "cooldownTicks": 70,
+          "healthRegenPerSecond": 1.45,
+          "manaRegenPerSecond": 1.08
         },
         {
           "experience": 400,
-          "maxHp": 850,
-          "damage": 37,
+          "maxHp": 870,
+          "damage": 30,
           "armor": 3,
-          "maxMana": 270,
-          "cooldownTicks": 69,
-          "healthRegenPerSecond": 1.75,
-          "manaRegenPerSecond": 0.91
+          "maxMana": 312,
+          "cooldownTicks": 68,
+          "healthRegenPerSecond": 1.6,
+          "manaRegenPerSecond": 1.16
         },
         {
           "experience": 720,
-          "maxHp": 925,
-          "damage": 40,
-          "armor": 4,
-          "maxMana": 285,
-          "cooldownTicks": 68,
-          "healthRegenPerSecond": 1.9,
-          "manaRegenPerSecond": 0.96
+          "maxHp": 945,
+          "damage": 33,
+          "armor": 3,
+          "maxMana": 338,
+          "cooldownTicks": 66,
+          "healthRegenPerSecond": 1.75,
+          "manaRegenPerSecond": 1.24
         },
         {
           "experience": 1120,
-          "maxHp": 1000,
-          "damage": 43,
+          "maxHp": 1020,
+          "damage": 36,
           "armor": 4,
-          "maxMana": 315,
-          "cooldownTicks": 66,
-          "healthRegenPerSecond": 2.05,
-          "manaRegenPerSecond": 1.06
+          "maxMana": 364,
+          "cooldownTicks": 64,
+          "healthRegenPerSecond": 1.9,
+          "manaRegenPerSecond": 1.32
         },
         {
           "experience": 1600,
-          "maxHp": 1075,
-          "damage": 46,
+          "maxHp": 1095,
+          "damage": 39,
           "armor": 4,
-          "maxMana": 330,
-          "cooldownTicks": 65,
-          "healthRegenPerSecond": 2.2,
-          "manaRegenPerSecond": 1.11
+          "maxMana": 390,
+          "cooldownTicks": 62,
+          "healthRegenPerSecond": 2.05,
+          "manaRegenPerSecond": 1.4
         },
         {
           "experience": 2160,
-          "maxHp": 1150,
-          "damage": 49,
+          "maxHp": 1170,
+          "damage": 42,
           "armor": 5,
-          "maxMana": 360,
-          "cooldownTicks": 63,
-          "healthRegenPerSecond": 2.35,
-          "manaRegenPerSecond": 1.21
+          "maxMana": 416,
+          "cooldownTicks": 60,
+          "healthRegenPerSecond": 2.2,
+          "manaRegenPerSecond": 1.48
         },
         {
           "experience": 2800,
-          "maxHp": 1225,
-          "damage": 52,
+          "maxHp": 1245,
+          "damage": 45,
           "armor": 5,
-          "maxMana": 375,
-          "cooldownTicks": 63,
-          "healthRegenPerSecond": 2.5,
-          "manaRegenPerSecond": 1.26
+          "maxMana": 442,
+          "cooldownTicks": 60,
+          "healthRegenPerSecond": 2.35,
+          "manaRegenPerSecond": 1.56
         },
         {
           "experience": 3520,
-          "maxHp": 1300,
-          "damage": 55,
+          "maxHp": 1320,
+          "damage": 48,
           "armor": 6,
-          "maxMana": 405,
-          "cooldownTicks": 61,
-          "healthRegenPerSecond": 2.65,
-          "manaRegenPerSecond": 1.36
+          "maxMana": 468,
+          "cooldownTicks": 60,
+          "healthRegenPerSecond": 2.5,
+          "manaRegenPerSecond": 1.64
         },
         {
           "experience": 4320,
-          "maxHp": 1375,
-          "damage": 58,
+          "maxHp": 1395,
+          "damage": 51,
           "armor": 6,
-          "maxMana": 420,
+          "maxMana": 494,
           "cooldownTicks": 60,
-          "healthRegenPerSecond": 2.8,
-          "manaRegenPerSecond": 1.41
+          "healthRegenPerSecond": 2.65,
+          "manaRegenPerSecond": 1.72
         },
         {
           "experience": 5200,
-          "maxHp": 1450,
-          "damage": 61,
-          "armor": 6,
-          "maxMana": 450,
-          "cooldownTicks": 59,
-          "healthRegenPerSecond": 2.95,
-          "manaRegenPerSecond": 1.51
+          "maxHp": 1470,
+          "damage": 54,
+          "armor": 7,
+          "maxMana": 520,
+          "cooldownTicks": 60,
+          "healthRegenPerSecond": 2.8,
+          "manaRegenPerSecond": 1.8
         }
       ]
     },
@@ -148,13 +135,31 @@
       "slots": 4,
       "pickupRange": 1.5
     },
+    "combat": {
+      "damage": 24,
+      "damageType": "hero",
+      "range": 14,
+      "cooldownTicks": 72,
+      "aggroRange": 20,
+      "attack": {
+        "windupTicks": 18,
+        "recoveryTicks": 12,
+        "rangeBuffer": 0.75
+      },
+      "projectile": {
+        "speed": 36
+      }
+    },
+    "movement": {
+      "speed": 11
+    },
     "abilities": {
-      "maxMana": 225,
-      "manaRegenPerSecond": 0.76,
+      "maxMana": 260,
+      "manaRegenPerSecond": 1.0,
       "bindings": [
         {
-          "id": "faultline",
-          "ability": "ability.marshal.faultline",
+          "id": "found",
+          "ability": "ability.ants.found-colony",
           "initialRank": 0,
           "controls": [
             "player",
@@ -178,8 +183,8 @@
           }
         },
         {
-          "id": "rally",
-          "ability": "ability.marshal.rally",
+          "id": "royal-jelly",
+          "ability": "ability.ants.royal-jelly",
           "initialRank": 0,
           "controls": [
             "player",
@@ -203,8 +208,8 @@
           }
         },
         {
-          "id": "carapace",
-          "ability": "ability.marshal.carapace",
+          "id": "one-body",
+          "ability": "ability.ants.one-body",
           "initialRank": 0,
           "controls": [
             "player",
@@ -228,12 +233,11 @@
           }
         },
         {
-          "id": "crownfall",
-          "ability": "ability.marshal.crownfall",
+          "id": "exodus",
+          "ability": "ability.ants.exodus",
           "initialRank": 0,
           "controls": [
             "player",
-            "ai",
             "scenario"
           ],
           "command": {
@@ -242,21 +246,28 @@
           },
           "learning": {
             "requiredLevels": [
-              5,
-              8
+              6
             ]
-          },
-          "ai": {
-            "preference": "enemy",
-            "intervalTicks": 20
           }
         }
       ]
-    },
-    "movement": {
-      "speed": 13
     }
   },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 425
+      },
+      {
+        "item": "item.root",
+        "amount": 75
+      }
+    ],
+    "workTicks": 2200
+  },
+  "level": 1,
   "supplyCost": 4,
   "dimensions": {
     "radius": 3,
@@ -264,17 +275,10 @@
     "formationSpacing": 6.5
   },
   "modelScale": 4.0,
-  "creation": {
-    "method": "train",
-    "items": [
-      {
-        "item": "item.amber",
-        "amount": 475
-      }
-    ],
-    "workTicks": 2200
-  },
   "presentation": {
-    "castContact": 0.5384615384615384
-  }
+    "projectile": "effect.weapon.nectar",
+    "projectileSocket": "socket_projectile",
+    "castContact": 0.5
+  },
+  "displayOrder": 1
 }

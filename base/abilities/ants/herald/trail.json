@@ -1,0 +1,90 @@
+{
+  "id": "ability.ants.trail",
+  "name": "Trail",
+  "description": "Lay a pheromone trail for 12 seconds: allied units in it move 35% faster.",
+  "activation": "targeted",
+  "persistent": {
+    "durationTicks": 480,
+    "intervalTicks": 20,
+    "anchor": "point",
+    "endsWithCaster": false,
+    "upkeepMana": 0,
+    "toggle": false
+  },
+  "ranks": [
+    {}
+  ],
+  "targeting": {
+    "kind": "point",
+    "radius": 5,
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 18,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 8,
+    "recoverTicks": 6,
+    "cost": {
+      "resource": "mana",
+      "amount": 60,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 600,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "target",
+      "id": "trailed",
+      "amount": 30,
+      "polarity": "positive",
+      "dispel": true,
+      "modifiers": {
+        "moveSpeedPermille": 350
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-herald-trail",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "zone",
+        "effect": "effect.ants.kit.trail",
+        "event": "released",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
+        "id": "trailed",
+        "effect": "effect.ants.kit.trailed",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "trailed"
+      }
+    ]
+  }
+}

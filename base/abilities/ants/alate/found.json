@@ -1,0 +1,68 @@
+{
+  "id": "ability.ants.found",
+  "name": "Found",
+  "description": "The Alate lands, sheds its wings and becomes a Brood Mound where it stands: a new tunnel mound and 8 supply. The Alate is used up.",
+  "activation": "targeted",
+  "ranks": [
+    {}
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 60,
+    "recoverTicks": 0,
+    "cost": {
+      "resource": "mana",
+      "amount": 0,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 0,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "found",
+      "target": "caster",
+      "building": "building.ants.house",
+      "consume": true
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-found",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "rise",
+        "effect": "effect.ants.kit.found",
+        "event": "summoned",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

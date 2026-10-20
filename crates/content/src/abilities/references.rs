@@ -173,6 +173,7 @@ fn effects(content: &Content, errors: &mut Vec<Error>) {
         let mut damage_types: Vec<&str> = Vec::new();
         let mut summons = Vec::new();
         let mut members = Vec::new();
+        let mut founds = Vec::new();
         for entry in ability.all_effects() {
             if let Some(status) = entry.status() {
                 damage_types.extend(status.periodic.iter().map(|p| p.damage_type.as_str()));
@@ -211,6 +212,7 @@ fn effects(content: &Content, errors: &mut Vec<Error>) {
                 }
                 Some(Effect::Summon(e)) => summons.extend(e.definition.ids()),
                 Some(Effect::Split(e)) => members.extend(e.members.iter().flat_map(|m| m.ids())),
+                Some(Effect::Found(e)) => founds.push(&e.building),
                 _ => {}
             }
         }
@@ -238,6 +240,16 @@ fn effects(content: &Content, errors: &mut Vec<Error>) {
                 .is_some_and(|d| d.kind == Kind::Unit)
             {
                 fail(format!("summons require a unit definition ({id})"));
+            }
+        }
+        for id in founds {
+            if !content
+                .definition(id.as_str())
+                .is_some_and(|d| d.kind == Kind::Building && d.footprint.is_some())
+            {
+                fail(format!(
+                    "found requires a building definition with a footprint ({id})"
+                ));
             }
         }
     }

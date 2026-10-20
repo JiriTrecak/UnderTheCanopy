@@ -1,12 +1,12 @@
 {
   "id": "unit.ants.queensguard",
   "name": "Major",
-  "description": "The colony's armoured tank, with a huge armoured head and a great shield.",
+  "description": "The colony's armoured tank, with a huge armoured head and a great shield. Guard: small ants beside it take less damage. Plug: it plants its head like a door and holds. Requires a Great Nest; uses 3 supply.",
   "model": "asset.models.units.ants-major",
   "icon": "asset.portraits.units.ants-major",
   "selectionClass": "army",
   "body": {
-    "maxHp": 720,
+    "maxHp": 960,
     "armor": 4,
     "armorType": "heavy"
   },
@@ -16,43 +16,55 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 26,
+      "damage": 24,
       "damageType": "melee",
-      "range": 1.2,
+      "range": 0.8,
       "cooldownTicks": 64,
       "aggroRange": 20,
       "attack": {
-        "windupTicks": 16,
-        "recoveryTicks": 18,
-        "rangeBuffer": 0.75
+        "windupTicks": 14,
+        "recoveryTicks": 12,
+        "rangeBuffer": 0.6
       }
     },
     "movement": {
-      "speed": 10
+      "speed": 9
     },
     "abilities": {
-      "maxMana": 100,
-      "manaRegenPerSecond": 1,
+      "maxMana": 10,
+      "manaRegenPerSecond": 0,
       "bindings": [
         {
-          "id": "royal-guard",
-          "ability": "ability.ants.royal-guard",
-          "initialRank": 1,
-          "controls": [
-            "scenario"
-          ]
-        },
-        {
-          "id": "shield-brace",
-          "ability": "ability.ants.shield-brace",
+          "id": "guard",
+          "ability": "ability.ants.guard",
           "initialRank": 1,
           "controls": [
             "player",
+            "ai",
+            "scenario"
+          ],
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        },
+        {
+          "id": "plug",
+          "ability": "ability.ants.plug",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
             "scenario"
           ],
           "command": {
             "hotkey": "Q",
             "column": 1
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20,
+            "threatRadius": 7
           }
         }
       ]
@@ -63,16 +75,19 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 280
+        "amount": 230
       },
       {
         "item": "item.root",
-        "amount": 80
+        "amount": 60
       }
     ],
-    "workTicks": 1280
+    "workTicks": 1120
   },
-  "level": 3,
+  "requires": [
+    "building.ants.great-mound"
+  ],
+  "level": 2,
   "supplyCost": 3,
   "dimensions": {
     "radius": 2,
@@ -80,9 +95,6 @@
     "formationSpacing": 4.4
   },
   "modelScale": 3.0,
-  "requires": [
-    "building.ants.great-mound"
-  ],
   "presentation": {
     "castContact": 0.5
   }

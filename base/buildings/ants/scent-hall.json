@@ -1,7 +1,7 @@
 {
   "id": "building.ants.scent-hall",
   "name": "Scent Hall",
-  "description": "The colony's pheromone hall, a clay spire crowned by a great flower: home of the pheromone specialists.",
+  "description": "Where the pheromone castes are raised: hatches Heralds and Gardeners. Requires a Great Nest.",
   "model": "asset.models.buildings.ants-scent-hall",
   "icon": "asset.portraits.buildings.ants-scent-hall",
   "body": {
@@ -37,9 +37,6 @@
     "behavior-set.player-building"
   ],
   "category": "category.build-advanced",
-  "requires": [
-    "building.ants.great-mound"
-  ],
   "level": 2,
   "command": {
     "priority": 40,
@@ -63,5 +60,26 @@
         "socket": "socket_throat"
       }
     ]
-  }
+  },
+  "behaviors": {
+    "storage": {
+      "capacity": 800,
+      "accepts": [
+        "item.amber",
+        "item.root"
+      ]
+    },
+    "production": {
+      "mode": "queued",
+      "outputs": [
+        "unit.ants.banneret",
+        "unit.ants.nectarist"
+      ],
+      "workerSlots": 0,
+      "queueCapacity": 6
+    }
+  },
+  "requires": [
+    "building.ants.great-mound"
+  ]
 }

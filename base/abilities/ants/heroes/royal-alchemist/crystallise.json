@@ -1,0 +1,127 @@
+{
+  "id": "ability.ants.crystallise",
+  "name": "Crystallise",
+  "description": "Encase a unit in hardened substance for 2/3/4 seconds: an enemy is stunned (half as long on heroes); an ally cannot act but takes no damage.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "hold": 80,
+      "hero": 40
+    },
+    {
+      "hold": 120,
+      "hero": 60
+    },
+    {
+      "hold": 160,
+      "hero": 80
+    }
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally",
+      "enemy"
+    ],
+    "allowSelf": true,
+    "range": 14,
+    "outOfRange": "reject",
+    "filter": {
+      "buildings": false
+    }
+  },
+  "cast": {
+    "prepareTicks": 8,
+    "recoverTicks": 6,
+    "cost": {
+      "resource": "mana",
+      "amount": 90,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 640,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "branch",
+      "condition": {
+        "kind": "relation",
+        "of": "target",
+        "to": "caster",
+        "is": "enemy"
+      },
+      "then": [
+        {
+          "op": "status",
+          "target": "target",
+          "id": "crystal",
+          "amount": {
+            "rankParameter": "hold"
+          },
+          "heroDuration": {
+            "rankParameter": "hero"
+          },
+          "polarity": "negative",
+          "dispel": true,
+          "stun": true
+        }
+      ],
+      "else": [
+        {
+          "op": "status",
+          "target": "target",
+          "id": "sheltered",
+          "amount": {
+            "rankParameter": "hold"
+          },
+          "polarity": "positive",
+          "dispel": true,
+          "stun": true,
+          "modifiers": {
+            "invulnerable": true
+          }
+        }
+      ]
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-alchemist-crystallise",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "crystal",
+        "effect": "effect.ants.kit.crystal",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "crystal"
+      },
+      {
+        "id": "shelter",
+        "effect": "effect.ants.kit.crystal",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "sheltered"
+      }
+    ]
+  }
+}

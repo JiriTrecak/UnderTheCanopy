@@ -1,0 +1,71 @@
+{
+  "id": "effect.ants.kit.alarmed",
+  "name": "Alarmed",
+  "description": "Alarmed on a unit, for as long as it lasts.",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#ff9a3c",
+      "accent": "#ffe0b0",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 1.6,
+      "height": 0.06,
+      "blend": "additive",
+      "sustain": true,
+      "follow": true,
+      "intensity": 0.45,
+      "motion": {
+        "opacity": {
+          "periodTicks": 40,
+          "min": 0.5,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "motes",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ff9a3c",
+      "accent": "#ffe0b0",
+      "durationTicks": 80,
+      "count": 4,
+      "size": 0.18,
+      "height": 1.6,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 1.6,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 40,
+        "rate": 4,
+        "speed": 2.2,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 25,
+        "gravity": 0.0,
+        "drag": 1.0,
+        "spawnRadius": 0.6400000000000001,
+        "startSize": 0.18,
+        "endSize": 0.036,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      }
+    }
+  ]
+}

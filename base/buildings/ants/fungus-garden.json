@@ -1,7 +1,7 @@
 {
   "id": "building.ants.fungus-garden",
   "name": "Fungus Garden",
-  "description": "The colony's substance lab, a living fungus cathedral: researches one-off mutations for its castes.",
+  "description": "The colony's substance garden: one-off upgrades for every caste. Requires a Great Nest.",
   "model": "asset.models.buildings.ants-fungus-garden",
   "icon": "asset.portraits.buildings.ants-fungus-garden",
   "body": {
@@ -37,9 +37,6 @@
     "behavior-set.player-building"
   ],
   "category": "category.build-advanced",
-  "requires": [
-    "building.ants.great-mound"
-  ],
   "level": 2,
   "command": {
     "priority": 40,
@@ -63,5 +60,22 @@
         "socket": "socket_gills"
       }
     ]
-  }
+  },
+  "behaviors": {
+    "research": {
+      "outputs": [
+        "research.ants.barbed-needles",
+        "research.ants.volatile-sacs",
+        "research.ants.living-wall",
+        "research.ants.sticky-nectar",
+        "research.ants.pheromone-mastery",
+        "research.ants.hardened-wings",
+        "research.ants.venom-glands"
+      ],
+      "queueCapacity": 3
+    }
+  },
+  "requires": [
+    "building.ants.great-mound"
+  ]
 }

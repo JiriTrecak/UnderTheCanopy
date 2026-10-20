@@ -1,0 +1,68 @@
+{
+  "id": "ability.ants.giant-killer",
+  "name": "Giant Killer",
+  "description": "Bullet Ants go for the biggest prey: +15 damage against heroes and units of level 3 and up.",
+  "activation": "passive",
+  "combatModifiers": {
+    "attackBonus": {
+      "amount": {
+        "rankParameter": "bonus"
+      },
+      "manaCost": 0,
+      "weapon": "melee",
+      "blockedBySilence": false,
+      "filter": {
+        "minLevel": 3
+      }
+    }
+  },
+  "ranks": [
+    {
+      "bonus": 15
+    }
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 0,
+    "recoverTicks": 0,
+    "cost": {
+      "resource": "mana",
+      "amount": 0,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 0,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-bullet-giant-killer",
+    "animations": {
+      "prepare": "idle",
+      "release": "idle",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": []
+  }
+}

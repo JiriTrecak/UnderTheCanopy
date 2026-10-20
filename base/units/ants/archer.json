@@ -1,12 +1,12 @@
 {
   "id": "unit.ants.archer",
   "name": "Needler",
-  "description": "An ant creature bristling with chitin needles that it fires from range.",
+  "description": "An ant creature bristling with chitin needles that it fires at ground and air targets. Barbed Needles, from the Fungus Garden, makes each hit strip armor. Uses 2 supply.",
   "model": "asset.models.units.ants-needler",
   "icon": "asset.portraits.units.ants-needler",
   "selectionClass": "army",
   "body": {
-    "maxHp": 375,
+    "maxHp": 380,
     "armor": 0,
     "armorType": "light"
   },
@@ -18,20 +18,44 @@
     "combat": {
       "damage": 15,
       "damageType": "piercing",
-      "range": 20,
-      "cooldownTicks": 60,
-      "aggroRange": 24,
+      "range": 18,
+      "cooldownTicks": 44,
+      "aggroRange": 22,
       "attack": {
-        "windupTicks": 20,
-        "recoveryTicks": 16,
+        "windupTicks": 10,
+        "recoveryTicks": 10,
         "rangeBuffer": 0.75
       },
       "projectile": {
-        "speed": 32
-      }
+        "speed": 40
+      },
+      "targets": [
+        "ground",
+        "air"
+      ]
     },
     "movement": {
-      "speed": 12
+      "speed": 11
+    },
+    "abilities": {
+      "maxMana": 10,
+      "manaRegenPerSecond": 0,
+      "bindings": [
+        {
+          "id": "barbed-needles",
+          "ability": "ability.ants.barbed-needles",
+          "initialRank": 0,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        }
+      ]
     }
   },
   "creation": {
@@ -39,13 +63,13 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 160
+        "amount": 150
       }
     ],
-    "workTicks": 960
+    "workTicks": 880
   },
   "level": 1,
-  "supplyCost": 1,
+  "supplyCost": 2,
   "dimensions": {
     "radius": 1.5,
     "height": 4.8,

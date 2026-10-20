@@ -2,7 +2,7 @@
 
 The design Jiri settled with Claude on 2026-10-19, before the concept review on the race roster page. It is the spec for the ants' content, models, icons and abilities. The current ant roster (Cleaver Warrior, Leaf Archer, Rootweaver, …) was a test and is replaced entirely. Concept art is in the old repository's `.asset-work/concepts/buildings/`: buildings `ant-sc-<id>-<n>.png`, units `ant-<id>-<n>.png` (a first pass whose look was rejected; to be redrawn).
 
-Rows marked *proposed* are Claude's proposals awaiting Jiri's review on the roster page; everything else is settled.
+The kits were designed and built by Claude on 2026-10-20 at Jiri's request ("build everything, add abilities that you think are appropriate"); they await his review in play.
 
 ## Identity
 
@@ -11,88 +11,87 @@ The forest runs on **substance**, its magic. Beetles keep it in glass; bees tran
 - **Buildings** are sculpted **sand-coloured clay** like a Gaudí termite cathedral: flowing organic spires with rounded tips, oval windows glowing blue-violet, climbing vines with small blue-violet blossoms, royal-blue silk banners and drapes. The main hall is concept `ant-base-spire-cathedral-2` (Jiri: the right amount of detail, and still fits ants). Every building keeps that style and adds one or two signature features that say what it is at a glance. Concepts `ant-sc-<id>-<n>.png`.
 - **The basic soldiers are ant creatures** (Jiri, 2026-10-20): the Raider is the ants' Zergling in every way (small, stocky, cheap, fast, hatched in pairs, swept-back blade fins) and the Needler fires chitin needles like a Hydralisk. Both read from above: identity on the back, blue only on the back plates.
 - **Specialists and heroes are humanoid** (Jiri, 2026-10-19): they stand upright on two legs with arms, an ant's head, mandibles and antennae, and carry grown props (chitin blades, amber, silk, leaves, fungus); each reads by its one or two signature props. Concepts `ant-u2-<unit>-<n>.png`.
-- **Only heavily mutated ants keep the full ant body**, and mutation always costs something (*proposed*): the Burster, the Honeypot and the Reaver Queen. **Mutated units can't fit through tunnels**, and each has its own drawback (see Units).
+- **Only heavily mutated ants keep the full ant body**, and mutation always costs something: the Burster, the Honeypot and the Reaver Queen. **Mutated units can't fit through tunnels**, and each has its own drawback (see Units).
 - Mutation is never something the player manages (too hard for beginners): a unit is mutated or not, and its drawbacks come with it.
 - **One body, ten thousand legs**: the colony is a superorganism. No machines and no metal; everything is grown or secreted (packed clay, amber resin, shed chitin, silk, fungus). **Pheromones are their magic.**
-- No healers in the usual sense and no summons: no broodlings, no larvae that hatch into units, nothing auto-spawns. The Gardener's fungus circles are the one healing.
+- No healers in the usual sense and no summons: no broodlings, no larvae that hatch into units, nothing auto-spawns. The Gardener's fungus circles are the one healing (with the Queen's Royal Jelly and the Alchemist's Transfusion).
 - Team colour (royal blue in concepts): war-paint on the big carapace plates and a silk band on units; dyed silk banners and painted resin plates on buildings.
 - Ants are the first race in the campaign. The Queen is its protagonist; she turns at the end.
 
 ## Economy and tunnels
 
 - **Amber** at the base, **Substance** in the world: a **Substance Siphon** is built on top of each Substance deposit, as for every race.
-- **Tunnels, the signature.** Every mound is a tunnel entrance: the Nest and its tiers, and every Brood Mound. Ants ordered to a destination travel underground automatically when a route through two mounds is faster than walking: they enter the nearest mound and come out at the one nearest the target.
-  - Each mound lets through a limited number of units per second (its **throughput**); the rest queue at its mouth or walk. You can't move a whole army in an instant. Wider Tunnels raises it.
-  - Units underground can't be seen or attacked. A mound destroyed with units queued inside it spills them out at its position.
-  - Whether a player can switch the routing off is open (Jiri: "maybe that is part of the mechanic"); the default is automatic.
-- **Founding (the Nydus attack):** the Alate (and the Queen) **Found** a new mound anywhere they can reach. It is a full tunnel mound. Expected to be strong; it will be balanced in play.
-- Tiers: Nest → Great Nest (tier 2) → Queen's Chamber (tier 3).
+- **Tunnels, the signature** (built, D74). Every mound is a tunnel entrance: the Nest and its tiers, and every Brood Mound. A unit ordered to walk somewhere travels underground automatically when a trip from the mound nearest it to the mound nearest its destination is faster than walking (by two seconds or more). It walks to the first mound and goes under at its mouth, travels underground at 36 cells a second, then comes up at the other mound and walks on.
+  - Each mound lets one unit under every 12 ticks (a little over three a second); the rest queue at its mouth. Wider Tunnels I and II each let 50% more through.
+  - Units underground can't be seen, attacked or ordered. If the mound they are headed to falls, they come up where it stood. Units walking or queued to a fallen mound walk on.
+  - A mound works (D65: its animation, glow and effects) while ants pass through it.
+  - The mutated castes can't use tunnels: the Burster, Honeypot and Reaver Queen. Flyers never do.
+  - Routing is always automatic; whether a player may switch it off stays open.
+- **Founding (the Nydus attack):** the Alate **Founds** a Brood Mound where it lands, and is used up. The Queen Founds one at a point nearby (a long cooldown). The mound is finished at once, a full tunnel mound with its 8 supply. The computer founds mounds out on the frontier, more than 64 cells from its other mounds with no enemy near, and its army then tunnels to them.
+- Tiers: Nest → Great Nest (tier 2) → Queen's Chamber (tier 3, once a Deep Gallery stands).
 
 ## Buildings
 
-| Id | Name | Tier | Size | Role | Makes / researches |
-|---|---|---|---|---|---|
-| `building.ants.nest` | Nest | 1 | 20 | Main hall: stores goods, supply, tunnel mound | Worker; upgrade to Great Nest |
-| `building.ants.great-nest` | Great Nest | 2 | 20 | Hall tier 2: unlocks the Fungus Garden, Scent Hall, Deep Gallery, tier-2 units | Worker; upgrade to Queen's Chamber |
-| `building.ants.queens-chamber` | Queen's Chamber | 3 | 20 | Hall tier 3: unlocks the Queen's Cradle, level III research, Venom Spire | Worker |
-| `building.ants.brood-mound` | Brood Mound | 1 | 8 | Supply; tunnel mound | Wider Tunnels I–II |
-| `building.ants.substance-siphon` | Substance Siphon | 1 | on a deposit | Built on a Substance deposit; workers gather from it | |
-| `building.ants.soldier-burrow` | Soldier Burrow | 1 | 16 | Barracks | Raider, Needler, Burster (tier 2), Major (tier 2) |
-| `building.ants.chitin-works` | Chitin Works | 1 | 16 | Forge: levelled research | Mandibles I–III, Needle Hardening I–III, Carapace I–III |
-| `building.ants.fungus-garden` | Fungus Garden | 2 | 12 | The substance lab: one-off upgrades. Costs substance | See Research |
-| `building.ants.scent-hall` | Scent Hall *proposed* | 2 | 12 | Pheromone specialists | Herald, Gardener |
-| `building.ants.deep-gallery` | Deep Gallery *proposed* | 2 | 16 | Specialised castes | Honeypot, Alate, Bullet Ant (tier 3) |
-| `building.ants.queens-cradle` | Queen's Cradle *proposed* | 3 | 16 | Needs the Queen's Chamber | Reaver Queen (one at a time) |
-| `building.ants.acid-spire` | Acid Spire | 1 | 8 | Tower: spits acid, hits air | Venom Spire upgrade (tier 3) |
-| `building.ants.royal-chamber` | Royal Chamber | 1 | 12 | Heroes: trains and revives them | The Queen, Royal Alchemist, General |
+The definitions keep their old ids (Building models below).
 
-The Scent Hall and Deep Gallery split the earlier single "specialist building" the way the beetles split the Alembic and the Engine Yard.
+| Building | Tier | Role | Makes / researches |
+|---|---|---|---|
+| Nest | 1 | Main hall: stores goods, 15 supply, tunnel mound | Worker; upgrade to Great Nest (400 amber, 150 substance) |
+| Great Nest | 2 | Hall tier 2, tunnel mound | Worker; upgrade to Queen's Chamber (600, 250; needs a Deep Gallery) |
+| Queen's Chamber | 3 | Hall tier 3, tunnel mound | Worker |
+| Brood Mound | 1 | 8 supply; tunnel mound | Wider Tunnels I–II |
+| Substance Siphon | 1 | On a Substance deposit | |
+| Soldier Burrow | 1 | Barracks | Raider (two at a time), Needler, Burster (tier 2), Major (tier 2) |
+| Chitin Works | 1 | Levelled research | Mandibles, Needle Hardening, Carapace, I–III each |
+| Fungus Garden | 2 | One-off upgrades | See Research |
+| Scent Hall | 2 | Pheromone castes | Herald, Gardener |
+| Deep Gallery | 2 | Specialised castes | Honeypot, Alate, Bullet Ant (tier 3) |
+| Queen's Cradle | 3 | The ultimate | Reaver Queen (one at a time) |
+| Acid Spire | 1 | Tower: a Needler spits from its mouth at ground and air (20 damage) | Upgrade to Venom Spire (tier 3) |
+| Venom Spire | 3 | Upgraded tower: 26 spell damage, each hit lowers armor by 2 | |
+| Royal Chamber | 1 | Heroes: trains and revives them | The Queen, Royal Alchemist, General |
 
 ## Units
 
-| Id | Name | From | Tier | Role | Kit and abilities |
-|---|---|---|---|---|---|
-| `unit.ants.worker` | Worker | Nest | 1 | Gathers, builds | Carries amber in its mandibles; builds by secreting resin |
-| `unit.ants.raider` | Raider | Soldier Burrow | 1 | Core melee; hatched two at a time | The ants' Zergling: a small, stocky biting ant with blue blade fins on its back. *Swarm* (innate): more damage for each other Raider nearby, up to a cap |
-| `unit.ants.needler` | Needler | Soldier Burrow | 1 | Ranged; hits air | An ant creature (not humanoid) that fires sharp chitin needles, inspired by the Hydralisk but standing, not crawling. Barbed Needles (research): hits lower armour |
-| `unit.ants.burster` | Burster | Soldier Burrow | 2 | Suicide unit: runs in and bursts (splash, strong against buildings and clumps) | **Mutated.** A huge sloshing sac of liquid substance. *Rupture*: bursts on command. *Unstable*: killed, it bursts anyway and hurts nearby allies too; can't use tunnels |
-| `unit.ants.major` | Major | Soldier Burrow | 2 | Tank | Huge armoured head. *Guard* (innate): takes part of the damage dealt to small allies next to it |
-| `unit.ants.gardener` | Gardener | Scent Hall | 2 | Support | *Fungus Circle*: grows a ring of glowing fungus that heals allies in it over time. *Spore Cloud* (adept): enemies in a cloud miss attacks |
-| `unit.ants.herald` | Herald | Scent Hall | 2 | Pheromone caster | *Trail*: allies in an area move faster. *Alarm*: a large, short damage buff for a lot of mana. *Panic* (adept): enemies in an area flee in fear |
-| `unit.ants.honeypot` | Honeypot | Deep Gallery | 2 | Siege: long-range splash, slow, minimum range | **Mutated.** A replete with a giant amber abdomen; lobs nectar globs. *Bloated*: slow, can't fire up close, can't use tunnels. Sticky Nectar (research): impacts leave a slowing pool |
-| `unit.ants.alate` | Alate | Deep Gallery | 2 | Flyer: scout, light harassment | Winged. *Found*: lands, sheds its wings and becomes a tunnel mound (the Alate is used up) |
-| `unit.ants.bullet-ant` | Bullet Ant | Deep Gallery | 3 | Elite duellist against big targets | *Agony*: a sting that stuns, then leaves the target slowed and taking more damage |
-| `unit.ants.reaver-queen` | Reaver Queen | Queen's Cradle | 3 | Ultimate monster, one at a time | See below |
+Numbers are per unit; costs are amber/substance, time in seconds.
 
-**Reaver Queen** *(Devour settled; the rest proposed)*: **mutated**: *Ravenous*, she loses health over time unless she Devours, Gardeners can't heal her, and she can't use tunnels.
-- **Devour**: swallows a non-hero enemy unit whole and heals; a large one is chewed over a few seconds and can be freed by killing her or interrupting.
-- **Rampage**: charges through a line, knocking enemies aside.
-- **Royal Presence** (aura): nearby ants attack faster.
-- **Molt**: sheds her carapace: heals a large part of her health and moves faster, with lower armour until it hardens.
+| Unit | Tier | Cost, supply | Role | Kit |
+|---|---|---|---|---|
+| Worker | 1 | 100, 1 | Gathers, builds | Like every ant, uses the tunnels |
+| Raider | 1 | 160 for **two**, 1 each | Core melee, fast (170 hp, 15 speed) | *Frenzy* (passive): every second a Raider fights beside other small ants, they gain 6% damage, up to 24% |
+| Needler | 1 | 150, 2 | Ranged, hits air | *Barbed Needles* (Fungus Garden): each hit lowers armor by 1 for 5 s, up to 3 |
+| Burster | 2 | 110/60, 1 | Suicide unit | **Mutated.** *Unstable*: bursts on its first bite or when it dies: 100 siege damage to enemies and buildings within 4, and 40 to allies (Volatile Sacs: 150, sparing allies). *Rupture*: burst on command. No tunnels |
+| Major | 2 | 230/60, 3 | Tank (960 hp, 4 armor) | *Guard* (aura): small ants within 6 take 15% less damage (Living Wall: 25%, and +2 armor). *Plug* (toggle): roots itself, +5 armor, half damage from missiles, 30% less from siege |
+| Honeypot | 2 | 240/60, 3 | Siege: 60 splash at 30 range, minimum range 7, slow | **Mutated.** Sticky Nectar: wider splash that slows by 30%. No tunnels |
+| Alate | 2 | 175/50, 2 | Flyer: scout, harasser | *Found*: becomes a Brood Mound |
+| Bullet Ant | 3 | 200/75, 3 | Elite duellist | *Giant Killer*: +15 damage against heroes and level-3+ units. *Agony*: 40 damage and a 1 s stun, then 30% slower and 25% more damage taken for 6 s (Venom Glands: 10 s) |
+| Herald | 2 | 160/40, 2 | Pheromone caster | *Trail*: a 12 s trail where allies move 35% faster. *Alarm*: allies within 9 deal 35% more damage and attack 15% faster for 6 s. *Panic* (Pheromone Mastery): enemies in an area can't attack or cast for 3 s and move slower |
+| Gardener | 2 | 150/40, 2 | Healer | *Fungus Circle*: a 10 s ring healing allies 15 a second (never the Reaver Queen). *Spore Cloud* (Pheromone Mastery): enemies in it attack 40% and move 20% slower |
+| Reaver Queen | 3 | 550/250, 8, one at a time | Ultimate (2800 hp) | **Mutated.** *Ravenous*: loses 10 hp a second, out of reach of the Gardeners. *Devour*: swallows a non-hero enemy, heals 300 and digests it. *Rampage*: charges an enemy, 90 damage and a stun around it. *Molt*: heals 35% and runs faster, with less armor. *Royal Presence* (aura): ants nearby attack 15% faster. No tunnels |
 
-Cut in design: Larva Bearer, any broodlings, auto-summoning, the mutation mechanic, the Young Queen's Nuptial Swarm, Trap-Jaw, Doorhead, Weaver, Leafcutter, Mycelial Oracle, Tunneler (may come back).
+Mutation is never something the player manages: a unit is mutated or not, and its drawbacks come with it.
 
-## Heroes *(kits proposed)*
+## Heroes
 
-Every hero has three basic abilities and an ultimate (the shared hero rules).
+Three abilities with three ranks each (levels 1, 3, 5) and an ultimate (level 6; the Queen's has one rank).
 
 **The Queen**, the colony's mother and the campaign's protagonist:
-- **Found**: raises a tunnel mound at a target point in range (one at a time; long cooldown).
-- **Royal Jelly**: heals a target ally and raises its damage for a while.
-- **One Body** (aura): damage dealt to an ally near her is shared out among all allies near her.
-- Ultimate **Exodus**: every ant around her sinks underground and comes out at a friendly mound she chooses.
+- **Found**: raises a Brood Mound at a point nearby (cooldown 90/70/50 s).
+- **Royal Jelly**: heals an ally 150/250/350 and raises its damage by 20/30/40% for 10 s.
+- **One Body** (aura): allies near her take 8/12/16% less damage.
+- Ultimate **Exodus**: after 2 s, she and up to 32 allies around her sink and come up beside any friendly building.
 
 **Royal Alchemist**, who distils substance in her own body:
-- **Volatile Draught**: throws a flask of substance venom that bursts in an area.
-- **Transfusion**: drains health and mana from an enemy into an ally.
-- **Crystallise**: encases a target in violet crystal: an enemy is stunned; an ally can't act and takes no damage.
-- Ultimate **Overdose**: allies in an area swell with substance: much faster and stronger for 10 seconds, then lose part of their health when it ends.
+- **Volatile Draught**: a flask bursting for 90/140/190 spell damage around the target.
+- **Transfusion**: draws 80/120/160 health out of an enemy into the most wounded ally near her.
+- **Crystallise**: an enemy is stunned for 2/3/4 s (half on heroes); an ally can't act but takes no damage.
+- Ultimate **Overdose**: allies in an area attack 40/60% faster, deal 25/40% more damage and move faster for 10 s, losing 10 health a second.
 
 **General**, the army-ant marshal:
-- **Mandible Charge**: leaps to a target enemy and seizes it (stun).
-- **Mark Prey**: marks an enemy; allies deal it more damage.
-- **War Column** (aura): nearby allies move faster and deal more damage.
-- Ultimate **Bivouac**: the General and the ants around lock together into a living fortress: they can't move, take much less damage, and enemies attacking them are hurt.
+- **Mandible Charge**: rushes an enemy: 80/130/180 damage and a 1/1.5/2 s stun.
+- **Mark Prey**: an enemy takes 15/25/35% more damage for 12 s.
+- **War Column** (aura): allies nearby move and hit 8/12/16% harder.
+- Ultimate **Bivouac**: the General and up to 24 allies lock into a living fortress for 8/10 s: rooted, 60/70% less damage, 35% of melee damage returned.
 
 ## Research
 
@@ -100,16 +99,18 @@ Every hero has three basic abilities and an ultimate (the shared hero rules).
 |---|---|
 | Nest | Great Nest (upgrade) |
 | Great Nest | Queen's Chamber (upgrade) |
-| Brood Mound | Wider Tunnels I–II (mound throughput; II needs tier 3) |
-| Chitin Works | Mandibles I–III (melee), Needle Hardening I–III (ranged), Carapace I–III (armour); II needs tier 2, III tier 3 |
-| Fungus Garden | Barbed Needles (Needler hits lower armour), Volatile Sacs (Burster radius), Living Wall (Major's Guard takes more and it gains armour), Sticky Nectar (Honeypot slowing pool), Pheromone Mastery (adept: Herald's Panic, Gardener's Spore Cloud), Hardened Wings (Alate health and speed), Venom Glands (Bullet Ant's Agony lasts longer) |
-| Acid Spire | Venom Spire (tier 3): acid splash that lowers armour |
+| Brood Mound | Wider Tunnels I–II (50% more throughput each; II needs tier 3) |
+| Chitin Works | Mandibles I–III (Raider, Major, Bullet Ant +10% damage), Needle Hardening I–III (Needler, Honeypot, Alate, spires +10%), Carapace I–III (all troops +1 armor); II needs tier 2, III tier 3 |
+| Fungus Garden | Barbed Needles, Volatile Sacs, Living Wall, Sticky Nectar, Pheromone Mastery (needs the Scent Hall), Hardened Wings (Alate +100 hp, +20% speed), Venom Glands (tier 3) |
+| Acid Spire | Venom Spire (upgrade, tier 3) |
+
+Everything here is written by `tools/content/ants/gen.py`, which holds every number; balance passes edit it and regenerate.
 
 ## Building models
 
-Every ant building is a Tripo model of its approved concept, made game-ready and animated by `tools/buildings/ant_building.py` from one config each in `tools/buildings/ants/` (its docstring is the reference). Tripo's segmentation only says where the moving parts are; they are cut from the whole model so a building keeps one material and atlas. Each building animates while it works (D65): swaying banners, a breathing crown, opening mandibles, a dipping blade, beating wings, an opening flower. The definitions keep the old ids (`building.ants.fort` is the Nest, `great-mound` the Great Nest, `elder-hall` the Queen's Chamber, `house` the Brood Mound, `substance-well` the Siphon, `barracks` the Soldier Burrow, `ironroot-forge` the Chitin Works, `bombardier-workshop` the Deep Gallery, `tower` the Acid Spire, `sanctuary` the Royal Chamber); the Fungus Garden, Scent Hall and Queen's Cradle are new and not yet in the build list (their units and research don't exist yet).
+Every ant building is a Tripo model of its approved concept, made game-ready and animated by `tools/buildings/ant_building.py` from one config each in `tools/buildings/ants/` (its docstring is the reference). Tripo's segmentation only says where the moving parts are; they are cut from the whole model so a building keeps one material and atlas. Each building animates while it works (D65): swaying banners, a breathing crown, opening mandibles, a dipping blade, beating wings, an opening flower. The definitions keep the old ids (`building.ants.fort` is the Nest, `great-mound` the Great Nest, `elder-hall` the Queen's Chamber, `house` the Brood Mound, `substance-well` the Siphon, `barracks` the Soldier Burrow, `ironroot-forge` the Chitin Works, `bombardier-workshop` the Deep Gallery, `tower` the Acid Spire, `sanctuary` the Royal Chamber); the Fungus Garden, Scent Hall, Queen's Cradle and Venom Spire are new.
 
-Known gaps: buildings without production or research (Brood Mound, Fungus Garden, Scent Hall, Queen's Cradle) never enter `work` yet, so their animation waits for tunnels and research; the Acid Spire plays its recoil as `attack`, once per shot.
+Known gap: the Acid Spire plays its recoil as `attack`, once per shot.
 
 ## Unit models
 
@@ -118,12 +119,11 @@ Every ant unit is a Tripo model of its picked concept, rigged and animated in Tr
 - **Humanoids** (Major, Queen, General) use Tripo's Mixamo rig and presets: walk, run, slash, hit, fall and cast. Tripo's export leaves idle presets out, so `tools/units/humanoid_idle.py` adds a breathing idle.
 - **Centaurs** (Herald, Gardener, Royal Alchemist: an upright torso on six ant legs) get two legs from Tripo whatever rig type is chosen. `tools/units/ant_centaur.py` keeps Tripo's humanoid rig and presets for the torso and replaces the lower body: it finds the six feet where the mesh meets the ground, follows each leg up the mesh to the body, adds two bones per leg and a body bone, skins them, and keys a tripod gait into walk and run (front and back legs of one side step with the middle leg of the other). It adds an idle and a death (legs curl, the body sinks); the biped's hips and arm pumping are damped so the body stays level and staffs don't sweep the legs. Its docstring has the per-unit options and the three units' commands. Their `tripo_unit.py` specs set `keepViolet`, so the violet substance (flasks, mushrooms, flowers) stays out of the team mask.
 
-The definitions keep the old ids: `unit.ants.settler` is the Worker, `warrior` the Raider, `archer` the Needler, `queensguard` the Major, `bombardier` the Honeypot, `winglancer` the Alate, `thornblade` the Bullet Ant, `marshal` the General, `banneret` the Herald and `nectarist` the Gardener. Stats and abilities are unchanged. The Burster, Reaver Queen, Queen and Royal Alchemist (`unit.ants.royal-alchemist`, a hero shaped like the Queen) are new definitions. They show in the gallery but nothing trains them yet, because their abilities aren't designed.
+The definitions keep the old ids: `unit.ants.settler` is the Worker, `warrior` the Raider, `archer` the Needler, `queensguard` the Major, `bombardier` the Honeypot, `winglancer` the Alate, `thornblade` the Bullet Ant, `marshal` the General, `banneret` the Herald and `nectarist` the Gardener. The Burster, Reaver Queen, Queen, Royal Alchemist, Venom Spire and the spires' crews (`unit.ants.spire-spitter`, `venom-spitter`) are new definitions. The Amber Adept, Hunter, Rootweaver, Silkwarden, Rootbreaker and Forester lodge are retired.
 
 Known gaps:
 - The Gardener's Tripo skeleton missed its torso (it sat inside the basket; a second rig ran its spine up one side), so it has a small skeleton of its own (`--upper`) and every clip is keyed in Blender: a swaying walk, the staff drawn back and flung, the staff raised to cast. Its arms move less freely than the Mixamo humanoids'.
 - The Herald's back legs disappear under its cape, so only their lower half steps.
-- The Herald and Gardener keep the Banneret's and Nectarist's abilities; their designed ones (Trail, Alarm, Fungus Circle, ...) aren't built yet.
 - The Honeypot and Bullet Ant show little team colour: their concepts carry almost no blue.
 - The Raider shows little: its fins came out of Tripo more bronze than blue.
 

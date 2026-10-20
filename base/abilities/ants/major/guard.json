@@ -1,0 +1,106 @@
+{
+  "id": "ability.ants.guard",
+  "name": "Guard",
+  "description": "Small ants within 6 units of a Major take 15% less damage. Living Wall raises it to 25%.",
+  "activation": "passive",
+  "aura": {
+    "radius": 6,
+    "meleeOnly": false
+  },
+  "ranks": [
+    {
+      "taken": 850
+    },
+    {
+      "taken": 750
+    }
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject",
+    "filter": {
+      "heroes": false,
+      "maxLevel": 2
+    }
+  },
+  "cast": {
+    "prepareTicks": 0,
+    "recoverTicks": 0,
+    "cost": {
+      "resource": "mana",
+      "amount": 0,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 0,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "target",
+      "id": "guarded",
+      "amount": 1,
+      "polarity": "positive",
+      "dispel": false,
+      "damageTakenPermille": {
+        "melee": {
+          "rankParameter": "taken"
+        },
+        "piercing": {
+          "rankParameter": "taken"
+        },
+        "siege": {
+          "rankParameter": "taken"
+        },
+        "hero": {
+          "rankParameter": "taken"
+        }
+      }
+    },
+    {
+      "op": "status",
+      "target": "caster",
+      "id": "guarding",
+      "amount": 1,
+      "polarity": "positive",
+      "dispel": false
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-major-guard",
+    "animations": {
+      "prepare": "idle",
+      "release": "idle",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "guard",
+        "effect": "effect.ants.kit.guard",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "guarding"
+      }
+    ]
+  }
+}

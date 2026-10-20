@@ -1,13 +1,13 @@
 {
   "id": "unit.ants.reaver-queen",
   "name": "Reaver Queen",
-  "description": "Mutated. The colony's ultimate monster, one at a time: a long armoured body of blades that devours to stay alive.",
+  "description": "Mutated: the colony's ultimate monster, one at a time. Devours enemies whole, Rampages through their lines, and Molts to heal; nearby ants attack faster in her presence. Ravenous: she starves without prey, Gardeners cannot heal her, and she is too big for the tunnels. Requires the Queen's Chamber; uses 8 supply.",
   "model": "asset.models.units.ants-reaver-queen",
   "icon": "asset.portraits.units.ants-reaver-queen",
   "selectionClass": "army",
   "body": {
-    "maxHp": 720,
-    "armor": 4,
+    "maxHp": 2800,
+    "armor": 5,
     "armorType": "heavy"
   },
   "vision": 32,
@@ -16,43 +16,104 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 26,
+      "damage": 55,
       "damageType": "melee",
-      "range": 1.2,
-      "cooldownTicks": 64,
-      "aggroRange": 20,
+      "range": 1.5,
+      "cooldownTicks": 60,
+      "aggroRange": 24,
       "attack": {
         "windupTicks": 16,
-        "recoveryTicks": 18,
-        "rangeBuffer": 0.75
+        "recoveryTicks": 14,
+        "rangeBuffer": 0.6
       }
     },
     "movement": {
-      "speed": 10
+      "speed": 9
     },
     "abilities": {
-      "maxMana": 100,
-      "manaRegenPerSecond": 1,
+      "maxMana": 200,
+      "manaRegenPerSecond": 1.0,
       "bindings": [
         {
-          "id": "royal-guard",
-          "ability": "ability.ants.royal-guard",
-          "initialRank": 1,
-          "controls": [
-            "scenario"
-          ]
-        },
-        {
-          "id": "shield-brace",
-          "ability": "ability.ants.shield-brace",
+          "id": "devour",
+          "ability": "ability.ants.devour",
           "initialRank": 1,
           "controls": [
             "player",
+            "ai",
             "scenario"
           ],
           "command": {
             "hotkey": "Q",
             "column": 1
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        },
+        {
+          "id": "rampage",
+          "ability": "ability.ants.rampage",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "W",
+            "column": 2
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 40
+          }
+        },
+        {
+          "id": "molt",
+          "ability": "ability.ants.molt",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "E",
+            "column": 3
+          },
+          "ai": {
+            "preference": "wounded-ally",
+            "intervalTicks": 40
+          }
+        },
+        {
+          "id": "royal-presence",
+          "ability": "ability.ants.royal-presence",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        },
+        {
+          "id": "ravenous",
+          "ability": "ability.ants.ravenous",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
           }
         }
       ]
@@ -63,27 +124,33 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 280
+        "amount": 550
       },
       {
         "item": "item.root",
-        "amount": 80
+        "amount": 250
       }
     ],
-    "workTicks": 1280
+    "workTicks": 2400
   },
-  "level": 3,
-  "supplyCost": 3,
+  "requires": [
+    "building.ants.elder-hall"
+  ],
+  "level": 5,
+  "supplyCost": 8,
+  "maxOwned": 1,
   "dimensions": {
     "radius": 2,
     "height": 6.4,
     "formationSpacing": 4.4
   },
   "modelScale": 2.4,
-  "requires": [
-    "building.ants.great-mound"
-  ],
   "presentation": {
-    "castContact": 0.5
-  }
+    "cameraAnchor": {
+      "height": 1.4,
+      "forward": 0.2,
+      "distance": 9
+    }
+  },
+  "underground": false
 }

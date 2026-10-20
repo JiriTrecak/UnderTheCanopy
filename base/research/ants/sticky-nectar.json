@@ -1,0 +1,27 @@
+{
+  "id": "research.ants.sticky-nectar",
+  "name": "Sticky Nectar",
+  "description": "Honeypot globs splash wider (3.4 units) and leave the survivors 30% slower for a while.",
+  "icon": "asset.icons.research-ants-sticky-nectar",
+  "priority": 70,
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 125
+    },
+    {
+      "item": "item.root",
+      "amount": 75
+    }
+  ],
+  "workTicks": 1800,
+  "effects": [
+    {
+      "units": [
+        "unit.ants.bombardier"
+      ],
+      "splashRadius": 3.4,
+      "splashSlowPermille": 300
+    }
+  ]
+}

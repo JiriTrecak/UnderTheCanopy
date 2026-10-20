@@ -1,7 +1,7 @@
 {
   "id": "building.ants.tower",
   "name": "Acid Spire",
-  "description": "Three clay spires full of violet acid. Right-click it with an Archer to enter; fire from the top using that unit’s own weapon and upgrades.",
+  "description": "A spire with a Needler spitting from its mouth at ground and air units. Upgrades to the Venom Spire once the Queen's Chamber stands.",
   "model": "asset.models.buildings.ants-acid-spire",
   "icon": "asset.portraits.buildings.ants-acid-spire",
   "body": {
@@ -37,11 +37,10 @@
   "level": 1,
   "garrison": {
     "capacity": 1,
-    "accepts": [
-      "unit.ants.archer"
-    ],
+    "accepts": [],
     "height": 5.8,
-    "lookoutRadius": 1.35
+    "lookoutRadius": 1.35,
+    "crew": "unit.ants.spire-spitter"
   },
   "command": {
     "priority": 90,
@@ -85,5 +84,19 @@
         "socket": "socket_mouth_right"
       }
     ]
+  },
+  "upgrade": {
+    "target": "building.ants.venom-spire",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 125
+      },
+      {
+        "item": "item.root",
+        "amount": 50
+      }
+    ],
+    "workTicks": 1600
   }
 }

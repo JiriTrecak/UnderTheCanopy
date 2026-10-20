@@ -1,0 +1,86 @@
+{
+  "id": "effect.ants.kit.jelly",
+  "name": "Royal jelly",
+  "description": "Royal jelly.",
+  "durationTicks": 26,
+  "loop": false,
+  "layers": [
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#ffb347",
+      "accent": "#ffe2a8",
+      "durationTicks": 20,
+      "count": 1,
+      "size": 2.4,
+      "height": 0.06,
+      "blend": "additive",
+      "intensity": 0.8
+    },
+    {
+      "id": "burst",
+      "enabled": true,
+      "shape": "burst",
+      "colour": "#ffb347",
+      "accent": "#ffe2a8",
+      "durationTicks": 18,
+      "count": 10,
+      "size": 1.2,
+      "height": 1.0,
+      "blend": "additive"
+    },
+    {
+      "id": "motes",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffb347",
+      "accent": "#ffe2a8",
+      "durationTicks": 26,
+      "count": 10,
+      "size": 0.18,
+      "height": 1.6,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 1.6,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 24,
+        "rate": 10,
+        "speed": 2.2,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 25,
+        "gravity": 0.0,
+        "drag": 1.0,
+        "spawnRadius": 0.72,
+        "startSize": 0.18,
+        "endSize": 0.036,
+        "spin": 0,
+        "fadeIn": 0.1,
+        "fadeOut": 0.7
+      }
+    },
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#ffb347",
+      "accent": "#ffe2a8",
+      "durationTicks": 10,
+      "count": 1,
+      "size": 6.0,
+      "height": 1.5,
+      "intensity": 2.0,
+      "startTick": 0
+    }
+  ]
+}

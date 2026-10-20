@@ -1,7 +1,7 @@
 {
   "id": "building.ants.barracks",
   "name": "Soldier Burrow",
-  "description": "Trains the colony’s soldiers, who march out between the mandibles of its giant ant-head gate.",
+  "description": "Hatches Raiders (two at a time), Needlers, Bursters and Majors.",
   "model": "asset.models.buildings.ants-soldier-burrow",
   "icon": "asset.portraits.buildings.ants-soldier-burrow",
   "body": {
@@ -34,7 +34,7 @@
   ],
   "behaviors": {
     "storage": {
-      "capacity": 500,
+      "capacity": 800,
       "accepts": [
         "item.amber",
         "item.root"
@@ -45,16 +45,8 @@
       "outputs": [
         "unit.ants.warrior",
         "unit.ants.archer",
-        "unit.ants.hunter",
-        "unit.ants.thornblade",
-        "unit.ants.silkwarden",
-        "unit.ants.nectarist",
-        "unit.ants.banneret",
-        "unit.ants.bombardier",
-        "unit.ants.amber-adept",
-        "unit.ants.queensguard",
-        "unit.ants.winglancer",
-        "unit.ants.rootweaver"
+        "unit.ants.burster",
+        "unit.ants.queensguard"
       ],
       "workerSlots": 0,
       "queueCapacity": 6

@@ -267,6 +267,7 @@ pub(crate) fn move_order(
             .and_then(|s| spatial.deck_id(s)),
     );
     let arrived = u.route.is_empty()
+        && !crate::tunnels::approaching(e)
         && (u.settled
             || at(e, target, deck)
             || u.goal.is_some_and(|g| at(e, spatial.spot(g), deck)));
@@ -283,6 +284,12 @@ pub(crate) fn move_order(
         return true;
     }
     if u.route.is_empty() && u.retry_at <= tick {
+        // A tunnel trip, when one is faster, walks to its entry mound instead.
+        let target = match crate::tunnels::steer(state, senses.catalog, spatial, id, destination) {
+            Some(mouth) => Spot::new(mouth.x, mouth.y, None),
+            None => target,
+        };
+        let e = state.entities.get(id).expect("unit");
         let known = |b: &crate::spatial::BodyRecord| {
             state
                 .entities

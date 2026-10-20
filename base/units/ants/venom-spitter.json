@@ -1,0 +1,67 @@
+{
+  "id": "unit.ants.venom-spitter",
+  "name": "Venom Spitter",
+  "description": "The spitter in an ant spire's mouth.",
+  "model": "asset.models.units.ants-needler",
+  "icon": "asset.portraits.units.ants-needler",
+  "body": {
+    "maxHp": 100,
+    "armor": 0,
+    "armorType": "light"
+  },
+  "vision": 30,
+  "behaviorSets": [],
+  "behaviors": {
+    "combat": {
+      "damage": 26,
+      "damageType": "spell",
+      "range": 20,
+      "cooldownTicks": 44,
+      "aggroRange": 22,
+      "attack": {
+        "windupTicks": 8,
+        "recoveryTicks": 8,
+        "rangeBuffer": 0.75
+      },
+      "projectile": {
+        "speed": 36
+      },
+      "targets": [
+        "ground",
+        "air"
+      ]
+    },
+    "abilities": {
+      "maxMana": 10,
+      "manaRegenPerSecond": 0,
+      "bindings": [
+        {
+          "id": "corrosion",
+          "ability": "ability.ants.corrosion",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        }
+      ]
+    }
+  },
+  "level": 1,
+  "supplyCost": 0,
+  "dimensions": {
+    "radius": 0.8,
+    "height": 2.0,
+    "formationSpacing": 2.0
+  },
+  "modelScale": 1.6,
+  "presentation": {
+    "projectile": "effect.weapon.thorn"
+  },
+  "selectable": false
+}

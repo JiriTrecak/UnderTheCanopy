@@ -41,6 +41,16 @@ fn cost(catalog: &Catalog, def: Def) -> u32 {
     catalog.get(def).supply_cost.unwrap_or(0)
 }
 
+/// Units one training of `def` makes.
+pub fn batch(catalog: &Catalog, def: Def) -> u32 {
+    catalog.get(def).creation.as_ref().map_or(1, |c| c.count())
+}
+
+/// Supply one training of `def` takes: each unit it hatches uses its own.
+pub fn batch_cost(catalog: &Catalog, def: Def) -> u32 {
+    cost(catalog, def) * batch(catalog, def)
+}
+
 /// `owner`'s supply, from its units and buildings.
 pub fn colony(state: &State, catalog: &Catalog, index: &super::Index, owner: Owner) -> Supply {
     let rules = &catalog.content.rules;
@@ -72,11 +82,11 @@ pub fn colony(state: &State, catalog: &Catalog, index: &super::Index, owner: Own
         }
         if let Some(p) = &e.production {
             for q in &p.queue {
-                s.reserved += cost(catalog, q.definition);
-                s.queued_units += 1;
+                s.reserved += batch_cost(catalog, q.definition);
+                s.queued_units += batch(catalog, q.definition);
             }
             if let Some(a) = &p.active {
-                s.training += cost(catalog, a.definition);
+                s.training += batch_cost(catalog, a.definition);
             }
         }
         for q in e.revival.iter().flat_map(|r| &r.queue) {

@@ -1,0 +1,100 @@
+{
+  "id": "ability.ants.one-body",
+  "name": "One Body",
+  "description": "The colony is one body: allies within 9 units of the Queen take 8/12/16% less damage.",
+  "activation": "passive",
+  "aura": {
+    "radius": 9,
+    "meleeOnly": false
+  },
+  "ranks": [
+    {
+      "taken": 920
+    },
+    {
+      "taken": 880
+    },
+    {
+      "taken": 840
+    }
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 0,
+    "recoverTicks": 0,
+    "cost": {
+      "resource": "mana",
+      "amount": 0,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 0,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "target",
+      "id": "one-body",
+      "amount": 1,
+      "polarity": "positive",
+      "dispel": false,
+      "damageTakenPermille": {
+        "melee": {
+          "rankParameter": "taken"
+        },
+        "piercing": {
+          "rankParameter": "taken"
+        },
+        "siege": {
+          "rankParameter": "taken"
+        },
+        "hero": {
+          "rankParameter": "taken"
+        },
+        "spell": {
+          "rankParameter": "taken"
+        }
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-queen-one-body",
+    "animations": {
+      "prepare": "idle",
+      "release": "idle",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "one",
+        "effect": "effect.ants.kit.one-body",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "one-body"
+      }
+    ]
+  }
+}

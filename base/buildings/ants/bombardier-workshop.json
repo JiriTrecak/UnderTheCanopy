@@ -1,7 +1,7 @@
 {
   "id": "building.ants.bombardier-workshop",
   "name": "Deep Gallery",
-  "description": "Raises the colony's specialised castes: equips free workers as Substance-loaded Bombardiers. Requires a Great Mound.",
+  "description": "Galleries of the specialised castes: hatches Honeypots and Alates, and Bullet Ants once the Queen's Chamber stands. Requires a Great Nest.",
   "model": "asset.models.buildings.ants-deep-gallery",
   "icon": "asset.portraits.buildings.ants-deep-gallery",
   "body": {
@@ -37,26 +37,25 @@
     "behavior-set.player-building"
   ],
   "behaviors": {
-    "production": {
-      "mode": "queued",
-      "outputs": [
-        "unit.ants.bombardier"
-      ],
-      "workerSlots": 0,
-      "queueCapacity": 6
-    },
     "storage": {
-      "capacity": 500,
+      "capacity": 1200,
       "accepts": [
         "item.amber",
         "item.root"
       ]
+    },
+    "production": {
+      "mode": "queued",
+      "outputs": [
+        "unit.ants.bombardier",
+        "unit.ants.winglancer",
+        "unit.ants.thornblade"
+      ],
+      "workerSlots": 0,
+      "queueCapacity": 6
     }
   },
   "category": "category.build-advanced",
-  "requires": [
-    "building.ants.great-mound"
-  ],
   "level": 2,
   "command": {
     "category": "category.build-advanced",
@@ -80,5 +79,8 @@
         "socket": "socket_wings"
       }
     ]
-  }
+  },
+  "requires": [
+    "building.ants.great-mound"
+  ]
 }

@@ -1,14 +1,14 @@
 {
   "id": "unit.ants.thornblade",
   "name": "Bullet Ant",
-  "description": "An elite duellist with a bristling mane and a fearsome sting.",
+  "description": "Elite duellist with a bristling mane, hunting the biggest prey: +15 damage against heroes and large units. Agony: a sting that stuns, then slows and weakens. Requires the Queen's Chamber; uses 3 supply.",
   "model": "asset.models.units.ants-bullet-ant",
   "icon": "asset.portraits.units.ants-bullet-ant",
   "selectionClass": "army",
   "body": {
-    "maxHp": 280,
-    "armor": 1,
-    "armorType": "light"
+    "maxHp": 560,
+    "armor": 2,
+    "armorType": "heavy"
   },
   "vision": 32,
   "behaviorSets": [
@@ -16,11 +16,11 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 15,
+      "damage": 22,
       "damageType": "melee",
       "range": 0.6,
-      "cooldownTicks": 40,
-      "aggroRange": 20,
+      "cooldownTicks": 48,
+      "aggroRange": 22,
       "attack": {
         "windupTicks": 10,
         "recoveryTicks": 10,
@@ -28,15 +28,15 @@
       }
     },
     "movement": {
-      "speed": 14
+      "speed": 13
     },
     "abilities": {
-      "maxMana": 60,
-      "manaRegenPerSecond": 2,
+      "maxMana": 150,
+      "manaRegenPerSecond": 0.8,
       "bindings": [
         {
-          "id": "thorn-rush",
-          "ability": "ability.ants.thorn-rush",
+          "id": "agony",
+          "ability": "ability.ants.agony",
           "initialRank": 1,
           "controls": [
             "player",
@@ -49,7 +49,21 @@
           },
           "ai": {
             "preference": "enemy",
-            "intervalTicks": 8
+            "intervalTicks": 12
+          }
+        },
+        {
+          "id": "giant-killer",
+          "ability": "ability.ants.giant-killer",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
           }
         }
       ]
@@ -61,12 +75,19 @@
       {
         "item": "item.amber",
         "amount": 200
+      },
+      {
+        "item": "item.root",
+        "amount": 75
       }
     ],
-    "workTicks": 960
+    "workTicks": 1120
   },
-  "level": 2,
-  "supplyCost": 2,
+  "requires": [
+    "building.ants.elder-hall"
+  ],
+  "level": 3,
+  "supplyCost": 3,
   "dimensions": {
     "radius": 1.5,
     "height": 4.8,

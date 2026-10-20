@@ -1,0 +1,104 @@
+{
+  "id": "ability.ants.rampage",
+  "name": "Rampage",
+  "description": "Charge an enemy: on contact, 90 damage and a 0.75-second stun to every enemy within 4 units.",
+  "activation": "targeted",
+  "delivery": {
+    "kind": "charge",
+    "speed": 34,
+    "maxTicks": 80
+  },
+  "ranks": [
+    {}
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 20,
+    "outOfRange": "reject",
+    "filter": {
+      "locomotion": [
+        "ground"
+      ]
+    }
+  },
+  "cast": {
+    "prepareTicks": 8,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": 75,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 720,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "damage",
+      "target": "target",
+      "query": {
+        "center": "target",
+        "radius": 4,
+        "relations": [
+          "enemy"
+        ],
+        "maxTargets": 16
+      },
+      "amount": 90,
+      "damageType": "melee"
+    },
+    {
+      "op": "status",
+      "target": "target",
+      "query": {
+        "center": "target",
+        "radius": 4,
+        "relations": [
+          "enemy"
+        ],
+        "maxTargets": 16
+      },
+      "id": "trampled",
+      "amount": 30,
+      "heroDuration": 15,
+      "polarity": "negative",
+      "dispel": true,
+      "stun": true
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-reaver-rampage",
+    "animations": {
+      "prepare": "run",
+      "release": "run",
+      "recover": "attack",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "hit",
+        "effect": "effect.ants.kit.rampage",
+        "event": "impact",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

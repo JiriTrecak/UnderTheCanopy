@@ -1,7 +1,7 @@
 {
   "id": "building.ants.ironroot-forge",
   "name": "Chitin Works",
-  "description": "A resin forge where a hanging mandible blade is tempered in glowing amber; researches permanent improvements for the colony.",
+  "description": "Grows weapons and armour for the colony: Mandibles, Needle Hardening and Carapace, three levels each. Level II needs a Great Nest, level III the Queen's Chamber.",
   "model": "asset.models.buildings.ants-chitin-works",
   "icon": "asset.portraits.buildings.ants-chitin-works",
   "body": {
@@ -35,11 +35,15 @@
   "behaviors": {
     "research": {
       "outputs": [
-        "research.ants.reinforced-carapace",
-        "research.ants.broadheads",
-        "research.ants.campaign-harness",
-        "research.ants.driving-spear",
-        "research.ants.saturating-shells"
+        "research.ants.mandibles-1",
+        "research.ants.mandibles-2",
+        "research.ants.mandibles-3",
+        "research.ants.needle-hardening-1",
+        "research.ants.needle-hardening-2",
+        "research.ants.needle-hardening-3",
+        "research.ants.carapace-1",
+        "research.ants.carapace-2",
+        "research.ants.carapace-3"
       ],
       "queueCapacity": 3
     }

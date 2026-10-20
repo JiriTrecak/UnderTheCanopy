@@ -154,6 +154,7 @@ pub fn interrupt(e: &mut Entity, destination: Option<Place>) -> bool {
     }
     u.order_queue.clear();
     release_combat(u);
+    u.tunnel = None;
     u.detour = None;
     u.last_moved_tick = None;
     u.idle = None;

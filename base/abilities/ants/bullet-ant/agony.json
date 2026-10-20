@@ -1,0 +1,114 @@
+{
+  "id": "ability.ants.agony",
+  "name": "Agony",
+  "description": "The most painful sting in the forest: 40 spell damage and a 1-second stun, then for 6 seconds the target moves 30% slower and takes 25% more damage. Venom Glands makes it last 10 seconds.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "linger": 240
+    },
+    {
+      "linger": 400
+    }
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 2,
+    "outOfRange": "reject",
+    "filter": {
+      "buildings": false
+    }
+  },
+  "cast": {
+    "prepareTicks": 6,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": 50,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 480,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "damage",
+      "target": "target",
+      "amount": 40,
+      "damageType": "spell"
+    },
+    {
+      "op": "status",
+      "target": "target",
+      "id": "stung",
+      "amount": 40,
+      "heroDuration": 20,
+      "polarity": "negative",
+      "dispel": true,
+      "stun": true
+    },
+    {
+      "op": "status",
+      "target": "target",
+      "id": "agony",
+      "amount": {
+        "rankParameter": "linger"
+      },
+      "polarity": "negative",
+      "dispel": true,
+      "modifiers": {
+        "moveSpeedPermille": -300
+      },
+      "damageTakenPermille": {
+        "melee": 1250,
+        "piercing": 1250,
+        "siege": 1250,
+        "hero": 1250,
+        "spell": 1250
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-bullet-agony",
+    "animations": {
+      "prepare": "attack",
+      "release": "attack",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "hit",
+        "effect": "effect.ants.kit.agony-hit",
+        "event": "damaged",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
+        "id": "agony",
+        "effect": "effect.ants.kit.agony",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "agony"
+      }
+    ]
+  }
+}

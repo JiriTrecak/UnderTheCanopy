@@ -347,3 +347,22 @@ fn the_unit_limit_counts_queued_units() {
         Some("Unit limit reached".into())
     );
 }
+
+#[test]
+fn one_training_can_hatch_a_pair_each_using_its_own_supply() {
+    let mut world = hall_world(vec![place("barracks", BARRACKS, 39.5, 19.5)]);
+    let barracks = id(&world, "barracks");
+    assert_eq!(try_command(&mut world, produce(barracks, TWINS)), None);
+    world.step();
+    let colony = world.view(P1).colony.unwrap();
+    assert_eq!((colony.supply.reserved, colony.supply.training), (2, 2));
+    run_until(&mut world, 60, |w| !all_of(w, P1, TWINS).is_empty());
+    let twins = all_of(&world, P1, TWINS);
+    assert_eq!(twins.len(), 2, "one price, two units");
+    assert_ne!(
+        get(&world, twins[0]).position,
+        get(&world, twins[1]).position
+    );
+    assert_eq!(wallet(&world, P1, AMBER), 188);
+    assert_eq!(world.view(P1).colony.unwrap().supply.used, 2);
+}

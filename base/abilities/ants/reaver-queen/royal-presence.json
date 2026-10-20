@@ -1,0 +1,78 @@
+{
+  "id": "ability.ants.royal-presence",
+  "name": "Royal Presence",
+  "description": "Ants within 10 units of the Reaver Queen attack 15% faster.",
+  "activation": "passive",
+  "aura": {
+    "radius": 10,
+    "meleeOnly": false
+  },
+  "ranks": [
+    {}
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 0,
+    "recoverTicks": 0,
+    "cost": {
+      "resource": "mana",
+      "amount": 0,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 0,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "target",
+      "id": "presence",
+      "amount": 1,
+      "polarity": "positive",
+      "dispel": false,
+      "modifiers": {
+        "attackSpeedPermille": 150
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-reaver-royal-presence",
+    "animations": {
+      "prepare": "idle",
+      "release": "idle",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "presence",
+        "effect": "effect.ants.kit.presence",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "presence"
+      }
+    ]
+  }
+}

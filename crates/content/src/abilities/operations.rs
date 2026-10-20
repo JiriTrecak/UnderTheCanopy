@@ -767,6 +767,19 @@ pub struct Sacrifice {
     pub record: Option<String>,
 }
 
+/// Raises a finished building of the caster's owner: where the caster stands, or at the
+/// aim point (the building lattice point nearest it whose ground allows the building).
+/// `consume` uses the caster up, as an Alate settles into the mound it founds.
+#[skip_serializing_none]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Found {
+    pub target: Anchor,
+    pub building: Id,
+    #[serde(default)]
+    pub consume: bool,
+}
+
 /// One operation, by `op`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(tag = "op", rename_all = "camelCase")]
@@ -788,6 +801,7 @@ pub enum Effect {
     Contain(Contain),
     ReleaseContained(ReleaseContained),
     Sacrifice(Sacrifice),
+    Found(Found),
 }
 
 impl Effect {
@@ -813,6 +827,7 @@ impl Effect {
             Self::Contain(e) => e.target.into(),
             Self::ReleaseContained(e) => e.target.into(),
             Self::Sacrifice(e) => e.target.into(),
+            Self::Found(e) => e.target,
         }
     }
 
@@ -835,6 +850,7 @@ impl Effect {
             Self::Contain(e) => e.query.as_ref(),
             Self::ReleaseContained(e) => e.query.as_ref(),
             Self::Sacrifice(e) => e.query.as_ref(),
+            Self::Found(_) => None,
         }
     }
 
@@ -856,7 +872,8 @@ impl Effect {
             | Self::Split(_)
             | Self::Resurrect(_)
             | Self::Revive(_)
-            | Self::Vision(_) => None,
+            | Self::Vision(_)
+            | Self::Found(_) => None,
         }
     }
 
@@ -877,7 +894,9 @@ impl Effect {
             Self::Pull(e) => e.amount.clone(),
             Self::Vision(e) => e.amount.clone(),
             Self::Contain(e) => e.amount.clone(),
-            Self::Convert(_) | Self::ReleaseContained(_) | Self::Sacrifice(_) => Amount::Fixed(1),
+            Self::Convert(_) | Self::ReleaseContained(_) | Self::Sacrifice(_) | Self::Found(_) => {
+                Amount::Fixed(1)
+            }
         }
     }
 
@@ -921,6 +940,7 @@ impl Effect {
             Self::Contain(_) => "contain",
             Self::ReleaseContained(_) => "releaseContained",
             Self::Sacrifice(_) => "sacrifice",
+            Self::Found(_) => "found",
         }
     }
 }

@@ -1,0 +1,69 @@
+{
+  "id": "ability.ants.ravenous",
+  "name": "Ravenous",
+  "description": "Mutated. The Reaver Queen starves: she loses 10 health every second, and only Devour and Molt heal her.",
+  "activation": "passive",
+  "ranks": [
+    {}
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 0,
+    "recoverTicks": 0,
+    "cost": {
+      "resource": "mana",
+      "amount": 0,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 0,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [],
+  "triggers": [
+    {
+      "id": "starve",
+      "event": "interval",
+      "intervalTicks": 40,
+      "blockedBySilence": false,
+      "operations": [
+        {
+          "op": "damage",
+          "target": "caster",
+          "amount": 10,
+          "damageType": "spell"
+        }
+      ]
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-reaver-ravenous",
+    "animations": {
+      "prepare": "idle",
+      "release": "idle",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": []
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "id": "ability.ants.unstable",
+  "name": "Unstable",
+  "description": "Mutated. The Burster bursts on its first bite, and whenever it dies: 100 siege damage to enemies and buildings within 4 units, and 40 to its own allies there. Volatile Sacs raises the blast to 150 and spares allies.",
+  "activation": "passive",
+  "ranks": [
+    {
+      "blast": 100,
+      "allies": 40
+    },
+    {
+      "blast": 150,
+      "allies": 0
+    }
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 0,
+    "recoverTicks": 0,
+    "cost": {
+      "resource": "mana",
+      "amount": 0,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 0,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [],
+  "triggers": [
+    {
+      "id": "bite",
+      "event": "weaponRelease",
+      "blockedBySilence": false,
+      "operations": [
+        {
+          "op": "damage",
+          "target": "caster",
+          "amount": 100000,
+          "damageType": "spell"
+        }
+      ]
+    },
+    {
+      "id": "burst",
+      "event": "death",
+      "operations": [
+        {
+          "op": "damage",
+          "target": "target",
+          "query": {
+            "center": "point",
+            "radius": 4,
+            "relations": [
+              "enemy"
+            ],
+            "includeBuildings": true,
+            "maxTargets": 24
+          },
+          "amount": {
+            "rankParameter": "blast"
+          },
+          "damageType": "siege"
+        },
+        {
+          "op": "damage",
+          "target": "target",
+          "query": {
+            "center": "point",
+            "radius": 4,
+            "relations": [
+              "ally"
+            ],
+            "maxTargets": 24
+          },
+          "amount": {
+            "rankParameter": "allies"
+          },
+          "damageType": "spell"
+        }
+      ]
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-burster-unstable",
+    "animations": {
+      "prepare": "idle",
+      "release": "idle",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "burst",
+        "effect": "effect.ants.kit.burst",
+        "event": "death",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

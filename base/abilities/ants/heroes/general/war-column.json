@@ -1,0 +1,91 @@
+{
+  "id": "ability.ants.war-column",
+  "name": "War Column",
+  "description": "Allies within 10 units of the General move 8/12/16% faster and deal 8/12/16% more damage.",
+  "activation": "passive",
+  "aura": {
+    "radius": 10,
+    "meleeOnly": false
+  },
+  "ranks": [
+    {
+      "boost": 80
+    },
+    {
+      "boost": 120
+    },
+    {
+      "boost": 160
+    }
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 0,
+    "recoverTicks": 0,
+    "cost": {
+      "resource": "mana",
+      "amount": 0,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 0,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "target",
+      "id": "column",
+      "amount": 1,
+      "polarity": "positive",
+      "dispel": false,
+      "rankedModifiers": {
+        "moveSpeedPermille": {
+          "rankParameter": "boost"
+        },
+        "damagePermille": {
+          "rankParameter": "boost"
+        }
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-general-war-column",
+    "animations": {
+      "prepare": "idle",
+      "release": "idle",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "column",
+        "effect": "effect.ants.kit.column",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "column"
+      }
+    ]
+  }
+}

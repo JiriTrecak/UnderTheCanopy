@@ -1,0 +1,85 @@
+{
+  "id": "ability.ants.panic",
+  "name": "Panic",
+  "description": "A cloud of fear-scent: enemies in a 5-radius cannot attack or cast for 3 seconds (1.5 on heroes) and move 20% slower. Learned through Pheromone Mastery.",
+  "activation": "targeted",
+  "ranks": [
+    {}
+  ],
+  "targeting": {
+    "kind": "point",
+    "radius": 5,
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 16,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 10,
+    "recoverTicks": 6,
+    "cost": {
+      "resource": "mana",
+      "amount": 100,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 1200,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "target",
+      "id": "panicked",
+      "amount": 120,
+      "heroDuration": 60,
+      "polarity": "negative",
+      "dispel": true,
+      "disarm": true,
+      "silence": true,
+      "modifiers": {
+        "moveSpeedPermille": -200
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-herald-panic",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "cloud",
+        "effect": "effect.ants.kit.panic",
+        "event": "released",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
+        "id": "panicked",
+        "effect": "effect.ants.kit.panicked",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "panicked"
+      }
+    ]
+  }
+}

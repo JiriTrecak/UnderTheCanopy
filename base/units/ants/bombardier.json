@@ -1,12 +1,12 @@
 {
   "id": "unit.ants.bombardier",
   "name": "Honeypot",
-  "description": "Mutated: a swollen amber replete fused with its carriers. Lobs bursting globs over long range.",
+  "description": "Mutated: a swollen amber replete fused with its carriers. Lobs bursting nectar globs over long range, but cannot fire at anything within 7 units, is slow, and too bloated for the tunnels. Requires a Great Nest; uses 3 supply.",
   "model": "asset.models.units.ants-honeypot",
   "icon": "asset.portraits.units.ants-honeypot",
   "selectionClass": "army",
   "body": {
-    "maxHp": 500,
+    "maxHp": 540,
     "armor": 1,
     "armorType": "light"
   },
@@ -15,27 +15,27 @@
     "behavior-set.ground-army"
   ],
   "behaviors": {
-    "movement": {
-      "speed": 10,
-      "turnRate": 720
-    },
     "combat": {
-      "damage": 42,
+      "damage": 60,
       "damageType": "siege",
-      "range": 32,
-      "cooldownTicks": 120,
-      "aggroRange": 36,
-      "shell": {
-        "flightTicks": 40,
-        "radius": 2,
-        "slowPermille": 200,
-        "slowTicks": 80
-      },
+      "range": 30,
+      "cooldownTicks": 140,
+      "aggroRange": 32,
       "attack": {
-        "windupTicks": 22,
-        "recoveryTicks": 14,
+        "windupTicks": 24,
+        "recoveryTicks": 20,
         "rangeBuffer": 0.75
+      },
+      "minRange": 7.0,
+      "shell": {
+        "flightTicks": 46,
+        "radius": 2.6,
+        "slowPermille": 0,
+        "slowTicks": 0
       }
+    },
+    "movement": {
+      "speed": 7
     }
   },
   "creation": {
@@ -43,19 +43,19 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 220
+        "amount": 240
       },
       {
         "item": "item.root",
-        "amount": 90
+        "amount": 60
       }
     ],
-    "workTicks": 1280
+    "workTicks": 1200
   },
   "requires": [
     "building.ants.great-mound"
   ],
-  "level": 3,
+  "level": 2,
   "supplyCost": 3,
   "dimensions": {
     "radius": 2.5,
@@ -68,5 +68,6 @@
     "projectileSocket": "socket_projectile",
     "impactEffect": "effect.ants.resin-explosion",
     "castContact": 0.3076923076923077
-  }
+  },
+  "underground": false
 }

@@ -170,6 +170,8 @@ pub struct Unit {
     pub flight: Option<crate::abilities::Flight>,
     /// Forced to fight a taunting unit (`abilities::taunt`).
     pub taunt: Option<crate::abilities::Taunt>,
+    /// Travelling through its owner's tunnels (`tunnels`).
+    pub tunnel: Option<crate::tunnels::Trip>,
 }
 
 fn is_zero(v: &u32) -> bool {

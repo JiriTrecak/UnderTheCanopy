@@ -1,0 +1,87 @@
+{
+  "id": "ability.ants.devour",
+  "name": "Devour",
+  "description": "Swallow a non-hero enemy whole and heal 300 health. It is digested over 10 seconds (35 damage a second); killing the Reaver Queen frees it.",
+  "activation": "targeted",
+  "ranks": [
+    {}
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 3,
+    "outOfRange": "reject",
+    "filter": {
+      "heroes": false,
+      "buildings": false,
+      "locomotion": [
+        "ground"
+      ]
+    }
+  },
+  "cast": {
+    "prepareTicks": 10,
+    "recoverTicks": 10,
+    "cost": {
+      "resource": "mana",
+      "amount": 50,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 800,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "contain",
+      "target": "target",
+      "id": "devoured",
+      "amount": 400,
+      "lifetime": "duration",
+      "capacity": 1,
+      "digestion": {
+        "intervalTicks": 40,
+        "damage": 35,
+        "damageType": "spell"
+      }
+    },
+    {
+      "op": "heal",
+      "target": "caster",
+      "amount": 300
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-reaver-devour",
+    "animations": {
+      "prepare": "attack",
+      "release": "attack",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "devour",
+        "effect": "effect.ants.kit.devour",
+        "event": "contained",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

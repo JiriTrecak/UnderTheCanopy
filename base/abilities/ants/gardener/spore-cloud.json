@@ -1,0 +1,91 @@
+{
+  "id": "ability.ants.spore-cloud",
+  "name": "Spore Cloud",
+  "description": "Release a cloud of choking spores for 8 seconds: enemies in it attack 40% slower and move 20% slower. Learned through Pheromone Mastery.",
+  "activation": "targeted",
+  "persistent": {
+    "durationTicks": 320,
+    "intervalTicks": 20,
+    "anchor": "point",
+    "endsWithCaster": false,
+    "upkeepMana": 0,
+    "toggle": false
+  },
+  "ranks": [
+    {}
+  ],
+  "targeting": {
+    "kind": "point",
+    "radius": 5,
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 14,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 10,
+    "recoverTicks": 6,
+    "cost": {
+      "resource": "mana",
+      "amount": 100,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 1000,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "target",
+      "id": "choked",
+      "amount": 30,
+      "polarity": "negative",
+      "dispel": true,
+      "modifiers": {
+        "attackSpeedPermille": -400,
+        "moveSpeedPermille": -200
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-gardener-spore-cloud",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "zone",
+        "effect": "effect.ants.kit.spores",
+        "event": "released",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
+        "id": "choked",
+        "effect": "effect.ants.kit.choked",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "choked"
+      }
+    ]
+  }
+}

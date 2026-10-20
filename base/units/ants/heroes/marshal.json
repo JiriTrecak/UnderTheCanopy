@@ -1,15 +1,14 @@
 {
   "id": "unit.ants.marshal",
   "name": "General",
-  "description": "The army-ant marshal, banner on its back and twin blades in hand. Gains experience from nearby enemy defeats.",
+  "description": "The army-ant marshal, banner on its back and twin blades in hand. Mandible Charge seizes a foe, Mark Prey sets the army on it, War Column drives the march and, at the last, the army locks into a Bivouac.",
   "model": "asset.models.units.ants-general",
   "icon": "asset.portraits.units.ants-general",
   "hero": true,
-  "level": 1,
   "selectionClass": "army",
   "body": {
-    "maxHp": 700,
-    "armor": 2,
+    "maxHp": 880,
+    "armor": 3,
     "armorType": "hero"
   },
   "vision": 36,
@@ -17,130 +16,118 @@
     "behavior-set.ground-army"
   ],
   "behaviors": {
-    "combat": {
-      "damage": 31,
-      "damageType": "hero",
-      "range": 0.6,
-      "cooldownTicks": 73,
-      "aggroRange": 20,
-      "attack": {
-        "windupTicks": 18,
-        "recoveryTicks": 14,
-        "rangeBuffer": 0.6
-      }
-    },
     "progression": {
       "experienceRadius": 40,
       "levels": [
         {
           "experience": 0,
-          "maxHp": 700,
-          "damage": 31,
-          "armor": 2,
-          "maxMana": 225,
-          "cooldownTicks": 73,
-          "healthRegenPerSecond": 1.45,
-          "manaRegenPerSecond": 0.76
+          "maxHp": 880,
+          "damage": 40,
+          "armor": 3,
+          "maxMana": 200,
+          "cooldownTicks": 78,
+          "healthRegenPerSecond": 1.8,
+          "manaRegenPerSecond": 0.75
         },
         {
           "experience": 160,
-          "maxHp": 775,
-          "damage": 34,
+          "maxHp": 970,
+          "damage": 44,
           "armor": 3,
-          "maxMana": 240,
-          "cooldownTicks": 72,
-          "healthRegenPerSecond": 1.6,
-          "manaRegenPerSecond": 0.81
+          "maxMana": 220,
+          "cooldownTicks": 76,
+          "healthRegenPerSecond": 1.95,
+          "manaRegenPerSecond": 0.83
         },
         {
           "experience": 400,
-          "maxHp": 850,
-          "damage": 37,
-          "armor": 3,
-          "maxMana": 270,
-          "cooldownTicks": 69,
-          "healthRegenPerSecond": 1.75,
+          "maxHp": 1060,
+          "damage": 49,
+          "armor": 4,
+          "maxMana": 240,
+          "cooldownTicks": 74,
+          "healthRegenPerSecond": 2.1,
           "manaRegenPerSecond": 0.91
         },
         {
           "experience": 720,
-          "maxHp": 925,
-          "damage": 40,
+          "maxHp": 1150,
+          "damage": 54,
           "armor": 4,
-          "maxMana": 285,
-          "cooldownTicks": 68,
-          "healthRegenPerSecond": 1.9,
-          "manaRegenPerSecond": 0.96
+          "maxMana": 260,
+          "cooldownTicks": 72,
+          "healthRegenPerSecond": 2.25,
+          "manaRegenPerSecond": 0.99
         },
         {
           "experience": 1120,
-          "maxHp": 1000,
-          "damage": 43,
-          "armor": 4,
-          "maxMana": 315,
-          "cooldownTicks": 66,
-          "healthRegenPerSecond": 2.05,
-          "manaRegenPerSecond": 1.06
+          "maxHp": 1240,
+          "damage": 58,
+          "armor": 5,
+          "maxMana": 280,
+          "cooldownTicks": 70,
+          "healthRegenPerSecond": 2.4,
+          "manaRegenPerSecond": 1.07
         },
         {
           "experience": 1600,
-          "maxHp": 1075,
-          "damage": 46,
-          "armor": 4,
-          "maxMana": 330,
-          "cooldownTicks": 65,
-          "healthRegenPerSecond": 2.2,
-          "manaRegenPerSecond": 1.11
+          "maxHp": 1330,
+          "damage": 62,
+          "armor": 5,
+          "maxMana": 300,
+          "cooldownTicks": 68,
+          "healthRegenPerSecond": 2.55,
+          "manaRegenPerSecond": 1.15
         },
         {
           "experience": 2160,
-          "maxHp": 1150,
-          "damage": 49,
-          "armor": 5,
-          "maxMana": 360,
-          "cooldownTicks": 63,
-          "healthRegenPerSecond": 2.35,
-          "manaRegenPerSecond": 1.21
+          "maxHp": 1420,
+          "damage": 67,
+          "armor": 6,
+          "maxMana": 320,
+          "cooldownTicks": 66,
+          "healthRegenPerSecond": 2.7,
+          "manaRegenPerSecond": 1.23
         },
         {
           "experience": 2800,
-          "maxHp": 1225,
-          "damage": 52,
-          "armor": 5,
-          "maxMana": 375,
-          "cooldownTicks": 63,
-          "healthRegenPerSecond": 2.5,
-          "manaRegenPerSecond": 1.26
+          "maxHp": 1510,
+          "damage": 72,
+          "armor": 6,
+          "maxMana": 340,
+          "cooldownTicks": 64,
+          "healthRegenPerSecond": 2.85,
+          "manaRegenPerSecond": 1.31
         },
         {
           "experience": 3520,
-          "maxHp": 1300,
-          "damage": 55,
-          "armor": 6,
-          "maxMana": 405,
-          "cooldownTicks": 61,
-          "healthRegenPerSecond": 2.65,
-          "manaRegenPerSecond": 1.36
+          "maxHp": 1600,
+          "damage": 76,
+          "armor": 7,
+          "maxMana": 360,
+          "cooldownTicks": 64,
+          "healthRegenPerSecond": 3.0,
+          "manaRegenPerSecond": 1.39
         },
         {
           "experience": 4320,
-          "maxHp": 1375,
-          "damage": 58,
-          "armor": 6,
-          "maxMana": 420,
-          "cooldownTicks": 60,
-          "healthRegenPerSecond": 2.8,
-          "manaRegenPerSecond": 1.41
+          "maxHp": 1690,
+          "damage": 80,
+          "armor": 7,
+          "maxMana": 380,
+          "cooldownTicks": 64,
+          "healthRegenPerSecond": 3.15,
+          "manaRegenPerSecond": 1.47
         },
         {
           "experience": 5200,
-          "maxHp": 1450,
-          "damage": 61,
-          "armor": 6,
-          "maxMana": 450,
-          "cooldownTicks": 59,
-          "healthRegenPerSecond": 2.95,
-          "manaRegenPerSecond": 1.51
+          "maxHp": 1780,
+          "damage": 85,
+          "armor": 8,
+          "maxMana": 400,
+          "cooldownTicks": 64,
+          "healthRegenPerSecond": 3.3,
+          "manaRegenPerSecond": 1.55
         }
       ]
     },
@@ -148,13 +135,28 @@
       "slots": 4,
       "pickupRange": 1.5
     },
+    "combat": {
+      "damage": 40,
+      "damageType": "hero",
+      "range": 0.8,
+      "cooldownTicks": 78,
+      "aggroRange": 20,
+      "attack": {
+        "windupTicks": 18,
+        "recoveryTicks": 14,
+        "rangeBuffer": 0.6
+      }
+    },
+    "movement": {
+      "speed": 12
+    },
     "abilities": {
-      "maxMana": 225,
-      "manaRegenPerSecond": 0.76,
+      "maxMana": 200,
+      "manaRegenPerSecond": 0.75,
       "bindings": [
         {
-          "id": "faultline",
-          "ability": "ability.marshal.faultline",
+          "id": "mandible-charge",
+          "ability": "ability.ants.mandible-charge",
           "initialRank": 0,
           "controls": [
             "player",
@@ -178,8 +180,8 @@
           }
         },
         {
-          "id": "rally",
-          "ability": "ability.marshal.rally",
+          "id": "mark-prey",
+          "ability": "ability.ants.mark-prey",
           "initialRank": 0,
           "controls": [
             "player",
@@ -198,13 +200,13 @@
             ]
           },
           "ai": {
-            "preference": "wounded-ally",
+            "preference": "enemy",
             "intervalTicks": 20
           }
         },
         {
-          "id": "carapace",
-          "ability": "ability.marshal.carapace",
+          "id": "war-column",
+          "ability": "ability.ants.war-column",
           "initialRank": 0,
           "controls": [
             "player",
@@ -228,8 +230,8 @@
           }
         },
         {
-          "id": "crownfall",
-          "ability": "ability.marshal.crownfall",
+          "id": "bivouac",
+          "ability": "ability.ants.bivouac",
           "initialRank": 0,
           "controls": [
             "player",
@@ -242,21 +244,34 @@
           },
           "learning": {
             "requiredLevels": [
-              5,
-              8
+              6,
+              9
             ]
           },
           "ai": {
             "preference": "enemy",
-            "intervalTicks": 20
+            "intervalTicks": 20,
+            "threatRadius": 9
           }
         }
       ]
-    },
-    "movement": {
-      "speed": 13
     }
   },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 425
+      },
+      {
+        "item": "item.root",
+        "amount": 75
+      }
+    ],
+    "workTicks": 2200
+  },
+  "level": 1,
   "supplyCost": 4,
   "dimensions": {
     "radius": 3,
@@ -264,17 +279,8 @@
     "formationSpacing": 6.5
   },
   "modelScale": 4.0,
-  "creation": {
-    "method": "train",
-    "items": [
-      {
-        "item": "item.amber",
-        "amount": 475
-      }
-    ],
-    "workTicks": 2200
-  },
   "presentation": {
     "castContact": 0.5384615384615384
-  }
+  },
+  "displayOrder": 3
 }

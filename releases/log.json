@@ -2,14 +2,19 @@
   "schemaVersion": 1,
   "unreleased": {
     "added": [
-      "Beetles now have a steel, brass and violet-magic HUD frame and resource ribbon; Ants keep their woodland interface."
+      "Beetles now have a steel, brass and violet-magic HUD frame and resource ribbon; Ants keep their woodland interface.",
+      "Ants travel underground: units ordered far away walk to their nearest mound and come up at the mound nearest their destination, a few at a time per mound",
+      "The ant army is complete: Raiders hatch in pairs and frenzy together, Bursters burst, Majors guard and plug, Heralds and Gardeners work pheromones and fungus, Alates found new mounds, Bullet Ants sting, and the Reaver Queen devours",
+      "Three ant heroes with four abilities each: the Queen, the Royal Alchemist and the General",
+      "Ant research at the Chitin Works, the Fungus Garden and the Brood Mound, and the Venom Spire tower upgrade"
     ],
     "improved": [
       "A building works on one thing at a time: research waits for the units queued before it, and units for the research, as in Warcraft III. Its queue panel shows training, research and revivals in the order you queued them.",
       "Ant buildings are rebuilt as sculpted sand-clay spire cathedrals with royal-blue drapes and glowing blossoms; each one animates while it works (swaying banners, opening mandibles, a dipping blade, a breathing crown)",
       "The beetle Bombard is about a third smaller and the Juggernaut half its former size, so they no longer dwarf the army",
       "Ant units have new models and portraits that read from above: the Worker, a stocky biting Raider, the needle-firing Needler, the armoured Major, a swollen amber Honeypot, the winged Alate, the Bullet Ant and the General, each animated as it walks, fights, casts and dies",
-      "The ants' Herald and Gardener have new six-legged models that walk on all six legs, and the Royal Alchemist hero has its model"
+      "The ants' Herald and Gardener have new six-legged models that walk on all six legs, and the Royal Alchemist hero has its model",
+      "Computer ant players found mounds near the front and send their armies through the tunnels"
     ],
     "fixed": [],
     "knownIssues": []

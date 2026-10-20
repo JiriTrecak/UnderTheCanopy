@@ -158,6 +158,7 @@ pub fn apply(ctx: &mut Ctx, state: &mut State, a: Apply) -> i64 {
             | Effect::Contain(_)
             | Effect::ReleaseContained(_)
             | Effect::Sacrifice(_)
+            | Effect::Found(_)
     ) {
         return world_ops::apply(ctx, state, &a);
     }

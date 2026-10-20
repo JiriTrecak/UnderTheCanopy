@@ -1,13 +1,13 @@
 {
   "id": "unit.ants.warrior",
   "name": "Raider",
-  "description": "A small, stocky biting ant with blade fins on its back: the colony's core melee.",
+  "description": "The colony's Zergling: a small, stocky biting ant with blade fins on its back, hatched two at a time. Fast and cheap; Frenzy makes Raiders hit harder the longer they fight together. Uses 1 supply each.",
   "model": "asset.models.units.ants-raider",
   "icon": "asset.portraits.units.ants-raider",
   "selectionClass": "army",
   "body": {
-    "maxHp": 300,
-    "armor": 2,
+    "maxHp": 170,
+    "armor": 1,
     "armorType": "heavy"
   },
   "vision": 32,
@@ -16,19 +16,39 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 14,
+      "damage": 7,
       "damageType": "melee",
       "range": 0.6,
-      "cooldownTicks": 54,
+      "cooldownTicks": 36,
       "aggroRange": 20,
       "attack": {
-        "windupTicks": 12,
-        "recoveryTicks": 10,
+        "windupTicks": 8,
+        "recoveryTicks": 8,
         "rangeBuffer": 0.6
       }
     },
     "movement": {
-      "speed": 12
+      "speed": 15
+    },
+    "abilities": {
+      "maxMana": 10,
+      "manaRegenPerSecond": 0,
+      "bindings": [
+        {
+          "id": "frenzy",
+          "ability": "ability.ants.frenzy",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
+          }
+        }
+      ]
     }
   },
   "creation": {
@@ -36,10 +56,11 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 135
+        "amount": 160
       }
     ],
-    "workTicks": 800
+    "workTicks": 960,
+    "count": 2
   },
   "level": 1,
   "supplyCost": 1,

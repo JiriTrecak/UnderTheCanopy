@@ -1,15 +1,14 @@
 {
   "id": "unit.ants.royal-alchemist",
   "name": "Royal Alchemist",
-  "description": "The colony's alchemist on six legs, carrying flasks of violet substance on her back and one raised in her hand.",
+  "description": "Distils substance in her own body. Throws Volatile Draughts, moves life from foe to friend with Transfusion, Crystallises friend or foe and, at the last, drives the army into an Overdose.",
   "model": "asset.models.units.ants-royal-alchemist",
   "icon": "asset.portraits.units.ants-royal-alchemist",
   "hero": true,
-  "level": 1,
   "selectionClass": "army",
   "body": {
-    "maxHp": 700,
-    "armor": 2,
+    "maxHp": 660,
+    "armor": 1,
     "armorType": "hero"
   },
   "vision": 36,
@@ -17,130 +16,118 @@
     "behavior-set.ground-army"
   ],
   "behaviors": {
-    "combat": {
-      "damage": 31,
-      "damageType": "hero",
-      "range": 0.6,
-      "cooldownTicks": 73,
-      "aggroRange": 20,
-      "attack": {
-        "windupTicks": 18,
-        "recoveryTicks": 14,
-        "rangeBuffer": 0.6
-      }
-    },
     "progression": {
       "experienceRadius": 40,
       "levels": [
         {
           "experience": 0,
-          "maxHp": 700,
-          "damage": 31,
-          "armor": 2,
-          "maxMana": 225,
-          "cooldownTicks": 73,
-          "healthRegenPerSecond": 1.45,
-          "manaRegenPerSecond": 0.76
+          "maxHp": 660,
+          "damage": 22,
+          "armor": 1,
+          "maxMana": 300,
+          "cooldownTicks": 72,
+          "healthRegenPerSecond": 1.2,
+          "manaRegenPerSecond": 1.1
         },
         {
           "experience": 160,
-          "maxHp": 775,
-          "damage": 34,
-          "armor": 3,
-          "maxMana": 240,
-          "cooldownTicks": 72,
-          "healthRegenPerSecond": 1.6,
-          "manaRegenPerSecond": 0.81
+          "maxHp": 730,
+          "damage": 25,
+          "armor": 1,
+          "maxMana": 330,
+          "cooldownTicks": 70,
+          "healthRegenPerSecond": 1.35,
+          "manaRegenPerSecond": 1.18
         },
         {
           "experience": 400,
-          "maxHp": 850,
-          "damage": 37,
-          "armor": 3,
-          "maxMana": 270,
-          "cooldownTicks": 69,
-          "healthRegenPerSecond": 1.75,
-          "manaRegenPerSecond": 0.91
-        },
-        {
-          "experience": 720,
-          "maxHp": 925,
-          "damage": 40,
-          "armor": 4,
-          "maxMana": 285,
-          "cooldownTicks": 68,
-          "healthRegenPerSecond": 1.9,
-          "manaRegenPerSecond": 0.96
-        },
-        {
-          "experience": 1120,
-          "maxHp": 1000,
-          "damage": 43,
-          "armor": 4,
-          "maxMana": 315,
-          "cooldownTicks": 66,
-          "healthRegenPerSecond": 2.05,
-          "manaRegenPerSecond": 1.06
-        },
-        {
-          "experience": 1600,
-          "maxHp": 1075,
-          "damage": 46,
-          "armor": 4,
-          "maxMana": 330,
-          "cooldownTicks": 65,
-          "healthRegenPerSecond": 2.2,
-          "manaRegenPerSecond": 1.11
-        },
-        {
-          "experience": 2160,
-          "maxHp": 1150,
-          "damage": 49,
-          "armor": 5,
+          "maxHp": 800,
+          "damage": 28,
+          "armor": 2,
           "maxMana": 360,
-          "cooldownTicks": 63,
-          "healthRegenPerSecond": 2.35,
-          "manaRegenPerSecond": 1.21
-        },
-        {
-          "experience": 2800,
-          "maxHp": 1225,
-          "damage": 52,
-          "armor": 5,
-          "maxMana": 375,
-          "cooldownTicks": 63,
-          "healthRegenPerSecond": 2.5,
+          "cooldownTicks": 68,
+          "healthRegenPerSecond": 1.5,
           "manaRegenPerSecond": 1.26
         },
         {
+          "experience": 720,
+          "maxHp": 870,
+          "damage": 31,
+          "armor": 2,
+          "maxMana": 390,
+          "cooldownTicks": 66,
+          "healthRegenPerSecond": 1.65,
+          "manaRegenPerSecond": 1.34
+        },
+        {
+          "experience": 1120,
+          "maxHp": 940,
+          "damage": 34,
+          "armor": 3,
+          "maxMana": 420,
+          "cooldownTicks": 64,
+          "healthRegenPerSecond": 1.8,
+          "manaRegenPerSecond": 1.42
+        },
+        {
+          "experience": 1600,
+          "maxHp": 1010,
+          "damage": 37,
+          "armor": 3,
+          "maxMana": 450,
+          "cooldownTicks": 62,
+          "healthRegenPerSecond": 1.95,
+          "manaRegenPerSecond": 1.5
+        },
+        {
+          "experience": 2160,
+          "maxHp": 1080,
+          "damage": 40,
+          "armor": 4,
+          "maxMana": 480,
+          "cooldownTicks": 60,
+          "healthRegenPerSecond": 2.1,
+          "manaRegenPerSecond": 1.58
+        },
+        {
+          "experience": 2800,
+          "maxHp": 1150,
+          "damage": 43,
+          "armor": 4,
+          "maxMana": 510,
+          "cooldownTicks": 60,
+          "healthRegenPerSecond": 2.25,
+          "manaRegenPerSecond": 1.66
+        },
+        {
           "experience": 3520,
-          "maxHp": 1300,
-          "damage": 55,
-          "armor": 6,
-          "maxMana": 405,
-          "cooldownTicks": 61,
-          "healthRegenPerSecond": 2.65,
-          "manaRegenPerSecond": 1.36
+          "maxHp": 1220,
+          "damage": 46,
+          "armor": 5,
+          "maxMana": 540,
+          "cooldownTicks": 60,
+          "healthRegenPerSecond": 2.4,
+          "manaRegenPerSecond": 1.74
         },
         {
           "experience": 4320,
-          "maxHp": 1375,
-          "damage": 58,
-          "armor": 6,
-          "maxMana": 420,
+          "maxHp": 1290,
+          "damage": 49,
+          "armor": 5,
+          "maxMana": 570,
           "cooldownTicks": 60,
-          "healthRegenPerSecond": 2.8,
-          "manaRegenPerSecond": 1.41
+          "healthRegenPerSecond": 2.55,
+          "manaRegenPerSecond": 1.82
         },
         {
           "experience": 5200,
-          "maxHp": 1450,
-          "damage": 61,
+          "maxHp": 1360,
+          "damage": 52,
           "armor": 6,
-          "maxMana": 450,
-          "cooldownTicks": 59,
-          "healthRegenPerSecond": 2.95,
-          "manaRegenPerSecond": 1.51
+          "maxMana": 600,
+          "cooldownTicks": 60,
+          "healthRegenPerSecond": 2.7,
+          "manaRegenPerSecond": 1.9
         }
       ]
     },
@@ -148,13 +135,31 @@
       "slots": 4,
       "pickupRange": 1.5
     },
+    "combat": {
+      "damage": 22,
+      "damageType": "hero",
+      "range": 14,
+      "cooldownTicks": 72,
+      "aggroRange": 20,
+      "attack": {
+        "windupTicks": 18,
+        "recoveryTicks": 12,
+        "rangeBuffer": 0.75
+      },
+      "projectile": {
+        "speed": 36
+      }
+    },
+    "movement": {
+      "speed": 11
+    },
     "abilities": {
-      "maxMana": 225,
-      "manaRegenPerSecond": 0.76,
+      "maxMana": 300,
+      "manaRegenPerSecond": 1.1,
       "bindings": [
         {
-          "id": "faultline",
-          "ability": "ability.marshal.faultline",
+          "id": "volatile-draught",
+          "ability": "ability.ants.volatile-draught",
           "initialRank": 0,
           "controls": [
             "player",
@@ -178,8 +183,8 @@
           }
         },
         {
-          "id": "rally",
-          "ability": "ability.marshal.rally",
+          "id": "transfusion",
+          "ability": "ability.ants.transfusion",
           "initialRank": 0,
           "controls": [
             "player",
@@ -198,13 +203,13 @@
             ]
           },
           "ai": {
-            "preference": "wounded-ally",
+            "preference": "enemy",
             "intervalTicks": 20
           }
         },
         {
-          "id": "carapace",
-          "ability": "ability.marshal.carapace",
+          "id": "crystallise",
+          "ability": "ability.ants.crystallise",
           "initialRank": 0,
           "controls": [
             "player",
@@ -228,8 +233,8 @@
           }
         },
         {
-          "id": "crownfall",
-          "ability": "ability.marshal.crownfall",
+          "id": "overdose",
+          "ability": "ability.ants.overdose",
           "initialRank": 0,
           "controls": [
             "player",
@@ -242,21 +247,34 @@
           },
           "learning": {
             "requiredLevels": [
-              5,
-              8
+              6,
+              9
             ]
           },
           "ai": {
             "preference": "enemy",
-            "intervalTicks": 20
+            "intervalTicks": 20,
+            "threatRadius": 14
           }
         }
       ]
-    },
-    "movement": {
-      "speed": 13
     }
   },
+  "creation": {
+    "method": "train",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 425
+      },
+      {
+        "item": "item.root",
+        "amount": 75
+      }
+    ],
+    "workTicks": 2200
+  },
+  "level": 1,
   "supplyCost": 4,
   "dimensions": {
     "radius": 3,
@@ -264,17 +282,10 @@
     "formationSpacing": 6.5
   },
   "modelScale": 4.0,
-  "creation": {
-    "method": "train",
-    "items": [
-      {
-        "item": "item.amber",
-        "amount": 475
-      }
-    ],
-    "workTicks": 2200
-  },
   "presentation": {
+    "projectile": "effect.weapon.nectar",
+    "projectileSocket": "socket_projectile",
     "castContact": 0.5
-  }
+  },
+  "displayOrder": 2
 }

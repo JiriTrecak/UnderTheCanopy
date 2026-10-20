@@ -1,0 +1,31 @@
+{
+  "id": "research.ants.venom-glands",
+  "name": "Venom Glands",
+  "description": "Agony lingers for 10 seconds instead of 6. Requires the Queen's Chamber.",
+  "icon": "asset.icons.research-ants-venom-glands",
+  "priority": 65,
+  "requires": [
+    "building.ants.elder-hall"
+  ],
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 150
+    },
+    {
+      "item": "item.root",
+      "amount": 100
+    }
+  ],
+  "workTicks": 2000,
+  "effects": [
+    {
+      "units": [
+        "unit.ants.thornblade"
+      ],
+      "abilityRanks": {
+        "agony": 2
+      }
+    }
+  ]
+}

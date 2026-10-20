@@ -1,7 +1,7 @@
 {
   "id": "building.ants.great-mound",
   "name": "Great Nest",
-  "description": "The colony hall grown to twin spires: stores resources, raises workers, provides 15 supply and is a tunnel mound.",
+  "description": "Hall tier 2 and a tunnel mound: unlocks the Fungus Garden, the Scent Hall, the Deep Gallery, tier-2 troops and level II research. Upgrades to the Queen's Chamber once a Deep Gallery stands.",
   "model": "asset.models.buildings.ants-great-nest",
   "icon": "asset.portraits.buildings.ants-great-nest",
   "body": {
@@ -45,20 +45,6 @@
   "level": 2,
   "supplyProvided": 15,
   "heroCapacity": 2,
-  "upgrade": {
-    "target": "building.ants.elder-hall",
-    "items": [
-      {
-        "item": "item.amber",
-        "amount": 600
-      },
-      {
-        "item": "item.root",
-        "amount": 250
-      }
-    ],
-    "workTicks": 4000
-  },
   "presentation": {
     "effects": [
       {
@@ -77,5 +63,23 @@
         "socket": "socket_crown"
       }
     ]
+  },
+  "tunnel": {
+    "intervalTicks": 12,
+    "speed": 36
+  },
+  "upgrade": {
+    "target": "building.ants.elder-hall",
+    "items": [
+      {
+        "item": "item.amber",
+        "amount": 600
+      },
+      {
+        "item": "item.root",
+        "amount": 250
+      }
+    ],
+    "workTicks": 4000
   }
 }

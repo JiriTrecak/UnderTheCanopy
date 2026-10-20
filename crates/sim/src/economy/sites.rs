@@ -133,6 +133,18 @@ pub fn deployment(
     def: Def,
     max_ring: i64,
 ) -> Option<Spot> {
+    deployment_avoiding(ctx, b, toward, def, max_ring, &[])
+}
+
+/// [`deployment`], skipping cells already given out (a brood hatched together).
+pub fn deployment_avoiding(
+    ctx: &mut Ctx,
+    b: EntityId,
+    toward: Milli,
+    def: Def,
+    max_ring: i64,
+    taken: &[Spot],
+) -> Option<Spot> {
     let building = ctx.state.entities.get(b)?;
     let (bdef, position, rotation) = (building.definition, building.position, building.rotation);
     let door = cell_of(entrance(ctx.catalog, bdef, position, rotation));
@@ -150,7 +162,7 @@ pub fn deployment(
         });
         for (x, y) in cells {
             let spot = Spot::new(x, y, None);
-            if !ctx.spatial.free(spot, None, Some(&body), None) {
+            if taken.contains(&spot) || !ctx.spatial.free(spot, None, Some(&body), None) {
                 continue;
             }
             let reachable = body.air

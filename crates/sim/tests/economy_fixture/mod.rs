@@ -29,6 +29,7 @@ pub const AMBER: &str = "item.test.amber";
 pub const WORKER: &str = "unit.test.worker";
 pub const SOLDIER: &str = "unit.test.soldier";
 pub const HERO: &str = "unit.test.hero";
+pub const TWINS: &str = "unit.test.twins";
 pub const HALL: &str = "building.test.hall";
 pub const KEEP: &str = "building.test.keep";
 pub const HOUSE: &str = "building.test.house";
@@ -223,6 +224,11 @@ fn game() -> Value {
                     "combat": {"damage": 400, "damageType": "damage.plain", "range": 1,
                         "cooldownTicks": 10, "aggroRange": 3}},
             })),
+            definition(TWINS, "unit", json!({
+                "body": body(80), "supplyCost": 1, "vision": 10, "dimensions": dimensions,
+                "creation": {"method": "train", "items": [cost(AMBER, 12)], "workTicks": 20, "count": 2},
+                "behaviors": {"playerControl": {}, "movement": {"speed": 4}},
+            })),
             definition(HERO, "unit", json!({
                 "hero": true, "body": body(300), "supplyCost": 3, "vision": 10, "dimensions": dimensions,
                 "creation": {"method": "train", "items": [cost(AMBER, 20)], "workTicks": 25},
@@ -255,7 +261,7 @@ fn game() -> Value {
                 "behaviors": {
                     "playerControl": {},
                     "storage": {"capacity": 100, "accepts": [AMBER]},
-                    "production": {"mode": "queued", "outputs": [SOLDIER], "workerSlots": 0, "queueCapacity": 2},
+                    "production": {"mode": "queued", "outputs": [SOLDIER, TWINS], "workerSlots": 0, "queueCapacity": 2},
                 },
             })),
             definition(FORGE, "building", json!({

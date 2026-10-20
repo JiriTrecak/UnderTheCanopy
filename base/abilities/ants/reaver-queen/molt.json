@@ -1,0 +1,92 @@
+{
+  "id": "ability.ants.molt",
+  "name": "Molt",
+  "description": "Shed the old carapace: heal 35% of her health and move 30% faster for 10 seconds, with 3 less armor until the new one hardens.",
+  "activation": "targeted",
+  "ranks": [
+    {}
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 16,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": 100,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 2400,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "heal",
+      "target": "caster",
+      "amount": 0,
+      "scale": {
+        "source": "caster",
+        "stat": "maxHealth",
+        "permille": 350
+      }
+    },
+    {
+      "op": "status",
+      "target": "caster",
+      "id": "molting",
+      "amount": 400,
+      "polarity": "positive",
+      "dispel": false,
+      "modifiers": {
+        "moveSpeedPermille": 300,
+        "armor": -3
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-reaver-molt",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "molt",
+        "effect": "effect.ants.kit.molt",
+        "event": "healed",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
+        "id": "fresh",
+        "effect": "effect.ants.kit.molting",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "molting"
+      }
+    ]
+  }
+}

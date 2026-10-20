@@ -29,6 +29,7 @@ pub mod state;
 pub mod stats;
 pub mod teams;
 pub mod terrain;
+pub mod tunnels;
 pub mod victory;
 pub mod view;
 pub mod vision;

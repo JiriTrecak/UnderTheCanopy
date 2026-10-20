@@ -1,12 +1,12 @@
 {
   "id": "unit.ants.winglancer",
   "name": "Alate",
-  "description": "A fast winged ant that strikes ground targets from the air.",
+  "description": "A fast winged ant: scout and light harasser that strikes ground targets from the air. Found: it lands, sheds its wings and becomes a new tunnel mound. Requires a Great Nest; uses 2 supply.",
   "model": "asset.models.units.ants-alate",
   "icon": "asset.portraits.units.ants-alate",
   "selectionClass": "army",
   "body": {
-    "maxHp": 340,
+    "maxHp": 360,
     "armor": 1,
     "armorType": "light"
   },
@@ -16,25 +16,46 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 28,
+      "damage": 18,
       "damageType": "melee",
-      "range": 2.5,
-      "targets": [
-        "ground"
-      ],
-      "cooldownTicks": 56,
-      "aggroRange": 24,
+      "range": 1.5,
+      "cooldownTicks": 44,
+      "aggroRange": 22,
       "attack": {
-        "windupTicks": 12,
-        "recoveryTicks": 14,
-        "rangeBuffer": 0.75
+        "windupTicks": 10,
+        "recoveryTicks": 10,
+        "rangeBuffer": 0.6
       }
     },
     "movement": {
       "speed": 18,
       "turnRate": 540,
       "locomotion": "air",
-      "flightHeight": 3
+      "flightHeight": 6
+    },
+    "abilities": {
+      "maxMana": 100,
+      "manaRegenPerSecond": 0.5,
+      "bindings": [
+        {
+          "id": "found",
+          "ability": "ability.ants.found",
+          "initialRank": 1,
+          "controls": [
+            "player",
+            "ai",
+            "scenario"
+          ],
+          "command": {
+            "hotkey": "Q",
+            "column": 1
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 80
+          }
+        }
+      ]
     }
   },
   "creation": {
@@ -42,26 +63,26 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 230
+        "amount": 175
       },
       {
         "item": "item.root",
-        "amount": 70
+        "amount": 50
       }
     ],
-    "workTicks": 1120
+    "workTicks": 960
   },
-  "level": 3,
-  "supplyCost": 3,
+  "requires": [
+    "building.ants.great-mound"
+  ],
+  "level": 2,
+  "supplyCost": 2,
   "dimensions": {
     "radius": 1.6,
     "height": 5,
     "formationSpacing": 5.5
   },
   "modelScale": 2.4,
-  "requires": [
-    "building.ants.great-mound"
-  ],
   "presentation": {
     "castContact": 0.4722222222222222
   }

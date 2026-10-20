@@ -1,0 +1,103 @@
+{
+  "id": "ability.ants.overdose",
+  "name": "Overdose",
+  "description": "Ultimate. Allies in a 6-radius swell with substance for 10 seconds: they attack 40/60% faster, deal 25/40% more damage and move 20% faster, but lose 10 health every second while it lasts.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "haste": 400,
+      "power": 250
+    },
+    {
+      "haste": 600,
+      "power": 400
+    }
+  ],
+  "targeting": {
+    "kind": "point",
+    "radius": 6,
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 18,
+    "outOfRange": "reject",
+    "maxTargets": 32
+  },
+  "cast": {
+    "prepareTicks": 12,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": 175,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 4800,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "target",
+      "id": "overdosed",
+      "amount": 400,
+      "polarity": "positive",
+      "dispel": false,
+      "modifiers": {
+        "moveSpeedPermille": 200
+      },
+      "rankedModifiers": {
+        "attackSpeedPermille": {
+          "rankParameter": "haste"
+        },
+        "damagePermille": {
+          "rankParameter": "power"
+        }
+      },
+      "periodic": {
+        "intervalTicks": 40,
+        "damage": 10,
+        "damageType": "spell"
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-alchemist-overdose",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "pour",
+        "effect": "effect.ants.kit.overdose",
+        "event": "released",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
+        "id": "swell",
+        "effect": "effect.ants.kit.overdosed",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "overdosed"
+      }
+    ]
+  }
+}

@@ -1,7 +1,7 @@
 {
   "id": "building.ants.house",
   "name": "Brood Mound",
-  "description": "A spiral tunnel shaft of packed clay leading down into the colony: provides 8 supply when completed.",
+  "description": "Brood chambers around a tunnel shaft: provides 8 supply and is a tunnel mound. Researches Wider Tunnels.",
   "model": "asset.models.buildings.ants-brood-mound",
   "icon": "asset.portraits.buildings.ants-brood-mound",
   "body": {
@@ -32,7 +32,15 @@
   "behaviorSets": [
     "behavior-set.player-building"
   ],
-  "behaviors": {},
+  "behaviors": {
+    "research": {
+      "outputs": [
+        "research.ants.wider-tunnels-1",
+        "research.ants.wider-tunnels-2"
+      ],
+      "queueCapacity": 2
+    }
+  },
   "level": 1,
   "supplyProvided": 8,
   "command": {
@@ -56,5 +64,9 @@
         "socket": "socket_shaft"
       }
     ]
+  },
+  "tunnel": {
+    "intervalTicks": 12,
+    "speed": 36
   }
 }

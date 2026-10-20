@@ -1,0 +1,96 @@
+{
+  "id": "ability.ants.mark-prey",
+  "name": "Mark Prey",
+  "description": "Mark an enemy with hunting scent for 12 seconds: it takes 15/25/35% more damage from everything.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "taken": 1150
+    },
+    {
+      "taken": 1250
+    },
+    {
+      "taken": 1350
+    }
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 18,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 6,
+    "recoverTicks": 6,
+    "cost": {
+      "resource": "mana",
+      "amount": 50,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 400,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "status",
+      "target": "target",
+      "id": "marked",
+      "amount": 480,
+      "polarity": "negative",
+      "dispel": true,
+      "damageTakenPermille": {
+        "melee": {
+          "rankParameter": "taken"
+        },
+        "piercing": {
+          "rankParameter": "taken"
+        },
+        "siege": {
+          "rankParameter": "taken"
+        },
+        "hero": {
+          "rankParameter": "taken"
+        },
+        "spell": {
+          "rankParameter": "taken"
+        }
+      }
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-general-mark-prey",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "mark",
+        "effect": "effect.ants.kit.marked",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "marked"
+      }
+    ]
+  }
+}

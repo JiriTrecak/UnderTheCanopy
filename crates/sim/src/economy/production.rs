@@ -182,7 +182,7 @@ pub fn start_workplace(ctx: &mut Ctx, b: EntityId, supply: &mut Cache) {
     let target = ctx.catalog.get(def);
     match target.creation.as_ref() {
         Some(Creation::Train { .. }) => {
-            let cost = target.supply_cost.unwrap_or(0);
+            let cost = supply::batch_cost(ctx.catalog, def);
             if let Some(reason) = supply::start(&supply.get(ctx, owner), cost) {
                 set_status(ctx, b, reason);
                 return;
@@ -466,14 +466,42 @@ fn complete_unit(ctx: &mut Ctx, b: EntityId) -> bool {
         },
         (None, None) => sites::entrance_of(ctx.catalog, e),
     };
-    let Some(exit) = sites::deployment(ctx, b, toward, def, 8) else {
-        set_status(ctx, b, Status::DeploymentBlocked);
-        return false;
-    };
     let e = ctx.state.entities.get(b).expect("workplace");
     if stock::missing(&e.inventory, stock::price(ctx.catalog, def)) {
         return false;
     }
+    // One training can hatch several units (`count`); each takes the next free exit.
+    let count = supply::batch(ctx.catalog, def);
+    let mut taken = Vec::new();
+    for _ in 0..count {
+        if !taken.is_empty()
+            && supply::living_units(ctx, owner) >= ctx.catalog.content.rules.max_units as usize
+        {
+            break;
+        }
+        let Some(exit) = sites::deployment_avoiding(ctx, b, toward, def, 8, &taken) else {
+            break;
+        };
+        hatch(ctx, owner, def, exit, rally.as_ref());
+        taken.push(exit);
+    }
+    if taken.is_empty() {
+        set_status(ctx, b, Status::DeploymentBlocked);
+        return false;
+    }
+    consume_inputs(ctx, b, def);
+    finish_cycle(ctx, b);
+    true
+}
+
+/// One trained unit appears at `exit` and takes its building's rally order.
+fn hatch(
+    ctx: &mut Ctx,
+    owner: canopy_content::placement::Owner,
+    def: Def,
+    exit: crate::spatial::Spot,
+    rally: Option<&Rally>,
+) {
     let unit = crate::spawn::insert(
         ctx.state,
         ctx.catalog,
@@ -493,7 +521,7 @@ fn complete_unit(ctx: &mut Ctx, b: EntityId) -> bool {
         },
     );
     ctx.index.sync(ctx.state, ctx.catalog);
-    let target = rally.as_ref().and_then(|r| r.target);
+    let target = rally.and_then(|r| r.target);
     let order = {
         let u = ctx.state.entities.get(unit).expect("unit");
         let t = target.and_then(|t| ctx.state.entities.get(t));
@@ -516,7 +544,7 @@ fn complete_unit(ctx: &mut Ctx, b: EntityId) -> bool {
                 })
             }
             _ => rally.map(|r| Order::Move {
-                destination: r.point,
+                destination: r.point.clone(),
                 attack_move: false,
             }),
         }
@@ -529,9 +557,6 @@ fn complete_unit(ctx: &mut Ctx, b: EntityId) -> bool {
     {
         u.order = order;
     }
-    consume_inputs(ctx, b, def);
-    finish_cycle(ctx, b);
-    true
 }
 
 /// Queues a unit, paying its whole bill into the building (old `queue`); the command
@@ -597,7 +622,7 @@ pub fn produce(ctx: &mut Ctx, b: EntityId, definition: &str) -> Result<(), Strin
     }
     let colony = supply::colony(ctx.state, ctx.catalog, ctx.index, owner);
     let hint = ctx.tables.hints.get(&owner).map(String::as_str);
-    if let Some(reason) = supply::admission(&colony, target.supply_cost.unwrap_or(0), hint) {
+    if let Some(reason) = supply::admission(&colony, supply::batch_cost(ctx.catalog, def), hint) {
         return Err(reason);
     }
     if !enqueue(ctx, b, def) {

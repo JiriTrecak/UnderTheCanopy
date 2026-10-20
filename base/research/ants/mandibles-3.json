@@ -1,0 +1,33 @@
+{
+  "id": "research.ants.mandibles-3",
+  "name": "Mandibles III",
+  "description": "Raiders, Majors and Bullet Ants deal 10% more attack damage (level III; levels add up). Requires the Queen's Chamber.",
+  "icon": "asset.icons.research-ants-mandibles",
+  "priority": 88,
+  "requires": [
+    "building.ants.elder-hall",
+    "research.ants.mandibles-2"
+  ],
+  "follows": "research.ants.mandibles-2",
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 225
+    },
+    {
+      "item": "item.root",
+      "amount": 100
+    }
+  ],
+  "workTicks": 2400,
+  "effects": [
+    {
+      "units": [
+        "unit.ants.warrior",
+        "unit.ants.queensguard",
+        "unit.ants.thornblade"
+      ],
+      "damagePermille": 100
+    }
+  ]
+}

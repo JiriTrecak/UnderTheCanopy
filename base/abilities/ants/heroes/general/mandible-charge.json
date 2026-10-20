@@ -1,0 +1,103 @@
+{
+  "id": "ability.ants.mandible-charge",
+  "name": "Mandible Charge",
+  "description": "Rush an enemy and seize it in the mandibles: 80/130/180 damage and a 1/1.5/2-second stun.",
+  "activation": "targeted",
+  "delivery": {
+    "kind": "charge",
+    "speed": 36,
+    "maxTicks": 80
+  },
+  "ranks": [
+    {
+      "damage": 80,
+      "stun": 40
+    },
+    {
+      "damage": 130,
+      "stun": 60
+    },
+    {
+      "damage": 180,
+      "stun": 80
+    }
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 18,
+    "outOfRange": "reject",
+    "filter": {
+      "locomotion": [
+        "ground"
+      ],
+      "buildings": false
+    }
+  },
+  "cast": {
+    "prepareTicks": 6,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": 75,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 480,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "damage",
+      "target": "target",
+      "amount": {
+        "rankParameter": "damage"
+      },
+      "damageType": "hero"
+    },
+    {
+      "op": "status",
+      "target": "target",
+      "id": "seized",
+      "amount": {
+        "rankParameter": "stun"
+      },
+      "polarity": "negative",
+      "dispel": true,
+      "stun": true
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-general-mandible-charge",
+    "animations": {
+      "prepare": "run",
+      "release": "run",
+      "recover": "attack",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "hit",
+        "effect": "effect.ants.kit.charge-hit",
+        "event": "impact",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

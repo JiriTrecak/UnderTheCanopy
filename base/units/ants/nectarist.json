@@ -1,12 +1,12 @@
 {
   "id": "unit.ants.nectarist",
   "name": "Gardener",
-  "description": "A six-legged gardener under a mushroom hat. Automatically sends nectar to wounded allies and can cleanse harmful effects.",
+  "description": "Fungus keeper under a wide mushroom cap. Fungus Circle heals the allies standing in it; Spore Cloud, learned through Pheromone Mastery, chokes enemies. Requires a Great Nest; uses 2 supply.",
   "model": "asset.models.units.ants-gardener",
   "icon": "asset.portraits.units.ants-gardener",
   "selectionClass": "army",
   "body": {
-    "maxHp": 280,
+    "maxHp": 400,
     "armor": 0,
     "armorType": "light"
   },
@@ -16,30 +16,30 @@
   ],
   "behaviors": {
     "combat": {
-      "damage": 5,
+      "damage": 8,
       "damageType": "spell",
-      "range": 14,
-      "cooldownTicks": 72,
-      "aggroRange": 20,
+      "range": 13,
+      "cooldownTicks": 64,
+      "aggroRange": 18,
       "attack": {
-        "windupTicks": 18,
-        "recoveryTicks": 16,
+        "windupTicks": 14,
+        "recoveryTicks": 10,
         "rangeBuffer": 0.75
       },
       "projectile": {
-        "speed": 26
+        "speed": 30
       }
     },
     "movement": {
-      "speed": 12
+      "speed": 11
     },
     "abilities": {
-      "maxMana": 140,
-      "manaRegenPerSecond": 2,
+      "maxMana": 240,
+      "manaRegenPerSecond": 1.2,
       "bindings": [
         {
-          "id": "nectar-mend",
-          "ability": "ability.ants.nectar-mend",
+          "id": "fungus-circle",
+          "ability": "ability.ants.fungus-circle",
           "initialRank": 1,
           "controls": [
             "player",
@@ -52,20 +52,25 @@
           },
           "ai": {
             "preference": "wounded-ally",
-            "intervalTicks": 12
+            "intervalTicks": 30
           }
         },
         {
-          "id": "nectar-cleanse",
-          "ability": "ability.ants.nectar-cleanse",
-          "initialRank": 1,
+          "id": "spore-cloud",
+          "ability": "ability.ants.spore-cloud",
+          "initialRank": 0,
           "controls": [
             "player",
+            "ai",
             "scenario"
           ],
           "command": {
             "hotkey": "W",
             "column": 2
+          },
+          "ai": {
+            "preference": "enemy",
+            "intervalTicks": 20
           }
         }
       ]
@@ -76,11 +81,18 @@
     "items": [
       {
         "item": "item.amber",
-        "amount": 195
+        "amount": 150
+      },
+      {
+        "item": "item.root",
+        "amount": 40
       }
     ],
-    "workTicks": 1000
+    "workTicks": 960
   },
+  "requires": [
+    "building.ants.great-mound"
+  ],
   "level": 2,
   "supplyCost": 2,
   "dimensions": {

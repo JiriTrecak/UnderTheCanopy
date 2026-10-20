@@ -1,0 +1,88 @@
+{
+  "id": "ability.ants.corrosion",
+  "name": "Corrosion",
+  "description": "Venom eats armor: each hit lowers the target's armor by 2 for 5 seconds.",
+  "activation": "passive",
+  "combatModifiers": {
+    "attackBonus": {
+      "status": "corroded",
+      "amount": 0,
+      "manaCost": 0,
+      "weapon": "projectile",
+      "blockedBySilence": false
+    }
+  },
+  "ranks": [
+    {
+      "armor": -2
+    }
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 0,
+    "recoverTicks": 0,
+    "cost": {
+      "resource": "mana",
+      "amount": 0,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 0,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "statuses": [
+    {
+      "op": "status",
+      "target": "target",
+      "id": "corroded",
+      "amount": 200,
+      "polarity": "negative",
+      "dispel": true,
+      "rankedModifiers": {
+        "armor": {
+          "rankParameter": "armor"
+        }
+      }
+    }
+  ],
+  "onRelease": [],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-needler-barbed-needles",
+    "animations": {
+      "prepare": "idle",
+      "release": "idle",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "corroded",
+        "effect": "effect.ants.kit.barbed",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "corroded"
+      }
+    ]
+  }
+}

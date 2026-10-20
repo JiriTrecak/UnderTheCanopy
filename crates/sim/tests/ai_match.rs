@@ -167,3 +167,34 @@ fn ai_free_for_all_with_every_start_taken() {
     let map = maps().into_iter().last().expect("a shipped map");
     check(&content, &map, CAP);
 }
+
+#[test]
+#[ignore = "long; run in release with --ignored --nocapture"]
+fn computer_ants_found_mounds_and_travel_through_them() {
+    let content = content();
+    let map = maps()
+        .into_iter()
+        .find(|m| m.player_starts.len() == 2)
+        .expect("a duel map");
+    let mut world =
+        World::new(content.clone(), &map, setup(&map)).unwrap_or_else(|e| panic!("{e}"));
+    let mut underground = 0;
+    for _ in 0..36_000 {
+        world.step();
+        underground = underground.max(
+            world
+                .state()
+                .entities
+                .iter()
+                .filter(|e| {
+                    e.unit
+                        .as_ref()
+                        .and_then(|u| u.tunnel.as_ref())
+                        .is_some_and(|t| t.arrives.is_some())
+                })
+                .count(),
+        );
+    }
+    println!("at most {underground} ants underground at once");
+    assert!(underground > 0, "no ant ever used a tunnel");
+}

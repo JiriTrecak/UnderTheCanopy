@@ -1,0 +1,40 @@
+{
+  "id": "research.ants.carapace-2",
+  "name": "Carapace II",
+  "description": "Ant troops gain 1 armor (level II; levels add up). Requires a Great Nest.",
+  "icon": "asset.icons.research-ants-carapace",
+  "priority": 79,
+  "requires": [
+    "building.ants.great-mound",
+    "research.ants.carapace-1"
+  ],
+  "follows": "research.ants.carapace-1",
+  "items": [
+    {
+      "item": "item.amber",
+      "amount": 175
+    },
+    {
+      "item": "item.root",
+      "amount": 50
+    }
+  ],
+  "workTicks": 2000,
+  "effects": [
+    {
+      "units": [
+        "unit.ants.warrior",
+        "unit.ants.archer",
+        "unit.ants.burster",
+        "unit.ants.queensguard",
+        "unit.ants.bombardier",
+        "unit.ants.winglancer",
+        "unit.ants.thornblade",
+        "unit.ants.banneret",
+        "unit.ants.nectarist",
+        "unit.ants.reaver-queen"
+      ],
+      "armor": 1
+    }
+  ]
+}

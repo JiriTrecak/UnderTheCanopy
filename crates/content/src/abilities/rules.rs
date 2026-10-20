@@ -685,6 +685,19 @@ impl<'a> Check<'a> {
                     self.fail("Pull minimum distance must be within 0–32");
                 }
             }
+            Effect::Found(e) => {
+                match e.target {
+                    Anchor::Caster => {}
+                    Anchor::Point if a.targeting.kind == TargetingKind::Point => {}
+                    Anchor::Point => self.fail("Founding at a point requires point targeting"),
+                    Anchor::Target => {
+                        self.fail("Found raises its building at the caster or the aim point")
+                    }
+                }
+                if e.consume && e.target != Anchor::Caster {
+                    self.fail("Only a caster-anchored found can consume the caster");
+                }
+            }
             Effect::Vision(e) => {
                 self.amount(&e.amount, "onRelease.amount", MAX_TICKS);
                 self.amount(&e.radius, "onRelease.radius", 64);

@@ -1,0 +1,100 @@
+{
+  "id": "ability.ants.frenzy",
+  "name": "Frenzy",
+  "description": "Raiders work each other into a frenzy: every second a Raider fights beside other small ants, they gain 6% attack damage, up to 24%. It fades a moment after they part.",
+  "activation": "passive",
+  "ranks": [
+    {}
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 0,
+    "recoverTicks": 0,
+    "cost": {
+      "resource": "mana",
+      "amount": 0,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 0,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [],
+  "triggers": [
+    {
+      "id": "stir",
+      "event": "interval",
+      "intervalTicks": 40,
+      "blockedBySilence": false,
+      "operations": [
+        {
+          "op": "status",
+          "target": "target",
+          "query": {
+            "center": "caster",
+            "radius": 5,
+            "relations": [
+              "ally"
+            ],
+            "allowSelf": false,
+            "maxTargets": 12
+          },
+          "filter": {
+            "heroes": false,
+            "maxLevel": 2
+          },
+          "id": "frenzy",
+          "amount": 60,
+          "polarity": "positive",
+          "dispel": true,
+          "stacking": {
+            "max": 4,
+            "scope": "ability"
+          },
+          "modifiers": {
+            "damagePermille": 60
+          }
+        }
+      ]
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-raider-frenzy",
+    "animations": {
+      "prepare": "idle",
+      "release": "idle",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "frenzy",
+        "effect": "effect.ants.kit.frenzy",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "frenzy"
+      }
+    ]
+  }
+}
