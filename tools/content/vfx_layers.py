@@ -19,6 +19,7 @@ CHUNK = tex('chunk')
 BLAST_RING = tex('blast-ring')
 MOTE = tex('mote')
 WAKE = tex('wake')
+BOLT = tex('bolt')
 WHITE = '#ffffff'
 # Four still variants of a 2 × 2 atlas, one picked per particle.
 VARIANTS = {'columns': 2, 'rows': 2, 'firstFrame': 0, 'frames': 4, 'frameTicks': 400, 'mode': 'once',
@@ -179,3 +180,12 @@ def puff(id_, colour, accent, count, size, *, speed=2.0, lifetime=24, height=0.3
                 erosionOverLife=keys((0, 0), (1, 0.6)))
     return layer(id_, 'particles', colour, accent, lifetime + 2, count, size, height, blend='normal', texture=PUFF,
                  flipbook=VARIANTS, emitter=e)
+
+
+def lightning(id_, colour, accent, width, duration, *, spread=0.6, forks=3, height=1.2, intensity=1.6,
+              additive=True, **extra):
+    """A crackling bolt between the cue's ends: a textured beam that wanders and forks."""
+    l = layer(id_, 'beam', colour, accent, duration, 1, width, height, blend='additive' if additive else 'normal',
+              texture=BOLT, spread=spread, forks=forks, intensity=intensity)
+    l.update(extra)
+    return l

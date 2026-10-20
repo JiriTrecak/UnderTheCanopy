@@ -460,6 +460,8 @@ pub struct VisualLayer {
     /// Soft particles: metres over which sprites fade where they meet the ground, units
     /// and buildings (default 0.4; 0 cuts hard).
     pub soft: Option<f64>,
+    /// Beam layers with a texture (lightning): branches forking off the bolt (0–8).
+    pub forks: Option<u32>,
 }
 
 fn enabled() -> bool {

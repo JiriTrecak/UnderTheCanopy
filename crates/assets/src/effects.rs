@@ -368,6 +368,8 @@ pub struct EffectLayer {
     /// Metres over which sprites fade into what is behind them (0: hard); `None` is the
     /// primitive's default (0.4 m; ground decals cut hard).
     pub soft: Option<f32>,
+    /// Textured beams: branches forking off the bolt.
+    pub forks: u32,
 }
 
 #[cfg(test)]

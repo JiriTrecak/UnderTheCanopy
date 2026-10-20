@@ -320,6 +320,7 @@ fn layer(
         opacity_curve: curve(&l.opacity_over_life),
         scale_curve: curve(&l.scale_over_life),
         soft: l.soft.map(|s| s as f32),
+        forks: l.forks.unwrap_or(0),
     }
 }
 

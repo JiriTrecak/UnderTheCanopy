@@ -113,7 +113,7 @@ pub(crate) fn layer_problems(layer: &VisualLayer) -> Vec<&'static str> {
     require(
         layer.texture.is_none()
             || is(&[
-                Burst, Billboard, Streaks, Rain, Missile, Wavefront, Particles, Ribbon,
+                Burst, Billboard, Streaks, Rain, Missile, Wavefront, Particles, Ribbon, Beam,
             ]),
         "This layer does not accept textures",
     );
@@ -128,6 +128,12 @@ pub(crate) fn layer_problems(layer: &VisualLayer) -> Vec<&'static str> {
     require(
         layer.ramp.is_none() || layer.texture.is_some(),
         "Ramps colour a texture",
+    );
+    require(
+        layer
+            .forks
+            .is_none_or(|f| shape == Beam && layer.texture.is_some() && f <= 8),
+        "Forks belong to textured beams, at most eight",
     );
     require(
         layer.soft.is_none_or(|s| (0.0..=10.0).contains(&s)),
@@ -401,6 +407,10 @@ mod tests {
             (
                 json!({"motion": {"opacity": {"periodTicks": 10, "min": 0, "max": 2, "easing": "sine"}}}),
                 "Opacity cannot exceed one",
+            ),
+            (
+                json!({"forks": 2}),
+                "Forks belong to textured beams, at most eight",
             ),
             (
                 json!({"shape": "ribbon"}),

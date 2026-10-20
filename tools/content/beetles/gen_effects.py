@@ -130,6 +130,41 @@ def shell_trail(arc, width, fire_rate, fire_size, smoke_size):
                     texture=vl.FLAME_STRIP, tile=1.6, scroll=4.0)]
 
 
+# Texture brightness → substance colour: deep violet rim, violet, lilac, a white-hot heart.
+SUBSTANCE_RAMP = vl.colours((0.0, '#1c0c40'), (0.3, '#5a2ad8'), (0.6, '#9a74ff'), (0.85, '#dccfff'),
+                            (1.0, '#ffffff'))
+
+
+def substance_blast(id_, count, size, speed, *, lifetime=24, height=1.0, flat=False, start=0, spawn=0.6):
+    """A burst of substance: ramp-coloured puffs born glowing that cool into violet haze."""
+    e = emitter('burst', lifetime, count, speed, variation=0.3 if flat else 0.5, cone=88 if flat else 180,
+                drag=3.0, gravity=-0.6, spawn=spawn, start=size, end=size * 2)
+    e.update({'sizeOverLife': vl.keys((0, size * 0.6), (0.15, size * 1.4), (1, size * 2.6)),
+              'colourOverLife': vl.colours((0, WHITE), (0.6, WHITE), (0.9, '#7a64c0'), (1, '#4a3c80')),
+              'additiveOverLife': vl.keys((0, 0.8), (0.6, 0.7), (0.9, 0.3)),
+              'opacityOverLife': vl.keys((0, 0), (0.04, 0.9), (0.6, 0.7), (1, 0)),
+              'erosionOverLife': vl.keys((0, 0.05), (0.5, 0.2), (1, 0.85)),
+              'heatOverLife': vl.keys((0, 1.05), (0.4, 0.8), (1, 0.45)),
+              'turbulence': {'strength': size * 0.3, 'scale': 2.0, 'speed': 2.0}})
+    if flat:
+        e['coneInnerDegrees'] = 78
+        e['spawnInner'] = 0.4
+    return layer(id_, 'particles', WHITE, WHITE, 3, count, size, height, startTick=start, blend='additive',
+                 texture=vl.PUFF, flipbook=vl.VARIANTS, ramp=SUBSTANCE_RAMP, emitter=e)
+
+
+def arcs(prefix, width, duration, *, height=1.2, spread=0.7, forks=3, colour='#b49cff', accent=VIOLET,
+         intensity=1.8, blue=False):
+    """Substance lightning between the cue's ends: a violet bolt with forks and a white core
+    tracing the same path (the same seed)."""
+    if blue:
+        colour, accent = '#9fb4ff', BLUE
+    return [vl.lightning(prefix + 'bolt', colour, accent, width * 1.5, duration, spread=spread, forks=forks,
+                         height=height, intensity=intensity * 1.3, additive=False),
+            vl.lightning(prefix + 'core', '#ffffff', '#e6deff', width * 0.35, duration, spread=spread, forks=0,
+                         height=height, intensity=1.8)]
+
+
 def streaks(id_, colour=SUBSTANCE, accent=SUBSTANCE_HOT, count=12, speed=9.0, size=0.08, lifetime=12, gravity=12.0,
             cone=80, direction=(0, 1, 0), height=0.0, start=0, stretch=0.05, core=0.35, intensity=5.0, spawn=0.15,
             drag=0.7, anchor=None, mode='burst', rate=None, duration=None, sustain=False, follow=None):
@@ -422,9 +457,7 @@ def build():
         'effect.beetles.weapons.arc', 'Substance arc',
         'A crackling violet arc from the coil to its target: a soft halo, a violet arc and a white core, with a star '
         'at the coil.', 20, [
-            beam('halo', VIOLET, VIOLET_LIGHT, 1.1, 6, height=0.0, spread=0.45, intensity=0.35),
-            beam('arc', '#9a74ff', '#efe8ff', 0.4, 8, height=0.0, spread=0.45),
-            beam('core', '#f4f0ff', WHITE, 0.12, 6, height=0.0, spread=0.45),
+            *arcs('arc-', 0.8, 8, height=0.0, spread=0.6, forks=2),
             glint('coil', SUBSTANCE, 1.6, duration=5, anchor='source', intensity=2.0),
             streaks('sparks', count=6, speed=6, size=0.06, lifetime=8, gravity=4, cone=120, anchor='source'),
         ]))
@@ -450,9 +483,7 @@ def build():
     W['zap'] = add('weapons/prong-zap', effect(
         'effect.beetles.weapons.prong-zap', 'Prong discharge',
         'A short blue discharge between the projector prongs and the target.', 16, [
-            beam('halo', BLUE, BLUE_LIGHT, 0.8, 5, height=0.0, spread=0.3, intensity=0.35),
-            beam('arc', '#7f9bff', BLUE_LIGHT, 0.3, 6, height=0.0, spread=0.3),
-            beam('core', '#eef2ff', WHITE, 0.1, 5, height=0.0, spread=0.3),
+            *arcs('arc-', 0.6, 6, height=0.0, spread=0.4, forks=1, blue=True),
             glint('flash', BLUE, 1.3, duration=4, anchor='source', intensity=1.8),
         ]))
     build_machines()
@@ -1022,14 +1053,13 @@ def build_heroes():
     H['lash'] = add('coilkeeper/arc-lash', effect(
         'effect.coilkeeper.arc-lash', 'Arc lash',
         'Violet lightning leaps from enemy to enemy: a thick crackling arc, a white core and a star on each.', 20, [
-            beam('halo', VIOLET, VIOLET_LIGHT, 1.7, 8, height=1.2, spread=0.7, intensity=0.35),
-            beam('arc', '#9a74ff', '#efe8ff', 0.6, 12, height=1.2, spread=0.7),
-            beam('core', '#faf8ff', WHITE, 0.18, 10, height=1.2, spread=0.7),
-            beam('fringe', BLUE, BLUE_LIGHT, 0.3, 6, height=1.3, spread=1.0),
+            *arcs('arc-', 1.4, 12, spread=1.1, forks=4),
+            vl.lightning('fringe', '#9fb4ff', BLUE, 0.6, 7, spread=1.6, forks=2, height=1.3, intensity=1.2),
             bolt('bolt', '#f4f0ff', 8.0, duration=9, intensity=2.6),
             glint('glint', '#e6deff', 4.0, duration=7, height=1.0, intensity=3.2),
-            shock('ring', VIOLET_LIGHT, 4.5, 10, intensity=1.8),
-            streaks('sparks', count=24, speed=11, size=0.08, lifetime=14, height=1.0, gravity=6, cone=140,
+            substance_blast('burst', 14, 1.0, 5.0, lifetime=18, height=1.0),
+            vl.ring('ring', VIOLET_LIGHT, 5.0, duration=10, intensity=1.4),
+            streaks('sparks', count=24, speed=11, size=0.1, lifetime=14, height=1.0, gravity=6, cone=140,
                     intensity=4.5),
             flash('flash', VIOLET, VIOLET_LIGHT, 8.0, 9.0, duration=7, height=1.0),
         ]))
@@ -1041,18 +1071,27 @@ def build_heroes():
                   blend='additive', intensity=1.8, core=0.6, texture=RING_ART,
                   motion={'scale': {'periodTicks': 16, 'min': 0.12, 'max': 1.0, 'easing': 'sine', 'phase': 0.5}}),
             orb('gather', VIOLET, VIOLET_LIGHT, 1.8, 8, height=1.2, intensity=1.2),
+            layer('inflow', 'particles', VIOLET_LIGHT, VIOLET, 8, 30, 0.2, 1.2, blend='additive', texture=vl.MOTE,
+                  intensity=2.6, core=0.8,
+                  emitter=emitter('burst', 8, 30, 0.0, cone=180, spawn=3.5, start=0.2, end=0.1) | {
+                      'spawnInner': 0.7, 'stretch': 0.04, 'inheritVelocity': 0.0,
+                      'sizeOverLife': vl.keys((0, 0.1), (0.5, 0.25), (1, 0.05))}),
             sigil('glyph', ARC_GLYPH, VIOLET, 6.0, 30, spin=60, intensity=1.3),
             bolt('bolt', '#f4f0ff', 9.0, duration=10, start=6, intensity=2.6),
             column('pillar', VIOLET, '#efe8ff', 2.4, 14.0, 16, start=6, intensity=1.2),
             glint('blast', '#d8c8ff', 5.5, duration=8, height=1.2, start=6, intensity=3.0),
-            muzzle('burst', SUBSTANCE, 4.0, duration=5, height=1.2, anchor=None, start=6),
-            shock('wave', VIOLET_LIGHT, 9.0, 16, start=6, intensity=2.0),
-            streaks('sparks', count=40, speed=15, size=0.08, lifetime=18, height=1.0, start=6, gravity=6, cone=180,
+            substance_blast('fireball', 18, 1.3, 6.0, lifetime=24, height=1.4, start=6),
+            substance_blast('wave', 90, 1.4, 26.0, lifetime=30, height=0.5, flat=True, start=6, spawn=0.8),
+            layer('ring', 'billboard', VIOLET_LIGHT, WHITE, 16, 1, 12.0, 0.1, startTick=6, orientation='ground',
+                  blend='additive', intensity=1.6, texture=vl.BLAST_RING,
+                  scaleOverLife=vl.keys((0, 0.15), (0.25, 0.7), (1, 1.0)), opacityOverLife=vl.keys((0, 1), (1, 0))),
+            streaks('sparks', count=40, speed=15, size=0.1, lifetime=18, height=1.0, start=6, gravity=6, cone=180,
                     intensity=4.5),
             flash('flash', VIOLET, VIOLET_LIGHT, 10.0, 10.0, duration=10, height=1.0, startTick=6),
         ]))
     H['overload_hit'] = add('coilkeeper/overload-shrapnel', effect(
         'effect.coilkeeper.overload-shrapnel', 'Overload shrapnel', 'Violet sparks on units caught in the detonation.', 16, [
+            *arcs('arc-', 0.6, 6, spread=0.5, forks=1),
             bolt('bolt', VIOLET_LIGHT, 2.6, duration=5, intensity=1.6),
             glint('glint', '#d8ccff', 1.8, duration=5, height=1.0),
             streaks('sparks', count=10, speed=6, size=0.07, lifetime=10, height=1.0, gravity=4, cone=140, intensity=4.0),
@@ -1064,10 +1103,11 @@ def build_heroes():
             sigil('glyph', ARC_GLYPH, BLUE, 7.0, 40, spin=200, intensity=1.2),
             shock('ring', VIOLET_LIGHT, 12.0, 22, intensity=2.0),
             glow('glow', VIOLET, VIOLET_LIGHT, 6.0, 24, height=0.1, intensity=0.8),
-            layer('motes', 'particles', VIOLET_LIGHT, WHITE, 40, 24, 0.16, 0.2, blend='additive', texture=SPARK_DOT,
-                  intensity=3.5, core=0.8, distribution='disc', spread=5.0,
-                  emitter=emitter('burst', 34, 24, 3.0, gravity=-3.0, spawn=5.0, start=0.16, end=0.04, cone=20)
-                  | {'stretch': 0.06}),
+            layer('motes', 'particles', VIOLET_LIGHT, WHITE, 40, 60, 0.3, 0.2, blend='additive', texture=vl.MOTE,
+                  intensity=2.6, core=0.8,
+                  emitter=emitter('burst', 40, 60, 3.0, gravity=-3.5, spawn=6.0, start=0.3, end=0.08, cone=20)
+                  | {'spawnInner': 0.2, 'turbulence': {'strength': 0.6, 'scale': 1.5, 'speed': 2.0},
+                     'opacityOverLife': vl.keys((0, 0), (0.1, 1), (0.7, 0.8), (1, 0))}),
             flash('flash', VIOLET, VIOLET_LIGHT, 9.0, 7.0, duration=10, height=1.0),
         ]))
     H['recharge_shield'] = add('coilkeeper/recharge-shield', effect(
@@ -1088,10 +1128,14 @@ def build_heroes():
             bolt('bolt', '#efe8ff', 14.0, duration=10),
             glint('star', '#e6dcff', 9.0, duration=9, height=1.8, intensity=3.2),
             muzzle('burst', SUBSTANCE, 6.0, duration=6, height=1.8, anchor=None),
-            shards('glass', count=36, speed=13, size=0.36, lifetime=24, height=1.6),
-            streaks('streaks', count=48, speed=17, size=0.09, lifetime=20, height=1.6, gravity=8, cone=180,
+            shards('glass', count=36, speed=13, size=0.36, lifetime=40, height=1.6).__or__({}),
+            substance_blast('fireball', 24, 1.8, 7.0, lifetime=28, height=2.0),
+            substance_blast('wave', 140, 1.8, 34.0, lifetime=34, height=0.6, flat=True, spawn=1.2),
+            streaks('streaks', count=48, speed=17, size=0.1, lifetime=20, height=1.6, gravity=8, cone=180,
                     intensity=4.5),
-            shock('wave', VIOLET_LIGHT, 16.0, 20, intensity=2.2),
+            layer('wave-ring', 'billboard', VIOLET_LIGHT, WHITE, 20, 1, 20.0, 0.1, orientation='ground',
+                  blend='additive', intensity=1.8, texture=vl.BLAST_RING,
+                  scaleOverLife=vl.keys((0, 0.1), (0.25, 0.7), (1, 1.0)), opacityOverLife=vl.keys((0, 1), (1, 0))),
             shock('wave2', VIOLET, 11.0, 26, start=6, height=0.14),
         ]))
     H['storm'] = add('coilkeeper/unbottled-storm', effect(
@@ -1102,17 +1146,26 @@ def build_heroes():
             sigil('inner', ARC_GLYPH, VIOLET_LIGHT, 9.0, 240, sustain=True, spin=40, intensity=1.2, follow=True),
             ring('edge', VIOLET, VIOLET_LIGHT, 14.0, 240, sustain=True, follow=True, motion={'opacity': pulse(12, 0.5, 1.0)}),
             column('column', VIOLET, VIOLET_LIGHT, 1.8, 14.0, 240, sustain=True, follow=True, intensity=0.25),
-            streaks('swirl', VIOLET_LIGHT, WHITE, count=28, speed=4.5, size=0.08, lifetime=30, gravity=-5.0, cone=30,
+            streaks('swirl', VIOLET_LIGHT, WHITE, count=28, speed=4.5, size=0.1, lifetime=30, gravity=-5.0, cone=30,
                     spawn=12.0, mode='continuous', duration=240, sustain=True, follow=True, stretch=0.07,
                     intensity=3.5),
+            layer('haze', 'particles', WHITE, WHITE, 240, 40, 2.0, 0.6, sustain=True, follow=True, blend='additive',
+                  texture=vl.PUFF, flipbook=vl.VARIANTS, ramp=SUBSTANCE_RAMP,
+                  emitter=emitter('continuous', 50, 30, 1.2, cone=40, gravity=-1.0, drag=1.0, spawn=11.0,
+                                  start=2.0, end=3.0) | {
+                      'spawnInner': 0.5,
+                      'sizeOverLife': vl.keys((0, 1.2), (1, 3.2)),
+                      'additiveOverLife': vl.keys((0, 0.8), (1, 0.4)),
+                      'opacityOverLife': vl.keys((0, 0), (0.2, 0.55), (1, 0)),
+                      'erosionOverLife': vl.keys((0, 0.1), (1, 0.75)),
+                      'heatOverLife': vl.keys((0, 0.9), (1, 0.4)),
+                      'turbulence': {'strength': 1.5, 'scale': 3.0, 'speed': 1.0}}),
             flash('light', VIOLET, VIOLET_LIGHT, 18.0, 6.0, duration=240, height=3.0, sustain=True, follow=True,
                   motion={'opacity': pulse(6, 0.5, 1.0)}),
         ]))
     H['storm_arc'] = add('coilkeeper/unbottled-arc', effect(
         'effect.coilkeeper.unbottled-arc', 'Storm arc', 'Lightning from the storm strikes a lifted enemy.', 12, [
-            beam('halo', VIOLET, VIOLET_LIGHT, 1.3, 5, height=2.4, spread=0.6, intensity=0.35),
-            beam('arc', '#9a74ff', '#efe8ff', 0.45, 6, height=2.4, spread=0.6),
-            beam('core', '#faf8ff', WHITE, 0.12, 5, height=2.4),
+            *arcs('arc-', 1.0, 7, height=2.4, spread=0.9, forks=3),
             bolt('bolt', '#e6deff', 4.0, duration=5),
             glint('glint', '#d8ccff', 2.6, duration=5, height=2.4, intensity=3.0),
             streaks('sparks', count=10, speed=7, size=0.07, lifetime=8, height=2.4, gravity=6, cone=180, intensity=4.0),

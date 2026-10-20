@@ -31,7 +31,7 @@ use canopy_render::{
     },
     frame::PointLight,
 };
-use glam::{EulerRot, Mat4, Quat, Vec3};
+use glam::{EulerRot, Mat4, Quat, Vec2, Vec3};
 use std::{collections::BTreeMap, f32::consts::TAU, sync::Arc};
 
 /// Fire points drawn at once (the nearest to the eye), each a flame and a smoke emitter.
@@ -912,10 +912,18 @@ impl EffectEvaluator {
         match l.motion {
             Motion::Sound => {}
             Motion::Rain => self.rain(cue, l, time, base, blend, texture, eye, out, models),
-            Motion::Beam => {
-                let opacity = (env * motion.opacity * l.intensity.unwrap_or(1.0)).clamp(0.0, 1.0);
-                beam(cue, l, time.age, opacity, out);
-            }
+            Motion::Beam => match texture {
+                // Textured beams are lightning: bright bolts with forks.
+                Some(_) => {
+                    let opacity = env * motion.opacity * l.intensity.unwrap_or(1.0);
+                    self.lightning(cue, l, time.age, opacity, texture);
+                }
+                None => {
+                    let opacity =
+                        (env * motion.opacity * l.intensity.unwrap_or(1.0)).clamp(0.0, 1.0);
+                    beam(cue, l, time.age, opacity, out);
+                }
+            },
             Motion::Missile | Motion::Wavefront => {
                 self.travel(cue, l, time, base, flags, blend, texture, eye, out, models)
             }
@@ -1108,6 +1116,125 @@ impl EffectEvaluator {
         for k in 0..n {
             let at = tick - seconds_ticks(elapsed - (from + dt * k as f32));
             out.paths.push(v4(emitter_at(table, cue, at), 0.0));
+        }
+    }
+
+    /// A textured beam as lightning: a bolt from the cue's origin to its destination whose
+    /// joints wander at two scales (a few broad bends and a fine crackle), tapering to the
+    /// ends, with `forks` branches splitting off it, all redrawn twenty times a second so
+    /// the bolt dances; the texture repeats along it from a fresh offset each time.
+    fn lightning(
+        &mut self,
+        cue: &CueView,
+        l: &EffectLayer,
+        age: f32,
+        opacity: f32,
+        texture: Option<u32>,
+    ) {
+        let (a, b) = (cue.origin, cue.destination);
+        let length = a.distance(b);
+        if length < 1e-3 || opacity <= 0.0 {
+            return;
+        }
+        let dir = (b - a) / length;
+        let side = dir.cross(Vec3::Y).try_normalize().unwrap_or(Vec3::X);
+        let up = side.cross(dir);
+        let jitter = cue.spread.unwrap_or(0.3);
+        let width = cue.size;
+        let flicker = (age * 20.0).floor() as u32;
+        let hash = |x: u32| {
+            let h = (x ^ (x >> 16)).wrapping_mul(0x7feb_352d);
+            let h = (h ^ (h >> 15)).wrapping_mul(0x846c_a68b);
+            h ^ (h >> 16)
+        };
+        let unit = |h: u32| f32::from((h & 0xffff) as u16) / 65535.0 * 2.0 - 1.0;
+        let key = cue.seed.wrapping_mul(0x9e37_79b1) ^ flicker.wrapping_mul(0x85eb_ca6b);
+        // A sideways offset of the bolt at `k` (0–1 along it): broad bends between five
+        // control points, plus a crackle per joint.
+        let bend = |k: f32, salt: u32| {
+            let x = k * 4.0;
+            let i = (x.floor() as u32).min(3);
+            let f = x - i as f32;
+            let f = f * f * (3.0 - 2.0 * f);
+            let at = |j: u32| {
+                let h = hash(key ^ salt ^ j.wrapping_mul(0xc2b2_ae35));
+                Vec2::new(unit(h), unit(h >> 16))
+            };
+            at(i).lerp(at(i + 1), f)
+        };
+        let joints = ((length / 0.7).ceil() as u32).clamp(4, 32);
+        let mut main = Vec::with_capacity(joints as usize + 1);
+        for i in 0..=joints {
+            let k = i as f32 / joints as f32;
+            let taper = (4.0 * k * (1.0 - k)).sqrt();
+            let broad = bend(k, 0x1234_5678);
+            let h = hash(key ^ i.wrapping_mul(0x2c1b_3c6d));
+            let fine = Vec2::new(unit(h), unit(h >> 16)) * 0.35;
+            let off = (broad + fine) * jitter * taper;
+            main.push(a.lerp(b, k) + side * off.x + up * off.y);
+        }
+        let colour = Vec3::from_array(l.color);
+        let accent = Vec3::from_array(l.accent);
+        let tile = (width * 6.0).max(0.5);
+        let shift = unit(hash(key ^ 0xdead_beef)) * 0.5 + 0.5;
+        // A normal-blended bolt partly covers what is behind it, so its colour holds on
+        // bright ground; an additive one adds light.
+        let additive = if l.blend == EffectBlend::Normal {
+            0.6
+        } else {
+            1.0
+        };
+        let soft = l.soft.unwrap_or(0.4);
+        let strips = self.strips.entry(texture).or_default();
+        let mut push = |points: &[Vec3], width: f32, fade: &dyn Fn(f32) -> f32| {
+            let n = points.len();
+            let mut along = 0.0;
+            let mut prev: Option<StripPoint> = None;
+            for (i, &p) in points.iter().enumerate() {
+                if i > 0 {
+                    along += p.distance(points[i - 1]);
+                }
+                let k = i as f32 / (n - 1).max(1) as f32;
+                let ahead = points[(i + 1).min(n - 1)];
+                let behind = points[i.saturating_sub(1)];
+                let point = StripPoint {
+                    position: p.to_array(),
+                    tangent: (ahead - behind).try_normalize().unwrap_or(dir).to_array(),
+                    width,
+                    u: along / tile + shift,
+                    color: colour.lerp(accent, (2.0 * k - 1.0).abs() * 0.5).to_array(),
+                    opacity: opacity * fade(k),
+                };
+                if let Some(q) = prev
+                    && strips.len() < MAX_RIBBONS
+                {
+                    strips.push(RibbonQuad::strip(&q, &point, additive, soft));
+                }
+                prev = Some(point);
+            }
+        };
+        push(&main, width, &|_| 1.0);
+        // Forks: thinner branches from random joints, angled on along the bolt and fading
+        // to their tips.
+        for f in 0..l.forks {
+            let h = hash(key ^ (f + 1).wrapping_mul(0x27d4_eb2f));
+            let j = 1 + (h % (joints - 1).max(1)) as usize;
+            let start = main[j];
+            let swing = Vec2::new(unit(h >> 8), unit(hash(h)) * 0.6);
+            let heading = (dir * 0.75 + side * swing.x + up * swing.y)
+                .try_normalize()
+                .unwrap_or(dir);
+            let reach = length * (0.12 + 0.18 * (unit(hash(h ^ 0x55)) * 0.5 + 0.5));
+            let twigs: u32 = 6;
+            let branch: Vec<Vec3> = (0..=twigs)
+                .map(|i| {
+                    let k = i as f32 / twigs as f32;
+                    let g = hash(h ^ (i + 7).wrapping_mul(0x9e37_79b1));
+                    let wobble = Vec2::new(unit(g), unit(g >> 16)) * jitter * 0.45 * k;
+                    start + heading * reach * k + side * wobble.x + up * wobble.y
+                })
+                .collect();
+            push(&branch, width * 0.55, &|k| 0.85 * (1.0 - k * 0.8));
         }
     }
 

@@ -101,23 +101,21 @@
       "colour": "#c9b8ff",
       "accent": "#ffffff",
       "durationTicks": 40,
-      "count": 24,
-      "size": 0.16,
+      "count": 60,
+      "size": 0.3,
       "height": 0.2,
       "blend": "additive",
       "texture": {
-        "asset": "asset.effects.beetles.spark",
+        "asset": "asset.effects.vfx.mote",
         "role": "image",
         "index": 1
       },
-      "intensity": 3.5,
+      "intensity": 2.6,
       "core": 0.8,
-      "distribution": "disc",
-      "spread": 5.0,
       "emitter": {
         "mode": "burst",
-        "lifetimeTicks": 34,
-        "rate": 24,
+        "lifetimeTicks": 40,
+        "rate": 60,
         "speed": 3.0,
         "speedVariation": 0.4,
         "direction": {
@@ -126,15 +124,38 @@
           "z": 0
         },
         "coneDegrees": 20,
-        "gravity": -3.0,
+        "gravity": -3.5,
         "drag": 0.5,
-        "spawnRadius": 5.0,
-        "startSize": 0.16,
-        "endSize": 0.04,
+        "spawnRadius": 6.0,
+        "startSize": 0.3,
+        "endSize": 0.08,
         "spin": 0,
         "fadeIn": 0.0,
         "fadeOut": 0.5,
-        "stretch": 0.06
+        "spawnInner": 0.2,
+        "turbulence": {
+          "strength": 0.6,
+          "scale": 1.5,
+          "speed": 2.0
+        },
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.1,
+            "value": 1
+          },
+          {
+            "at": 0.7,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ]
       }
     },
     {

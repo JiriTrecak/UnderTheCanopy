@@ -14,7 +14,8 @@ to its dense centre:
 - `blast-ring`: a ground shock ring smeared outwards, for blast waves;
 - `mote`: a soft round mote with a dense heart: sparkles, droplets, embers, glowing heads;
 - `wake`: a soft band repeating along its length, faintly streaked: the air wake of a
-  thorn or a bolt (ribbons).
+  thorn or a bolt (ribbons);
+- `bolt`: lightning: a hot jagged core in a soft glow, repeating along its length (beams).
 """
 import json
 import math
@@ -189,6 +190,19 @@ def wake(i, j, w, h):
     return value, value, value, min(1.0, across * (0.75 + 0.35 * streak))
 
 
+def bolt(i, j, w, h):
+    u = i / w
+    v = (j + 0.5) / h * 2 - 1
+    # The core zigzags across the strip (periodic along u), with fine crackle.
+    path = (fbm(u * 6, 1.5, 1201, 3, period=6) - 0.5) * 0.7 + (fbm(u * 24, 4.5, 1207, 2, period=24) - 0.5) * 0.25
+    d = abs(v - path)
+    core = math.exp(-(d / 0.07) ** 2)
+    glow = math.exp(-(d / 0.34) ** 2) * (0.55 + 0.25 * fbm(u * 10, 7.0, 1213, 2, period=10))
+    alpha = min(1.0, core + glow)
+    value = min(1.0, 0.75 + 0.25 * core)
+    return value, value, value, alpha
+
+
 TEXTURES = {
     'puff': ('Cloud puff', 256, 256, atlas(256, 2, puff),
              'Four billowing cloud puffs (2 × 2): fire, smoke and dust, bright and dense at the heart.'),
@@ -203,6 +217,8 @@ TEXTURES = {
              'A soft round mote with a dense heart: sparkles, droplets, embers and glowing heads.'),
     'wake': ('Air wake', 128, 32, lambda i, j: wake(i, j, 128, 32),
              'A soft band repeating along its length, faintly streaked: the air wake behind a thorn or bolt.'),
+    'bolt': ('Lightning bolt', 256, 64, lambda i, j: bolt(i, j, 256, 64),
+             'Lightning: a hot jagged core in a soft glow, repeating along its length (beam strips).'),
 }
 
 

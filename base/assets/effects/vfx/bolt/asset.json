@@ -1,0 +1,18 @@
+{
+  "id": "asset.effects.vfx.bolt",
+  "name": "Lightning bolt",
+  "kind": "texture",
+  "tags": [
+    "effect",
+    "vfx",
+    "particle"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original procedural effect art for Under the Canopy (tools/content/vfx_art.py). Lightning: a hot jagged core in a soft glow, repeating along its length (beam strips)."
+}

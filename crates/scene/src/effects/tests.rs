@@ -50,6 +50,7 @@ fn layer(motion: Motion, primitive: Primitive) -> EffectLayer {
         opacity_curve: None,
         scale_curve: None,
         soft: None,
+        forks: 0,
     }
 }
 

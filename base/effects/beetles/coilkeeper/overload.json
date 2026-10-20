@@ -51,6 +51,63 @@
       "core": 0.8
     },
     {
+      "id": "inflow",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c9b8ff",
+      "accent": "#8a5cff",
+      "durationTicks": 8,
+      "count": 30,
+      "size": 0.2,
+      "height": 1.2,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 2.6,
+      "core": 0.8,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 8,
+        "rate": 30,
+        "speed": 0.0,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": 0.0,
+        "drag": 0.5,
+        "spawnRadius": 3.5,
+        "startSize": 0.2,
+        "endSize": 0.1,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "spawnInner": 0.7,
+        "stretch": 0.04,
+        "inheritVelocity": 0.0,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 0.1
+          },
+          {
+            "at": 0.5,
+            "value": 0.25
+          },
+          {
+            "at": 1,
+            "value": 0.05
+          }
+        ]
+      }
+    },
+    {
       "id": "glyph",
       "enabled": true,
       "shape": "billboard",
@@ -146,53 +203,384 @@
       }
     },
     {
-      "id": "burst",
+      "id": "fireball",
       "enabled": true,
-      "shape": "billboard",
-      "colour": "#8f66ff",
+      "shape": "particles",
+      "colour": "#ffffff",
       "accent": "#ffffff",
-      "durationTicks": 5,
-      "count": 1,
-      "size": 4.0,
-      "height": 1.2,
+      "durationTicks": 3,
+      "count": 18,
+      "size": 1.3,
+      "height": 1.4,
       "startTick": 6,
       "blend": "additive",
-      "intensity": 2.4,
-      "core": 0.9,
       "texture": {
-        "asset": "asset.effects.beetles.flash",
+        "asset": "asset.effects.vfx.puff",
         "role": "image",
         "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "ramp": [
+        {
+          "at": 0.0,
+          "colour": "#1c0c40"
+        },
+        {
+          "at": 0.3,
+          "colour": "#5a2ad8"
+        },
+        {
+          "at": 0.6,
+          "colour": "#9a74ff"
+        },
+        {
+          "at": 0.85,
+          "colour": "#dccfff"
+        },
+        {
+          "at": 1.0,
+          "colour": "#ffffff"
+        }
+      ],
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 24,
+        "rate": 18,
+        "speed": 6.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": -0.6,
+        "drag": 3.0,
+        "spawnRadius": 0.6,
+        "startSize": 1.3,
+        "endSize": 2.6,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 0.78
+          },
+          {
+            "at": 0.15,
+            "value": 1.8199999999999998
+          },
+          {
+            "at": 1,
+            "value": 3.3800000000000003
+          }
+        ],
+        "colourOverLife": [
+          {
+            "at": 0,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.6,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.9,
+            "colour": "#7a64c0"
+          },
+          {
+            "at": 1,
+            "colour": "#4a3c80"
+          }
+        ],
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 0.8
+          },
+          {
+            "at": 0.6,
+            "value": 0.7
+          },
+          {
+            "at": 0.9,
+            "value": 0.3
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.04,
+            "value": 0.9
+          },
+          {
+            "at": 0.6,
+            "value": 0.7
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0.05
+          },
+          {
+            "at": 0.5,
+            "value": 0.2
+          },
+          {
+            "at": 1,
+            "value": 0.85
+          }
+        ],
+        "heatOverLife": [
+          {
+            "at": 0,
+            "value": 1.05
+          },
+          {
+            "at": 0.4,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0.45
+          }
+        ],
+        "turbulence": {
+          "strength": 0.39,
+          "scale": 2.0,
+          "speed": 2.0
+        }
       }
     },
     {
       "id": "wave",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 3,
+      "count": 90,
+      "size": 1.4,
+      "height": 0.5,
+      "startTick": 6,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "ramp": [
+        {
+          "at": 0.0,
+          "colour": "#1c0c40"
+        },
+        {
+          "at": 0.3,
+          "colour": "#5a2ad8"
+        },
+        {
+          "at": 0.6,
+          "colour": "#9a74ff"
+        },
+        {
+          "at": 0.85,
+          "colour": "#dccfff"
+        },
+        {
+          "at": 1.0,
+          "colour": "#ffffff"
+        }
+      ],
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 30,
+        "rate": 90,
+        "speed": 26.0,
+        "speedVariation": 0.3,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 88,
+        "gravity": -0.6,
+        "drag": 3.0,
+        "spawnRadius": 0.8,
+        "startSize": 1.4,
+        "endSize": 2.8,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 0.84
+          },
+          {
+            "at": 0.15,
+            "value": 1.9599999999999997
+          },
+          {
+            "at": 1,
+            "value": 3.6399999999999997
+          }
+        ],
+        "colourOverLife": [
+          {
+            "at": 0,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.6,
+            "colour": "#ffffff"
+          },
+          {
+            "at": 0.9,
+            "colour": "#7a64c0"
+          },
+          {
+            "at": 1,
+            "colour": "#4a3c80"
+          }
+        ],
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 0.8
+          },
+          {
+            "at": 0.6,
+            "value": 0.7
+          },
+          {
+            "at": 0.9,
+            "value": 0.3
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.04,
+            "value": 0.9
+          },
+          {
+            "at": 0.6,
+            "value": 0.7
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0.05
+          },
+          {
+            "at": 0.5,
+            "value": 0.2
+          },
+          {
+            "at": 1,
+            "value": 0.85
+          }
+        ],
+        "heatOverLife": [
+          {
+            "at": 0,
+            "value": 1.05
+          },
+          {
+            "at": 0.4,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0.45
+          }
+        ],
+        "turbulence": {
+          "strength": 0.42,
+          "scale": 2.0,
+          "speed": 2.0
+        },
+        "coneInnerDegrees": 78,
+        "spawnInner": 0.4
+      }
+    },
+    {
+      "id": "ring",
       "enabled": true,
       "shape": "billboard",
       "colour": "#c9b8ff",
       "accent": "#ffffff",
       "durationTicks": 16,
       "count": 1,
-      "size": 9.0,
+      "size": 12.0,
       "height": 0.1,
       "startTick": 6,
       "orientation": "ground",
       "blend": "additive",
-      "intensity": 2.0,
-      "core": 0.6,
+      "intensity": 1.6,
       "texture": {
-        "asset": "asset.effects.beetles.ring",
+        "asset": "asset.effects.vfx.blast-ring",
         "role": "image",
         "index": 1
       },
-      "motion": {
-        "scale": {
-          "periodTicks": 32,
-          "min": 0.18,
-          "max": 1.0,
-          "easing": "sine"
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.15
+        },
+        {
+          "at": 0.25,
+          "value": 0.7
+        },
+        {
+          "at": 1,
+          "value": 1.0
         }
-      }
+      ],
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 1
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ]
     },
     {
       "id": "sparks",
@@ -202,7 +590,7 @@
       "accent": "#b49cff",
       "durationTicks": 20,
       "count": 40,
-      "size": 0.08,
+      "size": 0.1,
       "height": 1.0,
       "startTick": 6,
       "blend": "additive",
@@ -228,8 +616,8 @@
         "gravity": 6,
         "drag": 0.7,
         "spawnRadius": 0.15,
-        "startSize": 0.08,
-        "endSize": 0.036000000000000004,
+        "startSize": 0.1,
+        "endSize": 0.045000000000000005,
         "spin": 0,
         "fadeIn": 0.0,
         "fadeOut": 0.55,

@@ -118,7 +118,7 @@
       "accent": "#ffffff",
       "durationTicks": 240,
       "count": 28,
-      "size": 0.08,
+      "size": 0.1,
       "height": 0.0,
       "startTick": 0,
       "blend": "additive",
@@ -144,8 +144,8 @@
         "gravity": -5.0,
         "drag": 0.7,
         "spawnRadius": 12.0,
-        "startSize": 0.08,
-        "endSize": 0.036000000000000004,
+        "startSize": 0.1,
+        "endSize": 0.045000000000000005,
         "spin": 0,
         "fadeIn": 0.0,
         "fadeOut": 0.55,
@@ -153,6 +153,137 @@
       },
       "sustain": true,
       "follow": true
+    },
+    {
+      "id": "haze",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 240,
+      "count": 40,
+      "size": 2.0,
+      "height": 0.6,
+      "sustain": true,
+      "follow": true,
+      "blend": "additive",
+      "texture": {
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "ramp": [
+        {
+          "at": 0.0,
+          "colour": "#1c0c40"
+        },
+        {
+          "at": 0.3,
+          "colour": "#5a2ad8"
+        },
+        {
+          "at": 0.6,
+          "colour": "#9a74ff"
+        },
+        {
+          "at": 0.85,
+          "colour": "#dccfff"
+        },
+        {
+          "at": 1.0,
+          "colour": "#ffffff"
+        }
+      ],
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 50,
+        "rate": 30,
+        "speed": 1.2,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": -1.0,
+        "drag": 1.0,
+        "spawnRadius": 11.0,
+        "startSize": 2.0,
+        "endSize": 3.0,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "spawnInner": 0.5,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 1.2
+          },
+          {
+            "at": 1,
+            "value": 3.2
+          }
+        ],
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0.4
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.2,
+            "value": 0.55
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0.1
+          },
+          {
+            "at": 1,
+            "value": 0.75
+          }
+        ],
+        "heatOverLife": [
+          {
+            "at": 0,
+            "value": 0.9
+          },
+          {
+            "at": 1,
+            "value": 0.4
+          }
+        ],
+        "turbulence": {
+          "strength": 1.5,
+          "scale": 3.0,
+          "speed": 1.0
+        }
+      }
     },
     {
       "id": "light",
