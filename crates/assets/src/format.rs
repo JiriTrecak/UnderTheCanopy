@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 /// First bytes of every pack.
 pub const MAGIC: [u8; 8] = *b"CANOPYPK";
 /// Version of the pack layout and of every metadata type.
-pub const FORMAT_VERSION: u32 = 4;
+pub const FORMAT_VERSION: u32 = 5;
 /// Alignment of blobs and of every array inside one.
 pub const ALIGN: usize = 16;
 /// Rate at which clips are baked, in frames per second.

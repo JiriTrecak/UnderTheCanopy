@@ -1,0 +1,28 @@
+{
+  "id": "asset.models.effects.beetles-anvil",
+  "name": "Forgefall anvil",
+  "kind": "prop",
+  "tags": [
+    "effect",
+    "beetles",
+    "forgemaster"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "license": "Original procedural effect art for Under the Canopy (tools/content/beetles/gen_art.py). The Forgemaster's falling anvil, red-hot, molten metal in its cracks."
+}

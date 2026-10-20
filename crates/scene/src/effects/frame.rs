@@ -14,18 +14,20 @@
 //! eye when a light is left.
 
 use super::{
-    BLADE_TICKS, CueView, EffectSnapshot, Fire, Flight, HIT_DUST_TICKS, HitDust, SPARK_TICKS,
-    TrailPoint, seconds_ticks, tick_seconds,
+    BLADE_TICKS, CueView, EffectSnapshot, Fire, Flight, HIT_DUST_TICKS, HitDust, ROOT_LIFT,
+    SPARK_TICKS, TrailPoint, seconds_ticks, tick_seconds,
 };
 use canopy_assets::{
     CookedCueMotion, CookedPulse, Easing, EffectBlend, EffectLayer, EffectTable, FlipbookPlay,
-    Motion, Primitive,
+    Motion, Primitive, sample_colours, sample_curve,
 };
 use canopy_render::{
     actors::{ActorInstance, MAX_POSES, Pose},
     effects::{
-        Blend, EffectDraw, EffectFrame, Emitter, Geometry, MAX_EFFECT_LIGHTS, MAX_EMITTER_PARTS,
-        MAX_EMITTERS, MAX_PARTS, MAX_RIBBONS, RibbonQuad, flag, kind,
+        Blend, CURVE_ROWS, CURVE_SAMPLES, EffectDraw, EffectFrame, Emitter, Geometry,
+        MAX_EFFECT_LIGHTS, MAX_EMITTER_PARTS, MAX_EMITTERS, MAX_PARTS, MAX_PATH_SAMPLES,
+        MAX_RIBBONS, NO_CURVES, PATH_SAMPLES, RibbonDraw, RibbonQuad, StripPoint, curve, flag,
+        kind,
     },
     frame::PointLight,
 };
@@ -196,6 +198,132 @@ fn keep_nearest(pairs: &mut Vec<(f32, u32)>, n: usize) {
     pairs.sort_unstable_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
 }
 
+/// The curve block of a layer (its emitter's curves over particle life and its ramp) and
+/// which curves it authored, or `None` when it has none.
+pub fn curve_block(l: &EffectLayer) -> Option<(u32, Vec<[f32; 4]>)> {
+    let e = l.emitter.as_ref();
+    let mut flags = 0;
+    let mut set = |on: bool, bit: u32| {
+        if on {
+            flags |= bit;
+        }
+    };
+    set(e.is_some_and(|e| e.colour.is_some()), curve::COLOUR);
+    set(e.is_some_and(|e| e.opacity.is_some()), curve::OPACITY);
+    set(e.is_some_and(|e| e.size.is_some()), curve::SIZE);
+    set(e.is_some_and(|e| e.additive.is_some()), curve::ADDITIVE);
+    set(e.is_some_and(|e| e.erosion.is_some()), curve::EROSION);
+    set(e.is_some_and(|e| e.heat.is_some()), curve::HEAT);
+    set(l.ramp.is_some(), curve::RAMP);
+    if flags == 0 {
+        return None;
+    }
+    let one = |c: Option<&Vec<(f32, f32)>>, t: f32| c.map_or(1.0, |c| sample_curve(c, t));
+    let mut rows = Vec::with_capacity((CURVE_ROWS * CURVE_SAMPLES) as usize);
+    let at = |i: u32| i as f32 / (CURVE_SAMPLES - 1) as f32;
+    for i in 0..CURVE_SAMPLES {
+        let t = at(i);
+        let colour = e
+            .and_then(|e| e.colour.as_ref())
+            .map_or([1.0; 3], |c| sample_colours(c, t));
+        let opacity = one(e.and_then(|e| e.opacity.as_ref()), t);
+        rows.push([colour[0], colour[1], colour[2], opacity]);
+    }
+    for i in 0..CURVE_SAMPLES {
+        let t = at(i);
+        rows.push([
+            one(e.and_then(|e| e.size.as_ref()), t),
+            one(e.and_then(|e| e.additive.as_ref()), t),
+            e.and_then(|e| e.erosion.as_ref())
+                .map_or(0.0, |c| sample_curve(c, t)),
+            one(e.and_then(|e| e.heat.as_ref()), t),
+        ]);
+    }
+    for i in 0..CURVE_SAMPLES {
+        let colour = l
+            .ramp
+            .as_ref()
+            .map_or([1.0; 3], |c| sample_colours(c, at(i)));
+        rows.push([colour[0], colour[1], colour[2], 1.0]);
+    }
+    Some((flags, rows))
+}
+
+/// Where a layer's emitter stands at render tick `tick`: on the path of the layer it
+/// rides, where the unit it follows was then, or at its root.
+pub fn emitter_at(table: &EffectTable, cue: &CueView, tick: f64) -> Vec3 {
+    let effect = &table.effects[usize::from(cue.effect)];
+    let own = &effect.layers[usize::from(cue.layer)];
+    if let Some(ride) = cue.ride {
+        let l = &effect.layers[usize::from(ride.layer)];
+        // The ridden layer stood at the anchor with its own offset.
+        let root = cue.root - Vec3::from_array(own.offset) + ride.offset;
+        let k = ((tick - ride.start) / ride.duration.max(1e-6)) as f32;
+        let at = match l.motion {
+            Motion::Rain => {
+                let Some(rain) = &l.rain else { return cue.root };
+                let fall = tick_seconds(ride.duration) as f32;
+                let (landing, delay) = rain_drop(
+                    cue.seed.wrapping_mul(7919),
+                    0,
+                    l.count.max(1),
+                    ride.spread,
+                    rain.launch_delay,
+                );
+                let age = tick_seconds(tick - ride.start) as f32 - delay;
+                let flight = (age / fall.max(1e-4)).clamp(0.0, 1.0);
+                let back = Vec3::from_array(rain.back);
+                root + cue.rotation * (landing + back * (l.height * (1.0 - flight)))
+            }
+            _ => match &cue.trail {
+                Some(points) if !points.is_empty() => {
+                    let last = points[points.len() - 1];
+                    if tick >= last.tick {
+                        cue.flight.map_or(last.position, |f| f.position)
+                    } else {
+                        trail_at(points, tick)
+                    }
+                }
+                _ => match cue.flight {
+                    Some(f) if cue.ride_end.is_none() && tick >= cue.start => f.position,
+                    _ => {
+                        // The cue's ends are at its own height; the ridden layer flies at
+                        // its height.
+                        let lift = Vec3::Y * (l.height - own.height);
+                        let k = k.clamp(0.0, 1.0);
+                        let mut p = (cue.origin + lift).lerp(cue.destination + lift, k);
+                        if l.motion == Motion::Missile {
+                            p.y += 4.0 * l.arc_height * k * (1.0 - k);
+                        }
+                        p + Vec3::from_array(l.offset)
+                    }
+                },
+            },
+        };
+        return at + Vec3::from_array(own.offset);
+    }
+    match &cue.history {
+        Some(points) if !points.is_empty() && tick < points[points.len() - 1].tick => {
+            trail_at(points, tick)
+        }
+        _ => cue.root,
+    }
+}
+
+/// A path's position at `tick` between its samples (held before the first).
+fn trail_at(points: &[TrailPoint], tick: f64) -> Vec3 {
+    let i = points.partition_point(|p| p.tick <= tick);
+    if i == 0 {
+        return points[0].position;
+    }
+    if i >= points.len() {
+        return points[points.len() - 1].position;
+    }
+    let (a, b) = (points[i - 1], points[i]);
+    let k = ((tick - a.tick) / (b.tick - a.tick).max(1e-6)) as f32;
+    a.position.lerp(b.position, k)
+}
+
 /// Visual-only phase of a seed (old `cast · 0.7` radians), wrapped.
 /// A beam layer as ribbon segments from the cue's origin to its destination: a zigzag
 /// whose joints jitter sideways by up to the cue's spread (0.3 without one), tapering to
@@ -282,6 +410,11 @@ pub struct EffectEvaluator {
     flames: Vec<u32>,
     /// Scratch: damage effects by distance to the eye.
     nearest: Vec<(f32, u32)>,
+    /// Curve blocks of every layer that has one, and each layer's block and flags.
+    curves: Vec<[f32; 4]>,
+    layer_curves: Vec<Vec<(u32, u32)>>,
+    /// Textured strips of this frame by texture.
+    strips: BTreeMap<Option<u32>, Vec<RibbonQuad>>,
 }
 
 /// Blends a cue's positions between two snapshots.
@@ -324,6 +457,24 @@ impl EffectEvaluator {
                     .collect()
             })
             .collect();
+        let mut curves = Vec::new();
+        let layer_curves = table
+            .effects
+            .iter()
+            .map(|e| {
+                e.layers
+                    .iter()
+                    .map(|l| match curve_block(l) {
+                        Some((flags, rows)) => {
+                            let block = curves.len() as u32;
+                            curves.extend(rows);
+                            (block, flags)
+                        }
+                        None => (NO_CURVES, 0),
+                    })
+                    .collect()
+            })
+            .collect();
         Self {
             table,
             textures,
@@ -332,7 +483,15 @@ impl EffectEvaluator {
             pushed: 0,
             flames: Vec::new(),
             nearest: Vec::new(),
+            curves,
+            layer_curves,
+            strips: BTreeMap::new(),
         }
+    }
+
+    /// The curve blocks emitters refer to (`Renderer::load_effect_curves`).
+    pub fn curves(&self) -> &[[f32; 4]] {
+        &self.curves
     }
 
     /// Texture entries in the order draws refer to them
@@ -366,6 +525,9 @@ impl EffectEvaluator {
         for bucket in self.buckets.values_mut() {
             bucket.clear();
         }
+        for strips in self.strips.values_mut() {
+            strips.clear();
+        }
         let t = t.clamp(0.0, 1.0);
         let older = a.map_or(&[][..], |a| &a.cues[..]);
         let mut j = 0;
@@ -392,7 +554,7 @@ impl EffectEvaluator {
                 motion: [1.0, 0.0, spark.angle, 0.0],
                 ints: [kind::SPARK, 0, 8, 0],
                 e4: [0.0, 0.0, 0.0, spark.power],
-                ..Emitter::default()
+                ..Emitter::neutral()
             };
             self.push(out, e, 8, Geometry::Quad, Blend::Additive, None, eye);
         }
@@ -415,6 +577,7 @@ impl EffectEvaluator {
                         ],
                         color: [0.95, 0.80, 0.54, 1.0],
                         look: [1.0, 0.0, 0.0, 0.0],
+                        end: [0.0; 4],
                     });
                 }
             }
@@ -439,6 +602,20 @@ impl EffectEvaluator {
                     geometry,
                     blend,
                     texture: (texture != u32::MAX).then_some(texture),
+                    first,
+                    count,
+                });
+            }
+        }
+        // Textured strips after every other ribbon, grouped by texture.
+        for (&texture, strips) in &self.strips {
+            let first = out.ribbons.len() as u32;
+            let room = MAX_RIBBONS.saturating_sub(out.ribbons.len());
+            out.ribbons.extend(strips.iter().take(room));
+            let count = out.ribbons.len() as u32 - first;
+            if count > 0 {
+                out.ribbon_draws.push(RibbonDraw {
+                    texture,
                     first,
                     count,
                 });
@@ -527,7 +704,7 @@ impl EffectEvaluator {
                 shape: [age, tick_seconds(HIT_DUST_TICKS) as f32, d.lift, 0.0],
                 ints: [kind::DUST, flag::NORMAL, HIT_DUST_PARTS, d.seed],
                 e0: v4(d.direction, 0.0),
-                ..Emitter::default()
+                ..Emitter::neutral()
             };
             self.push(
                 out,
@@ -570,7 +747,7 @@ impl EffectEvaluator {
             let base = Emitter {
                 position: v4(f.position, 0.0),
                 rotation: [0.0, 0.0, 0.0, 1.0],
-                ..Emitter::default()
+                ..Emitter::neutral()
             };
             if out.emitters.len() + 2 > MAX_EMITTERS {
                 break;
@@ -643,8 +820,21 @@ impl EffectEvaluator {
         let effect = &table.effects[usize::from(cue.effect)];
         let l = &effect.layers[usize::from(cue.layer)];
         let texture = self.layer_textures[usize::from(cue.effect)][usize::from(cue.layer)];
-        let motion = cue_motion(l.cue_motion.as_ref(), time.age);
+        let mut motion = cue_motion(l.cue_motion.as_ref(), time.age);
+        // Authored curves over the layer's life replace the envelope and the growth.
+        let env = l
+            .opacity_curve
+            .as_ref()
+            .map_or(envelope(time.t, time.persistent), |c| {
+                sample_curve(c, time.t)
+            });
+        let grows = l.scale_curve.is_none();
+        if let Some(c) = &l.scale_curve {
+            motion.scale *= sample_curve(c, time.t);
+        }
         let blend = match l.blend {
+            // A part whose additivity changes over its life sorts with the covering parts.
+            _ if l.emitter.as_ref().is_some_and(|e| e.additive.is_some()) => Blend::Normal,
             EffectBlend::Additive => Blend::Additive,
             EffectBlend::Normal => Blend::Normal,
         };
@@ -668,6 +858,21 @@ impl EffectEvaluator {
         if flip.is_some_and(|f| f.random_start) {
             flags |= flag::RANDOM_START;
         }
+        if flip.is_some_and(|f| f.over_life) {
+            flags |= flag::OVER_LIFE;
+        }
+        if flip.is_some_and(|f| f.blend) {
+            flags |= flag::FLIP_BLEND;
+        }
+        let (block, curve_flags) =
+            self.layer_curves[usize::from(cue.effect)][usize::from(cue.layer)];
+        let (ints2, mut e6, e7, mut e8) = Emitter::NONE_EXTRA;
+        // Marks lying on the ground would fade into it: they cut hard.
+        e6[3] = l.soft.unwrap_or(if l.primitive == Primitive::Decal {
+            0.0
+        } else {
+            0.4
+        });
         let base = Emitter {
             position: v4(cue.root, 0.0),
             rotation: cue.rotation.to_array(),
@@ -693,16 +898,17 @@ impl EffectEvaluator {
                 time.local,
                 0.0,
             ],
-            ..Emitter::default()
+            ints2: [block, curve_flags, ints2[2], ints2[3]],
+            e6,
+            e7,
+            e8,
+            ..Emitter::neutral()
         };
         match l.motion {
             Motion::Sound => {}
             Motion::Rain => self.rain(cue, l, time, base, blend, texture, eye, out, models),
             Motion::Beam => {
-                let opacity = (envelope(time.t, time.persistent)
-                    * motion.opacity
-                    * l.intensity.unwrap_or(1.0))
-                .clamp(0.0, 1.0);
+                let opacity = (env * motion.opacity * l.intensity.unwrap_or(1.0)).clamp(0.0, 1.0);
                 beam(cue, l, time.age, opacity, out);
             }
             Motion::Missile | Motion::Wavefront => {
@@ -712,8 +918,7 @@ impl EffectEvaluator {
                 let Some((model, clip)) = cue.model else {
                     return;
                 };
-                let opacity =
-                    envelope(time.t, time.persistent) * motion.opacity * l.intensity.unwrap_or(1.0);
+                let opacity = env * motion.opacity * l.intensity.unwrap_or(1.0);
                 let m = l.model.as_ref().expect("mesh layers have models");
                 let turn = Quat::from_euler(
                     EulerRot::XYZ,
@@ -748,9 +953,7 @@ impl EffectEvaluator {
                 });
             }
             Motion::Light => {
-                let strength = envelope(time.t, time.persistent)
-                    * motion.opacity
-                    * l.intensity.unwrap_or(35.0);
+                let strength = env * motion.opacity * l.intensity.unwrap_or(35.0);
                 if strength > 0.0 && out.lights.len() < MAX_EFFECT_LIGHTS {
                     out.lights.push(PointLight {
                         position: (cue.root + cue.rotation * (Vec3::Y * l.height)).to_array(),
@@ -786,11 +989,36 @@ impl EffectEvaluator {
                     0.0,
                 ];
                 e.e5[1] = em.stretch;
+                e.e6[2] = em.inherit;
+                e.e7 = [
+                    em.turbulence.map_or(0.0, |t| t[0]),
+                    em.turbulence.map_or(1.0, |t| t[1]),
+                    em.turbulence.map_or(0.0, |t| t[2]),
+                    em.collide.unwrap_or(-1.0),
+                ];
+                e8 = [
+                    em.cone_inner,
+                    em.spawn_inner,
+                    em.erosion_softness,
+                    // The ground under the layer's anchor.
+                    cue.root.y - l.offset[1] - ROOT_LIFT,
+                ];
+                e.e8 = e8;
+                if em.world {
+                    e.ints[1] |= flag::WORLD;
+                    let end = cue
+                        .ride_end
+                        .map_or(f32::INFINITY, |end| tick_seconds(end - cue.start) as f32);
+                    // A ride that ended stops emitting.
+                    e.e2[3] = e.e2[3].min(end.max(0.0));
+                    self.path(table, cue, tick, time.local, em.lifetime, &mut e, out);
+                }
                 let count = e.ints[2];
                 self.push(out, e, count, Geometry::Quad, blend, texture, eye);
             }
+            Motion::Ribbon => self.strip(table, cue, l, tick, env * motion.opacity, texture),
             shape => {
-                let opacity = envelope(time.t, time.persistent)
+                let opacity = env
                     * motion.opacity
                     * l.intensity
                         .unwrap_or(if shape == Motion::Pillar { 0.18 } else { 1.0 });
@@ -802,7 +1030,7 @@ impl EffectEvaluator {
                     Motion::Burst => (kind::BURST, cue.size, l.count, Geometry::Quad),
                     Motion::Streaks => (kind::STREAKS, cue.size, l.count, Geometry::Quad),
                     Motion::Ring => {
-                        let grow = if time.persistent || cue.duration_from {
+                        let grow = if time.persistent || cue.duration_from || !grows {
                             1.0
                         } else {
                             0.55 + time.t * 0.6
@@ -810,7 +1038,7 @@ impl EffectEvaluator {
                         (kind::RING, cue.size * grow, 1, Geometry::Quad)
                     }
                     Motion::Glow => {
-                        let grow = if time.persistent {
+                        let grow = if time.persistent || !grows {
                             1.0
                         } else {
                             0.85 + time.t * 0.2
@@ -819,7 +1047,7 @@ impl EffectEvaluator {
                     }
                     Motion::Pillar => (
                         kind::PILLAR,
-                        cue.size * (1.0 - time.t * 0.5),
+                        cue.size * if grows { 1.0 - time.t * 0.5 } else { 1.0 },
                         1,
                         if texture.is_some() {
                             Geometry::Quad
@@ -837,6 +1065,121 @@ impl EffectEvaluator {
                 let count = e.ints[2];
                 self.push(out, e, count, geometry, blend, texture, eye);
             }
+        }
+    }
+
+    /// Samples the path of a world-space emitter over the births still alive into the
+    /// frame's paths (seconds `elapsed − lifetime` to `elapsed` of the cue's timeline).
+    #[allow(clippy::too_many_arguments)]
+    fn path(
+        &self,
+        table: &EffectTable,
+        cue: &CueView,
+        tick: f64,
+        elapsed: f32,
+        lifetime: f32,
+        e: &mut Emitter,
+        out: &mut EffectFrame,
+    ) {
+        if out.paths.len() + PATH_SAMPLES as usize > MAX_PATH_SAMPLES {
+            // Over the budget the cloud travels with its emitter.
+            e.ints[1] &= !flag::WORLD;
+            return;
+        }
+        let from = (elapsed - lifetime).max(0.0);
+        let span = elapsed - from;
+        let n = if span > 1e-4 { PATH_SAMPLES } else { 1 };
+        let dt = if n > 1 { span / (n - 1) as f32 } else { 1.0 };
+        e.ints2[2] = out.paths.len() as u32;
+        e.ints2[3] = n;
+        e.e6[0] = from;
+        e.e6[1] = dt;
+        for k in 0..n {
+            let at = tick - seconds_ticks(elapsed - (from + dt * k as f32));
+            out.paths.push(v4(emitter_at(table, cue, at), 0.0));
+        }
+    }
+
+    /// A ribbon layer: a textured strip along its emitter's path over the ribbon's
+    /// duration, head first.
+    fn strip(
+        &mut self,
+        table: &EffectTable,
+        cue: &CueView,
+        l: &EffectLayer,
+        tick: f64,
+        opacity: f32,
+        texture: Option<u32>,
+    ) {
+        const POINTS: usize = 24;
+        let Some(r) = &l.ribbon else { return };
+        let duration = seconds_ticks(r.duration).max(1e-3);
+        let mut begin = (tick - duration).max(cue.start);
+        let mut end = tick;
+        if let Some(ride) = cue.ride {
+            begin = begin.max(ride.start);
+        }
+        if let Some(stop) = cue.ride_end {
+            end = end.min(stop);
+        }
+        if end - begin < 1e-3 || opacity <= 0.0 {
+            return;
+        }
+        let samples: Vec<(f64, Vec3)> = (0..POINTS)
+            .map(|k| {
+                let at = end - (end - begin) * k as f64 / (POINTS - 1) as f64;
+                (at, emitter_at(table, cue, at))
+            })
+            .collect();
+        let now = tick_seconds(tick - cue.start) as f32;
+        let intensity = l.intensity.unwrap_or(1.0) * opacity;
+        let mut distance = 0.0;
+        let mut points = Vec::with_capacity(POINTS);
+        for (k, &(at, position)) in samples.iter().enumerate() {
+            if k > 0 {
+                distance += position.distance(samples[k - 1].1);
+            }
+            let age = (((tick - at) / duration) as f32).clamp(0.0, 1.0);
+            let ahead = samples[k.saturating_sub(1)].1;
+            let behind = samples[(k + 1).min(POINTS - 1)].1;
+            let tangent = (ahead - behind).try_normalize().unwrap_or(Vec3::Y);
+            let curve = |c: &Option<Vec<(f32, f32)>>, default: f32| {
+                c.as_ref().map_or(default, |c| sample_curve(c, age))
+            };
+            let color = r.colour.as_ref().map_or_else(
+                || Vec3::from_array(l.color).lerp(Vec3::from_array(l.accent), age),
+                |c| Vec3::from_array(sample_colours(c, age)),
+            );
+            points.push(StripPoint {
+                position: position.to_array(),
+                tangent: tangent.to_array(),
+                width: r.width * curve(&r.width_curve, 1.0),
+                u: if r.tile > 0.0 {
+                    distance / r.tile + r.scroll * now
+                } else {
+                    age
+                },
+                color: color.to_array(),
+                opacity: intensity * curve(&r.opacity, 1.0 - age),
+            });
+        }
+        let default_additive = if l.blend == EffectBlend::Additive {
+            1.0
+        } else {
+            0.0
+        };
+        let strips = self.strips.entry(texture).or_default();
+        for (k, pair) in points.windows(2).enumerate() {
+            let (a, b) = (&pair[0], &pair[1]);
+            if Vec3::from_array(a.position).distance(Vec3::from_array(b.position)) < 1e-4 {
+                continue;
+            }
+            let age = (0.5 * (samples[k].0 + samples[k + 1].0) - tick) / -duration;
+            let additive = r
+                .additive
+                .as_ref()
+                .map_or(default_additive, |c| sample_curve(c, age as f32));
+            strips.push(RibbonQuad::strip(a, b, additive, l.soft.unwrap_or(0.4)));
         }
     }
 
@@ -878,7 +1221,8 @@ impl EffectEvaluator {
             0.0,
         ];
         if let (Some((model, clip)), Some(m)) = (cue.model, &l.model) {
-            // Model rain: each drop is the model, upright, turning slowly as it falls.
+            // Model rain: each drop is the model in its authored pose, falling along its
+            // path (an `intensity` below 1 makes it translucent).
             let back = Vec3::from_array(rain.back);
             let (speed, looping) = m.animation.as_ref().map_or((1.0, false), |a| (a.1, a.2));
             for i in 0..drops {
@@ -889,12 +1233,8 @@ impl EffectEvaluator {
                     continue;
                 }
                 let at = cue.root + cue.rotation * (landing + back * (l.height * (1.0 - flight)));
-                let turn = Quat::from_euler(
-                    EulerRot::XYZ,
-                    m.rotation[0],
-                    m.rotation[1] + age * 1.4 + noise(e.ints[3] ^ i) * TAU,
-                    m.rotation[2] + 0.35 * (age * 2.3).sin(),
-                );
+                let turn =
+                    Quat::from_euler(EulerRot::XYZ, m.rotation[0], m.rotation[1], m.rotation[2]);
                 let (count, pose) = model_pose(clip, age, speed, looping);
                 let mut poses = [Pose::default(); MAX_POSES];
                 poses[0] = pose;
@@ -909,7 +1249,12 @@ impl EffectEvaluator {
                     opacity: 1.0,
                     poses,
                     pose_count: count,
-                    tint: [l.color[0], l.color[1], l.color[2], 1.0],
+                    tint: [
+                        l.color[0],
+                        l.color[1],
+                        l.color[2],
+                        l.intensity.unwrap_or(1.0).clamp(0.0, 1.0),
+                    ],
                     shadow_only: false,
                     activity: 1.0,
                     aim: None,
@@ -929,6 +1274,8 @@ impl EffectEvaluator {
         flash.color = v4(Vec3::from_array(i.color), e.color[3]);
         flash.flip = [1, 1, 0, 1];
         flash.times[0] = 0.0;
+        // The flash lies on the ground.
+        flash.e6[3] = 0.0;
         self.push(
             out,
             flash,

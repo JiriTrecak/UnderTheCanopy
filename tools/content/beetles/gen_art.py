@@ -11,7 +11,8 @@ Writes asset folders under base/assets/effects/beetles/ (pure Python, no depende
   in the texture), `scorch` (a soot mark, for normal blending);
 - `bolt`: a brass repeater bolt with a glowing substance head (the Bolter's projectile);
 - `crucible`: the Forgemaster's falling crucible, a riveted iron pot brimming with molten
-  metal (a small glTF model; its metal glows through an emissive material).
+  metal (a small glTF model; its metal glows through an emissive material);
+- `anvil`: the Forgemaster's falling anvil, red-hot iron with molten metal in its cracks.
 """
 import json
 import math
@@ -350,6 +351,46 @@ def crucible():
     return [(merge(shell, lugs, rivets), 0), (metal, 1), (seam, 2)]
 
 
+ANVIL_MATERIALS = [
+    {'name': 'hot iron', 'doubleSided': True,
+     'pbrMetallicRoughness': {'baseColorFactor': [0.1, 0.045, 0.03, 1], 'metallicFactor': 0.6, 'roughnessFactor': 0.45},
+     'emissiveFactor': [1.0, 0.28, 0.06], 'extensions': {'KHR_materials_emissive_strength': {'emissiveStrength': 0.45}}},
+    {'name': 'molten', 'doubleSided': True,
+     'pbrMetallicRoughness': {'baseColorFactor': [1.0, 0.6, 0.2, 1], 'metallicFactor': 0.0, 'roughnessFactor': 0.6},
+     'emissiveFactor': [1.0, 0.55, 0.15], 'extensions': {'KHR_materials_emissive_strength': {'emissiveStrength': 10.0}}},
+]
+
+
+def along_x(part, y, tilt=0.0):
+    """Turns a part built along +Y to lie along +X at height `y`."""
+    positions, normals, indices = part
+    c, s = math.cos(tilt), math.sin(tilt)
+
+    def turn(v, lift):
+        x, yy, z = v[1], -v[0], v[2]
+        return (x * c - yy * s, x * s + yy * c + lift, z)
+
+    return [turn(p, y) for p in positions], [turn(n, 0.0) for n in normals], indices
+
+
+def anvil():
+    """A smith's anvil (about 0.95 m tall, its foot at the origin, the horn towards +X):
+    a splayed foot, a narrow waist, a heavy face with a heel and a tapering horn, molten
+    metal glowing in cracks across the face and down the sides."""
+    foot = boxes([(0.0, 0.08, 0.0)], (0.44, 0.08, 0.3))
+    plinth = boxes([(0.0, 0.2, 0.0)], (0.32, 0.05, 0.22))
+    waist = boxes([(0.0, 0.38, 0.0)], (0.2, 0.14, 0.15))
+    face = boxes([(-0.02, 0.7, 0.0)], (0.48, 0.18, 0.24))
+    heel = boxes([(-0.6, 0.78, 0.0)], (0.12, 0.1, 0.17))
+    horn = along_x(lathe([(0.0, -0.0), (0.21, 0.0), (0.17, 0.2), (0.1, 0.42), (0.0, 0.62)], 14), 0.72)
+    horn = ([(x + 0.46, y, z) for x, y, z in horn[0]], horn[1], horn[2])
+    cracks = boxes([(0.0, 0.885, 0.0), (-0.22, 0.885, 0.08), (0.2, 0.885, -0.07), (0.0, 0.7, 0.245),
+                    (0.0, 0.7, -0.245), (0.0, 0.42, 0.152)],
+                   (0.4, 0.006, 0.022))
+    cross = boxes([(-0.1, 0.886, 0.0), (0.26, 0.886, 0.0)], (0.02, 0.006, 0.2))
+    return [(merge(foot, plinth, waist, face, heel, horn), 0), (merge(cracks, cross), 1)]
+
+
 BOLT_MATERIALS = [
     {'name': 'brass', 'doubleSided': True,
      'pbrMetallicRoughness': {'baseColorFactor': [0.78, 0.56, 0.24, 1], 'metallicFactor': 0.9, 'roughnessFactor': 0.35}},
@@ -387,8 +428,16 @@ def model():
                    'license': LICENSE + ' The Forgemaster\'s falling crucible.'})
     glb(os.path.join(folder, 'geometry.glb'), crucible())
 
+    folder = os.path.join(OUT, 'anvil')
+    asset(folder, {'id': 'asset.models.effects.beetles-anvil', 'name': 'Forgefall anvil', 'kind': 'prop',
+                   'tags': ['effect', 'beetles', 'forgemaster'],
+                   'resources': [{'role': 'geometry', 'index': 1, 'format': 'glb'}],
+                   'transform': {'scale': 1, 'pivot': [0, 0, 0], 'up': 'Y', 'forward': '+Z'},
+                   'license': LICENSE + ' The Forgemaster\'s falling anvil, red-hot, molten metal in its cracks.'})
+    glb(os.path.join(folder, 'geometry.glb'), anvil(), ANVIL_MATERIALS, 'anvil')
+
 
 if __name__ == '__main__':
     textures()
     model()
-    print('wrote', len(TEXTURES), 'textures, the bolt and the crucible to', OUT)
+    print('wrote', len(TEXTURES), 'textures, the bolt, the crucible and the anvil to', OUT)

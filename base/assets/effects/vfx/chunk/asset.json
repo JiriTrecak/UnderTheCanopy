@@ -1,0 +1,18 @@
+{
+  "id": "asset.effects.vfx.chunk",
+  "name": "Debris chunks",
+  "kind": "texture",
+  "tags": [
+    "effect",
+    "vfx",
+    "particle"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original procedural effect art for Under the Canopy (tools/content/vfx_art.py). Four lumps of rock or slag lit from above (2 × 2): debris."
+}

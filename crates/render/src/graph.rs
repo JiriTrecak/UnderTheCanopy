@@ -174,6 +174,8 @@ pub mod passes {
     pub const RIPPLES: &str = "ripples";
     pub const CAUSTICS: &str = "caustics";
     pub const FORWARD: &str = "forward";
+    /// Particles, decals and ribbons over the resolved scene, reading its depth.
+    pub const EFFECTS: &str = "effects";
     pub const CONTACT: &str = "contact";
     pub const BLOOM: &str = "bloom";
     pub const HAZE: &str = "haze";
@@ -227,6 +229,11 @@ pub fn world_frame(features: FrameFeatures) -> FrameGraph {
         Pass::new(passes::FORWARD, Render)
             .reads(&forward_reads)
             .writes(&[SceneColor, SceneDepth]),
+    );
+    list.push(
+        Pass::new(passes::EFFECTS, Render)
+            .reads(&[SceneColor, SceneDepth])
+            .writes(&[SceneColor]),
     );
     let mut post_reads = vec![SceneColor, SceneDepth];
     if features.contact {
@@ -290,12 +297,12 @@ mod tests {
     #[test]
     fn the_world_frame_is_well_formed() {
         let graph = world_frame(FrameFeatures::default());
-        assert_eq!(graph.passes().len(), 7);
+        assert_eq!(graph.passes().len(), 8);
         assert_eq!(graph.last_use(ShadowMap), Some(passes::FORWARD));
         assert_eq!(graph.last_use(Palettes), Some(passes::FORWARD));
-        assert_eq!(graph.index(passes::POST), Some(4));
-        assert_eq!(graph.index(passes::WORLD_UI), Some(5));
-        assert_eq!(graph.index(passes::UI), Some(6));
+        assert_eq!(graph.index(passes::POST), Some(5));
+        assert_eq!(graph.index(passes::WORLD_UI), Some(6));
+        assert_eq!(graph.index(passes::UI), Some(7));
         let all = world_frame(FrameFeatures {
             water: true,
             contact: true,
@@ -308,8 +315,8 @@ mod tests {
         assert_eq!(
             names,
             [
-                "cull", "skin", "shadow", "ripples", "caustics", "forward", "contact", "bloom",
-                "haze", "post", "world_ui", "minimap", "portrait", "ui"
+                "cull", "skin", "shadow", "ripples", "caustics", "forward", "effects", "contact",
+                "bloom", "haze", "post", "world_ui", "minimap", "portrait", "ui"
             ]
         );
         assert_eq!(all.last_use(Palettes), Some(passes::PORTRAIT));

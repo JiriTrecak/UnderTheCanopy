@@ -1,0 +1,18 @@
+{
+  "id": "asset.effects.vfx.puff",
+  "name": "Cloud puff",
+  "kind": "texture",
+  "tags": [
+    "effect",
+    "vfx",
+    "particle"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original procedural effect art for Under the Canopy (tools/content/vfx_art.py). Four billowing cloud puffs (2 × 2): fire, smoke and dust, bright and dense at the heart."
+}

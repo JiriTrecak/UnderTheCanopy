@@ -143,6 +143,13 @@ The simulation sends fog changes with dirty rectangles. The renderer writes only
 
 A data-driven GPU effect system with six primitives: **particle emitter** (stateless, evaluated from seed and age with curves), **ground decal**, **mesh layer**, **ribbon** (trails, beams and melee trails), **light**, **sound**. Missiles, wavefronts and beams become *delivery drivers* that move layers. The 170 shipped effects (307 layers) use only these building blocks; a converter migrates the current JSON to a v2 format, checked against reference captures. One global budget replaces the three per-player budgets.
 
+As built (`crates/render/src/effects.rs`, `shaders/effects.wgsl`, `crates/scene/src/effects/frame.rs`, D69, D76):
+- Particles are stateless: the vertex shader evaluates each from its emitter record (304 bytes), index, seed and age. Curves over life live in curve blocks (3 rows of 32 samples: colour and opacity; size, additivity, erosion and heat; the ramp) loaded once; world-space emitters carry 32 samples of their path (where the emitter was over the births still alive), written each frame, from which each particle finds its birth point and inherited velocity.
+- Effects draw in their own pass after the forward pass, into the resolved HDR colour without a depth attachment, reading the resolved linear depth: hidden behind surfaces, soft where they meet them (ground decals cut hard). Every part blends premultiplied (`one, one − src alpha`) with its additivity; buckets keep additive parts first, then covering parts back to front.
+- Ribbons: trails and beams (camera-facing segments), melee blade quads, and textured strips grouped by texture. Beams are jittered segments redrawn 15 times a second.
+- Rain draws shards (or models) falling onto a disc, a flash and splashes where each lands.
+- Effect lights: 8 (`MAX_EFFECT_LIGHTS`), shared with working buildings (D65).
+
 ### 4.9 World UI and interpolation
 
 - All in-world UI (bars, badges, rings, labels, rally routes, ability aim, placement grid) is one instanced quad/decal pass. Per-instance data: world anchor, pixel offset and size, kind, values, colour, icon layer. The current health-bar fragment logic ports as is.

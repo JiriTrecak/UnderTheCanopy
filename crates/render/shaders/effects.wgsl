@@ -2,7 +2,14 @@
 // index, seed and age with the old effect player's formulas (billboards, bursts, streaks,
 // emitters, rings, glows, the pillar, travelling missiles and crests, hit sparks), the
 // damage effects (D46: flames and smoke of burning buildings, dust of melee hits), and
-// ribbons (trails and melee blade ribbons). Mirrors effects.rs. Needs Frame.
+// ribbons (trails, melee blade ribbons and textured strips). Mirrors effects.rs. Needs
+// Frame.
+//
+// Drawn in their own pass over the resolved scene: fragments read the scene's linear
+// depth to hide behind surfaces and fade softly into them, and blend premultiplied with
+// their additivity (1 adds light, 0 covers). Emitters may carry curve blocks (colour,
+// opacity, size, additivity, erosion and heat over life, and a ramp colouring texture
+// brightness) and a path (world-space particles stay on the path where they were born).
 
 struct Emitter {
     // xyz: root (world)
@@ -35,18 +42,30 @@ struct Emitter {
     e4: vec4f,
     // white-hot core (0–1), streak seconds along the velocity
     e5: vec4f,
+    // curve block (0xffffffff: none), curve flags (C_*), first path sample, path samples
+    ints2: vec4u,
+    // seconds of the first path sample, seconds between samples, inherited velocity,
+    // soft fade (m)
+    e6: vec4f,
+    // turbulence strength (m), cell (m), churn (1/s); landing friction (< 0: none)
+    e7: vec4f,
+    // inner cone (rad), inner spawn share, erosion softness, ground height (world y)
+    e8: vec4f,
 }
 
 struct Ribbon {
-    // mode 0: a (w: fade), b (w: fade), (width, 0, 0, 0); mode 1: four corners (w: alpha)
+    // mode 0: a (w: fade), b (w: fade), (width, 0, 0, 0); mode 1: four corners (w: alpha);
+    // mode 2: a (w: width), b (w: width), tangent at a (w: u), tangent at b (w: u)
     p0: vec4f,
     p1: vec4f,
     p2: vec4f,
     p3: vec4f,
-    // rgb; a: mode
+    // rgb (mode 2: at a); a: mode
     color: vec4f,
-    // opacity, 0, 0, 0
+    // mode 0: opacity; mode 2: opacity at a, additivity, soft fade (m)
     look: vec4f,
+    // mode 2: colour and opacity at b
+    end: vec4f,
 }
 
 struct EffectView {
@@ -62,6 +81,19 @@ struct EffectView {
 @group(2) @binding(1) var<storage, read> parts: array<u32>;
 @group(2) @binding(2) var<storage, read> ribbons: array<Ribbon>;
 @group(2) @binding(3) var<uniform> view: EffectView;
+@group(2) @binding(4) var<storage, read> curves: array<vec4f>;
+@group(2) @binding(5) var<storage, read> paths: array<vec4f>;
+@group(3) @binding(0) var scene_depth: texture_2d<f32>;
+
+const CURVE_SAMPLES: u32 = 32u;
+const NO_CURVES: u32 = 0xffffffffu;
+const C_COLOUR: u32 = 1u;
+const C_OPACITY: u32 = 2u;
+const C_SIZE: u32 = 4u;
+const C_ADDITIVE: u32 = 8u;
+const C_EROSION: u32 = 16u;
+const C_HEAT: u32 = 32u;
+const C_RAMP: u32 = 64u;
 
 const K_BILLBOARD: u32 = 0u;
 const K_BURST: u32 = 1u;
@@ -87,6 +119,9 @@ const F_SPIN: u32 = 16u;
 const F_DISC: u32 = 32u;
 const F_NORMAL: u32 = 64u;
 const F_RANDOM_START: u32 = 128u;
+const F_OVER_LIFE: u32 = 256u;
+const F_FLIP_BLEND: u32 = 512u;
+const F_WORLD: u32 = 1024u;
 
 // Fragment masks.
 const M_TEXTURE: u32 = 0u;
@@ -118,35 +153,132 @@ fn rotate(q: vec4f, v: vec3f) -> vec3f {
 }
 
 // A flipbook frame's texture rectangle (scale xy, offset zw), old `flipbookFrame`.
-fn flip_rect(e: Emitter, age: f32, seed: f32) -> vec4f {
+fn frame_rect(e: Emitter, frame: u32) -> vec4f {
     let cols = max(e.flip.x, 1u);
     let rows = max(e.flip.y, 1u);
+    let f = e.flip.z + frame;
+    return vec4f(1.0 / f32(cols), 1.0 / f32(rows), f32(f % cols) / f32(cols), f32(f / cols) / f32(rows));
+}
+
+struct Flip {
+    a: vec4f,
+    b: vec4f,
+    // how far towards `b`
+    blend: f32,
+}
+
+// The flipbook frames at `age` seconds (or, spanning each particle's life, at `life`),
+// and how far the first has faded into the next.
+fn flip_frames(e: Emitter, age: f32, life: f32, seed: f32) -> Flip {
+    var out: Flip;
+    out.a = vec4f(1.0, 1.0, 0.0, 0.0);
+    out.b = out.a;
+    out.blend = 0.0;
     let frames = max(e.flip.w, 1u);
-    if (e.times.x <= 0.0) {
-        return vec4f(1.0, 1.0, 0.0, 0.0);
+    let over_life = (e.ints.y & F_OVER_LIFE) != 0u;
+    if (e.times.x <= 0.0 && !over_life) {
+        return out;
     }
     var phase = 0u;
     if ((e.ints.y & F_RANDOM_START) != 0u) {
         phase = u32(floor(clamp(seed, 0.0, 0.999999) * f32(frames)));
     }
-    let step = u32(floor(max(age, 0.0) / e.times.x)) + phase;
-    let cycle = max(frames * 2u - 2u, 1u);
-    let ping = step % cycle;
-    var frame = 0u;
-    let mode = u32(e.times.y);
-    if (mode == 0u) {
-        frame = min(frames - 1u, step);
-    } else if (mode == 1u) {
-        frame = step % frames;
-    } else {
-        frame = min(ping, cycle - ping);
+    var position = max(age, 0.0) / max(e.times.x, 1e-4);
+    if (over_life) {
+        position = clamp(life, 0.0, 0.999999) * f32(frames);
     }
-    let f = e.flip.z + frame;
-    return vec4f(1.0 / f32(cols), 1.0 / f32(rows), f32(f % cols) / f32(cols), f32(f / cols) / f32(rows));
+    let step = u32(floor(position)) + phase;
+    let next = step + 1u;
+    out.blend = select(0.0, fract(position), (e.ints.y & F_FLIP_BLEND) != 0u);
+    let mode = u32(e.times.y);
+    out.a = frame_rect(e, play_frame(step, frames, mode));
+    out.b = frame_rect(e, play_frame(next, frames, mode));
+    return out;
+}
+
+fn play_frame(step: u32, frames: u32, mode: u32) -> u32 {
+    let cycle = max(frames * 2u - 2u, 1u);
+    if (mode == 0u) {
+        return min(frames - 1u, step);
+    } else if (mode == 1u) {
+        return step % frames;
+    }
+    let ping = step % cycle;
+    return min(ping, cycle - ping);
+}
+
+// A curve block's row sampled at `t` (0–1), linearly between its samples.
+fn curve(base: u32, row: u32, t: f32) -> vec4f {
+    let x = clamp(t, 0.0, 1.0) * f32(CURVE_SAMPLES - 1u);
+    let i = min(u32(floor(x)), CURVE_SAMPLES - 2u);
+    let at = base + row * CURVE_SAMPLES + i;
+    return mix(curves[at], curves[at + 1u], x - f32(i));
+}
+
+// Smooth 3D value noise in 0–1.
+fn value_noise3(p: vec3f) -> f32 {
+    let i = floor(p);
+    let f = fract(p);
+    let u = f * f * (3.0 - 2.0 * f);
+    let h = vec3u(vec3i(i) + vec3i(65536));
+    let hx = array<u32, 2>(h.x * 73856093u, (h.x + 1u) * 73856093u);
+    let hy = array<u32, 2>(h.y * 19349663u, (h.y + 1u) * 19349663u);
+    let hz = array<u32, 2>(h.z * 83492791u, (h.z + 1u) * 83492791u);
+    let c000 = noise(hx[0] ^ hy[0] ^ hz[0]);
+    let c100 = noise(hx[1] ^ hy[0] ^ hz[0]);
+    let c010 = noise(hx[0] ^ hy[1] ^ hz[0]);
+    let c110 = noise(hx[1] ^ hy[1] ^ hz[0]);
+    let c001 = noise(hx[0] ^ hy[0] ^ hz[1]);
+    let c101 = noise(hx[1] ^ hy[0] ^ hz[1]);
+    let c011 = noise(hx[0] ^ hy[1] ^ hz[1]);
+    let c111 = noise(hx[1] ^ hy[1] ^ hz[1]);
+    let x0 = mix(mix(c000, c100, u.x), mix(c010, c110, u.x), u.y);
+    let x1 = mix(mix(c001, c101, u.x), mix(c011, c111, u.x), u.y);
+    return mix(x0, x1, u.z);
+}
+
+// A swirling displacement (−1…1 each way) of the noise field at `p`, churning with `t`.
+fn swirl(p: vec3f, t: f32) -> vec3f {
+    return vec3f(
+        value_noise3(p + vec3f(0.0, 0.0, t)),
+        value_noise3(p + vec3f(17.3, 5.1, t * 0.9)),
+        value_noise3(p + vec3f(3.7, 29.9, t * 1.1)),
+    ) * 2.0 - 1.0;
+}
+
+// A moving emitter's position at `born` seconds and its velocity there, from its path
+// samples (`ints2.zw`, from `e6.x` every `e6.y` seconds).
+struct PathPoint {
+    position: vec3f,
+    velocity: vec3f,
+}
+
+fn path_at(e: Emitter, born: f32) -> PathPoint {
+    var out: PathPoint;
+    let n = e.ints2.w;
+    if (n == 0u) {
+        out.position = e.position.xyz;
+        out.velocity = vec3f(0.0);
+        return out;
+    }
+    let dt = max(e.e6.y, 1e-5);
+    let x = clamp((born - e.e6.x) / dt, 0.0, f32(n - 1u));
+    let i = min(u32(floor(x)), max(n, 2u) - 2u);
+    let a = paths[e.ints2.z + i].xyz;
+    let b = paths[e.ints2.z + min(i + 1u, n - 1u)].xyz;
+    out.position = mix(a, b, x - f32(i));
+    out.velocity = (b - a) / dt;
+    return out;
 }
 
 struct Part {
     local: vec3f,
+    // world-space particles: where the emitter was at birth (otherwise its root)
+    base: vec3f,
+    // additivity, erosion threshold, heat
+    look: vec3f,
+    // flipbook position over life (−1: by age)
+    flip_life: f32,
     // quad scale (sprites: full size; spheres and discs: radius); with an axis, x is the
     // width and y the length along it
     scale: vec2f,
@@ -169,6 +301,11 @@ fn drop_of(e: Emitter, i: u32, count: u32) -> vec4f {
     return vec4f(cos(angle) * radius, 0.02, sin(angle) * radius, noise(seed + 3u) * e.e1.x);
 }
 
+// Distance along an initial velocity of 1 after `age` seconds under linear drag.
+fn travel_of(drag: f32, age: f32) -> f32 {
+    return select(age, (1.0 - exp(-drag * age)) / drag, drag > 0.0);
+}
+
 fn evaluate(e: Emitter, i: u32) -> Part {
     let kind = e.ints.x;
     let flags = e.ints.y;
@@ -181,6 +318,9 @@ fn evaluate(e: Emitter, i: u32) -> Part {
     let fi = f32(i);
     var p: Part;
     p.local = vec3f(0.0);
+    p.base = e.position.xyz;
+    p.look = vec3f(select(1.0, 0.0, (flags & F_NORMAL) != 0u), 0.0, 1.0);
+    p.flip_life = t;
     p.scale = vec2f(size);
     p.axis = vec3f(0.0);
     p.rotation = select(0.0, e.motion.y, (flags & F_SPIN) != 0u);
@@ -229,28 +369,79 @@ fn evaluate(e: Emitter, i: u32) -> Part {
             }
             let age = elapsed - born;
             let life = age / lifetime;
+            let life01 = clamp(life, 0.0, 1.0);
             p.visible = age >= 0.0 && life < 1.0 && (sustained || born <= e.e2.w + 1e-5);
             let seed = e.ints.w + ordinal * 97u;
             p.flip_age = age;
+            p.flip_life = life01;
             p.flip_seed = noise(seed);
             let dir = e.e0.xyz;
             let reference = select(vec3f(1.0, 0.0, 0.0), vec3f(0.0, 1.0, 0.0), abs(dir.y) < 0.99);
             let side = normalize(cross(dir, reference));
             let up = normalize(cross(side, dir));
             let azimuth = noise(seed + 1u) * TAU;
-            let cos_t = 1.0 - noise(seed + 2u) * (1.0 - cos(e.e0.w));
+            // Directions between the inner and outer cone, uniform over the sphere.
+            let cos_t = mix(cos(e.e8.x), cos(e.e0.w), noise(seed + 2u));
             let sin_t = sqrt(max(0.0, 1.0 - cos_t * cos_t));
-            let velocity = (dir * cos_t + side * cos(azimuth) * sin_t + up * sin(azimuth) * sin_t)
+            var velocity = (dir * cos_t + side * cos(azimuth) * sin_t + up * sin(azimuth) * sin_t)
                 * e.e1.x * (1.0 - e.e1.y + 2.0 * e.e1.y * noise(seed + 3u));
             let drag = e.e1.z;
-            let travel = select(age, (1.0 - exp(-drag * age)) / drag, drag > 0.0);
+            let world = (flags & F_WORLD) != 0u;
+            var inherited = vec3f(0.0);
+            if (world) {
+                let at = path_at(e, born);
+                p.base = at.position;
+                // The emitter's velocity in its own frame, so the root rotation turns it back.
+                inherited = rotate(vec4f(-e.rotation.xyz, e.rotation.w), at.velocity) * e.e6.z;
+            }
+            velocity += inherited;
             let angle = noise(seed + 4u) * TAU;
-            let radius = sqrt(noise(seed + 5u)) * e.e2.z;
-            p.local = vec3f(cos(angle) * radius, height, sin(angle) * radius) + velocity * travel;
+            let inner = e.e8.y * e.e8.y;
+            let radius = sqrt(mix(inner, 1.0, noise(seed + 5u))) * e.e2.z;
+            let spawn = vec3f(cos(angle) * radius, height, sin(angle) * radius);
+            p.local = spawn + velocity * travel_of(drag, age);
             // Gravity pulls down (negative values lift: steam, embers).
             p.local.y -= 0.5 * e.e1.w * age * age;
-            p.scale = vec2f(e.e3.x + (e.e3.y - e.e3.x) * life);
-            if (e.e5.y > 0.0) {
+            if (e.e7.x > 0.0) {
+                // Swirling drift through a noise field, growing in as the particle lives.
+                let field = (p.base + p.local) / max(e.e7.y, 1e-3) + vec3f(noise(seed + 7u) * 0.35);
+                p.local += swirl(field, age * e.e7.z) * e.e7.x * min(1.0, life01 * 4.0);
+            }
+            let curves_on = e.ints2.y;
+            let block = e.ints2.x;
+            var size = e.e3.x + (e.e3.y - e.e3.x) * life;
+            if ((curves_on & C_SIZE) != 0u) {
+                size = curve(block, 1u, life01).x;
+            }
+            p.scale = vec2f(size);
+            var landed = false;
+            if (e.e7.w >= 0.0) {
+                // Landing on the ground under the emitter: the moment it lands is found by
+                // halving the time, then it slides on with the friction left.
+                let floor_y = e.e8.w - p.base.y + 0.02;
+                if (p.local.y < floor_y) {
+                    var lo = 0.0;
+                    var hi = age;
+                    for (var k = 0u; k < 7u; k++) {
+                        let mid = 0.5 * (lo + hi);
+                        let y = spawn.y + velocity.y * travel_of(drag, mid) - 0.5 * e.e1.w * mid * mid;
+                        if (y < floor_y) {
+                            hi = mid;
+                        } else {
+                            lo = mid;
+                        }
+                    }
+                    let at_land = spawn + velocity * travel_of(drag, hi);
+                    let slide = (p.local - at_land) * (1.0 - e.e7.w);
+                    p.local = vec3f(at_land.x + slide.x, floor_y, at_land.z + slide.z);
+                    if ((flags & F_GROUND) == 0u) {
+                        // Camera-facing sprites rest on the ground, not in it.
+                        p.local.y += size * 0.3;
+                    }
+                    landed = true;
+                }
+            }
+            if (e.e5.y > 0.0 && !landed) {
                 // A streak: the sprite spans the last `stretch` seconds of its path, its
                 // head at the particle.
                 let now = velocity * select(1.0, exp(-drag * age), drag > 0.0)
@@ -263,10 +454,30 @@ fn evaluate(e: Emitter, i: u32) -> Part {
                     p.local -= now * e.e5.y * 0.5;
                 }
             }
-            let fade_in = select(1.0, min(1.0, life / e.e3.w), e.e3.w > 0.0);
-            let fade_out = select(1.0, min(1.0, (1.0 - life) / e.e4.x), e.e4.x > 0.0);
-            p.alpha = fade_in * fade_out * e.color.a;
-            p.color = mix(e.color.rgb, e.accent.rgb, clamp(life, 0.0, 1.0));
+            if ((curves_on & C_OPACITY) != 0u) {
+                p.alpha = curve(block, 0u, life01).w * e.color.a;
+            } else {
+                let fade_in = select(1.0, min(1.0, life / e.e3.w), e.e3.w > 0.0);
+                let fade_out = select(1.0, min(1.0, (1.0 - life) / e.e4.x), e.e4.x > 0.0);
+                p.alpha = fade_in * fade_out * e.color.a;
+            }
+            if ((curves_on & C_COLOUR) != 0u) {
+                p.color = curve(block, 0u, life01).rgb;
+            } else {
+                p.color = mix(e.color.rgb, e.accent.rgb, life01);
+            }
+            if ((curves_on & (C_ADDITIVE | C_EROSION | C_HEAT)) != 0u) {
+                let look = curve(block, 1u, life01);
+                if ((curves_on & C_ADDITIVE) != 0u) {
+                    p.look.x = look.y;
+                }
+                if ((curves_on & C_EROSION) != 0u) {
+                    p.look.y = look.z;
+                }
+                if ((curves_on & C_HEAT) != 0u) {
+                    p.look.z = look.w;
+                }
+            }
             p.rotation = noise(seed + 6u) * TAU + e.e3.z * age;
         }
         case K_RING, K_GLOW: {
@@ -487,9 +698,14 @@ struct VsOut {
     @location(1) coord: vec4f,
     @location(2) color: vec4f,
     @location(3) rect: vec4f,
-    @location(4) @interpolate(flat) mask: vec2u,
-    // white-hot core
-    @location(5) @interpolate(flat) core: f32,
+    // mask, flags, curve block (ramp), curve flags
+    @location(4) @interpolate(flat) mask: vec4u,
+    // white-hot core, soft fade (m), flipbook blend, 0
+    @location(5) @interpolate(flat) look: vec4f,
+    // the next flipbook frame's rectangle
+    @location(6) rect2: vec4f,
+    // additivity, erosion threshold, erosion softness, heat
+    @location(7) @interpolate(flat) shade: vec4f,
 }
 
 const CORNERS = array<vec2f, 6>(
@@ -516,7 +732,7 @@ fn vs_quad(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> 
     let flags = e.ints.y;
     let mask = mask_of(e);
     let c = CORNERS[vi];
-    var centre = e.position.xyz;
+    var centre = p.base;
     if (kind != K_MISSILE && kind != K_WAVEFRONT) {
         centre += rotate(e.rotation, p.local);
     }
@@ -534,6 +750,11 @@ fn vs_quad(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> 
             let flat_dir = normalize(vec2f(d.x, d.z) + vec2f(1e-6, 0.0));
             ax = vec3f(flat_dir.x, 0.0, flat_dir.y);
             ay = vec3f(flat_dir.y, 0.0, -flat_dir.x);
+        } else if (dot(p.axis.xz, p.axis.xz) > 1e-8) {
+            // A streak lying on the ground: its length along its travel over the ground.
+            let along = normalize(p.axis.xz);
+            ay = vec3f(along.x, 0.0, along.y);
+            ax = vec3f(along.y, 0.0, -along.x);
         } else {
             ax = rotate(e.rotation, ax);
             ay = rotate(e.rotation, ay);
@@ -560,14 +781,20 @@ fn vs_quad(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -> 
     out.world = world;
     out.coord = vec4f(c, c.x * 0.5 + 0.5, 0.5 - c.y * 0.5);
     out.color = vec4f(p.color, p.alpha);
+    var blend = 0.0;
     if (mask == M_SMOKE || mask == M_FLAME) {
         // Procedural masks: the part's seed and life instead of a flipbook frame.
         out.rect = vec4f(p.flip_seed, p.flip_age, 0.0, 0.0);
+        out.rect2 = out.rect;
     } else {
-        out.rect = flip_rect(e, p.flip_age, p.flip_seed);
+        let flip = flip_frames(e, p.flip_age, p.flip_life, p.flip_seed);
+        out.rect = flip.a;
+        out.rect2 = flip.b;
+        blend = flip.blend;
     }
-    out.mask = vec2u(mask, flags);
-    out.core = e.e5.x;
+    out.mask = vec4u(mask, flags, e.ints2.x, e.ints2.y);
+    out.look = vec4f(e.e5.x, e.e6.w, blend, 0.0);
+    out.shade = vec4f(p.look.x, p.look.y, e.e8.z, p.look.z);
     return out;
 }
 
@@ -594,8 +821,10 @@ fn vs_pillar(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -
     out.coord = vec4f(0.0, v, 0.0, 0.0);
     out.color = vec4f(p.color, p.alpha);
     out.rect = vec4f(1.0, 1.0, 0.0, 0.0);
-    out.mask = vec2u(M_PILLAR, e.ints.y);
-    out.core = e.e5.x;
+    out.rect2 = out.rect;
+    out.mask = vec4u(M_PILLAR, e.ints.y, NO_CURVES, 0u);
+    out.look = vec4f(e.e5.x, e.e6.w, 0.0, 0.0);
+    out.shade = vec4f(p.look.x, 0.0, 0.1, 1.0);
     return out;
 }
 
@@ -616,8 +845,29 @@ fn value_noise(p: vec2f) -> f32 {
     return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
 }
 
+// How much of a fragment at `world` shows in front of the scene: 0 behind a surface,
+// rising to 1 over `soft` metres in front of it (0: a hard cut).
+fn depth_fade(clip: vec4f, world: vec3f, soft: f32) -> f32 {
+    let stored = textureLoad(scene_depth, vec2i(clip.xy), 0).rg;
+    let gap = stored.r + stored.g - view_depth(world);
+    if (soft <= 0.0) {
+        // A hard cut, with a hair of slack for marks lying on surfaces.
+        return select(0.0, 1.0, gap >= -0.02);
+    }
+    return clamp(gap / soft, 0.0, 1.0);
+}
+
+// What an effect writes: its colour after the fog of war and the frame shade,
+// premultiplied, with alpha that covers by the part's non-additive share. Alpha above 1
+// brightens additive light (an intensity), never covers more than everything.
+fn effect_out(color: vec3f, alpha: f32, additive: f32, world: vec3f) -> vec4f {
+    let lit = apply_fog(world, color * frame_shade(world));
+    let a = max(alpha, 0.0);
+    return vec4f(lit * a, min(a, 1.0) * (1.0 - clamp(additive, 0.0, 1.0)));
+}
+
 @fragment
-fn fs_main(in: VsOut) -> SceneOut {
+fn fs_main(in: VsOut) -> @location(0) vec4f {
     let r = length(in.coord.xy);
     let aa = max(fwidth(r), 1e-4);
     let inside = 1.0 - smoothstep(1.0 - aa, 1.0, r);
@@ -626,9 +876,25 @@ fn fs_main(in: VsOut) -> SceneOut {
     let normal_blend = (in.mask.y & F_NORMAL) != 0u;
     switch in.mask.x {
         case M_TEXTURE: {
-            let texel = textureSample(effect_texture, effect_sampler, in.coord.zw * in.rect.xy + in.rect.zw);
-            color *= texel.rgb;
+            var texel = textureSample(effect_texture, effect_sampler, in.coord.zw * in.rect.xy + in.rect.zw);
+            if (in.look.z > 0.0) {
+                let next = textureSample(effect_texture, effect_sampler, in.coord.zw * in.rect2.xy + in.rect2.zw);
+                texel = mix(texel, next, in.look.z);
+            }
+            if ((in.mask.w & C_RAMP) != 0u) {
+                // The texture's brightness, heated, picks the colour from the ramp.
+                let value = clamp(texel.r * in.shade.w, 0.0, 1.0);
+                color *= curve(in.mask.z, 2u, value).rgb;
+            } else {
+                color *= texel.rgb;
+            }
             alpha *= texel.a;
+            let threshold = in.shade.y;
+            if (threshold > 0.0) {
+                // Erosion: thin parts of the sprite go first, its dense centre last.
+                let w = max(in.shade.z, 1e-3);
+                alpha *= smoothstep(threshold - w, threshold + w, texel.a);
+            }
         }
         case M_SPHERE: {
             // An unlit sphere seen from outside: its front and back faces both blend.
@@ -689,18 +955,22 @@ fn fs_main(in: VsOut) -> SceneOut {
     if (alpha <= 0.0) {
         discard;
     }
-    if (in.core > 0.0 && !normal_blend) {
+    if (in.look.x > 0.0 && !normal_blend) {
         // A white-hot core: where the sprite is densest its colour burns towards white at
         // its brightest channel, so sparks read crisp with their colour at the fringe.
         var density = alpha / max(in.color.a, 1e-4);
         if (in.mask.x == M_SPHERE || in.mask.x == M_FRESNEL || in.mask.x == M_GLOW) {
             density = 1.0 - smoothstep(0.0, 0.8, r);
         }
-        let heat = in.core * smoothstep(0.35, 0.95, density);
+        let heat = in.look.x * smoothstep(0.35, 0.95, density);
         let peak = max(color.r, max(color.g, color.b));
         color = mix(color, vec3f(peak), heat);
     }
-    return scene_out(vec4f(color, alpha), in.world);
+    alpha *= depth_fade(in.clip, in.world, in.look.y);
+    if (alpha <= 0.0) {
+        discard;
+    }
+    return effect_out(color, alpha, in.shade.x, in.world);
 }
 
 // --- Ribbons ---------------------------------------------------------------------------
@@ -709,7 +979,10 @@ struct RibbonOut {
     @builtin(position) clip: vec4f,
     @location(0) world: vec3f,
     @location(1) color: vec4f,
-    @location(2) edge: f32,
+    // across the strip (−1…1), along it (texture u), mode
+    @location(2) edge: vec3f,
+    // additivity, soft fade (m)
+    @location(3) @interpolate(flat) look: vec2f,
 }
 
 @vertex
@@ -717,9 +990,10 @@ fn vs_ribbon(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -
     let r = ribbons[ii];
     var out: RibbonOut;
     var world: vec3f;
+    // Corners a+, a−, b+, b− as [0, 1, 2, 2, 1, 3].
+    let corners = array<u32, 6>(0u, 1u, 2u, 2u, 1u, 3u);
     if (r.color.a < 0.5) {
-        // A camera-facing trail segment: corners a+, a−, b+, b− as [0, 1, 2, 2, 1, 3].
-        let corners = array<u32, 6>(0u, 1u, 2u, 2u, 1u, 3u);
+        // A camera-facing trail segment.
         let k = corners[vi];
         let a = r.p0.xyz;
         let b = r.p1.xyz;
@@ -729,15 +1003,31 @@ fn vs_ribbon(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -
         let sign = select(-1.0, 1.0, k % 2u == 0u);
         world = select(b, a, k < 2u) + side * sign * r.p2.x * 0.5 * fade;
         out.color = vec4f(r.color.rgb * fade * fade, r.look.x);
-        out.edge = sign;
-    } else {
+        out.edge = vec3f(sign, 0.0, 0.0);
+        out.look = vec2f(1.0, 0.4);
+    } else if (r.color.a < 1.5) {
         // A blade ribbon quad: base a, tip a, tip b, base b.
-        let corners = array<u32, 6>(0u, 1u, 2u, 0u, 2u, 3u);
+        let quad = array<u32, 6>(0u, 1u, 2u, 0u, 2u, 3u);
         let points = array<vec4f, 4>(r.p0, r.p1, r.p2, r.p3);
-        let q = points[corners[vi]];
+        let q = points[quad[vi]];
         world = q.xyz;
         out.color = vec4f(r.color.rgb, q.w);
-        out.edge = 0.0;
+        out.edge = vec3f(0.0, 0.0, 1.0);
+        out.look = vec2f(1.0, 0.4);
+    } else {
+        // A textured strip segment: each end turned across its own tangent towards the
+        // eye, so neighbouring segments share their edges.
+        let k = corners[vi];
+        let at_a = k < 2u;
+        let p = select(r.p1, r.p0, at_a);
+        let tangent = select(r.p3, r.p2, at_a);
+        var side = cross(tangent.xyz, frame.eye.xyz - p.xyz);
+        side = select(vec3f(1.0, 0.0, 0.0), normalize(side), dot(side, side) > 1e-12);
+        let sign = select(-1.0, 1.0, k % 2u == 0u);
+        world = p.xyz + side * sign * p.w * 0.5;
+        out.color = select(r.end, vec4f(r.color.rgb, r.look.x), at_a);
+        out.edge = vec3f(sign, tangent.w, 2.0);
+        out.look = r.look.yz;
     }
     out.clip = frame.view_proj * vec4f(world, 1.0);
     out.world = world;
@@ -745,10 +1035,21 @@ fn vs_ribbon(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -
 }
 
 @fragment
-fn fs_ribbon(in: RibbonOut) -> SceneOut {
-    let alpha = in.color.a * (1.0 - smoothstep(0.15, 1.0, abs(in.edge)));
+fn fs_ribbon(in: RibbonOut) -> @location(0) vec4f {
+    var color = in.color.rgb;
+    var alpha = in.color.a;
+    if (in.edge.z > 1.5) {
+        // Textured strips repeat along their length.
+        let uv = vec2f(in.edge.y, 0.5 - in.edge.x * 0.5);
+        let texel = textureSampleGrad(effect_texture, effect_sampler, vec2f(fract(uv.x), uv.y), dpdx(uv), dpdy(uv));
+        color *= texel.rgb;
+        alpha *= texel.a;
+    } else if (in.edge.z < 0.5) {
+        alpha *= 1.0 - smoothstep(0.15, 1.0, abs(in.edge.x));
+    }
+    alpha *= depth_fade(in.clip, in.world, in.look.y);
     if (alpha <= 0.0) {
         discard;
     }
-    return scene_out(vec4f(in.color.rgb, alpha), in.world);
+    return effect_out(color, alpha, in.look.x, in.world);
 }

@@ -1,7 +1,7 @@
 {
   "id": "ability.forgemaster.forgefall",
   "name": "Forgefall",
-  "description": "Call down a crucible. After a 1.5-second warning circle it slams into a 5-radius area: 200/300 spell damage and a 1.5-second stun (half on heroes), then a pool of molten metal that burns enemies standing in it for 20/32 spell damage each half second for 6 seconds.",
+  "description": "Call down a red-hot anvil. After a 1.5-second warning circle it slams into a 5-radius area: 200/300 spell damage and a 1.5-second stun (half on heroes), then a pool of molten metal that burns enemies standing in it for 20/32 spell damage each half second for 6 seconds.",
   "activation": "targeted",
   "persistent": {
     "durationTicks": 240,

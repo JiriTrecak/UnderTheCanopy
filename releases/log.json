@@ -22,7 +22,9 @@
       "Beetle heroes stand larger on the field, as tall as the ant heroes",
       "Computer opponents now play with personalities: some rush you early, some expand and out-produce you, some race up the tiers, and the rest play a steady all-round game",
       "Computer heroes save mana for their ultimates, so Unbottled, Overdose, Exodus and the other ultimates now appear in matches against the computer",
-      "Balance: Raider pairs cost 150 amber and hit harder; the General is sturdier and War Column stronger; Lock Shields, Overclock, Forgefall and Horn Rush are toned down"
+      "Balance: Raider pairs cost 150 amber and hit harder; the General is sturdier and War Column stronger; Lock Shields, Overclock, Forgefall and Horn Rush are toned down",
+      "Forgefall is rebuilt with new effect tools: a red-hot anvil falls trailing fire and smoke that hang in the air, lands, and sends a blast wave of fire racing out over the ground that cools into drifting ash",
+      "Spell effects fade softly where they meet the ground, units and buildings instead of cutting into them"
     ],
     "fixed": [
       "Computer Shieldbearers no longer lock their shields from afar and stand rooted behind their own army"

@@ -41,6 +41,42 @@ RING_ART = art('ring')
 MOLTEN = art('molten')
 SCORCH = art('scorch')
 
+PUFF = {'asset': 'asset.effects.vfx.puff', 'role': 'image', 'index': 1}
+FLAME_STRIP = {'asset': 'asset.effects.vfx.flame-strip', 'role': 'image', 'index': 1}
+ASH = {'asset': 'asset.effects.vfx.ash', 'role': 'image', 'index': 1}
+CHUNK = {'asset': 'asset.effects.vfx.chunk', 'role': 'image', 'index': 1}
+BLAST_RING = {'asset': 'asset.effects.vfx.blast-ring', 'role': 'image', 'index': 1}
+# Four still variants of a 2 × 2 atlas, one picked per particle.
+VARIANTS = {'columns': 2, 'rows': 2, 'firstFrame': 0, 'frames': 4, 'frameTicks': 400, 'mode': 'once',
+            'randomStart': True}
+# Texture brightness → fire colour: a dark ember rim, red, orange, a white-hot heart.
+FIRE_RAMP = [{'at': 0.0, 'colour': '#3a1206'}, {'at': 0.25, 'colour': '#b8320a'}, {'at': 0.5, 'colour': '#ff7a1a'},
+             {'at': 0.75, 'colour': '#ffc04a'}, {'at': 1.0, 'colour': '#fff4d0'}]
+
+
+def keys(*pairs):
+    """A curve over a life: (at, value) pairs."""
+    return [{'at': at, 'value': value} for at, value in pairs]
+
+
+def fire_trail(id_, rides, start, duration):
+    """Fire left hanging in the air behind a falling or flying layer: hot puffs born where the
+    layer passes, swelling, cooling down the fire ramp and turning into dark smoke."""
+    return layer(id_, 'particles', WHITE, WHITE, duration, 110, 1.0, 0, startTick=start, blend='additive',
+                 rides=rides, offset={'x': 0, 'y': 1.6, 'z': 0}, texture=PUFF, flipbook=VARIANTS, ramp=FIRE_RAMP,
+                 emitter=emitter('continuous', 24, 180, 2.4, variation=0.6, cone=180, drag=2.0, spawn=1.3,
+                                 start=1.4, end=3.8) | {
+                     'space': 'world', 'inheritVelocity': 0.1,
+                     'sizeOverLife': keys((0, 1.4), (0.2, 2.6), (1, 4.0)),
+                     'colourOverLife': [{'at': 0, 'colour': WHITE}, {'at': 0.45, 'colour': WHITE},
+                                        {'at': 0.8, 'colour': '#6a5448'}, {'at': 1, 'colour': '#3a3532'}],
+                     'additiveOverLife': keys((0, 0.65), (0.45, 0.6), (0.75, 0)),
+                     'opacityOverLife': keys((0, 0), (0.08, 1), (0.6, 0.8), (1, 0)),
+                     'erosionOverLife': keys((0, 0), (0.5, 0.15), (1, 0.75)),
+                     'heatOverLife': keys((0, 1.2), (1, 0.4)),
+                     'turbulence': {'strength': 0.4, 'scale': 1.5, 'speed': 1.5}})
+
+
 SUBSTANCE = '#8f66ff'  # violet sparks
 SUBSTANCE_HOT = '#b49cff'
 EMBER = '#ffa040'
@@ -783,62 +819,154 @@ def build_heroes():
             streaks('sparks', SPARK, SPARK_LIGHT, count=10, speed=5, size=0.07, lifetime=10, height=1.2, gravity=16,
                     intensity=4.0),
         ]))
-    # Forgefall: the crucible is called down, warned for 1.5 s, and falls in the last 0.75 s
-    # to land on the `impact` event (the ability's delayTicks: 60).
+    # Forgefall: a red-hot anvil is called down, warned for 1.5 s, and falls in the last 0.6 s
+    # to land on the `impact` event (the ability's delayTicks: 60), trailing fire, smoke and
+    # a flame ribbon that stay in the air behind it (world-space particles riding its fall).
+    # It lands, a blast wave of fire turning to ash races out over the ground, and the anvil
+    # fades within a third of a second. Fire is a grey puff coloured through FIRE_RAMP: born
+    # additive and hot, cooling down the ramp into dark alpha-blended ash, so it reads on sand.
+    anvil_model = {'asset': 'asset.models.effects.beetles-anvil', 'role': 'geometry', 'index': 1,
+                   'rotation': {'x': 0, 'y': 25, 'z': 0}}
+    anvil_size = 3.4
+    fall_start, fall = 36, 24
     H['forgefall_warn'] = add('forgemaster/forgefall-warning', effect(
         'effect.forgemaster.forgefall-warning', 'Forgefall warning',
-        'A blazing warning circle and turning sigil while the crucible is in the air; in the last three quarters of '
-        'a second the iron crucible itself falls out of the canopy, brimming with molten metal and trailing fire.',
+        'A blazing warning circle and turning sigil while the anvil is in the air, its shadow darkening the '
+        'ground; in the last 0.6 s the red-hot anvil itself drops out of the canopy, leaving a column of fire, '
+        'smoke and embers hanging in the air behind it.',
         60, [
             ring('ring', '#ff5a2a', FIRE_LIGHT, 5.0, 60, sustain=True, motion={'opacity': pulse(10, 0.5, 1.0)}),
-            sigil('sigil', GEAR, FIRE, 8.0, 60, spin=120, intensity=1.4),
+            ground('sigil', SIGIL_TEX, FIRE, FIRE_LIGHT, 10.0, 60, sustain=True,
+                   motion={'rotation': {'periodTicks': 120, 'direction': 'clockwise'}, 'opacity': pulse(10, 0.45, 0.9)}),
             flash('glow', FIRE, FIRE_LIGHT, 8.0, 3.0, duration=60, height=1.0, sustain=True,
                   motion={'opacity': pulse(10, 0.4, 1.0)}),
-            layer('crucible', 'rain', WHITE, WHITE, 30, 1, 3.0, 26, startTick=30, spread=0.01, fallSpeed=1,
-                  fallAngleDegrees=12, fallAzimuthDegrees=200,
-                  model={'asset': 'asset.models.effects.beetles-crucible', 'role': 'geometry', 'index': 1,
-                         'rotation': {'x': 0, 'y': 0, 'z': 0}}),
-            layer('comet', 'rain', '#ff8a2a', FIRE_LIGHT, 30, 1, 2.6, 26, startTick=30, spread=0.01, fallSpeed=1,
-                  fallAngleDegrees=12, fallAzimuthDegrees=200, length=4.2, blend='additive', intensity=2.4, core=0.9,
-                  texture=SPARK_DOT, offset={'x': 0, 'y': 2.2, 'z': 0}),
-            layer('embers', 'rain', EMBER, FIRE_LIGHT, 30, 14, 0.18, 26, startTick=30, spread=1.6, fallSpeed=1,
-                  launchDelayMs=260, fallAngleDegrees=12, fallAzimuthDegrees=200, length=6, blend='additive',
-                  intensity=3.0, core=0.8, texture=SPARK_DOT, offset={'x': 0, 'y': 1.0, 'z': 0}),
+            layer('shadow', 'glow', '#1a1210', '#000000', 30, 1, 4.2, 0.07, startTick=30, blend='normal',
+                  opacityOverLife=keys((0, 0), (0.5, 0.35), (1, 0.7)), scaleOverLife=keys((0, 0.35), (1, 1.0))),
+            layer('anvil', 'rain', WHITE, WHITE, fall, 1, anvil_size, 30, startTick=fall_start, spread=0.01,
+                  fallSpeed=1, intensity=0.8, model=anvil_model),
+            fire_trail('trail-fire', 'anvil', fall_start, fall),
+            layer('trail-smoke', 'particles', '#3a3330', '#77706a', fall, 40, 1.0, 0, startTick=fall_start,
+                  blend='normal', rides='anvil', offset={'x': 0, 'y': 1.6, 'z': 0}, texture=PUFF, flipbook=VARIANTS,
+                  emitter=emitter('continuous', 40, 50, 1.2, variation=0.6, cone=180, drag=1.5, spawn=1.2,
+                                  start=1.0, end=3.0) | {
+                      'space': 'world', 'inheritVelocity': 0.05,
+                      'opacityOverLife': keys((0, 0), (0.15, 0.6), (0.6, 0.4), (1, 0)),
+                      'sizeOverLife': keys((0, 1.8), (1, 4.6)),
+                      'erosionOverLife': keys((0, 0), (1, 0.6)),
+                      'turbulence': {'strength': 0.6, 'scale': 2.0, 'speed': 1.0}}),
+            layer('trail-ribbon', 'ribbon', '#fff0c0', '#a02008', fall, 1, 1.0, 0, startTick=fall_start,
+                  blend='additive', rides='anvil', offset={'x': 0, 'y': 1.7, 'z': 0}, intensity=1.6,
+                  texture=FLAME_STRIP,
+                  ribbon={'durationTicks': 12, 'width': 3.4, 'tile': 5.0, 'scroll': 3.0,
+                          'colourOverLife': [{'at': 0, 'colour': '#fff0c0'}, {'at': 0.3, 'colour': '#ffa040'},
+                                             {'at': 1, 'colour': '#a02008'}],
+                          'opacityOverLife': keys((0, 1), (1, 0)),
+                          'widthOverLife': keys((0, 0.8), (0.2, 1.0), (1, 0.25))}),
+            layer('trail-embers', 'particles', EMBER, '#a02a08', fall, 40, 0.1, 0, startTick=fall_start,
+                  blend='additive', rides='anvil', offset={'x': 0, 'y': 1.2, 'z': 0}, intensity=4.0, core=0.8,
+                  texture=SPARK_DOT,
+                  emitter=emitter('continuous', 16, 70, 5.0, variation=0.6, cone=180, drag=1.0, spawn=1.0,
+                                  start=0.12, end=0.05, fade_out=0.5) | {'space': 'world', 'stretch': 0.04}),
             glow('heat', '#fff0c8', WHITE, 3.5, 24, height=0.08, startTick=36,
                  motion={'scale': pulse(48, 0.3, 1.2, 'smoothstep')}),
         ]))
     H['forgefall_hit'] = add('forgemaster/forgefall-impact', effect(
         'effect.forgemaster.forgefall-impact', 'Forgefall impact',
-        'The crucible slams down: a white-orange fireball, two shock rings, molten metal splashing out in hot '
-        'streaks, a scorched crater and a pillar of smoke.', 240, [
-            explosion('blast', 9.0, height=2.0),
-            explosion('second', 6.5, height=1.2, start=5, offset={'x': 1.5, 'y': 0, 'z': -1.0}),
-            column('pillar', FIRE, GOLD_LIGHT, 3.0, 16.0, 20, intensity=1.2),
-            steam_burst('steam', 12.0, duration=30, height=1.4, colour='#e8dcd0', intensity=0.6, start=3),
-            flash('flash', '#ffb070', WHITE, 18.0, 12.0, duration=12, height=2.0),
-            glint('glint', '#ffd9a0', 8.0, duration=7, height=1.4),
-            shock('shock', FIRE_LIGHT, 13.0, 16, intensity=2.0),
-            shock('shock2', FIRE, 9.0, 22, start=4, height=0.12),
-            layer('splash', 'rain', '#ff9a3c', FIRE_LIGHT, 14, 16, 0.22, 0.6, spread=5.0, fallSpeed=1.5,
-                  launchDelayMs=150, length=3, blend='additive', intensity=2.6, core=0.9, texture=SPARK_DOT,
-                  impact={'durationTicks': 14, 'count': 5, 'size': 0.16, 'spread': 0.9, 'height': 0.6,
-                          'colour': '#ff8a2a', 'accent': '#ffd9a0'}),
-            streaks('molten', EMBER, FIRE_LIGHT, count=56, speed=15, size=0.11, lifetime=26, gravity=22, cone=70,
-                    intensity=4.5, height=0.4),
-            puffs('debris', '#3a3430', '#5a524c', count=14, speed=9, size=0.55, height=0.6, lifetime=34, rise=20,
-                  cone=60, spawn=1.0),
-            smoke('smoke', '#4a4644', '#8e8884', count=14, speed=3.0, size=2.6, height=0.6, lifetime=60, start=4,
-                  spawn=2.0, cone=60, rise=-1.4),
-            scorch('scorch', 11.0, duration=320, start=3),
+        'The anvil slams down and fades: a white flash, a blast wave of fire racing out over the ground and '
+        'cooling into ash as it goes, streaks of flame, flung embers and rock, a sand-coloured dust ring, a '
+        'scorched crater and a column of smoke.', 120, [
+            flash('flash', '#ffb070', WHITE, 22.0, 16.0, duration=8, height=2.0),
+            glint('flare', '#ffd9a0', 9.0, duration=4, height=1.4, art_=FLASH_ART, intensity=2.6),
+            layer('anvil', 'mesh', WHITE, WHITE, 12, 1, anvil_size, 0.0, model=anvil_model, intensity=0.8,
+                  opacityOverLife=keys((0, 1), (0.35, 0.85), (1, 0)), scaleOverLife=keys((0, 1), (1, 1.05))),
+            layer('fireball', 'particles', WHITE, WHITE, 3, 36, 1.0, 0.8, texture=PUFF, flipbook=VARIANTS,
+                  ramp=FIRE_RAMP, blend='additive',
+                  emitter=emitter('burst', 34, 36, 7.0, variation=0.5, cone=70, drag=2.5, gravity=-3.0,
+                                  spawn=1.5, start=2.0, end=5.0) | {
+                      'sizeOverLife': keys((0, 1.6), (0.12, 4.2), (1, 6.0)),
+                      'colourOverLife': [{'at': 0, 'colour': WHITE}, {'at': 0.45, 'colour': WHITE},
+                                         {'at': 0.75, 'colour': '#5a463c'}, {'at': 1, 'colour': '#33302e'}],
+                      'additiveOverLife': keys((0, 0.7), (0.45, 0.55), (0.75, 0)),
+                      'opacityOverLife': keys((0, 0), (0.03, 1), (0.6, 0.8), (1, 0)),
+                      'erosionOverLife': keys((0, 0), (0.5, 0.15), (1, 0.8)),
+                      'heatOverLife': keys((0, 1.45), (0.4, 0.95), (1, 0.3)),
+                      'turbulence': {'strength': 0.8, 'scale': 2.5, 'speed': 1.5}}),
+            layer('blast', 'particles', WHITE, WHITE, 3, 180, 1.0, 0.6, texture=PUFF, flipbook=VARIANTS,
+                  ramp=FIRE_RAMP, blend='additive',
+                  emitter=emitter('burst', 44, 180, 34.0, variation=0.2, cone=88, drag=3.0, gravity=-0.8,
+                                  spawn=1.4, start=1.0, end=3.0) | {
+                      'coneInnerDegrees': 78, 'spawnInner': 0.4,
+                      'sizeOverLife': keys((0, 1.2), (0.12, 3.0), (1, 5.5)),
+                      'colourOverLife': [{'at': 0, 'colour': WHITE}, {'at': 0.28, 'colour': WHITE},
+                                         {'at': 0.55, 'colour': '#6a5448'}, {'at': 1, 'colour': '#3a3532'}],
+                      'additiveOverLife': keys((0, 0.7), (0.3, 0.55), (0.55, 0)),
+                      'opacityOverLife': keys((0, 0), (0.03, 1), (0.5, 0.8), (1, 0)),
+                      'erosionOverLife': keys((0, 0), (0.4, 0.1), (1, 0.8)),
+                      'heatOverLife': keys((0, 1.3), (0.35, 0.8), (1, 0.3)),
+                      'turbulence': {'strength': 0.6, 'scale': 2.0, 'speed': 2.0}}),
+            layer('blast-streaks', 'particles', '#ffd27a', '#ff5a14', 3, 64, 0.18, 0.5, blend='additive',
+                  intensity=4.0, core=0.8, texture=SPARK_DOT,
+                  emitter=emitter('burst', 12, 64, 46.0, variation=0.4, cone=89, drag=2.5, spawn=0.8,
+                                  start=0.28, end=0.12, fade_out=0.6) | {'coneInnerDegrees': 80, 'stretch': 0.05}),
+            layer('ash', 'particles', '#2e2a28', '#3a3532', 3, 90, 0.22, 0.6, blend='normal', texture=ASH,
+                  flipbook=VARIANTS,
+                  emitter=emitter('burst', 60, 90, 18.0, variation=0.6, cone=85, gravity=7.0, drag=1.5, spawn=1.0,
+                                  start=0.24, end=0.16, spin=6) | {
+                      'coneInnerDegrees': 45, 'collide': {'friction': 0.85},
+                      'opacityOverLife': keys((0, 0), (0.05, 1), (0.8, 1), (1, 0)),
+                      'turbulence': {'strength': 0.5, 'scale': 1.5, 'speed': 1.5}}),
+            layer('embers', 'particles', '#ffb04a', '#a02a08', 3, 40, 0.1, 0.6, blend='additive', intensity=4.0,
+                  core=0.8, texture=SPARK_DOT,
+                  emitter=emitter('burst', 40, 40, 14.0, variation=0.5, cone=70, gravity=9.0, drag=0.6, spawn=0.8,
+                                  start=0.12, end=0.06, fade_out=0.4) | {'stretch': 0.03,
+                                                                          'collide': {'friction': 0.6}}),
+            layer('shock', 'billboard', '#ffcf8a', WHITE, 16, 1, 15.0, 0.1, orientation='ground', blend='additive',
+                  intensity=1.6, core=0.4, texture=BLAST_RING,
+                  scaleOverLife=keys((0, 0.15), (0.25, 0.7), (1, 1.0)), opacityOverLife=keys((0, 1), (0.5, 0.6), (1, 0))),
+            layer('dust', 'particles', '#b89a72', '#9a8466', 3, 48, 1.0, 0.3, blend='normal', texture=PUFF,
+                  flipbook=VARIANTS, soft=0.8,
+                  emitter=emitter('burst', 56, 48, 20.0, variation=0.4, cone=89, drag=2.4, gravity=-0.3, spawn=2.0,
+                                  start=1.0, end=3.6) | {
+                      'coneInnerDegrees': 82, 'spawnInner': 0.6,
+                      'sizeOverLife': keys((0, 1.6), (1, 5.5)),
+                      'opacityOverLife': keys((0, 0), (0.1, 0.65), (1, 0)),
+                      'erosionOverLife': keys((0, 0), (1, 0.7))}),
+            layer('smoke', 'particles', '#2d2826', '#6e6862', 24, 64, 1.0, 0.6, startTick=3, blend='normal',
+                  texture=PUFF, flipbook=VARIANTS,
+                  emitter=emitter('continuous', 110, 40, 2.4, variation=0.5, cone=25, gravity=-2.2, drag=1.0,
+                                  spawn=1.8, start=1.6, end=4.5) | {
+                      'sizeOverLife': keys((0, 2.2), (1, 6.0)),
+                      'opacityOverLife': keys((0, 0), (0.12, 0.75), (0.6, 0.5), (1, 0)),
+                      'erosionOverLife': keys((0, 0.05), (1, 0.6)),
+                      'turbulence': {'strength': 0.8, 'scale': 2.5, 'speed': 1.0}}),
+            layer('debris', 'particles', '#7a6a58', '#6a5c4c', 3, 22, 0.35, 0.5, blend='normal', texture=CHUNK,
+                  flipbook=VARIANTS,
+                  emitter=emitter('burst', 50, 22, 14.0, variation=0.5, cone=50, gravity=22.0, drag=0.3, spawn=1.0,
+                                  start=0.38, end=0.32, spin=8, fade_out=0.15) | {
+                      'coneInnerDegrees': 25, 'collide': {'friction': 0.8}}),
+            layer('scorch', 'billboard', WHITE, WHITE, 320, 1, 11.0, 0.05, startTick=1, orientation='ground',
+                  blend='normal', intensity=0.9, texture=SCORCH,
+                  opacityOverLife=keys((0, 0), (0.01, 1), (0.7, 0.95), (1, 0))),
         ]))
     H['forgefall_pool'] = add('forgemaster/forgefall-pool', effect(
         'effect.forgemaster.forgefall-pool', 'Molten pool',
-        'A pool of molten metal for six seconds: hot veins glowing through a cooling crust, embers and smoke rising '
-        'from it.', 240, [
+        'A pool of molten metal for six seconds: hot veins glowing through a cooling crust, flames licking up '
+        'from it, embers and smoke rising.', 240, [
             ground('crust', SCORCH, WHITE, WHITE, 10.0, 240, height=0.05, blend='normal', sustain=True),
             ground('pool', MOLTEN, WHITE, WHITE, 9.5, 240, height=0.07, sustain=True, intensity=1.6,
                    motion={'opacity': pulse(30, 0.75, 1.0)}),
             glow('heat', '#ff6a1a', FIRE_LIGHT, 5.0, 240, height=0.2, sustain=True, motion={'opacity': pulse(20, 0.35, 0.6)}),
+            layer('licks', 'particles', WHITE, WHITE, 240, 40, 1.0, 0.2, sustain=True, blend='additive',
+                  texture=PUFF, flipbook=VARIANTS, ramp=FIRE_RAMP,
+                  emitter=emitter('continuous', 22, 22, 1.6, variation=0.5, cone=20, gravity=-2.0, drag=0.8,
+                                  spawn=3.8, start=0.6, end=0.4) | {
+                      'spawnInner': 0.1,
+                      'sizeOverLife': keys((0, 0.5), (0.35, 1.1), (1, 0.4)),
+                      'additiveOverLife': keys((0, 1), (0.7, 1), (1, 0.3)),
+                      'opacityOverLife': keys((0, 0), (0.15, 0.9), (1, 0)),
+                      'erosionOverLife': keys((0, 0.1), (1, 0.8)),
+                      'heatOverLife': keys((0, 1.3), (1, 0.5)),
+                      'turbulence': {'strength': 0.25, 'scale': 1.0, 'speed': 2.0}}),
             streaks('embers', EMBER, FIRE_LIGHT, count=10, speed=2.4, size=0.06, lifetime=30, gravity=-2.0, cone=20,
                     spawn=4.0, mode='continuous', duration=240, sustain=True, stretch=0.08, intensity=3.5),
             puffs('smoke', '#4a4644', '#8e8884', count=3, speed=0.8, size=1.6, height=0.4, lifetime=50, rise=-1.2,

@@ -1,0 +1,18 @@
+{
+  "id": "asset.effects.vfx.flame-strip",
+  "name": "Flame strip",
+  "kind": "texture",
+  "tags": [
+    "effect",
+    "vfx",
+    "particle"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original procedural effect art for Under the Canopy (tools/content/vfx_art.py). Licking flame tongues along a strip, repeating along its length: fire ribbons."
+}

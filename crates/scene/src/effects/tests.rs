@@ -44,6 +44,12 @@ fn layer(motion: Motion, primitive: Primitive) -> EffectLayer {
         cue_motion: None,
         trail: None,
         rain: None,
+        rides: None,
+        ribbon: None,
+        ramp: None,
+        opacity_curve: None,
+        scale_curve: None,
+        soft: None,
     }
 }
 
@@ -317,6 +323,7 @@ fn draws_follow_textures_not_effect_counts() {
         fade_in: 0.0,
         fade_out: 0.0,
         stretch: 0.0,
+        ..Default::default()
     });
     let mut d = director(
         vec![
@@ -511,4 +518,85 @@ fn rain_drops_land_on_their_disc() {
         super::frame::rain_drop(77, 3, 16, 4.0, 0.2),
         super::frame::rain_drop(77, 3, 16, 4.0, 0.2)
     );
+}
+
+#[test]
+fn world_space_particles_ride_a_falling_layer_and_stay_behind_it() {
+    use canopy_assets::{CookedRain, CookedRibbon};
+    use canopy_render::effects::{PATH_SAMPLES, flag, kind};
+    // A shard falls 10 m over 0.5 s; fire riding it is born along its fall.
+    let mut rain = layer(Motion::Rain, Primitive::Particle);
+    rain.id = "drop".into();
+    rain.start = 0.0;
+    rain.height = 10.0;
+    rain.spread = Some(0.0);
+    rain.texture = Some("spark.png".into());
+    rain.rain = Some(CookedRain {
+        speed: 1.0,
+        launch_delay: 0.0,
+        back: [0.0, 1.0, 0.0],
+        impact: None,
+    });
+    let mut fire = layer(Motion::Emitter, Primitive::Particle);
+    fire.id = "fire".into();
+    fire.start = 0.0;
+    fire.height = 0.0;
+    fire.count = 64;
+    fire.rides = Some(0);
+    fire.emitter = Some(CookedEmitter {
+        lifetime: 1.0,
+        rate: 100.0,
+        direction: [0.0, 1.0, 0.0],
+        world: true,
+        ..Default::default()
+    });
+    let mut strip = layer(Motion::Ribbon, Primitive::Particle);
+    strip.id = "strip".into();
+    strip.start = 0.0;
+    strip.height = 0.0;
+    strip.rides = Some(0);
+    strip.ribbon = Some(CookedRibbon {
+        duration: 0.25,
+        width: 1.0,
+        tile: 0.0,
+        scroll: 0.0,
+        colour: None,
+        opacity: None,
+        width_curve: None,
+        additive: None,
+    });
+    let mut d = director(
+        vec![effect("effect.test.fall", false, vec![rain, fire, strip])],
+        json!([{"id": "fall", "effect": "effect.test.fall", "event": "released", "anchor": "target"}]),
+    );
+    let snapshot = step(&mut d, 0, &[event(1, 0, EventKind::Released, 1)]);
+    let table = d.effect_table().clone();
+    let riding = snapshot.cues.iter().find(|c| c.layer == 1).unwrap();
+    // The emitter is where the shard is: at the top when it starts, on the ground at the end.
+    let top = super::frame::emitter_at(&table, riding, 0.0);
+    let bottom = super::frame::emitter_at(&table, riding, 20.0);
+    assert!((top.y - bottom.y - 10.0).abs() < 0.05, "{top} → {bottom}");
+    let mut evaluator = EffectEvaluator::new(table);
+    let mut frame = EffectFrame::default();
+    let mut models = Vec::new();
+    // Halfway down, the emitter's path back to its first births is in the frame, oldest
+    // (highest) first.
+    evaluator.frame(None, &snapshot, 1.0, 10.0, None, &mut frame, &mut models);
+    let e = frame
+        .emitters
+        .iter()
+        .find(|e| e.ints[0] == kind::EMITTER)
+        .unwrap();
+    assert_ne!(e.ints[1] & flag::WORLD, 0);
+    assert_eq!(e.ints2[3], PATH_SAMPLES);
+    let path = &frame.paths[e.ints2[2] as usize..][..PATH_SAMPLES as usize];
+    assert!(
+        path[0][1] > path[PATH_SAMPLES as usize - 1][1] + 4.0,
+        "{path:?}"
+    );
+    assert!(path.windows(2).all(|p| p[0][1] >= p[1][1]));
+    // The ribbon is a textured strip along the same fall.
+    assert!(!frame.ribbon_draws.is_empty());
+    let strips = &frame.ribbons[frame.ribbon_draws[0].first as usize..];
+    assert!(strips.iter().all(|r| r.color[3] == 2.0) && !strips.is_empty());
 }

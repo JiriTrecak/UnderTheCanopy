@@ -296,6 +296,7 @@ impl Stage {
             let evaluator = EffectEvaluator::new(shot.effects.clone());
             self.renderer
                 .load_effect_textures(gpu, &self.pack, evaluator.textures());
+            self.renderer.load_effect_curves(gpu, evaluator.curves());
             live.evaluator = Some((shot.effects.clone(), evaluator));
         }
         let a = shot.a.as_deref();

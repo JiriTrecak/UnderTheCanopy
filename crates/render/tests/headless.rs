@@ -316,7 +316,7 @@ fn a_tiny_world_renders_without_holes() {
     assert_eq!(
         report.passes,
         [
-            "cull", "skin", "shadow", "forward", "post", "world_ui", "ui"
+            "cull", "skin", "shadow", "forward", "effects", "post", "world_ui", "ui"
         ]
     );
     assert!(report.draws >= 4, "{report:?}");
@@ -478,8 +478,8 @@ fn a_tiny_lake_renders_with_wakes_and_every_post_effect() {
     assert_eq!(
         report.passes,
         [
-            "cull", "skin", "shadow", "ripples", "caustics", "forward", "contact", "bloom", "haze",
-            "post", "world_ui", "ui"
+            "cull", "skin", "shadow", "ripples", "caustics", "forward", "effects", "contact",
+            "bloom", "haze", "post", "world_ui", "ui"
         ]
     );
     assert!(
@@ -686,7 +686,7 @@ fn effects_fog_world_ui_and_hud_images_render() {
             shape: [0.5, 0.0, 1.0, 1.0],
             motion: [1.0, 0.0, 0.0, 0.0],
             ints: [kind::BILLBOARD, 0, 1, 0],
-            ..Emitter::default()
+            ..Emitter::neutral()
         }],
         parts: vec![0],
         draws: vec![EffectDraw {
@@ -703,13 +703,28 @@ fn effects_fog_world_ui_and_hud_images_render() {
             1.0,
             1.0,
         )],
-        lights: Vec::new(),
+        ..EffectFrame::default()
     };
+    let buried = effects.clone();
     renderer.set_effects(&mut effects);
     let (report, lit) = shoot(&mut renderer);
     assert!(report.effects.draws >= 2, "{:?}", report.effects);
     let after = luminance(&lit, centre.0, centre.1, centre.2, centre.3);
     assert!(after > before + 20.0, "effects {before} → {after}");
+
+    // Effects read the scene's depth: the same sprite under the ground does not show.
+    let mut buried = EffectFrame {
+        ribbons: Vec::new(),
+        ..buried
+    };
+    buried.emitters[0].position[1] = -20.0;
+    renderer.set_effects(&mut buried);
+    let (_, hidden) = shoot(&mut renderer);
+    let under = luminance(&hidden, centre.0, centre.1, centre.2, centre.3);
+    assert!(
+        (under - before).abs() < 2.0,
+        "buried effect {before} → {under}"
+    );
     renderer.set_effects(&mut EffectFrame::default());
 
     // A red overlay quad lands where it says, over everything.

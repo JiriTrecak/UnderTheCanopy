@@ -749,7 +749,7 @@ def hero_abilities(fx_):
 
     put('forgemaster/forgefall', ability(
         'ability.forgemaster.forgefall', 'Forgefall',
-        'Call down a crucible. After a 1.5-second warning circle it slams into a 5-radius area: 200/300 spell damage and a 1.5-second stun (half on heroes), then a pool of molten metal that burns enemies standing in it for 20/32 spell damage each half second for 6 seconds.',
+        'Call down a red-hot anvil. After a 1.5-second warning circle it slams into a 5-radius area: 200/300 spell damage and a 1.5-second stun (half on heroes), then a pool of molten metal that burns enemies standing in it for 20/32 spell damage each half second for 6 seconds.',
         'targeted', [{'damage': 200, 'burn': 20}, {'damage': 300, 'burn': 32}],
         point_aim(['enemy'], 22, 5, maxTargets=24, includeBuildings=True), cast(18, 10, 175, 3200),
         [{'op': 'damage', 'target': 'target', 'amount': rp('damage'), 'damageType': 'spell'},
