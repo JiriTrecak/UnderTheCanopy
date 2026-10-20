@@ -722,6 +722,9 @@ pub struct CategoryMeta {
     pub icon: Id,
     pub priority: i64,
     pub placement: Option<ActionPlacement>,
+    /// A fixed cell of the command card (1–12, row by row) the category's button keeps on
+    /// every page; other commands flow around it.
+    pub slot: Option<u32>,
     pub hotkey: Option<String>,
     pub parent: Option<Id>,
 }

@@ -23,7 +23,8 @@
       "Computer opponents now play with personalities: some rush you early, some expand and out-produce you, some race up the tiers, and the rest play a steady all-round game",
       "Computer heroes save mana for their ultimates, so Unbottled, Overdose, Exodus and the other ultimates now appear in matches against the computer",
       "Balance: Raider pairs cost 150 amber and hit harder; the General is sturdier and War Column stronger; Lock Shields, Overclock, Forgefall and Horn Rush are toned down",
-      "Every icon is repainted to read at a glance: one clear subject per icon, near-invisible backgrounds, passives at full brightness with a pulse mark, gold marks for research levels, and upgrades that visibly improve the same object"
+      "Every icon is repainted to read at a glance: one clear subject per icon, near-invisible backgrounds, passives at full brightness with a pulse mark, gold marks for research levels, and upgrades that visibly improve the same object",
+      "A hero's Abilities sit in the eighth command slot with a count of unspent skill points, instead of a \"New spell available\" banner that showed even with no points to spend"
     ],
     "fixed": [
       "Computer Shieldbearers no longer lock their shields from afar and stand rooted behind their own army"

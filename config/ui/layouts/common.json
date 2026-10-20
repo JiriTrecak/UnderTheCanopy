@@ -29,7 +29,8 @@
         },
         { "class": "slot-rim" },
         { "id": "passive", "class": "passive-mark", "visible": false },
-        { "id": "key", "kind": "label", "class": "kbd" }
+        { "id": "key", "kind": "label", "class": "kbd" },
+        { "id": "badge", "kind": "label", "class": "command-badge", "visible": false }
       ]
     },
     "slot": {

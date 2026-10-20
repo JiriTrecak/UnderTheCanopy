@@ -66,6 +66,12 @@ pub struct Command {
     pub placement: Option<ActionPlacement>,
     /// Fixed bottom-row column (1–4) of a spell.
     pub column: Option<u32>,
+    /// Fixed cell (0-based) a command keeps on every page (a category's `slot`).
+    pub slot: Option<usize>,
+    /// The learning hero's unspent skill points (learn entries).
+    pub points: Option<u32>,
+    /// A number shown on the icon: a menu's unspent skill points.
+    pub badge: Option<u32>,
     /// Remaining and total cooldown ticks.
     pub cooldown: Option<(u32, u32)>,
     /// Autocast state; right-click sends `alternate`.
@@ -104,6 +110,9 @@ impl Command {
             category: None,
             placement: None,
             column: None,
+            slot: None,
+            points: None,
+            badge: None,
             cooldown: None,
             autocast: None,
             alternate: None,
@@ -921,6 +930,8 @@ fn spells(
                 None
             };
             c.category = Some("category.hero.skills".into());
+            // Points count on the menu only where one can be spent now.
+            c.points = c.reason.is_none().then(|| level.saturating_sub(spent));
             c.column = Some(command.column);
             c.hotkey = Some(command.hotkey.clone());
             c.actors = vec![actor];
@@ -1117,6 +1128,16 @@ pub fn menu(k: &Knowledge, all: &[Command], category: Option<&str>) -> Vec<Comma
             );
             c.hotkey = meta.hotkey.clone();
             c.placement = meta.placement;
+            c.slot = meta
+                .slot
+                .and_then(|s| (s as usize).checked_sub(1))
+                .filter(|&s| s < SLOTS);
+            c.badge = all
+                .iter()
+                .filter(|x| x.category.as_deref() == Some(id.as_str()))
+                .filter_map(|x| x.points)
+                .max()
+                .filter(|&n| n > 0);
             entries.push(c);
         }
     }
@@ -1167,16 +1188,37 @@ pub fn layout(entries: &[Command], page: usize) -> Layout {
     let bottom: Vec<usize> = (0..entries.len())
         .filter(|&i| entries[i].placement == Some(ActionPlacement::BottomRow))
         .collect();
+    // Commands that keep a fixed cell, on every page (the first to claim a cell wins).
+    let mut fixed: Vec<(usize, usize)> = Vec::new();
+    for (i, entry) in entries.iter().enumerate() {
+        if let Some(s) = entry.slot.filter(|&s| s < SLOTS)
+            && Some(i) != back
+            && !banners.contains(&i)
+            && !bottom.contains(&i)
+            && !(back.is_some() && s == BACK_SLOT)
+            && !fixed.iter().any(|&(_, t)| t == s)
+        {
+            fixed.push((i, s));
+        }
+    }
     let ordinary: Vec<usize> = (0..entries.len())
-        .filter(|&i| Some(i) != back && !banners.contains(&i) && !bottom.contains(&i))
+        .filter(|&i| {
+            Some(i) != back
+                && !banners.contains(&i)
+                && !bottom.contains(&i)
+                && !fixed.iter().any(|&(f, _)| f == i)
+        })
         .collect();
-    let size = if !bottom.is_empty() {
-        8
-    } else if back.is_some() {
-        11
-    } else {
-        12
-    };
+    // The cells ordinary commands flow into: all but Back's, the spells' bottom row and
+    // the fixed ones.
+    let free: Vec<usize> = (0..SLOTS)
+        .filter(|&s| {
+            !(back.is_some() && s == BACK_SLOT)
+                && !(!bottom.is_empty() && s >= 2 * COLUMNS)
+                && !fixed.iter().any(|&(_, t)| t == s)
+        })
+        .collect();
+    let size = free.len().max(1);
     let bottom_size = if back.is_some() { 3 } else { 4 };
     let pages = 1
         .max(ordinary.len().div_ceil(size))
@@ -1191,14 +1233,11 @@ pub fn layout(entries: &[Command], page: usize) -> Layout {
     if let Some(b) = back {
         out.slots[BACK_SLOT] = Some(b);
     }
-    for (n, &i) in ordinary.iter().skip(page * size).take(size).enumerate() {
-        let mut slot = n;
-        if back.is_some() && slot >= BACK_SLOT {
-            slot += 1;
-        }
-        if slot < SLOTS {
-            out.slots[slot] = Some(i);
-        }
+    for &(i, s) in &fixed {
+        out.slots[s] = Some(i);
+    }
+    for (&i, &slot) in ordinary.iter().skip(page * size).take(size).zip(&free) {
+        out.slots[slot] = Some(i);
     }
     for (n, &i) in bottom
         .iter()
@@ -1353,6 +1392,27 @@ mod tests {
         let second = layout(&spells, 1);
         assert_eq!(second.slots[0], Some(8));
         assert_eq!(layout(&spells, 9).page, 1);
+    }
+
+    #[test]
+    fn a_fixed_slot_keeps_its_cell_on_every_page() {
+        // Eight ordinary commands, spells in the bottom row and a menu fixed in cell 8:
+        // seven ordinary commands flow around it, the eighth goes to the next page.
+        let mut entries: Vec<Command> = (0..8)
+            .map(|i| cmd(&format!("o{i}"), 0, None, None))
+            .collect();
+        entries.push(cmd("cast:a", 0, Some(ActionPlacement::BottomRow), Some(1)));
+        let mut skills = cmd("category:skills", 0, None, None);
+        skills.slot = Some(7);
+        entries.push(skills);
+        let l = layout(&entries, 0);
+        assert_eq!(l.slots[7], Some(9));
+        assert_eq!(l.slots[6], Some(6));
+        assert_eq!(l.slots[8], Some(8));
+        assert_eq!(l.pages, 2);
+        let second = layout(&entries, 1);
+        assert_eq!(second.slots[0], Some(7));
+        assert_eq!(second.slots[7], Some(9));
     }
 
     #[test]

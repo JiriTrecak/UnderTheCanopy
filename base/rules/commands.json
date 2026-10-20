@@ -127,12 +127,12 @@
       "hotkey": "V"
     },
     "category.hero.skills": {
-      "name": "New spell available",
-      "description": "Spend a skill point to learn or improve an ability.",
+      "name": "Abilities",
+      "description": "Learn or improve the hero's abilities. The number shows unspent skill points.",
       "icon": "asset.icons.command-learn",
       "priority": 106,
       "hotkey": "K",
-      "placement": "banner"
+      "slot": 8
     }
   },
   "navigation": {

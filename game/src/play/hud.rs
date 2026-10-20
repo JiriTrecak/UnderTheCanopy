@@ -1112,6 +1112,9 @@ impl Hud {
                 if let Some(mark) = ui.find_in(cell, "passive") {
                     ui.set_visible(mark, false);
                 }
+                if let Some(badge) = ui.find_in(cell, "badge") {
+                    ui.set_visible(badge, false);
+                }
                 ui.set_checked(cell, false);
                 ui.set_enabled(cell, false);
                 ui.set_tooltip(cell, None);
@@ -1128,6 +1131,12 @@ impl Hud {
             }
             if let Some(mark) = ui.find_in(cell, "passive") {
                 ui.set_visible(mark, c.passive);
+            }
+            if let Some(badge) = ui.find_in(cell, "badge") {
+                ui.set_visible(badge, c.badge.is_some());
+                if let Some(n) = c.badge {
+                    ui.set_text(badge, &n.to_string());
+                }
             }
             ui.set_enabled(cell, c.enabled() || c.passive);
             ui.set_checked(
