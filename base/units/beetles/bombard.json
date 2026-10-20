@@ -59,11 +59,11 @@
   "supplyCost": 3,
   "unitNature": "mechanical",
   "dimensions": {
-    "radius": 2.2,
-    "height": 7.0,
-    "formationSpacing": 5.0
+    "radius": 1.6,
+    "height": 4.9,
+    "formationSpacing": 3.6
   },
-  "modelScale": 1.4,
+  "modelScale": 0.98,
   "presentation": {
     "projectile": "effect.units.bombard-shell",
     "projectileSocket": "socket_muzzle",

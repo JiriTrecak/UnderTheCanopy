@@ -984,7 +984,7 @@ def write_units(W, fx_):
              body(640, 2, 'heavy'),
              weapon(56, 'siege', 30, 140, 32, 24, 20, 0.75, minRange=7.0,
                     shell={'flightTicks': 46, 'radius': 2.5, 'slowPermille': 0, 'slowTicks': 0}),
-             8, train(260, 40, 30), 3, (2.2, 7.0, 5.0), 1.4, level=2, requires=[T2], nature='mechanical',
+             8, train(260, 40, 30), 3, (1.6, 4.9, 3.6), 0.98, level=2, requires=[T2], nature='mechanical',
              presentation={'projectile': 'effect.units.bombard-shell', 'projectileSocket': 'socket_muzzle',
                            'launchEffect': 'effect.units.bombard-trail', 'impactEffect': 'effect.units.bombard-impact',
                            'effects': [{'effect': 'effect.units.bombard-launch', 'event': 'release',
@@ -1009,7 +1009,7 @@ def write_units(W, fx_):
              body(3000, 6, 'heavy'),
              weapon(62, 'siege', 22, 96, 26, 20, 18, 0.75,
                     shell={'flightTicks': 30, 'radius': 2.8, 'slowPermille': 0, 'slowTicks': 0}),
-             7, train(600, 150, 60), 8, (2.5, 13.0, 6.5), 1.9, level=4, requires=[T3], nature='mechanical',
+             7, train(600, 150, 60), 8, (1.6, 6.5, 4.0), 0.95, level=4, requires=[T3], nature='mechanical',
              max_owned=1,
              abilities=caster(160, 0.8, [
                  binding('broadside', 'ability.beetles.broadside', 1, 'Q', 1, interval=40),
@@ -1025,7 +1025,7 @@ def write_units(W, fx_):
                                        {'effect': 'effect.units.juggernaut-furnace', 'state': 'always', 'socket': 'socket_furnace'},
                                        {'effect': 'effect.units.juggernaut-steam', 'state': 'always', 'socket': 'socket_steam'},
                                        {'effect': 'effect.units.juggernaut-crash', 'event': 'crash'}],
-                           'cameraAnchor': {'height': 3.0, 'forward': 0.2, 'distance': 12}}, vision=34))
+                           'cameraAnchor': {'height': 1.6, 'forward': 0.2, 'distance': 8}}, vision=34))
 
     # Summons and crews: no supply, no player control.
     turret_body = (1.5, 4.6, 3.4)
