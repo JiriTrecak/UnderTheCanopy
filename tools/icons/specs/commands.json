@@ -41,13 +41,14 @@
    "name": "command-build",
    "kind": "command",
    "dir": "base/assets/icons/command-build",
-   "subject": "BUILD: one heavy builder's hammer with a dark steel head and a leather-wrapped wooden handle, angled diagonally from the lower left to the upper right."
+   "subject": "BUILD: one builder's hammer alone, a plain dark iron head and a plain wooden handle wrapped in brown leather, angled diagonally from the lower left to the upper right, simple and sturdy."
   },
   {
    "name": "command-build-advanced",
    "kind": "command",
    "dir": "base/assets/icons/command-build-advanced",
-   "subject": "BUILD ADVANCED STRUCTURE: one heavy steel-headed builder's hammer crossed over one bold bronze carpenter's square, forming an X."
+   "subject": "BUILD ADVANCED STRUCTURE: the same builder's hammer made better, a master builder's hammer: its head now polished bright steel bound with two bright brass bands, the handle dark polished wood with a brass cap and a royal-blue grip wrap.",
+   "after": "command-build"
   },
   {
    "name": "command-produce",

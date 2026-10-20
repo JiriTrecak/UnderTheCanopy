@@ -10,7 +10,7 @@
     ".asset-work/concepts/buildings/unit-forgemaster-1.png"
    ],
    "refnote": "the first image is the Forgemaster: use only its brass, steel and royal-blue materials; do not draw the Forgemaster.",
-   "subject": "FORGEFALL, the Forgemaster's ultimate: one huge round brass crucible, banded with riveted dark steel, plunging steeply down out of the upper left toward the lower right, tipped so one thick tongue of white-hot orange molten metal spills from its rim. Only the crucible and its pour. Energy colour: orange furnace fire."
+   "subject": "FORGEFALL, the Forgemaster's ultimate: one huge heavy anvil of dark riveted steel with bright brass bands, falling steeply out of the sky from the upper left toward the lower right, tilted in its fall, its underside white-hot and glowing orange, one short trail of orange fire and white steam streaming up behind it. Only the falling anvil. Energy colour: orange furnace fire."
   },
   {
    "name": "ability-beetles-arc-lash",
@@ -96,8 +96,8 @@
    "refs": [
     ".asset-work/concepts/buildings/unit-hornbreaker-2.png"
    ],
-   "refnote": "the first image is the Hornbreaker: draw only the head of its war hammer, keeping its shape and materials; not the beetle's body, cape or the rest of its gear.",
-   "subject": "OVERWHELM, blows that stack: the Hornbreaker's war-hammer head alone, level and still, seen from the side: an octagonal block of dark steel with brass end bands and a round violet glass eye in its middle, both striking faces glowing deep red, and three bold rings of deep-red light around it, one inside another. No handle below the head's socket, no target. Energy colour: deep red."
+   "refnote": "the first image is the Hornbreaker: use only its glossy black chitin and brass materials; do not draw the Hornbreaker.",
+   "subject": "OVERWHELM, blows that stack (each hit marks the target, up to three times): one cracked plate of glossy black beetle chitin armour seen from the front, still and centred, with three bold dents punched into it in a row from small to large, deep red-orange light glowing from inside each dent's cracks. No rings, no hammer, no weapon."
   },
   {
    "name": "ability-beetles-steadfast",
@@ -107,8 +107,8 @@
    "refs": [
     ".asset-work/concepts/buildings/unit-hornbreaker-2.png"
    ],
-   "refnote": "the first image is the Hornbreaker: draw only the royal-blue cloth with brass edging of its tabard, as a banner, and its black horn, keeping its shape and materials; not the beetle's body, cape or the rest of its gear.",
-   "subject": "STEADFAST AURA, healing and armour for nearby allies: one royal-blue war banner hanging still from a brass crossbar, seen from the front and centred, its swallow-tailed foot edged in brass, one black chitin horn fixed upright on its face, a calm warm golden glow close behind it. No pole below, no bearer. Energy colour: warm gold."
+   "refnote": "the first image is the Hornbreaker: take only the shape of its great black horn for the relief and its brass and royal-blue materials; do not draw the Hornbreaker or a banner.",
+   "subject": "STEADFAST AURA, healing and armour for nearby allies: one round heavy brass medallion seen from the front, centred and still, the Hornbreaker's great black curved horn raised in bold relief across its middle, a ring of royal-blue enamel around its rim, a soft warm gold glow of healing light radiating close behind it."
   },
   {
    "name": "ability-beetles-colossus",

@@ -1,35 +1,275 @@
 {
  "n": 2,
  "items": [
-  {"name": "item-neutral-amber-carapace", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-amber-carapace", "refs": [".asset-work/concepts/buildings/refs/icons/old-item-amber-carapace.png"], "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.", "subject": "AMBER CARAPACE: one chitin breastplate seen from the front-left, built of four thick overlapping curved plates of glossy translucent honey amber with light shining through them, held in a heavy gold rim with a few round gold studs. Only the breastplate: no body, no straps. Main colour: honey amber and gold."},
-  {"name": "item-neutral-amber-hourglass", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-amber-hourglass", "subject": "HOURGLASS OF AMBER: one tall hourglass, tilted slightly, its two bulbs of clear golden amber glass held between round caps of polished ivory bone joined by three thick bone pillars. One bold stream of glowing sky-blue sand falls from the upper bulb into a blue heap in the lower one. Main colour: ivory, amber and glowing sky blue."},
-  {"name": "item-neutral-ancient-heartwood", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-ancient-heartwood", "subject": "ANCIENT HEARTWOOD: one thick round slice cut from an ancient tree trunk, tilted toward the viewer so its cut face shows a few broad growth rings of rich red-brown wood, darkening to a deep red heart at the centre with a faint warm golden glow, a rugged rim of dark grey bark around the edge. Main colour: red-brown wood."},
-  {"name": "item-neutral-barkguard", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-barkguard", "refs": [".asset-work/concepts/buildings/refs/icons/old-item-barkguard.png"], "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.", "subject": "BARKGUARD CHARM: one small kite-shaped charm made of a thick slab of rugged grey-brown bark, framed by a plain rim of dull steel with four round rivets, hanging from a short loop of dark leather cord. No leaves. Main colour: grey-brown bark and steel."},
-  {"name": "item-neutral-broodkeeper-lantern", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-broodkeeper-lantern", "subject": "BROODKEEPER'S LANTERN: one hanging lantern with a gold ring on top and a gold cap and foot, its body a rounded cage of four curved ivory bone ribs around one curled sleeping larva made of soft, warm golden-white light. No leaves. Main colour: warm gold light and ivory."},
-  {"name": "item-neutral-canopy-aegis", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-canopy-aegis", "subject": "AEGIS OF THE CANOPY: one large round shield seen from the front-left, faced with three big overlapping autumn leaves of burnished copper-red with bold raised veins, a thick gold rim, and one round sapphire boss in the centre glowing soft blue. Main colour: copper-red and gold."},
-  {"name": "item-neutral-deep-moon-scepter", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-deep-moon-scepter", "refs": [".asset-work/concepts/buildings/refs/icons/old-item-deep-moon-scepter.png"], "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.", "subject": "SCEPTER OF THE DEEP MOON: one short royal scepter lying diagonally from the lower left to the upper right, a shaft of glossy black chitin banded with gold, topped by a thick gold crescent moon cradling a large orb of deep violet light. Main colour: black, gold and deep violet."},
-  {"name": "item-neutral-endless-brood-banner", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-endless-brood-banner", "subject": "BANNER OF THE ENDLESS BROOD: one square banner of heavy violet silk hanging still from a horizontal gold crossbar with round end knobs, its lower edge cut into three bold points, a broad plain gold band along its hem. No pole below it and no emblem. Main colour: violet silk and gold."},
-  {"name": "item-neutral-firefly-pendant", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-firefly-pendant", "subject": "FIREFLY PENDANT: one pendant shaped like a firefly seen from above with its wings spread wide, its head, body and wings of polished gold, its big round abdomen a glass lantern glowing bright sky blue, hanging from a small gold loop. Main colour: gold and glowing sky blue."},
-  {"name": "item-neutral-first-queen-crown", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-first-queen-crown", "refs": [".asset-work/concepts/buildings/refs/icons/old-item-first-queen-crown.png"], "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.", "subject": "CROWN OF THE FIRST QUEEN: one heavy gold crown seen from the front-left, its band rising into five tall curved points shaped like ant mandibles, the middle one tallest, one large royal-blue gem set in the band below it. Main colour: gold, with royal blue."},
-  {"name": "item-neutral-heartseed", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-heartseed", "refs": [".asset-work/concepts/buildings/refs/icons/old-item-heartseed.png"], "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.", "subject": "HEARTSEED: one plump glossy seed shaped like a heart, deep crimson red with one bright highlight, a short curled stem at its top with two small dark leaves. Main colour: crimson red."},
-  {"name": "item-neutral-moon-dew", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-moon-dew", "subject": "MOON DEW: one small glass vial shaped like a single fat dewdrop, point up, closed with a bark stopper and a silver crescent-moon clasp at its neck, filled with luminous pale silver-white liquid with a soft blue sheen. Main colour: silver-white."},
-  {"name": "item-neutral-moonwell-chalice", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-moonwell-chalice", "refs": [".asset-work/concepts/buildings/refs/icons/old-item-moonwell-chalice.png"], "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.", "subject": "MOONWELL CHALICE: one silver goblet seen from slightly above, a deep bowl on a short stem and wide foot, two crescent-moon handles, brimming with still, luminous deep-blue water. Main colour: silver and deep blue."},
-  {"name": "item-neutral-mossweave-wraps", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-mossweave-wraps", "refs": [".asset-work/concepts/buildings/refs/icons/old-item-mossweave-wraps.png"], "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.", "subject": "MOSSWEAVE WRAPS: two thick rolls of soft cream spider-silk bandage lying side by side, one partly unrolled in a broad curling ribbon, tied together with brown twine, a small tuft of moss tucked under the twine. Main colour: cream silk."},
-  {"name": "item-neutral-phoenix-chrysalis", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-phoenix-chrysalis", "subject": "PHOENIX CHRYSALIS: one large teardrop-shaped chrysalis hanging point down, its shell of glossy dark bronze chitin with a few bold gold ridges, split by one jagged crack down its front through which bright orange-gold fire-light blazes. Main colour: dark bronze and blazing orange."},
-  {"name": "item-neutral-predator-talon", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-predator-talon", "refs": [".asset-work/concepts/buildings/refs/icons/old-item-predator-talon.png"], "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.", "subject": "PREDATOR'S TALON: one big curved claw rising from its base at the lower left and hooking to a sharp point at the upper right, polished ivory bone darkening to a blood-red tip, its thick base bound with dark red leather and one gold band. Main colour: ivory and blood red."},
-  {"name": "item-neutral-quickstep-spurs", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-quickstep-spurs", "subject": "QUICKSTEP SPURS: one ankle cuff of tan leather with a brass buckle, tilted as if mid-stride, a short brass shank at its heel carrying one large spiked brass rowel wheel. Only the one cuff. Main colour: tan leather and brass."},
-  {"name": "item-neutral-reaper-mandible", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-reaper-mandible", "refs": [".asset-work/concepts/buildings/refs/icons/old-item-reaper-mandible.png"], "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.", "subject": "REAPER'S MANDIBLE: one huge sickle-shaped mandible blade curving from a gold-banded grip at the lower left up and over to a hooked point, glossy black chitin with a row of big ivory serrated teeth along its inner edge. No gems. Main colour: glossy black and ivory."},
-  {"name": "item-neutral-resin-salve", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-resin-salve", "subject": "RESIN SALVE: one half walnut shell used as a bowl, its dark brown wrinkled shell filled to the brim with glossy, softly glowing golden-amber salve, a short wooden spatula resting across it with one thick drip. Main colour: golden amber in brown."},
-  {"name": "item-neutral-restoration-draught", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-restoration-draught", "refs": [".asset-work/concepts/buildings/refs/icons/old-item-restoration-draught.png"], "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.", "subject": "RESTORATION DRAUGHT: one glass potion bottle of two stacked round bulbs, the large lower bulb full of glowing crimson-red liquid, the small upper bulb full of glowing bright blue liquid, a gold collar between them and a bark cork on top. No leaves. Main colour: crimson and blue."},
-  {"name": "item-neutral-rootbinder-idol", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-rootbinder-idol", "refs": [".asset-work/concepts/buildings/refs/icons/old-item-rootbinder-idol.png"], "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.", "subject": "ROOTBINDER'S IDOL: one squat carved wooden idol, a grim round face of dark knotted wood with two glaring eyes of violet light, thick roots spreading from its base like grasping legs. No body or arms. Main colour: dark wood, with violet eyes."},
-  {"name": "item-neutral-royal-crest", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-royal-crest", "subject": "ROYAL CREST: one heavy brooch shaped like an ant queen's head seen from the front, smooth plates of royal-blue enamel set in thick polished gold, two broad gold mandibles curving below and two short gold antennae above. Main colour: royal blue and gold."},
-  {"name": "item-neutral-scout-whistle", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-scout-whistle", "refs": [".asset-work/concepts/buildings/refs/icons/old-item-scout-whistle.png"], "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.", "subject": "SCOUT'S WHISTLE: one short stubby whistle carved from ivory bone, angled diagonally, its back end capped with a brown acorn cup, one dark oval sound hole on its side, a short leather cord looped at the cap. Main colour: ivory and acorn brown."},
-  {"name": "item-neutral-stormwing-spurs", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-stormwing-spurs", "refs": [".asset-work/concepts/buildings/refs/icons/old-item-stormwing-spurs.png"], "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.", "subject": "STORMWING SPURS: one polished silver ankle cuff with a single large dragonfly wing sweeping back from its heel, the wing translucent electric blue with a few bold dark veins, one small blue spark at its tip. Only the one cuff. Main colour: silver and electric blue."},
-  {"name": "item-neutral-tempest-antennae", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-tempest-antennae", "subject": "TEMPEST ANTENNAE: two thick curved bronze antennae rising from a gold circlet, bending outward and then inward so their round tips nearly meet above it, one bold violet-white lightning fork leaping between the two tips. Main colour: bronze, with violet-white lightning."},
-  {"name": "item-neutral-thornband", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-thornband", "refs": [".asset-work/concepts/buildings/refs/icons/old-item-thornband.png"], "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.", "subject": "THORNBAND: one thick ring of twisted dark wine-red bramble stem, seen at an angle, set with five big sharp bone-white thorns pointing outward. No gem. Main colour: dark wine red and bone white."},
-  {"name": "item-neutral-trailkeeper-flask", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-trailkeeper-flask", "subject": "TRAILKEEPER'S FLASK: one flat round gourd canteen, its polished ochre gourd body crossed by a dark leather strap with a brass buckle, a short neck closed with a bark cork. No liquid shown. Main colour: ochre and dark leather."},
-  {"name": "item-neutral-warcaller-standard", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-warcaller-standard", "refs": [".asset-work/concepts/buildings/refs/icons/old-item-warcaller-standard.png"], "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.", "subject": "WARCALLER'S STANDARD: one war standard held diagonally, a dark wooden spear shaft topped with a bronze crest of two curved mandible blades, one long crimson pennant with a ragged swallowtail streaming from just below the crest. Main colour: crimson and bronze."},
-  {"name": "item-neutral-winter-heart", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-winter-heart", "refs": [".asset-work/concepts/buildings/refs/icons/old-item-winter-heart.png"], "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.", "subject": "HEART OF WINTER: one large heart of faceted ice, clear pale blue darkening to deep blue inside, with a cold white glow at its core, gripped by four short silver claws. Main colour: ice blue and white."},
-  {"name": "item-neutral-worldroot-heart", "kind": "item", "faction": "neutral", "dir": "base/assets/icons/item-worldroot-heart", "subject": "WORLDROOT HEART: one round knot of thick gnarled roots woven tightly into a ball, dark brown bark, bright warm golden-white light shining out through the gaps between the roots. No leaves. Main colour: dark roots and golden light."}
+  {
+   "name": "item-neutral-amber-carapace",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-amber-carapace",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/old-item-amber-carapace.png"
+   ],
+   "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.",
+   "subject": "AMBER CARAPACE: one chitin breastplate seen from the front-left, built of four thick overlapping curved plates of glossy translucent honey amber with light shining through them, held in a heavy gold rim with a few round gold studs. Only the breastplate: no body, no straps. Main colour: honey amber and gold."
+  },
+  {
+   "name": "item-neutral-amber-hourglass",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-amber-hourglass",
+   "subject": "HOURGLASS OF AMBER: one tall hourglass, tilted slightly, its two bulbs of clear golden amber glass held between round caps of polished ivory bone joined by three thick bone pillars. One bold stream of glowing sky-blue sand falls from the upper bulb into a blue heap in the lower one. Main colour: ivory, amber and glowing sky blue."
+  },
+  {
+   "name": "item-neutral-ancient-heartwood",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-ancient-heartwood",
+   "subject": "ANCIENT HEARTWOOD: one thick round slice cut from an ancient tree trunk, tilted toward the viewer so its cut face shows a few broad growth rings of rich red-brown wood, darkening to a deep red heart at the centre with a faint warm golden glow, a rugged rim of dark grey bark around the edge. Main colour: red-brown wood."
+  },
+  {
+   "name": "item-neutral-barkguard",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-barkguard",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/old-item-barkguard.png"
+   ],
+   "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.",
+   "subject": "BARKGUARD CHARM: one small kite-shaped charm made of a thick slab of rugged grey-brown bark, framed by a plain rim of dull steel with four round rivets, hanging from a short loop of dark leather cord. No leaves. Main colour: grey-brown bark and steel."
+  },
+  {
+   "name": "item-neutral-broodkeeper-lantern",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-broodkeeper-lantern",
+   "subject": "BROODKEEPER'S LANTERN: one hanging lantern with a gold ring on top and a gold cap and foot, its body a rounded cage of four curved ivory bone ribs around one curled sleeping larva made of soft, warm golden-white light. No leaves. Main colour: warm gold light and ivory."
+  },
+  {
+   "name": "item-neutral-canopy-aegis",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-canopy-aegis",
+   "subject": "AEGIS OF THE CANOPY: one large round shield seen from the front-left, faced with three big overlapping autumn leaves of burnished copper-red with bold raised veins, a thick gold rim, and one round sapphire boss in the centre glowing soft blue. Main colour: copper-red and gold."
+  },
+  {
+   "name": "item-neutral-deep-moon-scepter",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-deep-moon-scepter",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/old-item-deep-moon-scepter.png"
+   ],
+   "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.",
+   "subject": "SCEPTER OF THE DEEP MOON: one short royal scepter lying diagonally from the lower left to the upper right, a shaft of glossy black chitin banded with gold, topped by a thick gold crescent moon cradling a large orb of deep violet light. Main colour: black, gold and deep violet."
+  },
+  {
+   "name": "item-neutral-endless-brood-banner",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-endless-brood-banner",
+   "subject": "BANNER OF THE ENDLESS BROOD: one square banner of heavy violet silk hanging still from a horizontal gold crossbar with round end knobs, its lower edge cut into three bold points, a broad plain gold band along its hem. No pole below it and no emblem. Main colour: violet silk and gold."
+  },
+  {
+   "name": "item-neutral-firefly-pendant",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-firefly-pendant",
+   "subject": "FIREFLY PENDANT: one pendant shaped like a firefly seen from above with its wings spread wide, its head, body and wings of polished gold, its big round abdomen a glass lantern glowing bright sky blue, hanging from a small gold loop. Main colour: gold and glowing sky blue."
+  },
+  {
+   "name": "item-neutral-first-queen-crown",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-first-queen-crown",
+   "subject": "CROWN OF THE FIRST QUEEN: one heavy gold crown seen straight from the front and slightly from above, perfectly symmetric and level, not tilted: its round band rising into five tall curved points shaped like ant mandibles, the middle one tallest, one large royal-blue gem set in the band below it. Main colour: gold, with royal blue."
+  },
+  {
+   "name": "item-neutral-heartseed",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-heartseed",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/old-item-heartseed.png"
+   ],
+   "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.",
+   "subject": "HEARTSEED: one plump glossy seed shaped like a heart, deep crimson red with one bright highlight, a short curled stem at its top with two small dark leaves. Main colour: crimson red."
+  },
+  {
+   "name": "item-neutral-moon-dew",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-moon-dew",
+   "subject": "MOON DEW: one small glass vial shaped like a single fat dewdrop, point up, closed with a bark stopper and a silver crescent-moon clasp at its neck, filled with luminous pale silver-white liquid with a soft blue sheen. Main colour: silver-white."
+  },
+  {
+   "name": "item-neutral-moonwell-chalice",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-moonwell-chalice",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/old-item-moonwell-chalice.png"
+   ],
+   "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.",
+   "subject": "MOONWELL CHALICE: one silver goblet seen from slightly above, a deep bowl on a short stem and wide foot, two crescent-moon handles, brimming with still, luminous deep-blue water. Main colour: silver and deep blue."
+  },
+  {
+   "name": "item-neutral-mossweave-wraps",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-mossweave-wraps",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/old-item-mossweave-wraps.png"
+   ],
+   "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.",
+   "subject": "MOSSWEAVE WRAPS: two thick rolls of soft cream spider-silk bandage lying side by side, one partly unrolled in a broad curling ribbon, tied together with brown twine, a small tuft of moss tucked under the twine. Main colour: cream silk."
+  },
+  {
+   "name": "item-neutral-phoenix-chrysalis",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-phoenix-chrysalis",
+   "subject": "PHOENIX CHRYSALIS: one large teardrop-shaped chrysalis hanging point down, its shell of glossy dark bronze chitin with a few bold gold ridges, split by one jagged crack down its front through which bright orange-gold fire-light blazes. Main colour: dark bronze and blazing orange."
+  },
+  {
+   "name": "item-neutral-predator-talon",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-predator-talon",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/old-item-predator-talon.png"
+   ],
+   "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.",
+   "subject": "PREDATOR'S TALON: one big curved claw rising from its base at the lower left and hooking to a sharp point at the upper right, polished ivory bone darkening to a blood-red tip, its thick base bound with dark red leather and one gold band. Main colour: ivory and blood red."
+  },
+  {
+   "name": "item-neutral-quickstep-spurs",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-quickstep-spurs",
+   "subject": "QUICKSTEP SPURS (move faster): one light, airy anklet woven from pale straw-gold grass and cream silk thread, two small curled fern fronds of dried pale gold sweeping back from it like little wings, one glossy amber seed bead at the front. Delicate and light, nothing metal. Main colour: pale straw gold and cream."
+  },
+  {
+   "name": "item-neutral-reaper-mandible",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-reaper-mandible",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/old-item-reaper-mandible.png"
+   ],
+   "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.",
+   "subject": "REAPER'S MANDIBLE: one huge sickle-shaped mandible blade curving from a gold-banded grip at the lower left up and over to a hooked point, glossy black chitin with a row of big ivory serrated teeth along its inner edge. No gems. Main colour: glossy black and ivory."
+  },
+  {
+   "name": "item-neutral-resin-salve",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-resin-salve",
+   "subject": "RESIN SALVE: one half walnut shell used as a bowl, its dark brown wrinkled shell filled to the brim with glossy, softly glowing golden-amber salve, a short wooden spatula resting across it with one thick drip. Main colour: golden amber in brown."
+  },
+  {
+   "name": "item-neutral-restoration-draught",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-restoration-draught",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/old-item-restoration-draught.png"
+   ],
+   "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.",
+   "subject": "RESTORATION DRAUGHT: one glass potion bottle of two stacked round bulbs, the large lower bulb full of glowing crimson-red liquid, the small upper bulb full of glowing bright blue liquid, a gold collar between them and a bark cork on top. No leaves. Main colour: crimson and blue."
+  },
+  {
+   "name": "item-neutral-rootbinder-idol",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-rootbinder-idol",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/old-item-rootbinder-idol.png"
+   ],
+   "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.",
+   "subject": "ROOTBINDER'S IDOL: one squat carved wooden idol, a grim round face of dark knotted wood with two glaring eyes of violet light, thick roots spreading from its base like grasping legs. No body or arms. Main colour: dark wood, with violet eyes."
+  },
+  {
+   "name": "item-neutral-royal-crest",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-royal-crest",
+   "subject": "ROYAL CREST: one heavy brooch shaped like an ant queen's head seen from the front, smooth plates of royal-blue enamel set in thick polished gold, two broad gold mandibles curving below and two short gold antennae above. Main colour: royal blue and gold."
+  },
+  {
+   "name": "item-neutral-scout-whistle",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-scout-whistle",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/old-item-scout-whistle.png"
+   ],
+   "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.",
+   "subject": "SCOUT'S WHISTLE: one short stubby whistle carved from ivory bone, angled diagonally, its back end capped with a brown acorn cup, one dark oval sound hole on its side, a short leather cord looped at the cap. Main colour: ivory and acorn brown."
+  },
+  {
+   "name": "item-neutral-stormwing-spurs",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-stormwing-spurs",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/old-item-stormwing-spurs.png"
+   ],
+   "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.",
+   "subject": "STORMWING SPURS: one polished silver ankle cuff with a single large dragonfly wing sweeping back from its heel, the wing translucent electric blue with a few bold dark veins, one small blue spark at its tip. Only the one cuff. Main colour: silver and electric blue."
+  },
+  {
+   "name": "item-neutral-tempest-antennae",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-tempest-antennae",
+   "subject": "TEMPEST ANTENNAE: two thick curved bronze antennae rising from a gold circlet, bending outward and then inward so their round tips nearly meet above it, one bold violet-white lightning fork leaping between the two tips. Main colour: bronze, with violet-white lightning."
+  },
+  {
+   "name": "item-neutral-thornband",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-thornband",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/old-item-thornband.png"
+   ],
+   "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.",
+   "subject": "THORNBAND: one thick ring of twisted dark wine-red bramble stem, seen at an angle, set with five big sharp bone-white thorns pointing outward. No gem. Main colour: dark wine red and bone white."
+  },
+  {
+   "name": "item-neutral-trailkeeper-flask",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-trailkeeper-flask",
+   "subject": "TRAILKEEPER'S FLASK: one flat round gourd canteen, its polished ochre gourd body crossed by a dark leather strap with a brass buckle, a short neck closed with a bark cork. No liquid shown. Main colour: ochre and dark leather."
+  },
+  {
+   "name": "item-neutral-warcaller-standard",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-warcaller-standard",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/old-item-warcaller-standard.png"
+   ],
+   "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.",
+   "subject": "WARCALLER'S STANDARD: one war standard held diagonally, a dark wooden spear shaft topped with a bronze crest of two curved mandible blades, one long crimson pennant with a ragged swallowtail streaming from just below the crest. Main colour: crimson and bronze."
+  },
+  {
+   "name": "item-neutral-winter-heart",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-winter-heart",
+   "refs": [
+    ".asset-work/concepts/buildings/refs/icons/old-item-winter-heart.png"
+   ],
+   "refnote": "the first image is this item's old icon: keep what the object is and its shape, but simplify it to a few big chunky forms with no fine ornament, and follow the colours given below.",
+   "subject": "HEART OF WINTER: one large heart of faceted ice, clear pale blue darkening to deep blue inside, with a cold white glow at its core, gripped by four short silver claws. Main colour: ice blue and white."
+  },
+  {
+   "name": "item-neutral-worldroot-heart",
+   "kind": "item",
+   "faction": "neutral",
+   "dir": "base/assets/icons/item-worldroot-heart",
+   "subject": "WORLDROOT HEART: one round knot of thick gnarled roots woven tightly into a ball, dark brown bark, bright warm golden-white light shining out through the gaps between the roots. No leaves. Main colour: dark roots and golden light."
+  }
  ]
 }
