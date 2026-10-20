@@ -1,101 +1,110 @@
 {
   "schemaVersion": 1,
   "unreleased": {
-    "added": [
-      "Beetles now have a steel, brass and violet-magic HUD frame and resource ribbon; Ants keep their woodland interface.",
-      "Ants travel underground: units ordered far away walk to their nearest mound and come up at the mound nearest their destination, a few at a time per mound",
-      "The ant army is complete: Raiders hatch in pairs and frenzy together, Needlers fire chitin needles, Bursters run in and burst, Majors guard and plug, Honeypots lob nectar, Heralds lay scent trails and sound the alarm, Gardeners grow healing fungus, Alates fly ahead and found new mounds, Bullet Ants sting, and the Reaver Queen devours",
-      "Three ant heroes with four abilities each: the Queen (Found Colony raises a Brood Mound where she points, Royal Jelly heals and strengthens an ally, One Body shares the colony's wounds, and the Exodus ultimate sinks her army underground and brings it up beside any ally), the Royal Alchemist (Volatile Draught, Transfusion, Crystallise, and the Overdose ultimate) and the General (Mandible Charge, Mark Prey, War Column, and the Bivouac ultimate that locks the army into a living fortress)",
-      "Ant research at the Chitin Works, the Fungus Garden and the Brood Mound, and the Venom Spire tower upgrade"
-    ],
-    "improved": [
-      "A building works on one thing at a time: research waits for the units queued before it, and units for the research, as in Warcraft III. Its queue panel shows training, research and revivals in the order you queued them.",
-      "Ant buildings are rebuilt as sculpted sand-clay spire cathedrals with royal-blue drapes and glowing blossoms; each one animates while it works (swaying banners, opening mandibles, a dipping blade, a breathing crown)",
-      "The beetle Bombard is about a third smaller and the Juggernaut half its former size, so they no longer dwarf the army",
-      "Ant units have new models and portraits that read from above: the Worker, a stocky biting Raider, the needle-firing Needler, the armoured Major, a swollen amber Honeypot, the winged Alate, the Bullet Ant and the General, each animated as it walks, fights, casts and dies",
-      "The ants' Herald and Gardener have new six-legged models that walk on all six legs, and the Royal Alchemist hero has its model",
-      "Computer ant players found mounds near the front and send their armies through the tunnels",
-      "Every ant spell has its own visible cast and landing: casters glow and draw a sigil as they wind up, and hero spells raise pillars of light, so you can see who cast what",
-      "Ant heroes and the Major stand larger on the field, and every ant weapon lands with its own hit effect",
-      "Every beetle spell has its own look and a visible cast: casters wind up over a turning brass gear or arc glyph, Overload drains mana into an orb that bursts, Unbottled is a turning violet vortex, the Bolt Turret assembles from swirling plates, shields are hexagon domes and the Juggernaut's barrage walks across the ground",
-      "The Hornbreaker has his own spell effects: Horn Rush throws up a wall of dust behind him and bursts the earth where he lands, Steadfast lays a brass shield sigil under his allies, and Colossus ignites his furnace, blasts steam from his vents and leaves burning footprints",
-      "Beetle heroes stand larger on the field, as tall as the ant heroes",
-      "Computer opponents play with personalities: a rusher attacks early with its first units and skips the creeps, an expander takes a second base early and out-produces you, a technologist races up the tiers for its strongest units, and the rest play a steady all-round game. Each computer player picks one per match",
-      "Computer heroes save mana for their ultimates, so Unbottled, Overdose, Exodus and the other ultimates now appear in matches against the computer",
-      "Balance from hundreds of computer matches: Raider pairs cost 150 amber (was 160) with 185 health (was 170) and 8 damage (was 7); the General has 900 health, 44 damage and 4 armor, and War Column gives 10/15/20%; Lock Shields gives 4 armor and 30% less piercing damage (7 and 45% with Interlocking Shields); Overclock is 30/45/60%; Forgefall deals 200/300; Horn Rush recharges in 14 seconds instead of 10",
-      "Every icon is repainted to read at a glance: one clear subject per icon, near-invisible backgrounds, passives at full brightness with a pulse mark, gold marks for research levels, and upgrades that visibly improve the same object",
-      "A hero's Abilities sit in the eighth command slot with a count of unspent skill points, instead of a \"New spell available\" banner that showed even with no points to spend",
-      "Forgefall is rebuilt with new effect tools: a red-hot anvil falls trailing fire and smoke that hang in the air, lands, and sends a blast wave of fire racing out over the ground that cools into drifting ash",
-      "Spell effects fade softly where they meet the ground, units and buildings instead of cutting into them",
-      "Every ranged attack now leaves a trail: arrows and thorns a faint wake, nectar and venom glowing comet tails with falling drops, beetle bolts a violet streak, and siege shells arcs of fire and smoke",
-      "Ranged forest creatures fire their own magic: willow lights, dew bolts, bloom and spore shots in their own colours, each bursting where it lands",
-      "Beetle lightning forks and branches: Arc Lash, Arc Surge, Overload, the Unbottled storm and the beetles' arc weapons crackle with jagged, forking bolts",
-      "Pressure Mains is researched at the Brood Den, the network building it upgrades, instead of the Great Bastion"
-    ],
-    "fixed": [
-      "Computer Shieldbearers no longer lock their shields from afar and stand rooted behind their own army"
-    ],
-    "knownIssues": [],
-    "images": [
-      {
-        "file": "ebff42c758f657b659af970569250fe28bfcde2813acd61da9ecfbc797882c3e.webp",
-        "alt": "The ant colony: sand-clay spire buildings and the whole ant army, with the Raider pairs in front.",
-        "caption": "The ant colony: sand-clay spire buildings and the whole ant army, with the Raider pairs in front.",
-        "width": 1280,
-        "height": 720
-      },
-      {
-        "file": "8063f0c3b3b7e5b6b98d63dcd0c6eceb4c22550ce30bdda0e5d2aef9801e103c.webp",
-        "alt": "Forgefall: the Forgemaster's anvil lands on a creep camp in a wave of fire.",
-        "caption": "Forgefall: the Forgemaster's anvil lands on a creep camp in a wave of fire.",
-        "width": 1280,
-        "height": 720
-      },
-      {
-        "file": "8c8af37f2ac66794ed37db01fd8c96c9f3f5d9adc4fa216bd269fa8adc96f66f.webp",
-        "alt": "Unbottled: the Coilkeeper's violet storm drags enemies into its vortex.",
-        "caption": "Unbottled: the Coilkeeper's violet storm drags enemies into its vortex.",
-        "width": 1280,
-        "height": 720
-      },
-      {
-        "file": "ad854cb7d59dafef2703b77c0912d2461bdd43380cf2ccc04edbc36f522ccc60.webp",
-        "alt": "Arc Lash: forked lightning leaps from the Coilkeeper into the creeps.",
-        "caption": "Arc Lash: forked lightning leaps from the Coilkeeper into the creeps.",
-        "width": 1280,
-        "height": 720
-      },
-      {
-        "file": "d6156defa85c4f80618c0207d080c456d2c815e9d09fe309bf0b525d6551a1a6.webp",
-        "alt": "Bivouac: the General locks into a living fortress of gold light.",
-        "caption": "Bivouac: the General locks into a living fortress of gold light.",
-        "width": 1280,
-        "height": 720
-      },
-      {
-        "file": "51f863cc64a570ea6ffdbff856d2d9d5995dabb544ddac057fc0d6922789c994.webp",
-        "alt": "Volatile Draught: the Royal Alchemist's flask bursts over a creep camp.",
-        "caption": "Volatile Draught: the Royal Alchemist's flask bursts over a creep camp.",
-        "width": 1280,
-        "height": 720
-      },
-      {
-        "file": "bd20ff975f3e8615ccc53cdc588d51e00e1f4d83b7b95dfd912d8b17ea7c2ec9.webp",
-        "alt": "Some of the repainted icons: ant and beetle abilities, a research line that improves level by level, and the commands.",
-        "caption": "Some of the repainted icons: ant and beetle abilities, a research line that improves level by level, and the commands.",
-        "width": 1280,
-        "height": 720
-      },
-      {
-        "file": "8e2861171d00ccb1c50542b035de54e74e6a31f8a2a8a1944a2a4ce7d056c1b4.webp",
-        "alt": "The beetle HUD with the Hornbreaker selected: the new icons, and Abilities in the eighth slot with eleven skill points to spend.",
-        "caption": "The beetle HUD with the Hornbreaker selected: the new icons, and Abilities in the eighth slot with eleven skill points to spend.",
-        "width": 1600,
-        "height": 900
-      }
-    ]
+    "added": [],
+    "improved": [],
+    "fixed": [],
+    "knownIssues": []
   },
   "releases": [
+    {
+      "images": [
+        {
+          "file": "ebff42c758f657b659af970569250fe28bfcde2813acd61da9ecfbc797882c3e.webp",
+          "alt": "The ant colony: sand-clay spire buildings and the whole ant army, with the Raider pairs in front.",
+          "caption": "The ant colony: sand-clay spire buildings and the whole ant army, with the Raider pairs in front.",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "file": "8063f0c3b3b7e5b6b98d63dcd0c6eceb4c22550ce30bdda0e5d2aef9801e103c.webp",
+          "alt": "Forgefall: the Forgemaster's anvil lands on a creep camp in a wave of fire.",
+          "caption": "Forgefall: the Forgemaster's anvil lands on a creep camp in a wave of fire.",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "file": "8c8af37f2ac66794ed37db01fd8c96c9f3f5d9adc4fa216bd269fa8adc96f66f.webp",
+          "alt": "Unbottled: the Coilkeeper's violet storm drags enemies into its vortex.",
+          "caption": "Unbottled: the Coilkeeper's violet storm drags enemies into its vortex.",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "file": "ad854cb7d59dafef2703b77c0912d2461bdd43380cf2ccc04edbc36f522ccc60.webp",
+          "alt": "Arc Lash: forked lightning leaps from the Coilkeeper into the creeps.",
+          "caption": "Arc Lash: forked lightning leaps from the Coilkeeper into the creeps.",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "file": "d6156defa85c4f80618c0207d080c456d2c815e9d09fe309bf0b525d6551a1a6.webp",
+          "alt": "Bivouac: the General locks into a living fortress of gold light.",
+          "caption": "Bivouac: the General locks into a living fortress of gold light.",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "file": "51f863cc64a570ea6ffdbff856d2d9d5995dabb544ddac057fc0d6922789c994.webp",
+          "alt": "Volatile Draught: the Royal Alchemist's flask bursts over a creep camp.",
+          "caption": "Volatile Draught: the Royal Alchemist's flask bursts over a creep camp.",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "file": "bd20ff975f3e8615ccc53cdc588d51e00e1f4d83b7b95dfd912d8b17ea7c2ec9.webp",
+          "alt": "Some of the repainted icons: ant and beetle abilities, a research line that improves level by level, and the commands.",
+          "caption": "Some of the repainted icons: ant and beetle abilities, a research line that improves level by level, and the commands.",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "file": "8e2861171d00ccb1c50542b035de54e74e6a31f8a2a8a1944a2a4ce7d056c1b4.webp",
+          "alt": "The beetle HUD with the Hornbreaker selected: the new icons, and Abilities in the eighth slot with eleven skill points to spend.",
+          "caption": "The beetle HUD with the Hornbreaker selected: the new icons, and Abilities in the eighth slot with eleven skill points to spend.",
+          "width": 1600,
+          "height": 900
+        }
+      ],
+      "added": [
+        "Beetles now have a steel, brass and violet-magic HUD frame and resource ribbon; Ants keep their woodland interface.",
+        "Ants travel underground: units ordered far away walk to their nearest mound and come up at the mound nearest their destination, a few at a time per mound",
+        "The ant army is complete: Raiders hatch in pairs and frenzy together, Needlers fire chitin needles, Bursters run in and burst, Majors guard and plug, Honeypots lob nectar, Heralds lay scent trails and sound the alarm, Gardeners grow healing fungus, Alates fly ahead and found new mounds, Bullet Ants sting, and the Reaver Queen devours",
+        "Three ant heroes with four abilities each: the Queen (Found Colony raises a Brood Mound where she points, Royal Jelly heals and strengthens an ally, One Body shares the colony's wounds, and the Exodus ultimate sinks her army underground and brings it up beside any ally), the Royal Alchemist (Volatile Draught, Transfusion, Crystallise, and the Overdose ultimate) and the General (Mandible Charge, Mark Prey, War Column, and the Bivouac ultimate that locks the army into a living fortress)",
+        "Ant research at the Chitin Works, the Fungus Garden and the Brood Mound, and the Venom Spire tower upgrade"
+      ],
+      "improved": [
+        "A building works on one thing at a time: research waits for the units queued before it, and units for the research, as in Warcraft III. Its queue panel shows training, research and revivals in the order you queued them.",
+        "Ant buildings are rebuilt as sculpted sand-clay spire cathedrals with royal-blue drapes and glowing blossoms; each one animates while it works (swaying banners, opening mandibles, a dipping blade, a breathing crown)",
+        "The beetle Bombard is about a third smaller and the Juggernaut half its former size, so they no longer dwarf the army",
+        "Ant units have new models and portraits that read from above: the Worker, a stocky biting Raider, the needle-firing Needler, the armoured Major, a swollen amber Honeypot, the winged Alate, the Bullet Ant and the General, each animated as it walks, fights, casts and dies",
+        "The ants' Herald and Gardener have new six-legged models that walk on all six legs, and the Royal Alchemist hero has its model",
+        "Computer ant players found mounds near the front and send their armies through the tunnels",
+        "Every ant spell has its own visible cast and landing: casters glow and draw a sigil as they wind up, and hero spells raise pillars of light, so you can see who cast what",
+        "Ant heroes and the Major stand larger on the field, and every ant weapon lands with its own hit effect",
+        "Every beetle spell has its own look and a visible cast: casters wind up over a turning brass gear or arc glyph, Overload drains mana into an orb that bursts, Unbottled is a turning violet vortex, the Bolt Turret assembles from swirling plates, shields are hexagon domes and the Juggernaut's barrage walks across the ground",
+        "The Hornbreaker has his own spell effects: Horn Rush throws up a wall of dust behind him and bursts the earth where he lands, Steadfast lays a brass shield sigil under his allies, and Colossus ignites his furnace, blasts steam from his vents and leaves burning footprints",
+        "Beetle heroes stand larger on the field, as tall as the ant heroes",
+        "Computer opponents play with personalities: a rusher attacks early with its first units and skips the creeps, an expander takes a second base early and out-produces you, a technologist races up the tiers for its strongest units, and the rest play a steady all-round game. Each computer player picks one per match",
+        "Computer heroes save mana for their ultimates, so Unbottled, Overdose, Exodus and the other ultimates now appear in matches against the computer",
+        "Balance from hundreds of computer matches: Raider pairs cost 150 amber (was 160) with 185 health (was 170) and 8 damage (was 7); the General has 900 health, 44 damage and 4 armor, and War Column gives 10/15/20%; Lock Shields gives 4 armor and 30% less piercing damage (7 and 45% with Interlocking Shields); Overclock is 30/45/60%; Forgefall deals 200/300; Horn Rush recharges in 14 seconds instead of 10",
+        "Every icon is repainted to read at a glance: one clear subject per icon, near-invisible backgrounds, passives at full brightness with a pulse mark, gold marks for research levels, and upgrades that visibly improve the same object",
+        "A hero's Abilities sit in the eighth command slot with a count of unspent skill points, instead of a \"New spell available\" banner that showed even with no points to spend",
+        "Forgefall is rebuilt with new effect tools: a red-hot anvil falls trailing fire and smoke that hang in the air, lands, and sends a blast wave of fire racing out over the ground that cools into drifting ash",
+        "Spell effects fade softly where they meet the ground, units and buildings instead of cutting into them",
+        "Every ranged attack now leaves a trail: arrows and thorns a faint wake, nectar and venom glowing comet tails with falling drops, beetle bolts a violet streak, and siege shells arcs of fire and smoke",
+        "Ranged forest creatures fire their own magic: willow lights, dew bolts, bloom and spore shots in their own colours, each bursting where it lands",
+        "Beetle lightning forks and branches: Arc Lash, Arc Surge, Overload, the Unbottled storm and the beetles' arc weapons crackle with jagged, forking bolts",
+        "Pressure Mains is researched at the Brood Den, the network building it upgrades, instead of the Great Bastion"
+      ],
+      "fixed": [
+        "Computer Shieldbearers no longer lock their shields from afar and stand rooted behind their own army"
+      ],
+      "knownIssues": [],
+      "version": "0.4.1",
+      "publishedAt": "2026-10-20T17:38:07.858Z",
+      "title": "The ant colony"
+    },
     {
       "added": [
         "0.4 is the first milestone since the native rebuild: the beetles join the ants as a second complete, playable race; the forest runs on a new economy of amber and Substance, pumped from wells on contested deposits; and Echo Isles shows the game's new autumn forest look.",
