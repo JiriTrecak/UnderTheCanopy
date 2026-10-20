@@ -11,7 +11,10 @@ to its dense centre:
 - `flame-strip`: a strip of licking flame tongues, repeating along its length (ribbons);
 - `ash`: four ragged ash flakes (2 × 2);
 - `chunk`: four lumps of rock or slag with a lit top (2 × 2);
-- `blast-ring`: a ground shock ring smeared outwards, for blast waves.
+- `blast-ring`: a ground shock ring smeared outwards, for blast waves;
+- `mote`: a soft round mote with a dense heart: sparkles, droplets, embers, glowing heads;
+- `wake`: a soft band repeating along its length, faintly streaked: the air wake of a
+  thorn or a bolt (ribbons).
 """
 import json
 import math
@@ -121,7 +124,9 @@ def flame_strip(i, j, w, h):
     across = abs(v) * 1.05
     shape = 1 - smooth(edge * 0.35, edge, across)
     core = (1 - smooth(0.0, 0.55, across)) * (0.75 + 0.25 * licks)
-    value = min(1.0, 0.25 + 0.75 * core + 0.2 * (tongues - 0.5))
+    # Bright throughout (a layer's colour tints it; additive strips on bright ground need
+    # the light), a little hotter along the core; the shape is in the alpha.
+    value = min(1.0, 0.72 + 0.28 * core + 0.1 * (tongues - 0.5))
     return value, value, value, min(1.0, shape * (0.7 + 0.5 * tongues))
 
 
@@ -166,6 +171,24 @@ def blast_ring(i, j, w, h):
     return value, value, value, min(1.0, alpha)
 
 
+def mote(i, j, w, h):
+    u = (i + 0.5) / w * 2 - 1
+    v = 1 - (j + 0.5) / h * 2
+    r = math.hypot(u, v)
+    alpha = (1 - smooth(0.0, 1.0, r)) ** 1.6
+    value = 0.55 + 0.45 * (1 - smooth(0.0, 0.45, r))
+    return value, value, value, alpha
+
+
+def wake(i, j, w, h):
+    u = i / w
+    v = (j + 0.5) / h * 2 - 1
+    streak = fbm(u * 8, v * 2 + 3, 911, 3, period=8)
+    across = math.exp(-(v / (0.38 + 0.12 * streak)) ** 2)
+    value = 0.88 + 0.12 * streak
+    return value, value, value, min(1.0, across * (0.75 + 0.35 * streak))
+
+
 TEXTURES = {
     'puff': ('Cloud puff', 256, 256, atlas(256, 2, puff),
              'Four billowing cloud puffs (2 × 2): fire, smoke and dust, bright and dense at the heart.'),
@@ -176,6 +199,10 @@ TEXTURES = {
               'Four lumps of rock or slag lit from above (2 × 2): debris.'),
     'blast-ring': ('Blast ring', 256, 256, lambda i, j: blast_ring(i, j, 256, 256),
                    'A ground shock ring with a sharp front smeared back towards the centre.'),
+    'mote': ('Soft mote', 64, 64, lambda i, j: mote(i, j, 64, 64),
+             'A soft round mote with a dense heart: sparkles, droplets, embers and glowing heads.'),
+    'wake': ('Air wake', 128, 32, lambda i, j: wake(i, j, 128, 32),
+             'A soft band repeating along its length, faintly streaked: the air wake behind a thorn or bolt.'),
 }
 
 

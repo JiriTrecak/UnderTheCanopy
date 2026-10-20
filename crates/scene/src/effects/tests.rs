@@ -588,15 +588,101 @@ fn world_space_particles_ride_a_falling_layer_and_stay_behind_it() {
         .find(|e| e.ints[0] == kind::EMITTER)
         .unwrap();
     assert_ne!(e.ints[1] & flag::WORLD, 0);
-    assert_eq!(e.ints2[3], PATH_SAMPLES);
-    let path = &frame.paths[e.ints2[2] as usize..][..PATH_SAMPLES as usize];
-    assert!(
-        path[0][1] > path[PATH_SAMPLES as usize - 1][1] + 4.0,
-        "{path:?}"
-    );
+    // A sample every 25 ms of the 0.25 s of births so far.
+    let n = e.ints2[3] as usize;
+    assert!((8..=PATH_SAMPLES as usize).contains(&n), "{n}");
+    let path = &frame.paths[e.ints2[2] as usize..][..n];
+    assert!(path[0][1] > path[n - 1][1] + 4.0, "{path:?}");
     assert!(path.windows(2).all(|p| p[0][1] >= p[1][1]));
     // The ribbon is a textured strip along the same fall.
     assert!(!frame.ribbon_draws.is_empty());
     let strips = &frame.ribbons[frame.ribbon_draws[0].first as usize..];
     assert!(strips.iter().all(|r| r.color[3] == 2.0) && !strips.is_empty());
+}
+
+#[test]
+fn trails_ride_a_weapon_flight_and_outlive_its_missile() {
+    use super::Play;
+    use canopy_assets::CookedRibbon;
+    // A weapon's launch effect: an invisible missile carrying a ribbon and world-space motes.
+    let mut path = layer(Motion::Missile, Primitive::Particle);
+    path.id = "path".into();
+    path.start = 0.0;
+    path.height = 0.0;
+    path.intensity = Some(0.0);
+    let mut motes = layer(Motion::Emitter, Primitive::Particle);
+    motes.id = "motes".into();
+    motes.start = 0.0;
+    motes.height = 0.0;
+    motes.count = 16;
+    motes.rides = Some(0);
+    motes.emitter = Some(CookedEmitter {
+        lifetime: 0.5,
+        rate: 30.0,
+        direction: [0.0, 1.0, 0.0],
+        world: true,
+        ..Default::default()
+    });
+    let mut tail = layer(Motion::Ribbon, Primitive::Particle);
+    tail.id = "tail".into();
+    tail.start = 0.0;
+    tail.height = 0.0;
+    tail.rides = Some(0);
+    tail.ribbon = Some(CookedRibbon {
+        duration: 0.2,
+        width: 0.5,
+        tile: 1.0,
+        scroll: 0.0,
+        colour: None,
+        opacity: None,
+        width_curve: None,
+        additive: None,
+    });
+    let table = Arc::new(EffectTable {
+        effects: vec![effect("effect.test.shot", false, vec![path, motes, tail])],
+    });
+    let mut d = EffectDirector::bind(table.clone(), &[], BTreeMap::new(), |_| None);
+    // 20 m east over 20 ticks.
+    let cues = d.play_flight(
+        Play {
+            effect: 0,
+            tick: 0.0,
+            seed: 7,
+            at: Vec3::new(20.0, 1.0, 0.0),
+            from: Some(Vec3::new(0.0, 1.0, 0.0)),
+            radius: None,
+        },
+        20.0,
+        None,
+    );
+    assert_eq!(cues.len(), 3);
+    let snapshot = step(&mut d, 10, &[]);
+    let riding = snapshot.cues.iter().find(|c| c.layer == 1).unwrap();
+    // The trail's emitter flies with the shot: halfway at tick 10.
+    let at = super::frame::emitter_at(&table, riding, 10.0);
+    assert!((at.x - 10.0).abs() < 0.1, "{at}");
+    let mut evaluator = EffectEvaluator::new(table.clone());
+    let mut frame = EffectFrame::default();
+    let mut models = Vec::new();
+    evaluator.frame(None, &snapshot, 1.0, 10.0, None, &mut frame, &mut models);
+    // The invisible path draws nothing; the motes and the strip do.
+    assert!(
+        frame
+            .emitters
+            .iter()
+            .all(|e| e.ints[0] != canopy_render::effects::kind::MISSILE)
+    );
+    assert!(!frame.ribbon_draws.is_empty());
+    // The missile hits and its cues are stopped: what it shed lives on a while.
+    d.stop(&cues);
+    let after = step(&mut d, 21, &[]);
+    assert!(
+        after
+            .cues
+            .iter()
+            .any(|c| c.layer == 1 && c.ride_end.is_some())
+    );
+    assert!(after.cues.iter().all(|c| c.layer != 0));
+    let gone = step(&mut d, 60, &[]);
+    assert!(gone.cues.is_empty());
 }

@@ -1,8 +1,8 @@
 {
   "id": "effect.ants.kit.hit-needle",
   "name": "Needle hit",
-  "description": "A chitin needle strikes: a violet star and splinters.",
-  "durationTicks": 20,
+  "description": "A chitin needle strikes: a violet star, splinters and a puff of dust.",
+  "durationTicks": 24,
   "loop": false,
   "layers": [
     {
@@ -65,6 +65,87 @@
         "fadeIn": 0.0,
         "fadeOut": 0.55,
         "stretch": 0.05
+      }
+    },
+    {
+      "id": "dust",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c8a070",
+      "accent": "#f2dcb4",
+      "durationTicks": 26,
+      "count": 4,
+      "size": 0.9,
+      "height": 0.3,
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.vfx.puff",
+        "role": "image",
+        "index": 1
+      },
+      "flipbook": {
+        "columns": 2,
+        "rows": 2,
+        "firstFrame": 0,
+        "frames": 4,
+        "frameTicks": 400,
+        "mode": "once",
+        "randomStart": true
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 24,
+        "rate": 4,
+        "speed": 2.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": -0.5,
+        "drag": 2.0,
+        "spawnRadius": 0.3,
+        "startSize": 0.9,
+        "endSize": 2.16,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "sizeOverLife": [
+          {
+            "at": 0,
+            "value": 0.54
+          },
+          {
+            "at": 1,
+            "value": 2.16
+          }
+        ],
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.1,
+            "value": 0.45
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "erosionOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 1,
+            "value": 0.6
+          }
+        ]
       }
     }
   ]

@@ -12,6 +12,10 @@ Also writes the machines' weapon effects (effects/units/) and the Hornwatch's sh
 Brood Den's pressure (effects/buildings/), so every beetle weapon reads alike.
 """
 from gen_common import *
+import os as _os
+import sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+import vfx_layers as vl  # noqa: E402  (tools/content/vfx_layers.py)
 
 E = {}
 
@@ -96,6 +100,34 @@ def tracer(colour, accent, size=0.3, length=10.0, width=0.18, trail=6, trail_col
     if arc is not None:
         l['arcHeight'] = arc
     return l
+
+
+def head(colour, accent, size=0.3, length=10.0, intensity=8.0, arc=None):
+    """A bright elongated head along the flight (the path the shot's trails ride)."""
+    l = layer('tracer', 'missile', colour, accent, 40, 1, size, 0, blend='additive', texture=SPARK_DOT,
+              intensity=intensity, core=1.0, length=length)
+    if arc is not None:
+        l['arcHeight'] = arc
+    return l
+
+
+def substance_trail(colour, light, width=0.6, rate=70, size=0.14):
+    """A violet light wake and hot sparks shed behind a bolt, hanging in the air."""
+    return [vl.wake('trail-wake', 'tracer', light, colour, width=width, ticks=6, opacity=1.2, additive=0.7,
+                    texture=vl.WAKE, tile=2.0, scroll=2.0),
+            vl.motes('trail-sparks', 'tracer', light, colour, rate, size, 9, intensity=3.0, core=0.8, speed=1.4,
+                     texture=SPARK_DOT, stretch=0.03)]
+
+
+def shell_trail(arc, width, fire_rate, fire_size, smoke_size):
+    """A burning shell's trail: fire puffs cooling to smoke, a dark smoke column and embers,
+    all left hanging along its arc."""
+    return [vl.fire_trail('fire', 'tracer', fire_rate, fire_size, 16),
+            vl.smoke_trail('smoke', 'tracer', '#3e3a36', '#7a746c', 30, smoke_size, 50, opacity=0.5),
+            vl.motes('embers', 'tracer', EMBER, '#a02a08', 40, 0.16, 18, intensity=3.5, core=0.8, speed=1.6,
+                     gravity=6.0, texture=SPARK_DOT, stretch=0.04),
+            vl.wake('heat', 'tracer', FIRE_LIGHT, '#ff5a14', width=width, ticks=6, opacity=1.0, additive=0.65,
+                    texture=vl.FLAME_STRIP, tile=1.6, scroll=4.0)]
 
 
 def streaks(id_, colour=SUBSTANCE, accent=SUBSTANCE_HOT, count=12, speed=9.0, size=0.08, lifetime=12, gravity=12.0,
@@ -358,7 +390,8 @@ def build():
             streaks('sparks', count=9, speed=10.0, size=0.08, lifetime=9, gravity=10, cone=55, anchor='source'),
             puffs('steam', count=3, speed=1.4, size=0.8, height=0.1, lifetime=26, rise=-2.0).__or__(
                 {'anchor': 'source'}),
-            tracer('#8a5cff', WHITE, trail_colour='#7a4cff'),
+            head('#8a5cff', WHITE),
+            *substance_trail('#7a4cff', '#c8b4ff'),
         ]))
     W['bolt_hit'] = add('weapons/bolt-impact', effect(
         'effect.beetles.weapons.bolt-impact', 'Bolt impact',
@@ -366,6 +399,7 @@ def build():
             glint('glint', SUBSTANCE, 2.2, duration=5, height=0.3, intensity=2.8),
             streaks('sparks', count=12, speed=8.5, size=0.08, lifetime=11, gravity=14, cone=80, height=0.3),
             puffs('dust', '#b8a890', '#e0d6c4', count=2, speed=1.2, size=0.55, height=0.0, lifetime=18, rise=-0.6),
+            vl.ring('ring', VIOLET, 3.0, duration=8, intensity=0.9),
         ]))
     W['drill'] = add('weapons/drill-strike', effect(
         'effect.beetles.weapons.drill-strike', 'Drill strike',
@@ -403,7 +437,10 @@ def build():
         'effect.beetles.weapons.syringe', 'Syringe dart', 'A hissing dart of pressurised tonic.', 40, [
             puffs('hiss', count=2, speed=0.8, size=0.45, height=0.1, lifetime=18, rise=-1.4).__or__({'anchor': 'source'}),
             glint('flash', BLUE, 0.9, duration=3, anchor='source', intensity=1.6),
-            tracer('#8fa6ff', WHITE, size=0.13, length=7, width=0.06, trail=5, trail_colour=BLUE, intensity=4.0),
+            head('#8fa6ff', WHITE, size=0.13, length=7, intensity=4.0),
+            vl.wake('wake', 'tracer', BLUE_LIGHT, BLUE, width=0.4, ticks=7, opacity=1.0, additive=0.7),
+            vl.motes('mist', 'tracer', '#b8c8ff', BLUE, 30, 0.28, 14, intensity=1.3, speed=0.5),
+            vl.drips('drops', 'tracer', '#8fa6ff', '#5b7bff', 10, 0.14, additive=0.5),
         ]))
     W['syringe_hit'] = add('weapons/syringe-impact', effect(
         'effect.beetles.weapons.syringe-impact', 'Dart splash', 'A small blue splash.', 18, [
@@ -435,7 +472,9 @@ def build_machines():
         'A searing violet beam from the emitter to the target for an instant, and a hot tracer riding the bolt.', 40, [
             beam('halo', VIOLET, VIOLET_LIGHT, 0.9, 4, height=0.0, spread=0.12, intensity=0.4),
             beam('beam', '#b89cff', WHITE, 0.22, 4, height=0.0, spread=0.08),
-            tracer('#c4a8ff', WHITE, size=0.26, length=8, width=0.14, trail=6, trail_colour=VIOLET, intensity=5.0),
+            head('#c4a8ff', WHITE, size=0.26, length=8, intensity=5.0),
+            *substance_trail(VIOLET, '#d8c8ff', width=0.7),
+            vl.smoke_trail('steam', 'tracer', '#e8ecf2', '#ffffff', 30, 0.8, 24, opacity=0.45, rise=-1.0),
         ]))
     add_at('units/steamwing-muzzle', effect(
         'effect.beetles.steamwing-muzzle', 'Steamwing emitter flash',
@@ -458,8 +497,8 @@ def build_machines():
     add_at('units/bombard-trail', effect(
         'effect.units.bombard-trail', 'Bombard shell trail',
         'A burning fuse riding the shell up its arc, trailing embers and a violet glow.', 40, [
-            tracer(EMBER, FIRE_LIGHT, size=0.45, length=1.6, width=0.32, trail=14, trail_colour='#ff7a2a', arc=9,
-                   intensity=4.0),
+            head(EMBER, FIRE_LIGHT, size=0.45, length=1.6, arc=9, intensity=4.0),
+            *shell_trail(9, 1.2, 70, 1.3, 1.5),
         ]))
     add_at('units/bombard-launch', effect(
         'effect.units.bombard-launch', 'Bombard launch',
@@ -496,8 +535,8 @@ def build_machines():
         40, [missile_model('asset.models.units.beetles-juggernaut', 1.6, arc=4.5, index=2)]))
     add_at('units/juggernaut-trail', effect(
         'effect.units.juggernaut-trail', 'Juggernaut shell trail', 'A glowing shell trailing fire across the field.', 40, [
-            tracer(EMBER, FIRE_LIGHT, size=0.55, length=2.2, width=0.4, trail=12, trail_colour='#ff6a1a', arc=4.5,
-                   intensity=4.5),
+            head(EMBER, FIRE_LIGHT, size=0.55, length=2.2, arc=4.5, intensity=4.5),
+            *shell_trail(4.5, 1.4, 80, 1.5, 1.7),
         ]))
     add_at('units/juggernaut-muzzle', effect(
         'effect.units.juggernaut-muzzle', 'Juggernaut cannon',
@@ -855,13 +894,14 @@ def build_heroes():
                       'erosionOverLife': keys((0, 0), (1, 0.6)),
                       'turbulence': {'strength': 0.6, 'scale': 2.0, 'speed': 1.0}}),
             layer('trail-ribbon', 'ribbon', '#fff0c0', '#a02008', fall, 1, 1.0, 0, startTick=fall_start,
-                  blend='additive', rides='anvil', offset={'x': 0, 'y': 1.7, 'z': 0}, intensity=1.6,
+                  blend='normal', rides='anvil', offset={'x': 0, 'y': 1.7, 'z': 0}, intensity=1.6,
                   texture=FLAME_STRIP,
                   ribbon={'durationTicks': 12, 'width': 3.4, 'tile': 5.0, 'scroll': 3.0,
                           'colourOverLife': [{'at': 0, 'colour': '#fff0c0'}, {'at': 0.3, 'colour': '#ffa040'},
                                              {'at': 1, 'colour': '#a02008'}],
                           'opacityOverLife': keys((0, 1), (1, 0)),
-                          'widthOverLife': keys((0, 0.8), (0.2, 1.0), (1, 0.25))}),
+                          'widthOverLife': keys((0, 0.8), (0.2, 1.0), (1, 0.25)),
+                          'additiveOverLife': keys((0, 0.6), (1, 0.9))}),
             layer('trail-embers', 'particles', EMBER, '#a02a08', fall, 40, 0.1, 0, startTick=fall_start,
                   blend='additive', rides='anvil', offset={'x': 0, 'y': 1.2, 'z': 0}, intensity=4.0, core=0.8,
                   texture=SPARK_DOT,

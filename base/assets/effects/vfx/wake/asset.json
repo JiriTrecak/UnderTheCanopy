@@ -1,0 +1,18 @@
+{
+  "id": "asset.effects.vfx.wake",
+  "name": "Air wake",
+  "kind": "texture",
+  "tags": [
+    "effect",
+    "vfx",
+    "particle"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original procedural effect art for Under the Canopy (tools/content/vfx_art.py). A soft band repeating along its length, faintly streaked: the air wake behind a thorn or bolt."
+}

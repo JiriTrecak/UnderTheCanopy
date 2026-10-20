@@ -49,7 +49,7 @@ Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a
 - **Unit-only:** `supplyCost`; `maxOwned` (at most that many living or in training per player: one Juggernaut at a time).
 - **`presentation`** says how *this* unit shows its model:
   - `projectile` and `projectileSocket` (the missile's visual effect and the model node it leaves from);
-  - `launchEffect`: a full effect played as each missile or shell leaves, from the projectile socket to the target and lasting the flight: muzzle flash, steam, a tracer `missile` layer with a `trail`, or a `beam` to the target;
+  - `launchEffect`: a full effect played as each missile or shell leaves, from the projectile socket to the target and lasting the flight: muzzle flash, steam, a `beam` to the target, and the shot's trail: a `missile` layer on the projectile's arc (a glowing head, or invisible with `intensity: 0`) that particle and ribbon layers `ride` in world space (D77; builders in `tools/content/vfx_layers.py`, shared flights `effect.weapons.*-flight`). A magical shot may drop `projectile` and let the launch effect's glowing head be the shot;
   - `impactEffect` (where its shells and missiles land, and where its melee blows strike);
   - `castContact` (share of the cast animation at which a spell lands);
   - `cameraAnchor`;

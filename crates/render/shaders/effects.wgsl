@@ -1038,10 +1038,11 @@ fn vs_ribbon(@builtin(vertex_index) vi: u32, @builtin(instance_index) ii: u32) -
 fn fs_ribbon(in: RibbonOut) -> @location(0) vec4f {
     var color = in.color.rgb;
     var alpha = in.color.a;
+    // Textured strips repeat along their length: sampled in uniform control flow (the
+    // derivatives of the unwrapped coordinate pick the mip), used by strips only.
+    let uv = vec2f(in.edge.y, 0.5 - in.edge.x * 0.5);
+    let texel = textureSampleGrad(effect_texture, effect_sampler, vec2f(fract(uv.x), uv.y), dpdx(uv), dpdy(uv));
     if (in.edge.z > 1.5) {
-        // Textured strips repeat along their length.
-        let uv = vec2f(in.edge.y, 0.5 - in.edge.x * 0.5);
-        let texel = textureSampleGrad(effect_texture, effect_sampler, vec2f(fract(uv.x), uv.y), dpdx(uv), dpdy(uv));
         color *= texel.rgb;
         alpha *= texel.a;
     } else if (in.edge.z < 0.5) {

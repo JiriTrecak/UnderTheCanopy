@@ -1,0 +1,138 @@
+{
+  "id": "effect.ants.kit.nectar-hit",
+  "name": "Nectar splash",
+  "description": "A glob of nectar bursts: an amber flash, a sticky ring and droplets that land and glow.",
+  "durationTicks": 30,
+  "loop": false,
+  "layers": [
+    {
+      "id": "flare",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#fff0c0",
+      "accent": "#ffffff",
+      "durationTicks": 5,
+      "count": 1,
+      "size": 3.2,
+      "height": 0.6,
+      "blend": "additive",
+      "intensity": 2.4,
+      "core": 0.8,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.5
+        },
+        {
+          "at": 0.3,
+          "value": 1.0
+        },
+        {
+          "at": 1,
+          "value": 1.2
+        }
+      ],
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 1
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#ffc870",
+      "accent": "#ffffff",
+      "durationTicks": 10,
+      "count": 1,
+      "size": 4.0,
+      "height": 0.08,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.0,
+      "texture": {
+        "asset": "asset.effects.vfx.blast-ring",
+        "role": "image",
+        "index": 1
+      },
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.2
+        },
+        {
+          "at": 0.3,
+          "value": 0.75
+        },
+        {
+          "at": 1,
+          "value": 1.0
+        }
+      ],
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 1
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "drops",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#ffc040",
+      "accent": "#c86a10",
+      "durationTicks": 26,
+      "count": 14,
+      "size": 0.24,
+      "height": 0.6,
+      "blend": "additive",
+      "intensity": 1.6,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 24,
+        "rate": 14,
+        "speed": 6.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 80,
+        "gravity": 14,
+        "drag": 1.5,
+        "spawnRadius": 0.2,
+        "startSize": 0.24,
+        "endSize": 0.048,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.6,
+        "collide": {
+          "friction": 0.9
+        }
+      },
+      "core": 0.6
+    }
+  ]
+}

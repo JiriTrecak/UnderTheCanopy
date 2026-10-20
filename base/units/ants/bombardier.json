@@ -67,7 +67,8 @@
     "projectile": "effect.weapon.nectar",
     "projectileSocket": "socket_projectile",
     "impactEffect": "effect.ants.kit.glob-impact",
-    "castContact": 0.3076923076923077
+    "castContact": 0.3076923076923077,
+    "launchEffect": "effect.ants.kit.glob-flight"
   },
   "underground": false
 }

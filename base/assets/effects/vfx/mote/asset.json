@@ -1,0 +1,18 @@
+{
+  "id": "asset.effects.vfx.mote",
+  "name": "Soft mote",
+  "kind": "texture",
+  "tags": [
+    "effect",
+    "vfx",
+    "particle"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original procedural effect art for Under the Canopy (tools/content/vfx_art.py). A soft round mote with a dense heart: sparkles, droplets, embers and glowing heads."
+}

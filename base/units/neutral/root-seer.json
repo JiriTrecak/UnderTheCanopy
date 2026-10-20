@@ -62,7 +62,8 @@
   "supplyCost": 1,
   "modelScale": 3.35,
   "presentation": {
-    "projectile": "effect.weapon.thorn",
-    "projectileSocket": "socket_projectile"
+    "projectileSocket": "socket_projectile",
+    "launchEffect": "effect.neutral.root-seer-bolt",
+    "impactEffect": "effect.neutral.root-seer-burst"
   }
 }

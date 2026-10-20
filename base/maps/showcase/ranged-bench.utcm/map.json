@@ -1,0 +1,426 @@
+{
+  "biome": "autumn-forest",
+  "sandbox": true,
+  "camps": [
+    {
+      "aggression": "players",
+      "aggroRange": 24,
+      "home": {
+        "x": 105.0,
+        "y": 78.0
+      },
+      "id": "bench.camp",
+      "leash": 40,
+      "lootPool": "loot.camp.easy",
+      "members": [
+        "bench.camp.0",
+        "bench.camp.1",
+        "bench.camp.2",
+        "bench.camp.3",
+        "bench.camp.4",
+        "bench.camp.5",
+        "bench.camp.6",
+        "bench.camp.7",
+        "bench.camp.8",
+        "bench.camp.9",
+        "bench.camp.10",
+        "bench.camp.11",
+        "bench.camp.12",
+        "bench.camp.13"
+      ]
+    }
+  ],
+  "size": 256,
+  "playerStarts": [
+    {
+      "mainFort": "start.player.1/main-fort",
+      "player": 1,
+      "setup": "setup.beetles",
+      "x": 113.5,
+      "z": 129.5
+    }
+  ],
+  "entities": [
+    {
+      "definition": "building.beetles.great-bastion",
+      "id": "bench.hall",
+      "owner": "player.1",
+      "initialState": {
+        "construction": "complete",
+        "inventory": {
+          "item.amber": 20000
+        }
+      },
+      "position": {
+        "x": 113.5,
+        "y": 129.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "id": "bench.shooter.0",
+      "owner": "player.1",
+      "position": {
+        "x": 60.0,
+        "y": 70.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.nectarist",
+      "id": "bench.shooter.1",
+      "owner": "player.1",
+      "position": {
+        "x": 67.0,
+        "y": 70.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.banneret",
+      "id": "bench.shooter.2",
+      "owner": "player.1",
+      "position": {
+        "x": 74.0,
+        "y": 70.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.bombardier",
+      "id": "bench.shooter.3",
+      "owner": "player.1",
+      "position": {
+        "x": 81.0,
+        "y": 70.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.beetles.bolter",
+      "id": "bench.shooter.4",
+      "owner": "player.1",
+      "position": {
+        "x": 88.0,
+        "y": 70.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.beetles.arcwright",
+      "id": "bench.shooter.5",
+      "owner": "player.1",
+      "position": {
+        "x": 95.0,
+        "y": 70.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.beetles.mender",
+      "id": "bench.shooter.6",
+      "owner": "player.1",
+      "position": {
+        "x": 102.0,
+        "y": 70.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.beetles.steamwing",
+      "id": "bench.shooter.7",
+      "owner": "player.1",
+      "position": {
+        "x": 109.0,
+        "y": 70.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.beetles.bombard",
+      "id": "bench.shooter.8",
+      "owner": "player.1",
+      "position": {
+        "x": 116.0,
+        "y": 70.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.beetles.juggernaut",
+      "id": "bench.shooter.9",
+      "owner": "player.1",
+      "position": {
+        "x": 123.0,
+        "y": 70.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.beetles.warden",
+      "id": "bench.shooter.10",
+      "owner": "player.1",
+      "position": {
+        "x": 130.0,
+        "y": 70.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.queen",
+      "id": "bench.hero.0",
+      "owner": "player.1",
+      "initialState": {
+        "experience": 5200
+      },
+      "position": {
+        "x": 70.0,
+        "y": 62.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.royal-alchemist",
+      "id": "bench.hero.1",
+      "owner": "player.1",
+      "initialState": {
+        "experience": 5200
+      },
+      "position": {
+        "x": 84.0,
+        "y": 62.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.beetles.forgemaster",
+      "id": "bench.hero.2",
+      "owner": "player.1",
+      "initialState": {
+        "experience": 5200
+      },
+      "position": {
+        "x": 98.0,
+        "y": 62.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.beetles.coilkeeper",
+      "id": "bench.hero.3",
+      "owner": "player.1",
+      "initialState": {
+        "experience": 5200
+      },
+      "position": {
+        "x": 112.0,
+        "y": 62.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.ants.tower",
+      "id": "bench.tower.0",
+      "owner": "player.1",
+      "initialState": {
+        "construction": "complete"
+      },
+      "position": {
+        "x": 143.5,
+        "y": 67.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.ants.venom-spire",
+      "id": "bench.tower.1",
+      "owner": "player.1",
+      "initialState": {
+        "construction": "complete"
+      },
+      "position": {
+        "x": 155.5,
+        "y": 67.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.beetles.hornwatch",
+      "id": "bench.tower.2",
+      "owner": "player.1",
+      "initialState": {
+        "construction": "complete"
+      },
+      "position": {
+        "x": 167.5,
+        "y": 67.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.beetles.arc-tower",
+      "id": "bench.tower.3",
+      "owner": "player.1",
+      "initialState": {
+        "construction": "complete"
+      },
+      "position": {
+        "x": 179.5,
+        "y": 67.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.needle-wasp",
+      "id": "bench.camp.0",
+      "owner": "none",
+      "position": {
+        "x": 66.0,
+        "y": 84.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.thorn-slinger",
+      "id": "bench.camp.1",
+      "owner": "none",
+      "position": {
+        "x": 79.0,
+        "y": 84.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.twigcaster",
+      "id": "bench.camp.2",
+      "owner": "none",
+      "position": {
+        "x": 92.0,
+        "y": 84.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.seedcaster",
+      "id": "bench.camp.3",
+      "owner": "none",
+      "position": {
+        "x": 105.0,
+        "y": 84.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.old-root",
+      "id": "bench.camp.4",
+      "owner": "none",
+      "position": {
+        "x": 118.0,
+        "y": 84.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.spitter",
+      "id": "bench.camp.5",
+      "owner": "none",
+      "position": {
+        "x": 131.0,
+        "y": 84.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.tree-frog",
+      "id": "bench.camp.6",
+      "owner": "none",
+      "position": {
+        "x": 144.0,
+        "y": 84.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.willow-wisp",
+      "id": "bench.camp.7",
+      "owner": "none",
+      "position": {
+        "x": 66.0,
+        "y": 90.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.dew-sprite",
+      "id": "bench.camp.8",
+      "owner": "none",
+      "position": {
+        "x": 79.0,
+        "y": 90.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.bloom-witch",
+      "id": "bench.camp.9",
+      "owner": "none",
+      "position": {
+        "x": 92.0,
+        "y": 90.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.root-seer",
+      "id": "bench.camp.10",
+      "owner": "none",
+      "position": {
+        "x": 105.0,
+        "y": 90.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.tadpole-spirit",
+      "id": "bench.camp.11",
+      "owner": "none",
+      "position": {
+        "x": 118.0,
+        "y": 90.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.violet-sporeling",
+      "id": "bench.camp.12",
+      "owner": "none",
+      "position": {
+        "x": 131.0,
+        "y": 90.0
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.puffcap",
+      "id": "bench.camp.13",
+      "owner": "none",
+      "position": {
+        "x": 144.0,
+        "y": 90.0
+      },
+      "rotation": 180.0
+    }
+  ],
+  "terrain": {
+    "paint": [],
+    "textureGrid": {
+      "cellSize": 5,
+      "origin": [
+        -0.5,
+        -0.5
+      ]
+    },
+    "waterProfiles": []
+  }
+}

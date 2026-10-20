@@ -45,8 +45,13 @@ use std::{
     sync::Arc,
 };
 
-/// Live cues at once; further events are not shown (old player: 64 per player).
+/// Live cues of ability events at once; further events are not shown (old player: 64
+/// per player).
 pub const MAX_CUES: usize = 256;
+/// Live cues of plays outside ability events at once (weapon launches with their trails,
+/// impacts, building states): their own budget, so a big battle's arrows never hide a
+/// spell.
+pub const MAX_PLAY_CUES: usize = 768;
 /// Effect lights at once (old `EffectLights` pool of 4; the renderer's budget since
 /// buildings light their work, D65).
 pub const MAX_LIGHTS: usize = canopy_render::effects::MAX_EFFECT_LIGHTS;
@@ -712,7 +717,18 @@ impl EffectDirector {
         {
             return None;
         }
-        if self.cues.len() >= MAX_CUES {
+        let (room, live) = if recipe.is_some() {
+            (
+                MAX_CUES,
+                self.cues.iter().filter(|c| c.recipe.is_some()).count(),
+            )
+        } else {
+            (
+                MAX_PLAY_CUES,
+                self.cues.iter().filter(|c| c.recipe.is_none()).count(),
+            )
+        };
+        if live >= room {
             tracing::debug!("effect cue budget reached");
             return None;
         }
@@ -1499,11 +1515,12 @@ impl EffectDirector {
                 }
             }
             if c.travels {
-                // Missiles home on their anchored unit.
+                // Missiles home on their anchored unit (at the cue's own height: a riding
+                // layer adds the ridden layer's lift itself).
                 if l.motion == Motion::Missile
                     && let Some(anchor) = c.entity.and_then(|e| scene.anchor(e))
                 {
-                    c.view.destination = anchor + Vec3::Y * l.height;
+                    c.view.destination = anchor + Vec3::Y * own.height;
                 }
                 // A weapon missile carrying the cast leads (old `deliveryPose`).
                 if let Some(cast) = c.cast

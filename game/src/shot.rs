@@ -18,7 +18,8 @@ use canopy_render::{
 use std::path::Path;
 
 /// Plays the shot's standalone effects at the camera's focus (in a row, 8 m apart), each
-/// started `age` ticks before the captured tick, travelling layers from 6 m west.
+/// started `age` ticks before the captured tick, travelling layers from 6 m west; flights
+/// (`--flight`) fly a weapon's launch effect from the west in rows 4 m apart.
 fn play_effects(options: &Options, loaded: &world::Loaded, game: &mut world::Match) -> Result<()> {
     use canopy_render::water::ripples::WaterField;
     if options.effects.is_empty() {
@@ -38,7 +39,24 @@ fn play_effects(options: &Options, loaded: &world::Loaded, game: &mut world::Mat
             .effects
             .find(&spec.id)
             .with_context(|| format!("--effect {}: no such effect in the pack", spec.id))?;
-        let x = fx + (i as f32 - (n - 1.0) / 2.0) * 8.0;
+        let offset = i as f32 - (n - 1.0) / 2.0;
+        if let Some((metres, ticks)) = spec.flight {
+            let z = fz + offset * 4.0;
+            let y = terrain.walk(fx, z, 0) + 1.0;
+            let play = canopy_scene::effects::Play {
+                effect,
+                tick: f64::from(options.tick) - f64::from(spec.age),
+                seed: 1 + i as u32,
+                at: glam::Vec3::new(fx, y, z),
+                from: Some(glam::Vec3::new(fx - metres, y + 0.5, z)),
+                radius: None,
+            };
+            game.presenter
+                .effects
+                .play_flight(play, f64::from(ticks.max(1)), None);
+            continue;
+        }
+        let x = fx + offset * 8.0;
         let y = terrain.walk(x, fz, 0);
         game.presenter.effects.play(canopy_scene::effects::Play {
             effect,

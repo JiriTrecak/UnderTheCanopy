@@ -148,15 +148,110 @@
       },
       "intensity": 8.0,
       "core": 1.0,
-      "length": 10.0,
-      "trail": {
+      "length": 10.0
+    },
+    {
+      "id": "trail-wake",
+      "enabled": true,
+      "shape": "ribbon",
+      "colour": "#c8b4ff",
+      "accent": "#7a4cff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 1.0,
+      "height": 0,
+      "rides": "tracer",
+      "blend": "normal",
+      "texture": {
+        "asset": "asset.effects.vfx.wake",
+        "role": "image",
+        "index": 1
+      },
+      "intensity": 1.2,
+      "ribbon": {
         "durationTicks": 6,
-        "maxPoints": 12,
-        "width": 0.18,
-        "colour": "#7a4cff",
-        "opacity": 1.0,
-        "breakDistance": 6
+        "width": 0.6,
+        "tile": 2.0,
+        "scroll": 2.0,
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 1
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "widthOverLife": [
+          {
+            "at": 0,
+            "value": 0.6
+          },
+          {
+            "at": 0.15,
+            "value": 1
+          },
+          {
+            "at": 1,
+            "value": 0.35
+          }
+        ],
+        "additiveOverLife": [
+          {
+            "at": 0,
+            "value": 0.7
+          },
+          {
+            "at": 1,
+            "value": 1.0
+          }
+        ]
       }
+    },
+    {
+      "id": "trail-sparks",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c8b4ff",
+      "accent": "#7a4cff",
+      "durationTicks": 40,
+      "count": 17,
+      "size": 0.14,
+      "height": 0,
+      "rides": "tracer",
+      "blend": "additive",
+      "intensity": 3.0,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 9,
+        "rate": 70,
+        "speed": 1.4,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 180,
+        "gravity": 0.0,
+        "drag": 1.5,
+        "spawnRadius": 0.12,
+        "startSize": 0.14,
+        "endSize": 0.035,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.6,
+        "space": "world",
+        "inheritVelocity": 0.1,
+        "stretch": 0.03
+      },
+      "core": 0.8
     }
   ]
 }

@@ -611,7 +611,10 @@ fn effects_fog_world_ui_and_hud_images_render() {
     use canopy_render::{
         PortraitSubject,
         actors::ActorInstance,
-        effects::{Blend, EffectDraw, EffectFrame, Emitter, Geometry, RibbonQuad, kind},
+        effects::{
+            Blend, EffectDraw, EffectFrame, Emitter, Geometry, RibbonDraw, RibbonQuad, StripPoint,
+            kind,
+        },
         fog::FogCells,
         world_ui::{OverlayVertex, WorldUiFrame, overlay},
     };
@@ -711,6 +714,37 @@ fn effects_fog_world_ui_and_hud_images_render() {
     assert!(report.effects.draws >= 2, "{:?}", report.effects);
     let after = luminance(&lit, centre.0, centre.1, centre.2, centre.3);
     assert!(after > before + 20.0, "effects {before} → {after}");
+
+    // A textured strip (untextured: white) across the middle brightens it too.
+    let strip_point = |x: f32| StripPoint {
+        position: [x, 3.0, 0.0],
+        tangent: [1.0, 0.0, 0.0],
+        width: 3.0,
+        u: 0.0,
+        color: [1.0, 1.0, 1.0],
+        opacity: 1.0,
+    };
+    let mut strip = EffectFrame {
+        ribbons: vec![RibbonQuad::strip(
+            &strip_point(-6.0),
+            &strip_point(6.0),
+            1.0,
+            0.4,
+        )],
+        ribbon_draws: vec![RibbonDraw {
+            texture: None,
+            first: 0,
+            count: 1,
+        }],
+        ..EffectFrame::default()
+    };
+    renderer.set_effects(&mut strip);
+    let (_, striped) = shoot(&mut renderer);
+    let lit_by_strip = luminance(&striped, centre.0, centre.1, centre.2, centre.3);
+    assert!(
+        lit_by_strip > before + 20.0,
+        "strip {before} → {lit_by_strip}"
+    );
 
     // Effects read the scene's depth: the same sprite under the ground does not show.
     let mut buried = EffectFrame {

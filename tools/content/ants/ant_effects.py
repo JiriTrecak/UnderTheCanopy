@@ -20,6 +20,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 from gen_common import (write, layer, emitter, flash, ring, glow, burst, pulse, effect, puffs, VIOLET, VIOLET_LIGHT,
                         WHITE, BURST_TEX, FLIPBOOK)
 from gen_effects import streaks, glint, orb, shock, SPARK_DOT
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import vfx_layers as vl  # noqa: E402  (tools/content/vfx_layers.py)
 
 S = 40
 
@@ -66,6 +68,71 @@ def put(key, e):
 
 def eff(key, name, description, duration, layers, loop=False):
     return put(key, effect('effect.ants.kit.' + key, name, description, duration, layers, loop=loop))
+
+
+# ----- weapon flights -----------------------------------------------------------------------
+
+# The thorn and nectar projectiles' arc (effects/weapons/thorn.json, nectar.json).
+ARC = 0.65
+
+
+def spit(id_='flash'):
+    """The spit at the spitter's mouth."""
+    return [glint(id_, VIOLET_HOT, 1.4, duration=4, anchor='source', intensity=2.4),
+            streaks('spray', VIOLET, VIOLET_LIGHT, count=5, speed=6, size=0.05, lifetime=8, gravity=6, cone=30,
+                    anchor='source')]
+
+
+def nectar_trail(width, rate, drip, sparkle=None):
+    """A glowing amber tail streaming from a nectar glob, motes of light and sticky drops
+    falling from it."""
+    layers = [vl.carrier(ARC, head=(GOLD_LIGHT, width * 0.7, 1.8)),
+              vl.wake('tail', 'path', '#ffb840', '#c86a10', width=width, ticks=9, opacity=1.3, additive=0.6,
+                      texture=vl.FLAME_STRIP, tile=width * 2.4, scroll=4.0),
+              vl.motes('glow', 'path', AMBER, '#c86a10', rate, width * 0.5, 16, intensity=1.5, core=0.5,
+                       speed=0.6, gravity=-0.3),
+              vl.drips('drops', 'path', '#e8a030', '#a85a10', drip, 0.22, additive=0.6, intensity=1.3)]
+    if sparkle:
+        layers.append(vl.motes('sparkles', 'path', GOLD_LIGHT, GOLD, sparkle, 0.26, 22, intensity=2.4, core=0.8,
+                               speed=1.2, turbulence={'strength': 0.3, 'scale': 0.8, 'speed': 2.0}))
+    return layers
+
+
+def weapon_flights():
+    """Every ant shot leaves a trail: thorns a faint wake, venom and nectar a glowing tail
+    and drops that fall and land."""
+    eff('spit-thorn', 'Spit and thorn', 'A violet spit at the mouth and the faint wake of the thorn it throws.', S, [
+        *spit(),
+        vl.carrier(ARC),
+        vl.wake('wake', 'path', '#fbf6ea', width=0.42, ticks=8, opacity=0.85),
+        vl.motes('dust', 'path', '#e2d6be', '#cfc2a6', 30, 0.28, 14, additive=False, intensity=0.7, speed=0.4),
+    ])
+    eff('spit-venom', 'Venom spit',
+        'A violet spit at the mouth and a glowing glob of venom streaming a violet tail and dripping as it flies.',
+        S, [
+            *spit(),
+            vl.carrier(ARC, head=(VIOLET_LIGHT, 0.8, 2.0)),
+            vl.wake('tail', 'path', VIOLET_HOT, VIOLET, width=0.9, ticks=9, opacity=1.3, additive=0.6,
+                    texture=vl.FLAME_STRIP, tile=2.2, scroll=4.0),
+            vl.motes('glow', 'path', VIOLET_HOT, VIOLET, 45, 0.4, 16, intensity=1.5, core=0.5, speed=0.6),
+            vl.drips('drops', 'path', '#7a3ad8', '#4a1a90', 16, 0.2, additive=0.6, intensity=1.3),
+        ])
+    eff('nectar-flight', 'Nectar glob flight',
+        'A glob of glowing nectar streaming an amber tail, shedding motes of light and sticky drops that land.', S,
+        nectar_trail(1.0, 45, 16))
+    eff('royal-nectar-flight', 'Royal nectar flight',
+        'A hero\'s glob of nectar: a wider amber tail, motes of light, golden sparkles and falling drops.', S,
+        nectar_trail(1.3, 55, 18, sparkle=40))
+    eff('glob-flight', 'Nectar bomb flight',
+        'A heavy nectar bomb on its arc: a broad amber tail, a haze of glowing motes and drops raining off it.', S,
+        nectar_trail(1.9, 70, 34))
+    eff('nectar-hit', 'Nectar splash',
+        'A glob of nectar bursts: an amber flash, a sticky ring and droplets that land and glow.', 30, [
+            vl.flare('flare', GOLD_LIGHT, 3.2, duration=5, intensity=2.4),
+            vl.ring('ring', AMBER, 4.0, duration=10, intensity=1.0),
+            vl.burst('drops', '#ffc040', '#c86a10', 14, 0.24, speed=6.0, lifetime=24, gravity=14, collide=0.9,
+                     intensity=1.6, cone=80),
+        ])
 
 
 # ----- building blocks ----------------------------------------------------------------------
@@ -194,10 +261,11 @@ def build():
         streaks('chips', AMBER, GOLD_LIGHT, count=6, speed=6, size=0.06, lifetime=10, gravity=16, cone=80, height=0.5),
         puffs('dust', EARTH, EARTH_LIGHT, count=2, speed=1.0, size=0.5, height=0.0, lifetime=16, rise=-0.5),
     ])
-    eff('hit-needle', 'Needle hit', 'A chitin needle strikes: a violet star and splinters.', 20, [
+    eff('hit-needle', 'Needle hit', 'A chitin needle strikes: a violet star, splinters and a puff of dust.', 24, [
         glint('glint', VIOLET, 1.6, duration=5, height=0.4, intensity=2.6),
         streaks('splinters', VIOLET_HOT, VIOLET_LIGHT, count=8, speed=7, size=0.06, lifetime=10, gravity=12,
                 cone=70, height=0.4),
+        vl.puff('dust', EARTH, EARTH_LIGHT, 4, 0.9, lifetime=24, opacity=0.45),
     ])
     eff('hit-heavy', 'Heavy blow', 'A heavy head-butt or slam: a shock ring, a dust burst and a glint.', 28, [
         glint('glint', GOLD, 2.2, duration=5, height=0.7, intensity=2.4),
@@ -230,6 +298,7 @@ def build():
         streaks('spray', VIOLET, VIOLET_LIGHT, count=5, speed=6, size=0.05, lifetime=8, gravity=6, cone=30,
                 anchor='source'),
     ])
+    weapon_flights()
 
     # --- Raider, Needler, Burster, Major, Bullet Ant.
     aura('frenzy', 'Frenzy', CRIMSON, CRIMSON_LIGHT, 1.2, flame=True)

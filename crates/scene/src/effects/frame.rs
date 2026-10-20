@@ -165,7 +165,12 @@ pub fn tail_ticks(layer: &EffectLayer) -> f64 {
     let rain = layer.rain.as_ref().map_or(0.0, |r| {
         seconds_ticks(r.launch_delay) + r.impact.as_ref().map_or(0.0, |i| seconds_ticks(i.duration))
     });
-    emitter + rain
+    // A ribbon's tail fades out after its emitter stops.
+    let ribbon = layer
+        .ribbon
+        .as_ref()
+        .map_or(0.0, |r| seconds_ticks(r.duration));
+    emitter + rain + ribbon
 }
 
 /// Visual-only stable randomness, the same as `noise` in effects.wgsl.
@@ -1088,7 +1093,13 @@ impl EffectEvaluator {
         }
         let from = (elapsed - lifetime).max(0.0);
         let span = elapsed - from;
-        let n = if span > 1e-4 { PATH_SAMPLES } else { 1 };
+        // A sample every 25 ms of the live births, at most `PATH_SAMPLES` (an arrow's short
+        // trail needs few).
+        let n = if span > 1e-4 {
+            ((span / 0.025).ceil() as u32 + 1).clamp(2, PATH_SAMPLES)
+        } else {
+            1
+        };
         let dt = if n > 1 { span / (n - 1) as f32 } else { 1.0 };
         e.ints2[2] = out.paths.len() as u32;
         e.ints2[3] = n;
@@ -1111,8 +1122,9 @@ impl EffectEvaluator {
         opacity: f32,
         texture: Option<u32>,
     ) {
-        const POINTS: usize = 24;
         let Some(r) = &l.ribbon else { return };
+        // A point every 20 ms of the strip, 4 to 24.
+        let points_wanted = ((r.duration / 0.02).ceil() as usize + 1).clamp(4, 24);
         let duration = seconds_ticks(r.duration).max(1e-3);
         let mut begin = (tick - duration).max(cue.start);
         let mut end = tick;
@@ -1125,23 +1137,23 @@ impl EffectEvaluator {
         if end - begin < 1e-3 || opacity <= 0.0 {
             return;
         }
-        let samples: Vec<(f64, Vec3)> = (0..POINTS)
+        let samples: Vec<(f64, Vec3)> = (0..points_wanted)
             .map(|k| {
-                let at = end - (end - begin) * k as f64 / (POINTS - 1) as f64;
+                let at = end - (end - begin) * k as f64 / (points_wanted - 1) as f64;
                 (at, emitter_at(table, cue, at))
             })
             .collect();
         let now = tick_seconds(tick - cue.start) as f32;
         let intensity = l.intensity.unwrap_or(1.0) * opacity;
         let mut distance = 0.0;
-        let mut points = Vec::with_capacity(POINTS);
+        let mut points = Vec::with_capacity(points_wanted);
         for (k, &(at, position)) in samples.iter().enumerate() {
             if k > 0 {
                 distance += position.distance(samples[k - 1].1);
             }
             let age = (((tick - at) / duration) as f32).clamp(0.0, 1.0);
             let ahead = samples[k.saturating_sub(1)].1;
-            let behind = samples[(k + 1).min(POINTS - 1)].1;
+            let behind = samples[(k + 1).min(points_wanted - 1)].1;
             let tangent = (ahead - behind).try_normalize().unwrap_or(Vec3::Y);
             let curve = |c: &Option<Vec<(f32, f32)>>, default: f32| {
                 c.as_ref().map_or(default, |c| sample_curve(c, age))
@@ -1370,7 +1382,10 @@ impl EffectEvaluator {
                 e.ints[1] = flags | flag::FRESNEL;
             }
             e.color[3] = l.intensity.unwrap_or(1.0);
-            self.push(out, e, 1, Geometry::Quad, blend, texture, eye);
+            // An invisible missile (`intensity: 0`) only carries the layers riding it.
+            if e.color[3] > 0.0 {
+                self.push(out, e, 1, Geometry::Quad, blend, texture, eye);
+            }
         }
         let Some(trail) = &l.trail else { return };
         let now = cue.start + seconds_ticks(time.age);

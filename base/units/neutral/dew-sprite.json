@@ -43,7 +43,8 @@
   "supplyCost": 1,
   "modelScale": 3.42,
   "presentation": {
-    "projectile": "effect.weapon.thorn",
-    "projectileSocket": "socket_projectile"
+    "projectileSocket": "socket_projectile",
+    "launchEffect": "effect.neutral.dew-sprite-bolt",
+    "impactEffect": "effect.neutral.dew-sprite-burst"
   }
 }

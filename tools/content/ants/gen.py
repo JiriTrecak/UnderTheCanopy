@@ -881,18 +881,22 @@ def write_buildings(research):
 
 def weapon_effects():
     """Every ant blow lands with weight: an impact (and a spit at the mouth) per weapon."""
-    hits = {'warrior': ('hit-bite', None), 'archer': ('hit-needle', None), 'queensguard': ('hit-heavy', None),
-            'bombardier': ('glob-impact', None), 'winglancer': ('hit-needle', None), 'thornblade': ('hit-sting', None),
-            'banneret': ('hit-sting', None), 'nectarist': ('hit-sting', None), 'reaver-queen': ('hit-reaver', None),
-            'heroes/marshal': ('hit-heavy', None), 'heroes/queen': ('hit-sting', None),
-            'heroes/royal-alchemist': ('hit-sting', None), 'spire-spitter': ('hit-needle', 'spit-muzzle'),
-            'venom-spitter': ('hit-sting', 'spit-muzzle')}
+    hits = {'warrior': ('hit-bite', None), 'archer': ('hit-needle', 'effect.weapons.thorn-flight'),
+            'queensguard': ('hit-heavy', None),
+            'bombardier': ('glob-impact', 'glob-flight'), 'winglancer': ('hit-needle', None),
+            'thornblade': ('hit-sting', None),
+            'banneret': ('nectar-hit', 'nectar-flight'), 'nectarist': ('nectar-hit', 'nectar-flight'),
+            'reaver-queen': ('hit-reaver', None),
+            'heroes/marshal': ('hit-heavy', None), 'heroes/queen': ('nectar-hit', 'royal-nectar-flight'),
+            'heroes/royal-alchemist': ('nectar-hit', 'royal-nectar-flight'),
+            'spire-spitter': ('hit-needle', 'spit-thorn'), 'venom-spitter': ('hit-sting', 'spit-venom')}
     for name, (impact, launch) in hits.items():
         rel = 'units/ants/' + name + '.json'
         d = load(rel)
         pres = d.get('presentation', {}) | {'impactEffect': FX[impact]}
         if launch:
-            pres['launchEffect'] = FX[launch]
+            # Shared flights (tools/content/weapon_fx.py) by id; the ants' own by key.
+            pres['launchEffect'] = launch if launch.startswith('effect.') else FX[launch]
         d['presentation'] = pres
         write(rel, ordered(d))
 
