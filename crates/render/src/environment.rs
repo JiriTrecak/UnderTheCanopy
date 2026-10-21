@@ -304,6 +304,9 @@ pub struct CliffLook {
     /// How much of the biome's frost the face takes (1: all).
     #[serde(default = "one")]
     pub frost: f32,
+    /// How light the boulders heaped on rock blocks are (1: as loose stones).
+    #[serde(default = "one")]
+    pub boulder_shade: f32,
     /// Stones along the top of the cliff, per cell of its edge.
     #[serde(default = "top_rubble")]
     pub top_rubble: f32,

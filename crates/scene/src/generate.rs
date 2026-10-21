@@ -1456,8 +1456,10 @@ fn cliffs(heights: &Heights, cells: &Cells, recipe: &BlockLook, seed: u64) -> Ve
                 crown,
                 |p| heights.at(p.x, p.y).max(top - 0.25),
                 |p| {
-                    back + crown.width * 0.25
-                        - (wander(look, p, seed ^ k as u64) + look.wander * 0.75) * 0.8
+                    // On the lip, where the face's top turns over: a pale crust over the
+                    // edge, following its wander.
+                    let w = wander(look, p, seed ^ k as u64);
+                    0.3 + back - look.overhang * 0.6 - (w + look.wander * 0.75) * 0.8 + w
                 },
                 seed ^ 0xC20,
                 &mut rng,
@@ -1521,12 +1523,19 @@ fn cliffs(heights: &Heights, cells: &Cells, recipe: &BlockLook, seed: u64) -> Ve
                 rng.range(0.35, 1.1)
             };
             let y = heights.at(at.x, at.y);
+            let base = meshes[0].vertices.len();
             meshes[0].rock(
                 Vec3::new(at.x, y + size * 0.1, at.y),
                 size,
                 rng.range(0.0, std::f32::consts::TAU),
                 seed ^ rng.0,
             );
+            // Heaped boulders shade each other: darker than loose stones.
+            if rock {
+                for v in &mut meshes[0].vertices[base..] {
+                    v.occlusion *= cliff.boulder_shade;
+                }
+            }
         }
     }
     for (k, look) in looks.iter().enumerate() {

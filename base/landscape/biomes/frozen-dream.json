@@ -427,8 +427,8 @@
             "frost": 0.55
           },
           "crown": {
-            "height": 0.55,
-            "width": 2.2,
+            "height": 0.7,
+            "width": 2.8,
             "stone": 0.6,
             "rubble": 0.0
           }
