@@ -292,10 +292,15 @@ fn parts(icon: Icon) -> Vec<Part> {
             Open(vec![[15.0, 14.33], [15.0, 19.0]]),
         ],
         // A map pin.
+        // Something set down on the ground: an arrow onto a spot.
         Icon::Place => {
-            let mut pin = arc([12.0, 10.0], [6.5, 6.5], PI * 0.8, PI * 2.2);
-            pin.push([12.0, 21.5]);
-            vec![Closed(pin), circle([12.0, 10.0], 2.3)]
+            let mut ground = arc([12.0, 18.0], [8.5, 3.2], 0.0, 2.0 * PI);
+            ground.pop();
+            vec![
+                Closed(ground),
+                Open(vec![[12.0, 2.5], [12.0, 14.0]]),
+                Open(vec![[7.5, 9.5], [12.0, 14.0], [16.5, 9.5]]),
+            ]
         }
         // A block's corner rounded off.
         Icon::Round => {

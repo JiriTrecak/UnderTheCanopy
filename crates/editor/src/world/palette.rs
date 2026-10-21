@@ -1,12 +1,9 @@
 //! Pictures for the tool strip's pickers, so a choice shows what it lays down: each block
 //! kind as the biome's ground texture for it, each cliff face as its texture, and what
-//! Place puts down as its portrait. Made from the cooked pack when a map's biome is first
-//! seen; uploaded to egui as the strip first draws them.
+//! Place puts down as its icon. Made from the cooked pack when a map's biome is first
+//! seen (icons as they are first shown); uploaded to egui as the strip first draws them.
 
-use super::Placing;
 use canopy_assets::Pack;
-use canopy_content::Content;
-use canopy_content::game::Kind;
 use canopy_content::map::blocks::BlockKind;
 use egui::{ColorImage, TextureHandle};
 use std::sync::Arc;
@@ -17,7 +14,6 @@ pub enum Choice {
     Kind(BlockKind),
     /// A face style (0: the biome's own cliff).
     Face(u8),
-    Place(Placing),
 }
 
 /// Pictures smaller than this are taken from a larger mip.
@@ -29,6 +25,10 @@ pub struct Palette {
     pub biome: String,
     images: Vec<(Choice, Arc<ColorImage>)>,
     textures: Vec<(Choice, TextureHandle)>,
+    /// The pack icons come from, and the icons shown so far by pack entry (none when the
+    /// entry has no picture).
+    pack: Option<Arc<Pack>>,
+    icons: Vec<(String, Option<TextureHandle>)>,
 }
 
 impl std::fmt::Debug for Palette {
@@ -42,7 +42,7 @@ impl std::fmt::Debug for Palette {
 
 impl Palette {
     /// The pictures of `biome`'s ground and faces and of what maps place.
-    pub fn new(biome: &str, pack: &Pack, look: &canopy_scene::Look, content: &Content) -> Self {
+    pub fn new(biome: &str, pack: &Arc<Pack>, look: &canopy_scene::Look) -> Self {
         let mut images = Vec::new();
         let mut add = |choice: Choice, entry: Option<String>, opaque: bool| {
             if let Some(image) = entry.and_then(|e| picture(pack, &e, opaque)) {
@@ -86,49 +86,34 @@ impl Palette {
                 );
             }
         }
-        let icon = |id: &str| {
-            content
-                .definitions
-                .iter()
-                .find(|d| d.id.as_str() == id)
-                .map(|d| format!("{}/image.png", d.icon.as_str()))
-        };
-        let setup = content
-            .rules
-            .races
-            .values()
-            .filter_map(|r| r.starting_setup.as_ref())
-            .next()
-            .unwrap_or(&content.rules.starting_setup);
-        add(
-            Choice::Place(Placing::Start),
-            icon(setup.fort.as_str()),
-            false,
-        );
-        let mine = content.definitions.iter().find(|d| {
-            d.kind == Kind::Building && d.harvesting.is_some() && d.resource_yield.is_some()
-        });
-        add(
-            Choice::Place(Placing::Amber),
-            mine.and_then(|d| icon(d.id.as_str())),
-            false,
-        );
-        // The strongest creep stands for a camp.
-        let creep = content
-            .definitions
-            .iter()
-            .filter(|d| d.kind == Kind::Unit && d.behaviors.camp_defense.is_some())
-            .max_by_key(|d| (d.level.unwrap_or(1), std::cmp::Reverse(d.id.as_str())));
-        add(
-            Choice::Place(Placing::Camp),
-            creep.and_then(|d| icon(d.id.as_str())),
-            false,
-        );
         Self {
             biome: biome.to_string(),
             images,
             textures: Vec::new(),
+            pack: Some(pack.clone()),
+            icons: Vec::new(),
         }
+    }
+
+    /// The picture of pack entry `entry` (an icon's `…/image.png`), if it has one.
+    pub fn icon(&mut self, ctx: &egui::Context, entry: &str) -> Option<egui::TextureId> {
+        if let Some((_, t)) = self.icons.iter().find(|(e, _)| e == entry) {
+            return t.as_ref().map(TextureHandle::id);
+        }
+        let image = self
+            .pack
+            .as_ref()
+            .and_then(|pack| picture(pack, entry, false));
+        let handle = image.map(|image| {
+            ctx.load_texture(
+                format!("block-palette/icon/{entry}"),
+                image,
+                egui::TextureOptions::LINEAR,
+            )
+        });
+        let id = handle.as_ref().map(TextureHandle::id);
+        self.icons.push((entry.to_string(), handle));
+        id
     }
 
     /// `choice`'s picture, if it has one.

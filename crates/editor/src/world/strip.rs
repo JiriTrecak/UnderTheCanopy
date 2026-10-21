@@ -4,11 +4,12 @@
 //! placements are pickers: a button with the current choice's picture, opening a grid of
 //! every choice's picture above it.
 
+use super::catalog::Entry;
 use super::palette::{Choice, Palette};
 use super::{BlockTool, Placing, View, mesh};
 use crate::icons::{self, Icon};
 use crate::map::Session;
-use crate::map::tools::{Picked, Tier};
+use crate::map::tools::Picked;
 use crate::theme::*;
 use canopy_content::map::blocks::{Block, BlockKind};
 use egui::{
@@ -18,6 +19,7 @@ use egui::{
 
 /// The tools in their groups: shaping the blocks, their surface, things on the map.
 const GROUPS: [&[BlockTool]; 3] = [
+    &[BlockTool::Select, BlockTool::Place],
     &[
         BlockTool::Raise,
         BlockTool::Level,
@@ -27,7 +29,6 @@ const GROUPS: [&[BlockTool]; 3] = [
         BlockTool::Round,
     ],
     &[BlockTool::Cells, BlockTool::Face],
-    &[BlockTool::Place, BlockTool::Select],
 ];
 
 fn icon(tool: BlockTool) -> Icon {
@@ -173,15 +174,6 @@ fn picture(ui: &Ui, palette: &mut Palette, rect: Rect, choice: Choice) {
         }
         Choice::Face(_) => {
             painter.rect_filled(rect, radius, RAISED);
-        }
-        Choice::Place(_) => {
-            painter.rect_filled(rect, radius, RAISED);
-            icons::paint(
-                painter,
-                icons::square(rect.center(), rect.width() * 0.5),
-                Icon::Place,
-                MUTED,
-            );
         }
     }
     painter.rect_stroke(
@@ -354,6 +346,280 @@ fn note(ui: &mut Ui, text: &str) {
     ui.label(RichText::new(text).size(11.5).color(MUTED));
 }
 
+/// A catalog entry's picture in `rect`: its icon, or for what has none, a sign of it.
+fn entry_picture(ui: &Ui, palette: &mut Palette, rect: Rect, entry: &Entry) {
+    let radius = (rect.width() * 0.12).clamp(3.0, 6.0) as u8;
+    if let Some(texture) = entry
+        .icon
+        .as_deref()
+        .and_then(|e| palette.icon(ui.ctx(), e))
+    {
+        egui::Image::from_texture((texture, rect.size()))
+            .corner_radius(radius)
+            .paint_at(ui, rect);
+        return;
+    }
+    let painter = ui.painter();
+    painter.rect_filled(rect, radius, RAISED);
+    let big = FontId::proportional(rect.height() * 0.42);
+    match &entry.placing {
+        Placing::Start(n) => {
+            painter.text(
+                rect.center(),
+                Align2::CENTER_CENTER,
+                n.to_string(),
+                big,
+                TEXT,
+            );
+        }
+        Placing::Camp(tier) => {
+            painter.text(
+                rect.center(),
+                Align2::CENTER_CENTER,
+                tier.name().to_uppercase(),
+                FontId::proportional(rect.height() * 0.2),
+                SOFT,
+            );
+        }
+        Placing::Scenery(_) => icons::paint(
+            painter,
+            icons::square(rect.center(), rect.width() * 0.5),
+            Icon::World,
+            MUTED,
+        ),
+        _ => icons::paint(
+            painter,
+            icons::square(rect.center(), rect.width() * 0.5),
+            Icon::Place,
+            MUTED,
+        ),
+    }
+}
+
+/// One entry in the Place picker's grid: its picture, its name under it.
+fn place_tile(ui: &mut Ui, palette: &mut Palette, entry: &Entry, on: bool) -> bool {
+    let (rect, response) = ui.allocate_exact_size(vec2(84.0, 108.0), Sense::click());
+    let hovered = response.hovered();
+    if on || hovered {
+        ui.painter().rect(
+            rect,
+            8,
+            if on { SELECTED } else { RAISED },
+            Stroke::new(1.0, if on { SOFT } else { BORDER }),
+            egui::StrokeKind::Inside,
+        );
+    }
+    let image = Rect::from_min_size(rect.min + vec2(8.0, 6.0), vec2(68.0, 68.0));
+    entry_picture(ui, palette, image, entry);
+    if on {
+        ui.painter().rect_stroke(
+            image.expand(1.5),
+            7,
+            Stroke::new(2.0, TEXT),
+            egui::StrokeKind::Outside,
+        );
+    }
+    let mut job = egui::text::LayoutJob::simple(
+        entry.name.clone(),
+        FontId::proportional(11.5),
+        if on || hovered { TEXT } else { SOFT },
+        rect.width() - 6.0,
+    );
+    job.wrap.max_rows = 2;
+    job.halign = egui::Align::Center;
+    let galley = ui.painter().layout_job(job);
+    ui.painter()
+        .galley(pos2(rect.center().x, image.bottom() + 5.0), galley, TEXT);
+    response.on_hover_text(&entry.name).clicked()
+}
+
+/// A grid of entries; the one clicked.
+fn place_grid(
+    ui: &mut Ui,
+    palette: &mut Palette,
+    salt: impl std::hash::Hash + std::fmt::Debug,
+    entries: &[&Entry],
+    current: &Placing,
+) -> Option<Placing> {
+    let mut chosen = None;
+    egui::Grid::new(salt)
+        .spacing(vec2(4.0, 4.0))
+        .show(ui, |ui| {
+            for (i, entry) in entries.iter().enumerate() {
+                if place_tile(ui, palette, entry, &entry.placing == current) {
+                    chosen = Some(entry.placing.clone());
+                }
+                if i % 7 == 6 {
+                    ui.end_row();
+                }
+            }
+        });
+    chosen
+}
+
+/// What Place puts down: a button with the current entry, opening the catalog above it:
+/// a search over everything, the categories, their groups (races, kinds) and a grid of
+/// what is in the group.
+fn place_picker(ui: &mut Ui, session: &mut Session, open: bool) {
+    let state = &mut session.blocks;
+    let current = state.placing.clone();
+    let entry = state.catalog.find(&current).cloned();
+    let name = entry
+        .as_ref()
+        .map_or("Choose what to place", |e| e.name.as_str());
+    let galley = ui
+        .painter()
+        .layout_no_wrap(name.to_string(), FontId::proportional(12.5), TEXT);
+    let size = vec2(5.0 + 24.0 + 8.0 + galley.size().x + 10.0 + 10.0 + 8.0, 32.0);
+    let (rect, response) = ui.allocate_exact_size(size, Sense::click());
+    let popup = Popup::default_response_id(&response);
+    if open {
+        Popup::open_id(ui.ctx(), popup);
+    }
+    let shown = Popup::is_id_open(ui.ctx(), popup);
+    let hovered = response.hovered();
+    ui.painter().rect(
+        rect,
+        7,
+        if shown || hovered { RAISED } else { SELECTED },
+        Stroke::new(1.0, if shown { SOFT } else { BORDER }),
+        egui::StrokeKind::Inside,
+    );
+    let thumb = Rect::from_min_size(rect.min + vec2(5.0, 4.0), vec2(24.0, 24.0));
+    if let Some(entry) = &entry {
+        entry_picture(ui, &mut state.palette, thumb, entry);
+    }
+    let painter = ui.painter();
+    painter.galley(
+        pos2(thumb.right() + 8.0, rect.center().y - galley.size().y / 2.0),
+        galley,
+        TEXT,
+    );
+    let c = pos2(rect.right() - 13.0, rect.center().y);
+    let chevron = Stroke::new(1.4, if shown || hovered { TEXT } else { MUTED });
+    painter.line_segment([c + vec2(-4.0, 2.0), c + vec2(0.0, -2.0)], chevron);
+    painter.line_segment([c + vec2(0.0, -2.0), c + vec2(4.0, 2.0)], chevron);
+    let response = response.on_hover_text("What Place puts down");
+    let mut chosen = None;
+    Popup::from_toggle_button_response(&response)
+        .align(RectAlign::TOP_START)
+        .align_alternatives(&[RectAlign::TOP, RectAlign::TOP_END])
+        .gap(10.0)
+        .frame(frame().inner_margin(10))
+        .close_behavior(PopupCloseBehavior::CloseOnClickOutside)
+        .id(popup)
+        .show(|ui| {
+            let (catalog, palette) = (&state.catalog, &mut state.palette);
+            ui.set_width(7.0 * 88.0);
+            ui.spacing_mut().item_spacing = vec2(6.0, 6.0);
+            ui.add(
+                egui::TextEdit::singleline(&mut state.place_search)
+                    .hint_text("Search everything…")
+                    .desired_width(f32::INFINITY),
+            );
+            let search = state.place_search.trim().to_lowercase();
+            if search.is_empty() {
+                state.place_category = state
+                    .place_category
+                    .min(catalog.categories.len().saturating_sub(1));
+                ui.horizontal(|ui| {
+                    for (i, category) in catalog.categories.iter().enumerate() {
+                        if ui
+                            .selectable_label(
+                                state.place_category == i,
+                                RichText::new(&category.name).size(13.0),
+                            )
+                            .clicked()
+                        {
+                            state.place_category = i;
+                            state.place_group = 0;
+                        }
+                    }
+                });
+                let Some(category) = catalog.categories.get(state.place_category) else {
+                    ui.label(RichText::new("Nothing to place yet").color(MUTED));
+                    return;
+                };
+                state.place_group = state
+                    .place_group
+                    .min(category.groups.len().saturating_sub(1));
+                if category.groups.len() > 1 {
+                    ui.horizontal_wrapped(|ui| {
+                        for (i, group) in category.groups.iter().enumerate() {
+                            if segment(ui, state.place_group == i, &group.name) {
+                                state.place_group = i;
+                            }
+                        }
+                    });
+                }
+                ui.separator();
+                if let Some(group) = category.groups.get(state.place_group) {
+                    let entries: Vec<&Entry> = group.entries.iter().collect();
+                    egui::ScrollArea::vertical()
+                        .max_height(360.0)
+                        .auto_shrink([false, true])
+                        .show(ui, |ui| {
+                            chosen = place_grid(
+                                ui,
+                                palette,
+                                ("place-grid", state.place_category, state.place_group),
+                                &entries,
+                                &current,
+                            );
+                        });
+                }
+            } else {
+                ui.separator();
+                egui::ScrollArea::vertical()
+                    .max_height(400.0)
+                    .auto_shrink([false, true])
+                    .show(ui, |ui| {
+                        let mut any = false;
+                        for category in &catalog.categories {
+                            for group in &category.groups {
+                                let entries: Vec<&Entry> = group
+                                    .entries
+                                    .iter()
+                                    .filter(|e| e.name.to_lowercase().contains(&search))
+                                    .collect();
+                                if entries.is_empty() {
+                                    continue;
+                                }
+                                any = true;
+                                ui.label(
+                                    RichText::new(format!("{}  ›  {}", category.name, group.name))
+                                        .size(11.5)
+                                        .color(MUTED),
+                                );
+                                if let Some(p) = place_grid(
+                                    ui,
+                                    palette,
+                                    ("place-search", &category.name, &group.name),
+                                    &entries,
+                                    &current,
+                                ) {
+                                    chosen = Some(p);
+                                }
+                            }
+                        }
+                        if !any {
+                            ui.label(RichText::new("Nothing matches").color(MUTED));
+                        }
+                    });
+            }
+            if chosen.is_some() {
+                ui.close();
+            }
+        });
+    if let Some(placing) = chosen {
+        let neutral = state.catalog.find(&placing).is_none_or(|e| e.neutral);
+        if !neutral && state.owner == 0 {
+            state.owner = 1;
+        }
+        state.placing = placing;
+    }
+}
+
 /// The chosen tool's settings.
 fn settings(
     ui: &mut Ui,
@@ -448,79 +714,70 @@ fn settings(
             }
         }
         BlockTool::Place => {
-            let picks: Vec<Pick> = [
-                (Placing::Start, "Start"),
-                (Placing::Amber, "Amber site"),
-                (Placing::Camp, "Creep camp"),
-            ]
-            .into_iter()
-            .map(|(placing, name)| Pick {
-                choice: Choice::Place(placing),
-                name: name.to_string(),
-                key: None,
-            })
-            .collect();
-            let state = &mut session.blocks;
-            if let Some(Choice::Place(placing)) = picker(
-                ui,
-                &mut state.palette,
-                "place",
-                "What Place puts down",
-                open,
-                Choice::Place(state.placing),
-                &picks,
-            ) {
-                state.placing = placing;
-            }
-            divider(ui);
-            let t = &mut session.tools;
-            match session.blocks.placing {
-                Placing::Start | Placing::Amber => {
-                    ui.add(
-                        egui::Slider::new(&mut t.amber, 500..=6000)
-                            .step_by(100.0)
-                            .text("amber a node"),
-                    );
-                    if session.blocks.placing == Placing::Start {
-                        divider(ui);
-                        note(ui, "with its amber, towards the middle");
+            place_picker(ui, session, open);
+            let state = &session.blocks;
+            let entry = state.catalog.find(&state.placing).cloned();
+            match &state.placing {
+                Placing::Definition(_) if entry.as_ref().is_some_and(|e| !e.neutral) => {
+                    divider(ui);
+                    note(ui, "owner");
+                    let mut owner = session.blocks.owner;
+                    for n in 0..=8u8 {
+                        let name = if n == 0 {
+                            "none".to_string()
+                        } else {
+                            n.to_string()
+                        };
+                        if segment(ui, owner == n, &name) {
+                            owner = n;
+                        }
                     }
+                    session.blocks.owner = owner;
                 }
-                Placing::Camp => {
-                    egui::ComboBox::from_id_salt(("camp-tier", &session.root))
-                        .selected_text(t.tier.name())
-                        .width(90.0)
-                        .show_ui(ui, |ui| {
-                            for tier in Tier::ALL {
-                                ui.selectable_value(&mut t.tier, tier, tier.name());
-                            }
-                        });
-                    note(ui, "strength");
+                Placing::Amber => {
+                    divider(ui);
+                    ui.add(
+                        egui::Slider::new(&mut session.tools.amber, 500..=6000)
+                            .step_by(100.0)
+                            .text("amber"),
+                    );
+                }
+                Placing::Start(_) => {
+                    divider(ui);
+                    note(ui, "moves the start there when the map has it");
+                }
+                _ => {}
+            }
+        }
+        BlockTool::Select => {
+            let selection = session.blocks.selection.clone();
+            match selection.as_slice() {
+                [] => note(
+                    ui,
+                    "click a start, unit, building or prop; drag a rectangle round several; Shift adds",
+                ),
+                items => {
+                    let what = match items {
+                        [(Picked::Start, id)] => format!("start of player {id}"),
+                        [(Picked::Entity, id)] => id.clone(),
+                        [(Picked::Object, id)] => format!("prop {id}"),
+                        many => format!("{} selected", many.len()),
+                    };
+                    ui.label(RichText::new(what).size(12.0).color(TEXT));
+                    divider(ui);
+                    note(ui, "drag to move; Shift adds or removes");
+                    if ui.button("Delete").clicked()
+                        && let Some(docs) = docs
+                    {
+                        let commands = crate::map::view::delete_all(session, docs, items);
+                        if !commands.is_empty() {
+                            edit = Some(crate::map::view::step(session, "Delete", commands));
+                            session.blocks.selection.clear();
+                        }
+                    }
                 }
             }
         }
-        BlockTool::Select => match session.tools.selected.clone() {
-            Some((kind, id)) => {
-                let what = match kind {
-                    Picked::Start => format!("start of player {id}"),
-                    Picked::Entity => id.clone(),
-                    Picked::Object => format!("prop {id}"),
-                };
-                ui.label(RichText::new(what).size(12.0).color(TEXT));
-                divider(ui);
-                note(ui, "drag it to move it");
-                if ui.button("Delete").clicked()
-                    && let Some(docs) = docs
-                {
-                    let commands = crate::map::view::delete(session, docs, kind, &id);
-                    if !commands.is_empty() {
-                        edit = Some(crate::map::view::step(session, "Delete", commands));
-                        session.tools.selected = None;
-                    }
-                }
-            }
-            None => note(ui, "click a start, amber site, camp or prop"),
-        },
     }
     edit
 }

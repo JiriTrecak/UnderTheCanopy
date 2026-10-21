@@ -60,8 +60,6 @@ pub struct Tools {
     pub tier: Tier,
     /// Amber per node of a new site.
     pub amber: u32,
-    /// The selected start, entity or object: (kind, id).
-    pub selected: Option<(Picked, String)>,
 }
 
 impl Default for Tools {
@@ -69,7 +67,6 @@ impl Default for Tools {
         Self {
             tier: Tier::Easy,
             amber: 2500,
-            selected: None,
         }
     }
 }

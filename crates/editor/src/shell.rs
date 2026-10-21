@@ -721,8 +721,13 @@ impl Shell {
                 &biome,
                 &resources.pack,
                 &resources.looks[&biome],
-                &content,
             );
+        }
+        // What Place can put down, from the content of the last passing check.
+        let source = Arc::as_ptr(&content) as usize;
+        if session.blocks.catalog.source != source {
+            session.blocks.catalog = crate::world::catalog::Catalog::new(&content);
+            session.blocks.catalog.source = source;
         }
         if due {
             // An edit in the split view: the generated world follows a moment after.

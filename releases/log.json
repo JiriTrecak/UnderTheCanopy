@@ -23,7 +23,9 @@
       "Maps: the Warcraft III and older maps are gone; skirmish is played on Frozen Dream, a map built in the new block editor with generated cliffs and ground",
       "Map editor: every map is made of blocks; a new map starts as flat blocks, and the Warcraft map import is removed",
       "Map editor: in the Split view the highlighted cell, a drag and the selection show in both panes",
-      "Maps: one winter biome remains; the other biomes and their ground textures are removed"
+      "Maps: one winter biome remains; the other biomes and their ground textures are removed",
+      "Map editor: Place chooses from everything that can be placed, by category with search: buildings and units of every race and neutral, camps, player starts, single amber nodes, substance deposits and world scenery",
+      "Map editor: Select comes first and selects several things at once: drag a rectangle, Shift-click to add; move or delete them together"
     ],
     "fixed": [
       "Generated cliffs join cleanly at corners and turns, ramps keep their side walls down to the foot, and diagonal cliff edges no longer show a staircase",

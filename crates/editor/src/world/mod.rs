@@ -8,6 +8,7 @@
 //! becomes one undo step: the blocks and closed cells whole, heights and water as patches
 //! over what changed.
 
+pub mod catalog;
 pub mod mesh;
 pub mod palette;
 mod strip;
@@ -29,7 +30,6 @@ use glam::{Vec2, Vec3};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum BlockTool {
     /// Each block in the dragged area one level up (Shift: down).
-    #[default]
     Raise,
     /// The dragged area to the level of the block the drag began on.
     Level,
@@ -50,6 +50,7 @@ pub enum BlockTool {
     Round,
     /// Picks a start, an amber site, a camp or a placed prop: drag to move it, Delete to
     /// remove it.
+    #[default]
     Select,
 }
 
@@ -119,13 +120,13 @@ impl BlockTool {
                 "Drag over the blocks above a cliff to choose its face (Shift: the biome's)"
             }
             BlockTool::Place => {
-                "Click to place a start (with its amber), an amber site or a creep camp"
+                "Click to place what the picker holds: a building, unit, camp, start, resource node or scenery"
             }
             BlockTool::Round => {
                 "Drag over a plateau's edge to cut its corners at 45° (Shift uncuts)"
             }
             BlockTool::Select => {
-                "Click a start, amber site, camp or prop; drag it to move it, Delete removes it"
+                "Click to select (Shift adds), drag a rectangle round several; drag the selection to move it, Delete removes it"
             }
         }
     }
@@ -140,13 +141,35 @@ impl BlockTool {
     }
 }
 
-/// What Place puts down.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+/// What Place puts down (the catalog's entries, `catalog.rs`).
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Placing {
-    #[default]
-    Start,
+    /// A unit or building: the Place tool's owner's, or no one's when it is neutral.
+    Definition(String),
+    /// A camp of creeps of this strength.
+    Camp(crate::map::tools::Tier),
+    /// Player `n`'s start (moved here when the map has one).
+    Start(u8),
+    /// One amber node.
     Amber,
-    Camp,
+    /// A piece of scenery.
+    Scenery(String),
+}
+
+impl Default for Placing {
+    fn default() -> Self {
+        Placing::Start(1)
+    }
+}
+
+/// A placement's twin in the mirror, made once the map has taken the first.
+#[derive(Debug, Clone)]
+pub struct Twin {
+    pub placing: Placing,
+    pub at: [f32; 2],
+    pub owner: u8,
+    /// The store generation the map was loaded at when the first was placed.
+    pub after: Option<u64>,
 }
 
 /// Edits repeated in a mirror of the map, for fair maps.
@@ -308,11 +331,17 @@ pub struct State {
     /// The names of the biome's faces (face style 1 onwards).
     pub faces: Vec<String>,
     pub placing: Placing,
+    /// Who placed units and buildings belong to: 0 no one, else that player.
+    pub owner: u8,
+    /// What Place can put down, and where its picker stands: category, group, search.
+    pub catalog: catalog::Catalog,
+    pub place_category: usize,
+    pub place_group: usize,
+    pub place_search: String,
+    /// What Select holds.
+    pub selection: Vec<(Picked, String)>,
     pub symmetry: Symmetry,
-    /// A placement's twin, waiting for the map to take the first (a start's player
-    /// number comes from the starts already there): what, where, and how many starts
-    /// the map has once the first is in.
-    pub twin: Option<(Placing, [f32; 2], usize)>,
+    pub twin: Option<Twin>,
     /// While a drag is under way, the map shows what it will do: the terrain as it was
     /// before the drag, to go back to, and what the preview last showed.
     pub preview: Option<(Box<canopy_content::map::TerrainData>, String)>,
@@ -363,6 +392,12 @@ impl Default for State {
             right_pane: false,
             faces: Vec::new(),
             placing: Placing::default(),
+            owner: 1,
+            catalog: catalog::Catalog::default(),
+            place_category: 0,
+            place_group: 0,
+            place_search: String::new(),
+            selection: Vec::new(),
             symmetry: Symmetry::default(),
             twin: None,
             preview: None,
@@ -1236,35 +1271,275 @@ fn move_selection(
     out
 }
 
-/// Places what Place puts down at `at` (a start with its amber, an amber site or a camp),
-/// as MCP's `map_place` does; in blocks a start needs no pad, the blocks are its ground.
+/// Everything placed on the map, with where it stands: starts, entities and scenery.
+fn placed(map: &canopy_content::map::UtcMap) -> Vec<(Picked, String, f64, f64)> {
+    let mut out: Vec<(Picked, String, f64, f64)> = map
+        .player_starts
+        .iter()
+        .map(|s| (Picked::Start, s.player.to_string(), s.x, s.z))
+        .collect();
+    out.extend(
+        map.entities
+            .iter()
+            .map(|e| (Picked::Entity, e.id.clone(), e.position.x, e.position.y)),
+    );
+    out.extend(
+        map.authoring
+            .objects
+            .iter()
+            .map(|o| (Picked::Object, o.id.clone(), o.x, o.z)),
+    );
+    out
+}
+
+/// The selected item under world point `at`, if any.
+fn selection_under(session: &Session, at: [f32; 2]) -> Option<(Picked, String)> {
+    let map = session.map.as_ref()?;
+    session
+        .blocks
+        .selection
+        .iter()
+        .find(|(kind, id)| {
+            let reach = if *kind == Picked::Start { 8.0 } else { 3.5 };
+            selection_at(map, *kind, id)
+                .is_some_and(|(x, z)| (x as f32 - at[0]).hypot(z as f32 - at[1]) < reach)
+        })
+        .cloned()
+}
+
+/// The commands that move the whole selection by `delta`: each camp and each old amber
+/// site once, however many of its members are selected.
+fn move_all(session: &Session, docs: &crate::map::view::Docs, delta: (f64, f64)) -> Vec<Command> {
+    let camps = docs.map["camps"].as_array().cloned().unwrap_or_default();
+    let group = |id: &str| -> String {
+        if let Some(c) = camps.iter().position(|c| {
+            c["members"]
+                .as_array()
+                .is_some_and(|m| m.iter().any(|v| v == id))
+        }) {
+            return format!("camp {c}");
+        }
+        if id.starts_with("mine.")
+            && let Some((head, _)) = id.rsplit_once('.')
+        {
+            return head.to_string();
+        }
+        id.to_string()
+    };
+    let mut seen = std::collections::BTreeSet::new();
+    let mut out = Vec::new();
+    for (kind, id) in &session.blocks.selection {
+        let key = match kind {
+            Picked::Entity => format!("e {}", group(id)),
+            Picked::Start => format!("s {id}"),
+            Picked::Object => format!("o {id}"),
+        };
+        if seen.insert(key) {
+            out.extend(move_selection(session, docs, *kind, id, delta));
+        }
+    }
+    out
+}
+
+/// A building's centre on the 4-cell building lattice (its edges at -0.5 + 4k), for a
+/// footprint `width` × `depth` cells.
+fn on_lattice(x: f64, z: f64, width: u32, depth: u32) -> (f64, f64) {
+    let snap = |v: f64, size: u32| {
+        let offset = f64::from(size) / 2.0 - 0.5;
+        ((v - offset) / 4.0).round() * 4.0 + offset
+    };
+    (snap(x, width), snap(z, depth))
+}
+
+/// Places what Place puts down at `at`, owned by player `owner` (0: no one) when it can
+/// be: a unit or building, a camp, a player's start (moved when it is there already), one
+/// amber node, or a piece of scenery. In blocks nothing needs a pad: the blocks are the
+/// ground.
 fn place(
     session: &mut Session,
     content: &canopy_content::Content,
     docs: &crate::map::view::Docs,
-    placing: Placing,
+    placing: &Placing,
+    owner: u8,
     at: [f32; 2],
 ) -> Option<crate::tabs::Edit> {
-    use crate::map::tools::Placement;
-    let tool = match placing {
-        Placing::Start => Placement::Start,
-        Placing::Amber => Placement::Amber,
-        Placing::Camp => Placement::Camp,
+    use crate::map::tools::{self, Placement};
+    use serde_json::json;
+    let (x, z) = (f64::from(at[0]), f64::from(at[1]));
+    let map = session.map.as_ref()?;
+    let map_doc = session.path("map.json");
+    let list = |v: &serde_json::Value| v.as_array().cloned().unwrap_or_default();
+    let entities = list(&docs.map["entities"]);
+    let fresh = |prefix: &str, taken: Vec<String>| {
+        let n = (1..)
+            .find(|n| !taken.iter().any(|t| t == &format!("{prefix}{n}")))
+            .unwrap_or(1);
+        format!("{prefix}{n}")
     };
-    let mut edit = crate::map::view::place(
-        session,
-        content,
-        docs,
-        tool,
-        f64::from(at[0]),
-        f64::from(at[1]),
-    )
-    .ok()
-    .flatten()?;
-    edit.commands.retain(
-        |c| !matches!(c, Command::Patch { document, .. } if document.ends_with("heights.grid")),
-    );
-    Some(edit)
+    let entity_ids: Vec<String> = entities
+        .iter()
+        .filter_map(|e| e["id"].as_str().map(str::to_string))
+        .collect();
+    let insert_entity = |value: serde_json::Value| Command::Insert {
+        document: map_doc.clone(),
+        pointer: "/entities".into(),
+        index: entities.len(),
+        value,
+    };
+    match placing {
+        Placing::Camp(tier) => {
+            session.tools.tier = *tier;
+            let mut edit = crate::map::view::place(session, content, docs, Placement::Camp, x, z)
+                .ok()
+                .flatten()?;
+            edit.commands.retain(
+                |c| !matches!(c, Command::Patch { document, .. } if document.ends_with("heights.grid")),
+            );
+            Some(edit)
+        }
+        Placing::Start(player) => {
+            let (x, z) = tools::start_position(x, z);
+            let setup = content
+                .rules
+                .races
+                .values()
+                .filter_map(|r| r.starting_setup.as_ref())
+                .next()
+                .unwrap_or(&content.rules.starting_setup);
+            let rotation = tools::facing_middle(content, setup.fort.as_str(), x, z, map.size);
+            let starts = list(&docs.map["playerStarts"]);
+            let commands = match starts
+                .iter()
+                .position(|s| s["player"].as_u64() == Some(u64::from(*player)))
+            {
+                Some(i) => vec![
+                    Command::Set {
+                        document: map_doc.clone(),
+                        pointer: format!("/playerStarts/{i}/x"),
+                        value: x.into(),
+                        at: None,
+                    },
+                    Command::Set {
+                        document: map_doc.clone(),
+                        pointer: format!("/playerStarts/{i}/z"),
+                        value: z.into(),
+                        at: None,
+                    },
+                ],
+                None => {
+                    let mut start = json!({"mainFort": format!("start.player.{player}/main-fort"), "player": player, "setup": setup.id.as_str(), "x": x, "z": z});
+                    if rotation != 0 {
+                        start["rotation"] = json!(rotation);
+                    }
+                    vec![Command::Insert {
+                        document: map_doc.clone(),
+                        pointer: "/playerStarts".into(),
+                        index: starts.len(),
+                        value: start,
+                    }]
+                }
+            };
+            Some(step(session, &format!("Place start {player}"), commands))
+        }
+        Placing::Amber => {
+            let mine = content.definitions.iter().find(|d| catalog::is_mine(d))?;
+            let footprint = mine
+                .footprint
+                .as_ref()
+                .map_or((4, 4), |f| (f.width, f.depth));
+            let (x, z) = on_lattice(x, z, footprint.0, footprint.1);
+            // The mine's numbered looks (`…-1`, `…-2`, …), one picked by the place.
+            let stem = mine
+                .model
+                .as_str()
+                .trim_end_matches(|c: char| c.is_ascii_digit());
+            let looks: Vec<&str> = content
+                .assets
+                .iter()
+                .map(|a| a.id.as_str())
+                .filter(|id| stem.ends_with('-') && id.starts_with(stem))
+                .collect();
+            let mut node = json!({
+                "definition": mine.id.as_str(),
+                "id": fresh("amber.", entity_ids),
+                "initialState": {"amount": session.tools.amber, "construction": "complete"},
+                "owner": "none",
+                "position": {"x": x, "y": z},
+                "rotation": 0.0,
+            });
+            if !looks.is_empty() {
+                let pick = ((x * 7.0 + z * 13.0).abs() as usize) % looks.len();
+                node["appearance"] = json!({"asset": looks[pick]});
+            }
+            Some(step(
+                session,
+                "Place an amber node",
+                vec![insert_entity(node)],
+            ))
+        }
+        Placing::Definition(id) => {
+            let definition = content.definition(id)?;
+            let neutral = session
+                .blocks
+                .catalog
+                .find(placing)
+                .is_none_or(|e| e.neutral);
+            let owner = if neutral || owner == 0 {
+                "none".to_string()
+            } else {
+                format!("player.{owner}")
+            };
+            let building = definition.kind == canopy_content::game::Kind::Building;
+            let (x, z) = match &definition.footprint {
+                Some(f) if building => on_lattice(x, z, f.width, f.depth),
+                _ => (x.floor() + 0.5, z.floor() + 0.5),
+            };
+            let short = id.rsplit('.').next().unwrap_or(id);
+            let mut entity = json!({
+                "definition": id,
+                "id": fresh(&format!("{short}."), entity_ids),
+                "owner": owner,
+                "position": {"x": x, "y": z},
+                "rotation": 0.0,
+            });
+            if building {
+                entity["initialState"] = json!({"construction": "complete"});
+            }
+            Some(step(
+                session,
+                &format!("Place {}", definition.name),
+                vec![insert_entity(entity)],
+            ))
+        }
+        Placing::Scenery(id) => {
+            let objects = list(&docs.scenery["objects"]);
+            let short = id.rsplit('.').next().unwrap_or(id);
+            let taken = objects
+                .iter()
+                .filter_map(|o| o["id"].as_str().map(str::to_string))
+                .collect();
+            // A turn picked by the place, so a row of the same piece does not repeat.
+            let yaw = ((x * 12.9898 + z * 78.233).sin() * 43758.545).fract().abs()
+                * std::f64::consts::TAU;
+            let object = json!({
+                "id": fresh(&format!("{short}."), taken),
+                "asset": id,
+                "x": x,
+                "z": z,
+                "yaw": yaw,
+            });
+            Some(step(
+                session,
+                "Place scenery",
+                vec![Command::Insert {
+                    document: session.path("scenery.json"),
+                    pointer: "/objects".into(),
+                    index: objects.len(),
+                    value: object,
+                }],
+            ))
+        }
+    }
 }
 
 /// The block view of `session`; `texture` is the scene's last picture.
@@ -1579,12 +1854,14 @@ pub fn show(
             op.from = drag.from;
             op.to = drag.to;
             op.path = drag.path.clone();
-            if strokes {
-                preview(&op, SOFT);
-            } else {
-                outline(drag.from, c, SOFT);
+            if op.tool != BlockTool::Select {
+                if strokes {
+                    preview(&op, SOFT);
+                } else {
+                    outline(drag.from, c, SOFT);
+                }
+                shown = Some(op.clone());
             }
-            shown = Some(op.clone());
             if op.tool == BlockTool::Cells {
                 for q in &op.path {
                     let y = crate::map::tools::ground_at(map, q[0], q[1]);
@@ -1618,6 +1895,20 @@ pub fn show(
         (None, Some((c, p))) => match state.tool {
             BlockTool::Cells => ring(p, radius.max(0.5), Color32::from_white_alpha(200)),
             BlockTool::Place => ring(p, 4.0, Color32::from_rgb(255, 214, 120)),
+            // Select rings what a click would pick.
+            BlockTool::Select => {
+                if let Some((kind, id)) = crate::map::view::nearest(session, p.x, p.z)
+                    && let Some((x, z)) = selection_at(map, kind, &id)
+                {
+                    let y = crate::map::tools::ground_at(map, x as f32, z as f32);
+                    let radius = if kind == Picked::Start { 8.0 } else { 3.0 };
+                    ring(
+                        Vec3::new(x as f32, y, z as f32),
+                        radius,
+                        Color32::from_white_alpha(170),
+                    );
+                }
+            }
             _ if strokes && state.tool != BlockTool::Ramp => {
                 op.from = c;
                 op.to = c;
@@ -1689,41 +1980,93 @@ pub fn show(
                 }
                 _ => None,
             };
-            // A drag that begins on the selection moves it; anything else selects.
-            let on_selection = |session: &Session| {
-                let (Some((kind, id)), Some(a)) = (session.tools.selected.clone(), op.path.first())
-                else {
-                    return false;
-                };
-                session
-                    .map
-                    .as_ref()
-                    .and_then(|m| selection_at(m, kind, &id))
-                    .is_some_and(|(x, z)| (x as f32 - a[0]).hypot(z as f32 - a[1]) < 6.0)
-            };
+            let adding = input.modifiers.shift;
+            let on_selection = op
+                .path
+                .first()
+                .is_some_and(|a| selection_under(session, *a).is_some());
             match (moved, docs) {
-                (Some(delta), Some(docs)) if on_selection(session) => {
-                    if let Some((kind, id)) = session.tools.selected.clone() {
-                        let commands = move_selection(session, docs, kind, &id, delta);
-                        if !commands.is_empty() {
-                            out.edits.push(step(session, "Move", commands));
+                // A drag that begins on the selection moves all of it.
+                (Some(delta), Some(docs)) if on_selection => {
+                    let commands = move_all(session, docs, delta);
+                    if !commands.is_empty() {
+                        out.edits.push(step(session, "Move", commands));
+                    }
+                }
+                // Any other drag selects what stands in its rectangle.
+                (Some(_), _) => {
+                    if let (Some(a), Some(b), Some(map)) =
+                        (op.path.first(), op.path.last(), session.map.as_ref())
+                    {
+                        let corner = |p: &[f32; 2]| {
+                            let y = crate::map::tools::ground_at(map, p[0], p[1]);
+                            project(view_projection, rect, Vec3::new(p[0], y, p[1]))
+                        };
+                        if let (Some(a), Some(b)) = (corner(a), corner(b)) {
+                            let area = Rect::from_two_pos(a, b);
+                            let inside = placed(map)
+                                .into_iter()
+                                .filter(|(_, _, x, z)| {
+                                    let y = crate::map::tools::ground_at(map, *x as f32, *z as f32);
+                                    project(
+                                        view_projection,
+                                        rect,
+                                        Vec3::new(*x as f32, y, *z as f32),
+                                    )
+                                    .is_some_and(|p| area.contains(p))
+                                })
+                                .map(|(kind, id, _, _)| (kind, id));
+                            if !adding {
+                                session.blocks.selection.clear();
+                            }
+                            for item in inside.collect::<Vec<_>>() {
+                                if !session.blocks.selection.contains(&item) {
+                                    session.blocks.selection.push(item);
+                                }
+                            }
                         }
                     }
                 }
+                // A click picks what is nearest; Shift adds it or takes it away.
                 _ => {
                     if let Some(at) = op.path.first() {
-                        session.tools.selected = crate::map::view::nearest(session, at[0], at[1]);
+                        let picked = crate::map::view::nearest(session, at[0], at[1]);
+                        let selection = &mut session.blocks.selection;
+                        match picked {
+                            Some(item) if adding => match selection.iter().position(|s| *s == item)
+                            {
+                                Some(i) => {
+                                    selection.remove(i);
+                                }
+                                None => selection.push(item),
+                            },
+                            Some(item) => *selection = vec![item],
+                            None if !adding => selection.clear(),
+                            None => {}
+                        }
                     }
                 }
             }
         } else if op.tool == BlockTool::Place {
             if let (Some(content), Some(docs), Some(&at)) = (content, docs, op.path.first()) {
-                let placing = session.blocks.placing;
-                let starts = session.map.as_ref().map_or(0, |m| m.player_starts.len());
-                out.edits.extend(place(session, content, docs, placing, at));
+                let placing = session.blocks.placing.clone();
+                let owner = session.blocks.owner;
+                let loaded = session.loaded_at;
+                out.edits
+                    .extend(place(session, content, docs, &placing, owner, at));
                 if symmetry != Symmetry::None {
-                    let twin = symmetry.point(at, map_size);
-                    session.blocks.twin = Some((placing, twin, starts + 1));
+                    // The mirror's twin: the next player's start, or the next player's
+                    // unit or building.
+                    let next = |n: u8| n % 8 + 1;
+                    session.blocks.twin = Some(Twin {
+                        placing: match placing {
+                            Placing::Start(n) => Placing::Start(next(n)),
+                            other => other,
+                        },
+                        at: symmetry.point(at, map_size),
+                        owner: if owner == 0 { 0 } else { next(owner) },
+                        after: loaded,
+                    });
                 }
             }
         } else {
@@ -1731,16 +2074,42 @@ pub fn show(
         }
     }
     // A placement's twin, once the map has taken the first.
-    if let Some((placing, at, starts)) = session.blocks.twin
+    if let Some(twin) = session.blocks.twin.clone()
         && let (Some(content), Some(docs)) = (content, docs)
-        && session
-            .map
-            .as_ref()
-            .is_some_and(|m| placing != Placing::Start || m.player_starts.len() >= starts)
+        && session.loaded_at != twin.after
         && out.edits.is_empty()
     {
         session.blocks.twin = None;
-        out.edits.extend(place(session, content, docs, placing, at));
+        out.edits.extend(place(
+            session,
+            content,
+            docs,
+            &twin.placing,
+            twin.owner,
+            twin.at,
+        ));
+    }
+    // The rectangle a Select drag is drawing.
+    if session.blocks.tool == BlockTool::Select
+        && let (Some(drag), Some(map), Some(pointer)) = (
+            session.blocks.drag.as_ref(),
+            session.map.as_ref(),
+            response.hover_pos().or(response.interact_pointer_pos()),
+        )
+        && let Some(a) = drag.path.first()
+        && selection_under(session, *a).is_none()
+    {
+        let y = crate::map::tools::ground_at(map, a[0], a[1]);
+        if let Some(start) = project(view_projection, rect, Vec3::new(a[0], y, a[1])) {
+            let area = Rect::from_two_pos(start, pointer);
+            painter.rect(
+                area,
+                2,
+                Color32::from_rgba_unmultiplied(255, 214, 120, 18),
+                Line::new(1.0, Color32::from_rgb(255, 214, 120)),
+                egui::StrokeKind::Inside,
+            );
+        }
     }
     if let Some((c, p)) = column
         && let Some(b) = blocks.get(c.0, c.1)
@@ -1781,60 +2150,58 @@ pub fn show(
             TEXT,
         );
     }
-    // The selection: a ring round it; Delete takes it away (a camp member its camp).
-    if session.blocks.tool == BlockTool::Select
-        && let Some((kind, id)) = session.tools.selected.clone()
-    {
-        match session
-            .map
-            .as_ref()
-            .and_then(|m| selection_at(m, kind, &id))
-        {
-            Some((x, z)) => {
-                if let Some(map) = session.map.as_ref() {
-                    let y = crate::map::tools::ground_at(map, x as f32, z as f32);
-                    let radius = if kind == Picked::Start { 8.0 } else { 3.0 };
-                    let points: Vec<_> = (0..=32)
-                        .filter_map(|k| {
-                            let a = k as f32 / 32.0 * std::f32::consts::TAU;
-                            let p = Vec2::new(x as f32, z as f32) + Vec2::from_angle(a) * radius;
-                            project(view_projection, rect, Vec3::new(p.x, y + 0.3, p.y))
-                        })
-                        .collect();
-                    painter.add(egui::Shape::line(
-                        points,
-                        Line::new(2.5, Color32::from_rgb(255, 214, 120)),
-                    ));
-                    if let Some(p) = project(
+    // The selection: a ring round each, the name of one alone; Delete takes it away (a
+    // camp member its camp).
+    if session.blocks.tool == BlockTool::Select && !session.blocks.selection.is_empty() {
+        let gold = Color32::from_rgb(255, 214, 120);
+        let single = session.blocks.selection.len() == 1;
+        let mut kept = Vec::new();
+        if let Some(map) = session.map.as_ref() {
+            for (kind, id) in &session.blocks.selection {
+                let Some((x, z)) = selection_at(map, *kind, id) else {
+                    continue;
+                };
+                kept.push((*kind, id.clone()));
+                let y = crate::map::tools::ground_at(map, x as f32, z as f32);
+                let radius = if *kind == Picked::Start { 8.0 } else { 3.0 };
+                let points: Vec<_> = (0..=32)
+                    .filter_map(|k| {
+                        let a = k as f32 / 32.0 * std::f32::consts::TAU;
+                        let p = Vec2::new(x as f32, z as f32) + Vec2::from_angle(a) * radius;
+                        project(view_projection, rect, Vec3::new(p.x, y + 0.3, p.y))
+                    })
+                    .collect();
+                painter.add(egui::Shape::line(points, Line::new(2.5, gold)));
+                if single
+                    && let Some(p) = project(
                         view_projection,
                         rect,
                         Vec3::new(x as f32, y + 0.3, z as f32),
-                    ) {
-                        painter.text(
-                            p + egui::vec2(0.0, -14.0),
-                            egui::Align2::CENTER_BOTTOM,
-                            match kind {
-                                Picked::Start => format!("start of player {id}"),
-                                _ => id.clone(),
-                            },
-                            egui::FontId::proportional(11.0),
-                            Color32::from_rgb(255, 214, 120),
-                        );
-                    }
-                }
-                if response.hovered()
-                    && (input.key_pressed(egui::Key::Delete)
-                        || input.key_pressed(egui::Key::Backspace))
-                    && let Some(docs) = docs
+                    )
                 {
-                    let commands = crate::map::view::delete(session, docs, kind, &id);
-                    if !commands.is_empty() {
-                        out.edits.push(step(session, "Delete", commands));
-                        session.tools.selected = None;
-                    }
+                    painter.text(
+                        p + egui::vec2(0.0, -14.0),
+                        egui::Align2::CENTER_BOTTOM,
+                        match kind {
+                            Picked::Start => format!("start of player {id}"),
+                            _ => id.clone(),
+                        },
+                        egui::FontId::proportional(11.0),
+                        gold,
+                    );
                 }
             }
-            None => session.tools.selected = None,
+        }
+        session.blocks.selection = kept;
+        if response.hovered()
+            && (input.key_pressed(egui::Key::Delete) || input.key_pressed(egui::Key::Backspace))
+            && let Some(docs) = docs
+        {
+            let commands = crate::map::view::delete_all(session, docs, &session.blocks.selection);
+            if !commands.is_empty() {
+                out.edits.push(step(session, "Delete", commands));
+                session.blocks.selection.clear();
+            }
         }
     }
     // The playable area: a strong line round it, on the ground, and its size at a corner.

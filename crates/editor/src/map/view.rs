@@ -122,79 +122,78 @@ pub(crate) fn nearest(session: &Session, x: f32, z: f32) -> Option<(Picked, Stri
     best.map(|b| (b.1, b.2))
 }
 
-/// The commands that delete the selection (and, for a camp member, its camp entry).
-pub(crate) fn delete(session: &Session, docs: &Docs, picked: Picked, id: &str) -> Vec<Command> {
-    let map_doc = session.path("map.json");
-    let mut out = Vec::new();
-    match picked {
-        Picked::Start => {
-            if let Some(i) = docs.map["playerStarts"].as_array().and_then(|s| {
-                s.iter()
-                    .position(|s| s["player"].as_u64() == id.parse().ok())
-            }) {
-                out.push(Command::Remove {
-                    document: map_doc,
-                    pointer: format!("/playerStarts/{i}"),
-                });
-            }
-        }
-        Picked::Entity => {
-            // A camp member takes its whole camp with it.
-            let camp = docs.map["camps"].as_array().and_then(|camps| {
-                camps.iter().position(|c| {
-                    c["members"]
-                        .as_array()
-                        .is_some_and(|m| m.iter().any(|v| v == id))
-                })
-            });
-            let mut ids: Vec<String> = vec![id.to_string()];
-            if let Some(c) = camp {
-                ids = docs.map["camps"][c]["members"]
-                    .as_array()
-                    .map(|m| {
-                        m.iter()
-                            .filter_map(|v| v.as_str().map(str::to_string))
-                            .collect()
-                    })
-                    .unwrap_or_default();
-            }
-            let mut indices: Vec<usize> = docs.map["entities"]
-                .as_array()
-                .map(|e| {
-                    e.iter()
-                        .enumerate()
-                        .filter(|(_, e)| ids.iter().any(|i| e["id"] == *i))
-                        .map(|(i, _)| i)
-                        .collect()
-                })
-                .unwrap_or_default();
-            indices.sort_unstable_by(|a, b| b.cmp(a));
-            for i in indices {
-                out.push(Command::Remove {
-                    document: map_doc.clone(),
-                    pointer: format!("/entities/{i}"),
-                });
-            }
-            if let Some(c) = camp {
-                out.push(Command::Remove {
-                    document: map_doc,
-                    pointer: format!("/camps/{c}"),
-                });
-            }
-        }
-        Picked::Object => {
-            if let Some(i) = docs.scenery["objects"]
-                .as_array()
-                .and_then(|o| o.iter().position(|o| o["id"] == id))
-            {
-                out.push(Command::Remove {
-                    document: session.path("scenery.json"),
-                    pointer: format!("/objects/{i}"),
-                });
-            }
+/// The commands that delete everything in `items` at once (a camp member takes its whole
+/// camp with it), removing from the end of each list so the indices hold.
+pub(crate) fn delete_all(
+    session: &Session,
+    docs: &Docs,
+    items: &[(Picked, String)],
+) -> Vec<Command> {
+    let list = |v: &Value| v.as_array().cloned().unwrap_or_default();
+    let (starts, entities, camps, objects) = (
+        list(&docs.map["playerStarts"]),
+        list(&docs.map["entities"]),
+        list(&docs.map["camps"]),
+        list(&docs.scenery["objects"]),
+    );
+    let has = |kind: Picked, id: &str| items.iter().any(|(k, i)| *k == kind && i == id);
+    let gone_starts: Vec<usize> = (0..starts.len())
+        .filter(|i| {
+            starts[*i]["player"]
+                .as_u64()
+                .is_some_and(|p| has(Picked::Start, &p.to_string()))
+        })
+        .collect();
+    let mut gone_entities: std::collections::BTreeSet<String> = items
+        .iter()
+        .filter(|(k, _)| *k == Picked::Entity)
+        .map(|(_, id)| id.clone())
+        .collect();
+    let mut gone_camps = Vec::new();
+    for (i, camp) in camps.iter().enumerate() {
+        let members: Vec<String> = list(&camp["members"])
+            .iter()
+            .filter_map(|m| m.as_str().map(str::to_string))
+            .collect();
+        if members.iter().any(|m| gone_entities.contains(m)) {
+            gone_entities.extend(members);
+            gone_camps.push(i);
         }
     }
-    out
+    let entity_indices: Vec<usize> = (0..entities.len())
+        .filter(|i| {
+            entities[*i]["id"]
+                .as_str()
+                .is_some_and(|id| gone_entities.contains(id))
+        })
+        .collect();
+    let gone_objects: Vec<usize> = (0..objects.len())
+        .filter(|i| {
+            objects[*i]["id"]
+                .as_str()
+                .is_some_and(|id| has(Picked::Object, id))
+        })
+        .collect();
+    let map_doc = session.path("map.json");
+    let remove = |document: &str, array: &str, mut indices: Vec<usize>| {
+        indices.sort_unstable_by(|a, b| b.cmp(a));
+        indices
+            .into_iter()
+            .map(|i| Command::Remove {
+                document: document.to_string(),
+                pointer: format!("/{array}/{i}"),
+            })
+            .collect::<Vec<_>>()
+    };
+    let mut commands = remove(&map_doc, "playerStarts", gone_starts);
+    commands.extend(remove(&map_doc, "entities", entity_indices));
+    commands.extend(remove(&map_doc, "camps", gone_camps));
+    commands.extend(remove(
+        &session.path("scenery.json"),
+        "objects",
+        gone_objects,
+    ));
+    commands
 }
 
 /// Removes what lies within `radius` of world (`x`, `z`) as one step: starts, entities
