@@ -233,6 +233,9 @@ pub struct State {
     /// number comes from the starts already there): what, where, and how many starts
     /// the map has once the first is in.
     pub twin: Option<(Placing, [f32; 2], usize)>,
+    /// While a drag is under way, the map shows what it will do: the terrain as it was
+    /// before the drag, to go back to, and what the preview last showed.
+    pub preview: Option<(Box<canopy_content::map::TerrainData>, String)>,
 }
 
 impl Default for State {
@@ -251,6 +254,7 @@ impl Default for State {
             placing: Placing::default(),
             symmetry: Symmetry::default(),
             twin: None,
+            preview: None,
         }
     }
 }
@@ -656,6 +660,58 @@ fn round(blocks: &mut Blocks, columns: &[(i32, i32)], reverse: bool) {
             b.cut = cut;
             blocks.set(x, z, b);
         }
+    }
+}
+
+/// Shows what `op` will do while its drag is under way: the map's grids as they would be,
+/// none of it in the documents (the drag's end makes the one undo step).
+fn live_preview(session: &mut Session, op: &BlockOp) {
+    let key = format!(
+        "{:?}{:?}{}{:?}{}",
+        op.from,
+        op.to,
+        op.path.len(),
+        op.path.last(),
+        op.reverse
+    );
+    if session
+        .blocks
+        .preview
+        .as_ref()
+        .is_some_and(|(_, k)| *k == key)
+    {
+        return;
+    }
+    restore(session);
+    let symmetry = session.blocks.symmetry;
+    let Some(map) = session.map.as_mut() else {
+        return;
+    };
+    let size = map.size;
+    let terrain = &mut map.authoring.terrain;
+    let Some(Ok(mut blocks)) = Blocks::of(terrain) else {
+        return;
+    };
+    let original = Box::new(terrain.clone());
+    let start = blocks.at(op.from.0, op.from.1);
+    change(&mut blocks, op, start);
+    if symmetry != Symmetry::None {
+        let twin = symmetry.op(op, size, blocks.side as i32);
+        let start = blocks.at(twin.from.0, twin.from.1);
+        change(&mut blocks, &twin, start);
+    }
+    blocks.apply(terrain);
+    session.blocks.preview = Some((original, key));
+    session.stale = true;
+}
+
+/// Puts back the terrain a preview stood in for.
+fn restore(session: &mut Session) {
+    if let Some((original, _)) = session.blocks.preview.take()
+        && let Some(map) = session.map.as_mut()
+    {
+        map.authoring.terrain = *original;
+        session.stale = true;
     }
 }
 
@@ -1205,6 +1261,7 @@ pub fn show(
     let symmetry = state.symmetry;
     let side = blocks.side as i32;
     let mut shown: Option<BlockOp> = None;
+    let mut live: Option<BlockOp> = None;
     let mut op = BlockOp {
         tool: state.tool,
         reverse: shift,
@@ -1258,6 +1315,10 @@ pub fn show(
                 painter.arrow(a, b - a, Line::new(2.5, Color32::from_rgb(255, 214, 120)));
             }
             session.blocks.drag = Some(drag);
+            // The map follows the drag (not for cuts and placements, which are clicks).
+            if !matches!(op.tool, BlockTool::Place | BlockTool::Cut) {
+                live = Some(op.clone());
+            }
         }
         (None, Some((c, p))) => match state.tool {
             BlockTool::Cells => ring(p, radius.max(0.5), Color32::from_white_alpha(200)),
@@ -1318,7 +1379,11 @@ pub fn show(
             path: vec![[p.x, p.z]],
         });
     }
+    if session.blocks.drag.is_none() && finished.is_none() {
+        restore(session);
+    }
     if let Some(drag) = finished {
+        restore(session);
         op.from = drag.from;
         op.to = drag.to;
         op.path = drag.path;
@@ -1386,6 +1451,11 @@ pub fn show(
             egui::FontId::proportional(12.0),
             TEXT,
         );
+    }
+    if let Some(op) = live
+        && session.blocks.drag.is_some()
+    {
+        live_preview(session, &op);
     }
     out
 }
