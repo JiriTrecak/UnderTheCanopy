@@ -5,12 +5,13 @@
     c.call("map_info", map="frozen-dream")
 
 The token is the editor's per-install token in the game's user folder (CANOPY_MCP_TOKEN_FILE
-overrides where it is read from); start the server with `just mcp` or from the editor."""
+overrides where it is read from, CANOPY_MCP_PORT the port, for the server and this client
+alike); start the server with `just mcp` or from the editor."""
 import json, os, base64, urllib.request
 
 TOKEN_FILE = os.environ.get("CANOPY_MCP_TOKEN_FILE") or os.path.expanduser(
     "~/Library/Application Support/com.jt.canopy/editor-mcp-token")
-URL = "http://127.0.0.1:7431/mcp"
+URL = "http://127.0.0.1:%s/mcp" % os.environ.get("CANOPY_MCP_PORT", "7431")
 
 class Client:
     def __init__(self):

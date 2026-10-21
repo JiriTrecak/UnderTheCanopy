@@ -1,0 +1,10 @@
+{
+  "format": 1,
+  "id": "underleaf-lookdev",
+  "kind": "map",
+  "name": "Underleaf",
+  "version": "1.0.0",
+  "dependencies": {
+    "base": ">=0.4.1"
+  }
+}

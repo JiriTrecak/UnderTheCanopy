@@ -674,6 +674,20 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     shoot(&mut editor, rig, "editor-blocks-dream-split-wide")?;
     editor.set_map_panels(false, true);
     editor.set_block_view("blocks");
+    // The forest biome's look-dev map: its blocks and the world generated from them.
+    if paths
+        .data
+        .join("base/maps/showcase/underleaf-lookdev.utcm")
+        .is_dir()
+    {
+        editor.open_document("maps/showcase/underleaf-lookdev.utcm/map.json");
+        settle(&mut editor, rig, 40);
+        shoot(&mut editor, rig, "editor-blocks-underleaf")?;
+        editor.set_block_view("generated");
+        settle(&mut editor, rig, 60);
+        shoot(&mut editor, rig, "editor-blocks-underleaf-generated")?;
+        editor.set_block_view("blocks");
+    }
     Ok(())
 }
 

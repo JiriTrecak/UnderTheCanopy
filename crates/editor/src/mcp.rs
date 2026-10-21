@@ -24,8 +24,17 @@ use serde_json::Value;
 use std::sync::{Arc, mpsc};
 use std::time::Duration;
 
-/// The port the server listens on.
+/// The port the server listens on by default.
 pub const PORT: u16 = 7431;
+
+/// The port to serve on: `CANOPY_MCP_PORT` when set (several checkouts on one machine
+/// each run their own server), otherwise [`PORT`].
+pub fn port() -> u16 {
+    std::env::var("CANOPY_MCP_PORT")
+        .ok()
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(PORT)
+}
 
 /// What an agent asked for.
 #[derive(Debug, Clone)]
@@ -202,7 +211,7 @@ pub struct MapCreateArgs {
     pub name: Option<String>,
     /// Cells per side: a multiple of 32 from 128 to 1024. 512 by default.
     pub size: Option<u32>,
-    /// frozen-dream (the only one for now, and the default).
+    /// One of the biomes: frozen-dream (the default) or underleaf.
     pub biome: Option<String>,
     /// The folder under `maps/`; `skirmish` by default.
     pub folder: Option<String>,

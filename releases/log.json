@@ -17,7 +17,10 @@
       "Snowy Lake: a four-player map round a frozen lake",
       "Map editor: import StarCraft II melee maps (from the game's folders and the Battle.net cache) as block maps at their true size, with their cliffs, ramps, starts and resources",
       "Map editor: a minimap of the whole map in the view's corner (M or the view bar), following every edit, with starts, amber, camps and the camera's view; click it to look there",
-      "Campaign missions have their own computer players, allies and enemies: they hold their ground, keep their bases manned and rebuilt, send attack waves on a timer, or arrive later in the mission when the story calls for them"
+      "Campaign missions have their own computer players, allies and enemies: they hold their ground, keep their bases manned and rebuilt, send attack waves on a timer, or arrive later in the mission when the story calls for them",
+      "Underleaf, a late-summer forest biome for the ant campaign: calm soil and moss, stone and root-bank cliffs, beetle masonry, tea-dark streams, a lush frame and warm low light",
+      "Map pieces for the forest missions: withered patches, glowing substance pools, bleached mushrooms and a collapsed ant mound for the Hollow; moss, blossoms and a mushroom ring for the glade; beetle road tiles, lanterns, glass substance tanks, station walls and the condenser for the Glass Road",
+      "The Underleaf showcase map, showing the new forest biome from a sunken hollow to a beetle road"
     ],
     "improved": [
       "Frost Hollow: frozen ice, quiet frosted snow, a bank of roots with pale spires, a crusted shore and big frosted leaves, rebuilt to its drawn layout",
