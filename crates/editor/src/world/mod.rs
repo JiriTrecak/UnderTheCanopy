@@ -1465,3 +1465,59 @@ pub fn show(
     }
     out
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn op(tool: BlockTool, from: (i32, i32), to: (i32, i32)) -> BlockOp {
+        BlockOp::new(tool, from, to)
+    }
+
+    #[test]
+    fn a_point_mirrored_edit_leaves_the_blocks_symmetric() {
+        let mut blocks = Blocks::flat(256);
+        let side = blocks.side as i32;
+        let raise = op(BlockTool::Raise, (10, 12), (14, 15));
+        let mut ramp = op(BlockTool::Ramp, (0, 0), (0, 0));
+        ramp.path = vec![[40.0, 30.0], [60.0, 50.0]];
+        ramp.level = Some(2);
+        for edit in [raise, ramp] {
+            let start = blocks.at(edit.from.0, edit.from.1);
+            change(&mut blocks, &edit, start);
+            let twin = Symmetry::Point.op(&edit, 256, side);
+            let start = blocks.at(twin.from.0, twin.from.1);
+            change(&mut blocks, &twin, start);
+        }
+        for z in 0..side {
+            for x in 0..side {
+                let (a, b) = (blocks.at(x, z), blocks.at(side - 1 - x, side - 1 - z));
+                assert_eq!((a.level, a.kind), (b.level, b.kind), "at {x}, {z}");
+                // The twin ramp falls the other way, half a turn round.
+                if a.kind == BlockKind::Ramp {
+                    assert_eq!((a.ramp + 3) % 8 + 1, b.ramp);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn round_cuts_the_turning_corners_of_a_plateau_only() {
+        let mut blocks = Blocks::flat(256);
+        for z in 20..26 {
+            for x in 20..26 {
+                blocks.set(x, z, Block::ground(2));
+            }
+        }
+        let all = op(BlockTool::Round, (18, 18), (28, 28));
+        let start = blocks.at(18, 18);
+        change(&mut blocks, &all, start);
+        assert_eq!(blocks.at(20, 20).cut, Cut::NorthWest);
+        assert_eq!(blocks.at(25, 20).cut, Cut::NorthEast);
+        assert_eq!(blocks.at(25, 25).cut, Cut::SouthEast);
+        assert_eq!(blocks.at(20, 25).cut, Cut::SouthWest);
+        // Along the straight edges and inside, nothing is cut.
+        assert_eq!(blocks.at(22, 20).cut, Cut::None);
+        assert_eq!(blocks.at(22, 22).cut, Cut::None);
+    }
+}
