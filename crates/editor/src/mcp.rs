@@ -228,11 +228,12 @@ pub struct MapBlocksArgs {
     pub map: String,
     /// What the block editor's tools do (D80): `flat` (blocks out the map as level-1
     /// ground), `blockout` (blocks from its heights), raise, lower, level, paint, face,
-    /// unface, ramp, unramp, cut, uncut, cells, uncells, fill.
+    /// unface, ramp, unramp, cut, uncut, cells, uncells, fill, round, unround.
     /// - raise, lower, level, paint, face, unface: the blocks of the box `from`–`to`, or
     ///   with `points`, those within `radius` blocks of that line.
     /// - ramp: from its top (`from`) to its foot (`to`), `radius` blocks to each side
     ///   (default 1); it falls one level that way. A diagonal ramp's teeth are cut.
+    /// - round, unround: cuts (or uncuts) the plateaus' turning corners at 45°.
     /// - cells, uncells: kinds painted cell by cell within `radius` cells of `points`;
     ///   fill: the cells inside the outline `points`, painted `kind` (`none` clears).
     pub op: String,
@@ -242,6 +243,9 @@ pub struct MapBlocksArgs {
     pub to: Option<[f32; 2]>,
     /// A line or outline in world cells (x, z).
     pub points: Option<Vec<[f32; 2]>>,
+    /// raise, lower, level, paint, face, round: the blocks inside the outline `points`
+    /// instead of along it.
+    pub fill: Option<bool>,
     /// Brush radius: blocks for block ops, cells for cells.
     pub radius: Option<f32>,
     /// level: the level (0–7; flat ground is 1, one level is 3 m); ramp: its top level.
@@ -252,6 +256,9 @@ pub struct MapBlocksArgs {
     pub style: Option<u8>,
     /// cut: the corner of the block at `to` nearest this world point is cut away.
     pub corner: Option<[f32; 2]>,
+    /// Makes this and later edits in the mirror too, as the editor's Symmetry does:
+    /// off, point (half a turn round the middle), x (left–right) or z (top–bottom).
+    pub symmetry: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]

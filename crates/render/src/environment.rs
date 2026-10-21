@@ -216,6 +216,10 @@ pub struct BlockLook {
     /// How far rubble spills out over the ground from a ramp's foot (metres).
     #[serde(default)]
     pub ramp_spill: f32,
+    /// Ground of its own on whole levels (a main's paving, a middle level's moss),
+    /// blended down ramps by their height.
+    #[serde(default)]
+    pub levels: Vec<LevelGround>,
     /// Closed ground's cover in the biome's grass layer (0 none, 1 full).
     #[serde(default = "one")]
     pub frame_cover: f32,
@@ -239,6 +243,15 @@ pub struct BlockLook {
     /// Scenery scattered by zone.
     #[serde(default)]
     pub scatter: Vec<Scatter>,
+}
+
+/// The ground painted on one level.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LevelGround {
+    pub level: u8,
+    /// A terrain material.
+    pub material: String,
 }
 
 /// A cliff face a map's blocks can choose (their face style).

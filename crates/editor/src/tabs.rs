@@ -266,9 +266,13 @@ impl TabViewer for Viewer<'_> {
                     .entry(root.clone())
                     .or_insert_with(|| crate::map::Session::new(&root));
                 let out = match session.editor {
-                    crate::map::Editor::Blocks => {
-                        crate::world::show(ui, session, self.scene_texture)
-                    }
+                    crate::map::Editor::Blocks => crate::world::show(
+                        ui,
+                        session,
+                        self.content.as_deref(),
+                        docs.as_ref(),
+                        self.scene_texture,
+                    ),
                     crate::map::Editor::Classic => crate::map::view::show(
                         ui,
                         session,

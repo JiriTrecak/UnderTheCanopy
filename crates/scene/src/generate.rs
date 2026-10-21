@@ -556,6 +556,18 @@ fn ground(map: &mut UtcMap, cells: &Cells, recipe: &BlockLook, biome: &BiomeConf
     terrain.shade = (recipe.frame_shade > 0.0).then(|| floats(shade.into_iter()));
     terrain.rock = floats(std::iter::repeat_n(0.0, side * side));
     let mut paint = Vec::new();
+    // Each level's own ground, by the height the blocks made (ramps blend between).
+    for level in &recipe.levels {
+        let l = f32::from(level.level);
+        paint.push(PaintLayer {
+            material: level.material.clone(),
+            weights: floats(heights_before.iter().map(|h| {
+                let at = (h - canopy_content::map::blocks::BASE_HEIGHT) / LEVEL_HEIGHT;
+                smoothstep(0.0, 1.0, (1.0 - (at - l).abs()) * 1.6 - 0.3)
+            })),
+            variants: None,
+        });
+    }
     // Paint that a biome layer takes feeds that layer; anything else is the map's own.
     let _ = &biome.terrain;
     if let Some(material) = &recipe.rubble {

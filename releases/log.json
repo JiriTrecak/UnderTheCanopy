@@ -4,7 +4,9 @@
     "added": [
       "Editor: a block editor for maps. Shape a map in 4×4-cell blocks (raise, level, ramps, diagonal cuts, water and impassable ground) and its cliffs, water and closed ground follow; Test in game plays it.",
       "Editor: maps shaped in blocks are dressed automatically: generated stone cliffs, ground and frame, leaf and clover decals, frozen ice, frost. Frost Hollow, a new showcase map, is built only from blocks.",
-      "Block editor: ramps dragged from a cliff's top to its foot, wide and diagonal; kinds painted cell by cell for shores and edges at any angle; a choice of cliff face; brush strokes for every block tool"
+      "Block editor: ramps dragged from a cliff's top to its foot, wide and diagonal; kinds painted cell by cell for shores and edges at any angle; a choice of cliff face; brush strokes for every block tool",
+      "New two-player map Frozen Dream: paved mains in opposite corners, one ramp to a natural on the frozen moss, a dusty lowland winding between, all ringed by frozen forest",
+      "Block editor: symmetry (point or mirrored) for every edit and placement, a Place tool for starts, amber and camps, and Round to cut a plateau's corners at 45°"
     ],
     "improved": [
       "Frost Hollow: frozen ice, quiet frosted snow, a bank of roots with pale spires, a crusted shore and big frosted leaves, rebuilt to its drawn layout"

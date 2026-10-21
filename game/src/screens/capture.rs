@@ -466,6 +466,57 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     settle(&mut editor, rig, 30);
     shoot(&mut editor, rig, "editor-blocks-edited")?;
     editor.undo_all();
+
+    // Frost Hollow, authored in blocks: the blocks, a ramp being dragged, the cell brush,
+    // and the world generated from them.
+    editor.open_document("maps/showcase/frost-hollow.utcm/map.json");
+    settle(&mut editor, rig, 60);
+    editor.set_map_editor(true);
+    editor.set_block_view(false);
+    settle(&mut editor, rig, 30);
+    shoot(&mut editor, rig, "editor-blocks-frost")?;
+    editor.set_block_tool("ramp");
+    let (a, b) = (point(880.0, 420.0), point(1040.0, 560.0));
+    frame(&mut editor, rig, vec![egui::Event::PointerMoved(a)]);
+    frame(&mut editor, rig, vec![press(a, true)]);
+    for i in 1..=10 {
+        let t = i as f32 / 10.0;
+        frame(
+            &mut editor,
+            rig,
+            vec![egui::Event::PointerMoved(a + (b - a) * t)],
+        );
+    }
+    shoot(&mut editor, rig, "editor-blocks-ramp-drag")?;
+    frame(&mut editor, rig, vec![press(b, false)]);
+    settle(&mut editor, rig, 10);
+    editor.set_block_tool("cells");
+    frame(
+        &mut editor,
+        rig,
+        vec![egui::Event::PointerMoved(point(1300.0, 700.0))],
+    );
+    settle(&mut editor, rig, 4);
+    shoot(&mut editor, rig, "editor-blocks-cells")?;
+    editor.set_block_view(true);
+    let started = Instant::now();
+    settle(&mut editor, rig, 1);
+    let build_ms = started.elapsed().as_secs_f32() * 1000.0;
+    settle(&mut editor, rig, 40);
+    tracing::info!(build_ms, "generated view build");
+    shoot(&mut editor, rig, "editor-blocks-generated")?;
+    // An edit in the generated view, and how long the world takes to follow it.
+    editor.set_block_tool("raise");
+    let started = Instant::now();
+    click(&mut editor, rig, (700.0, 800.0));
+    settle(&mut editor, rig, 1);
+    tracing::info!(
+        edit_ms = started.elapsed().as_secs_f32() * 1000.0,
+        "generated view edit"
+    );
+    settle(&mut editor, rig, 20);
+    shoot(&mut editor, rig, "editor-blocks-generated-edited")?;
+    editor.undo_all();
     Ok(())
 }
 

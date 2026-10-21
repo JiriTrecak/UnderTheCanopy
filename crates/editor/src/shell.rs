@@ -2090,6 +2090,17 @@ impl Shell {
         }
     }
 
+    /// The block editor's view: the blocks, or the world generated from them (captures).
+    pub fn set_block_view(&mut self, generated: bool) {
+        if let Some(root) = self.active_map_root()
+            && let Some(session) = self.maps.get_mut(&root)
+            && session.blocks.generated != generated
+        {
+            session.blocks.generated = generated;
+            session.stale = true;
+        }
+    }
+
     pub fn undo_all(&mut self) {
         while let Some(store) = &mut self.store
             && store.undo().is_some()

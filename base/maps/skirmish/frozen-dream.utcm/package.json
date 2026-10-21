@@ -1,0 +1,10 @@
+{
+  "format": 1,
+  "id": "frozen-dream",
+  "kind": "map",
+  "name": "Frozen Dream",
+  "version": "1.0.0",
+  "dependencies": {
+    "base": ">=0.4.1"
+  }
+}

@@ -281,6 +281,16 @@ impl Shell {
         let root = self.map_root(&args.map)?;
         self.loaded_map(&root)?;
         let session = self.maps.get_mut(&root).expect("loaded");
+        if let Some(symmetry) = &args.symmetry {
+            use crate::world::Symmetry;
+            session.blocks.symmetry = match symmetry.as_str() {
+                "off" | "none" => Symmetry::None,
+                "point" => Symmetry::Point,
+                "x" => Symmetry::MirrorX,
+                "z" => Symmetry::MirrorZ,
+                other => return Err(format!("No symmetry {other}: off, point, x or z")),
+            };
+        }
         let op = args.op.to_lowercase();
         let edit = if op == "flat" || op == "blockout" {
             crate::world::block_out(session, op == "flat")
@@ -322,9 +332,11 @@ impl Shell {
                 "uncells" => (BlockTool::Cells, true),
                 "face" => (BlockTool::Face, false),
                 "unface" => (BlockTool::Face, true),
+                "round" => (BlockTool::Round, false),
+                "unround" => (BlockTool::Round, true),
                 other => {
                     return Err(format!(
-                        "No op {other}: flat, blockout, raise, lower, level, paint, face, unface, ramp, unramp, cut, uncut, cells, uncells, fill"
+                        "No op {other}: flat, blockout, raise, lower, level, paint, face, unface, ramp, unramp, cut, uncut, cells, uncells, fill, round, unround"
                     ));
                 }
             };
@@ -346,7 +358,7 @@ impl Shell {
                     brush: !points.is_empty(),
                     path,
                     radius: args.radius.unwrap_or(1.0),
-                    fill: op == "fill",
+                    fill: op == "fill" || args.fill.unwrap_or(false),
                     style: args.style.unwrap_or(1),
                     ..BlockOp::new(tool, column(from), column(to))
                 },

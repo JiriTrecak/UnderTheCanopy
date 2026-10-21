@@ -40,10 +40,15 @@ pub enum BlockTool {
     Cells,
     /// The face the cliffs under the blocks take (Shift: the biome's own).
     Face,
+    /// Starts, amber sites and creep camps, clicked where they go.
+    Place,
+    /// The corners of the blocks under the brush where a plateau's edge turns, cut at
+    /// 45° so outlines round off (Shift: uncut).
+    Round,
 }
 
 impl BlockTool {
-    const ALL: [BlockTool; 7] = [
+    const ALL: [BlockTool; 9] = [
         BlockTool::Raise,
         BlockTool::Level,
         BlockTool::Paint,
@@ -51,6 +56,8 @@ impl BlockTool {
         BlockTool::Cut,
         BlockTool::Cells,
         BlockTool::Face,
+        BlockTool::Place,
+        BlockTool::Round,
     ];
 
     pub fn named(name: &str) -> Option<Self> {
@@ -68,6 +75,8 @@ impl BlockTool {
             BlockTool::Cut => "Cut",
             BlockTool::Cells => "Cells",
             BlockTool::Face => "Face",
+            BlockTool::Place => "Place",
+            BlockTool::Round => "Round",
         }
     }
 
@@ -80,6 +89,8 @@ impl BlockTool {
             BlockTool::Cut => egui::Key::T,
             BlockTool::Cells => egui::Key::C,
             BlockTool::Face => egui::Key::F,
+            BlockTool::Place => egui::Key::P,
+            BlockTool::Round => egui::Key::O,
         }
     }
 
@@ -98,6 +109,12 @@ impl BlockTool {
             BlockTool::Face => {
                 "Drag over the blocks above a cliff to choose its face (Shift: the biome's)"
             }
+            BlockTool::Place => {
+                "Click to place a start (with its amber), an amber site or a creep camp"
+            }
+            BlockTool::Round => {
+                "Drag over a plateau's edge to cut its corners at 45° (Shift uncuts)"
+            }
         }
     }
 
@@ -105,8 +122,80 @@ impl BlockTool {
     fn strokes(self, brush: bool) -> bool {
         match self {
             BlockTool::Ramp | BlockTool::Cells => true,
-            BlockTool::Cut => false,
+            BlockTool::Cut | BlockTool::Place => false,
             _ => brush,
+        }
+    }
+}
+
+/// What Place puts down.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Placing {
+    #[default]
+    Start,
+    Amber,
+    Camp,
+}
+
+/// Edits repeated in a mirror of the map, for fair maps.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Symmetry {
+    #[default]
+    None,
+    /// Turned half round the map's middle (two players across a diagonal).
+    Point,
+    /// Mirrored left to right.
+    MirrorX,
+    /// Mirrored top to bottom.
+    MirrorZ,
+}
+
+impl Symmetry {
+    const ALL: [Symmetry; 4] = [
+        Symmetry::None,
+        Symmetry::Point,
+        Symmetry::MirrorX,
+        Symmetry::MirrorZ,
+    ];
+
+    fn name(self) -> &'static str {
+        match self {
+            Symmetry::None => "Off",
+            Symmetry::Point => "Point",
+            Symmetry::MirrorX => "Left–right",
+            Symmetry::MirrorZ => "Top–bottom",
+        }
+    }
+
+    /// A world point's twin on a map of `size` cells.
+    pub fn point(self, p: [f32; 2], size: u32) -> [f32; 2] {
+        let s = size as f32;
+        match self {
+            Symmetry::None => p,
+            Symmetry::Point => [s - p[0], s - p[1]],
+            Symmetry::MirrorX => [s - p[0], p[1]],
+            Symmetry::MirrorZ => [p[0], s - p[1]],
+        }
+    }
+
+    /// A column's twin among `side` columns per side.
+    fn column(self, c: (i32, i32), side: i32) -> (i32, i32) {
+        match self {
+            Symmetry::None => c,
+            Symmetry::Point => (side - 1 - c.0, side - 1 - c.1),
+            Symmetry::MirrorX => (side - 1 - c.0, c.1),
+            Symmetry::MirrorZ => (c.0, side - 1 - c.1),
+        }
+    }
+
+    /// `op` done in the mirror.
+    fn op(self, op: &BlockOp, size: u32, side: i32) -> BlockOp {
+        BlockOp {
+            from: self.column(op.from, side),
+            to: self.column(op.to, side),
+            point: op.point.map(|p| self.point(p, size)),
+            path: op.path.iter().map(|p| self.point(*p, size)).collect(),
+            ..op.clone()
         }
     }
 }
@@ -138,6 +227,12 @@ pub struct State {
     pub generated: bool,
     /// The names of the biome's faces (face style 1 onwards).
     pub faces: Vec<String>,
+    pub placing: Placing,
+    pub symmetry: Symmetry,
+    /// A placement's twin, waiting for the map to take the first (a start's player
+    /// number comes from the starts already there): what, where, and how many starts
+    /// the map has once the first is in.
+    pub twin: Option<(Placing, [f32; 2], usize)>,
 }
 
 impl Default for State {
@@ -153,6 +248,9 @@ impl Default for State {
             drag: None,
             generated: false,
             faces: Vec::new(),
+            placing: Placing::default(),
+            symmetry: Symmetry::default(),
+            twin: None,
         }
     }
 }
@@ -335,6 +433,18 @@ fn centre(x: i32, z: i32) -> Vec2 {
 
 /// The columns an op works on: its box, or those within its brush of its stroke.
 pub fn footprint(blocks: &Blocks, op: &BlockOp) -> Vec<(i32, i32)> {
+    // An outline filled: every column whose centre is inside it.
+    if op.fill && op.path.len() >= 3 && op.tool != BlockTool::Cells {
+        let (lo, hi) = op.path.iter().fold(
+            (Vec2::splat(f32::MAX), Vec2::splat(f32::MIN)),
+            |(lo, hi), p| (lo.min(Vec2::from_array(*p)), hi.max(Vec2::from_array(*p))),
+        );
+        let (x0, z0) = blocks.column_at(lo.x, lo.y);
+        let (x1, z1) = blocks.column_at(hi.x, hi.y);
+        return area((x0, z0), (x1, z1))
+            .filter(|&(x, z)| blocks.get(x, z).is_some() && inside(centre(x, z), &op.path))
+            .collect();
+    }
     if !op.tool.strokes(op.brush) || op.path.is_empty() {
         return area(op.from, op.to).collect();
     }
@@ -407,10 +517,29 @@ pub fn apply(session: &mut Session, op: &BlockOp) -> Option<crate::tabs::Edit> {
         BlockTool::Cells if reverse => "Clear painted cells",
         BlockTool::Cells => "Paint cells",
         BlockTool::Face => "Cliff face",
+        BlockTool::Place => return None,
+        BlockTool::Round if reverse => "Uncut corners",
+        BlockTool::Round => "Round corners",
     };
-    let columns = footprint(&blocks, op);
     let current = blocks.clone();
-    commit(session, label, current, |blocks| match op.tool {
+    let size = session.map.as_ref().map_or(0, |m| m.size);
+    let symmetry = session.blocks.symmetry;
+    commit(session, label, current, |blocks| {
+        change(blocks, op, start);
+        if symmetry != Symmetry::None {
+            let side = blocks.side as i32;
+            let twin = symmetry.op(op, size, side);
+            let start = blocks.at(twin.from.0, twin.from.1);
+            change(blocks, &twin, start);
+        }
+    })
+}
+
+/// What `op` does to `blocks`; `start` is the block its drag began on.
+fn change(blocks: &mut Blocks, op: &BlockOp, start: Block) {
+    let reverse = op.reverse;
+    let columns = footprint(blocks, op);
+    match op.tool {
         BlockTool::Raise => {
             for &(x, z) in &columns {
                 if let Some(mut b) = blocks.get(x, z) {
@@ -475,7 +604,56 @@ pub fn apply(session: &mut Session, op: &BlockOp) -> Option<crate::tabs::Edit> {
                 }
             }
         }
-    })
+        BlockTool::Place => {}
+        BlockTool::Round => round(blocks, &columns, reverse),
+    }
+}
+
+/// Cuts the convex corners of `columns` at 45°: a corner where both neighbours beside it
+/// are lower (and the one across it no higher), so a plateau's outline rounds off; with
+/// `reverse`, takes those cuts away. Ramps keep their own.
+fn round(blocks: &mut Blocks, columns: &[(i32, i32)], reverse: bool) {
+    let mut cuts = Vec::new();
+    for &(x, z) in columns {
+        let Some(b) = blocks.get(x, z) else { continue };
+        if b.kind == BlockKind::Ramp {
+            continue;
+        }
+        if reverse {
+            cuts.push((x, z, Cut::None));
+            continue;
+        }
+        let lower = |n: Block| {
+            n.level < b.level || (n.level == b.level && n.kind.closed() && !b.kind.closed())
+        };
+        let corners: Vec<Cut> = [
+            ((-1, -1), Cut::NorthWest),
+            ((1, -1), Cut::NorthEast),
+            ((1, 1), Cut::SouthEast),
+            ((-1, 1), Cut::SouthWest),
+        ]
+        .into_iter()
+        .filter(|&((dx, dz), _)| {
+            let (a, c, d) = (
+                blocks.at(x + dx, z),
+                blocks.at(x, z + dz),
+                blocks.at(x + dx, z + dz),
+            );
+            lower(a) && lower(c) && d.level <= b.level
+        })
+        .map(|(_, cut)| cut)
+        .collect();
+        // One turning corner: cut it; a block sticking out on two sides keeps its shape.
+        if let [cut] = corners.as_slice() {
+            cuts.push((x, z, *cut));
+        }
+    }
+    for (x, z, cut) in cuts {
+        if let Some(mut b) = blocks.get(x, z) {
+            b.cut = cut;
+            blocks.set(x, z, b);
+        }
+    }
 }
 
 /// A ramp over `columns`: from the stroke's top (its first point) towards its foot, one
@@ -662,6 +840,41 @@ fn panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
             session.blocks.radius = r;
         }
     }
+    if tool == BlockTool::Place {
+        ui.add_space(8.0);
+        ui.label(eyebrow("Place"));
+        for (placing, name) in [
+            (Placing::Start, "Start (and its amber)"),
+            (Placing::Amber, "Amber site"),
+            (Placing::Camp, "Creep camp"),
+        ] {
+            if ui
+                .selectable_label(session.blocks.placing == placing, name)
+                .clicked()
+            {
+                session.blocks.placing = placing;
+            }
+        }
+        let t = &mut session.tools;
+        match session.blocks.placing {
+            Placing::Amber | Placing::Start => {
+                ui.add(
+                    egui::Slider::new(&mut t.amber, 500..=6000)
+                        .step_by(100.0)
+                        .text("Amber a node"),
+                );
+            }
+            Placing::Camp => {
+                ui.horizontal(|ui| {
+                    for tier in crate::map::tools::Tier::ALL {
+                        if ui.selectable_label(t.tier == tier, tier.name()).clicked() {
+                            t.tier = tier;
+                        }
+                    }
+                });
+            }
+        }
+    }
     if tool == BlockTool::Face {
         ui.add_space(8.0);
         ui.label(eyebrow("Face"));
@@ -720,6 +933,19 @@ fn panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
         }
     }
     ui.add_space(12.0);
+    ui.label(eyebrow("Symmetry"));
+    ui.horizontal_wrapped(|ui| {
+        for symmetry in Symmetry::ALL {
+            if ui
+                .selectable_label(session.blocks.symmetry == symmetry, symmetry.name())
+                .on_hover_text("Every edit and placement is made in the mirror too (Y cycles)")
+                .clicked()
+            {
+                session.blocks.symmetry = symmetry;
+            }
+        }
+    });
+    ui.add_space(12.0);
     ui.label(eyebrow("View"));
     ui.horizontal(|ui| {
         for (generated, label) in [(false, "Blocks"), (true, "Generated")] {
@@ -750,7 +976,45 @@ fn panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
 }
 
 /// The block view of `session`; `texture` is the scene's last picture.
-pub fn show(ui: &mut Ui, session: &mut Session, texture: Option<egui::TextureId>) -> Out {
+/// Places what Place puts down at `at` (a start with its amber, an amber site or a camp),
+/// as the classic editor does; in blocks a start needs no pad, the blocks are its ground.
+fn place(
+    session: &mut Session,
+    content: &canopy_content::Content,
+    docs: &crate::map::view::Docs,
+    placing: Placing,
+    at: [f32; 2],
+) -> Option<crate::tabs::Edit> {
+    use crate::map::tools::Tool;
+    let tool = match placing {
+        Placing::Start => Tool::Start,
+        Placing::Amber => Tool::Amber,
+        Placing::Camp => Tool::Camp,
+    };
+    let mut edit = crate::map::view::place(
+        session,
+        content,
+        docs,
+        tool,
+        f64::from(at[0]),
+        f64::from(at[1]),
+    )
+    .ok()
+    .flatten()?;
+    edit.commands.retain(
+        |c| !matches!(c, Command::Patch { document, .. } if document.ends_with("heights.grid")),
+    );
+    Some(edit)
+}
+
+/// The block view of `session`; `texture` is the scene's last picture.
+pub fn show(
+    ui: &mut Ui,
+    session: &mut Session,
+    content: Option<&canopy_content::Content>,
+    docs: Option<&crate::map::view::Docs>,
+    texture: Option<egui::TextureId>,
+) -> Out {
     let mut out = Out::default();
     let mut panel_edit = None;
     egui::Panel::left(egui::Id::new(("block-tools", &session.root)))
@@ -817,6 +1081,14 @@ pub fn show(ui: &mut Ui, session: &mut Session, texture: Option<egui::TextureId>
         }
         if input.key_pressed(egui::Key::B) {
             session.blocks.brush = !session.blocks.brush;
+        }
+        if input.key_pressed(egui::Key::Y) {
+            let all = Symmetry::ALL;
+            let i = all
+                .iter()
+                .position(|s| *s == session.blocks.symmetry)
+                .unwrap_or(0);
+            session.blocks.symmetry = all[(i + 1) % all.len()];
         }
         let grow = i32::from(input.key_pressed(egui::Key::CloseBracket))
             - i32::from(input.key_pressed(egui::Key::OpenBracket));
@@ -927,6 +1199,9 @@ pub fn show(ui: &mut Ui, session: &mut Session, texture: Option<egui::TextureId>
             outline((x, z), (x, z), color);
         }
     };
+    let symmetry = state.symmetry;
+    let side = blocks.side as i32;
+    let mut shown: Option<BlockOp> = None;
     let mut op = BlockOp {
         tool: state.tool,
         reverse: shift,
@@ -957,6 +1232,7 @@ pub fn show(ui: &mut Ui, session: &mut Session, texture: Option<egui::TextureId>
             } else {
                 outline(drag.from, c, SOFT);
             }
+            shown = Some(op.clone());
             if op.tool == BlockTool::Cells {
                 for q in &op.path {
                     let y = crate::map::tools::ground_at(map, q[0], q[1]);
@@ -982,15 +1258,40 @@ pub fn show(ui: &mut Ui, session: &mut Session, texture: Option<egui::TextureId>
         }
         (None, Some((c, p))) => match state.tool {
             BlockTool::Cells => ring(p, radius.max(0.5), Color32::from_white_alpha(200)),
+            BlockTool::Place => ring(p, 4.0, Color32::from_rgb(255, 214, 120)),
             _ if strokes && state.tool != BlockTool::Ramp => {
                 op.from = c;
                 op.to = c;
                 op.path = vec![[p.x, p.z]];
                 preview(&op, Color32::from_white_alpha(200));
+                shown = Some(op.clone());
             }
-            _ => outline(c, c, Color32::from_white_alpha(200)),
+            _ => {
+                outline(c, c, Color32::from_white_alpha(200));
+                op.from = c;
+                op.to = c;
+                op.path = vec![[p.x, p.z]];
+                shown = Some(op.clone());
+            }
         },
         _ => {}
+    }
+    // The mirror's twin of what the pointer would change.
+    if symmetry != Symmetry::None
+        && let Some(o) = &shown
+    {
+        let twin = symmetry.op(o, map_size, side);
+        let faint = Color32::from_rgba_unmultiplied(255, 214, 120, 110);
+        if twin.tool == BlockTool::Cells {
+            for q in &twin.path {
+                let y = crate::map::tools::ground_at(map, q[0], q[1]);
+                ring(Vec3::new(q[0], y, q[1]), radius.max(0.5), faint);
+            }
+        } else if strokes {
+            preview(&twin, faint);
+        } else {
+            outline(twin.from, twin.to, faint);
+        }
     }
 
     if response.drag_started_by(egui::PointerButton::Primary)
@@ -1018,7 +1319,31 @@ pub fn show(ui: &mut Ui, session: &mut Session, texture: Option<egui::TextureId>
         op.from = drag.from;
         op.to = drag.to;
         op.path = drag.path;
-        out.edits.extend(apply(session, &op));
+        if op.tool == BlockTool::Place {
+            if let (Some(content), Some(docs), Some(&at)) = (content, docs, op.path.first()) {
+                let placing = session.blocks.placing;
+                let starts = session.map.as_ref().map_or(0, |m| m.player_starts.len());
+                out.edits.extend(place(session, content, docs, placing, at));
+                if symmetry != Symmetry::None {
+                    let twin = symmetry.point(at, map_size);
+                    session.blocks.twin = Some((placing, twin, starts + 1));
+                }
+            }
+        } else {
+            out.edits.extend(apply(session, &op));
+        }
+    }
+    // A placement's twin, once the map has taken the first.
+    if let Some((placing, at, starts)) = session.blocks.twin
+        && let (Some(content), Some(docs)) = (content, docs)
+        && session
+            .map
+            .as_ref()
+            .is_some_and(|m| placing != Placing::Start || m.player_starts.len() >= starts)
+        && out.edits.is_empty()
+    {
+        session.blocks.twin = None;
+        out.edits.extend(place(session, content, docs, placing, at));
     }
     if let Some((c, p)) = column
         && let Some(b) = blocks.get(c.0, c.1)

@@ -228,9 +228,15 @@ impl Editor {
         self.shell.block_out_map();
     }
 
-    /// The block editor's tool by name: raise, level, paint, ramp, cut (captures).
+    /// The block editor's tool by name: raise, level, paint, ramp, cut, cells, face
+    /// (captures).
     pub fn set_block_tool(&mut self, name: &str) {
         self.shell.set_block_tool(name);
+    }
+
+    /// The block editor's view: the blocks, or the world generated from them (captures).
+    pub fn set_block_view(&mut self, generated: bool) {
+        self.shell.set_block_view(generated);
     }
 
     /// Takes back every step (captures).
