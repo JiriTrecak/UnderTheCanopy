@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-pine-cone",
+  "name": "Pine cone",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-pine-cone",
+  "blockers": [
+    {
+      "width": 14.4,
+      "depth": 12.17,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": 0.0
+    }
+  ]
+}

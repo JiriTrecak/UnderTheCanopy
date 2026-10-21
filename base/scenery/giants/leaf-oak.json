@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-leaf-oak",
+  "name": "Fallen oak leaf",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-leaf-oak",
+  "blockers": [
+    {
+      "width": 21.01,
+      "depth": 12.8,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": 0.0
+    }
+  ]
+}

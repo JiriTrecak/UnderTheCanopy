@@ -1,0 +1,7 @@
+{
+  "id": "scenery.giants-bracken",
+  "name": "Fallen bracken",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-bracken"
+}

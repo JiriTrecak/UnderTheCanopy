@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-mossy-stone",
+  "name": "Mossy stone",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-mossy-stone",
+  "blockers": [
+    {
+      "width": 7.56,
+      "depth": 7.66,
+      "shape": "ellipse",
+      "x": -0.01,
+      "z": -0.0
+    }
+  ]
+}

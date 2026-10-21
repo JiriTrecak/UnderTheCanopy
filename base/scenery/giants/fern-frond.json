@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-fern-frond",
+  "name": "Fern frond",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-fern-frond",
+  "blockers": [
+    {
+      "width": 1.57,
+      "depth": 1.73,
+      "shape": "ellipse",
+      "x": -8.06,
+      "z": 2.2
+    }
+  ]
+}

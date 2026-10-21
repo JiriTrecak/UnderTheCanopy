@@ -85,6 +85,92 @@ Ranked by effect for the cost:
 
 Giant objects are scenery and never hide a unit; the scenery cutaway already opens around units.
 
+### What big means: the forest-floor giants (2026-10-22, proposal)
+
+Jiri: "sell the scale … it must feel alive, yet the playable area must be clean."
+
+**Our size.** An ant warrior is about 3 m long in the game and 5 mm in life, so one game metre is about 1.7 mm of forest floor: the world is some 600 times larger than we know it. Taken literally, an acorn would be 15 m, a fern 300 m, a tree trunk 600 m across. The set uses true scale for small things and compresses the giants, so they still fit the camera:
+
+| Object | In life | True scale | We build | Reads as | Where |
+|---|---|---|---|---|---|
+| dew drop | 3 mm | 2 m | 1–2.4 m | a glass orb | frame rim, on leaves |
+| moss cushion | 1 cm plants | 6 m | 7 m mound | a hill of tiny pines | frame rim, playable edge |
+| pebble | 1–2 cm | 6–12 m | 9–10 m | a boulder field | cliff feet, frame rim |
+| pine needle | 4 cm × 1 mm | 24 m × 0.6 m | 14–18 m beams | fallen beams | frame litter |
+| twig | 5 mm across | 3 m across | 18 m | a fallen log | frame rim, a line across play |
+| acorn, hazelnut, beech nut | 2–2.5 cm | 12–15 m | 8–9 m | a boulder, a hut | landmark, frame rim |
+| acorn cup | 2 cm | 12 m | 8 m | a bowl, a plateau | landmark |
+| chestnut burr, pine cone | 6–8 cm | 36–48 m | 14–18 m | a spiked hill, a ruin | frame |
+| button mushrooms | 2 cm | 12 m | 6 m | a cluster of pavilions | playable edge |
+| bolete, ink cap, morel | 8–15 cm | 50–90 m | 14–26 m | towers | frame |
+| parasol mushroom | 30 cm | 180 m | 70 m | a tower that leaves the frame | frame giants |
+| clover, wood sorrel | 10 cm | 60 m | 12–14 m | trees | frame |
+| grass clump | 15 cm | 90 m | 24 m | a reed forest | frame |
+| fern | 50 cm | 300 m | 30–46 m | a vaulted roof, a palm | frame giants |
+| fallen leaf | 8–12 cm | 50–70 m | 22–28 m | a sheet to walk across | frame; one as a landmark ramp |
+| snail shell, beetle husk | 2–2.5 cm | 12–15 m | 13–16 m | a ruin | landmark, camp site |
+| feather | 15 cm | 90 m | 56 m | a fallen wing | frame, once per map |
+| fallen branch | 3 cm across | 18 m across | 64 m long | a ridge | frame, or a wall that splits a map |
+| tree trunk, root | 1 m, 10 cm | 600 m, 60 m | 70–100 m, 40 m | mountains, cliffs | frame corners |
+
+**How big feels.**
+- **Things we know.** An acorn, a leaf, a feather: everyone knows their real size, so one of them beside the army sets the scale at once. One familiar object near the army is worth ten strange ones.
+- **The same thing at several sizes.** Button mushrooms at 6 m by the army, ink caps at 20 m at the rim, a parasol at 70 m in the frame: the eye reads the repeat as depth.
+- **Tops leave the screen.** Giants rise out of the frame; their caps, crowns and trunks are never seen whole from the RTS camera (the canopy ceiling, D64).
+- **Overhang.** Mushroom caps and fern fronds roof the edges. Units pass under them (the cutaway opens them), never inside them.
+- **Air and light.** Canopy shade drifting across the field, spores, a falling leaf, a seed: things moving slowly because they are huge.
+- **A calm centre.** Scale comes from the contrast between the busy, towering frame and the quiet ground the army stands on (D61). The playable area stays clean.
+
+**Layers.**
+1. **Ground cover** (terrain and decals): moss, compacted soil, leaf crumbs; flat, low contrast, no props on playable ground.
+2. **Small** (frame rim): pebbles, needles, dew drops, moss cushions, button mushrooms, berries, seeds; low, scattered in clusters along the edge of play.
+3. **Mid** (rim and frame): ferns, fiddleheads, clover and sorrel trees, bolete and ink-cap towers, acorns, nuts, cones, twigs, fallen leaves.
+4. **Giants** (deep frame): parasols, fern crowns, a fallen branch ridge, the feather, the trunks with their roots.
+5. **Sky**: canopy light and shade, falling leaves, drifting spores, never over play.
+
+**Playable area.** Only flat or low pieces (fallen leaves, twigs, needles, pebbles, moss) and at most one or two landmarks (an acorn cup, a snail shell, a beetle husk, a big acorn), each with a clean blocker; nothing busy, no foliage, no glow. Everything taller sits in the frame and leans out of play, never in.
+
+**Mission moods** (story.md):
+- *The Hollow Brood* (dusk, a forest going wrong): glowing bonnet mushrooms (blue-violet gills), withered mushrooms, dissolving ink caps, dry bracken, snail shells and a beetle husk as ruins, dark trunks.
+- *Founding* (a lush morning glade): fern crowns and fronds, fiddleheads, wood sorrel and clover trees, moss cushions, boletes and parasols, fresh beech leaves, dew drops, bilberries.
+- *The Glass Road* (a cool afternoon): the silver beech trunk, pine cones and needles, acorns and cups, twigs and the branch ridge, the feather, pebbles.
+
+The pieces, their sizes and where each belongs are listed in [the giants set](#the-giants-set).
+
+#### The giants set
+
+43 placeable pieces, `scenery.giants-<name>` in `base/scenery/giants/`, models `asset.models.environment.giants-<name>`. Each Tripo piece started as a gpt-image-2 concept (the object alone, light grey, front-left 35° down), became a model through Tripo's image to 3D, and was made game-ready by `tools/props/import_tripo.py` from `tools/props/giants.json` (size, triangle budget, toning, laying flat, a glow, sway). Pine needles and dew drops are built in Blender by `tools/props/build_floor_bits.py`. `tools/props/giants_scenery.py` writes the scenery files with blockers measured from each model: a mushroom or plant blocks only at its foot, so units walk under caps and fronds; tall pieces carry `canopy`, so the cutaway opens them around units. Sizes are as built (a placement may scale 0.7–1.3).
+
+| Layer | Piece (`giants-…`) | Size (m) | Frame | Rim | Play |
+|---|---|---|---|---|---|
+| Giants | `beech-trunk` | 72 across, 103 tall | corners, 1–2 per map | | |
+| | `parasol` | 50 cap, 70 tall | north and east sides, 2–4 per map | | |
+| | `branch` | 64 long | a ridge, 1 per map | | could split a map |
+| | `feather` | 56 long | once per map | | |
+| | `root` | 40 long | beside trunks | | |
+| | `fern-crown` | 46 across, 31 tall | 1 per 40 m of frame | | |
+| | `shelf-fungus` | 14 wide, 32 tall | against trunks | | |
+| Mid | `porcini`, `inkcap`, `morel`, `mycena` | 14–26 tall | deep frame, clusters of 2–3 | | |
+| | `fern-frond`, `harts-tongue`, `grass` | 16–30 | deep frame and rim | | |
+| | `chestnut-burr`, `pine-cone` | 14–18 | deep frame | | |
+| | `bark-slab`, `withered` | 10–16 | deep frame | rim | |
+| | `clover`, `sorrel`, `fiddleheads` | 12–14 tall | | rim, every 10–15 m | |
+| Seeds and litter | `acorn`, `hazelnut`, `beechnut`, `acorn-cup` | 7–9 | | rim, in twos and threes | `acorn`, `acorn-cup`: a landmark |
+| | `maple-seed`, `twig`, `bracken` | 16–24 long, low | | rim | `twig` as a line |
+| | `leaf-oak`, `leaf-beech`, `leaf-maple` | 22–28 across, flat | | rim | one as a landmark |
+| | `pine-needles-a`, `-b` | 14–18 long, 0.6 thick | | rim, scattered | at the edge only |
+| Ground cover | `moss`, `pebbles`, `mossy-stone`, `buttons`, `puffballs`, `bilberries` | 4–12 | | rim, every 6–10 m | `pebbles` sparingly |
+| | `dew-drop`, `dew-drops` | 1–4, glassy | | rim, on leaves | |
+| Ruins | `snail-shell`, `beetle-husk` | 13–16 | | | a landmark or camp site |
+
+Glow: only `mycena` (blue-violet gills and rims, for the Hollow); everything else is unlit. The colours are toned down for the frame (0.64–0.88 value, 0.7–0.85 saturation), so the army stays the brightest thing on screen.
+
+**Showcase: Forest Giants** (`base/maps/showcase/forest-giants.utcm`, built through the editor's MCP by `tools/maps/forest_giants.py`). An ant colony and its army in a clean clearing, the forest floor around it in the layers above: species grow in clusters of two to six, litter (leaves, needles, twigs) lies under everything, height grows with the distance from the clearing, steeper on the far (north) side than on the near one. What it taught:
+- **The camera never leaves the playable area**, so the frame must lie inside it (as closed ground, or dressed ground the giants' blockers close), and from the RTS camera only its first 30–60 m show, plus whatever is tall enough to lean into view from further out.
+- **Clusters, not a mix.** A random mix of species along the rim reads as a collection on display; a few species in groups, over a litter carpet, reads as a forest floor.
+- **Giants' shadows cross the play area.** A 70 m parasol's cap throws a 100 m disc of shade over a base at a low sun, and the sun moves with the hour. It sells the scale and keeps the ground calm, but it darkens play: whether the canopy ceiling (D64, shadows above 75 m) should come down to about 40 m for mushrooms and ferns is Jiri's call.
+- **Closed blocks bring the biome's own frame scatter**, so the map keeps its frame open ground to show the giants alone; a biome lists the giants in its `blocks.scatter` to dress real maps with them.
+
 ## Units: the three boards
 
 Jiri's boards set the look: `art/styles/units-ants.webp`, `units-beetles.webp` and `units-bees.webp`. Their bright grass backgrounds are not part of it. They are heroic Warcraft with dark undertones rather than grimdark: glossy chitin and big black eyes stay, and the darkness lives in the materials and rituals (bone, contained magic, blood).

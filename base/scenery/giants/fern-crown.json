@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-fern-crown",
+  "name": "Fern crown",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-fern-crown",
+  "blockers": [
+    {
+      "width": 18.4,
+      "depth": 16.47,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": 0.0
+    }
+  ]
+}

@@ -1,0 +1,5324 @@
+{
+  "objects": [
+    {
+      "id": "giants.0",
+      "asset": "scenery.giants-beech-trunk",
+      "x": 206,
+      "z": 30,
+      "yaw": 5.811,
+      "scale": 1.0
+    },
+    {
+      "id": "giants.1",
+      "asset": "scenery.giants-beech-trunk",
+      "x": 26,
+      "z": 40,
+      "yaw": 2.0,
+      "scale": 0.8
+    },
+    {
+      "id": "giants.2",
+      "asset": "scenery.giants-parasol",
+      "x": 76,
+      "z": 22,
+      "yaw": 0.6,
+      "scale": 1.1
+    },
+    {
+      "id": "giants.3",
+      "asset": "scenery.giants-parasol",
+      "x": 150,
+      "z": 16,
+      "yaw": 1.1,
+      "scale": 0.9
+    },
+    {
+      "id": "giants.4",
+      "asset": "scenery.giants-parasol",
+      "x": 238,
+      "z": 104,
+      "yaw": 2.2,
+      "scale": 0.85
+    },
+    {
+      "id": "giants.5",
+      "asset": "scenery.giants-parasol",
+      "x": 16,
+      "z": 118,
+      "yaw": 4.0,
+      "scale": 0.75
+    },
+    {
+      "id": "giants.6",
+      "asset": "scenery.giants-branch",
+      "x": 116,
+      "z": 34,
+      "yaw": 0.12,
+      "scale": 0.9
+    },
+    {
+      "id": "giants.7",
+      "asset": "scenery.giants-feather",
+      "x": 232,
+      "z": 168,
+      "yaw": 1.6,
+      "scale": 0.8
+    },
+    {
+      "id": "giants.8",
+      "asset": "scenery.giants-root",
+      "x": 174,
+      "z": 40,
+      "yaw": 2.4,
+      "scale": 1.0
+    },
+    {
+      "id": "giants.9",
+      "asset": "scenery.giants-root",
+      "x": 232,
+      "z": 62,
+      "yaw": 1.2,
+      "scale": 0.9
+    },
+    {
+      "id": "giants.10",
+      "asset": "scenery.giants-root",
+      "x": 46,
+      "z": 60,
+      "yaw": 5.2,
+      "scale": 0.8
+    },
+    {
+      "id": "giants.11",
+      "asset": "scenery.giants-fern-crown",
+      "x": 40,
+      "z": 92,
+      "yaw": 5.96,
+      "scale": 0.9
+    },
+    {
+      "id": "giants.12",
+      "asset": "scenery.giants-fern-crown",
+      "x": 222,
+      "z": 212,
+      "yaw": 5.607,
+      "scale": 0.9
+    },
+    {
+      "id": "giants.13",
+      "asset": "scenery.giants-fern-crown",
+      "x": 30,
+      "z": 196,
+      "yaw": 0.525,
+      "scale": 0.8
+    },
+    {
+      "id": "giants.14",
+      "asset": "scenery.giants-porcini",
+      "x": 196,
+      "z": 70,
+      "yaw": 3.72,
+      "scale": 0.9
+    },
+    {
+      "id": "giants.15",
+      "asset": "scenery.giants-grass",
+      "x": 104,
+      "z": 12,
+      "yaw": 2.662,
+      "scale": 1.0
+    },
+    {
+      "id": "giants.16",
+      "asset": "scenery.giants-shelf-fungus",
+      "x": 196,
+      "z": 46,
+      "yaw": 3.6,
+      "scale": 0.9
+    },
+    {
+      "id": "giants.17",
+      "asset": "scenery.giants-mycena",
+      "x": 214,
+      "z": 140,
+      "yaw": 3.331,
+      "scale": 0.9
+    },
+    {
+      "id": "giants.18",
+      "asset": "scenery.giants-fern-crown",
+      "x": 123.28,
+      "z": 254.42,
+      "yaw": 0.437,
+      "scale": 1.034
+    },
+    {
+      "id": "giants.19",
+      "asset": "scenery.giants-fern-crown",
+      "x": 88.79,
+      "z": 223.25,
+      "yaw": 5.406,
+      "scale": 0.855
+    },
+    {
+      "id": "giants.20",
+      "asset": "scenery.giants-fern-crown",
+      "x": 122.18,
+      "z": 217.53,
+      "yaw": 2.87,
+      "scale": 0.756
+    },
+    {
+      "id": "giants.21",
+      "asset": "scenery.giants-grass",
+      "x": 28.34,
+      "z": 71.55,
+      "yaw": 1.861,
+      "scale": 0.762
+    },
+    {
+      "id": "giants.22",
+      "asset": "scenery.giants-harts-tongue",
+      "x": 85.69,
+      "z": 60.74,
+      "yaw": 4.627,
+      "scale": 0.921
+    },
+    {
+      "id": "giants.23",
+      "asset": "scenery.giants-grass",
+      "x": 2.77,
+      "z": 140.23,
+      "yaw": 4.512,
+      "scale": 1.038
+    },
+    {
+      "id": "giants.24",
+      "asset": "scenery.giants-harts-tongue",
+      "x": 193.81,
+      "z": 238.54,
+      "yaw": 4.603,
+      "scale": 0.882
+    },
+    {
+      "id": "giants.25",
+      "asset": "scenery.giants-harts-tongue",
+      "x": 211.58,
+      "z": 246.06,
+      "yaw": 0.149,
+      "scale": 1.081
+    },
+    {
+      "id": "giants.26",
+      "asset": "scenery.giants-grass",
+      "x": 176.22,
+      "z": 5.97,
+      "yaw": 4.621,
+      "scale": 0.957
+    },
+    {
+      "id": "giants.27",
+      "asset": "scenery.giants-harts-tongue",
+      "x": 255.63,
+      "z": 30.07,
+      "yaw": 1.773,
+      "scale": 1.011
+    },
+    {
+      "id": "giants.28",
+      "asset": "scenery.giants-harts-tongue",
+      "x": 254.88,
+      "z": 70.59,
+      "yaw": 1.265,
+      "scale": 0.853
+    },
+    {
+      "id": "giants.29",
+      "asset": "scenery.giants-harts-tongue",
+      "x": 254.73,
+      "z": 53.21,
+      "yaw": 1.333,
+      "scale": 0.939
+    },
+    {
+      "id": "giants.30",
+      "asset": "scenery.giants-fern-crown",
+      "x": 255.2,
+      "z": 191.18,
+      "yaw": 3.594,
+      "scale": 0.889
+    },
+    {
+      "id": "giants.31",
+      "asset": "scenery.giants-fern-crown",
+      "x": 2.38,
+      "z": 169.34,
+      "yaw": 4.907,
+      "scale": 0.918
+    },
+    {
+      "id": "giants.32",
+      "asset": "scenery.giants-fern-crown",
+      "x": 31.9,
+      "z": 234.22,
+      "yaw": 5.449,
+      "scale": 0.76
+    },
+    {
+      "id": "giants.33",
+      "asset": "scenery.giants-harts-tongue",
+      "x": 161.44,
+      "z": 63.72,
+      "yaw": 0.087,
+      "scale": 0.813
+    },
+    {
+      "id": "giants.34",
+      "asset": "scenery.giants-grass",
+      "x": 208.45,
+      "z": 77.42,
+      "yaw": 2.223,
+      "scale": 0.8
+    },
+    {
+      "id": "giants.35",
+      "asset": "scenery.giants-grass",
+      "x": 185.63,
+      "z": 78.97,
+      "yaw": 1.764,
+      "scale": 0.832
+    },
+    {
+      "id": "giants.36",
+      "asset": "scenery.giants-harts-tongue",
+      "x": 157.91,
+      "z": 249.97,
+      "yaw": 1.4,
+      "scale": 1.031
+    },
+    {
+      "id": "giants.37",
+      "asset": "scenery.giants-harts-tongue",
+      "x": 140.32,
+      "z": 233.86,
+      "yaw": 5.285,
+      "scale": 0.937
+    },
+    {
+      "id": "giants.38",
+      "asset": "scenery.giants-fern-crown",
+      "x": 251.91,
+      "z": 242.32,
+      "yaw": 2.353,
+      "scale": 0.875
+    },
+    {
+      "id": "giants.39",
+      "asset": "scenery.giants-fern-crown",
+      "x": 180.63,
+      "z": 217.62,
+      "yaw": 1.713,
+      "scale": 0.962
+    },
+    {
+      "id": "giants.40",
+      "asset": "scenery.giants-harts-tongue",
+      "x": 1.29,
+      "z": 195.74,
+      "yaw": 4.114,
+      "scale": 0.802
+    },
+    {
+      "id": "giants.41",
+      "asset": "scenery.giants-inkcap",
+      "x": 202.08,
+      "z": 200.76,
+      "yaw": 4.696,
+      "scale": 0.751
+    },
+    {
+      "id": "giants.42",
+      "asset": "scenery.giants-inkcap",
+      "x": 194.92,
+      "z": 199.49,
+      "yaw": 0.158,
+      "scale": 0.842
+    },
+    {
+      "id": "giants.43",
+      "asset": "scenery.giants-inkcap",
+      "x": 209.54,
+      "z": 196.57,
+      "yaw": 3.106,
+      "scale": 0.876
+    },
+    {
+      "id": "giants.44",
+      "asset": "scenery.giants-parasol",
+      "x": 67.52,
+      "z": 251.47,
+      "yaw": 2.906,
+      "scale": 0.883
+    },
+    {
+      "id": "giants.45",
+      "asset": "scenery.giants-porcini",
+      "x": 97.33,
+      "z": 244.96,
+      "yaw": 3.019,
+      "scale": 0.986
+    },
+    {
+      "id": "giants.46",
+      "asset": "scenery.giants-porcini",
+      "x": 7.93,
+      "z": 230.72,
+      "yaw": 6.0,
+      "scale": 0.701
+    },
+    {
+      "id": "giants.47",
+      "asset": "scenery.giants-porcini",
+      "x": 16.57,
+      "z": 213.78,
+      "yaw": 5.665,
+      "scale": 0.995
+    },
+    {
+      "id": "giants.48",
+      "asset": "scenery.giants-parasol",
+      "x": 29.58,
+      "z": 2.83,
+      "yaw": 0.057,
+      "scale": 0.831
+    },
+    {
+      "id": "giants.49",
+      "asset": "scenery.giants-porcini",
+      "x": 41.9,
+      "z": 217.21,
+      "yaw": 3.082,
+      "scale": 0.801
+    },
+    {
+      "id": "giants.50",
+      "asset": "scenery.giants-inkcap",
+      "x": 145.32,
+      "z": 38.91,
+      "yaw": 2.019,
+      "scale": 0.777
+    },
+    {
+      "id": "giants.51",
+      "asset": "scenery.giants-inkcap",
+      "x": 148.47,
+      "z": 55.73,
+      "yaw": 5.441,
+      "scale": 0.789
+    },
+    {
+      "id": "giants.52",
+      "asset": "scenery.giants-inkcap",
+      "x": 174.57,
+      "z": 85.77,
+      "yaw": 0.735,
+      "scale": 0.893
+    },
+    {
+      "id": "giants.53",
+      "asset": "scenery.giants-inkcap",
+      "x": 177.74,
+      "z": 68.04,
+      "yaw": 0.187,
+      "scale": 1.007
+    },
+    {
+      "id": "giants.54",
+      "asset": "scenery.giants-mycena",
+      "x": 185.77,
+      "z": 64.16,
+      "yaw": 6.054,
+      "scale": 0.82
+    },
+    {
+      "id": "giants.55",
+      "asset": "scenery.giants-buttons",
+      "x": 37.93,
+      "z": 109.3,
+      "yaw": 1.059,
+      "scale": 0.884
+    },
+    {
+      "id": "giants.56",
+      "asset": "scenery.giants-buttons",
+      "x": 46.64,
+      "z": 109.32,
+      "yaw": 2.603,
+      "scale": 1.055
+    },
+    {
+      "id": "giants.57",
+      "asset": "scenery.giants-buttons",
+      "x": 42.89,
+      "z": 116.06,
+      "yaw": 6.11,
+      "scale": 1.045
+    },
+    {
+      "id": "giants.58",
+      "asset": "scenery.giants-mycena",
+      "x": 218.61,
+      "z": 82.05,
+      "yaw": 4.898,
+      "scale": 1.016
+    },
+    {
+      "id": "giants.59",
+      "asset": "scenery.giants-mycena",
+      "x": 197.5,
+      "z": 98.34,
+      "yaw": 3.36,
+      "scale": 0.974
+    },
+    {
+      "id": "giants.60",
+      "asset": "scenery.giants-mycena",
+      "x": 207.12,
+      "z": 108.23,
+      "yaw": 5.413,
+      "scale": 0.766
+    },
+    {
+      "id": "giants.61",
+      "asset": "scenery.giants-mycena",
+      "x": 212.32,
+      "z": 97.82,
+      "yaw": 1.996,
+      "scale": 0.793
+    },
+    {
+      "id": "giants.62",
+      "asset": "scenery.giants-mycena",
+      "x": 208.89,
+      "z": 90.21,
+      "yaw": 0.435,
+      "scale": 0.888
+    },
+    {
+      "id": "giants.63",
+      "asset": "scenery.giants-buttons",
+      "x": 67.16,
+      "z": 118.45,
+      "yaw": 1.414,
+      "scale": 1.053
+    },
+    {
+      "id": "giants.64",
+      "asset": "scenery.giants-buttons",
+      "x": 64.51,
+      "z": 115.03,
+      "yaw": 1.641,
+      "scale": 0.906
+    },
+    {
+      "id": "giants.65",
+      "asset": "scenery.giants-buttons",
+      "x": 71.13,
+      "z": 119.06,
+      "yaw": 4.703,
+      "scale": 0.843
+    },
+    {
+      "id": "giants.66",
+      "asset": "scenery.giants-buttons",
+      "x": 62.39,
+      "z": 120.33,
+      "yaw": 3.994,
+      "scale": 1.027
+    },
+    {
+      "id": "giants.67",
+      "asset": "scenery.giants-withered",
+      "x": 52.29,
+      "z": 183.02,
+      "yaw": 0.975,
+      "scale": 1.013
+    },
+    {
+      "id": "giants.68",
+      "asset": "scenery.giants-withered",
+      "x": 45.34,
+      "z": 171.99,
+      "yaw": 6.122,
+      "scale": 0.767
+    },
+    {
+      "id": "giants.69",
+      "asset": "scenery.giants-withered",
+      "x": 57.37,
+      "z": 176.0,
+      "yaw": 3.962,
+      "scale": 0.998
+    },
+    {
+      "id": "giants.70",
+      "asset": "scenery.giants-inkcap",
+      "x": 77.34,
+      "z": 82.69,
+      "yaw": 5.812,
+      "scale": 0.782
+    },
+    {
+      "id": "giants.71",
+      "asset": "scenery.giants-inkcap",
+      "x": 76.27,
+      "z": 68.69,
+      "yaw": 0.981,
+      "scale": 0.918
+    },
+    {
+      "id": "giants.72",
+      "asset": "scenery.giants-inkcap",
+      "x": 81.77,
+      "z": 75.31,
+      "yaw": 0.701,
+      "scale": 0.786
+    },
+    {
+      "id": "giants.73",
+      "asset": "scenery.giants-mycena",
+      "x": 199.03,
+      "z": 107.09,
+      "yaw": 0.472,
+      "scale": 0.994
+    },
+    {
+      "id": "giants.74",
+      "asset": "scenery.giants-mycena",
+      "x": 190.58,
+      "z": 106.08,
+      "yaw": 2.117,
+      "scale": 0.772
+    },
+    {
+      "id": "giants.75",
+      "asset": "scenery.giants-mycena",
+      "x": 203.7,
+      "z": 117.36,
+      "yaw": 6.066,
+      "scale": 1.102
+    },
+    {
+      "id": "giants.76",
+      "asset": "scenery.giants-mycena",
+      "x": 158.55,
+      "z": 217.46,
+      "yaw": 3.149,
+      "scale": 0.781
+    },
+    {
+      "id": "giants.77",
+      "asset": "scenery.giants-inkcap",
+      "x": 181.98,
+      "z": 196.93,
+      "yaw": 0.634,
+      "scale": 0.871
+    },
+    {
+      "id": "giants.78",
+      "asset": "scenery.giants-inkcap",
+      "x": 195.91,
+      "z": 188.01,
+      "yaw": 5.789,
+      "scale": 0.955
+    },
+    {
+      "id": "giants.79",
+      "asset": "scenery.giants-inkcap",
+      "x": 185.45,
+      "z": 181.92,
+      "yaw": 5.206,
+      "scale": 0.823
+    },
+    {
+      "id": "giants.80",
+      "asset": "scenery.giants-mycena",
+      "x": 50.47,
+      "z": 146.91,
+      "yaw": 5.618,
+      "scale": 1.078
+    },
+    {
+      "id": "giants.81",
+      "asset": "scenery.giants-mycena",
+      "x": 42.55,
+      "z": 158.46,
+      "yaw": 0.234,
+      "scale": 0.898
+    },
+    {
+      "id": "giants.82",
+      "asset": "scenery.giants-mycena",
+      "x": 38.48,
+      "z": 147.39,
+      "yaw": 4.647,
+      "scale": 1.165
+    },
+    {
+      "id": "giants.83",
+      "asset": "scenery.giants-buttons",
+      "x": 70.68,
+      "z": 201.35,
+      "yaw": 1.587,
+      "scale": 1.042
+    },
+    {
+      "id": "giants.84",
+      "asset": "scenery.giants-buttons",
+      "x": 70.72,
+      "z": 197.02,
+      "yaw": 1.324,
+      "scale": 0.98
+    },
+    {
+      "id": "giants.85",
+      "asset": "scenery.giants-buttons",
+      "x": 75.28,
+      "z": 199.08,
+      "yaw": 5.494,
+      "scale": 1.091
+    },
+    {
+      "id": "giants.86",
+      "asset": "scenery.giants-buttons",
+      "x": 73.96,
+      "z": 206.7,
+      "yaw": 4.775,
+      "scale": 0.793
+    },
+    {
+      "id": "giants.87",
+      "asset": "scenery.giants-buttons",
+      "x": 212.03,
+      "z": 166.88,
+      "yaw": 0.318,
+      "scale": 0.809
+    },
+    {
+      "id": "giants.88",
+      "asset": "scenery.giants-buttons",
+      "x": 215.28,
+      "z": 176.75,
+      "yaw": 5.045,
+      "scale": 0.754
+    },
+    {
+      "id": "giants.89",
+      "asset": "scenery.giants-buttons",
+      "x": 212.24,
+      "z": 170.88,
+      "yaw": 5.358,
+      "scale": 0.971
+    },
+    {
+      "id": "giants.90",
+      "asset": "scenery.giants-buttons",
+      "x": 60.08,
+      "z": 79.47,
+      "yaw": 3.663,
+      "scale": 0.863
+    },
+    {
+      "id": "giants.91",
+      "asset": "scenery.giants-buttons",
+      "x": 62.03,
+      "z": 85.68,
+      "yaw": 2.343,
+      "scale": 0.985
+    },
+    {
+      "id": "giants.92",
+      "asset": "scenery.giants-buttons",
+      "x": 56.1,
+      "z": 77.97,
+      "yaw": 0.497,
+      "scale": 1.051
+    },
+    {
+      "id": "giants.93",
+      "asset": "scenery.giants-buttons",
+      "x": 157.75,
+      "z": 34.63,
+      "yaw": 0.642,
+      "scale": 0.914
+    },
+    {
+      "id": "giants.94",
+      "asset": "scenery.giants-inkcap",
+      "x": 47.31,
+      "z": 126.91,
+      "yaw": 4.089,
+      "scale": 1.039
+    },
+    {
+      "id": "giants.95",
+      "asset": "scenery.giants-inkcap",
+      "x": 58.0,
+      "z": 113.89,
+      "yaw": 5.741,
+      "scale": 0.831
+    },
+    {
+      "id": "giants.96",
+      "asset": "scenery.giants-inkcap",
+      "x": 52.91,
+      "z": 119.36,
+      "yaw": 2.279,
+      "scale": 0.786
+    },
+    {
+      "id": "giants.97",
+      "asset": "scenery.giants-mycena",
+      "x": 160.52,
+      "z": 206.86,
+      "yaw": 3.335,
+      "scale": 0.807
+    },
+    {
+      "id": "giants.98",
+      "asset": "scenery.giants-mycena",
+      "x": 54.94,
+      "z": 105.56,
+      "yaw": 3.462,
+      "scale": 0.889
+    },
+    {
+      "id": "giants.99",
+      "asset": "scenery.giants-mycena",
+      "x": 62.85,
+      "z": 101.27,
+      "yaw": 2.894,
+      "scale": 0.984
+    },
+    {
+      "id": "giants.100",
+      "asset": "scenery.giants-mycena",
+      "x": 61.38,
+      "z": 189.9,
+      "yaw": 3.266,
+      "scale": 0.877
+    },
+    {
+      "id": "giants.101",
+      "asset": "scenery.giants-mycena",
+      "x": 68.71,
+      "z": 191.16,
+      "yaw": 3.173,
+      "scale": 0.797
+    },
+    {
+      "id": "giants.102",
+      "asset": "scenery.giants-morel",
+      "x": 25.96,
+      "z": 133.81,
+      "yaw": 5.832,
+      "scale": 0.617
+    },
+    {
+      "id": "giants.103",
+      "asset": "scenery.giants-morel",
+      "x": 29.5,
+      "z": 126.91,
+      "yaw": 1.982,
+      "scale": 0.659
+    },
+    {
+      "id": "giants.104",
+      "asset": "scenery.giants-morel",
+      "x": 18.59,
+      "z": 136.66,
+      "yaw": 4.388,
+      "scale": 0.729
+    },
+    {
+      "id": "giants.105",
+      "asset": "scenery.giants-morel",
+      "x": 165.15,
+      "z": 228.23,
+      "yaw": 2.681,
+      "scale": 0.636
+    },
+    {
+      "id": "giants.106",
+      "asset": "scenery.giants-morel",
+      "x": 204.63,
+      "z": 171.81,
+      "yaw": 2.338,
+      "scale": 0.736
+    },
+    {
+      "id": "giants.107",
+      "asset": "scenery.giants-morel",
+      "x": 206.66,
+      "z": 177.57,
+      "yaw": 0.478,
+      "scale": 0.908
+    },
+    {
+      "id": "giants.108",
+      "asset": "scenery.giants-morel",
+      "x": 199.11,
+      "z": 194.86,
+      "yaw": 1.017,
+      "scale": 0.684
+    },
+    {
+      "id": "giants.109",
+      "asset": "scenery.giants-morel",
+      "x": 202.01,
+      "z": 192.45,
+      "yaw": 1.412,
+      "scale": 0.849
+    },
+    {
+      "id": "giants.110",
+      "asset": "scenery.giants-porcini",
+      "x": 228.91,
+      "z": 137.11,
+      "yaw": 3.748,
+      "scale": 0.847
+    },
+    {
+      "id": "giants.111",
+      "asset": "scenery.giants-porcini",
+      "x": 251.64,
+      "z": 144.06,
+      "yaw": 0.71,
+      "scale": 0.689
+    },
+    {
+      "id": "giants.112",
+      "asset": "scenery.giants-morel",
+      "x": 210.58,
+      "z": 131.71,
+      "yaw": 5.837,
+      "scale": 0.613
+    },
+    {
+      "id": "giants.113",
+      "asset": "scenery.giants-morel",
+      "x": 206.97,
+      "z": 136.65,
+      "yaw": 0.218,
+      "scale": 0.888
+    },
+    {
+      "id": "giants.114",
+      "asset": "scenery.giants-morel",
+      "x": 215.72,
+      "z": 124.92,
+      "yaw": 0.618,
+      "scale": 0.823
+    },
+    {
+      "id": "giants.115",
+      "asset": "scenery.giants-fern-frond",
+      "x": 71.24,
+      "z": 52.78,
+      "yaw": 3.644,
+      "scale": 1.031
+    },
+    {
+      "id": "giants.116",
+      "asset": "scenery.giants-fern-frond",
+      "x": 64.29,
+      "z": 71.39,
+      "yaw": 5.432,
+      "scale": 0.817
+    },
+    {
+      "id": "giants.117",
+      "asset": "scenery.giants-sorrel",
+      "x": 202.34,
+      "z": 160.08,
+      "yaw": 0.809,
+      "scale": 0.869
+    },
+    {
+      "id": "giants.118",
+      "asset": "scenery.giants-sorrel",
+      "x": 196.04,
+      "z": 164.11,
+      "yaw": 5.108,
+      "scale": 0.844
+    },
+    {
+      "id": "giants.119",
+      "asset": "scenery.giants-fern-frond",
+      "x": 31.39,
+      "z": 168.05,
+      "yaw": 3.371,
+      "scale": 0.974
+    },
+    {
+      "id": "giants.120",
+      "asset": "scenery.giants-harts-tongue",
+      "x": 169.51,
+      "z": 195.45,
+      "yaw": 3.917,
+      "scale": 0.869
+    },
+    {
+      "id": "giants.121",
+      "asset": "scenery.giants-sorrel",
+      "x": 235.5,
+      "z": 146.52,
+      "yaw": 3.245,
+      "scale": 0.755
+    },
+    {
+      "id": "giants.122",
+      "asset": "scenery.giants-sorrel",
+      "x": 222.72,
+      "z": 145.89,
+      "yaw": 1.104,
+      "scale": 0.819
+    },
+    {
+      "id": "giants.123",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 36.86,
+      "z": 118.71,
+      "yaw": 2.624,
+      "scale": 0.821
+    },
+    {
+      "id": "giants.124",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 35.48,
+      "z": 126.48,
+      "yaw": 1.648,
+      "scale": 0.942
+    },
+    {
+      "id": "giants.125",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 40.85,
+      "z": 122.51,
+      "yaw": 3.233,
+      "scale": 0.872
+    },
+    {
+      "id": "giants.126",
+      "asset": "scenery.giants-sorrel",
+      "x": 218.61,
+      "z": 119.17,
+      "yaw": 2.956,
+      "scale": 0.97
+    },
+    {
+      "id": "giants.127",
+      "asset": "scenery.giants-sorrel",
+      "x": 216.8,
+      "z": 131.65,
+      "yaw": 1.25,
+      "scale": 0.855
+    },
+    {
+      "id": "giants.128",
+      "asset": "scenery.giants-sorrel",
+      "x": 205.29,
+      "z": 128.96,
+      "yaw": 5.154,
+      "scale": 0.959
+    },
+    {
+      "id": "giants.129",
+      "asset": "scenery.giants-sorrel",
+      "x": 197.48,
+      "z": 177.67,
+      "yaw": 1.38,
+      "scale": 0.882
+    },
+    {
+      "id": "giants.130",
+      "asset": "scenery.giants-harts-tongue",
+      "x": 149.04,
+      "z": 222.01,
+      "yaw": 2.355,
+      "scale": 0.808
+    },
+    {
+      "id": "giants.131",
+      "asset": "scenery.giants-harts-tongue",
+      "x": 62.21,
+      "z": 132.61,
+      "yaw": 2.955,
+      "scale": 0.8
+    },
+    {
+      "id": "giants.132",
+      "asset": "scenery.giants-harts-tongue",
+      "x": 213.84,
+      "z": 151.15,
+      "yaw": 2.25,
+      "scale": 0.752
+    },
+    {
+      "id": "giants.133",
+      "asset": "scenery.giants-harts-tongue",
+      "x": 100.44,
+      "z": 202.15,
+      "yaw": 4.97,
+      "scale": 0.833
+    },
+    {
+      "id": "giants.134",
+      "asset": "scenery.giants-harts-tongue",
+      "x": 85.53,
+      "z": 197.97,
+      "yaw": 3.122,
+      "scale": 0.829
+    },
+    {
+      "id": "giants.135",
+      "asset": "scenery.giants-clover",
+      "x": 32.6,
+      "z": 154.32,
+      "yaw": 1.758,
+      "scale": 1.143
+    },
+    {
+      "id": "giants.136",
+      "asset": "scenery.giants-fern-frond",
+      "x": 66.6,
+      "z": 227.03,
+      "yaw": 0.469,
+      "scale": 0.882
+    },
+    {
+      "id": "giants.137",
+      "asset": "scenery.giants-clover",
+      "x": 139.83,
+      "z": 44.22,
+      "yaw": 2.337,
+      "scale": 0.836
+    },
+    {
+      "id": "giants.138",
+      "asset": "scenery.giants-fern-frond",
+      "x": 62.66,
+      "z": 206.97,
+      "yaw": 4.077,
+      "scale": 0.815
+    },
+    {
+      "id": "giants.139",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 219.39,
+      "z": 93.79,
+      "yaw": 1.398,
+      "scale": 0.823
+    },
+    {
+      "id": "giants.140",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 225.84,
+      "z": 88.35,
+      "yaw": 5.43,
+      "scale": 1.092
+    },
+    {
+      "id": "giants.141",
+      "asset": "scenery.giants-fern-frond",
+      "x": 17.74,
+      "z": 149.13,
+      "yaw": 5.272,
+      "scale": 1.007
+    },
+    {
+      "id": "giants.142",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 43.67,
+      "z": 137.71,
+      "yaw": 6.059,
+      "scale": 1.02
+    },
+    {
+      "id": "giants.143",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 40.01,
+      "z": 133.12,
+      "yaw": 5.06,
+      "scale": 0.832
+    },
+    {
+      "id": "giants.144",
+      "asset": "scenery.giants-harts-tongue",
+      "x": 232.39,
+      "z": 191.53,
+      "yaw": 4.075,
+      "scale": 0.753
+    },
+    {
+      "id": "giants.145",
+      "asset": "scenery.giants-sorrel",
+      "x": 41.36,
+      "z": 179.1,
+      "yaw": 1.736,
+      "scale": 0.856
+    },
+    {
+      "id": "giants.146",
+      "asset": "scenery.giants-sorrel",
+      "x": 69.89,
+      "z": 85.94,
+      "yaw": 1.234,
+      "scale": 0.823
+    },
+    {
+      "id": "giants.147",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 129.42,
+      "z": 4.39,
+      "yaw": 2.871,
+      "scale": 0.844
+    },
+    {
+      "id": "giants.148",
+      "asset": "scenery.giants-mossy-stone",
+      "x": 144.46,
+      "z": 195.5,
+      "yaw": 5.889,
+      "scale": 1.044
+    },
+    {
+      "id": "giants.149",
+      "asset": "scenery.giants-mossy-stone",
+      "x": 37.1,
+      "z": 137.85,
+      "yaw": 3.332,
+      "scale": 0.765
+    },
+    {
+      "id": "giants.150",
+      "asset": "scenery.giants-bark-slab",
+      "x": 207.4,
+      "z": 61.53,
+      "yaw": 2.955,
+      "scale": 0.796
+    },
+    {
+      "id": "giants.151",
+      "asset": "scenery.giants-mossy-stone",
+      "x": 77.47,
+      "z": 203.29,
+      "yaw": 1.768,
+      "scale": 0.759
+    },
+    {
+      "id": "giants.152",
+      "asset": "scenery.giants-mossy-stone",
+      "x": 153.3,
+      "z": 49.83,
+      "yaw": 5.891,
+      "scale": 0.761
+    },
+    {
+      "id": "giants.153",
+      "asset": "scenery.giants-mossy-stone",
+      "x": 170.68,
+      "z": 16.54,
+      "yaw": 4.293,
+      "scale": 0.839
+    },
+    {
+      "id": "giants.154",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 207.42,
+      "z": 187.17,
+      "yaw": 4.581,
+      "scale": 0.822
+    },
+    {
+      "id": "giants.155",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 114.2,
+      "z": 197.6,
+      "yaw": 5.165,
+      "scale": 1.067
+    },
+    {
+      "id": "giants.156",
+      "asset": "scenery.giants-pine-cone",
+      "x": 157.62,
+      "z": 235.48,
+      "yaw": 3.673,
+      "scale": 1.038
+    },
+    {
+      "id": "giants.157",
+      "asset": "scenery.giants-mossy-stone",
+      "x": 215.99,
+      "z": 190.31,
+      "yaw": 3.022,
+      "scale": 1.078
+    },
+    {
+      "id": "giants.158",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 184.68,
+      "z": 94.35,
+      "yaw": 4.816,
+      "scale": 1.029
+    },
+    {
+      "id": "giants.159",
+      "asset": "scenery.giants-mossy-stone",
+      "x": 243.79,
+      "z": 153.42,
+      "yaw": 2.898,
+      "scale": 0.728
+    },
+    {
+      "id": "giants.160",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 59.11,
+      "z": 91.01,
+      "yaw": 2.707,
+      "scale": 0.841
+    },
+    {
+      "id": "giants.161",
+      "asset": "scenery.giants-mossy-stone",
+      "x": 57.41,
+      "z": 157.08,
+      "yaw": 0.611,
+      "scale": 0.789
+    },
+    {
+      "id": "giants.162",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 177.03,
+      "z": 183.51,
+      "yaw": 1.251,
+      "scale": 0.808
+    },
+    {
+      "id": "giants.163",
+      "asset": "scenery.giants-moss",
+      "x": 132.8,
+      "z": 192.58,
+      "yaw": 0.169,
+      "scale": 0.69
+    },
+    {
+      "id": "giants.164",
+      "asset": "scenery.giants-moss",
+      "x": 132.64,
+      "z": 188.35,
+      "yaw": 2.572,
+      "scale": 0.857
+    },
+    {
+      "id": "giants.165",
+      "asset": "scenery.giants-moss",
+      "x": 138.3,
+      "z": 189.83,
+      "yaw": 0.82,
+      "scale": 0.874
+    },
+    {
+      "id": "giants.166",
+      "asset": "scenery.giants-moss",
+      "x": 127.87,
+      "z": 200.16,
+      "yaw": 5.524,
+      "scale": 0.748
+    },
+    {
+      "id": "giants.167",
+      "asset": "scenery.giants-bilberries",
+      "x": 67.42,
+      "z": 123.87,
+      "yaw": 6.142,
+      "scale": 0.668
+    },
+    {
+      "id": "giants.168",
+      "asset": "scenery.giants-bilberries",
+      "x": 68.98,
+      "z": 121.11,
+      "yaw": 2.441,
+      "scale": 0.611
+    },
+    {
+      "id": "giants.169",
+      "asset": "scenery.giants-buttons",
+      "x": 173.21,
+      "z": 176.05,
+      "yaw": 2.196,
+      "scale": 0.881
+    },
+    {
+      "id": "giants.170",
+      "asset": "scenery.giants-buttons",
+      "x": 180.97,
+      "z": 173.3,
+      "yaw": 3.507,
+      "scale": 0.726
+    },
+    {
+      "id": "giants.171",
+      "asset": "scenery.giants-moss",
+      "x": 55.04,
+      "z": 138.39,
+      "yaw": 4.74,
+      "scale": 0.851
+    },
+    {
+      "id": "giants.172",
+      "asset": "scenery.giants-moss",
+      "x": 61.76,
+      "z": 142.92,
+      "yaw": 1.655,
+      "scale": 0.72
+    },
+    {
+      "id": "giants.173",
+      "asset": "scenery.giants-buttons",
+      "x": 114.85,
+      "z": 59.75,
+      "yaw": 4.041,
+      "scale": 0.714
+    },
+    {
+      "id": "giants.174",
+      "asset": "scenery.giants-buttons",
+      "x": 119.87,
+      "z": 57.58,
+      "yaw": 1.549,
+      "scale": 0.88
+    },
+    {
+      "id": "giants.175",
+      "asset": "scenery.giants-buttons",
+      "x": 111.64,
+      "z": 57.31,
+      "yaw": 5.669,
+      "scale": 0.971
+    },
+    {
+      "id": "giants.176",
+      "asset": "scenery.giants-buttons",
+      "x": 118.35,
+      "z": 60.55,
+      "yaw": 3.426,
+      "scale": 0.71
+    },
+    {
+      "id": "giants.177",
+      "asset": "scenery.giants-buttons",
+      "x": 124.48,
+      "z": 56.35,
+      "yaw": 2.459,
+      "scale": 0.873
+    },
+    {
+      "id": "giants.178",
+      "asset": "scenery.giants-buttons",
+      "x": 192.92,
+      "z": 157.21,
+      "yaw": 4.394,
+      "scale": 1.083
+    },
+    {
+      "id": "giants.179",
+      "asset": "scenery.giants-buttons",
+      "x": 188.99,
+      "z": 156.66,
+      "yaw": 2.715,
+      "scale": 0.778
+    },
+    {
+      "id": "giants.180",
+      "asset": "scenery.giants-buttons",
+      "x": 194.4,
+      "z": 153.35,
+      "yaw": 1.771,
+      "scale": 0.706
+    },
+    {
+      "id": "giants.181",
+      "asset": "scenery.giants-buttons",
+      "x": 197.83,
+      "z": 156.02,
+      "yaw": 4.217,
+      "scale": 0.706
+    },
+    {
+      "id": "giants.182",
+      "asset": "scenery.giants-buttons",
+      "x": 188.7,
+      "z": 161.91,
+      "yaw": 5.394,
+      "scale": 0.62
+    },
+    {
+      "id": "giants.183",
+      "asset": "scenery.giants-moss",
+      "x": 196.18,
+      "z": 145.32,
+      "yaw": 4.7,
+      "scale": 0.655
+    },
+    {
+      "id": "giants.184",
+      "asset": "scenery.giants-moss",
+      "x": 197.45,
+      "z": 151.93,
+      "yaw": 4.973,
+      "scale": 0.602
+    },
+    {
+      "id": "giants.185",
+      "asset": "scenery.giants-moss",
+      "x": 200.27,
+      "z": 147.55,
+      "yaw": 1.714,
+      "scale": 0.807
+    },
+    {
+      "id": "giants.186",
+      "asset": "scenery.giants-moss",
+      "x": 152.12,
+      "z": 64.99,
+      "yaw": 6.093,
+      "scale": 0.878
+    },
+    {
+      "id": "giants.187",
+      "asset": "scenery.giants-buttons",
+      "x": 70.85,
+      "z": 80.46,
+      "yaw": 1.337,
+      "scale": 0.65
+    },
+    {
+      "id": "giants.188",
+      "asset": "scenery.giants-buttons",
+      "x": 71.49,
+      "z": 76.99,
+      "yaw": 0.561,
+      "scale": 0.637
+    },
+    {
+      "id": "giants.189",
+      "asset": "scenery.giants-buttons",
+      "x": 82.9,
+      "z": 81.62,
+      "yaw": 2.861,
+      "scale": 0.938
+    },
+    {
+      "id": "giants.190",
+      "asset": "scenery.giants-moss",
+      "x": 137.06,
+      "z": 199.06,
+      "yaw": 0.856,
+      "scale": 0.859
+    },
+    {
+      "id": "giants.191",
+      "asset": "scenery.giants-moss",
+      "x": 145.69,
+      "z": 188.6,
+      "yaw": 3.047,
+      "scale": 0.649
+    },
+    {
+      "id": "giants.192",
+      "asset": "scenery.giants-moss",
+      "x": 133.93,
+      "z": 49.22,
+      "yaw": 4.311,
+      "scale": 0.695
+    },
+    {
+      "id": "giants.193",
+      "asset": "scenery.giants-moss",
+      "x": 129.89,
+      "z": 56.8,
+      "yaw": 0.289,
+      "scale": 0.88
+    },
+    {
+      "id": "giants.194",
+      "asset": "scenery.giants-moss",
+      "x": 139.87,
+      "z": 57.82,
+      "yaw": 2.54,
+      "scale": 0.688
+    },
+    {
+      "id": "giants.195",
+      "asset": "scenery.giants-moss",
+      "x": 154.63,
+      "z": 195.32,
+      "yaw": 1.895,
+      "scale": 0.715
+    },
+    {
+      "id": "giants.196",
+      "asset": "scenery.giants-moss",
+      "x": 151.33,
+      "z": 199.12,
+      "yaw": 5.729,
+      "scale": 0.977
+    },
+    {
+      "id": "giants.197",
+      "asset": "scenery.giants-moss",
+      "x": 150.73,
+      "z": 187.0,
+      "yaw": 1.899,
+      "scale": 0.812
+    },
+    {
+      "id": "giants.198",
+      "asset": "scenery.giants-buttons",
+      "x": 66.76,
+      "z": 110.65,
+      "yaw": 2.295,
+      "scale": 1.086
+    },
+    {
+      "id": "giants.199",
+      "asset": "scenery.giants-buttons",
+      "x": 72.35,
+      "z": 107.73,
+      "yaw": 1.447,
+      "scale": 0.918
+    },
+    {
+      "id": "giants.200",
+      "asset": "scenery.giants-buttons",
+      "x": 69.0,
+      "z": 104.9,
+      "yaw": 0.401,
+      "scale": 0.659
+    },
+    {
+      "id": "giants.201",
+      "asset": "scenery.giants-buttons",
+      "x": 73.57,
+      "z": 101.25,
+      "yaw": 1.277,
+      "scale": 0.919
+    },
+    {
+      "id": "giants.202",
+      "asset": "scenery.giants-buttons",
+      "x": 73.91,
+      "z": 97.47,
+      "yaw": 2.874,
+      "scale": 0.785
+    },
+    {
+      "id": "giants.203",
+      "asset": "scenery.giants-moss",
+      "x": 182.02,
+      "z": 167.55,
+      "yaw": 2.323,
+      "scale": 1.024
+    },
+    {
+      "id": "giants.204",
+      "asset": "scenery.giants-moss",
+      "x": 188.94,
+      "z": 165.62,
+      "yaw": 4.614,
+      "scale": 0.843
+    },
+    {
+      "id": "giants.205",
+      "asset": "scenery.giants-moss",
+      "x": 176.36,
+      "z": 169.6,
+      "yaw": 3.921,
+      "scale": 0.619
+    },
+    {
+      "id": "giants.206",
+      "asset": "scenery.giants-moss",
+      "x": 166.31,
+      "z": 73.87,
+      "yaw": 3.922,
+      "scale": 0.912
+    },
+    {
+      "id": "giants.207",
+      "asset": "scenery.giants-moss",
+      "x": 162.01,
+      "z": 76.29,
+      "yaw": 5.103,
+      "scale": 0.765
+    },
+    {
+      "id": "giants.208",
+      "asset": "scenery.giants-buttons",
+      "x": 146.26,
+      "z": 61.34,
+      "yaw": 3.739,
+      "scale": 0.634
+    },
+    {
+      "id": "giants.209",
+      "asset": "scenery.giants-buttons",
+      "x": 133.64,
+      "z": 58.97,
+      "yaw": 4.092,
+      "scale": 0.882
+    },
+    {
+      "id": "giants.210",
+      "asset": "scenery.giants-buttons",
+      "x": 135.8,
+      "z": 54.74,
+      "yaw": 1.453,
+      "scale": 0.798
+    },
+    {
+      "id": "giants.211",
+      "asset": "scenery.giants-buttons",
+      "x": 164.46,
+      "z": 81.83,
+      "yaw": 5.213,
+      "scale": 0.83
+    },
+    {
+      "id": "giants.212",
+      "asset": "scenery.giants-buttons",
+      "x": 170.17,
+      "z": 80.41,
+      "yaw": 0.087,
+      "scale": 0.787
+    },
+    {
+      "id": "giants.213",
+      "asset": "scenery.giants-buttons",
+      "x": 167.07,
+      "z": 85.27,
+      "yaw": 4.123,
+      "scale": 0.769
+    },
+    {
+      "id": "giants.214",
+      "asset": "scenery.giants-pebbles",
+      "x": 199.63,
+      "z": 135.28,
+      "yaw": 3.268,
+      "scale": 0.617
+    },
+    {
+      "id": "giants.215",
+      "asset": "scenery.giants-pebbles",
+      "x": 169.04,
+      "z": 57.5,
+      "yaw": 0.327,
+      "scale": 0.538
+    },
+    {
+      "id": "giants.216",
+      "asset": "scenery.giants-pebbles",
+      "x": 99.02,
+      "z": 58.52,
+      "yaw": 2.364,
+      "scale": 0.89
+    },
+    {
+      "id": "giants.217",
+      "asset": "scenery.giants-pebbles",
+      "x": 95.55,
+      "z": 72.67,
+      "yaw": 3.422,
+      "scale": 0.785
+    },
+    {
+      "id": "giants.218",
+      "asset": "scenery.giants-pebbles",
+      "x": 88.31,
+      "z": 50.26,
+      "yaw": 0.108,
+      "scale": 0.833
+    },
+    {
+      "id": "giants.219",
+      "asset": "scenery.giants-pebbles",
+      "x": 205.26,
+      "z": 150.83,
+      "yaw": 0.591,
+      "scale": 0.562
+    },
+    {
+      "id": "giants.220",
+      "asset": "scenery.giants-pebbles",
+      "x": 204.9,
+      "z": 95.63,
+      "yaw": 0.806,
+      "scale": 0.611
+    },
+    {
+      "id": "giants.221",
+      "asset": "scenery.giants-acorn",
+      "x": 168.8,
+      "z": 182.68,
+      "yaw": 4.207,
+      "scale": 0.926
+    },
+    {
+      "id": "giants.222",
+      "asset": "scenery.giants-beechnut",
+      "x": 158.24,
+      "z": 54.45,
+      "yaw": 2.382,
+      "scale": 0.936
+    },
+    {
+      "id": "giants.223",
+      "asset": "scenery.giants-hazelnut",
+      "x": 65.07,
+      "z": 81.29,
+      "yaw": 3.56,
+      "scale": 0.808
+    },
+    {
+      "id": "giants.224",
+      "asset": "scenery.giants-beechnut",
+      "x": 87.77,
+      "z": 71.54,
+      "yaw": 0.328,
+      "scale": 0.941
+    },
+    {
+      "id": "giants.225",
+      "asset": "scenery.giants-beechnut",
+      "x": 170.56,
+      "z": 69.69,
+      "yaw": 1.61,
+      "scale": 0.831
+    },
+    {
+      "id": "giants.226",
+      "asset": "scenery.giants-beechnut",
+      "x": 175.78,
+      "z": 78.17,
+      "yaw": 4.089,
+      "scale": 0.856
+    },
+    {
+      "id": "giants.227",
+      "asset": "scenery.giants-beechnut",
+      "x": 195.0,
+      "z": 121.94,
+      "yaw": 2.884,
+      "scale": 0.904
+    },
+    {
+      "id": "giants.228",
+      "asset": "scenery.giants-hazelnut",
+      "x": 177.11,
+      "z": 98.56,
+      "yaw": 1.901,
+      "scale": 0.829
+    },
+    {
+      "id": "giants.229",
+      "asset": "scenery.giants-hazelnut",
+      "x": 125.79,
+      "z": 191.01,
+      "yaw": 1.537,
+      "scale": 0.896
+    },
+    {
+      "id": "giants.230",
+      "asset": "scenery.giants-acorn",
+      "x": 62.18,
+      "z": 171.6,
+      "yaw": 0.023,
+      "scale": 0.717
+    },
+    {
+      "id": "giants.231",
+      "asset": "scenery.giants-acorn",
+      "x": 47.99,
+      "z": 176.9,
+      "yaw": 0.124,
+      "scale": 0.897
+    },
+    {
+      "id": "giants.232",
+      "asset": "scenery.giants-acorn",
+      "x": 58.22,
+      "z": 164.04,
+      "yaw": 4.152,
+      "scale": 0.842
+    },
+    {
+      "id": "giants.233",
+      "asset": "scenery.giants-acorn",
+      "x": 63.33,
+      "z": 155.82,
+      "yaw": 6.133,
+      "scale": 0.908
+    },
+    {
+      "id": "giants.234",
+      "asset": "scenery.giants-dew-drops",
+      "x": 207.56,
+      "z": 121.99,
+      "yaw": 0.662,
+      "scale": 0.763
+    },
+    {
+      "id": "giants.235",
+      "asset": "scenery.giants-dew-drops",
+      "x": 211.9,
+      "z": 123.88,
+      "yaw": 3.804,
+      "scale": 0.822
+    },
+    {
+      "id": "giants.236",
+      "asset": "scenery.giants-dew-drops",
+      "x": 210.73,
+      "z": 120.1,
+      "yaw": 1.063,
+      "scale": 0.947
+    },
+    {
+      "id": "giants.237",
+      "asset": "scenery.giants-dew-drop",
+      "x": 72.31,
+      "z": 73.13,
+      "yaw": 3.51,
+      "scale": 0.997
+    },
+    {
+      "id": "giants.238",
+      "asset": "scenery.giants-dew-drop",
+      "x": 75.47,
+      "z": 89.39,
+      "yaw": 3.932,
+      "scale": 1.092
+    },
+    {
+      "id": "giants.239",
+      "asset": "scenery.giants-dew-drop",
+      "x": 76.97,
+      "z": 87.95,
+      "yaw": 1.989,
+      "scale": 1.091
+    },
+    {
+      "id": "giants.240",
+      "asset": "scenery.giants-dew-drop",
+      "x": 141.2,
+      "z": 187.74,
+      "yaw": 3.342,
+      "scale": 0.848
+    },
+    {
+      "id": "giants.241",
+      "asset": "scenery.giants-dew-drop",
+      "x": 113.49,
+      "z": 62.81,
+      "yaw": 5.274,
+      "scale": 1.154
+    },
+    {
+      "id": "giants.242",
+      "asset": "scenery.giants-dew-drops",
+      "x": 67.83,
+      "z": 97.85,
+      "yaw": 2.44,
+      "scale": 1.019
+    },
+    {
+      "id": "giants.243",
+      "asset": "scenery.giants-dew-drops",
+      "x": 72.16,
+      "z": 93.24,
+      "yaw": 2.298,
+      "scale": 1.037
+    },
+    {
+      "id": "giants.244",
+      "asset": "scenery.giants-dew-drop",
+      "x": 154.24,
+      "z": 55.38,
+      "yaw": 1.191,
+      "scale": 0.791
+    },
+    {
+      "id": "giants.245",
+      "asset": "scenery.giants-dew-drop",
+      "x": 193.15,
+      "z": 168.46,
+      "yaw": 0.758,
+      "scale": 1.078
+    },
+    {
+      "id": "giants.246",
+      "asset": "scenery.giants-dew-drop",
+      "x": 197.26,
+      "z": 169.0,
+      "yaw": 4.397,
+      "scale": 0.987
+    },
+    {
+      "id": "giants.247",
+      "asset": "scenery.giants-dew-drop",
+      "x": 121.23,
+      "z": 198.57,
+      "yaw": 5.731,
+      "scale": 1.098
+    },
+    {
+      "id": "giants.248",
+      "asset": "scenery.giants-dew-drop",
+      "x": 120.15,
+      "z": 200.25,
+      "yaw": 6.221,
+      "scale": 0.892
+    },
+    {
+      "id": "giants.249",
+      "asset": "scenery.giants-dew-drop",
+      "x": 121.48,
+      "z": 196.55,
+      "yaw": 2.489,
+      "scale": 0.853
+    },
+    {
+      "id": "giants.250",
+      "asset": "scenery.giants-dew-drops",
+      "x": 64.02,
+      "z": 162.95,
+      "yaw": 1.274,
+      "scale": 0.852
+    },
+    {
+      "id": "giants.251",
+      "asset": "scenery.giants-dew-drops",
+      "x": 65.72,
+      "z": 168.68,
+      "yaw": 1.946,
+      "scale": 0.942
+    },
+    {
+      "id": "giants.252",
+      "asset": "scenery.giants-dew-drops",
+      "x": 69.98,
+      "z": 171.15,
+      "yaw": 2.055,
+      "scale": 1.189
+    },
+    {
+      "id": "giants.253",
+      "asset": "scenery.giants-dew-drop",
+      "x": 172.41,
+      "z": 178.72,
+      "yaw": 1.782,
+      "scale": 0.98
+    },
+    {
+      "id": "giants.254",
+      "asset": "scenery.giants-dew-drops",
+      "x": 83.19,
+      "z": 184.82,
+      "yaw": 6.21,
+      "scale": 0.762
+    },
+    {
+      "id": "giants.255",
+      "asset": "scenery.giants-dew-drops",
+      "x": 189.43,
+      "z": 171.0,
+      "yaw": 4.904,
+      "scale": 1.004
+    },
+    {
+      "id": "giants.256",
+      "asset": "scenery.giants-dew-drops",
+      "x": 185.53,
+      "z": 171.56,
+      "yaw": 0.892,
+      "scale": 1.023
+    },
+    {
+      "id": "giants.257",
+      "asset": "scenery.giants-dew-drops",
+      "x": 184.06,
+      "z": 163.6,
+      "yaw": 3.693,
+      "scale": 0.834
+    },
+    {
+      "id": "giants.258",
+      "asset": "scenery.giants-dew-drops",
+      "x": 123.66,
+      "z": 199.5,
+      "yaw": 0.032,
+      "scale": 0.824
+    },
+    {
+      "id": "giants.259",
+      "asset": "scenery.giants-dew-drops",
+      "x": 120.23,
+      "z": 193.48,
+      "yaw": 0.391,
+      "scale": 0.831
+    },
+    {
+      "id": "giants.260",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 239.29,
+      "z": 251.24,
+      "yaw": 1.174,
+      "scale": 0.645
+    },
+    {
+      "id": "giants.261",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 122.44,
+      "z": 41.92,
+      "yaw": 3.277,
+      "scale": 0.865
+    },
+    {
+      "id": "giants.262",
+      "asset": "scenery.giants-bracken",
+      "x": 173.99,
+      "z": 78.08,
+      "yaw": 2.497,
+      "scale": 1.042
+    },
+    {
+      "id": "giants.263",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 36.82,
+      "z": 142.39,
+      "yaw": 4.799,
+      "scale": 0.974
+    },
+    {
+      "id": "giants.264",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 180.2,
+      "z": 27.1,
+      "yaw": 4.906,
+      "scale": 0.616
+    },
+    {
+      "id": "giants.265",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 31.53,
+      "z": 35.09,
+      "yaw": 5.848,
+      "scale": 0.765
+    },
+    {
+      "id": "giants.266",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 164.48,
+      "z": 39.64,
+      "yaw": 2.073,
+      "scale": 0.984
+    },
+    {
+      "id": "giants.267",
+      "asset": "scenery.giants-maple-seed",
+      "x": 243.36,
+      "z": 217.66,
+      "yaw": 3.572,
+      "scale": 0.982
+    },
+    {
+      "id": "giants.268",
+      "asset": "scenery.giants-twig",
+      "x": 85.83,
+      "z": 59.14,
+      "yaw": 3.796,
+      "scale": 0.614
+    },
+    {
+      "id": "giants.269",
+      "asset": "scenery.giants-twig",
+      "x": 180.17,
+      "z": 201.92,
+      "yaw": 2.186,
+      "scale": 0.701
+    },
+    {
+      "id": "giants.270",
+      "asset": "scenery.giants-maple-seed",
+      "x": 163.82,
+      "z": 202.13,
+      "yaw": 5.161,
+      "scale": 0.869
+    },
+    {
+      "id": "giants.271",
+      "asset": "scenery.giants-maple-seed",
+      "x": 81.7,
+      "z": 43.68,
+      "yaw": 2.507,
+      "scale": 0.897
+    },
+    {
+      "id": "giants.272",
+      "asset": "scenery.giants-maple-seed",
+      "x": 128.23,
+      "z": 48.74,
+      "yaw": 1.094,
+      "scale": 0.715
+    },
+    {
+      "id": "giants.273",
+      "asset": "scenery.giants-maple-seed",
+      "x": 25.28,
+      "z": 43.12,
+      "yaw": 3.67,
+      "scale": 0.814
+    },
+    {
+      "id": "giants.274",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 245.14,
+      "z": 148.51,
+      "yaw": 2.041,
+      "scale": 0.679
+    },
+    {
+      "id": "giants.275",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 169.99,
+      "z": 242.35,
+      "yaw": 2.154,
+      "scale": 0.671
+    },
+    {
+      "id": "giants.276",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 130.13,
+      "z": 247.15,
+      "yaw": 3.675,
+      "scale": 0.79
+    },
+    {
+      "id": "giants.277",
+      "asset": "scenery.giants-bracken",
+      "x": 68.11,
+      "z": 64.04,
+      "yaw": 2.579,
+      "scale": 0.916
+    },
+    {
+      "id": "giants.278",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 43.9,
+      "z": 83.49,
+      "yaw": 2.887,
+      "scale": 0.672
+    },
+    {
+      "id": "giants.279",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 189.06,
+      "z": 107.72,
+      "yaw": 4.015,
+      "scale": 0.588
+    },
+    {
+      "id": "giants.280",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 7.86,
+      "z": 105.68,
+      "yaw": 0.613,
+      "scale": 1.022
+    },
+    {
+      "id": "giants.281",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 214.75,
+      "z": 17.06,
+      "yaw": 0.626,
+      "scale": 0.901
+    },
+    {
+      "id": "giants.282",
+      "asset": "scenery.giants-maple-seed",
+      "x": 33.1,
+      "z": 47.01,
+      "yaw": 3.481,
+      "scale": 0.607
+    },
+    {
+      "id": "giants.283",
+      "asset": "scenery.giants-maple-seed",
+      "x": 208.86,
+      "z": 10.91,
+      "yaw": 5.918,
+      "scale": 0.689
+    },
+    {
+      "id": "giants.284",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 63.69,
+      "z": 213.4,
+      "yaw": 0.555,
+      "scale": 0.887
+    },
+    {
+      "id": "giants.285",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 205.5,
+      "z": 230.88,
+      "yaw": 2.239,
+      "scale": 1.01
+    },
+    {
+      "id": "giants.286",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 185.92,
+      "z": 47.43,
+      "yaw": 2.397,
+      "scale": 0.677
+    },
+    {
+      "id": "giants.287",
+      "asset": "scenery.giants-twig",
+      "x": 62.07,
+      "z": 10.2,
+      "yaw": 3.61,
+      "scale": 0.675
+    },
+    {
+      "id": "giants.288",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 25.88,
+      "z": 24.05,
+      "yaw": 4.88,
+      "scale": 0.872
+    },
+    {
+      "id": "giants.289",
+      "asset": "scenery.giants-twig",
+      "x": 125.48,
+      "z": 56.46,
+      "yaw": 3.091,
+      "scale": 0.879
+    },
+    {
+      "id": "giants.290",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 7.8,
+      "z": 234.61,
+      "yaw": 0.826,
+      "scale": 0.749
+    },
+    {
+      "id": "giants.291",
+      "asset": "scenery.giants-bracken",
+      "x": 119.33,
+      "z": 2.89,
+      "yaw": 0.032,
+      "scale": 0.71
+    },
+    {
+      "id": "giants.292",
+      "asset": "scenery.giants-twig",
+      "x": 182.49,
+      "z": 63.1,
+      "yaw": 2.213,
+      "scale": 0.784
+    },
+    {
+      "id": "giants.293",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 211.01,
+      "z": 99.39,
+      "yaw": 1.094,
+      "scale": 0.969
+    },
+    {
+      "id": "giants.294",
+      "asset": "scenery.giants-twig",
+      "x": 165.07,
+      "z": 73.73,
+      "yaw": 3.399,
+      "scale": 0.572
+    },
+    {
+      "id": "giants.295",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 71.8,
+      "z": 107.83,
+      "yaw": 1.704,
+      "scale": 0.637
+    },
+    {
+      "id": "giants.296",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 157.36,
+      "z": 230.26,
+      "yaw": 5.161,
+      "scale": 0.701
+    },
+    {
+      "id": "giants.297",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 36.95,
+      "z": 226.4,
+      "yaw": 0.056,
+      "scale": 0.712
+    },
+    {
+      "id": "giants.298",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 165.8,
+      "z": 4.03,
+      "yaw": 4.678,
+      "scale": 0.748
+    },
+    {
+      "id": "giants.299",
+      "asset": "scenery.giants-bracken",
+      "x": 3.4,
+      "z": 27.93,
+      "yaw": 1.319,
+      "scale": 0.658
+    },
+    {
+      "id": "giants.300",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 172.3,
+      "z": 218.72,
+      "yaw": 1.539,
+      "scale": 0.878
+    },
+    {
+      "id": "giants.301",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 95.87,
+      "z": 51.85,
+      "yaw": 5.839,
+      "scale": 0.992
+    },
+    {
+      "id": "giants.302",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 32.86,
+      "z": 248.39,
+      "yaw": 1.193,
+      "scale": 0.579
+    },
+    {
+      "id": "giants.303",
+      "asset": "scenery.giants-bracken",
+      "x": 45.52,
+      "z": 189.6,
+      "yaw": 3.506,
+      "scale": 0.941
+    },
+    {
+      "id": "giants.304",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 20.2,
+      "z": 71.89,
+      "yaw": 0.049,
+      "scale": 0.978
+    },
+    {
+      "id": "giants.305",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 149.31,
+      "z": 29.75,
+      "yaw": 0.326,
+      "scale": 0.555
+    },
+    {
+      "id": "giants.306",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 217.05,
+      "z": 42.4,
+      "yaw": 2.106,
+      "scale": 0.69
+    },
+    {
+      "id": "giants.307",
+      "asset": "scenery.giants-twig",
+      "x": 216.69,
+      "z": 49.14,
+      "yaw": 5.404,
+      "scale": 0.655
+    },
+    {
+      "id": "giants.308",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 91.71,
+      "z": 186.78,
+      "yaw": 0.255,
+      "scale": 0.846
+    },
+    {
+      "id": "giants.309",
+      "asset": "scenery.giants-bracken",
+      "x": 218.39,
+      "z": 172.85,
+      "yaw": 4.684,
+      "scale": 0.954
+    },
+    {
+      "id": "giants.310",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 230.13,
+      "z": 214.7,
+      "yaw": 5.351,
+      "scale": 0.644
+    },
+    {
+      "id": "giants.311",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 211.41,
+      "z": 89.68,
+      "yaw": 0.92,
+      "scale": 0.965
+    },
+    {
+      "id": "giants.312",
+      "asset": "scenery.giants-maple-seed",
+      "x": 165.29,
+      "z": 245.29,
+      "yaw": 3.934,
+      "scale": 0.67
+    },
+    {
+      "id": "giants.313",
+      "asset": "scenery.giants-maple-seed",
+      "x": 106.23,
+      "z": 53.17,
+      "yaw": 3.998,
+      "scale": 0.972
+    },
+    {
+      "id": "giants.314",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 175.82,
+      "z": 197.23,
+      "yaw": 1.159,
+      "scale": 0.947
+    },
+    {
+      "id": "giants.315",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 22.47,
+      "z": 193.8,
+      "yaw": 4.563,
+      "scale": 0.783
+    },
+    {
+      "id": "giants.316",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 236.33,
+      "z": 215.43,
+      "yaw": 4.522,
+      "scale": 0.717
+    },
+    {
+      "id": "giants.317",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 11.87,
+      "z": 241.51,
+      "yaw": 1.108,
+      "scale": 0.736
+    },
+    {
+      "id": "giants.318",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 131.89,
+      "z": 28.14,
+      "yaw": 0.972,
+      "scale": 0.991
+    },
+    {
+      "id": "giants.319",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 14.48,
+      "z": 45.28,
+      "yaw": 3.426,
+      "scale": 0.604
+    },
+    {
+      "id": "giants.320",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 250.19,
+      "z": 180.84,
+      "yaw": 3.694,
+      "scale": 0.929
+    },
+    {
+      "id": "giants.321",
+      "asset": "scenery.giants-bracken",
+      "x": 10.96,
+      "z": 206.7,
+      "yaw": 3.016,
+      "scale": 0.773
+    },
+    {
+      "id": "giants.322",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 20.77,
+      "z": 112.58,
+      "yaw": 3.385,
+      "scale": 0.915
+    },
+    {
+      "id": "giants.323",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 230.01,
+      "z": 18.87,
+      "yaw": 3.91,
+      "scale": 0.894
+    },
+    {
+      "id": "giants.324",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 153.29,
+      "z": 237.16,
+      "yaw": 1.018,
+      "scale": 0.705
+    },
+    {
+      "id": "giants.325",
+      "asset": "scenery.giants-maple-seed",
+      "x": 57.44,
+      "z": 82.25,
+      "yaw": 0.023,
+      "scale": 0.627
+    },
+    {
+      "id": "giants.326",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 4.28,
+      "z": 158.19,
+      "yaw": 0.387,
+      "scale": 0.736
+    },
+    {
+      "id": "giants.327",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 239.25,
+      "z": 166.69,
+      "yaw": 2.254,
+      "scale": 0.572
+    },
+    {
+      "id": "giants.328",
+      "asset": "scenery.giants-twig",
+      "x": 106.77,
+      "z": 202.28,
+      "yaw": 3.087,
+      "scale": 0.705
+    },
+    {
+      "id": "giants.329",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 194.04,
+      "z": 239.74,
+      "yaw": 3.941,
+      "scale": 0.967
+    },
+    {
+      "id": "giants.330",
+      "asset": "scenery.giants-maple-seed",
+      "x": 166.08,
+      "z": 192.46,
+      "yaw": 0.81,
+      "scale": 0.758
+    },
+    {
+      "id": "giants.331",
+      "asset": "scenery.giants-twig",
+      "x": 81.34,
+      "z": 253.0,
+      "yaw": 4.082,
+      "scale": 0.599
+    },
+    {
+      "id": "giants.332",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 222.39,
+      "z": 186.4,
+      "yaw": 5.515,
+      "scale": 0.73
+    },
+    {
+      "id": "giants.333",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 93.24,
+      "z": 231.27,
+      "yaw": 5.916,
+      "scale": 0.765
+    },
+    {
+      "id": "giants.334",
+      "asset": "scenery.giants-twig",
+      "x": 27.84,
+      "z": 243.45,
+      "yaw": 4.273,
+      "scale": 0.865
+    },
+    {
+      "id": "giants.335",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 99.73,
+      "z": 40.68,
+      "yaw": 4.0,
+      "scale": 0.846
+    },
+    {
+      "id": "giants.336",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 51.66,
+      "z": 174.69,
+      "yaw": 4.45,
+      "scale": 0.804
+    },
+    {
+      "id": "giants.337",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 141.7,
+      "z": 10.88,
+      "yaw": 0.519,
+      "scale": 0.624
+    },
+    {
+      "id": "giants.338",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 46.84,
+      "z": 95.8,
+      "yaw": 1.992,
+      "scale": 0.915
+    },
+    {
+      "id": "giants.339",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 226.4,
+      "z": 30.26,
+      "yaw": 4.697,
+      "scale": 0.671
+    },
+    {
+      "id": "giants.340",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 101.59,
+      "z": 13.69,
+      "yaw": 4.691,
+      "scale": 0.864
+    },
+    {
+      "id": "giants.341",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 28.87,
+      "z": 107.52,
+      "yaw": 3.199,
+      "scale": 0.86
+    },
+    {
+      "id": "giants.342",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 153.05,
+      "z": 40.23,
+      "yaw": 4.561,
+      "scale": 1.012
+    },
+    {
+      "id": "giants.343",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 29.16,
+      "z": 117.16,
+      "yaw": 3.546,
+      "scale": 0.718
+    },
+    {
+      "id": "giants.344",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 194.08,
+      "z": 102.72,
+      "yaw": 3.322,
+      "scale": 0.838
+    },
+    {
+      "id": "giants.345",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 182.64,
+      "z": 192.26,
+      "yaw": 1.267,
+      "scale": 1.009
+    },
+    {
+      "id": "giants.346",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 109.46,
+      "z": 213.6,
+      "yaw": 0.78,
+      "scale": 0.582
+    },
+    {
+      "id": "giants.347",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 128.02,
+      "z": 229.22,
+      "yaw": 6.111,
+      "scale": 0.642
+    },
+    {
+      "id": "giants.348",
+      "asset": "scenery.giants-maple-seed",
+      "x": 3.98,
+      "z": 252.77,
+      "yaw": 3.563,
+      "scale": 0.848
+    },
+    {
+      "id": "giants.349",
+      "asset": "scenery.giants-twig",
+      "x": 38.73,
+      "z": 39.08,
+      "yaw": 3.045,
+      "scale": 0.951
+    },
+    {
+      "id": "giants.350",
+      "asset": "scenery.giants-twig",
+      "x": 228.77,
+      "z": 91.8,
+      "yaw": 1.11,
+      "scale": 1.034
+    },
+    {
+      "id": "giants.351",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 238.63,
+      "z": 21.53,
+      "yaw": 5.36,
+      "scale": 0.97
+    },
+    {
+      "id": "giants.352",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 251.92,
+      "z": 90.29,
+      "yaw": 3.357,
+      "scale": 0.944
+    },
+    {
+      "id": "giants.353",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 106.9,
+      "z": 42.13,
+      "yaw": 5.876,
+      "scale": 0.659
+    },
+    {
+      "id": "giants.354",
+      "asset": "scenery.giants-bracken",
+      "x": 212.07,
+      "z": 82.64,
+      "yaw": 3.316,
+      "scale": 0.678
+    },
+    {
+      "id": "giants.355",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 48.31,
+      "z": 123.85,
+      "yaw": 0.699,
+      "scale": 0.6
+    },
+    {
+      "id": "giants.356",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 170.89,
+      "z": 53.72,
+      "yaw": 6.102,
+      "scale": 0.556
+    },
+    {
+      "id": "giants.357",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 205.12,
+      "z": 66.94,
+      "yaw": 3.648,
+      "scale": 0.837
+    },
+    {
+      "id": "giants.358",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 17.47,
+      "z": 213.53,
+      "yaw": 5.806,
+      "scale": 0.576
+    },
+    {
+      "id": "giants.359",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 251.55,
+      "z": 131.97,
+      "yaw": 0.996,
+      "scale": 0.721
+    },
+    {
+      "id": "giants.360",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 74.56,
+      "z": 11.21,
+      "yaw": 5.555,
+      "scale": 0.595
+    },
+    {
+      "id": "giants.361",
+      "asset": "scenery.giants-maple-seed",
+      "x": 54.52,
+      "z": 11.0,
+      "yaw": 5.927,
+      "scale": 0.638
+    },
+    {
+      "id": "giants.362",
+      "asset": "scenery.giants-maple-seed",
+      "x": 193.29,
+      "z": 94.05,
+      "yaw": 5.299,
+      "scale": 1.009
+    },
+    {
+      "id": "giants.363",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 26.5,
+      "z": 70.33,
+      "yaw": 2.459,
+      "scale": 0.734
+    },
+    {
+      "id": "giants.364",
+      "asset": "scenery.giants-twig",
+      "x": 228.14,
+      "z": 142.3,
+      "yaw": 2.773,
+      "scale": 0.905
+    },
+    {
+      "id": "giants.365",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 7.98,
+      "z": 220.59,
+      "yaw": 1.226,
+      "scale": 1.047
+    },
+    {
+      "id": "giants.366",
+      "asset": "scenery.giants-twig",
+      "x": 110.62,
+      "z": 59.78,
+      "yaw": 3.26,
+      "scale": 0.863
+    },
+    {
+      "id": "giants.367",
+      "asset": "scenery.giants-maple-seed",
+      "x": 195.6,
+      "z": 251.79,
+      "yaw": 3.139,
+      "scale": 0.597
+    },
+    {
+      "id": "giants.368",
+      "asset": "scenery.giants-twig",
+      "x": 240.7,
+      "z": 186.17,
+      "yaw": 3.38,
+      "scale": 0.901
+    },
+    {
+      "id": "giants.369",
+      "asset": "scenery.giants-bracken",
+      "x": 219.45,
+      "z": 74.23,
+      "yaw": 5.474,
+      "scale": 0.624
+    },
+    {
+      "id": "giants.370",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 226.86,
+      "z": 115.65,
+      "yaw": 5.895,
+      "scale": 0.762
+    },
+    {
+      "id": "giants.371",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 242.86,
+      "z": 92.91,
+      "yaw": 0.473,
+      "scale": 0.928
+    },
+    {
+      "id": "giants.372",
+      "asset": "scenery.giants-bracken",
+      "x": 34.76,
+      "z": 230.82,
+      "yaw": 1.044,
+      "scale": 0.587
+    },
+    {
+      "id": "giants.373",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 183.05,
+      "z": 70.05,
+      "yaw": 1.184,
+      "scale": 0.713
+    },
+    {
+      "id": "giants.374",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 108.79,
+      "z": 37.31,
+      "yaw": 0.189,
+      "scale": 0.898
+    },
+    {
+      "id": "giants.375",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 17.94,
+      "z": 130.16,
+      "yaw": 2.95,
+      "scale": 0.862
+    },
+    {
+      "id": "giants.376",
+      "asset": "scenery.giants-twig",
+      "x": 35.87,
+      "z": 158.84,
+      "yaw": 5.163,
+      "scale": 0.715
+    },
+    {
+      "id": "giants.377",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 154.67,
+      "z": 18.69,
+      "yaw": 6.175,
+      "scale": 0.596
+    },
+    {
+      "id": "giants.378",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 3.52,
+      "z": 123.1,
+      "yaw": 1.957,
+      "scale": 0.556
+    },
+    {
+      "id": "giants.379",
+      "asset": "scenery.giants-twig",
+      "x": 242.06,
+      "z": 17.95,
+      "yaw": 0.761,
+      "scale": 0.609
+    },
+    {
+      "id": "giants.380",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 102.25,
+      "z": 250.87,
+      "yaw": 5.155,
+      "scale": 0.619
+    },
+    {
+      "id": "giants.381",
+      "asset": "scenery.giants-bracken",
+      "x": 57.42,
+      "z": 212.75,
+      "yaw": 1.266,
+      "scale": 0.935
+    },
+    {
+      "id": "giants.382",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 169.37,
+      "z": 7.2,
+      "yaw": 5.973,
+      "scale": 0.726
+    },
+    {
+      "id": "giants.383",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 235.04,
+      "z": 186.38,
+      "yaw": 0.026,
+      "scale": 0.59
+    },
+    {
+      "id": "giants.384",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 110.91,
+      "z": 198.99,
+      "yaw": 4.862,
+      "scale": 0.945
+    },
+    {
+      "id": "giants.385",
+      "asset": "scenery.giants-twig",
+      "x": 12.79,
+      "z": 39.49,
+      "yaw": 2.677,
+      "scale": 1.045
+    },
+    {
+      "id": "giants.386",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 59.12,
+      "z": 136.92,
+      "yaw": 0.5,
+      "scale": 0.732
+    },
+    {
+      "id": "giants.387",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 49.32,
+      "z": 55.39,
+      "yaw": 0.724,
+      "scale": 0.935
+    },
+    {
+      "id": "giants.388",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 153.29,
+      "z": 251.39,
+      "yaw": 0.218,
+      "scale": 0.641
+    },
+    {
+      "id": "giants.389",
+      "asset": "scenery.giants-twig",
+      "x": 47.67,
+      "z": 14.84,
+      "yaw": 1.783,
+      "scale": 1.036
+    },
+    {
+      "id": "giants.390",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 201.14,
+      "z": 168.33,
+      "yaw": 3.154,
+      "scale": 0.618
+    },
+    {
+      "id": "giants.391",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 11.15,
+      "z": 83.58,
+      "yaw": 5.409,
+      "scale": 0.922
+    },
+    {
+      "id": "giants.392",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 116.64,
+      "z": 225.38,
+      "yaw": 1.577,
+      "scale": 0.912
+    },
+    {
+      "id": "giants.393",
+      "asset": "scenery.giants-twig",
+      "x": 225.78,
+      "z": 43.48,
+      "yaw": 3.227,
+      "scale": 0.615
+    },
+    {
+      "id": "giants.394",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 234.29,
+      "z": 129.4,
+      "yaw": 5.42,
+      "scale": 0.995
+    },
+    {
+      "id": "giants.395",
+      "asset": "scenery.giants-maple-seed",
+      "x": 129.23,
+      "z": 204.47,
+      "yaw": 4.014,
+      "scale": 0.862
+    },
+    {
+      "id": "giants.396",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 218.47,
+      "z": 5.94,
+      "yaw": 4.859,
+      "scale": 0.957
+    },
+    {
+      "id": "giants.397",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 170.01,
+      "z": 73.62,
+      "yaw": 1.298,
+      "scale": 0.757
+    },
+    {
+      "id": "giants.398",
+      "asset": "scenery.giants-bracken",
+      "x": 211.29,
+      "z": 39.12,
+      "yaw": 5.325,
+      "scale": 1.049
+    },
+    {
+      "id": "giants.399",
+      "asset": "scenery.giants-twig",
+      "x": 5.04,
+      "z": 37.18,
+      "yaw": 0.482,
+      "scale": 0.752
+    },
+    {
+      "id": "giants.400",
+      "asset": "scenery.giants-maple-seed",
+      "x": 182.25,
+      "z": 218.3,
+      "yaw": 2.376,
+      "scale": 0.635
+    },
+    {
+      "id": "giants.401",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 236.7,
+      "z": 136.44,
+      "yaw": 5.961,
+      "scale": 0.777
+    },
+    {
+      "id": "giants.402",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 132.26,
+      "z": 224.27,
+      "yaw": 1.73,
+      "scale": 0.746
+    },
+    {
+      "id": "giants.403",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 134.53,
+      "z": 253.04,
+      "yaw": 4.02,
+      "scale": 0.969
+    },
+    {
+      "id": "giants.404",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 74.76,
+      "z": 44.68,
+      "yaw": 1.429,
+      "scale": 0.769
+    },
+    {
+      "id": "giants.405",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 35.54,
+      "z": 27.53,
+      "yaw": 5.483,
+      "scale": 1.001
+    },
+    {
+      "id": "giants.406",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 89.44,
+      "z": 41.19,
+      "yaw": 5.732,
+      "scale": 0.819
+    },
+    {
+      "id": "giants.407",
+      "asset": "scenery.giants-maple-seed",
+      "x": 27.59,
+      "z": 10.01,
+      "yaw": 2.586,
+      "scale": 0.954
+    },
+    {
+      "id": "giants.408",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 152.24,
+      "z": 49.48,
+      "yaw": 2.799,
+      "scale": 0.637
+    },
+    {
+      "id": "giants.409",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 3.45,
+      "z": 144.16,
+      "yaw": 4.132,
+      "scale": 0.907
+    },
+    {
+      "id": "giants.410",
+      "asset": "scenery.giants-bracken",
+      "x": 42.51,
+      "z": 62.95,
+      "yaw": 0.501,
+      "scale": 0.891
+    },
+    {
+      "id": "giants.411",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 223.34,
+      "z": 139.87,
+      "yaw": 2.788,
+      "scale": 0.853
+    },
+    {
+      "id": "giants.412",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 31.52,
+      "z": 18.76,
+      "yaw": 3.469,
+      "scale": 0.713
+    },
+    {
+      "id": "giants.413",
+      "asset": "scenery.giants-maple-seed",
+      "x": 151.26,
+      "z": 226.98,
+      "yaw": 1.609,
+      "scale": 0.759
+    },
+    {
+      "id": "giants.414",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 223.79,
+      "z": 77.27,
+      "yaw": 4.111,
+      "scale": 0.72
+    },
+    {
+      "id": "giants.415",
+      "asset": "scenery.giants-twig",
+      "x": 72.99,
+      "z": 253.4,
+      "yaw": 1.892,
+      "scale": 1.043
+    },
+    {
+      "id": "giants.416",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 110.94,
+      "z": 27.72,
+      "yaw": 0.951,
+      "scale": 0.641
+    },
+    {
+      "id": "giants.417",
+      "asset": "scenery.giants-twig",
+      "x": 9.98,
+      "z": 196.67,
+      "yaw": 0.449,
+      "scale": 0.697
+    },
+    {
+      "id": "giants.418",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 80.9,
+      "z": 231.67,
+      "yaw": 0.597,
+      "scale": 1.009
+    },
+    {
+      "id": "giants.419",
+      "asset": "scenery.giants-bracken",
+      "x": 7.03,
+      "z": 78.51,
+      "yaw": 4.85,
+      "scale": 0.948
+    },
+    {
+      "id": "giants.420",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 118.29,
+      "z": 239.4,
+      "yaw": 1.817,
+      "scale": 0.917
+    },
+    {
+      "id": "giants.421",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 209.26,
+      "z": 172.56,
+      "yaw": 5.645,
+      "scale": 0.693
+    },
+    {
+      "id": "giants.422",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 195.39,
+      "z": 246.06,
+      "yaw": 6.139,
+      "scale": 0.747
+    },
+    {
+      "id": "giants.423",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 45.58,
+      "z": 5.46,
+      "yaw": 2.357,
+      "scale": 0.82
+    },
+    {
+      "id": "giants.424",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 38.98,
+      "z": 175.67,
+      "yaw": 4.274,
+      "scale": 1.035
+    },
+    {
+      "id": "giants.425",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 13.62,
+      "z": 56.7,
+      "yaw": 3.946,
+      "scale": 0.725
+    },
+    {
+      "id": "giants.426",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 11.77,
+      "z": 62.57,
+      "yaw": 5.395,
+      "scale": 0.897
+    },
+    {
+      "id": "giants.427",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 140.96,
+      "z": 22.45,
+      "yaw": 1.39,
+      "scale": 0.913
+    },
+    {
+      "id": "giants.428",
+      "asset": "scenery.giants-maple-seed",
+      "x": 183.98,
+      "z": 227.47,
+      "yaw": 2.716,
+      "scale": 0.702
+    },
+    {
+      "id": "giants.429",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 41.0,
+      "z": 163.45,
+      "yaw": 5.927,
+      "scale": 0.956
+    },
+    {
+      "id": "giants.430",
+      "asset": "scenery.giants-twig",
+      "x": 37.27,
+      "z": 198.16,
+      "yaw": 1.364,
+      "scale": 0.617
+    },
+    {
+      "id": "giants.431",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 162.72,
+      "z": 61.14,
+      "yaw": 5.882,
+      "scale": 0.642
+    },
+    {
+      "id": "giants.432",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 233.53,
+      "z": 47.49,
+      "yaw": 5.241,
+      "scale": 0.965
+    },
+    {
+      "id": "giants.433",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 184.14,
+      "z": 236.97,
+      "yaw": 3.158,
+      "scale": 0.9
+    },
+    {
+      "id": "giants.434",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 156.04,
+      "z": 190.81,
+      "yaw": 2.11,
+      "scale": 1.046
+    },
+    {
+      "id": "giants.435",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 217.01,
+      "z": 23.12,
+      "yaw": 2.417,
+      "scale": 0.824
+    },
+    {
+      "id": "giants.436",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 79.62,
+      "z": 59.63,
+      "yaw": 4.603,
+      "scale": 0.801
+    },
+    {
+      "id": "giants.437",
+      "asset": "scenery.giants-maple-seed",
+      "x": 139.18,
+      "z": 209.31,
+      "yaw": 0.637,
+      "scale": 0.841
+    },
+    {
+      "id": "giants.438",
+      "asset": "scenery.giants-maple-seed",
+      "x": 78.57,
+      "z": 241.06,
+      "yaw": 3.027,
+      "scale": 0.888
+    },
+    {
+      "id": "giants.439",
+      "asset": "scenery.giants-maple-seed",
+      "x": 16.72,
+      "z": 195.7,
+      "yaw": 2.697,
+      "scale": 0.59
+    },
+    {
+      "id": "giants.440",
+      "asset": "scenery.giants-twig",
+      "x": 50.58,
+      "z": 107.72,
+      "yaw": 4.483,
+      "scale": 0.74
+    },
+    {
+      "id": "giants.441",
+      "asset": "scenery.giants-maple-seed",
+      "x": 223.54,
+      "z": 51.67,
+      "yaw": 5.996,
+      "scale": 0.736
+    },
+    {
+      "id": "giants.442",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 71.31,
+      "z": 195.08,
+      "yaw": 2.83,
+      "scale": 0.815
+    },
+    {
+      "id": "giants.443",
+      "asset": "scenery.giants-bracken",
+      "x": 58.56,
+      "z": 87.38,
+      "yaw": 2.097,
+      "scale": 0.658
+    },
+    {
+      "id": "giants.444",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 219.51,
+      "z": 243.27,
+      "yaw": 1.781,
+      "scale": 0.665
+    },
+    {
+      "id": "giants.445",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 163.85,
+      "z": 227.93,
+      "yaw": 6.251,
+      "scale": 0.605
+    },
+    {
+      "id": "giants.446",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 88.08,
+      "z": 191.73,
+      "yaw": 3.967,
+      "scale": 0.762
+    },
+    {
+      "id": "giants.447",
+      "asset": "scenery.giants-twig",
+      "x": 194.76,
+      "z": 201.36,
+      "yaw": 3.732,
+      "scale": 0.792
+    },
+    {
+      "id": "giants.448",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 45.24,
+      "z": 31.27,
+      "yaw": 3.466,
+      "scale": 0.603
+    },
+    {
+      "id": "giants.449",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 19.45,
+      "z": 249.03,
+      "yaw": 2.619,
+      "scale": 0.914
+    },
+    {
+      "id": "giants.450",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 45.59,
+      "z": 146.96,
+      "yaw": 0.326,
+      "scale": 1.033
+    },
+    {
+      "id": "giants.451",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 217.75,
+      "z": 235.27,
+      "yaw": 3.231,
+      "scale": 0.984
+    },
+    {
+      "id": "giants.452",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 114.42,
+      "z": 36.99,
+      "yaw": 2.318,
+      "scale": 0.75
+    },
+    {
+      "id": "giants.453",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 173.4,
+      "z": 249.13,
+      "yaw": 4.153,
+      "scale": 1.009
+    },
+    {
+      "id": "giants.454",
+      "asset": "scenery.giants-bracken",
+      "x": 8.61,
+      "z": 116.99,
+      "yaw": 4.841,
+      "scale": 0.839
+    },
+    {
+      "id": "giants.455",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 204.31,
+      "z": 109.66,
+      "yaw": 1.022,
+      "scale": 0.583
+    },
+    {
+      "id": "giants.456",
+      "asset": "scenery.giants-bracken",
+      "x": 19.08,
+      "z": 5.72,
+      "yaw": 4.765,
+      "scale": 0.957
+    },
+    {
+      "id": "giants.457",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 32.94,
+      "z": 132.55,
+      "yaw": 4.644,
+      "scale": 0.825
+    },
+    {
+      "id": "giants.458",
+      "asset": "scenery.giants-twig",
+      "x": 59.0,
+      "z": 105.41,
+      "yaw": 5.671,
+      "scale": 0.721
+    },
+    {
+      "id": "giants.459",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 160.64,
+      "z": 239.51,
+      "yaw": 4.43,
+      "scale": 1.037
+    },
+    {
+      "id": "giants.460",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 46.79,
+      "z": 102.92,
+      "yaw": 2.529,
+      "scale": 0.979
+    },
+    {
+      "id": "giants.461",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 180.5,
+      "z": 96.29,
+      "yaw": 2.996,
+      "scale": 0.956
+    },
+    {
+      "id": "giants.462",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 207.72,
+      "z": 122.66,
+      "yaw": 3.235,
+      "scale": 0.692
+    },
+    {
+      "id": "giants.463",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 38.7,
+      "z": 103.7,
+      "yaw": 0.054,
+      "scale": 1.003
+    },
+    {
+      "id": "giants.464",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 184.64,
+      "z": 13.18,
+      "yaw": 4.143,
+      "scale": 0.71
+    },
+    {
+      "id": "giants.465",
+      "asset": "scenery.giants-twig",
+      "x": 223.41,
+      "z": 109.97,
+      "yaw": 6.074,
+      "scale": 0.648
+    },
+    {
+      "id": "giants.466",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 103.19,
+      "z": 245.0,
+      "yaw": 2.262,
+      "scale": 0.752
+    },
+    {
+      "id": "giants.467",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 95.83,
+      "z": 60.17,
+      "yaw": 2.449,
+      "scale": 0.616
+    },
+    {
+      "id": "giants.468",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 30.32,
+      "z": 196.87,
+      "yaw": 1.444,
+      "scale": 0.665
+    },
+    {
+      "id": "giants.469",
+      "asset": "scenery.giants-bracken",
+      "x": 2.76,
+      "z": 97.41,
+      "yaw": 2.187,
+      "scale": 0.713
+    },
+    {
+      "id": "giants.470",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 67.31,
+      "z": 218.35,
+      "yaw": 1.715,
+      "scale": 1.009
+    },
+    {
+      "id": "giants.471",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 221.9,
+      "z": 220.77,
+      "yaw": 0.907,
+      "scale": 0.779
+    },
+    {
+      "id": "giants.472",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 161.72,
+      "z": 17.34,
+      "yaw": 3.333,
+      "scale": 0.715
+    },
+    {
+      "id": "giants.473",
+      "asset": "scenery.giants-bracken",
+      "x": 201.54,
+      "z": 214.73,
+      "yaw": 4.918,
+      "scale": 0.816
+    },
+    {
+      "id": "giants.474",
+      "asset": "scenery.giants-bracken",
+      "x": 47.27,
+      "z": 154.69,
+      "yaw": 5.957,
+      "scale": 0.875
+    },
+    {
+      "id": "giants.475",
+      "asset": "scenery.giants-twig",
+      "x": 186.21,
+      "z": 41.14,
+      "yaw": 5.608,
+      "scale": 1.044
+    },
+    {
+      "id": "giants.476",
+      "asset": "scenery.giants-twig",
+      "x": 105.95,
+      "z": 253.57,
+      "yaw": 6.138,
+      "scale": 0.848
+    },
+    {
+      "id": "giants.477",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 150.45,
+      "z": 12.72,
+      "yaw": 2.885,
+      "scale": 0.818
+    },
+    {
+      "id": "giants.478",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 79.51,
+      "z": 84.76,
+      "yaw": 0.646,
+      "scale": 0.609
+    },
+    {
+      "id": "giants.479",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 201.31,
+      "z": 248.66,
+      "yaw": 1.37,
+      "scale": 0.686
+    },
+    {
+      "id": "giants.480",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 47.16,
+      "z": 220.48,
+      "yaw": 2.798,
+      "scale": 0.834
+    },
+    {
+      "id": "giants.481",
+      "asset": "scenery.giants-bracken",
+      "x": 20.19,
+      "z": 53.6,
+      "yaw": 2.477,
+      "scale": 0.979
+    },
+    {
+      "id": "giants.482",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 104.4,
+      "z": 233.04,
+      "yaw": 3.455,
+      "scale": 0.553
+    },
+    {
+      "id": "giants.483",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 21.71,
+      "z": 204.99,
+      "yaw": 0.305,
+      "scale": 0.82
+    },
+    {
+      "id": "giants.484",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 54.48,
+      "z": 246.04,
+      "yaw": 3.225,
+      "scale": 0.937
+    },
+    {
+      "id": "giants.485",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 25.81,
+      "z": 184.94,
+      "yaw": 2.666,
+      "scale": 0.72
+    },
+    {
+      "id": "giants.486",
+      "asset": "scenery.giants-bracken",
+      "x": 67.03,
+      "z": 3.67,
+      "yaw": 3.495,
+      "scale": 0.934
+    },
+    {
+      "id": "giants.487",
+      "asset": "scenery.giants-twig",
+      "x": 186.92,
+      "z": 65.03,
+      "yaw": 4.519,
+      "scale": 0.954
+    },
+    {
+      "id": "giants.488",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 122.81,
+      "z": 219.84,
+      "yaw": 2.253,
+      "scale": 0.877
+    },
+    {
+      "id": "giants.489",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 87.37,
+      "z": 216.2,
+      "yaw": 1.845,
+      "scale": 0.993
+    },
+    {
+      "id": "giants.490",
+      "asset": "scenery.giants-maple-seed",
+      "x": 14.2,
+      "z": 186.13,
+      "yaw": 5.361,
+      "scale": 0.594
+    },
+    {
+      "id": "giants.491",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 239.29,
+      "z": 175.9,
+      "yaw": 4.342,
+      "scale": 0.648
+    },
+    {
+      "id": "giants.492",
+      "asset": "scenery.giants-bracken",
+      "x": 160.06,
+      "z": 207.56,
+      "yaw": 4.089,
+      "scale": 0.724
+    },
+    {
+      "id": "giants.493",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 76.66,
+      "z": 2.32,
+      "yaw": 5.763,
+      "scale": 1.037
+    },
+    {
+      "id": "giants.494",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 20.47,
+      "z": 135.44,
+      "yaw": 0.119,
+      "scale": 0.684
+    },
+    {
+      "id": "giants.495",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 244.39,
+      "z": 196.7,
+      "yaw": 4.678,
+      "scale": 0.905
+    },
+    {
+      "id": "giants.496",
+      "asset": "scenery.giants-bracken",
+      "x": 195.48,
+      "z": 57.53,
+      "yaw": 1.092,
+      "scale": 0.626
+    },
+    {
+      "id": "giants.497",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 244.94,
+      "z": 235.52,
+      "yaw": 4.384,
+      "scale": 1.006
+    },
+    {
+      "id": "giants.498",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 89.68,
+      "z": 236.91,
+      "yaw": 0.7,
+      "scale": 0.829
+    },
+    {
+      "id": "giants.499",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 230.6,
+      "z": 238.6,
+      "yaw": 0.458,
+      "scale": 0.91
+    },
+    {
+      "id": "giants.500",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 193.24,
+      "z": 215.46,
+      "yaw": 1.93,
+      "scale": 0.99
+    },
+    {
+      "id": "giants.501",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 90.11,
+      "z": 13.43,
+      "yaw": 2.911,
+      "scale": 0.801
+    },
+    {
+      "id": "giants.502",
+      "asset": "scenery.giants-twig",
+      "x": 167.07,
+      "z": 28.81,
+      "yaw": 4.142,
+      "scale": 0.85
+    },
+    {
+      "id": "giants.503",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 159.63,
+      "z": 212.97,
+      "yaw": 1.272,
+      "scale": 0.806
+    },
+    {
+      "id": "giants.504",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 218.7,
+      "z": 128.12,
+      "yaw": 4.473,
+      "scale": 0.945
+    },
+    {
+      "id": "giants.505",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 147.36,
+      "z": 235.69,
+      "yaw": 1.974,
+      "scale": 0.793
+    },
+    {
+      "id": "giants.506",
+      "asset": "scenery.giants-bracken",
+      "x": 5.58,
+      "z": 52.33,
+      "yaw": 4.76,
+      "scale": 0.814
+    },
+    {
+      "id": "giants.507",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 208.12,
+      "z": 117.18,
+      "yaw": 0.997,
+      "scale": 0.878
+    },
+    {
+      "id": "giants.508",
+      "asset": "scenery.giants-bracken",
+      "x": 163.73,
+      "z": 253.4,
+      "yaw": 1.598,
+      "scale": 1.049
+    },
+    {
+      "id": "giants.509",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 135.56,
+      "z": 195.0,
+      "yaw": 3.832,
+      "scale": 0.967
+    },
+    {
+      "id": "giants.510",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 12.48,
+      "z": 151.53,
+      "yaw": 5.057,
+      "scale": 0.877
+    },
+    {
+      "id": "giants.511",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 234.67,
+      "z": 118.97,
+      "yaw": 3.426,
+      "scale": 0.726
+    },
+    {
+      "id": "giants.512",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 32.73,
+      "z": 101.87,
+      "yaw": 1.35,
+      "scale": 0.894
+    },
+    {
+      "id": "giants.513",
+      "asset": "scenery.giants-leaf-maple",
+      "x": 51.05,
+      "z": 47.24,
+      "yaw": 5.142,
+      "scale": 0.831
+    },
+    {
+      "id": "giants.514",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 67.52,
+      "z": 97.13,
+      "yaw": 6.211,
+      "scale": 0.678
+    },
+    {
+      "id": "giants.515",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 121.34,
+      "z": 190.42,
+      "yaw": 5.499,
+      "scale": 1.04
+    },
+    {
+      "id": "giants.516",
+      "asset": "scenery.giants-twig",
+      "x": 35.82,
+      "z": 194.13,
+      "yaw": 5.633,
+      "scale": 0.941
+    },
+    {
+      "id": "giants.517",
+      "asset": "scenery.giants-twig",
+      "x": 50.3,
+      "z": 196.53,
+      "yaw": 1.921,
+      "scale": 0.79
+    },
+    {
+      "id": "giants.518",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 109.3,
+      "z": 232.53,
+      "yaw": 4.817,
+      "scale": 0.826
+    },
+    {
+      "id": "giants.519",
+      "asset": "scenery.giants-leaf-beech",
+      "x": 133.59,
+      "z": 37.67,
+      "yaw": 4.502,
+      "scale": 0.789
+    },
+    {
+      "id": "giants.520",
+      "asset": "scenery.giants-moss",
+      "x": 18.87,
+      "z": 99.23,
+      "yaw": 4.923,
+      "scale": 0.857
+    },
+    {
+      "id": "giants.521",
+      "asset": "scenery.giants-moss",
+      "x": 30.59,
+      "z": 120.72,
+      "yaw": 1.557,
+      "scale": 0.884
+    },
+    {
+      "id": "giants.522",
+      "asset": "scenery.giants-moss",
+      "x": 233.37,
+      "z": 252.61,
+      "yaw": 4.465,
+      "scale": 0.947
+    },
+    {
+      "id": "giants.523",
+      "asset": "scenery.giants-buttons",
+      "x": 224.78,
+      "z": 94.14,
+      "yaw": 2.361,
+      "scale": 0.916
+    },
+    {
+      "id": "giants.524",
+      "asset": "scenery.giants-buttons",
+      "x": 164.21,
+      "z": 54.75,
+      "yaw": 3.567,
+      "scale": 1.176
+    },
+    {
+      "id": "giants.525",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 138.85,
+      "z": 216.93,
+      "yaw": 5.437,
+      "scale": 1.186
+    },
+    {
+      "id": "giants.526",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 253.71,
+      "z": 44.66,
+      "yaw": 0.172,
+      "scale": 0.707
+    },
+    {
+      "id": "giants.527",
+      "asset": "scenery.giants-buttons",
+      "x": 10.35,
+      "z": 247.37,
+      "yaw": 3.954,
+      "scale": 1.007
+    },
+    {
+      "id": "giants.528",
+      "asset": "scenery.giants-buttons",
+      "x": 241.01,
+      "z": 218.29,
+      "yaw": 1.297,
+      "scale": 0.897
+    },
+    {
+      "id": "giants.529",
+      "asset": "scenery.giants-clover",
+      "x": 183.95,
+      "z": 20.35,
+      "yaw": 1.692,
+      "scale": 0.862
+    },
+    {
+      "id": "giants.530",
+      "asset": "scenery.giants-buttons",
+      "x": 141.75,
+      "z": 211.03,
+      "yaw": 1.664,
+      "scale": 1.092
+    },
+    {
+      "id": "giants.531",
+      "asset": "scenery.giants-sorrel",
+      "x": 68.16,
+      "z": 43.71,
+      "yaw": 1.412,
+      "scale": 0.779
+    },
+    {
+      "id": "giants.532",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 101.7,
+      "z": 231.9,
+      "yaw": 0.16,
+      "scale": 1.193
+    },
+    {
+      "id": "giants.533",
+      "asset": "scenery.giants-buttons",
+      "x": 227.11,
+      "z": 118.56,
+      "yaw": 4.968,
+      "scale": 1.047
+    },
+    {
+      "id": "giants.534",
+      "asset": "scenery.giants-clover",
+      "x": 247.13,
+      "z": 118.64,
+      "yaw": 6.282,
+      "scale": 0.853
+    },
+    {
+      "id": "giants.535",
+      "asset": "scenery.giants-buttons",
+      "x": 31.05,
+      "z": 180.18,
+      "yaw": 2.61,
+      "scale": 1.148
+    },
+    {
+      "id": "giants.536",
+      "asset": "scenery.giants-moss",
+      "x": 236.44,
+      "z": 41.73,
+      "yaw": 6.225,
+      "scale": 0.742
+    },
+    {
+      "id": "giants.537",
+      "asset": "scenery.giants-moss",
+      "x": 209.34,
+      "z": 102.57,
+      "yaw": 4.13,
+      "scale": 0.71
+    },
+    {
+      "id": "giants.538",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 205.83,
+      "z": 230.43,
+      "yaw": 5.808,
+      "scale": 0.971
+    },
+    {
+      "id": "giants.539",
+      "asset": "scenery.giants-moss",
+      "x": 147.64,
+      "z": 248.78,
+      "yaw": 0.945,
+      "scale": 1.025
+    },
+    {
+      "id": "giants.540",
+      "asset": "scenery.giants-moss",
+      "x": 252.36,
+      "z": 174.72,
+      "yaw": 4.574,
+      "scale": 0.822
+    },
+    {
+      "id": "giants.541",
+      "asset": "scenery.giants-moss",
+      "x": 19.96,
+      "z": 94.4,
+      "yaw": 3.375,
+      "scale": 0.787
+    },
+    {
+      "id": "giants.542",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 191.05,
+      "z": 230.52,
+      "yaw": 6.228,
+      "scale": 0.766
+    },
+    {
+      "id": "giants.543",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 45.82,
+      "z": 184.27,
+      "yaw": 5.154,
+      "scale": 0.906
+    },
+    {
+      "id": "giants.544",
+      "asset": "scenery.giants-buttons",
+      "x": 41.41,
+      "z": 71.22,
+      "yaw": 1.283,
+      "scale": 0.967
+    },
+    {
+      "id": "giants.545",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 96.13,
+      "z": 62.38,
+      "yaw": 2.886,
+      "scale": 0.804
+    },
+    {
+      "id": "giants.546",
+      "asset": "scenery.giants-sorrel",
+      "x": 244.9,
+      "z": 39.93,
+      "yaw": 0.228,
+      "scale": 0.735
+    },
+    {
+      "id": "giants.547",
+      "asset": "scenery.giants-moss",
+      "x": 155.06,
+      "z": 57.62,
+      "yaw": 4.095,
+      "scale": 0.736
+    },
+    {
+      "id": "giants.548",
+      "asset": "scenery.giants-moss",
+      "x": 222.23,
+      "z": 70.19,
+      "yaw": 3.053,
+      "scale": 0.896
+    },
+    {
+      "id": "giants.549",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 188.57,
+      "z": 201.55,
+      "yaw": 3.275,
+      "scale": 0.916
+    },
+    {
+      "id": "giants.550",
+      "asset": "scenery.giants-clover",
+      "x": 234.24,
+      "z": 245.43,
+      "yaw": 2.365,
+      "scale": 0.962
+    },
+    {
+      "id": "giants.551",
+      "asset": "scenery.giants-clover",
+      "x": 10.44,
+      "z": 154.6,
+      "yaw": 4.676,
+      "scale": 0.731
+    },
+    {
+      "id": "giants.552",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 53.23,
+      "z": 167.84,
+      "yaw": 0.928,
+      "scale": 0.743
+    },
+    {
+      "id": "giants.553",
+      "asset": "scenery.giants-moss",
+      "x": 251.67,
+      "z": 219.3,
+      "yaw": 2.878,
+      "scale": 0.905
+    },
+    {
+      "id": "giants.554",
+      "asset": "scenery.giants-moss",
+      "x": 181.73,
+      "z": 57.37,
+      "yaw": 3.174,
+      "scale": 0.93
+    },
+    {
+      "id": "giants.555",
+      "asset": "scenery.giants-sorrel",
+      "x": 9.38,
+      "z": 60.76,
+      "yaw": 4.862,
+      "scale": 0.814
+    },
+    {
+      "id": "giants.556",
+      "asset": "scenery.giants-buttons",
+      "x": 66.23,
+      "z": 185.36,
+      "yaw": 5.939,
+      "scale": 0.871
+    },
+    {
+      "id": "giants.557",
+      "asset": "scenery.giants-clover",
+      "x": 23.82,
+      "z": 220.61,
+      "yaw": 4.474,
+      "scale": 0.723
+    },
+    {
+      "id": "giants.558",
+      "asset": "scenery.giants-moss",
+      "x": 139.68,
+      "z": 36.53,
+      "yaw": 3.076,
+      "scale": 1.105
+    },
+    {
+      "id": "giants.559",
+      "asset": "scenery.giants-buttons",
+      "x": 9.83,
+      "z": 22.87,
+      "yaw": 4.922,
+      "scale": 0.701
+    },
+    {
+      "id": "giants.560",
+      "asset": "scenery.giants-clover",
+      "x": 235.78,
+      "z": 227.47,
+      "yaw": 1.986,
+      "scale": 1.016
+    },
+    {
+      "id": "giants.561",
+      "asset": "scenery.giants-moss",
+      "x": 53.62,
+      "z": 4.97,
+      "yaw": 2.318,
+      "scale": 1.146
+    },
+    {
+      "id": "giants.562",
+      "asset": "scenery.giants-sorrel",
+      "x": 66.23,
+      "z": 4.34,
+      "yaw": 3.734,
+      "scale": 1.055
+    },
+    {
+      "id": "giants.563",
+      "asset": "scenery.giants-buttons",
+      "x": 235.53,
+      "z": 2.02,
+      "yaw": 4.623,
+      "scale": 1.024
+    },
+    {
+      "id": "giants.564",
+      "asset": "scenery.giants-buttons",
+      "x": 65.36,
+      "z": 60.86,
+      "yaw": 3.751,
+      "scale": 0.801
+    },
+    {
+      "id": "giants.565",
+      "asset": "scenery.giants-buttons",
+      "x": 12.77,
+      "z": 243.58,
+      "yaw": 3.648,
+      "scale": 1.199
+    },
+    {
+      "id": "giants.566",
+      "asset": "scenery.giants-buttons",
+      "x": 201.92,
+      "z": 56.74,
+      "yaw": 4.511,
+      "scale": 0.991
+    },
+    {
+      "id": "giants.567",
+      "asset": "scenery.giants-buttons",
+      "x": 175.84,
+      "z": 91.2,
+      "yaw": 4.67,
+      "scale": 0.709
+    },
+    {
+      "id": "giants.568",
+      "asset": "scenery.giants-buttons",
+      "x": 17.13,
+      "z": 174.17,
+      "yaw": 4.145,
+      "scale": 1.176
+    },
+    {
+      "id": "giants.569",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 197.58,
+      "z": 90.34,
+      "yaw": 4.565,
+      "scale": 0.886
+    },
+    {
+      "id": "giants.570",
+      "asset": "scenery.giants-clover",
+      "x": 236.23,
+      "z": 19.0,
+      "yaw": 4.949,
+      "scale": 0.85
+    },
+    {
+      "id": "giants.571",
+      "asset": "scenery.giants-buttons",
+      "x": 44.82,
+      "z": 74.52,
+      "yaw": 1.194,
+      "scale": 1.014
+    },
+    {
+      "id": "giants.572",
+      "asset": "scenery.giants-moss",
+      "x": 222.02,
+      "z": 97.18,
+      "yaw": 2.667,
+      "scale": 0.807
+    },
+    {
+      "id": "giants.573",
+      "asset": "scenery.giants-moss",
+      "x": 52.89,
+      "z": 49.44,
+      "yaw": 1.554,
+      "scale": 0.823
+    },
+    {
+      "id": "giants.574",
+      "asset": "scenery.giants-buttons",
+      "x": 11.42,
+      "z": 92.76,
+      "yaw": 0.554,
+      "scale": 0.796
+    },
+    {
+      "id": "giants.575",
+      "asset": "scenery.giants-moss",
+      "x": 240.33,
+      "z": 87.82,
+      "yaw": 3.505,
+      "scale": 0.812
+    },
+    {
+      "id": "giants.576",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 142.66,
+      "z": 246.53,
+      "yaw": 4.54,
+      "scale": 1.198
+    },
+    {
+      "id": "giants.577",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 9.51,
+      "z": 67.01,
+      "yaw": 2.166,
+      "scale": 0.737
+    },
+    {
+      "id": "giants.578",
+      "asset": "scenery.giants-moss",
+      "x": 64.02,
+      "z": 180.26,
+      "yaw": 6.161,
+      "scale": 1.164
+    },
+    {
+      "id": "giants.579",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 237.05,
+      "z": 237.28,
+      "yaw": 1.391,
+      "scale": 0.765
+    },
+    {
+      "id": "giants.580",
+      "asset": "scenery.giants-sorrel",
+      "x": 190.83,
+      "z": 89.4,
+      "yaw": 5.881,
+      "scale": 1.058
+    },
+    {
+      "id": "giants.581",
+      "asset": "scenery.giants-moss",
+      "x": 103.08,
+      "z": 211.78,
+      "yaw": 0.574,
+      "scale": 0.904
+    },
+    {
+      "id": "giants.582",
+      "asset": "scenery.giants-clover",
+      "x": 61.35,
+      "z": 51.23,
+      "yaw": 2.856,
+      "scale": 0.976
+    },
+    {
+      "id": "giants.583",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 61.56,
+      "z": 124.96,
+      "yaw": 1.984,
+      "scale": 0.932
+    },
+    {
+      "id": "giants.584",
+      "asset": "scenery.giants-moss",
+      "x": 228.01,
+      "z": 245.73,
+      "yaw": 2.928,
+      "scale": 0.873
+    },
+    {
+      "id": "giants.585",
+      "asset": "scenery.giants-buttons",
+      "x": 10.57,
+      "z": 100.74,
+      "yaw": 0.137,
+      "scale": 1.076
+    },
+    {
+      "id": "giants.586",
+      "asset": "scenery.giants-moss",
+      "x": 28.91,
+      "z": 215.06,
+      "yaw": 3.387,
+      "scale": 1.165
+    },
+    {
+      "id": "giants.587",
+      "asset": "scenery.giants-sorrel",
+      "x": 57.13,
+      "z": 224.88,
+      "yaw": 2.668,
+      "scale": 0.996
+    },
+    {
+      "id": "giants.588",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 45.42,
+      "z": 241.78,
+      "yaw": 2.355,
+      "scale": 0.952
+    },
+    {
+      "id": "giants.589",
+      "asset": "scenery.giants-buttons",
+      "x": 81.5,
+      "z": 68.87,
+      "yaw": 0.448,
+      "scale": 0.799
+    },
+    {
+      "id": "giants.590",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 107.77,
+      "z": 62.59,
+      "yaw": 5.65,
+      "scale": 0.84
+    },
+    {
+      "id": "giants.591",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 21.85,
+      "z": 161.23,
+      "yaw": 4.13,
+      "scale": 1.151
+    },
+    {
+      "id": "giants.592",
+      "asset": "scenery.giants-clover",
+      "x": 184.2,
+      "z": 234.3,
+      "yaw": 2.116,
+      "scale": 0.738
+    },
+    {
+      "id": "giants.593",
+      "asset": "scenery.giants-clover",
+      "x": 49.73,
+      "z": 190.47,
+      "yaw": 0.222,
+      "scale": 1.076
+    },
+    {
+      "id": "giants.594",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 247.07,
+      "z": 224.13,
+      "yaw": 5.17,
+      "scale": 1.196
+    },
+    {
+      "id": "giants.595",
+      "asset": "scenery.giants-clover",
+      "x": 67.79,
+      "z": 216.84,
+      "yaw": 6.177,
+      "scale": 1.151
+    },
+    {
+      "id": "giants.596",
+      "asset": "scenery.giants-moss",
+      "x": 237.06,
+      "z": 222.62,
+      "yaw": 1.99,
+      "scale": 1.099
+    },
+    {
+      "id": "giants.597",
+      "asset": "scenery.giants-buttons",
+      "x": 231.62,
+      "z": 32.73,
+      "yaw": 5.392,
+      "scale": 1.133
+    },
+    {
+      "id": "giants.598",
+      "asset": "scenery.giants-buttons",
+      "x": 73.09,
+      "z": 231.35,
+      "yaw": 0.107,
+      "scale": 0.799
+    },
+    {
+      "id": "giants.599",
+      "asset": "scenery.giants-moss",
+      "x": 229.18,
+      "z": 83.94,
+      "yaw": 3.953,
+      "scale": 1.035
+    },
+    {
+      "id": "giants.600",
+      "asset": "scenery.giants-moss",
+      "x": 13.04,
+      "z": 89.49,
+      "yaw": 3.46,
+      "scale": 1.039
+    },
+    {
+      "id": "giants.601",
+      "asset": "scenery.giants-buttons",
+      "x": 23.71,
+      "z": 141.89,
+      "yaw": 3.535,
+      "scale": 0.893
+    },
+    {
+      "id": "giants.602",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 94.53,
+      "z": 10.95,
+      "yaw": 6.055,
+      "scale": 0.957
+    },
+    {
+      "id": "giants.603",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 222.63,
+      "z": 2.66,
+      "yaw": 4.9,
+      "scale": 0.862
+    },
+    {
+      "id": "giants.604",
+      "asset": "scenery.giants-buttons",
+      "x": 194.38,
+      "z": 53.12,
+      "yaw": 2.092,
+      "scale": 0.776
+    },
+    {
+      "id": "giants.605",
+      "asset": "scenery.giants-clover",
+      "x": 249.34,
+      "z": 78.95,
+      "yaw": 5.641,
+      "scale": 0.931
+    },
+    {
+      "id": "giants.606",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 167.52,
+      "z": 204.79,
+      "yaw": 4.61,
+      "scale": 1.183
+    },
+    {
+      "id": "giants.607",
+      "asset": "scenery.giants-clover",
+      "x": 18.36,
+      "z": 61.29,
+      "yaw": 1.307,
+      "scale": 1.019
+    },
+    {
+      "id": "giants.608",
+      "asset": "scenery.giants-moss",
+      "x": 54.72,
+      "z": 128.59,
+      "yaw": 4.784,
+      "scale": 0.723
+    },
+    {
+      "id": "giants.609",
+      "asset": "scenery.giants-buttons",
+      "x": 222.57,
+      "z": 12.24,
+      "yaw": 1.536,
+      "scale": 0.73
+    },
+    {
+      "id": "giants.610",
+      "asset": "scenery.giants-clover",
+      "x": 233.91,
+      "z": 10.64,
+      "yaw": 3.236,
+      "scale": 0.914
+    },
+    {
+      "id": "giants.611",
+      "asset": "scenery.giants-buttons",
+      "x": 209.62,
+      "z": 125.31,
+      "yaw": 5.391,
+      "scale": 0.845
+    },
+    {
+      "id": "giants.612",
+      "asset": "scenery.giants-moss",
+      "x": 80.1,
+      "z": 52.45,
+      "yaw": 1.468,
+      "scale": 0.971
+    },
+    {
+      "id": "giants.613",
+      "asset": "scenery.giants-clover",
+      "x": 84.44,
+      "z": 43.47,
+      "yaw": 5.308,
+      "scale": 0.885
+    },
+    {
+      "id": "giants.614",
+      "asset": "scenery.giants-clover",
+      "x": 253.59,
+      "z": 166.15,
+      "yaw": 2.65,
+      "scale": 0.896
+    },
+    {
+      "id": "giants.615",
+      "asset": "scenery.giants-moss",
+      "x": 220.86,
+      "z": 54.82,
+      "yaw": 0.655,
+      "scale": 0.829
+    },
+    {
+      "id": "giants.616",
+      "asset": "scenery.giants-buttons",
+      "x": 236.63,
+      "z": 74.25,
+      "yaw": 1.494,
+      "scale": 0.872
+    },
+    {
+      "id": "giants.617",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 222.82,
+      "z": 75.62,
+      "yaw": 5.93,
+      "scale": 0.703
+    },
+    {
+      "id": "giants.618",
+      "asset": "scenery.giants-moss",
+      "x": 32.66,
+      "z": 134.6,
+      "yaw": 3.167,
+      "scale": 0.76
+    },
+    {
+      "id": "giants.619",
+      "asset": "scenery.giants-buttons",
+      "x": 134.29,
+      "z": 7.75,
+      "yaw": 1.762,
+      "scale": 0.847
+    },
+    {
+      "id": "giants.620",
+      "asset": "scenery.giants-moss",
+      "x": 36.89,
+      "z": 76.15,
+      "yaw": 0.178,
+      "scale": 0.871
+    },
+    {
+      "id": "giants.621",
+      "asset": "scenery.giants-moss",
+      "x": 33.0,
+      "z": 63.43,
+      "yaw": 3.826,
+      "scale": 0.967
+    },
+    {
+      "id": "giants.622",
+      "asset": "scenery.giants-clover",
+      "x": 125.72,
+      "z": 232.0,
+      "yaw": 3.836,
+      "scale": 1.038
+    },
+    {
+      "id": "giants.623",
+      "asset": "scenery.giants-buttons",
+      "x": 245.92,
+      "z": 88.57,
+      "yaw": 0.929,
+      "scale": 0.815
+    },
+    {
+      "id": "giants.624",
+      "asset": "scenery.giants-clover",
+      "x": 11.07,
+      "z": 185.86,
+      "yaw": 4.856,
+      "scale": 0.765
+    },
+    {
+      "id": "giants.625",
+      "asset": "scenery.giants-sorrel",
+      "x": 15.28,
+      "z": 229.04,
+      "yaw": 4.585,
+      "scale": 0.769
+    },
+    {
+      "id": "giants.626",
+      "asset": "scenery.giants-moss",
+      "x": 59.63,
+      "z": 106.79,
+      "yaw": 1.48,
+      "scale": 0.744
+    },
+    {
+      "id": "giants.627",
+      "asset": "scenery.giants-buttons",
+      "x": 136.91,
+      "z": 41.28,
+      "yaw": 6.108,
+      "scale": 0.821
+    },
+    {
+      "id": "giants.628",
+      "asset": "scenery.giants-buttons",
+      "x": 88.38,
+      "z": 246.66,
+      "yaw": 4.85,
+      "scale": 1.147
+    },
+    {
+      "id": "giants.629",
+      "asset": "scenery.giants-moss",
+      "x": 179.45,
+      "z": 252.42,
+      "yaw": 0.097,
+      "scale": 0.968
+    },
+    {
+      "id": "giants.630",
+      "asset": "scenery.giants-moss",
+      "x": 25.13,
+      "z": 137.3,
+      "yaw": 3.845,
+      "scale": 0.971
+    },
+    {
+      "id": "giants.631",
+      "asset": "scenery.giants-buttons",
+      "x": 76.89,
+      "z": 207.25,
+      "yaw": 3.136,
+      "scale": 0.861
+    },
+    {
+      "id": "giants.632",
+      "asset": "scenery.giants-buttons",
+      "x": 250.2,
+      "z": 205.0,
+      "yaw": 3.352,
+      "scale": 0.716
+    },
+    {
+      "id": "giants.633",
+      "asset": "scenery.giants-buttons",
+      "x": 133.3,
+      "z": 210.09,
+      "yaw": 4.473,
+      "scale": 0.779
+    },
+    {
+      "id": "giants.634",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 85.8,
+      "z": 238.54,
+      "yaw": 3.703,
+      "scale": 0.737
+    },
+    {
+      "id": "giants.635",
+      "asset": "scenery.giants-sorrel",
+      "x": 47.12,
+      "z": 29.78,
+      "yaw": 3.76,
+      "scale": 0.702
+    },
+    {
+      "id": "giants.636",
+      "asset": "scenery.giants-moss",
+      "x": 69.72,
+      "z": 112.69,
+      "yaw": 3.792,
+      "scale": 0.737
+    },
+    {
+      "id": "giants.637",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 55.84,
+      "z": 212.63,
+      "yaw": 2.738,
+      "scale": 0.712
+    },
+    {
+      "id": "giants.638",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 250.74,
+      "z": 211.99,
+      "yaw": 0.26,
+      "scale": 1.185
+    },
+    {
+      "id": "giants.639",
+      "asset": "scenery.giants-sorrel",
+      "x": 167.41,
+      "z": 10.21,
+      "yaw": 0.743,
+      "scale": 1.025
+    },
+    {
+      "id": "giants.640",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 240.52,
+      "z": 72.69,
+      "yaw": 3.974,
+      "scale": 1.058
+    },
+    {
+      "id": "giants.641",
+      "asset": "scenery.giants-clover",
+      "x": 132.95,
+      "z": 196.22,
+      "yaw": 2.679,
+      "scale": 0.731
+    },
+    {
+      "id": "giants.642",
+      "asset": "scenery.giants-buttons",
+      "x": 133.99,
+      "z": 14.83,
+      "yaw": 5.818,
+      "scale": 1.179
+    },
+    {
+      "id": "giants.643",
+      "asset": "scenery.giants-sorrel",
+      "x": 48.6,
+      "z": 206.31,
+      "yaw": 2.976,
+      "scale": 0.784
+    },
+    {
+      "id": "giants.644",
+      "asset": "scenery.giants-sorrel",
+      "x": 3.57,
+      "z": 70.35,
+      "yaw": 4.474,
+      "scale": 0.956
+    },
+    {
+      "id": "giants.645",
+      "asset": "scenery.giants-moss",
+      "x": 225.56,
+      "z": 184.61,
+      "yaw": 2.294,
+      "scale": 1.139
+    },
+    {
+      "id": "giants.646",
+      "asset": "scenery.giants-moss",
+      "x": 246.73,
+      "z": 175.94,
+      "yaw": 2.14,
+      "scale": 0.768
+    },
+    {
+      "id": "giants.647",
+      "asset": "scenery.giants-buttons",
+      "x": 156.65,
+      "z": 198.77,
+      "yaw": 0.723,
+      "scale": 1.199
+    },
+    {
+      "id": "giants.648",
+      "asset": "scenery.giants-buttons",
+      "x": 36.13,
+      "z": 251.14,
+      "yaw": 2.531,
+      "scale": 0.796
+    },
+    {
+      "id": "giants.649",
+      "asset": "scenery.giants-buttons",
+      "x": 216.87,
+      "z": 237.29,
+      "yaw": 2.736,
+      "scale": 1.096
+    },
+    {
+      "id": "giants.650",
+      "asset": "scenery.giants-buttons",
+      "x": 12.71,
+      "z": 9.26,
+      "yaw": 4.54,
+      "scale": 0.832
+    },
+    {
+      "id": "giants.651",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 7.16,
+      "z": 241.97,
+      "yaw": 5.307,
+      "scale": 0.841
+    },
+    {
+      "id": "giants.652",
+      "asset": "scenery.giants-buttons",
+      "x": 3.94,
+      "z": 245.51,
+      "yaw": 2.656,
+      "scale": 0.834
+    },
+    {
+      "id": "giants.653",
+      "asset": "scenery.giants-sorrel",
+      "x": 46.9,
+      "z": 9.52,
+      "yaw": 2.957,
+      "scale": 0.799
+    },
+    {
+      "id": "giants.654",
+      "asset": "scenery.giants-moss",
+      "x": 71.89,
+      "z": 61.89,
+      "yaw": 1.1,
+      "scale": 0.854
+    },
+    {
+      "id": "giants.655",
+      "asset": "scenery.giants-moss",
+      "x": 50.14,
+      "z": 214.61,
+      "yaw": 0.37,
+      "scale": 0.882
+    },
+    {
+      "id": "giants.656",
+      "asset": "scenery.giants-buttons",
+      "x": 24.36,
+      "z": 129.38,
+      "yaw": 0.933,
+      "scale": 0.737
+    },
+    {
+      "id": "giants.657",
+      "asset": "scenery.giants-fiddleheads",
+      "x": 248.47,
+      "z": 65.75,
+      "yaw": 4.414,
+      "scale": 0.964
+    },
+    {
+      "id": "giants.658",
+      "asset": "scenery.giants-moss",
+      "x": 157.47,
+      "z": 223.98,
+      "yaw": 0.008,
+      "scale": 0.853
+    },
+    {
+      "id": "giants.659",
+      "asset": "scenery.giants-moss",
+      "x": 239.73,
+      "z": 33.16,
+      "yaw": 2.438,
+      "scale": 1.047
+    },
+    {
+      "id": "giants.660",
+      "asset": "scenery.giants-snail-shell",
+      "x": 94,
+      "z": 98,
+      "yaw": 0.7,
+      "scale": 0.9
+    },
+    {
+      "id": "giants.661",
+      "asset": "scenery.giants-acorn-cup",
+      "x": 162,
+      "z": 160,
+      "yaw": 2.0,
+      "scale": 1.0
+    },
+    {
+      "id": "giants.662",
+      "asset": "scenery.giants-acorn",
+      "x": 172,
+      "z": 150,
+      "yaw": 0.4,
+      "scale": 0.9
+    },
+    {
+      "id": "giants.663",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 94,
+      "z": 162,
+      "yaw": 2.6,
+      "scale": 0.8
+    },
+    {
+      "id": "giants.664",
+      "asset": "scenery.giants-pebbles",
+      "x": 164,
+      "z": 96,
+      "yaw": 1.0,
+      "scale": 0.7
+    }
+  ]
+}

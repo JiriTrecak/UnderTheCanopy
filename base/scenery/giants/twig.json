@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-twig",
+  "name": "Twig",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-twig",
+  "blockers": [
+    {
+      "width": 13.51,
+      "depth": 4.19,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": 0.0
+    }
+  ]
+}

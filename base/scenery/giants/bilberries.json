@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-bilberries",
+  "name": "Bilberry sprig",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-bilberries",
+  "blockers": [
+    {
+      "width": 0.6,
+      "depth": 0.6,
+      "shape": "ellipse",
+      "x": -0.92,
+      "z": 0.44
+    }
+  ]
+}

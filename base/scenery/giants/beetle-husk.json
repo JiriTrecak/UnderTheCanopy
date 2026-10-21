@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-beetle-husk",
+  "name": "Beetle husk",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-beetle-husk",
+  "blockers": [
+    {
+      "width": 7.4,
+      "depth": 11.05,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": 0.0
+    }
+  ]
+}

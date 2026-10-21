@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-leaf-beech",
+  "name": "Fallen beech leaf",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-leaf-beech",
+  "blockers": [
+    {
+      "width": 16.5,
+      "depth": 12.1,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": -0.0
+    }
+  ]
+}

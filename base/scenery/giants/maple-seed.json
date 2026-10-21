@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-maple-seed",
+  "name": "Maple seed",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-maple-seed",
+  "blockers": [
+    {
+      "width": 9.6,
+      "depth": 7.9,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": -0.0
+    }
+  ]
+}

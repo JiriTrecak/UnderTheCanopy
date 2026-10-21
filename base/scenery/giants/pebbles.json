@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-pebbles",
+  "name": "Pebbles",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-pebbles",
+  "blockers": [
+    {
+      "width": 8.5,
+      "depth": 6.48,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": -0.0
+    }
+  ]
+}

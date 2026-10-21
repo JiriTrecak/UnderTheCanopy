@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-morel",
+  "name": "Morel",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-morel",
+  "blockers": [
+    {
+      "width": 3.13,
+      "depth": 3.15,
+      "shape": "ellipse",
+      "x": 0.16,
+      "z": 1.35
+    }
+  ]
+}

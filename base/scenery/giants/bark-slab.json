@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-bark-slab",
+  "name": "Bark slab",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-bark-slab",
+  "blockers": [
+    {
+      "width": 13.6,
+      "depth": 8.15,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": 0.0
+    }
+  ]
+}

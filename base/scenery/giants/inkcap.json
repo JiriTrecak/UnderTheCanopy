@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-inkcap",
+  "name": "Ink caps",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-inkcap",
+  "blockers": [
+    {
+      "width": 6.7,
+      "depth": 5.63,
+      "shape": "ellipse",
+      "x": 1.05,
+      "z": 0.81
+    }
+  ]
+}

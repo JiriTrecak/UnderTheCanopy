@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-feather",
+  "name": "Feather",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-feather",
+  "blockers": [
+    {
+      "width": 39.2,
+      "depth": 21.19,
+      "shape": "ellipse",
+      "x": -0.0,
+      "z": 0.0
+    }
+  ]
+}

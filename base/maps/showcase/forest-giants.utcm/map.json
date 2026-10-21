@@ -1,0 +1,282 @@
+{
+  "biome": "frozen-dream",
+  "camps": [],
+  "entities": [
+    {
+      "definition": "building.ants.fort",
+      "id": "colony.hall",
+      "owner": "player.1",
+      "initialState": {
+        "construction": "complete"
+      },
+      "position": {
+        "x": 121.5,
+        "y": 129.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.ants.barracks",
+      "id": "colony.burrow",
+      "owner": "player.1",
+      "initialState": {
+        "construction": "complete"
+      },
+      "position": {
+        "x": 145.5,
+        "y": 113.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.ants.house",
+      "id": "colony.mound",
+      "owner": "player.1",
+      "initialState": {
+        "construction": "complete"
+      },
+      "position": {
+        "x": 99.5,
+        "y": 143.5
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "colony.army.0",
+      "owner": "player.1",
+      "position": {
+        "x": 134.0,
+        "y": 140.0
+      },
+      "rotation": 200.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "colony.army.1",
+      "owner": "player.1",
+      "position": {
+        "x": 139.0,
+        "y": 140.0
+      },
+      "rotation": 200.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "colony.army.2",
+      "owner": "player.1",
+      "position": {
+        "x": 144.0,
+        "y": 140.0
+      },
+      "rotation": 200.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "colony.army.3",
+      "owner": "player.1",
+      "position": {
+        "x": 149.0,
+        "y": 140.0
+      },
+      "rotation": 200.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "colony.army.4",
+      "owner": "player.1",
+      "position": {
+        "x": 154.0,
+        "y": 140.0
+      },
+      "rotation": 200.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "colony.army.5",
+      "owner": "player.1",
+      "position": {
+        "x": 134.0,
+        "y": 145.0
+      },
+      "rotation": 200.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "colony.army.6",
+      "owner": "player.1",
+      "position": {
+        "x": 139.0,
+        "y": 145.0
+      },
+      "rotation": 200.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "colony.army.7",
+      "owner": "player.1",
+      "position": {
+        "x": 144.0,
+        "y": 145.0
+      },
+      "rotation": 200.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "id": "colony.army.8",
+      "owner": "player.1",
+      "position": {
+        "x": 149.0,
+        "y": 145.0
+      },
+      "rotation": 200.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "id": "colony.army.9",
+      "owner": "player.1",
+      "position": {
+        "x": 154.0,
+        "y": 145.0
+      },
+      "rotation": 200.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "id": "colony.army.10",
+      "owner": "player.1",
+      "position": {
+        "x": 134.0,
+        "y": 150.0
+      },
+      "rotation": 200.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "id": "colony.army.11",
+      "owner": "player.1",
+      "position": {
+        "x": 139.0,
+        "y": 150.0
+      },
+      "rotation": 200.0
+    },
+    {
+      "definition": "unit.ants.queensguard",
+      "id": "colony.army.12",
+      "owner": "player.1",
+      "position": {
+        "x": 144.0,
+        "y": 150.0
+      },
+      "rotation": 200.0
+    },
+    {
+      "definition": "unit.ants.queensguard",
+      "id": "colony.army.13",
+      "owner": "player.1",
+      "position": {
+        "x": 149.0,
+        "y": 150.0
+      },
+      "rotation": 200.0
+    },
+    {
+      "definition": "unit.ants.queen",
+      "id": "colony.hero.0",
+      "owner": "player.1",
+      "position": {
+        "x": 140.0,
+        "y": 160.0
+      },
+      "rotation": 200.0
+    },
+    {
+      "definition": "unit.ants.marshal",
+      "id": "colony.hero.1",
+      "owner": "player.1",
+      "position": {
+        "x": 149.0,
+        "y": 160.0
+      },
+      "rotation": 200.0
+    },
+    {
+      "definition": "unit.ants.civilian",
+      "id": "colony.worker.0",
+      "owner": "player.1",
+      "position": {
+        "x": 104.0,
+        "y": 116.0
+      },
+      "rotation": 90.0
+    },
+    {
+      "definition": "unit.ants.civilian",
+      "id": "colony.worker.1",
+      "owner": "player.1",
+      "position": {
+        "x": 108.0,
+        "y": 116.0
+      },
+      "rotation": 90.0
+    },
+    {
+      "definition": "unit.ants.civilian",
+      "id": "colony.worker.2",
+      "owner": "player.1",
+      "position": {
+        "x": 112.0,
+        "y": 116.0
+      },
+      "rotation": 90.0
+    },
+    {
+      "definition": "unit.ants.civilian",
+      "id": "colony.worker.3",
+      "owner": "player.1",
+      "position": {
+        "x": 116.0,
+        "y": 116.0
+      },
+      "rotation": 90.0
+    },
+    {
+      "definition": "unit.ants.civilian",
+      "id": "colony.worker.4",
+      "owner": "player.1",
+      "position": {
+        "x": 120.0,
+        "y": 116.0
+      },
+      "rotation": 90.0
+    }
+  ],
+  "playerStarts": [
+    {
+      "mainFort": "start.player.1/main-fort",
+      "player": 1,
+      "setup": "setup.ants",
+      "x": 121.5,
+      "z": 129.5,
+      "rotation": 90
+    }
+  ],
+  "size": 256,
+  "playable": {
+    "x": 16,
+    "z": 16,
+    "width": 224,
+    "height": 224
+  },
+  "landscape": {
+    "environment": {
+      "hour": 15.5,
+      "playing": false,
+      "weather": {
+        "kind": "clear"
+      }
+    }
+  },
+  "sandbox": true
+}

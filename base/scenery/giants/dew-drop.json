@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-dew-drop",
+  "name": "Dew drop",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-dew-drop",
+  "blockers": [
+    {
+      "width": 2.16,
+      "depth": 2.16,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": 0.0
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-grass",
+  "name": "Grass clump",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-grass",
+  "blockers": [
+    {
+      "width": 8.72,
+      "depth": 10.48,
+      "shape": "ellipse",
+      "x": 2.51,
+      "z": 3.13
+    }
+  ]
+}
