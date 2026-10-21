@@ -21,10 +21,14 @@
       "Map editor: kinds, cliff faces and what Place puts down are chosen from a grid of pictures, so you see what you lay down",
       "Map editor: the Blocks and Generated views switch from a floating bar at the top of the view, and G now works wherever the pointer is",
       "Maps: the Warcraft III and older maps are gone; skirmish is played on Frozen Dream, a map built in the new block editor with generated cliffs and ground",
-      "Map editor: every map is made of blocks; a new map starts as flat blocks, and the Warcraft map import is removed"
+      "Map editor: every map is made of blocks; a new map starts as flat blocks, and the Warcraft map import is removed",
+      "Map editor: in the Split view the highlighted cell, a drag and the selection show in both panes",
+      "Maps: one winter biome remains; the other biomes and their ground textures are removed"
     ],
     "fixed": [
-      "Generated cliffs join cleanly at corners and turns, ramps keep their side walls down to the foot, and diagonal cliff edges no longer show a staircase"
+      "Generated cliffs join cleanly at corners and turns, ramps keep their side walls down to the foot, and diagonal cliff edges no longer show a staircase",
+      "Map editor: Test in game works when the game was opened straight into the editor",
+      "Map editor: undo keeps the map on its Map tab instead of switching to Form"
     ],
     "knownIssues": []
   },

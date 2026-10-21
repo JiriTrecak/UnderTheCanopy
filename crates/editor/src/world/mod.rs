@@ -1338,6 +1338,10 @@ pub fn show(
         return out;
     };
     let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
+    // In the split view, where the overlays (the hover, the drag, the selection, the
+    // playable outline) begin among the shapes drawn: they are drawn again in the other
+    // pane, which shows the same camera at the same size.
+    let mut mirror_from = None;
     let scale = ui.ctx().pixels_per_point();
     let pixels = |r: Rect| [(r.width() * scale) as u32, (r.height() * scale) as u32];
     match panes {
@@ -1363,6 +1367,10 @@ pub fn show(
             }
             out.size = Some(pixels(left));
             out.size_generated = Some(pixels(right));
+            mirror_from = Some(
+                ui.ctx()
+                    .graphics(|g| g.get(ui.layer_id()).map_or(0, |l| l.next_idx().0)),
+            );
         }
         None => {
             if let Some(texture) = texture {
@@ -1884,6 +1892,28 @@ pub fn show(
         }
     }
     // The tool strips, floating over the foot of the view.
+    if let (Some(start), Some((left, right))) = (mirror_from, panes) {
+        let other = if session.blocks.right_pane {
+            left
+        } else {
+            right
+        };
+        let delta = other.min - rect.min;
+        let layer = ui.layer_id();
+        ui.ctx().graphics_mut(|g| {
+            let list = g.entry(layer);
+            let copies: Vec<egui::Shape> = list
+                .all_entries()
+                .skip(start)
+                .map(|c| {
+                    let mut shape = c.shape.clone();
+                    shape.translate(delta);
+                    shape
+                })
+                .collect();
+            list.extend(other, copies);
+        });
+    }
     out.edits.extend(strip::show(ui.ctx(), session, full, docs));
     strip::view_bar(ui.ctx(), session, full);
     if let Some(op) = live

@@ -69,9 +69,12 @@ impl Workspace {
     }
 
     /// Opens (or focuses) `element`'s tab; shows its folder in the library.
-    fn open(&mut self, element: &Element) {
+    /// Opens `element`'s tab, or brings it forward; `form` shows its form (to reveal a
+    /// field), otherwise the tab keeps the view it shows (a map its map).
+    fn open(&mut self, element: &Element, form: bool) {
         if let Some(path) = self.dock.find_tab_from(|d| d.document == element.document) {
-            if let Ok(leaf) = self.dock.leaf_mut(path.node_path())
+            if form
+                && let Ok(leaf) = self.dock.leaf_mut(path.node_path())
                 && let Some(tab) = leaf.tabs.get_mut(path.tab.0)
             {
                 tab.show_form();
@@ -1120,7 +1123,7 @@ impl Shell {
                 biome: biomes
                     .first()
                     .cloned()
-                    .unwrap_or_else(|| "vibrant-forest".into()),
+                    .unwrap_or_else(|| canopy_content::map::BIOMES[0].into()),
                 biomes,
             });
             return;
@@ -1955,7 +1958,8 @@ impl Shell {
             .entry(context.editor)
             .or_insert_with(|| Workspace::read(package, context.editor));
         let element = workspace.element(&context.document);
-        workspace.open(&element);
+        // Steps on a field show it in the form; others (a map edit) keep the view.
+        workspace.open(&element, context.pointer.is_some());
         workspace.highlight = context
             .pointer
             .clone()
@@ -2122,7 +2126,7 @@ impl Shell {
             .for_each(|n| n.elements(&mut elements));
         let first: Vec<Element> = elements.into_iter().take(n).cloned().collect();
         for element in &first {
-            workspace.open(element);
+            workspace.open(element, false);
         }
     }
 
@@ -2700,7 +2704,9 @@ fn library_panel(
                     }
                 });
             if let Some(element) = open {
-                workspace.open(&element);
+                // A map stays on its map; other documents show their form.
+                let form = crate::map::root_of(&element.document).is_none();
+                workspace.open(&element, form);
             }
         });
     action

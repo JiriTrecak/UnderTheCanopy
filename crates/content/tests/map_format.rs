@@ -24,7 +24,7 @@ fn minimal_map_parses_with_defaults() {
     assert_eq!(parsed.name, DEFAULT_MAP_NAME);
     assert!(parsed.stamps.is_empty());
     assert!(!parsed.sandbox);
-    assert_eq!(parsed.biome(), "vibrant-forest");
+    assert_eq!(parsed.biome(), "frozen-dream");
     assert_eq!(parsed.exploration(), Exploration::Explored);
     let object = &parsed.authoring.objects[0];
     assert_eq!(
@@ -144,7 +144,7 @@ fn accepts_what_the_old_parser_tolerates() {
             json!({"environment": {"hour": 24, "playing": false}, "decals": []}),
         ),
         ("/initialExploration", json!("hidden")),
-        ("/biome", json!("frozen-forest")),
+        ("/biome", json!("frozen-dream")),
         ("/v", json!(3.0)),
     ] {
         if let Err(errors) = parse(with(pointer, value.clone())) {

@@ -508,7 +508,7 @@ mod tests {
             "flat",
             "Flat",
             256,
-            "vibrant-forest",
+            "frozen-dream",
         )
         .unwrap();
         let map_root = "maps/skirmish/flat.utcm";

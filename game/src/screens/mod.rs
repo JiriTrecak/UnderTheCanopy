@@ -1084,7 +1084,9 @@ impl Game {
         }
     }
 
-    fn poll_boot(&mut self) {
+    /// Takes in the game's data once it has loaded (also while the editor has the window,
+    /// so Test in game works when the game opened straight into it).
+    pub fn poll_boot(&mut self) {
         let Some(rx) = &self.boot else {
             return;
         };

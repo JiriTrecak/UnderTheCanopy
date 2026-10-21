@@ -190,7 +190,7 @@ pub struct MapCreateArgs {
     pub name: Option<String>,
     /// Cells per side: 256, 480, 512, 640, 800, 960 or 1024. 512 by default.
     pub size: Option<u32>,
-    /// vibrant-forest (the default), deep-forest, autumn-forest, frozen-forest or frost-hollow.
+    /// frozen-dream (the only one for now, and the default).
     pub biome: Option<String>,
     /// The folder under `maps/`; `skirmish` by default.
     pub folder: Option<String>,

@@ -46,16 +46,9 @@ pub const DEFAULT_MAP_NAME: &str = "Untitled";
 pub const MAP_SIZES: [u32; 8] = [256, 480, 512, 640, 800, 960, 1024, 2048];
 /// Visible, non-playable border around the playable cells, in cells per side.
 pub const MAP_HALO: u32 = 16;
-/// Biome ids. The old game defines biomes in code (`src/content/biomes.ts`), not data, and
-/// rejects a map naming any other biome.
-pub const BIOMES: [&str; 6] = [
-    "vibrant-forest",
-    "frozen-forest",
-    "autumn-forest",
-    "deep-forest",
-    "frost-hollow",
-    "frozen-dream",
-];
+/// Biome ids: the biomes whose recipe generates a map's look from its blocks (D80, D82).
+/// A map naming any other biome is rejected.
+pub const BIOMES: [&str; 1] = ["frozen-dream"];
 
 /// A number that must equal `N` (format and section versions).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

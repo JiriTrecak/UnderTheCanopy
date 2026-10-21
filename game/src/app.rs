@@ -188,6 +188,8 @@ impl App {
         let Some(editor) = &mut session.editor else {
             return;
         };
+        // The game's data keeps loading behind the editor.
+        session.game.poll_boot();
         let output = editor.run(window, &session.display.gpu);
         if output.quit {
             session.game.quit();

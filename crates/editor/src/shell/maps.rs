@@ -162,7 +162,9 @@ impl Shell {
             .map(|p| p.manifest.version.to_string())
             .map_err(Clone::clone)?;
         let name = args.name.unwrap_or_else(|| args.id.clone());
-        let biome = args.biome.unwrap_or_else(|| "vibrant-forest".into());
+        let biome = args
+            .biome
+            .unwrap_or_else(|| canopy_content::map::BIOMES[0].into());
         let commands = crate::map::new_map(
             &content,
             &version,

@@ -390,7 +390,7 @@ pub fn run(
 /// The editor offscreen: an empty editor, documents open, the assistant open, and a
 /// library of several collections.
 /// The block editor (D80) on Frozen Dream: a raised area, a ramp and a diagonal cut; then
-/// Frost Hollow and Frozen Dream in every view.
+/// Frozen Dream in every view.
 fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     use canopy_editor::{Editor, Kind};
     let format = CAPTURE_FORMAT.remove_srgb_suffix();
@@ -464,9 +464,8 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     shoot(&mut editor, rig, "editor-blocks-edited")?;
     editor.undo_all();
 
-    // Frost Hollow, authored in blocks: the blocks, a ramp being dragged, the cell brush,
-    // and the world generated from them.
-    editor.open_document("maps/showcase/frost-hollow.utcm/map.json");
+    // The blocks, a ramp being dragged, the cell brush, and the world generated from them.
+    editor.open_document("maps/skirmish/frozen-dream.utcm/map.json");
     settle(&mut editor, rig, 60);
     editor.set_block_view("blocks");
     settle(&mut editor, rig, 30);
