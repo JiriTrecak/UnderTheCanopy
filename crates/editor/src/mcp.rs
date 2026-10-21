@@ -74,7 +74,6 @@ pub enum Tool {
     MapPreview {
         map: String,
     },
-    ImportWarcraft(ImportWarcraftArgs),
     Encounter(EncounterArgs),
 }
 
@@ -117,16 +116,6 @@ pub struct EncounterArgs {
     pub point: Option<[u32; 2]>,
     /// Stop the caster at this tick (an interruption).
     pub interrupt_at: Option<u32>,
-}
-
-#[derive(Debug, Clone, Deserialize, JsonSchema)]
-pub struct ImportWarcraftArgs {
-    /// The Warcraft III map file (.w3x or .w3m).
-    pub source: String,
-    /// The new map's id: lowercase words joined by hyphens (`twisted-meadows`).
-    pub id: String,
-    /// The folder under maps/; `skirmish` by default.
-    pub folder: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
@@ -209,7 +198,7 @@ pub struct MapCreateArgs {
 
 #[derive(Debug, Deserialize, JsonSchema)]
 struct MapArgs {
-    /// The map: its id (`echo-isles`) or its package path (`maps/skirmish/echo-isles.utcm`).
+    /// The map: its id (`frozen-dream`) or its package path (`maps/skirmish/frozen-dream.utcm`).
     map: String,
 }
 
@@ -225,8 +214,8 @@ struct MapPictureArgs {
 pub struct MapBlocksArgs {
     /// The map: its id or its package path.
     pub map: String,
-    /// What the block editor's tools do (D80): `flat` (blocks out the map as level-1
-    /// ground), `blockout` (blocks from its heights), raise, lower, level, paint, face,
+    /// What the block editor's tools do (D80): `flat` (starts the map again as level-1
+    /// ground), raise, lower, level, paint, face,
     /// unface, ramp, unramp, cut, uncut, cells, uncells, fill, round, unround.
     /// - raise, lower, level, paint, face, unface: the blocks of the box `from`–`to`, or
     ///   with `points`, those within `radius` blocks of that line.
@@ -437,7 +426,7 @@ impl Handler {
     }
 
     #[tool(
-        description = "Creates a map package: flat dry ground at height 2 in grass, every ground material as a paint layer, and players 1 and 2 in opposite corners. Shape it in blocks with map_blocks (op flat first) and furnish it with map_place."
+        description = "Creates a map package made of flat blocks (level 1), with players 1 and 2 in opposite corners. Shape it with map_blocks and furnish it with map_place; its biome generates its look."
     )]
     async fn create_map(
         &self,
@@ -471,7 +460,7 @@ impl Handler {
     }
 
     #[tool(
-        description = "Edits a map's blocks (D80) as the block editor's tools do, one undo step: start from flat ground or block out an existing map, then raise, lower, level, paint a kind, add or remove ramps and diagonal cuts over an area. Heights, cliffs, water and closed ground follow from the blocks; the world is generated from them."
+        description = "Edits a map's blocks (D80) as the block editor's tools do, one undo step: raise, lower, level, paint a kind, add or remove ramps and diagonal cuts over an area. Heights, cliffs, water and closed ground follow from the blocks; the world is generated from them."
     )]
     async fn map_blocks(
         &self,
@@ -522,16 +511,6 @@ impl Handler {
         Parameters(args): Parameters<MapArgs>,
     ) -> Result<CallToolResult, ErrorData> {
         self.ask(Tool::MapPreview { map: args.map }).await
-    }
-
-    #[tool(
-        description = "Imports a Warcraft III melee map as a new map package: terrain, cliffs, ramps and water at 5 cells a tile; its ground tiles substituted with the nearest ground this game has (in a biome picked by its tileset); trees as the biome's trees; gold mines as amber sites; creep groups as camps of the same strength; start locations as starts. Written at once with its preview; returns what it did and the problems the check finds."
-    )]
-    async fn import_warcraft(
-        &self,
-        Parameters(args): Parameters<ImportWarcraftArgs>,
-    ) -> Result<CallToolResult, ErrorData> {
-        self.ask(Tool::ImportWarcraft(args)).await
     }
 
     #[tool(

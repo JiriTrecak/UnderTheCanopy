@@ -204,7 +204,7 @@ Capture:
 
 The play camera clamps zoom, so crop full-resolution captures for detail. Benches:
 - `base/maps/showcase/beetle-bench.utcm` (`tools/maps/beetle_bench.py`): flat, sandbox, a hall stocked with 20k;
-- `lookdev-fall` (`tools/maps/lookdev_fall.py`, the look-dev map, hall stocked with 9k/9k).
+- `ant-bench` (`tools/maps/ant_bench.py`), the same for the ants.
 
 Sandbox maps spawn no start setup, so stock comes from the placed hall's `initialState.inventory`.
 

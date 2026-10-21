@@ -98,19 +98,7 @@ pub fn grid_mut<'a>(map: &'a mut UtcMap, file: &str) -> Option<&'a mut Grid> {
     match file {
         "terrain/heights.grid" => Some(&mut terrain.heights),
         "terrain/water-heights.grid" => Some(&mut terrain.water_heights),
-        "terrain/grass.grid" => Some(&mut terrain.grass),
-        "terrain/rock.grid" => Some(&mut terrain.rock),
-        _ => {
-            let n: usize = file
-                .strip_prefix("terrain/paint-")?
-                .strip_suffix("-weights.grid")?
-                .parse()
-                .ok()?;
-            terrain
-                .paint
-                .get_mut(n.checked_sub(1)?)
-                .map(|l| &mut l.weights)
-        }
+        _ => None,
     }
 }
 

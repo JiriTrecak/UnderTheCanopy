@@ -1,6 +1,6 @@
 ---
 name: run-game
-description: Builds Under the Canopy with the latest changes and starts it for Jiri to play, optionally straight into a match (/run-game echo-isles beetles,ants). Use when Jiri says /run-game, "run the game", "let me play" or "start the game".
+description: Builds Under the Canopy with the latest changes and starts it for Jiri to play, optionally straight into a match (/run-game frozen-dream beetles,ants). Use when Jiri says /run-game, "run the game", "let me play" or "start the game".
 ---
 
 # Run the game
@@ -12,14 +12,14 @@ use.
 
 Free text after the command picks what to start:
 - **Nothing:** the main menu.
-- **A map id** (`echo-isles`, `amberleaf-crossing`, …, the folder names under
+- **A map id** (`frozen-dream`, …, the folder names under
   `base/maps/*/<id>.utcm`): a skirmish on that map, Jiri against computer players.
 - **Races** (`beetles,ants`): the first is Jiri's race, the second the computer's.
 - **"watch" or "spectate":** computer players only, Jiri watching (`--spectate` in place of
   `--map`).
 
-So `/run-game echo-isles beetles,ants` runs:
-`./target/release/canopy --data "$PWD" --map echo-isles --races beetles,ants`.
+So `/run-game frozen-dream beetles,ants` runs:
+`./target/release/canopy --data "$PWD" --map frozen-dream --races beetles,ants`.
 
 ## Steps
 

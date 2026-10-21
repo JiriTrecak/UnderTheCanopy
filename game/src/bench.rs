@@ -32,69 +32,45 @@ struct Scene {
 const SCENES: &[Scene] = &[
     Scene {
         name: "default",
-        about: "echo-isles mid-game, player 1's base at the default zoom",
+        about: "frozen-dream mid-game, player 1's main at the default zoom",
         args: &[
             "--map",
-            "echo-isles",
+            "frozen-dream",
             "--tick",
             "2400",
             "--camera",
-            "117.5,225.5,1",
+            "188.5,42.5,1",
         ],
     },
     Scene {
         name: "spectator",
-        about: "echo-isles mid-game, the map's centre zoomed out to 3× (spectator)",
+        about: "frozen-dream mid-game, the map's centre zoomed out to 3× (spectator)",
         args: &[
             "--map",
-            "echo-isles",
+            "frozen-dream",
             "--tick",
             "2400",
             "--camera",
-            "320,320,3",
+            "128,128,3",
         ],
     },
     Scene {
         name: "crowd",
-        about: "turtle-rock 8 × 50 crowd battle at zoom 1.6 with its effects (256 cues)",
+        about: "frozen-dream crowd battle of 50 a player at zoom 1.6 with its effects",
         args: &[
             "--map",
-            "turtle-rock",
+            "frozen-dream",
             "--crowd",
             "50",
             "--tick",
             "120",
             "--camera",
-            "325.5,331.5,1.6",
-        ],
-    },
-    Scene {
-        name: "water",
-        about: "turtle-rock west edge over deep water, 12 wading bodies",
-        args: &[
-            "--map",
-            "turtle-rock",
-            "--camera",
-            "20,320,1.25",
-            "--movers",
-            "12",
-        ],
-    },
-    Scene {
-        name: "forest",
-        about: "echo-isles player 1's base in the deep forest look (bloom and haze)",
-        args: &[
-            "--map",
-            "echo-isles",
-            "--biome",
-            "deep-forest",
-            "--camera",
-            "117.5,225.5,1",
+            "128,128,1.6",
         ],
     },
 ];
 
-const DEFAULT_SCENES: &str = "default,spectator,crowd,water,forest,menu,hud";
+const DEFAULT_SCENES: &str = "default,spectator,crowd,menu,hud";
 
 /// One measured scene at one size.
 struct Result1 {
@@ -229,7 +205,13 @@ fn hud(
         .arg("shot")
         .arg("--data")
         .arg(&paths.data)
-        .args(["--map", "echo-isles", "--play", "--input", "select:worker"])
+        .args([
+            "--map",
+            "frozen-dream",
+            "--play",
+            "--input",
+            "select:worker",
+        ])
         .args(["--size", &format!("{}x{}", size[0], size[1])])
         .arg("--out")
         .arg(&png)
@@ -434,7 +416,7 @@ fn table(results: &[Result1], extra: &[String], frames: u32) -> String {
     }
     let _ = writeln!(
         s,
-        "- `menu`: the main menu (UI only), rendered in process\n- `hud`: the play capture's HUD on echo-isles (`shot --play --input select:worker`), CPU only"
+        "- `menu`: the main menu (UI only), rendered in process\n- `hud`: the play capture's HUD on frozen-dream (`shot --play --input select:worker`), CPU only"
     );
     s
 }

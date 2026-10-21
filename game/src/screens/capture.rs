@@ -389,8 +389,8 @@ pub fn run(
 
 /// The editor offscreen: an empty editor, documents open, the assistant open, and a
 /// library of several collections.
-/// The block editor (D80) on Echo Isles: blocked out from its heights, then a raised
-/// area, a ramp and a diagonal cut.
+/// The block editor (D80) on Frozen Dream: a raised area, a ramp and a diagonal cut; then
+/// Frost Hollow and Frozen Dream in every view.
 fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     use canopy_editor::{Editor, Kind};
     let format = CAPTURE_FORMAT.remove_srgb_suffix();
@@ -442,10 +442,8 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
         frame(editor, rig, vec![]);
     };
     editor.select(Kind::Maps);
-    editor.open_document("maps/skirmish/echo-isles.utcm/map.json");
+    editor.open_document("maps/skirmish/frozen-dream.utcm/map.json");
     settle(&mut editor, rig, 60);
-    editor.block_out_map();
-    settle(&mut editor, rig, 40);
     // Frame time in the block view (the editor draws every frame it is shown).
     let started = Instant::now();
     settle(&mut editor, rig, 30);
@@ -752,7 +750,7 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
         std::thread::sleep(Duration::from_millis(25));
     }
     shoot(&mut editor, rig, "editor-maps")?;
-    // Editing the map through its view, in blocks: blocked out, a raised stroke, a start.
+    // Editing the map through its view, in blocks: a raised stroke, a start.
     let frame = |editor: &mut Editor, rig: &mut Rig, events: Vec<egui::Event>| {
         editor.run_headless_with(rig.size, rig.scale, &rig.gpu, events);
         std::thread::sleep(Duration::from_millis(20));
@@ -786,10 +784,6 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
         frame(editor, rig, vec![]);
     };
     editor.undo_all();
-    editor.block_out_map();
-    for _ in 0..20 {
-        frame(&mut editor, rig, vec![]);
-    }
     editor.set_block_tool("raise");
     editor.set_block_symmetry("off", true);
     drag(&mut editor, rig, (760.0, 640.0), (1000.0, 700.0));
@@ -1516,7 +1510,7 @@ fn a_match(rig: &mut Rig) -> Result<()> {
     rig.settle(0.1);
     rig.shoot("game-menu-save")?;
     rig.game.save_game();
-    rig.game.save_game_named("Echo Isles opening");
+    rig.game.save_game_named("An opening");
     rig.settle(0.1);
     rig.shoot("game-menu-saved")?;
     rig.game.open_saves();
@@ -1527,7 +1521,7 @@ fn a_match(rig: &mut Rig) -> Result<()> {
         .game
         .saves_list
         .iter()
-        .find(|m| m.name == "Echo Isles opening")
+        .find(|m| m.name == "An opening")
         .map(|m| m.id.clone())
         .context("the save is listed")?;
     rig.game.load_save(&saved);

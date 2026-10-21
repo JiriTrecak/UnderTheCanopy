@@ -18,9 +18,9 @@ Everything is a package: a folder for authoring and git, or (with map transfer, 
 ```json
 {
   "format": 1,
-  "id": "echo-isles",
+  "id": "frozen-dream",
   "kind": "map",
-  "name": "Echo Isles",
+  "name": "Frozen Dream",
   "version": "2.2.0",
   "author": "…",
   "description": "…",
@@ -78,7 +78,7 @@ base/
 │  └─ water/
 ├─ assets/                 one folder per asset (see Assets)
 ├─ campaigns/              <name>.utcc
-└─ maps/                   e.g. skirmish/echo-isles.utcm
+└─ maps/                   e.g. skirmish/frozen-dream.utcm
 ```
 
 Moves from today's data:
@@ -129,6 +129,8 @@ echo-isles.utcm/
 ```
 
 The terrain data stays what it is today; only the container changes. Map data will change often as maps gain features: a new feature is a new file, and maps without it get a default.
+
+**Since D82 (2026-10-21)** a map is made of blocks: its `terrain/` holds `blocks.grid` (and `block-paint.grid`) and the grids they make (heights, water heights, water flow, closed cells); map.json has no terrain section, and no painted ground is stored (the biome generates it). The layout above is the M0 plan, kept for its history.
 
 ## Where packages live
 

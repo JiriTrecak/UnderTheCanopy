@@ -446,21 +446,11 @@ fn commit(
     Some(step(session, label, commands))
 }
 
-/// Blocks out the session's map from its heights, water and closed ground, or as flat
-/// level-1 ground (`flat`).
-pub fn block_out(session: &mut Session, flat: bool) -> Option<crate::tabs::Edit> {
+/// Starts the session's map again from flat ground.
+pub fn flatten(session: &mut Session) -> Option<crate::tabs::Edit> {
     let map = session.map.as_ref()?;
-    if flat {
-        let blocks = Blocks::flat(map.size);
-        return commit(session, "Flat blocks", blocks, |_| {});
-    }
-    let starts: Vec<[f32; 2]> = map
-        .player_starts
-        .iter()
-        .map(|s| [s.x as f32, s.z as f32])
-        .collect();
-    let blocks = Blocks::from_terrain(&map.authoring.terrain, &starts);
-    commit(session, "Block out the map", blocks, |_| {})
+    let blocks = Blocks::flat(map.size);
+    commit(session, "Flat blocks", blocks, |_| {})
 }
 
 /// One block edit, as a drag of a tool does it.
@@ -1069,23 +1059,7 @@ fn panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
         .color(MUTED),
     );
     ui.add_space(8.0);
-    let has = blocks_of(session).is_some();
-    if !has {
-        ui.label(
-            RichText::new("This map has no blocks yet.")
-                .size(12.0)
-                .color(TEXT),
-        );
-        ui.add_space(4.0);
-        if ui.button("Block out this map").on_hover_text("Blocks from the map's heights, water and closed ground; the map's heights then follow the blocks").clicked() {
-            edit = block_out(session, false);
-        }
-        if ui.button("Start from flat ground").clicked() {
-            edit = block_out(session, true);
-        }
-        ui.add_space(10.0);
-    }
-    ui.add_space(12.0);
+    ui.add_space(4.0);
     ui.label(eyebrow("Playable area"));
     edit = edit.or(playable_panel(ui, session));
     ui.add_space(12.0);
@@ -1490,7 +1464,7 @@ pub fn show(
         painter.text(
             rect.center(),
             egui::Align2::CENTER_CENTER,
-            "Block out the map, or start from flat ground (left)",
+            "This map has no blocks: its package is broken",
             egui::FontId::proportional(13.0),
             MUTED,
         );

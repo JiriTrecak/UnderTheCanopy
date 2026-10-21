@@ -321,7 +321,7 @@ mod tests {
         let base = canopy_content::map::library(&root)
             .unwrap()
             .into_iter()
-            .find(|m| m.id == "echo-isles")
+            .find(|m| m.id == "frozen-dream")
             .unwrap()
             .load()
             .unwrap();

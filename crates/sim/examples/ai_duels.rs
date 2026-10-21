@@ -3,7 +3,7 @@
 //!
 //! ```text
 //! cargo run --release -p canopy-sim --example ai_duels -- --data . [--seeds 4] \
-//!     [--minutes 60] [--races ants,beetles] [--maps echo-isles,amberleaf-crossing] [--log]
+//!     [--minutes 60] [--races ants,beetles] [--maps frozen-dream] [--log]
 //! ```
 //!
 //! `--styles a,b` plays the two computer players in those styles (D75: standard, rush,

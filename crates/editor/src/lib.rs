@@ -23,7 +23,6 @@ mod shell;
 mod stage;
 mod tabs;
 pub mod theme;
-mod warcraft;
 mod watch;
 mod widgets;
 mod world;
@@ -216,11 +215,6 @@ impl Editor {
         self.shell.unsaved()
     }
 
-    /// Blocks out the open map from its heights (captures).
-    pub fn block_out_map(&mut self) {
-        self.shell.block_out_map();
-    }
-
     /// The block editor's tool by name: raise, level, paint, ramp, cut, cells, face
     /// (captures).
     pub fn set_block_tool(&mut self, name: &str) {
@@ -284,7 +278,7 @@ impl Editor {
     }
 
     /// Opens the document at `path` in its editor (captures), such as a map's
-    /// `maps/skirmish/echo-isles.utcm/map.json`.
+    /// `maps/skirmish/frozen-dream.utcm/map.json`.
     pub fn open_document(&mut self, path: &str) {
         self.shell.reveal_document(path);
     }

@@ -16,11 +16,11 @@ Authority:
 - `map/check.rs` and `map/validate.rs` (rules).
 
 ```
-echo-isles.utcm/
+frozen-dream.utcm/
 ├─ package.json     id (the map id), kind "map", name (shown in menus), description, version
-├─ map.json         everything but terrain samples and scenery
+├─ map.json         everything but the terrain and scenery
 ├─ scenery.json     {"objects": [...]}: placed scenery, in order
-├─ terrain/         one .grid file per terrain grid
+├─ terrain/         the blocks, and the grids they make (.grid files)
 ├─ mission.lua      the mission script (missions only)
 └─ preview.webp     the menus' picture (cooked into the pack as maps/<id>/preview.webp)
 ```
@@ -29,7 +29,7 @@ echo-isles.utcm/
 
 The main fields:
 - `size`: cells per side, one of 256, 480, 512, 640, 800, 960, 1024, 2048 (the renderer draws up to 1024).
-- `playable` (optional): `{x, z, width, height}` in cells, the part play happens in. Around it is a border of scenery nobody enters (unwalkable, unbuildable); the camera, minimap and preview frame it. Starts stand at least 8 cells inside it. Warcraft III imports set it from the map's margins (decision D56).
+- `playable` (optional): `{x, z, width, height}` in cells, the part play happens in. Around it is a border of scenery nobody enters (unwalkable, unbuildable); the camera, minimap and preview frame it. Starts stand at least 8 cells inside it. The block editor outlines it and sets its border.
 - `biome`, `sandbox`, `initialExploration`.
 - `playerStarts`: `[{player, x, z, setup, mainFort}]`, where `setup` is a race starting setup id such as `setup.ants`.
 - `entities`: pre-placed units and buildings: `{id, definition, position: {x, y}, rotation, owner: "none" | "player.N", initialState?, appearance?: {asset, scale}}`.
@@ -37,11 +37,12 @@ The main fields:
 - `stamps`: scenery placed with walk surfaces.
 - `landscape.environment`: `{hour, weather}`.
 - `mission`: campaign metadata, objectives and regions; the script is in `mission.lua`.
-- `terrain`: `{textureGrid, waterProfiles, paint: [{material, variants}], overlay?}`. The optional `overlay` (`{asset, x, z, width, height}`, metres) lays one painted texture asset, premultiplied alpha, over the ground in that rectangle (D63).
 
-**The order of `terrain.paint` matters.** Later layers paint over earlier ones, and cliffs come after non-cliffs. Each layer has `terrain/paint-<n>-weights.grid`, plus `paint-<n>-variants.grid` when `variants` is true. `material` is a terrain-material asset id.
+map.json has no `terrain` section (D82): a map is made of blocks, and its ground, cliffs and dressing are generated from them by its biome at load (D80). A map in the old format (painted ground layers) is refused.
 
 ## Terrain grids
+
+A map is made of **blocks** (D80, `crates/content/src/map/blocks.rs`): `blocks.grid` is what it is authored as, and the block editor (or MCP `map_blocks`) writes it together with the grids it makes (`Blocks::apply`), which the simulation reads and which are stored so a map plays the same forever. Never write heights without their blocks.
 
 The terrain covers the playable square plus a 16-cell halo on every side:
 - `span = size + 32` cells;
@@ -50,14 +51,12 @@ The terrain covers the playable square plus a 16-cell halo on every side:
 
 | File | Samples | Values |
 |---|---|---|
-| `heights.grid` | f32 per vertex | -16 to 24 |
-| `water-heights.grid` | f32 per vertex | the water surface; -17 means dry |
+| `blocks.grid` | 4 bytes per 4 × 4-cell column | level, kind, cut and ramp direction, face style (`blocks.rs`) |
+| `block-paint.grid` (optional) | u8 per cell | 0 keeps the column's kind, else kind + 1 |
+| `heights.grid` | f32 per vertex | made from the blocks |
+| `water-heights.grid` | f32 per vertex | made from the blocks; -17 means dry |
 | `water-flow.grid` | 4 bytes per cell | x, z (128 still), foam, profile (0 = the biome's water) |
-| `grass.grid`, `rock.grid` | f32 per vertex | 0 to 1 |
-| `shade.grid` (optional) | f32 per vertex | 0 lit to 1 black: the frame shade (D63) |
-| `blocked.grid` (optional) | u8 per cell | nonzero: closed, never walked or built on (D71). Paint it from the same mask as the dark frame: what looks impassable must be |
-| `paint-<n>-weights.grid` | f32 per vertex | 0 to 1 |
-| `paint-<n>-variants.grid` | u8 per texture cell | atlas variant |
+| `blocked.grid` (optional) | u8 per cell | made from the blocks: nonzero is closed (forest floor, rock), never walked or built on |
 
 A `.grid` file is:
 - a 16-byte header: `UTCG`, format 1, sample type, codec, filter, width, height;

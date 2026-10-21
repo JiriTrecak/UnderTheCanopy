@@ -1,19 +1,22 @@
 //! Map packages (`.utcm`, docs/packages.md): a map as a folder (or, later, a zip of one).
 //!
 //! ```text
-//! echo-isles.utcm/
+//! frozen-dream.utcm/
 //! ├─ package.json      id, name, description, version, dependencies (kind "map")
 //! ├─ map.json          size, biome, starts, placements, camps, environment, mission
-//! │                    (without its script), terrain metadata and the ordered paint layers
+//! │                    (without its script)
 //! ├─ scenery.json      {"objects": […]}: placed scenery, in placement order
-//! ├─ terrain/          heights, water-heights, water-flow, grass, rock, (shade), (blocked),
-//! │                    paint-<n>-weights and paint-<n>-variants (.grid, see [`super::grid`])
+//! ├─ terrain/          blocks and (block-paint), what the map is made of (D80), and what
+//! │                    they make: heights, water-heights, water-flow and (blocked)
+//! │                    (.grid, see [`super::grid`])
 //! ├─ mission.lua       the mission script, when there is a mission
 //! └─ preview.webp      the menus' picture
 //! ```
 //!
 //! In memory a map is still one [`UtcMap`]; [`load`] assembles it from the package and
-//! checks it as before, [`write`] splits one into a package.
+//! checks it as before, [`write`] splits one into a package. A map's ground (paint layers,
+//! grass, rock, shade) is not stored: its biome generates it from the blocks at load
+//! (`canopy_scene::generate`), so in memory those layers start empty.
 
 use super::{
     UtcMap, check,
@@ -32,13 +35,12 @@ pub const MISSION_SCRIPT: &str = "mission.lua";
 pub const PREVIEW_FILE: &str = "preview.webp";
 pub const TERRAIN_DIR: &str = "terrain";
 
-/// The grids of a terrain: (file stem, key in the terrain document, element, per vertex).
-const GRIDS: [(&str, &str, Element, bool); 5] = [
+/// The grids the blocks make: (file stem, key in the terrain document, element, per
+/// vertex).
+const GRIDS: [(&str, &str, Element, bool); 3] = [
     ("heights", "heights", Element::F32, true),
     ("water-heights", "waterHeights", Element::F32, true),
     ("water-flow", "waterFlow", Element::Rgba8, false),
-    ("grass", "grass", Element::F32, true),
-    ("rock", "rock", Element::F32, true),
 ];
 
 fn grid_path(stem: &str) -> String {
@@ -87,43 +89,23 @@ pub fn load_package(package: &Package) -> Result<UtcMap, Errors> {
         .get("objects")
         .cloned()
         .unwrap_or(Value::Array(Vec::new()));
-    // The terrain document, its grids filled in below once the map has its size.
-    let mut terrain = match document.remove("terrain") {
-        Some(Value::Object(fields)) => fields,
-        _ => {
-            return Err(one(Error::new(
-                &package.label(MAP_FILE),
-                "terrain",
-                "missing terrain",
-            )));
-        }
-    };
+    // The terrain is the grids in terrain/, filled in below once the map has its size.
+    if document.contains_key("terrain") {
+        return Err(one(Error::new(
+            &package.label(MAP_FILE),
+            "terrain",
+            "a map keeps its terrain as blocks in terrain/ (D80); this map is in the old format",
+        )));
+    }
+    let mut terrain = Map::new();
     let size = document.get("size").cloned().unwrap_or(Value::Null);
     terrain.insert("version".into(), json!(1));
     terrain.insert("size".into(), size);
-    for (_, key, _, _) in GRIDS {
+    for key in ["heights", "waterHeights", "waterFlow", "grass", "rock"] {
         terrain.insert(key.into(), json!(""));
     }
-    let painted: Vec<bool> = terrain
-        .get("paint")
-        .and_then(Value::as_array)
-        .map(|layers| {
-            layers
-                .iter()
-                .map(|l| l.get("variants").and_then(Value::as_bool) == Some(true))
-                .collect()
-        })
-        .unwrap_or_default();
-    if let Some(Value::Array(layers)) = terrain.get_mut("paint") {
-        for layer in layers {
-            layer["weights"] = json!("");
-            if layer.get("variants").and_then(Value::as_bool) == Some(true) {
-                layer["variants"] = json!("");
-            } else if let Some(object) = layer.as_object_mut() {
-                object.remove("variants");
-            }
-        }
-    }
+    terrain.insert("waterProfiles".into(), json!([]));
+    terrain.insert("paint".into(), json!([]));
     if let Some(Value::Object(mission)) = document.get_mut("mission") {
         let script = package.read_text(MISSION_SCRIPT).map_err(|e| {
             one(Error::new(
@@ -155,7 +137,6 @@ pub fn load_package(package: &Package) -> Result<UtcMap, Errors> {
     };
     let terrain = &mut map.authoring.terrain;
     let (vertices, span) = (terrain.vertices(), terrain.span());
-    let texture = terrain.texture_layout();
     let mut read_grid = |stem: &str, element: Element, side: (u32, u32)| -> Grid {
         let file = grid_path(stem);
         package
@@ -177,42 +158,23 @@ pub fn load_package(package: &Package) -> Result<UtcMap, Errors> {
         match key {
             "heights" => terrain.heights = grid,
             "waterHeights" => terrain.water_heights = grid,
-            "waterFlow" => terrain.water_flow = grid,
-            "grass" => terrain.grass = grid,
-            _ => terrain.rock = grid,
+            _ => terrain.water_flow = grid,
         }
     }
-    // The frame shade is optional: read only when the package has it.
-    if package.read_bytes(&grid_path("shade")).is_ok() {
-        terrain.shade = Some(read_grid("shade", Element::F32, (vertices, vertices)));
-    }
-    // So are the closed cells.
-    if package.read_bytes(&grid_path("blocked")).is_ok() {
-        terrain.blocked = Some(read_grid("blocked", Element::U8, (span, span)));
-    }
-    // And the blockout (D80).
-    if package.read_bytes(&grid_path("blocks")).is_ok() {
-        let columns = span / super::blocks::BLOCK;
-        terrain.blocks = Some(read_grid("blocks", Element::Rgba8, (columns, columns)));
-    }
+    // The blocks (D80) are what the map is made of.
+    let columns = span / super::blocks::BLOCK;
+    terrain.blocks = Some(read_grid("blocks", Element::Rgba8, (columns, columns)));
+    // Kinds painted cell by cell, and the closed cells, when the map has them.
     if package.read_bytes(&grid_path("block-paint")).is_ok() {
         terrain.block_paint = Some(read_grid("block-paint", Element::U8, (span, span)));
     }
-    for (i, layer) in terrain.paint.iter_mut().enumerate() {
-        let n = i + 1;
-        layer.weights = read_grid(
-            &format!("paint-{n}-weights"),
-            Element::F32,
-            (vertices, vertices),
-        );
-        if painted.get(i) == Some(&true) {
-            layer.variants = Some(read_grid(
-                &format!("paint-{n}-variants"),
-                Element::U8,
-                (texture.cells[0], texture.cells[1]),
-            ));
-        }
+    if package.read_bytes(&grid_path("blocked")).is_ok() {
+        terrain.blocked = Some(read_grid("blocked", Element::U8, (span, span)));
     }
+    // No painted ground until the biome generates it.
+    let zeros = Grid(vec![0; (vertices * vertices * 4) as usize]);
+    terrain.grass = zeros.clone();
+    terrain.rock = zeros;
     if !errors.is_empty() {
         return Err(Errors(errors));
     }
@@ -271,38 +233,17 @@ pub fn write(map: &UtcMap, id: &str, version: &str, dir: &Path) -> std::io::Resu
         document.remove("stamps");
     }
     let terrain = &map.authoring.terrain;
-    let mut meta = Map::new();
-    if let Some(grid) = &terrain.texture_grid {
-        meta.insert(
-            "textureGrid".into(),
-            serde_json::to_value(grid).expect("serialises"),
-        );
-    }
-    meta.insert("waterProfiles".into(), json!(terrain.water_profiles));
-    if let Some(overlay) = &terrain.overlay {
-        meta.insert(
-            "overlay".into(),
-            serde_json::to_value(overlay).expect("serialises"),
-        );
-    }
-    meta.insert(
-        "paint".into(),
-        Value::Array(
-            terrain
-                .paint
-                .iter()
-                .map(|p| json!({"material": p.material, "variants": p.variants.is_some()}))
-                .collect(),
-        ),
-    );
-    document.insert("terrain".into(), Value::Object(meta));
+    let Some(blocks) = &terrain.blocks else {
+        return Err(std::io::Error::other(
+            "a map is made of blocks (D80): this one has none",
+        ));
+    };
     std::fs::write(dir.join(MAP_FILE), pretty(&Value::Object(document)))?;
     std::fs::write(
         dir.join(SCENERY_FILE),
         pretty(&json!({"objects": map.authoring.objects})),
     )?;
     let (vertices, span) = (terrain.vertices(), terrain.span());
-    let texture = terrain.texture_layout();
     let write_grid = |stem: &str, grid: &Grid, element: Element, side: (u32, u32)| {
         std::fs::write(
             dir.join(grid_path(stem)),
@@ -327,37 +268,13 @@ pub fn write(map: &UtcMap, id: &str, version: &str, dir: &Path) -> std::io::Resu
         Element::Rgba8,
         (span, span),
     )?;
-    write_grid("grass", &terrain.grass, Element::F32, (vertices, vertices))?;
-    write_grid("rock", &terrain.rock, Element::F32, (vertices, vertices))?;
-    if let Some(shade) = &terrain.shade {
-        write_grid("shade", shade, Element::F32, (vertices, vertices))?;
-    }
     if let Some(blocked) = &terrain.blocked {
         write_grid("blocked", blocked, Element::U8, (span, span))?;
     }
-    if let Some(blocks) = &terrain.blocks {
-        let columns = span / super::blocks::BLOCK;
-        write_grid("blocks", blocks, Element::Rgba8, (columns, columns))?;
-    }
+    let columns = span / super::blocks::BLOCK;
+    write_grid("blocks", blocks, Element::Rgba8, (columns, columns))?;
     if let Some(paint) = &terrain.block_paint {
         write_grid("block-paint", paint, Element::U8, (span, span))?;
-    }
-    for (i, layer) in terrain.paint.iter().enumerate() {
-        let n = i + 1;
-        write_grid(
-            &format!("paint-{n}-weights"),
-            &layer.weights,
-            Element::F32,
-            (vertices, vertices),
-        )?;
-        if let Some(variants) = &layer.variants {
-            write_grid(
-                &format!("paint-{n}-variants"),
-                variants,
-                Element::U8,
-                (texture.cells[0], texture.cells[1]),
-            )?;
-        }
     }
     Ok(())
 }

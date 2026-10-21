@@ -500,6 +500,33 @@ impl Blocks {
     /// A vertex on a column boundary takes the highest surface around it, so a raised
     /// column keeps its whole top and its cliff falls within the lower neighbour's first
     /// cell; inside a column the vertex samples its own column.
+    /// A map's terrain made of these blocks (`size` cells per side): its heights, water and
+    /// closed cells, still water, and no painted ground (its biome generates that).
+    pub fn terrain(&self, size: u32) -> TerrainData {
+        let span = size + 2 * MAP_HALO;
+        let vertices = (span + 1) as usize;
+        let floats = |v: f32| Grid(v.to_le_bytes().repeat(vertices * vertices));
+        let mut terrain = TerrainData {
+            version: crate::map::Version,
+            size,
+            texture_grid: None,
+            heights: floats(0.0),
+            water_heights: floats(DRY_WATER_HEIGHT as f32),
+            water_flow: Grid([128, 128, 0, 0].repeat((span * span) as usize)),
+            water_profiles: Vec::new(),
+            grass: floats(0.0),
+            rock: floats(0.0),
+            paint: Vec::new(),
+            shade: None,
+            blocked: None,
+            overlay: None,
+            blocks: None,
+            block_paint: None,
+        };
+        self.apply(&mut terrain);
+        terrain
+    }
+
     pub fn apply(&self, terrain: &mut TerrainData) {
         let vertices = terrain.vertices();
         let span = terrain.span();
@@ -588,135 +615,6 @@ impl Blocks {
         terrain.blocked = Some(Grid(blocked));
         terrain.blocks = Some(self.encode());
         terrain.block_paint = self.paint.as_ref().map(|p| Grid(p.clone()));
-    }
-
-    /// Blocks that approximate an existing map: each column's level from its mean height,
-    /// water where most of it is under water (deep or shallow by depth), closed ground
-    /// where most of its cells are closed. Where the map's ground was walkable between two
-    /// columns a level apart, the higher becomes a ramp, so gentle slopes stay passable;
-    /// every point in `pads` (the starts) gets flat ground at its level within 26 cells (the
-    /// fort and its worker formation).
-    pub fn from_terrain(terrain: &TerrainData, pads: &[[f32; 2]]) -> Self {
-        let size = terrain.size;
-        let mut blocks = Self::flat(size);
-        let vertices = terrain.vertices() as usize;
-        let span = terrain.span() as usize;
-        let read = |grid: &Grid, i: usize| {
-            let b = &grid.0[i * 4..i * 4 + 4];
-            f32::from_le_bytes([b[0], b[1], b[2], b[3]])
-        };
-        let blocked = terrain.blocked.as_ref().map(|g| g.0.clone());
-        let b = BLOCK as usize;
-        for cz in 0..blocks.side as usize {
-            for cx in 0..blocks.side as usize {
-                let (mut sum, mut wet, mut depth, mut n) = (0.0f32, 0, 0.0f32, 0);
-                for z in cz * b..=cz * b + b {
-                    for x in cx * b..=cx * b + b {
-                        let i = z.min(vertices - 1) * vertices + x.min(vertices - 1);
-                        let h = read(&terrain.heights, i);
-                        let w = read(&terrain.water_heights, i);
-                        sum += h;
-                        n += 1;
-                        if w > h + 0.05 && w > DRY_WATER_HEIGHT as f32 + 0.5 {
-                            wet += 1;
-                            depth += w - h;
-                        }
-                    }
-                }
-                let mean = sum / n as f32;
-                let mut closed = 0;
-                if let Some(blocked) = &blocked {
-                    for z in cz * b..cz * b + b {
-                        for x in cx * b..cx * b + b {
-                            closed +=
-                                usize::from(blocked[z.min(span - 1) * span + x.min(span - 1)] != 0);
-                        }
-                    }
-                }
-                let mut block = Block::ground(
-                    ((mean - BASE_HEIGHT) / LEVEL_HEIGHT)
-                        .round()
-                        .clamp(0.0, MAX_LEVEL as f32) as u8,
-                );
-                if wet * 2 > n {
-                    let surface = mean + depth / wet as f32;
-                    block.level = ((surface - BASE_HEIGHT) / LEVEL_HEIGHT)
-                        .ceil()
-                        .clamp(0.0, MAX_LEVEL as f32) as u8;
-                    block.kind = if depth / (wet as f32) > 1.2 {
-                        BlockKind::Deep
-                    } else {
-                        BlockKind::Shallow
-                    };
-                } else if closed * 2 > b * b {
-                    block.kind = BlockKind::Wall;
-                }
-                blocks.columns[cz * blocks.side as usize + cx] = block;
-            }
-        }
-        // Starts stand on flat ground.
-        let halo = MAP_HALO as f32;
-        for pad in pads {
-            let (px, pz) = blocks.column_at(pad[0], pad[1]);
-            let level = blocks.at(px, pz).level;
-            for z in pz - 8..=pz + 8 {
-                for x in px - 8..=px + 8 {
-                    let (cx, cz) = (
-                        (x as f32 + 0.5) * BLOCK as f32 - halo,
-                        (z as f32 + 0.5) * BLOCK as f32 - halo,
-                    );
-                    if (cx - pad[0]).hypot(cz - pad[1]) <= 26.0 + BLOCK as f32 {
-                        blocks.set(x, z, Block::ground(level));
-                    }
-                }
-            }
-        }
-        // Gentle slopes between levels become ramps.
-        let walkable_between = |a: (usize, usize), b: (usize, usize)| {
-            let centre = |c: (usize, usize)| (c.0 * BLOCK as usize + 2, c.1 * BLOCK as usize + 2);
-            let (pa, pb) = (centre(a), centre(b));
-            let steps = pa.0.abs_diff(pb.0).max(pa.1.abs_diff(pb.1));
-            let mut previous = None;
-            (0..=steps).all(|s| {
-                let t = s as f32 / steps.max(1) as f32;
-                let x = (pa.0 as f32 + (pb.0 as f32 - pa.0 as f32) * t).round() as usize;
-                let z = (pa.1 as f32 + (pb.1 as f32 - pa.1 as f32) * t).round() as usize;
-                let h = read(
-                    &terrain.heights,
-                    z.min(vertices - 1) * vertices + x.min(vertices - 1),
-                );
-                let ok = previous.is_none_or(|p: f32| (h - p).abs() <= 0.9);
-                previous = Some(h);
-                ok
-            })
-        };
-        let side = blocks.side as usize;
-        let mut ramps = Vec::new();
-        for cz in 0..side {
-            for cx in 0..side {
-                let here = blocks.columns[cz * side + cx];
-                if here.kind != BlockKind::Ground {
-                    continue;
-                }
-                for (dx, dz) in [(1i32, 0i32), (-1, 0), (0, 1), (0, -1)] {
-                    let (nx, nz) = (cx as i32 + dx, cz as i32 + dz);
-                    let Some(next) = blocks.get(nx, nz) else {
-                        continue;
-                    };
-                    if next.kind == BlockKind::Ground
-                        && here.level == next.level + 1
-                        && walkable_between((cx, cz), (nx as usize, nz as usize))
-                    {
-                        ramps.push((cx, cz));
-                        break;
-                    }
-                }
-            }
-        }
-        for (cx, cz) in ramps {
-            blocks.columns[cz * side + cx].kind = BlockKind::Ramp;
-        }
-        blocks
     }
 }
 

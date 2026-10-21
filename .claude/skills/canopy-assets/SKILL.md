@@ -133,7 +133,7 @@ walk and run clips carry root motion; a lunge that returns is fine). Fix a Blend
 AGENTS.md has the unit readability rules: check at game zoom, from above, and in every player colour.
 
 ```bash
-just shot --map turtle-rock --gallery --camera 310,322,0.7 --out target/shots/units.png
+just shot --map frozen-dream --gallery --camera 128,128,0.7 --out target/shots/units.png
 ```
 
 `--gallery` places one of every unit and building around the middle of the map's starts.

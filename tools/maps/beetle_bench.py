@@ -54,7 +54,7 @@ def main():
         json.dump(package, f, indent=2, ensure_ascii=False)
         f.write('\n')
     game = {
-        'biome': 'autumn-forest',
+        'biome': 'frozen-dream',
         'sandbox': True,
         'camps': [{'aggression': 'players', 'aggroRange': 10, 'home': {'x': CAMP[0], 'y': CAMP[1]}, 'id': 'bench.camp',
                    'leash': 24, 'lootPool': 'loot.camp.easy',
@@ -92,7 +92,6 @@ def main():
              'position': {'x': CAMP[0] - 6.0 + 6.0 * (i % 3), 'y': CAMP[1] - 6.0 + 6.0 * (i // 3)}, 'rotation': 180.0}
             for i, d in enumerate(d for d, n in TARGETS for _ in range(n))
         ],
-        'terrain': {'paint': [], 'textureGrid': {'cellSize': 5, 'origin': [-0.5, -0.5]}, 'waterProfiles': []},
     }
     with open(os.path.join(OUT, 'map.json'), 'w') as f:
         json.dump(game, f, indent=2, ensure_ascii=False)
@@ -106,8 +105,9 @@ def main():
     write_grid(os.path.join(t, 'heights.grid'), flat, 1, SIDE)
     write_grid(os.path.join(t, 'water-heights.grid'), dry, 1, SIDE)
     write_grid(os.path.join(t, 'water-flow.grid'), flow, 3, SPAN)
-    write_grid(os.path.join(t, 'grass.grid'), flat, 1, SIDE)
-    write_grid(os.path.join(t, 'rock.grid'), flat, 1, SIDE)
+    # Flat ground: every 4 × 4-cell block at level 0 (D80), what the heights above are made of.
+    columns = SPAN // 4
+    write_grid(os.path.join(t, 'blocks.grid'), np.zeros((columns, columns, 4), dtype=np.uint8), 3, columns)
     with open(os.path.join(OUT, 'scenery.json'), 'w') as f:
         json.dump({'objects': []}, f, indent=2)
         f.write('\n')

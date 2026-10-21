@@ -30,7 +30,9 @@ fn mix(a: Rgb, b: Rgb, t: f32) -> Rgb {
 /// The biome's map colours: ground, grass, forest (the old biome table's `minimap`).
 fn palette(biome: &str) -> (Rgb, Rgb, Rgb, bool) {
     match biome {
-        "frozen-forest" => (hex(0xced4d8), hex(0xa8b7ad), hex(0x4f6869), true),
+        b if b.contains("frozen") || b.contains("frost") => {
+            (hex(0xced4d8), hex(0xa8b7ad), hex(0x4f6869), true)
+        }
         "autumn-forest" => (hex(0xad8960), hex(0x89834a), hex(0x99622f), false),
         _ => (hex(0xad956d), hex(0x829151), hex(0x344c2a), false),
     }

@@ -2,7 +2,7 @@
 
     import mcp
     c = mcp.Client()
-    c.call("map_info", map="amberleaf-crossing")
+    c.call("map_info", map="frozen-dream")
 
 The token is the editor's per-install token in the game's user folder (CANOPY_MCP_TOKEN_FILE
 overrides where it is read from); start the server with `just mcp` or from the editor."""

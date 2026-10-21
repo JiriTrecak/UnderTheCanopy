@@ -4,7 +4,7 @@
 
 Every ant and beetle ranged unit and tower stands in a row facing a camp of every ranged
 forest creature, close enough that both sides shoot from the first ticks; the ground, size and
-biome are the beetle bench's (bright sand, the hardest ground for effects to read on).
+biome are the beetle bench's (flat blocks in the winter biome).
 """
 import json
 import os
@@ -59,7 +59,6 @@ def main():
         'size': source['size'],
         'playerStarts': source['playerStarts'],
         'entities': entities,
-        'terrain': source['terrain'],
     }
     if os.path.isdir(OUT):
         shutil.rmtree(OUT)

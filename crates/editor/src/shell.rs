@@ -137,12 +137,6 @@ enum Dialog {
         kind: String,
         folder: String,
     },
-    /// A Warcraft III map imported as a new map package.
-    ImportWarcraft {
-        source: String,
-        id: String,
-        folder: String,
-    },
     /// A new map package in `maps/<group>/`.
     NewMap {
         group: String,
@@ -598,13 +592,7 @@ impl Shell {
         if create {
             self.start_create(kind);
         }
-        if import && kind == Kind::Maps {
-            self.dialog = Some(Dialog::ImportWarcraft {
-                source: String::new(),
-                id: String::new(),
-                folder: "skirmish".into(),
-            });
-        } else if import {
+        if import {
             self.dialog = Some(Dialog::Import {
                 source: String::new(),
                 id: String::new(),
@@ -1174,17 +1162,13 @@ impl Shell {
             Reveal(String),
             Fail(String),
             Import(crate::assets::Import),
-            Warcraft(String, String, String),
         }
         let mut outcome = Outcome::Open;
         let uses = match &dialog {
             Dialog::Rename { document, .. } | Dialog::Delete { document, .. } => {
                 self.uses_of(&document.clone())
             }
-            Dialog::Create { .. }
-            | Dialog::NewMap { .. }
-            | Dialog::Import { .. }
-            | Dialog::ImportWarcraft { .. } => Vec::new(),
+            Dialog::Create { .. } | Dialog::NewMap { .. } | Dialog::Import { .. } => Vec::new(),
         };
         let content = self.checker.as_ref().and_then(|c| c.content().cloned());
         let base_version = self
@@ -1395,60 +1379,6 @@ impl Shell {
                         }
                     });
                 }
-                Dialog::ImportWarcraft { source, id, folder } => {
-                    ui.label(RichText::new("Import a Warcraft III map").size(14.0).color(TEXT));
-                    ui.label(
-                        RichText::new("A melee map (.w3x or .w3m) becomes a map package: its terrain, cliffs, ramps and water, its ground in the nearest ground this game has, trees, amber sites for its gold mines, camps of the same strength for its creeps, its starts, and its margins as the border around the playable area.")
-                            .color(MUTED)
-                            .size(11.0),
-                    );
-                    ui.add_space(6.0);
-                    ui.label(RichText::new("File").color(MUTED).size(11.0));
-                    ui.add(TextEdit::singleline(source).font(egui::TextStyle::Monospace).hint_text("/path/to/(4)TwistedMeadows.w3x").desired_width(f32::INFINITY));
-                    let path = std::path::PathBuf::from(source.trim());
-                    if id.is_empty()
-                        && let Some(stem) = path.file_stem().and_then(|s| s.to_str())
-                    {
-                        // "(4)TwistedMeadows_LV" → "twisted-meadows".
-                        let name = stem.trim_start_matches(|c: char| c == '(' || c.is_ascii_digit() || c == ')');
-                        let name = name.split('_').next().unwrap_or(name);
-                        let mut out = String::new();
-                        for (k, c) in name.chars().enumerate() {
-                            if c.is_ascii_uppercase() && k > 0 {
-                                out.push('-');
-                            }
-                            if c.is_ascii_alphanumeric() {
-                                out.push(c.to_ascii_lowercase());
-                            }
-                        }
-                        *id = out;
-                    }
-                    ui.label(RichText::new("Id").color(MUTED).size(11.0));
-                    ui.add(TextEdit::singleline(id).font(egui::TextStyle::Monospace).desired_width(f32::INFINITY));
-                    ui.label(RichText::new("Folder under maps/").color(MUTED).size(11.0));
-                    ui.add(TextEdit::singleline(folder).font(egui::TextStyle::Monospace).desired_width(f32::INFINITY));
-                    let problem = if !path.is_file() {
-                        Some("Choose a Warcraft III map file.".to_string())
-                    } else if let Err(e) = canopy_content::Id::new(id.as_str()) {
-                        Some(e)
-                    } else if exists(store, &format!("maps/{}/{id}.utcm/map.json", folder.trim_matches('/'))) {
-                        Some("A map with this id is there already.".into())
-                    } else {
-                        None
-                    };
-                    if let Some(problem) = &problem {
-                        ui.label(RichText::new(problem).color(FAINT).size(11.0));
-                    }
-                    ui.add_space(12.0);
-                    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                        if ui.add_enabled(problem.is_none(), primary("Import")).clicked() {
-                            outcome = Outcome::Warcraft(source.trim().to_string(), id.clone(), folder.trim_matches('/').to_string());
-                        }
-                        if ui.button("Cancel").clicked() {
-                            outcome = Outcome::Close;
-                        }
-                    });
-                }
                 Dialog::NewMap { group, id, name, size, biome, biomes } => {
                     ui.label(RichText::new("New map").size(14.0).color(TEXT));
                     ui.add_space(6.0);
@@ -1616,30 +1546,6 @@ impl Shell {
             Outcome::Close => {}
             Outcome::Reveal(document) => self.reveal_document(&document),
             Outcome::Fail(message) => self.say(message, true),
-            Outcome::Warcraft(source, id, folder) => {
-                match self.import_warcraft(&source, &id, &folder) {
-                    Ok(report) => {
-                        let moved = if report.warnings.is_empty() {
-                            String::new()
-                        } else {
-                            format!(
-                                " ({} notes: {})",
-                                report.warnings.len(),
-                                report.warnings.join("; ")
-                            )
-                        };
-                        self.say(
-                            format!("Imported {} as maps/{folder}/{id}.utcm{moved}", report.name),
-                            false,
-                        );
-                        self.reveal_document(&format!("maps/{folder}/{id}.utcm/map.json"));
-                    }
-                    Err(error) => {
-                        self.say(error, true);
-                        self.dialog = Some(dialog);
-                    }
-                }
-            }
             Outcome::Import(request) => match self.import_asset(&request) {
                 Ok(document) => {
                     self.say(format!("Imported {}; cook to see it.", request.id), false);
@@ -2117,17 +2023,6 @@ impl Shell {
     fn active_map_root(&mut self) -> Option<String> {
         self.active_document()
             .and_then(|d| crate::map::root_of(&d).map(str::to_string))
-    }
-
-    /// Blocks out the open map from its heights (captures; the panel's button).
-    pub fn block_out_map(&mut self) {
-        let edit = self
-            .active_map_root()
-            .and_then(|root| self.maps.get_mut(&root))
-            .and_then(|s| crate::world::block_out(s, false));
-        if let Some(edit) = edit {
-            self.run(edit);
-        }
     }
 
     /// The block editor's tool by name (captures).
@@ -2714,12 +2609,6 @@ fn library_panel(
                 Icon::Search,
                 FAINT,
             );
-            if kind == Kind::Maps {
-                action.import = ui
-                    .button("Import Warcraft map…")
-                    .on_hover_text("A Warcraft III melee map (.w3x) as a new map")
-                    .clicked();
-            }
             if kind == Kind::Assets {
                 ui.horizontal(|ui| {
                     action.import = ui

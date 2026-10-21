@@ -6,8 +6,8 @@ Where the Rust rebuild stands, written for Jiri after the night of 2026-10-14/15
 
 ```bash
 just play                         # main menu → skirmish, campaign, multiplayer, settings, saves
-just play --map echo-isles        # straight into a skirmish against the AI
-just play --spectate turtle-rock  # watch an AI-versus-AI match
+just play --map frozen-dream      # straight into a skirmish against the AI
+just play --spectate frozen-dream # watch an AI-versus-AI match
 just package                      # build Under the Canopy.app
 just bench-render                 # GPU benchmark (add --preset medium for the base M1 preset)
 ```

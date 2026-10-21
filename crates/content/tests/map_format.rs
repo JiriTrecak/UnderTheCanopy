@@ -106,11 +106,22 @@ fn round_trips() {
 fn packages_round_trip() {
     let folder = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("map-format");
     let _ = std::fs::remove_dir_all(&folder);
-    let parsed = parse(map()).expect("parses");
+    let mut parsed = parse(map()).expect("parses");
+    // A package keeps its terrain as blocks (D82).
     let path = folder.join("fixture.utcm");
+    assert!(canopy_content::map::package::write(&parsed, "fixture", "1.0.0", &path).is_err());
+    let mut blocks = canopy_content::map::blocks::Blocks::flat(parsed.size);
+    blocks.set(5, 5, canopy_content::map::blocks::Block::ground(2));
+    parsed.authoring.terrain = blocks.terrain(parsed.size);
     canopy_content::map::package::write(&parsed, "fixture", "1.0.0", &path).expect("written");
     let loaded = canopy_content::map::package::load(&path).unwrap_or_else(|e| panic!("{e}"));
     assert_eq!(loaded, parsed);
+    // A package in the old format, its ground painted in map.json, is refused.
+    let file = path.join("map.json");
+    let mut old: Value = serde_json::from_str(&std::fs::read_to_string(&file).unwrap()).unwrap();
+    old["terrain"] = json!({"paint": [], "waterProfiles": []});
+    std::fs::write(&file, old.to_string()).unwrap();
+    assert!(canopy_content::map::package::load(&path).is_err());
     let summary = canopy_content::map::package::summary(&path).unwrap();
     assert_eq!(summary.name, "Fixture");
     assert_eq!(summary.starts.len(), parsed.player_starts.len());

@@ -1,5 +1,5 @@
 {
-  "biome": "autumn-forest",
+  "biome": "frozen-dream",
   "sandbox": true,
   "camps": [
     {
@@ -385,16 +385,5 @@
       },
       "rotation": 180.0
     }
-  ],
-  "terrain": {
-    "paint": [],
-    "textureGrid": {
-      "cellSize": 5,
-      "origin": [
-        -0.5,
-        -0.5
-      ]
-    },
-    "waterProfiles": []
-  }
+  ]
 }

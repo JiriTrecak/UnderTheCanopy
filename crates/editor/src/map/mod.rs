@@ -267,7 +267,7 @@ impl Camera {
 
 /// One open map.
 pub struct Session {
-    /// The map package's folder in the base package (`maps/skirmish/echo-isles.utcm`).
+    /// The map package's folder in the base package (`maps/skirmish/frozen-dream.utcm`).
     pub root: String,
     /// The map as last loaded from the store, and the store generation it matches.
     pub map: Option<UtcMap>,
@@ -332,8 +332,7 @@ pub fn root_of(document: &str) -> Option<&str> {
 
 /// The commands that create a new map package `maps/<group>/<id>.utcm`: its manifest, a
 /// map of `size` in `biome` with players 1 and 2 in opposite corners (a map has two
-/// starts at least; the Start tool places them properly), every ground material as a
-/// paint layer, and flat dry ground at height 2 covered in the biome's grass.
+/// starts at least; the Start tool places them properly), made of flat blocks (D80).
 pub fn new_map(
     content: &Content,
     base_version: &str,
@@ -349,14 +348,6 @@ pub fn new_map(
             "a map is 256, 480, 512, 640, 800, 960 or 1024 cells, not {size}"
         ));
     }
-    // Ground materials: the painted ones first, cliff faces last (they follow slopes).
-    let mut materials: Vec<(&str, bool)> = content
-        .landscape
-        .iter()
-        .filter_map(|a| Some((a.id.as_str(), a.terrain.as_ref()?.projection.is_some())))
-        .collect();
-    materials.sort_by_key(|(id, cliff)| (*cliff, *id));
-    let materials: Vec<&str> = materials.into_iter().map(|(m, _)| m).collect();
     let setup = content
         .rules
         .races
@@ -366,22 +357,11 @@ pub fn new_map(
         .map_or(content.rules.starting_setup.id.to_string(), |s| {
             s.id.to_string()
         });
-    new_map_of(
-        &materials,
-        &setup,
-        base_version,
-        group,
-        id,
-        name,
-        size,
-        biome,
-    )
+    new_map_of(&setup, base_version, group, id, name, size, biome)
 }
 
-/// [`new_map`] with its paint layers given.
-#[allow(clippy::too_many_arguments)]
+/// [`new_map`] with its starting setup given.
 fn new_map_of(
-    materials: &[&str],
     setup: &str,
     base_version: &str,
     group: &str,
@@ -391,7 +371,7 @@ fn new_map_of(
     biome: &str,
 ) -> Result<Vec<crate::document::Command>, String> {
     use crate::document::{Command, Sample};
-    use canopy_content::map::{DRY_WATER_HEIGHT, MAP_HALO};
+    use canopy_content::map::blocks::{BLOCK, Blocks};
     use serde_json::json;
     canopy_content::Id::new(id)?;
     let root = format!("maps/{group}/{id}.utcm");
@@ -400,19 +380,14 @@ fn new_map_of(
         json!({"mainFort": format!("start.player.{player}/main-fort"), "player": player, "setup": setup, "x": x, "z": z})
     };
     let starts = vec![corner(1, 48.0), corner(2, f64::from(size) - 48.0)];
-    let span = size + 2 * MAP_HALO;
-    let vertices = span + 1;
-    let floats = |v: f32| -> Vec<u8> {
-        std::iter::repeat_n(v, (vertices * vertices) as usize)
-            .flat_map(f32::to_le_bytes)
-            .collect()
-    };
-    let grid = |file: &str, element: Sample, side: u32, bytes: Vec<u8>| Command::Grid {
+    let terrain = Blocks::flat(size).terrain(size);
+    let (span, vertices) = (terrain.span(), terrain.vertices());
+    let grid = |file: &str, element: Sample, side: u32, bytes: &[u8]| Command::Grid {
         document: format!("{root}/terrain/{file}.grid"),
         element,
         width: side,
         height: side,
-        bytes,
+        bytes: bytes.to_vec(),
     };
     let mut commands = vec![
         Command::Create {
@@ -434,42 +409,26 @@ fn new_map_of(
                 "entities": [],
                 "playerStarts": starts,
                 "size": size,
-                "terrain": {
-                    "paint": materials.iter().map(|m| json!({"material": m, "variants": false})).collect::<Vec<_>>(),
-                    "textureGrid": {"cellSize": 5, "origin": [-0.5, -0.5]},
-                    "waterProfiles": [],
-                },
             }),
         },
         Command::Create {
             document: format!("{root}/scenery.json"),
             value: json!({"objects": []}),
         },
-        grid("heights", Sample::F32, vertices, floats(2.0)),
+        grid("heights", Sample::F32, vertices, &terrain.heights.0),
         grid(
             "water-heights",
             Sample::F32,
             vertices,
-            floats(DRY_WATER_HEIGHT as f32),
+            &terrain.water_heights.0,
         ),
-        grid(
-            "water-flow",
-            Sample::Rgba8,
-            span,
-            std::iter::repeat_n([128u8, 128, 0, 0], (span * span) as usize)
-                .flatten()
-                .collect(),
-        ),
-        grid("grass", Sample::F32, vertices, floats(1.0)),
-        grid("rock", Sample::F32, vertices, floats(0.0)),
+        grid("water-flow", Sample::Rgba8, span, &terrain.water_flow.0),
     ];
-    for n in 1..=materials.len() {
-        commands.push(grid(
-            &format!("paint-{n}-weights"),
-            Sample::F32,
-            vertices,
-            floats(0.0),
-        ));
+    if let Some(blocks) = &terrain.blocks {
+        commands.push(grid("blocks", Sample::Rgba8, span / BLOCK, &blocks.0));
+    }
+    if let Some(blocked) = &terrain.blocked {
+        commands.push(grid("blocked", Sample::U8, span, &blocked.0));
     }
     Ok(commands)
 }
@@ -543,7 +502,6 @@ mod tests {
         .unwrap();
         let mut store = Store::new(&root);
         let commands = new_map_of(
-            &["ground", "cliff"],
             "setup.test",
             "1.0.0",
             "skirmish",
@@ -563,9 +521,10 @@ mod tests {
         let check = |package: Package| {
             let map = canopy_content::map::package::load_package(&package).unwrap();
             assert_eq!(map.size, 256);
-            assert_eq!(map.authoring.terrain.paint.len(), 2);
+            assert!(map.authoring.terrain.blocks.is_some());
             let terrain = map.authoring.terrain.decode().unwrap();
-            assert!(terrain.heights.iter().all(|h| *h == 2.0));
+            let first = terrain.heights[0];
+            assert!(terrain.heights.iter().all(|h| *h == first));
         };
         let overlay = Arc::new(store.overlay().below(map_root));
         check(Package::open_overlaid(&root.join(map_root), Some(overlay.clone())).unwrap());

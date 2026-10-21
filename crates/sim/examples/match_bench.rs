@@ -1,7 +1,7 @@
 //! Simulation cost of a real match, per tick and per tick step (`just bench-sim`).
 //!
 //! ```text
-//! cargo run --release -p canopy-sim --example match_bench -- --data . --map echo-isles \
+//! cargo run --release -p canopy-sim --example match_bench -- --data . --map frozen-dream \
 //!     [--crowd 50 | --ai 2] [--ticks 1600] [--warmup 0] [--no-spans] [--save <file>]
 //! ```
 //!

@@ -58,11 +58,17 @@ impl Shell {
             .map(|c| crate::map::tools::tree_kinds(&c))
             .unwrap_or_default();
         let package = self.package.as_ref().map_err(Clone::clone)?.root.clone();
-        let map = self.loaded_map(root)?;
+        let data = self.data.clone();
+        let map = self.loaded_map(root)?.clone();
+        // The ground its biome generates from the blocks, as the game shows it.
+        let map = data
+            .and_then(|data| canopy_scene::Look::load(&data, map.biome()).ok())
+            .and_then(|look| canopy_scene::generate::generate(&map, &look.biome))
+            .map_or(map, |generated| generated.map);
         let is_tree = |asset: &str| {
             trees.iter().any(|t| t == asset) || asset.contains("pine") || asset.contains("tree")
         };
-        let image = crate::map::preview::render(map, &is_tree)?;
+        let image = crate::map::preview::render(&map, &is_tree)?;
         let bytes = crate::map::preview::webp(&image)?;
         let dir = package.join(root);
         std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
@@ -197,11 +203,10 @@ impl Shell {
             };
         }
         let op = args.op.to_lowercase();
-        let edit = if op == "flat" || op == "blockout" {
-            crate::world::block_out(session, op == "flat")
+        let edit = if op == "flat" {
+            crate::world::flatten(session)
         } else {
-            let blocks = crate::world::blocks_of(session)
-                .ok_or("The map has no blocks yet: start with op flat or blockout")?;
+            let blocks = crate::world::blocks_of(session).ok_or("The map has no blocks")?;
             let column = |p: [f32; 2]| Blocks::column_at(&blocks, p[0], p[1]);
             let points = args.points.clone().unwrap_or_default();
             let from = args
@@ -241,7 +246,7 @@ impl Shell {
                 "unround" => (BlockTool::Round, true),
                 other => {
                     return Err(format!(
-                        "No op {other}: flat, blockout, raise, lower, level, paint, face, unface, ramp, unramp, cut, uncut, cells, uncells, fill, round, unround"
+                        "No op {other}: flat, raise, lower, level, paint, face, unface, ramp, unramp, cut, uncut, cells, uncells, fill, round, unround"
                     ));
                 }
             };
