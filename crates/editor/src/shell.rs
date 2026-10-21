@@ -140,6 +140,14 @@ enum Dialog {
         kind: String,
         folder: String,
     },
+    /// A StarCraft II map imported as a new map package: the file, the maps found on
+    /// this machine (read once), the new id and folder.
+    ImportStarcraft {
+        source: String,
+        found: Option<Vec<crate::starcraft::Found>>,
+        id: String,
+        folder: String,
+    },
     /// A new map package in `maps/<group>/`.
     NewMap {
         group: String,
@@ -599,7 +607,14 @@ impl Shell {
         if create {
             self.start_create(kind);
         }
-        if import {
+        if import && kind == Kind::Maps {
+            self.dialog = Some(Dialog::ImportStarcraft {
+                source: String::new(),
+                found: None,
+                id: String::new(),
+                folder: "skirmish".into(),
+            });
+        } else if import {
             self.dialog = Some(Dialog::Import {
                 source: String::new(),
                 id: String::new(),
@@ -1214,13 +1229,17 @@ impl Shell {
             Reveal(String),
             Fail(String),
             Import(crate::assets::Import),
+            Starcraft(String, String, String),
         }
         let mut outcome = Outcome::Open;
         let uses = match &dialog {
             Dialog::Rename { document, .. } | Dialog::Delete { document, .. } => {
                 self.uses_of(&document.clone())
             }
-            Dialog::Create { .. } | Dialog::NewMap { .. } | Dialog::Import { .. } => Vec::new(),
+            Dialog::Create { .. }
+            | Dialog::NewMap { .. }
+            | Dialog::Import { .. }
+            | Dialog::ImportStarcraft { .. } => Vec::new(),
         };
         let content = self.checker.as_ref().and_then(|c| c.content().cloned());
         let base_version = self
@@ -1431,6 +1450,68 @@ impl Shell {
                         }
                     });
                 }
+                Dialog::ImportStarcraft { source, found, id, folder } => {
+                    ui.label(RichText::new("Import a StarCraft II map").size(14.0).color(TEXT));
+                    ui.label(
+                        RichText::new("A melee map becomes a block map: its cliff levels, ramps and chasms (as deep water), its playable area with a forest border, its starts, amber nodes for its mineral fields and substance deposits for its geysers. Rocks, towers and decoration are left out. One of its cells is two here.")
+                            .color(MUTED)
+                            .size(11.0),
+                    );
+                    ui.add_space(6.0);
+                    let maps = found.get_or_insert_with(crate::starcraft::find);
+                    if !maps.is_empty() {
+                        ui.label(RichText::new(format!("On this machine ({})", maps.len())).color(MUTED).size(11.0));
+                        egui::ScrollArea::vertical().max_height(220.0).show(ui, |ui| {
+                            for map in maps.iter() {
+                                let path = map.file.to_string_lossy().into_owned();
+                                let on = *source == path;
+                                if ui
+                                    .selectable_label(on, format!("{}  ·  {} players", map.name, map.players))
+                                    .clicked()
+                                {
+                                    *source = path;
+                                    // "Oxide LE" → "oxide".
+                                    let name = map.name.trim_end_matches(" LE");
+                                    *id = name
+                                        .to_lowercase()
+                                        .split(|c: char| !c.is_ascii_alphanumeric())
+                                        .filter(|w| !w.is_empty())
+                                        .collect::<Vec<_>>()
+                                        .join("-");
+                                }
+                            }
+                        });
+                        ui.add_space(6.0);
+                    }
+                    ui.label(RichText::new("File").color(MUTED).size(11.0));
+                    ui.add(TextEdit::singleline(source).font(egui::TextStyle::Monospace).hint_text("/path/to/Map.SC2Map").desired_width(f32::INFINITY));
+                    let path = std::path::PathBuf::from(source.trim());
+                    ui.label(RichText::new("Id").color(MUTED).size(11.0));
+                    ui.add(TextEdit::singleline(id).font(egui::TextStyle::Monospace).desired_width(f32::INFINITY));
+                    ui.label(RichText::new("Folder under maps/").color(MUTED).size(11.0));
+                    ui.add(TextEdit::singleline(folder).font(egui::TextStyle::Monospace).desired_width(f32::INFINITY));
+                    let problem = if !path.is_file() {
+                        Some("Choose a StarCraft II map.".to_string())
+                    } else if let Err(e) = canopy_content::Id::new(id.as_str()) {
+                        Some(e)
+                    } else if exists(store, &format!("maps/{}/{id}.utcm/map.json", folder.trim_matches('/'))) {
+                        Some("A map with this id is there already.".into())
+                    } else {
+                        None
+                    };
+                    if let Some(problem) = &problem {
+                        ui.label(RichText::new(problem).color(FAINT).size(11.0));
+                    }
+                    ui.add_space(12.0);
+                    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                        if ui.add_enabled(problem.is_none(), primary("Import")).clicked() {
+                            outcome = Outcome::Starcraft(source.trim().to_string(), id.clone(), folder.trim_matches('/').to_string());
+                        }
+                        if ui.button("Cancel").clicked() {
+                            outcome = Outcome::Close;
+                        }
+                    });
+                }
                 Dialog::NewMap { group, id, name, size, biome, biomes } => {
                     ui.label(RichText::new("New map").size(14.0).color(TEXT));
                     ui.add_space(6.0);
@@ -1598,6 +1679,30 @@ impl Shell {
             Outcome::Close => {}
             Outcome::Reveal(document) => self.reveal_document(&document),
             Outcome::Fail(message) => self.say(message, true),
+            Outcome::Starcraft(source, id, folder) => {
+                match self.import_starcraft(&source, &id, &folder) {
+                    Ok(report) => {
+                        let notes = if report.warnings.is_empty() {
+                            String::new()
+                        } else {
+                            format!(
+                                " ({} notes: {})",
+                                report.warnings.len(),
+                                report.warnings.join("; ")
+                            )
+                        };
+                        self.say(
+                            format!("Imported {} as maps/{folder}/{id}.utcm{notes}", report.name),
+                            false,
+                        );
+                        self.reveal_document(&format!("maps/{folder}/{id}.utcm/map.json"));
+                    }
+                    Err(error) => {
+                        self.say(error, true);
+                        self.dialog = Some(dialog);
+                    }
+                }
+            }
             Outcome::Import(request) => match self.import_asset(&request) {
                 Ok(document) => {
                     self.say(format!("Imported {}; cook to see it.", request.id), false);
@@ -2662,6 +2767,12 @@ fn library_panel(
                 Icon::Search,
                 FAINT,
             );
+            if kind == Kind::Maps {
+                action.import = ui
+                    .button("Import StarCraft II map…")
+                    .on_hover_text("A StarCraft II melee map as a new block map")
+                    .clicked();
+            }
             if kind == Kind::Assets {
                 ui.horizontal(|ui| {
                     action.import = ui

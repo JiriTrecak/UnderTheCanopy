@@ -20,6 +20,36 @@ impl Shell {
         Ok(document)
     }
 
+    /// Imports a StarCraft II map (`starcraft::import`); the libraries read it at once.
+    pub(super) fn import_starcraft(
+        &mut self,
+        source: &str,
+        id: &str,
+        folder: &str,
+    ) -> Result<crate::starcraft::Report, String> {
+        let root = self.package.as_ref().map_err(Clone::clone)?.root.clone();
+        let data = self.data.clone().ok_or("the editor has no data folder")?;
+        let content = self
+            .checker
+            .as_ref()
+            .and_then(|c| c.content().cloned())
+            .ok_or("the package has not passed a check yet")?;
+        let report = crate::starcraft::import(
+            std::path::Path::new(source),
+            id,
+            folder,
+            &root,
+            &data,
+            &content,
+        )?;
+        self.structure = None;
+        if let Ok(package) = self.package.clone() {
+            self.refresh_libraries(&package);
+        }
+        self.checked = None;
+        Ok(report)
+    }
+
     /// Plays the preview's clip `index` (captures).
     pub fn play_clip(&mut self, index: usize) {
         self.clip = Some(index);

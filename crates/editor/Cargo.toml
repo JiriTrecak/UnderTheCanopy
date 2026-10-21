@@ -12,6 +12,7 @@ image.workspace = true
 rfd.workspace = true
 gltf.workspace = true
 flate2.workspace = true
+bzip2 = "0.6"
 base64.workspace = true
 canopy-assets = { path = "../assets" }
 canopy-content = { path = "../content" }

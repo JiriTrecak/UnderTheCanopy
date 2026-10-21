@@ -308,6 +308,22 @@ impl Shell {
             Tool::Problems => Ok(self.problems_value()),
             Tool::UnusedAssets => Ok(json!({ "unused": self.unused_assets() })),
             Tool::Cook => unreachable!("cooks answer when they finish"),
+            Tool::ImportStarcraft(args) => match (&args.source, &args.id) {
+                (Some(source), Some(id)) => {
+                    let report = self.import_starcraft(
+                        source,
+                        id,
+                        args.folder.as_deref().unwrap_or("skirmish"),
+                    )?;
+                    Ok(serde_json::to_value(report).unwrap_or_default())
+                }
+                _ => Ok(json!({
+                    "maps": crate::starcraft::find()
+                        .into_iter()
+                        .map(|m| json!({"name": m.name, "players": m.players, "file": m.file}))
+                        .collect::<Vec<_>>()
+                })),
+            },
             Tool::Import(args) => {
                 let request = crate::assets::Import {
                     source: args.source.into(),

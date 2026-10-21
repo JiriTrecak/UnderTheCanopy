@@ -75,6 +75,7 @@ pub enum Tool {
         map: String,
     },
     Encounter(EncounterArgs),
+    ImportStarcraft(ImportStarcraftArgs),
 }
 
 /// An ability's encounter, headless (the ability stage's take run to its end).
@@ -116,6 +117,17 @@ pub struct EncounterArgs {
     pub point: Option<[u32; 2]>,
     /// Stop the caster at this tick (an interruption).
     pub interrupt_at: Option<u32>,
+}
+
+#[derive(Debug, Clone, Deserialize, JsonSchema)]
+pub struct ImportStarcraftArgs {
+    /// The StarCraft II map file (.SC2Map or a Battle.net cache .s2ma); omit to list the
+    /// melee maps found on this machine.
+    pub source: Option<String>,
+    /// The new map's id: lowercase words joined by hyphens (`oxide`).
+    pub id: Option<String>,
+    /// The folder under maps/; `skirmish` by default.
+    pub folder: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
@@ -511,6 +523,16 @@ impl Handler {
         Parameters(args): Parameters<MapArgs>,
     ) -> Result<CallToolResult, ErrorData> {
         self.ask(Tool::MapPreview { map: args.map }).await
+    }
+
+    #[tool(
+        description = "Imports a StarCraft II melee map as a new block map (cliff levels, ramps, chasms as deep water, its playable area with a forest border, starts, amber nodes for mineral fields, substance deposits for geysers); one of its cells is two here. Without a source, lists the melee maps found on this machine (the game's Maps folder and the Battle.net cache). Written at once with its preview; returns what it did and the problems the check finds."
+    )]
+    async fn import_starcraft(
+        &self,
+        Parameters(args): Parameters<ImportStarcraftArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        self.ask(Tool::ImportStarcraft(args)).await
     }
 
     #[tool(

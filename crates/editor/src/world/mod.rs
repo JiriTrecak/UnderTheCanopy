@@ -765,6 +765,17 @@ fn change(blocks: &mut Blocks, op: &BlockOp, start: Block) {
 /// Cuts the convex corners of `columns` at 45°: a corner where both neighbours beside it
 /// are lower (and the one across it no higher), so a plateau's outline rounds off; with
 /// `reverse`, takes those cuts away. Ramps keep their own.
+/// Cuts the teeth of the staircase a diagonal ramp's blocks make, as the Ramp tool does
+/// (the importers).
+pub(crate) fn ramp_teeth(blocks: &mut Blocks, columns: &[(i32, i32)], level: u8, dir: u8) {
+    teeth(blocks, columns, level, dir);
+}
+
+/// Cuts the turning corners of the plateaus among `columns` at 45° (the importers).
+pub(crate) fn round_columns(blocks: &mut Blocks, columns: &[(i32, i32)]) {
+    round(blocks, columns, false);
+}
+
 fn round(blocks: &mut Blocks, columns: &[(i32, i32)], reverse: bool) {
     let mut cuts = Vec::new();
     for &(x, z) in columns {
@@ -899,6 +910,10 @@ fn ramp(blocks: &mut Blocks, op: &BlockOp, columns: &[(i32, i32)]) {
             blocks.set(x, z, b);
         }
     }
+    teeth(blocks, columns, level, dir);
+}
+
+fn teeth(blocks: &mut Blocks, columns: &[(i32, i32)], level: u8, dir: u8) {
     if dir == 0 {
         return;
     }

@@ -21,6 +21,7 @@ mod overview;
 mod references;
 mod shell;
 mod stage;
+pub mod starcraft;
 mod tabs;
 pub mod theme;
 mod watch;
