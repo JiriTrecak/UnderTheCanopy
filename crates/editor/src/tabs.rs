@@ -261,7 +261,17 @@ impl TabViewer for Viewer<'_> {
                         .flatten()
                         .cloned(),
                 ) {
-                    (Some(map), Some(scenery)) => Some(crate::map::view::Docs { map, scenery }),
+                    (Some(map), Some(scenery)) => Some(crate::map::view::Docs {
+                        map,
+                        scenery,
+                        package: self
+                            .store
+                            .get(&format!("{root}/package.json"))
+                            .ok()
+                            .flatten()
+                            .cloned()
+                            .unwrap_or_default(),
+                    }),
                     _ => None,
                 };
                 let session = self
@@ -275,6 +285,7 @@ impl TabViewer for Viewer<'_> {
                     docs.as_ref(),
                     self.scene_texture,
                     self.generated_texture,
+                    self.root.as_deref(),
                 );
                 self.edits.extend(out.edits);
                 if out.preview {

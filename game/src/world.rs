@@ -19,6 +19,8 @@ pub struct MatchSpec<'a> {
     pub players: Option<usize>,
     /// Another biome's look, to preview it on this map.
     pub biome: Option<&'a str>,
+    /// Other weather than the map's (`rain`, `snow`, `godRays`, `clear`).
+    pub weather: Option<&'a str>,
     /// A measured battle instead of a match: this many soldiers for each of eight players,
     /// facing each other around the middle of the starts (no computer players).
     pub crowd: Option<u32>,
@@ -70,6 +72,8 @@ pub struct DayCycle {
     pub start_hour: f32,
     pub lighting: canopy_render::environment::LightingConfig,
     pub biome: canopy_render::environment::BiomeConfig,
+    /// The map's weather, which tones the light too.
+    pub weather: canopy_render::environment::Weather,
 }
 
 impl DayCycle {
@@ -80,11 +84,13 @@ impl DayCycle {
 
     /// The light at `seconds` of match time.
     pub fn lighting(&self, seconds: f32) -> canopy_render::environment::Lighting {
-        canopy_render::environment::Lighting::resolve(
+        let mut lighting = canopy_render::environment::Lighting::resolve(
             &self.lighting,
             &self.biome,
             self.hour(seconds),
-        )
+        );
+        self.weather.light(&mut lighting);
+        lighting
     }
 }
 
@@ -135,6 +141,21 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
         })?;
         file.load().map_err(|e| anyhow!("{}: {e}", file.file))?
     };
+    // Other weather than the map's, to preview it (`--weather`).
+    if let Some(weather) = spec.weather {
+        let kind: canopy_content::map::WeatherKind =
+            serde_json::from_value(serde_json::json!(weather)).context("--weather")?;
+        let landscape = map.landscape.get_or_insert(canopy_content::map::Landscape {
+            environment: canopy_content::map::EnvironmentConditions {
+                hour: 12.0,
+                playing: true,
+                weather: None,
+            },
+            decals: None,
+            water: None,
+        });
+        landscape.environment.weather = Some(canopy_content::map::WeatherConditions { kind });
+    }
     let pack_path =
         canopy_assets::find_pack(&paths.data).context("no cooked asset pack (run `just cook`)")?;
     let pack = Arc::new(Pack::open(&pack_path).with_context(|| pack_path.display().to_string())?);
@@ -229,10 +250,13 @@ fn assemble(
         }
     }
     let presenter = scene.presenter(&world, map, pack.clone());
-    let day = (hour.is_none() && !map.sandbox).then(|| DayCycle {
+    // The clock runs unless the map holds its hour (`landscape.environment.playing`).
+    let dynamic = map.landscape.as_ref().is_none_or(|l| l.environment.playing);
+    let day = (hour.is_none() && !map.sandbox && dynamic).then(|| DayCycle {
         start_hour: scene.hour,
         lighting: look.lighting.clone(),
         biome: look.biome.clone(),
+        weather: canopy_scene::weather_of(map),
     });
     let hour = hour.unwrap_or(scene.hour);
     let grade = &look.biome.grade;
@@ -249,7 +273,8 @@ fn assemble(
         }),
         _ => None,
     };
-    let environment = Environment::new(&look.lighting, &look.biome, hour, lut.as_ref());
+    let environment = Environment::new(&look.lighting, &look.biome, hour, lut.as_ref())
+        .with_weather(canopy_scene::weather_of(map));
     let obstacles = canopy_scene::obstruction::Obstacles::new(
         &pack,
         &scene.world.statics,

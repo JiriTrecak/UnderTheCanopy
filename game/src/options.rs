@@ -202,6 +202,8 @@ pub struct Options {
     pub camera: Option<CameraChoice>,
     /// Hour of the day; the map's own when absent.
     pub hour: Option<f32>,
+    /// Weather (`clear`, `rain`, `snow`, `godRays`); the map's own when absent.
+    pub weather: Option<String>,
     /// Animation time of a shot, seconds (wind, canopy drift).
     pub time: f32,
     /// Frames a shot renders before the captured one (for timings).
@@ -286,6 +288,7 @@ impl Options {
             colors: None,
             camera: None,
             hour: None,
+            weather: None,
             time: 12.0,
             frames: 1,
             shadows: true,
@@ -419,6 +422,7 @@ impl Options {
                     ));
                 }
                 "--biome" => options.biome = Some(value("--biome")?),
+                "--weather" => options.weather = Some(value("--weather")?),
                 "--effect" => options
                     .effects
                     .push(EffectSpec::parse(&value("--effect")?)?),
@@ -469,7 +473,7 @@ impl Options {
                     size = [w.parse().context("--size")?, h.parse().context("--size")?];
                 }
                 other => bail!(
-                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --races, --tick, --crowd, --gallery, --only, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --preset, --lod-pixels, --shadow-map, --biome; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --sequence, --effect, --flight, --viewer, --select, --health, --damage, --kill, --play, --observe, --input)"
+                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --races, --tick, --crowd, --gallery, --only, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --preset, --lod-pixels, --shadow-map, --biome, --weather; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --sequence, --effect, --flight, --viewer, --select, --health, --damage, --kill, --play, --observe, --input)"
                 ),
             }
             first = false;

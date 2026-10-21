@@ -78,6 +78,51 @@ impl Environment {
             motes: biome.motes.clone(),
         }
     }
+
+    /// This environment under a map's `weather`: its light, falling snow or rain, and for
+    /// god rays sunlight in shafts through a light haze.
+    pub fn with_weather(mut self, weather: crate::environment::Weather) -> Self {
+        use crate::environment::Weather;
+        weather.light(&mut self.lighting);
+        let mut motes = self.motes.take().unwrap_or(crate::environment::Motes {
+            dust: 0,
+            dust_brightness: 0.0,
+            leaves: 0,
+            leaf_texture: None,
+            leaf_size: 0.3,
+            snow: 0,
+            rain: 0,
+        });
+        let atmosphere = &mut self.post.atmosphere;
+        match weather {
+            Weather::Clear => {}
+            Weather::Snow => {
+                motes.snow = 9000;
+                self.haze.1 = [self.haze.1[0] * 0.6, self.haze.1[1] * 0.7];
+            }
+            Weather::Rain => {
+                motes.rain = 12000;
+                self.haze.1 = [self.haze.1[0] * 0.5, self.haze.1[1] * 0.6];
+                atmosphere.enabled = true;
+                atmosphere.density = atmosphere.density.max(0.012);
+                atmosphere.shaft_density = 0.0;
+                atmosphere.base_height = 2.0;
+                atmosphere.height_falloff = 6.0;
+            }
+            Weather::GodRays => {
+                atmosphere.enabled = true;
+                atmosphere.density = atmosphere.density.max(0.01);
+                atmosphere.shaft_density = 0.01;
+                atmosphere.sun_strength = 2.8;
+                atmosphere.base_height = 4.0;
+                atmosphere.height_falloff = 10.0;
+                atmosphere.overhead_strength = 1.0;
+            }
+        }
+        let any = motes.dust > 0 || motes.leaves > 0 || motes.snow > 0 || motes.rain > 0;
+        self.motes = any.then_some(motes);
+        self
+    }
 }
 
 /// The model the selection portrait shows: a posed live model (its transform's scale
@@ -1194,6 +1239,8 @@ impl Renderer {
                 seconds,
                 sun.0 * tint * sun.1.min(2.5),
                 atmosphere.shaft_elevation,
+                // Snow and rain take the sky's light and a little of the sun's.
+                lighting.ambient + lighting.sky * 0.5 + lighting.sun * 0.25,
             );
         }
         let grade = &lighting.grade;
@@ -1376,6 +1423,7 @@ impl Renderer {
                     report.draws += self.world_ui.draw_ground(&mut rp, &self.frame_group);
                     if let Some(motes) = &self.motes {
                         report.draws += motes.draw_dust(&mut rp, &self.frame_group);
+                        report.draws += motes.draw_weather(&mut rp, &self.frame_group);
                     }
                 }
                 (passes::EFFECTS, PassKind::Render) => {

@@ -32,6 +32,8 @@ pub struct Scene {
     pub colors: Vec<[f32; 3]>,
     pub biome: String,
     pub hour: f32,
+    /// The map's weather.
+    pub weather: canopy_render::environment::Weather,
 }
 
 /// The look (model file and scale) of definition `id` as the game draws it.
@@ -251,6 +253,7 @@ pub fn build(
         ghost,
         colors,
         biome: map.biome().to_string(),
+        weather: canopy_scene::weather_of(map),
         hour,
     })
 }
@@ -376,10 +379,9 @@ pub fn new_map(
     size: u32,
     biome: &str,
 ) -> Result<Vec<crate::document::Command>, String> {
-    use canopy_content::map::MAP_SIZES;
-    if !MAP_SIZES.contains(&size) || size > 1024 {
+    if !canopy_content::map::valid_size(size) {
         return Err(format!(
-            "a map is 256, 480, 512, 640, 800, 960 or 1024 cells, not {size}"
+            "a map is a multiple of 32 cells from 128 to 1024, not {size}"
         ));
     }
     let setup = content

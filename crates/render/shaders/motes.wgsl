@@ -17,6 +17,10 @@ struct Motes {
     // xyz camera right, up (billboards)
     right: vec4f,
     up: vec4f,
+    // x snow count, y rain count, z the weather field's half size, w its height
+    weather: vec4f,
+    // rgb: the light falling on snow and rain (linear)
+    weather_color: vec4f,
 }
 
 @group(1) @binding(0) var<uniform> motes: Motes;
@@ -188,4 +192,105 @@ fn fs_leaf(in: LeafOut, @builtin(front_facing) front: bool) -> SceneOut {
     surface.model = LIGHT_STANDARD;
     let color = surface_light(surface, normalize(frame.eye.xyz - in.world), in.clip.xy);
     return scene_out(vec4f(color, 1.0), in.world);
+}
+
+// --- Weather: snow and rain ------------------------------------------------------------
+
+struct WeatherOut {
+    @builtin(position) clip: vec4f,
+    @location(0) world: vec3f,
+    @location(1) quad: vec2f,
+    @location(2) alpha: f32,
+    // 0 snow (a soft round flake), 1 rain (a thin streak)
+    @location(3) @interpolate(flat) kind: f32,
+}
+
+// The weather's field round the camera's target: `fall` metres a second down, a breeze
+// carrying it sideways. Returns the point and its fade towards the field's faces.
+fn weather_point(seed: vec3f, drift: vec3f) -> vec4f {
+    let height = motes.weather.w;
+    let half = vec3f(motes.weather.z, height * 0.5, motes.weather.z);
+    let centre = motes.leaves.xyz + vec3f(0.0, height * 0.5, 0.0);
+    let p = wrapped(seed, drift, centre, half);
+    let edge = abs(p - centre) / half;
+    let fade = 1.0 - smoothstep(0.75, 1.0, max(edge.x, max(edge.y, edge.z)));
+    return vec4f(p, fade);
+}
+
+@vertex
+fn vs_snow(@builtin(vertex_index) vertex: u32, @builtin(instance_index) index: u32) -> WeatherOut {
+    let t = motes.params.w;
+    let seed = hash3(index * 7u + 31u);
+    let seed2 = hash3(index * 7u + 57u);
+    let phase = seed2 * 6.2831853;
+    // Drifting down slowly, swaying, carried along by the breeze.
+    let fall = 1.1 + 0.9 * seed2.x;
+    let drift = vec3f(
+        sin(t * 0.7 + phase.x) * 0.9 + t * 0.55,
+        -t * fall,
+        cos(t * 0.5 + phase.y) * 0.7 + t * 0.25,
+    );
+    let q = weather_point(seed, drift);
+    let p = q.xyz;
+    // A few pixels across whatever its distance, bigger flakes nearer.
+    let distance = length(p - frame.eye.xyz);
+    let size = clamp(distance * (0.0022 + 0.0022 * seed.z), 0.03, 0.6);
+    let c = corner(vertex);
+    var out: WeatherOut;
+    out.world = p + (motes.right.xyz * c.x + motes.up.xyz * c.y) * size;
+    out.clip = frame.view_proj * vec4f(out.world, 1.0);
+    out.quad = c;
+    out.alpha = q.w * (0.55 + 0.4 * seed.y) * smoothstep(0.8, 2.5, distance);
+    out.kind = 0.0;
+    return out;
+}
+
+@vertex
+fn vs_rain(@builtin(vertex_index) vertex: u32, @builtin(instance_index) index: u32) -> WeatherOut {
+    let t = motes.params.w;
+    let seed = hash3(index * 11u + 13u);
+    let seed2 = hash3(index * 11u + 71u);
+    // Falling fast, slanted by the wind.
+    let fall = 11.0 + 4.0 * seed2.x;
+    let wind = vec3f(1.6, 0.0, 0.7);
+    let drift = vec3f(t * wind.x, -t * fall, t * wind.z);
+    let q = weather_point(seed, drift);
+    let p = q.xyz;
+    let velocity = normalize(vec3f(wind.x, -fall, wind.z));
+    let view = normalize(p - frame.eye.xyz);
+    let across = normalize(cross(velocity, view) + vec3f(0.0001, 0.0, 0.0));
+    let distance = length(p - frame.eye.xyz);
+    // A streak: as long as the drop falls in a frame or two, a pixel or two wide.
+    let length = 0.9 + 0.5 * seed.z;
+    let width = clamp(distance * 0.0011, 0.012, 0.25);
+    let c = corner(vertex);
+    var out: WeatherOut;
+    out.world = p + velocity * c.y * length * 0.5 + across * c.x * width;
+    out.clip = frame.view_proj * vec4f(out.world, 1.0);
+    out.quad = c;
+    out.alpha = q.w * (0.22 + 0.18 * seed.y) * smoothstep(1.0, 4.0, distance);
+    out.kind = 1.0;
+    return out;
+}
+
+@fragment
+fn fs_weather(in: WeatherOut) -> SceneOut {
+    var coverage: f32;
+    var tint: vec3f;
+    if (in.kind < 0.5) {
+        // A soft round flake.
+        let r = dot(in.quad, in.quad);
+        coverage = pow(max(0.0, 1.0 - r), 1.5);
+        tint = vec3f(0.95, 0.97, 1.0);
+    } else {
+        // A streak, fading at its ends and edges.
+        coverage = (1.0 - abs(in.quad.x)) * (1.0 - in.quad.y * in.quad.y);
+        tint = vec3f(0.72, 0.78, 0.86);
+    }
+    let alpha = coverage * in.alpha;
+    if (alpha < 0.004) {
+        discard;
+    }
+    let light = motes.weather_color.rgb * tint;
+    return scene_out(vec4f(light, alpha), in.world);
 }

@@ -221,12 +221,11 @@ impl Editor {
         self.shell.set_block_tool(name);
     }
 
-    /// Shows or hides the panels round the map view: the maps library, the tools' panel
-    /// and the properties (captures).
-    pub fn set_map_panels(&mut self, library: bool, tools: bool, properties: bool) {
+    /// Shows or hides the panels round the map view: the maps library and the map's panel
+    /// (captures).
+    pub fn set_map_panels(&mut self, library: bool, properties: bool) {
         world::Panels {
             library,
-            tools,
             properties,
         }
         .set(&self.ctx);

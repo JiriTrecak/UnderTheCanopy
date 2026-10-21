@@ -44,8 +44,8 @@ pub enum Icon {
     Split,
     // The map view's panels.
     Library,
-    PanelLeft,
     PanelRight,
+    Symmetry,
 }
 
 /// One stroke of an icon: an open or closed polyline in grid units.
@@ -365,13 +365,17 @@ fn parts(icon: Icon) -> Vec<Part> {
             circle([4.5, 18.0], 1.2),
         ],
         // A window with its left or right column: the tools' panel, the properties.
-        Icon::PanelLeft => vec![
-            Closed(vec![[3.0, 4.0], [21.0, 4.0], [21.0, 20.0], [3.0, 20.0]]),
-            Open(vec![[9.0, 4.0], [9.0, 20.0]]),
-        ],
         Icon::PanelRight => vec![
             Closed(vec![[3.0, 4.0], [21.0, 4.0], [21.0, 20.0], [3.0, 20.0]]),
             Open(vec![[15.0, 4.0], [15.0, 20.0]]),
+        ],
+        // Two halves mirrored across a dashed line.
+        Icon::Symmetry => vec![
+            Closed(vec![[3.0, 7.0], [9.5, 7.0], [9.5, 17.0], [3.0, 17.0]]),
+            Closed(vec![[14.5, 7.0], [21.0, 7.0], [21.0, 17.0], [14.5, 17.0]]),
+            Open(vec![[12.0, 3.0], [12.0, 6.0]]),
+            Open(vec![[12.0, 10.5], [12.0, 13.5]]),
+            Open(vec![[12.0, 18.0], [12.0, 21.0]]),
         ],
     }
 }

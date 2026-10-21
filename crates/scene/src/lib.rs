@@ -378,3 +378,20 @@ pub fn forest(
         canopy_height: biome.canopy.height,
     })
 }
+
+/// The weather `map` asks for (`landscape.environment.weather`), as the renderer draws it.
+pub fn weather_of(map: &canopy_content::map::UtcMap) -> canopy_render::environment::Weather {
+    use canopy_content::map::WeatherKind;
+    use canopy_render::environment::Weather;
+    match map
+        .landscape
+        .as_ref()
+        .and_then(|l| l.environment.weather.as_ref())
+        .map(|w| w.kind)
+    {
+        Some(WeatherKind::Rain) => Weather::Rain,
+        Some(WeatherKind::Snow) => Weather::Snow,
+        Some(WeatherKind::GodRays) => Weather::GodRays,
+        Some(WeatherKind::Clear | WeatherKind::Spores) | None => Weather::Clear,
+    }
+}

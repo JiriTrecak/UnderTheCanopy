@@ -422,7 +422,9 @@ impl Shell {
         } else {
             LibraryAction::default()
         };
-        let request = if !panels.properties {
+        // The Maps editor's own panel (the map's settings, or what is selected) stands in
+        // for the properties.
+        let request = if !panels.properties || kind == Kind::Maps {
             None
         } else {
             inspector::show(
@@ -734,6 +736,33 @@ impl Shell {
                 &resources.pack,
                 &resources.looks[&biome],
             );
+        }
+        // The biomes the map panel's picker offers.
+        if session.blocks.biomes.is_empty()
+            && let Some(data) = &self.data
+        {
+            for id in canopy_content::map::BIOMES {
+                if !resources.looks.contains_key(id)
+                    && let Ok(look) = canopy_scene::Look::load(data, id)
+                {
+                    resources.looks.insert(id.to_string(), look);
+                }
+                if let Some(look) = resources.looks.get(id) {
+                    session
+                        .blocks
+                        .biomes
+                        .push(crate::world::settings::BiomeInfo {
+                            id: id.to_string(),
+                            name: look.biome.name.clone(),
+                            description: look.biome.description.clone().unwrap_or_default(),
+                            picture: look
+                                .biome
+                                .preview
+                                .as_ref()
+                                .map(|p| format!("{p}/image.png")),
+                        });
+                }
+            }
         }
         // What Place can put down, from the content of the last passing check.
         let source = Arc::as_ptr(&content) as usize;
@@ -1415,7 +1444,7 @@ impl Shell {
                         egui::ComboBox::from_label("Size")
                             .selected_text(format!("{size} cells"))
                             .show_ui(ui, |ui| {
-                                for s in [256, 480, 512, 640, 800, 960, 1024] {
+                                for s in [192, 256, 320, 384, 512, 640, 768, 1024] {
                                     ui.selectable_value(size, s, format!("{s} cells"));
                                 }
                             });

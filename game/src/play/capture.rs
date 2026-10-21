@@ -77,6 +77,7 @@ pub fn run(
             colors: options.colors.clone(),
             races: options.races.clone(),
             biome: options.biome.as_deref(),
+            weather: None,
             human: me,
             content: None,
             encounter: None,

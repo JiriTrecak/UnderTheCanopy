@@ -2,7 +2,7 @@
 //! applies, beyond what the types already enforce.
 
 use super::{
-    BIOMES, MAP_SIZES, Mission, PlayerStart, Stamp, UtcMap,
+    BIOMES, Mission, PlayerStart, Stamp, UtcMap,
     authoring::{AuthoredObject, SavedScene},
     stamp::STAMP_KEYS,
 };
@@ -246,9 +246,12 @@ pub(super) fn document(map: &UtcMap, file: &str, errors: &mut Vec<Error>) {
     let mut report = Report { file, errors };
     let r = &mut report;
     r.expect(
-        MAP_SIZES.contains(&map.size),
+        super::valid_size(map.size),
         "size",
-        format!("must be one of {MAP_SIZES:?}, got {}", map.size),
+        format!(
+            "must be a multiple of 32 from 128 to 1024, got {}",
+            map.size
+        ),
     );
     if let Some(p) = &map.playable {
         r.expect(

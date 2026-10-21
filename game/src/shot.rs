@@ -159,6 +159,7 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
             colors: options.colors.clone(),
             races: options.races.clone(),
             biome: options.biome.as_deref(),
+            weather: options.weather.as_deref(),
             human: None,
             content: None,
             encounter: None,

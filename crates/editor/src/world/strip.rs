@@ -904,8 +904,11 @@ pub(super) fn view_bar(ctx: &egui::Context, session: &mut Session, view: Rect) {
                         let before = panels;
                         for (icon, on, hint) in [
                             (Icon::Library, &mut panels.library, "The maps library"),
-                            (Icon::PanelLeft, &mut panels.tools, "The map's panel: blocking out, playable area, symmetry"),
-                            (Icon::PanelRight, &mut panels.properties, "The properties"),
+                            (
+                                Icon::PanelRight,
+                                &mut panels.properties,
+                                "The map's panel: its settings, or what is selected",
+                            ),
                         ] {
                             if panel_button(ui, icon, *on, hint) {
                                 *on = !*on;
@@ -913,6 +916,26 @@ pub(super) fn view_bar(ctx: &egui::Context, session: &mut Session, view: Rect) {
                         }
                         if panels != before {
                             panels.set(ui.ctx());
+                        }
+                        divider(ui);
+                        // Symmetry: every edit and placement made in the mirror too (Y).
+                        let symmetry = session.blocks.symmetry;
+                        let hint = format!(
+                            "Symmetry: {} (Y cycles off, point, left-right, top-bottom)",
+                            symmetry.name()
+                        );
+                        if panel_button(
+                            ui,
+                            Icon::Symmetry,
+                            symmetry != super::Symmetry::None,
+                            &hint,
+                        ) {
+                            let all = super::Symmetry::ALL;
+                            let i = all.iter().position(|s| *s == symmetry).unwrap_or(0);
+                            session.blocks.symmetry = all[(i + 1) % all.len()];
+                        }
+                        if symmetry != super::Symmetry::None {
+                            ui.label(RichText::new(symmetry.name()).size(11.5).color(SOFT));
                         }
                         divider(ui);
                         let views = [

@@ -1,5 +1,7 @@
 {
   "name": "Frozen Dream",
+  "description": "A frozen forest floor: snow-dusted paving and moss, root-banked cliffs, frosted pines and toadstools, cold blue light.",
+  "preview": "asset.biomes.frozen-dream",
   "daylight": "winter",
   "light": {
     "sunTint": "#f2f0ec",

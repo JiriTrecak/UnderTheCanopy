@@ -117,6 +117,7 @@ impl Shell {
         Ok(Docs {
             map: get("map.json")?,
             scenery: get("scenery.json")?,
+            package: get("package.json").unwrap_or(Value::Null),
         })
     }
 

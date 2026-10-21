@@ -1,0 +1,16 @@
+{
+  "id": "asset.biomes.frozen-dream",
+  "name": "Frozen Dream biome",
+  "kind": "icon",
+  "tags": [
+    "biome"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original artwork for Under the Canopy."
+}

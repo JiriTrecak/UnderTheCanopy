@@ -1,5 +1,6 @@
 //! Ambient motes (`shaders/motes.wgsl`): dust glinting where light falls through the
-//! canopy, and leaves drifting down, from a biome's `motes`. Both are generated on the GPU
+//! canopy, and leaves drifting down, from a biome's `motes`; and a map's weather, snow
+//! drifting down and rain streaking through the view. Both are generated on the GPU
 //! from the instance index in fields that follow the camera and wrap around it, so they
 //! need no buffers beyond one uniform: the dust only for close cameras (it is too small to
 //! see from the RTS view), the leaves for every view. Render only.
@@ -21,6 +22,8 @@ const DUST_AHEAD: f32 = 18.0;
 const DUST_FIELD: f32 = 14.0;
 /// Height of the leaves' field above the camera's target (metres).
 const LEAF_HEIGHT: f32 = 50.0;
+/// Height of the snow and rain above the camera's target (metres).
+const WEATHER_HEIGHT: f32 = 60.0;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
@@ -32,6 +35,10 @@ struct MotesUniform {
     color: [f32; 4],
     right: [f32; 4],
     up: [f32; 4],
+    // x snow, y rain, z the field's half size, w its height
+    weather: [f32; 4],
+    // rgb: the light falling on snow and rain (linear)
+    weather_color: [f32; 4],
 }
 
 pub struct MotesGpu {
@@ -40,6 +47,8 @@ pub struct MotesGpu {
     group: wgpu::BindGroup,
     dust: wgpu::RenderPipeline,
     leaves: wgpu::RenderPipeline,
+    snow: wgpu::RenderPipeline,
+    rain: wgpu::RenderPipeline,
     /// This frame's close-view share (no dust at RTS pitches).
     close: f32,
     pub bytes: u64,
@@ -191,6 +200,18 @@ impl MotesGpu {
             group,
             dust: pipeline("vs_dust", "fs_dust", Some(additive), false),
             leaves: pipeline("vs_leaf", "fs_leaf", None, true),
+            snow: pipeline(
+                "vs_snow",
+                "fs_weather",
+                Some(wgpu::BlendState::ALPHA_BLENDING),
+                false,
+            ),
+            rain: pipeline(
+                "vs_rain",
+                "fs_weather",
+                Some(wgpu::BlendState::ALPHA_BLENDING),
+                false,
+            ),
             close: 0.0,
             bytes,
         })
@@ -205,6 +226,7 @@ impl MotesGpu {
         seconds: f32,
         light: Vec3,
         elevation: Option<f32>,
+        weather_light: Vec3,
     ) {
         let close = view_fade(camera);
         self.close = close;
@@ -232,6 +254,8 @@ impl MotesGpu {
             color: [light.x, light.y, light.z, 0.0],
             right: [right.x, right.y, right.z, 0.0],
             up: [up.x, up.y, up.z, 0.0],
+            weather: [c.snow as f32, c.rain as f32, field, WEATHER_HEIGHT],
+            weather_color: [weather_light.x, weather_light.y, weather_light.z, 0.0],
         };
         queue.write_buffer(&self.buffer, 0, bytemuck::bytes_of(&uniform));
     }
@@ -250,6 +274,29 @@ impl MotesGpu {
         pass.set_bind_group(1, &self.group, &[]);
         pass.draw(0..6, 0..self.config.leaves);
         1
+    }
+
+    /// The map's snow and rain (blended over the scene); returns the draw count.
+    pub fn draw_weather<'a>(
+        &'a self,
+        pass: &mut wgpu::RenderPass<'a>,
+        frame: &'a wgpu::BindGroup,
+    ) -> u32 {
+        let mut draws = 0;
+        for (count, pipeline) in [
+            (self.config.snow, &self.snow),
+            (self.config.rain, &self.rain),
+        ] {
+            if count == 0 {
+                continue;
+            }
+            pass.set_pipeline(pipeline);
+            pass.set_bind_group(0, frame, &[]);
+            pass.set_bind_group(1, &self.group, &[]);
+            pass.draw(0..6, 0..count);
+            draws += 1;
+        }
+        draws
     }
 
     /// The dust in the light (additive, close cameras only); returns the draw count.

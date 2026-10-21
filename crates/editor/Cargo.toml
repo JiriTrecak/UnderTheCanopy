@@ -9,6 +9,7 @@ publish.workspace = true
 
 [dependencies]
 image.workspace = true
+rfd.workspace = true
 gltf.workspace = true
 flate2.workspace = true
 base64.workspace = true

@@ -214,7 +214,7 @@ impl Stage {
         let size = self.fit(gpu, egui, shot.size);
         self.leave_encounter();
         let scene = &shot.scene;
-        self.light(gpu, Some(&scene.biome), scene.hour);
+        self.light(gpu, Some(&scene.biome), scene.hour, scene.weather);
         let loaded = Loaded::Scene(shot.root.clone(), shot.version);
         if self.loaded.as_ref() != Some(&loaded) {
             if let Err(error) = self.renderer.load_world(gpu, &self.pack, &scene.world) {
@@ -270,8 +270,14 @@ impl Stage {
         }
     }
 
-    /// Lights the stage as `biome` at `hour`, or as the zinc stage.
-    fn light(&mut self, gpu: &Gpu, biome: Option<&str>, hour: f32) {
+    /// Lights the stage as `biome` at `hour` under `weather`, or as the zinc stage.
+    fn light(
+        &mut self,
+        gpu: &Gpu,
+        biome: Option<&str>,
+        hour: f32,
+        weather: canopy_render::environment::Weather,
+    ) {
         let Some(biome) = biome else {
             if self.environment != "stage" {
                 self.renderer
@@ -280,15 +286,17 @@ impl Stage {
             }
             return;
         };
-        if self.environment == biome {
+        let key = format!("{biome}@{hour}@{weather:?}");
+        if self.environment == key {
             return;
         }
         match canopy_scene::Look::load(&self.data, biome) {
             Ok(look) => {
                 let environment =
-                    canopy_render::Environment::new(&look.lighting, &look.biome, hour, None);
+                    canopy_render::Environment::new(&look.lighting, &look.biome, hour, None)
+                        .with_weather(weather);
                 self.renderer.set_environment(gpu, environment);
-                self.environment = biome.to_string();
+                self.environment = key;
             }
             Err(error) => tracing::warn!(%error, %biome, "editor: biome lighting"),
         }
@@ -304,7 +312,12 @@ impl Stage {
     ) {
         let size = self.fit(gpu, egui, shot.size);
         let hour = shot.scene.hour;
-        self.light(gpu, shot.biome.as_deref(), hour);
+        self.light(
+            gpu,
+            shot.biome.as_deref(),
+            hour,
+            canopy_render::environment::Weather::Clear,
+        );
         let b = &shot.b;
         let live = &mut self.live;
         // A new presenter may list its models in another order: the world loads again.
@@ -406,7 +419,7 @@ impl Stage {
     pub fn draw(&mut self, gpu: &Gpu, egui: &mut egui_wgpu::Renderer, shot: &Shot) {
         let size = self.fit(gpu, egui, shot.size);
         self.leave_encounter();
-        self.light(gpu, None, 12.0);
+        self.light(gpu, None, 12.0, canopy_render::environment::Weather::Clear);
         if !matches!(&self.loaded, Some(Loaded::Model(m, _)) if *m == shot.model) {
             let world = World {
                 terrain: None,

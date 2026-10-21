@@ -669,10 +669,10 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     shoot(&mut editor, rig, "editor-blocks-dream-split-followed")?;
     editor.undo_all();
     editor.set_block_tool("level");
-    editor.set_map_panels(false, false, false);
+    editor.set_map_panels(false, false);
     settle(&mut editor, rig, 40);
     shoot(&mut editor, rig, "editor-blocks-dream-split-wide")?;
-    editor.set_map_panels(true, true, true);
+    editor.set_map_panels(false, true);
     editor.set_block_view("blocks");
     Ok(())
 }

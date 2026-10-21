@@ -188,7 +188,7 @@ pub struct MapCreateArgs {
     pub id: String,
     /// Its name in the game's map list.
     pub name: Option<String>,
-    /// Cells per side: 256, 480, 512, 640, 800, 960 or 1024. 512 by default.
+    /// Cells per side: a multiple of 32 from 128 to 1024. 512 by default.
     pub size: Option<u32>,
     /// frozen-dream (the only one for now, and the default).
     pub biome: Option<String>,

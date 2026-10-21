@@ -512,6 +512,7 @@ dependencies = [
  "hyper-util",
  "image",
  "notify",
+ "rfd",
  "rmcp",
  "schemars 1.2.3",
  "serde",

@@ -41,9 +41,14 @@ use serde_with::skip_serializing_none;
 pub const UTCMAP_VERSION: u32 = 3;
 /// Name of a map whose document has no (or a blank) name.
 pub const DEFAULT_MAP_NAME: &str = "Untitled";
-/// Playable cells per side a map may have: multiples of the renderer's 32-cell terrain
-/// chunks, including Warcraft III's 96, 160 and 192-tile maps at 5 cells a tile.
-pub const MAP_SIZES: [u32; 8] = [256, 480, 512, 640, 800, 960, 1024, 2048];
+/// The smallest and largest cells per side a map may have.
+pub const MAP_SIZE_RANGE: std::ops::RangeInclusive<u32> = 128..=1024;
+
+/// Whether a map may have `size` cells per side: a multiple of the renderer's 32-cell
+/// terrain chunks (so of the 4-cell blocks too), 128 to 1024.
+pub fn valid_size(size: u32) -> bool {
+    size.is_multiple_of(32) && MAP_SIZE_RANGE.contains(&size)
+}
 /// Visible, non-playable border around the playable cells, in cells per side.
 pub const MAP_HALO: u32 = 16;
 /// Biome ids: the biomes whose recipe generates a map's look from its blocks (D80, D82).
@@ -122,6 +127,8 @@ pub enum WeatherKind {
     Rain,
     Snow,
     Spores,
+    /// Sunlight in shafts through the air.
+    GodRays,
 }
 
 /// Unknown keys are dropped, as the old parser's non-strict schema does.
@@ -196,7 +203,7 @@ fn is_false(value: &bool) -> bool {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct UtcMap {
     pub v: Version<UTCMAP_VERSION>,
-    /// Playable cells per side, one of [`MAP_SIZES`].
+    /// Cells per side ([`valid_size`]).
     pub size: u32,
     /// Trimmed; [`DEFAULT_MAP_NAME`] when absent or blank.
     #[serde(default = "default_name")]

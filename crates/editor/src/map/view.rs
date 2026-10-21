@@ -289,6 +289,8 @@ pub fn remove_area(
 pub struct Docs {
     pub map: Value,
     pub scenery: Value,
+    /// Its package.json: name, description.
+    pub package: Value,
 }
 
 pub(crate) fn step(session: &Session, label: &str, commands: Vec<Command>) -> Edit {

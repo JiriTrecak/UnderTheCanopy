@@ -101,6 +101,7 @@ fn dev(
             hour: spec.hour,
             players: spec.players,
             biome: spec.biome.as_deref(),
+            weather: None,
             crowd: spec.crowd,
             gallery: false,
             only: None,

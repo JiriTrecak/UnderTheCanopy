@@ -97,6 +97,9 @@ pub struct LightingConfig {
     pub ground_probe: GroundProbe,
     pub environment: EnvironmentProbe,
     pub shadow: ShadowConfig,
+    /// How the light is toned at dawn, dusk and by night (none: as the palettes give it).
+    #[serde(default)]
+    pub toning: Option<Toning>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -174,6 +177,12 @@ pub struct ShadowConfig {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct BiomeConfig {
     pub name: String,
+    /// What the biome is about, for the map editor's biome picker.
+    #[serde(default)]
+    pub description: Option<String>,
+    /// Its picture in the picker: an icon asset (`<id>/image.png` in the pack).
+    #[serde(default)]
+    pub preview: Option<String>,
     /// A profile of [`LightingConfig::daylight`].
     pub daylight: String,
     pub light: BiomeLight,
@@ -491,6 +500,81 @@ pub struct Motes {
     pub leaf_texture: Option<String>,
     /// Leaf size in metres.
     pub leaf_size: f32,
+    /// Snowflakes falling round the view (a map's snow).
+    #[serde(default)]
+    pub snow: u32,
+    /// Raindrops streaking down round the view (a map's rain).
+    #[serde(default)]
+    pub rain: u32,
+}
+
+/// A map's weather (`landscape.environment.weather`): it adds to the biome's look.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Weather {
+    #[default]
+    Clear,
+    Rain,
+    Snow,
+    /// Sunlight in shafts through a light haze.
+    GodRays,
+}
+
+impl Weather {
+    /// The light under this weather: rain dims and cools it, snow softens it and frosts
+    /// the ground, god rays brighten the sun a little.
+    pub fn light(self, lighting: &mut Lighting) {
+        match self {
+            Weather::Clear => {}
+            Weather::Rain => {
+                lighting.sun *= 0.45;
+                lighting.sun_intensity *= 0.45;
+                lighting.ambient *= Vec3::new(0.82, 0.86, 0.94);
+                lighting.sky *= Vec3::new(0.85, 0.9, 1.0);
+                lighting.shadow_softness *= 1.8;
+            }
+            Weather::Snow => {
+                lighting.sun *= 0.72;
+                lighting.sun_intensity *= 0.72;
+                lighting.ambient *= 1.08;
+                lighting.shadow_softness *= 1.4;
+                lighting.frost = (lighting.frost + 0.3).min(1.0);
+            }
+            Weather::GodRays => {
+                lighting.sun *= 1.12;
+                lighting.sun_intensity *= 1.12;
+            }
+        }
+    }
+}
+
+/// How the light is toned through the day (`lighting.json`'s `toning`): multipliers of
+/// the sun, ambient and sky colours at dawn, at dusk and by night.
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Toning {
+    pub dawn: Tone,
+    pub dusk: Tone,
+    pub night: Tone,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Tone {
+    pub sun: [f32; 3],
+    pub ambient: [f32; 3],
+    pub sky: [f32; 3],
+}
+
+/// The weights of dawn, dusk and night at `hour`: dawn and dusk swell over an hour and a
+/// half either side of 6:30 and 18:00; night holds from 19:30 to 5:00.
+pub fn tone_weights(hour: f32) -> (f32, f32, f32) {
+    let h = wrap_hour(hour);
+    let bump = |centre: f32, width: f32| {
+        let t = (1.0 - (h - centre).abs() / width).clamp(0.0, 1.0);
+        t * t * (3.0 - 2.0 * t)
+    };
+    let day = smoothstep(5.0, 7.0, h) * (1.0 - smoothstep(17.5, 19.5, h));
+    (bump(6.5, 1.5), bump(18.0, 1.5), 1.0 - day)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
@@ -894,6 +978,8 @@ impl BiomeConfig {
             range("motes.dustBrightness", m.dust_brightness, 0.0, 20.0)?;
             range("motes.leaves", m.leaves as f32, 0.0, 2048.0)?;
             range("motes.leafSize", m.leaf_size, 0.05, 10.0)?;
+            range("motes.snow", m.snow as f32, 0.0, 20000.0)?;
+            range("motes.rain", m.rain as f32, 0.0, 20000.0)?;
             if m.leaves > 0 && m.leaf_texture.is_none() {
                 return Err("motes.leaves needs motes.leafTexture".into());
             }
@@ -1017,6 +1103,24 @@ impl Lighting {
         let (sun_rgb, sun_m) = mix(&set.day.sun, &set.night.sun);
         let (ambient_rgb, ambient_m) = mix(&set.day.ambient, &set.night.ambient);
         let (sky_rgb, sky_m) = mix(&set.day.sky, &set.night.sky);
+        // Toned through the day: warm at dawn and dusk, cold and dim by night.
+        let (sun_rgb, ambient_rgb, sky_rgb) = match &lighting.toning {
+            Some(toning) => {
+                let (dawn, dusk, night) = tone_weights(hour);
+                let tone = |c: Vec3, pick: fn(&Tone) -> [f32; 3]| {
+                    let lerp = |w: f32, m: [f32; 3]| Vec3::ONE.lerp(Vec3::from_array(m), w);
+                    c * lerp(dawn, pick(&toning.dawn))
+                        * lerp(dusk, pick(&toning.dusk))
+                        * lerp(night, pick(&toning.night))
+                };
+                (
+                    tone(sun_rgb, |t| t.sun),
+                    tone(ambient_rgb, |t| t.ambient),
+                    tone(sky_rgb, |t| t.sky),
+                )
+            }
+            None => (sun_rgb, ambient_rgb, sky_rgb),
+        };
         let l = &biome.light;
         let hemisphere = sky_m * l.fill_strength;
         let probe = |c: [f32; 3]| Vec3::from_array(c);
@@ -1270,6 +1374,7 @@ mod tests {
             ..day
         };
         LightingConfig {
+            toning: None,
             daylight: BTreeMap::from([("test".to_owned(), Daylight { day, night })]),
             phases: Phases {
                 dawn_start: 5.8,
@@ -1311,6 +1416,8 @@ mod tests {
 
     fn biome() -> BiomeConfig {
         BiomeConfig {
+            description: None,
+            preview: None,
             name: "Test".into(),
             daylight: "test".into(),
             light: BiomeLight {

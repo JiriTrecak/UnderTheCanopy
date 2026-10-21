@@ -11,6 +11,7 @@
 pub mod catalog;
 pub mod mesh;
 pub mod palette;
+pub mod settings;
 mod strip;
 
 use crate::document::{Command, Sample};
@@ -18,7 +19,6 @@ use crate::map::Session;
 use crate::map::tools::Picked;
 use crate::map::view::{Out, matrices, navigate, pick, project, step};
 use crate::theme::*;
-use crate::widgets::eyebrow;
 use canopy_content::map::MAP_HALO;
 use canopy_content::map::blocks::{
     BLOCK, Block, BlockKind, Blocks, Cut, MAX_LEVEL, RAMP_DIRECTIONS, ramp_direction,
@@ -272,19 +272,17 @@ impl View {
 }
 
 /// Which panels round the map view show (the maps editor's own layout): the maps
-/// library, the block tools' panel and the properties.
+/// library, and the map's panel on the right (its settings, or what is selected).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Panels {
     pub library: bool,
-    pub tools: bool,
     pub properties: bool,
 }
 
 impl Default for Panels {
     fn default() -> Self {
         Self {
-            library: true,
-            tools: true,
+            library: false,
             properties: true,
         }
     }
@@ -343,6 +341,9 @@ pub struct State {
     pub place_search: String,
     /// What Select holds.
     pub selection: Vec<(Picked, String)>,
+    /// The map panel's state, and the biomes its picker offers.
+    pub settings: settings::State,
+    pub biomes: Vec<settings::BiomeInfo>,
     pub symmetry: Symmetry,
     pub twin: Option<Twin>,
     /// While a drag is under way, the map shows what it will do: the terrain as it was
@@ -402,6 +403,8 @@ impl Default for State {
             place_group: 0,
             place_search: String::new(),
             selection: Vec::new(),
+            settings: settings::State::default(),
+            biomes: Vec::new(),
             symmetry: Symmetry::default(),
             twin: None,
             preview: None,
@@ -968,174 +971,6 @@ fn area(a: (i32, i32), b: (i32, i32)) -> impl Iterator<Item = (i32, i32)> {
     let (x0, x1) = (a.0.min(b.0), a.0.max(b.0));
     let (z0, z1) = (a.1.min(b.1), a.1.max(b.1));
     (z0..=z1).flat_map(move |z| (x0..=x1).map(move |x| (x, z)))
-}
-
-/// The smallest playable square the map rules allow (cells).
-const MIN_PLAYABLE: u32 = 64;
-
-/// The map's playable area as borders (cells) left, top, right and bottom.
-fn borders(map: &canopy_content::map::UtcMap) -> [u32; 4] {
-    let a = map.playable_area();
-    [
-        a.x,
-        a.z,
-        map.size - a.x - a.width,
-        map.size - a.z - a.height,
-    ]
-}
-
-/// The step that gives the map these borders (none when they are its own): the whole map
-/// playable leaves the field out.
-fn set_borders(session: &Session, b: [u32; 4]) -> Option<crate::tabs::Edit> {
-    let map = session.map.as_ref()?;
-    if borders(map) == b {
-        return None;
-    }
-    let document = session.path("map.json");
-    let command = if b == [0; 4] {
-        map.playable.is_some().then(|| Command::Remove {
-            document: document.clone(),
-            pointer: "/playable".into(),
-        })?
-    } else {
-        Command::Set {
-            document,
-            pointer: "/playable".into(),
-            value: serde_json::json!({
-                "x": b[0],
-                "z": b[1],
-                "width": map.size - b[0] - b[2],
-                "height": map.size - b[1] - b[3],
-            }),
-            at: None,
-        }
-    };
-    let mut edit = step(session, "Playable area", vec![command]);
-    // A dragged border is one undo step.
-    edit.merge = Some(format!("{}/playable", session.root));
-    Some(edit)
-}
-
-/// The playable area's controls: one border all round, or each side on its own, in steps
-/// of a block so the outline runs on block edges.
-fn playable_panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
-    let map = session.map.as_ref()?;
-    let size = map.size;
-    let mut b = borders(map);
-    let before = b;
-    let most = (size - MIN_PLAYABLE) / 2;
-    ui.label(
-        RichText::new(format!(
-            "{} × {} cells playable; the border around it is forest nobody enters.",
-            size - b[0] - b[2],
-            size - b[1] - b[3]
-        ))
-        .size(11.0)
-        .color(MUTED),
-    );
-    let mut all = *b.iter().max().unwrap_or(&0);
-    if ui
-        .add(
-            egui::Slider::new(&mut all, 0..=most)
-                .step_by(BLOCK as f64)
-                .text("border, all round"),
-        )
-        .changed()
-    {
-        b = [all; 4];
-    }
-    egui::CollapsingHeader::new(RichText::new("Each side").size(11.0))
-        .id_salt(("playable-sides", &session.root))
-        .show(ui, |ui| {
-            egui::Grid::new(("playable-grid", &session.root))
-                .num_columns(4)
-                .spacing([6.0, 4.0])
-                .show(ui, |ui| {
-                    for (k, name) in ["Left", "Top", "Right", "Bottom"].iter().enumerate() {
-                        ui.label(RichText::new(*name).size(11.0).color(MUTED));
-                        let opposite = b[(k + 2) % 4];
-                        let room = size.saturating_sub(MIN_PLAYABLE + opposite);
-                        ui.add(
-                            egui::DragValue::new(&mut b[k])
-                                .range(0..=room)
-                                .speed(1.0)
-                                .suffix(" cells"),
-                        );
-                        if k % 2 == 1 {
-                            ui.end_row();
-                        }
-                    }
-                });
-        });
-    // On block edges, and never smaller than the rules allow.
-    for side in &mut b {
-        *side = (*side + BLOCK / 2) / BLOCK * BLOCK;
-    }
-    for k in 0..2 {
-        while size.saturating_sub(b[k] + b[k + 2]) < MIN_PLAYABLE && b[k] + b[k + 2] > 0 {
-            if b[k] >= b[k + 2] {
-                b[k] -= BLOCK.min(b[k]);
-            } else {
-                b[k + 2] -= BLOCK.min(b[k + 2]);
-            }
-        }
-    }
-    if b == before {
-        return None;
-    }
-    set_borders(session, b)
-}
-
-/// The left panel; returns an edit when one of its buttons made one.
-fn panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
-    let mut edit = None;
-    ui.label(eyebrow("Blocks"));
-    ui.label(
-        RichText::new(
-            "Shape the map in 4 × 4-cell blocks; heights, cliffs, water and closed ground follow.",
-        )
-        .size(11.0)
-        .color(MUTED),
-    );
-    ui.add_space(8.0);
-    ui.add_space(4.0);
-    ui.label(eyebrow("Playable area"));
-    edit = edit.or(playable_panel(ui, session));
-    ui.add_space(12.0);
-    ui.label(eyebrow("Symmetry"));
-    ui.horizontal_wrapped(|ui| {
-        for symmetry in Symmetry::ALL {
-            if ui
-                .selectable_label(session.blocks.symmetry == symmetry, symmetry.name())
-                .on_hover_text("Every edit and placement is made in the mirror too (Y cycles)")
-                .clicked()
-            {
-                session.blocks.symmetry = symmetry;
-            }
-        }
-    });
-    ui.add_space(12.0);
-    ui.label(
-        RichText::new(
-            "B box · brush · lasso  ·  [ ] size  ·  Y symmetry  ·  X 4 or 1 cell  ·  G view  ·  Shift reverses",
-        )
-        .size(10.5)
-        .color(FAINT),
-    );
-    ui.add_space(12.0);
-    ui.label(eyebrow("Map"));
-    if ui
-        .button("Write map picture")
-        .on_hover_text("The map picker's picture (preview.webp), from the map as it is now; cook to see it in the game")
-        .clicked()
-    {
-        session.blocks.write_picture = true;
-    }
-    if let Some(error) = &session.error {
-        ui.add_space(6.0);
-        ui.label(RichText::new(error).color(ERROR).size(11.0));
-    }
-    edit
 }
 
 /// The block view of `session`; `texture` is the scene's last picture.
@@ -1900,26 +1735,33 @@ pub fn show(
     docs: Option<&crate::map::view::Docs>,
     texture: Option<egui::TextureId>,
     texture_generated: Option<egui::TextureId>,
+    package: Option<&std::path::Path>,
 ) -> Out {
     let mut out = Out::default();
-    let mut panel_edit = None;
-    if Panels::get(ui.ctx()).tools {
-        egui::Panel::left(egui::Id::new(("block-tools", &session.root)))
-            .exact_size(214.0)
+    // The map's one panel: its settings, or what is selected.
+    if Panels::get(ui.ctx()).properties {
+        let mut edits = Vec::new();
+        egui::Panel::right(egui::Id::new(("map-panel", &session.root)))
+            .exact_size(300.0)
             .resizable(false)
             .show_separator_line(true)
             .frame(
                 egui::Frame::new()
                     .fill(PANEL)
-                    .inner_margin(egui::Margin::same(10)),
+                    .inner_margin(egui::Margin::same(14)),
             )
             .show(ui, |ui| {
-                egui::ScrollArea::vertical()
-                    .auto_shrink([false, false])
-                    .show(ui, |ui| panel_edit = panel(ui, session));
+                if let Some(error) = &session.error {
+                    ui.label(
+                        RichText::new(error)
+                            .size(11.0)
+                            .color(Color32::from_rgb(240, 120, 110)),
+                    );
+                }
+                edits = settings::show(ui, session, content, docs, package);
             });
+        out.edits.extend(edits);
     }
-    out.edits.extend(panel_edit);
     out.preview = std::mem::take(&mut session.blocks.write_picture);
     // Place and Select check what they put down as the game would.
     session.overlay = Default::default();
