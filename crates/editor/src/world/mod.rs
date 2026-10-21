@@ -843,6 +843,122 @@ fn tool_button(ui: &mut Ui, label: &str, key: &str, on: bool) -> bool {
     .clicked()
 }
 
+/// The smallest playable square the map rules allow (cells).
+const MIN_PLAYABLE: u32 = 64;
+
+/// The map's playable area as borders (cells) left, top, right and bottom.
+fn borders(map: &canopy_content::map::UtcMap) -> [u32; 4] {
+    let a = map.playable_area();
+    [
+        a.x,
+        a.z,
+        map.size - a.x - a.width,
+        map.size - a.z - a.height,
+    ]
+}
+
+/// The step that gives the map these borders (none when they are its own): the whole map
+/// playable leaves the field out.
+fn set_borders(session: &Session, b: [u32; 4]) -> Option<crate::tabs::Edit> {
+    let map = session.map.as_ref()?;
+    if borders(map) == b {
+        return None;
+    }
+    let document = session.path("map.json");
+    let command = if b == [0; 4] {
+        map.playable.is_some().then(|| Command::Remove {
+            document: document.clone(),
+            pointer: "/playable".into(),
+        })?
+    } else {
+        Command::Set {
+            document,
+            pointer: "/playable".into(),
+            value: serde_json::json!({
+                "x": b[0],
+                "z": b[1],
+                "width": map.size - b[0] - b[2],
+                "height": map.size - b[1] - b[3],
+            }),
+            at: None,
+        }
+    };
+    let mut edit = step(session, "Playable area", vec![command]);
+    // A dragged border is one undo step.
+    edit.merge = Some(format!("{}/playable", session.root));
+    Some(edit)
+}
+
+/// The playable area's controls: one border all round, or each side on its own, in steps
+/// of a block so the outline runs on block edges.
+fn playable_panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
+    let map = session.map.as_ref()?;
+    let size = map.size;
+    let mut b = borders(map);
+    let before = b;
+    let most = (size - MIN_PLAYABLE) / 2;
+    ui.label(
+        RichText::new(format!(
+            "{} × {} cells playable; the border around it is forest nobody enters.",
+            size - b[0] - b[2],
+            size - b[1] - b[3]
+        ))
+        .size(11.0)
+        .color(MUTED),
+    );
+    let mut all = *b.iter().max().unwrap_or(&0);
+    if ui
+        .add(
+            egui::Slider::new(&mut all, 0..=most)
+                .step_by(BLOCK as f64)
+                .text("border, all round"),
+        )
+        .changed()
+    {
+        b = [all; 4];
+    }
+    egui::CollapsingHeader::new(RichText::new("Each side").size(11.0))
+        .id_salt(("playable-sides", &session.root))
+        .show(ui, |ui| {
+            egui::Grid::new(("playable-grid", &session.root))
+                .num_columns(4)
+                .spacing([6.0, 4.0])
+                .show(ui, |ui| {
+                    for (k, name) in ["Left", "Top", "Right", "Bottom"].iter().enumerate() {
+                        ui.label(RichText::new(*name).size(11.0).color(MUTED));
+                        let opposite = b[(k + 2) % 4];
+                        let room = size.saturating_sub(MIN_PLAYABLE + opposite);
+                        ui.add(
+                            egui::DragValue::new(&mut b[k])
+                                .range(0..=room)
+                                .speed(1.0)
+                                .suffix(" cells"),
+                        );
+                        if k % 2 == 1 {
+                            ui.end_row();
+                        }
+                    }
+                });
+        });
+    // On block edges, and never smaller than the rules allow.
+    for side in &mut b {
+        *side = (*side + BLOCK / 2) / BLOCK * BLOCK;
+    }
+    for k in 0..2 {
+        while size.saturating_sub(b[k] + b[k + 2]) < MIN_PLAYABLE && b[k] + b[k + 2] > 0 {
+            if b[k] >= b[k + 2] {
+                b[k] -= BLOCK.min(b[k]);
+            } else {
+                b[k + 2] -= BLOCK.min(b[k + 2]);
+            }
+        }
+    }
+    if b == before {
+        return None;
+    }
+    set_borders(session, b)
+}
+
 /// The left panel; returns an edit when one of its buttons made one.
 fn panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
     let mut edit = None;
@@ -1014,6 +1130,9 @@ fn panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
             });
         }
     }
+    ui.add_space(12.0);
+    ui.label(eyebrow("Playable area"));
+    edit = edit.or(playable_panel(ui, session));
     ui.add_space(12.0);
     ui.label(eyebrow("Symmetry"));
     ui.horizontal_wrapped(|ui| {
@@ -1493,6 +1612,60 @@ pub fn show(
             egui::FontId::proportional(12.0),
             TEXT,
         );
+    }
+    // The playable area: a strong line round it, on the ground, and its size at a corner.
+    if let Some(map) = session.map.as_ref() {
+        let area = map.playable_area();
+        let (x0, z0) = (area.x as f32, area.z as f32);
+        let (x1, z1) = ((area.x + area.width) as f32, (area.z + area.height) as f32);
+        let corners = [(x0, z0), (x1, z0), (x1, z1), (x0, z1), (x0, z0)];
+        let mut line = Vec::new();
+        let mut lines = Vec::new();
+        for pair in corners.windows(2) {
+            let ((ax, az), (bx, bz)) = (pair[0], pair[1]);
+            let steps = ((bx - ax).abs() + (bz - az).abs()).max(1.0) as usize;
+            for k in 0..=steps {
+                let t = k as f32 / steps as f32;
+                let (x, z) = (ax + (bx - ax) * t, az + (bz - az) * t);
+                let y = crate::map::tools::ground_at(map, x, z) + 0.25;
+                match project(view_projection, rect, Vec3::new(x, y, z)) {
+                    Some(p) if rect.expand(200.0).contains(p) => line.push(p),
+                    _ => {
+                        if line.len() > 1 {
+                            lines.push(std::mem::take(&mut line));
+                        }
+                        line.clear();
+                    }
+                }
+            }
+        }
+        if line.len() > 1 {
+            lines.push(line);
+        }
+        for l in lines {
+            painter.add(egui::Shape::line(
+                l.clone(),
+                Line::new(5.0, Color32::from_black_alpha(150)),
+            ));
+            painter.add(egui::Shape::line(
+                l,
+                Line::new(2.5, Color32::from_rgb(255, 214, 120)),
+            ));
+        }
+        if let Some(p) = project(
+            view_projection,
+            rect,
+            Vec3::new(x0, crate::map::tools::ground_at(map, x0, z0) + 0.25, z0),
+        ) && rect.contains(p)
+        {
+            painter.text(
+                p + egui::vec2(6.0, -6.0),
+                egui::Align2::LEFT_BOTTOM,
+                format!("playable {} × {}", area.width, area.height),
+                egui::FontId::proportional(11.0),
+                Color32::from_rgb(255, 214, 120),
+            );
+        }
     }
     if let Some(op) = live
         && session.blocks.drag.is_some()
