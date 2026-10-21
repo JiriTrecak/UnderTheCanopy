@@ -1,0 +1,18 @@
+{
+  "id": "asset.interface.campaign.vanguard.background",
+  "name": "vanguard campaign: background",
+  "kind": "interface",
+  "tags": [
+    "campaign",
+    "vanguard",
+    "original"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "webp"
+    }
+  ],
+  "license": "Original artwork for Under the Canopy, generated with gpt-image-2."
+}
