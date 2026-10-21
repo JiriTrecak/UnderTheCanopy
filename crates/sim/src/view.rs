@@ -41,6 +41,8 @@ pub struct EntityView {
     pub combat: Option<crate::combat::CombatView>,
     /// Statuses, casting, mana, ranks and items of a seen unit (`abilities`).
     pub magic: Option<crate::abilities::view::MagicView>,
+    /// A seen shop's wares and stock (`neutrals`).
+    pub shop: Option<Vec<crate::neutrals::WareView>>,
 }
 
 /// Movement a renderer animates.
@@ -261,6 +263,7 @@ impl View {
                 ),
                 combat: None,
                 magic: None,
+                shop: crate::neutrals::view(catalog, state.tick, e),
             })
             .peekable();
         // Remembered structures stand in where nothing with their id is seen.
@@ -306,6 +309,7 @@ impl View {
                 work: None,
                 combat: None,
                 magic: None,
+                shop: None,
             })
             .collect();
         if !missing.is_empty() {
@@ -412,6 +416,7 @@ impl View {
                 ),
                 combat: None,
                 magic: None,
+                shop: crate::neutrals::view(catalog, state.tick, e),
             })
             .collect();
         Self {
@@ -513,6 +518,7 @@ fn remembered_view(sighting: &Sighting, relation: Relation) -> EntityView {
         work: None,
         combat: None,
         magic: None,
+        shop: None,
     }
 }
 

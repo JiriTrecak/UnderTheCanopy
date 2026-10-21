@@ -3,7 +3,7 @@
   "itemTier": 3,
   "name": "Crown of the First Queen",
   "description": "+150 maximum health. Aura: allied units within 7 tiles gain 15% damage and +2 armor.",
-  "model": "asset.placeholder.missing-model",
+  "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-first-queen-crown",
   "stackLimit": 1,
   "behaviors": {},

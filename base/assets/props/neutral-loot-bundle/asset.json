@@ -1,0 +1,42 @@
+{
+  "id": "asset.models.props.neutral-loot-bundle",
+  "name": "Loot Bundle",
+  "kind": "prop",
+  "tags": [
+    "original",
+    "neutral",
+    "tripo"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 1,
+    "healthHeight": 2.1
+  },
+  "license": "Original artwork for Under the Canopy: concept by gpt-image-2, model by Tripo (image to 3D), made game-ready by tools/props/neutral_features.py."
+}

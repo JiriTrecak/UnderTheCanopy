@@ -1,0 +1,36 @@
+{
+  "id": "building.neutral.sap-spring",
+  "name": "Sap Spring",
+  "description": "Golden healing sap wells up from an old root. Every unit near it slowly regains its health.",
+  "model": "asset.models.props.neutral-sap-spring",
+  "icon": "asset.portraits.buildings.neutral-sap-spring",
+  "footprint": {
+    "width": 12,
+    "depth": 12
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 6.5
+  },
+  "behaviors": {},
+  "restoration": {
+    "radius": 8,
+    "intervalTicks": 40,
+    "health": 3,
+    "healthPermille": 15
+  },
+  "presentation": {
+    "effects": [
+      {
+        "effect": "effect.buildings.sap-spring-glow",
+        "state": "always",
+        "socket": "socket_pool"
+      },
+      {
+        "effect": "effect.buildings.sap-spring-motes",
+        "state": "always",
+        "socket": "socket_pool"
+      }
+    ]
+  }
+}

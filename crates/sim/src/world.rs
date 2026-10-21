@@ -479,6 +479,7 @@ impl World {
         let s = step!("items");
         crate::items::effects::tick(&mut ctx!(), &mut self.state);
         crate::items::regeneration::tick(&mut ctx!(), &mut self.state);
+        crate::neutrals::tick(&self.catalog, &mut self.state);
         drop(s);
         // Step 4: order advance, then work assignment.
         let s = step!("orders");
@@ -753,6 +754,37 @@ impl World {
                 };
                 self.state.tick = tick;
                 result
+            }
+            _ if crate::neutrals::buys(&self.state, action) => {
+                self.motion.spatial.sync_static(&self.state);
+                self.motion.spatial.sync_bodies(&self.state);
+                let mut ctx = abilities::Ctx {
+                    senses: combat::Senses {
+                        catalog: &self.catalog,
+                        terrain: &self.terrain,
+                        vision: &self.vision,
+                        rules: &self.sight,
+                        combat: &self.combat.rules,
+                        camps: &self.combat.camps,
+                        teams: &self.combat.teams,
+                        cache: None,
+                    },
+                    spatial: &mut self.motion.spatial,
+                    events: &mut self.events,
+                    economy: &mut self.economy,
+                    limits: self.combat.limits,
+                    suppress: 0,
+                };
+                let Action::Produce { actor, definition } = action else {
+                    unreachable!("a purchase is a produce");
+                };
+                crate::neutrals::buy(
+                    &mut ctx,
+                    &mut self.state,
+                    owner,
+                    EntityId(*actor),
+                    definition,
+                )
             }
             _ if economy::command::handles(action) => {
                 self.motion.spatial.sync_static(&self.state);

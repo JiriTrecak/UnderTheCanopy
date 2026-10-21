@@ -1,0 +1,51 @@
+{
+  "id": "effect.buildings.dew-spring-motes",
+  "name": "Dew Spring motes",
+  "description": "Slow violet motes rising off the Dew Spring's bowl, always.",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "motes",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 100,
+        "rate": 7,
+        "speed": 0.9,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 14,
+        "gravity": 0,
+        "drag": 0.2,
+        "spawnRadius": 1.4,
+        "startSize": 0.45,
+        "endSize": 0.05,
+        "spin": 1.2,
+        "fadeIn": 0.2,
+        "fadeOut": 0.55
+      },
+      "anchor": "target",
+      "shape": "particles",
+      "colour": "#a07cff",
+      "accent": "#e6dcff",
+      "durationTicks": 80,
+      "count": 24,
+      "size": 0.3,
+      "height": 0,
+      "blend": "additive",
+      "intensity": 2.4,
+      "texture": {
+        "asset": "asset.effects.holy-light-spark",
+        "role": "image",
+        "index": 1
+      }
+    }
+  ]
+}

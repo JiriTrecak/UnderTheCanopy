@@ -1,0 +1,89 @@
+{
+ "n": 2,
+ "items": [
+  {
+   "name": "building-neutral-amber-cache",
+   "kind": "building",
+   "faction": "neutral",
+   "dir": "base/assets/portraits/buildings/neutral-amber-cache",
+   "id": "asset.portraits.buildings.neutral-amber-cache",
+   "title": "Amber Cache portrait",
+   "refs": [
+    ".asset-work/concepts/buildings/neutral-amber-cache-b-1.png"
+   ],
+   "subject": "the AMBER CACHE, a breakable loot urn: a squat round urn of glossy bronze-brown ant chitin plates bound by two cream rope bands, its top sealed by a thick cap of glowing golden amber with two big amber nuggets in it. The glowing amber cap is the signature. No ground."
+  },
+  {
+   "name": "building-neutral-supply-crate",
+   "kind": "building",
+   "faction": "neutral",
+   "dir": "base/assets/portraits/buildings/neutral-supply-crate",
+   "id": "asset.portraits.buildings.neutral-supply-crate",
+   "title": "Beetle Supply Crate portrait",
+   "refs": [
+    ".asset-work/concepts/buildings/neutral-supply-crate-b-1.png"
+   ],
+   "subject": "the BEETLE SUPPLY CRATE, a breakable loot crate: a chunky square crate of dark riveted steel with thick brass corner bands, a big iron handle on its front and one glass vial of glowing violet liquid strapped to its side. Square silhouette, the violet vial as the one bright accent. No ground."
+  },
+  {
+   "name": "building-neutral-seed-pod",
+   "kind": "building",
+   "faction": "neutral",
+   "dir": "base/assets/portraits/buildings/neutral-seed-pod",
+   "id": "asset.portraits.buildings.neutral-seed-pod",
+   "title": "Fallen Seed Pod portrait",
+   "refs": [
+    ".asset-work/concepts/buildings/neutral-seed-pod-1.png"
+   ],
+   "subject": "the FALLEN SEED POD: a big woody ribbed husk split open into four curled spiky lobes like a tulip, three smooth pale seeds inside with a warm golden glow between them. Warm brown and cream. No ground."
+  },
+  {
+   "name": "building-neutral-rubble",
+   "kind": "building",
+   "faction": "neutral",
+   "dir": "base/assets/portraits/buildings/neutral-rubble",
+   "id": "asset.portraits.buildings.neutral-rubble",
+   "title": "Collapsed Rubble portrait",
+   "refs": [
+    ".asset-work/concepts/buildings/neutral-rubble-2.png"
+   ],
+   "subject": "COLLAPSED RUBBLE that blocks a path: a low, wide heap of big rounded ochre sand-clay clods and grey flat stones, a snapped pale root sticking out and one cracked clay arch fragment on top. Fill the frame's width with the long heap. No ground."
+  },
+  {
+   "name": "building-neutral-sap-spring",
+   "kind": "building",
+   "faction": "neutral",
+   "dir": "base/assets/portraits/buildings/neutral-sap-spring",
+   "id": "asset.portraits.buildings.neutral-sap-spring",
+   "title": "Sap Spring portrait",
+   "refs": [
+    ".asset-work/concepts/buildings/neutral-sap-spring-2.png"
+   ],
+   "subject": "the SAP SPRING, a healing fountain: a round hollow root stump with a thick bark rim, brimming with glowing warm golden sap that wells up in a small dome in the middle and spills over the rim. The glowing golden pool is the signature. No ground."
+  },
+  {
+   "name": "building-neutral-dew-spring",
+   "kind": "building",
+   "faction": "neutral",
+   "dir": "base/assets/portraits/buildings/neutral-dew-spring",
+   "id": "asset.portraits.buildings.neutral-dew-spring",
+   "title": "Dew Spring portrait",
+   "refs": [
+    ".asset-work/concepts/buildings/neutral-dew-spring-1.png"
+   ],
+   "subject": "the DEW SPRING, a mana fountain: a smooth pale stone bowl cradled by three big curled green leaves standing up like petals, filled with glowing blue-violet dew, one big violet dew drop hanging from the tallest leaf's tip. The glowing violet bowl and the drop are the signature. No ground."
+  },
+  {
+   "name": "building-neutral-merchant",
+   "kind": "building",
+   "faction": "neutral",
+   "dir": "base/assets/portraits/buildings/neutral-merchant",
+   "id": "asset.portraits.buildings.neutral-merchant",
+   "title": "Pill-Bug Peddler portrait",
+   "refs": [
+    ".asset-work/concepts/buildings/neutral-merchant-1.png"
+   ],
+   "subject": "the PILL-BUG PEDDLER, a travelling merchant: a friendly slate-grey pill bug with a tiny lantern on its antenna, harnessed in front of a small wooden cart piled with jars, potion bottles and amber, under a striped cream-and-rust awning. The striped awning and the pill bug's round armoured back are the signature. No ground."
+  }
+ ]
+}

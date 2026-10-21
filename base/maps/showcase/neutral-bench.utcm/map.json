@@ -1,0 +1,236 @@
+{
+  "biome": "frozen-dream",
+  "sandbox": true,
+  "camps": [],
+  "size": 256,
+  "playerStarts": [
+    {
+      "mainFort": "start.player.1/main-fort",
+      "player": 1,
+      "setup": "setup.ants",
+      "x": 29.5,
+      "z": 129.5
+    }
+  ],
+  "entities": [
+    {
+      "definition": "building.ants.fort",
+      "id": "bench.hall",
+      "owner": "player.1",
+      "position": {
+        "x": 29.5,
+        "y": 129.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete",
+        "inventory": {
+          "item.amber": 2000
+        }
+      }
+    },
+    {
+      "definition": "building.neutral.merchant",
+      "id": "bench.merchant",
+      "owner": "none",
+      "position": {
+        "x": 101.5,
+        "y": 109.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "building.neutral.sap-spring",
+      "id": "bench.sap-spring",
+      "owner": "none",
+      "position": {
+        "x": 121.5,
+        "y": 109.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "building.neutral.dew-spring",
+      "id": "bench.dew-spring",
+      "owner": "none",
+      "position": {
+        "x": 141.5,
+        "y": 109.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-cache",
+      "id": "bench.amber-cache",
+      "owner": "none",
+      "position": {
+        "x": 101.5,
+        "y": 141.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "building.neutral.supply-crate",
+      "id": "bench.supply-crate",
+      "owner": "none",
+      "position": {
+        "x": 109.5,
+        "y": 141.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "building.neutral.seed-pod",
+      "id": "bench.seed-pod",
+      "owner": "none",
+      "position": {
+        "x": 117.5,
+        "y": 141.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "building.neutral.rubble",
+      "id": "bench.rubble",
+      "owner": "none",
+      "position": {
+        "x": 133.5,
+        "y": 141.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "building.neutral.rubble",
+      "id": "bench.rubble-turned",
+      "owner": "none",
+      "position": {
+        "x": 149.5,
+        "y": 145.5
+      },
+      "rotation": 90.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "item.moon-dew",
+      "id": "bench.item.0",
+      "owner": "none",
+      "position": {
+        "x": 126.0,
+        "y": 152.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "item.thornband",
+      "id": "bench.item.1",
+      "owner": "none",
+      "position": {
+        "x": 131.0,
+        "y": 152.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "bench.army.0",
+      "owner": "player.1",
+      "position": {
+        "x": 104.0,
+        "y": 128.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "bench.army.1",
+      "owner": "player.1",
+      "position": {
+        "x": 108.0,
+        "y": 128.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "bench.army.2",
+      "owner": "player.1",
+      "position": {
+        "x": 112.0,
+        "y": 128.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "bench.army.3",
+      "owner": "player.1",
+      "position": {
+        "x": 116.0,
+        "y": 128.0
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "bench.wounded.0",
+      "owner": "player.1",
+      "position": {
+        "x": 121.0,
+        "y": 119.0
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "health": 40
+      }
+    },
+    {
+      "definition": "unit.ants.archer",
+      "id": "bench.wounded.1",
+      "owner": "player.1",
+      "position": {
+        "x": 125.0,
+        "y": 119.0
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "health": 30
+      }
+    },
+    {
+      "definition": "unit.ants.queen",
+      "id": "bench.hero",
+      "owner": "player.1",
+      "position": {
+        "x": 101.0,
+        "y": 119.0
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "experience": 5200
+      }
+    }
+  ]
+}

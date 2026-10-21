@@ -9,6 +9,7 @@
 //! over what changed.
 
 pub mod catalog;
+mod features;
 pub mod mesh;
 mod minimap;
 pub mod palette;
@@ -1446,7 +1447,7 @@ fn problem(
         Placing::Scenery(_) => return None,
     }?;
     if let Some(error) =
-        canopy_sim::spawn::site_problem(map, terrain, definition, land.x, land.z, 0.0)
+        canopy_sim::spawn::site_problem(map, terrain, definition, land.x, land.z, land.rotation)
     {
         return Some(error);
     }
@@ -1455,7 +1456,7 @@ fn problem(
             land.x,
             land.z,
             Extent::of(definition.footprint.as_ref()),
-            0.0,
+            land.rotation,
         );
         return overlap(cells);
     }
@@ -1478,10 +1479,10 @@ fn move_fits(
     let ignore: Vec<(Picked, String)> =
         items.iter().map(|(k, id, _, _)| (*k, id.clone())).collect();
     for (kind, id, x, z) in &items {
-        let placing = match kind {
-            Picked::Start => Placing::Start(id.parse().unwrap_or(1)),
+        let (placing, rotation) = match kind {
+            Picked::Start => (Placing::Start(id.parse().unwrap_or(1)), 0.0),
             Picked::Entity => match map.entities.iter().find(|e| &e.id == id) {
-                Some(e) => Placing::Definition(e.definition.to_string()),
+                Some(e) => (Placing::Definition(e.definition.to_string()), e.rotation),
                 None => continue,
             },
             Picked::Object => continue,
@@ -1490,6 +1491,7 @@ fn move_fits(
             x: x + delta.0,
             z: z + delta.1,
             footprint: None,
+            rotation,
         };
         if let Some(why) = problem(map, content, terrain, &placing, &land, &ignore) {
             return Err(why);
@@ -1599,6 +1601,8 @@ pub struct Landing {
     pub z: f64,
     /// Width and depth in cells, for what has a footprint.
     pub footprint: Option<(u32, u32)>,
+    /// Degrees (a building's quarter turns).
+    pub rotation: f64,
 }
 
 fn landing(
@@ -1623,6 +1627,7 @@ fn landing(
         x,
         z,
         footprint: None,
+        rotation: 0.0,
     };
     let building = |d: &canopy_content::game::Definition| {
         let (w, h) = d.footprint.as_ref().map_or((4, 4), |f| (f.width, f.depth));
@@ -1631,6 +1636,7 @@ fn landing(
             x,
             z,
             footprint: Some((w, h)),
+            rotation: 0.0,
         }
     };
     match placing {
@@ -1658,6 +1664,7 @@ fn landing(
                     .definition(setup.fort.as_str())
                     .and_then(|d| d.footprint.as_ref())
                     .map(|f| (f.width, f.depth)),
+                rotation: 0.0,
             }
         }
         Placing::Camp(_) => point(cell(x), cell(z)),

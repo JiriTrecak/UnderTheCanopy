@@ -3,7 +3,7 @@
   "itemTier": 3,
   "name": "Scepter of the Deep Moon",
   "description": "+220 maximum mana, +2 mana per second and 20% shorter hero ability cooldowns. Does not affect items.",
-  "model": "asset.placeholder.missing-model",
+  "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-deep-moon-scepter",
   "stackLimit": 1,
   "behaviors": {},

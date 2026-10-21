@@ -103,6 +103,7 @@ fn credited(
     crate::abilities::cast::cancel(ctx, state, id, "Caster died");
     let senses = ctx.senses;
     camps::on_death(state, senses.catalog, ctx.spatial, senses.camps, id);
+    crate::neutrals::on_death(state, senses.catalog, ctx.spatial, id);
     crate::items::inventory::on_death(ctx, state, id);
     capture_corpse(&senses, state, id);
     senses

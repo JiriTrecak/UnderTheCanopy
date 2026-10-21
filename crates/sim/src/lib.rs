@@ -22,6 +22,7 @@ pub mod math;
 pub mod mission;
 pub mod movement;
 pub mod navigation;
+pub mod neutrals;
 pub mod orders;
 pub mod setup;
 pub mod spatial;

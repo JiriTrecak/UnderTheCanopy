@@ -161,7 +161,62 @@ StarCraft's pylon power, as content: a race whose buildings need power places th
 - **Research** widens discs: `{"units": ["building.beetles.bastion", "building.beetles.brood-den"], "networkRadius": 8}` adds 8 cells to the listed buildings' radius. Such an effect lists only buildings with a `network` and changes nothing else.
 - A race with buildings that need power must have a source in its roster. Players see the network as a blue-violet field on the ground while placing a building that needs power (and with the debug overlay's **Show power network**); an unpowered building goes dark and shows a struck-bolt badge.
 
+## Neutral map features (crates, rubble, springs, shops)
+
+Warcraft III's destructibles, fountains and Goblin Merchant, as neutral buildings a map places (`owner: "none"`, `crates/sim/src/neutrals.rs`). None of them is ever built (no `creation`), and a building is at most one of the three.
+
+- **`breakable`** (crates, barrels, rubble): no unit attacks it by itself; a right-click (a forced attack) breaks it, and when it breaks it drops what it holds as items on the ground. What it holds is fixed when the match starts: the placement's `initialState.inventory` (items and counts), else a roll of the placement's `initialState.lootPool`, else of the definition's `lootPool`, else the definition's `drops`. Only hero items. Its footprint blocks the ground until it breaks, so a wide breakable (rubble, 12 × 4) closes a path; quarter turns keep a footprint like 12 × 4 or 4 × 4 on the building lattice. Use `armorType` light for crates (two blows) and structure for rubble.
+- **`restoration`** (springs): every `intervalTicks`, every living unit of any owner within `radius` cells of its footprint regains `health` + `healthPermille` of its maximum health and `mana` + `manaPermille` of its maximum mana. A spring and a shop may have no `body`: nothing can attack them.
+- **`shop`**: a player buys a ware for their nearest hero (a unit with an inventory) within `range` cells of the footprint, paying `price` from their stock; the item goes into a free slot (a power-up is used at once). Each ware starts with `stock` and grows back one every `restockTicks` after a sale. Selecting the shop shows its wares on the command card. A placement may sell other wares: `initialState.wares`, the same list.
+
+```json building
+{
+  "id": "building.example.crate",
+  "name": "Supply Crate",
+  "description": "Break it open to see what is inside.",
+  "model": "asset.models.props.neutral-supply-crate",
+  "icon": "asset.portraits.buildings.neutral-supply-crate",
+  "body": {"maxHp": 40, "armor": 0, "armorType": "light"},
+  "footprint": {"width": 4, "depth": 4},
+  "entrance": {"x": 0.5, "y": 2.5},
+  "behaviors": {},
+  "breakable": {"lootPool": "loot.camp.easy"}
+}
+```
+
+```json building
+{
+  "id": "building.example.spring",
+  "name": "Sap Spring",
+  "description": "Restores the health of every unit near it.",
+  "model": "asset.models.props.neutral-sap-spring",
+  "icon": "asset.portraits.buildings.neutral-sap-spring",
+  "footprint": {"width": 12, "depth": 12},
+  "entrance": {"x": 0.5, "y": 6.5},
+  "behaviors": {},
+  "restoration": {"radius": 8, "intervalTicks": 40, "health": 3, "healthPermille": 15}
+}
+```
+
+```json building
+{
+  "id": "building.example.merchant",
+  "name": "Merchant",
+  "description": "Sells items to heroes standing near.",
+  "model": "asset.models.props.neutral-merchant",
+  "icon": "asset.portraits.buildings.neutral-merchant",
+  "footprint": {"width": 12, "depth": 12},
+  "entrance": {"x": 0.5, "y": 6.5},
+  "behaviors": {},
+  "shop": {"range": 6, "wares": [
+    {"item": "item.resin-salve", "price": [{"item": "item.amber", "amount": 75}], "stock": 3, "restockTicks": 2400}
+  ]}
+}
+```
+
 ## An item
+
+Items placed on a map (`entities`, owner `none`) lie on the ground until a hero picks them up, like dropped loot.
 
 ```json item
 {

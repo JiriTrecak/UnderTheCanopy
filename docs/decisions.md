@@ -944,3 +944,12 @@ Jiri: authoring must be fast for people, not scripts; a campaign needs many maps
 - **Found leaves the Queen** (D74 gave it to her): a hero has four buttons, and a logistics spell in one of them is what made her meh. The Alate still Founds; the computer founds with its Alates only. Exodus and Royal Jelly are gone with their icons and effects.
 - Rebirth's grant is the first hint of her fall: the substance stays in the reborn, brighter and changed, in blue-violet bio-magic (nothing corrupted yet).
 - No engine change: every mechanic is an existing operation (branch, heal, damage, status with `invulnerable`, dispel, resurrect with an until-death grant).
+
+## D87. Neutral map features: breakables, ground items, springs and shops (2026-10-21, for the campaign's maps)
+
+Jiri wants campaign maps "expansive, with neutrals, lots of interesting points, maybe some secret places", as Warcraft III's. Its destructible crates, items on the ground, Fountains of Health and Mana and the Goblin Merchant come over as neutral buildings a map places, each a definition field (`breakable`, `restoration`, `shop`; skill **canopy-definitions**), run by `crates/sim/src/neutrals.rs`:
+- **Breakables** (crates, barrels, rubble) are attacked only when ordered (a right-click is a forced attack); what they drop is rolled when the match starts (placement items, else a placement or definition loot pool), so a save holds it and nothing rolls at death. Their footprint blocks the ground, so rubble (12 × 4, turned in quarter turns) closes a gap until it breaks.
+- **Springs** have no body (nothing can attack them) and pulse every second for every living unit of any owner near their footprint, creeps included, as Warcraft III's fountains do.
+- **Shops**: a purchase is the frozen protocol's `produce` (D10) with the shop as the actor and the item as the definition, so the match server and old clients pass it unchanged; the simulation gives the item to the buyer's nearest hero within range with a free slot and takes the price from their stock. Each ware has a limited stock that grows back one at a time. Its stock is public in the view (`EntityView::shop`) for anyone who sees the shop.
+- **Items** placed on a map lie on the ground as dropped loot does.
+- The editor places them (Breakables under Special, springs and the merchant under Buildings › Neutral, a new Items category) and edits a placement's drops and wares and turns it.

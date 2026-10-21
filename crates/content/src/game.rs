@@ -520,6 +520,61 @@ pub struct Income {
     pub interval_ticks: u32,
 }
 
+/// A breakable object (Warcraft III's crates and barrels; also rubble that closes a path):
+/// a neutral building any unit may attack when ordered to, which no unit attacks by
+/// itself. When it breaks it drops what it holds: the items its placement put in it
+/// (`initialState.inventory`), else a roll of its placement's `lootPool`, else a roll of
+/// this pool, else these `drops`. Its footprint blocks the ground until it breaks.
+#[skip_serializing_none]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Breakable {
+    /// The loot pool rolled when the placement names no items or pool of its own.
+    pub loot_pool: Option<Id>,
+    /// Items dropped when neither the placement nor `lootPool` names any.
+    pub drops: Option<Vec<Id>>,
+}
+
+/// A spring (Warcraft III's Fountain of Health and Fountain of Mana): every
+/// `intervalTicks` every living unit within `radius` cells of its footprint, of any owner,
+/// regains `health` plus `healthPermille` of its maximum health, and `mana` plus
+/// `manaPermille` of its maximum mana.
+#[skip_serializing_none]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Restoration {
+    /// Cells from the footprint's edge.
+    pub radius: f64,
+    pub interval_ticks: u32,
+    pub health: Option<u32>,
+    pub health_permille: Option<u32>,
+    pub mana: Option<u32>,
+    pub mana_permille: Option<u32>,
+}
+
+/// One kind of item a shop sells: its price, the most it holds, and how long it takes to
+/// grow back by one after a sale. A shop starts with every ware fully stocked.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Ware {
+    pub item: Id,
+    pub price: Vec<Cost>,
+    pub stock: u32,
+    pub restock_ticks: u32,
+}
+
+/// A shop (Warcraft III's Goblin Merchant): a player buys one of its wares for a hero of
+/// theirs standing within `range` cells of its footprint, with goods from their stock. The
+/// item goes straight into the hero's inventory. A placement may sell other wares
+/// (`initialState.wares`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Shop {
+    /// Cells from the footprint's edge.
+    pub range: f64,
+    pub wares: Vec<Ware>,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub enum SelectionClass {
@@ -594,6 +649,12 @@ pub struct Definition {
     /// Whether this unit may travel through its owner's tunnels (default true; flyers
     /// never do). The ants' mutated castes are too big for them.
     pub underground: Option<bool>,
+    /// A neutral crate, barrel or rubble: attacked only when ordered, drops loot.
+    pub breakable: Option<Breakable>,
+    /// A spring that restores the health and mana of units near it.
+    pub restoration: Option<Restoration>,
+    /// A neutral shop where heroes buy items.
+    pub shop: Option<Shop>,
     pub creation: Option<Creation>,
     pub behaviors: Behaviors,
 }

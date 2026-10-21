@@ -1,0 +1,54 @@
+{
+  "id": "asset.models.props.neutral-supply-crate",
+  "name": "Beetle Supply Crate",
+  "kind": "prop",
+  "tags": [
+    "original",
+    "neutral",
+    "tripo"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    },
+    "blocker": {
+      "shape": "box",
+      "size": [
+        4,
+        4
+      ],
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "vegetationClearance": 2.0
+  },
+  "display": {
+    "scale": 1,
+    "healthHeight": 3.7
+  },
+  "license": "Original artwork for Under the Canopy: concept by gpt-image-2, model by Tripo (image to 3D), made game-ready by tools/props/neutral_features.py."
+}

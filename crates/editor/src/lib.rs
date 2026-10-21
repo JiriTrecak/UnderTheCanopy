@@ -241,6 +241,16 @@ impl Editor {
         self.shell.open_block_picker();
     }
 
+    /// Selects a map placement by id, so the map's panel shows it (captures).
+    pub fn select_placement(&mut self, id: &str) {
+        self.shell.select_placement(id);
+    }
+
+    /// Shows Place's category and group by name (captures).
+    pub fn set_place_group(&mut self, category: &str, group: &str) {
+        self.shell.set_place_group(category, group);
+    }
+
     /// The block editor's lasso (captures).
     pub fn set_block_lasso(&mut self, lasso: bool) {
         self.shell.set_block_lasso(lasso);

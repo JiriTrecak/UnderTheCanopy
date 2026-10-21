@@ -308,6 +308,7 @@ pub fn run(
             "multiplayer" => multiplayer(&mut rig)?,
             "editor" => editor(&mut rig, &paths)?,
             "blocks" => blocks(&mut rig, &paths)?,
+            "neutrals" => neutrals(&mut rig, &paths)?,
             "settings" => settings_tabs(&mut rig)?,
             "campaign" => campaigns(&mut rig, &paths)?,
             "replays" => {
@@ -345,7 +346,7 @@ pub fn run(
                 feedback_match(&mut rig)?;
             }
             other => anyhow::bail!(
-                "unknown capture group {other} (releases, multiplayer, editor, settings, feedback, replays, campaign)"
+                "unknown capture group {other} (releases, multiplayer, editor, blocks, neutrals, settings, feedback, replays, campaign)"
             ),
         }
         let _ = std::fs::remove_dir_all(&user);
@@ -490,6 +491,70 @@ fn campaigns(rig: &mut Rig, paths: &Paths) -> Result<()> {
     rig.game.apply(Intent::Back);
     rig.game.apply(Intent::Back);
     rig.settle(0.3);
+    Ok(())
+}
+
+/// The map editor on the neutral bench (D87): Place's catalog, and the panel of a shop, a
+/// crate, turned rubble and a spring.
+fn neutrals(rig: &mut Rig, paths: &Paths) -> Result<()> {
+    use canopy_editor::{Editor, Kind};
+    let format = CAPTURE_FORMAT.remove_srgb_suffix();
+    let mut editor = Editor::headless(&rig.gpu, format, crate::app::editor_setup(paths));
+    let settle = |editor: &mut Editor, rig: &mut Rig, n: usize| {
+        for _ in 0..n {
+            editor.run_headless(rig.size, rig.scale, &rig.gpu);
+            std::thread::sleep(Duration::from_millis(25));
+        }
+    };
+    let shoot = |editor: &mut Editor, rig: &mut Rig, name: &str| -> Result<()> {
+        let mut encoder = rig
+            .gpu
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        editor.paint(&mut encoder, &rig.target.ui_view);
+        rig.gpu.queue.submit([encoder.finish()]);
+        rig.save(name)
+    };
+    editor.select(Kind::Maps);
+    editor.open_document("maps/showcase/neutral-bench.utcm/map.json");
+    settle(&mut editor, rig, 60);
+    editor.set_block_view("generated");
+    editor.set_block_tool("place");
+    settle(&mut editor, rig, 10);
+    let escape = |pressed| egui::Event::Key {
+        key: egui::Key::Escape,
+        physical_key: None,
+        pressed,
+        repeat: false,
+        modifiers: egui::Modifiers::NONE,
+    };
+    for (category, group, name) in [
+        ("Buildings", "Neutral", "editor-neutrals-place-buildings"),
+        ("Special", "Breakables", "editor-neutrals-place-breakables"),
+        ("Items", "Tier 1", "editor-neutrals-place-items"),
+    ] {
+        editor.set_place_group(category, group);
+        editor.open_block_picker();
+        settle(&mut editor, rig, 12);
+        shoot(&mut editor, rig, name)?;
+        editor.run_headless_with(
+            rig.size,
+            rig.scale,
+            &rig.gpu,
+            vec![escape(true), escape(false)],
+        );
+    }
+    for id in [
+        "bench.merchant",
+        "bench.amber-cache",
+        "bench.rubble-turned",
+        "bench.sap-spring",
+        "bench.item.0",
+    ] {
+        editor.select_placement(id);
+        settle(&mut editor, rig, 8);
+        shoot(&mut editor, rig, &format!("editor-neutrals-{}", &id[6..]))?;
+    }
     Ok(())
 }
 

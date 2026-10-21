@@ -121,7 +121,7 @@ pub fn show(
             {
                 map_settings(ui, session, docs, package, &mut edits);
             } else if let Some(content) = content {
-                selection(ui, session, content);
+                selection(ui, session, content, docs, &mut edits);
             }
         });
     edits
@@ -691,8 +691,15 @@ fn resize(session: &Session, docs: &Docs, size: [u32; 3]) -> Option<Edit> {
     Some(edit)
 }
 
-/// What the selection is: one thing in full, several counted.
-fn selection(ui: &mut Ui, session: &mut Session, content: &canopy_content::Content) {
+/// What the selection is: one thing in full, several counted; a placement's turn, drops
+/// and wares are edited here.
+fn selection(
+    ui: &mut Ui,
+    session: &mut Session,
+    content: &canopy_content::Content,
+    docs: Option<&Docs>,
+    edits: &mut Vec<Edit>,
+) {
     let Some(map) = session.map.clone() else {
         return;
     };
@@ -788,6 +795,16 @@ fn selection(ui: &mut Ui, session: &mut Session, content: &canopy_content::Conte
             );
             row(ui, "Cell", cell(entity.position.x, entity.position.y));
             row(ui, "Facing", format!("{}°", entity.rotation));
+            // Its place in map.json's entities, which edits address.
+            let index = docs.and_then(|d| {
+                d.map["entities"]
+                    .as_array()?
+                    .iter()
+                    .position(|e| e["id"].as_str() == Some(entity.id.as_str()))
+            });
+            if let Some(index) = index {
+                super::features::turn(ui, session, content, index, entity, edits);
+            }
             if let Some(f) = definition.and_then(|d| d.footprint.as_ref()) {
                 row(ui, "Footprint", format!("{} × {} cells", f.width, f.depth));
             }
@@ -808,7 +825,8 @@ fn selection(ui: &mut Ui, session: &mut Session, content: &canopy_content::Conte
                         format!("{construction:?}").to_lowercase(),
                     );
                 }
-                for (item, count) in state.inventory.iter().flatten() {
+                let drops = definition.is_some_and(|d| d.breakable.is_some());
+                for (item, count) in state.inventory.iter().flatten().filter(|_| !drops) {
                     let name = content
                         .definition(item.as_str())
                         .map_or(item.to_string(), |d| d.name.clone());
@@ -817,6 +835,9 @@ fn selection(ui: &mut Ui, session: &mut Session, content: &canopy_content::Conte
             }
             if let Some(level) = definition.and_then(|d| d.level) {
                 row(ui, "Level", level.to_string());
+            }
+            if let (Some(index), Some(definition)) = (index, definition) {
+                super::features::show(ui, session, content, index, entity, definition, edits);
             }
             if let Some(camp) = map.camps.iter().find(|c| c.members.iter().any(|m| m == id)) {
                 section(ui, "Camp");

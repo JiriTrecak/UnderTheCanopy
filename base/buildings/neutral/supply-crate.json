@@ -1,0 +1,24 @@
+{
+  "id": "building.neutral.supply-crate",
+  "name": "Beetle Supply Crate",
+  "description": "A riveted crate a beetle column left behind on the march. Break it open for what it holds.",
+  "model": "asset.models.props.neutral-supply-crate",
+  "icon": "asset.portraits.buildings.neutral-supply-crate",
+  "footprint": {
+    "width": 4,
+    "depth": 4
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 2.5
+  },
+  "body": {
+    "maxHp": 60,
+    "armor": 1,
+    "armorType": "light"
+  },
+  "behaviors": {},
+  "breakable": {
+    "lootPool": "loot.camp.easy"
+  }
+}

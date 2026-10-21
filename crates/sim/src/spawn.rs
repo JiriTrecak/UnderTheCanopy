@@ -1202,6 +1202,7 @@ pub fn insert(state: &mut State, catalog: &Catalog, spawn: Spawn) -> EntityId {
         links: None,
         equipment: None,
         income: 0,
+        shop: None,
     };
     // A complete body starts at full health for its level and its owner's research,
     // unless the placement says otherwise.
@@ -1226,6 +1227,7 @@ pub fn insert(state: &mut State, catalog: &Catalog, spawn: Spawn) -> EntityId {
             entity.inventory.remove(&item);
         }
     }
+    crate::neutrals::furnish(state, catalog, &mut entity, &initial);
     crate::abilities::equip_new(catalog, &mut entity);
     crate::abilities::research_ranks(
         catalog,

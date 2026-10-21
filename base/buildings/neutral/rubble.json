@@ -1,0 +1,22 @@
+{
+  "id": "building.neutral.rubble",
+  "name": "Collapsed Rubble",
+  "description": "Packed clay, stone and snapped roots where a tunnel or a gap fell in. Nothing passes until it is broken through.",
+  "model": "asset.models.props.neutral-rubble",
+  "icon": "asset.portraits.buildings.neutral-rubble",
+  "footprint": {
+    "width": 12,
+    "depth": 4
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 2.5
+  },
+  "body": {
+    "maxHp": 900,
+    "armor": 2,
+    "armorType": "structure"
+  },
+  "behaviors": {},
+  "breakable": {}
+}

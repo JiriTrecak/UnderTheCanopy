@@ -1,0 +1,55 @@
+{
+  "id": "effect.buildings.sap-spring-glow",
+  "name": "Sap Spring light",
+  "description": "Warm golden light breathing off the Sap Spring's pool, always (healing sap glows like raw amber).",
+  "durationTicks": 120,
+  "loop": true,
+  "layers": [
+    {
+      "id": "light",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "light",
+      "colour": "#ffb347",
+      "accent": "#ffe2a0",
+      "durationTicks": 120,
+      "count": 1,
+      "size": 11,
+      "height": 0.6,
+      "intensity": 14,
+      "motion": {
+        "opacity": {
+          "periodTicks": 120,
+          "min": 0.7,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "aura",
+      "sustain": true,
+      "enabled": true,
+      "startTick": 0,
+      "anchor": "target",
+      "shape": "glow",
+      "colour": "#ffb347",
+      "accent": "#fff0c8",
+      "durationTicks": 120,
+      "count": 1,
+      "size": 3.2,
+      "height": 0.2,
+      "intensity": 0.4,
+      "motion": {
+        "opacity": {
+          "periodTicks": 120,
+          "min": 0.5,
+          "max": 0.85,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

@@ -75,8 +75,13 @@ pub struct InitialState {
     pub experience: Option<u32>,
     pub construction: Option<InitialConstruction>,
     pub amount: Option<u32>,
+    /// Goods a building starts with; the items a breakable drops.
     pub inventory: Option<BTreeMap<Id, u32>>,
     pub quantity: Option<u32>,
+    /// A breakable's loot pool, rolled when the match starts (its definition's otherwise).
+    pub loot_pool: Option<Id>,
+    /// A shop's wares in place of its definition's.
+    pub wares: Option<Vec<crate::game::Ware>>,
 }
 
 #[skip_serializing_none]
