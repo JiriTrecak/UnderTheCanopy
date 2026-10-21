@@ -67,7 +67,10 @@ use std::{collections::BTreeSet, iter::Peekable, sync::Arc, vec::IntoIter};
 pub struct Vision {
     size: u32,
     nodes: usize,
-    teams: Teams,
+    /// Sight groups: the teams, with allies that keep their vision on their own.
+    sight: Teams,
+    /// The match's teams (who is allied).
+    alliance: Teams,
     ground: sensor::Ground,
     decks: Vec<[f64; 4]>,
     deck_cells: Arc<[u32]>,
@@ -98,10 +101,12 @@ impl Vision {
         catalog: &Catalog,
         terrain: &Terrain,
         setup: &MatchSetup,
+        private: &[u8],
         exploration: Exploration,
         rules: &dyn SightRules,
     ) -> Self {
-        let teams = Teams::new(setup);
+        let alliance = Teams::new(setup);
+        let teams = alliance.with_private_sight(private);
         let nodes = node_count(terrain);
         let explored = exploration == Exploration::Explored;
         let mut team = TeamKnowledge {
@@ -147,7 +152,7 @@ impl Vision {
             spells: Vec::new(),
             cues: Vec::new(),
         };
-        let mut vision = Self::derive(state, catalog, terrain, teams, rules);
+        let mut vision = Self::derive(state, catalog, terrain, teams, alliance, rules);
         // The starting sight: everything covered is seen for the first time.
         for (t, team) in state.knowledge.teams.iter_mut().enumerate() {
             for record in &vision.statics.records {
@@ -175,9 +180,11 @@ impl Vision {
         catalog: &Catalog,
         terrain: &Terrain,
         setup: &MatchSetup,
+        private: &[u8],
         rules: &dyn SightRules,
     ) -> Result<Self, String> {
-        let teams = Teams::new(setup);
+        let alliance = Teams::new(setup);
+        let teams = alliance.with_private_sight(private);
         check(
             &state.knowledge,
             &teams,
@@ -185,7 +192,9 @@ impl Vision {
             catalog,
             state,
         )?;
-        Ok(Self::derive(state, catalog, terrain, teams, rules))
+        Ok(Self::derive(
+            state, catalog, terrain, teams, alliance, rules,
+        ))
     }
 
     /// Everything derived, from scratch. Fog cells are made to agree with the coverage.
@@ -194,6 +203,7 @@ impl Vision {
         catalog: &Catalog,
         terrain: &Terrain,
         teams: Teams,
+        alliance: Teams,
         rules: &dyn SightRules,
     ) -> Self {
         let nodes = node_count(terrain);
@@ -222,7 +232,8 @@ impl Vision {
             scenery: vec![Chunks::default(); count + 1],
             reshaped: Vec::new(),
             restyled: Vec::new(),
-            teams,
+            sight: teams,
+            alliance,
         };
         vision.sync(state, catalog, terrain, rules);
         for (mask, knowledge) in vision.masks.iter_mut().zip(&mut state.knowledge.teams) {
@@ -256,8 +267,15 @@ impl Vision {
         vision
     }
 
+    /// The match's teams: who is allied.
     pub fn teams(&self) -> &Teams {
-        &self.teams
+        &self.alliance
+    }
+
+    /// The sight groups knowledge is kept by: the teams, except allies that keep their
+    /// vision to themselves see as teams of one.
+    pub fn sight_teams(&self) -> &Teams {
+        &self.sight
     }
 
     /// Ground cells per side.
@@ -282,15 +300,15 @@ impl Vision {
 
     /// The fog revision of the owner's team and the steps that led to it.
     pub fn fog_history(&self, owner: Owner) -> Option<(u32, &Arc<[FogStep]>)> {
-        let mask = &self.masks[self.teams.index(owner)?];
+        let mask = &self.masks[self.sight.index(owner)?];
         Some((mask.revision, &mask.history))
     }
 
     /// Scenery known to the owner's team; `None` (observer) for all of it.
     pub fn scenery(&self, owner: Option<Owner>) -> Scenery {
         let index = match owner {
-            None => self.teams.teams().len(),
-            Some(owner) => match self.teams.index(owner) {
+            None => self.sight.teams().len(),
+            Some(owner) => match self.sight.index(owner) {
                 Some(index) => index,
                 None => return Scenery::default(),
             },
@@ -385,8 +403,8 @@ impl Vision {
             if let Some(flight) = rules.flight_cm(catalog, e) {
                 elevation += flight + air_gap_cm(terrain, origin, deck);
             }
-            let mut teams = team_bit(&self.teams, e.owner);
-            rules.lends_sight(e, &mut |owner| teams |= team_bit(&self.teams, owner));
+            let mut teams = team_bit(&self.sight, e.owner);
+            rules.lends_sight(e, &mut |owner| teams |= team_bit(&self.sight, owner));
             let spec = Spec {
                 owner: e.owner,
                 origin,
@@ -411,7 +429,7 @@ impl Vision {
                 elevation: v.elevation,
                 radius: v.radius,
                 ignore_terrain: v.ignore_terrain,
-                teams: team_bit(&self.teams, v.owner),
+                teams: team_bit(&self.sight, v.owner),
             };
             self.follow(SensorKey::Spell(v.id), spec, &mut old, &mut next, terrain);
         }
@@ -504,7 +522,7 @@ impl Vision {
             .peekable();
         let mut next: Vec<StaticRecord> = Vec::with_capacity(old.len());
         let mut nodes = Vec::new();
-        let observer = self.teams.teams().len();
+        let observer = self.sight.teams().len();
         self.actors.clear();
         for e in state.entities.iter() {
             if !statics::alive(e) {
@@ -568,13 +586,13 @@ impl Vision {
         self.statics.lift(id, &record.nodes);
         self.reshaped.push(id);
         if record.scenery {
-            let observer = self.teams.teams().len();
+            let observer = self.sight.teams().len();
             self.scenery[observer].touch(id);
         }
     }
 
     fn rebuild_scenery(&mut self, state: &State) {
-        let observer = self.teams.teams().len();
+        let observer = self.sight.teams().len();
         for (t, chunks) in self.scenery.iter_mut().enumerate() {
             if t == observer {
                 let records = &self.statics.records;
@@ -619,7 +637,7 @@ impl Vision {
             rules,
         };
         let viewers: Vec<Owner> = self
-            .teams
+            .sight
             .owners()
             .iter()
             .copied()
@@ -658,7 +676,14 @@ impl Vision {
         rules: &dyn SightRules,
     ) -> Result<(), String> {
         let mut copy = state.clone();
-        let fresh = Self::derive(&mut copy, catalog, terrain, self.teams.clone(), rules);
+        let fresh = Self::derive(
+            &mut copy,
+            catalog,
+            terrain,
+            self.sight.clone(),
+            self.alliance.clone(),
+            rules,
+        );
         if copy.knowledge != state.knowledge {
             return Err("fog cells disagree with sensor coverage".into());
         }
@@ -718,7 +743,7 @@ impl Vision {
                 }
             }
         }
-        let observer = self.teams.teams().len();
+        let observer = self.sight.teams().len();
         if fresh.scenery[observer].list.chunks != self.scenery[observer].list.chunks {
             return Err("observer scenery differs".into());
         }

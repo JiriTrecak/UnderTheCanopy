@@ -590,3 +590,52 @@ pub fn spawn(world: &mut World, id: &str, definition: &str, owner: Owner, x: f64
         .expect("spawn")
         .0
 }
+
+/// An altar: revives fallen heroes (campaign tests).
+pub const ALTAR: &str = "building.test.altar";
+
+/// [`content`] with an altar that revives heroes (the campaign AI's tests).
+pub fn campaign_content() -> Arc<Content> {
+    static CONTENT: OnceLock<Arc<Content>> = OnceLock::new();
+    CONTENT
+        .get_or_init(|| {
+            let mut game = game();
+            let definitions = game["definitions"].as_array_mut().expect("definitions");
+            let mut altar = definitions
+                .iter()
+                .find(|d| d["id"] == HOUSE)
+                .expect("house")
+                .clone();
+            altar["id"] = json!(ALTAR);
+            altar["name"] = json!(ALTAR);
+            altar["supplyProvided"] = json!(0);
+            altar["behaviors"]["revival"] = json!({
+                "items": [{"item": AMBER, "amount": 30}], "itemsPerLevel": [],
+                "workTicks": 100, "workTicksPerLevel": 0, "queueCapacity": 2,
+            });
+            definitions.push(altar);
+            load(game, "sim-ai-campaign")
+        })
+        .clone()
+}
+
+/// A mission on flat ground: no player starts unless `starts`, the given placements,
+/// regions, computer players and script. Explored from the start.
+pub fn mission_map(
+    entities: Vec<Value>,
+    regions: Value,
+    players: Value,
+    starts: Value,
+    script: &str,
+) -> UtcMap {
+    let document = json!({
+        "v": 3, "size": SIZE, "name": "AI mission", "stamps": [],
+        "initialExploration": "explored",
+        "playerStarts": starts,
+        "entities": entities, "camps": [],
+        "mission": {"campaign": "test", "title": "Test", "order": 1, "script": script,
+            "regions": regions, "players": players},
+        "authoring": {"version": 1, "terrain": flat(), "objects": []},
+    });
+    UtcMap::from_value(document, "mission.utcmap").unwrap_or_else(|errors| panic!("{errors}"))
+}

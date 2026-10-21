@@ -55,6 +55,11 @@ pub enum MissionEffect {
         slot: usize,
         item: Option<Id>,
     },
+    /// A script's order to a computer player of the mission (zero-based player).
+    Ai {
+        player: u8,
+        order: crate::ai::campaign::Order,
+    },
     /// Player 1 wins the mission.
     Win,
     /// Player 1 loses the mission.
@@ -208,6 +213,9 @@ pub(super) fn apply(
                     (2 * u64::from(after) * hp + u64::from(before)) / (2 * u64::from(before));
                 u32::try_from(scaled).unwrap_or(u32::MAX).max(1)
             });
+        }
+        MissionEffect::Ai { player, order } => {
+            crate::ai::campaign::command(state, *player, order);
         }
         MissionEffect::Win => {
             state.outcome = Some(Outcome {

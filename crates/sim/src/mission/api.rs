@@ -1,4 +1,4 @@
-//! The `mission` table: 34 functions over a draft of the mission state.
+//! The `mission` table: 39 functions over a draft of the mission state.
 //!
 //! Calls read the game state as it was when the run began and write only to the draft and
 //! the effect queue, so a failed run leaves no trace. Item exchanges read their own writes
@@ -35,7 +35,7 @@ pub const MAX_DAMAGE: usize = 64;
 /// Camera transition when a shot gives none.
 const DEFAULT_TRANSITION_MS: u32 = 350;
 
-pub const NAMES: [&str; 34] = [
+pub const NAMES: [&str; 39] = [
     "has_item",
     "give_item",
     "take_item",
@@ -70,7 +70,14 @@ pub const NAMES: [&str; 34] = [
     "objective",
     "win",
     "lose",
+    "ai_waves",
+    "ai_attack_now",
+    "ai_target",
+    "ai_behaviour",
+    "ai_wake",
 ];
+
+mod ai;
 
 type Reply = Result<Vec<Scalar>, String>;
 
@@ -192,6 +199,9 @@ impl<'a> Api<'a> {
             "objective" => {
                 self.draft.objective = text(a.get(0), 500)?.to_string();
                 none()
+            }
+            "ai_waves" | "ai_attack_now" | "ai_target" | "ai_behaviour" | "ai_wake" => {
+                self.ai(name, &a)
             }
             "win" => self.effect(MissionEffect::Win),
             "lose" => self.effect(MissionEffect::Lose),

@@ -29,6 +29,7 @@
 //! rebuilt from the player's knowledge on load. The only randomness is the placement
 //! cursor, seeded from the match seed and the player.
 
+pub mod campaign;
 pub mod continuity;
 pub mod economy;
 pub mod frame;
@@ -214,6 +215,7 @@ impl<'f, 'a> Beat<'f, 'a> {
         if self.out.len() >= self.rules().limits.commands_per_beat as usize
             || ids.iter().any(|&id| self.claimed(id))
             || (spends(&action) && self.spent)
+            || self.rules().forbids(&action)
             || self.s.pending.len() >= MAX_PENDING
             || self
                 .s
@@ -387,9 +389,65 @@ impl Brains {
     /// experiments; the next decision uses it).
     pub fn restyle(&mut self, catalog: &crate::catalog::Catalog, player: u8, style: AiStyle) {
         for b in self.brains.iter_mut().filter(|b| b.player == player) {
-            let rules = AiRules::for_race(catalog, b.race.as_deref(), style);
+            let mut rules = AiRules::for_race(catalog, b.race.as_deref(), style);
+            rules.forbidden = b.rules.forbidden.clone();
+            rules
+                .composition
+                .retain(|c| !rules.forbidden.contains(&c.definition));
             b.phase = b.phase.min(rules.decision_ticks.saturating_sub(1));
             b.rules = rules;
+        }
+    }
+
+    /// Holds `player` back as a campaign mission's Skirmish behaviour asks
+    /// (docs/campaign.md): its style, an army cap, a slower pace (every decision interval
+    /// multiplied). Its income handicap is the economy's ([`crate::economy::Economy::set_income`]).
+    pub fn hold_back(
+        &mut self,
+        catalog: &crate::catalog::Catalog,
+        player: u8,
+        limits: &canopy_content::map::SkirmishLimits,
+    ) {
+        for b in self.brains.iter_mut().filter(|b| b.player == player) {
+            let style = limits
+                .style
+                .as_deref()
+                .and_then(AiStyle::parse)
+                .unwrap_or(b.rules.style);
+            let mut rules = AiRules::for_race(catalog, b.race.as_deref(), style);
+            if let Some(cap) = limits.army_cap {
+                rules.army.maximum = rules.army.maximum.min(cap);
+                rules.army.minimum = rules.army.minimum.min(cap);
+                rules.invest_army = rules.invest_army.min(cap);
+            }
+            if let Some(pace) = limits.pace.filter(|p| *p > 1.0) {
+                let slow = |t: u32| ((f64::from(t) * pace).round() as u32).max(1);
+                rules.decision_ticks = slow(rules.decision_ticks);
+                rules.economy_ticks = slow(rules.economy_ticks);
+                rules.strategy_ticks = slow(rules.strategy_ticks);
+                rules.operation_ticks = slow(rules.operation_ticks);
+                rules.reaction_ticks = slow(rules.reaction_ticks);
+                rules.order_interval_ticks = slow(rules.order_interval_ticks);
+            }
+            rules.forbidden = b.rules.forbidden.clone();
+            rules
+                .composition
+                .retain(|c| !rules.forbidden.contains(&c.definition));
+            b.phase = b.phase.min(rules.decision_ticks.saturating_sub(1));
+            b.rules = rules;
+        }
+    }
+
+    /// The mission's tech limits for `player`: definitions and research it may not build,
+    /// train or research (the campaign's tech gating fills this; without it
+    /// every tech is open). Its recruits drop them, and commands that would make them are
+    /// never issued.
+    pub fn forbid(&mut self, player: u8, forbidden: Vec<canopy_content::Id>) {
+        for b in self.brains.iter_mut().filter(|b| b.player == player) {
+            b.rules
+                .composition
+                .retain(|c| !forbidden.contains(&c.definition));
+            b.rules.forbidden = forbidden.clone();
         }
     }
 
@@ -537,7 +595,15 @@ impl Brains {
 
     /// Step 12: the AIs due this tick decide (old `World.tick` brains loop). Returns each
     /// command with its player, to be queued for the next tick.
-    pub fn decide(&self, input: &Input, memories: &mut [Memory], tick: u32) -> Vec<(u8, Command)> {
+    /// Players in `idle` (campaign players the skirmish AI does not play right now) are
+    /// skipped.
+    pub fn decide(
+        &self,
+        input: &Input,
+        memories: &mut [Memory],
+        tick: u32,
+        idle: &[u8],
+    ) -> Vec<(u8, Command)> {
         let Some(geo) = self.geography.clone() else {
             return Vec::new();
         };
@@ -546,7 +612,7 @@ impl Brains {
             return out;
         }
         for (brain, memory) in self.brains.iter().zip(memories.iter_mut()) {
-            if tick % brain.rules.decision_ticks != brain.phase {
+            if tick % brain.rules.decision_ticks != brain.phase || idle.contains(&brain.player) {
                 continue;
             }
             let _span = tracing::trace_span!("ai decision").entered();

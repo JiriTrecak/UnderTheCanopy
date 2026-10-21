@@ -71,6 +71,9 @@ pub fn validate(map: &UtcMap, content: &Content) -> Vec<Error> {
         errors: Vec::new(),
     };
     mission(&mut v);
+    for (at, message) in super::players::validate(map, content) {
+        v.fail(at, message);
+    }
     let declared = declared_placements(&mut v);
     placements(&mut v, &declared);
     camps(&mut v, &declared);

@@ -14,7 +14,7 @@ pub struct Script {
     /// entities by placement id; numeric entity ids stay private.
     placements: Vec<Placement>,
     camps: Vec<Camp>,
-    /// Owners with a player start.
+    /// Owners with a player start, and the mission's computer players.
     owners: Vec<Owner>,
     /// Cells per side.
     pub size: u32,
@@ -33,7 +33,17 @@ impl Script {
             mission: mission.clone(),
             placements,
             camps: map.camps.clone(),
-            owners: map.player_starts.iter().map(|s| s.owner()).collect(),
+            owners: map
+                .player_starts
+                .iter()
+                .map(|s| s.owner())
+                .chain(
+                    mission
+                        .players
+                        .iter()
+                        .map(|p| Owner::Player(p.player.saturating_sub(1))),
+                )
+                .collect(),
             size: map.size,
         }))
     }
@@ -43,6 +53,11 @@ impl Script {
             .binary_search_by(|p| p.id.as_str().cmp(id))
             .ok()
             .map(|index| &self.placements[index])
+    }
+
+    /// Every placement, script-activated ones included, by id.
+    pub fn placements(&self) -> &[Placement] {
+        &self.placements
     }
 
     pub fn camp(&self, id: &str) -> Option<&Camp> {
@@ -68,7 +83,7 @@ impl Script {
         self.objectives().iter().find(|o| o.id == id)
     }
 
-    /// Nobody, or a player with a start on this map.
+    /// Nobody, a player with a start on this map, or a computer player of the mission.
     pub fn seats(&self, owner: Owner) -> bool {
         owner == Owner::Nobody || self.owners.contains(&owner)
     }

@@ -120,9 +120,27 @@ pub struct AiRules {
     pub army_per_worker: u32,
     /// The race's recruits, by id.
     pub composition: Vec<AiComposition>,
+    /// Definitions and research the mission's tech forbids ([`super::Brains::forbid`]).
+    pub forbidden: Vec<Id>,
 }
 
 impl AiRules {
+    /// Whether a spending command would make something the mission's tech forbids.
+    pub fn forbids(&self, action: &crate::action::Action) -> bool {
+        use crate::action::Action;
+        if self.forbidden.is_empty() {
+            return false;
+        }
+        let made = match action {
+            Action::Build { definition, .. } | Action::Produce { definition, .. } => {
+                definition.as_str()
+            }
+            Action::Research { research, .. } => research.as_str(),
+            _ => return false,
+        };
+        self.forbidden.iter().any(|f| f.as_str() == made)
+    }
+
     /// The workers it keeps at `tick`.
     pub fn workers_at(&self, tick: u32) -> &AiWorkers {
         if self.rush_until == 0 || tick < self.rush_until {
@@ -173,6 +191,7 @@ impl AiRules {
             army_per_producer: 12,
             army_per_worker: 2,
             composition: recruits(catalog, race, style),
+            forbidden: Vec::new(),
         };
         match style {
             AiStyle::Standard => standard,

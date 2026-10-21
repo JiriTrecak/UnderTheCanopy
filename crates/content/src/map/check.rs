@@ -559,6 +559,9 @@ fn mission(r: &mut Report, m: &Mission) {
         "mission",
         "Region IDs must be unique",
     );
+    for (at, message) in super::players::check(m) {
+        r.fail(at, message);
+    }
 }
 
 fn authoring(r: &mut Report, scene: &SavedScene) {

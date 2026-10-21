@@ -112,6 +112,9 @@ pub struct State {
     /// What each AI player remembers, by player (`ai`).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub ai: Vec<crate::ai::Memory>,
+    /// What each campaign computer player remembers, by player (`ai::campaign`).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub campaign_ai: Vec<crate::ai::campaign::Memory>,
     /// Deliveries, persistent instances and queued reactions (`abilities`).
     #[serde(
         default,
@@ -158,6 +161,7 @@ impl State {
             economy: crate::economy::EconomyState::default(),
             combat: crate::combat::CombatState::default(),
             ai: Vec::new(),
+            campaign_ai: Vec::new(),
             abilities: crate::abilities::AbilityWorld::default(),
             pings: Vec::new(),
             tunnels: Default::default(),

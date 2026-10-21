@@ -305,6 +305,9 @@ pub struct Tables {
     /// Per owner: the name of the cheapest constructable network node of its race, for
     /// placement messages (D66).
     pub network: BTreeMap<Owner, String>,
+    /// Per owner: gathered currencies count this many permille (a campaign AI's income
+    /// handicap); 1000 when absent.
+    pub income: BTreeMap<Owner, u32>,
 }
 
 /// Derived economy data kept beside the state: indexes, compiled tables and the tick's
@@ -342,6 +345,7 @@ impl Economy {
                 hints: supply::hints(catalog, setup),
                 fulfils: supply::fulfils(catalog),
                 network: network::hints(catalog, setup),
+                income: BTreeMap::new(),
             },
             deliveries: Vec::new(),
         }
@@ -349,6 +353,12 @@ impl Economy {
 
     pub fn tables(&self) -> &Tables {
         &self.tables
+    }
+
+    /// Makes `owner`'s gathered currencies count `permille` (a campaign Skirmish player's
+    /// income handicap). Derived: set again after a restore.
+    pub fn set_income(&mut self, owner: Owner, permille: u32) {
+        self.tables.income.insert(owner, permille);
     }
 
     pub fn ctx<'a>(
