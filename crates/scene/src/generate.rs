@@ -242,6 +242,15 @@ impl Cells {
     }
 
     /// `zone` at cell `i`, and when `face` is given, near a cliff of that face.
+    /// Whether vertex (`vx`, `vz`) is a corner of a ramp cell.
+    fn by_ramp(&self, vx: usize, vz: usize) -> bool {
+        let span = self.span;
+        (vz.saturating_sub(1)..=vz.min(span - 1)).any(|z| {
+            (vx.saturating_sub(1)..=vx.min(span - 1))
+                .any(|x| self.kind[z * span + x] == BlockKind::Ramp)
+        })
+    }
+
     fn zone_of(&self, i: usize, zone: Zone, face: Option<u8>) -> bool {
         self.zone(i, zone) && face.is_none_or(|f| self.face[i] == f)
     }
@@ -282,6 +291,17 @@ impl Heights<'_> {
             self.bytes[i + 2],
             self.bytes[i + 3],
         ])
+    }
+
+    /// The highest corner of the cell at (`wx`, `wz`): never under the drawn ground,
+    /// whichever way its triangles split.
+    fn cell_top(&self, wx: f32, wz: f32) -> f32 {
+        let halo = MAP_HALO as f32;
+        let (x, z) = ((wx + halo).max(0.0) as usize, (wz + halo).max(0.0) as usize);
+        self.vertex(x, z)
+            .max(self.vertex(x + 1, z))
+            .max(self.vertex(x, z + 1))
+            .max(self.vertex(x + 1, z + 1))
     }
 
     fn at(&self, wx: f32, wz: f32) -> f32 {
@@ -466,8 +486,9 @@ fn ground(map: &mut UtcMap, cells: &Cells, recipe: &BlockLook, biome: &BiomeConf
         })
         .collect();
     // Rounded: the distance into closed ground, blurred over three cells and never more
-    // than the true distance, so convex corners round off inside the frame (open ground is
-    // never covered, D71); then wandering, eating bays into the frame.
+    // than the true distance, so convex corners round off inside the frame and a diagonal
+    // edge's staircase of cells runs straight along its inner corners (open ground is never
+    // covered, D71); then wandering, eating bays into the frame.
     let blurred = blur(&into, span, 3);
     let into: Vec<f32> = into
         .iter()
@@ -479,7 +500,7 @@ fn ground(map: &mut UtcMap, cells: &Cells, recipe: &BlockLook, biome: &BiomeConf
             if d <= 0.0 {
                 d
             } else {
-                d.min(b + 0.6).min(d + wander.min(0.0)).max(-0.5)
+                d.min(b).min(d + wander.min(0.0)).max(-0.5)
             }
         })
         .collect();
@@ -515,6 +536,57 @@ fn ground(map: &mut UtcMap, cells: &Cells, recipe: &BlockLook, biome: &BiomeConf
             }
         }
         terrain.heights = Grid(bytes);
+    }
+    // Beside a ramp, where the drop is too low for a wall, the ground slopes instead of
+    // stepping cell by cell down a diagonal side (the look only, as above).
+    {
+        let read = |bytes: &[u8], i: usize| {
+            f32::from_le_bytes([
+                bytes[i * 4],
+                bytes[i * 4 + 1],
+                bytes[i * 4 + 2],
+                bytes[i * 4 + 3],
+            ])
+        };
+        let src: Vec<f32> = (0..side * side)
+            .map(|i| read(&terrain.heights.0, i))
+            .collect();
+        let soft: Vec<bool> = (0..side * side)
+            .map(|i| {
+                let (vx, vz) = (i % side, i / side);
+                if !cells.by_ramp(vx, vz)
+                    && !(vx > 0 && cells.by_ramp(vx - 1, vz))
+                    && !(vz > 0 && cells.by_ramp(vx, vz - 1))
+                    && !cells.by_ramp(vx + 1, vz)
+                    && !cells.by_ramp(vx, vz + 1)
+                {
+                    return false;
+                }
+                let mut most = 0.0f32;
+                for z in vz.saturating_sub(1)..=(vz + 1).min(side - 1) {
+                    for x in vx.saturating_sub(1)..=(vx + 1).min(side - 1) {
+                        most = most.max((src[z * side + x] - src[i]).abs());
+                    }
+                }
+                most > 0.01 && most < RAMP_STEP
+            })
+            .collect();
+        let mut h = src;
+        for _ in 0..2 {
+            let prev = h.clone();
+            for i in (0..side * side).filter(|&i| soft[i]) {
+                let (vx, vz) = (i % side, i / side);
+                let (mut sum, mut n) = (0.0, 0.0);
+                for z in vz.saturating_sub(1)..=(vz + 1).min(side - 1) {
+                    for x in vx.saturating_sub(1)..=(vx + 1).min(side - 1) {
+                        sum += prev[z * side + x];
+                        n += 1.0;
+                    }
+                }
+                h[i] = sum / n;
+            }
+        }
+        terrain.heights = Grid(h.iter().flat_map(|v| v.to_le_bytes()).collect());
     }
     // How far each cell is from the lower half of a ramp: rubble spills out of its foot.
     let to_ramp_foot = distance(span, |i| {
@@ -963,6 +1035,10 @@ impl MeshBuilder {
     }
 }
 
+/// The least drop beside a ramp that makes a wall: steeper than a ramp ever falls (a
+/// level over two blocks at the most). Lower drops beside it slope instead.
+const RAMP_STEP: f32 = LEVEL_HEIGHT * 0.14;
+
 /// One steep crossing of a level's middle height: a segment of contour, its two ends'
 /// tops and bottoms and the way down.
 struct Segment {
@@ -971,9 +1047,19 @@ struct Segment {
     top: [f32; 2],
     bottom: [f32; 2],
     down: Vec2,
+    /// The way out at each end, shared with the segment joined there (mitred: longer
+    /// where the face turns), so neighbouring stretches of face meet without a notch.
+    downs: [Vec2; 2],
     /// How far each end is from the nearer end of the run of face it belongs to (metres;
     /// far for a closed loop).
     end: [f32; 2],
+}
+
+impl Segment {
+    /// The way out `u` of the way from `a` to `b`.
+    fn down_at(&self, u: f32) -> Vec2 {
+        self.downs[0] + (self.downs[1] - self.downs[0]) * u
+    }
 }
 
 /// Fills each segment's distances to the ends of its run: segments joined end to end with
@@ -985,6 +1071,24 @@ fn runs(segments: &mut [Segment], face: &[usize]) {
     for (i, s) in segments.iter().enumerate() {
         at.entry(key(s.a)).or_default().push(i);
         at.entry(key(s.b)).or_default().push(i);
+    }
+    // Where segments meet, they share the way out: the mean of theirs, lengthened so the
+    // face keeps its reach round the turn.
+    for i in 0..segments.len() {
+        let ends = [segments[i].a, segments[i].b];
+        for (e, p) in ends.into_iter().enumerate() {
+            let own = segments[i].down;
+            let others = at.get(&key(p)).map_or(&[][..], |v| v.as_slice());
+            // A face turning back on itself (a ramp's side leaving a cliff) keeps its own.
+            let sum = others
+                .iter()
+                .map(|&j| segments[j].down)
+                .filter(|d| d.dot(own) > -0.1)
+                .fold(Vec2::ZERO, |a, d| a + d);
+            let mean = sum.normalize_or(own);
+            let cos = mean.dot(own).max(0.6);
+            segments[i].downs[e] = mean / cos;
+        }
     }
     let neighbour = |i: usize, p: Vec2, at: &BTreeMap<(i64, i64), Vec<usize>>| {
         at.get(&key(p))
@@ -1038,7 +1142,12 @@ fn runs(segments: &mut [Segment], face: &[usize]) {
     }
 }
 
-fn contours(heights: &Heights, side: usize) -> Vec<Segment> {
+fn contours(heights: &Heights, cells: &Cells, side: usize) -> Vec<Segment> {
+    // The least drop across a cell edge that makes a wall: deeper than a shallow water's
+    // bed lies; beside a ramp, steeper than a ramp ever falls (a level over two blocks at
+    // the most), so its sides keep their walls almost to its foot.
+    const STEP: f32 = LEVEL_HEIGHT * 0.25;
+    let ramp = |vx: usize, vz: usize| cells.by_ramp(vx, vz);
     let halo = MAP_HALO as f32;
     let mut out = Vec::new();
     for z in 0..side - 1 {
@@ -1053,8 +1162,9 @@ fn contours(heights: &Heights, side: usize) -> Vec<Segment> {
                 h.iter().copied().fold(f32::MAX, f32::min),
                 h.iter().copied().fold(f32::MIN, f32::max),
             );
-            // Only steep cells: a ramp falls a quarter level per cell.
-            if hi - lo < LEVEL_HEIGHT * 0.6 {
+            let near_ramp = ramp(x, z) || ramp(x + 1, z + 1);
+            let step = if near_ramp { RAMP_STEP } else { STEP };
+            if hi - lo < step {
                 continue;
             }
             let corners = [
@@ -1063,30 +1173,43 @@ fn contours(heights: &Heights, side: usize) -> Vec<Segment> {
                 Vec2::new(x as f32 + 1.0, z as f32 + 1.0),
                 Vec2::new(x as f32, z as f32 + 1.0),
             ];
-            // The level middle just above this cell's foot (rounded: water and ice lie a
-            // little under their level): one wall per drop.
-            let level = (lo / LEVEL_HEIGHT).round();
-            let t = (level + 0.5) * LEVEL_HEIGHT;
-            if t <= lo || t > hi {
-                continue;
+            // A wall crosses each steep edge of the cell at its middle height, so the
+            // cells either side of the edge agree where; a ramp's side, falling with the
+            // ramp, keeps its wall down to where the drop gives out.
+            let mut crossed: Vec<(usize, f32)> = (0..4)
+                .filter_map(|e| {
+                    let d = (h[e] - h[(e + 1) % 4]).abs();
+                    (d >= step).then_some((e, d))
+                })
+                .collect();
+            if crossed.len() % 2 == 1 {
+                let least = (0..crossed.len())
+                    .min_by(|&i, &j| crossed[i].1.total_cmp(&crossed[j].1))
+                    .unwrap_or(0);
+                crossed.remove(least);
             }
-            let mut points = Vec::new();
-            for e in 0..4 {
-                let (p, q) = (e, (e + 1) % 4);
-                if (h[p] > t) != (h[q] > t) {
-                    let f = (t - h[p]) / (h[q] - h[p]);
-                    points.push(corners[p] + (corners[q] - corners[p]) * f);
-                }
-            }
+            let points: Vec<Vec2> = crossed
+                .iter()
+                .map(|&(e, _)| (corners[e] + corners[(e + 1) % 4]) * 0.5)
+                .collect();
             if points.len() < 2 {
                 continue;
             }
-            // The way down: against the cell's gradient.
-            let gx = (h[1] + h[2]) - (h[0] + h[3]);
-            let gz = (h[2] + h[3]) - (h[0] + h[1]);
-            let down = -Vec2::new(gx, gz).normalize_or(Vec2::X);
             for pair in points.chunks_exact(2) {
                 let (mut a, mut b) = (pair[0] - Vec2::splat(halo), pair[1] - Vec2::splat(halo));
+                // The way down: across the segment, to whichever side is lower (a cell's
+                // own slope says nothing where two walls cross it).
+                let across = Vec2::new(-(b - a).y, (b - a).x).normalize_or(Vec2::X);
+                let mid = (a + b) * 0.5;
+                let side = |d: Vec2| {
+                    let p = mid + d * 0.3;
+                    heights.at(p.x, p.y)
+                };
+                let down = if side(across) <= side(-across) {
+                    across
+                } else {
+                    -across
+                };
                 // Wound so the wall's front (dv × du) faces down the slope.
                 let dir = b - a;
                 if -dir.y * down.x + dir.x * down.y < 0.0 {
@@ -1098,6 +1221,7 @@ fn contours(heights: &Heights, side: usize) -> Vec<Segment> {
                     top: [hi; 2],
                     bottom: [lo; 2],
                     down,
+                    downs: [down; 2],
                     end: [1e3; 2],
                 });
             }
@@ -1148,8 +1272,9 @@ fn roots(
     seed: u64,
 ) {
     let length = (s.b - s.a).length();
-    let n = (length * rule.density).floor() as usize
-        + usize::from(rng.next() < (length * rule.density).fract());
+    // Few on a low face (a ramp's side towards its foot).
+    let many = length * rule.density * smoothstep(0.6, 2.0, s.top[0] - s.bottom[0]);
+    let n = many.floor() as usize + usize::from(rng.next() < many.fract());
     let along = (s.b - s.a) / length.max(1e-4);
     let (top, bottom) = (s.top[0], s.bottom[0]);
     let drop = (top - bottom).max(0.5);
@@ -1205,8 +1330,9 @@ fn face_strip(mesh: &mut MeshBuilder, heights: &Heights, s: &Segment, look: &Cli
         for c in 0..cols {
             let u = c as f32 / (cols - 1) as f32;
             let at = s.a + (s.b - s.a) * u;
-            let top = s.top[0] + (s.top[1] - s.top[0]) * u;
             let bottom = s.bottom[0] + (s.bottom[1] - s.bottom[0]) * u;
+            let top = s.top[0] + (s.top[1] - s.top[0]) * u;
+            let down = s.down_at(u);
             // From a lip on the plateau out over the lower ground, steepest under the
             // lip, spreading at the foot; an overhang pushes the upper face out.
             let k = reach(at, s.end[0] + (s.end[1] - s.end[0]) * u, seed);
@@ -1216,7 +1342,7 @@ fn face_strip(mesh: &mut MeshBuilder, heights: &Heights, s: &Segment, look: &Cli
                 // The lip wanders only out over the drop, so the block's straight edge
                 // stays under the face.
                 (
-                    top + 0.02,
+                    top + 0.06,
                     -0.5 - back + look.overhang * 0.6 + (w + look.wander * 0.75) * 0.8 - w,
                 )
             } else if r == rows - 1 {
@@ -1228,11 +1354,27 @@ fn face_strip(mesh: &mut MeshBuilder, heights: &Heights, s: &Segment, look: &Cli
             // the drop (in front of the block's straight edge), freely towards the foot.
             let f = r as f32 / (rows - 1) as f32;
             let out = out + w + look.wander * 0.75 * (1.0 - f).powi(2);
-            let (px, pz) = (at.x + s.down.x * out, at.y + s.down.y * out);
+            // Along a diagonal, the lip reaches back past the corners its staircase of cells
+            // leaves (half a cell's diagonal behind the wall), however it wanders.
+            let out = if r == 0 {
+                let diagonal = smoothstep(
+                    0.25,
+                    0.7,
+                    2.0 * (down.x * down.y).abs() / down.length_squared().max(1e-6),
+                );
+                out.min(-0.75 + (1.0 - diagonal) * 10.0)
+            } else {
+                out
+            };
+            let (px, pz) = (at.x + down.x * out, at.y + down.y * out);
             // The lip lies on the ground it covers: beside a ramp, the ramp's slope, so it
-            // never floats over it.
+            // never floats over it (on the cell's highest corner, so never under it either).
             let y = if r == 0 {
-                y.min(heights.at(px, pz) + 0.02)
+                y.min(heights.cell_top(px, pz) + 0.06)
+            } else if r == 1 {
+                // Where the face turns down, a little over the ground's own edge, so the
+                // teeth a diagonal leaves stay under it.
+                y + 0.06
             } else {
                 y
             };
@@ -1245,7 +1387,7 @@ fn face_strip(mesh: &mut MeshBuilder, heights: &Heights, s: &Segment, look: &Cli
             let bulge = look.relief * face * (0.2 + 0.8 * id) * dome * smoothstep(0.0, 0.3, edge);
             let lift = if r == 0 { bulge * 0.4 } else { 0.0 };
             let push = if r == 0 { 0.0 } else { bulge };
-            points.push(p + Vec3::new(s.down.x * push, lift, s.down.y * push));
+            points.push(p + Vec3::new(down.x * push, lift, down.y * push));
             // Dark in the grooves, and towards the foot under the overhang of stones.
             let groove = smoothstep(0.02, 0.32, edge);
             let foot = if r == rows - 1 {
@@ -1311,7 +1453,7 @@ fn rim_strip(
     mesh: &mut MeshBuilder,
     a: Vec2,
     b: Vec2,
-    across: Vec2,
+    across: [Vec2; 2],
     rim: &Shore,
     ground: impl Fn(Vec2) -> f32,
     shift: impl Fn(Vec2) -> f32,
@@ -1329,6 +1471,7 @@ fn rim_strip(
         for c in 0..cols {
             let u = c as f32 / (cols - 1) as f32;
             let along = a + (b - a) * u;
+            let across = across[0] + (across[1] - across[0]) * u;
             let p = along + across * ((t - 0.45) * rim.width + shift(along));
             let g = ground(p);
             let profile = (std::f32::consts::PI * t).sin().max(0.0).powf(0.6);
@@ -1346,7 +1489,7 @@ fn rim_strip(
     }
     // Wound so it faces up: across × along.
     let dir = b - a;
-    let flip = dir.x * across.y - dir.y * across.x < 0.0;
+    let flip = dir.x * across[0].y - dir.y * across[0].x < 0.0;
     let base = mesh.vertices.len();
     let first = mesh.indices.len();
     mesh.grid(&grid, rows, cols);
@@ -1364,7 +1507,9 @@ fn rim_strip(
     let n = (length * rim.rubble).floor() as usize
         + usize::from(rng.next() < (length * rim.rubble).fract());
     for _ in 0..n {
-        let p = a + (b - a) * rng.next() + across * rng.range(-0.9, 0.9) * rim.width;
+        let u = rng.next();
+        let side = across[0] + (across[1] - across[0]) * u;
+        let p = a + (b - a) * u + side * rng.range(-0.9, 0.9) * rim.width;
         let size = rng.range(0.25, 0.8) * rim.stone;
         let y = ground(p);
         mesh.rock(
@@ -1433,7 +1578,7 @@ fn shore(mesh: &mut MeshBuilder, heights: &Heights, cells: &Cells, shore: &Shore
                     mesh,
                     a,
                     b,
-                    to_ice,
+                    [to_ice; 2],
                     shore,
                     |p| heights.at(p.x, p.y),
                     |_| 0.0,
@@ -1471,14 +1616,21 @@ fn cliffs(heights: &Heights, cells: &Cells, recipe: &BlockLook, seed: u64) -> Ve
         .collect();
     let mut rng = Rng(seed ^ 0xC11F);
     let side = heights.side;
-    let mut segments = contours(heights, side);
+    let mut segments = contours(heights, cells, side);
     // The face of the column above each drop.
     let faces: Vec<usize> = segments
         .iter()
         .map(|s| {
             let up = (s.a + s.b) * 0.5 - s.down * 1.2;
             let style = cells.at(up.x, up.y).map_or(0, |i| cells.face[i]) as usize;
-            if style < looks.len() { style } else { 0 }
+            // A low wall (a ramp's side towards its foot) is a curb of the biome's own
+            // stone, whatever face the cliff above it has.
+            let low = s.top[0] - s.bottom[0] < LEVEL_HEIGHT * 0.4;
+            if style < looks.len() && !low {
+                style
+            } else {
+                0
+            }
         })
         .collect();
     runs(&mut segments, &faces);
@@ -1498,7 +1650,7 @@ fn cliffs(heights: &Heights, cells: &Cells, recipe: &BlockLook, seed: u64) -> Ve
                 &mut meshes[0],
                 s.a,
                 s.b,
-                -s.down,
+                [-s.downs[0], -s.downs[1]],
                 crown,
                 |p| heights.at(p.x, p.y).max(top - 0.25),
                 |p| {

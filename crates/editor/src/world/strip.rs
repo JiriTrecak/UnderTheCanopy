@@ -575,3 +575,92 @@ pub(super) fn show(
         })
         .inner
 }
+
+/// The view switch, floating at the top of the view: the blocks, or the world the biome
+/// makes of them (G).
+pub(super) fn view_bar(ctx: &egui::Context, session: &mut Session, view: Rect) {
+    egui::Area::new(Id::new(("block-view", &session.root)))
+        .order(Order::Foreground)
+        .pivot(Align2::CENTER_TOP)
+        .fixed_pos(view.center_top() + vec2(0.0, 12.0))
+        .constrain_to(view)
+        .show(ctx, |ui| {
+            frame()
+                .inner_margin(egui::Margin::symmetric(5, 5))
+                .show(ui, |ui| {
+                    ui.spacing_mut().item_spacing = vec2(3.0, 0.0);
+                    ui.horizontal(|ui| {
+                        for (generated, icon, name) in [
+                            (false, Icon::Blocks, "Blocks"),
+                            (true, Icon::World, "Generated"),
+                        ] {
+                            let on = session.blocks.generated == generated;
+                            if view_button(ui, icon, name, on) && !on {
+                                session.blocks.generated = generated;
+                                session.stale = true;
+                            }
+                        }
+                        let (rect, _) = ui.allocate_exact_size(vec2(24.0, 30.0), Sense::hover());
+                        let chip = Rect::from_center_size(rect.center(), vec2(17.0, 17.0));
+                        ui.painter().rect_stroke(
+                            chip,
+                            4,
+                            Stroke::new(1.0, BORDER),
+                            egui::StrokeKind::Inside,
+                        );
+                        ui.painter().text(
+                            chip.center(),
+                            Align2::CENTER_CENTER,
+                            "G",
+                            FontId::monospace(10.5),
+                            MUTED,
+                        );
+                    });
+                });
+        });
+}
+
+/// One side of the view switch: its icon and name, highlighted when shown.
+fn view_button(ui: &mut Ui, icon: Icon, name: &str, on: bool) -> bool {
+    let galley = ui
+        .painter()
+        .layout_no_wrap(name.to_string(), FontId::proportional(12.5), TEXT);
+    let size = vec2(10.0 + 18.0 + 7.0 + galley.size().x + 12.0, 30.0);
+    let (rect, response) = ui.allocate_exact_size(size, Sense::click());
+    let hovered = response.hovered();
+    let painter = ui.painter();
+    if on {
+        painter.rect(
+            rect,
+            7,
+            SELECTED,
+            Stroke::new(1.0, SOFT),
+            egui::StrokeKind::Inside,
+        );
+    } else if hovered {
+        painter.rect_filled(rect, 7, RAISED);
+    }
+    let color = if on {
+        TEXT
+    } else if hovered {
+        SOFT
+    } else {
+        MUTED
+    };
+    icons::paint(
+        painter,
+        icons::square(pos2(rect.left() + 10.0 + 9.0, rect.center().y), 18.0),
+        icon,
+        color,
+    );
+    painter.text(
+        pos2(rect.left() + 10.0 + 18.0 + 7.0, rect.center().y),
+        Align2::LEFT_CENTER,
+        name,
+        FontId::proportional(12.5),
+        color,
+    );
+    response
+        .on_hover_text("Switch between the blocks and the world made of them   G")
+        .clicked()
+}

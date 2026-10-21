@@ -1012,21 +1012,6 @@ fn panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
         }
     });
     ui.add_space(12.0);
-    ui.label(eyebrow("View"));
-    ui.horizontal(|ui| {
-        for (generated, label) in [(false, "Blocks"), (true, "Generated")] {
-            if ui
-                .selectable_label(session.blocks.generated == generated, label)
-                .on_hover_text("G switches")
-                .clicked()
-                && session.blocks.generated != generated
-            {
-                session.blocks.generated = generated;
-                session.stale = true;
-            }
-        }
-    });
-    ui.add_space(12.0);
     ui.label(
         RichText::new(
             "B box · brush · lasso  ·  [ ] size  ·  Y symmetry  ·  G view  ·  Shift reverses",
@@ -1281,11 +1266,15 @@ pub fn show(
     );
     let input = ui.input(|i| i.clone());
     navigate(&input, &response, rect, &mut session.camera, map_size);
+    // G switches the view wherever the pointer is, unless a field is being typed in.
+    if input.key_pressed(egui::Key::G)
+        && !input.modifiers.command
+        && !ui.ctx().egui_wants_keyboard_input()
+    {
+        session.blocks.generated = !session.blocks.generated;
+        session.stale = true;
+    }
     if response.hovered() && !input.modifiers.command {
-        if input.key_pressed(egui::Key::G) {
-            session.blocks.generated = !session.blocks.generated;
-            session.stale = true;
-        }
         for tool in BlockTool::ALL {
             if input.key_pressed(tool.key()) {
                 session.blocks.tool = tool;
@@ -1765,6 +1754,7 @@ pub fn show(
     }
     // The tool strips, floating over the foot of the view.
     out.edits.extend(strip::show(ui.ctx(), session, rect, docs));
+    strip::view_bar(ui.ctx(), session, rect);
     if let Some(op) = live
         && session.blocks.drag.is_some()
     {

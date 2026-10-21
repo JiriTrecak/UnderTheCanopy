@@ -15,9 +15,12 @@
       "Block editor: the map shows an edit live while you drag, in the blocks and in the generated world, and takes it as one undo step",
       "The map editor is the block editor: maps are shaped in blocks, with a Select tool to move or remove starts, amber sites, camps and props",
       "Block editor: a floating tool strip of icons at the foot of the map, with the chosen tool's settings in a strip above it",
-      "Map editor: kinds, cliff faces and what Place puts down are chosen from a grid of pictures, so you see what you lay down"
+      "Map editor: kinds, cliff faces and what Place puts down are chosen from a grid of pictures, so you see what you lay down",
+      "Map editor: the Blocks and Generated views switch from a floating bar at the top of the view, and G now works wherever the pointer is"
     ],
-    "fixed": [],
+    "fixed": [
+      "Generated cliffs join cleanly at corners and turns, ramps keep their side walls down to the foot, and diagonal cliff edges no longer show a staircase"
+    ],
     "knownIssues": []
   },
   "releases": [

@@ -37,6 +37,9 @@ pub enum Icon {
     Place,
     Round,
     Select,
+    // The block editor's views.
+    Blocks,
+    World,
 }
 
 /// One stroke of an icon: an open or closed polyline in grid units.
@@ -305,6 +308,31 @@ fn parts(icon: Icon) -> Vec<Part> {
             [12.0, 14.0],
             [18.0, 14.0],
         ])],
+        // A block, seen from above a corner.
+        Icon::Blocks => vec![
+            Closed(vec![
+                [12.0, 3.0],
+                [20.0, 7.5],
+                [20.0, 16.5],
+                [12.0, 21.0],
+                [4.0, 16.5],
+                [4.0, 7.5],
+            ]),
+            Open(vec![[4.0, 7.5], [12.0, 12.0], [20.0, 7.5]]),
+            Open(vec![[12.0, 12.0], [12.0, 21.0]]),
+        ],
+        // Hills under a sun: the world made of the blocks.
+        Icon::World => vec![
+            Open(vec![
+                [2.5, 19.0],
+                [9.0, 9.5],
+                [13.0, 15.0],
+                [16.0, 11.5],
+                [21.5, 19.0],
+            ]),
+            Open(vec![[2.5, 19.0], [21.5, 19.0]]),
+            circle([17.0, 5.5], 2.2),
+        ],
     }
 }
 
