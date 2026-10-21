@@ -1020,6 +1020,12 @@ fn panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
         }
     });
     ui.add_space(12.0);
+    ui.label(
+        RichText::new("B brush  ·  [ ] size  ·  Y symmetry  ·  G view  ·  Shift reverses")
+            .size(10.5)
+            .color(FAINT),
+    );
+    ui.add_space(12.0);
     ui.label(eyebrow("Editor"));
     if ui
         .button("Classic map editor")
