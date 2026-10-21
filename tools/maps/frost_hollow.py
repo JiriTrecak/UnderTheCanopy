@@ -68,6 +68,10 @@ c.call('map_blocks', map=M, op='ramp', **{'from': [129, 95]}, to=[143, 116], rad
 fill('ice', [[170, 96], [164, 106], [158, 116], [147, 131], [139, 146], [136, 154],
              [134, 176], [200, 176], [200, 96]])
 fill('rock', [[178, 96], [173, 110], [166, 130], [160, 150], [157, 176], [230, 176], [230, 96]])
+# The far bank rises a level beyond the pond, its edge cut at 45°.
+c.call('map_blocks', map=M, op='level', points=[[180, 92], [176, 112], [170, 132], [164, 152],
+                                                [160, 180], [240, 180], [240, 92]], fill=True, level=2)
+c.call('map_blocks', map=M, op='round', **{'from': [150, 90]}, to=[200, 182])
 
 # The leaf frame in the south-west, its edge cell by cell.
 fill('wall', [[56, 133], [84, 133.5], [96, 135.5], [104, 141], [109, 148], [111, 158],
