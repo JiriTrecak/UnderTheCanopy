@@ -683,13 +683,12 @@ impl Shell {
                 &content,
             );
         }
-        let blocks = !session.blocks.generated;
         match crate::map::build(
             map,
             &content,
             &resources.pack,
             &resources.looks[&biome],
-            blocks,
+            session.blocks.view,
         ) {
             Ok(scene) => {
                 session.scene = Some(Arc::new(scene));
@@ -2102,13 +2101,13 @@ impl Shell {
         }
     }
 
-    /// The block editor's view: the blocks, or the world generated from them (captures).
-    pub fn set_block_view(&mut self, generated: bool) {
+    /// The block editor's view: "blocks", "generated" or "pathing" (captures).
+    pub fn set_block_view(&mut self, view: &str) {
         if let Some(root) = self.active_map_root()
             && let Some(session) = self.maps.get_mut(&root)
-            && session.blocks.generated != generated
+            && let Some(view) = crate::world::View::named(view)
+            && session.blocks.set_view(view)
         {
-            session.blocks.generated = generated;
             session.stale = true;
         }
     }

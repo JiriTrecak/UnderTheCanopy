@@ -40,6 +40,7 @@ pub enum Icon {
     // The block editor's views.
     Blocks,
     World,
+    Pathing,
 }
 
 /// One stroke of an icon: an open or closed polyline in grid units.
@@ -332,6 +333,12 @@ fn parts(icon: Icon) -> Vec<Part> {
             ]),
             Open(vec![[2.5, 19.0], [21.5, 19.0]]),
             circle([17.0, 5.5], 2.2),
+        ],
+        // A winding route between two stops: where units walk.
+        Icon::Pathing => vec![
+            Open(vec![[6.0, 17.5], [6.0, 12.0], [18.0, 12.0], [18.0, 6.5]]),
+            circle([6.0, 19.5], 2.0),
+            circle([18.0, 4.5], 2.0),
         ],
     }
 }

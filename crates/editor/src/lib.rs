@@ -224,9 +224,9 @@ impl Editor {
         self.shell.set_block_tool(name);
     }
 
-    /// The block editor's view: the blocks, or the world generated from them (captures).
-    pub fn set_block_view(&mut self, generated: bool) {
-        self.shell.set_block_view(generated);
+    /// The block editor's view: "blocks", "generated" or "pathing" (captures).
+    pub fn set_block_view(&mut self, view: &str) {
+        self.shell.set_block_view(view);
     }
 
     /// Opens the block tool's picker on the next frame (captures).

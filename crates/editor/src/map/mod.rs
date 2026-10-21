@@ -36,20 +36,28 @@ fn colors(look: &Look) -> Vec<[f32; 3]> {
         .collect()
 }
 
-/// Builds the editor's scene of `map`.
-/// `blocks`: draw the map's blocks (D80) instead of its terrain, water and scenery, when
-/// it has them.
+/// Builds the editor's scene of `map` as `view` shows it: its blocks (D80, when it has
+/// them), the world generated from them (or its terrain, water and scenery), or where
+/// ground units can walk, cell by cell.
 pub fn build(
     map: &UtcMap,
     content: &Content,
     pack: &Pack,
     look: &Look,
-    blocks: bool,
+    view: crate::world::View,
 ) -> Result<Scene, String> {
-    let blockout = blocks
-        .then(|| canopy_content::map::blocks::Blocks::of(&map.authoring.terrain)?.ok())
-        .flatten()
-        .map(|b| crate::world::mesh::mesh(&b));
+    use crate::world::View;
+    let blockout = match view {
+        View::Blocks => canopy_content::map::blocks::Blocks::of(&map.authoring.terrain)
+            .and_then(Result::ok)
+            .map(|b| crate::world::mesh::mesh(&b)),
+        View::Generated => None,
+        View::Pathing => {
+            let terrain = canopy_sim::terrain::Terrain::compile(map, content)
+                .map_err(|e| format!("{e:?}"))?;
+            Some(crate::world::mesh::pathing(&terrain))
+        }
+    };
     // Otherwise the world generated from the blocks, as the game builds it (D80).
     let generated = blockout
         .is_none()

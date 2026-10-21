@@ -470,7 +470,7 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     // and the world generated from them.
     editor.open_document("maps/showcase/frost-hollow.utcm/map.json");
     settle(&mut editor, rig, 60);
-    editor.set_block_view(false);
+    editor.set_block_view("blocks");
     settle(&mut editor, rig, 30);
     shoot(&mut editor, rig, "editor-blocks-frost")?;
     editor.set_block_tool("ramp");
@@ -516,7 +516,7 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
         frame(&mut editor, rig, vec![escape(true), escape(false)]);
     }
     editor.set_block_tool("cells");
-    editor.set_block_view(true);
+    editor.set_block_view("generated");
     let started = Instant::now();
     settle(&mut editor, rig, 1);
     let build_ms = started.elapsed().as_secs_f32() * 1000.0;
@@ -539,7 +539,7 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     // Frozen Dream with point symmetry: a brush stroke and its mirrored twin.
     editor.open_document("maps/skirmish/frozen-dream.utcm/map.json");
     settle(&mut editor, rig, 60);
-    editor.set_block_view(false);
+    editor.set_block_view("blocks");
     editor.set_block_tool("raise");
     editor.set_block_symmetry("point", true);
     settle(&mut editor, rig, 30);
@@ -589,9 +589,14 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     settle(&mut editor, rig, 10);
     editor.set_block_lasso(false);
     editor.undo_all();
-    editor.set_block_view(true);
+    editor.set_block_view("generated");
     settle(&mut editor, rig, 40);
     shoot(&mut editor, rig, "editor-blocks-dream-generated")?;
+    // Where ground units walk, cell by cell.
+    editor.set_block_view("pathing");
+    settle(&mut editor, rig, 40);
+    shoot(&mut editor, rig, "editor-blocks-dream-pathing")?;
+    editor.set_block_view("blocks");
     Ok(())
 }
 

@@ -221,6 +221,29 @@ pub struct Drag {
 }
 
 /// The block editor's state in a map's session.
+/// What the block view shows.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum View {
+    /// The blocks themselves.
+    #[default]
+    Blocks,
+    /// The world the biome generates from them.
+    Generated,
+    /// Each cell green where ground units can walk, grey where they cannot.
+    Pathing,
+}
+
+impl View {
+    pub fn named(name: &str) -> Option<Self> {
+        match name {
+            "blocks" => Some(View::Blocks),
+            "generated" => Some(View::Generated),
+            "pathing" => Some(View::Pathing),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct State {
     pub tool: BlockTool,
@@ -237,8 +260,11 @@ pub struct State {
     pub radius: u8,
     pub cell_radius: u8,
     pub drag: Option<Drag>,
-    /// Show the world generated from the blocks instead of the blocks (G).
-    pub generated: bool,
+    /// What the view shows: the blocks, the world generated from them (G), or where
+    /// ground units can walk (H).
+    pub view: View,
+    /// The view H returns to from Pathing.
+    pub before_pathing: View,
     /// The names of the biome's faces (face style 1 onwards).
     pub faces: Vec<String>,
     pub placing: Placing,
@@ -258,6 +284,15 @@ pub struct State {
     pub open_picker: bool,
 }
 
+impl State {
+    /// Shows `view`, rebuilding the scene when it changes.
+    pub fn set_view(&mut self, view: View) -> bool {
+        let changed = self.view != view;
+        self.view = view;
+        changed
+    }
+}
+
 impl Default for State {
     fn default() -> Self {
         Self {
@@ -270,7 +305,8 @@ impl Default for State {
             radius: 1,
             cell_radius: 2,
             drag: None,
-            generated: false,
+            view: View::Blocks,
+            before_pathing: View::Blocks,
             faces: Vec::new(),
             placing: Placing::default(),
             symmetry: Symmetry::default(),
@@ -1266,13 +1302,31 @@ pub fn show(
     );
     let input = ui.input(|i| i.clone());
     navigate(&input, &response, rect, &mut session.camera, map_size);
-    // G switches the view wherever the pointer is, unless a field is being typed in.
-    if input.key_pressed(egui::Key::G)
-        && !input.modifiers.command
-        && !ui.ctx().egui_wants_keyboard_input()
-    {
-        session.blocks.generated = !session.blocks.generated;
-        session.stale = true;
+    // G switches between the blocks and the generated world, H shows where ground units
+    // walk and back, wherever the pointer is, unless a field is being typed in.
+    if !input.modifiers.command && !ui.ctx().egui_wants_keyboard_input() {
+        let view = session.blocks.view;
+        let next = if input.key_pressed(egui::Key::G) {
+            Some(match view {
+                View::Generated => View::Blocks,
+                _ => View::Generated,
+            })
+        } else if input.key_pressed(egui::Key::H) {
+            Some(match view {
+                View::Pathing => session.blocks.before_pathing,
+                other => {
+                    session.blocks.before_pathing = other;
+                    View::Pathing
+                }
+            })
+        } else {
+            None
+        };
+        if let Some(next) = next
+            && session.blocks.set_view(next)
+        {
+            session.stale = true;
+        }
     }
     if response.hovered() && !input.modifiers.command {
         for tool in BlockTool::ALL {

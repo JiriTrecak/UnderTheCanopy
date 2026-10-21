@@ -5,7 +5,7 @@
 //! every choice's picture above it.
 
 use super::palette::{Choice, Palette};
-use super::{BlockTool, Placing, mesh};
+use super::{BlockTool, Placing, View, mesh};
 use crate::icons::{self, Icon};
 use crate::map::Session;
 use crate::map::tools::{Picked, Tier};
@@ -576,8 +576,23 @@ pub(super) fn show(
         .inner
 }
 
-/// The view switch, floating at the top of the view: the blocks, or the world the biome
-/// makes of them (G).
+/// A key's chip beside the view switch's buttons.
+fn key_chip(ui: &mut Ui, key: &str) {
+    let (rect, _) = ui.allocate_exact_size(vec2(24.0, 30.0), Sense::hover());
+    let chip = Rect::from_center_size(rect.center(), vec2(17.0, 17.0));
+    ui.painter()
+        .rect_stroke(chip, 4, Stroke::new(1.0, BORDER), egui::StrokeKind::Inside);
+    ui.painter().text(
+        chip.center(),
+        Align2::CENTER_CENTER,
+        key,
+        FontId::monospace(10.5),
+        MUTED,
+    );
+}
+
+/// The view switch, floating at the top of the view: the blocks or the world the biome
+/// makes of them (G), and where ground units walk (H).
 pub(super) fn view_bar(ctx: &egui::Context, session: &mut Session, view: Rect) {
     egui::Area::new(Id::new(("block-view", &session.root)))
         .order(Order::Foreground)
@@ -590,38 +605,48 @@ pub(super) fn view_bar(ctx: &egui::Context, session: &mut Session, view: Rect) {
                 .show(ui, |ui| {
                     ui.spacing_mut().item_spacing = vec2(3.0, 0.0);
                     ui.horizontal(|ui| {
-                        for (generated, icon, name) in [
-                            (false, Icon::Blocks, "Blocks"),
-                            (true, Icon::World, "Generated"),
-                        ] {
-                            let on = session.blocks.generated == generated;
-                            if view_button(ui, icon, name, on) && !on {
-                                session.blocks.generated = generated;
+                        let views = [
+                            (
+                                View::Blocks,
+                                Icon::Blocks,
+                                "Blocks",
+                                "The blocks themselves   G",
+                            ),
+                            (
+                                View::Generated,
+                                Icon::World,
+                                "Generated",
+                                "The world the biome makes of the blocks   G",
+                            ),
+                            (
+                                View::Pathing,
+                                Icon::Pathing,
+                                "Pathing",
+                                "Green where ground units can walk, grey where they cannot   H",
+                            ),
+                        ];
+                        for (shown, icon, name, hint) in views {
+                            if shown == View::Pathing {
+                                key_chip(ui, "G");
+                                divider(ui);
+                            }
+                            let on = session.blocks.view == shown;
+                            if view_button(ui, icon, name, hint, on) && !on {
+                                if shown == View::Pathing {
+                                    session.blocks.before_pathing = session.blocks.view;
+                                }
+                                session.blocks.set_view(shown);
                                 session.stale = true;
                             }
                         }
-                        let (rect, _) = ui.allocate_exact_size(vec2(24.0, 30.0), Sense::hover());
-                        let chip = Rect::from_center_size(rect.center(), vec2(17.0, 17.0));
-                        ui.painter().rect_stroke(
-                            chip,
-                            4,
-                            Stroke::new(1.0, BORDER),
-                            egui::StrokeKind::Inside,
-                        );
-                        ui.painter().text(
-                            chip.center(),
-                            Align2::CENTER_CENTER,
-                            "G",
-                            FontId::monospace(10.5),
-                            MUTED,
-                        );
+                        key_chip(ui, "H");
                     });
                 });
         });
 }
 
 /// One side of the view switch: its icon and name, highlighted when shown.
-fn view_button(ui: &mut Ui, icon: Icon, name: &str, on: bool) -> bool {
+fn view_button(ui: &mut Ui, icon: Icon, name: &str, hint: &str, on: bool) -> bool {
     let galley = ui
         .painter()
         .layout_no_wrap(name.to_string(), FontId::proportional(12.5), TEXT);
@@ -660,7 +685,5 @@ fn view_button(ui: &mut Ui, icon: Icon, name: &str, on: bool) -> bool {
         FontId::proportional(12.5),
         color,
     );
-    response
-        .on_hover_text("Switch between the blocks and the world made of them   G")
-        .clicked()
+    response.on_hover_text(hint).clicked()
 }

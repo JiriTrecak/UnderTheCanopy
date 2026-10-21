@@ -291,3 +291,101 @@ pub fn mesh(blocks: &Blocks) -> BlockoutMesh {
     }
     b.mesh
 }
+
+/// The pathing view's mesh: every cell of the playable map flat at its height, green where
+/// ground units can walk (open, with a neighbour within a climbable step, as the
+/// simulation moves them) and grey where they cannot, each outlined; walls where a cell
+/// stands above its neighbour, grey where the step is too high to climb.
+pub fn pathing(terrain: &canopy_sim::terrain::Terrain) -> BlockoutMesh {
+    use canopy_sim::terrain::MAX_GROUND_STEP_CM;
+    let size = terrain.size() as i64;
+    let heights = terrain.heights();
+    let open = terrain.walkable_cells();
+    let at = |x: i64, z: i64| terrain.cell(x, z);
+    let step = |a: usize, b: usize| {
+        open[b] && (i32::from(heights[a]) - i32::from(heights[b])).abs() <= MAX_GROUND_STEP_CM
+    };
+    let pathable: Vec<bool> = (0..size * size)
+        .map(|i| {
+            let (x, z) = (i % size, i / size);
+            let i = i as usize;
+            open[i]
+                && [(1, 0), (-1, 0), (0, 1), (0, -1)]
+                    .iter()
+                    .filter_map(|(dx, dz)| at(x + dx, z + dz))
+                    .any(|j| step(i, j))
+        })
+        .collect();
+    let (green, grey) = (linear(0x6cc35f), linear(0x9a9aa2));
+    let shade = |c: [f32; 3]| c.map(|v| v * 0.62);
+    let mut b = Builder {
+        mesh: BlockoutMesh {
+            vertices: Vec::new(),
+            indices: Vec::new(),
+        },
+    };
+    let y = |i: usize| f32::from(heights[i]) / 100.0;
+    for z in 0..size {
+        for x in 0..size {
+            let i = (z * size + x) as usize;
+            let color = if pathable[i] { green } else { grey };
+            let (x0, z0, h) = (x as f32, z as f32, y(i));
+            b.quad(
+                [
+                    Vec3::new(x0, h, z0 + 1.0),
+                    Vec3::new(x0 + 1.0, h, z0 + 1.0),
+                    Vec3::new(x0 + 1.0, h, z0),
+                    Vec3::new(x0, h, z0),
+                ],
+                Vec3::Y,
+                color,
+            );
+            // Walls down to each lower neighbour (and at the map's edges): grey where the
+            // step is too high to climb.
+            for (dx, dz) in [(1i64, 0i64), (-1, 0), (0, 1), (0, -1)] {
+                let next = at(x + dx, z + dz);
+                let low = next.map_or(h - 0.5, y);
+                let barrier = next.is_none_or(|j| {
+                    (i32::from(heights[i]) - i32::from(heights[j])).abs() > MAX_GROUND_STEP_CM
+                });
+                let wall = if barrier { grey } else { color };
+                if low >= h - 0.01 {
+                    continue;
+                }
+                let (a, c, n) = match (dx, dz) {
+                    (1, _) => (
+                        Vec3::new(x0 + 1.0, 0.0, z0 + 1.0),
+                        Vec3::new(x0 + 1.0, 0.0, z0),
+                        Vec3::X,
+                    ),
+                    (-1, _) => (
+                        Vec3::new(x0, 0.0, z0),
+                        Vec3::new(x0, 0.0, z0 + 1.0),
+                        -Vec3::X,
+                    ),
+                    (_, 1) => (
+                        Vec3::new(x0, 0.0, z0 + 1.0),
+                        Vec3::new(x0 + 1.0, 0.0, z0 + 1.0),
+                        Vec3::Z,
+                    ),
+                    _ => (
+                        Vec3::new(x0 + 1.0, 0.0, z0),
+                        Vec3::new(x0, 0.0, z0),
+                        -Vec3::Z,
+                    ),
+                };
+                b.quad(
+                    [
+                        Vec3::new(a.x, low, a.z),
+                        Vec3::new(c.x, low, c.z),
+                        Vec3::new(c.x, h, c.z),
+                        Vec3::new(a.x, h, a.z),
+                    ],
+                    n,
+                    shade(wall),
+                );
+            }
+        }
+    }
+    b.mesh
+}
