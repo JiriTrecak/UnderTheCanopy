@@ -39,6 +39,7 @@ pub mod collections {
         dir: "rules",
         form: Form::Singletons(&["game", "combat", "experience", "commands"]),
     };
+    /// Campaign packages nested in the base (`crate::campaign`); not layered as game data.
     pub const CAMPAIGNS: Collection = Collection {
         dir: "campaigns",
         form: Form::Packages(crate::package::CAMPAIGN_EXTENSION),
@@ -204,7 +205,6 @@ fn read_source(
         rules.insert("startingSetup".into(), setup.clone());
     }
     rules.insert("races".into(), races);
-    rules.insert("campaigns".into(), campaigns(packages, errors));
 
     let mut actions = match rule_files.remove("commands") {
         Some(Value::Object(fields)) => fields,
@@ -220,36 +220,6 @@ fn read_source(
         abilities: elements(&ABILITIES, packages, files, errors),
         effects: elements(&EFFECTS, packages, files, errors),
     }
-}
-
-/// Campaigns of every package: id → `{name, race}`, from each campaign package's manifest
-/// and `campaign.json`.
-fn campaigns(packages: &[Package], errors: &mut Vec<Error>) -> Value {
-    let mut map = Map::new();
-    for package in packages {
-        for found in CAMPAIGNS.read(package, errors) {
-            let campaign = match Package::open(&package.root.join(&found.path)) {
-                Ok(campaign) => campaign,
-                Err(e) => {
-                    errors.push(e);
-                    continue;
-                }
-            };
-            let file = campaign.label("campaign.json");
-            let read = std::fs::read_to_string(campaign.root.join("campaign.json"))
-                .map_err(|e| e.to_string())
-                .and_then(|text| serde_json::from_str::<Value>(&text).map_err(|e| e.to_string()));
-            match read {
-                Ok(Value::Object(mut fields)) => {
-                    fields.insert("name".into(), Value::String(campaign.manifest.name.clone()));
-                    map.insert(campaign.id().to_string(), Value::Object(fields));
-                }
-                Ok(_) => errors.push(Error::new(&file, "", "expected an object")),
-                Err(e) => errors.push(Error::new(&file, "", e)),
-            }
-        }
-    }
-    Value::Object(map)
 }
 
 /// A definition's look: `model` (its model's render asset, when there is one) with the

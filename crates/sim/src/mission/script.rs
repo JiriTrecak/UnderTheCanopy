@@ -1,6 +1,7 @@
 //! A map's mission compiled for the simulation: the script and everything it names.
 
 use super::sandbox;
+use crate::setup::MatchSetup;
 use canopy_content::{
     map::{Mission, Objective, Region, UtcMap},
     placement::{Camp, Owner, Placement},
@@ -14,7 +15,8 @@ pub struct Script {
     /// entities by placement id; numeric entity ids stay private.
     placements: Vec<Placement>,
     camps: Vec<Camp>,
-    /// Owners with a player start, and the mission's computer players.
+    /// Owners in the match: players with a start, the mission's computer players and
+    /// the setup's slots.
     owners: Vec<Owner>,
     /// Cells per side.
     pub size: u32,
@@ -22,7 +24,7 @@ pub struct Script {
 
 impl Script {
     /// The map's mission, if it has one. Its script must compile.
-    pub fn new(map: &UtcMap) -> Result<Option<Self>, String> {
+    pub fn new(map: &UtcMap, setup: &MatchSetup) -> Result<Option<Self>, String> {
         let Some(mission) = &map.mission else {
             return Ok(None);
         };
@@ -43,6 +45,7 @@ impl Script {
                         .iter()
                         .map(|p| Owner::Player(p.player.saturating_sub(1))),
                 )
+                .chain(setup.slots.iter().map(|s| Owner::Player(s.player)))
                 .collect(),
             size: map.size,
         }))
@@ -83,7 +86,8 @@ impl Script {
         self.objectives().iter().find(|o| o.id == id)
     }
 
-    /// Nobody, a player with a start on this map, or a computer player of the mission.
+    /// Nobody, or a player in the match (a start, a computer player of the mission or a
+    /// slot).
     pub fn seats(&self, owner: Owner) -> bool {
         owner == Owner::Nobody || self.owners.contains(&owner)
     }

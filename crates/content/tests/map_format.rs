@@ -84,7 +84,7 @@ fn round_trips() {
     let mut document = with(
         "/mission",
         json!({
-            "campaign": "Test", "title": "One", "order": 1, "script": "function on_start() end",
+            "script": "function on_start() end",
             "regions": [{"id": "gate", "x": 4, "y": 5, "radius": 3}],
             "objectives": [{"id": "win", "title": "Win", "description": "Win it"}],
         }),
@@ -289,8 +289,7 @@ fn rejects_what_the_old_parser_rejects() {
 
 #[test]
 fn mission_rules() {
-    let mission =
-        || json!({"campaign": "C", "title": "T", "order": 1, "script": "x = 1", "regions": []});
+    let mission = || json!({"script": "x = 1", "regions": []});
     let one_start = json!([{"player": 1, "x": 40.5, "z": 40.5, "setup": "s", "mainFort": "f"}]);
     let mut base = with("/mission", mission());
     set(&mut base, "/playerStarts", one_start);
@@ -343,14 +342,14 @@ fn mission_rules() {
     let back: Vec<canopy_content::map::MissionPlayer> = serde_json::from_str(&text).unwrap();
     assert_eq!(&back, read);
     for (pointer, value) in [
-        ("/mission/order", json!(0)),
         ("/mission/script", json!("")),
-        ("/mission/race", json!("Ants")),
-        ("/mission/playerRaces", json!({"player.9": "ants"})),
-        ("/mission/nextMission", json!("-next")),
-        ("/mission/company", json!([])),
-        ("/mission/company", json!(["a", "a"])),
-        ("/mission/heroLevelCap", json!(51)),
+        // Campaign fields moved to campaign.json (D85).
+        ("/mission/campaign", json!("c")),
+        ("/mission/order", json!(1)),
+        ("/mission/race", json!("ants")),
+        ("/mission/nextMission", json!("next")),
+        ("/mission/company", json!(["a"])),
+        ("/mission/heroLevelCap", json!(3)),
         (
             "/mission/regions",
             json!([{"id": "1a", "x": 1, "y": 1, "radius": 1}]),
@@ -367,14 +366,7 @@ fn mission_rules() {
             "/mission/objectives",
             json!([{"id": "o", "title": "", "description": "d"}]),
         ),
-        (
-            "/mission/presentation",
-            json!({"loadingBackground": "asset.icons.x"}),
-        ),
-        (
-            "/mission/presentation",
-            json!({"tips": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"]}),
-        ),
+        ("/mission/presentation", json!({"chapter": "One"})),
         ("/mission/extra", json!(1)),
         ("/mission/players", json!([player(1)])),
         ("/mission/players", json!([player(2), player(2)])),

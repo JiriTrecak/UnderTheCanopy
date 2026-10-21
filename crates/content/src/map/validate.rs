@@ -1,6 +1,5 @@
-//! Map rules that need the content: the old `validatePlacements` (src/content/map.ts), the
-//! mission participant rule of `createMissionMatch` (src/shared/scenario/match.ts) and the
-//! non-spatial rules of `playableMapError` (src/shared/map/playable.ts).
+//! Map rules that need the content: the old `validatePlacements` (src/content/map.ts) and
+//! the non-spatial rules of `playableMapError` (src/shared/map/playable.ts).
 //!
 //! Rules that need navigation or footprint geometry, the terrain projection or the Lua
 //! compiler are the simulation's: placement geometry, building footprints inside the map,
@@ -70,7 +69,6 @@ pub fn validate(map: &UtcMap, content: &Content) -> Vec<Error> {
         content,
         errors: Vec::new(),
     };
-    mission(&mut v);
     for (at, message) in super::players::validate(map, content) {
         v.fail(at, message);
     }
@@ -82,57 +80,8 @@ pub fn validate(map: &UtcMap, content: &Content) -> Vec<Error> {
     v.errors
 }
 
-fn mission(v: &mut Validator) {
-    let (map, rules) = (v.map, &v.content.rules);
-    let Some(mission) = &map.mission else {
-        return;
-    };
-    let base = mission.race.as_deref().or_else(|| {
-        rules
-            .campaigns
-            .get(&mission.campaign)
-            .map(|c| c.race.as_str())
-    });
-    if let Err(message) = race_setup(rules, base) {
-        v.fail("mission.race", message);
-    }
-    for (owner, race) in mission.player_races.iter().flatten() {
-        let location = format!("mission.playerRaces.{owner}");
-        if let Err(message) = race_setup(rules, Some(race)) {
-            v.fail(&location, message);
-        }
-        if !map
-            .player_starts
-            .iter()
-            .any(|s| format!("player.{}", s.player) == *owner)
-        {
-            v.fail(
-                &location,
-                format!("Mission race assigned to missing participant {owner}"),
-            );
-        }
-    }
-    for tag in mission.company.iter().flatten() {
-        let valid = map.entities.iter().find(|p| p.id == *tag).is_some_and(|p| {
-            p.activation.is_none()
-                && p.owner == Owner::Player(0)
-                && v.content
-                    .definition(p.definition.as_str())
-                    .is_some_and(|d| d.kind == Kind::Unit)
-        });
-        if !valid {
-            v.fail(
-                "mission.company",
-                format!("Invalid campaign company slot: {tag}"),
-            );
-        }
-    }
-    if !v.has_start(Owner::Player(0)) {
-        v.fail("playerStarts", "A campaign mission requires Player 1");
-    }
-}
-
-/// The map's entities plus each player start's fort and starting units (skirmish maps only).
+/// The map's entities plus each player start's fort and starting units (skirmish and
+/// mission maps; a mission's players may also start with only what the map places).
 fn declared_placements<'a>(v: &mut Validator<'a>) -> Vec<Declared<'a>> {
     let map = v.map;
     let rules = &v.content.rules;
@@ -144,7 +93,7 @@ fn declared_placements<'a>(v: &mut Validator<'a>) -> Vec<Declared<'a>> {
             positioned: true,
         })
         .collect();
-    if map.mission.is_some() || map.sandbox {
+    if map.sandbox {
         return declared;
     }
     // Without chosen slots every start uses the default race.
@@ -234,7 +183,8 @@ fn placements(v: &mut Validator, declared: &[Declared]) {
         if p.activation.is_some() && map.mission.is_none() {
             v.fail(at, "scripted spawns require a mission map");
         }
-        if p.owner != Owner::Nobody && !v.has_start(p.owner) {
+        // A mission's players need no start: they begin with what the map places.
+        if p.owner != Owner::Nobody && !v.has_start(p.owner) && map.mission.is_none() {
             v.fail(at, "missing owner slot");
         }
         if entry.positioned && (p.position.x >= size || p.position.y >= size) {
@@ -284,11 +234,10 @@ fn placements(v: &mut Validator, declared: &[Declared]) {
 fn initial_state(v: &mut Validator, at: &str, d: &Definition, state: &InitialState) {
     let levels = d.behaviors.progression.as_ref().map(|p| &p.levels);
     if let Some(experience) = state.experience {
-        let cap = v.map.mission.as_ref().and_then(|m| m.hero_level_cap);
-        let within = levels.is_some_and(|levels| {
-            let reachable = cap.map_or(levels.len(), |c| levels.len().min(c as usize));
-            reachable > 0 && experience <= levels[reachable - 1].experience
-        });
+        // A campaign's hero level cap applies when the mission is played in it.
+        let within = levels
+            .and_then(|levels| levels.last())
+            .is_some_and(|top| experience <= top.experience);
         if !within {
             v.fail(at, "initial experience exceeds hero or mission limit");
         }
@@ -441,7 +390,7 @@ fn camps(v: &mut Validator, declared: &[Declared]) {
 
 fn main_forts(v: &mut Validator, declared: &[Declared]) {
     let map = v.map;
-    if map.mission.is_some() || map.sandbox {
+    if map.sandbox {
         return;
     }
     for start in &map.player_starts {
@@ -469,7 +418,8 @@ fn playable(v: &mut Validator) {
     let map = v.map;
     let starts = &map.player_starts;
     let size = f64::from(map.size);
-    if starts.is_empty() {
+    // A mission may start every player with only what the map places for them.
+    if starts.is_empty() && map.mission.is_none() {
         v.fail("playerStarts", "Place a player start.");
     }
     if let Some(mission) = &map.mission
@@ -486,7 +436,9 @@ fn playable(v: &mut Validator) {
     {
         v.fail("playerStarts", "Place Player 1 and Player 2 start points.");
     }
-    if (1..=starts.len()).any(|n| !starts.iter().any(|s| usize::from(s.player) == n)) {
+    if map.mission.is_none()
+        && (1..=starts.len()).any(|n| !starts.iter().any(|s| usize::from(s.player) == n))
+    {
         v.fail(
             "playerStarts",
             "Player slots must be consecutive, starting at Player 1.",

@@ -17,7 +17,9 @@
       "Snowy Lake: a four-player map round a frozen lake",
       "Map editor: import StarCraft II melee maps (from the game's folders and the Battle.net cache) as block maps at their true size, with their cliffs, ramps, starts and resources",
       "Map editor: a minimap of the whole map in the view's corner (M or the view bar), following every edit, with starts, amber, camps and the camera's view; click it to look there",
-      "Campaign missions have their own computer players, allies and enemies: they hold their ground, keep their bases manned and rebuilt, send attack waves on a timer, or arrive later in the mission when the story calls for them"
+      "Campaign missions have their own computer players, allies and enemies: they hold their ground, keep their bases manned and rebuilt, send attack waves on a timer, or arrive later in the mission when the story calls for them",
+      "Campaigns play straight through: a campaign screen with every step reached and the next one ahead, story pages, chapter cards, and mission loading screens with the mission's art and story.",
+      "Heroes carry their level, abilities and items from one campaign mission to the next, and each mission unlocks its own buildings, units and research."
     ],
     "improved": [
       "Frost Hollow: frozen ice, quiet frosted snow, a bank of roots with pale spires, a crusted shore and big frosted leaves, rebuilt to its drawn layout",

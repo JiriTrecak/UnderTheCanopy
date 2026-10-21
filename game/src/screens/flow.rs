@@ -2,10 +2,10 @@
 //! where a match leads back to. Pure logic (no UI, no GPU) so every transition is tested.
 //!
 //! ```text
-//! Boot ─▶ MainMenu ─┬▶ Campaign ─▶ Missions ─┐
-//!                   ├▶ Skirmish ─▶ Replays ──┼▶ Loading ─▶ Match ─▶ Result ─▶ (origin)
-//!                   ├▶ Multiplayer ─▶ Lobby ─┘      │         │
-//!                   ├▶ Load (overlay) ─────────────▶┘         └▶ GameMenu (overlay) ─▶ (origin)
+//! Boot ─▶ MainMenu ─┬▶ Campaigns ─▶ Campaign ─┐
+//!                   ├▶ Skirmish ─▶ Replays ────┼▶ Loading ─▶ Match ─▶ Result ─▶ (origin)
+//!                   ├▶ Multiplayer ─▶ Lobby ───┘      │         │
+//!                   ├▶ Load (overlay) ───────────────▶┘         └▶ GameMenu (overlay) ─▶ (origin)
 //!                   ├▶ Settings (overlay)
 //!                   ├▶ Releases (overlay: What's new, updates)
 //!                   ├▶ Feedback (overlay; also over the game menu)
@@ -14,17 +14,27 @@
 //!
 //! Overlays stack: settings and the save list open over the game menu or the main menu
 //! and return to what was under them; a confirmation sits on top of everything.
+//!
+//! A campaign plays straight through (docs/campaign.md): its screen runs a step, a story,
+//! chapter or cinematic is a [`Screen::Step`], a mission loads and plays as a match, and
+//! [`Intent::Proceed`] moves on to the next step (or back to the campaign screen) from
+//! wherever the last one ended, a won match included.
 
 /// A full screen.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Screen {
     Boot,
     MainMenu,
-    /// Faction cards.
-    Campaign,
-    /// The missions of one campaign.
-    Missions {
+    /// The campaigns to choose from.
+    Campaigns,
+    /// One campaign: the steps reached so far, Continue.
+    Campaign {
         campaign: String,
+    },
+    /// A campaign's story, chapter card or cinematic, by step index.
+    Step {
+        campaign: String,
+        step: usize,
     },
     Skirmish,
     /// The recorded matches (D60), from the skirmish screen.
@@ -63,7 +73,7 @@ pub enum Origin {
     MainMenu,
     Skirmish,
     Replays,
-    Missions { campaign: String },
+    Campaign { campaign: String },
     Multiplayer,
 }
 
@@ -73,7 +83,7 @@ impl Origin {
             Self::MainMenu => Screen::MainMenu,
             Self::Skirmish => Screen::Skirmish,
             Self::Replays => Screen::Replays,
-            Self::Missions { campaign } => Screen::Missions {
+            Self::Campaign { campaign } => Screen::Campaign {
                 campaign: campaign.clone(),
             },
             Self::Multiplayer => Screen::Multiplayer,
@@ -86,8 +96,12 @@ impl Origin {
 pub enum Intent {
     /// The game's data is loaded.
     Booted,
-    /// A main-menu entry, or a step deeper (campaign → missions, multiplayer → lobby).
+    /// A main-menu entry, or a step deeper (campaigns → a campaign → its step,
+    /// multiplayer → lobby).
     Open(Screen),
+    /// A campaign moves on: to its next step or back to its screen, from a step, the
+    /// campaign screen, or a match that ended (which ends with it).
+    Proceed(Screen),
     /// One step back: closes the top overlay, or leaves the screen for its parent.
     Back,
     Show(Overlay),
@@ -199,13 +213,24 @@ impl Flow {
                     (&self.screen, &screen),
                     (
                         Screen::MainMenu,
-                        Screen::Campaign | Screen::Skirmish | Screen::Multiplayer
-                    ) | (Screen::Campaign, Screen::Missions { .. })
+                        Screen::Campaigns | Screen::Skirmish | Screen::Multiplayer
+                    ) | (Screen::Campaigns, Screen::Campaign { .. })
+                        | (Screen::Campaign { .. }, Screen::Step { .. })
                         | (Screen::Skirmish, Screen::Replays)
                         | (Screen::Multiplayer, Screen::Lobby)
                         | (Screen::Lobby, Screen::Multiplayer)
                 );
                 if allowed && self.overlays.is_empty() {
+                    self.set_screen(screen, &mut effects);
+                }
+            }
+            Intent::Proceed(screen) => {
+                let from = matches!(
+                    self.screen,
+                    Screen::Campaign { .. } | Screen::Step { .. } | Screen::Loading | Screen::Match
+                );
+                let to = matches!(screen, Screen::Campaign { .. } | Screen::Step { .. });
+                if from && to {
                     self.set_screen(screen, &mut effects);
                 }
             }
@@ -217,10 +242,13 @@ impl Flow {
                     }
                 } else {
                     let parent = match &self.screen {
-                        Screen::Campaign | Screen::Skirmish | Screen::Multiplayer => {
+                        Screen::Campaigns | Screen::Skirmish | Screen::Multiplayer => {
                             Some(Screen::MainMenu)
                         }
-                        Screen::Missions { .. } => Some(Screen::Campaign),
+                        Screen::Campaign { .. } => Some(Screen::Campaigns),
+                        Screen::Step { campaign, .. } => Some(Screen::Campaign {
+                            campaign: campaign.clone(),
+                        }),
                         Screen::Replays => Some(Screen::Skirmish),
                         Screen::Lobby => Some(Screen::Multiplayer),
                         Screen::Loading => Some(self.origin.screen()),
@@ -378,33 +406,88 @@ mod tests {
         assert_eq!(flow.screen(), &Screen::Skirmish);
     }
 
+    fn campaign() -> Screen {
+        Screen::Campaign {
+            campaign: "c".into(),
+        }
+    }
+
+    fn origin() -> Origin {
+        Origin::Campaign {
+            campaign: "c".into(),
+        }
+    }
+
+    fn step(step: usize) -> Screen {
+        Screen::Step {
+            campaign: "c".into(),
+            step,
+        }
+    }
+
     #[test]
     fn a_failed_load_returns_to_its_origin() {
         let mut flow = booted();
-        flow.apply(Intent::Open(Screen::Campaign));
-        flow.apply(Intent::Open(Screen::Missions {
-            campaign: "c".into(),
-        }));
-        flow.apply(Intent::StartMatch(Origin::Missions {
-            campaign: "c".into(),
-        }));
+        flow.apply(Intent::Open(Screen::Campaigns));
+        flow.apply(Intent::Open(campaign()));
+        flow.apply(Intent::StartMatch(origin()));
         assert_eq!(flow.apply(Intent::LoadFailed), vec![Effect::EndMatch]);
-        assert_eq!(
-            flow.screen(),
-            &Screen::Missions {
-                campaign: "c".into()
-            }
-        );
+        assert_eq!(flow.screen(), &campaign());
         flow.apply(Intent::Back);
-        assert_eq!(flow.screen(), &Screen::Campaign);
+        assert_eq!(flow.screen(), &Screen::Campaigns);
         // Back from loading cancels it.
-        flow.apply(Intent::Open(Screen::Missions {
-            campaign: "c".into(),
-        }));
-        flow.apply(Intent::StartMatch(Origin::Missions {
-            campaign: "c".into(),
-        }));
+        flow.apply(Intent::Open(campaign()));
+        flow.apply(Intent::StartMatch(origin()));
         assert_eq!(flow.apply(Intent::Back), vec![Effect::EndMatch]);
+    }
+
+    #[test]
+    fn a_campaign_plays_straight_through_its_steps() {
+        let mut flow = booted();
+        flow.apply(Intent::Open(Screen::Campaigns));
+        flow.apply(Intent::Open(campaign()));
+        // Continue: a chapter card, then a story, then the mission.
+        flow.apply(Intent::Open(step(0)));
+        assert_eq!(flow.screen(), &step(0));
+        flow.apply(Intent::Proceed(step(1)));
+        assert_eq!(flow.screen(), &step(1));
+        flow.apply(Intent::StartMatch(origin()));
+        flow.apply(Intent::Loaded);
+        assert!(flow.in_match());
+        // A won mission moves straight on to the next step, ending the match.
+        assert_eq!(flow.apply(Intent::Proceed(step(3))), vec![Effect::EndMatch]);
+        assert_eq!(flow.screen(), &step(3));
+        // ...and from there into the next mission.
+        flow.apply(Intent::StartMatch(origin()));
+        flow.apply(Intent::Loaded);
+        // A lost mission shows its result; Retry loads it again, leaving goes back to
+        // the campaign screen.
+        flow.apply(Intent::Decided);
+        assert_eq!(flow.top(), Some(Overlay::Result));
+        flow.apply(Intent::StartMatch(origin()));
+        assert_eq!(flow.screen(), &Screen::Loading);
+        flow.apply(Intent::Loaded);
+        flow.apply(Intent::Decided);
+        assert_eq!(flow.apply(Intent::LeaveMatch), vec![Effect::EndMatch]);
+        assert_eq!(flow.screen(), &campaign());
+        // Back from a step returns to the campaign screen; the last step returns there too.
+        flow.apply(Intent::Open(step(2)));
+        flow.apply(Intent::Back);
+        assert_eq!(flow.screen(), &campaign());
+        flow.apply(Intent::Open(step(4)));
+        flow.apply(Intent::Proceed(campaign()));
+        assert_eq!(flow.screen(), &campaign());
+        // Proceeding is the campaign's alone.
+        let mut other = booted();
+        other.apply(Intent::Proceed(step(1)));
+        assert_eq!(other.screen(), &Screen::MainMenu);
+        other.apply(Intent::Open(Screen::Skirmish));
+        other.apply(Intent::Proceed(campaign()));
+        assert_eq!(other.screen(), &Screen::Skirmish);
+        // A step opens only from its campaign.
+        other.apply(Intent::Back);
+        other.apply(Intent::Open(step(0)));
+        assert_eq!(other.screen(), &Screen::MainMenu);
     }
 
     #[test]

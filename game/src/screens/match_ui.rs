@@ -301,8 +301,8 @@ pub struct ResultModel {
     pub goods: String,
     /// The local player won (campaign progress).
     pub won: bool,
-    /// The next mission's map id, after a won mission.
-    pub next: Option<String>,
+    /// A lost campaign mission offers Retry.
+    pub retry: bool,
 }
 
 fn kind_name(kind: MatchKind) -> &'static str {
@@ -340,7 +340,6 @@ impl ResultModel {
         outcome: Option<&Outcome>,
         save: Option<&canopy_sim::Save>,
         surrendered: bool,
-        next: Option<String>,
     ) -> Self {
         let me = playing.me.map(Owner::Player);
         let winner = outcome.and_then(|o| o.winner);
@@ -363,17 +362,13 @@ impl ResultModel {
             if me.is_some_and(ally_of_winner) {
                 (
                     "[color=#fcd34d]Mission complete[/color]".into(),
-                    if next.is_some() {
-                        "Your surviving company is ready to continue. Items and learned abilities travel with you.".into()
-                    } else {
-                        "The Vanguard has completed its mission.".into()
-                    },
+                    "The mission is won.".into(),
                     true,
                 )
             } else {
                 (
                     "[color=#fca5a5]Mission failed[/color]".into(),
-                    "The Vanguard could not complete its mission. Rally and try again.".into(),
+                    "The mission could not be completed. Rally and try again.".into(),
                     false,
                 )
             }
@@ -504,7 +499,7 @@ impl ResultModel {
             rows,
             goods,
             won,
-            next: next.filter(|_| won),
+            retry: campaign && !won,
         }
     }
 
@@ -528,7 +523,7 @@ impl ResultModel {
         }
         widgets::text(ui, "result/goods", &self.goods);
         widgets::visible(ui, "result/goods", !self.goods.is_empty());
-        widgets::visible(ui, "result/next", self.next.is_some());
+        widgets::visible(ui, "result/retry", self.retry);
         widgets::text(
             ui,
             "result/leave",

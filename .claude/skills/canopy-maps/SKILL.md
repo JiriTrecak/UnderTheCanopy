@@ -6,7 +6,7 @@ description: The map package format of Under the Canopy (.utcm): what each file 
 # Map packages
 
 A map is a package (skill **canopy-packages**): a folder named `<id>.utcm`.
-- **Shipped maps:** `base/maps/<group>/` (groups: `skirmish`, `campaign`, `showcase`).
+- **Shipped maps:** `base/maps/<group>/` (groups: `skirmish`, `campaign`, `showcase`). A campaign's missions live in its package instead: `base/campaigns/<id>.utcc/missions/<map>.utcm` (docs/campaign.md).
 - **Player maps:** the user folder's `maps/` (own) and `downloads/` (received).
 
 Authority:
@@ -36,7 +36,7 @@ The main fields:
 - `camps`: neutral camps: `{id, members, home, aggroRange, leash, aggression, lootPool}`.
 - `stamps`: scenery placed with walk surfaces.
 - `landscape.environment`: `{hour, weather}`.
-- `mission`: campaign metadata, objectives and regions; the script is in `mission.lua`.
+- `mission`: `{objectives, regions}`; the script is in `mission.lua`. Everything about the campaign (its order, the loading art and story, the player's race, the hero level cap, the tech) is the campaign's `campaign.json` (docs/campaign.md "Formats"), so a mission map plays on its own too. A mission needs no player starts: a player with a start gets its race's base as in a skirmish, a player without one begins with only what `entities` places for it. The mission script decides the outcome (`mission.win()`, `mission.lose()`); losing every building ends nothing by itself.
 
 map.json has no `terrain` section (D82): a map is made of blocks, and its ground, cliffs and dressing are generated from them by its biome at load (D80). A map in the old format (painted ground layers) is refused.
 

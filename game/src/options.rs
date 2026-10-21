@@ -7,7 +7,7 @@
 //! canopy mcp [--data <folder>]   (the editor's MCP server without a window)
 //! canopy replay <file.utcr> [--verify] [--data <folder>]  (watch a replay; --verify plays it headless and checks it)
 //! canopy replay <out.utcr> --record <map> [--ticks <n>]  (records a stand-in match: a computer player's commands sent as a human's)
-//! canopy capture-screens --out <folder> [--size <w>x<h>] [--scale <s>] [--only releases|multiplayer|editor|blocks|settings|feedback|replays]
+//! canopy capture-screens --out <folder> [--size <w>x<h>] [--scale <s>] [--only releases|multiplayer|editor|blocks|settings|feedback|replays|campaign]
 //!                         [--data <folder>]
 //! canopy shot --map <id> --camera <x,z,zoom[,yaw] | battle[,zoom]> --out <png>
 //!             [--tick <n>] [--players <n>] [--races <race,…>] [--crowd <n> | --gallery [--only <text>]] [--colors <i,j,…>] [--size <w>x<h>]

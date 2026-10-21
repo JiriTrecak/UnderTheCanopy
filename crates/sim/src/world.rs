@@ -80,14 +80,35 @@ pub struct World {
 impl World {
     /// Starts a match on `map`.
     pub fn new(content: Arc<Content>, map: &UtcMap, setup: MatchSetup) -> Result<Self, SetupError> {
+        Self::start(content, map, setup, None)
+    }
+
+    /// Starts a mission of a campaign on `map`: the campaign's tech for its player, its
+    /// carried heroes on the heroes the map places, the hero level cap and the campaign
+    /// variables (docs/campaign.md).
+    pub fn new_campaign(
+        content: Arc<Content>,
+        map: &UtcMap,
+        setup: MatchSetup,
+        campaign: &crate::campaign::CampaignStart,
+    ) -> Result<Self, SetupError> {
+        Self::start(content, map, setup, Some(campaign))
+    }
+
+    fn start(
+        content: Arc<Content>,
+        map: &UtcMap,
+        setup: MatchSetup,
+        start: Option<&crate::campaign::CampaignStart>,
+    ) -> Result<Self, SetupError> {
         // A mission's computer players are the ones its map lists.
         let setup = ai::campaign::mission_setup(map, setup);
         let campaign = ai::campaign::Campaign::new(map);
         let catalog = Arc::new(Catalog::new(content));
         let terrain = Arc::new(compile(map, &catalog)?);
-        let combat = combat::Runtime::new(&catalog, map, &setup).map_err(SetupError)?;
+        let mut combat = combat::Runtime::new(&catalog, map, &setup).map_err(SetupError)?;
         let mut state = State::new(setup.seed);
-        let mission = mission_runtime(map)?;
+        let mission = mission_runtime(map, &setup)?;
         if mission.is_some() {
             state.mission = Some(mission::MissionState::default());
         }
@@ -101,6 +122,31 @@ impl World {
                 starting.insert(id);
             }
         }
+        if let Some(start) = start {
+            crate::campaign::begin(&mut state, &catalog, start);
+            // A computer player of the campaign's race playing the held-back skirmish AI
+            // keeps to the mission's tech too (docs/campaign.md "Campaign AI").
+            let race = |player: u8| {
+                setup.slots.iter().find(|s| s.player == player).map(|s| {
+                    s.race
+                        .clone()
+                        .unwrap_or_else(|| catalog.content.rules.default_race.clone())
+                })
+            };
+            let skirmish = map.mission.iter().flat_map(|m| &m.players).filter(|p| {
+                p.ai.behaviour == canopy_content::map::Behaviour::Skirmish
+                    && p.player > 1
+                    && race(p.player - 1) == race(start.player)
+            });
+            for p in skirmish {
+                crate::campaign::lock(
+                    &mut state,
+                    Owner::Player(p.player - 1),
+                    start.locked.iter().cloned(),
+                );
+            }
+        }
+        combat.limits.level_cap = level_cap(&state);
         let rules = match_rules(map);
         if rules == victory::Rules::Skirmish {
             for start in &map.player_starts {
@@ -143,7 +189,8 @@ impl World {
             appearance_scales(map, &terrain),
         );
         let mut economy = Economy::new(&state, &catalog, &setup);
-        if rules == victory::Rules::Skirmish {
+        // Starting workers go to work wherever starts give bases (skirmish and missions).
+        if rules != victory::Rules::Sandbox && !starting.is_empty() {
             let mut ctx = economy.ctx(&mut state, &catalog, &mut motion.spatial);
             economy::harvest::start_gathering(&mut ctx, &setup, &starting);
         }
@@ -173,6 +220,7 @@ impl World {
             ai: brains,
             campaign,
         };
+        world.sync_ai_tech();
         world.prepare_ai();
         Ok(world)
     }
@@ -317,6 +365,30 @@ impl World {
     /// The campaign mission, on mission maps.
     pub fn mission(&self) -> Option<&mission::Runtime> {
         self.mission.as_ref()
+    }
+
+    /// Limits what `player` may build, train and research to its race's tech without
+    /// `locked` (a campaign's computer player held back to the mission's tech).
+    pub fn limit_tech(&mut self, player: u8, locked: impl IntoIterator<Item = canopy_content::Id>) {
+        crate::campaign::lock(&mut self.state, Owner::Player(player), locked);
+        self.sync_ai_tech();
+    }
+
+    /// Tells the computer players what their tech limits keep from them (derived from the
+    /// saved limits, so a restore tells them again).
+    fn sync_ai_tech(&mut self) {
+        for owner in self.ai_owners() {
+            if let Owner::Player(player) = owner
+                && let Some(locked) = self.state.tech.get(&owner)
+            {
+                self.ai.forbid(player, locked.iter().cloned().collect());
+            }
+        }
+    }
+
+    /// The heroes of `player` as a won mission carries them on (`campaign::carried`).
+    pub fn carried_heroes(&self, player: u8) -> Vec<crate::campaign::CarriedHero> {
+        crate::campaign::carried(&self.state, &self.catalog, player)
     }
 
     /// Schedules a command. Commands for past ticks and malformed ones are refused here;
@@ -900,8 +972,9 @@ impl World {
         }
         let catalog = Arc::new(Catalog::new(content));
         let terrain = Arc::new(compile(map, &catalog)?);
-        let combat = combat::Runtime::new(&catalog, map, &save.setup).map_err(SetupError)?;
-        let mission = mission_runtime(map)?;
+        let mut combat = combat::Runtime::new(&catalog, map, &save.setup).map_err(SetupError)?;
+        combat.limits.level_cap = level_cap(&save.state);
+        let mission = mission_runtime(map, &save.setup)?;
         if mission.is_some() != save.state.mission.is_some() {
             return Err(SetupError(
                 "the save does not match the map's mission".into(),
@@ -957,6 +1030,7 @@ impl World {
             ai: brains,
             campaign,
         };
+        world.sync_ai_tech();
         world.prepare_ai();
         Ok(world)
     }
@@ -1005,6 +1079,7 @@ impl World {
         self.economy = Economy::new(&state, &self.catalog, &self.setup);
         income(&self.campaign, &mut self.economy);
         self.combat.scratch = Default::default();
+        self.combat.limits.level_cap = level_cap(&state);
         self.state = state;
         self.pending = save.pending;
         self.vision = vision;
@@ -1012,6 +1087,7 @@ impl World {
         if let Some(m) = &self.mission {
             self.mission = Some(mission::Runtime::new(m.script.clone()));
         }
+        self.sync_ai_tech();
         self.prepare_ai();
         Ok(())
     }
@@ -1065,8 +1141,16 @@ fn appearance_scales(map: &UtcMap, terrain: &Terrain) -> std::collections::BTree
         .collect()
 }
 
-fn mission_runtime(map: &UtcMap) -> Result<Option<mission::Runtime>, SetupError> {
-    let script = mission::Script::new(map).map_err(SetupError)?;
+/// A campaign's hero level cap, from the saved state.
+fn level_cap(state: &State) -> Option<u32> {
+    state.campaign.as_ref().and_then(|c| c.hero_level_cap)
+}
+
+fn mission_runtime(
+    map: &UtcMap,
+    setup: &MatchSetup,
+) -> Result<Option<mission::Runtime>, SetupError> {
+    let script = mission::Script::new(map, setup).map_err(SetupError)?;
     Ok(script.map(|s| mission::Runtime::new(Arc::new(s))))
 }
 

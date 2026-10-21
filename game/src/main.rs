@@ -2,6 +2,7 @@
 
 mod app;
 mod bench;
+mod campaign;
 mod clipboard;
 mod data;
 mod feedback;

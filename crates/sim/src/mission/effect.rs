@@ -60,6 +60,8 @@ pub enum MissionEffect {
         player: u8,
         order: crate::ai::campaign::Order,
     },
+    /// A campaign variable or the campaign player's tech changes (`crate::campaign`).
+    Campaign(crate::campaign::Change),
     /// Player 1 wins the mission.
     Win,
     /// Player 1 loses the mission.
@@ -229,6 +231,7 @@ pub(super) fn apply(
                 defeated: vec![CAMPAIGN_PLAYER],
             });
         }
+        MissionEffect::Campaign(change) => crate::campaign::apply(state, change),
         MissionEffect::Equip { entity, slot, item } => {
             let item = item.as_ref().and_then(|id| catalog.find(id.as_str()));
             crate::items::inventory::set_slot(catalog, state, *entity, *slot, item);

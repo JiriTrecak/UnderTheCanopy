@@ -150,11 +150,11 @@ The game's menus are layout documents in `config/ui/layouts/`, one per screen, d
 | Document | Screen | Code |
 |---|---|---|
 | `main-menu` | logo panel, six actions, animated forest art, the release plaque | `screens/menu.rs` (effects), `screens/releases.rs` (plaque) |
-| `campaign`, `missions` | faction cards; mission list with art, chapter, briefing | `screens/campaign.rs` |
+| `campaign`, `campaign-steps`, `card` | the campaigns as cards; a campaign's screen (the steps reached, the next one larger, Continue); story pages, chapter and cinematic cards ([campaign](campaign.md)) | `screens/campaign.rs`, `campaign.rs` |
 | `skirmish` | battlefields, preview with start markers, players (controller, team, race, hero) | `screens/skirmish.rs` |
 | `replays`, `replay` | the recorded matches; the replay viewer's bar, statistics and transport | `screens/replays.rs`, `screens/replay_ui.rs`, `replay/` |
 | `multiplayer`, `lobby` | server status, lobbies, create and join; the room's seats, races, heroes, round trips | `screens/multiplayer.rs` |
-| `loading` | plain panel (skirmish, multiplayer) or mission art with progress | `screens/loading.rs`, `mod.rs` |
+| `loading` | plain panel (skirmish, multiplayer), a campaign mission's art and story with one gold bar, then "Click or press any key to begin" | `screens/loading.rs`, `mod.rs`, `screens/campaign.rs` |
 | `hud` (with `play.json`) | the in-match HUD, chat included (the play module) | `play/hud.rs` |
 | `match-overlay`, `mission-hud` | waiting for players, connection problems; objectives, dialogue, letterbox | `screens/match_ui.rs` |
 | `game-menu`, `result`, `saves`, `settings`, `dialog` | overlays | `match_ui.rs`, `settings_ui.rs`, `mod.rs` |

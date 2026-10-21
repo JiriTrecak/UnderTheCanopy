@@ -1,0 +1,66 @@
+{
+  "templates": {
+    "cs-entry": {
+      "class": "cs-entry",
+      "children": [
+        {
+          "id": "heading", "class": "cs-heading",
+          "children": [
+            { "id": "label", "kind": "label", "class": "cs-heading-label" },
+            { "class": "cs-heading-rule" }
+          ]
+        },
+        {
+          "id": "row", "class": "cs-row",
+          "children": [
+            { "id": "kind", "kind": "label", "class": "cs-row-kind" },
+            { "id": "title", "kind": "label", "class": "cs-row-title" },
+            { "id": "act", "kind": "button", "class": "cs-act", "text": "Play", "action": "steps.act" }
+          ]
+        },
+        {
+          "id": "next", "class": "cs-next",
+          "children": [
+            { "id": "art", "kind": "image", "class": "cs-next-art" },
+            {
+              "class": "cs-next-body",
+              "children": [
+                { "id": "eyebrow", "kind": "label", "class": "cs-next-eyebrow" },
+                { "id": "title", "kind": "label", "class": "cs-next-title" },
+                { "id": "line", "kind": "label", "class": "cs-next-line" }
+              ]
+            },
+            { "id": "act", "kind": "button", "class": "cs-act cs-next-act", "text": "Play", "action": "steps.act" }
+          ]
+        }
+      ]
+    }
+  },
+  "root": {
+    "class": "cs",
+    "children": [
+      { "id": "art", "kind": "image", "class": "cover", "image": "menu-aftermath" },
+      { "class": "cs-veil" },
+      { "class": "cs-shade-solid" },
+      { "class": "cs-shade" },
+      { "class": "cs-bottom" },
+      {
+        "class": "cs-content",
+        "children": [
+          { "id": "kicker", "kind": "label", "class": "cs-kicker", "text": "The campaign" },
+          { "id": "title", "kind": "label", "class": "cs-title", "text": "Campaign" },
+          { "class": "cs-title-rule" },
+          { "id": "steps", "class": "cs-steps", "repeat": "cs-entry" },
+          { "id": "complete", "kind": "label", "class": "cs-complete", "text": "The campaign is complete. Any step can be played again.", "visible": false },
+          {
+            "class": "cs-footer",
+            "children": [
+              { "kind": "button", "class": "menu-action cs-back", "text": "Back", "action": "steps.back" },
+              { "id": "continue", "kind": "button", "class": "cs-continue", "text": "Continue", "action": "steps.continue" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

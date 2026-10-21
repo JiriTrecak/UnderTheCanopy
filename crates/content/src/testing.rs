@@ -129,7 +129,7 @@ impl DataFolder {
             );
             base(
                 &format!("campaigns/{id}.utcc/campaign.json"),
-                &json!({"race": campaign["race"]}),
+                &json!({"race": campaign["race"], "steps": campaign.get("steps").cloned().unwrap_or(json!([]))}),
             );
         }
         let mut combat = serde_json::Map::new();

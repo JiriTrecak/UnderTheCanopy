@@ -1,0 +1,45 @@
+{
+  "templates": {
+    "cd-paragraph": { "kind": "label", "class": "cd-text" }
+  },
+  "root": {
+    "class": "cd",
+    "children": [
+      { "id": "art", "kind": "image", "class": "cover", "image": "menu-aftermath" },
+      { "id": "veil", "class": "cd-veil" },
+      { "id": "catch", "kind": "button", "class": "cd-catch", "action": "card.next" },
+      {
+        "id": "story", "class": "cd-story",
+        "children": [
+          { "class": "cd-story-shade" },
+          {
+            "id": "panel", "class": "cd-panel",
+            "children": [
+              { "id": "kicker", "kind": "label", "class": "cd-kicker" },
+              { "id": "text", "class": "cd-paragraphs", "repeat": "cd-paragraph" },
+              {
+                "class": "cd-story-footer",
+                "children": [
+                  { "id": "page", "kind": "label", "class": "cd-page" },
+                  { "class": "cd-spacer" },
+                  { "kind": "button", "class": "cd-skip", "text": "Skip", "action": "card.skip" },
+                  { "id": "continue", "kind": "button", "class": "cd-continue", "text": "Continue", "action": "card.next" }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "title", "class": "cd-title-view",
+        "children": [
+          { "id": "kicker", "kind": "label", "class": "cd-title-kicker" },
+          { "id": "name", "kind": "label", "class": "cd-title-name" },
+          { "class": "cd-title-rule" },
+          { "id": "note", "kind": "label", "class": "cd-title-note" }
+        ]
+      },
+      { "id": "hint", "kind": "label", "class": "cd-hint", "text": "Click or press any key to continue" }
+    ]
+  }
+}

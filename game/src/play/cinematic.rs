@@ -174,9 +174,6 @@ end
     );
     document["entities"] = json!(entities);
     document["mission"] = json!({
-        "campaign": rules.campaigns.keys().next().map_or("test", String::as_str),
-        "title": "Scene test",
-        "order": 1,
         "regions": [],
         "script": script,
     });

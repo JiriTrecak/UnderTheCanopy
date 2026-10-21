@@ -96,28 +96,6 @@ fn script_id(text: &str) -> bool {
         && chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '.' | '-'))
 }
 
-/// `^[a-z][a-z0-9-]*$`
-fn race_id(text: &str) -> bool {
-    let mut chars = text.chars();
-    chars.next().is_some_and(|c| c.is_ascii_lowercase())
-        && chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
-}
-
-/// `^[a-z0-9][a-z0-9-]*$`
-fn map_id(text: &str) -> bool {
-    let mut chars = text.chars();
-    chars
-        .next()
-        .is_some_and(|c| c.is_ascii_lowercase() || c.is_ascii_digit())
-        && chars.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
-}
-
-/// `^player\.[1-8]$`
-fn player_key(text: &str) -> bool {
-    text.strip_prefix("player.")
-        .is_some_and(|n| n.len() == 1 && (b'1'..=b'8').contains(&n.as_bytes()[0]))
-}
-
 /// The authoring id rule: 1 to 160 characters, `^[a-zA-Z0-9][a-zA-Z0-9._-]*$`.
 fn authoring_id(text: &str) -> bool {
     let mut chars = text.chars();
@@ -456,43 +434,6 @@ fn camp(r: &mut Report, at: &str, camp: &Camp) {
 }
 
 fn mission(r: &mut Report, m: &Mission) {
-    r.text("mission.campaign", &m.campaign, 1, 80);
-    r.text("mission.title", &m.title, 1, 120);
-    r.range("mission.order", f64::from(m.order), 1.0, 100.0);
-    if let Some(race) = &m.race {
-        r.expect(
-            race_id(race),
-            "mission.race",
-            format!("invalid race {race:?}"),
-        );
-    }
-    for (owner, race) in m.player_races.iter().flatten() {
-        let location = format!("mission.playerRaces.{owner}");
-        r.expect(
-            player_key(owner),
-            &location,
-            "key must be player.1 to player.8",
-        );
-        r.expect(race_id(race), &location, format!("invalid race {race:?}"));
-    }
-    if let Some(next) = &m.next_mission {
-        r.expect(
-            map_id(next) && next.len() <= 100,
-            "mission.nextMission",
-            format!("invalid map id {next:?}"),
-        );
-    }
-    if let Some(company) = &m.company {
-        r.count("mission.company", company.len(), 1, 32);
-        for (i, tag) in company.iter().enumerate() {
-            r.text(&format!("mission.company[{i}]"), tag, 1, 120);
-        }
-        r.expect(
-            unique(company.iter().map(String::as_str)),
-            "mission.company",
-            "Duplicate company tag",
-        );
-    }
     if let Some(objectives) = &m.objectives {
         r.count("mission.objectives", objectives.len(), 0, 64);
         for (i, objective) in objectives.iter().enumerate() {
@@ -506,40 +447,6 @@ fn mission(r: &mut Report, m: &Mission) {
             "mission",
             "Objective IDs must be unique",
         );
-    }
-    if let Some(p) = &m.presentation {
-        for (key, image) in [
-            ("loadingBackground", &p.loading_background),
-            ("selectionBackground", &p.selection_background),
-        ] {
-            if let Some(image) = image {
-                r.expect(
-                    image.as_str().starts_with("asset.interface.") && image.as_str().len() <= 160,
-                    format!("mission.presentation.{key}"),
-                    "must be an asset.interface image id",
-                );
-            }
-        }
-        if let Some(chapter) = &p.chapter {
-            r.text("mission.presentation.chapter", chapter, 1, 80);
-        }
-        if let Some(briefing) = &p.briefing {
-            r.text("mission.presentation.briefing", briefing, 1, 1200);
-        }
-        for (key, list, most, longest) in
-            [("tips", &p.tips, 12, 300), ("features", &p.features, 4, 80)]
-        {
-            if let Some(list) = list {
-                let at = format!("mission.presentation.{key}");
-                r.count(&at, list.len(), 0, most);
-                for (i, text) in list.iter().enumerate() {
-                    r.text(&format!("{at}[{i}]"), text, 1, longest);
-                }
-            }
-        }
-    }
-    if let Some(cap) = m.hero_level_cap {
-        r.range("mission.heroLevelCap", f64::from(cap), 1.0, 50.0);
     }
     r.text("mission.script", &m.script, 1, 64000);
     r.count("mission.regions", m.regions.len(), 0, 128);

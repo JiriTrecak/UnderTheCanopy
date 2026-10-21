@@ -22,6 +22,10 @@ pub fn enqueue(ctx: &mut Ctx, b: EntityId) -> Result<(), String> {
         .catalog
         .find(recipe.target.as_str())
         .ok_or("Select a completed upgradeable building")?;
+    // A campaign's tech (`campaign`).
+    if let Some(reason) = crate::campaign::refused(ctx.state, owner, recipe.target.as_str()) {
+        return Err(reason);
+    }
     let requires = ctx.catalog.get(target).requires.as_deref();
     if let Some(reason) = supply::prerequisite(ctx, owner, requires) {
         return Err(reason);

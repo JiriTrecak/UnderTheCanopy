@@ -336,6 +336,9 @@ pub struct MatchRequest {
     pub replay: Option<Arc<crate::replay::format::Replay>>,
     /// The map package to load instead of the library's map `map` (a replay's own map).
     pub map_path: Option<std::path::PathBuf>,
+    /// A campaign mission: what its campaign hands it (tech, carried heroes, level cap,
+    /// variables).
+    pub campaign: Option<canopy_sim::campaign::CampaignStart>,
 }
 
 /// A prepared match and what the game needs to know about it.
@@ -384,6 +387,11 @@ pub fn prepare(
         }
     };
     let look = Look::load(&paths.data, map.biome())?;
+    // A campaign mission plays on its campaign's layer when it has one.
+    let content = match &request.map_path {
+        Some(_) => data.content.clone(),
+        None => data.content_for(paths, &request.map)?,
+    };
     progress(Stage::World, 0.25);
     let colors = request.colors.clone();
     let mut playback = None;
@@ -391,7 +399,7 @@ pub fn prepare(
         _ if let Some(replay) = &request.replay => {
             let p = crate::replay::playback::Playback::new(
                 replay,
-                data.content.clone(),
+                content.clone(),
                 Arc::new(map.clone()),
             );
             let world = p.first_world().context("cannot start the replay")?;
@@ -400,7 +408,7 @@ pub fn prepare(
         }
         Some(save) => {
             let setup = save.setup.clone();
-            let world = canopy_sim::World::restore(data.content.clone(), &map, save)
+            let world = canopy_sim::World::restore(content.clone(), &map, save)
                 .map_err(|e| anyhow!("cannot load the save: {}", e.0))?;
             let session = request
                 .session
@@ -412,8 +420,13 @@ pub fn prepare(
                 .session
                 .unwrap_or_else(|| Session::local(request.setup.clone(), request.me));
             let setup = session.setup().cloned().unwrap_or(request.setup);
-            let world = canopy_sim::World::new(data.content.clone(), &map, setup)
-                .map_err(|e| anyhow!("cannot start the match: {}", e.0))?;
+            let world = match &request.campaign {
+                Some(campaign) => {
+                    canopy_sim::World::new_campaign(content.clone(), &map, setup, campaign)
+                }
+                None => canopy_sim::World::new(content.clone(), &map, setup),
+            }
+            .map_err(|e| anyhow!("cannot start the match: {}", e.0))?;
             (world, session)
         }
     };

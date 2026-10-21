@@ -35,7 +35,10 @@ impl Recorder {
         let tick = world.tick();
         Self(Arc::new(Mutex::new(Recording {
             setup: world.setup().clone(),
-            start: (tick > 0 || !world.pending().is_empty()).then(|| world.save()),
+            // A campaign mission starts from what its campaign handed it (tech, carried
+            // heroes), which only a save of the world holds.
+            start: (tick > 0 || !world.pending().is_empty() || world.state().campaign.is_some())
+                .then(|| world.save()),
             start_tick: tick,
             commands: Vec::new(),
             fingerprints: Vec::new(),

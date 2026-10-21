@@ -110,6 +110,9 @@ pub struct Colony {
     pub supply: supply::Supply,
     pub population: supply::Population,
     pub research: Vec<Id>,
+    /// What the owner may not build, train or research in this mission (a campaign's
+    /// tech, `crate::campaign`), sorted.
+    pub locked: Vec<Id>,
 }
 
 /// Per-view work data computed once: gathering assignments and base workforces.
@@ -595,6 +598,7 @@ pub fn colony(state: &State, catalog: &Catalog, economy: &Economy, owner: Owner)
         supply: supply::colony(state, catalog, index, owner),
         population: supply::population(state, catalog, index, owner),
         research: state.economy.researched(owner).to_vec(),
+        locked: crate::campaign::locked(state, owner),
     }
 }
 

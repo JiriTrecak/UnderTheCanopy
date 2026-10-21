@@ -221,9 +221,8 @@ impl Runtime {
             rules: Rules::new(catalog)?,
             camps: crate::camps::Camps::new(map),
             teams: crate::teams::Teams::new(setup),
-            limits: crate::heroes::Limits {
-                level_cap: map.mission.as_ref().and_then(|m| m.hero_level_cap),
-            },
+            // A campaign's cap is set once the state is known (`World`).
+            limits: crate::heroes::Limits::default(),
             scratch: plan::Scratch::default(),
         })
     }

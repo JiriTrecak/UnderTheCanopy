@@ -309,6 +309,7 @@ pub fn run(
             "editor" => editor(&mut rig, &paths)?,
             "blocks" => blocks(&mut rig, &paths)?,
             "settings" => settings_tabs(&mut rig)?,
+            "campaign" => campaigns(&mut rig, &paths)?,
             "replays" => {
                 start_skirmish(&mut rig)?;
                 rig.until("the match", Duration::from_secs(180), |g| g.flow.in_match())?;
@@ -344,7 +345,7 @@ pub fn run(
                 feedback_match(&mut rig)?;
             }
             other => anyhow::bail!(
-                "unknown capture group {other} (releases, multiplayer, editor, settings, feedback, replays)"
+                "unknown capture group {other} (releases, multiplayer, editor, settings, feedback, replays, campaign)"
             ),
         }
         let _ = std::fs::remove_dir_all(&user);
@@ -356,22 +357,7 @@ pub fn run(
     settings_tabs(&mut rig)?;
     feedback_menu(&mut rig)?;
 
-    // Campaign and missions.
-    rig.game.apply(Intent::Open(Screen::Campaign));
-    rig.settle(0.4);
-    rig.shoot("campaign")?;
-    let campaign = rig
-        .game
-        .data
-        .as_ref()
-        .and_then(|d| d.content.rules.campaigns.keys().next().cloned());
-    if let Some(campaign) = campaign {
-        rig.game.apply(Intent::Open(Screen::Missions { campaign }));
-        rig.settle(0.3);
-        rig.shoot("missions")?;
-        rig.game.apply(Intent::Back);
-    }
-    rig.game.apply(Intent::Back);
+    campaigns(&mut rig, &paths)?;
 
     skirmish(&mut rig)?;
     multiplayer(&mut rig)?;
@@ -384,6 +370,126 @@ pub fn run(
     editor(&mut rig, &paths)?;
     let _ = std::fs::remove_dir_all(&user);
     println!("{} captures", rig.written.len());
+    Ok(())
+}
+
+/// The campaign screens (docs/campaign.md) on the first shipped campaign: choosing one,
+/// its screen fresh, a chapter card, a story page revealing and revealed, a mission's
+/// loading screen while loading and once loaded, the mission, a won mission moving on to
+/// a cinematic's card, the screen part way through, a lost mission's result with Retry,
+/// and the screen of a finished campaign.
+fn campaigns(rig: &mut Rig, paths: &Paths) -> Result<()> {
+    rig.game.apply(Intent::Open(Screen::Campaigns));
+    rig.settle(0.4);
+    rig.shoot("campaign")?;
+    let Some(campaign) = rig
+        .game
+        .data
+        .as_ref()
+        .and_then(|d| d.campaigns.first().cloned())
+    else {
+        rig.game.apply(Intent::Back);
+        return Ok(());
+    };
+    let id = campaign.id().to_string();
+    let open = |rig: &mut Rig| {
+        rig.game.apply(Intent::Open(Screen::Campaign {
+            campaign: id.clone(),
+        }));
+        rig.settle(0.5);
+    };
+    open(rig);
+    rig.shoot("campaign-new")?;
+    // Straight through from the start: the cards, then the first mission.
+    rig.game.continue_campaign(&id);
+    rig.settle(0.4);
+    let steps = &campaign.campaign.steps;
+    for _ in 0..steps.len() {
+        match rig.game.flow.screen().clone() {
+            Screen::Step { step, .. } => {
+                let kind = steps[step].kind();
+                rig.settle(0.6);
+                rig.shoot(&format!("card-{kind}-{step}-reveal"))?;
+                rig.settle(2.6);
+                rig.shoot(&format!("card-{kind}-{step}"))?;
+                // Through every page of a story.
+                while matches!(rig.game.flow.screen(), Screen::Step { step: s, .. } if *s == step) {
+                    rig.game.card_next();
+                    rig.settle(0.4);
+                }
+            }
+            _ => break,
+        }
+    }
+    if matches!(rig.game.flow.screen(), Screen::Loading) {
+        rig.frame();
+        rig.shoot("loading-mission")?;
+        rig.until("the mission", Duration::from_secs(180), |g| {
+            g.loading.as_ref().is_some_and(|l| l.prepared.is_some())
+        })?;
+        rig.settle(0.5);
+        rig.shoot("loading-mission-ready")?;
+        rig.game.begin_loaded();
+        rig.until("the match", Duration::from_secs(60), |g| g.flow.in_match())?;
+        rig.settle(3.0);
+        rig.shoot("mission")?;
+        // Won: progress is saved and the campaign moves on by itself.
+        let outcome = canopy_sim::state::Outcome {
+            winner: Some(canopy_content::placement::Owner::Player(0)),
+            defeated: Vec::new(),
+        };
+        if let Some(playing) = &mut rig.game.playing {
+            playing.outcome = Some(outcome.clone());
+        }
+        rig.game.decided(Some(outcome), false);
+        rig.until("the next step", Duration::from_secs(20), |g| {
+            !g.flow.in_match() && !matches!(g.flow.screen(), Screen::Loading)
+        })?;
+        rig.settle(2.2);
+        rig.shoot("after-victory")?;
+    }
+    // The campaign screen part way through.
+    rig.game.apply(Intent::Proceed(Screen::Campaign {
+        campaign: id.clone(),
+    }));
+    rig.settle(0.6);
+    rig.shoot("campaign-progress")?;
+    // A lost mission: its result offers Retry.
+    let first_mission = steps.iter().position(|s| s.mission().is_some());
+    if let Some(step) = first_mission {
+        rig.game.run_step(&id, step, false);
+        rig.until("the mission", Duration::from_secs(180), |g| {
+            g.loading.as_ref().is_some_and(|l| l.prepared.is_some())
+        })?;
+        rig.game.begin_loaded();
+        rig.until("the match", Duration::from_secs(60), |g| g.flow.in_match())?;
+        rig.settle(1.0);
+        let outcome = canopy_sim::state::Outcome {
+            winner: None,
+            defeated: vec![canopy_content::placement::Owner::Player(0)],
+        };
+        if let Some(playing) = &mut rig.game.playing {
+            playing.outcome = Some(outcome.clone());
+        }
+        rig.game.decided(Some(outcome), false);
+        rig.settle(0.4);
+        rig.shoot("result-mission-failed")?;
+        rig.game.apply(Intent::LeaveMatch);
+        rig.settle(0.4);
+    }
+    // A finished campaign: every step listed, nothing next.
+    let mut done = crate::campaign::Progress::load(paths, &id);
+    for step in 0..steps.len() {
+        done.finish(&campaign.campaign, step);
+    }
+    done.save(paths, &id)?;
+    rig.game.apply(Intent::Back);
+    rig.settle(0.3);
+    open(rig);
+    rig.shoot("campaign-complete")?;
+    rig.game.apply(Intent::Back);
+    rig.game.apply(Intent::Back);
+    rig.settle(0.3);
     Ok(())
 }
 

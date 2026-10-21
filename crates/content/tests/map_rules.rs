@@ -384,22 +384,32 @@ fn player_starts_are_playable() {
 }
 
 #[test]
-fn missions_reference_races_and_company() {
-    let mut mission = with(
-        "/mission",
-        json!({"campaign": "C", "title": "T", "order": 1, "script": "x = 1", "regions": [], "company": ["hero"]}),
-    );
+fn missions_start_with_what_the_map_places() {
+    let mut mission = with("/mission", json!({"script": "x = 1", "regions": []}));
     set(
         &mut mission,
         "/entities",
         json!([{"id": "hero", "definition": "unit.hero", "position": {"x": 50, "y": 50}, "owner": "player.1"}]),
     );
     set(&mut mission, "/camps", json!([]));
+    // No start at all: player 1 begins with only the units the map places.
+    let mut no_start = mission.clone();
+    set(&mut no_start, "/playerStarts", json!([]));
+    assert_eq!(errors(no_start.clone()), Vec::<String>::new());
+    // One start, for a computer player only: no consecutive numbering needed.
+    let mut other = mission.clone();
+    set(
+        &mut other,
+        "/playerStarts",
+        json!([{"player": 3, "x": 200.5, "z": 200.5, "setup": "setup.test", "mainFort": "start.player.3/main-fort"}]),
+    );
+    assert_eq!(errors(other), Vec::<String>::new());
+    // Player 1's own base comes from its start, as in a skirmish.
     let mut one_start = mission.clone();
     set(
         &mut one_start,
         "/playerStarts",
-        json!([{"player": 1, "x": 40.5, "z": 40.5, "setup": "setup.test", "mainFort": "x"}]),
+        json!([{"player": 1, "x": 200.5, "z": 200.5, "setup": "setup.test", "mainFort": "start.player.1/main-fort"}]),
     );
     assert_eq!(errors(one_start.clone()), Vec::<String>::new());
     let changed = |pointer: &str, value: Value| {
@@ -408,24 +418,8 @@ fn missions_reference_races_and_company() {
         document
     };
     fails(
-        changed("/mission/race", json!("elves")),
-        "Unknown race: elves",
-    );
-    fails(
-        changed("/mission/company", json!(["nobody"])),
-        "Invalid campaign company slot: nobody",
-    );
-    fails(
-        changed("/entities/0/owner", json!("none")),
-        "Invalid campaign company slot: hero",
-    );
-    fails(
-        changed("/mission/playerRaces", json!({"player.2": "ants"})),
-        "missing participant player.2",
-    );
-    fails(
-        changed("/playerStarts/0/player", json!(2)),
-        "A campaign mission requires Player 1",
+        changed("/playerStarts/0/mainFort", json!("hero")),
+        "Player 1: invalid main fort objective",
     );
     fails(
         changed(
@@ -443,7 +437,7 @@ fn mission_players_reference_units_races_and_regions() {
         "from": {"region": "edge"}, "target": {"region": "gate"}});
     let mut mission = with(
         "/mission",
-        json!({"campaign": "C", "title": "T", "order": 1, "script": "x = 1",
+        json!({"script": "x = 1",
             "regions": [{"id": "edge", "x": 10, "y": 10, "radius": 3}, {"id": "gate", "x": 20, "y": 20, "radius": 3}],
             "players": [{"player": 2, "team": "enemy", "ai": {"behaviour": "waves", "waves": [line]}}]}),
     );
@@ -452,7 +446,7 @@ fn mission_players_reference_units_races_and_regions() {
     set(
         &mut mission,
         "/playerStarts",
-        json!([{"player": 1, "x": 40.5, "z": 40.5, "setup": "setup.test", "mainFort": "x"}]),
+        json!([{"player": 1, "x": 40.5, "z": 40.5, "setup": "setup.test", "mainFort": "start.player.1/main-fort"}]),
     );
     assert_eq!(errors(mission.clone()), Vec::<String>::new());
     let changed = |pointer: &str, value: Value| {

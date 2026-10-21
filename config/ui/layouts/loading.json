@@ -1,7 +1,37 @@
 {
+  "templates": {
+    "lm-paragraph": { "kind": "label", "class": "lm-paragraph" }
+  },
   "root": {
     "class": "ld",
     "children": [
+      {
+        "id": "mission-view", "class": "fill", "visible": false,
+        "children": [
+          { "id": "art", "kind": "image", "class": "cover", "image": "menu-aftermath" },
+          { "class": "lm-shade" },
+          { "class": "lm-shade-solid" },
+          { "id": "begin", "kind": "button", "class": "lm-catch", "action": "loading.begin" },
+          {
+            "id": "copy", "class": "lm-copy",
+            "children": [
+              { "id": "chapter", "kind": "label", "class": "lm-chapter" },
+              { "id": "title", "kind": "label", "class": "lm-title" },
+              { "class": "lm-rule" },
+              { "id": "story", "class": "lm-story", "repeat": "lm-paragraph" },
+              {
+                "class": "lm-footer",
+                "children": [
+                  { "id": "progress", "kind": "bar", "class": "lm-bar", "value": 0 },
+                  { "id": "prompt", "kind": "label", "class": "lm-prompt", "text": "Click or press any key to begin", "visible": false },
+                  { "id": "error", "kind": "label", "class": "lm-error", "visible": false },
+                  { "id": "back", "kind": "button", "class": "cd-skip lm-back", "text": "Back to the campaign", "action": "loading.back", "visible": false }
+                ]
+              }
+            ]
+          }
+        ]
+      },
       {
         "id": "art-view", "class": "fill",
         "children": [

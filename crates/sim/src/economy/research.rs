@@ -24,6 +24,10 @@ pub fn enqueue(ctx: &mut Ctx, b: EntityId, id: &Id) -> Result<(), String> {
     if ctx.state.economy.researched(owner).contains(id) {
         return Err("Already researched".into());
     }
+    // A campaign's tech (`campaign`).
+    if let Some(reason) = crate::campaign::refused(ctx.state, owner, id.as_str()) {
+        return Err(reason);
+    }
     let queued = ctx.index.buildings.iter().any(|&other| {
         ctx.state.entities.get(other).is_some_and(|o| {
             o.owner == owner

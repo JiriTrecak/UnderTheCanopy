@@ -128,6 +128,13 @@ pub struct State {
     /// fingerprint, never read by the rules.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub pings: Vec<Ping>,
+    /// The campaign a mission is played in: its player, hero level cap and variables
+    /// (`campaign`); `None` outside campaigns.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub campaign: Option<crate::campaign::CampaignState>,
+    /// What each owner may not build, train or research (`campaign`).
+    #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub tech: crate::campaign::TechLimits,
 }
 
 /// A player's ping on the map, seen by their team.
@@ -165,6 +172,8 @@ impl State {
             abilities: crate::abilities::AbilityWorld::default(),
             pings: Vec::new(),
             tunnels: Default::default(),
+            campaign: None,
+            tech: BTreeMap::new(),
         }
     }
 

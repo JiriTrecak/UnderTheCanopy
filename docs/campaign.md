@@ -1,6 +1,6 @@
 # Campaigns
 
-Agreed with Jiri, 2026-10-21 (D85). Nothing of it is built yet. The mockups are the canvas [Campaign Mockups](https://claude.ai/artifact/CbzEBp3GQZB5wqcrxA6aBT).
+Agreed with Jiri, 2026-10-21 (D85). The mockups are the canvas [Campaign Mockups](https://claude.ai/artifact/CbzEBp3GQZB5wqcrxA6aBT). Built so far: the campaign runtime (the format, progress, tech, carried heroes, the screens and the straight-through flow; see "The runtime" below). The campaign AI is built too (below). Not yet: the cinematic player and the editor's Campaigns view.
 
 Campaigns are linear, Warcraft III style, with heroes as the stars of the show. About twelve missions per race are planned. The research behind the design (how Warcraft III and StarCraft II build, script and present campaigns) is summarised at the end.
 
@@ -35,6 +35,7 @@ There is no branching, no side missions, no continuing into another campaign and
 - The campaign plays straight through. Winning a mission saves the progress and loads the next step at once: a mission's loading screen, a cinematic playing, a story's pages, a chapter's card. Losing offers Retry or going back to the campaign screen.
 - **The campaign screen** is where a campaign is started, resumed (Continue) and replayed. Over the campaign's background it lists only the steps already reached, grouped under their chapters, each with what fits it (Play, Watch, Read), and the next step highlighted. Nothing ahead of it shows: not its titles, not a count.
 - **The mission loading screen** is designed anew: the mission's illustration full-bleed, the chapter line, title and a few paragraphs of story on it, one gold loading bar and nothing else (no tips, stage or file counts). When loading is done the bar gives way to "Click or press any key to begin" and the screen waits. Skirmish and multiplayer keep starting at once.
+- **A mission map needs no player starts.** A player with a start gets its race's base and starting units as in a skirmish (player 1's race is the campaign's); a player without one begins with only the units and buildings the map places for it. In a mission, losing every building ends nothing by itself: the script decides with `mission.win()` / `mission.lose()`.
 
 ## What carries over
 
@@ -77,7 +78,7 @@ The simulation's `ai::campaign` (`crates/sim/src/ai/campaign/`) plays every play
 - **Posts.** Every unit and building the map places for a player (also script-spawned ones, and units handed to it) is a post: units guard where they stand, buildings stand where they stood. A defender walks back home when idle and more than 3 cells away, breaks off once drawn more than 18 cells away, and joins a neighbour fighting within 10 cells. A script's move of a defender moves its home there; units on other script orders (follow, attack, patrol) are left alone.
 - **Base** (and Waves): a lost defender is trained again at the player's own building that trains it (its training time, nothing paid; no such building, no replacement); a fallen hero revives at the player's altar after the altar's revival time; with `rebuild` (the default), a destroyed building rises again where it stood 30 seconds later, as a site that raises itself over its construction time, once nothing stands on its footprint. Units the script transferred away are not replaced.
 - **Waves.** Wave times count from when the player became active (the start, or its waking). A line without `after` waits for `ai_waves(player, true)`; `grow` adds its units after every `every` waves sent; `until` ends the line. A trained wave is spread over the buildings that train its units, one unit after another per building, and launches when the last is out; a unit no building can train is left out, and training at a building that falls is lost. A region wave appears around the region's centre and launches at once. With `hero`, the player's living heroes march with it. A wave attack-moves to its target and keeps attacking until its units are gone; its heroes then walk home. Targets: `base` is the nearest living enemy main fort (a player start's `mainFort`), else the nearest enemy building, else enemy unit; `nearest` is each unit's nearest enemy unit; enemies are players of the other team, never neutral camps.
-- **Skirmish**: the skirmish AI with the player's `skirmish` limits (`style`, `armyCap` capping its army, `pace` multiplying every decision interval, `income` multiplying gathered currencies). The mission's tech reaches it through `World::set_ai_tech(player, forbidden)` (the campaign's tech gating calls it; until then everything is open): forbidden units leave its recruits and no build, train or research command for them is issued. Switching a player to another behaviour stops the skirmish AI; switching to Skirmish starts it.
+- **Skirmish**: the skirmish AI with the player's `skirmish` limits (`style`, `armyCap` capping its army, `pace` multiplying every decision interval, `income` multiplying gathered currencies). The mission's tech reaches it through `World::set_ai_tech(player, forbidden)`: in a campaign mission a Skirmish player of the campaign's race is held to the same locked tech as player 1 (in the saved limits, refused like player 1's, and told to the AI again after a restore; `World::limit_tech` does the same for any player). Forbidden units leave its recruits and no build, train or research command for them is issued. Switching a player to another behaviour stops the skirmish AI; switching to Skirmish starts it.
 - **Vision.** An ally with `vision: false` keeps its sight to itself (vision treats it as a team of one); it stays an ally in everything else.
 - **Script API** (`mission.*`; a player is its number `2` or `"player.2"`, and must be one the mission lists, else the script stops with an error): `ai_waves(player, on)` pauses or resumes its waves (resuming starts lines without `after`; a wave due while paused is sent on resume); `ai_attack_now(player)` sends the next wave of every running line now (if none runs, the first unfinished line's) and restarts their timers (Waves behaviour only); `ai_target(player, target)` sends its waves from now on to `"base"`, `"nearest"` or a region id; `ai_behaviour(player, behaviour)` switches it to `passive`, `base`, `waves` or `skirmish`; `ai_wake(player)` brings a dormant player in: its placements marked `activation: "script"` appear and its timers start; it returns false when the player is not dormant.
 
@@ -118,7 +119,20 @@ The shapes every part builds against (2026-10-21). Field names are camelCase JSO
 - A mission's `map` is a map id among the package's `missions/` maps. Its tech: everything listed in `new` by this mission or any before it, minus this mission's `blocked`; whatever no mission has listed is locked. A race's starting setup still places its units and buildings.
 - **Carried heroes** need no list: when a mission is won, every hero of player 1 is saved by its definition (level, experience, learned abilities, items, permanent bonuses); when a mission starts, every hero of player 1 the map places whose definition has a saved state takes it on. `heroLevelCap` caps them.
 
-**Progress** (the user folder, `campaigns/<campaign id>.json`): the index of the furthest step reached, the saved heroes by definition, and the campaign variables (`{name: number | string | boolean}`).
+**Progress** (the user folder, `campaigns/<campaign id>.json`): the furthest step reached, by its id (the next to play; ids survive steps being inserted), `complete` once every step is done, the saved heroes by definition, and the campaign variables (`{name: number | string | boolean}`):
+
+```json
+{
+  "furthest": "condenser-hums",
+  "heroes": {
+    "unit.ants.queen": {"definition": "unit.ants.queen", "experience": 230,
+                        "learned": {"swarm": 2, "royal-guard": 1},
+                        "items": [{"item": "item.charm", "charges": 2}, null],
+                        "bonuses": {"maxHp": 10, "damage": 0, "armor": 0, "maxMana": 0}}
+  },
+  "variables": {"rescued": 3, "ally": "moths"}
+}
+```
 
 **A map's `mission` section** keeps objectives, regions and the script, and gains `players`; `campaign`, `order`, `nextMission`, `company`, `presentation`, `race`, `playerRaces` and `heroLevelCap` move to the campaign (the player's race is the campaign's):
 
@@ -137,6 +151,19 @@ The shapes every part builds against (2026-10-21). Field names are camelCase JSO
 - `team` is `ally` (player 1's team) or `enemy`; `behaviour` one of `passive`, `base`, `waves`, `skirmish`; a wave's `from` is `"trained"` or `{"region": "<id>"}`, its `target` `"base"`, `"nearest"` or `{"region": "<id>"}`; `until` (seconds) ends a wave line, and a later line can take over. `skirmish` takes `{"style", "armyCap", "pace", "income"}`. Players the map lists nowhere stay out of the match.
 
 **Mission script additions** (Lua, the `mission` API): `campaign_get(name)`, `campaign_set(name, value)`; `allow(id)`, `forbid(id)` (tech, for the rest of the mission); `ai_waves(player, on)`, `ai_attack_now(player)`, `ai_target(player, region)`, `ai_behaviour(player, behaviour)`, `ai_wake(player)` (a dormant player arrives: its placements marked `activation: "script"` appear, then it plays its behaviour).
+
+## The runtime
+
+Built 2026-10-21 (`canopy-content` `campaign`, `canopy-sim` `campaign`, `game/src/campaign.rs`, `game/src/screens/campaign.rs`).
+
+- **Loading.** Campaigns are the `.utcc` packages in `base/campaigns/`; a campaign that breaks a rule is left out with a warning. Its mission maps join the game's maps (the skirmish list leaves missions out). Its `assets/` cook into the same pack. A mission plays on the base content, or on base, campaign and map layered when the campaign or the map package carries game data of its own (units, abilities, rules…); the save and replay identity then names the campaign too.
+- **Validation** (`canopy_content::campaign::validate`, and a test over every shipped campaign): the race exists; step ids are unique; a mission's map is among the package's `missions/`; tech ids are units, buildings, items or research of the campaign's race and never both new and blocked; every art, music and narration asset exists (in the base or the package's own `assets/`); texts and the level cap (1–50) are in range. Unknown fields are errors. Story text and a mission's `story` are paragraphs separated by blank lines.
+- **A race's tech** is its roster (units and buildings), what its roster buildings train (queued production), research and upgrade into. `Campaign::locked(content, step)` is that minus everything `new` up to the step, plus the step's `blocked`.
+- **In the simulation** a mission starts with `World::new_campaign(content, map, setup, &CampaignStart)`: the locked tech for player 1, the carried heroes, the level cap and the variables. Everything then lives in the saved state (`state.campaign`, `state.tech`), so saves, restores and replays carry it (a campaign mission's replay starts from the save of its first tick). Locked tech is refused for building, training, research and building upgrades ("Not available in this mission"); the view's colony lists it and the command card leaves it out. `World::limit_tech(player, ids)` holds a computer player back the same way (the campaign AI's Skirmish behaviour).
+- **Carried heroes.** When a mission of the next step is won, every hero of player 1 (fallen ones too, never summoned ones; one per definition) is saved over the earlier save of its definition. A placed hero of player 1 of a saved definition takes it on at the start: experience up to the mission's cap, items with their charges, permanent bonuses and its learned ranks, or, when its capped level no longer allows them, its initial ranks with the points to spend again; then full health and mana.
+- **Variables.** `campaign_set` checks names and values as the mission variables are (at most 128, text of at most 2,000 characters); a run reads its own writes and a failed run changes nothing. A mission played on its own keeps no campaign variables; its `allow`/`forbid` act on player 1.
+- **Flow.** Continue runs the next step; a story or card finished, or a mission won, saves the progress and runs the step after it (a won mission shows its victory for 2.5 seconds first). Play, Read and Watch on an earlier step replay it and return to the campaign screen without changing the progress. A lost mission shows its result with Retry and Return to campaign. A loaded save of a campaign mission belongs to the furthest step reached that plays its map. Escape skips a story or card.
+- **Screens** (`config/ui/layouts`): `campaign` (the campaigns as cards), `campaign-steps` (the campaign screen), `card` (story pages revealed paragraph by paragraph with Continue and Skip; chapter and cinematic cards that move on after a few seconds or a click or key), and the `mission-view` of `loading`. `canopy capture-screens --only campaign` captures them.
 
 ## Research: how Warcraft III and StarCraft II do it
 

@@ -1196,14 +1196,6 @@ fn races(check: &mut Checker) {
     if !rules.races.is_empty() && !rules.races.contains_key(&rules.default_race) {
         check.fail("rules.defaultRace", "unknown default race");
     }
-    for (id, campaign) in &rules.campaigns {
-        if !rules.races.contains_key(&campaign.race) {
-            check.fail(
-                format!("rules.campaigns.{id}"),
-                format!("unknown campaign race {}", campaign.race),
-            );
-        }
-    }
     let profiles: Vec<_> = rules.races.keys().filter_map(|id| rules.race(id)).collect();
     let foreign = |race: &str, id: &str| {
         profiles

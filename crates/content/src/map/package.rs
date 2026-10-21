@@ -289,33 +289,12 @@ pub struct MapSummary {
     pub starts: Vec<(u8, f64, f64)>,
     pub camps: u32,
     pub sandbox: bool,
-    pub mission: Option<MissionSummary>,
+    /// A mission map (it has a `mission` section).
+    pub mission: bool,
+    /// Players (1-based) the map places entities for, sorted.
+    pub placed_players: Vec<u8>,
     /// Whether the package has [`PREVIEW_FILE`].
     pub preview: bool,
-}
-
-/// The mission fields the menus show.
-#[serde_with::skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct MissionSummary {
-    pub campaign: String,
-    pub order: u32,
-    pub title: String,
-    pub presentation: Option<MissionPresentation>,
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, schemars::JsonSchema)]
-#[serde(rename_all = "camelCase")]
-pub struct MissionPresentation {
-    /// `asset.interface.*` image ids.
-    pub loading_background: Option<String>,
-    pub selection_background: Option<String>,
-    pub chapter: Option<String>,
-    pub briefing: Option<String>,
-    pub tips: Option<Vec<String>>,
-    pub features: Option<Vec<String>>,
 }
 
 /// Reads [`MapSummary`] of the map package at `dir`: its manifest and `map.json`, not the
@@ -337,7 +316,14 @@ pub fn summary(dir: &Path) -> Result<MapSummary, Errors> {
         player_starts: Vec<Start>,
         #[serde(default)]
         camps: Vec<serde::de::IgnoredAny>,
-        mission: Option<MissionSummary>,
+        #[serde(default)]
+        entities: Vec<Placed>,
+        mission: Option<serde::de::IgnoredAny>,
+    }
+    #[derive(serde::Deserialize)]
+    struct Placed {
+        #[serde(default)]
+        owner: Option<String>,
     }
     let package = Package::open(dir).map_err(|e| Errors(vec![e]))?;
     let value = read_json(&package, MAP_FILE).map_err(|e| Errors(vec![e]))?;
@@ -355,7 +341,17 @@ pub fn summary(dir: &Path) -> Result<MapSummary, Errors> {
             .collect(),
         camps: document.camps.len() as u32,
         sandbox: document.sandbox,
-        mission: document.mission,
+        mission: document.mission.is_some(),
+        placed_players: {
+            let mut players: Vec<u8> = document
+                .entities
+                .iter()
+                .filter_map(|e| e.owner.as_deref()?.strip_prefix("player.")?.parse().ok())
+                .collect();
+            players.sort_unstable();
+            players.dedup();
+            players
+        },
         preview: package.root.join(PREVIEW_FILE).is_file(),
     })
 }

@@ -39,6 +39,8 @@ pub const DOWNLOADED_MAPS: &str = "downloads";
 pub const FEEDBACK_OUTBOX: &str = "feedback";
 /// This installation's anonymous id (feedback reports), in the user folder.
 pub const INSTALL_ID: &str = "install-id";
+/// The player's progress through each campaign (`<campaign id>.json`), in the user folder.
+pub const CAMPAIGN_PROGRESS: &str = "campaigns";
 
 impl Paths {
     pub fn resolve(data_override: Option<PathBuf>) -> Result<Self> {
@@ -67,6 +69,11 @@ impl Paths {
 }
 
 impl Paths {
+    /// The player's progress through campaign `id`.
+    pub fn campaign_progress(&self, id: &str) -> PathBuf {
+        self.user.join(CAMPAIGN_PROGRESS).join(format!("{id}.json"))
+    }
+
     /// The repository checkout the data folder is, if it is one. The editor edits its
     /// base package and nothing else, and exists only then (docs/editor.md).
     pub fn repository(&self) -> Option<&Path> {

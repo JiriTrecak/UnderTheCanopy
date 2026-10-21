@@ -606,6 +606,10 @@ pub fn produce(ctx: &mut Ctx, b: EntityId, definition: &str) -> Result<(), Strin
         .filter(|_| policy.mode == ProductionMode::Queued)
         .filter(|_| policy.outputs.iter().any(|o| o.as_str() == definition))
         .ok_or("Unsupported output")?;
+    // A campaign's tech (`campaign`).
+    if let Some(reason) = crate::campaign::refused(ctx.state, owner, definition) {
+        return Err(reason);
+    }
     if lane_size(e) >= policy.queue_capacity.unwrap_or(0) as usize {
         return Err("Queue is full".into());
     }

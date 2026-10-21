@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "vanguard-first-light",
+  "kind": "map",
+  "name": "First Light",
+  "description": "A placeholder mission: the Queen and her escort clear a hollow.",
+  "version": "1.0.0",
+  "dependencies": {
+    "base": ">=0.4.0"
+  }
+}
