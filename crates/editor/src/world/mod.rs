@@ -333,6 +333,9 @@ pub struct State {
     pub placing: Placing,
     /// Who placed units and buildings belong to: 0 no one, else that player.
     pub owner: u8,
+    /// Place and move what may stand anywhere (units, camps, scenery) cell by cell instead
+    /// of block by block (X); buildings, starts and nodes keep the building lattice.
+    pub fine: bool,
     /// What Place can put down, and where its picker stands: category, group, search.
     pub catalog: catalog::Catalog,
     pub place_category: usize,
@@ -393,6 +396,7 @@ impl Default for State {
             faces: Vec::new(),
             placing: Placing::default(),
             owner: 1,
+            fine: false,
             catalog: catalog::Catalog::default(),
             place_category: 0,
             place_group: 0,
@@ -1113,7 +1117,7 @@ fn panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
     ui.add_space(12.0);
     ui.label(
         RichText::new(
-            "B box · brush · lasso  ·  [ ] size  ·  Y symmetry  ·  G view  ·  Shift reverses",
+            "B box · brush · lasso  ·  [ ] size  ·  Y symmetry  ·  X 4 or 1 cell  ·  G view  ·  Shift reverses",
         )
         .size(10.5)
         .color(FAINT),
@@ -1309,7 +1313,37 @@ fn selection_under(session: &Session, at: [f32; 2]) -> Option<(Picked, String)> 
 
 /// The commands that move the whole selection by `delta`: each camp and each old amber
 /// site once, however many of its members are selected.
-fn move_all(session: &Session, docs: &crate::map::view::Docs, delta: (f64, f64)) -> Vec<Command> {
+fn move_all(
+    session: &Session,
+    content: Option<&canopy_content::Content>,
+    docs: &crate::map::view::Docs,
+    delta: (f64, f64),
+) -> Vec<Command> {
+    // Whole blocks when a building, a start or a node moves, so they stay on the
+    // building lattice; otherwise as fine as Place is set.
+    let lattice = session
+        .blocks
+        .selection
+        .iter()
+        .any(|(kind, id)| match kind {
+            Picked::Start => true,
+            Picked::Entity => session
+                .map
+                .as_ref()
+                .and_then(|m| m.entities.iter().find(|e| &e.id == id))
+                .and_then(|e| content?.definition(e.definition.as_str()))
+                .is_some_and(|d| d.kind == canopy_content::game::Kind::Building),
+            Picked::Object => false,
+        });
+    let step = if lattice || !session.blocks.fine {
+        4.0
+    } else {
+        1.0
+    };
+    let delta = (
+        (delta.0 / step).round() * step,
+        (delta.1 / step).round() * step,
+    );
     let camps = docs.map["camps"].as_array().cloned().unwrap_or_default();
     let group = |id: &str| -> String {
         if let Some(c) = camps.iter().position(|c| {
@@ -1351,6 +1385,81 @@ fn on_lattice(x: f64, z: f64, width: u32, depth: u32) -> (f64, f64) {
     (snap(x, width), snap(z, depth))
 }
 
+/// Where a placement lands (the simulation's rules: a building's footprint edges on the
+/// 4-cell building lattice, units and resources on cell centres), and the footprint to
+/// show there. `fine` places what may stand anywhere (units, camps, scenery) cell by cell
+/// instead of block by block.
+pub struct Landing {
+    pub x: f64,
+    pub z: f64,
+    /// Width and depth in cells, for what has a footprint.
+    pub footprint: Option<(u32, u32)>,
+}
+
+fn landing(
+    content: &canopy_content::Content,
+    placing: &Placing,
+    at: [f32; 2],
+    fine: bool,
+) -> Landing {
+    use crate::map::tools;
+    let (x, z) = (f64::from(at[0]), f64::from(at[1]));
+    // A block's middle (4k + 1.5) or a cell's centre; units and camps need a cell centre,
+    // so a block's middle rounds to the cell beside it.
+    let free = |v: f64| {
+        if fine {
+            v.round()
+        } else {
+            ((v - 1.5) / 4.0).round() * 4.0 + 1.5
+        }
+    };
+    let cell = |v: f64| free(v).round();
+    let point = |x: f64, z: f64| Landing {
+        x,
+        z,
+        footprint: None,
+    };
+    let building = |d: &canopy_content::game::Definition| {
+        let (w, h) = d.footprint.as_ref().map_or((4, 4), |f| (f.width, f.depth));
+        let (x, z) = on_lattice(x, z, w, h);
+        Landing {
+            x,
+            z,
+            footprint: Some((w, h)),
+        }
+    };
+    match placing {
+        Placing::Definition(id) => match content.definition(id) {
+            Some(d) if d.kind == canopy_content::game::Kind::Building => building(d),
+            _ => point(cell(x), cell(z)),
+        },
+        Placing::Amber => match content.definitions.iter().find(|d| catalog::is_mine(d)) {
+            Some(d) => building(d),
+            None => point(cell(x), cell(z)),
+        },
+        Placing::Start(_) => {
+            let (x, z) = tools::start_position(x, z);
+            let setup = content
+                .rules
+                .races
+                .values()
+                .filter_map(|r| r.starting_setup.as_ref())
+                .next()
+                .unwrap_or(&content.rules.starting_setup);
+            Landing {
+                x,
+                z,
+                footprint: content
+                    .definition(setup.fort.as_str())
+                    .and_then(|d| d.footprint.as_ref())
+                    .map(|f| (f.width, f.depth)),
+            }
+        }
+        Placing::Camp(_) => point(cell(x), cell(z)),
+        Placing::Scenery(_) => point(free(x), free(z)),
+    }
+}
+
 /// Places what Place puts down at `at`, owned by player `owner` (0: no one) when it can
 /// be: a unit or building, a camp, a player's start (moved when it is there already), one
 /// amber node, or a piece of scenery. In blocks nothing needs a pad: the blocks are the
@@ -1365,7 +1474,8 @@ fn place(
 ) -> Option<crate::tabs::Edit> {
     use crate::map::tools::{self, Placement};
     use serde_json::json;
-    let (x, z) = (f64::from(at[0]), f64::from(at[1]));
+    let land = landing(content, placing, at, session.blocks.fine);
+    let (x, z) = (land.x, land.z);
     let map = session.map.as_ref()?;
     let map_doc = session.path("map.json");
     let list = |v: &serde_json::Value| v.as_array().cloned().unwrap_or_default();
@@ -1398,7 +1508,6 @@ fn place(
             Some(edit)
         }
         Placing::Start(player) => {
-            let (x, z) = tools::start_position(x, z);
             let setup = content
                 .rules
                 .races
@@ -1443,11 +1552,6 @@ fn place(
         }
         Placing::Amber => {
             let mine = content.definitions.iter().find(|d| catalog::is_mine(d))?;
-            let footprint = mine
-                .footprint
-                .as_ref()
-                .map_or((4, 4), |f| (f.width, f.depth));
-            let (x, z) = on_lattice(x, z, footprint.0, footprint.1);
             // The mine's numbered looks (`…-1`, `…-2`, …), one picked by the place.
             let stem = mine
                 .model
@@ -1490,10 +1594,6 @@ fn place(
                 format!("player.{owner}")
             };
             let building = definition.kind == canopy_content::game::Kind::Building;
-            let (x, z) = match &definition.footprint {
-                Some(f) if building => on_lattice(x, z, f.width, f.depth),
-                _ => (x.floor() + 0.5, z.floor() + 0.5),
-            };
             let short = id.rsplit('.').next().unwrap_or(id);
             let mut entity = json!({
                 "definition": id,
@@ -1674,6 +1774,9 @@ pub fn show(
                 View::Generated => View::Blocks,
                 _ => View::Generated,
             })
+        } else if input.key_pressed(egui::Key::X) {
+            session.blocks.fine = !session.blocks.fine;
+            None
         } else if let Some(mode) = [(egui::Key::H, View::Pathing), (egui::Key::V, View::Split)]
             .into_iter()
             .find_map(|(key, mode)| input.key_pressed(key).then_some(mode))
@@ -1894,7 +1997,44 @@ pub fn show(
         }
         (None, Some((c, p))) => match state.tool {
             BlockTool::Cells => ring(p, radius.max(0.5), Color32::from_white_alpha(200)),
-            BlockTool::Place => ring(p, 4.0, Color32::from_rgb(255, 214, 120)),
+            // Place shows where it will land: the footprint on the lattice, or the spot.
+            BlockTool::Place => {
+                let gold = Color32::from_rgb(255, 214, 120);
+                match content {
+                    Some(content) => {
+                        let land = landing(content, &state.placing, [p.x, p.z], state.fine);
+                        let (x, z) = (land.x as f32, land.z as f32);
+                        match land.footprint {
+                            Some((w, h)) => {
+                                let (hw, hh) = (w as f32 / 2.0, h as f32 / 2.0);
+                                let corners =
+                                    [(-hw, -hh), (hw, -hh), (hw, hh), (-hw, hh), (-hw, -hh)];
+                                let mut points = Vec::new();
+                                for pair in corners.windows(2) {
+                                    for k in 0..8 {
+                                        let t = k as f32 / 8.0;
+                                        let px = x + pair[0].0 + (pair[1].0 - pair[0].0) * t;
+                                        let pz = z + pair[0].1 + (pair[1].1 - pair[0].1) * t;
+                                        let y = crate::map::tools::ground_at(map, px, pz) + 0.15;
+                                        points.extend(project(
+                                            view_projection,
+                                            rect,
+                                            Vec3::new(px, y, pz),
+                                        ));
+                                    }
+                                }
+                                points.extend(points.first().copied());
+                                painter.add(egui::Shape::line(points, Line::new(2.0, gold)));
+                            }
+                            None => {
+                                let y = crate::map::tools::ground_at(map, x, z);
+                                ring(Vec3::new(x, y, z), 1.2, gold);
+                            }
+                        }
+                    }
+                    None => ring(p, 4.0, gold),
+                }
+            }
             // Select rings what a click would pick.
             BlockTool::Select => {
                 if let Some((kind, id)) = crate::map::view::nearest(session, p.x, p.z)
@@ -1988,7 +2128,7 @@ pub fn show(
             match (moved, docs) {
                 // A drag that begins on the selection moves all of it.
                 (Some(delta), Some(docs)) if on_selection => {
-                    let commands = move_all(session, docs, delta);
+                    let commands = move_all(session, content, docs, delta);
                     if !commands.is_empty() {
                         out.edits.push(step(session, "Move", commands));
                     }

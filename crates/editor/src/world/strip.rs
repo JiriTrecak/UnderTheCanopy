@@ -620,6 +620,18 @@ fn place_picker(ui: &mut Ui, session: &mut Session, open: bool) {
     }
 }
 
+/// How finely Place and moves snap what may stand anywhere: whole blocks or single
+/// cells (X). Buildings, starts and nodes always keep the building lattice.
+fn precision(ui: &mut Ui, session: &mut Session) {
+    let fine = &mut session.blocks.fine;
+    if segment(ui, !*fine, "4 cells") {
+        *fine = false;
+    }
+    if segment(ui, *fine, "1 cell") {
+        *fine = true;
+    }
+}
+
 /// The chosen tool's settings.
 fn settings(
     ui: &mut Ui,
@@ -715,6 +727,8 @@ fn settings(
         }
         BlockTool::Place => {
             place_picker(ui, session, open);
+            divider(ui);
+            precision(ui, session);
             let state = &session.blocks;
             let entry = state.catalog.find(&state.placing).cloned();
             match &state.placing {
@@ -764,6 +778,8 @@ fn settings(
                         many => format!("{} selected", many.len()),
                     };
                     ui.label(RichText::new(what).size(12.0).color(TEXT));
+                    divider(ui);
+                    precision(ui, session);
                     divider(ui);
                     note(ui, "drag to move; Shift adds or removes");
                     if ui.button("Delete").clicked()

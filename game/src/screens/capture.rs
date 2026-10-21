@@ -512,6 +512,15 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
         };
         frame(&mut editor, rig, vec![escape(true), escape(false)]);
     }
+    // Place shows where it lands: a start's hall footprint on the building lattice.
+    editor.set_block_tool("place");
+    frame(
+        &mut editor,
+        rig,
+        vec![egui::Event::PointerMoved(point(1180.0, 640.0))],
+    );
+    settle(&mut editor, rig, 4);
+    shoot(&mut editor, rig, "editor-blocks-place-hover")?;
     // A rectangle drawn round several things selects them all.
     editor.set_block_tool("select");
     let (a, b) = (point(800.0, 560.0), point(1060.0, 800.0));

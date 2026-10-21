@@ -25,12 +25,14 @@
       "Map editor: in the Split view the highlighted cell, a drag and the selection show in both panes",
       "Maps: one winter biome remains; the other biomes and their ground textures are removed",
       "Map editor: Place chooses from everything that can be placed, by category with search: buildings and units of every race and neutral, camps, player starts, single amber nodes, substance deposits and world scenery",
-      "Map editor: Select comes first and selects several things at once: drag a rectangle, Shift-click to add; move or delete them together"
+      "Map editor: Select comes first and selects several things at once: drag a rectangle, Shift-click to add; move or delete them together",
+      "Map editor: everything Place puts down snaps as the game requires (buildings, starts and amber nodes to the building grid, units to cells), Place shows where it will land, and X switches between 4-cell and 1-cell precision"
     ],
     "fixed": [
       "Generated cliffs join cleanly at corners and turns, ramps keep their side walls down to the foot, and diagonal cliff edges no longer show a staircase",
       "Map editor: Test in game works when the game was opened straight into the editor",
-      "Map editor: undo keeps the map on its Map tab instead of switching to Form"
+      "Map editor: undo keeps the map on its Map tab instead of switching to Form",
+      "Map editor: units placed with Place stand on cell centres, and moving a selection with a building keeps it on the building grid"
     ],
     "knownIssues": []
   },
