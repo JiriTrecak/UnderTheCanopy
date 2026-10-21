@@ -415,6 +415,9 @@ pub struct DecalScatter {
     /// How much rime lies on them (0–1; their sheets carry their own frost).
     #[serde(default)]
     pub frost: f32,
+    /// Only this many cells (nearest and farthest) out from a cliff's foot, below it:
+    /// beyond a long face's talus, say.
+    pub within: Option<[f32; 2]>,
 }
 
 fn talus() -> f32 {

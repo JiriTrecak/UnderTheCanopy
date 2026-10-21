@@ -363,16 +363,31 @@ fn classify(blocks: &Blocks, heights: &Heights, span: usize) -> Cells {
             let i = cz * span + cx;
             let h = centre(cx, cz);
             for (dx, dz) in [(1i32, 0i32), (-1, 0), (0, 1), (0, -1)] {
-                let (nx, nz) = ((cx as i32 + dx) as usize, (cz as i32 + dz) as usize);
-                let n = centre(nx, nz);
+                let n = centre((cx as i32 + dx) as usize, (cz as i32 + dz) as usize);
                 if h - n > LEVEL_HEIGHT * 0.4 {
                     top[i] = true;
-                    face[i] = Some(style[i]);
                 }
                 if n - h > LEVEL_HEIGHT * 0.4 {
                     foot[i] = true;
-                    face[i] = face[i].or(Some(style[nz * span + nx]));
                 }
+            }
+            // The face is the one of the highest cell within two: the column above the
+            // drop, past the half-height cell the drop falls through.
+            if top[i] || foot[i] {
+                let mut highest = (h, style[i]);
+                for dz in -2i32..=2 {
+                    for dx in -2i32..=2 {
+                        let (nx, nz) = (cx as i32 + dx, cz as i32 + dz);
+                        if nx < 0 || nz < 0 || nx >= span as i32 || nz >= span as i32 {
+                            continue;
+                        }
+                        let n = centre(nx as usize, nz as usize);
+                        if n > highest.0 {
+                            highest = (n, style[nz as usize * span + nx as usize]);
+                        }
+                    }
+                }
+                face[i] = Some(highest.1);
             }
         }
     }
@@ -672,6 +687,12 @@ fn decals(cells: &Cells, heights: &Heights, recipe: &BlockLook, seed: u64) -> Ve
             };
             if !cells.zone_of(i, rule.zone, rule.face) {
                 continue;
+            }
+            if let Some([near, far]) = rule.within {
+                let d = cells.to_foot[i];
+                if d < near || d > far || cells.to_top[i] < d {
+                    continue;
+                }
             }
             if rule.clump > 0.0 {
                 let gather = smoothstep(

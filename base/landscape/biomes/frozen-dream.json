@@ -282,6 +282,38 @@
         ],
         "clump": 0.5,
         "frost": 0.42
+      },
+      {
+        "zone": "groundEdge",
+        "face": 1,
+        "atlas": "asset.texture.frost-ground-leaves/image.png",
+        "cells": 5,
+        "count": 23,
+        "density": 28.0,
+        "size": [
+          2.0,
+          4.5
+        ],
+        "tint": [
+          1.08,
+          1.0,
+          0.93
+        ],
+        "clump": 0.5
+      },
+      {
+        "zone": "groundEdge",
+        "face": 1,
+        "atlas": "asset.texture.frost-clover/image.png",
+        "cells": 7,
+        "count": 40,
+        "density": 36.0,
+        "size": [
+          1.0,
+          1.8
+        ],
+        "frost": 0.35,
+        "clump": 0.6
       }
     ],
     "scatter": [

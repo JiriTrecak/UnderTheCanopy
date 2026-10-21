@@ -332,6 +332,46 @@
         ],
         "clump": 0.5,
         "frost": 0.42
+      },
+      {
+        "zone": "ground",
+        "face": 1,
+        "atlas": "asset.texture.frost-ground-leaves/image.png",
+        "cells": 5,
+        "count": 23,
+        "density": 10.0,
+        "size": [
+          2.0,
+          4.5
+        ],
+        "tint": [
+          1.08,
+          1.0,
+          0.93
+        ],
+        "clump": 0.75,
+        "within": [
+          15.0,
+          26.0
+        ]
+      },
+      {
+        "zone": "ground",
+        "face": 1,
+        "atlas": "asset.texture.frost-clover/image.png",
+        "cells": 7,
+        "count": 40,
+        "density": 12.0,
+        "size": [
+          1.0,
+          1.8
+        ],
+        "frost": 0.35,
+        "clump": 0.75,
+        "within": [
+          15.0,
+          26.0
+        ]
       }
     ],
     "scatter": [],
