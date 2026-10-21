@@ -1,5 +1,5 @@
 //! What maps are furnished with: starts, amber sites and creep camps, placed as the block
-//! editor's Place and MCP's `map_place` do (and the Warcraft importer); a start's level
+//! editor's Place and MCP's `map_place` do; a start's level
 //! pad as patches over the heights; the ground's height; the scenery that counts as trees
 //! and as props. (The brush editor of M3 was removed with D81: maps are made in blocks.)
 
@@ -33,8 +33,8 @@ impl Tier {
         }
     }
 
-    /// The camp's summed creep levels (the Warcraft importer's tiers: up to 9 easy,
-    /// 10 to 19 medium, 20 and more hard).
+    /// The camp's summed creep levels (up to 9 easy, 10 to 19 medium, 20 and more
+    /// hard).
     fn levels(self) -> (u32, u32) {
         match self {
             Tier::Easy => (5, 8),

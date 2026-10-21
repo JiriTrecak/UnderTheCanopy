@@ -17,25 +17,21 @@ const PLAYERS: [[u8; 3]; 8] = [
     [240, 110, 190],
 ];
 
-/// A material's colour from its id (the Warcraft tile names and plain words).
+/// A material's colour from the words of its id.
 fn material(id: &str) -> [f32; 3] {
     let id = id.to_ascii_lowercase();
     let has = |words: &[&str]| words.iter().any(|w| id.contains(w));
     if has(&["cliff"]) {
         [92.0, 86.0, 78.0]
-    } else if has(&["lgrd", "dark"]) {
+    } else if has(&["moss", "dark"]) {
         [58.0, 96.0, 44.0]
-    } else if has(&["grs", "grass"]) {
+    } else if has(&["grass"]) {
         [92.0, 138.0, 58.0]
-    } else if has(&["rok", "rock", "stone"]) {
+    } else if has(&["rock", "stone", "paving", "rubble"]) {
         [128.0, 124.0, 116.0]
-    } else if has(&["san", "sand"]) {
+    } else if has(&["sand"]) {
         [196.0, 178.0, 124.0]
-    } else if has(&["dro", "rough"]) {
-        [118.0, 96.0, 70.0]
-    } else if has(&["drg", "grassy"]) {
-        [112.0, 118.0, 66.0]
-    } else if has(&["drt", "dirt", "soil"]) {
+    } else if has(&["dirt", "soil"]) {
         [140.0, 110.0, 74.0]
     } else if has(&["snow", "ice"]) {
         [226.0, 232.0, 238.0]

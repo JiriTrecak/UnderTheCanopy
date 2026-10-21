@@ -31,8 +31,8 @@ its code is not a template to translate.
   map and asset editors are built. Some implementations still await Jiri's review.
 - The editor is a game mode (`just edit`), currently for a repository checkout's
   base package. It has shared undo, schema forms, references, disk watching,
-  unsaved Test in game, an ability encounter stage, map brushes, Warcraft map
-  import, asset import/cooking, and MCP. See [editor](editor.md).
+  unsaved Test in game, an ability encounter stage, the block map editor (D80–D82),
+  asset import/cooking, and MCP. See [editor](editor.md).
 - Content lives in `base/`, not the former `content/game.json` or top-level asset
   registries. Maps are `.utcm` package directories; campaigns use `.utcc`.
   Objects merge across package layers, lists replace, null removes; inheritance
@@ -101,7 +101,7 @@ its code is not a template to translate.
   see [audio.md](audio.md).
 - **Editor:** [canopy-editor](../crates/editor/src/lib.rs): `document.rs` is the
   command/undo core; `checker.rs`, `watch.rs`, `forms.rs`, `references.rs`,
-  `map/`, `warcraft/`, `assets.rs`, `stage.rs`, `encounter.rs` implement the tools.
+  `map/`, `world/`, `assets.rs`, `stage.rs`, `encounter.rs` implement the tools.
   [mcp.rs](../crates/editor/src/mcp.rs) exposes the same editing commands.
   `just mcp` serves headless; [tools/maps/mcp.py](../tools/maps/mcp.py) is an
   existing client. Use the documented loopback/token access, never print tokens.

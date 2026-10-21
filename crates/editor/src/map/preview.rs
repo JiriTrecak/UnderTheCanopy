@@ -44,18 +44,16 @@ fn paint(material: &str, grass: Rgb, soil: Rgb, winter: bool) -> Option<Rgb> {
     let has = |w: &[&str]| w.iter().any(|s| m.contains(s));
     Some(if has(&["cliff"]) {
         return None;
-    } else if has(&["lgrs", "lgrd", "grass"]) {
+    } else if has(&["grass", "moss"]) {
         grass
-    } else if has(&["lrok", "rock"]) {
+    } else if has(&["rock", "paving"]) {
         hex(if winter { 0xa4b0bc } else { 0x929080 })
-    } else if has(&["pebble", "stones"]) {
+    } else if has(&["pebble", "stones", "rubble"]) {
         hex(if winter { 0xbed0db } else { 0xa79a78 })
     } else if has(&["riverbed"]) {
         hex(0x65948d)
-    } else if has(&["ldrt", "ldro", "dirt"]) {
+    } else if has(&["dirt"]) {
         hex(if winter { 0xadc6d8 } else { 0xb99a69 })
-    } else if has(&["ldrg"]) {
-        mix(grass, hex(0xb99a69), 0.5)
     } else {
         soil
     })
