@@ -298,6 +298,27 @@ pub fn validate_aim(
             }
             continue;
         }
+        // Raising or consuming the dead needs a corpse to work on: an empty field refuses
+        // the cast before its costs, as Warcraft's Resurrection does.
+        let corpses = match op {
+            Effect::Resurrect(r) => {
+                let q = &r.corpses;
+                Some((&q.radius, &q.relations, q.filter.as_ref(), q.order))
+            }
+            Effect::Summon(s) => s
+                .corpses
+                .as_ref()
+                .map(|q| (&q.radius, &q.relations, q.filter.as_ref(), q.order)),
+            _ => None,
+        };
+        if let Some((radius, relations, filter, order)) = corpses {
+            let views = super::corpses::visible(ctx, state, &caster_actor);
+            let radius = library::value(spell, rank, radius);
+            if super::corpses::select(&views, radius, relations, filter, order, point).is_empty() {
+                return Err("No corpses nearby");
+            }
+            continue;
+        }
         if op.query().is_some() || op.target() == Anchor::Point {
             continue;
         }

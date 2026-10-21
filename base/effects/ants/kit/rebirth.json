@@ -1,0 +1,244 @@
+{
+  "id": "effect.ants.kit.rebirth",
+  "name": "Rebirth",
+  "description": "Raw substance erupts from the Queen: a towering violet column, a great sigil, a wave over the fallen and a rain of liquid light.",
+  "durationTicks": 70,
+  "loop": false,
+  "layers": [
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 40,
+      "count": 1,
+      "size": 26,
+      "height": 4.0,
+      "intensity": 6.0,
+      "startTick": 0
+    },
+    {
+      "id": "column",
+      "enabled": true,
+      "shape": "pillar",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 50,
+      "count": 1,
+      "size": 3.6,
+      "height": 22.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.7
+    },
+    {
+      "id": "core",
+      "enabled": true,
+      "shape": "pillar",
+      "colour": "#ffffff",
+      "accent": "#c9b8ff",
+      "durationTicks": 30,
+      "count": 1,
+      "size": 1.2,
+      "height": 22.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.0999999999999996
+    },
+    {
+      "id": "sigil-shade",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#141032",
+      "accent": "#141032",
+      "durationTicks": 70,
+      "count": 1,
+      "size": 33.800000000000004,
+      "height": 0.06,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "normal",
+      "intensity": 0.45,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": 0.1,
+          "value": 1
+        },
+        {
+          "at": 0.7,
+          "value": 0.9
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "sigil",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#8a5cff",
+      "accent": "#ffffff",
+      "durationTicks": 70,
+      "count": 1,
+      "size": 41.6,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "normal",
+      "intensity": 0.9900000000000001,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.royal-sigil",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 240,
+          "direction": "clockwise"
+        },
+        "scale": {
+          "periodTicks": 48,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "smoothstep"
+        }
+      }
+    },
+    {
+      "id": "sigil-glow",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#8a5cff",
+      "accent": "#ffffff",
+      "durationTicks": 70,
+      "count": 1,
+      "size": 41.6,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.26,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.royal-sigil",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 240,
+          "direction": "clockwise"
+        },
+        "scale": {
+          "periodTicks": 48,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "smoothstep"
+        }
+      }
+    },
+    {
+      "id": "wave",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#8a5cff",
+      "accent": "#ffffff",
+      "durationTicks": 26,
+      "count": 1,
+      "size": 30.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.6,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 52,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "wave2",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#8a5cff",
+      "accent": "#ffffff",
+      "durationTicks": 30,
+      "count": 1,
+      "size": 22.0,
+      "height": 0.1,
+      "startTick": 8,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.2,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 60,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "rain",
+      "enabled": true,
+      "shape": "rain",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 34,
+      "count": 48,
+      "size": 0.24,
+      "height": 10.0,
+      "spread": 13.0,
+      "fallSpeed": 1.2,
+      "launchDelayMs": 420,
+      "length": 3.0,
+      "blend": "additive",
+      "intensity": 2.6,
+      "core": 0.9,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "impact": {
+        "durationTicks": 12,
+        "count": 3,
+        "size": 0.16,
+        "spread": 0.6,
+        "height": 0.2,
+        "colour": "#8a5cff",
+        "accent": "#c9b8ff"
+      }
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 {
   "id": "unit.ants.queen",
   "name": "The Queen",
-  "description": "The colony's mother and the campaign's protagonist. Founds new mounds where she stands, feeds allies Royal Jelly, shares the colony's wounds through One Body and, at the last, leads the Exodus underground.",
+  "description": "Aurelith, the colony's young queen and the campaign's protagonist, touched by substance. Her Living Light heals an ally or sears an enemy, her Cocoon keeps her from harm, the colony fights as One Body around her and, at the last, she pours raw substance into the fallen for their Rebirth.",
   "model": "asset.models.units.ants-queen",
   "icon": "asset.portraits.units.ants-queen",
   "hero": true,
@@ -27,7 +27,7 @@
           "maxMana": 260,
           "cooldownTicks": 72,
           "healthRegenPerSecond": 1.3,
-          "manaRegenPerSecond": 1.0
+          "manaRegenPerSecond": 1.2
         },
         {
           "experience": 160,
@@ -37,7 +37,7 @@
           "maxMana": 286,
           "cooldownTicks": 70,
           "healthRegenPerSecond": 1.45,
-          "manaRegenPerSecond": 1.08
+          "manaRegenPerSecond": 1.28
         },
         {
           "experience": 400,
@@ -47,7 +47,7 @@
           "maxMana": 312,
           "cooldownTicks": 68,
           "healthRegenPerSecond": 1.6,
-          "manaRegenPerSecond": 1.16
+          "manaRegenPerSecond": 1.36
         },
         {
           "experience": 720,
@@ -57,7 +57,7 @@
           "maxMana": 338,
           "cooldownTicks": 66,
           "healthRegenPerSecond": 1.75,
-          "manaRegenPerSecond": 1.24
+          "manaRegenPerSecond": 1.44
         },
         {
           "experience": 1120,
@@ -67,7 +67,7 @@
           "maxMana": 364,
           "cooldownTicks": 64,
           "healthRegenPerSecond": 1.9,
-          "manaRegenPerSecond": 1.32
+          "manaRegenPerSecond": 1.52
         },
         {
           "experience": 1600,
@@ -77,7 +77,7 @@
           "maxMana": 390,
           "cooldownTicks": 62,
           "healthRegenPerSecond": 2.05,
-          "manaRegenPerSecond": 1.4
+          "manaRegenPerSecond": 1.6
         },
         {
           "experience": 2160,
@@ -87,7 +87,7 @@
           "maxMana": 416,
           "cooldownTicks": 60,
           "healthRegenPerSecond": 2.2,
-          "manaRegenPerSecond": 1.48
+          "manaRegenPerSecond": 1.68
         },
         {
           "experience": 2800,
@@ -97,7 +97,7 @@
           "maxMana": 442,
           "cooldownTicks": 60,
           "healthRegenPerSecond": 2.35,
-          "manaRegenPerSecond": 1.56
+          "manaRegenPerSecond": 1.76
         },
         {
           "experience": 3520,
@@ -107,7 +107,7 @@
           "maxMana": 468,
           "cooldownTicks": 60,
           "healthRegenPerSecond": 2.5,
-          "manaRegenPerSecond": 1.64
+          "manaRegenPerSecond": 1.84
         },
         {
           "experience": 4320,
@@ -117,7 +117,7 @@
           "maxMana": 494,
           "cooldownTicks": 60,
           "healthRegenPerSecond": 2.65,
-          "manaRegenPerSecond": 1.72
+          "manaRegenPerSecond": 1.92
         },
         {
           "experience": 5200,
@@ -127,7 +127,7 @@
           "maxMana": 520,
           "cooldownTicks": 60,
           "healthRegenPerSecond": 2.8,
-          "manaRegenPerSecond": 1.8
+          "manaRegenPerSecond": 2.0
         }
       ]
     },
@@ -155,11 +155,11 @@
     },
     "abilities": {
       "maxMana": 260,
-      "manaRegenPerSecond": 1.0,
+      "manaRegenPerSecond": 1.2,
       "bindings": [
         {
-          "id": "found",
-          "ability": "ability.ants.found-colony",
+          "id": "living-light",
+          "ability": "ability.ants.living-light",
           "initialRank": 0,
           "controls": [
             "player",
@@ -178,13 +178,13 @@
             ]
           },
           "ai": {
-            "preference": "enemy",
-            "intervalTicks": 20
+            "preference": "wounded-ally",
+            "intervalTicks": 10
           }
         },
         {
-          "id": "royal-jelly",
-          "ability": "ability.ants.royal-jelly",
+          "id": "cocoon",
+          "ability": "ability.ants.cocoon",
           "initialRank": 0,
           "controls": [
             "player",
@@ -203,8 +203,9 @@
             ]
           },
           "ai": {
-            "preference": "wounded-ally",
-            "intervalTicks": 20
+            "preference": "enemy",
+            "intervalTicks": 20,
+            "threatRadius": 12
           }
         },
         {
@@ -233,8 +234,8 @@
           }
         },
         {
-          "id": "exodus",
-          "ability": "ability.ants.exodus",
+          "id": "rebirth",
+          "ability": "ability.ants.rebirth",
           "initialRank": 0,
           "controls": [
             "player",
@@ -251,9 +252,8 @@
             ]
           },
           "ai": {
-            "preference": "enemy",
-            "intervalTicks": 40,
-            "intent": "reinforce"
+            "preference": "wounded-ally",
+            "intervalTicks": 40
           }
         }
       ]

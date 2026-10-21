@@ -14,7 +14,7 @@ The forest runs on **substance**, its magic. Beetles keep it in glass; bees tran
 - **Only heavily mutated ants keep the full ant body**, and mutation always costs something: the Burster, the Honeypot and the Reaver Queen. **Mutated units can't fit through tunnels**, and each has its own drawback (see Units).
 - Mutation is never something the player manages (too hard for beginners): a unit is mutated or not, and its drawbacks come with it.
 - **One body, ten thousand legs**: the colony is a superorganism. No machines and no metal; everything is grown or secreted (packed clay, amber resin, shed chitin, silk, fungus). **Pheromones are their magic.**
-- No healers in the usual sense and no summons: no broodlings, no larvae that hatch into units, nothing auto-spawns. The Gardener's fungus circles are the one healing (with the Queen's Royal Jelly and the Alchemist's Transfusion).
+- No healers in the usual sense and no summons: no broodlings, no larvae that hatch into units, nothing auto-spawns. The Gardener's fungus circles are the one healing (with the Queen's Living Light and the Alchemist's Transfusion).
 - Team colour (royal blue in concepts): war-paint on the big carapace plates and a silk band on units; dyed silk banners and painted resin plates on buildings.
 - Ants are the first race in the campaign. The Queen is its protagonist; she turns at the end.
 
@@ -27,7 +27,7 @@ The forest runs on **substance**, its magic. Beetles keep it in glass; bees tran
   - A mound works (D65: its animation, glow and effects) while ants pass through it.
   - The mutated castes can't use tunnels: the Burster, Honeypot and Reaver Queen. Flyers never do.
   - Routing is always automatic; whether a player may switch it off stays open.
-- **Founding (the Nydus attack):** the Alate **Founds** a Brood Mound where it lands, and is used up. The Queen Founds one at a point nearby (a long cooldown). The mound is finished at once, a full tunnel mound with its 8 supply. The computer founds mounds out on the frontier, more than 64 cells from its other mounds with no enemy near, and its army then tunnels to them.
+- **Founding (the Nydus attack):** the Alate **Founds** a Brood Mound where it lands, and is used up (the Queen founded too until D86). The mound is finished at once, a full tunnel mound with its 8 supply. The computer founds mounds out on the frontier, more than 64 cells from its other mounds with no enemy near, and its army then tunnels to them.
 - Tiers: Nest → Great Nest (tier 2) → Queen's Chamber (tier 3, once a Deep Gallery stands).
 
 ## Buildings
@@ -75,11 +75,18 @@ Mutation is never something the player manages: a unit is mutated or not, and it
 
 Three abilities with three ranks each (levels 1, 3, 5) and an ultimate (level 6; the Queen's has one rank).
 
-**The Queen**, the colony's mother and the campaign's protagonist:
-- **Found**: raises a Brood Mound at a point nearby (cooldown 90/70/50 s).
-- **Royal Jelly**: heals an ally 150/250/350 and raises its damage by 20/30/40% for 10 s.
-- **One Body** (aura): allies near her take 8/12/16% less damage.
-- Ultimate **Exodus**: after 2 s, she and up to 32 allies around her sink and come up beside any friendly building.
+**The Queen**, Aurelith, the colony's young queen and the campaign's protagonist (redesigned 2026-10-21, D86: her first kit of Found, Royal Jelly, One Body and Exodus was logistics, and she felt "totally meh"):
+- **Living Light**, her signature, her Holy Light: heals an ally 200/400/600, or sears an enemy for 100/200/300 spell damage; never herself. 65 mana, 5 s cooldown, range 16. Refuses an unhurt ally.
+- **Cocoon**, her Divine Shield: she spins a cocoon of living silk around herself and sheds every hostile spell; nothing can harm her for 6/9/12 s, and she keeps moving, fighting and casting. 50 mana, 40 s cooldown, instant.
+- **One Body** (aura), her Devotion Aura: allies within 10, the Queen too, take 10/15/20% less damage.
+- Ultimate **Rebirth**, her Resurrection: she pours raw substance into her fallen; up to 8 dead allies within 14 rise at full health and mana, and the substance stays in them (+25% damage until they fall again). 175 mana, 150 s cooldown.
+
+Why: Arthas is strong because every one of his spells is one sentence and swings a fight. Holy Light is cheap, quick and big enough to undo a death, and it is her button too, used all match; the cocoon keeps the colony's queen alive while she heals (and she cannot heal herself, so the two lean on each other); the aura makes the army around her tougher without a click; Rebirth turns a lost fight around. Each is the ants' own: living light and blossoms, silk around the brood, the colony as one body, and the ultimate is the first time she uses raw substance, the thing that ruined the other broods: the reborn come back brighter, and changed. It is the hint of what she becomes at the Wellspring. In early missions (level 3 cap) she already has two of Living Light, Cocoon and One Body, at least one at rank 2.
+
+Directions weighed (2026-10-21):
+- **The Lightmother** (chosen): the four above. The simplest kit with the most felt power, every spell a mother's: heal and protect, then the forbidden cure.
+- **The Substance Sovereign**: a caster-nuker. A lance of light along a line (hurts enemies, heals allies on it), Bloom (a flower ring that roots enemies), an attack-speed aura, and Ascension (she becomes a towering substance being for 30 s). Rejected: a line skillshot is not instantly understood or used constantly; it overlaps the Herald and the Alchemist; Ascension repeats the Hornbreaker's Colossus and the Reaver Queen, and gives her ending away too literally.
+- **The Hive Mother**: the first kit made stronger (Found, Royal Jelly, One Body, Exodus). Rejected: her power stays in the economy and the tunnels, so in a fight the player never feels her; Found stays with the Alate, the race's founder.
 
 **Royal Alchemist**, who distils substance in her own body:
 - **Volatile Draught**: a flask bursting for 90/140/190 spell damage around the target.

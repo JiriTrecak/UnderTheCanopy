@@ -86,3 +86,28 @@ in furnaces, steam from every vent.
   (`shell`) snaps up bright and shimmers while held.
 - **Bulwark Pulse** (Warden) — shields allies around → the mechanic is a pulse, so **a blue
   field wave** rolls out, and each shielded ally wears a thin blue hexagon shell.
+
+## Ants
+
+Bio-magic, never corruption: living light like bioluminescence, blossoms and fireflies;
+substance a violet liquid light; royalty gold; pheromones a drifting violet-blue scent.
+
+### The Queen (living light, silk and, at the last, raw substance)
+
+- **Living Light** — heals an ally or sears an enemy → **a blossom of light falls on the one
+  she touches**: a ribbon of blue-violet light from her staff, then a column of blue-white
+  light drops on the target and a glowing flower (the `living-bloom` glyph) opens at its feet
+  with a pulse, fireflies and petals rising. On an enemy the same light **strikes**: a
+  narrow white-violet column, a white flash and star, a shock ring, sparks and the blossom
+  scattered into burning petals · Holy Light (a symbol, a cone and a pulse).
+- **Cocoon** — invulnerable, still acting → **silk of light winds up around her and
+  closes**: pearly strands spiral up her body and a flash; while it lasts a translucent
+  cocoon of glowing silk bands (`silk-cocoon`) stands around her with threads circling up and
+  a soft ring at her feet · Divine Shield.
+- **One Body** — the aura → quiet: the royal sigil at her feet and a scent-violet ring and
+  motes on each ally in it · Devotion Aura.
+- **Rebirth** — the fallen rise, raw substance stays in them → **raw substance erupts from
+  her**: violet light streams in from all around into her hands, then a towering violet
+  column, a great royal sigil, a wave rolling out over the fallen and a rain of liquid light;
+  under each corpse violet liquid wells up and splashes and the ant rises out of it; the
+  reborn keep a faint violet glow and a few rising motes until they fall · Resurrection.

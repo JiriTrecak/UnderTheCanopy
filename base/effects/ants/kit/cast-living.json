@@ -1,0 +1,123 @@
+{
+  "id": "effect.ants.kit.cast-living",
+  "name": "Living light wind-up",
+  "description": "The Queen gathers her light: a small blossom opens at her feet and fireflies rise to her staff.",
+  "durationTicks": 20,
+  "loop": false,
+  "layers": [
+    {
+      "id": "bloom",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#6f78ff",
+      "accent": "#ffffff",
+      "durationTicks": 20,
+      "count": 1,
+      "size": 5.120000000000001,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 2.16,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.living-bloom",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 480,
+          "direction": "clockwise"
+        },
+        "scale": {
+          "periodTicks": 40,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "smoothstep"
+        }
+      }
+    },
+    {
+      "id": "motes",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#e4ebff",
+      "accent": "#6f78ff",
+      "durationTicks": 22,
+      "count": 8,
+      "size": 0.18,
+      "height": 0.2,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.0,
+      "core": 0.7,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 20,
+        "rate": 8,
+        "speed": 0.6,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 30,
+        "gravity": -4.0,
+        "drag": 1.0,
+        "spawnRadius": 1.2,
+        "startSize": 0.18,
+        "endSize": 0.054,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "spawnInner": 0.1,
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.15,
+            "value": 1
+          },
+          {
+            "at": 0.7,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "turbulence": {
+          "strength": 0.5,
+          "scale": 1.2,
+          "speed": 2.0
+        }
+      }
+    },
+    {
+      "id": "hands",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#6f78ff",
+      "accent": "#e4ebff",
+      "durationTicks": 20,
+      "count": 1,
+      "size": 1.6,
+      "height": 5.5,
+      "startTick": 0,
+      "blend": "additive",
+      "orientation": "camera",
+      "intensity": 1.4,
+      "core": 0.8
+    }
+  ]
+}

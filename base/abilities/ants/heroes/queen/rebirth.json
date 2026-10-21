@@ -1,0 +1,117 @@
+{
+  "id": "ability.ants.rebirth",
+  "name": "Rebirth",
+  "description": "Ultimate. The Queen pours raw substance into her fallen: up to 8 dead allies within 14 units rise again at full health. The substance stays in them: the reborn deal 25% more damage until they fall again.",
+  "activation": "targeted",
+  "ranks": [
+    {}
+  ],
+  "targeting": {
+    "kind": "self",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally"
+    ],
+    "allowSelf": true,
+    "range": 0,
+    "outOfRange": "reject"
+  },
+  "cast": {
+    "prepareTicks": 20,
+    "recoverTicks": 16,
+    "cost": {
+      "resource": "mana",
+      "amount": 175,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 6000,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "statuses": [
+    {
+      "op": "status",
+      "target": "target",
+      "id": "reborn",
+      "amount": 0,
+      "lifetime": "untilDeath",
+      "polarity": "positive",
+      "dispel": false,
+      "modifiers": {
+        "damagePermille": 250
+      }
+    }
+  ],
+  "onRelease": [
+    {
+      "op": "resurrect",
+      "target": "caster",
+      "amount": 8,
+      "corpses": {
+        "radius": 14,
+        "relations": [
+          "ally"
+        ],
+        "order": "strongest"
+      },
+      "healthPermille": 1000,
+      "manaPermille": 1000,
+      "placementRadius": 6,
+      "supply": "allow-over-cap",
+      "grants": [
+        "reborn"
+      ]
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-queen-rebirth",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "windup",
+        "effect": "effect.ants.kit.rebirth-gather",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
+        "id": "pour",
+        "effect": "effect.ants.kit.rebirth",
+        "event": "released",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
+        "id": "rise",
+        "effect": "effect.ants.kit.reborn-rise",
+        "event": "resurrected",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
+        "id": "reborn",
+        "effect": "effect.ants.kit.reborn",
+        "event": "statusApplied",
+        "anchor": "target",
+        "lifetime": "status",
+        "statusId": "reborn"
+      }
+    ]
+  }
+}

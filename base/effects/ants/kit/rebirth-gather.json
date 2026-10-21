@@ -1,0 +1,173 @@
+{
+  "id": "effect.ants.kit.rebirth-gather",
+  "name": "Rebirth wind-up",
+  "description": "The Queen draws up raw substance: violet light streams in from all around and swells in her hands.",
+  "durationTicks": 24,
+  "loop": false,
+  "layers": [
+    {
+      "id": "sigil-shade",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#141032",
+      "accent": "#141032",
+      "durationTicks": 24,
+      "count": 1,
+      "size": 13.0,
+      "height": 0.06,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "normal",
+      "intensity": 0.45,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": 0.1,
+          "value": 1
+        },
+        {
+          "at": 0.7,
+          "value": 0.9
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "sigil",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#8a5cff",
+      "accent": "#ffffff",
+      "durationTicks": 24,
+      "count": 1,
+      "size": 16.0,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "normal",
+      "intensity": 0.9900000000000001,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.royal-sigil",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 200,
+          "direction": "clockwise"
+        },
+        "scale": {
+          "periodTicks": 48,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "smoothstep"
+        }
+      }
+    },
+    {
+      "id": "sigil-glow",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#8a5cff",
+      "accent": "#ffffff",
+      "durationTicks": 24,
+      "count": 1,
+      "size": 16.0,
+      "height": 0.08,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.08,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.royal-sigil",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "rotation": {
+          "periodTicks": 200,
+          "direction": "clockwise"
+        },
+        "scale": {
+          "periodTicks": 48,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "smoothstep"
+        }
+      }
+    },
+    {
+      "id": "inflow",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#b49cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 22,
+      "count": 48,
+      "size": 0.24,
+      "height": 0.4,
+      "blend": "additive",
+      "intensity": 3.0,
+      "core": 0.7,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 22,
+        "rate": 48,
+        "speed": 0.2,
+        "speedVariation": 0.3,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 30,
+        "gravity": -4.0,
+        "drag": 0.2,
+        "spawnRadius": 12.0,
+        "startSize": 0.24,
+        "endSize": 0.12,
+        "spin": 0,
+        "fadeIn": 0.2,
+        "fadeOut": 0.3,
+        "spawnInner": 0.7,
+        "orbit": 220,
+        "pull": 1.0,
+        "stretch": 0.08
+      }
+    },
+    {
+      "id": "hands",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#b49cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 24,
+      "count": 1,
+      "size": 2.4,
+      "height": 5.5,
+      "startTick": 0,
+      "blend": "additive",
+      "orientation": "camera",
+      "intensity": 1.8,
+      "core": 0.8
+    }
+  ]
+}

@@ -453,11 +453,18 @@ fn corpses_raise_with_resurrect_and_heroes_revive() {
         spec,
         entities,
         300,
-        vec![(200, 1, cast(1, "awaken", 1))],
+        // Before anyone has fallen there is nothing to raise: the cast is refused before
+        // its costs, so the later one is not cooling down.
+        vec![(2, 1, cast(1, "awaken", 1)), (200, 1, cast(1, "awaken", 1))],
     )
     .set(0, "b", json!({"hp": 15}))
     .set(0, "c", json!({"hp": 10}))
     .play();
+    assert!(
+        played.errors().iter().any(|e| e == "No corpses nearby"),
+        "{:?}",
+        played.errors()
+    );
     let raised = played.of(EventKind::Resurrected);
     assert_eq!(
         raised.len(),

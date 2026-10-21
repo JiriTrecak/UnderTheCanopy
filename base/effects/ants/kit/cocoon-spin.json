@@ -1,0 +1,139 @@
+{
+  "id": "effect.ants.kit.cocoon-spin",
+  "name": "Cocoon spun",
+  "description": "Silk of light spirals up around the Queen and closes: strands winding upward, a pearly flash and a soft ring.",
+  "durationTicks": 34,
+  "loop": false,
+  "layers": [
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#dfe4ff",
+      "accent": "#e4ebff",
+      "durationTicks": 18,
+      "count": 1,
+      "size": 10,
+      "height": 3.0,
+      "intensity": 3.5,
+      "startTick": 0
+    },
+    {
+      "id": "strands",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#dfe4ff",
+      "accent": "#e4ebff",
+      "durationTicks": 30,
+      "count": 48,
+      "size": 0.2,
+      "height": 0.2,
+      "blend": "additive",
+      "intensity": 3.0,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "follow": true,
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 26,
+        "rate": 48,
+        "speed": 0.4,
+        "speedVariation": 0.3,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 10,
+        "gravity": -9.0,
+        "drag": 0.6,
+        "spawnRadius": 3.2,
+        "startSize": 0.2,
+        "endSize": 0.1,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.4,
+        "spawnInner": 0.8,
+        "orbit": 540,
+        "pull": 0.5,
+        "stretch": 0.12
+      }
+    },
+    {
+      "id": "flare",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#dfe4ff",
+      "accent": "#ffffff",
+      "durationTicks": 8,
+      "count": 1,
+      "size": 7.0,
+      "height": 4.0,
+      "blend": "additive",
+      "intensity": 2.0,
+      "core": 0.8,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.5
+        },
+        {
+          "at": 0.3,
+          "value": 1.0
+        },
+        {
+          "at": 1,
+          "value": 1.2
+        }
+      ],
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 1
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "shock",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#dfe4ff",
+      "accent": "#ffffff",
+      "durationTicks": 14,
+      "count": 1,
+      "size": 8.0,
+      "height": 0.1,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.6,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.ring",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 28,
+          "min": 0.18,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

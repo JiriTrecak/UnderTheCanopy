@@ -1,0 +1,230 @@
+{
+  "id": "effect.ants.kit.reborn-rise",
+  "name": "Reborn",
+  "description": "A fallen ant rises: violet liquid light wells up out of the ground beneath it and splashes up around it.",
+  "durationTicks": 44,
+  "loop": false,
+  "layers": [
+    {
+      "id": "splash",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#b49cff",
+      "accent": "#ffffff",
+      "durationTicks": 20,
+      "count": 1,
+      "size": 6.6000000000000005,
+      "height": 1.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 3.5200000000000005,
+      "core": 0.4,
+      "texture": {
+        "asset": "asset.effects.ants.liquid-splash",
+        "role": "image",
+        "index": 1
+      },
+      "motion": {
+        "scale": {
+          "periodTicks": 40,
+          "min": 0.6,
+          "max": 1.2,
+          "easing": "smoothstep"
+        },
+        "opacity": {
+          "periodTicks": 40,
+          "min": 0.0,
+          "max": 1.0,
+          "easing": "sine",
+          "phase": 0.5
+        }
+      }
+    },
+    {
+      "id": "column",
+      "enabled": true,
+      "shape": "pillar",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 26,
+      "count": 1,
+      "size": 1.4,
+      "height": 8.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.0999999999999996
+    },
+    {
+      "id": "flare",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#c9b8ff",
+      "accent": "#ffffff",
+      "durationTicks": 8,
+      "count": 1,
+      "size": 3.6,
+      "height": 1.0,
+      "blend": "additive",
+      "intensity": 2.4,
+      "core": 0.8,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.5
+        },
+        {
+          "at": 0.3,
+          "value": 1.0
+        },
+        {
+          "at": 1,
+          "value": 1.2
+        }
+      ],
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 1
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "drops",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#b49cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 26,
+      "count": 14,
+      "size": 0.2,
+      "height": 0.6,
+      "blend": "additive",
+      "intensity": 2.0,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 24,
+        "rate": 14,
+        "speed": 6.0,
+        "speedVariation": 0.5,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": 14,
+        "drag": 1.5,
+        "spawnRadius": 0.2,
+        "startSize": 0.2,
+        "endSize": 0.04000000000000001,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.6,
+        "collide": {
+          "friction": 0.9
+        }
+      },
+      "core": 0.6
+    },
+    {
+      "id": "motes",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c9b8ff",
+      "accent": "#8a5cff",
+      "durationTicks": 42,
+      "count": 10,
+      "size": 0.2,
+      "height": 0.2,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.2,
+      "core": 0.7,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 40,
+        "rate": 10,
+        "speed": 0.6,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 30,
+        "gravity": -3.0,
+        "drag": 1.0,
+        "spawnRadius": 0.8,
+        "startSize": 0.2,
+        "endSize": 0.06,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "spawnInner": 0.1,
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.15,
+            "value": 1
+          },
+          {
+            "at": 0.7,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "turbulence": {
+          "strength": 0.5,
+          "scale": 1.2,
+          "speed": 2.0
+        }
+      }
+    },
+    {
+      "id": "pool",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 44,
+      "count": 1,
+      "size": 2.4,
+      "height": 0.06,
+      "blend": "additive",
+      "intensity": 0.6,
+      "motion": {
+        "opacity": {
+          "periodTicks": 88,
+          "min": 0.0,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "id": "effect.ants.kit.reborn",
+  "name": "Reborn",
+  "description": "The substance stays in the reborn: a faint violet glow and motes of light rising off it.",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "glow",
+      "enabled": true,
+      "shape": "glow",
+      "colour": "#8a5cff",
+      "accent": "#c9b8ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 1.4,
+      "height": 0.06,
+      "blend": "additive",
+      "sustain": true,
+      "follow": true,
+      "intensity": 0.35,
+      "motion": {
+        "opacity": {
+          "periodTicks": 60,
+          "min": 0.5,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "motes",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#c9b8ff",
+      "accent": "#8a5cff",
+      "durationTicks": 80,
+      "count": 3,
+      "size": 0.16,
+      "height": 0.6,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.0,
+      "core": 0.7,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 40,
+        "rate": 3,
+        "speed": 0.6,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 30,
+        "gravity": -2.0,
+        "drag": 1.0,
+        "spawnRadius": 0.6,
+        "startSize": 0.16,
+        "endSize": 0.048,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "spawnInner": 0.1,
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.15,
+            "value": 1
+          },
+          {
+            "at": 0.7,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "turbulence": {
+          "strength": 0.5,
+          "scale": 1.2,
+          "speed": 2.0
+        }
+      },
+      "sustain": true,
+      "follow": true
+    }
+  ]
+}
