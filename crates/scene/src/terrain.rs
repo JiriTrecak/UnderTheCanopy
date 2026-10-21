@@ -228,6 +228,15 @@ pub fn water_profile(
         flow_speed: water.flow_speed as f32,
         glint: water.glint.unwrap_or(0.0) as f32,
         waves,
+        ice: match &water.ice {
+            Some(ice) => canopy_render::water::WaterIce {
+                width: ice.width as f32,
+                floes: ice.floes as f32,
+                cracks: ice.cracks as f32,
+                color: color(&ice.color)?,
+            },
+            None => Default::default(),
+        },
     })
 }
 

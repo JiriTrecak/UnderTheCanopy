@@ -102,7 +102,7 @@
       "edge": 1
     }
   },
-  "water": "water.meltwater",
+  "water": "water.frozen-lake",
   "surroundings": {
     "floorTexture": "asset.terrain.frost-ground",
     "floorColor": "#8a94a3",
@@ -147,6 +147,7 @@
   },
   "blocks": {
     "seed": 23,
+    "ice": "asset.terrain.frost-ice",
     "rubble": "asset.terrain.frost-rubble",
     "frameCover": 1.0,
     "frameShade": 0.25,

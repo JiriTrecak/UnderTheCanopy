@@ -1,0 +1,33 @@
+{
+  "id": "water.frozen-lake",
+  "name": "Frozen lake",
+  "water": {
+    "shallowColor": "#1f4a6d",
+    "deepColor": "#05142a",
+    "clarity": 0.7,
+    "rippleScale": 0.12,
+    "rippleStrength": 0.03,
+    "foamStrength": 0.0,
+    "reflectionStrength": 0.7,
+    "causticStrength": 0.08,
+    "cloudStrength": 0.04,
+    "flowSpeed": 0.1,
+    "glint": 0.0,
+    "waves": {
+      "height": 0.08,
+      "length": 16,
+      "speed": 0.35,
+      "depthStart": 0.5,
+      "depthEnd": 3.0,
+      "shallowStrength": 0.02,
+      "shoreWidth": 0.3,
+      "crestStrength": 0.0
+    },
+    "ice": {
+      "width": 3.0,
+      "floes": 0.7,
+      "cracks": 0.7,
+      "color": "#cfe6f2"
+    }
+  }
+}

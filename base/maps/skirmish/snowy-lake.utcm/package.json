@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "snowy-lake",
+  "kind": "map",
+  "name": "Snowy Lake",
+  "version": "1.0.0",
+  "dependencies": {
+    "base": ">=0.4.1"
+  },
+  "description": "Four players round a frozen lake: mains on paved plateaus in the corners, moss shelves below them, and an ice-rimmed lake of drifting floes in the middle."
+}

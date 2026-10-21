@@ -13,7 +13,8 @@
       "Map editor: a Split view (V) shows the blocks and the generated world side by side under one camera; the world follows two seconds after the last edit",
       "Map editor: the view bar hides or shows the maps library, the map's panel and the properties",
       "Map editor: one panel on the right shows the map's settings (name, description, picture you can draw again or upload, size presets, biome picker, weather and time of day) or what is selected",
-      "Maps: weather (rain, snow or god rays) and time of day (dawn, day, dusk, night, or any hour, with time passing or not) set per map"
+      "Maps: weather (rain, snow or god rays) and time of day (dawn, day, dusk, night, or any hour, with time passing or not) set per map",
+      "Snowy Lake: a four-player map round a frozen lake"
     ],
     "improved": [
       "Frost Hollow: frozen ice, quiet frosted snow, a bank of roots with pale spires, a crusted shore and big frosted leaves, rebuilt to its drawn layout",
@@ -30,7 +31,8 @@
       "Map editor: Select comes first and selects several things at once: drag a rectangle, Shift-click to add; move or delete them together",
       "Map editor: everything Place puts down snaps as the game requires (buildings, starts and amber nodes to the building grid, units to cells), Place shows where it will land, and X switches between 4-cell and 1-cell precision",
       "Map editor: Place shows a ghost of what it puts down, and dragging a selection moves it live, snapped; both turn red with the reason where the game would not allow it, and refuse to place or drop there",
-      "Maps can be any multiple of 32 cells from 128 to 1024 across"
+      "Maps can be any multiple of 32 cells from 128 to 1024 across",
+      "Frozen water: deep dark water with an ice shelf along the shore and floes drifting on it; lake shores slope smoothly under the ice instead of stepping"
     ],
     "fixed": [
       "Generated cliffs join cleanly at corners and turns, ramps keep their side walls down to the foot, and diagonal cliff edges no longer show a staircase",

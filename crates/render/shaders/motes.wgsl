@@ -234,13 +234,14 @@ fn vs_snow(@builtin(vertex_index) vertex: u32, @builtin(instance_index) index: u
     let p = q.xyz;
     // A few pixels across whatever its distance, bigger flakes nearer.
     let distance = length(p - frame.eye.xyz);
-    let size = clamp(distance * (0.0022 + 0.0022 * seed.z), 0.03, 0.6);
+    let size = clamp(distance * (0.0012 + 0.0012 * seed.z), 0.03, 0.16);
     let c = corner(vertex);
     var out: WeatherOut;
     out.world = p + (motes.right.xyz * c.x + motes.up.xyz * c.y) * size;
     out.clip = frame.view_proj * vec4f(out.world, 1.0);
     out.quad = c;
-    out.alpha = q.w * (0.55 + 0.4 * seed.y) * smoothstep(0.8, 2.5, distance);
+    // Flakes right before the lens fade, so none blot out the view.
+    out.alpha = q.w * (0.5 + 0.4 * seed.y) * smoothstep(6.0, 18.0, distance);
     out.kind = 0.0;
     return out;
 }

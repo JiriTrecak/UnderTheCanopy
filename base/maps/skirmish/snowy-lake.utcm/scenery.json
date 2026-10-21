@@ -1,0 +1,36 @@
+{
+  "objects": [
+    {
+      "id": "island.0",
+      "asset": "scenery.frost-pine-a",
+      "x": 157.0,
+      "z": 158.0,
+      "yaw": 0.4,
+      "scale": 1.6
+    },
+    {
+      "id": "island.1",
+      "asset": "scenery.frost-pine-b",
+      "x": 164.0,
+      "z": 161.0,
+      "yaw": 1.9,
+      "scale": 1.4
+    },
+    {
+      "id": "island.2",
+      "asset": "scenery.mega-mushroom",
+      "x": 160.5,
+      "z": 165.0,
+      "yaw": 2.7,
+      "scale": 0.45
+    },
+    {
+      "id": "island.3",
+      "asset": "scenery.frost-pine-sapling",
+      "x": 155.0,
+      "z": 164.0,
+      "yaw": 0.9,
+      "scale": 1.2
+    }
+  ]
+}

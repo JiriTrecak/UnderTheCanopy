@@ -32,6 +32,10 @@ struct Profile {
     swell: vec4f,
     // depth start, shallow strength, shore width, crest strength
     shore: vec4f,
+    // frozen water: shelf width (m), floes, cracks, 0 (none when the width is 0)
+    ice: vec4f,
+    // rgb the ice's colour (linear)
+    ice_color: vec4f,
 }
 
 @group(1) @binding(0) var levels: texture_2d<f32>;
@@ -65,6 +69,38 @@ fn water_noise(p: vec2f) -> f32 {
 fn depth_at(p: vec2f) -> f32 {
     let uv = (p - water.grid.x + 0.5) / water.grid.z;
     return textureSampleLevel(depths, clamp_linear, uv, 0.0).r;
+}
+
+// Distance to dry ground at a world position (metres, at most 64).
+fn shore_at(p: vec2f) -> f32 {
+    let uv = (p - water.grid.x + 0.5) / water.grid.z;
+    return textureSampleLevel(depths, clamp_linear, uv, 0.0).g;
+}
+
+// Cells of a cracked sheet: the distance to the nearest of a cell's points (x), to the
+// second nearest (y) and the nearest cell's hash (z); the edge between cells is where
+// y - x is small.
+fn ice_cells(p: vec2f) -> vec3f {
+    let cell = floor(p);
+    let f = fract(p);
+    var first = 4.0;
+    var second = 4.0;
+    var id = 0.0;
+    for (var y = -1; y <= 1; y++) {
+        for (var x = -1; x <= 1; x++) {
+            let o = vec2f(f32(x), f32(y));
+            let h = textureLoad(hash_map, vec2i(cell + o) & vec2i(255), 0).rg;
+            let d = length(o + 0.15 + h * 0.7 - f);
+            if (d < first) {
+                second = first;
+                first = d;
+                id = h.x;
+            } else if (d < second) {
+                second = d;
+            }
+        }
+    }
+    return vec3f(first, second, id);
 }
 
 fn flow_at(p: vec2f) -> vec4f {
@@ -327,6 +363,56 @@ fn fs_main(in: VsOut) -> SceneOut {
     let cloud = 1.0 - pr.extra.x * (0.5 + 0.5 * sin(p.x * 0.07 + p.y * 0.04 + t * 0.04));
     m *= cloud;
     a *= cloud * canopy;
+
+    // Frozen water: a shelf of ice along the shore, its edge wandering, cracked into
+    // plates and frosted; beyond it floes drift on the dark water. The ice is opaque.
+    if (pr.ice.x > 0.0) {
+        let shore = shore_at(p);
+        let reach = pr.ice.x * (0.65 + 0.7 * water_noise(p * 0.11)) + (water_noise(p * 0.6) - 0.5) * 0.9;
+        let aa = max(pixel * 1.5, 0.08);
+        let shelf = 1.0 - smoothstep(reach - aa, reach + aa, shore);
+        // Floes: plates of a slowly drifting cell sheet, kept by their hash, more of them
+        // nearer the shelf.
+        let drift = vec2f(t * 0.05, t * 0.03) + flow_dir * t * 0.2;
+        // Two sheets, coarse and fine, so floes come in many sizes.
+        let coarse = ice_cells((p + drift) * 0.2);
+        let fine = ice_cells((p + drift * 1.3) * 0.45 + 17.0);
+        let big = step(0.5, water_noise(p * 0.05 + 3.0));
+        let floe_cells = select(fine, coarse, big > 0.5);
+        let near = 1.0 - smoothstep(reach, reach + 16.0, shore);
+        let kept = step(1.0 - pr.ice.y * mix(0.05, 0.5, near * near), floe_cells.z);
+        // A floe is a whole cell of a cracked sheet, apart from its neighbours by a lead
+        // of open water: angular plates, not discs.
+        let lead = smoothstep(0.1, 0.22 + aa * 0.3, floe_cells.y - floe_cells.x);
+        let floe = kept * lead * near * (1.0 - shelf);
+        let ice = max(shelf, floe);
+        // Open water is lighter and colder near the ice, darkest far out.
+        let far_out = smoothstep(reach, reach + 26.0, shore);
+        a += pr.shallow.rgb * body_light * (1.0 - far_out) * 0.22 * m;
+        if (ice > 0.0) {
+            // Cracks between the plates of the shelf, and fine frost over everything.
+            let crack_cells = ice_cells(p * 0.45);
+            let crack = (1.0 - smoothstep(0.0, 0.06 + aa * 0.1, crack_cells.y - crack_cells.x)) * pr.ice.z;
+            let frost = water_noise(p * 2.3) * 0.5 + water_noise(p * 0.7) * 0.5;
+            // Thinner, darker ice towards its edge, where the water shows through.
+            let thick = smoothstep(0.0, 1.6, reach - shore) * shelf + floe * 0.7;
+            var albedo = mix(pr.ice_color.rgb * 0.55, pr.ice_color.rgb, clamp(thick + 0.25, 0.0, 1.0));
+            // Each floe its own thickness: thin ones darker and bluer, sunk in the water.
+            let thin = floe * (1.0 - floe_cells.z) * (1.0 - shelf);
+            albedo = mix(albedo, mix(pr.deep.rgb, pr.ice_color.rgb, 0.45), thin * 0.6);
+            albedo = mix(albedo, vec3f(0.92, 0.96, 1.0), smoothstep(0.55, 0.9, frost) * 0.45);
+            albedo *= 1.0 - crack * 0.55;
+            // A bright rim where the shelf meets open water.
+            let rim = (smoothstep(reach - 0.9, reach - 0.15, shore) * (1.0 - smoothstep(reach - 0.15, reach + aa, shore))) * shelf;
+            albedo = mix(albedo, vec3f(0.95, 0.98, 1.0), rim * 0.6);
+            // Lit as the water's body is (light normalised to the sunlit), a touch of sheen.
+            let ice_light = body_light * mix(0.62, 1.0, shadow) * canopy;
+            let sheen = pow(max(dot(vec3f(0.0, 1.0, 0.0), half_light), 0.0), 60.0) * 0.08 * shadow;
+            let ice_color = albedo * ice_light * 0.85 + vec3f(sheen) * body_light;
+            a = mix(a, ice_color, ice);
+            m = mix(m, 0.0, ice);
+        }
+    }
 
     return scene_out(vec4f(a, 1.0 - m), in.world);
 }

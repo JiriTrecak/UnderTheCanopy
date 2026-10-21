@@ -106,6 +106,22 @@ pub struct WaterProfile {
     /// Sun glitter: sparkles on the ripples, seen from any angle (0 none).
     pub glint: Option<f64>,
     pub waves: Option<WaterWaves>,
+    /// Frozen water: an ice shelf along the shore and floes drifting near it.
+    pub ice: Option<WaterIce>,
+}
+
+/// The ice of frozen water.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct WaterIce {
+    /// How far the shelf reaches out from the shore (metres).
+    pub width: f64,
+    /// How many floes drift beyond it (0 none, 1 many).
+    pub floes: f64,
+    /// How strongly the ice shows its cracks (0–1).
+    pub cracks: f64,
+    /// `#rrggbb`: the ice's colour.
+    pub color: String,
 }
 
 /// Visual swells that fade with water depth; they never alter navigation.

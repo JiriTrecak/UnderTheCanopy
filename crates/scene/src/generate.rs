@@ -219,6 +219,8 @@ struct Cells {
     to_top: Vec<f32>,
     to_foot: Vec<f32>,
     to_shore: Vec<f32>,
+    /// Distance (cells) to the nearest water cell.
+    to_water: Vec<f32>,
     /// The face style of the nearest cliff (its upper column's).
     face: Vec<u8>,
 }
@@ -420,6 +422,7 @@ fn classify(blocks: &Blocks, heights: &Heights, span: usize) -> Cells {
         to_top: distance(span, |i| top[i]),
         to_foot: distance(span, |i| foot[i]),
         to_shore: distance(span, |i| kind[i] != BlockKind::Ice),
+        to_water: distance(span, |i| kind[i].water()),
         kind,
         span,
     }
@@ -536,6 +539,85 @@ fn ground(map: &mut UtcMap, cells: &Cells, recipe: &BlockLook, biome: &BiomeConf
             }
         }
         terrain.heights = Grid(bytes);
+    }
+    // A lake's bank slopes under its water over a few cells instead of stepping along the
+    // cells (the look only, as above): the ground near the water relaxes towards the water
+    // just under its surface, and the water spreads over what sinks below it, so its edge
+    // runs where the slope crosses the surface.
+    {
+        let read = |b: &[u8], i: usize| {
+            f32::from_le_bytes([b[i * 4], b[i * 4 + 1], b[i * 4 + 2], b[i * 4 + 3]])
+        };
+        let n = side * side;
+        let ground: Vec<f32> = (0..n).map(|i| read(&terrain.heights.0, i)).collect();
+        let water: Vec<f32> = (0..n).map(|i| read(&terrain.water_heights.0, i)).collect();
+        let wet: Vec<bool> = (0..n).map(|i| water[i] > ground[i] + 0.05).collect();
+        // Each vertex near water: the surface of the water nearest it.
+        let mut surface = vec![f32::NAN; n];
+        let band = 3.5f32;
+        for vz in 0..side {
+            for vx in 0..side {
+                let i = vz * side + vx;
+                if wet[i] || at_vertex(&cells.to_water, span, vx, vz) > band {
+                    continue;
+                }
+                let r = 4i32;
+                let mut best = (f32::MAX, f32::NAN);
+                for dz in -r..=r {
+                    for dx in -r..=r {
+                        let (x, z) = (vx as i32 + dx, vz as i32 + dz);
+                        if x < 0 || z < 0 || x >= side as i32 || z >= side as i32 {
+                            continue;
+                        }
+                        let j = z as usize * side + x as usize;
+                        let d = (dx * dx + dz * dz) as f32;
+                        if wet[j] && d < best.0 {
+                            best = (d, water[j]);
+                        }
+                    }
+                }
+                surface[i] = best.1;
+            }
+        }
+        // Relax the band: water vertices held just under the surface, the band averaged.
+        let mut h: Vec<f32> = (0..n)
+            .map(|i| {
+                if wet[i] {
+                    ground[i].max(water[i] - 0.6)
+                } else {
+                    ground[i]
+                }
+            })
+            .collect();
+        for _ in 0..6 {
+            let prev = h.clone();
+            for vz in 1..side - 1 {
+                for vx in 1..side - 1 {
+                    let i = vz * side + vx;
+                    if surface[i].is_nan() {
+                        continue;
+                    }
+                    let mut sum = 0.0;
+                    for (dx, dz) in [(1i32, 0i32), (-1, 0), (0, 1), (0, -1)] {
+                        sum += prev[(vz as i32 + dz) as usize * side + (vx as i32 + dx) as usize];
+                    }
+                    h[i] = (sum / 4.0 * 0.7 + prev[i] * 0.3).min(ground[i]);
+                }
+            }
+        }
+        let mut heights = terrain.heights.0.clone();
+        let mut waters = terrain.water_heights.0.clone();
+        for i in 0..n {
+            if surface[i].is_nan() || h[i] >= ground[i] {
+                continue;
+            }
+            heights[i * 4..i * 4 + 4].copy_from_slice(&h[i].to_le_bytes());
+            if h[i] < surface[i] {
+                waters[i * 4..i * 4 + 4].copy_from_slice(&surface[i].to_le_bytes());
+            }
+        }
+        terrain.heights = Grid(heights);
+        terrain.water_heights = Grid(waters);
     }
     // Beside a ramp, where the drop is too low for a wall, the ground slopes instead of
     // stepping cell by cell down a diagonal side (the look only, as above).
@@ -1197,6 +1279,17 @@ fn contours(heights: &Heights, cells: &Cells, side: usize) -> Vec<Segment> {
             }
             for pair in points.chunks_exact(2) {
                 let (mut a, mut b) = (pair[0] - Vec2::splat(halo), pair[1] - Vec2::splat(halo));
+                // Ground falling into water has no cliff: the water hides its bank, and
+                // the shore's crust (`shore`) rims it.
+                let mid = (a + b) * 0.5;
+                let into_water = [1.0f32, -1.0].iter().any(|s| {
+                    let across = Vec2::new(-(b - a).y, (b - a).x).normalize_or(Vec2::X) * *s;
+                    let q = mid + across * 0.8;
+                    cells.at(q.x, q.y).is_some_and(|i| cells.kind[i].water())
+                });
+                if into_water {
+                    continue;
+                }
                 // The way down: across the segment, to whichever side is lower (a cell's
                 // own slope says nothing where two walls cross it).
                 let across = Vec2::new(-(b - a).y, (b - a).x).normalize_or(Vec2::X);
@@ -1706,6 +1799,9 @@ fn cliffs(heights: &Heights, cells: &Cells, recipe: &BlockLook, seed: u64) -> Ve
                 cliff.top_rubble
             } else if rock {
                 0.22
+            } else if !cells.kind[i].water() && cells.to_water[i] <= 1.5 {
+                // Frosted stones along a lake's shore, half in its water.
+                0.16
             } else {
                 0.0
             };
@@ -1717,6 +1813,8 @@ fn cliffs(heights: &Heights, cells: &Cells, recipe: &BlockLook, seed: u64) -> Ve
                 rng.range(1.0, 2.8)
             } else if cells.kind[i] == BlockKind::Ramp {
                 rng.range(cliff.ramp_stones[0], cliff.ramp_stones[1])
+            } else if cells.to_water[i] <= 1.5 {
+                rng.range(0.7, 2.0)
             } else {
                 rng.range(0.35, 1.1)
             };

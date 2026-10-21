@@ -287,13 +287,19 @@ impl WaterGpu {
             n * 4,
             [n, n],
         );
-        let depth_bits: Vec<u16> = depths.iter().map(|&d| f16_bits(d)).collect();
+        // Depth and distance to the shore, together.
+        let shore = crate::water::shore_distance(&depths, n);
+        let depth_bits: Vec<u16> = depths
+            .iter()
+            .zip(&shore)
+            .flat_map(|(&d, &s)| [f16_bits(d), f16_bits(s)])
+            .collect();
         // Rows of 2-byte texels must be a multiple of 256 bytes for buffer copies, not for
         // `write_texture`, so the grid uploads as is.
         let depth_texture = texture_2d(
             device,
             "water depth",
-            wgpu::TextureFormat::R16Float,
+            wgpu::TextureFormat::Rg16Float,
             [n, n],
             usage,
         );
@@ -301,7 +307,7 @@ impl WaterGpu {
             queue,
             &depth_texture,
             bytemuck::cast_slice(&depth_bits),
-            n * 2,
+            n * 4,
             [n, n],
         );
         let flow_texture = texture_2d(
@@ -326,7 +332,7 @@ impl WaterGpu {
             usage,
         );
         write_2d(queue, &hash_texture, &hash_lattice(), 512, [256, 256]);
-        bytes += u64::from(n * n) * 6 + u64::from(span * span) * 4 + 256 * 256 * 2;
+        bytes += u64::from(n * n) * 8 + u64::from(span * span) * 4 + 256 * 256 * 2;
 
         let (reflection, cube_bytes) =
             reflection_cube(device, queue, pack, textures.reflection.as_ref())?;
@@ -345,7 +351,7 @@ impl WaterGpu {
                 [128, 128, 0, 255],
             ),
         };
-        let rows: Vec<[[f32; 4]; 6]> = water.profiles.iter().map(profile_rows).collect();
+        let rows: Vec<[[f32; 4]; 8]> = water.profiles.iter().map(profile_rows).collect();
         let profiles = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("water profiles"),
             contents: bytemuck::cast_slice(&rows),

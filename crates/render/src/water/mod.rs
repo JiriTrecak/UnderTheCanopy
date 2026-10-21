@@ -127,6 +127,18 @@ pub struct WaterProfile {
     /// Sun glitter on the ripples (0 none).
     pub glint: f32,
     pub waves: WaterWaves,
+    /// Frozen water: shelf width (metres), floes (0–1), cracks (0–1) and the ice's
+    /// linear colour; none when the width is 0.
+    pub ice: WaterIce,
+}
+
+/// The ice of frozen water.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct WaterIce {
+    pub width: f32,
+    pub floes: f32,
+    pub cracks: f32,
+    pub color: [f32; 3],
 }
 
 /// Most profiles a map can use (slot 0 is the biome's).
@@ -179,8 +191,8 @@ impl WaterDesc {
     }
 }
 
-/// Six rows per profile, as `water.wgsl` reads them.
-pub fn profile_rows(p: &WaterProfile) -> [[f32; 4]; 6] {
+/// Eight rows per profile, as `water.wgsl` reads them.
+pub fn profile_rows(p: &WaterProfile) -> [[f32; 4]; 8] {
     let w = &p.waves;
     [
         [p.shallow[0], p.shallow[1], p.shallow[2], p.clarity],
@@ -199,6 +211,8 @@ pub fn profile_rows(p: &WaterProfile) -> [[f32; 4]; 6] {
             w.shore_width,
             w.crest_strength,
         ],
+        [p.ice.width, p.ice.floes, p.ice.cracks, 0.0],
+        [p.ice.color[0], p.ice.color[1], p.ice.color[2], 0.0],
     ]
 }
 
@@ -291,6 +305,57 @@ pub fn vertex_fields(terrain: &TerrainDesc) -> (Vec<f32>, Vec<f32>) {
         .map(|(w, h)| w - h)
         .collect();
     (terrain.water.clone(), depth)
+}
+
+/// How far each vertex is from dry ground (metres, chamfer distance over the vertex grid,
+/// at most 64): where frozen water's shelf and floes lie.
+pub fn shore_distance(depths: &[f32], n: u32) -> Vec<f32> {
+    let n = n as usize;
+    let far = 64.0f32;
+    let mut d: Vec<f32> = depths
+        .iter()
+        .map(|&depth| if depth <= 0.05 { 0.0 } else { far })
+        .collect();
+    let (a, b) = (1.0f32, std::f32::consts::SQRT_2);
+    for z in 0..n {
+        for x in 0..n {
+            let i = z * n + x;
+            let mut v = d[i];
+            if x > 0 {
+                v = v.min(d[i - 1] + a);
+            }
+            if z > 0 {
+                v = v.min(d[i - n] + a);
+                if x > 0 {
+                    v = v.min(d[i - n - 1] + b);
+                }
+                if x + 1 < n {
+                    v = v.min(d[i - n + 1] + b);
+                }
+            }
+            d[i] = v;
+        }
+    }
+    for z in (0..n).rev() {
+        for x in (0..n).rev() {
+            let i = z * n + x;
+            let mut v = d[i];
+            if x + 1 < n {
+                v = v.min(d[i + 1] + a);
+            }
+            if z + 1 < n {
+                v = v.min(d[i + n] + a);
+                if x + 1 < n {
+                    v = v.min(d[i + n + 1] + b);
+                }
+                if x > 0 {
+                    v = v.min(d[i + n - 1] + b);
+                }
+            }
+            d[i] = v;
+        }
+    }
+    d
 }
 
 /// The 256² hash lattice of the water noise: R = hash(i), G = hash(i + 31.7) (old
@@ -407,6 +472,7 @@ mod tests {
             cloud_strength: 0.03,
             flow_speed: 1.0,
             glint: 0.0,
+            ice: Default::default(),
             waves: DEFAULT_WAVES,
         }
     }
