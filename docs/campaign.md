@@ -38,7 +38,7 @@ There is no branching, no side missions, no continuing into another campaign and
 
 ## What carries over
 
-- **Heroes**, with their level, experience, learned abilities, items and permanent bonuses (the old game's company). A mission step names the heroes arriving and those leaving with the player. The map places each hero as usual; the campaign swaps in the carried hero's progress, so a map stays playable on its own (in the editor, or on a fresh start).
+- **Heroes**, with their level, experience, learned abilities, items and permanent bonuses (the old game's company). Every hero of the player is saved when a mission is won; the map places each hero as usual and the campaign swaps in the carried hero's progress, so a map stays playable on its own (in the editor, or on a fresh start).
 - **Campaign variables** that mission scripts set and read.
 
 ## Tech
@@ -77,6 +77,54 @@ The skirmish AI is far too strong for a campaign. Campaign opponents are a separ
 - **Players** in the map's panel: each computer player's race, team (ally or enemy), colour, shared vision and behaviour, and its waves as a list of rows of unit portraits with their timing, source and target.
 - **Play from here** on any step, with the carried state fresh, as after the previous step, or edited by hand.
 - The check covers campaigns: missing or broken maps, carried heroes missing from the next map, tech contradictions, variables read that nothing sets, missing art.
+
+## Formats
+
+The shapes every part builds against (2026-10-21). Field names are camelCase JSON; the Rust types in `canopy-content` define them exactly and generate their schemas.
+
+**`campaign.json`** (in `campaigns/<id>.utcc/`):
+
+```json
+{
+  "race": "ants",
+  "background": "asset.interface.campaign.vanguard-background",
+  "card": "asset.interface.campaign.ants",
+  "steps": [
+    {"kind": "chapter", "id": "prologue", "title": "Prologue"},
+    {"kind": "story", "id": "the-hollow", "title": "The Hollow",
+     "pages": [{"art": "asset.interface.campaign.vanguard.story-hollow-1", "text": "…"}]},
+    {"kind": "mission", "id": "hollow-brood", "map": "hollow-brood", "title": "The Hollow Brood",
+     "chapterLine": "Prologue · Mission One", "art": "asset.interface.campaign.vanguard.hollow-brood",
+     "story": "…\n\n…", "heroLevelCap": 3,
+     "tech": {"new": ["building.ants.fort", "unit.ants.settler"], "blocked": []}},
+    {"kind": "cinematic", "id": "condenser-hums", "title": "The Condenser Hums", "note": "What it will show."}
+  ]
+}
+```
+
+- Every step has an `id` unique in the campaign (progress, Play from here). Optional on every step: `music` (an audio asset). Story pages may add `narration` (an audio asset). Chapters may add `art`.
+- A mission's `map` is a map id among the package's `missions/` maps. Its tech: everything listed in `new` by this mission or any before it, minus this mission's `blocked`; whatever no mission has listed is locked. A race's starting setup still places its units and buildings.
+- **Carried heroes** need no list: when a mission is won, every hero of player 1 is saved by its definition (level, experience, learned abilities, items, permanent bonuses); when a mission starts, every hero of player 1 the map places whose definition has a saved state takes it on. `heroLevelCap` caps them.
+
+**Progress** (the user folder, `campaigns/<campaign id>.json`): the index of the furthest step reached, the saved heroes by definition, and the campaign variables (`{name: number | string | boolean}`).
+
+**A map's `mission` section** keeps objectives, regions and the script, and gains `players`; `campaign`, `order`, `nextMission`, `company`, `presentation`, `race`, `playerRaces` and `heroLevelCap` move to the campaign (the player's race is the campaign's):
+
+```json
+"players": [
+  {"player": 2, "race": "ants", "team": "enemy", "vision": false,
+   "ai": {"behaviour": "waves", "dormant": false, "rebuild": true,
+          "waves": [{"after": 120, "every": 90,
+                     "units": [{"unit": "unit.ants.warrior", "count": 2}],
+                     "grow": {"every": 3, "unit": "unit.ants.warrior", "count": 1},
+                     "hero": true, "from": "trained", "target": "base"}]}},
+  {"player": 3, "race": "ants", "team": "ally", "vision": true, "ai": {"behaviour": "base"}}
+]
+```
+
+- `team` is `ally` (player 1's team) or `enemy`; `behaviour` one of `passive`, `base`, `waves`, `skirmish`; a wave's `from` is `"trained"` or `{"region": "<id>"}`, its `target` `"base"`, `"nearest"` or `{"region": "<id>"}`; `until` (seconds) ends a wave line, and a later line can take over. `skirmish` takes `{"style", "armyCap", "pace", "income"}`. Players the map lists nowhere stay out of the match.
+
+**Mission script additions** (Lua, the `mission` API): `campaign_get(name)`, `campaign_set(name, value)`; `allow(id)`, `forbid(id)` (tech, for the rest of the mission); `ai_waves(player, on)`, `ai_attack_now(player)`, `ai_target(player, region)`, `ai_behaviour(player, behaviour)`, `ai_wake(player)` (a dormant player arrives: its placements marked `activation: "script"` appear, then it plays its behaviour).
 
 ## Research: how Warcraft III and StarCraft II do it
 
