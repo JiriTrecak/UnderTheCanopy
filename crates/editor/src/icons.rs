@@ -45,6 +45,7 @@ pub enum Icon {
     Split,
     // The map view's panels.
     PanelRight,
+    Minimap,
     Symmetry,
 }
 
@@ -371,6 +372,12 @@ fn parts(icon: Icon) -> Vec<Part> {
         Icon::PanelRight => vec![
             Closed(vec![[3.0, 4.0], [21.0, 4.0], [21.0, 20.0], [3.0, 20.0]]),
             Open(vec![[15.0, 4.0], [15.0, 20.0]]),
+        ],
+        // A map's square with the camera's view in it.
+        Icon::Minimap => vec![
+            Closed(vec![[3.0, 3.0], [21.0, 3.0], [21.0, 21.0], [3.0, 21.0]]),
+            Closed(vec![[7.0, 11.0], [15.0, 11.0], [17.0, 17.0], [5.0, 17.0]]),
+            circle([16.0, 7.0], 1.5),
         ],
         // Two halves mirrored across a dashed line.
         Icon::Symmetry => vec![

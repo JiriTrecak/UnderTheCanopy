@@ -10,6 +10,7 @@
 
 pub mod catalog;
 pub mod mesh;
+mod minimap;
 pub mod palette;
 pub mod settings;
 mod strip;
@@ -272,15 +273,20 @@ impl View {
 }
 
 /// Which panels round the map view show (the maps editor's own layout): the map's panel
-/// on the right (its settings, or what is selected). The library is the shell's.
+/// on the right (its settings, or what is selected) and the minimap in the view's corner.
+/// The library is the shell's.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Panels {
     pub properties: bool,
+    pub minimap: bool,
 }
 
 impl Default for Panels {
     fn default() -> Self {
-        Self { properties: true }
+        Self {
+            properties: true,
+            minimap: true,
+        }
     }
 }
 
@@ -342,6 +348,8 @@ pub struct State {
     pub biomes: Vec<settings::BiomeInfo>,
     pub symmetry: Symmetry,
     pub twin: Option<Twin>,
+    /// The minimap's picture, drawn again when the map changes.
+    pub minimap: Option<minimap::Cache>,
     /// The press under way began while a picker was open: it only closes the picker.
     pub dismissing: bool,
     /// While a drag is under way, the map shows what it will do: the terrain as it was
@@ -405,6 +413,7 @@ impl Default for State {
             biomes: Vec::new(),
             symmetry: Symmetry::default(),
             twin: None,
+            minimap: None,
             dismissing: false,
             preview: None,
             write_picture: false,
@@ -1975,8 +1984,8 @@ pub fn show(
     let input = ui.input(|i| i.clone());
     navigate(&input, &response, rect, &mut session.camera, map_size);
     // G switches between the blocks and the generated world, H shows where ground units
-    // walk and back, V both side by side and back, wherever the pointer is, unless a
-    // field is being typed in.
+    // walk and back, V both side by side and back, M shows or hides the minimap, wherever
+    // the pointer is, unless a field is being typed in.
     if !input.modifiers.command && !ui.ctx().egui_wants_keyboard_input() {
         let view = session.blocks.view;
         let next = if input.key_pressed(egui::Key::G) {
@@ -1986,6 +1995,11 @@ pub fn show(
             })
         } else if input.key_pressed(egui::Key::X) {
             session.blocks.fine = !session.blocks.fine;
+            None
+        } else if input.key_pressed(egui::Key::M) {
+            let mut panels = Panels::get(ui.ctx());
+            panels.minimap = !panels.minimap;
+            panels.set(ui.ctx());
             None
         } else if let Some(mode) = [(egui::Key::H, View::Pathing), (egui::Key::V, View::Split)]
             .into_iter()
@@ -2762,6 +2776,7 @@ pub fn show(
     }
     out.edits.extend(strip::show(ui.ctx(), session, full, docs));
     strip::view_bar(ui.ctx(), session, full);
+    minimap::show(ui.ctx(), session, full, rect, view_projection, eye);
     if let Some(op) = live
         && session.blocks.drag.is_some()
     {

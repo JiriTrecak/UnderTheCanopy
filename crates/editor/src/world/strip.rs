@@ -47,7 +47,7 @@ fn icon(tool: BlockTool) -> Icon {
 }
 
 /// A floating, bordered strip.
-fn frame() -> egui::Frame {
+pub(super) fn frame() -> egui::Frame {
     egui::Frame::new()
         .fill(PANEL)
         .stroke(Stroke::new(1.0, BORDER))
@@ -909,6 +909,14 @@ pub(super) fn view_bar(ctx: &egui::Context, session: &mut Session, view: Rect) {
                             "The map's panel: its settings, or what is selected",
                         ) {
                             panels.properties = !panels.properties;
+                        }
+                        if panel_button(
+                            ui,
+                            Icon::Minimap,
+                            panels.minimap,
+                            "The minimap: the whole map from above; click it to look there (M)",
+                        ) {
+                            panels.minimap = !panels.minimap;
                         }
                         if panels != before {
                             panels.set(ui.ctx());

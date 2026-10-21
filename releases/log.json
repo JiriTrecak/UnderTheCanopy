@@ -15,7 +15,8 @@
       "Map editor: one panel on the right shows the map's settings (name, description, picture you can draw again or upload, size presets, biome picker, weather and time of day) or what is selected",
       "Maps: weather (rain, snow or god rays) and time of day (dawn, day, dusk, night, or any hour, with time passing or not) set per map",
       "Snowy Lake: a four-player map round a frozen lake",
-      "Map editor: import StarCraft II melee maps (from the game's folders and the Battle.net cache) as block maps at their true size, with their cliffs, ramps, starts and resources"
+      "Map editor: import StarCraft II melee maps (from the game's folders and the Battle.net cache) as block maps at their true size, with their cliffs, ramps, starts and resources",
+      "Map editor: a minimap of the whole map in the view's corner (M or the view bar), following every edit, with starts, amber, camps and the camera's view; click it to look there"
     ],
     "improved": [
       "Frost Hollow: frozen ice, quiet frosted snow, a bank of roots with pale spires, a crusted shore and big frosted leaves, rebuilt to its drawn layout",

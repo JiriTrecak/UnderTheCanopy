@@ -226,7 +226,9 @@ impl Editor {
     /// (captures).
     pub fn set_map_panels(&mut self, library: bool, properties: bool) {
         self.shell.set_library(library);
-        world::Panels { properties }.set(&self.ctx);
+        let mut panels = world::Panels::get(&self.ctx);
+        panels.properties = properties;
+        panels.set(&self.ctx);
     }
 
     /// The block editor's view: "blocks", "generated", "pathing" or "split" (captures).
