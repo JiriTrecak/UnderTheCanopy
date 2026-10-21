@@ -307,7 +307,7 @@ pub struct Store {
     done: Vec<Step>,
     undone: Vec<Step>,
     revision: u64,
-    /// Counts creations and deletions: the documents that exist changed.
+    /// Counts changes to what libraries list: documents created or deleted, and ids.
     structure: u64,
 }
 
@@ -407,7 +407,12 @@ impl Store {
         Ok(self.grids.get_mut(path).expect("just loaded"))
     }
 
-    /// Counts creations and deletions of documents (libraries list what exists).
+    /// Whether the store holds grid `path` (it was edited this session).
+    pub fn holds_grid(&self, path: &str) -> bool {
+        self.grids.contains_key(path)
+    }
+
+    /// Counts changes to what libraries list: documents created or deleted, and ids.
     pub fn structure(&self) -> u64 {
         self.structure
     }
@@ -713,6 +718,8 @@ impl Store {
             }
             document.saved = document.value.clone();
             document.saved_changed();
+            // Saving over a file changed on disk keeps this version: the conflict is over.
+            self.conflicts.remove(path);
             written.push(path.clone());
         }
         for (path, grid) in &mut self.grids {
@@ -747,10 +754,17 @@ impl Store {
         self.revision += 1;
         let revision = self.revision;
         let path = command.document().to_string();
-        if matches!(
-            command,
-            Command::Create { .. } | Command::Delete { .. } | Command::Grid { .. }
-        ) {
+        // What libraries list changes with the documents that exist and with an element's
+        // id (a rename, a whole document set as JSON). Names follow at the next save, so
+        // typing one stays cheap.
+        let listed = match command {
+            Command::Create { .. } | Command::Delete { .. } | Command::Grid { .. } => true,
+            Command::Set { pointer, .. }
+            | Command::Insert { pointer, .. }
+            | Command::Remove { pointer, .. } => matches!(pointer.as_str(), "" | "/id"),
+            Command::Patch { .. } => false,
+        };
+        if listed {
             self.structure += 1;
         }
         if is_grid(&path) {

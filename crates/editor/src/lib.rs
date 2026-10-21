@@ -280,6 +280,16 @@ impl Editor {
         self.shell.reveal_document(path);
     }
 
+    /// Opens the focused document's form (`"form"`) or JSON (`"json"`) modal, or closes it
+    /// (anything else) (captures).
+    pub fn show_sheet(&mut self, sheet: &str) {
+        self.shell.show_sheet(match sheet {
+            "form" => Some(tabs::Sheet::Form),
+            "json" => Some(tabs::Sheet::Json),
+            _ => None,
+        });
+    }
+
     /// Opens ability `id` on its stage (captures).
     pub fn open_stage(&mut self, id: &str) {
         self.shell.open_stage(id);

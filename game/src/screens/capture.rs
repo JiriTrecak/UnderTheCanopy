@@ -743,6 +743,11 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
     editor.select(Kind::Units);
     editor.open_first(1);
     shoot(&mut editor, rig, "editor-units")?;
+    editor.show_sheet("form");
+    shoot(&mut editor, rig, "editor-units-form")?;
+    editor.show_sheet("json");
+    shoot(&mut editor, rig, "editor-units-json")?;
+    editor.show_sheet("");
     // The ability stage: a unit's projectile spell cast at an enemy in the editor's own
     // viewport, caught in flight; then a hero's area spell on a few enemies.
     {
@@ -841,10 +846,23 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
     editor.set_block_tool("raise");
     editor.set_block_symmetry("off", true);
     drag(&mut editor, rig, (760.0, 640.0), (1000.0, 700.0));
+    // The start moves where its room (turned to the middle) is clear: the first spot
+    // that takes it.
     editor.set_block_tool("place");
-    click(&mut editor, rig, (1150.0, 600.0));
-    for _ in 0..20 {
-        frame(&mut editor, rig, vec![]);
+    for at in [
+        (1150.0, 450.0),
+        (1300.0, 450.0),
+        (1150.0, 600.0),
+        (1300.0, 800.0),
+        (1150.0, 850.0),
+    ] {
+        click(&mut editor, rig, at);
+        for _ in 0..20 {
+            frame(&mut editor, rig, vec![]);
+        }
+        if editor.unsaved().iter().any(|d| d.ends_with("map.json")) {
+            break;
+        }
     }
     let unsaved = editor.unsaved();
     anyhow::ensure!(

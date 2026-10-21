@@ -30,6 +30,9 @@ pub struct Form<'a> {
     pub changes: Vec<Change>,
     /// Ids whose element to open (an id field's link).
     pub opens: Vec<String>,
+    /// A tagged variant's tag and its place in the object, for the next [`Form::object`]
+    /// (which is shown the object without it).
+    tag: Option<(String, usize)>,
 }
 
 const LABEL: f32 = 150.0;
@@ -63,6 +66,7 @@ impl<'a> Form<'a> {
             highlight: None,
             changes: Vec::new(),
             opens: Vec::new(),
+            tag: None,
         }
     }
 
@@ -368,6 +372,7 @@ impl<'a> Form<'a> {
         pointer: &str,
         depth: usize,
     ) {
+        let tag = self.tag.take();
         let schema = self.present(schema);
         let properties = schema.get("properties").and_then(Value::as_object);
         let required = required(schema);
@@ -422,7 +427,7 @@ impl<'a> Form<'a> {
         };
         let missing: Vec<&String> = properties
             .keys()
-            .filter(|k| !object.contains_key(*k))
+            .filter(|k| !object.contains_key(*k) && tag.as_ref().is_none_or(|(t, _)| t != *k))
             .collect();
         if missing.is_empty() {
             return;
@@ -449,6 +454,11 @@ impl<'a> Form<'a> {
                 .take_while(|k| **k != name)
                 .filter(|k| object.contains_key(*k))
                 .count();
+            // The tag the object was shown without counts where it stands.
+            let at = match &tag {
+                Some((_, place)) if *place <= at => at + 1,
+                _ => at,
+            };
             self.command(
                 pointer,
                 format!("Add {}", words(&name)),
@@ -614,7 +624,9 @@ impl<'a> Form<'a> {
             }
             if let Some(variant) = chosen {
                 let mut rest = object.clone();
+                let place = rest.keys().position(|k| k == tag).unwrap_or(0);
                 rest.shift_remove(tag);
+                form.tag = Some((tag.to_string(), place));
                 form.object(ui, variant, &rest, pointer, depth + 1);
             }
         });
@@ -677,8 +689,11 @@ impl<'a> Form<'a> {
                 }
             }
             Value::Number(number) => {
-                let integer =
-                    type_of(schema) == Some("integer") || number.is_i64() || number.is_u64();
+                // A whole number in a decimal field stays decimal (a speed of 11 can be 11.5).
+                let integer = match type_of(schema) {
+                    Some(kind) => kind == "integer",
+                    None => number.is_i64() || number.is_u64(),
+                };
                 let low = schema
                     .get("minimum")
                     .and_then(Value::as_f64)
@@ -694,7 +709,12 @@ impl<'a> Form<'a> {
                     let range =
                         (low.max(i64::MIN as f64) as i64)..=(high.min(i64::MAX as f64) as i64);
                     if ui
-                        .add(DragValue::new(&mut n).range(range).speed(0.2))
+                        .add(
+                            DragValue::new(&mut n)
+                                .range(range)
+                                .clamp_existing_to_range(false)
+                                .speed(0.2),
+                        )
                         .changed()
                     {
                         self.set(pointer, &format!("Set {label}"), Value::from(n), true);
@@ -705,6 +725,7 @@ impl<'a> Form<'a> {
                         .add(
                             DragValue::new(&mut n)
                                 .range(low..=high)
+                                .clamp_existing_to_range(false)
                                 .speed(0.01)
                                 .max_decimals(6),
                         )
@@ -735,7 +756,8 @@ impl<'a> Form<'a> {
         }
     }
 
-    /// A text field that commits when it loses focus.
+    /// A text field that commits as it is typed in (one undo step while typing goes on), so
+    /// nothing typed is lost to a click elsewhere, a save or leaving.
     fn text(&mut self, ui: &mut Ui, label: &str, current: &str, pointer: &str, width: f32) {
         let id = Id::new(("text", self.document, pointer));
         let mut buffer = ui.data_mut(|d| d.get_temp::<String>(id));
@@ -750,12 +772,12 @@ impl<'a> Form<'a> {
                 .desired_width(width.max(80.0))
                 .margin(Margin::symmetric(6, 4)),
         );
-        if response.lost_focus() && text != current {
+        if response.changed() && text != current {
             self.set(
                 pointer,
                 &format!("Set {label}"),
                 Value::String(text.clone()),
-                false,
+                true,
             );
         }
         ui.data_mut(|d| d.insert_temp(id, text));

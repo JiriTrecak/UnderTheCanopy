@@ -169,7 +169,9 @@ pub fn show(ui: &mut Ui, dock: &mut DockState<Doc>, inspect: Inspect) -> Option<
                             .desired_width(f32::INFINITY)
                             .margin(Margin::symmetric(8, 6)),
                     );
-                    if response.lost_focus() && doc.name_field != name {
+                    // Committed as it is typed (one undo step), so a click elsewhere or a
+                    // save never loses it.
+                    if response.changed() && doc.name_field != name {
                         inspect.edits.push(Edit {
                             label: format!("Rename {name}"),
                             context: Context {
@@ -183,7 +185,7 @@ pub fn show(ui: &mut Ui, dock: &mut DockState<Doc>, inspect: Inspect) -> Option<
                                 value: Value::String(doc.name_field.clone()),
                                 at: None,
                             }],
-                            merge: None,
+                            merge: Some(format!("{}/name", doc.document)),
                         });
                     }
                 }

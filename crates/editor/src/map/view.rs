@@ -448,13 +448,14 @@ pub(crate) fn navigate(
         }
         let speed = camera.distance * input.stable_dt * 0.9;
         let (s, c) = camera.yaw.sin_cos();
+        let typing = response.ctx.egui_wants_keyboard_input();
         for (key, dx, dz) in [
             (egui::Key::ArrowLeft, -1.0, 0.0),
             (egui::Key::ArrowRight, 1.0, 0.0),
             (egui::Key::ArrowUp, 0.0, -1.0),
             (egui::Key::ArrowDown, 0.0, 1.0),
         ] {
-            if input.key_down(key) {
+            if input.key_down(key) && !typing {
                 camera.focus[0] += (dx * c + dz * s) * speed;
                 camera.focus[1] += (-dx * s + dz * c) * speed;
             }

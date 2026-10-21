@@ -108,7 +108,17 @@ pub fn show(
     egui::ScrollArea::vertical()
         .auto_shrink([false, false])
         .show(ui, |ui| {
-            if session.blocks.selection.is_empty() {
+            // What is selected and gone (undone, deleted) is forgotten, whatever the tool;
+            // the selection shows while Select is the tool, the map's settings otherwise.
+            if let Some(map) = session.map.as_ref() {
+                session
+                    .blocks
+                    .selection
+                    .retain(|(kind, id)| super::selection_at(map, *kind, id).is_some());
+            }
+            if session.blocks.selection.is_empty()
+                || session.blocks.tool != super::BlockTool::Select
+            {
                 map_settings(ui, session, docs, package, &mut edits);
             } else if let Some(content) = content {
                 selection(ui, session, content);
@@ -226,8 +236,10 @@ fn map_settings(
     number(ui, "Playable height", &mut size[1], 64..=960);
     number(ui, "Border", &mut size[2], 0..=128);
     let total = total_size(size);
+    // An untouched map says what it is (its border may be wider on some sides).
     ui.label(
         RichText::new(match total {
+            _ if size == now => format!("{0} × {0} cells in all", map.size),
             Some(total) => format!("{total} × {total} cells in all (now {})", map.size),
             None => "Too large: a map is at most 1024 cells across".into(),
         })
@@ -237,7 +249,10 @@ fn map_settings(
     session.blocks.settings.size = (size != now).then_some(size);
     if size != now {
         ui.horizontal(|ui| {
-            if ui.button("Apply").clicked()
+            if ui
+                .add_enabled(total.is_some(), egui::Button::new("Apply"))
+                .on_disabled_hover_text("Too large: a map is at most 1024 cells across")
+                .clicked()
                 && let Some(edit) = resize(session, docs, size)
             {
                 edits.push(edit);
@@ -407,6 +422,8 @@ fn upload(file: &Path, dir: &Path) -> Result<(), String> {
         )
         .to_rgba8();
     let bytes = crate::map::preview::webp(&picture)?;
+    // A new map's folder is written only when it is first saved.
+    std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     std::fs::write(dir.join("preview.webp"), bytes).map_err(|e| e.to_string())
 }
 

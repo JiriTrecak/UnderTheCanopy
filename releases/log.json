@@ -33,14 +33,19 @@
       "Map editor: everything Place puts down snaps as the game requires (buildings, starts and amber nodes to the building grid, units to cells), Place shows where it will land, and X switches between 4-cell and 1-cell precision",
       "Map editor: Place shows a ghost of what it puts down, and dragging a selection moves it live, snapped; both turn red with the reason where the game would not allow it, and refuse to place or drop there",
       "Maps can be any multiple of 32 cells from 128 to 1024 across",
-      "Frozen water: deep dark water with an ice shelf along the shore and floes drifting on it; lake shores slope smoothly under the ice instead of stepping"
+      "Frozen water: deep dark water with an ice shelf along the shore and floes drifting on it; lake shores slope smoothly under the ice instead of stepping",
+      "Editor: no more row of view tabs; a document's Form and JSON open as modals from the tab bar, beside its other views"
     ],
     "fixed": [
       "Generated cliffs join cleanly at corners and turns, ramps keep their side walls down to the foot, and diagonal cliff edges no longer show a staircase",
       "Map editor: Test in game works when the game was opened straight into the editor",
       "Map editor: undo keeps the map on its Map tab instead of switching to Form",
       "Map editor: units placed with Place stand on cell centres, and moving a selection with a building keeps it on the building grid",
-      "Editor: the library list is shown again and can always be toggled from the header, beside the assistant (now a robot icon)"
+      "Editor: the library list is shown again and can always be toggled from the header, beside the assistant (now a robot icon)",
+      "Editor: text typed into a field is no longer lost when clicking elsewhere, switching documents, saving or leaving",
+      "Map editor: tool keys, Delete and arrow keys no longer act while typing in a search or name field",
+      "Map editor: moving a start turns its hall to the middle and no longer collides with its own old spot; symmetric raises, twins and camps now mirror exactly",
+      "Editor: Cook finishes in the window, renamed ids reach pickers and links at once, and maps show unsaved block edits on their tab"
     ],
     "knownIssues": []
   },

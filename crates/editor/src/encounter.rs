@@ -77,6 +77,9 @@ enum Page {
     Events,
 }
 
+/// The next ground version (shared by every stage).
+static NEXT_VERSION: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+
 /// One ability's stage.
 pub struct Session {
     pub ability: String,
@@ -137,7 +140,7 @@ impl Session {
             built: None,
             fixture: None,
             scene: None,
-            version: 0,
+            version: NEXT_VERSION.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             pack: None,
             take: None,
             presenter: None,
@@ -189,6 +192,16 @@ impl Session {
             }
             s
         });
+        // An ability that lost ranks is cast (and shown) at its highest.
+        if let Some(ranks) = content
+            .abilities
+            .abilities
+            .iter()
+            .find(|a| a.id.as_str() == self.ability)
+            .map(|a| a.ranks.len().max(1) as u32)
+        {
+            settings.rank = settings.rank.clamp(1, ranks);
+        }
         let settings = settings.clone();
         let stale = self
             .built
@@ -235,7 +248,9 @@ impl Session {
             match ground(fixture, take, pack, look, wanted.is_none()) {
                 Ok(scene) => {
                     self.scene = Some((wanted, Arc::new(scene)));
-                    self.version += 1;
+                    // Versions are unique across stages: one renderer draws them all, and
+                    // tells the grounds apart by it.
+                    self.version = NEXT_VERSION.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                     // The presenter takes the scene's player colours.
                     if let Some(take) = &self.take
                         && let Ok(fresh) = take.restart()

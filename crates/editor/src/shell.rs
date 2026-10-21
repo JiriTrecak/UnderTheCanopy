@@ -68,17 +68,10 @@ impl Workspace {
         }
     }
 
-    /// Opens (or focuses) `element`'s tab; shows its folder in the library.
-    /// Opens `element`'s tab, or brings it forward; `form` shows its form (to reveal a
-    /// field), otherwise the tab keeps the view it shows (a map its map).
-    fn open(&mut self, element: &Element, form: bool) {
+    /// Opens `element`'s tab, or brings it forward in the view it shows; shows its folder
+    /// in the library.
+    fn open(&mut self, element: &Element) {
         if let Some(path) = self.dock.find_tab_from(|d| d.document == element.document) {
-            if form
-                && let Ok(leaf) = self.dock.leaf_mut(path.node_path())
-                && let Some(tab) = leaf.tabs.get_mut(path.tab.0)
-            {
-                tab.show_form();
-            }
             let _ = self.dock.set_active_tab(path);
             self.dock.set_focused_node_and_surface(path.node_path());
         } else {
@@ -361,6 +354,7 @@ impl Shell {
         if let Some(checker) = &mut self.checker {
             checker.poll();
         }
+        self.poll_cook();
         self.follow_disk();
         self.shortcuts(ui.ctx());
         self.rail(ui);
@@ -1405,7 +1399,14 @@ impl Shell {
                         .unwrap_or_default()
                         .to_ascii_lowercase()
                         .replace([' ', '_'], "-");
-                    if id.is_empty() && !stem.is_empty() {
+                    // The id and folder follow the file (once it is one the importer takes)
+                    // until either is typed in.
+                    let automatic = id.is_empty()
+                        || id
+                            .strip_prefix("asset.")
+                            .and_then(|rest| rest.split_once('.'))
+                            .is_some_and(|(group, name)| *folder == format!("{group}/{name}"));
+                    if automatic && !stem.is_empty() && !kinds.is_empty() && path.is_file() {
                         let group = if kinds.first() == Some(&"icon") { "icons" } else { "models" };
                         *id = format!("asset.{group}.{stem}");
                         *folder = format!("{group}/{stem}");
@@ -1747,6 +1748,17 @@ impl Shell {
                 if let Outside::Unreadable(message) = store.outside_change(document) {
                     unreadable = Some(message);
                 }
+                // A grid the store does not hold is read from disk: an open map with it
+                // loads again.
+                if crate::document::is_grid(document)
+                    && !store.holds_grid(document)
+                    && let Some(map) = crate::map::map_document_of(document)
+                    && let Some(root) = crate::map::root_of(&map)
+                    && let Some(session) = self.maps.get_mut(root)
+                {
+                    session.loaded_at = None;
+                    session.own = false;
+                }
             }
         }
         // Files may have come or gone: read the libraries again.
@@ -2026,6 +2038,15 @@ impl Shell {
             .map(|(_, d)| d.document.clone())
     }
 
+    /// Opens the focused document's form or JSON modal, or closes it (captures).
+    pub fn show_sheet(&mut self, sheet: Option<tabs::Sheet>) {
+        if let Some(workspace) = self.workspaces.get_mut(&self.current)
+            && let Some((_, doc)) = workspace.dock.main_surface_mut().find_active_focused()
+        {
+            doc.show_sheet(sheet);
+        }
+    }
+
     /// Opens ability `id` on its stage (captures).
     pub fn open_stage(&mut self, id: &str) {
         self.open_id(id);
@@ -2114,9 +2135,11 @@ impl Shell {
             .workspaces
             .entry(context.editor)
             .or_insert_with(|| Workspace::read(package, context.editor));
-        let element = workspace.element(&context.document);
-        // Steps on a field show it in the form; others (a map edit) keep the view.
-        workspace.open(&element, context.pointer.is_some());
+        // A map's other files (its scenery, its grids) open the map.
+        let document = crate::map::map_document_of(&context.document)
+            .unwrap_or_else(|| context.document.clone());
+        let element = workspace.element(&document);
+        workspace.open(&element);
         workspace.highlight = context
             .pointer
             .clone()
@@ -2288,7 +2311,7 @@ impl Shell {
             .for_each(|n| n.elements(&mut elements));
         let first: Vec<Element> = elements.into_iter().take(n).cloned().collect();
         for element in &first {
-            workspace.open(element, false);
+            workspace.open(element);
         }
     }
 
@@ -2538,6 +2561,7 @@ impl Shell {
             return;
         };
         let unsaved = self.store.as_ref().map_or(0, |s| s.dirty().len());
+        let problems = self.problem_count().unwrap_or(0);
         let mut answer = None;
         let response = egui::Modal::new(Id::new("leave"))
             .backdrop_color(egui::Color32::from_black_alpha(150))
@@ -2562,6 +2586,17 @@ impl Shell {
                     ))
                     .color(MUTED),
                 );
+                // Saving writes them as they are: the game loads only a package that passes.
+                if problems > 0 {
+                    let what = if problems == 1 { "1 problem".to_string() } else { format!("{problems} problems") };
+                    ui.label(
+                        RichText::new(format!(
+                            "The package has {what}: saved as it is, the game will not load it until they are fixed."
+                        ))
+                        .color(ERROR)
+                        .size(11.0),
+                    );
+                }
                 ui.add_space(12.0);
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                     if ui.add(primary("Save and leave")).clicked() {
@@ -2878,9 +2913,7 @@ fn library_panel(
                     }
                 });
             if let Some(element) = open {
-                // A map stays on its map; other documents show their form.
-                let form = crate::map::root_of(&element.document).is_none();
-                workspace.open(&element, form);
+                workspace.open(&element);
             }
         });
     action
@@ -2946,7 +2979,7 @@ fn element_row(ui: &mut Ui, depth: usize, element: &Element, shown: &Shown) -> e
         None,
         None,
         shown.active == Some(element.document.as_str()),
-        shown.store.is_dirty(&element.document),
+        tabs::unsaved(shown.store, &element.document),
     )
     .on_hover_text(&element.id)
 }

@@ -379,7 +379,10 @@ pub fn camp(map: &UtcMap, content: &Content, cx: f64, cz: f64, tier: Tier) -> (V
         .collect();
     creeps.sort_by_key(|c| (c.1, c.0));
     let (low, high) = tier.levels();
-    let seed = (cx as i64) * 31 + cz as i64;
+    // Seeded by the distance from the middle along each axis, the same for a camp and its
+    // mirror in any symmetry, so mirrored camps hold the same creeps.
+    let middle = f64::from(map.size) / 2.0;
+    let seed = ((cx - middle).abs() as i64) * 31 + (cz - middle).abs() as i64;
     // A leader as strong as the tier allows, then followers of its level or lower.
     let leaders: Vec<&(&str, u32)> = creeps.iter().filter(|c| c.1 <= high / 2 + 1).collect();
     let mut members: Vec<&str> = Vec::new();

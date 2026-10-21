@@ -38,6 +38,8 @@ pub struct Checker {
     tx: mpsc::Sender<Report>,
     rx: mpsc::Receiver<Report>,
     running: bool,
+    /// The running check's thread and generation (a check that panics sends no report).
+    worker: Option<(std::thread::JoinHandle<()>, u64)>,
     /// The newest request while a check runs; older ones are dropped.
     waiting: Option<(u64, Overlay, Vec<String>)>,
     report: Option<Report>,
@@ -53,6 +55,7 @@ impl Checker {
             tx,
             rx,
             running: false,
+            worker: None,
             waiting: None,
             report: None,
             content: None,
@@ -164,20 +167,52 @@ impl Checker {
                     content,
                 });
             });
-        if let Err(error) = spawned {
-            tracing::warn!(%error, "editor: cannot start a check");
-            self.running = false;
+        match spawned {
+            Ok(handle) => self.worker = Some((handle, generation)),
+            Err(error) => {
+                tracing::warn!(%error, "editor: cannot start a check");
+                self.running = false;
+            }
         }
     }
 
     /// Takes finished checks; starts the next waiting one.
     pub fn poll(&mut self) {
+        let finished = self
+            .worker
+            .as_ref()
+            .is_some_and(|(handle, _)| handle.is_finished());
         while let Ok(report) = self.rx.try_recv() {
             self.running = false;
             if let Some(content) = &report.content {
                 self.content = Some(content.clone());
             }
             self.report = Some(report);
+        }
+        // A check that ended without a report panicked: say so, and check again.
+        if finished && let Some((handle, generation)) = self.worker.take() {
+            let panicked = handle.join().is_err();
+            if self.running {
+                self.running = false;
+                tracing::error!(
+                    generation,
+                    panicked,
+                    "editor: the check ended without a report"
+                );
+                self.report = Some(Report {
+                    generation,
+                    problems: vec![Problem {
+                        document: None,
+                        location: String::new(),
+                        message:
+                            "The check crashed; the log says where. Edit again to check again."
+                                .into(),
+                        file: String::new(),
+                    }],
+                    ms: 0.0,
+                    content: None,
+                });
+            }
         }
         self.start();
     }

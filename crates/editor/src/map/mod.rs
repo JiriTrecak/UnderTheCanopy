@@ -367,6 +367,13 @@ pub fn root_of(document: &str) -> Option<&str> {
     root.ends_with(".utcm").then_some(root)
 }
 
+/// The map document of the package `document` belongs to (its scenery, a grid, its
+/// manifest): `maps/<group>/<id>.utcm/map.json`.
+pub fn map_document_of(document: &str) -> Option<String> {
+    let end = document.find(".utcm/")? + ".utcm".len();
+    Some(format!("{}/map.json", &document[..end]))
+}
+
 /// The commands that create a new map package `maps/<group>/<id>.utcm`: its manifest, a
 /// map of `size` in `biome` with players 1 and 2 in opposite corners (a map has two
 /// starts at least; the Start tool places them properly), made of flat blocks (D80).

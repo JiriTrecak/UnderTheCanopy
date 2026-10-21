@@ -129,16 +129,33 @@ pub fn import(root: &Path, request: &Import) -> Result<String, String> {
 /// named after (the others keep their own names), its `socket_*` nodes as sockets.
 fn model_asset(glb: &[u8], id: &str, name: &str, kind: &str) -> Result<Value, String> {
     let gltf = gltf::Gltf::from_slice(glb).map_err(|e| format!("not a glTF binary: {e}"))?;
+    // A semantic is an id: the clip's own name after any `Armature|` prefix, lowercased,
+    // other characters as `_`; one clip per semantic.
+    let mut seen = std::collections::BTreeSet::new();
     let animations: Vec<Value> = gltf
         .animations()
         .filter_map(|a| a.name().map(str::to_string))
-        .map(|clip| {
-            let lower = clip.to_ascii_lowercase();
+        .filter_map(|clip| {
+            let own = clip.rsplit('|').next().unwrap_or(&clip);
+            let lower: String = own
+                .trim()
+                .to_ascii_lowercase()
+                .chars()
+                .map(|c| {
+                    if c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-') {
+                        c
+                    } else {
+                        '_'
+                    }
+                })
+                .collect();
+            let lower = lower.trim_matches(['_', '.', '-']).to_string();
             let (semantic, looping) = SEMANTICS
                 .iter()
                 .find(|(s, _)| *s == lower)
                 .map_or((lower.clone(), false), |(s, l)| (s.to_string(), *l));
-            json!({"semantic": semantic, "clip": clip, "loop": looping, "events": []})
+            (!semantic.is_empty() && seen.insert(semantic.clone()))
+                .then(|| json!({"semantic": semantic, "clip": clip, "loop": looping, "events": []}))
         })
         .collect();
     let sockets: Vec<Value> = gltf

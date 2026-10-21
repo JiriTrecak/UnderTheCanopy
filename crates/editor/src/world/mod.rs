@@ -342,6 +342,8 @@ pub struct State {
     pub biomes: Vec<settings::BiomeInfo>,
     pub symmetry: Symmetry,
     pub twin: Option<Twin>,
+    /// The press under way began while a picker was open: it only closes the picker.
+    pub dismissing: bool,
     /// While a drag is under way, the map shows what it will do: the terrain as it was
     /// before the drag, to go back to, and what the preview last showed.
     pub preview: Option<(Box<canopy_content::map::TerrainData>, String)>,
@@ -403,6 +405,7 @@ impl Default for State {
             biomes: Vec::new(),
             symmetry: Symmetry::default(),
             twin: None,
+            dismissing: false,
             preview: None,
             write_picture: false,
             palette: palette::Palette::default(),
@@ -671,14 +674,42 @@ pub fn apply(session: &mut Session, op: &BlockOp) -> Option<crate::tabs::Edit> {
     let size = session.map.as_ref().map_or(0, |m| m.size);
     let symmetry = session.blocks.symmetry;
     commit(session, label, current, |blocks| {
-        change(blocks, op, start);
-        if symmetry != Symmetry::None {
-            let side = blocks.side as i32;
-            let twin = symmetry.op(op, size, side);
-            let start = blocks.at(twin.from.0, twin.from.1);
-            change(blocks, &twin, start);
-        }
+        let twin = (symmetry != Symmetry::None).then(|| symmetry.op(op, size, blocks.side as i32));
+        change_mirrored(blocks, op, start, twin.as_ref());
     })
+}
+
+/// `op`, then its mirror `twin`: a column both reach is raised or lowered once (a plateau
+/// raised across the mirror line is one level high, not two); the other tools set what
+/// they set, so doing them twice is the same.
+fn change_mirrored(blocks: &mut Blocks, op: &BlockOp, start: Block, twin: Option<&BlockOp>) {
+    let first: std::collections::BTreeSet<(i32, i32)> = match twin {
+        Some(_) if op.tool == BlockTool::Raise => footprint(blocks, op).into_iter().collect(),
+        _ => Default::default(),
+    };
+    change(blocks, op, start);
+    let Some(twin) = twin else {
+        return;
+    };
+    let start = blocks.at(twin.from.0, twin.from.1);
+    if first.is_empty() {
+        change(blocks, twin, start);
+        return;
+    }
+    let reverse = twin.reverse;
+    for (x, z) in footprint(blocks, twin) {
+        if first.contains(&(x, z)) {
+            continue;
+        }
+        if let Some(mut b) = blocks.get(x, z) {
+            b.level = if reverse {
+                b.level.saturating_sub(1)
+            } else {
+                (b.level + 1).min(MAX_LEVEL)
+            };
+            blocks.set(x, z, b);
+        }
+    }
 }
 
 /// What `op` does to `blocks`; `start` is the block its drag began on.
@@ -847,12 +878,8 @@ fn live_preview(session: &mut Session, op: &BlockOp) {
     };
     let original = Box::new(terrain.clone());
     let start = blocks.at(op.from.0, op.from.1);
-    change(&mut blocks, op, start);
-    if symmetry != Symmetry::None {
-        let twin = symmetry.op(op, size, blocks.side as i32);
-        let start = blocks.at(twin.from.0, twin.from.1);
-        change(&mut blocks, &twin, start);
-    }
+    let twin = (symmetry != Symmetry::None).then(|| symmetry.op(op, size, blocks.side as i32));
+    change_mirrored(&mut blocks, op, start, twin.as_ref());
     blocks.apply(terrain);
     session.blocks.preview = Some((original, key));
     session.stale = true;
@@ -1007,11 +1034,74 @@ fn selection_at(map: &canopy_content::map::UtcMap, picked: Picked, id: &str) -> 
     }
 }
 
+/// Player `player`'s start standing at (`x`, `z`) as the game would have it: its own
+/// setup (the first race's for a new start), its main hall's door turned to the middle.
+fn start_at(
+    map: &canopy_content::map::UtcMap,
+    content: &canopy_content::Content,
+    player: u8,
+    x: f64,
+    z: f64,
+) -> canopy_content::map::PlayerStart {
+    let setups = || {
+        content
+            .rules
+            .races
+            .values()
+            .filter_map(|r| r.starting_setup.as_ref())
+            .chain(std::iter::once(&content.rules.starting_setup))
+    };
+    let own = map.player_starts.iter().find(|s| s.player == player);
+    let setup = own
+        .and_then(|own| setups().find(|s| s.id.as_str() == own.setup))
+        .or_else(|| setups().next())
+        .unwrap_or(&content.rules.starting_setup);
+    let rotation = crate::map::tools::facing_middle(content, setup.fort.as_str(), x, z, map.size);
+    canopy_content::map::PlayerStart {
+        player,
+        x,
+        z,
+        rotation: (rotation != 0).then_some(rotation),
+        setup: own.map_or_else(|| setup.id.to_string(), |s| s.setup.clone()),
+        main_fort: own.map_or_else(
+            || format!("start.player.{player}/main-fort"),
+            |s| s.main_fort.clone(),
+        ),
+    }
+}
+
+/// The command that turns start `i` (now `current`) to `rotation`, if it changes.
+fn turn_start(
+    map_doc: &str,
+    i: usize,
+    current: &serde_json::Value,
+    rotation: Option<u32>,
+) -> Option<Command> {
+    let now = current["rotation"].as_u64().map(|r| r as u32);
+    if now.unwrap_or(0) == rotation.unwrap_or(0) {
+        return None;
+    }
+    let pointer = format!("/playerStarts/{i}/rotation");
+    Some(match rotation {
+        Some(r) => Command::Set {
+            document: map_doc.to_string(),
+            pointer,
+            value: r.into(),
+            at: None,
+        },
+        None => Command::Remove {
+            document: map_doc.to_string(),
+            pointer,
+        },
+    })
+}
+
 /// The commands that move the selection by whole cells (so placements stay on their cell
 /// centres): a start; a camp member with its whole camp and its home; an amber crystal
 /// with the rest of its site; a prop.
 fn move_selection(
     session: &Session,
+    content: Option<&canopy_content::Content>,
     docs: &crate::map::view::Docs,
     picked: Picked,
     id: &str,
@@ -1051,6 +1141,14 @@ fn move_selection(
                     format!("/playerStarts/{i}/z"),
                     (f(&s["z"]) + dz).into(),
                 ));
+                // Its hall's door turns to the middle from where it lands.
+                if let (Some(content), Some(map), Some(player)) =
+                    (content, session.map.as_ref(), s["player"].as_u64())
+                {
+                    let start =
+                        start_at(map, content, player as u8, f(&s["x"]) + dx, f(&s["z"]) + dz);
+                    out.extend(turn_start(&map_doc, i, s, start.rotation));
+                }
             }
         }
         Picked::Entity => {
@@ -1306,21 +1404,7 @@ fn problem(
             .iter()
             .find(|d| d.behaviors.camp_defense.is_some()),
         Placing::Start(player) => {
-            let setup = content
-                .rules
-                .races
-                .values()
-                .filter_map(|r| r.starting_setup.as_ref())
-                .next()
-                .unwrap_or(&content.rules.starting_setup);
-            let start = canopy_content::map::PlayerStart {
-                player: *player,
-                x: land.x,
-                z: land.z,
-                rotation: None,
-                setup: setup.id.to_string(),
-                main_fort: format!("start.player.{player}/main-fort"),
-            };
+            let start = start_at(map, content, *player, land.x, land.z);
             if let Err(error) = canopy_sim::spawn::start_problem(map, content, terrain, &start) {
                 return Some(error);
             }
@@ -1332,7 +1416,23 @@ fn problem(
             if crowded {
                 return Some("Too close to another start".into());
             }
-            return canopy_sim::spawn::start_area(map, content, terrain, &start).and_then(overlap);
+            // The start leaves where it stood: its own room is free.
+            let mut ignore = ignore.to_vec();
+            ignore.push((Picked::Start, player.to_string()));
+            let taken = taken_cells(map, content, terrain, &ignore);
+            return canopy_sim::spawn::start_area(map, content, terrain, &start).and_then(
+                |cells| {
+                    taken
+                        .into_iter()
+                        .find(|(_, other)| {
+                            cells.min_x <= other.max_x
+                                && other.min_x <= cells.max_x
+                                && cells.min_y <= other.max_y
+                                && other.min_y <= cells.max_y
+                        })
+                        .map(|(name, _)| format!("Overlaps {name}"))
+                },
+            );
         }
         Placing::Scenery(_) => return None,
     }?;
@@ -1465,7 +1565,7 @@ fn move_all(
             Picked::Object => format!("o {id}"),
         };
         if seen.insert(key) {
-            out.extend(move_selection(session, docs, *kind, id, delta));
+            out.extend(move_selection(session, content, docs, *kind, id, delta));
         }
     }
     out
@@ -1568,7 +1668,7 @@ fn place(
     owner: u8,
     at: [f32; 2],
 ) -> Option<crate::tabs::Edit> {
-    use crate::map::tools::{self, Placement};
+    use crate::map::tools::Placement;
     use serde_json::json;
     let land = landing(content, placing, at, session.blocks.fine);
     let (x, z) = (land.x, land.z);
@@ -1604,37 +1704,34 @@ fn place(
             Some(edit)
         }
         Placing::Start(player) => {
-            let setup = content
-                .rules
-                .races
-                .values()
-                .filter_map(|r| r.starting_setup.as_ref())
-                .next()
-                .unwrap_or(&content.rules.starting_setup);
-            let rotation = tools::facing_middle(content, setup.fort.as_str(), x, z, map.size);
+            let start = start_at(map, content, *player, x, z);
             let starts = list(&docs.map["playerStarts"]);
             let commands = match starts
                 .iter()
                 .position(|s| s["player"].as_u64() == Some(u64::from(*player)))
             {
-                Some(i) => vec![
-                    Command::Set {
-                        document: map_doc.clone(),
-                        pointer: format!("/playerStarts/{i}/x"),
-                        value: x.into(),
-                        at: None,
-                    },
-                    Command::Set {
-                        document: map_doc.clone(),
-                        pointer: format!("/playerStarts/{i}/z"),
-                        value: z.into(),
-                        at: None,
-                    },
-                ],
+                Some(i) => {
+                    let mut commands = vec![
+                        Command::Set {
+                            document: map_doc.clone(),
+                            pointer: format!("/playerStarts/{i}/x"),
+                            value: x.into(),
+                            at: None,
+                        },
+                        Command::Set {
+                            document: map_doc.clone(),
+                            pointer: format!("/playerStarts/{i}/z"),
+                            value: z.into(),
+                            at: None,
+                        },
+                    ];
+                    commands.extend(turn_start(&map_doc, i, &starts[i], start.rotation));
+                    commands
+                }
                 None => {
-                    let mut start = json!({"mainFort": format!("start.player.{player}/main-fort"), "player": player, "setup": setup.id.as_str(), "x": x, "z": z});
-                    if rotation != 0 {
-                        start["rotation"] = json!(rotation);
+                    let mut start = json!({"mainFort": start.main_fort, "player": player, "setup": start.setup, "x": x, "z": z, "rotation": start.rotation});
+                    if start["rotation"].is_null() {
+                        start.as_object_mut().map(|o| o.remove("rotation"));
                     }
                     vec![Command::Insert {
                         document: map_doc.clone(),
@@ -1749,6 +1846,10 @@ pub fn show(
     package: Option<&std::path::Path>,
 ) -> Out {
     let mut out = Out::default();
+    // A click that closes an open picker does nothing else on the map.
+    if ui.input(|i| i.pointer.any_pressed()) {
+        session.blocks.dismissing = egui::Popup::is_any_open(ui.ctx());
+    }
     // The map's one panel: its settings, or what is selected.
     if Panels::get(ui.ctx()).properties {
         let mut edits = Vec::new();
@@ -1900,7 +2001,9 @@ pub fn show(
             session.stale = true;
         }
     }
-    if response.hovered() && !input.modifiers.command {
+    // The keys act over the map, never while a text field takes typing (a search, a name).
+    let typing = ui.ctx().egui_wants_keyboard_input();
+    if response.hovered() && !input.modifiers.command && !typing {
         for tool in BlockTool::ALL {
             if input.key_pressed(tool.key()) {
                 session.blocks.tool = tool;
@@ -2283,6 +2386,7 @@ pub fn show(
     }
 
     if response.drag_started_by(egui::PointerButton::Primary)
+        && !session.blocks.dismissing
         && let Some((c, p)) = column
     {
         // A drag begins where the button went down, not where it has moved to by the
@@ -2302,6 +2406,7 @@ pub fn show(
     if response.drag_stopped_by(egui::PointerButton::Primary) {
         finished = session.blocks.drag.take();
     } else if response.clicked_by(egui::PointerButton::Primary)
+        && !session.blocks.dismissing
         && let Some((c, p)) = column
     {
         finished = Some(Drag {
@@ -2426,7 +2531,9 @@ pub fn show(
                             Placing::Start(n) => Placing::Start(next(n)),
                             other => other,
                         },
-                        at: symmetry.point(at, map_size),
+                        // The mirror of where the first landed (not of the pointer),
+                        // so the twin snaps to the true mirror.
+                        at: symmetry.point([land.x as f32, land.z as f32], map_size),
                         owner: if owner == 0 { 0 } else { next(owner) },
                         after: loaded,
                     });
@@ -2565,6 +2672,7 @@ pub fn show(
         }
         session.blocks.selection = kept;
         if response.hovered()
+            && !ui.ctx().egui_wants_keyboard_input()
             && (input.key_pressed(egui::Key::Delete) || input.key_pressed(egui::Key::Backspace))
             && let Some(docs) = docs
         {
@@ -2680,10 +2788,8 @@ mod tests {
         ramp.level = Some(2);
         for edit in [raise, ramp] {
             let start = blocks.at(edit.from.0, edit.from.1);
-            change(&mut blocks, &edit, start);
             let twin = Symmetry::Point.op(&edit, 256, side);
-            let start = blocks.at(twin.from.0, twin.from.1);
-            change(&mut blocks, &twin, start);
+            change_mirrored(&mut blocks, &edit, start, Some(&twin));
         }
         for z in 0..side {
             for x in 0..side {
@@ -2694,6 +2800,21 @@ mod tests {
                     assert_eq!((a.ramp + 3) % 8 + 1, b.ramp);
                 }
             }
+        }
+    }
+
+    #[test]
+    fn raising_across_the_mirror_line_lifts_every_column_once() {
+        let mut blocks = Blocks::flat(256);
+        let side = blocks.side as i32;
+        let middle = side / 2;
+        let raise = op(BlockTool::Raise, (middle - 4, 10), (middle + 2, 12));
+        let twin = Symmetry::MirrorX.op(&raise, 256, side);
+        let start = blocks.at(raise.from.0, raise.from.1);
+        let before = blocks.at(middle, 11).level;
+        change_mirrored(&mut blocks, &raise, start, Some(&twin));
+        for x in middle - 4..=middle + 3 {
+            assert_eq!(blocks.at(x, 11).level, before + 1, "column {x}");
         }
     }
 
