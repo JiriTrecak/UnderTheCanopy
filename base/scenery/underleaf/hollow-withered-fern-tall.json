@@ -1,0 +1,7 @@
+{
+  "id": "scenery.hollow-withered-fern-tall",
+  "name": "Hollow: withered fern, tall",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.hollow-withered-fern-tall"
+}

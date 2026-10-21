@@ -1,0 +1,510 @@
+{
+  "name": "Underleaf",
+  "description": "A late-summer forest floor at low sun: calm olive soil, moss on the heights, leaf litter, ferns and giant roots in the frame, stone and root-bank cliffs, beetle masonry, tea-dark streams.",
+  "preview": "asset.biomes.underleaf",
+  "daylight": "temperate",
+  "light": {
+    "sunTint": "#ffd9a6",
+    "sunStrength": 1.8,
+    "sunDirection": 150,
+    "sunHeight": 32,
+    "ambientTint": "#93a69c",
+    "ambientStrength": 0.55,
+    "skyTint": "#b8c7cf",
+    "bounceTint": "#a8946a",
+    "fillStrength": 0.85,
+    "shadowSoftness": 4.5,
+    "frost": 0
+  },
+  "canopy": {
+    "height": 150,
+    "scale": 150,
+    "coverage": 0.45,
+    "softness": 0.2,
+    "strength": 0.55,
+    "sway": 1.2,
+    "speed": 0.3,
+    "cloudShadow": 0.04,
+    "seed": 517
+  },
+  "grade": {
+    "exposure": 1.05,
+    "contrast": 1.12,
+    "saturation": 1.06,
+    "highlightShoulder": 0.5,
+    "shadowTint": "#4b5a68",
+    "highlightTint": "#fff0da",
+    "splitStrength": 0.35,
+    "shadowLift": 0.015,
+    "vignette": 0.3,
+    "daytimeLut": "asset.texture.woodland-daytime-grades/data.json#day",
+    "daytimeLutStrength": 0
+  },
+  "bloom": {
+    "strength": 0.14,
+    "threshold": 1.2,
+    "knee": 0.3,
+    "radius": 3
+  },
+  "contact": {
+    "strength": 0.85,
+    "radius": 2.0,
+    "bias": 0.06
+  },
+  "atmosphere": {
+    "enabled": true,
+    "color": "#8b9478",
+    "sunTint": "#ffd9a0",
+    "density": 0.0004,
+    "shaftDensity": 0.0012,
+    "baseHeight": 0.5,
+    "heightFalloff": 24,
+    "sunStrength": 1.6,
+    "noiseScale": 0.05,
+    "noiseStrength": 0.8,
+    "driftSpeed": 0.3,
+    "overheadStrength": 0.08,
+    "shaftElevation": 70
+  },
+  "terrain": {
+    "soil": {
+      "albedo": "asset.terrain.underleaf-soil",
+      "normal": "asset.terrain.underleaf-soil-normal",
+      "tiling": 0.3,
+      "blend": -1
+    },
+    "grass": {
+      "albedo": "asset.terrain.underleaf-litter",
+      "normal": "asset.terrain.underleaf-litter-normal",
+      "tiling": 0.22,
+      "blend": 0.5,
+      "breakup": 0.3
+    },
+    "dirt": {
+      "albedo": "asset.terrain.underleaf-moss",
+      "normal": "asset.terrain.underleaf-moss-normal",
+      "tiling": 0.3,
+      "blend": -1
+    },
+    "waterbed": {
+      "albedo": "asset.terrain.underleaf-streambed",
+      "normal": "asset.terrain.underleaf-streambed-normal",
+      "tiling": 0.4,
+      "blend": -1
+    },
+    "stones": {
+      "albedo": "asset.terrain.underleaf-rubble",
+      "normal": "asset.terrain.underleaf-rubble-normal",
+      "tiling": 0.45,
+      "blend": 0.55
+    },
+    "rock": {
+      "albedo": "asset.terrain.underleaf-stone",
+      "normal": "asset.terrain.underleaf-stone-normal",
+      "tiling": 0.4,
+      "blend": -1,
+      "edge": 1
+    }
+  },
+  "water": "water.underleaf-stream",
+  "surroundings": {
+    "floorTexture": "asset.terrain.underleaf-litter",
+    "floorColor": "#4b4632",
+    "hazeColor": "#7e8870",
+    "hazeStart": 150,
+    "hazeEnd": 850,
+    "forest": {
+      "trunk": "scenery.mega-oak-trunk",
+      "mushroom": "scenery.mega-mushroom",
+      "log": "scenery.mega-fallen-log",
+      "limbTexture": "asset.textures.forest-giants-bark",
+      "rings": [
+        {
+          "distance": 48,
+          "spacing": 92,
+          "height": 155
+        },
+        {
+          "distance": 145,
+          "spacing": 110,
+          "height": 195
+        },
+        {
+          "distance": 270,
+          "spacing": 120,
+          "height": 240
+        }
+      ],
+      "leafColors": [
+        "#4f6a33",
+        "#6d873d",
+        "#8a964a",
+        "#3c5630",
+        "#9c8a40"
+      ],
+      "leafSpacing": 16,
+      "leafLength": 24
+    }
+  },
+  "groundCover": {
+    "radius": 1.2,
+    "strength": 0.7
+  },
+  "motes": {
+    "dust": 400,
+    "dustBrightness": 1.2,
+    "leaves": 50,
+    "leafTexture": "asset.texture.underleaf-falling-leaf/image.png",
+    "leafSize": 1.1
+  },
+  "blocks": {
+    "seed": 41,
+    "rubble": "asset.terrain.underleaf-rubble",
+    "frameCover": 1.0,
+    "frameShade": 0.35,
+    "frameRise": 0.8,
+    "edgeRubble": 0.5,
+    "rampSpill": 6.0,
+    "cliff": {
+      "albedo": "asset.terrain.underleaf-stone/data.bin",
+      "normal": "asset.terrain.underleaf-stone-normal/data.bin",
+      "tile": 2.6,
+      "roughness": 0.85,
+      "stone": 1.5,
+      "relief": 0.7,
+      "rubble": 0.12,
+      "rampRubble": 0,
+      "slope": 1.1,
+      "wander": 0.8,
+      "frost": 0,
+      "rampStones": [
+        1.0,
+        2.2
+      ],
+      "topRubble": 0.05
+    },
+    "faces": [
+      {
+        "name": "Roots",
+        "cliff": {
+          "albedo": "asset.terrain.underleaf-roots/data.bin",
+          "normal": "asset.terrain.underleaf-roots-normal/data.bin",
+          "tile": 3.2,
+          "roughness": 0.88,
+          "stone": 1.1,
+          "grain": [
+            5.0,
+            0.22,
+            5.0
+          ],
+          "relief": 0.35,
+          "slope": 1.5,
+          "overhang": 0.5,
+          "rubble": 0.05,
+          "wander": 1.0,
+          "frost": 0,
+          "roots": {
+            "density": 1.6,
+            "radius": [
+              0.1,
+              0.45
+            ],
+            "length": [
+              2.5,
+              7.0
+            ],
+            "albedo": "asset.terrain.underleaf-bark/data.bin",
+            "normal": "asset.terrain.underleaf-bark-normal/data.bin",
+            "tile": 1.6,
+            "frost": 0
+          },
+          "crown": {
+            "height": 0.6,
+            "width": 2.6,
+            "stone": 0.6,
+            "rubble": 0.0
+          }
+        }
+      },
+      {
+        "name": "Beetle masonry",
+        "cliff": {
+          "albedo": "asset.terrain.underleaf-masonry/data.bin",
+          "normal": "asset.terrain.underleaf-masonry-normal/data.bin",
+          "tile": 3.0,
+          "roughness": 0.8,
+          "stone": 2.2,
+          "grain": [
+            2.5,
+            0.7,
+            2.5
+          ],
+          "relief": 0.3,
+          "slope": 0.9,
+          "wander": 0.2,
+          "rubble": 0.0,
+          "rampRubble": 0,
+          "rampStones": [
+            0.6,
+            1.2
+          ],
+          "topRubble": 0.0,
+          "frost": 0
+        }
+      }
+    ],
+    "levels": [
+      {
+        "level": 2,
+        "material": "asset.terrain.underleaf-moss"
+      },
+      {
+        "level": 3,
+        "material": "asset.terrain.underleaf-moss"
+      }
+    ],
+    "decals": [
+      {
+        "zone": "groundEdge",
+        "atlas": "asset.texture.underleaf-leaves/image.png",
+        "cells": 5,
+        "count": 25,
+        "density": 4.0,
+        "size": [
+          0.9,
+          2.0
+        ],
+        "tint": [
+          0.82,
+          0.84,
+          0.74
+        ],
+        "clump": 0.4
+      },
+      {
+        "zone": "cliffFoot",
+        "atlas": "asset.texture.underleaf-leaves/image.png",
+        "cells": 5,
+        "count": 25,
+        "density": 3.0,
+        "size": [
+          0.8,
+          1.8
+        ],
+        "tint": [
+          0.82,
+          0.84,
+          0.74
+        ],
+        "clump": 0.5
+      },
+      {
+        "zone": "frameEdge",
+        "atlas": "asset.texture.underleaf-leaves/image.png",
+        "cells": 5,
+        "count": 25,
+        "density": 3.2,
+        "size": [
+          3.0,
+          7.0
+        ],
+        "tint": [
+          0.74,
+          0.76,
+          0.68
+        ]
+      },
+      {
+        "zone": "frame",
+        "atlas": "asset.texture.underleaf-leaves/image.png",
+        "cells": 5,
+        "count": 25,
+        "density": 1.8,
+        "size": [
+          4.0,
+          9.0
+        ],
+        "tint": [
+          0.74,
+          0.76,
+          0.68
+        ]
+      },
+      {
+        "zone": "frameEdge",
+        "atlas": "asset.texture.underleaf-sorrel/image.png",
+        "cells": 6,
+        "count": 33,
+        "density": 12,
+        "size": [
+          0.8,
+          1.6
+        ],
+        "clump": 0.6,
+        "tint": [
+          0.8,
+          0.84,
+          0.76
+        ]
+      },
+      {
+        "zone": "groundEdge",
+        "atlas": "asset.texture.underleaf-sorrel/image.png",
+        "cells": 6,
+        "count": 33,
+        "density": 5,
+        "size": [
+          0.6,
+          1.2
+        ],
+        "clump": 0.7,
+        "tint": [
+          0.8,
+          0.84,
+          0.76
+        ]
+      },
+      {
+        "zone": "cliffTop",
+        "atlas": "asset.texture.underleaf-sorrel/image.png",
+        "cells": 6,
+        "count": 33,
+        "density": 8,
+        "size": [
+          0.9,
+          1.8
+        ],
+        "clump": 0.5,
+        "tint": [
+          0.8,
+          0.84,
+          0.76
+        ]
+      },
+      {
+        "zone": "frameEdge",
+        "atlas": "asset.texture.underleaf-blossoms/image.png",
+        "cells": 6,
+        "count": 32,
+        "density": 1.0,
+        "size": [
+          0.6,
+          1.1
+        ],
+        "clump": 0.75,
+        "tint": [
+          0.85,
+          0.85,
+          0.85
+        ]
+      }
+    ],
+    "scatter": [
+      {
+        "zone": "frame",
+        "pieces": [
+          "scenery.pl-fern-sword",
+          "scenery.pl-fern-sword-b",
+          "scenery.pl-fern-bushy",
+          "scenery.pl-fern-bushy-b"
+        ],
+        "density": 1.6,
+        "scale": [
+          3.5,
+          6.0
+        ]
+      },
+      {
+        "zone": "frame",
+        "pieces": [
+          "scenery.pl-clover-sorrel",
+          "scenery.pl-clover-a",
+          "scenery.pl-grass-lush-a",
+          "scenery.pl-grass-lush-b"
+        ],
+        "density": 1.4,
+        "scale": [
+          3.0,
+          5.0
+        ]
+      },
+      {
+        "zone": "frame",
+        "pieces": [
+          "scenery.lookdev-puffball",
+          "scenery.mega-mushroom"
+        ],
+        "density": 0.04,
+        "scale": [
+          0.3,
+          0.55
+        ]
+      },
+      {
+        "zone": "frameEdge",
+        "pieces": [
+          "scenery.pl-fern-bushy",
+          "scenery.pl-fern-bushy-b",
+          "scenery.pl-clover-sorrel",
+          "scenery.pl-clover-a"
+        ],
+        "density": 1.2,
+        "scale": [
+          2.4,
+          4.0
+        ]
+      },
+      {
+        "zone": "frameEdge",
+        "pieces": [
+          "scenery.lookdev-leaf-oak",
+          "scenery.lookdev-leaf-beech",
+          "scenery.lookdev-acorn",
+          "scenery.woodland-mushroom-cluster"
+        ],
+        "density": 0.25,
+        "scale": [
+          0.5,
+          0.9
+        ]
+      },
+      {
+        "zone": "rim",
+        "pieces": [
+          "scenery.pl-fern-sword",
+          "scenery.pl-fern-sword-b"
+        ],
+        "density": 0.7,
+        "scale": [
+          2.6,
+          4.0
+        ],
+        "reach": 2.0
+      },
+      {
+        "zone": "frameEdge",
+        "pieces": [
+          "scenery.lookdev-root-d",
+          "scenery.lookdev-root-b"
+        ],
+        "density": 0.03,
+        "scale": [
+          0.35,
+          0.55
+        ]
+      },
+      {
+        "zone": "cliffFoot",
+        "pieces": [
+          "scenery.woodland-moss-boulder",
+          "scenery.meadow-boulder"
+        ],
+        "density": 0.08,
+        "scale": [
+          0.5,
+          1.0
+        ]
+      }
+    ]
+  }
+}

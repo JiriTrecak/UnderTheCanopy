@@ -1,0 +1,12 @@
+{
+  "id": "scenery.hollow-collapsed-mound",
+  "name": "Hollow: collapsed ant mound",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.hollow-collapsed-mound",
+  "blocker": {
+    "width": 19.0,
+    "depth": 16.0,
+    "shape": "ellipse"
+  }
+}

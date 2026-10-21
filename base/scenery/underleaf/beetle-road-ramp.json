@@ -1,0 +1,7 @@
+{
+  "id": "scenery.beetle-road-ramp",
+  "name": "Glass Road: ramp",
+  "category": "terrain",
+  "type": "prop",
+  "model": "asset.models.environment.beetle-road-ramp"
+}

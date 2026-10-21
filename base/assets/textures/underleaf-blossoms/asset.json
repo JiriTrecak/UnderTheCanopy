@@ -1,0 +1,17 @@
+{
+  "id": "asset.texture.underleaf-blossoms",
+  "name": "underleaf blossoms",
+  "kind": "texture",
+  "tags": [
+    "decals",
+    "imagegen"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original ImageGen (gpt-image-2) cut-outs for Under the Canopy, packed by tools/terrain/build_decals.py."
+}

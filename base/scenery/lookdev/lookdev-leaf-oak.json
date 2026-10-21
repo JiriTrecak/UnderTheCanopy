@@ -1,8 +1,7 @@
 {
   "id": "scenery.lookdev-leaf-oak",
-  "name": "lookdev leaf oak",
+  "name": "Fallen oak leaf",
   "category": "foliage",
   "type": "prop",
-  "model": "asset.models.environment.lookdev-leaf-oak",
-  "editorHidden": true
+  "model": "asset.models.environment.lookdev-leaf-oak"
 }

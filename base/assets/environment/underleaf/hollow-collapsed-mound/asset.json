@@ -1,0 +1,41 @@
+{
+  "id": "asset.models.environment.hollow-collapsed-mound",
+  "name": "Collapsed ant mound",
+  "kind": "prop",
+  "tags": [
+    "underleaf",
+    "hollow",
+    "ants",
+    "landmark",
+    "procedural"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "vegetationClearance": 3,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "license": "Original procedural model for Under the Canopy (tools/props/hollow_mound.py)."
+}

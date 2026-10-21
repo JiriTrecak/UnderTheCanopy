@@ -1,8 +1,7 @@
 {
   "id": "scenery.lookdev-root-arch",
-  "name": "lookdev root arch",
+  "name": "Root arch",
   "category": "landmark",
   "type": "prop",
-  "model": "asset.models.environment.lookdev-root-arch",
-  "editorHidden": true
+  "model": "asset.models.environment.lookdev-root-arch"
 }

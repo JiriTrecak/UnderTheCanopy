@@ -1,0 +1,7 @@
+{
+  "id": "scenery.hollow-bleached-mushrooms",
+  "name": "Hollow: bleached mushrooms",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.hollow-bleached-mushrooms"
+}

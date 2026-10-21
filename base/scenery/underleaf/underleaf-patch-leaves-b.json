@@ -1,0 +1,7 @@
+{
+  "id": "scenery.underleaf-patch-leaves-b",
+  "name": "Leaf drift B",
+  "category": "terrain",
+  "type": "prop",
+  "model": "asset.models.environment.underleaf-patch-leaves-b"
+}

@@ -11,10 +11,47 @@ import numpy as np
 import OpenImageIO as oiio
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from build_overlay import leaves_of  # noqa: E402
-
 SIZE = 1024
+
+
+def leaves_of(path, min_pixels=900):
+    """The separate shapes of a sheet on white, or of a transparent sheet: premultiplied
+    RGBA crops, one per connected shape."""
+    pixels = oiio.ImageBuf(path).get_pixels(oiio.FLOAT)
+    rgb = pixels[:, :, :3]
+    if pixels.shape[2] == 4 and pixels[:, :, 3].min() < 0.5:
+        # OpenImageIO reads PNG alpha associated; the crops below premultiply again.
+        alpha = pixels[:, :, 3]
+        rgb = rgb / np.maximum(alpha, 1e-4)[..., None]
+    else:
+        # Faint grey shadows on the sheet stay out: only clearly coloured pixels count.
+        alpha = np.clip(((1.0 - rgb).max(axis=2) - 0.13) / 0.1, 0.0, 1.0)
+    solid = alpha > 0.5
+    # Connected shapes by repeated min-label propagation on a half-size mask.
+    small = solid[::2, ::2]
+    h, w = small.shape
+    big = h * w + 1
+    labels = np.where(small, np.arange(h * w).reshape(h, w), big)
+    for _ in range(4000):
+        prev = labels
+        p = np.pad(labels, 1, constant_values=big)
+        n = np.minimum.reduce([p[1:-1, 1:-1], p[:-2, 1:-1], p[2:, 1:-1], p[1:-1, :-2], p[1:-1, 2:]])
+        labels = np.where(small, n, big)
+        if np.array_equal(labels, prev):
+            break
+    out = []
+    for label in np.unique(labels[small]):
+        ys, xs = np.nonzero(labels == label)
+        if len(ys) * 4 < min_pixels:
+            continue
+        y0, y1 = max(0, ys.min() * 2 - 4), min(rgb.shape[0], ys.max() * 2 + 6)
+        x0, x1 = max(0, xs.min() * 2 - 4), min(rgb.shape[1], xs.max() * 2 + 6)
+        mask = np.zeros(rgb.shape[:2], bool)
+        grown = np.repeat(np.repeat(labels == label, 2, 0), 2, 1)[:rgb.shape[0], :rgb.shape[1]]
+        mask[y0:y1, x0:x1] = grown[y0:y1, x0:x1]
+        a = alpha[y0:y1, x0:x1] * mask[y0:y1, x0:x1]
+        out.append(np.concatenate([rgb[y0:y1, x0:x1] * a[..., None], a[..., None]], -1).astype(np.float32))
+    return out
 
 
 def main():

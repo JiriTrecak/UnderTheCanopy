@@ -1,8 +1,7 @@
 {
   "id": "scenery.lookdev-sapling",
-  "name": "Look-dev sapling",
+  "name": "Sapling, leafy",
   "category": "foliage",
   "type": "prop",
-  "model": "asset.models.environment.lookdev-sapling",
-  "editorHidden": true
+  "model": "asset.models.environment.lookdev-sapling"
 }

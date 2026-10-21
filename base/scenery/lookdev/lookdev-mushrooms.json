@@ -1,8 +1,7 @@
 {
   "id": "scenery.lookdev-mushrooms",
-  "name": "lookdev mushrooms",
+  "name": "Mushroom cluster, tall",
   "category": "foliage",
   "type": "prop",
-  "model": "asset.models.environment.lookdev-mushrooms",
-  "editorHidden": true
+  "model": "asset.models.environment.lookdev-mushrooms"
 }

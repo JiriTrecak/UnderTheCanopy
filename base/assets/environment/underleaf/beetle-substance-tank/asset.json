@@ -1,0 +1,41 @@
+{
+  "id": "asset.models.environment.beetle-substance-tank",
+  "name": "Glass substance tank",
+  "kind": "prop",
+  "tags": [
+    "underleaf",
+    "glass-road",
+    "beetles",
+    "procedural",
+    "substance"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "vegetationClearance": 2,
+    "groundContact": {
+      "mode": "terrain"
+    }
+  },
+  "license": "Original procedural model for Under the Canopy (tools/props/beetle_road.py), textures by gpt-image-2."
+}

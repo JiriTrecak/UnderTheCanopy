@@ -1,8 +1,7 @@
 {
   "id": "scenery.lookdev-root-d",
-  "name": "lookdev root d",
+  "name": "Giant root D",
   "category": "landmark",
   "type": "prop",
-  "model": "asset.models.environment.lookdev-root-d",
-  "editorHidden": true
+  "model": "asset.models.environment.lookdev-root-d"
 }

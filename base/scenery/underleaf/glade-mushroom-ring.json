@@ -1,0 +1,7 @@
+{
+  "id": "scenery.glade-mushroom-ring",
+  "name": "Glade: mushroom ring",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.glade-mushroom-ring"
+}

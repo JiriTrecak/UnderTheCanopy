@@ -1,0 +1,27 @@
+{
+  "id": "water.underleaf-stream",
+  "name": "Underleaf stream",
+  "water": {
+    "shallowColor": "#3b3c2a",
+    "deepColor": "#0a1410",
+    "clarity": 0.8,
+    "rippleScale": 0.15,
+    "rippleStrength": 0.035,
+    "foamStrength": 0.04,
+    "reflectionStrength": 0.55,
+    "causticStrength": 0.25,
+    "cloudStrength": 0.03,
+    "flowSpeed": 0.45,
+    "glint": 0.0,
+    "waves": {
+      "height": 0.12,
+      "length": 11,
+      "speed": 0.45,
+      "depthStart": 0.4,
+      "depthEnd": 2.6,
+      "shallowStrength": 0.08,
+      "shoreWidth": 0.6,
+      "crestStrength": 0.0
+    }
+  }
+}

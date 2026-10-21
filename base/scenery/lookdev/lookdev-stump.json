@@ -1,10 +1,9 @@
 {
   "id": "scenery.lookdev-stump",
-  "name": "lookdev stump",
+  "name": "Hollow stump",
   "category": "landmark",
   "type": "prop",
   "model": "asset.models.environment.lookdev-stump",
-  "editorHidden": true,
   "blocker": {
     "width": 10,
     "depth": 10,

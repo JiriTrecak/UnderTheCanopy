@@ -1,0 +1,17 @@
+{
+  "id": "asset.texture.underleaf-falling-leaf",
+  "name": "underleaf falling leaf",
+  "kind": "texture",
+  "tags": [
+    "sprite",
+    "imagegen"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original ImageGen (gpt-image-2.5) cut-out for Under the Canopy, cut by tools/terrain/build_sprite.py."
+}
