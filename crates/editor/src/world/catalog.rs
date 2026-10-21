@@ -1,6 +1,7 @@
 //! What Place can put down, in categories, each in groups: buildings and units by race
-//! (and the neutral ones), creep camps by strength, the special pieces (player starts,
-//! amber and substance nodes), and the world's scenery by its category. Made from the
+//! (and the neutral ones: springs, shops), creep camps by strength, hero items lying on
+//! the ground by tier, the special pieces (player starts, amber and substance nodes,
+//! breakable crates and rubble), and the world's scenery by its category. Made from the
 //! content whenever it changes, so new definitions and scenery appear by themselves; a
 //! new kind of thing is a new category here.
 
@@ -67,7 +68,9 @@ impl Catalog {
             .iter()
             .filter_map(|d| d.placement_on.as_ref().map(|p| p.source.as_str()))
             .collect();
-        let special = |d: &Definition| is_mine(d) || deposits.contains(&d.id.as_str());
+        let special = |d: &Definition| {
+            is_mine(d) || deposits.contains(&d.id.as_str()) || d.breakable.is_some()
+        };
         let in_roster = |d: &Definition| {
             content
                 .rules
@@ -144,6 +147,41 @@ impl Catalog {
                 .filter(|d| deposits.contains(&d.id.as_str()))
                 .map(|d| entry(d, true)),
         );
+        // Crates, barrels and rubble: broken for what they hold, or to open a way.
+        let breakables = Group {
+            name: "Breakables".into(),
+            entries: sorted(
+                content
+                    .definitions
+                    .iter()
+                    .filter(|d| d.breakable.is_some())
+                    .collect(),
+            )
+            .into_iter()
+            .map(|d| entry(d, true))
+            .collect(),
+        };
+        // Hero items lying on the ground, by tier.
+        let mut items: Vec<Group> = Vec::new();
+        for d in sorted(
+            content
+                .definitions
+                .iter()
+                .filter(|d| d.kind == Kind::Item && d.item_effect.is_some())
+                .collect(),
+        ) {
+            let name = d
+                .item_tier
+                .map_or_else(|| "Other".to_string(), |t| format!("Tier {t}"));
+            match items.iter_mut().find(|g| g.name == name) {
+                Some(g) => g.entries.push(entry(d, true)),
+                None => items.push(Group {
+                    name,
+                    entries: vec![entry(d, true)],
+                }),
+            }
+        }
+        items.sort_by(|a, b| (a.name == "Other", &a.name).cmp(&(b.name == "Other", &b.name)));
         let starts = Group {
             name: "Player starts".into(),
             entries: (1..=8u8)
@@ -199,6 +237,10 @@ impl Catalog {
                 groups: vec![camps],
             },
             Category {
+                name: "Items".into(),
+                groups: items,
+            },
+            Category {
                 name: "Special".into(),
                 groups: vec![
                     starts,
@@ -206,6 +248,7 @@ impl Catalog {
                         name: "Resource nodes".into(),
                         entries: nodes,
                     },
+                    breakables,
                 ],
             },
             Category {

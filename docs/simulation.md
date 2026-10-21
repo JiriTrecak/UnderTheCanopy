@@ -32,7 +32,7 @@ One function per system, called in a fixed order (from the old game, `Game.tick`
 
 1. Apply due commands, sorted by (tick, player, seq); rejected commands become error facts.
 2. Ability lifecycle → cast orders → ambient effects → taunts.
-3. Item effects → regeneration.
+3. Item effects → regeneration → springs and shop restocking (`neutrals`).
 4. Order advance → economy assignment.
 5. Garrisons → inventory → combat planning → separation → idle motion → movement.
 6. Cast orders (second pass) → item effects.

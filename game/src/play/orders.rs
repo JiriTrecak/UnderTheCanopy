@@ -415,11 +415,13 @@ pub fn smart(
                 Some(marker),
             )];
         }
-        // f, g. The army attacks enemies and neutral creatures. Unlike the old game,
+        // f, g. The army attacks enemies and neutral creatures, and breaks crates and
+        // rubble (a forced attack: no unit attacks those by itself). Unlike the old game,
         // allies are not attacked by a right-click (D20 teams; force attack with A).
+        let breakable = t.owner == Owner::Nobody && d.breakable.is_some();
         let hostile = match t.owner {
             Owner::Player(_) => !mine(t) && t.relation != Relation::Ally,
-            Owner::Nobody => d.kind == Kind::Unit,
+            Owner::Nobody => d.kind == Kind::Unit || breakable,
         };
         if !army.is_empty() && hostile && d.body.is_some() {
             let marker = target_marker(k, MarkerKind::Attack, t);
@@ -427,7 +429,7 @@ pub fn smart(
                 Action::Attack {
                     actors: army,
                     target: t.id,
-                    force: None,
+                    force: breakable.then_some(true),
                     append: append(shift),
                 },
                 Some(marker),

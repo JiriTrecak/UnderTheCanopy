@@ -1,0 +1,26 @@
+{
+  "id": "building.neutral.seed-pod",
+  "name": "Fallen Seed Pod",
+  "description": "A woody husk fallen from the canopy, sweet sap still glowing between its seeds. Crack it open for a salve.",
+  "model": "asset.models.props.neutral-seed-pod",
+  "icon": "asset.portraits.buildings.neutral-seed-pod",
+  "footprint": {
+    "width": 4,
+    "depth": 4
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 2.5
+  },
+  "body": {
+    "maxHp": 30,
+    "armor": 0,
+    "armorType": "light"
+  },
+  "behaviors": {},
+  "breakable": {
+    "drops": [
+      "item.resin-salve"
+    ]
+  }
+}

@@ -68,6 +68,8 @@ pub struct Spec {
     pub archer: Vec<Value>,
     /// Extra definitions (items, units).
     pub definitions: Vec<Value>,
+    /// Loot pools by id.
+    pub loot_pools: serde_json::Map<String, Value>,
 }
 
 /// A binding with every control.
@@ -285,7 +287,7 @@ pub fn game(spec: &Spec) -> Value {
             },
             "maxUnits": 400, "maxSupply": 400, "supplyIcon": "asset.icon", "maxBuildings": 100,
             "constructionHpPermille": 100, "constructionRefundPermille": 500, "repairTicks": 10,
-            "research": {}, "lootPools": {},
+            "research": {}, "lootPools": spec.loot_pools,
             "armorCoefficient": 0.06,
             "damageTypes": {
                 "damage.blade": {"name": "Blade", "appliesArmor": true},
@@ -706,6 +708,15 @@ fn mutate(world: &mut World, placement: &str, values: &Value) {
     if let Some(v) = values.get("experience") {
         e.progression.as_mut().expect("progression").experience =
             v.as_u64().expect("experience") as u32;
+    }
+    // `{"wallet": {"item.gold": 100}}`: the placement's owner holds exactly these goods.
+    if let Some(goods) = values.get("wallet").and_then(Value::as_object) {
+        let owner = e.owner;
+        let wallet = world.state_mut().wallets.entry(owner).or_default();
+        for (item, amount) in goods {
+            let item = canopy_content::Id::new(item).expect("item id");
+            wallet.insert(item, amount.as_u64().expect("amount") as u32);
+        }
     }
 }
 

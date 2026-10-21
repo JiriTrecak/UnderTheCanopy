@@ -224,6 +224,8 @@ pub struct Entity {
     /// Ticks towards a building's next income (`economy::income`).
     #[serde(default, skip_serializing_if = "is_zero")]
     pub income: u32,
+    /// A shop's wares and their stock (`neutrals`).
+    pub shop: Option<Box<crate::neutrals::Shop>>,
 }
 
 /// Entities ordered by id with O(1) lookup. Removal leaves a hole that later compaction
@@ -360,6 +362,7 @@ mod tests {
             links: None,
             equipment: None,
             income: 0,
+            shop: None,
         }
     }
 

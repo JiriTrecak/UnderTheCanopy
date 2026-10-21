@@ -404,10 +404,13 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
     let Some(focus) = selection.first().and_then(|&id| k.entity(id)) else {
         return Vec::new();
     };
+    let ended = k.view.outcome.is_some();
+    if let Some(wares) = focus.shop.as_ref().filter(|_| !focus.remembered) {
+        return finish(shop(k, focus, wares), ended);
+    }
     if !k.controlled(focus) {
         return Vec::new();
     }
-    let ended = k.view.outcome.is_some();
     let done = fulfilled_buildings(k);
     let mut out = Vec::new();
     let fid = focus.id().0;
@@ -1052,6 +1055,90 @@ pub fn camera(
     c.placement = meta.placement;
     c.actors = vec![focus.id().0];
     Some(c)
+}
+
+/// Whether one of the player's heroes (a unit with an inventory) stands within the
+/// shop's range of its footprint, as the simulation judges a purchase.
+pub fn hero_at_shop(k: &Knowledge, shop: &canopy_sim::view::EntityView) -> bool {
+    let d = k.def(shop);
+    let Some(range) = d.shop.as_ref().map(|s| s.range) else {
+        return false;
+    };
+    let (w, h) = d
+        .footprint
+        .as_ref()
+        .map_or((0.0, 0.0), |f| (f64::from(f.width), f64::from(f.depth)));
+    let quarter = (f64::from(shop.public.rotation) / 90_000.0).round() as i64;
+    let (hx, hy) = if quarter.rem_euclid(2) == 1 {
+        (h / 2.0, w / 2.0)
+    } else {
+        (w / 2.0, h / 2.0)
+    };
+    k.view.entities.iter().any(|e| {
+        let ed = k.def(e);
+        if !k.own(e) || !k.alive(e) || k.held(e.id().0) || ed.behaviors.inventory.is_none() {
+            return false;
+        }
+        let reach = range + ed.dimensions.as_ref().map_or(0.0, |d| d.radius);
+        let dx = (f64::from(e.public.position.x - shop.public.position.x) / 1000.0).abs() - hx;
+        let dy = (f64::from(e.public.position.y - shop.public.position.y) / 1000.0).abs() - hy;
+        let (dx, dy) = (dx.max(0.0), dy.max(0.0));
+        dx * dx + dy * dy <= reach * reach
+    })
+}
+
+/// A shop's wares (Warcraft III's Goblin Merchant): one button per ware, its price, the
+/// stock on the icon and the restock sweep while it is sold out. Buying sends `produce`
+/// to the shop; the simulation picks the player's nearest hero in range.
+fn shop(
+    k: &Knowledge,
+    focus: &canopy_sim::view::EntityView,
+    wares: &[canopy_sim::neutrals::WareView],
+) -> Vec<Command> {
+    if k.owner().is_none() {
+        return Vec::new();
+    }
+    let near = hero_at_shop(k, focus);
+    wares
+        .iter()
+        .enumerate()
+        .map(|(index, ware)| {
+            let item = k.catalog.get(ware.item);
+            let mut c = Command::new(
+                format!("buy:{}", item.id),
+                &format!("Buy {}", item.name),
+                &format!(
+                    "{}\nIn stock: {} of {}.",
+                    item.description, ware.stock, ware.most
+                ),
+                &item.icon,
+                -(index as i64),
+                Activate::Immediate {
+                    action: Action::Produce {
+                        actor: focus.id().0,
+                        definition: item.id.clone(),
+                    },
+                    queue: false,
+                },
+            );
+            c.costs = item_costs(k, &ware.price);
+            c.badge = Some(ware.stock);
+            if ware.stock == 0 {
+                c.cooldown = ware.restock;
+            }
+            c.actors = vec![focus.id().0];
+            c.reason = if ware.stock == 0 {
+                Some("Sold out".into())
+            } else if !near {
+                Some("A hero must stand near the shop".into())
+            } else if !affordable(k, &ware.price) {
+                Some("Insufficient resources".into())
+            } else {
+                None
+            };
+            c
+        })
+        .collect()
 }
 
 /// Every command is unavailable once the match is decided.

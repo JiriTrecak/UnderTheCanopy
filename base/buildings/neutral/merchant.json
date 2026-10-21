@@ -1,0 +1,109 @@
+{
+  "id": "building.neutral.merchant",
+  "name": "Pill-Bug Peddler",
+  "description": "A travelling trader and his cart of salves, flasks and trinkets. Bring a hero near to buy; what sells out comes back in time.",
+  "model": "asset.models.props.neutral-merchant",
+  "icon": "asset.portraits.buildings.neutral-merchant",
+  "footprint": {
+    "width": 12,
+    "depth": 12
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 6.5
+  },
+  "behaviors": {},
+  "shop": {
+    "range": 6,
+    "wares": [
+      {
+        "item": "item.resin-salve",
+        "price": [
+          {
+            "item": "item.amber",
+            "amount": 75
+          }
+        ],
+        "stock": 3,
+        "restockTicks": 2400
+      },
+      {
+        "item": "item.moon-dew",
+        "price": [
+          {
+            "item": "item.amber",
+            "amount": 75
+          }
+        ],
+        "stock": 2,
+        "restockTicks": 2400
+      },
+      {
+        "item": "item.trailkeeper-flask",
+        "price": [
+          {
+            "item": "item.amber",
+            "amount": 125
+          }
+        ],
+        "stock": 2,
+        "restockTicks": 3600
+      },
+      {
+        "item": "item.scout-whistle",
+        "price": [
+          {
+            "item": "item.amber",
+            "amount": 100
+          }
+        ],
+        "stock": 1,
+        "restockTicks": 4800
+      },
+      {
+        "item": "item.quickstep-spurs",
+        "price": [
+          {
+            "item": "item.amber",
+            "amount": 150
+          }
+        ],
+        "stock": 1,
+        "restockTicks": 7200
+      },
+      {
+        "item": "item.mossweave-wraps",
+        "price": [
+          {
+            "item": "item.amber",
+            "amount": 150
+          }
+        ],
+        "stock": 1,
+        "restockTicks": 7200
+      },
+      {
+        "item": "item.barkguard",
+        "price": [
+          {
+            "item": "item.amber",
+            "amount": 150
+          }
+        ],
+        "stock": 1,
+        "restockTicks": 7200
+      },
+      {
+        "item": "item.restoration-draught",
+        "price": [
+          {
+            "item": "item.amber",
+            "amount": 250
+          }
+        ],
+        "stock": 1,
+        "restockTicks": 12000
+      }
+    ]
+  }
+}

@@ -320,6 +320,30 @@ fn initial_state(v: &mut Validator, at: &str, d: &Definition, state: &InitialSta
     if state.construction.is_some() && d.kind != Kind::Building {
         v.fail(at, "construction on non-building");
     }
+    if state.loot_pool.is_some() && d.breakable.is_none() {
+        v.fail(at, "only breakables roll a loot pool");
+    }
+    if let Some(pool) = &state.loot_pool
+        && !v.content.rules.loot_pools.contains_key(pool)
+    {
+        v.fail(at, format!("unknown loot pool {pool}"));
+    }
+    if let Some(wares) = &state.wares {
+        if d.shop.is_none() {
+            v.fail(at, "only shops sell wares");
+        }
+        if let Some(problem) = crate::registry::ware_problem(v.content, wares) {
+            v.fail(at, problem);
+        }
+    }
+    if let (Some(inventory), Some(_)) = (&state.inventory, &d.breakable) {
+        for item in inventory.keys() {
+            if !crate::registry::hero_item(v.content, item.as_str()) {
+                v.fail(at, format!("a breakable holds hero items: {item}"));
+            }
+        }
+        return;
+    }
     if let Some(inventory) = &state.inventory {
         let Some(storage) = &d.behaviors.storage else {
             v.fail(at, "no storage");

@@ -2250,6 +2250,37 @@ impl Shell {
         }
     }
 
+    /// Selects the map placement `id` with the Select tool, so the map's panel shows it
+    /// (captures).
+    pub fn select_placement(&mut self, id: &str) {
+        if let Some(root) = self.active_map_root()
+            && let Some(session) = self.maps.get_mut(&root)
+        {
+            session.blocks.tool = crate::world::BlockTool::Select;
+            session.blocks.selection = vec![(crate::map::tools::Picked::Entity, id.to_string())];
+        }
+    }
+
+    /// Shows Place's category and group by name (captures).
+    pub fn set_place_group(&mut self, category: &str, group: &str) {
+        if let Some(root) = self.active_map_root()
+            && let Some(session) = self.maps.get_mut(&root)
+            && let Some(c) = session
+                .blocks
+                .catalog
+                .categories
+                .iter()
+                .position(|c| c.name == category)
+        {
+            session.blocks.place_category = c;
+            session.blocks.place_group = session.blocks.catalog.categories[c]
+                .groups
+                .iter()
+                .position(|g| g.name == group)
+                .unwrap_or(0);
+        }
+    }
+
     /// The block editor's lasso (captures).
     pub fn set_block_lasso(&mut self, lasso: bool) {
         if let Some(root) = self.active_map_root()

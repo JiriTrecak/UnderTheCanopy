@@ -627,7 +627,9 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
     if model && d.kind != Kind::Resource && scenery {
         check.fail(at, "batched scenery models require a resource definition");
     }
-    if matches!(d.kind, Kind::Unit | Kind::Building) && d.body.is_none() {
+    // Springs and shops may go without a body: nothing can attack them.
+    let invulnerable = d.restoration.is_some() || d.shop.is_some();
+    if matches!(d.kind, Kind::Unit | Kind::Building) && d.body.is_none() && !invulnerable {
         check.fail(at, "body required");
     }
     if let Some(p) = &d.presentation {
@@ -938,6 +940,7 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
             "a tunnel mound must be a building with a positive interval and speed",
         );
     }
+    neutral_rules(check, d);
     if d.underground.is_some() && d.kind != Kind::Unit {
         check.fail(at, "only units travel underground");
     }
@@ -972,6 +975,98 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
     }
     if let Some(production) = &b.production {
         production_rules(check, d, production);
+    }
+}
+
+/// A hero item a crate may drop or a shop may sell: an item with an effect.
+pub(crate) fn hero_item(content: &Content, id: &str) -> bool {
+    content
+        .definition(id)
+        .is_some_and(|d| d.kind == Kind::Item && d.item_effect.is_some())
+}
+
+/// Why a shop's wares cannot be sold, if they cannot (definitions and map placements).
+pub(crate) fn ware_problem(content: &Content, wares: &[crate::game::Ware]) -> Option<String> {
+    let mut seen = BTreeSet::new();
+    for ware in wares {
+        if !hero_item(content, ware.item.as_str()) {
+            return Some(format!("a ware must be a hero item: {}", ware.item));
+        }
+        if !seen.insert(ware.item.as_str()) {
+            return Some(format!("duplicate ware {}", ware.item));
+        }
+        if ware.stock == 0 || ware.restock_ticks == 0 {
+            return Some(format!(
+                "{}: a ware needs stock and a restock time",
+                ware.item
+            ));
+        }
+        let currencies = ware.price.iter().all(|c| {
+            content
+                .definition(c.item.as_str())
+                .is_some_and(|i| i.currency == Some(true))
+        });
+        if !currencies {
+            return Some(format!("{}: a ware is paid in currencies", ware.item));
+        }
+    }
+    None
+}
+
+/// Breakables, springs and shops: neutral buildings a map places.
+fn neutral_rules(check: &mut Checker, d: &Definition) {
+    let content = check.content;
+    let at = d.id.as_str();
+    let roles = [
+        d.breakable.is_some(),
+        d.restoration.is_some(),
+        d.shop.is_some(),
+    ];
+    if roles.iter().filter(|&&r| r).count() > 1 {
+        check.fail(
+            at,
+            "a building is at most one of breakable, spring and shop",
+        );
+    }
+    if roles.contains(&true) && (d.kind != Kind::Building || d.creation.is_some()) {
+        check.fail(
+            at,
+            "breakables, springs and shops are buildings placed by maps, never built",
+        );
+    }
+    if let Some(b) = &d.breakable {
+        if d.body.is_none() {
+            check.fail(at, "a breakable needs a body to be broken");
+        }
+        if let Some(pool) = &b.loot_pool
+            && !content.rules.loot_pools.contains_key(pool)
+        {
+            check.fail(at, format!("unknown loot pool {pool}"));
+        }
+        for item in b.drops.iter().flatten() {
+            if !hero_item(content, item.as_str()) {
+                check.fail(at, format!("a breakable drops hero items: {item}"));
+            }
+        }
+    }
+    if let Some(r) = &d.restoration {
+        let restores = [r.health, r.health_permille, r.mana, r.mana_permille]
+            .iter()
+            .any(|v| v.is_some_and(|v| v > 0));
+        if r.radius <= 0.0 || r.interval_ticks == 0 || !restores {
+            check.fail(
+                at,
+                "a spring needs a radius, an interval and something it restores",
+            );
+        }
+    }
+    if let Some(shop) = &d.shop {
+        if shop.range <= 0.0 || shop.wares.is_empty() {
+            check.fail(at, "a shop needs a range and wares");
+        }
+        if let Some(problem) = ware_problem(content, &shop.wares) {
+            check.fail(at, problem);
+        }
     }
 }
 

@@ -17,7 +17,9 @@
       "Snowy Lake: a four-player map round a frozen lake",
       "Map editor: import StarCraft II melee maps (from the game's folders and the Battle.net cache) as block maps at their true size, with their cliffs, ramps, starts and resources",
       "Map editor: a minimap of the whole map in the view's corner (M or the view bar), following every edit, with starts, amber, camps and the camera's view; click it to look there",
-      "Campaign missions have their own computer players, allies and enemies: they hold their ground, keep their bases manned and rebuilt, send attack waves on a timer, or arrive later in the mission when the story calls for them"
+      "Campaign missions have their own computer players, allies and enemies: they hold their ground, keep their bases manned and rebuilt, send attack waves on a timer, or arrive later in the mission when the story calls for them",
+      "Neutral map features for maps and campaigns: breakable crates, seed pods and rubble that drop loot or open a path, Sap and Dew Springs that heal and restore mana, and the Pill-Bug Peddler, a travelling merchant whose limited wares a hero nearby can buy for amber",
+      "Map editor: place hero items on the ground, crates, rubble, springs and the merchant from the Place catalog, turn buildings, and set a crate's drops and a merchant's wares in the map's panel"
     ],
     "improved": [
       "Frost Hollow: frozen ice, quiet frosted snow, a bank of roots with pale spires, a crusted shore and big frosted leaves, rebuilt to its drawn layout",
@@ -36,7 +38,8 @@
       "Map editor: Place shows a ghost of what it puts down, and dragging a selection moves it live, snapped; both turn red with the reason where the game would not allow it, and refuse to place or drop there",
       "Maps can be any multiple of 32 cells from 128 to 1024 across",
       "Frozen water: deep dark water with an ice shelf along the shore and floes drifting on it; lake shores slope smoothly under the ice instead of stepping",
-      "Editor: no more row of view tabs; a document's Form and JSON open as modals from the tab bar, beside its other views"
+      "Editor: no more row of view tabs; a document's Form and JSON open as modals from the tab bar, beside its other views",
+      "Items lying on the ground show as a leaf-wrapped loot bundle instead of a placeholder"
     ],
     "fixed": [
       "Generated cliffs join cleanly at corners and turns, ramps keep their side walls down to the foot, and diagonal cliff edges no longer show a staircase",

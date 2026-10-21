@@ -1,0 +1,24 @@
+{
+  "id": "building.neutral.amber-cache",
+  "name": "Amber Cache",
+  "description": "A resin-sealed urn an ant colony hid and never came back for. Break it open for what it holds.",
+  "model": "asset.models.props.neutral-amber-cache",
+  "icon": "asset.portraits.buildings.neutral-amber-cache",
+  "footprint": {
+    "width": 4,
+    "depth": 4
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 2.5
+  },
+  "body": {
+    "maxHp": 40,
+    "armor": 0,
+    "armorType": "light"
+  },
+  "behaviors": {},
+  "breakable": {
+    "lootPool": "loot.camp.easy"
+  }
+}

@@ -3,7 +3,7 @@
   "itemTier": 3,
   "name": "Reaper’s Mandible",
   "description": "+18 damage. Every fourth basic hit cleaves up to 4 enemies within 3 tiles of the target for 50% attack damage.",
-  "model": "asset.placeholder.missing-model",
+  "model": "asset.models.props.neutral-loot-bundle",
   "icon": "asset.icons.item-reaper-mandible",
   "stackLimit": 1,
   "behaviors": {},

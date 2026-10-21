@@ -32,7 +32,9 @@ The main fields:
 - `playable` (optional): `{x, z, width, height}` in cells, the part play happens in. Around it is a border of scenery nobody enters (unwalkable, unbuildable); the camera, minimap and preview frame it. Starts stand at least 8 cells inside it. The block editor outlines it and sets its border.
 - `biome`, `sandbox`, `initialExploration`.
 - `playerStarts`: `[{player, x, z, setup, mainFort}]`, where `setup` is a race starting setup id such as `setup.ants`.
-- `entities`: pre-placed units and buildings: `{id, definition, position: {x, y}, rotation, owner: "none" | "player.N", initialState?, appearance?: {asset, scale}}`.
+- `entities`: pre-placed units, buildings and items: `{id, definition, position: {x, y}, rotation, owner: "none" | "player.N", initialState?, appearance?: {asset, scale}}`.
+  - An item placed with owner `none` lies on the ground for a hero to pick up (a hidden cache, a dead scout's satchel).
+  - Neutral features (skill **canopy-definitions**): a breakable crate or rubble drops `initialState.inventory` (`{"item.moon-dew": 1}`) or a roll of `initialState.lootPool`, else its definition's loot; a shop sells `initialState.wares` in place of its definition's. Buildings turn in quarter turns (`rotation` 0, 90, 180, 270): rubble 12 × 4 closes a gap either way.
 - `camps`: neutral camps: `{id, members, home, aggroRange, leash, aggression, lootPool}`.
 - `stamps`: scenery placed with walk surfaces.
 - `landscape.environment`: `{hour, weather}`.

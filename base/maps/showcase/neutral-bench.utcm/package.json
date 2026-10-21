@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "neutral-bench",
+  "kind": "map",
+  "name": "Bench: Neutral features",
+  "description": "A sandbox for the neutral map features: a merchant, springs, crates, rubble and items on the ground.",
+  "version": "1.0.0",
+  "dependencies": {
+    "base": ">=0.3.5"
+  }
+}
