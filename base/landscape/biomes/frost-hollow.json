@@ -102,8 +102,8 @@
   },
   "water": "water.meltwater",
   "surroundings": {
-    "floorTexture": "asset.terrain.frost-litter",
-    "floorColor": "#3a4048",
+    "floorTexture": "asset.terrain.frost-ground",
+    "floorColor": "#8a94a3",
     "hazeColor": "#9fb2c6",
     "hazeStart": 170,
     "hazeEnd": 850,
