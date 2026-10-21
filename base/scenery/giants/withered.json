@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-withered",
+  "name": "Withered mushrooms",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-withered",
+  "blockers": [
+    {
+      "width": 4.43,
+      "depth": 2.79,
+      "shape": "ellipse",
+      "x": 0.67,
+      "z": 0.51
+    }
+  ]
+}

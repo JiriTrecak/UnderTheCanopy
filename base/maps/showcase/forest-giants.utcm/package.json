@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "forest-giants",
+  "kind": "map",
+  "name": "Showcase: Forest Giants",
+  "description": "The forest floor at insect scale: an ant colony in a clearing among giant mushrooms, ferns, nuts, leaves and trunks.",
+  "version": "1.0.0",
+  "dependencies": {
+    "base": ">=0.4.1"
+  }
+}

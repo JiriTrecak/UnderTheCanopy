@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-sorrel",
+  "name": "Wood sorrel",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-sorrel",
+  "blockers": [
+    {
+      "width": 1.18,
+      "depth": 0.83,
+      "shape": "ellipse",
+      "x": 0.08,
+      "z": -0.13
+    }
+  ]
+}

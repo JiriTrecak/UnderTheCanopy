@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-branch",
+  "name": "Fallen branch",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-branch",
+  "blockers": [
+    {
+      "width": 48.0,
+      "depth": 14.12,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": 0.0
+    }
+  ]
+}

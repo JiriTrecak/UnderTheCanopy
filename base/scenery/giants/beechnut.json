@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-beechnut",
+  "name": "Beech nut husk",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-beechnut",
+  "blockers": [
+    {
+      "width": 5.26,
+      "depth": 6.0,
+      "shape": "ellipse",
+      "x": -0.01,
+      "z": 0.0
+    }
+  ]
+}

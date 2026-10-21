@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-fiddleheads",
+  "name": "Fiddleheads",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-fiddleheads",
+  "blockers": [
+    {
+      "width": 3.41,
+      "depth": 2.33,
+      "shape": "ellipse",
+      "x": -0.03,
+      "z": 0.0
+    }
+  ]
+}

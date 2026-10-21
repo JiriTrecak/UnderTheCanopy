@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-parasol",
+  "name": "Parasol mushroom",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-parasol",
+  "blockers": [
+    {
+      "width": 6.07,
+      "depth": 6.1,
+      "shape": "ellipse",
+      "x": 0.11,
+      "z": 1.95
+    }
+  ]
+}

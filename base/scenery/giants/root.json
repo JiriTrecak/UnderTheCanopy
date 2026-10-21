@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-root",
+  "name": "Giant root",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-root",
+  "blockers": [
+    {
+      "width": 28.0,
+      "depth": 11.05,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": 0.0
+    }
+  ]
+}

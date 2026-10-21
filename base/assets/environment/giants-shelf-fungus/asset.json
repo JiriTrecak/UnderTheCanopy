@@ -1,0 +1,40 @@
+{
+  "id": "asset.models.environment.giants-shelf-fungus",
+  "name": "giants shelf fungus",
+  "kind": "prop",
+  "tags": [
+    "forest-floor",
+    "giants",
+    "tripo",
+    "mushroom",
+    "trunk"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "license": "Generated with Tripo (image to 3D) from a gpt-image-2 concept for Under the Canopy; made game-ready by tools/props/import_tripo.py (tools/props/giants.json)."
+}

@@ -1,0 +1,52 @@
+{
+  "out": "base/assets/environment",
+  "tags": ["forest-floor", "giants", "tripo"],
+  "license": "Generated with Tripo (image to 3D) from a gpt-image-2 concept for Under the Canopy; made game-ready by tools/props/import_tripo.py (tools/props/giants.json).",
+  "items": [
+    {"name": "giants-acorn", "glb": "giants-acorn.glb", "width": 9, "triangles": 7000, "texture": 1024, "tone": 0.88, "saturation": 0.85, "weld": true, "tags": ["seed"]},
+    {"name": "giants-acorn-cup", "glb": "giants-acorn-cup.glb", "width": 8, "triangles": 7000, "texture": 1024, "tone": 0.85, "saturation": 0.85, "weld": true, "tags": ["seed"]},
+    {"name": "giants-beechnut", "glb": "giants-beechnut.glb", "width": 8, "triangles": 7000, "texture": 1024, "tone": 0.85, "saturation": 0.85, "weld": true, "tags": ["seed"]},
+    {"name": "giants-chestnut-burr", "glb": "giants-chestnut-burr.glb", "width": 14, "triangles": 9000, "texture": 1024, "tone": 0.82, "saturation": 0.82, "weld": true, "tags": ["seed"]},
+    {"name": "giants-hazelnut", "glb": "giants-hazelnut.glb", "width": 8, "triangles": 7000, "texture": 1024, "tone": 0.85, "saturation": 0.85, "weld": true, "tags": ["seed"]},
+    {"name": "giants-pine-cone", "glb": "giants-pine-cone.glb", "width": 18, "triangles": 9000, "texture": 1024, "tone": 0.85, "saturation": 0.85, "weld": true, "tags": ["seed", "pine"]},
+    {"name": "giants-maple-seed", "flat": true, "glb": "giants-maple-seed.glb", "width": 16, "triangles": 5000, "texture": 1024, "tone": 0.82, "saturation": 0.8, "weld": true, "tags": ["seed"]},
+    {"name": "giants-bilberries", "glb": "giants-bilberries.glb", "height": 7, "triangles": 6000, "texture": 1024, "tone": 0.85, "saturation": 0.85, "weld": true, "tags": ["berries"]},
+
+    {"name": "giants-parasol", "glb": "giants-parasol.glb", "height": 70, "triangles": 12000, "texture": 1024, "tone": 0.8, "saturation": 0.82, "weld": true, "tags": ["mushroom"], "capabilities": {"canopy": true}},
+    {"name": "giants-porcini", "glb": "giants-porcini.glb", "height": 26, "triangles": 9000, "texture": 1024, "tone": 0.82, "saturation": 0.85, "weld": true, "tags": ["mushroom"], "capabilities": {"canopy": true}},
+    {"name": "giants-mycena", "glb": "giants-mycena.glb", "height": 22, "triangles": 9000, "texture": 1024, "tone": 0.8, "saturation": 0.85, "weld": true, "glow": {"color": [0.55, 0.42, 1.0], "strength": 2.5, "threshold": 0.05}, "tags": ["mushroom", "glow"], "capabilities": {"canopy": true}},
+    {"name": "giants-shelf-fungus", "glb": "giants-shelf-fungus.glb", "width": 14, "triangles": 7000, "texture": 1024, "tone": 0.82, "saturation": 0.8, "weld": true, "tags": ["mushroom", "trunk"]},
+    {"name": "giants-inkcap", "glb": "giants-inkcap.glb", "height": 20, "triangles": 9000, "texture": 1024, "tone": 0.78, "saturation": 0.85, "weld": true, "tags": ["mushroom"], "capabilities": {"canopy": true}},
+    {"name": "giants-morel", "upright": true, "glb": "giants-morel.glb", "height": 14, "triangles": 9000, "texture": 1024, "tone": 0.82, "saturation": 0.85, "weld": true, "tags": ["mushroom"], "capabilities": {"canopy": true}},
+    {"name": "giants-buttons", "glb": "giants-buttons.glb", "height": 6, "triangles": 5000, "texture": 512, "tone": 0.82, "saturation": 0.85, "weld": true, "tags": ["mushroom"]},
+    {"name": "giants-puffballs", "glb": "giants-puffballs.glb", "width": 12, "triangles": 6000, "texture": 1024, "tone": 0.78, "saturation": 0.85, "weld": true, "tags": ["mushroom"]},
+    {"name": "giants-withered", "glb": "giants-withered.glb", "height": 10, "triangles": 7000, "texture": 1024, "tone": 0.8, "saturation": 0.8, "weld": true, "tags": ["mushroom", "sick"], "capabilities": {"canopy": true}},
+
+    {"name": "giants-fern-crown", "glb": "giants-fern-crown.glb", "width": 46, "triangles": 16000, "texture": 1024, "tone": 0.72, "saturation": 0.78, "weld": true, "kind": "foliage", "tags": ["fern"], "capabilities": {"canopy": true, "wind": {"mode": "tree", "strength": 0.04, "speed": 0.5, "stiffness": 0.8}}},
+    {"name": "giants-fern-frond", "glb": "giants-fern-frond.glb", "height": 30, "triangles": 10000, "texture": 1024, "tone": 0.72, "saturation": 0.78, "weld": true, "kind": "foliage", "tags": ["fern"], "capabilities": {"canopy": true, "wind": {"mode": "tree", "strength": 0.04, "speed": 0.5, "stiffness": 0.8}}},
+    {"name": "giants-fiddleheads", "glb": "giants-fiddleheads.glb", "height": 14, "triangles": 9000, "texture": 1024, "tone": 0.78, "saturation": 0.8, "weld": true, "kind": "foliage", "tags": ["fern"], "capabilities": {"canopy": true}},
+    {"name": "giants-harts-tongue", "glb": "giants-harts-tongue.glb", "width": 22, "triangles": 10000, "texture": 1024, "tone": 0.64, "saturation": 0.72, "weld": true, "kind": "foliage", "tags": ["fern"], "capabilities": {"canopy": true, "wind": {"mode": "tree", "strength": 0.04, "speed": 0.5, "stiffness": 0.8}}},
+    {"name": "giants-bracken", "flat": true, "glb": "giants-bracken.glb", "width": 24, "triangles": 9000, "texture": 1024, "tone": 0.78, "saturation": 0.8, "weld": true, "tags": ["fern", "autumn", "litter"]},
+
+    {"name": "giants-beech-trunk", "glb": "giants-beech-trunk.glb", "stretch": {"above": 0.3, "by": 3.0}, "width": 72, "triangles": 16000, "texture": 1024, "tone": 0.78, "saturation": 0.8, "weld": true, "kind": "tree", "tags": ["trunk", "beech"], "capabilities": {"canopy": true}},
+    {"name": "giants-branch", "glb": "giants-branch.glb", "axes": [1.8, 1.0, 1.0], "width": 64, "triangles": 10000, "texture": 1024, "tone": 0.78, "saturation": 0.8, "weld": true, "tags": ["wood"]},
+    {"name": "giants-twig", "glb": "giants-twig.glb", "width": 18, "triangles": 6000, "texture": 1024, "tone": 0.82, "saturation": 0.8, "weld": true, "tags": ["wood"]},
+    {"name": "giants-bark-slab", "glb": "giants-bark-slab.glb", "width": 16, "triangles": 7000, "texture": 1024, "tone": 0.82, "saturation": 0.82, "weld": true, "tags": ["wood"]},
+    {"name": "giants-root", "glb": "giants-root.glb", "width": 40, "triangles": 10000, "texture": 1024, "tone": 0.76, "saturation": 0.8, "weld": true, "tags": ["wood", "root"]},
+
+    {"name": "giants-leaf-oak", "flat": true, "squash": 0.55, "glb": "giants-leaf-oak.glb", "width": 28, "triangles": 5000, "texture": 1024, "tone": 0.8, "saturation": 0.8, "weld": true, "tags": ["leaf"]},
+    {"name": "giants-leaf-beech", "flat": true, "glb": "giants-leaf-beech.glb", "width": 22, "triangles": 5000, "texture": 1024, "tone": 0.68, "saturation": 0.7, "weld": true, "tags": ["leaf"]},
+    {"name": "giants-leaf-maple", "flat": true, "squash": 0.5, "glb": "giants-leaf-maple.glb", "width": 26, "triangles": 5000, "texture": 1024, "tone": 0.8, "saturation": 0.78, "weld": true, "tags": ["leaf", "autumn"]},
+    {"name": "giants-feather", "flat": true, "glb": "giants-feather.glb", "width": 56, "triangles": 7000, "texture": 1024, "tone": 0.8, "saturation": 0.85, "weld": true, "tags": ["feather"]},
+
+    {"name": "giants-moss", "glb": "giants-moss.glb", "width": 7, "triangles": 7000, "texture": 1024, "tone": 0.72, "saturation": 0.78, "weld": true, "kind": "foliage", "tags": ["moss"]},
+    {"name": "giants-sorrel", "glb": "giants-sorrel.glb", "height": 14, "triangles": 8000, "texture": 1024, "tone": 0.75, "saturation": 0.8, "weld": true, "kind": "foliage", "tags": ["plant"], "capabilities": {"canopy": true, "wind": {"mode": "tree", "strength": 0.04, "speed": 0.6, "stiffness": 0.8}}},
+    {"name": "giants-clover", "glb": "giants-clover.glb", "height": 12, "triangles": 8000, "texture": 1024, "tone": 0.75, "saturation": 0.8, "weld": true, "kind": "foliage", "tags": ["plant"], "capabilities": {"canopy": true, "wind": {"mode": "tree", "strength": 0.04, "speed": 0.6, "stiffness": 0.8}}},
+    {"name": "giants-grass", "glb": "giants-grass.glb", "height": 24, "triangles": 8000, "texture": 1024, "tone": 0.75, "saturation": 0.78, "weld": true, "kind": "foliage", "tags": ["grass"], "capabilities": {"canopy": true, "wind": {"mode": "tree", "strength": 0.04, "speed": 0.6, "stiffness": 0.8}}},
+    {"name": "giants-pebbles", "glb": "giants-pebbles.glb", "width": 10, "triangles": 5000, "texture": 1024, "tone": 0.82, "saturation": 0.8, "weld": true, "tags": ["stone"]},
+    {"name": "giants-mossy-stone", "glb": "giants-mossy-stone.glb", "width": 9, "triangles": 6000, "texture": 1024, "tone": 0.78, "saturation": 0.8, "weld": true, "tags": ["stone", "moss"]},
+
+    {"name": "giants-snail-shell", "glb": "giants-snail-shell.glb", "width": 16, "triangles": 8000, "texture": 1024, "tone": 0.82, "saturation": 0.82, "weld": true, "tags": ["ruin"]},
+    {"name": "giants-beetle-husk", "glb": "giants-beetle-husk.glb", "width": 13, "triangles": 9000, "texture": 1024, "tone": 0.85, "saturation": 0.85, "weld": true, "tags": ["ruin"]}
+  ]
+}

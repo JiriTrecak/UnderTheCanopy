@@ -1,0 +1,7 @@
+{
+  "id": "scenery.giants-pine-needles-b",
+  "name": "Crossed pine needles",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-pine-needles-b"
+}

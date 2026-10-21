@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-porcini",
+  "name": "King bolete",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-porcini",
+  "blockers": [
+    {
+      "width": 11.77,
+      "depth": 11.72,
+      "shape": "ellipse",
+      "x": 0.12,
+      "z": 2.09
+    }
+  ]
+}

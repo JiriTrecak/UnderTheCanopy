@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-puffballs",
+  "name": "Puffballs",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-puffballs",
+  "blockers": [
+    {
+      "width": 10.2,
+      "depth": 6.92,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": 0.01
+    }
+  ]
+}

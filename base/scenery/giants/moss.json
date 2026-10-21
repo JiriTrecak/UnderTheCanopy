@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-moss",
+  "name": "Moss cushion",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-moss",
+  "blockers": [
+    {
+      "width": 5.56,
+      "depth": 5.6,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": 0.0
+    }
+  ]
+}

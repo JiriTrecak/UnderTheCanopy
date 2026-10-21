@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-mycena",
+  "name": "Glowing bonnets",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-mycena",
+  "blockers": [
+    {
+      "width": 4.46,
+      "depth": 2.43,
+      "shape": "ellipse",
+      "x": 0.95,
+      "z": 0.2
+    }
+  ]
+}

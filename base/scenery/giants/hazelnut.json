@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-hazelnut",
+  "name": "Hazelnut",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-hazelnut",
+  "blockers": [
+    {
+      "width": 6.4,
+      "depth": 4.51,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": 0.0
+    }
+  ]
+}

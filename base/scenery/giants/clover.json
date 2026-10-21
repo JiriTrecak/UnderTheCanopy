@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-clover",
+  "name": "Clover",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-clover",
+  "blockers": [
+    {
+      "width": 2.14,
+      "depth": 2.11,
+      "shape": "ellipse",
+      "x": 0.27,
+      "z": 0.19
+    }
+  ]
+}

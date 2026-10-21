@@ -1,0 +1,39 @@
+{
+  "id": "asset.models.environment.giants-dew-drops",
+  "name": "giants dew drops",
+  "kind": "prop",
+  "tags": [
+    "forest-floor",
+    "giants",
+    "dew",
+    "water"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "license": "Original artwork for Under the Canopy, built by tools/props/build_floor_bits.py."
+}

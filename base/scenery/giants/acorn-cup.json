@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-acorn-cup",
+  "name": "Acorn cup",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-acorn-cup",
+  "blockers": [
+    {
+      "width": 6.24,
+      "depth": 7.2,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": -0.0
+    }
+  ]
+}

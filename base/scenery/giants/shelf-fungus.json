@@ -1,0 +1,7 @@
+{
+  "id": "scenery.giants-shelf-fungus",
+  "name": "Shelf fungus",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-shelf-fungus"
+}

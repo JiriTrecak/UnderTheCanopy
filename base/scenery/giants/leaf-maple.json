@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-leaf-maple",
+  "name": "Fallen maple leaf",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-leaf-maple",
+  "blockers": [
+    {
+      "width": 19.5,
+      "depth": 18.49,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": 0.0
+    }
+  ]
+}

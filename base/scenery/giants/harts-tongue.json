@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-harts-tongue",
+  "name": "Hart's-tongue fern",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-harts-tongue",
+  "blockers": [
+    {
+      "width": 9.9,
+      "depth": 9.42,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": 0.0
+    }
+  ]
+}

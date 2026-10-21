@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-acorn",
+  "name": "Acorn",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-acorn",
+  "blockers": [
+    {
+      "width": 7.65,
+      "depth": 5.23,
+      "shape": "ellipse",
+      "x": -0.0,
+      "z": 0.0
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-buttons",
+  "name": "Button mushrooms",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.giants-buttons",
+  "blockers": [
+    {
+      "width": 4.2,
+      "depth": 2.81,
+      "shape": "ellipse",
+      "x": 0.03,
+      "z": 0.29
+    }
+  ]
+}

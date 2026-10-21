@@ -1,0 +1,7 @@
+{
+  "id": "scenery.giants-pine-needles-a",
+  "name": "Pine needles",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-pine-needles-a"
+}

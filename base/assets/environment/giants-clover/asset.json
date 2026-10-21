@@ -1,0 +1,46 @@
+{
+  "id": "asset.models.environment.giants-clover",
+  "name": "giants clover",
+  "kind": "foliage",
+  "tags": [
+    "forest-floor",
+    "giants",
+    "tripo",
+    "plant"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    },
+    "canopy": true,
+    "wind": {
+      "mode": "tree",
+      "strength": 0.04,
+      "speed": 0.6,
+      "stiffness": 0.8
+    }
+  },
+  "license": "Generated with Tripo (image to 3D) from a gpt-image-2 concept for Under the Canopy; made game-ready by tools/props/import_tripo.py (tools/props/giants.json)."
+}

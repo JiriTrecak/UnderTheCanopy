@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-chestnut-burr",
+  "name": "Chestnut burr",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-chestnut-burr",
+  "blockers": [
+    {
+      "width": 11.14,
+      "depth": 11.2,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": 0.0
+    }
+  ]
+}
