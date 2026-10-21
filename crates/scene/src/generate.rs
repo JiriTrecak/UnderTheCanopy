@@ -1075,12 +1075,14 @@ fn contours(heights: &Heights, side: usize) -> Vec<Segment> {
 fn profile(look: &CliffLook, top: f32, bottom: f32, f: f32, reach: f32) -> (f32, f32) {
     let drop = (top - bottom).max(0.5);
     let run = look.slope * drop * reach;
-    let back = (run * 0.35).min(1.2);
     let curve = f.clamp(0.0, 1.0).powf(1.3);
     let hang = look.overhang * (1.0 - f.clamp(0.0, 1.0)).powi(2);
     (
         top + (bottom - top) * f.clamp(0.0, 1.0),
-        -0.5 - back * 0.7 + (run * 0.95 + back * 0.7) * curve + hang,
+        // Its steep top starts a little out over the drop: the lip covers the ground to
+        // there at the top's height, hiding the staircase a diagonal block edge leaves in
+        // the ground.
+        0.6 + run * 0.95 * curve + hang,
     )
 }
 
@@ -1153,7 +1155,7 @@ fn roots(
 
 /// One stretch of cliff face along segment `s`, as a talus of stones from a lip on the
 /// plateau out over the lower ground, in `look`.
-fn face_strip(mesh: &mut MeshBuilder, s: &Segment, look: &CliffLook, seed: u64) {
+fn face_strip(mesh: &mut MeshBuilder, heights: &Heights, s: &Segment, look: &CliffLook, seed: u64) {
     let length = (s.b - s.a).length();
     let cols = ((length / 0.33).ceil() as usize).max(1) + 1;
     let drop = (s.top[0] - s.bottom[0]).max(0.5);
@@ -1190,7 +1192,15 @@ fn face_strip(mesh: &mut MeshBuilder, s: &Segment, look: &CliffLook, seed: u64) 
             // the drop (in front of the block's straight edge), freely towards the foot.
             let f = r as f32 / (rows - 1) as f32;
             let out = out + w + look.wander * 0.75 * (1.0 - f).powi(2);
-            let p = Vec3::new(at.x + s.down.x * out, y, at.y + s.down.y * out);
+            let (px, pz) = (at.x + s.down.x * out, at.y + s.down.y * out);
+            // The lip lies on the ground it covers: beside a ramp, the ramp's slope, so it
+            // never floats over it.
+            let y = if r == 0 {
+                y.min(heights.at(px, pz) + 0.02)
+            } else {
+                y
+            };
+            let p = Vec3::new(px, y, pz);
             // Domed stones of their own depth, deep grooves between them; the lip and
             // the foot stand out less.
             let (edge, id, centre) = stones_with_centre(p, look.stone, grain, seed);
@@ -1442,7 +1452,7 @@ fn cliffs(heights: &Heights, cells: &Cells, recipe: &BlockLook, seed: u64) -> Ve
             continue;
         }
         let look = looks[k];
-        face_strip(&mut meshes[k], s, look, seed ^ k as u64);
+        face_strip(&mut meshes[k], heights, s, look, seed ^ k as u64);
         // A crust of pale frost along the top, behind the lip.
         if let Some(crown) = &look.crown {
             let drop = (s.top[0] - s.bottom[0]).max(0.5);
