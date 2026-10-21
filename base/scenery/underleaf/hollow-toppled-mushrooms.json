@@ -1,0 +1,7 @@
+{
+  "id": "scenery.hollow-toppled-mushrooms",
+  "name": "Hollow: toppled mushrooms",
+  "category": "foliage",
+  "type": "prop",
+  "model": "asset.models.environment.hollow-toppled-mushrooms"
+}

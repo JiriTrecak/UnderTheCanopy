@@ -1,0 +1,43 @@
+{
+  "id": "asset.models.environment.underleaf-patch-leaves-b",
+  "name": "Leaf drift B",
+  "kind": "foliage",
+  "tags": [
+    "underleaf",
+    "imagegen"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "vegetationClearance": 0,
+    "groundContact": {
+      "mode": "terrain"
+    }
+  },
+  "license": "Original ImageGen (gpt-image-2.5) cut-out on procedural Blender geometry (tools/props/build_patches.py)."
+}

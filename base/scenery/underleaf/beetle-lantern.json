@@ -1,0 +1,19 @@
+{
+  "id": "scenery.beetle-lantern",
+  "name": "Glass Road: lantern",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.beetle-lantern",
+  "light": {
+    "x": 0,
+    "y": 2.7,
+    "z": 0,
+    "color": "#9b70ff",
+    "intensity": 1.8,
+    "range": 8
+  },
+  "blocker": {
+    "width": 1.0,
+    "depth": 1.0
+  }
+}

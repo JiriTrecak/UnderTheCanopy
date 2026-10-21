@@ -370,6 +370,36 @@ What the scene uses for it:
 
 Still to do: the overhead leaf sheet beyond the map is the old procedural one; a painted far-forest backdrop; leaf litter that piles where the falling leaves land is not attempted.
 
+## Underleaf: the campaign's forest biome (2026-10-22)
+
+Claude's design while Jiri delegated the look of the first ant campaign; review the captures. `underleaf` (`base/landscape/biomes/underleaf.json`, in `BIOMES` beside `frozen-dream`) is a late-summer forest floor at low sun, generated from a map's blocks like Frozen Dream. Its target frames, one per mood of the first three missions, are `art/styles/target-underleaf-hollow.jpg`, `-glade.jpg` and `-road.jpg` (gpt-image concepts). The look-dev map is `base/maps/showcase/underleaf-lookdev.utcm` ("Underleaf"), authored with block operations and the Place catalog's pieces through MCP by `tools/maps/underleaf_lookdev.py`: the Hollow in the west, the Glade in the middle, the Glass Road in the east.
+
+**One biome, three moods.** The ground, cliffs, water and frame are shared; each mission's mood comes from its map's hour and weather (D83) and from the scenery its author places:
+
+| Mission | Map settings | Placed pieces |
+|---|---|---|
+| The Hollow Brood | dusk (about 18:00), clear; a basin a level down under root banks (face 1) | `underleaf-patch-withered-*`, `substance-pool-*`, `hollow-withered-fern*`, `hollow-bleached-mushrooms`, `hollow-toppled-mushrooms`, `hollow-collapsed-mound` |
+| Founding | morning (8:30–9:30), clear (the god-ray weather's haze hides the ground from the RTS camera); moss shelves, a stream | `underleaf-patch-moss-*`, `underleaf-patch-blossoms`, `underleaf-patch-leaves-*`, `glade-mushroom-ring`, the existing ferns, flowers and leaves |
+| The Glass Road | late morning, rain or clear; terraces faced in beetle masonry (face 2) | `beetle-road-*` (8 × 8 m tiles: straight, corner, junction, crossing, end; `beetle-road-ramp` 8 × 16 m for a four-block ramp), `beetle-lantern`, `beetle-substance-tank*`, `beetle-pipe-run`, `beetle-wall` (8 m) and `beetle-wall-tower` for the walled station, `beetle-condenser` |
+
+**Ground** (gpt-image tiles, packed by `tools/terrain/pack_ground.py`): soil `underleaf-soil` (calm olive-brown compacted earth, the base), frame cover `underleaf-litter` (late-summer leaf litter, olive to faded copper, no saturated orange: amber owns orange), moss `underleaf-moss` on levels 2 and 3, `underleaf-rubble` at cliffs and ramps, `underleaf-streambed` under water. Level 4 keeps the plain soil, so the top of a beetle plateau reads ordered rather than lush.
+
+**Cliffs**: the default face is stacked sandstone (`underleaf-stone`); face 1 **Roots** is Frozen Dream's root bank in warm bark and earth (`underleaf-roots`, `underleaf-bark`), without frost; face 2 **Beetle masonry** is a steep, nearly flat wall of cut blue-grey blocks (`underleaf-masonry`), little relief, no rubble.
+
+**Water** `water.underleaf-stream`: tea-dark, olive-brown shallows over the streambed, near-black deep pools, gentle ripples, no glints or crests (no sparkle, D61).
+
+**Light and grade**: a warm low sun (`#ffd9a6`, 32° high, from 150°) with sage ambient and cool slate shadows (split toning `#4b5a68`), a highlight shoulder of 0.5, saturation just over 1 so moss stays alive while the units stay brighter. Canopy shade in large soft patches (scale 150, strength 0.55). Haze in the air is light; the light shafts stay thin (`shaftDensity` 0.0012) because god rays at morning already add them. Motes: a little dust, a few falling leaves (`asset.texture.underleaf-falling-leaf`).
+
+**Frame**: closed ground mounds up (`frameRise` 0.8), is shaded (0.35) and carries dense, large existing ferns, clover and grasses (`pl-fern-*` at 2.4–6 ×, `pl-clover-*`), sword ferns hanging over the rim, the odd giant mushroom or puffball, fallen leaves, acorns and roots at its edge. Decals: leaves along every edge and cliff foot, sorrel on cliff tops and frame edges, a sprinkle of blossoms in the frame edge; none on open ground, which stays calm. The scatter lists name scenery ids only, so the forest-floor giants being built by another agent drop into `blocks.scatter` and `surroundings.forest` without other changes.
+
+**Substance** in the scenery always glows blue-violet (`#8a5cff`, lilac veins), with a small violet light; nothing is green.
+
+**How the props are made** (all procedural or derived, so they re-run): `tools/props/build_patches.py` (flat soft-alpha ground patches from transparent gpt-image cut-outs), `substance_pool.py`, `beetle_road.py` (road tiles, lantern, tanks, pipe run, condenser), `hollow_props.py` (withered and bleached plants regraded and re-posed from the base game's own models, the mushroom ring) and `hollow_mound.py`. `tools/terrain/build_sprite.py` cuts one shape of a sheet as its own texture (the falling leaf); `build_decals.py` no longer needs the removed overlay tool.
+
+**Missions** (docs/story.md): the mission blockout scripts (`tools/maps/hollow_brood.py`, `founding.py`, `glass_road.py`) still create their maps in `frozen-dream`; switching them to `biome='underleaf'`, setting each map's hour and weather as in the table and placing the pieces is the missions' authoring. The Hollow wants dusk going to night (try 18:00–19:30), Founding morning, the Glass Road a clear cool afternoon (14:00–15:00).
+
+**Open for review**: the Hollow's pools may be too bright from far away (bloom); the masonry face reads dark; the mound is procedural and could become a Tripo model from the target frame; the frame's foliage still uses the old ferns until the giants land; the stream's shallows read green-grey at noon.
+
 ## Open questions
 
 - **Human leftovers as landmarks** (a lost button, a nail, a coin)? They show scale instantly but are a lore choice.

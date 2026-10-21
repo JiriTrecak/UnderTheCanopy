@@ -1,8 +1,7 @@
 {
   "id": "scenery.lookdev-leaf-big",
-  "name": "lookdev leaf big",
+  "name": "Fallen leaf, huge",
   "category": "foliage",
   "type": "prop",
-  "model": "asset.models.environment.lookdev-leaf-big",
-  "editorHidden": true
+  "model": "asset.models.environment.lookdev-leaf-big"
 }

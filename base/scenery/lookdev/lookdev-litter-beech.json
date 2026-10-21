@@ -1,8 +1,7 @@
 {
   "id": "scenery.lookdev-litter-beech",
-  "name": "lookdev litter beech",
+  "name": "Curled beech leaf",
   "category": "foliage",
   "type": "prop",
-  "model": "asset.models.environment.lookdev-litter-beech",
-  "editorHidden": true
+  "model": "asset.models.environment.lookdev-litter-beech"
 }

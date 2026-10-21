@@ -1,0 +1,39 @@
+{
+  "id": "asset.models.environment.hollow-toppled-mushrooms",
+  "name": "Bleached mushrooms, toppled",
+  "kind": "foliage",
+  "tags": [
+    "underleaf",
+    "hollow",
+    "withered"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "vegetationClearance": 0,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "license": "Original artwork for Under the Canopy: regraded and re-posed from the base game's own plant models by tools/props/hollow_props.py."
+}

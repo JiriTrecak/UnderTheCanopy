@@ -1,8 +1,7 @@
 {
   "id": "scenery.lookdev-litter-maple",
-  "name": "lookdev litter maple",
+  "name": "Curled maple leaf",
   "category": "foliage",
   "type": "prop",
-  "model": "asset.models.environment.lookdev-litter-maple",
-  "editorHidden": true
+  "model": "asset.models.environment.lookdev-litter-maple"
 }

@@ -58,7 +58,7 @@ pub fn valid_size(size: u32) -> bool {
 pub const MAP_HALO: u32 = 16;
 /// Biome ids: the biomes whose recipe generates a map's look from its blocks (D80, D82).
 /// A map naming any other biome is rejected.
-pub const BIOMES: [&str; 1] = ["frozen-dream"];
+pub const BIOMES: [&str; 2] = ["frozen-dream", "underleaf"];
 
 /// A number that must equal `N` (format and section versions).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

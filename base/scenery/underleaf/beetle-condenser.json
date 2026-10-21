@@ -1,0 +1,20 @@
+{
+  "id": "scenery.beetle-condenser",
+  "name": "Glass Road: condenser",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.beetle-condenser",
+  "light": {
+    "x": 0,
+    "y": 7.0,
+    "z": 0,
+    "color": "#8a5cff",
+    "intensity": 3.0,
+    "range": 24
+  },
+  "blocker": {
+    "width": 17.0,
+    "depth": 17.0,
+    "shape": "ellipse"
+  }
+}

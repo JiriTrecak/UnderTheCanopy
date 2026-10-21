@@ -1,8 +1,7 @@
 {
   "id": "scenery.lookdev-leaf-maple",
-  "name": "lookdev leaf maple",
+  "name": "Fallen maple leaf",
   "category": "foliage",
   "type": "prop",
-  "model": "asset.models.environment.lookdev-leaf-maple",
-  "editorHidden": true
+  "model": "asset.models.environment.lookdev-leaf-maple"
 }

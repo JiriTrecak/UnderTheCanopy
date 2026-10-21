@@ -1,0 +1,11 @@
+{
+  "id": "scenery.beetle-wall",
+  "name": "Glass Road: station wall",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.beetle-wall",
+  "blocker": {
+    "width": 8.0,
+    "depth": 2.0
+  }
+}

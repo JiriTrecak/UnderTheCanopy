@@ -1,10 +1,9 @@
 {
   "id": "scenery.lookdev-trunk",
-  "name": "lookdev trunk",
+  "name": "Giant trunk",
   "category": "landmark",
   "type": "prop",
   "model": "asset.models.environment.lookdev-trunk",
-  "editorHidden": true,
   "blocker": {
     "width": 22,
     "depth": 22,

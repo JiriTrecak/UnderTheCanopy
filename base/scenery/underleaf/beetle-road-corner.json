@@ -1,0 +1,7 @@
+{
+  "id": "scenery.beetle-road-corner",
+  "name": "Glass Road: corner",
+  "category": "terrain",
+  "type": "prop",
+  "model": "asset.models.environment.beetle-road-corner"
+}

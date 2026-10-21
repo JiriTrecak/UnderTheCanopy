@@ -1,0 +1,41 @@
+{
+  "id": "asset.models.environment.beetle-wall-tower",
+  "name": "Glass Road: wall tower",
+  "kind": "prop",
+  "tags": [
+    "underleaf",
+    "glass-road",
+    "beetles",
+    "procedural",
+    "wall"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "vegetationClearance": 1,
+    "groundContact": {
+      "mode": "terrain"
+    }
+  },
+  "license": "Original procedural model for Under the Canopy (tools/props/beetle_road.py), textures by gpt-image-2."
+}

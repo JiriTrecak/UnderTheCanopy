@@ -1,0 +1,612 @@
+{
+  "objects": [
+    {
+      "id": "dress.0",
+      "asset": "scenery.hollow-collapsed-mound",
+      "x": 60,
+      "z": 152,
+      "yaw": 0.6,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.1",
+      "asset": "scenery.underleaf-patch-withered-a",
+      "x": 74,
+      "z": 140,
+      "yaw": 0.4,
+      "scale": 1.4
+    },
+    {
+      "id": "dress.2",
+      "asset": "scenery.underleaf-patch-withered-b",
+      "x": 84,
+      "z": 180,
+      "yaw": 2.1,
+      "scale": 1.3
+    },
+    {
+      "id": "dress.3",
+      "asset": "scenery.underleaf-patch-withered-a",
+      "x": 44,
+      "z": 182,
+      "yaw": 4.0,
+      "scale": 1.1
+    },
+    {
+      "id": "dress.4",
+      "asset": "scenery.underleaf-patch-withered-b",
+      "x": 52,
+      "z": 128,
+      "yaw": 5.1,
+      "scale": 1.2
+    },
+    {
+      "id": "dress.5",
+      "asset": "scenery.underleaf-patch-withered-a",
+      "x": 92,
+      "z": 158,
+      "yaw": 1.0,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.6",
+      "asset": "scenery.substance-pool-large",
+      "x": 80,
+      "z": 166,
+      "yaw": 0.3,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.7",
+      "asset": "scenery.substance-pool",
+      "x": 40,
+      "z": 150,
+      "yaw": 1.7,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.8",
+      "asset": "scenery.substance-pool-small",
+      "x": 70,
+      "z": 134,
+      "yaw": 2.6,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.9",
+      "asset": "scenery.substance-pool-small",
+      "x": 56,
+      "z": 184,
+      "yaw": 4.4,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.10",
+      "asset": "scenery.substance-pool",
+      "x": 92,
+      "z": 142,
+      "yaw": 3.0,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.11",
+      "asset": "scenery.hollow-bleached-mushrooms",
+      "x": 84,
+      "z": 152,
+      "yaw": 0.0,
+      "scale": 3.2
+    },
+    {
+      "id": "dress.12",
+      "asset": "scenery.hollow-bleached-mushrooms",
+      "x": 48,
+      "z": 170,
+      "yaw": 1.7,
+      "scale": 3.6
+    },
+    {
+      "id": "dress.13",
+      "asset": "scenery.hollow-bleached-mushrooms",
+      "x": 94,
+      "z": 186,
+      "yaw": 3.4,
+      "scale": 2.6
+    },
+    {
+      "id": "dress.14",
+      "asset": "scenery.hollow-bleached-mushrooms",
+      "x": 40,
+      "z": 136,
+      "yaw": 5.1,
+      "scale": 2.8
+    },
+    {
+      "id": "dress.15",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 66,
+      "z": 176,
+      "yaw": 0.5,
+      "scale": 3.0
+    },
+    {
+      "id": "dress.16",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 78,
+      "z": 128,
+      "yaw": 2.8,
+      "scale": 2.6
+    },
+    {
+      "id": "dress.17",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 36,
+      "z": 176,
+      "yaw": 0.0,
+      "scale": 3.6
+    },
+    {
+      "id": "dress.18",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 100,
+      "z": 136,
+      "yaw": 2.1,
+      "scale": 3.0
+    },
+    {
+      "id": "dress.19",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 70,
+      "z": 198,
+      "yaw": 4.2,
+      "scale": 3.8
+    },
+    {
+      "id": "dress.20",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 34,
+      "z": 148,
+      "yaw": 6.300000000000001,
+      "scale": 3.2
+    },
+    {
+      "id": "dress.21",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 100,
+      "z": 176,
+      "yaw": 8.4,
+      "scale": 3.4
+    },
+    {
+      "id": "dress.22",
+      "asset": "scenery.underleaf-patch-moss-a",
+      "x": 196,
+      "z": 132,
+      "yaw": 0.2,
+      "scale": 1.1
+    },
+    {
+      "id": "dress.23",
+      "asset": "scenery.underleaf-patch-moss-b",
+      "x": 214,
+      "z": 150,
+      "yaw": 1.4,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.24",
+      "asset": "scenery.underleaf-patch-moss-a",
+      "x": 182,
+      "z": 112,
+      "yaw": 3.1,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.25",
+      "asset": "scenery.underleaf-patch-blossoms",
+      "x": 132,
+      "z": 132,
+      "yaw": 0.8,
+      "scale": 1.2
+    },
+    {
+      "id": "dress.26",
+      "asset": "scenery.underleaf-patch-blossoms",
+      "x": 170,
+      "z": 232,
+      "yaw": 2.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.27",
+      "asset": "scenery.underleaf-patch-leaves-a",
+      "x": 206,
+      "z": 236,
+      "yaw": 1.1,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.28",
+      "asset": "scenery.underleaf-patch-leaves-b",
+      "x": 128,
+      "z": 210,
+      "yaw": 2.6,
+      "scale": 1.1
+    },
+    {
+      "id": "dress.29",
+      "asset": "scenery.glade-mushroom-ring",
+      "x": 200,
+      "z": 116,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.30",
+      "asset": "scenery.lookdev-leaf-oak",
+      "x": 168,
+      "z": 158,
+      "yaw": 0.7,
+      "scale": 0.7
+    },
+    {
+      "id": "dress.31",
+      "asset": "scenery.lookdev-acorn",
+      "x": 124,
+      "z": 166,
+      "yaw": 1.2,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.32",
+      "asset": "scenery.lookdev-litter-beech",
+      "x": 186,
+      "z": 168,
+      "yaw": 2.2,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.33",
+      "asset": "scenery.meadow-stick-a",
+      "x": 196,
+      "z": 182,
+      "yaw": 0.3,
+      "scale": 2.0
+    },
+    {
+      "id": "dress.34",
+      "asset": "scenery.woodland-river-stones",
+      "x": 150,
+      "z": 128,
+      "yaw": 0.5,
+      "scale": 2.0
+    },
+    {
+      "id": "dress.35",
+      "asset": "scenery.woodland-river-stones",
+      "x": 160,
+      "z": 222,
+      "yaw": 2.5,
+      "scale": 1.8
+    },
+    {
+      "id": "dress.36",
+      "asset": "scenery.beetle-road-end",
+      "x": 184,
+      "z": 160,
+      "yaw": -1.5707963267948966,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.37",
+      "asset": "scenery.beetle-road-straight",
+      "x": 192,
+      "z": 160,
+      "yaw": 1.5707963267948966,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.38",
+      "asset": "scenery.beetle-road-straight",
+      "x": 200,
+      "z": 160,
+      "yaw": 1.5707963267948966,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.39",
+      "asset": "scenery.beetle-road-straight",
+      "x": 208,
+      "z": 160,
+      "yaw": 1.5707963267948966,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.40",
+      "asset": "scenery.beetle-road-straight",
+      "x": 232,
+      "z": 160,
+      "yaw": 1.5707963267948966,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.41",
+      "asset": "scenery.beetle-road-straight",
+      "x": 260,
+      "z": 160,
+      "yaw": 1.5707963267948966,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.42",
+      "asset": "scenery.beetle-road-straight",
+      "x": 268,
+      "z": 160,
+      "yaw": 1.5707963267948966,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.43",
+      "asset": "scenery.beetle-road-ramp",
+      "x": 220,
+      "z": 160,
+      "yaw": -1.5707963267948966,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.44",
+      "asset": "scenery.beetle-road-ramp",
+      "x": 244,
+      "z": 160,
+      "yaw": -1.5707963267948966,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.45",
+      "asset": "scenery.beetle-lantern",
+      "x": 210,
+      "z": 151,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.46",
+      "asset": "scenery.beetle-lantern",
+      "x": 210,
+      "z": 169,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.47",
+      "asset": "scenery.beetle-lantern",
+      "x": 232,
+      "z": 151,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.48",
+      "asset": "scenery.beetle-lantern",
+      "x": 232,
+      "z": 169,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.49",
+      "asset": "scenery.beetle-lantern",
+      "x": 270,
+      "z": 151,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.50",
+      "asset": "scenery.beetle-lantern",
+      "x": 270,
+      "z": 169,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.51",
+      "asset": "scenery.beetle-substance-tank",
+      "x": 238,
+      "z": 134,
+      "yaw": 0.8,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.52",
+      "asset": "scenery.beetle-substance-tank",
+      "x": 238,
+      "z": 186,
+      "yaw": 2.2,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.53",
+      "asset": "scenery.beetle-substance-tank-small",
+      "x": 266,
+      "z": 136,
+      "yaw": 0.3,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.54",
+      "asset": "scenery.beetle-substance-tank-small",
+      "x": 266,
+      "z": 184,
+      "yaw": 1.4,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.55",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 284,
+      "z": 124,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.56",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 284,
+      "z": 116,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.57",
+      "asset": "scenery.beetle-condenser",
+      "x": 281,
+      "z": 160,
+      "yaw": -1.5707963267948966,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.58",
+      "asset": "scenery.beetle-wall",
+      "x": 257,
+      "z": 126,
+      "yaw": 1.5707963267948966,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.59",
+      "asset": "scenery.beetle-wall",
+      "x": 257,
+      "z": 134,
+      "yaw": 1.5707963267948966,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.60",
+      "asset": "scenery.beetle-wall",
+      "x": 257,
+      "z": 142,
+      "yaw": 1.5707963267948966,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.61",
+      "asset": "scenery.beetle-wall",
+      "x": 257,
+      "z": 178,
+      "yaw": 1.5707963267948966,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.62",
+      "asset": "scenery.beetle-wall",
+      "x": 257,
+      "z": 186,
+      "yaw": 1.5707963267948966,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.63",
+      "asset": "scenery.beetle-wall",
+      "x": 257,
+      "z": 194,
+      "yaw": 1.5707963267948966,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.64",
+      "asset": "scenery.beetle-wall",
+      "x": 265,
+      "z": 118,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.65",
+      "asset": "scenery.beetle-wall",
+      "x": 265,
+      "z": 202,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.66",
+      "asset": "scenery.beetle-wall",
+      "x": 273,
+      "z": 118,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.67",
+      "asset": "scenery.beetle-wall",
+      "x": 273,
+      "z": 202,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.68",
+      "asset": "scenery.beetle-wall",
+      "x": 281,
+      "z": 118,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.69",
+      "asset": "scenery.beetle-wall",
+      "x": 281,
+      "z": 202,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.70",
+      "asset": "scenery.beetle-wall-tower",
+      "x": 257,
+      "z": 151,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.71",
+      "asset": "scenery.beetle-wall-tower",
+      "x": 257,
+      "z": 169,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.72",
+      "asset": "scenery.beetle-wall-tower",
+      "x": 257,
+      "z": 118,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.73",
+      "asset": "scenery.beetle-wall-tower",
+      "x": 257,
+      "z": 202,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.74",
+      "asset": "scenery.beetle-wall-tower",
+      "x": 287,
+      "z": 118,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.75",
+      "asset": "scenery.beetle-wall-tower",
+      "x": 287,
+      "z": 202,
+      "yaw": 0.0,
+      "scale": 1.0
+    }
+  ]
+}

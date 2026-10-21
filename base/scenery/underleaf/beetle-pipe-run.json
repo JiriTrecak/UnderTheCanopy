@@ -1,0 +1,11 @@
+{
+  "id": "scenery.beetle-pipe-run",
+  "name": "Glass Road: pipe run",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.beetle-pipe-run",
+  "blocker": {
+    "width": 1.0,
+    "depth": 8.0
+  }
+}

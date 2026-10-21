@@ -1,8 +1,7 @@
 {
   "id": "scenery.lookdev-litter-oak",
-  "name": "lookdev litter oak",
+  "name": "Curled oak leaf",
   "category": "foliage",
   "type": "prop",
-  "model": "asset.models.environment.lookdev-litter-oak",
-  "editorHidden": true
+  "model": "asset.models.environment.lookdev-litter-oak"
 }

@@ -71,14 +71,14 @@ impl Shell {
         if self.server.is_some() || self.store.is_none() {
             return;
         }
-        match mcp::start(mcp::PORT, self.token.clone(), self.calls.0.clone()) {
+        match mcp::start(mcp::port(), self.token.clone(), self.calls.0.clone()) {
             Ok(server) => {
                 self.server = Some(server);
                 self.mcp_error = None;
             }
             Err(error) => {
                 tracing::warn!(%error, "editor: MCP server");
-                self.mcp_error = Some(format!("Port {} is taken: {error}", mcp::PORT));
+                self.mcp_error = Some(format!("Port {} is taken: {error}", mcp::port()));
             }
         }
     }
@@ -89,7 +89,7 @@ impl Shell {
 
     /// The command that adds the server to Claude Code.
     pub fn claude_command(&self) -> String {
-        mcp::claude_command(mcp::PORT, &self.token)
+        mcp::claude_command(mcp::port(), &self.token)
     }
 
     /// What the editor does each frame besides drawing: finished checks, files changed on
