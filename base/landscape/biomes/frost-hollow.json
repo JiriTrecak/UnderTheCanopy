@@ -253,9 +253,9 @@
         "atlas": "asset.texture.frost-ground-leaves/image.png",
         "cells": 5,
         "count": 23,
-        "density": 3.3000000000000003,
+        "density": 8.58,
         "size": [
-          5.0,
+          5.5,
           11.0
         ],
         "tint": [
@@ -303,9 +303,9 @@
         "atlas": "asset.texture.frost-ground-leaves/image.png",
         "cells": 5,
         "count": 23,
-        "density": 1.9250000000000003,
+        "density": 5.01,
         "size": [
-          5.0,
+          5.5,
           11.0
         ],
         "tint": [

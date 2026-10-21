@@ -167,54 +167,6 @@
     },
     "decals": [
       {
-        "zone": "ice",
-        "atlas": "asset.texture.frost-clover/image.png",
-        "cells": 7,
-        "count": 40,
-        "density": 33.0,
-        "size": [
-          0.9,
-          1.5
-        ],
-        "under": 0.08,
-        "clump": 0.85,
-        "tint": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      },
-      {
-        "zone": "iceEdge",
-        "atlas": "asset.texture.frost-clover/image.png",
-        "cells": 7,
-        "count": 40,
-        "density": 24.0,
-        "size": [
-          0.9,
-          1.5
-        ],
-        "under": 0.08,
-        "clump": 0.85,
-        "tint": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      },
-      {
-        "zone": "ice",
-        "atlas": "asset.texture.frost-leaves/image.png",
-        "cells": 5,
-        "count": 24,
-        "density": 1.2,
-        "size": [
-          1.2,
-          2.2
-        ],
-        "under": 0.25
-      },
-      {
         "zone": "groundEdge",
         "atlas": "asset.texture.frost-ground-leaves/image.png",
         "cells": 5,
@@ -235,10 +187,10 @@
         "atlas": "asset.texture.frost-ground-leaves/image.png",
         "cells": 5,
         "count": 23,
-        "density": 0.25,
+        "density": 1.0,
         "size": [
-          0.6,
-          1.2
+          1.0,
+          2.4
         ],
         "tint": [
           1.15,
@@ -379,6 +331,17 @@
           0.8
         ],
         "max": 6
+      },
+      {
+        "zone": "cliffFoot",
+        "pieces": [
+          "scenery.frost-boulder"
+        ],
+        "density": 0.12,
+        "scale": [
+          0.35,
+          0.7
+        ]
       }
     ],
     "frameRise": 0,
