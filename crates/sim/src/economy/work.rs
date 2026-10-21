@@ -361,10 +361,11 @@ pub fn deposit(ctx: &mut Ctx, worker: EntityId, store: EntityId) {
         .is_some_and(|s| s.dropoff == Some(true));
     let store_owner = store_entity.owner;
     if stock::currency(ctx.catalog, cargo.item.as_str()) {
+        let permille = ctx.tables.income.get(&owner).copied().unwrap_or(1000);
         stock::add(
             ctx.state.wallets.entry(owner).or_default(),
             &cargo.item,
-            cargo.amount,
+            (u64::from(cargo.amount) * u64::from(permille) / 1000) as u32,
         );
     } else if let Some(s) = ctx.state.entities.get_mut(store) {
         stock::add(&mut s.inventory, &cargo.item, cargo.amount);

@@ -65,6 +65,36 @@ impl Teams {
         }
     }
 
+    /// Sight groups: these teams, except that each of `private` (players) sees on its own,
+    /// as a team of one: allies that keep their vision to themselves (campaign
+    /// `mission.players[].vision`). Vision is built on these; alliance stays with `self`.
+    pub fn with_private_sight(&self, private: &[u8]) -> Self {
+        let mut used: Vec<u8> = self.slots.iter().map(|s| s.1).collect();
+        let mut free = 0u8;
+        let slots: Vec<(u8, u8)> = self
+            .slots
+            .iter()
+            .map(|&(player, team)| {
+                if !private.contains(&player) {
+                    return (player, team);
+                }
+                while used.contains(&free) {
+                    free += 1;
+                }
+                used.push(free);
+                (player, free)
+            })
+            .collect();
+        let mut teams: Vec<u8> = slots.iter().map(|s| s.1).collect();
+        teams.sort_unstable();
+        teams.dedup();
+        Self {
+            slots,
+            teams,
+            owners: self.owners.clone(),
+        }
+    }
+
     /// The owner's team; `None` for the neutral side and owners not in the match.
     pub fn team_of(&self, owner: Owner) -> Option<u8> {
         let Owner::Player(player) = owner else {
@@ -142,6 +172,17 @@ mod tests {
         assert_eq!(teams.teams().len(), 3);
         assert_eq!(teams.team_of(p(1)), Some(0));
         assert_eq!(teams.team_of(p(3)), Some(2));
+    }
+
+    #[test]
+    fn private_sight_splits_only_sight() {
+        let teams = Teams::new(&setup(&[Some(0), Some(0), Some(1)]));
+        let sight = teams.with_private_sight(&[1]);
+        let p = Owner::Player;
+        assert_eq!(teams.relation(p(0), p(1)), Relation::Ally);
+        assert_eq!(sight.relation(p(0), p(1)), Relation::Enemy);
+        assert_eq!(sight.teams(), [0, 1, 2]);
+        assert_eq!(sight.owners(), teams.owners());
     }
 
     #[test]

@@ -435,3 +435,50 @@ fn missions_reference_races_and_company() {
         "Mission region outside map.",
     );
 }
+
+#[test]
+fn mission_players_reference_units_races_and_regions() {
+    let line = json!({"after": 60, "every": 30, "units": [{"unit": "unit.worker", "count": 2}],
+        "grow": {"every": 2, "unit": "unit.creep", "count": 1},
+        "from": {"region": "edge"}, "target": {"region": "gate"}});
+    let mut mission = with(
+        "/mission",
+        json!({"campaign": "C", "title": "T", "order": 1, "script": "x = 1",
+            "regions": [{"id": "edge", "x": 10, "y": 10, "radius": 3}, {"id": "gate", "x": 20, "y": 20, "radius": 3}],
+            "players": [{"player": 2, "team": "enemy", "ai": {"behaviour": "waves", "waves": [line]}}]}),
+    );
+    set(&mut mission, "/entities", json!([]));
+    set(&mut mission, "/camps", json!([]));
+    set(
+        &mut mission,
+        "/playerStarts",
+        json!([{"player": 1, "x": 40.5, "z": 40.5, "setup": "setup.test", "mainFort": "x"}]),
+    );
+    assert_eq!(errors(mission.clone()), Vec::<String>::new());
+    let changed = |pointer: &str, value: Value| {
+        let mut document = mission.clone();
+        set(&mut document, pointer, value);
+        document
+    };
+    let wave = "/mission/players/0/ai/waves/0";
+    fails(
+        changed(&format!("{wave}/units/0/unit"), json!("unit.nobody")),
+        "Unknown unit: unit.nobody",
+    );
+    fails(
+        changed(&format!("{wave}/grow/unit"), json!("building.hall")),
+        "Unknown unit: building.hall",
+    );
+    fails(
+        changed(&format!("{wave}/from"), json!({"region": "nowhere"})),
+        "Unknown region: nowhere",
+    );
+    fails(
+        changed(&format!("{wave}/target"), json!({"region": "nowhere"})),
+        "Unknown region: nowhere",
+    );
+    fails(
+        changed("/mission/players/0/race", json!("elves")),
+        "Unknown race: elves",
+    );
+}

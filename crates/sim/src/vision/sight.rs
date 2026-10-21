@@ -29,7 +29,7 @@ pub struct Sight<'a> {
 impl<'a> Sight<'a> {
     /// The fog and memory of `owner`'s team; `None` for owners outside the match.
     pub fn knowledge(&self, owner: Owner) -> Option<&'a TeamKnowledge> {
-        let team = self.vision.teams().index(owner)?;
+        let team = self.vision.sight_teams().index(owner)?;
         self.state.knowledge.teams.get(team)
     }
 
@@ -110,7 +110,7 @@ impl<'a> Sight<'a> {
         let size = i64::from(self.terrain.size());
         // Sensors that do not share their sight with `owner` cannot answer; with a team,
         // that is exactly those without its bit (a sensor's teams include its owner's).
-        let shared = self.vision.teams().index(owner).map(|t| 1u16 << t);
+        let shared = self.vision.sight_teams().index(owner).map(|t| 1u16 << t);
         self.vision.index.any(query, shared, |key| {
             let (Some(sensor), SensorKey::Entity(id)) = (self.vision.sensor(key), key) else {
                 return false;
@@ -152,7 +152,7 @@ impl<'a> Sight<'a> {
     pub fn detects(&self, owner: Owner, entity: &Entity, observer: Option<&Entity>) -> bool {
         let tick = self.state.tick;
         if !self.rules.hidden(entity, tick)
-            || (owner != Owner::Nobody && self.vision.teams().allied(owner, entity.owner))
+            || (owner != Owner::Nobody && self.vision.sight_teams().allied(owner, entity.owner))
             || observer.is_some_and(|o| o.id == entity.id)
         {
             return true;
@@ -177,7 +177,7 @@ impl<'a> Sight<'a> {
         if owner == Owner::Nobody {
             return observer.is_some_and(detector);
         }
-        let teams = self.vision.teams();
+        let teams = self.vision.sight_teams();
         for sensor in &self.vision.sensors {
             if let SensorKey::Entity(id) = sensor.key
                 && teams.allied(owner, sensor.spec.owner)
@@ -199,7 +199,7 @@ impl<'a> Sight<'a> {
     /// Inside a temporary sight source shared with `owner`.
     fn spell_visible(&self, owner: Owner, entity: &Entity) -> bool {
         let tick = self.state.tick;
-        let teams = self.vision.teams();
+        let teams = self.vision.sight_teams();
         let airborne = self.rules.flight_cm(self.catalog, entity).is_some();
         let target = self.sight_point(entity);
         self.state.knowledge.spells.iter().any(|v| {
@@ -216,7 +216,7 @@ impl<'a> Sight<'a> {
 
     /// Ordinary sight shared through allies or lent through containment.
     fn shares(&self, owner: Owner, sensor: &Sensor) -> bool {
-        let teams = self.vision.teams();
+        let teams = self.vision.sight_teams();
         teams.allied(owner, sensor.spec.owner)
             || teams
                 .index(owner)

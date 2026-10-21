@@ -765,7 +765,7 @@ end"#;
 
 #[test]
 fn every_function_is_exposed() {
-    assert_eq!(mission::NAMES.len(), 34);
+    assert_eq!(mission::NAMES.len(), 39);
     let calls: Vec<String> = mission::NAMES
         .iter()
         .map(|n| format!("mission.{n} ~= nil"))

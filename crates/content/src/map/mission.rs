@@ -65,4 +65,7 @@ pub struct Mission {
     /// Lua 5.3 source with `on_start` / `on_tick` callbacks.
     pub script: String,
     pub regions: Vec<Region>,
+    /// The computer players and the campaign AI that plays them (`players`).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub players: Vec<super::players::MissionPlayer>,
 }

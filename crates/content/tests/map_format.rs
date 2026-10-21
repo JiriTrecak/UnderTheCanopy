@@ -295,6 +295,53 @@ fn mission_rules() {
     let mut base = with("/mission", mission());
     set(&mut base, "/playerStarts", one_start);
     parse(base.clone()).unwrap_or_else(|e| panic!("{e}"));
+    let player = |n: u8| json!({"player": n, "team": "enemy"});
+    let wave = |changes: Value| {
+        let mut line = json!({"after": 120, "every": 90, "units": [{"unit": "unit.a", "count": 2}],
+            "grow": {"every": 3, "unit": "unit.a", "count": 1}, "hero": true,
+            "from": "trained", "target": "base"});
+        for (key, value) in changes.as_object().expect("object") {
+            line[key] = value.clone();
+        }
+        json!({"player": 2, "team": "enemy", "ai": {"behaviour": "waves", "waves": [line]}})
+    };
+    let skirmish = |changes: Value| {
+        let mut limits = json!({"style": "rush", "armyCap": 12, "pace": 2, "income": 0.5});
+        for (key, value) in changes.as_object().expect("object") {
+            limits[key] = value.clone();
+        }
+        json!({"player": 3, "team": "ally", "vision": false, "ai": {"behaviour": "skirmish", "skirmish": limits}})
+    };
+    // The documented shapes read and round-trip.
+    let mut players = base.clone();
+    set(
+        &mut players,
+        "/mission/players",
+        json!([
+            wave(json!({})),
+            wave(json!({"from": {"region": "edge"}, "target": {"region": "gate"}, "until": 600})),
+            skirmish(json!({})),
+            {"player": 4, "race": "test", "team": "ally", "ai": {"behaviour": "base", "dormant": true, "rebuild": false}},
+        ])
+        .as_array()
+        .map(|list| {
+            let mut list = list.clone();
+            list[1]["player"] = json!(5);
+            Value::Array(list)
+        })
+        .unwrap(),
+    );
+    let parsed = parse(players.clone()).unwrap_or_else(|e| panic!("{e}"));
+    let read = &parsed.mission.as_ref().unwrap().players;
+    assert_eq!(read.len(), 4);
+    assert_eq!(
+        read[1].ai.waves[0].from,
+        canopy_content::map::WaveSource::Region("edge".into())
+    );
+    assert!(!read[2].shares_vision());
+    let text = serde_json::to_string(read).unwrap();
+    let back: Vec<canopy_content::map::MissionPlayer> = serde_json::from_str(&text).unwrap();
+    assert_eq!(&back, read);
     for (pointer, value) in [
         ("/mission/order", json!(0)),
         ("/mission/script", json!("")),
@@ -329,6 +376,38 @@ fn mission_rules() {
             json!({"tips": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"]}),
         ),
         ("/mission/extra", json!(1)),
+        ("/mission/players", json!([player(1)])),
+        ("/mission/players", json!([player(2), player(2)])),
+        (
+            "/mission/players",
+            json!([{"player": 2, "team": "enemy", "vision": true}]),
+        ),
+        ("/mission/players", json!([{"player": 2, "team": "foe"}])),
+        (
+            "/mission/players",
+            json!([{"player": 2, "team": "enemy", "ai": {"behaviour": "rush"}}]),
+        ),
+        ("/mission/players", json!([wave(json!({"every": 0}))])),
+        ("/mission/players", json!([wave(json!({"after": -1}))])),
+        ("/mission/players", json!([wave(json!({"units": []}))])),
+        (
+            "/mission/players",
+            json!([wave(json!({"units": [{"unit": "unit.a", "count": 0}]}))]),
+        ),
+        (
+            "/mission/players",
+            json!([wave(
+                json!({"grow": {"every": 0, "unit": "unit.a", "count": 1}})
+            )]),
+        ),
+        ("/mission/players", json!([wave(json!({"from": "edge"}))])),
+        ("/mission/players", json!([wave(json!({"target": "home"}))])),
+        (
+            "/mission/players",
+            json!([skirmish(json!({"style": "turtle"}))]),
+        ),
+        ("/mission/players", json!([skirmish(json!({"pace": 0.5}))])),
+        ("/mission/players", json!([skirmish(json!({"income": 5}))])),
         ("/sandbox", json!(true)),
     ] {
         let mut document = base.clone();

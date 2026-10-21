@@ -73,11 +73,16 @@ pub struct World {
     events: abilities::Events,
     /// The AI players' derived side; their memories are in the state.
     ai: ai::Brains,
+    /// The mission's computer players (campaign AI), from the map; memories in the state.
+    campaign: ai::campaign::Campaign,
 }
 
 impl World {
     /// Starts a match on `map`.
     pub fn new(content: Arc<Content>, map: &UtcMap, setup: MatchSetup) -> Result<Self, SetupError> {
+        // A mission's computer players are the ones its map lists.
+        let setup = ai::campaign::mission_setup(map, setup);
+        let campaign = ai::campaign::Campaign::new(map);
         let catalog = Arc::new(Catalog::new(content));
         let terrain = Arc::new(compile(map, &catalog)?);
         let combat = combat::Runtime::new(&catalog, map, &setup).map_err(SetupError)?;
@@ -120,11 +125,13 @@ impl World {
         let sight = SpellSight {
             catalog: catalog.clone(),
         };
+        state.campaign_ai = campaign.memories();
         let vision = Vision::new(
             &mut state,
             &catalog,
             &terrain,
             &setup,
+            &campaign.private_sight(),
             map.exploration(),
             &sight,
         );
@@ -140,7 +147,7 @@ impl World {
             let mut ctx = economy.ctx(&mut state, &catalog, &mut motion.spatial);
             economy::harvest::start_gathering(&mut ctx, &setup, &starting);
         }
-        let brains = ai::Brains::new(
+        let mut brains = ai::Brains::new(
             &catalog,
             map,
             terrain.clone(),
@@ -148,6 +155,7 @@ impl World {
             appearance_scales(map, &terrain),
         );
         state.ai = brains.memories(setup.seed);
+        hold_back(&campaign, &catalog, &mut brains, &mut economy);
         let mut world = Self {
             catalog,
             terrain,
@@ -163,6 +171,7 @@ impl World {
             sight,
             events: abilities::Events::default(),
             ai: brains,
+            campaign,
         };
         world.prepare_ai();
         Ok(world)
@@ -208,6 +217,7 @@ impl World {
         }
         let _span = tracing::trace_span!("ai").entered();
         self.economy.index(&self.state, &self.catalog);
+        let idle = self.campaign.idle_brains(&self.state.campaign_ai);
         let mut memories = std::mem::take(&mut self.state.ai);
         let commands = {
             let spells = abilities::Ctx {
@@ -232,7 +242,7 @@ impl World {
                 catalog: &self.catalog,
                 spells: &spells,
             };
-            self.ai.decide(&input, &mut memories, clock)
+            self.ai.decide(&input, &mut memories, clock, &idle)
         };
         self.state.ai = memories;
         for (player, command) in commands {
@@ -253,6 +263,12 @@ impl World {
     /// Plays AI `player` in `style` (tools and experiments, D75).
     pub fn set_ai_style(&mut self, player: u8, style: ai::AiStyle) {
         self.ai.restyle(&self.catalog, player, style);
+    }
+
+    /// The mission's tech limits for AI `player` (definitions and research it may not
+    /// make): the campaign's tech gating sets it; derived, so set again after a restore.
+    pub fn set_ai_tech(&mut self, player: u8, forbidden: Vec<canopy_content::Id>) {
+        self.ai.forbid(player, forbidden);
     }
 
     /// The style each AI player plays, by player.
@@ -486,6 +502,15 @@ impl World {
         if let Some(mission) = &mut self.mission {
             let _s = step!("mission");
             mission.tick(&mut self.state, &self.catalog);
+            self.motion.spatial.sync_static(&self.state);
+        }
+        // Step 10b: the mission's computer players (campaign AI).
+        if !self.campaign.is_empty() {
+            let _s = step!("campaign ai");
+            let mut ctx =
+                self.economy
+                    .ctx(&mut self.state, &self.catalog, &mut self.motion.spatial);
+            self.campaign.step(&mut ctx, &self.combat.teams);
             self.motion.spatial.sync_static(&self.state);
         }
         // Step 11: fog and knowledge, then defeat and victory.
@@ -884,11 +909,20 @@ impl World {
         }
         let mut state = save.state;
         crate::economy::lane::order_legacy(&mut state);
+        let campaign = ai::campaign::Campaign::new(map);
+        campaign.check(&state.campaign_ai).map_err(SetupError)?;
         let sight = SpellSight {
             catalog: catalog.clone(),
         };
-        let vision = Vision::restore(&mut state, &catalog, &terrain, &save.setup, &sight)
-            .map_err(SetupError)?;
+        let vision = Vision::restore(
+            &mut state,
+            &catalog,
+            &terrain,
+            &save.setup,
+            &campaign.private_sight(),
+            &sight,
+        )
+        .map_err(SetupError)?;
         let motion = Motion::new(
             terrain.clone(),
             &catalog,
@@ -896,8 +930,8 @@ impl World {
             crate::teams::Teams::new(&save.setup),
             appearance_scales(map, &terrain),
         );
-        let economy = Economy::new(&state, &catalog, &save.setup);
-        let brains = ai::Brains::new(
+        let mut economy = Economy::new(&state, &catalog, &save.setup);
+        let mut brains = ai::Brains::new(
             &catalog,
             map,
             terrain.clone(),
@@ -905,6 +939,7 @@ impl World {
             appearance_scales(map, &terrain),
         );
         brains.check(&state.ai, &save.pending).map_err(SetupError)?;
+        hold_back(&campaign, &catalog, &mut brains, &mut economy);
         let mut world = Self {
             catalog,
             terrain,
@@ -920,6 +955,7 @@ impl World {
             sight,
             events: abilities::Events::default(),
             ai: brains,
+            campaign,
         };
         world.prepare_ai();
         Ok(world)
@@ -951,6 +987,9 @@ impl World {
         self.ai
             .check(&save.state.ai, &save.pending)
             .map_err(SetupError)?;
+        self.campaign
+            .check(&save.state.campaign_ai)
+            .map_err(SetupError)?;
         let mut state = save.state;
         crate::economy::lane::order_legacy(&mut state);
         let vision = Vision::restore(
@@ -958,11 +997,13 @@ impl World {
             &self.catalog,
             &self.terrain,
             &self.setup,
+            &self.campaign.private_sight(),
             &self.sight,
         )
         .map_err(SetupError)?;
         self.motion.rewind(&state);
         self.economy = Economy::new(&state, &self.catalog, &self.setup);
+        income(&self.campaign, &mut self.economy);
         self.combat.scratch = Default::default();
         self.state = state;
         self.pending = save.pending;
@@ -973,6 +1014,29 @@ impl World {
         }
         self.prepare_ai();
         Ok(())
+    }
+}
+
+/// Holds the mission's Skirmish players back (style, army cap, pace, income).
+fn hold_back(
+    campaign: &ai::campaign::Campaign,
+    catalog: &Catalog,
+    brains: &mut ai::Brains,
+    economy: &mut Economy,
+) {
+    for (player, limits) in campaign.skirmish_limits() {
+        brains.hold_back(catalog, player, &limits);
+    }
+    income(campaign, economy);
+}
+
+/// The mission's income handicaps (derived economy tables).
+fn income(campaign: &ai::campaign::Campaign, economy: &mut Economy) {
+    for (player, limits) in campaign.skirmish_limits() {
+        if let Some(income) = limits.income {
+            let permille = (income * 1000.0).round().max(0.0) as u32;
+            economy.set_income(Owner::Player(player), permille);
+        }
     }
 }
 

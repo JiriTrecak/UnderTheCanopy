@@ -39,7 +39,7 @@ One function per system, called in a fixed order (from the old game, `Game.tick`
 7. Combat resolution (sight sensors brought up to date after movement; shells, then missiles, then swings), deaths.
 8. Ability delivery → taunts.
 9. Revival → economy → inventory → upgrades → research.
-10. Mission script.
+10. Mission script, then the mission's computer players (campaign AI, [campaign](campaign.md)).
 11. Observation (fog and knowledge) → defeat and victory.
 12. AI decisions, enqueued for the next tick.
 
@@ -57,7 +57,7 @@ Differences from the old Lua 5.3 (fengari) runtime that scripts can notice:
 - Some error messages are worded differently.
 - `mission.tick()` starts at 0 (one lower than the old game).
 
-Vendored Lua 5.4 through `mlua`, no standard libraries, a fresh state per run, an instruction limit (20,000) and string limit (64 KiB), scalar arguments only, ≤256 API calls per run, transactional effects (applied only when the run succeeds). `on_start` once, `on_tick` every 4 ticks. The 34-function `mission` API from the old game.
+Vendored Lua 5.4 through `mlua`, no standard libraries, a fresh state per run, an instruction limit (20,000) and string limit (64 KiB), scalar arguments only, ≤256 API calls per run, transactional effects (applied only when the run succeeds). `on_start` once, `on_tick` every 4 ticks. The 34-function `mission` API from the old game, plus the campaign AI's `ai_waves`, `ai_attack_now`, `ai_target`, `ai_behaviour` and `ai_wake` ([campaign](campaign.md), "How the campaign AI plays").
 
 ## Saves and hashing
 

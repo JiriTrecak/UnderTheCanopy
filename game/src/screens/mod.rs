@@ -704,27 +704,32 @@ impl Game {
         let Some(map) = data.map(map_id) else {
             return;
         };
+        // Player 1 plays, with or without a start; the simulation replaces the other
+        // slots with the computer players the mission lists (`mission.players`).
+        let others = map
+            .starts
+            .iter()
+            .map(|p| p.saturating_sub(1))
+            .filter(|&p| p != 0);
         let setup = canopy_sim::MatchSetup {
             seed: seed(),
-            slots: map
-                .starts
-                .iter()
-                .enumerate()
-                .map(|(i, &player)| canopy_sim::Slot {
-                    player: player.saturating_sub(1),
-                    kind: if i == 0 {
+            slots: std::iter::once(0)
+                .chain(others)
+                .map(|player| canopy_sim::Slot {
+                    player,
+                    kind: if player == 0 {
                         canopy_sim::SlotKind::Human
                     } else {
                         canopy_sim::SlotKind::Ai
                     },
-                    name: (i == 0).then(|| self.settings.display_name()),
+                    name: (player == 0).then(|| self.settings.display_name()),
                     team: None,
                     hero: None,
                     race: None,
                 })
                 .collect(),
         };
-        let me = map.starts.first().map(|p| p.saturating_sub(1));
+        let me = Some(0);
         self.start_rerun(Rerun {
             map: map_id.to_string(),
             setup,
