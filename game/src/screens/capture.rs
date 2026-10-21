@@ -538,6 +538,35 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     frame(&mut editor, rig, vec![press(b, false)]);
     settle(&mut editor, rig, 6);
     shoot(&mut editor, rig, "editor-blocks-select-many")?;
+    // Dragging the selection: it follows the pointer, block by block, red where it
+    // may not stand.
+    let (a, b) = (point(1050.0, 590.0), point(1250.0, 700.0));
+    frame(&mut editor, rig, vec![egui::Event::PointerMoved(a)]);
+    frame(&mut editor, rig, vec![press(a, true)]);
+    for i in 1..=10 {
+        let t = i as f32 / 10.0;
+        frame(
+            &mut editor,
+            rig,
+            vec![egui::Event::PointerMoved(a + (b - a) * t)],
+        );
+    }
+    settle(&mut editor, rig, 4);
+    shoot(&mut editor, rig, "editor-blocks-move-drag")?;
+    frame(
+        &mut editor,
+        rig,
+        vec![egui::Event::Key {
+            key: egui::Key::Escape,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: egui::Modifiers::NONE,
+        }],
+    );
+    frame(&mut editor, rig, vec![press(a, false)]);
+    settle(&mut editor, rig, 6);
+    editor.undo_all();
     editor.set_block_tool("cells");
     editor.set_block_view("generated");
     let started = Instant::now();

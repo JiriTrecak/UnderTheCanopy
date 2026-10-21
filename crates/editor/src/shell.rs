@@ -545,6 +545,7 @@ impl Shell {
                 camera: session.camera,
                 ground,
                 size,
+                overlay: session.overlay.clone(),
             });
         }
         if let Some((root, size)) = map_size
@@ -560,6 +561,7 @@ impl Shell {
                 camera: session.camera,
                 ground,
                 size,
+                overlay: session.overlay.clone(),
             });
         }
         for edit in edits {
@@ -669,6 +671,16 @@ impl Shell {
             session.scene_generated = None;
             session.generated_due = None;
         }
+        // What Place holds has its model loaded, for its ghost.
+        let ghost = self
+            .checker
+            .as_ref()
+            .and_then(|c| c.content().cloned())
+            .filter(|_| session.blocks.tool == crate::world::BlockTool::Place)
+            .and_then(|content| crate::world::ghost_look(&content, &session.blocks.placing));
+        if ghost != session.scene_ghost {
+            session.stale = true;
+        }
         let due = session.scene.is_none()
             || (session.stale
                 && session
@@ -740,9 +752,11 @@ impl Shell {
                 &resources.pack,
                 &resources.looks[&biome],
                 session.blocks.view,
+                ghost.clone(),
             ) {
                 Ok(scene) => {
                     session.scene = Some(Arc::new(scene));
+                    session.scene_ghost = ghost.clone();
                     session.version += 1;
                     session.stale = false;
                     tracing::debug!(ms = started.elapsed().as_millis() as u64, map = %root, "editor: map scene");
@@ -759,6 +773,7 @@ impl Shell {
                 &resources.pack,
                 &resources.looks[&biome],
                 crate::world::View::Generated,
+                ghost.clone(),
             ) {
                 Ok(scene) => {
                     session.scene_generated = Some(Arc::new(scene));

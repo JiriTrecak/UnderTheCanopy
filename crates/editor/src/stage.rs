@@ -91,6 +91,16 @@ struct Live {
     world_ui_frame: canopy_render::world_ui::WorldUiFrame,
 }
 
+/// What the view draws over a map's scene this frame.
+#[derive(Debug, Clone, Default)]
+pub struct Overlay {
+    /// Actors (by their index in the scene) standing elsewhere: a drag under way.
+    pub moved: Vec<(usize, glam::Vec3)>,
+    /// The ghost of what Place would put down: where (model space to world), its owner's
+    /// colour, and whether it may stand there.
+    pub ghost: Option<(glam::Mat4, Option<[f32; 3]>, bool)>,
+}
+
 /// A map's scene to draw this frame.
 pub struct SceneShot {
     pub root: String,
@@ -100,6 +110,7 @@ pub struct SceneShot {
     /// Ground height under the camera's focus.
     pub ground: f32,
     pub size: [u32; 2],
+    pub overlay: Overlay,
 }
 
 pub struct Stage {
@@ -211,7 +222,29 @@ impl Stage {
             }
             self.loaded = Some(loaded);
         }
-        self.renderer.set_actors(&scene.actors);
+        if shot.overlay.moved.is_empty() && shot.overlay.ghost.is_none() {
+            self.renderer.set_actors(&scene.actors);
+        } else {
+            let mut actors = scene.actors.clone();
+            for &(i, at) in &shot.overlay.moved {
+                if let Some(actor) = actors.get_mut(i) {
+                    actor.transform.w_axis = at.extend(1.0);
+                }
+            }
+            if let (Some((model, _)), Some((transform, owner, fits))) =
+                (scene.ghost, shot.overlay.ghost)
+            {
+                let mut ghost = canopy_render::actors::ActorInstance::rest(model, transform);
+                ghost.owner_color = owner;
+                ghost.opacity = 0.6;
+                // Red where it may not stand.
+                if !fits {
+                    ghost.tint = [1.0, 0.35, 0.3, 1.0];
+                }
+                actors.push(ghost);
+            }
+            self.renderer.set_actors(&actors);
+        }
         let (eye, target) = shot.camera.eye_target(shot.ground);
         let distance = shot.camera.distance.max(1.0);
         let aspect = size[0] as f32 / size[1].max(1) as f32;

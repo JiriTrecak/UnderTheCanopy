@@ -23,8 +23,23 @@ pub struct Scene {
     pub world: World,
     /// Mines, creeps, start halls (drawn as models; `world.actor_models` lists them).
     pub actors: Vec<ActorInstance>,
+    /// What each actor is on the map (a start by its player, an entity by its id), so the
+    /// view can move them while a drag is under way.
+    pub keys: Vec<(tools::Picked, String)>,
+    /// The model of what Place holds, loaded for its ghost: model index and scale.
+    pub ghost: Option<(u32, f64)>,
+    /// The player colours, linear.
+    pub colors: Vec<[f32; 3]>,
     pub biome: String,
     pub hour: f32,
+}
+
+/// The look (model file and scale) of definition `id` as the game draws it.
+pub fn look_of(content: &Content, id: &str) -> Option<(String, f64)> {
+    let definition = content.definition(id)?;
+    let render = content.render_of(definition, definition.model.as_str())?;
+    let scale = render.scale.unwrap_or(1.0) * definition.model_scale.unwrap_or(1.0);
+    Some((render.file.clone()?, scale))
 }
 
 /// The player colours of `look`, linear.
@@ -45,6 +60,7 @@ pub fn build(
     pack: &Pack,
     look: &Look,
     view: crate::world::View,
+    ghost: Option<(String, f64)>,
 ) -> Result<Scene, String> {
     use crate::world::View;
     let blockout = match view {
@@ -138,6 +154,7 @@ pub fn build(
         }
     };
     let mut actors = Vec::new();
+    let mut keys = Vec::new();
     let mut place = |file: &str, scale: f64, x: f64, z: f64, degrees: f64, owner: Option<usize>| {
         let mut actor = ActorInstance::rest(
             model_index(file),
@@ -185,6 +202,7 @@ pub fn build(
             entity.rotation,
             owner,
         );
+        keys.push((tools::Picked::Entity, entity.id.clone()));
     }
     // Each start shows the hall its setup places.
     for start in &map.player_starts {
@@ -208,7 +226,9 @@ pub fn build(
         let owner = Some(usize::from(start.player.saturating_sub(1)));
         let scale = look.scale.unwrap_or(1.0) * fort.model_scale.unwrap_or(1.0);
         place(file, scale, start.x, start.z, degrees, owner);
+        keys.push((tools::Picked::Start, start.player.to_string()));
     }
+    let ghost = ghost.map(|(file, scale)| (model_index(&file), scale));
     let hour = map
         .landscape
         .as_ref()
@@ -227,6 +247,9 @@ pub fn build(
             dressing: generated.map(|g| g.dressing),
         },
         actors,
+        keys,
+        ghost,
+        colors,
         biome: map.biome().to_string(),
         hour,
     })
@@ -289,6 +312,14 @@ pub struct Session {
     /// the blocks (rebuilt [`GENERATE_AFTER`] after the last change, not while a drag
     /// is under way).
     pub scene_generated: Option<Arc<Scene>>,
+    /// The ghost model the scene was built with (what Place held).
+    pub scene_ghost: Option<(String, f64)>,
+    /// What the view draws over the scene this frame: actors moved by a drag, and the
+    /// ghost of what Place would put down.
+    pub overlay: crate::stage::Overlay,
+    /// The simulation's view of the map's terrain (walkable cells, heights), for checking
+    /// placements as the game would: the store generation it was made at.
+    pub sim_terrain: Option<(Option<u64>, Arc<canopy_sim::terrain::Terrain>)>,
     pub generated_version: u64,
     pub generated_due: Option<std::time::Instant>,
 }
@@ -313,6 +344,9 @@ impl Session {
             own: false,
             blocks: Default::default(),
             scene_generated: None,
+            scene_ghost: None,
+            overlay: Default::default(),
+            sim_terrain: None,
             generated_version: 0,
             generated_due: None,
         }

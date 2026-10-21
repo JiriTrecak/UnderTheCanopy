@@ -362,16 +362,18 @@ pub fn validate(
     Ok(())
 }
 
-/// Whether the map can be played on its terrain: each start on the building lattice with
-/// room, dry and gentle ground for every race's fort and formation; starting halls clear
-/// of resources; nothing overlapping at the start. Checked for the default setups, as
-/// the map is authored.
-pub fn playable(map: &UtcMap, catalog: &Catalog, terrain: &Terrain) -> Result<(), String> {
-    let content = &catalog.content;
-    let rules = &content.rules;
-    let resources = resources(map, terrain);
+/// Why `start` cannot stand on `map`'s terrain, by the rules [`playable`] checks: on the
+/// building lattice at least 8 cells inside the playable area, with room, dry and gentle
+/// ground for every race's fort and its worker formation. The map editor asks this of a
+/// start before it places or moves one.
+pub fn start_problem(
+    map: &UtcMap,
+    content: &Content,
+    terrain: &Terrain,
+    start: &PlayerStart,
+) -> Result<(), String> {
     let fort = content
-        .definition(rules.starting_setup.fort.as_str())
+        .definition(content.rules.starting_setup.fort.as_str())
         .ok_or("unknown starting fort")?;
     let area = map.playable_area();
     let (x0, z0) = (f64::from(area.x), f64::from(area.z));
@@ -379,40 +381,125 @@ pub fn playable(map: &UtcMap, catalog: &Catalog, terrain: &Terrain) -> Result<()
         f64::from(area.x + area.width),
         f64::from(area.z + area.height),
     );
+    let player = start.player;
+    let rotation = f64::from(start.rotation.unwrap_or(0));
+    if placement_geometry_error(fort, start.x, start.z, rotation).is_some()
+        || start.x < x0 + 8.0
+        || start.z < z0 + 8.0
+        || start.x > x1 - 9.0
+        || start.z > z1 - 9.0
+    {
+        return Err(format!(
+            "Player {player} needs a building-grid-aligned start at least 8 navigation cells inside the map."
+        ));
+    }
+    let resources = resources(map, terrain);
+    let area = starting_area(start, &resources, content)?;
+    if !area.inside(terrain.size()) {
+        return Err(format!(
+            "Player {player} needs room for the complete fort and worker formation."
+        ));
+    }
     let field = terrain.field();
-    for s in &map.player_starts {
-        let player = s.player;
-        let rotation = f64::from(s.rotation.unwrap_or(0));
-        if placement_geometry_error(fort, s.x, s.z, rotation).is_some()
-            || s.x < x0 + 8.0
-            || s.z < z0 + 8.0
-            || s.x > x1 - 9.0
-            || s.z > z1 - 9.0
+    let dry = area.cells().all(|(x, z)| {
+        let (x, z) = (x as f64, z as f64);
+        field.sample(x, z) > field.water_at(x, z) + 0.1
+    });
+    if !dry {
+        return Err(format!(
+            "Player {player} needs dry ground for the fort and workers."
+        ));
+    }
+    if !terrain.foundation_fits(area) {
+        return Err(format!(
+            "Player {player} needs flatter ground for the fort and workers."
+        ));
+    }
+    if area
+        .cells()
+        .any(|(x, z)| terrain.cell(x, z).is_none_or(|c| !terrain.walkable(c)))
+    {
+        return Err(format!(
+            "Player {player} needs open ground for the fort and workers."
+        ));
+    }
+    Ok(())
+}
+
+/// The cells a start's forts and worker formation cover (every race's), as [`playable`]
+/// checks them.
+pub fn start_area(
+    map: &UtcMap,
+    content: &Content,
+    terrain: &Terrain,
+    start: &PlayerStart,
+) -> Option<CellBounds> {
+    starting_area(start, &resources(map, terrain), content).ok()
+}
+
+/// Why `definition` cannot stand at (`x`, `y`) on `map`'s terrain: its geometry (the
+/// building lattice, cell centres), inside the playable area, every cell it covers open
+/// and dry, and for a building gentle enough for its foundation.
+pub fn site_problem(
+    map: &UtcMap,
+    terrain: &Terrain,
+    definition: &Definition,
+    x: f64,
+    y: f64,
+    rotation: f64,
+) -> Option<String> {
+    if let Some(error) = placement_geometry_error(definition, x, y, rotation) {
+        return Some(error.to_string());
+    }
+    let building = definition.kind == Kind::Building;
+    let cells = if building {
+        footprint_cells(x, y, Extent::of(definition.footprint.as_ref()), rotation)
+    } else {
+        let (cx, cy) = (x.round() as i64, y.round() as i64);
+        CellBounds {
+            min_x: cx,
+            min_y: cy,
+            max_x: cx,
+            max_y: cy,
+        }
+    };
+    let area = map.playable_area();
+    let inside = cells.min_x >= i64::from(area.x)
+        && cells.min_y >= i64::from(area.z)
+        && cells.max_x < i64::from(area.x + area.width)
+        && cells.max_y < i64::from(area.z + area.height);
+    if !inside {
+        return Some("Inside the playable area only".into());
+    }
+    let field = terrain.field();
+    for (cx, cy) in cells.cells() {
+        let Some(cell) = terrain.cell(cx, cy) else {
+            return Some("Inside the map only".into());
+        };
+        if !terrain.walkable(cell) {
+            return Some("The ground is closed or under deep water".into());
+        }
+        if building
+            && field.sample(cx as f64, cy as f64) <= field.water_at(cx as f64, cy as f64) + 0.1
         {
-            return Err(format!(
-                "Player {player} needs a building-grid-aligned start at least 8 navigation cells inside the map."
-            ));
+            return Some("Buildings need dry ground".into());
         }
-        let area = starting_area(s, &resources, content)?;
-        if !area.inside(terrain.size()) {
-            return Err(format!(
-                "Player {player} needs room for the complete fort and worker formation."
-            ));
-        }
-        let dry = area.cells().all(|(x, z)| {
-            let (x, z) = (x as f64, z as f64);
-            field.sample(x, z) > field.water_at(x, z) + 0.1
-        });
-        if !dry {
-            return Err(format!(
-                "Player {player} needs dry ground for the fort and workers."
-            ));
-        }
-        if !terrain.foundation_fits(area) {
-            return Err(format!(
-                "Player {player} needs flatter ground for the fort and workers."
-            ));
-        }
+    }
+    if building && !terrain.foundation_fits(cells) {
+        return Some("Choose flatter ground (no cliff or ramp under it)".into());
+    }
+    None
+}
+
+/// Whether the map can be played on its terrain: each start on the building lattice with
+/// room, dry and gentle ground for every race's fort and formation; starting halls clear
+/// of resources; nothing overlapping at the start. Checked for the default setups, as
+/// the map is authored.
+pub fn playable(map: &UtcMap, catalog: &Catalog, terrain: &Terrain) -> Result<(), String> {
+    let content = &catalog.content;
+    let resources = resources(map, terrain);
+    for s in &map.player_starts {
+        start_problem(map, content, terrain, s)?;
     }
     resource_clearance(map, content, &resources)?;
     occupancy(map, content, terrain)

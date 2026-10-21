@@ -1311,16 +1311,13 @@ fn selection_under(session: &Session, at: [f32; 2]) -> Option<(Picked, String)> 
         .cloned()
 }
 
-/// The commands that move the whole selection by `delta`: each camp and each old amber
-/// site once, however many of its members are selected.
-fn move_all(
+/// A drag of the selection by `delta`, snapped: whole blocks when a building, a start or
+/// a node moves, so they stay on the building lattice; otherwise as fine as Place is set.
+fn snapped_delta(
     session: &Session,
     content: Option<&canopy_content::Content>,
-    docs: &crate::map::view::Docs,
     delta: (f64, f64),
-) -> Vec<Command> {
-    // Whole blocks when a building, a start or a node moves, so they stay on the
-    // building lattice; otherwise as fine as Place is set.
+) -> (f64, f64) {
     let lattice = session
         .blocks
         .selection
@@ -1340,10 +1337,263 @@ fn move_all(
     } else {
         1.0
     };
-    let delta = (
+    (
         (delta.0 / step).round() * step,
         (delta.1 / step).round() * step,
+    )
+}
+
+/// What a move of the selection carries along: every selected thing, a camp member's
+/// whole camp, an old amber site's every node; each with where it stands.
+fn carried(session: &Session) -> Vec<(Picked, String, f64, f64)> {
+    let Some(map) = session.map.as_ref() else {
+        return Vec::new();
+    };
+    let selected = &session.blocks.selection;
+    let mut ids: std::collections::BTreeSet<String> = selected
+        .iter()
+        .filter(|(k, _)| *k == Picked::Entity)
+        .map(|(_, id)| id.clone())
+        .collect();
+    for camp in &map.camps {
+        if camp.members.iter().any(|m| ids.contains(m)) {
+            ids.extend(camp.members.iter().cloned());
+        }
+    }
+    let sites: Vec<String> = ids
+        .iter()
+        .filter(|id| id.starts_with("mine."))
+        .filter_map(|id| id.rsplit_once('.').map(|(head, _)| format!("{head}.")))
+        .collect();
+    placed(map)
+        .into_iter()
+        .filter(|(kind, id, _, _)| match kind {
+            Picked::Entity => ids.contains(id) || sites.iter().any(|s| id.starts_with(s)),
+            other => selected.contains(&(*other, id.clone())),
+        })
+        .collect()
+}
+
+/// The simulation's view of the map's terrain, made again when the map changes.
+fn sim_terrain(
+    session: &mut Session,
+    content: &canopy_content::Content,
+) -> Option<std::sync::Arc<canopy_sim::terrain::Terrain>> {
+    if let Some((at, terrain)) = &session.sim_terrain
+        && *at == session.loaded_at
+    {
+        return Some(terrain.clone());
+    }
+    let map = session.map.as_ref()?;
+    let terrain = std::sync::Arc::new(canopy_sim::terrain::Terrain::compile(map, content).ok()?);
+    session.sim_terrain = Some((session.loaded_at, terrain.clone()));
+    Some(terrain)
+}
+
+/// The cells taken by buildings and starts (a start: its every fort and worker
+/// formation), but for those in `ignore`.
+fn taken_cells(
+    map: &canopy_content::map::UtcMap,
+    content: &canopy_content::Content,
+    terrain: &canopy_sim::terrain::Terrain,
+    ignore: &[(Picked, String)],
+) -> Vec<(String, canopy_sim::terrain::CellBounds)> {
+    use canopy_sim::terrain::footprint::{Extent, footprint_cells};
+    let skip = |kind: Picked, id: &str| ignore.iter().any(|(k, i)| *k == kind && i == id);
+    let mut out = Vec::new();
+    for e in &map.entities {
+        if skip(Picked::Entity, &e.id) {
+            continue;
+        }
+        if let Some(d) = content.definition(e.definition.as_str())
+            && d.kind == canopy_content::game::Kind::Building
+        {
+            let cells = footprint_cells(
+                e.position.x,
+                e.position.y,
+                Extent::of(d.footprint.as_ref()),
+                e.rotation,
+            );
+            out.push((d.name.clone(), cells));
+        }
+    }
+    for s in &map.player_starts {
+        if skip(Picked::Start, &s.player.to_string()) {
+            continue;
+        }
+        if let Some(cells) = canopy_sim::spawn::start_area(map, content, terrain, s) {
+            out.push((format!("start {}", s.player), cells));
+        }
+    }
+    out
+}
+
+/// Why `placing` may not stand at `land` as the game would check it (for a start, the
+/// start's rules and room from the other starts; for a unit or building, open ground in
+/// the playable area, a building's flat foundation clear of other buildings and starts),
+/// ignoring what is in `ignore` (what a drag moves).
+fn problem(
+    map: &canopy_content::map::UtcMap,
+    content: &canopy_content::Content,
+    terrain: &canopy_sim::terrain::Terrain,
+    placing: &Placing,
+    land: &Landing,
+    ignore: &[(Picked, String)],
+) -> Option<String> {
+    use canopy_sim::terrain::footprint::{Extent, footprint_cells};
+    let overlap = |cells: canopy_sim::terrain::CellBounds| {
+        taken_cells(map, content, terrain, ignore)
+            .into_iter()
+            .find(|(_, other)| {
+                cells.min_x <= other.max_x
+                    && other.min_x <= cells.max_x
+                    && cells.min_y <= other.max_y
+                    && other.min_y <= cells.max_y
+            })
+            .map(|(name, _)| format!("Overlaps {name}"))
+    };
+    let definition = match placing {
+        Placing::Definition(id) => content.definition(id),
+        Placing::Amber => content.definitions.iter().find(|d| catalog::is_mine(d)),
+        Placing::Camp(_) => content
+            .definitions
+            .iter()
+            .find(|d| d.behaviors.camp_defense.is_some()),
+        Placing::Start(player) => {
+            let setup = content
+                .rules
+                .races
+                .values()
+                .filter_map(|r| r.starting_setup.as_ref())
+                .next()
+                .unwrap_or(&content.rules.starting_setup);
+            let start = canopy_content::map::PlayerStart {
+                player: *player,
+                x: land.x,
+                z: land.z,
+                rotation: None,
+                setup: setup.id.to_string(),
+                main_fort: format!("start.player.{player}/main-fort"),
+            };
+            if let Err(error) = canopy_sim::spawn::start_problem(map, content, terrain, &start) {
+                return Some(error);
+            }
+            let crowded = map.player_starts.iter().any(|s| {
+                s.player != *player
+                    && !ignore.contains(&(Picked::Start, s.player.to_string()))
+                    && (s.x - land.x).hypot(s.z - land.z) < 20.0
+            });
+            if crowded {
+                return Some("Too close to another start".into());
+            }
+            return canopy_sim::spawn::start_area(map, content, terrain, &start).and_then(overlap);
+        }
+        Placing::Scenery(_) => return None,
+    }?;
+    if let Some(error) =
+        canopy_sim::spawn::site_problem(map, terrain, definition, land.x, land.z, 0.0)
+    {
+        return Some(error);
+    }
+    if definition.kind == canopy_content::game::Kind::Building {
+        let cells = footprint_cells(
+            land.x,
+            land.z,
+            Extent::of(definition.footprint.as_ref()),
+            0.0,
+        );
+        return overlap(cells);
+    }
+    None
+}
+
+/// Whether the selection may move by `delta` (already snapped): every start, building
+/// and unit it carries must stand where it lands, by [`problem`]'s rules, clear of what
+/// does not move.
+fn move_fits(
+    session: &Session,
+    content: &canopy_content::Content,
+    terrain: Option<&canopy_sim::terrain::Terrain>,
+    delta: (f64, f64),
+) -> Result<(), String> {
+    let (Some(map), Some(terrain)) = (session.map.as_ref(), terrain) else {
+        return Ok(());
+    };
+    let items = carried(session);
+    let ignore: Vec<(Picked, String)> =
+        items.iter().map(|(k, id, _, _)| (*k, id.clone())).collect();
+    for (kind, id, x, z) in &items {
+        let placing = match kind {
+            Picked::Start => Placing::Start(id.parse().unwrap_or(1)),
+            Picked::Entity => match map.entities.iter().find(|e| &e.id == id) {
+                Some(e) => Placing::Definition(e.definition.to_string()),
+                None => continue,
+            },
+            Picked::Object => continue,
+        };
+        let land = Landing {
+            x: x + delta.0,
+            z: z + delta.1,
+            footprint: None,
+        };
+        if let Some(why) = problem(map, content, terrain, &placing, &land, &ignore) {
+            return Err(why);
+        }
+    }
+    Ok(())
+}
+
+/// Why something may not stand where the pointer is: a label beside the pointer.
+fn reason(painter: &egui::Painter, at: egui::Pos2, why: &str) {
+    let galley = painter.layout_no_wrap(
+        why.to_string(),
+        egui::FontId::proportional(12.0),
+        Color32::from_rgb(255, 150, 140),
     );
+    let place = at + egui::vec2(18.0, 16.0);
+    let back = Rect::from_min_size(place, galley.size()).expand2(egui::vec2(7.0, 4.0));
+    painter.rect(
+        back,
+        5,
+        Color32::from_black_alpha(200),
+        Line::new(1.0, Color32::from_rgb(200, 70, 60)),
+        egui::StrokeKind::Inside,
+    );
+    painter.galley(place, galley, Color32::WHITE);
+}
+
+/// What `placing` puts down, as a ghost: its model and scale.
+pub fn ghost_look(content: &canopy_content::Content, placing: &Placing) -> Option<(String, f64)> {
+    match placing {
+        Placing::Definition(id) => crate::map::look_of(content, id),
+        Placing::Amber => content
+            .definitions
+            .iter()
+            .find(|d| catalog::is_mine(d))
+            .and_then(|d| crate::map::look_of(content, d.id.as_str())),
+        Placing::Start(_) => {
+            let setup = content
+                .rules
+                .races
+                .values()
+                .filter_map(|r| r.starting_setup.as_ref())
+                .next()
+                .unwrap_or(&content.rules.starting_setup);
+            crate::map::look_of(content, setup.fort.as_str())
+        }
+        Placing::Camp(_) | Placing::Scenery(_) => None,
+    }
+}
+
+/// The commands that move the whole selection by `delta`: each camp and each old amber
+/// site once, however many of its members are selected.
+fn move_all(
+    session: &Session,
+    content: Option<&canopy_content::Content>,
+    docs: &crate::map::view::Docs,
+    delta: (f64, f64),
+) -> Vec<Command> {
+    let delta = snapped_delta(session, content, delta);
     let camps = docs.map["camps"].as_array().cloned().unwrap_or_default();
     let group = |id: &str| -> String {
         if let Some(c) = camps.iter().position(|c| {
@@ -1671,6 +1921,12 @@ pub fn show(
     }
     out.edits.extend(panel_edit);
     out.preview = std::mem::take(&mut session.blocks.write_picture);
+    // Place and Select check what they put down as the game would.
+    session.overlay = Default::default();
+    let terrain = match (content, session.blocks.tool) {
+        (Some(content), BlockTool::Place | BlockTool::Select) => sim_terrain(session, content),
+        _ => None,
+    };
     let full = ui.available_rect_before_wrap();
     let response = ui.allocate_rect(full, Sense::click_and_drag());
     ui.painter_at(full).rect_filled(full, 0, RAISED);
@@ -1915,6 +2171,23 @@ pub fn show(
             painter.add(egui::Shape::line(points, Line::new(1.5, color)));
         }
     };
+    // A footprint `w` × `h` cells round (`x`, `z`), on the ground.
+    let ground_rect = |x: f32, z: f32, w: f32, h: f32, color: Color32| {
+        let (hw, hh) = (w / 2.0, h / 2.0);
+        let corners = [(-hw, -hh), (hw, -hh), (hw, hh), (-hw, hh), (-hw, -hh)];
+        let mut points = Vec::new();
+        for pair in corners.windows(2) {
+            for k in 0..8 {
+                let t = k as f32 / 8.0;
+                let px = x + pair[0].0 + (pair[1].0 - pair[0].0) * t;
+                let pz = z + pair[0].1 + (pair[1].1 - pair[0].1) * t;
+                let y = crate::map::tools::ground_at(map, px, pz) + 0.15;
+                points.extend(project(view_projection, rect, Vec3::new(px, y, pz)));
+            }
+        }
+        points.extend(points.first().copied());
+        painter.add(egui::Shape::line(points, Line::new(2.0, color)));
+    };
     let preview = |op: &BlockOp, color: Color32| {
         if op.tool == BlockTool::Cells {
             return;
@@ -1946,6 +2219,8 @@ pub fn show(
         style: state.style,
         ..BlockOp::new(state.tool, (0, 0), (0, 0))
     };
+    let mut ghost = None;
+    let mut moved: Vec<(usize, Vec3)> = Vec::new();
     match (&session.blocks.drag, column) {
         (Some(drag), Some((c, p))) => {
             let mut drag = drag.clone();
@@ -1964,6 +2239,39 @@ pub fn show(
                     outline(drag.from, c, SOFT);
                 }
                 shown = Some(op.clone());
+            } else if let (Some(a), Some(content)) = (drag.path.first(), content)
+                && selection_under(session, *a).is_some()
+            {
+                // The selection follows the pointer, snapped as it will land, red where
+                // something may not stand.
+                let delta = snapped_delta(
+                    session,
+                    Some(content),
+                    (f64::from(p.x - a[0]), f64::from(p.z - a[1])),
+                );
+                let fits = move_fits(session, content, terrain.as_deref(), delta);
+                let color = if fits.is_ok() {
+                    Color32::from_rgb(255, 214, 120)
+                } else {
+                    Color32::from_rgb(240, 90, 80)
+                };
+                let keys = session
+                    .scene
+                    .as_ref()
+                    .map(|s| s.keys.clone())
+                    .unwrap_or_default();
+                for (kind, id, x, z) in carried(session) {
+                    let (nx, nz) = ((x + delta.0) as f32, (z + delta.1) as f32);
+                    let y = crate::map::tools::ground_at(map, nx, nz);
+                    let radius = if kind == Picked::Start { 8.0 } else { 3.0 };
+                    ring(Vec3::new(nx, y, nz), radius, color);
+                    if let Some(i) = keys.iter().position(|k| k.0 == kind && k.1 == id) {
+                        moved.push((i, Vec3::new(nx, y, nz)));
+                    }
+                }
+                if let (Err(why), Some(at)) = (&fits, response.hover_pos()) {
+                    reason(&painter, at, why);
+                }
             }
             if op.tool == BlockTool::Cells {
                 for q in &op.path {
@@ -1997,42 +2305,77 @@ pub fn show(
         }
         (None, Some((c, p))) => match state.tool {
             BlockTool::Cells => ring(p, radius.max(0.5), Color32::from_white_alpha(200)),
-            // Place shows where it will land: the footprint on the lattice, or the spot.
+            // Place shows where it will land and what it puts down (its ghost), red with
+            // the reason where it may not stand.
             BlockTool::Place => {
                 let gold = Color32::from_rgb(255, 214, 120);
-                match content {
-                    Some(content) => {
-                        let land = landing(content, &state.placing, [p.x, p.z], state.fine);
-                        let (x, z) = (land.x as f32, land.z as f32);
-                        match land.footprint {
-                            Some((w, h)) => {
-                                let (hw, hh) = (w as f32 / 2.0, h as f32 / 2.0);
-                                let corners =
-                                    [(-hw, -hh), (hw, -hh), (hw, hh), (-hw, hh), (-hw, -hh)];
-                                let mut points = Vec::new();
-                                for pair in corners.windows(2) {
-                                    for k in 0..8 {
-                                        let t = k as f32 / 8.0;
-                                        let px = x + pair[0].0 + (pair[1].0 - pair[0].0) * t;
-                                        let pz = z + pair[0].1 + (pair[1].1 - pair[0].1) * t;
-                                        let y = crate::map::tools::ground_at(map, px, pz) + 0.15;
-                                        points.extend(project(
-                                            view_projection,
-                                            rect,
-                                            Vec3::new(px, y, pz),
-                                        ));
-                                    }
-                                }
-                                points.extend(points.first().copied());
-                                painter.add(egui::Shape::line(points, Line::new(2.0, gold)));
-                            }
-                            None => {
-                                let y = crate::map::tools::ground_at(map, x, z);
-                                ring(Vec3::new(x, y, z), 1.2, gold);
-                            }
+                let red = Color32::from_rgb(240, 90, 80);
+                if let Some(content) = content {
+                    let land = landing(content, &state.placing, [p.x, p.z], state.fine);
+                    let why = terrain
+                        .as_deref()
+                        .and_then(|t| problem(map, content, t, &state.placing, &land, &[]));
+                    let color = if why.is_some() { red } else { gold };
+                    let (x, z) = (land.x as f32, land.z as f32);
+                    match land.footprint {
+                        Some((w, h)) => {
+                            ground_rect(x, z, w as f32, h as f32, color);
+                        }
+                        None => {
+                            let y = crate::map::tools::ground_at(map, x, z);
+                            ring(Vec3::new(x, y, z), 1.2, color);
                         }
                     }
-                    None => ring(p, 4.0, gold),
+                    let owner = match &state.placing {
+                        Placing::Start(n) => Some(usize::from(n.saturating_sub(1))),
+                        Placing::Definition(_)
+                            if state.owner > 0
+                                && state
+                                    .catalog
+                                    .find(&state.placing)
+                                    .is_some_and(|e| !e.neutral) =>
+                        {
+                            Some(usize::from(state.owner - 1))
+                        }
+                        _ => None,
+                    };
+                    let degrees = match &state.placing {
+                        Placing::Start(_) => {
+                            let setup = content
+                                .rules
+                                .races
+                                .values()
+                                .filter_map(|r| r.starting_setup.as_ref())
+                                .next()
+                                .unwrap_or(&content.rules.starting_setup);
+                            crate::map::tools::facing_middle(
+                                content,
+                                setup.fort.as_str(),
+                                land.x,
+                                land.z,
+                                map_size,
+                            ) as f32
+                        }
+                        _ => 0.0,
+                    };
+                    if let Some((_, scale)) = session.scene.as_ref().and_then(|s| s.ghost) {
+                        let colors = session.scene.as_ref().map(|s| s.colors.clone());
+                        let y = crate::map::tools::ground_at(map, x, z);
+                        ghost = Some((
+                            glam::Mat4::from_scale_rotation_translation(
+                                Vec3::splat(scale as f32),
+                                glam::Quat::from_rotation_y(degrees.to_radians()),
+                                Vec3::new(x, y, z),
+                            ),
+                            owner.and_then(|o| colors?.get(o).copied()),
+                            why.is_none(),
+                        ));
+                    }
+                    if let (Some(why), Some(at)) = (&why, response.hover_pos()) {
+                        reason(&painter, at, why);
+                    }
+                } else {
+                    ring(p, 4.0, gold);
                 }
             }
             // Select rings what a click would pick.
@@ -2066,6 +2409,8 @@ pub fn show(
         },
         _ => {}
     }
+    session.overlay.ghost = ghost;
+    session.overlay.moved = std::mem::take(&mut moved);
     // The mirror's twin of what the pointer would change.
     if symmetry != Symmetry::None
         && let Some(o) = &shown
@@ -2087,6 +2432,13 @@ pub fn show(
     if response.drag_started_by(egui::PointerButton::Primary)
         && let Some((c, p)) = column
     {
+        // A drag begins where the button went down, not where it has moved to by the
+        // time it counts as a drag: what was pressed on is what moves.
+        let (c, p) = input
+            .pointer
+            .press_origin()
+            .and_then(|o| pick(session, view_projection, eye, rect, o))
+            .map_or((c, p), |o| (blocks.column_at(o.x, o.z), o));
         session.blocks.drag = Some(Drag {
             from: c,
             to: c,
@@ -2128,9 +2480,17 @@ pub fn show(
             match (moved, docs) {
                 // A drag that begins on the selection moves all of it.
                 (Some(delta), Some(docs)) if on_selection => {
-                    let commands = move_all(session, content, docs, delta);
-                    if !commands.is_empty() {
-                        out.edits.push(step(session, "Move", commands));
+                    let snapped = snapped_delta(session, content, delta);
+                    let fits = match content {
+                        Some(content) => move_fits(session, content, terrain.as_deref(), snapped),
+                        None => Ok(()),
+                    };
+                    // Where something may not stand, the move does not happen.
+                    if fits.is_ok() {
+                        let commands = move_all(session, content, docs, delta);
+                        if !commands.is_empty() {
+                            out.edits.push(step(session, "Move", commands));
+                        }
                     }
                 }
                 // Any other drag selects what stands in its rectangle.
@@ -2192,9 +2552,19 @@ pub fn show(
                 let placing = session.blocks.placing.clone();
                 let owner = session.blocks.owner;
                 let loaded = session.loaded_at;
-                out.edits
-                    .extend(place(session, content, docs, &placing, owner, at));
-                if symmetry != Symmetry::None {
+                // Where it may not stand, nothing is placed (the ghost says why).
+                let land = landing(content, &placing, at, session.blocks.fine);
+                let fits = match (session.map.as_ref(), terrain.as_deref()) {
+                    (Some(map), Some(t)) => {
+                        problem(map, content, t, &placing, &land, &[]).is_none()
+                    }
+                    _ => true,
+                };
+                if fits {
+                    out.edits
+                        .extend(place(session, content, docs, &placing, owner, at));
+                }
+                if fits && symmetry != Symmetry::None {
                     // The mirror's twin: the next player's start, or the next player's
                     // unit or building.
                     let next = |n: u8| n % 8 + 1;
@@ -2220,14 +2590,22 @@ pub fn show(
         && out.edits.is_empty()
     {
         session.blocks.twin = None;
-        out.edits.extend(place(
-            session,
-            content,
-            docs,
-            &twin.placing,
-            twin.owner,
-            twin.at,
-        ));
+        let land = landing(content, &twin.placing, twin.at, session.blocks.fine);
+        let terrain = sim_terrain(session, content);
+        let fits = match (session.map.as_ref(), terrain.as_deref()) {
+            (Some(map), Some(t)) => problem(map, content, t, &twin.placing, &land, &[]).is_none(),
+            _ => true,
+        };
+        if fits {
+            out.edits.extend(place(
+                session,
+                content,
+                docs,
+                &twin.placing,
+                twin.owner,
+                twin.at,
+            ));
+        }
     }
     // The rectangle a Select drag is drawing.
     if session.blocks.tool == BlockTool::Select
