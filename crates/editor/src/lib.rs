@@ -225,11 +225,8 @@ impl Editor {
     /// Shows or hides the panels round the map view: the maps library and the map's panel
     /// (captures).
     pub fn set_map_panels(&mut self, library: bool, properties: bool) {
-        world::Panels {
-            library,
-            properties,
-        }
-        .set(&self.ctx);
+        self.shell.set_library(library);
+        world::Panels { properties }.set(&self.ctx);
     }
 
     /// The block editor's view: "blocks", "generated", "pathing" or "split" (captures).

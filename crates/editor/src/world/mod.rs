@@ -271,20 +271,16 @@ impl View {
     }
 }
 
-/// Which panels round the map view show (the maps editor's own layout): the maps
-/// library, and the map's panel on the right (its settings, or what is selected).
+/// Which panels round the map view show (the maps editor's own layout): the map's panel
+/// on the right (its settings, or what is selected). The library is the shell's.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Panels {
-    pub library: bool,
     pub properties: bool,
 }
 
 impl Default for Panels {
     fn default() -> Self {
-        Self {
-            library: false,
-            properties: true,
-        }
+        Self { properties: true }
     }
 }
 

@@ -23,7 +23,8 @@ pub enum Icon {
     ChevronLeft,
     ChevronDown,
     Search,
-    Panel,
+    Robot,
+    PanelLeft,
     File,
     Send,
     // The block editor's tools.
@@ -43,7 +44,6 @@ pub enum Icon {
     Pathing,
     Split,
     // The map view's panels.
-    Library,
     PanelRight,
     Symmetry,
 }
@@ -208,9 +208,21 @@ fn parts(icon: Icon) -> Vec<Part> {
             circle([11.0, 11.0], 7.0),
             Open(vec![[20.0, 20.0], [16.5, 16.5]]),
         ],
-        Icon::Panel => vec![
+        // A robot's head: the assistant.
+        Icon::Robot => vec![
+            Closed(vec![[4.0, 8.0], [20.0, 8.0], [20.0, 20.0], [4.0, 20.0]]),
+            Open(vec![[12.0, 8.0], [12.0, 4.5]]),
+            circle([12.0, 3.5], 1.2),
+            Open(vec![[2.0, 12.5], [2.0, 15.5]]),
+            Open(vec![[22.0, 12.5], [22.0, 15.5]]),
+            circle([8.5, 13.0], 1.4),
+            circle([15.5, 13.0], 1.4),
+            Open(vec![[9.0, 17.0], [15.0, 17.0]]),
+        ],
+        // A window with its left column: the library.
+        Icon::PanelLeft => vec![
             Closed(vec![[3.0, 4.0], [21.0, 4.0], [21.0, 20.0], [3.0, 20.0]]),
-            Open(vec![[15.0, 4.0], [15.0, 20.0]]),
+            Open(vec![[9.0, 4.0], [9.0, 20.0]]),
         ],
         Icon::File => vec![
             Closed(vec![
@@ -355,16 +367,7 @@ fn parts(icon: Icon) -> Vec<Part> {
             Closed(vec![[2.5, 5.0], [11.0, 5.0], [11.0, 19.0], [2.5, 19.0]]),
             Closed(vec![[13.0, 5.0], [21.5, 5.0], [21.5, 19.0], [13.0, 19.0]]),
         ],
-        // A list: the maps library.
-        Icon::Library => vec![
-            Open(vec![[9.0, 6.0], [21.0, 6.0]]),
-            Open(vec![[9.0, 12.0], [21.0, 12.0]]),
-            Open(vec![[9.0, 18.0], [21.0, 18.0]]),
-            circle([4.5, 6.0], 1.2),
-            circle([4.5, 12.0], 1.2),
-            circle([4.5, 18.0], 1.2),
-        ],
-        // A window with its left or right column: the tools' panel, the properties.
+        // A window with its right column: the map's panel.
         Icon::PanelRight => vec![
             Closed(vec![[3.0, 4.0], [21.0, 4.0], [21.0, 20.0], [3.0, 20.0]]),
             Open(vec![[15.0, 4.0], [15.0, 20.0]]),

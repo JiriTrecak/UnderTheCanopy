@@ -39,7 +39,8 @@
       "Generated cliffs join cleanly at corners and turns, ramps keep their side walls down to the foot, and diagonal cliff edges no longer show a staircase",
       "Map editor: Test in game works when the game was opened straight into the editor",
       "Map editor: undo keeps the map on its Map tab instead of switching to Form",
-      "Map editor: units placed with Place stand on cell centres, and moving a selection with a building keeps it on the building grid"
+      "Map editor: units placed with Place stand on cell centres, and moving a selection with a building keeps it on the building grid",
+      "Editor: the library list is shown again and can always be toggled from the header, beside the assistant (now a robot icon)"
     ],
     "knownIssues": []
   },

@@ -885,9 +885,9 @@ fn panel_button(ui: &mut Ui, icon: Icon, on: bool, hint: &str) -> bool {
     response.on_hover_text(hint).clicked()
 }
 
-/// The view bar, floating at the top of the view: the panels round it (the maps library,
-/// the tools' panel, the properties), and what it shows: the blocks or the world the
-/// biome makes of them (G), both side by side (V), where ground units walk (H).
+/// The view bar, floating at the top of the view: the map's panel, and what it shows: the
+/// blocks or the world the biome makes of them (G), both side by side (V), where ground
+/// units walk (H).
 pub(super) fn view_bar(ctx: &egui::Context, session: &mut Session, view: Rect) {
     egui::Area::new(Id::new(("block-view", &session.root)))
         .order(Order::Foreground)
@@ -902,17 +902,13 @@ pub(super) fn view_bar(ctx: &egui::Context, session: &mut Session, view: Rect) {
                     ui.horizontal(|ui| {
                         let mut panels = super::Panels::get(ui.ctx());
                         let before = panels;
-                        for (icon, on, hint) in [
-                            (Icon::Library, &mut panels.library, "The maps library"),
-                            (
-                                Icon::PanelRight,
-                                &mut panels.properties,
-                                "The map's panel: its settings, or what is selected",
-                            ),
-                        ] {
-                            if panel_button(ui, icon, *on, hint) {
-                                *on = !*on;
-                            }
+                        if panel_button(
+                            ui,
+                            Icon::PanelRight,
+                            panels.properties,
+                            "The map's panel: its settings, or what is selected",
+                        ) {
+                            panels.properties = !panels.properties;
                         }
                         if panels != before {
                             panels.set(ui.ctx());

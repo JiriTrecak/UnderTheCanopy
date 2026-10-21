@@ -191,6 +191,8 @@ pub struct Shell {
     store: Option<Store>,
     current: Kind,
     workspaces: HashMap<Kind, Workspace>,
+    /// Whether the library (the list on the left) shows.
+    library: bool,
     assistant: bool,
     /// Asking about unsaved changes before leaving.
     leaving: Option<Leave>,
@@ -338,6 +340,7 @@ impl Shell {
             store,
             current: Kind::Abilities,
             workspaces: HashMap::new(),
+            library: true,
             assistant: false,
             leaving: None,
             notice: None,
@@ -415,7 +418,7 @@ impl Shell {
         let mut edits = Vec::new();
         let unused = (kind == Kind::Assets && workspace.unused_only).then_some(&unused_assets);
         let cooking = self.cooking.is_some();
-        // The maps editor can hide its library and properties (the map view's top bar).
+        // The maps editor can hide its properties (the map view's top bar).
         let panels = if kind == Kind::Maps {
             crate::world::Panels::get(ui.ctx())
         } else {
@@ -425,7 +428,7 @@ impl Shell {
             create,
             import,
             cook,
-        } = if panels.library {
+        } = if self.library {
             library_panel(ui, kind, workspace, store, &package, unused, cooking)
         } else {
             LibraryAction::default()
@@ -2184,6 +2187,11 @@ impl Shell {
     }
 
     /// The block editor's tool by name (captures).
+    /// Shows or hides the library (captures).
+    pub fn set_library(&mut self, shown: bool) {
+        self.library = shown;
+    }
+
     pub fn set_block_tool(&mut self, name: &str) {
         if let Some(root) = self.active_map_root()
             && let Some(session) = self.maps.get_mut(&root)
@@ -2416,11 +2424,17 @@ impl Shell {
                     }
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                         ui.spacing_mut().item_spacing.x = 6.0;
-                        if icon_button(ui, Icon::Panel, self.assistant, true)
+                        if icon_button(ui, Icon::Robot, self.assistant, true)
                             .on_hover_text("Assistant")
                             .clicked()
                         {
                             self.assistant = !self.assistant;
+                        }
+                        if icon_button(ui, Icon::PanelLeft, self.library, true)
+                            .on_hover_text("The library")
+                            .clicked()
+                        {
+                            self.library = !self.library;
                         }
                         clicked.0 = ui
                             .add_enabled(unsaved > 0, primary("Save"))
