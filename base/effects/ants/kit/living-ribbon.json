@@ -1,0 +1,37 @@
+{
+  "id": "effect.ants.kit.living-ribbon",
+  "name": "Living light",
+  "description": "A ribbon of blue-violet light from the Queen's staff to the one she touches.",
+  "durationTicks": 14,
+  "loop": false,
+  "layers": [
+    {
+      "id": "beam",
+      "enabled": true,
+      "shape": "beam",
+      "colour": "#6f78ff",
+      "accent": "#e4ebff",
+      "durationTicks": 14,
+      "count": 1,
+      "size": 0.7,
+      "height": 4.0,
+      "blend": "additive",
+      "follow": true,
+      "intensity": 2.2
+    },
+    {
+      "id": "core",
+      "enabled": true,
+      "shape": "beam",
+      "colour": "#ffffff",
+      "accent": "#ffffff",
+      "durationTicks": 10,
+      "count": 1,
+      "size": 0.2,
+      "height": 4.0,
+      "blend": "additive",
+      "follow": true,
+      "intensity": 1.6
+    }
+  ]
+}

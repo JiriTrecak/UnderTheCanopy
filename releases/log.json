@@ -36,7 +36,9 @@
       "Map editor: Place shows a ghost of what it puts down, and dragging a selection moves it live, snapped; both turn red with the reason where the game would not allow it, and refuse to place or drop there",
       "Maps can be any multiple of 32 cells from 128 to 1024 across",
       "Frozen water: deep dark water with an ice shelf along the shore and floes drifting on it; lake shores slope smoothly under the ice instead of stepping",
-      "Editor: no more row of view tabs; a document's Form and JSON open as modals from the tab bar, beside its other views"
+      "Editor: no more row of view tabs; a document's Form and JSON open as modals from the tab bar, beside its other views",
+      "The ant Queen is redesigned as a true hero: Living Light heals an ally or sears an enemy, Cocoon makes her untouchable while she keeps fighting, One Body shields the army around her, and her ultimate Rebirth raises up to 8 fallen allies, changed by raw substance. Her old Found, Royal Jelly and Exodus are gone.",
+      "Raising or consuming the dead is refused when there are no corpses nearby, so an ultimate is never wasted on an empty field."
     ],
     "fixed": [
       "Generated cliffs join cleanly at corners and turns, ramps keep their side walls down to the foot, and diagonal cliff edges no longer show a staircase",

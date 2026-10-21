@@ -40,6 +40,15 @@ BLUE = '#5b7bff'
 BLUE_LIGHT = '#c8d4ff'
 EARTH = '#c8a070'
 EARTH_LIGHT = '#f2dcb4'
+# The Queen's living light: bioluminescent blue-violet, a pearly silk.
+LIVING = '#6f78ff'
+LIVING_LIGHT = '#e4ebff'
+LIVING_VIOLET = '#a98cff'
+PEARL = '#dfe4ff'
+DUSK = '#141032'
+SILK = '#cdc6ff'
+# A little towards the game camera, so a shell drawn round a unit stands in front of it.
+FRONT = {'x': 0.0, 'y': 0.0, 'z': 3.5}
 
 FX = {}
 
@@ -58,6 +67,8 @@ PETAL = art('petal')
 SHELL = art('shell')
 SLASH = art('slash')
 EARTH_BURST = art('earth-burst')
+BLOOM = art('living-bloom')
+COCOON = art('silk-cocoon')
 
 
 def put(key, e):
@@ -235,6 +246,31 @@ def aura(key, name, colour, accent, size=1.6, flame=False, texture=None, light_=
         layers.append(light('light', colour, accent, size * 3, 1.2, 80, height=1.0, sustain=True,
                             pulse_=pulse(40, 0.6, 1.0)))
     return eff(key, name, name + ': worn for as long as it lasts.', 80, layers, loop=True)
+
+
+def blossom(id_, colour, size, duration, start=0, spin=640, burst=False):
+    """The living-light flower opening on the ground: a covering bloom that keeps its colour on
+    bright snow and sand, and its glow over it. `burst` blows it open and away at once (the sear)."""
+    if burst:
+        open_ = {'scaleOverLife': vl.keys((0, 0.4), (0.25, 1.1), (1, 1.4)),
+                 'opacityOverLife': vl.keys((0, 0), (0.06, 1), (0.35, 0.8), (1, 0))}
+    else:
+        open_ = {'scaleOverLife': vl.keys((0, 0.25), (0.18, 1.0), (1, 1.08)),
+                 'opacityOverLife': vl.keys((0, 0), (0.08, 1), (0.65, 0.9), (1, 0)),
+                 'motion': {'rotation': {'periodTicks': spin, 'direction': 'clockwise'}}}
+    return [layer(id_, 'billboard', colour, colour, duration, 1, size, 0.07, startTick=start, orientation='ground',
+                  blend='normal', intensity=1.0, texture=BLOOM, **open_),
+            layer(id_ + '-glow', 'billboard', colour, WHITE, duration, 1, size, 0.09, startTick=start,
+                  orientation='ground', blend='additive', intensity=0.9, core=0.25, texture=BLOOM, **open_)]
+
+
+def deep_sigil(id_, texture, colour, size, duration, spin=240, glow_=0.7):
+    """A ground glyph that keeps its colour on snow and sand: a covering layer in the colour and
+    a softer glow over it (a purely additive glyph washes out to white there)."""
+    return [vl.shade(id_ + '-shade', DUSK, size * 1.3, duration, opacity=0.45,
+                     opacityOverLife=vl.keys((0, 0), (0.1, 1), (0.7, 0.9), (1, 0))),
+            dict(sigil(id_, texture, colour, size, duration, spin=spin, intensity=0.55), blend='normal'),
+            sigil(id_ + '-glow', texture, colour, size, duration, spin=spin, intensity=glow_)]
 
 
 def windup(key, name, colour, accent, size=2.0, duration=30):
@@ -448,37 +484,119 @@ def build():
             drift('petals', PETAL, GOLD, GOLD_LIGHT, 18, 0.3, 46, 3.0, rise=2.6, height=1.0),
         ])
 
-    # --- The Queen.
-    eff('jelly-beam', 'Royal jelly', 'A ribbon of golden light from the Queen to the one she feeds.', 18, [
-        layer('beam', 'beam', GOLD, GOLD_LIGHT, 18, 1, 0.9, 1.6, blend='additive', follow=True, intensity=2.0),
-        layer('core', 'beam', WHITE, WHITE, 14, 1, 0.25, 1.6, blend='additive', follow=True),
-    ])
-    eff('jelly', 'Royal jelly',
-        'Golden light pours down on the unit: a pillar, a flash, petals and a ring of gold.', 50, [
-            pillar('pillar', GOLD, GOLD_LIGHT, 2.8, 14.0, 34, intensity=1.6),
-            light('light', GOLD, GOLD_LIGHT, 14, 5.0, 20, height=2.0),
-            sigil('sigil', SIGIL, GOLD, 9.0, 40, intensity=1.6),
-            shock('shock', GOLD, 10.0, 18, intensity=2.0),
-            drift('petals', PETAL, GOLD, GOLD_LIGHT, 24, 0.3, 40, 2.0, rise=3.0, height=0.4),
-            glint('star', GOLD_LIGHT, 5.0, duration=10, height=3.0, intensity=3.0),
+    # --- The Queen (docs/spell-visuals.md): living light, silk and, at the last, raw substance.
+    eff('cast-living', 'Living light wind-up',
+        'The Queen gathers her light: a small blossom opens at her feet and fireflies rise to her staff.', 20, [
+            sigil('bloom', BLOOM, LIVING, 3.2, 20, intensity=1.2, spin=480),
+            vl.rising_motes('motes', LIVING_LIGHT, LIVING, 8, 0.18, 1.2, lifetime=20, rise=4.0, intensity=2.0),
+            orb('hands', LIVING, LIVING_LIGHT, 1.6, 20, height=5.5, intensity=1.4),
         ])
-    aura('jellied', 'Royal jelly', GOLD, GOLD_LIGHT, 1.2, flame=True)
+    eff('living-ribbon', 'Living light', 'A ribbon of blue-violet light from the Queen\'s staff to the one she touches.',
+        14, [
+            layer('beam', 'beam', LIVING, LIVING_LIGHT, 14, 1, 0.7, 4.0, blend='additive', follow=True, intensity=2.2),
+            layer('core', 'beam', WHITE, WHITE, 10, 1, 0.2, 4.0, blend='additive', follow=True, intensity=1.6),
+        ])
+    eff('living-light', 'Living light',
+        'Light falls on the one she heals: a column of blue-violet light, a glowing blossom opening at its feet, a pulse and fireflies rising.',
+        64, [
+            vl.shade('shade', DUSK, 12.0, 64, opacity=0.5,
+                     opacityOverLife=vl.keys((0, 0), (0.08, 1), (0.6, 0.9), (1, 0))),
+            light('light', LIVING, LIVING_LIGHT, 12, 4.0, 18, height=3.0),
+            pillar('column', LIVING, LIVING_VIOLET, 2.6, 14.0, 26, intensity=0.9),
+            pillar('core', LIVING_LIGHT, LIVING, 0.8, 14.0, 18, intensity=0.7),
+            vl.flare('flare', LIVING, 5.0, duration=8, height=1.6, intensity=1.4),
+            *blossom('bloom', LIVING, 10.0, 64),
+            vl.ring('pulse', LIVING, 12.0, duration=16, intensity=1.2),
+            vl.rising_motes('fireflies', LIVING_LIGHT, LIVING, 30, 0.4, 2.2, lifetime=48, rise=3.2, intensity=2.2),
+            drift('petals', PETAL, LIVING, LIVING_VIOLET, 12, 0.45, 44, 2.0, rise=2.2, height=0.8, intensity=0.9),
+        ])
+    eff('living-sear', 'Living light sears',
+        'The light strikes an enemy: a violet column, a flash and star, the blossom blown open and scattered into burning petals and sparks.',
+        40, [
+            vl.shade('shade', DUSK, 9.0, 40, opacity=0.5,
+                     opacityOverLife=vl.keys((0, 0), (0.08, 1), (0.5, 0.8), (1, 0))),
+            light('light', LIVING_VIOLET, WHITE, 10, 4.0, 12, height=2.0),
+            pillar('column', LIVING_VIOLET, LIVING, 2.0, 14.0, 14, intensity=1.1),
+            pillar('core', LIVING_LIGHT, LIVING_VIOLET, 0.6, 14.0, 10, intensity=0.9),
+            vl.flare('flare', LIVING_VIOLET, 6.0, duration=7, height=1.4, intensity=1.8),
+            glint('star', LIVING_VIOLET, 6.0, duration=9, height=1.6, intensity=2.2),
+            *blossom('bloom', LIVING_VIOLET, 8.0, 28, burst=True),
+            vl.ring('shock', LIVING_VIOLET, 10.0, duration=14, intensity=1.4),
+            streaks('sparks', LIVING_VIOLET, LIVING_LIGHT, count=30, speed=10, size=0.16, lifetime=16, gravity=10,
+                    cone=95, height=1.2, intensity=3.0),
+            drift('petals', PETAL, LIVING_VIOLET, LIVING_LIGHT, 14, 0.4, 30, 1.0, rise=-1.0, height=1.4, speed=5.5,
+                  cone=90, intensity=1.0),
+        ])
+    eff('cocoon-spin', 'Cocoon spun',
+        'Silk of light spirals up around the Queen and closes: strands winding upward, a pearly flash and a soft ring.',
+        34, [
+            light('light', PEARL, LIVING_LIGHT, 10, 3.5, 18, height=3.0),
+            layer('strands', 'particles', PEARL, LIVING_LIGHT, 30, 48, 0.2, 0.2, blend='additive', intensity=3.0,
+                  core=0.6, texture=SPARK_DOT, follow=True,
+                  emitter=vl.emitter('burst', 26, 48, 0.4, variation=0.3, direction=(0, 1, 0), cone=10,
+                                  gravity=-9.0, drag=0.6, spawn=3.2, start=0.2, end=0.1, fade_out=0.4,
+                                  spawnInner=0.8, orbit=540, pull=0.5, stretch=0.12)),
+            vl.flare('flare', PEARL, 7.0, duration=8, height=4.0, intensity=2.0),
+            shock('shock', PEARL, 8.0, 14, intensity=1.6),
+        ])
+    eff('cocoon', 'Cocoon',
+        'A cocoon of glowing silk around the Queen: nothing can harm her while it shines.', 80, [
+            layer('silk', 'billboard', SILK, SILK, 80, 1, 10.5, 5.6, blend='normal', intensity=0.55, texture=COCOON,
+                  sustain=True, follow=True, offset=FRONT, motion={'opacity': pulse(60, 0.75, 1.0)}),
+            sprite('cocoon', COCOON, LIVING, 7.0, 80, height=5.6, grow=None, fade=False, sustain=True, follow=True,
+                   intensity=0.8, offset=FRONT, motion={'opacity': pulse(60, 0.6, 1.0)}),
+            ring('ring', PEARL, LIVING_LIGHT, 3.4, 80, sustain=True, follow=True, intensity=0.6,
+                 motion={'opacity': pulse(40, 0.6, 1.0)}),
+            layer('threads', 'particles', PEARL, LIVING_LIGHT, 80, 16, 0.16, 0.6, blend='additive', intensity=2.4,
+                  core=0.6, texture=SPARK_DOT, follow=True, sustain=True,
+                  emitter=vl.emitter('continuous', 40, 8, 0.3, variation=0.4, direction=(0, 1, 0), cone=10,
+                                  gravity=-3.0, drag=0.5, spawn=3.0, start=0.16, end=0.06, fade_out=0.5,
+                                  spawnInner=0.85, orbit=360, stretch=0.1)),
+        ], loop=True)
     aura('one-body-source', 'One body', SCENT, SCENT_LIGHT, 4.0, texture=SIGIL)
     aura('one-body', 'One body', SCENT, SCENT_LIGHT, 1.0)
-    eff('exodus-gather', 'Exodus',
-        'The colony gathers to go under: a great royal sigil opens around the Queen and a column of violet light rises.',
-        80, [
-            sigil('sigil', SIGIL, VIOLET_HOT, 22.0, 80, intensity=1.6, spin=200),
-            pillar('pillar', VIOLET, VIOLET_LIGHT, 3.0, 14.0, 80, intensity=1.4),
-            light('light', VIOLET, VIOLET_LIGHT, 20, 4.0, 80, height=3.0, pulse_=pulse(20, 0.5, 1.0)),
-            drift('motes', PETAL, VIOLET, VIOLET_LIGHT, 40, 0.3, 60, 8.0, rise=3.0, height=0.3),
-            mist('earth', EARTH, 10, 2.4, 60, 8.0, start=30, intensity=0.5),
+    eff('rebirth-gather', 'Rebirth wind-up',
+        'The Queen draws up raw substance: violet light streams in from all around and swells in her hands.', 24, [
+            *deep_sigil('sigil', SIGIL, VIOLET, 10.0, 24, spin=200, glow_=0.6),
+            layer('inflow', 'particles', VIOLET_HOT, VIOLET_LIGHT, 22, 48, 0.24, 0.4, blend='additive',
+                  intensity=3.0, core=0.7, texture=SPARK_DOT,
+                  emitter=vl.emitter('burst', 22, 48, 0.2, variation=0.3, direction=(0, 1, 0), cone=30, gravity=-4.0,
+                                  drag=0.2, spawn=12.0, start=0.24, end=0.12, fade_in=0.2, fade_out=0.3,
+                                  spawnInner=0.7, orbit=220, pull=1.0, stretch=0.08)),
+            orb('hands', VIOLET_HOT, VIOLET_LIGHT, 2.4, 24, height=5.5, intensity=1.8),
         ])
-    eff('exodus-rise', 'Exodus arrival', 'The colony bursts up out of the ground.', 40, [
-        sprite('earth', EARTH_BURST, EARTH, 4.0, 18, height=0.8, grow=(0.7, 1.1)),
-        drift('motes', PETAL, VIOLET, VIOLET_LIGHT, 8, 0.24, 30, 1.0, rise=3.0),
-        puffs('dust', EARTH, EARTH_LIGHT, count=4, speed=2.0, size=0.9, height=0.0, lifetime=24, rise=-0.4, cone=85),
-    ])
+    eff('rebirth', 'Rebirth',
+        'Raw substance erupts from the Queen: a towering violet column, a great sigil, a wave over the fallen and a rain of liquid light.',
+        70, [
+            light('light', VIOLET, VIOLET_LIGHT, 26, 6.0, 40, height=4.0),
+            pillar('column', VIOLET, VIOLET_LIGHT, 3.6, 22.0, 50, intensity=1.8),
+            pillar('core', WHITE, VIOLET_LIGHT, 1.2, 22.0, 30, intensity=1.4),
+            *deep_sigil('sigil', SIGIL, VIOLET, 26.0, 70, spin=240),
+            shock('wave', VIOLET, 30.0, 26, intensity=1.6),
+            shock('wave2', VIOLET, 22.0, 30, start=8, intensity=1.2),
+            layer('rain', 'rain', VIOLET, VIOLET_LIGHT, 34, 48, 0.24, 10.0, spread=13.0, fallSpeed=1.2,
+                  launchDelayMs=420, length=3.0, blend='additive', intensity=2.6, core=0.9, texture=SPARK_DOT,
+                  impact={'durationTicks': 12, 'count': 3, 'size': 0.16, 'spread': 0.6, 'height': 0.2,
+                          'colour': VIOLET, 'accent': VIOLET_LIGHT}),
+        ])
+    eff('reborn-rise', 'Reborn',
+        'A fallen ant rises: violet liquid light wells up out of the ground beneath it and splashes up around it.', 44, [
+            sprite('splash', SPLASH, VIOLET_HOT, 4.4, 20, height=1.0, grow=(0.6, 1.2), intensity=2.2),
+            pillar('column', VIOLET, VIOLET_LIGHT, 1.4, 8.0, 26, intensity=1.4),
+            vl.flare('flare', VIOLET_LIGHT, 3.6, duration=8, height=1.0, intensity=2.4),
+            vl.burst('drops', VIOLET_HOT, VIOLET_LIGHT, 14, 0.2, speed=6.0, lifetime=24, gravity=14, collide=0.9,
+                     intensity=2.0, cone=40),
+            vl.rising_motes('motes', VIOLET_LIGHT, VIOLET, 10, 0.2, 0.8, lifetime=40, rise=3.0, intensity=2.2),
+            glow('pool', VIOLET, VIOLET_LIGHT, 2.4, 44, height=0.06, intensity=0.6,
+                 motion={'opacity': pulse(88, 0.0, 1.0, 'sine')}),
+        ])
+    eff('reborn', 'Reborn', 'The substance stays in the reborn: a faint violet glow and motes of light rising off it.',
+        80, [
+            glow('glow', VIOLET, VIOLET_LIGHT, 1.4, 80, height=0.06, sustain=True, follow=True, intensity=0.35,
+                 motion={'opacity': pulse(60, 0.5, 1.0)}),
+            vl.rising_motes('motes', VIOLET_LIGHT, VIOLET, 3, 0.16, 0.6, lifetime=40, rise=2.0, mode='continuous',
+                            duration=80, sustain=True, follow=True, intensity=2.0, height=0.6),
+        ], loop=True)
 
     # --- The Royal Alchemist.
     eff('draught-flight', 'Volatile draught', 'A flask of glowing violet liquid arcs through the air.', 40, [

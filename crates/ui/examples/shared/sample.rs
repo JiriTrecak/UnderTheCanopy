@@ -32,7 +32,7 @@ pub const ICONS: &[&str] = &[
     "asset.icons.stat-armor-light",
     "asset.portraits.units.ants-general",
     "asset.icons.ability-ants-general-war-column",
-    "asset.icons.ability-ants-queen-royal-jelly",
+    "asset.icons.ability-ants-queen-living-light",
     "asset.portraits.units.beetles-hornbreaker",
     "asset.portraits.units.ants-herald",
 ];
@@ -238,7 +238,7 @@ pub fn populate_hud(ui: &mut Ui) {
         ("asset.icons.item-thornband", None),
         ("asset.icons.item-firefly-pendant", None),
         ("asset.icons.item-resin-salve", Some("2")),
-        ("asset.icons.ability-ants-queen-royal-jelly", None),
+        ("asset.icons.ability-ants-queen-living-light", None),
     ];
     ui.set_count(inventory, items.len());
     for (i, (img, count)) in items.iter().enumerate() {

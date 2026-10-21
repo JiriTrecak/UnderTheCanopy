@@ -1,0 +1,145 @@
+{
+  "id": "effect.ants.kit.cocoon",
+  "name": "Cocoon",
+  "description": "A cocoon of glowing silk around the Queen: nothing can harm her while it shines.",
+  "durationTicks": 80,
+  "loop": true,
+  "layers": [
+    {
+      "id": "silk",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#cdc6ff",
+      "accent": "#cdc6ff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 10.5,
+      "height": 5.6,
+      "blend": "normal",
+      "intensity": 0.55,
+      "texture": {
+        "asset": "asset.effects.ants.silk-cocoon",
+        "role": "image",
+        "index": 1
+      },
+      "sustain": true,
+      "follow": true,
+      "offset": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 3.5
+      },
+      "motion": {
+        "opacity": {
+          "periodTicks": 60,
+          "min": 0.75,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "cocoon",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#6f78ff",
+      "accent": "#ffffff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 10.5,
+      "height": 5.6,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 1.2800000000000002,
+      "core": 0.4,
+      "texture": {
+        "asset": "asset.effects.ants.silk-cocoon",
+        "role": "image",
+        "index": 1
+      },
+      "sustain": true,
+      "follow": true,
+      "offset": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 3.5
+      },
+      "motion": {
+        "opacity": {
+          "periodTicks": 60,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "ring",
+      "enabled": true,
+      "shape": "ring",
+      "colour": "#dfe4ff",
+      "accent": "#e4ebff",
+      "durationTicks": 80,
+      "count": 1,
+      "size": 3.4,
+      "height": 0.06,
+      "blend": "additive",
+      "sustain": true,
+      "follow": true,
+      "intensity": 0.6,
+      "motion": {
+        "opacity": {
+          "periodTicks": 40,
+          "min": 0.6,
+          "max": 1.0,
+          "easing": "sine"
+        }
+      }
+    },
+    {
+      "id": "threads",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#dfe4ff",
+      "accent": "#e4ebff",
+      "durationTicks": 80,
+      "count": 16,
+      "size": 0.16,
+      "height": 0.6,
+      "blend": "additive",
+      "intensity": 2.4,
+      "core": 0.6,
+      "texture": {
+        "asset": "asset.effects.beetles.spark",
+        "role": "image",
+        "index": 1
+      },
+      "follow": true,
+      "sustain": true,
+      "emitter": {
+        "mode": "continuous",
+        "lifetimeTicks": 40,
+        "rate": 8,
+        "speed": 0.3,
+        "speedVariation": 0.4,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 10,
+        "gravity": -3.0,
+        "drag": 0.5,
+        "spawnRadius": 3.0,
+        "startSize": 0.16,
+        "endSize": 0.06,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "spawnInner": 0.85,
+        "orbit": 360,
+        "stretch": 0.1
+      }
+    }
+  ]
+}

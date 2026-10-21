@@ -1,0 +1,145 @@
+{
+  "id": "ability.ants.living-light",
+  "name": "Living Light",
+  "description": "The Queen's living light: it heals an ally 200/400/600 health, or sears an enemy for 100/200/300 spell damage. It never touches the Queen herself.",
+  "activation": "targeted",
+  "ranks": [
+    {
+      "heal": 200,
+      "sear": 100
+    },
+    {
+      "heal": 400,
+      "sear": 200
+    },
+    {
+      "heal": 600,
+      "sear": 300
+    }
+  ],
+  "targeting": {
+    "kind": "unit",
+    "alive": true,
+    "visible": true,
+    "relations": [
+      "ally",
+      "enemy"
+    ],
+    "allowSelf": false,
+    "range": 16,
+    "outOfRange": "reject",
+    "filter": {
+      "buildings": false
+    },
+    "condition": {
+      "kind": "any",
+      "conditions": [
+        {
+          "kind": "relation",
+          "of": "target",
+          "to": "caster",
+          "is": "enemy"
+        },
+        {
+          "kind": "resource",
+          "of": "target",
+          "resource": "health",
+          "measure": "missing",
+          "comparison": "gt",
+          "value": 0
+        }
+      ]
+    }
+  },
+  "cast": {
+    "prepareTicks": 6,
+    "recoverTicks": 8,
+    "cost": {
+      "resource": "mana",
+      "amount": 65,
+      "commit": "release"
+    },
+    "cooldown": {
+      "ticks": 200,
+      "start": "release",
+      "scope": "ability"
+    },
+    "cancelBeforeRelease": "refund",
+    "revalidateAtRelease": [
+      "caster",
+      "target",
+      "range",
+      "visibility",
+      "relationship"
+    ]
+  },
+  "onRelease": [
+    {
+      "op": "branch",
+      "condition": {
+        "kind": "relation",
+        "of": "target",
+        "to": "caster",
+        "is": "enemy"
+      },
+      "then": [
+        {
+          "op": "damage",
+          "target": "target",
+          "amount": {
+            "rankParameter": "sear"
+          },
+          "damageType": "spell"
+        }
+      ],
+      "else": [
+        {
+          "op": "heal",
+          "target": "target",
+          "amount": {
+            "rankParameter": "heal"
+          }
+        }
+      ]
+    }
+  ],
+  "presentation": {
+    "icon": "asset.icons.ability-ants-queen-living-light",
+    "animations": {
+      "prepare": "cast",
+      "release": "cast",
+      "recover": "idle",
+      "fallback": "idle"
+    },
+    "effects": [
+      {
+        "id": "windup",
+        "effect": "effect.ants.kit.cast-living",
+        "event": "accepted",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
+        "id": "ribbon",
+        "effect": "effect.ants.kit.living-ribbon",
+        "event": "released",
+        "anchor": "caster",
+        "lifetime": "finite"
+      },
+      {
+        "id": "bloom",
+        "effect": "effect.ants.kit.living-light",
+        "event": "healed",
+        "anchor": "target",
+        "lifetime": "finite"
+      },
+      {
+        "id": "sear",
+        "effect": "effect.ants.kit.living-sear",
+        "event": "damaged",
+        "anchor": "target",
+        "lifetime": "finite"
+      }
+    ]
+  }
+}

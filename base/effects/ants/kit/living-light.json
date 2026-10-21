@@ -1,0 +1,397 @@
+{
+  "id": "effect.ants.kit.living-light",
+  "name": "Living light",
+  "description": "Light falls on the one she heals: a column of blue-violet light, a glowing blossom opening at its feet, a pulse and fireflies rising.",
+  "durationTicks": 64,
+  "loop": false,
+  "layers": [
+    {
+      "id": "shade",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#141032",
+      "accent": "#141032",
+      "durationTicks": 64,
+      "count": 1,
+      "size": 12.0,
+      "height": 0.06,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "normal",
+      "intensity": 0.5,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": 0.08,
+          "value": 1
+        },
+        {
+          "at": 0.6,
+          "value": 0.9
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "light",
+      "enabled": true,
+      "shape": "light",
+      "colour": "#6f78ff",
+      "accent": "#e4ebff",
+      "durationTicks": 18,
+      "count": 1,
+      "size": 12,
+      "height": 3.0,
+      "intensity": 4.0,
+      "startTick": 0
+    },
+    {
+      "id": "column",
+      "enabled": true,
+      "shape": "pillar",
+      "colour": "#6f78ff",
+      "accent": "#a98cff",
+      "durationTicks": 26,
+      "count": 1,
+      "size": 2.6,
+      "height": 14.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 1.35
+    },
+    {
+      "id": "core",
+      "enabled": true,
+      "shape": "pillar",
+      "colour": "#e4ebff",
+      "accent": "#6f78ff",
+      "durationTicks": 18,
+      "count": 1,
+      "size": 0.8,
+      "height": 14.0,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 1.0499999999999998
+    },
+    {
+      "id": "flare",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#6f78ff",
+      "accent": "#ffffff",
+      "durationTicks": 8,
+      "count": 1,
+      "size": 5.0,
+      "height": 1.6,
+      "blend": "additive",
+      "intensity": 1.4,
+      "core": 0.8,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.5
+        },
+        {
+          "at": 0.3,
+          "value": 1.0
+        },
+        {
+          "at": 1,
+          "value": 1.2
+        }
+      ],
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 1
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "bloom",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#6f78ff",
+      "accent": "#6f78ff",
+      "durationTicks": 64,
+      "count": 1,
+      "size": 10.0,
+      "height": 0.07,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "normal",
+      "intensity": 1.0,
+      "texture": {
+        "asset": "asset.effects.ants.living-bloom",
+        "role": "image",
+        "index": 1
+      },
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.25
+        },
+        {
+          "at": 0.18,
+          "value": 1.0
+        },
+        {
+          "at": 1,
+          "value": 1.08
+        }
+      ],
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": 0.08,
+          "value": 1
+        },
+        {
+          "at": 0.65,
+          "value": 0.9
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ],
+      "motion": {
+        "rotation": {
+          "periodTicks": 640,
+          "direction": "clockwise"
+        }
+      }
+    },
+    {
+      "id": "bloom-glow",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#6f78ff",
+      "accent": "#ffffff",
+      "durationTicks": 64,
+      "count": 1,
+      "size": 10.0,
+      "height": 0.09,
+      "startTick": 0,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 0.9,
+      "core": 0.25,
+      "texture": {
+        "asset": "asset.effects.ants.living-bloom",
+        "role": "image",
+        "index": 1
+      },
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.25
+        },
+        {
+          "at": 0.18,
+          "value": 1.0
+        },
+        {
+          "at": 1,
+          "value": 1.08
+        }
+      ],
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 0
+        },
+        {
+          "at": 0.08,
+          "value": 1
+        },
+        {
+          "at": 0.65,
+          "value": 0.9
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ],
+      "motion": {
+        "rotation": {
+          "periodTicks": 640,
+          "direction": "clockwise"
+        }
+      }
+    },
+    {
+      "id": "pulse",
+      "enabled": true,
+      "shape": "billboard",
+      "colour": "#6f78ff",
+      "accent": "#ffffff",
+      "durationTicks": 16,
+      "count": 1,
+      "size": 12.0,
+      "height": 0.08,
+      "orientation": "ground",
+      "blend": "additive",
+      "intensity": 1.2,
+      "texture": {
+        "asset": "asset.effects.vfx.blast-ring",
+        "role": "image",
+        "index": 1
+      },
+      "scaleOverLife": [
+        {
+          "at": 0,
+          "value": 0.2
+        },
+        {
+          "at": 0.3,
+          "value": 0.75
+        },
+        {
+          "at": 1,
+          "value": 1.0
+        }
+      ],
+      "opacityOverLife": [
+        {
+          "at": 0,
+          "value": 1
+        },
+        {
+          "at": 1,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "fireflies",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#e4ebff",
+      "accent": "#6f78ff",
+      "durationTicks": 50,
+      "count": 30,
+      "size": 0.4,
+      "height": 0.2,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 2.2,
+      "core": 0.7,
+      "texture": {
+        "asset": "asset.effects.vfx.mote",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 48,
+        "rate": 30,
+        "speed": 0.6,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 30,
+        "gravity": -3.2,
+        "drag": 1.0,
+        "spawnRadius": 2.2,
+        "startSize": 0.4,
+        "endSize": 0.12,
+        "spin": 0,
+        "fadeIn": 0.0,
+        "fadeOut": 0.5,
+        "spawnInner": 0.1,
+        "opacityOverLife": [
+          {
+            "at": 0,
+            "value": 0
+          },
+          {
+            "at": 0.15,
+            "value": 1
+          },
+          {
+            "at": 0.7,
+            "value": 0.8
+          },
+          {
+            "at": 1,
+            "value": 0
+          }
+        ],
+        "turbulence": {
+          "strength": 0.5,
+          "scale": 1.2,
+          "speed": 2.0
+        }
+      }
+    },
+    {
+      "id": "petals",
+      "enabled": true,
+      "shape": "particles",
+      "colour": "#6f78ff",
+      "accent": "#a98cff",
+      "durationTicks": 48,
+      "count": 12,
+      "size": 0.9,
+      "height": 0.8,
+      "startTick": 0,
+      "blend": "additive",
+      "intensity": 1.62,
+      "core": 0.3,
+      "texture": {
+        "asset": "asset.effects.ants.petal",
+        "role": "image",
+        "index": 1
+      },
+      "emitter": {
+        "mode": "burst",
+        "lifetimeTicks": 44,
+        "rate": 12,
+        "speed": 1.2,
+        "speedVariation": 0.6,
+        "direction": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "coneDegrees": 40,
+        "gravity": -2.2,
+        "drag": 1.2,
+        "spawnRadius": 2.0,
+        "startSize": 0.9,
+        "endSize": 0.45,
+        "spin": 2.0,
+        "fadeIn": 0.15,
+        "fadeOut": 0.6
+      }
+    }
+  ]
+}

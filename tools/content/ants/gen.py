@@ -338,32 +338,44 @@ def unit_abilities():
 # ----- hero abilities -----------------------------------------------------------------------
 
 def hero_abilities():
-    put_ability('heroes/queen/found-colony', ability(
-        'ability.ants.found-colony', 'Found',
-        'Raise a Brood Mound at a point nearby: a new tunnel mound and 8 supply. Cooldown 90/70/50 seconds.',
-        'targeted', [{'cooldown': 90 * S}, {'cooldown': 70 * S}, {'cooldown': 50 * S}],
-        point_aim(['ally'], 10, 1) | {'allowSelf': True}, cast(40, 8, 125, rp('cooldown')),
-        [{'op': 'found', 'target': 'point', 'building': MOUND}],
-        icon('found'), [fx('windup', FX['cast-royal'], 'accepted', anchor='caster'), fx('rise', FX['found'], 'summoned')]))
+    # The Queen (docs/ants.md, Heroes): Living Light is her Holy Light, Cocoon her Divine Shield,
+    # One Body her Devotion Aura and Rebirth her Resurrection, each the colony's own way.
+    put_ability('heroes/queen/living-light', ability(
+        'ability.ants.living-light', 'Living Light',
+        'The Queen\'s living light: it heals an ally 200/400/600 health, or sears an enemy for 100/200/300 spell damage. It never touches the Queen herself.',
+        'targeted', [{'heal': 200, 'sear': 100}, {'heal': 400, 'sear': 200}, {'heal': 600, 'sear': 300}],
+        unit_aim(['ally', 'enemy'], 16, filter={'buildings': False},
+                 # A wounded ally or any enemy: light poured on a healthy ally would be wasted.
+                 condition={'kind': 'any', 'conditions': [
+                     {'kind': 'relation', 'of': 'target', 'to': 'caster', 'is': 'enemy'},
+                     {'kind': 'resource', 'of': 'target', 'resource': 'health', 'measure': 'missing',
+                      'comparison': 'gt', 'value': 0}]}),
+        cast(6, 8, 65, 5 * S),
+        [{'op': 'branch', 'condition': {'kind': 'relation', 'of': 'target', 'to': 'caster', 'is': 'enemy'},
+          'then': [{'op': 'damage', 'target': 'target', 'amount': rp('sear'), 'damageType': 'spell'}],
+          'else': [{'op': 'heal', 'target': 'target', 'amount': rp('heal')}]}],
+        icon('queen-living-light'),
+        [fx('windup', FX['cast-living'], 'accepted', anchor='caster'),
+         fx('ribbon', FX['living-ribbon'], 'released', anchor='caster'),
+         fx('bloom', FX['living-light'], 'healed'),
+         fx('sear', FX['living-sear'], 'damaged')]))
 
-    put_ability('heroes/queen/royal-jelly', ability(
-        'ability.ants.royal-jelly', 'Royal Jelly',
-        'Feed an ally royal jelly: it heals 150/250/350 health and deals 20/30/40% more damage for 10 seconds.',
-        'targeted', [{'heal': 150, 'boost': 200}, {'heal': 250, 'boost': 300}, {'heal': 350, 'boost': 400}],
-        unit_aim(['ally'], 14, allow_self=True), cast(8, 6, 75, 12 * S),
-        [{'op': 'heal', 'target': 'target', 'amount': rp('heal')},
-         {'op': 'status', 'target': 'target', 'id': 'jellied', 'amount': 10 * S, 'polarity': 'positive',
-          'dispel': True, 'rankedModifiers': {'damagePermille': rp('boost')}}],
-        icon('queen-royal-jelly'),
-        [fx('windup', FX['cast-royal'], 'accepted', anchor='caster'),
-         fx('beam', FX['jelly-beam'], 'released', anchor='caster'),
-         fx('jelly', FX['jelly'], 'statusApplied', statusId='jellied'),
-         fx('jellied', FX['jellied'], 'statusApplied', lifetime='status', statusId='jellied')]))
+    put_ability('heroes/queen/cocoon', ability(
+        'ability.ants.cocoon', 'Cocoon',
+        'The colony cannot lose its queen: she spins a cocoon of living silk around herself and sheds every hostile spell. For 6/9/12 seconds nothing can harm her, and she still moves, fights and casts.',
+        'targeted', [{'hold': 6 * S}, {'hold': 9 * S}, {'hold': 12 * S}],
+        self_aim(), cast(0, 4, 50, 40 * S),
+        [{'op': 'status', 'target': 'caster', 'id': 'cocooned', 'amount': rp('hold'), 'polarity': 'positive',
+          'dispel': False, 'modifiers': {'invulnerable': True}},
+         {'op': 'dispel', 'target': 'caster', 'amount': 0, 'damageType': 'spell', 'polarity': 'negative'}],
+        icon('queen-cocoon'),
+        [fx('spin', FX['cocoon-spin'], 'statusApplied', statusId='cocooned'),
+         fx('cocoon', FX['cocoon'], 'statusApplied', lifetime='status', statusId='cocooned')]))
 
     put_ability('heroes/queen/one-body', passive(
         'ability.ants.one-body', 'One Body',
-        'The colony is one body: allies within 9 units of the Queen take 8/12/16% less damage.',
-        [{'taken': 920}, {'taken': 880}, {'taken': 840}],
+        'The colony is one body: allies within 10 units of the Queen, the Queen too, take 10/15/20% less damage.',
+        [{'taken': 900}, {'taken': 850}, {'taken': 800}],
         [{'op': 'status', 'target': 'target', 'id': 'one-body', 'amount': 1, 'polarity': 'positive', 'dispel': False,
           'damageTakenPermille': {t: rp('taken') for t in PHYSICAL + ('spell',)}},
          {'op': 'status', 'target': 'caster', 'id': 'oneBodySource', 'amount': 1, 'polarity': 'positive',
@@ -371,20 +383,23 @@ def hero_abilities():
         icon('queen-one-body'),
         [fx('one', FX['one-body'], 'statusApplied', lifetime='status', statusId='one-body'),
          fx('source', FX['one-body-source'], 'statusApplied', lifetime='status', statusId='oneBodySource')],
-        aura={'radius': 9, 'meleeOnly': False}))
+        aura={'radius': 10, 'meleeOnly': False}))
 
-    put_ability('heroes/queen/exodus', ability(
-        'ability.ants.exodus', 'Exodus',
-        'Ultimate. Choose any friendly unit or building: after 2 seconds, the Queen and up to 32 allied units within 10 units of her sink underground and come up beside it.',
-        'targeted', [{'cooldown': 120 * S}],
-        unit_aim(['ally'], 4096, includeBuildings=True), cast(80, 8, 200, 120 * S),
-        [{'op': 'teleport', 'target': 'target',
-          'query': {'center': 'caster', 'radius': 10, 'relations': ['ally'], 'allowSelf': False,
-                    'maxTargets': 32},
-          'filter': {'buildings': False}, 'amount': 12, 'destination': 'target', 'preserveOffset': True},
-         {'op': 'teleport', 'target': 'caster', 'amount': 12, 'destination': 'target', 'preserveOffset': False}],
-        icon('queen-exodus'),
-        [fx('sink', FX['exodus-gather'], 'accepted', anchor='caster'), fx('rise', FX['exodus-rise'], 'teleported')]))
+    put_ability('heroes/queen/rebirth', ability(
+        'ability.ants.rebirth', 'Rebirth',
+        'Ultimate. The Queen pours raw substance into her fallen: up to 8 dead allies within 14 units rise again at full health. The substance stays in them: the reborn deal 25% more damage until they fall again.',
+        'targeted', [{}], self_aim(), cast(20, 16, 175, 150 * S),
+        [{'op': 'resurrect', 'target': 'caster', 'amount': 8,
+          'corpses': {'radius': 14, 'relations': ['ally'], 'order': 'strongest'},
+          'healthPermille': 1000, 'manaPermille': 1000, 'placementRadius': 6, 'supply': 'allow-over-cap',
+          'grants': ['reborn']}],
+        icon('queen-rebirth'),
+        [fx('windup', FX['rebirth-gather'], 'accepted', anchor='caster'),
+         fx('pour', FX['rebirth'], 'released', anchor='caster'),
+         fx('rise', FX['reborn-rise'], 'resurrected'),
+         fx('reborn', FX['reborn'], 'statusApplied', lifetime='status', statusId='reborn')],
+        statuses=[{'op': 'status', 'target': 'target', 'id': 'reborn', 'amount': 0, 'lifetime': 'untilDeath',
+                   'polarity': 'positive', 'dispel': False, 'modifiers': {'damagePermille': 250}}]))
 
     put_ability('heroes/royal-alchemist/volatile-draught', ability(
         'ability.ants.volatile-draught', 'Volatile Draught',
@@ -765,14 +780,15 @@ def write_units(builds):
 
     ult = [6, 9]
     hero('units/ants/heroes/queen.json', None, 'The Queen',
-         'The colony\'s mother and the campaign\'s protagonist. Founds new mounds where she stands, feeds allies Royal Jelly, shares the colony\'s wounds through One Body and, at the last, leads the Exodus underground.',
-         hero_levels(720, 75, 24, 3.0, 2, 260, 26, 72, 60, 1.3, 1.0),
-         weapon(24, 'hero', 14, 72, 20, 18, 12, 0.75, projectile={'speed': 36}), 11, 1.0,
-         ([binding('found', 'ability.ants.found-colony', 0, 'Q', 1, levels=[1, 3, 5])] if ENGINE else []) + [
-          binding('royal-jelly', 'ability.ants.royal-jelly', 0, 'W', 2, levels=[1, 3, 5], preference='wounded-ally'),
+         'Aurelith, the colony\'s young queen and the campaign\'s protagonist, touched by substance. Her Living Light heals an ally or sears an enemy, her Cocoon keeps her from harm, the colony fights as One Body around her and, at the last, she pours raw substance into the fallen for their Rebirth.',
+         hero_levels(720, 75, 24, 3.0, 2, 260, 26, 72, 60, 1.3, 1.2),
+         weapon(24, 'hero', 14, 72, 20, 18, 12, 0.75, projectile={'speed': 36}), 11, 1.2,
+         [binding('living-light', 'ability.ants.living-light', 0, 'Q', 1, levels=[1, 3, 5], preference='wounded-ally',
+                  interval=10),
+          binding('cocoon', 'ability.ants.cocoon', 0, 'W', 2, levels=[1, 3, 5], threat=12),
           binding('one-body', 'ability.ants.one-body', 0, 'E', 3, levels=[1, 3, 5]),
-          binding('exodus', 'ability.ants.exodus', 0, 'R', 4, levels=[6], interval=40)
-          | {'ai': {'preference': 'enemy', 'intervalTicks': 40, 'intent': 'reinforce'}}], 1,
+          binding('rebirth', 'ability.ants.rebirth', 0, 'R', 4, levels=[6], preference='wounded-ally',
+                  interval=40)], 1,
          presentation={'projectile': 'effect.weapon.nectar', 'projectileSocket': 'socket_projectile', 'castContact': 0.5})
     hero('units/ants/heroes/royal-alchemist.json', None, 'Royal Alchemist',
          'Distils substance in her own body. Throws Volatile Draughts, moves life from foe to friend with Transfusion, Crystallises friend or foe and, at the last, drives the army into an Overdose.',
@@ -922,6 +938,7 @@ RETIRED = ['units/ants/amber-adept.json', 'units/ants/hunter.json', 'units/ants/
            'units/ants/silkwarden.json', 'units/ants/heroes/rootbreaker.json', 'buildings/ants/forester.json',
            'research/ants/broadheads.json', 'research/ants/campaign-harness.json', 'research/ants/driving-spear.json',
            'research/ants/reinforced-carapace.json', 'research/ants/saturating-shells.json']
+RETIRED_QUEEN = ['found-colony', 'royal-jelly', 'exodus']  # her first kit (docs/ants.md, Heroes)
 RETIRED_ABILITIES = ['ants/amber-adept', 'ants/banneret', 'ants/nectarist', 'ants/queensguard', 'ants/rootweaver',
                      'ants/silkwarden', 'ants/thornblade', 'heroes/marshal', 'heroes/rootbreaker']
 
@@ -935,6 +952,8 @@ def main():
             for f in os.listdir(path):
                 os.remove(os.path.join(path, f))
             os.rmdir(path)
+    for name in RETIRED_QUEEN:
+        remove('abilities/ants/heroes/queen/' + name + '.json')
     build_effects()
     unit_abilities()
     hero_abilities()
