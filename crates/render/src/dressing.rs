@@ -46,7 +46,8 @@ pub struct Decal {
     pub cell: f32,
     /// How much ice covers it (0–1).
     pub under: f32,
-    pub pad: f32,
+    /// How much rime lies on it (0–1).
+    pub frost: f32,
     pub tint: [f32; 4],
 }
 

@@ -690,7 +690,7 @@ fn decals(cells: &Cells, heights: &Heights, recipe: &BlockLook, seed: u64) -> Ve
                 size: rng.range(rule.size[0], rule.size[1]),
                 cell: ((rng.next() * rule.count as f32) as u32).min(rule.count - 1) as f32,
                 under: rule.under * rng.range(0.6, 1.0),
-                pad: 0.0,
+                frost: rule.frost,
                 tint: [
                     rule.tint[0] * shade,
                     rule.tint[1] * shade,

@@ -412,6 +412,9 @@ pub struct DecalScatter {
     pub clump: f32,
     /// Only where the blocks chose this face style (cliff tops and feet of that face).
     pub face: Option<u8>,
+    /// How much rime lies on them (0–1; their sheets carry their own frost).
+    #[serde(default)]
+    pub frost: f32,
 }
 
 fn talus() -> f32 {

@@ -18,7 +18,8 @@ struct Decal {
     size: f32,
     cell: f32,
     under: f32,
-    pad: f32,
+    // How much rime lies on it (0–1).
+    frost: f32,
     tint: vec4f,
 }
 
@@ -137,7 +138,7 @@ fn fs_decal(in: DecalOut) -> SceneOut {
     var surface: Surface;
     surface.position = in.world;
     surface.normal = up;
-    surface.albedo = albedo;
+    surface.albedo = frosted(albedo, up, in.world, d.frost);
     surface.roughness = mix(0.8, 0.2, d.under);
     surface.metalness = 0.0;
     surface.occlusion = 1.0;
