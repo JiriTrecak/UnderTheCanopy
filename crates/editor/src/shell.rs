@@ -675,6 +675,14 @@ impl Shell {
             .as_ref()
             .map(|b| b.faces.iter().map(|f| f.name.clone()).collect())
             .unwrap_or_default();
+        if session.blocks.palette.biome != biome {
+            session.blocks.palette = crate::world::palette::Palette::new(
+                &biome,
+                &resources.pack,
+                &resources.looks[&biome],
+                &content,
+            );
+        }
         let blocks = !session.blocks.generated;
         match crate::map::build(
             map,
@@ -2073,6 +2081,15 @@ impl Shell {
             };
             session.blocks.brush = brush;
             session.blocks.lasso = false;
+        }
+    }
+
+    /// Opens the block tool's picker on the next frame (captures).
+    pub fn open_block_picker(&mut self) {
+        if let Some(root) = self.active_map_root()
+            && let Some(session) = self.maps.get_mut(&root)
+        {
+            session.blocks.open_picker = true;
         }
     }
 

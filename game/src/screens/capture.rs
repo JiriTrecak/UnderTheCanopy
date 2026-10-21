@@ -496,6 +496,26 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     );
     settle(&mut editor, rig, 4);
     shoot(&mut editor, rig, "editor-blocks-cells")?;
+    // The strip's pickers open: kinds, faces, what Place puts down.
+    for (tool, name) in [
+        ("paint", "editor-blocks-picker-kinds"),
+        ("face", "editor-blocks-picker-faces"),
+        ("place", "editor-blocks-picker-place"),
+    ] {
+        editor.set_block_tool(tool);
+        editor.open_block_picker();
+        settle(&mut editor, rig, 4);
+        shoot(&mut editor, rig, name)?;
+        let escape = |pressed| egui::Event::Key {
+            key: egui::Key::Escape,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: egui::Modifiers::NONE,
+        };
+        frame(&mut editor, rig, vec![escape(true), escape(false)]);
+    }
+    editor.set_block_tool("cells");
     editor.set_block_view(true);
     let started = Instant::now();
     settle(&mut editor, rig, 1);

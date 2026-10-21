@@ -9,6 +9,7 @@
 //! over what changed.
 
 pub mod mesh;
+pub mod palette;
 mod strip;
 
 use crate::document::{Command, Sample};
@@ -251,6 +252,10 @@ pub struct State {
     pub preview: Option<(Box<canopy_content::map::TerrainData>, String)>,
     /// Write the map picker's picture on the next frame (the panel's button).
     pub write_picture: bool,
+    /// The pictures of the strip's pickers, for the map's biome.
+    pub palette: palette::Palette,
+    /// Open the chosen tool's picker on the next frame (captures).
+    pub open_picker: bool,
 }
 
 impl Default for State {
@@ -272,6 +277,8 @@ impl Default for State {
             twin: None,
             preview: None,
             write_picture: false,
+            palette: palette::Palette::default(),
+            open_picker: false,
         }
     }
 }

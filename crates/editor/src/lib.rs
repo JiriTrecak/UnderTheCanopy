@@ -229,6 +229,11 @@ impl Editor {
         self.shell.set_block_view(generated);
     }
 
+    /// Opens the block tool's picker on the next frame (captures).
+    pub fn open_block_picker(&mut self) {
+        self.shell.open_block_picker();
+    }
+
     /// The block editor's lasso (captures).
     pub fn set_block_lasso(&mut self, lasso: bool) {
         self.shell.set_block_lasso(lasso);
