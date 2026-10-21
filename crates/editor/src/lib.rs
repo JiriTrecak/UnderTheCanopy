@@ -239,6 +239,11 @@ impl Editor {
         self.shell.set_block_view(generated);
     }
 
+    /// The block editor's lasso (captures).
+    pub fn set_block_lasso(&mut self, lasso: bool) {
+        self.shell.set_block_lasso(lasso);
+    }
+
     /// The block editor's symmetry (off, point, x, z) and brush (captures).
     pub fn set_block_symmetry(&mut self, symmetry: &str, brush: bool) {
         self.shell.set_block_symmetry(symmetry, brush);

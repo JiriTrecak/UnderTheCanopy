@@ -219,6 +219,8 @@ pub struct State {
     pub style: u8,
     /// Block tools follow a brush stroke instead of a box (B).
     pub brush: bool,
+    /// Block tools and Cells fill the loop a drag draws (B again).
+    pub lasso: bool,
     /// The brush's radius: blocks for block tools (0: one block), cells for Cells.
     pub radius: u8,
     pub cell_radius: u8,
@@ -246,6 +248,7 @@ impl Default for State {
             cell_kind: BlockKind::Ice,
             style: 1,
             brush: false,
+            lasso: false,
             radius: 1,
             cell_radius: 2,
             drag: None,
@@ -885,9 +888,29 @@ fn panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
     if !matches!(tool, BlockTool::Cut) {
         ui.add_space(8.0);
         ui.label(eyebrow("Brush"));
-        if !matches!(tool, BlockTool::Ramp | BlockTool::Cells) {
-            ui.checkbox(&mut session.blocks.brush, "Brush stroke   B")
-                .on_hover_text("Off: drag a box of blocks");
+        if !matches!(tool, BlockTool::Ramp | BlockTool::Place) {
+            ui.horizontal(|ui| {
+                let state = &mut session.blocks;
+                let cells = tool == BlockTool::Cells;
+                for (name, brush, lasso) in [
+                    (if cells { "Stroke" } else { "Box" }, cells, false),
+                    ("Brush", true, false),
+                    ("Lasso", false, true),
+                ] {
+                    if cells && name == "Brush" {
+                        continue;
+                    }
+                    let on = state.lasso == lasso && (lasso || cells || state.brush == brush);
+                    if ui
+                        .selectable_label(on, name)
+                        .on_hover_text("B cycles; Lasso fills the loop the drag draws")
+                        .clicked()
+                    {
+                        state.brush = brush;
+                        state.lasso = lasso;
+                    }
+                }
+            });
         }
         if tool == BlockTool::Cells {
             let mut r = session.blocks.cell_radius;
@@ -1021,9 +1044,11 @@ fn panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
     });
     ui.add_space(12.0);
     ui.label(
-        RichText::new("B brush  ·  [ ] size  ·  Y symmetry  ·  G view  ·  Shift reverses")
-            .size(10.5)
-            .color(FAINT),
+        RichText::new(
+            "B box · brush · lasso  ·  [ ] size  ·  Y symmetry  ·  G view  ·  Shift reverses",
+        )
+        .size(10.5)
+        .color(FAINT),
     );
     ui.add_space(12.0);
     ui.label(eyebrow("Editor"));
@@ -1145,7 +1170,13 @@ pub fn show(
             }
         }
         if input.key_pressed(egui::Key::B) {
-            session.blocks.brush = !session.blocks.brush;
+            // Box, brush, lasso.
+            let state = &mut session.blocks;
+            (state.brush, state.lasso) = match (state.brush, state.lasso) {
+                (false, false) => (true, false),
+                (true, false) => (false, true),
+                _ => (false, false),
+            };
         }
         if input.key_pressed(egui::Key::Y) {
             let all = Symmetry::ALL;
@@ -1236,7 +1267,7 @@ pub fn show(
     };
 
     let state = &session.blocks;
-    let strokes = state.tool.strokes(state.brush);
+    let strokes = state.tool.strokes(state.brush || state.lasso);
     let radius = if state.tool == BlockTool::Cells {
         state.cell_radius as f32
     } else {
@@ -1277,7 +1308,12 @@ pub fn show(
             state.kind
         },
         point: column.map(|(_, p)| [p.x, p.z]),
-        brush: state.brush,
+        brush: state.brush || state.lasso,
+        fill: state.lasso
+            && !matches!(
+                state.tool,
+                BlockTool::Ramp | BlockTool::Cut | BlockTool::Place
+            ),
         radius,
         style: state.style,
         ..BlockOp::new(state.tool, (0, 0), (0, 0))

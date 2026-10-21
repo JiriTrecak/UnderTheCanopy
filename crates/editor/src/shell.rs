@@ -2103,6 +2103,16 @@ impl Shell {
                 _ => Symmetry::None,
             };
             session.blocks.brush = brush;
+            session.blocks.lasso = false;
+        }
+    }
+
+    /// The block editor's lasso (captures).
+    pub fn set_block_lasso(&mut self, lasso: bool) {
+        if let Some(root) = self.active_map_root()
+            && let Some(session) = self.maps.get_mut(&root)
+        {
+            session.blocks.lasso = lasso;
         }
     }
 

@@ -543,6 +543,35 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     shoot(&mut editor, rig, "editor-blocks-symmetry-done")?;
     editor.set_block_symmetry("off", false);
     editor.undo_all();
+    // A lasso: a loop drawn with Level, the blocks inside it taking the level.
+    editor.set_block_tool("level");
+    editor.set_block_lasso(true);
+    settle(&mut editor, rig, 4);
+    let centre = point(1050.0, 640.0);
+    frame(
+        &mut editor,
+        rig,
+        vec![egui::Event::PointerMoved(centre + egui::vec2(120.0, 0.0))],
+    );
+    frame(
+        &mut editor,
+        rig,
+        vec![press(centre + egui::vec2(120.0, 0.0), true)],
+    );
+    for i in 1..=24 {
+        let a = i as f32 / 24.0 * std::f32::consts::TAU;
+        let p = centre + egui::vec2(a.cos() * 120.0, a.sin() * 80.0);
+        frame(&mut editor, rig, vec![egui::Event::PointerMoved(p)]);
+    }
+    shoot(&mut editor, rig, "editor-blocks-lasso")?;
+    frame(
+        &mut editor,
+        rig,
+        vec![press(centre + egui::vec2(120.0, 0.0), false)],
+    );
+    settle(&mut editor, rig, 10);
+    editor.set_block_lasso(false);
+    editor.undo_all();
     editor.set_block_view(true);
     settle(&mut editor, rig, 40);
     shoot(&mut editor, rig, "editor-blocks-dream-generated")?;
