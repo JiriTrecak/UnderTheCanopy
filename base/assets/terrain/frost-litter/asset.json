@@ -1,6 +1,6 @@
 {
   "id": "asset.terrain.frost-litter",
-  "name": "Frosted root litter · albedo/roughness",
+  "name": "Frosted litter · albedo/roughness",
   "kind": "terrain-material",
   "tags": [
     "lookdev",

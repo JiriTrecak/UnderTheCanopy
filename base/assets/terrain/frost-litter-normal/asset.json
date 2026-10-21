@@ -1,6 +1,6 @@
 {
   "id": "asset.terrain.frost-litter-normal",
-  "name": "Frosted root litter · normal/height",
+  "name": "Frosted litter · normal/height",
   "kind": "terrain-material",
   "tags": [
     "lookdev",
