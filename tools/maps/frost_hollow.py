@@ -95,7 +95,7 @@ def obj(i, asset, x, z, scale, yaw=0.0):
             'scale': scale, 'visible': True, 'x': x, 'yaw': yaw, 'z': z}
 c.call('edit', label='Frost Hollow: landmarks', commands=[
     {'op': 'set', 'document': SC, 'pointer': '/objects', 'value': [
-        obj(0, 'scenery.lookdev-acorn', 123.5, 121.0, 1.8, 0.6),
+        obj(0, 'scenery.lookdev-acorn', 122.5, 117.5, 1.8, 0.6),
         obj(1, 'scenery.lookdev-acorn', 149.0, 86.5, 1.05, 1.9),
         obj(2, 'scenery.lookdev-acorn', 156.5, 90.0, 0.85, 4.1),
         obj(3, 'scenery.lookdev-acorn', 163.0, 86.0, 1.15, 0.2),
