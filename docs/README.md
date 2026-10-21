@@ -7,6 +7,7 @@
 - [Parity](parity.md): the phase 1 checklist against the old game, with evidence and what remains.
 - [Structure](structure.md): repository layout, dependency rules, data.
 - [Editor](editor.md): the native editor's design, decided milestone by milestone (phase 2).
+- [Campaign](campaign.md): campaigns of steps, carried heroes, tech per mission, the campaign AI (D85; designed, not built).
 - [Packages](packages.md): how content is organised: packages, layering, assets, maps (D53). Agent skills in `.claude/skills/canopy-*` describe each format.
 - [Art direction](art-direction.md): the graphical direction (D61), its research and the order of work.
 - [Renderer](renderer.md): renderer design and its open questions.

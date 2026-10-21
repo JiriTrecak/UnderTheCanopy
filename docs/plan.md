@@ -62,7 +62,7 @@ Agreed with Jiri, 2026-10-16. One native Rust editor shipped inside the game, us
 | M5. Players' content (deferred) | Custom maps in the game, packaged maps, map transfer in multiplayer, the Lua sandbox audit. Waits until the game is well established (Jiri, 2026-10-17); so do user scripts. |
 | M6. Retire the old repository | |
 
-AI stays code, not data: it should read the game data and react to what the opponent does rather than follow fixed unit lists, and custom races later bring their own AI as an included Lua script. Built beyond the candidates: the Warcraft III map importer (2026-10-17, docs/editor.md) with twelve imported maps, and playable areas with a border (D56). Deferred: a campaign editor, the match server in Rust (it works as TypeScript in `server/`, D48), Steam integration.
+AI stays code, not data: it should read the game data and react to what the opponent does rather than follow fixed unit lists, and custom races later bring their own AI as an included Lua script. Built beyond the candidates: the Warcraft III map importer (2026-10-17, docs/editor.md) with twelve imported maps, and playable areas with a border (D56). Deferred: the match server in Rust (it works as TypeScript in `server/`, D48), Steam integration.
 
 ## What remains
 
@@ -74,7 +74,7 @@ Updated 2026-10-17. Players' content and user scripts are left out until the gam
 - **The assistant**: the sidebar that calls the Claude API over every editor (M1 left room for it).
 - **Map editor, waiting by decision (2026-10-16)**: landform objects, symmetry tools, new ground cover (moving grass, decals, foliage).
 - **Asset editor, left to the art pipeline**: retargeting animations, editing materials and team colour masks, generating art.
-- **A campaign editor** (missions are authored as files and Lua today).
+- **Campaigns** (designed, D85, [campaign](campaign.md)): linear campaigns of steps, carried heroes, tech per mission with its graph, the campaign and loading screens, and a campaign AI.
 
 **Game**
 

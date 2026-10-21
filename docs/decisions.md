@@ -928,3 +928,11 @@ Jiri: authoring must be fast for people, not scripts; a campaign needs many maps
 - The importer (`crates/editor/src/starcraft/`) reads the archive with the MPQ reader the Warcraft importer had (now formats 0–3 and bzip2, the pure-Rust `bzip2` crate), cliff levels, ramps, chasms (deep water), camera bounds (the playable area), starts, mineral fields (amber nodes) and geysers (substance deposits); rocks, towers and decoration are left out. The game's own start and reachability checks report what does not fit.
 - Imported maps are Blizzard's: they are for trying the importer and for reference, not shipped.
 
+
+## D85. Linear campaigns of steps, carried heroes, tech per mission and a campaign AI (2026-10-21, Jiri)
+
+- A campaign (`.utcc`) is one linear list of steps in `campaign.json`, Warcraft III style: Chapter, Story (pages of art and text), Mission (a map in the package's `missions/`), Cinematic (a placeholder until the cinematic player). The order lives in the campaign, no longer in the maps. Jiri: "only allow building linear missions, like Warcraft. No need to do branching"; no side missions, no continuing into another campaign, no difficulty for now. About twelve missions per race.
+- Winning goes straight on to the next step (a mission's loading screen waits for a click); the campaign screen starts, resumes and replays, over the campaign's background, showing only the steps reached ("better to be surprised how long the game is").
+- Heroes carry over ("heroes will be the star of the show"); each mission's tech is progressive unlocks plus per-mission blocks, edited on a Tech graph of the race's tree in the Maps editor. A "lent for one mission" state was dropped as unnecessary (placed units and scripts cover it).
+- Campaign opponents get their own AI (Passive, Base, Waves, a held-back Skirmish) instead of the skirmish AI, which "would totally decimate the player": waves trained at the AI's buildings by default, or arriving at a region ("epic battles where someone new comes into play"); they cost the AI nothing. Allies work the same way on the player's team ("it must be possible to have allies as well").
+- The design, the editor's part and the research behind it are in [campaign](campaign.md).
