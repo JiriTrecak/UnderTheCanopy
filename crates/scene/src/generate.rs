@@ -549,19 +549,34 @@ fn ground(map: &mut UtcMap, cells: &Cells, recipe: &BlockLook, biome: &BiomeConf
                     } else {
                         1.0 - h.fract()
                     };
-                    smoothstep(0.35, 0.95, fall + ragged(vx, vz, 29) * 0.25)
+                    if recipe.ramp_rubble >= 1.0 {
+                        0.0
+                    } else {
+                        smoothstep(recipe.ramp_rubble, 1.0, fall + ragged(vx, vz, 29) * 0.25)
+                    }
                 } else {
                     0.0
                 }
             };
-            let spill = smoothstep(
-                recipe.ramp_spill + 1.0,
-                1.0,
-                at_vertex(&to_ramp_foot, span, vx, vz) + ragged(vx, vz, 31) * 1.8,
-            );
-            let r = smoothstep(3.2, 0.8, near_cliff + ragged(vx, vz, 17) * 0.9)
-                .max(ramp)
-                .max(spill);
+            let on_ramp = {
+                let x = vx.saturating_sub(1).min(span - 1);
+                let z = vz.saturating_sub(1).min(span - 1);
+                cells.kind[z * span + x] == BlockKind::Ramp
+            };
+            // Spilled out over the ground beyond the foot, not on the ramp itself.
+            let spill = if recipe.ramp_spill > 0.0 && !on_ramp {
+                smoothstep(
+                    recipe.ramp_spill + 1.0,
+                    1.0,
+                    at_vertex(&to_ramp_foot, span, vx, vz) + ragged(vx, vz, 31) * 1.8,
+                )
+            } else {
+                0.0
+            };
+            let r = (recipe.edge_rubble
+                * smoothstep(3.2, 0.8, near_cliff + ragged(vx, vz, 17) * 0.9))
+            .max(ramp)
+            .max(spill);
             rubble.push(r);
             let shore = at_vertex(&cells.to_shore, span, vx, vz);
             ice.push(smoothstep(0.0, 0.8, shore));

@@ -56,9 +56,11 @@ box('face', 56, 96, 128, 108, style=1)
 box('paint', 76, 108, 128, 124, kind='wall')
 fill('ground', [[76, 120], [100, 125], [118, 123.5], [128, 121], [128, 124], [76, 124]])
 
-# The frame of acorns east of the ramp, on the lower ground.
-box('paint', 136, 64, 172, 100, kind='wall')
-fill('wall', [[136, 100], [150, 103], [162, 104], [168, 100]])
+# The frame of acorns east of the ramp, on the lower ground, its edge along the ramp's.
+frame = [[132, 60], [135, 86], [139, 94], [143, 102], [148, 111], [156, 108], [164, 104],
+         [172, 98], [180, 60]]
+c.call('map_blocks', map=M, op='paint', points=frame, fill=True, kind='wall')
+fill('wall', frame)
 
 # The ramp: wide and diagonal, from the plateau's corner down to the south-east.
 c.call('map_blocks', map=M, op='ramp', **{'from': [129, 95]}, to=[143, 116], radius=1.6, level=2)
@@ -88,18 +90,26 @@ c.call('edit', label='Frost Hollow: one player, a warrior', commands=[
         'position': {'x': 131.0, 'y': 131.0}, 'rotation': 200.0}]},
 ])
 # Landmarks placed by hand, as the editor's props place them: the acorn at the bank's end
-# by the ramp, a heap of acorns in the frame east of it.
+# by the ramp, frosted toadstools in the frame east of it.
 SC = 'maps/showcase/frost-hollow.utcm/scenery.json'
+# A heap of frosted stones beside the acorn, at the ramp's foot.
+import random
+rng = random.Random(7)
+rubble = []
+for k in range(34):
+    x, z = 126 + rng.uniform(0, 16), 113 + rng.uniform(0, 14)
+    rubble.append(None)
+    rubble[-1] = (k, x, z, rng.uniform(0.35, 1.0), rng.uniform(0, 6.28))
 def obj(i, asset, x, z, scale, yaw=0.0):
     return {'asset': asset, 'elevation': 0.0, 'heightMode': 'terrain', 'id': 'frost.%d' % i, 'locked': False,
             'scale': scale, 'visible': True, 'x': x, 'yaw': yaw, 'z': z}
 c.call('edit', label='Frost Hollow: landmarks', commands=[
     {'op': 'set', 'document': SC, 'pointer': '/objects', 'value': [
         obj(0, 'scenery.lookdev-acorn', 122.5, 117.5, 1.8, 0.6),
-        obj(1, 'scenery.lookdev-acorn', 149.0, 86.5, 1.05, 1.9),
-        obj(2, 'scenery.lookdev-acorn', 156.5, 90.0, 0.85, 4.1),
-        obj(3, 'scenery.lookdev-acorn', 163.0, 86.0, 1.15, 0.2),
-        obj(4, 'scenery.lookdev-acorn', 160.5, 95.5, 0.7, 2.8),
-    ]}])
+        obj(1, 'scenery.mega-mushroom', 150.0, 87.0, 0.5, 1.9),
+        obj(2, 'scenery.mega-mushroom', 157.0, 95.0, 0.4, 4.1),
+        obj(3, 'scenery.mega-mushroom', 164.0, 86.0, 0.55, 0.2),
+        obj(4, 'scenery.mega-mushroom', 146.0, 79.0, 0.35, 2.8),
+    ] + [obj(10 + k, 'scenery.frost-boulder', x, z, size, yaw) for (k, x, z, size, yaw) in rubble]}])
 print(c.call('problems'))
 print(c.call('save'))

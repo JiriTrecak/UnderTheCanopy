@@ -12,7 +12,7 @@
     "bounceTint": "#ffffff",
     "fillStrength": 0.7,
     "shadowSoftness": 4.0,
-    "frost": 0.3
+    "frost": 0.5
   },
   "canopy": {
     "height": 150,
@@ -156,7 +156,7 @@
       "roughness": 0.8,
       "stone": 1.5,
       "relief": 0.75,
-      "rubble": 0.2,
+      "rubble": 1.4,
       "rampRubble": 0,
       "slope": 1.2,
       "wander": 0.8,
@@ -404,7 +404,7 @@
             "width": 1.2
           },
           "wander": 2.4,
-          "frost": 0.35,
+          "frost": 0.22,
           "roots": {
             "density": 2.6,
             "radius": [
@@ -418,7 +418,7 @@
             "albedo": "asset.terrain.frost-bark/data.bin",
             "normal": "asset.terrain.frost-bark-normal/data.bin",
             "tile": 1.6,
-            "frost": 0.55
+            "frost": 0.33
           },
           "crown": {
             "height": 0.7,
@@ -435,6 +435,8 @@
       "stone": 1.1,
       "rubble": 0.9
     },
-    "rampSpill": 7.0
+    "rampSpill": 7.0,
+    "rampRubble": 1.0,
+    "edgeRubble": 1.0
   }
 }

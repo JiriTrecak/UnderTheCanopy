@@ -216,6 +216,12 @@ pub struct BlockLook {
     /// How far rubble spills out over the ground from a ramp's foot (metres).
     #[serde(default)]
     pub ramp_spill: f32,
+    /// How much rubble lies along cliff tops and feet (0–1).
+    #[serde(default = "one")]
+    pub edge_rubble: f32,
+    /// How far down a ramp its rubble begins (0: at its top, 1: only at its foot).
+    #[serde(default = "ramp_rubble")]
+    pub ramp_rubble: f32,
     /// Ground of its own on whole levels (a main's paving, a middle level's moss),
     /// blended down ramps by their height.
     #[serde(default)]
@@ -426,6 +432,10 @@ fn talus() -> f32 {
 
 fn top_rubble() -> f32 {
     0.3
+}
+
+fn ramp_rubble() -> f32 {
+    0.35
 }
 
 fn ramp_stones() -> [f32; 2] {
