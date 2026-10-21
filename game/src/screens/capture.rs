@@ -543,6 +543,9 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     shoot(&mut editor, rig, "editor-blocks-symmetry-done")?;
     editor.set_block_symmetry("off", false);
     editor.undo_all();
+    editor.set_block_view(true);
+    settle(&mut editor, rig, 40);
+    shoot(&mut editor, rig, "editor-blocks-dream-generated")?;
     Ok(())
 }
 
