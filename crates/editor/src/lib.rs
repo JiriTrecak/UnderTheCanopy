@@ -239,6 +239,11 @@ impl Editor {
         self.shell.set_block_view(generated);
     }
 
+    /// The block editor's symmetry (off, point, x, z) and brush (captures).
+    pub fn set_block_symmetry(&mut self, symmetry: &str, brush: bool) {
+        self.shell.set_block_symmetry(symmetry, brush);
+    }
+
     /// Takes back every step (captures).
     pub fn undo_all(&mut self) {
         self.shell.undo_all();

@@ -517,6 +517,32 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     settle(&mut editor, rig, 20);
     shoot(&mut editor, rig, "editor-blocks-generated-edited")?;
     editor.undo_all();
+
+    // Frozen Dream with point symmetry: a brush stroke and its mirrored twin.
+    editor.open_document("maps/skirmish/frozen-dream.utcm/map.json");
+    settle(&mut editor, rig, 60);
+    editor.set_map_editor(true);
+    editor.set_block_view(false);
+    editor.set_block_tool("raise");
+    editor.set_block_symmetry("point", true);
+    settle(&mut editor, rig, 30);
+    let (a, b) = (point(900.0, 500.0), point(1100.0, 640.0));
+    frame(&mut editor, rig, vec![egui::Event::PointerMoved(a)]);
+    frame(&mut editor, rig, vec![press(a, true)]);
+    for i in 1..=10 {
+        let t = i as f32 / 10.0;
+        frame(
+            &mut editor,
+            rig,
+            vec![egui::Event::PointerMoved(a + (b - a) * t)],
+        );
+    }
+    shoot(&mut editor, rig, "editor-blocks-symmetry")?;
+    frame(&mut editor, rig, vec![press(b, false)]);
+    settle(&mut editor, rig, 20);
+    shoot(&mut editor, rig, "editor-blocks-symmetry-done")?;
+    editor.set_block_symmetry("off", false);
+    editor.undo_all();
     Ok(())
 }
 

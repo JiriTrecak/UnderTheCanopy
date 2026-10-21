@@ -591,8 +591,11 @@ fn change(blocks: &mut Blocks, op: &BlockOp, start: Block) {
             }
         }
         BlockTool::Cells => {
-            let kind = (!reverse).then_some(op.kind);
+            let b = BLOCK as i32;
             for (cx, cz) in cell_footprint(blocks, op) {
+                // A cell painted its own block's kind keeps no paint of its own.
+                let own = blocks.at(cx / b, cz / b).kind;
+                let kind = (!reverse && op.kind != own).then_some(op.kind);
                 blocks.paint_cell(cx, cz, kind);
             }
         }

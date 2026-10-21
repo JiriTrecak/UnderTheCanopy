@@ -2090,6 +2090,22 @@ impl Shell {
         }
     }
 
+    /// The block editor's symmetry and brush (captures): off, point, x or z.
+    pub fn set_block_symmetry(&mut self, symmetry: &str, brush: bool) {
+        use crate::world::Symmetry;
+        if let Some(root) = self.active_map_root()
+            && let Some(session) = self.maps.get_mut(&root)
+        {
+            session.blocks.symmetry = match symmetry {
+                "point" => Symmetry::Point,
+                "x" => Symmetry::MirrorX,
+                "z" => Symmetry::MirrorZ,
+                _ => Symmetry::None,
+            };
+            session.blocks.brush = brush;
+        }
+    }
+
     /// The block editor's view: the blocks, or the world generated from them (captures).
     pub fn set_block_view(&mut self, generated: bool) {
         if let Some(root) = self.active_map_root()

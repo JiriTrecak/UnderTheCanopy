@@ -50,8 +50,20 @@ c.call('edit', label='No starts yet', commands=[
 ])
 c.call('map_blocks', map=M, op='flat', symmetry='point')
 
-# Frozen forest everywhere; the playable outline, cell by cell (half drawn, half mirrored).
+# Frozen forest everywhere; the playable outline, in blocks and then cell by cell for its
+# edge (half drawn, half mirrored).
 c.call('map_blocks', map=M, op='paint', **{'from': [-15.9, -15.9]}, to=[271.9, 271.9], kind='wall')
+outline_east = [
+    [128, 128], [128, 10], [150, 14], [168, 9], [200, 12], [232, 10], [246, 24], [247, 60],
+    [243, 96], [248, 132], [245, 172], [238, 204], [222, 222], [190, 226], [160, 236],
+    [128, 246],
+]
+outline_west = [
+    [128, 128], [128, 10], [100, 15], [72, 11], [44, 16], [22, 24], [12, 44], [16, 76],
+    [10, 104], [14, 128],
+]
+for outline in (outline_east, outline_west):
+    blocks('paint', outline, kind='ground')
 cells('ground', [
     [128, 128], [128, 10], [150, 14], [168, 9], [200, 12], [232, 10], [246, 24], [247, 60],
     [243, 96], [248, 132], [245, 172], [238, 204], [222, 222], [190, 226], [160, 236],
