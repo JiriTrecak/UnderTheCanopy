@@ -935,13 +935,6 @@ pub struct RaceHud {
     pub resources: Option<Id>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct Campaign {
-    pub name: String,
-    pub race: String,
-}
-
 fn default_race() -> String {
     "ants".into()
 }
@@ -968,8 +961,6 @@ pub struct Rules {
     pub default_race: String,
     #[serde(default)]
     pub races: BTreeMap<String, Race>,
-    #[serde(default)]
-    pub campaigns: BTreeMap<String, Campaign>,
 }
 
 /// A race with the global starting setup filled in where it has none.

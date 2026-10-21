@@ -326,4 +326,5 @@ pub fn asset_image(data: &GameData, asset: &str) -> Option<String> {
                 .find(|o| o.role == canopy_content::assets::OutputRole::Image)
                 .map(|o| o.path.clone())
         })
+        .or_else(|| data.campaign_images.get(asset).cloned())
 }

@@ -1,4 +1,5 @@
-//! The `mission` table: 39 functions over a draft of the mission state.
+//! The `mission` table: 43 functions over a draft of the mission state (the computer
+//! players' five in [`ai`], the campaign's four in [`campaign`]).
 //!
 //! Calls read the game state as it was when the run began and write only to the draft and
 //! the effect queue, so a failed run leaves no trace. Item exchanges read their own writes
@@ -28,6 +29,8 @@ use canopy_content::{
 };
 use std::collections::BTreeMap;
 
+mod campaign;
+
 /// API calls per run.
 pub const CALL_LIMIT: u32 = 256;
 /// Scripted damage events per run.
@@ -35,7 +38,7 @@ pub const MAX_DAMAGE: usize = 64;
 /// Camera transition when a shot gives none.
 const DEFAULT_TRANSITION_MS: u32 = 350;
 
-pub const NAMES: [&str; 39] = [
+pub const NAMES: [&str; 43] = [
     "has_item",
     "give_item",
     "take_item",
@@ -75,6 +78,11 @@ pub const NAMES: [&str; 39] = [
     "ai_target",
     "ai_behaviour",
     "ai_wake",
+    // The campaign (`campaign`).
+    "campaign_get",
+    "campaign_set",
+    "allow",
+    "forbid",
 ];
 
 mod ai;
@@ -205,6 +213,7 @@ impl<'a> Api<'a> {
             }
             "win" => self.effect(MissionEffect::Win),
             "lose" => self.effect(MissionEffect::Lose),
+            _ if campaign::NAMES.contains(&name) => self.campaign(name, &a),
             _ => Err(format!("Unknown mission function {name}")),
         }
     }

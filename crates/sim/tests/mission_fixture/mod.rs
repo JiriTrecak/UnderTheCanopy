@@ -173,13 +173,13 @@ impl Mission {
         map_fixture::set(&mut document, "/authoring/objects", json!([]));
         map_fixture::set(&mut document, "/entities", json!(self.entities));
         map_fixture::set(&mut document, "/camps", json!(self.camps));
+        // The cast is placed by the map; player 2 has a start but no seat, so no base.
+        let second = document["playerStarts"][1].clone();
+        map_fixture::set(&mut document, "/playerStarts", json!([second]));
         map_fixture::set(
             &mut document,
             "/mission",
-            json!({
-                "campaign": "test", "title": "Test mission", "order": 1,
-                "objectives": self.objectives, "regions": self.regions, "script": self.script,
-            }),
+            json!({"objectives": self.objectives, "regions": self.regions, "script": self.script}),
         );
         map_fixture::parse(document).unwrap_or_else(|errors| panic!("{errors}"))
     }

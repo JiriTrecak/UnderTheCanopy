@@ -269,6 +269,15 @@ pub fn fulfilled_buildings(k: &Knowledge) -> Vec<String> {
     done
 }
 
+/// Whether a campaign mission keeps `id` from the player (docs/campaign.md "Tech"): the
+/// card leaves locked tech out, as Warcraft III's campaigns do.
+fn locked(k: &Knowledge, id: &str) -> bool {
+    k.view
+        .colony
+        .as_ref()
+        .is_some_and(|c| c.locked.iter().any(|l| l.as_str() == id))
+}
+
 /// "Requires X, Y" for missing prerequisite buildings.
 pub fn prerequisite(k: &Knowledge, requires: Option<&[Id]>, done: &[String]) -> Option<String> {
     let missing: Vec<String> = requires?
@@ -455,7 +464,7 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
         {
             out.push(c);
         }
-        if let Some(up) = &d.upgrade {
+        if let Some(up) = d.upgrade.as_ref().filter(|u| !locked(k, u.target.as_str())) {
             let target = k.content.definition(up.target.as_str());
             if let Some(task) = work.and_then(|w| w.upgrade.as_ref()) {
                 if let Some(mut c) = add(
@@ -527,6 +536,9 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
                 let Some(rule) = rules.get(id.as_str()) else {
                     continue;
                 };
+                if locked(k, id.as_str()) {
+                    continue;
+                }
                 if !chain_shows(id.as_str(), &policy.outputs, rules, &started) {
                     continue;
                 }
@@ -651,6 +663,9 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
                 let Some(od) = k.content.definition(output.as_str()) else {
                     continue;
                 };
+                if locked(k, output.as_str()) {
+                    continue;
+                }
                 units |= od.kind == Kind::Unit;
                 if policy.mode != canopy_content::game::ProductionMode::Queued {
                     continue;
@@ -797,6 +812,9 @@ pub fn commands(k: &Knowledge, selection: &[u32]) -> Vec<Command> {
             let Some(bd) = k.content.definition(building.as_str()) else {
                 continue;
             };
+            if locked(k, building.as_str()) {
+                continue;
+            }
             let actors: Vec<u32> = units
                 .iter()
                 .copied()

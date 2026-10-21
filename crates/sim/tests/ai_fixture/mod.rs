@@ -633,7 +633,7 @@ pub fn mission_map(
         "initialExploration": "explored",
         "playerStarts": starts,
         "entities": entities, "camps": [],
-        "mission": {"campaign": "test", "title": "Test", "order": 1, "script": script,
+        "mission": {"script": script,
             "regions": regions, "players": players},
         "authoring": {"version": 1, "terrain": flat(), "objects": []},
     });

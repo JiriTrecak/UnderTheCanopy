@@ -19,7 +19,7 @@ base/
 ├─ scenery/                                    placeable scenery pieces
 ├─ assets/                                     one folder per asset (skill canopy-assets)
 ├─ landscape/  biomes/  water/
-├─ campaigns/<id>.utcc/                        nested campaign packages
+├─ campaigns/<id>.utcc/                        nested campaign packages: campaign.json, missions/, assets/
 └─ maps/<group>/<id>.utcm/                     nested map packages (skill canopy-maps)
 ```
 

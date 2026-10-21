@@ -194,10 +194,26 @@ impl InMatch {
         if start.me.is_some() {
             // Players keep the game's zoom range.
             camera.zoom_range = canopy_render::camera::game_zoom();
+            // The player's start, else (a mission that places the player's units without
+            // one) the player's first unit.
+            let first_own = || {
+                let me = canopy_content::placement::Owner::Player(start.me?);
+                view0
+                    .entities
+                    .iter()
+                    .find(|e| !e.remembered && e.public.owner == me)
+                    .map(|e| {
+                        [
+                            e.public.position.x as f32 / 1000.0,
+                            e.public.position.y as f32 / 1000.0,
+                        ]
+                    })
+            };
             if start.camera.is_none()
-                && let Some(&focus) = start
+                && let Some(focus) = start
                     .me
-                    .and_then(|p| loaded.scene.starts.get(usize::from(p)))
+                    .and_then(|p| loaded.scene.starts.get(usize::from(p)).copied())
+                    .or_else(first_own)
             {
                 camera.look_at(focus[0], focus[1]);
             }

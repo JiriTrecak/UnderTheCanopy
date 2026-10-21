@@ -1100,6 +1100,15 @@ impl Ui {
         }
     }
 
+    /// Scrolls a box with `overflow: scroll` to its end as last laid out (a list whose
+    /// newest entry is at the bottom).
+    pub fn scroll_to_end(&mut self, id: NodeId) {
+        if let Some(n) = self.tree.node_of(id) {
+            let node = self.tree.node_mut(n);
+            node.scroll.y = node.scroll_max.y;
+        }
+    }
+
     /// Resizes a list (a node with `repeat`): entries are built from its template or
     /// removed from the end. Entries keep their handles while they exist.
     pub fn set_count(&mut self, id: NodeId, count: usize) {

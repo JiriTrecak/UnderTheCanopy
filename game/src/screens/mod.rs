@@ -37,7 +37,6 @@ use crate::{
     world::MatchRequest,
 };
 use anyhow::Result;
-use campaign::Progress;
 use canopy_render::{Gpu, Renderer};
 use canopy_ui::{Action, ActionKind};
 use flow::{Effect, Flow, Intent, Origin, Overlay, Screen};
@@ -111,6 +110,8 @@ struct Rerun {
     origin: Origin,
     /// Palette colours by player number, when not their own (skirmish).
     colors: Option<Vec<usize>>,
+    /// A campaign mission's start (tech, carried heroes, level cap, variables).
+    campaign: Option<canopy_sim::campaign::CampaignStart>,
 }
 
 struct Loading {
@@ -118,7 +119,14 @@ struct Loading {
     start: PendingStart,
     error: Option<String>,
     started: Instant,
+    /// A campaign mission waits on its loading screen once loaded, until the player
+    /// clicks or presses a key (docs/campaign.md).
+    hold: bool,
+    prepared: Option<crate::world::Prepared>,
 }
+
+/// Seconds a won campaign mission shows its outcome before the campaign moves on.
+const VICTORY_SECONDS: f32 = 2.5;
 
 /// A question with up to two answers besides Cancel.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -148,7 +156,18 @@ pub struct Game {
     settings_dirty: bool,
     catalog: Vec<keys::Entry>,
     library: SaveLibrary,
-    progress: Progress,
+    /// The player's progress through each campaign, by campaign id.
+    progress: std::collections::BTreeMap<String, crate::campaign::Progress>,
+    /// The campaign step being played (a card or a mission), if any.
+    campaign_play: Option<crate::campaign::Playing>,
+    /// The story, chapter or cinematic card on screen.
+    card: Option<campaign::Card>,
+    /// The campaign screen's list, which its buttons index.
+    campaign_entries: Vec<campaign::Entry>,
+    /// Frames the campaign screen keeps its list scrolled to the newest step.
+    scroll_steps: u32,
+    /// A won campaign mission moves on at this moment.
+    advance_at: Option<Instant>,
     flow: Flow,
     pub host: UiHost,
     palette: Palette,
@@ -158,7 +177,6 @@ pub struct Game {
     boot_error: Option<String>,
     dev: Option<DevStart>,
     skirmish: Skirmish,
-    mission_index: usize,
     mp: Multiplayer,
     loading: Option<Loading>,
     pub playing: Option<Playing>,
@@ -268,7 +286,12 @@ impl Game {
             surrendered: false,
             replay_saved: None,
             courier: crate::feedback::Courier::new(&paths.user),
-            progress: Progress::load(&paths.user),
+            progress: std::collections::BTreeMap::new(),
+            campaign_play: None,
+            card: None,
+            campaign_entries: Vec::new(),
+            scroll_steps: 0,
+            advance_at: None,
             catalog,
             play_options,
             cursor: None,
@@ -284,7 +307,6 @@ impl Game {
             boot_error: None,
             dev,
             skirmish: Skirmish::default(),
-            mission_index: 0,
             mp: Multiplayer::default(),
             loading: None,
             playing: None,
@@ -465,6 +487,27 @@ impl Game {
             // An overlay holds the input: the match only follows releases and focus.
             playing.window_event(window, event, &self.host.ui, true);
         }
+        // A card or a loaded mission moves on with any key but Escape.
+        if !consumed
+            && let WindowEvent::KeyboardInput { event: key, .. } = event
+            && key.state == winit::event::ElementState::Pressed
+            && !key.repeat
+            && key.physical_key
+                != winit::keyboard::PhysicalKey::Code(winit::keyboard::KeyCode::Escape)
+            && self.flow.overlays().is_empty()
+        {
+            match self.flow.screen() {
+                Screen::Step { .. } => {
+                    self.card_next();
+                    return;
+                }
+                Screen::Loading if self.loading.as_ref().is_some_and(|l| l.prepared.is_some()) => {
+                    self.begin_loaded();
+                    return;
+                }
+                _ => {}
+            }
+        }
         // Escape outside a match: one step back.
         if !consumed
             && let WindowEvent::KeyboardInput { event: key, .. } = event
@@ -493,6 +536,9 @@ impl Game {
             None => {
                 if matches!(self.flow.screen(), Screen::Loading) {
                     self.apply(Intent::Back);
+                } else if matches!(self.flow.screen(), Screen::Step { .. }) {
+                    // Escape skips a card or a story, as Skip does.
+                    self.finish_step();
                 } else {
                     self.navigate(Intent::Back);
                 }
@@ -591,6 +637,7 @@ impl Game {
         self.menu_page = MenuPage::Main;
         self.menu_status.clear();
         self.clear_actors = true;
+        self.advance_at = None;
     }
 
     /// Hooks when a screen comes up.
@@ -618,15 +665,29 @@ impl Game {
                     &self.settings.player_name,
                 );
             }
-            Screen::Missions { campaign } => {
-                let missions = data.missions(campaign);
-                // The first mission not yet won that is open.
-                self.mission_index = (0..missions.len())
-                    .find(|&i| {
-                        self.progress.unlocked(&missions, i)
-                            && !self.progress.completed.contains(missions[i].id())
-                    })
-                    .unwrap_or(0);
+            Screen::Campaigns => {
+                for c in &data.campaigns {
+                    self.progress.insert(
+                        c.id().to_string(),
+                        crate::campaign::Progress::load(&self.paths, c.id()),
+                    );
+                }
+            }
+            Screen::Campaign { campaign } => {
+                let progress = crate::campaign::Progress::load(&self.paths, campaign);
+                self.progress.insert(campaign.clone(), progress);
+                self.campaign_play = None;
+                self.card = None;
+                self.scroll_steps = 20;
+                self.audio.stop_music(1.5);
+            }
+            Screen::Step { campaign, step } => {
+                self.card = Some(campaign::Card::new(campaign, *step));
+                if let Some(c) = data.campaign(campaign)
+                    && let Some(s) = c.campaign.steps.get(*step)
+                {
+                    self.play_step_music(&data, s);
+                }
             }
             _ => {}
         }
@@ -641,11 +702,14 @@ impl Game {
             self.end_match();
         }
         self.dialog = None;
+        let hold = start.kind == MatchKind::Campaign && self.campaign_play.is_some();
         self.loading = Some(Loading {
             job: Some(LoadJob::spawn(self.paths.clone(), data, job)),
             start,
             error: None,
             started: Instant::now(),
+            hold,
+            prepared: None,
         });
         self.apply(Intent::StartMatch(origin));
     }
@@ -674,6 +738,7 @@ impl Game {
             colors: rerun.colors.clone(),
             replay: None,
             map_path: None,
+            campaign: rerun.campaign.clone(),
         }));
         self.last_match = Some(Rerun {
             setup,
@@ -694,52 +759,231 @@ impl Game {
             kind: MatchKind::Skirmish,
             origin: Origin::Skirmish,
             colors: self.skirmish.colors(),
+            campaign: None,
         });
     }
 
-    fn begin_mission(&mut self, campaign: &str, map_id: &str) {
+    // --- Campaigns ------------------------------------------------------------------
+
+    /// The campaign's progress as last read.
+    fn campaign_progress(&self, campaign: &str) -> crate::campaign::Progress {
+        self.progress.get(campaign).cloned().unwrap_or_default()
+    }
+
+    /// Continue on the campaign screen: the next step, straight through.
+    fn continue_campaign(&mut self, campaign: &str) {
         let Some(data) = self.data.clone() else {
             return;
         };
-        let Some(map) = data.map(map_id) else {
+        let Some(c) = data.campaign(campaign) else {
             return;
         };
-        // Player 1 plays, with or without a start; the simulation replaces the other
-        // slots with the computer players the mission lists (`mission.players`).
-        let others = map
-            .starts
+        let next = self.campaign_progress(campaign).next(&c.campaign);
+        if next < c.campaign.steps.len() {
+            self.run_step(campaign, next, true);
+        }
+    }
+
+    /// Plays step `step`: a mission loads, a story, chapter or cinematic shows its card.
+    /// `straight`: it is the next step, and finishing it moves the campaign on.
+    fn run_step(&mut self, campaign: &str, step: usize, straight: bool) {
+        let Some(data) = self.data.clone() else {
+            return;
+        };
+        let Some(c) = data.campaign(campaign).cloned() else {
+            return;
+        };
+        let Some(kind) = c.campaign.steps.get(step) else {
+            return;
+        };
+        self.campaign_play = Some(crate::campaign::Playing {
+            campaign: campaign.to_string(),
+            step,
+            straight,
+        });
+        let screen = Screen::Step {
+            campaign: campaign.to_string(),
+            step,
+        };
+        match kind {
+            canopy_content::campaign::Step::Mission(_) => self.begin_mission(&data, &c, step),
+            _ if matches!(self.flow.screen(), Screen::Campaign { .. }) => {
+                self.navigate(Intent::Open(screen));
+            }
+            _ => {
+                self.navigate(Intent::Proceed(screen));
+            }
+        }
+    }
+
+    /// The step being played is done: progress moves on (straight through), then the next
+    /// step runs, or the campaign screen comes back.
+    fn finish_step(&mut self) {
+        let Some(data) = self.data.clone() else {
+            return;
+        };
+        let Some(play) = self.campaign_play.clone() else {
+            // A card without a play (should not happen): back to the campaign.
+            self.navigate(Intent::Back);
+            return;
+        };
+        let Some(c) = data.campaign(&play.campaign).cloned() else {
+            return;
+        };
+        if play.straight {
+            let mut progress = self.campaign_progress(&play.campaign);
+            progress.finish(&c.campaign, play.step);
+            self.store_progress(&play.campaign, progress);
+        }
+        self.after_step(&c, &play);
+    }
+
+    /// Where the campaign goes after `play`'s step.
+    fn after_step(
+        &mut self,
+        c: &canopy_content::campaign::CampaignPackage,
+        play: &crate::campaign::Playing,
+    ) {
+        match crate::campaign::after(&c.campaign, play.step, play.straight) {
+            crate::campaign::After::Step(next) => self.run_step(&play.campaign, next, true),
+            crate::campaign::After::Screen => {
+                self.campaign_play = None;
+                self.audio.stop_music(1.5);
+                self.navigate(Intent::Proceed(Screen::Campaign {
+                    campaign: play.campaign.clone(),
+                }));
+            }
+        }
+    }
+
+    fn store_progress(&mut self, campaign: &str, progress: crate::campaign::Progress) {
+        if let Err(error) = progress.save(&self.paths, campaign) {
+            tracing::warn!(%error, "cannot save campaign progress");
+        }
+        self.progress.insert(campaign.to_string(), progress);
+    }
+
+    /// Continue on a card: the rest of the page, the next page, or the next step.
+    fn card_next(&mut self) {
+        let Some(data) = self.data.clone() else {
+            return;
+        };
+        let Some(card) = &mut self.card else {
+            return;
+        };
+        let Some(step) = data
+            .campaign(&card.campaign)
+            .and_then(|c| c.campaign.steps.get(card.step))
+        else {
+            return;
+        };
+        if card.advance(step) {
+            self.finish_step();
+        }
+    }
+
+    /// A step's music, when it names one (an audio asset in the pack).
+    fn play_step_music(&mut self, data: &GameData, step: &canopy_content::campaign::Step) {
+        let Some(music) = step.music() else {
+            return;
+        };
+        if self.audio.library().is_empty()
+            && let Err(error) = self.audio.load(&data.pack)
+        {
+            tracing::warn!(%error, "sounds not loaded");
+        }
+        let prefix = format!("{music}/audio");
+        let found = data
+            .pack
+            .entries()
             .iter()
-            .map(|p| p.saturating_sub(1))
-            .filter(|&p| p != 0);
+            .find(|e| e.name.starts_with(&prefix))
+            .and_then(|e| self.audio.sound(&e.name));
+        if let Some(sound) = found {
+            self.audio
+                .play_music(canopy_audio::Playlist::new(vec![sound]));
+        }
+    }
+
+    /// Story narration for the page on screen, once per page.
+    fn play_narration(&mut self, data: &GameData, asset: &str) {
+        if self.audio.library().is_empty()
+            && let Err(error) = self.audio.load(&data.pack)
+        {
+            tracing::warn!(%error, "sounds not loaded");
+        }
+        let prefix = format!("{asset}/audio");
+        let found = data
+            .pack
+            .entries()
+            .iter()
+            .find(|e| e.name.starts_with(&prefix))
+            .and_then(|e| self.audio.sound(&e.name));
+        if let Some(sound) = found {
+            self.audio.play_interface(sound);
+        }
+    }
+
+    /// Loads the mission at `step` of campaign `c`: player 1 plays the campaign's race,
+    /// computer players take the other starts, and the campaign hands it its tech, carried
+    /// heroes, level cap and variables.
+    fn begin_mission(
+        &mut self,
+        data: &GameData,
+        c: &canopy_content::campaign::CampaignPackage,
+        step: usize,
+    ) {
+        let Some(mission) = c.campaign.steps.get(step).and_then(|s| s.mission()) else {
+            return;
+        };
+        let Some(map) = data.map(mission.map.as_str()) else {
+            return;
+        };
+        let mut slots = vec![canopy_sim::Slot {
+            player: 0,
+            kind: canopy_sim::SlotKind::Human,
+            name: Some(self.settings.display_name()),
+            team: None,
+            hero: None,
+            race: Some(c.campaign.race.clone()),
+        }];
+        // Players with a start are computer players (`mission.players` refines this).
+        for &player in map.starts.iter().filter(|&&p| p > 1) {
+            slots.push(canopy_sim::Slot {
+                player: player - 1,
+                kind: canopy_sim::SlotKind::Ai,
+                name: None,
+                team: None,
+                hero: None,
+                race: None,
+            });
+        }
         let setup = canopy_sim::MatchSetup {
             seed: seed(),
-            slots: std::iter::once(0)
-                .chain(others)
-                .map(|player| canopy_sim::Slot {
-                    player,
-                    kind: if player == 0 {
-                        canopy_sim::SlotKind::Human
-                    } else {
-                        canopy_sim::SlotKind::Ai
-                    },
-                    name: (player == 0).then(|| self.settings.display_name()),
-                    team: None,
-                    hero: None,
-                    race: None,
-                })
-                .collect(),
+            slots,
         };
-        let me = Some(0);
+        let start = self
+            .campaign_progress(c.id())
+            .start(&c.campaign, &data.content, step);
+        self.play_step_music(data, &c.campaign.steps[step]);
         self.start_rerun(Rerun {
-            map: map_id.to_string(),
+            map: mission.map.to_string(),
             setup,
-            me,
+            me: Some(0),
             kind: MatchKind::Campaign,
-            origin: Origin::Missions {
-                campaign: campaign.to_string(),
+            origin: Origin::Campaign {
+                campaign: c.id().to_string(),
             },
             colors: None,
+            campaign: Some(start),
         });
+    }
+
+    /// The loaded mission begins (a click or a key on its loading screen).
+    fn begin_loaded(&mut self) {
+        if let Some(loading) = &mut self.loading {
+            loading.hold = false;
+        }
     }
 
     fn load_save(&mut self, id: &str) {
@@ -772,6 +1016,17 @@ impl Game {
             Origin::MainMenu
         };
         let setup = body.world.setup.clone();
+        // A campaign save continues its step: Retry starts it as the campaign would.
+        let (origin, campaign) = match self.campaign_of_save(&data, &meta.identity.map_id) {
+            Some((play, start)) => {
+                let origin = Origin::Campaign {
+                    campaign: play.campaign.clone(),
+                };
+                self.campaign_play = Some(play);
+                (origin, Some(start))
+            }
+            None => (origin, None),
+        };
         self.last_match = Some(Rerun {
             map: meta.identity.map_id.clone(),
             setup: setup.clone(),
@@ -779,6 +1034,7 @@ impl Game {
             kind,
             origin: origin.clone(),
             colors: None,
+            campaign,
         });
         let start = PendingStart {
             kind,
@@ -800,9 +1056,43 @@ impl Game {
             colors: None,
             replay: None,
             map_path: None,
+            campaign: None,
         }));
         self.saves_status.clear();
         self.start_loading(job, start, origin);
+    }
+
+    /// The campaign step a save on `map` belongs to (the furthest step reached that plays
+    /// it), and what it starts with.
+    fn campaign_of_save(
+        &mut self,
+        data: &GameData,
+        map: &str,
+    ) -> Option<(
+        crate::campaign::Playing,
+        canopy_sim::campaign::CampaignStart,
+    )> {
+        let c = data.campaign(data.map(map)?.campaign.as_deref()?)?.clone();
+        let progress = crate::campaign::Progress::load(&self.paths, c.id());
+        let next = progress.next(&c.campaign);
+        let step = (0..c.campaign.steps.len())
+            .rev()
+            .filter(|&i| i <= next)
+            .find(|&i| {
+                c.campaign.steps[i]
+                    .mission()
+                    .is_some_and(|m| m.map.as_str() == map)
+            })?;
+        let start = progress.start(&c.campaign, &data.content, step);
+        self.progress.insert(c.id().to_string(), progress);
+        Some((
+            crate::campaign::Playing {
+                campaign: c.id().to_string(),
+                step,
+                straight: step == next,
+            },
+            start,
+        ))
     }
 
     fn start_dev(&mut self, dev: DevStart) {
@@ -824,22 +1114,28 @@ impl Game {
         let Some(loading) = &mut self.loading else {
             return;
         };
-        let Some(job) = &mut loading.job else {
-            return;
-        };
-        let Some(result) = job.poll() else {
-            return;
-        };
-        loading.job = None;
-        let start = loading.start.clone();
-        let prepared = match result {
-            Ok(p) => p,
-            Err(error) => {
-                tracing::error!(error = %format!("{error:#}"), "match failed to load");
-                loading.error = Some(format!("{error:#}"));
+        if let Some(job) = &mut loading.job {
+            let Some(result) = job.poll() else {
                 return;
+            };
+            loading.job = None;
+            match result {
+                Ok(p) => loading.prepared = Some(p),
+                Err(error) => {
+                    tracing::error!(error = %format!("{error:#}"), "match failed to load");
+                    loading.error = Some(format!("{error:#}"));
+                    return;
+                }
             }
+        }
+        // A campaign mission waits for the player on its loading screen.
+        if loading.hold {
+            return;
+        }
+        let Some(prepared) = loading.prepared.take() else {
+            return;
         };
+        let start = loading.start.clone();
         let Some(data) = self.data.clone() else {
             return;
         };
@@ -1026,6 +1322,7 @@ impl Game {
                 self.action(&action, ctx);
             }
         }
+        self.update_campaign(dt);
         self.update_fade(dt);
         self.sync(ctx);
         self.update_cursor(ctx);
@@ -1041,6 +1338,61 @@ impl Game {
         let time = (now - self.started).as_secs_f64();
         self.prepare_ui(ctx.gpu, ctx.renderer, time);
         std::mem::take(&mut self.requests)
+    }
+
+    /// A card's clock (timed cards move on by themselves) and a won mission's pause
+    /// before the campaign moves on.
+    fn update_campaign(&mut self, dt: f32) {
+        if let Some(card) = &mut self.card
+            && matches!(self.flow.screen(), Screen::Step { .. })
+            && self.flow.overlays().is_empty()
+            && !self.fading_out
+        {
+            let before = card.time;
+            card.time += dt;
+            let page = card.page;
+            let narration = self.data.clone().and_then(|data| {
+                let c = data.campaign(&card.campaign)?;
+                let step = c.campaign.steps.get(card.step)?;
+                let narration = match step {
+                    canopy_content::campaign::Step::Story(s) if before == 0.0 => {
+                        s.pages.get(page)?.narration.clone()
+                    }
+                    _ => None,
+                };
+                Some((card.due(step), narration, data.clone()))
+            });
+            if let Some((due, narration, data)) = narration {
+                if let Some(asset) = narration {
+                    self.play_narration(&data, asset.as_str());
+                }
+                if due {
+                    self.finish_step();
+                }
+            }
+        }
+        if self
+            .advance_at
+            .is_some_and(|at| Instant::now() >= at && !self.fading_out)
+        {
+            self.advance_at = None;
+            self.after_victory();
+        }
+    }
+
+    /// A won campaign mission's pause is over: the campaign moves on.
+    fn after_victory(&mut self) {
+        let Some(data) = self.data.clone() else {
+            return;
+        };
+        let Some(play) = self.campaign_play.clone() else {
+            self.apply(Intent::LeaveMatch);
+            return;
+        };
+        let Some(c) = data.campaign(&play.campaign).cloned() else {
+            return;
+        };
+        self.after_step(&c, &play);
     }
 
     /// The mouse cursor: the UI's (pointer over controls, text over fields), else the
@@ -1177,6 +1529,7 @@ impl Game {
                     colors,
                     replay: None,
                     map_path: None,
+                    campaign: None,
                 }));
                 self.start_loading(job, start, Origin::Multiplayer);
             }
@@ -1246,30 +1599,54 @@ impl Game {
 
     /// Shows the result (an outcome, or a surrender).
     fn decided(&mut self, outcome: Option<canopy_sim::state::Outcome>, surrendered: bool) {
-        let (Some(playing), Some(data)) = (&self.playing, &self.data) else {
+        let (Some(playing), Some(data)) = (&self.playing, self.data.clone()) else {
             return;
         };
         let save = playing.save();
-        let next = data.map(&playing.map_id).and_then(|m| {
-            let mission = m.mission.as_ref()?;
-            let missions = data.missions(&mission.campaign);
-            let i = missions.iter().position(|x| x.id() == m.id())?;
-            missions.get(i + 1).map(|x| x.id().to_string())
-        });
         let model = ResultModel::build(
             playing,
-            data,
+            &data,
             outcome.as_ref(),
             save.as_ref().map(|b| &b.world),
             surrendered,
-            next,
         );
-        if model.won && playing.kind == MatchKind::Campaign {
-            self.progress.completed.insert(playing.map_id.clone());
-            if let Err(error) = self.progress.save(&self.paths.user) {
-                tracing::warn!(%error, "cannot save campaign progress");
+        let campaign = (playing.kind == MatchKind::Campaign)
+            .then(|| self.campaign_play.clone())
+            .flatten();
+        let map_id = playing.map_id.clone();
+        if model.won
+            && let Some(play) = campaign
+        {
+            // The heroes and campaign variables carry on (docs/campaign.md).
+            if play.straight
+                && let (Some(c), Some(body)) = (data.campaign(&play.campaign), &save)
+            {
+                let content = data
+                    .content_for(&self.paths, &map_id)
+                    .unwrap_or_else(|_| data.content.clone());
+                let catalog = canopy_sim::catalog::Catalog::new(content);
+                let state = &body.world.state;
+                let heroes = canopy_sim::campaign::carried(state, &catalog, 0);
+                let variables = state
+                    .campaign
+                    .as_ref()
+                    .map(|c| c.variables.clone())
+                    .unwrap_or_default();
+                let mut progress = self.campaign_progress(&play.campaign);
+                progress.won(&c.campaign, play.step, heroes, &variables);
+                self.store_progress(&play.campaign, progress);
+            }
+            if play.straight {
+                // Straight through: the victory shows a moment, then the next step.
+                self.result = None;
+                self.advance_at =
+                    Some(Instant::now() + std::time::Duration::from_secs_f32(VICTORY_SECONDS));
+                return;
             }
         }
+        let Some(playing) = &self.playing else {
+            return;
+        };
         if surrendered && !playing.networked {
             playing.pause(true);
         }
@@ -1330,7 +1707,7 @@ impl Game {
         }
         match name {
             // Main menu.
-            "menu.campaign" if clicked => self.navigate(Intent::Open(Screen::Campaign)),
+            "menu.campaign" if clicked => self.navigate(Intent::Open(Screen::Campaigns)),
             "menu.skirmish" if clicked => self.navigate(Intent::Open(Screen::Skirmish)),
             "menu.multiplayer" if clicked => self.navigate(Intent::Open(Screen::Multiplayer)),
             "menu.load" if clicked => self.open_saves(),
@@ -1397,28 +1774,32 @@ impl Game {
             // Campaign.
             "campaign.play" if clicked => {
                 if let Some(id) = action.index.and_then(|i| campaign::card_id(&data, i)) {
-                    self.navigate(Intent::Open(Screen::Missions { campaign: id }));
+                    self.navigate(Intent::Open(Screen::Campaign { campaign: id }));
                 }
             }
-            "campaign.back" | "missions.back" | "skirmish.back" | "mp.back" if clicked => {
+            "campaign.back" | "steps.back" | "skirmish.back" | "mp.back" if clicked => {
                 self.navigate(Intent::Back)
             }
-            "missions.select" if clicked => {
-                if let Some(i) = action.index {
-                    self.mission_index = i;
+            "steps.continue" if clicked => {
+                if let Screen::Campaign { campaign } = self.flow.screen().clone() {
+                    self.continue_campaign(&campaign);
                 }
             }
-            "missions.begin" if clicked => {
-                if let Screen::Missions { campaign } = self.flow.screen().clone() {
-                    let missions = data.missions(&campaign);
-                    if self.progress.unlocked(&missions, self.mission_index)
-                        && let Some(m) = missions.get(self.mission_index)
-                    {
-                        let id = m.id().to_string();
-                        self.begin_mission(&campaign, &id);
-                    }
+            "steps.act" if clicked => {
+                if let (Screen::Campaign { campaign }, Some(step)) = (
+                    self.flow.screen().clone(),
+                    action
+                        .index
+                        .and_then(|i| self.campaign_entries.get(i))
+                        .and_then(campaign::Entry::step),
+                ) && let Some(c) = data.campaign(&campaign)
+                {
+                    let next = self.campaign_progress(&campaign).next(&c.campaign);
+                    self.run_step(&campaign, step, step == next);
                 }
             }
+            "card.next" if clicked => self.card_next(),
+            "card.skip" if clicked => self.finish_step(),
             // Skirmish (the map list is shared with hosting a lobby).
             "skirmish.map" if clicked => {
                 if let Some(i) = action.index {
@@ -1537,6 +1918,11 @@ impl Game {
             }
             "lobby.start" if clicked => self.mp.start(),
             // Loading.
+            "loading.begin" if clicked => {
+                if self.loading.as_ref().is_some_and(|l| l.prepared.is_some()) {
+                    self.begin_loaded();
+                }
+            }
             "loading.back" if clicked => {
                 let failed = self.loading.as_ref().is_some_and(|l| l.error.is_some());
                 self.apply(if failed {
@@ -1632,12 +2018,9 @@ impl Game {
             // Result and match overlay.
             "result.watch" if clicked => self.result_hidden = true,
             "result.leave" | "overlay.leave" if clicked => self.apply(Intent::LeaveMatch),
-            "result.next" if clicked => {
-                let next = self.result.as_ref().and_then(|r| r.next.clone());
-                if let (Some(next), Origin::Missions { campaign }) =
-                    (next, self.flow.origin().clone())
-                {
-                    self.begin_mission(&campaign, &next);
+            "result.retry" if clicked => {
+                if let Some(rerun) = self.last_match.clone() {
+                    self.start_rerun(rerun);
                 }
             }
             _ => {}
@@ -1996,6 +2379,7 @@ impl Game {
             colors,
             replay: Some(Arc::new(replay)),
             map_path,
+            campaign: None,
         }));
         self.last_match = None;
         self.start_loading(job, start, Origin::Replays);
@@ -2172,8 +2556,9 @@ impl Game {
             .is_some_and(|p| p.newest().is_some_and(|s| s.view.mission.is_some()));
         let shows = [
             ("main-menu", screen == Screen::MainMenu),
-            ("campaign", screen == Screen::Campaign),
-            ("missions", matches!(screen, Screen::Missions { .. })),
+            ("campaign", screen == Screen::Campaigns),
+            ("campaign-steps", matches!(screen, Screen::Campaign { .. })),
+            ("card", matches!(screen, Screen::Step { .. })),
             ("skirmish", screen == Screen::Skirmish),
             ("replays", screen == Screen::Replays),
             (
@@ -2225,21 +2610,31 @@ impl Game {
                 menu::animate(&mut self.host, t, self.view);
                 self.releases.show_plaque(&mut self.host.ui, &self.updater);
             }
-            Screen::Campaign => {
+            Screen::Campaigns => {
                 if let Some(data) = &data {
                     campaign::show_cards(&mut self.host, gpu, data, &self.progress);
                 }
             }
-            Screen::Missions { campaign } => {
-                if let Some(data) = &data {
-                    campaign::show_missions(
-                        &mut self.host,
-                        gpu,
-                        data,
-                        &self.progress,
-                        campaign,
-                        self.mission_index,
-                    );
+            Screen::Campaign { campaign } => {
+                if let Some(data) = &data
+                    && let Some(c) = data.campaign(campaign)
+                {
+                    let progress = self.campaign_progress(campaign);
+                    self.campaign_entries =
+                        campaign::show_steps(&mut self.host, gpu, data, c, &progress);
+                    // The newest step is at the bottom: keep it in view as the list
+                    // settles.
+                    if self.scroll_steps > 0 {
+                        self.scroll_steps -= 1;
+                        if let Some(list) = self.host.ui.find("campaign-steps/steps") {
+                            self.host.ui.scroll_to_end(list);
+                        }
+                    }
+                }
+            }
+            Screen::Step { .. } => {
+                if let (Some(data), Some(card)) = (&data, &self.card) {
+                    campaign::show_card(&mut self.host, gpu, data, card);
                 }
             }
             Screen::Skirmish => {
@@ -2352,6 +2747,7 @@ impl Game {
 
     fn show_boot(&mut self) {
         let ui = &mut self.host.ui;
+        widgets::visible(ui, "loading/mission-view", false);
         widgets::visible(ui, "loading/art-view", true);
         widgets::visible(ui, "loading/panel-view", false);
         widgets::visible(ui, "loading/art-view/copy", true);
@@ -2386,86 +2782,37 @@ impl Game {
             return;
         };
         let data = self.data.clone();
-        let entry = data.as_ref().and_then(|d| d.map(&loading.start.map));
-        let presentation = entry
-            .and_then(|m| m.mission.as_ref())
-            .and_then(|m| m.presentation.as_ref());
-        let art = presentation
-            .and_then(|p| p.loading_background.as_deref())
-            .and_then(|id| data.as_ref().and_then(|d| widgets::asset_image(d, id)));
         let (stage, progress, error) = (
             loading.job.as_ref().map(|j| (j.stage, j.progress)),
             loading.job.as_ref().map_or(1.0, |j| j.progress),
             loading.error.clone(),
         );
-        let mission_title = entry
-            .and_then(|m| m.mission.as_ref())
-            .map(|m| m.title.clone());
-        let map_name = entry.map(|m| m.name.clone()).unwrap_or_default();
-        let tip_list = presentation
-            .and_then(|p| p.tips.clone())
-            .unwrap_or_default();
-        let elapsed = loading.started.elapsed().as_secs();
-        let art_key = match (art, &data) {
-            (Some(path), Some(d)) => self.host.pack_image(gpu, &d.pack, &path),
-            _ => None,
-        };
-        // The campaign race's crest over the mission's copy (the old screen showed its
-        // one campaign's crest).
-        let mission_entry = entry.and_then(|m| m.mission.as_ref());
-        let crest_key = match (mission_entry, &data) {
-            (Some(m), Some(d)) => d
-                .content
-                .rules
-                .campaigns
-                .get(&m.campaign)
-                .and_then(|c| campaign::crest(d, &c.race))
-                .and_then(|path| self.host.pack_image(gpu, &d.pack, &path)),
-            _ => None,
-        };
-        let chapter_default = mission_entry.map(|m| format!("Chapter {}", m.order));
+        // A campaign mission loads over its art with its story (option A, docs/campaign.md).
+        let mission = self
+            .campaign_play
+            .clone()
+            .filter(|_| loading.start.kind == MatchKind::Campaign);
+        if let (Some(play), Some(data)) = (mission, &data)
+            && let Some(c) = data.campaign(&play.campaign)
+        {
+            let state = campaign::Loading {
+                progress,
+                ready: loading.prepared.is_some(),
+                error: error.as_deref(),
+                time: loading.started.elapsed().as_secs_f32(),
+            };
+            campaign::show_loading(&mut self.host, gpu, data, c, play.step, &state);
+            let ui = &mut self.host.ui;
+            widgets::visible(ui, "loading/mission-view", true);
+            widgets::visible(ui, "loading/art-view", false);
+            widgets::visible(ui, "loading/panel-view", false);
+            return;
+        }
         let ui = &mut self.host.ui;
-        if let Some(node) = ui.find("loading/art-view/copy/crest") {
-            ui.set_image(node, crest_key);
-        }
-        widgets::visible(ui, "loading/art-view/copy/crest", crest_key.is_some());
-        if let Some(node) = ui.find("loading/art-view/art") {
-            let key = art_key.or_else(|| Some(ui.image_key("menu-aftermath")));
-            ui.set_image(node, key);
-        }
-        widgets::visible(ui, "loading/art-view/back", true);
-        widgets::text(
-            ui,
-            "loading/art-view/copy/chapter",
-            &presentation
-                .and_then(|p| p.chapter.clone())
-                .or(chapter_default)
-                .unwrap_or_else(|| map_name.clone()),
-        );
-        widgets::text(
-            ui,
-            "loading/art-view/copy/title",
-            mission_title
-                .as_deref()
-                .unwrap_or("Preparing the battlefield"),
-        );
-        widgets::text(
-            ui,
-            "loading/art-view/copy/briefing",
-            &presentation
-                .and_then(|p| p.briefing.clone())
-                .unwrap_or_default(),
-        );
-        let tip = if tip_list.is_empty() {
-            String::new()
-        } else {
-            tip_list[(elapsed / 9) as usize % tip_list.len()].clone()
-        };
-        widgets::text(ui, "loading/art-view/tip", &tip);
-        // Missions load over their art; other matches show the old plain panel.
-        let mission = mission_title.is_some();
-        widgets::visible(ui, "loading/art-view", mission);
-        widgets::visible(ui, "loading/panel-view", !mission);
+        // Other matches show the old plain panel.
+        widgets::visible(ui, "loading/mission-view", false);
+        widgets::visible(ui, "loading/art-view", false);
+        widgets::visible(ui, "loading/panel-view", true);
         let label = stage.map_or("Starting the match", |(s, _)| s.label());
         widgets::text(
             ui,

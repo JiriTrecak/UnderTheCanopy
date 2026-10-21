@@ -463,6 +463,10 @@ pub fn check_build(
         rotation,
         append,
     } = *request;
+    // A campaign's tech (`campaign`).
+    if let Some(reason) = crate::campaign::refused(ctx.state, owner, definition) {
+        return Err(reason);
+    }
     let builders: Vec<EntityId> = eligible
         .iter()
         .copied()

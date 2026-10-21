@@ -121,7 +121,14 @@ impl Inputs {
         let mut errors = Vec::new();
         let base = canopy_content::package::Package::open(&data.join(canopy_content::BASE_DIR))
             .map_err(|e| e.to_string())?;
-        let mut index = assets::package::index(&[base], assets::Files::Check, &mut errors);
+        // The campaigns' own art (backgrounds, loading and story art) cooks into the same
+        // pack (docs/campaign.md).
+        let mut packages = vec![base];
+        match canopy_content::campaign::library(data) {
+            Ok(campaigns) => packages.extend(campaigns.into_iter().map(|c| c.package)),
+            Err(e) => errors.extend(e.0),
+        }
+        let mut index = assets::package::index(&packages, assets::Files::Check, &mut errors);
         let mut previews = Vec::new();
         match canopy_content::map::library(data) {
             Ok(maps) => {

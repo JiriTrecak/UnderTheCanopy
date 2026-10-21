@@ -1,3 +1,88 @@
 {
-  "race": "ants"
+  "race": "ants",
+  "background": "asset.interface.campaign.vanguard.background",
+  "card": "asset.interface.campaign.ants",
+  "steps": [
+    {
+      "kind": "chapter",
+      "id": "prologue",
+      "title": "Prologue",
+      "art": "asset.interface.campaign.vanguard.chapter-prologue"
+    },
+    {
+      "kind": "story",
+      "id": "the-hollow",
+      "title": "The Hollow",
+      "pages": [
+        {
+          "art": "asset.interface.campaign.vanguard.story-hollow-1",
+          "text": "A placeholder story. The real campaign replaces it.\n\nBeneath the frost the old colony sleeps, and its Queen wakes alone."
+        },
+        {
+          "art": "asset.interface.campaign.vanguard.story-hollow-2",
+          "text": "With only an escort at her side she sets out for the hollow, where the first light of the thaw breaks through the canopy."
+        }
+      ]
+    },
+    {
+      "kind": "mission",
+      "id": "first-light",
+      "map": "vanguard-first-light",
+      "title": "First Light",
+      "chapterLine": "Prologue · Mission One",
+      "art": "asset.interface.campaign.vanguard.hollow-brood",
+      "story": "A placeholder mission for the campaign screens.\n\nThe Queen and her escort must drive the creatures out of the hollow before the colony can follow.",
+      "heroLevelCap": 3,
+      "tech": {
+        "new": [
+          "building.ants.fort",
+          "unit.ants.settler",
+          "building.ants.barracks",
+          "unit.ants.warrior"
+        ],
+        "blocked": []
+      }
+    },
+    {
+      "kind": "cinematic",
+      "id": "the-thaw",
+      "title": "The Thaw",
+      "note": "The colony streams out of the ground behind the Queen."
+    },
+    {
+      "kind": "chapter",
+      "id": "chapter-one",
+      "title": "Chapter One: Roots",
+      "art": "asset.interface.campaign.vanguard.chapter-act-1"
+    },
+    {
+      "kind": "story",
+      "id": "the-broods",
+      "title": "The Broods",
+      "pages": [
+        {
+          "art": "asset.interface.campaign.vanguard.story-broods-1",
+          "text": "A placeholder story page between the missions."
+        }
+      ]
+    },
+    {
+      "kind": "mission",
+      "id": "deeper-roots",
+      "map": "vanguard-first-light",
+      "title": "Deeper Roots",
+      "chapterLine": "Chapter One · Mission Two",
+      "art": "asset.interface.campaign.vanguard.founding",
+      "story": "A placeholder second mission on the same map: the Queen returns, carrying what she learned.",
+      "heroLevelCap": 5,
+      "tech": {
+        "new": [
+          "unit.ants.archer"
+        ],
+        "blocked": [
+          "unit.ants.warrior"
+        ]
+      }
+    }
+  ]
 }

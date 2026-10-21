@@ -91,11 +91,10 @@ fn definition() -> Value {
 
 /// The rule keys assembled from other files, absent from `rules/game.json` and
 /// `rules/combat.json`.
-const ASSEMBLED_RULES: [&str; 6] = [
+const ASSEMBLED_RULES: [&str; 5] = [
     "research",
     "lootPools",
     "races",
-    "campaigns",
     "startingSetup",
     "experience",
 ];
@@ -103,6 +102,9 @@ const ASSEMBLED_RULES: [&str; 6] = [
 /// The schema of the document at `path` (`/`-separated from its package's root), when the
 /// format has one.
 pub fn of_document(path: &str) -> Option<Value> {
+    if path == crate::campaign::CAMPAIGN_FILE {
+        return Some(root::<crate::campaign::Campaign>());
+    }
     let (folder, rest) = path.split_once('/')?;
     Some(match folder {
         "abilities" => root::<Ability>(),

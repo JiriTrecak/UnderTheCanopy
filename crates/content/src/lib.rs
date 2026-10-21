@@ -5,6 +5,7 @@
 
 pub mod abilities;
 pub mod assets;
+pub mod campaign;
 pub mod conditions;
 pub mod effects;
 pub mod error;

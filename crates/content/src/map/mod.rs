@@ -26,7 +26,7 @@ pub use authoring::{
     WaterFlow, decode_base64, decode_floats,
 };
 pub use library::{MAP_GROUPS, MAPS_FOLDER, MapFile, folder, library};
-pub use mission::{Mission, Objective, Presentation, Region};
+pub use mission::{Mission, Objective, Region};
 pub use players::{
     Behaviour, Grow, MissionPlayer, PlayerAi, SkirmishLimits, Team, WaveLine, WaveSource,
     WaveTarget, WaveUnit,

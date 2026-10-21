@@ -74,7 +74,7 @@ fn expand(
     }
     let mut result = map.entities.clone();
     let mut started = BTreeSet::new();
-    if skirmish(map) {
+    if bases(map) {
         // A seat nobody plays (left open or closed in the lobby) is not in the match: its
         // start gets no base and the map's own placements for it are left out.
         let seated = |owner: Owner| match owner {
@@ -162,8 +162,10 @@ fn expand(
     })
 }
 
-fn skirmish(map: &UtcMap) -> bool {
-    map.mission.is_none() && !map.sandbox
+/// Whether the map's starts give their players a base: skirmish maps and missions (a
+/// mission's player without a start begins with what the map places); never testbeds.
+fn bases(map: &UtcMap) -> bool {
+    !map.sandbox
 }
 
 /// The map's entities and its projected resources: what starting formations face.
@@ -739,7 +741,7 @@ fn resource_clearance(
     content: &Content,
     resources: &[&Placement],
 ) -> Result<(), String> {
-    if !skirmish(map) {
+    if !bases(map) {
         return Ok(());
     }
     let hall = content
