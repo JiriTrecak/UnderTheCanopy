@@ -591,8 +591,30 @@ fn key_chip(ui: &mut Ui, key: &str) {
     );
 }
 
-/// The view switch, floating at the top of the view: the blocks or the world the biome
-/// makes of them (G), and where ground units walk (H).
+/// A panel's switch in the view bar: its icon, highlighted while the panel shows.
+fn panel_button(ui: &mut Ui, icon: Icon, on: bool, hint: &str) -> bool {
+    let (rect, response) = ui.allocate_exact_size(vec2(30.0, 30.0), Sense::click());
+    let hovered = response.hovered();
+    let painter = ui.painter();
+    if on {
+        painter.rect_filled(rect, 7, SELECTED);
+    } else if hovered {
+        painter.rect_filled(rect, 7, RAISED);
+    }
+    let color = if on {
+        TEXT
+    } else if hovered {
+        SOFT
+    } else {
+        FAINT
+    };
+    icons::paint(painter, icons::square(rect.center(), 17.0), icon, color);
+    response.on_hover_text(hint).clicked()
+}
+
+/// The view bar, floating at the top of the view: the panels round it (the maps library,
+/// the tools' panel, the properties), and what it shows: the blocks or the world the
+/// biome makes of them (G), both side by side (V), where ground units walk (H).
 pub(super) fn view_bar(ctx: &egui::Context, session: &mut Session, view: Rect) {
     egui::Area::new(Id::new(("block-view", &session.root)))
         .order(Order::Foreground)
@@ -605,18 +627,34 @@ pub(super) fn view_bar(ctx: &egui::Context, session: &mut Session, view: Rect) {
                 .show(ui, |ui| {
                     ui.spacing_mut().item_spacing = vec2(3.0, 0.0);
                     ui.horizontal(|ui| {
+                        let mut panels = super::Panels::get(ui.ctx());
+                        let before = panels;
+                        for (icon, on, hint) in [
+                            (Icon::Library, &mut panels.library, "The maps library"),
+                            (Icon::PanelLeft, &mut panels.tools, "The map's panel: blocking out, playable area, symmetry"),
+                            (Icon::PanelRight, &mut panels.properties, "The properties"),
+                        ] {
+                            if panel_button(ui, icon, *on, hint) {
+                                *on = !*on;
+                            }
+                        }
+                        if panels != before {
+                            panels.set(ui.ctx());
+                        }
+                        divider(ui);
                         let views = [
-                            (
-                                View::Blocks,
-                                Icon::Blocks,
-                                "Blocks",
-                                "The blocks themselves   G",
-                            ),
+                            (View::Blocks, Icon::Blocks, "Blocks", "The blocks themselves   G"),
                             (
                                 View::Generated,
                                 Icon::World,
                                 "Generated",
                                 "The world the biome makes of the blocks   G",
+                            ),
+                            (
+                                View::Split,
+                                Icon::Split,
+                                "Split",
+                                "The blocks and the generated world side by side, one camera; the world follows two seconds after the last edit   V",
                             ),
                             (
                                 View::Pathing,
@@ -626,16 +664,24 @@ pub(super) fn view_bar(ctx: &egui::Context, session: &mut Session, view: Rect) {
                             ),
                         ];
                         for (shown, icon, name, hint) in views {
-                            if shown == View::Pathing {
-                                key_chip(ui, "G");
-                                divider(ui);
+                            match shown {
+                                View::Split => {
+                                    key_chip(ui, "G");
+                                    divider(ui);
+                                }
+                                View::Pathing => {
+                                    key_chip(ui, "V");
+                                    divider(ui);
+                                }
+                                _ => {}
                             }
                             let on = session.blocks.view == shown;
                             if view_button(ui, icon, name, hint, on) && !on {
-                                if shown == View::Pathing {
-                                    session.blocks.before_pathing = session.blocks.view;
-                                }
-                                session.blocks.set_view(shown);
+                                let next = match shown {
+                                    View::Pathing | View::Split => session.blocks.toggle(shown),
+                                    other => other,
+                                };
+                                session.blocks.set_view(next);
                                 session.stale = true;
                             }
                         }

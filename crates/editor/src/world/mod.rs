@@ -231,6 +231,9 @@ pub enum View {
     Generated,
     /// Each cell green where ground units can walk, grey where they cannot.
     Pathing,
+    /// The blocks and the generated world side by side, one camera; the world follows
+    /// the blocks a moment after the last edit.
+    Split,
 }
 
 impl View {
@@ -239,8 +242,42 @@ impl View {
             "blocks" => Some(View::Blocks),
             "generated" => Some(View::Generated),
             "pathing" => Some(View::Pathing),
+            "split" => Some(View::Split),
             _ => None,
         }
+    }
+}
+
+/// Which panels round the map view show (the maps editor's own layout): the maps
+/// library, the block tools' panel and the properties.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Panels {
+    pub library: bool,
+    pub tools: bool,
+    pub properties: bool,
+}
+
+impl Default for Panels {
+    fn default() -> Self {
+        Self {
+            library: true,
+            tools: true,
+            properties: true,
+        }
+    }
+}
+
+impl Panels {
+    fn id() -> egui::Id {
+        egui::Id::new("map-panels")
+    }
+
+    pub fn get(ctx: &egui::Context) -> Self {
+        ctx.data_mut(|d| d.get_temp(Self::id()).unwrap_or_default())
+    }
+
+    pub fn set(self, ctx: &egui::Context) {
+        ctx.data_mut(|d| d.insert_temp(Self::id(), self));
     }
 }
 
@@ -263,8 +300,11 @@ pub struct State {
     /// What the view shows: the blocks, the world generated from them (G), or where
     /// ground units can walk (H).
     pub view: View,
-    /// The view H returns to from Pathing.
-    pub before_pathing: View,
+    /// The view H and V return to from Pathing and Split.
+    pub before: View,
+    /// In the split view, whether the pointer works in the right pane (the generated
+    /// world); kept through a drag.
+    pub right_pane: bool,
     /// The names of the biome's faces (face style 1 onwards).
     pub faces: Vec<String>,
     pub placing: Placing,
@@ -285,6 +325,19 @@ pub struct State {
 }
 
 impl State {
+    /// The view after switching `mode` (Pathing, Split) on, or off back to the view
+    /// before it.
+    pub fn toggle(&mut self, mode: View) -> View {
+        if self.view == mode {
+            self.before
+        } else {
+            if !matches!(self.view, View::Pathing | View::Split) {
+                self.before = self.view;
+            }
+            mode
+        }
+    }
+
     /// Shows `view`, rebuilding the scene when it changes.
     pub fn set_view(&mut self, view: View) -> bool {
         let changed = self.view != view;
@@ -306,7 +359,8 @@ impl Default for State {
             cell_radius: 2,
             drag: None,
             view: View::Blocks,
-            before_pathing: View::Blocks,
+            before: View::Blocks,
+            right_pane: false,
             faces: Vec::new(),
             placing: Placing::default(),
             symmetry: Symmetry::default(),
@@ -1246,29 +1300,59 @@ pub fn show(
     content: Option<&canopy_content::Content>,
     docs: Option<&crate::map::view::Docs>,
     texture: Option<egui::TextureId>,
+    texture_generated: Option<egui::TextureId>,
 ) -> Out {
     let mut out = Out::default();
     let mut panel_edit = None;
-    egui::Panel::left(egui::Id::new(("block-tools", &session.root)))
-        .exact_size(214.0)
-        .resizable(false)
-        .show_separator_line(true)
-        .frame(
-            egui::Frame::new()
-                .fill(PANEL)
-                .inner_margin(egui::Margin::same(10)),
-        )
-        .show(ui, |ui| {
-            egui::ScrollArea::vertical()
-                .auto_shrink([false, false])
-                .show(ui, |ui| panel_edit = panel(ui, session));
-        });
+    if Panels::get(ui.ctx()).tools {
+        egui::Panel::left(egui::Id::new(("block-tools", &session.root)))
+            .exact_size(214.0)
+            .resizable(false)
+            .show_separator_line(true)
+            .frame(
+                egui::Frame::new()
+                    .fill(PANEL)
+                    .inner_margin(egui::Margin::same(10)),
+            )
+            .show(ui, |ui| {
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| panel_edit = panel(ui, session));
+            });
+    }
     out.edits.extend(panel_edit);
     out.preview = std::mem::take(&mut session.blocks.write_picture);
-    let rect = ui.available_rect_before_wrap();
-    let response = ui.allocate_rect(rect, Sense::click_and_drag());
+    let full = ui.available_rect_before_wrap();
+    let response = ui.allocate_rect(full, Sense::click_and_drag());
+    ui.painter_at(full).rect_filled(full, 0, RAISED);
+    // The split view: the blocks on the left, the generated world on the right; the pane
+    // under the pointer is the one worked in (kept through a drag).
+    let split = session.blocks.view == View::Split;
+    let panes = split.then(|| {
+        let middle = full.center().x;
+        (
+            Rect::from_min_max(full.min, pos2(middle - 1.0, full.max.y)),
+            Rect::from_min_max(pos2(middle + 1.0, full.min.y), full.max),
+        )
+    });
+    if let Some((_, right)) = panes
+        && session.blocks.drag.is_none()
+        && !response.dragged()
+        && let Some(p) = response.hover_pos()
+    {
+        session.blocks.right_pane = right.contains(p);
+    }
+    let rect = match panes {
+        Some((left, right)) => {
+            if session.blocks.right_pane {
+                right
+            } else {
+                left
+            }
+        }
+        None => full,
+    };
     let painter = ui.painter_at(rect);
-    painter.rect_filled(rect, 0, RAISED);
     let Some(map) = session.map.as_ref() else {
         painter.text(
             rect.center(),
@@ -1279,19 +1363,40 @@ pub fn show(
         );
         return out;
     };
-    if let Some(texture) = texture {
-        painter.image(
-            texture,
-            rect,
-            Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
-            Color32::WHITE,
-        );
-    }
+    let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
     let scale = ui.ctx().pixels_per_point();
-    out.size = Some([
-        (rect.width() * scale) as u32,
-        (rect.height() * scale) as u32,
-    ]);
+    let pixels = |r: Rect| [(r.width() * scale) as u32, (r.height() * scale) as u32];
+    match panes {
+        Some((left, right)) => {
+            let full_painter = ui.painter_at(full);
+            if let Some(texture) = texture {
+                full_painter.image(texture, left, uv, Color32::WHITE);
+            }
+            if let Some(texture) = texture_generated {
+                full_painter.image(texture, right, uv, Color32::WHITE);
+            }
+            full_painter.vline(full.center().x, full.y_range(), Line::new(2.0, BORDER));
+            // The world follows the blocks a moment after the last edit: a spinner while
+            // it waits.
+            if session.generated_due.is_some() {
+                let at = Rect::from_center_size(
+                    right.right_bottom() + egui::vec2(-20.0, -20.0),
+                    egui::vec2(14.0, 14.0),
+                );
+                egui::Spinner::new().size(14.0).color(SOFT).paint_at(ui, at);
+                ui.ctx()
+                    .request_repaint_after(std::time::Duration::from_millis(100));
+            }
+            out.size = Some(pixels(left));
+            out.size_generated = Some(pixels(right));
+        }
+        None => {
+            if let Some(texture) = texture {
+                painter.image(texture, rect, uv, Color32::WHITE);
+            }
+            out.size = Some(pixels(rect));
+        }
+    }
     let map_size = map.size;
     let ground =
         crate::map::tools::ground_at(map, session.camera.focus[0], session.camera.focus[1]);
@@ -1303,7 +1408,8 @@ pub fn show(
     let input = ui.input(|i| i.clone());
     navigate(&input, &response, rect, &mut session.camera, map_size);
     // G switches between the blocks and the generated world, H shows where ground units
-    // walk and back, wherever the pointer is, unless a field is being typed in.
+    // walk and back, V both side by side and back, wherever the pointer is, unless a
+    // field is being typed in.
     if !input.modifiers.command && !ui.ctx().egui_wants_keyboard_input() {
         let view = session.blocks.view;
         let next = if input.key_pressed(egui::Key::G) {
@@ -1311,14 +1417,11 @@ pub fn show(
                 View::Generated => View::Blocks,
                 _ => View::Generated,
             })
-        } else if input.key_pressed(egui::Key::H) {
-            Some(match view {
-                View::Pathing => session.blocks.before_pathing,
-                other => {
-                    session.blocks.before_pathing = other;
-                    View::Pathing
-                }
-            })
+        } else if let Some(mode) = [(egui::Key::H, View::Pathing), (egui::Key::V, View::Split)]
+            .into_iter()
+            .find_map(|(key, mode)| input.key_pressed(key).then_some(mode))
+        {
+            Some(session.blocks.toggle(mode))
         } else {
             None
         };
@@ -1807,8 +1910,8 @@ pub fn show(
         }
     }
     // The tool strips, floating over the foot of the view.
-    out.edits.extend(strip::show(ui.ctx(), session, rect, docs));
-    strip::view_bar(ui.ctx(), session, rect);
+    out.edits.extend(strip::show(ui.ctx(), session, full, docs));
+    strip::view_bar(ui.ctx(), session, full);
     if let Some(op) = live
         && session.blocks.drag.is_some()
     {

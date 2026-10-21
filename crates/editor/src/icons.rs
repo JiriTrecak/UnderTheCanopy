@@ -41,6 +41,11 @@ pub enum Icon {
     Blocks,
     World,
     Pathing,
+    Split,
+    // The map view's panels.
+    Library,
+    PanelLeft,
+    PanelRight,
 }
 
 /// One stroke of an icon: an open or closed polyline in grid units.
@@ -339,6 +344,29 @@ fn parts(icon: Icon) -> Vec<Part> {
             Open(vec![[6.0, 17.5], [6.0, 12.0], [18.0, 12.0], [18.0, 6.5]]),
             circle([6.0, 19.5], 2.0),
             circle([18.0, 4.5], 2.0),
+        ],
+        // Two views side by side.
+        Icon::Split => vec![
+            Closed(vec![[2.5, 5.0], [11.0, 5.0], [11.0, 19.0], [2.5, 19.0]]),
+            Closed(vec![[13.0, 5.0], [21.5, 5.0], [21.5, 19.0], [13.0, 19.0]]),
+        ],
+        // A list: the maps library.
+        Icon::Library => vec![
+            Open(vec![[9.0, 6.0], [21.0, 6.0]]),
+            Open(vec![[9.0, 12.0], [21.0, 12.0]]),
+            Open(vec![[9.0, 18.0], [21.0, 18.0]]),
+            circle([4.5, 6.0], 1.2),
+            circle([4.5, 12.0], 1.2),
+            circle([4.5, 18.0], 1.2),
+        ],
+        // A window with its left or right column: the tools' panel, the properties.
+        Icon::PanelLeft => vec![
+            Closed(vec![[3.0, 4.0], [21.0, 4.0], [21.0, 20.0], [3.0, 20.0]]),
+            Open(vec![[9.0, 4.0], [9.0, 20.0]]),
+        ],
+        Icon::PanelRight => vec![
+            Closed(vec![[3.0, 4.0], [21.0, 4.0], [21.0, 20.0], [3.0, 20.0]]),
+            Open(vec![[15.0, 4.0], [15.0, 20.0]]),
         ],
     }
 }

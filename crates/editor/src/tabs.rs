@@ -110,6 +110,9 @@ pub struct Viewer<'a> {
     pub content: Option<std::sync::Arc<canopy_content::Content>>,
     pub scene_texture: Option<egui::TextureId>,
     pub map_size: &'a mut Option<(String, [u32; 2])>,
+    /// The split view's generated world: its last picture and its pane's size.
+    pub generated_texture: Option<egui::TextureId>,
+    pub generated_size: &'a mut Option<(String, [u32; 2])>,
     /// A map whose picker preview was asked for.
     pub preview: &'a mut Option<String>,
     /// The package folder on disk.
@@ -271,10 +274,14 @@ impl TabViewer for Viewer<'_> {
                     self.content.as_deref(),
                     docs.as_ref(),
                     self.scene_texture,
+                    self.generated_texture,
                 );
                 self.edits.extend(out.edits);
                 if out.preview {
                     *self.preview = Some(root.clone());
+                }
+                if let Some(size) = out.size_generated {
+                    *self.generated_size = Some((root.clone(), size));
                 }
                 if let Some(size) = out.size {
                     *self.map_size = Some((root, size));

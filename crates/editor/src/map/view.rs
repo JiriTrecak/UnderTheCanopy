@@ -20,6 +20,8 @@ pub const FOV: f32 = 0.8;
 pub struct Out {
     /// The viewport's size in physical pixels: the stage draws the scene at this size.
     pub size: Option<[u32; 2]>,
+    /// The split view's right pane, the generated world, in physical pixels.
+    pub size_generated: Option<[u32; 2]>,
     pub edits: Vec<Edit>,
     /// The map picker's preview was asked for.
     pub preview: bool,

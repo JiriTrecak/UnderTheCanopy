@@ -79,6 +79,8 @@ pub struct Editor {
     shell: shell::Shell,
     /// The viewport's renderer, made when a viewport first shows (or why it could not be).
     stage: Option<Result<stage::Stage, String>>,
+    /// A second viewport, opened for the map editor's split view: its generated world.
+    stage_generated: Option<Result<stage::Stage, String>>,
     data: PathBuf,
 }
 
@@ -126,6 +128,7 @@ impl Editor {
             },
             shell: shell::Shell::new(package, setup.user, Some(setup.data.clone())),
             stage: None,
+            stage_generated: None,
             data: setup.data,
         }
     }
@@ -224,7 +227,18 @@ impl Editor {
         self.shell.set_block_tool(name);
     }
 
-    /// The block editor's view: "blocks", "generated" or "pathing" (captures).
+    /// Shows or hides the panels round the map view: the maps library, the tools' panel
+    /// and the properties (captures).
+    pub fn set_map_panels(&mut self, library: bool, tools: bool, properties: bool) {
+        world::Panels {
+            library,
+            tools,
+            properties,
+        }
+        .set(&self.ctx);
+    }
+
+    /// The block editor's view: "blocks", "generated", "pathing" or "split" (captures).
     pub fn set_block_view(&mut self, view: &str) {
         self.shell.set_block_view(view);
     }
@@ -311,6 +325,10 @@ impl Editor {
             Some(Ok(stage)) => stage.texture(),
             _ => None,
         };
+        self.shell.viewport_texture_generated = match &self.stage_generated {
+            Some(Ok(stage)) => stage.texture(),
+            _ => None,
+        };
         self.shell.viewport_error = match &self.stage {
             Some(Err(error)) => Some(error.clone()),
             _ => None,
@@ -318,11 +336,22 @@ impl Editor {
         let shell = &mut self.shell;
         let output = self.ctx.run_ui(input, |ui| shell.ui(ui));
         // A cook finished: the stage opens the new pack.
-        if std::mem::take(&mut self.shell.reload_pack)
-            && let Some(Ok(stage)) = self.stage.take()
-            && let Some(texture) = stage.texture()
-        {
-            self.renderer.free_texture(&texture);
+        if std::mem::take(&mut self.shell.reload_pack) {
+            for stage in [self.stage.take(), self.stage_generated.take()] {
+                if let Some(Ok(stage)) = stage
+                    && let Some(texture) = stage.texture()
+                {
+                    self.renderer.free_texture(&texture);
+                }
+            }
+        }
+        if let Some(scene) = self.shell.scene_generated.take() {
+            let stage = self
+                .stage_generated
+                .get_or_insert_with(|| stage::Stage::new(gpu, &self.data));
+            if let Ok(stage) = stage {
+                stage.draw_scene(gpu, &mut self.renderer, &scene);
+            }
         }
         let (shot, scene, encounter) = (
             self.shell.shot.take(),

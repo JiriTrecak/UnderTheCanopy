@@ -228,6 +228,8 @@ pub struct Shell {
     /// The viewport: last frame's picture, why it cannot draw, this frame's request and
     /// its camera.
     pub viewport_texture: Option<egui::TextureId>,
+    /// The second viewport's last picture: the split view's generated world.
+    pub viewport_texture_generated: Option<egui::TextureId>,
     /// Set when a cook finished: the viewports open the pack again.
     pub reload_pack: bool,
     /// The cook running, and the MCP calls waiting for it.
@@ -252,6 +254,8 @@ pub struct Shell {
     no_looks: HashMap<String, canopy_scene::Look>,
     data: Option<std::path::PathBuf>,
     pub scene: Option<crate::stage::SceneShot>,
+    /// The split view's generated world to draw this frame, in the second viewport.
+    pub scene_generated: Option<crate::stage::SceneShot>,
     /// Abilities' stages by document, the looks their grounds asked for, and the
     /// encounter to draw this frame.
     encounters: HashMap<String, crate::encounter::Session>,
@@ -292,6 +296,7 @@ impl Shell {
             encounter_waiting: Vec::new(),
             test: None,
             viewport_texture: None,
+            viewport_texture_generated: None,
             viewport_error: None,
             shot: None,
             orbit: crate::stage::Orbit::default(),
@@ -307,6 +312,7 @@ impl Shell {
             no_looks: HashMap::new(),
             data,
             scene: None,
+            scene_generated: None,
             encounters: HashMap::new(),
             wanted_looks: Vec::new(),
             encounter: None,
@@ -404,33 +410,47 @@ impl Shell {
         let mut edits = Vec::new();
         let unused = (kind == Kind::Assets && workspace.unused_only).then_some(&unused_assets);
         let cooking = self.cooking.is_some();
+        // The maps editor can hide its library and properties (the map view's top bar).
+        let panels = if kind == Kind::Maps {
+            crate::world::Panels::get(ui.ctx())
+        } else {
+            crate::world::Panels::default()
+        };
         let LibraryAction {
             create,
             import,
             cook,
-        } = library_panel(ui, kind, workspace, store, &package, unused, cooking);
-        let request = inspector::show(
-            ui,
-            &mut workspace.dock,
-            Inspect {
-                kind,
-                store,
-                edits: &mut edits,
-                uses: uses.as_deref(),
-                can_rename,
-                can_delete,
-                preview: subject.map(|(model, scale)| inspector::Preview {
-                    model,
-                    scale,
-                    texture: self.viewport_texture,
-                    error: self.viewport_error.as_deref(),
-                    orbit: &mut self.orbit,
-                    shot: &mut self.shot,
-                    clips,
-                    clip: &mut self.clip,
-                }),
-            },
-        );
+        } = if panels.library {
+            library_panel(ui, kind, workspace, store, &package, unused, cooking)
+        } else {
+            LibraryAction::default()
+        };
+        let request = if !panels.properties {
+            None
+        } else {
+            inspector::show(
+                ui,
+                &mut workspace.dock,
+                Inspect {
+                    kind,
+                    store,
+                    edits: &mut edits,
+                    uses: uses.as_deref(),
+                    can_rename,
+                    can_delete,
+                    preview: subject.map(|(model, scale)| inspector::Preview {
+                        model,
+                        scale,
+                        texture: self.viewport_texture,
+                        error: self.viewport_error.as_deref(),
+                        orbit: &mut self.orbit,
+                        shot: &mut self.shot,
+                        clips,
+                        clip: &mut self.clip,
+                    }),
+                },
+            )
+        };
         if workspace
             .highlight
             .as_ref()
@@ -443,6 +463,7 @@ impl Shell {
         let mut new_ability = None;
         let mut try_with = None;
         let mut map_size = None;
+        let mut generated_size = None;
         let mut preview: Option<String> = None;
         let content = self.checker.as_ref().and_then(|c| c.content().cloned());
         // The ability stages' grounds: the pack, and the looks they asked for.
@@ -488,6 +509,8 @@ impl Shell {
                 content,
                 scene_texture: self.viewport_texture,
                 map_size: &mut map_size,
+                generated_texture: self.viewport_texture_generated,
+                generated_size: &mut generated_size,
                 preview: &mut preview,
                 root: Some(package.root.clone()),
                 encounters: &mut self.encounters,
@@ -511,6 +534,21 @@ impl Shell {
                 ),
                 Err(error) => self.say(error, true),
             }
+        }
+        if let Some((root, size)) = generated_size
+            && let Some(session) = self.maps.get(&root)
+            && let (Some(scene), Some(map)) = (&session.scene_generated, &session.map)
+        {
+            let ground =
+                crate::map::tools::ground_at(map, session.camera.focus[0], session.camera.focus[1]);
+            self.scene_generated = Some(crate::stage::SceneShot {
+                root: root.clone(),
+                version: session.generated_version,
+                scene: scene.clone(),
+                camera: session.camera,
+                ground,
+                size,
+            });
         }
         if let Some((root, size)) = map_size
             && let Some(session) = self.maps.get(&root)
@@ -628,18 +666,30 @@ impl Shell {
 
     /// Loads the map at `root` from the store when it changed (an undo, MCP, a file on disk)
     /// and rebuilds its scene when its terrain changed, at most every 150 ms while a stroke
-    /// paints.
+    /// paints. The split view's generated world follows [`crate::map::GENERATE_AFTER`]
+    /// after the last change.
     fn prepare_map(&mut self, root: &str) {
         self.load_map(root);
         let Some(session) = self.maps.get_mut(root) else {
             return;
         };
+        let split = session.blocks.view == crate::world::View::Split;
+        if !split {
+            session.scene_generated = None;
+            session.generated_due = None;
+        }
         let due = session.scene.is_none()
             || (session.stale
                 && session
                     .last_build
                     .is_none_or(|t| t.elapsed() > Duration::from_millis(150)));
-        if !due {
+        let due_generated = split
+            && session.blocks.drag.is_none()
+            && (session.scene_generated.is_none() && session.generated_due.is_none()
+                || session
+                    .generated_due
+                    .is_some_and(|t| t.elapsed() >= crate::map::GENERATE_AFTER));
+        if !due && !due_generated {
             return;
         }
         let Some(content) = self.checker.as_ref().and_then(|c| c.content().cloned()) else {
@@ -683,22 +733,46 @@ impl Shell {
                 &content,
             );
         }
-        match crate::map::build(
-            map,
-            &content,
-            &resources.pack,
-            &resources.looks[&biome],
-            session.blocks.view,
-        ) {
-            Ok(scene) => {
-                session.scene = Some(Arc::new(scene));
-                session.version += 1;
-                session.stale = false;
-                tracing::debug!(ms = started.elapsed().as_millis() as u64, map = %root, "editor: map scene");
+        if due {
+            // An edit in the split view: the generated world follows a moment after.
+            if split && session.stale && session.scene_generated.is_some() {
+                session.generated_due = Some(Instant::now());
             }
-            Err(error) => session.error = Some(error),
+            match crate::map::build(
+                map,
+                &content,
+                &resources.pack,
+                &resources.looks[&biome],
+                session.blocks.view,
+            ) {
+                Ok(scene) => {
+                    session.scene = Some(Arc::new(scene));
+                    session.version += 1;
+                    session.stale = false;
+                    tracing::debug!(ms = started.elapsed().as_millis() as u64, map = %root, "editor: map scene");
+                }
+                Err(error) => session.error = Some(error),
+            }
+            session.last_build = Some(Instant::now());
         }
-        session.last_build = Some(Instant::now());
+        if due_generated {
+            let started = Instant::now();
+            match crate::map::build(
+                map,
+                &content,
+                &resources.pack,
+                &resources.looks[&biome],
+                crate::world::View::Generated,
+            ) {
+                Ok(scene) => {
+                    session.scene_generated = Some(Arc::new(scene));
+                    session.generated_version += 1;
+                    tracing::debug!(ms = started.elapsed().as_millis() as u64, map = %root, "editor: generated scene");
+                }
+                Err(error) => session.error = Some(error),
+            }
+            session.generated_due = None;
+        }
     }
 
     /// The map package at `root` with its unsaved edits, written to a temporary folder;

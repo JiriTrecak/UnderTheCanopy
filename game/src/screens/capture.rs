@@ -596,6 +596,31 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     editor.set_block_view("pathing");
     settle(&mut editor, rig, 40);
     shoot(&mut editor, rig, "editor-blocks-dream-pathing")?;
+    // The blocks and the generated world side by side, then with the panels hidden.
+    editor.set_block_view("split");
+    settle(&mut editor, rig, 60);
+    shoot(&mut editor, rig, "editor-blocks-dream-split")?;
+    // An edit in the blocks: the world follows two seconds after it.
+    editor.set_block_tool("raise");
+    let (a, b) = (point(560.0, 560.0), point(700.0, 640.0));
+    frame(&mut editor, rig, vec![egui::Event::PointerMoved(a)]);
+    frame(&mut editor, rig, vec![press(a, true)]);
+    frame(&mut editor, rig, vec![egui::Event::PointerMoved(b)]);
+    frame(&mut editor, rig, vec![press(b, false)]);
+    settle(&mut editor, rig, 10);
+    shoot(&mut editor, rig, "editor-blocks-dream-split-edited")?;
+    let started = Instant::now();
+    while started.elapsed() < Duration::from_millis(2600) {
+        settle(&mut editor, rig, 5);
+    }
+    settle(&mut editor, rig, 10);
+    shoot(&mut editor, rig, "editor-blocks-dream-split-followed")?;
+    editor.undo_all();
+    editor.set_block_tool("level");
+    editor.set_map_panels(false, false, false);
+    settle(&mut editor, rig, 40);
+    shoot(&mut editor, rig, "editor-blocks-dream-split-wide")?;
+    editor.set_map_panels(true, true, true);
     editor.set_block_view("blocks");
     Ok(())
 }

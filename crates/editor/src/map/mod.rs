@@ -48,9 +48,11 @@ pub fn build(
 ) -> Result<Scene, String> {
     use crate::world::View;
     let blockout = match view {
-        View::Blocks => canopy_content::map::blocks::Blocks::of(&map.authoring.terrain)
-            .and_then(Result::ok)
-            .map(|b| crate::world::mesh::mesh(&b)),
+        View::Blocks | View::Split => {
+            canopy_content::map::blocks::Blocks::of(&map.authoring.terrain)
+                .and_then(Result::ok)
+                .map(|b| crate::world::mesh::mesh(&b))
+        }
         View::Generated => None,
         View::Pathing => {
             let terrain = canopy_sim::terrain::Terrain::compile(map, content)
@@ -283,7 +285,17 @@ pub struct Session {
     pub own: bool,
     /// The block editor's state (D80, D81).
     pub blocks: crate::world::State,
+    /// The split view's generated world, its version, and since when it waits to follow
+    /// the blocks (rebuilt [`GENERATE_AFTER`] after the last change, not while a drag
+    /// is under way).
+    pub scene_generated: Option<Arc<Scene>>,
+    pub generated_version: u64,
+    pub generated_due: Option<std::time::Instant>,
 }
+
+/// How long the split view's generated world waits after the last change before it is
+/// made again: making it costs far more than the blocks.
+pub const GENERATE_AFTER: std::time::Duration = std::time::Duration::from_secs(2);
 
 impl Session {
     pub fn new(root: &str) -> Self {
@@ -300,6 +312,9 @@ impl Session {
             tools: tools::Tools::default(),
             own: false,
             blocks: Default::default(),
+            scene_generated: None,
+            generated_version: 0,
+            generated_due: None,
         }
     }
 
