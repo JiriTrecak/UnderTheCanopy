@@ -26,6 +26,17 @@ pub enum Icon {
     Panel,
     File,
     Send,
+    // The block editor's tools.
+    Raise,
+    Level,
+    Paint,
+    Ramp,
+    Cut,
+    Cells,
+    Face,
+    Place,
+    Round,
+    Select,
 }
 
 /// One stroke of an icon: an open or closed polyline in grid units.
@@ -206,6 +217,94 @@ fn parts(icon: Icon) -> Vec<Part> {
             Open(vec![[12.0, 19.0], [12.0, 5.0]]),
             Open(vec![[6.0, 11.0], [12.0, 5.0], [18.0, 11.0]]),
         ],
+        // A block with an arrow up out of it.
+        Icon::Raise => vec![
+            Closed(vec![[5.0, 14.0], [19.0, 14.0], [19.0, 20.0], [5.0, 20.0]]),
+            Open(vec![[12.0, 11.0], [12.0, 3.0]]),
+            Open(vec![[8.5, 6.5], [12.0, 3.0], [15.5, 6.5]]),
+        ],
+        // Two blocks of different heights brought to one line.
+        Icon::Level => vec![
+            Open(vec![[3.0, 9.0], [21.0, 9.0]]),
+            Closed(vec![[4.0, 12.0], [11.0, 12.0], [11.0, 20.0], [4.0, 20.0]]),
+            Closed(vec![[13.0, 15.0], [20.0, 15.0], [20.0, 20.0], [13.0, 20.0]]),
+            Open(vec![[16.5, 12.5], [16.5, 10.5]]),
+        ],
+        // A brush.
+        Icon::Paint => vec![
+            Open(vec![[20.0, 4.0], [11.0, 13.0]]),
+            Closed(vec![
+                [11.0, 13.0],
+                [8.0, 13.5],
+                [6.0, 16.0],
+                [4.0, 20.5],
+                [8.5, 18.5],
+                [10.5, 16.5],
+                [11.5, 14.5],
+            ]),
+        ],
+        // A slope down from a level.
+        Icon::Ramp => vec![Closed(vec![
+            [3.0, 20.0],
+            [3.0, 7.0],
+            [9.0, 7.0],
+            [16.0, 17.0],
+            [21.0, 17.0],
+            [21.0, 20.0],
+        ])],
+        // A block with its corner cut off.
+        Icon::Cut => vec![
+            Closed(vec![
+                [4.0, 4.0],
+                [20.0, 4.0],
+                [20.0, 12.0],
+                [12.0, 20.0],
+                [4.0, 20.0],
+            ]),
+            Open(vec![[16.0, 21.0], [21.0, 16.0]]),
+        ],
+        // A grid of cells.
+        Icon::Cells => vec![
+            Closed(vec![[4.0, 4.0], [20.0, 4.0], [20.0, 20.0], [4.0, 20.0]]),
+            Open(vec![[9.33, 4.0], [9.33, 20.0]]),
+            Open(vec![[14.67, 4.0], [14.67, 20.0]]),
+            Open(vec![[4.0, 9.33], [20.0, 9.33]]),
+            Open(vec![[4.0, 14.67], [20.0, 14.67]]),
+        ],
+        // A wall of stones: a cliff's face.
+        Icon::Face => vec![
+            Closed(vec![[3.0, 5.0], [21.0, 5.0], [21.0, 19.0], [3.0, 19.0]]),
+            Open(vec![[3.0, 9.67], [21.0, 9.67]]),
+            Open(vec![[3.0, 14.33], [21.0, 14.33]]),
+            Open(vec![[9.0, 5.0], [9.0, 9.67]]),
+            Open(vec![[15.0, 5.0], [15.0, 9.67]]),
+            Open(vec![[12.0, 9.67], [12.0, 14.33]]),
+            Open(vec![[9.0, 14.33], [9.0, 19.0]]),
+            Open(vec![[15.0, 14.33], [15.0, 19.0]]),
+        ],
+        // A map pin.
+        Icon::Place => {
+            let mut pin = arc([12.0, 10.0], [6.5, 6.5], PI * 0.8, PI * 2.2);
+            pin.push([12.0, 21.5]);
+            vec![Closed(pin), circle([12.0, 10.0], 2.3)]
+        }
+        // A block's corner rounded off.
+        Icon::Round => {
+            let mut edge = vec![[4.0, 20.0], [4.0, 13.0]];
+            edge.extend(arc([13.0, 13.0], [9.0, 9.0], PI, 1.5 * PI));
+            edge.push([20.0, 4.0]);
+            vec![Open(edge)]
+        }
+        // An arrow cursor.
+        Icon::Select => vec![Closed(vec![
+            [5.0, 3.0],
+            [5.0, 19.0],
+            [9.5, 15.0],
+            [12.5, 21.5],
+            [15.0, 20.4],
+            [12.0, 14.0],
+            [18.0, 14.0],
+        ])],
     }
 }
 

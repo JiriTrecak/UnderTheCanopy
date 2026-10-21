@@ -9,6 +9,7 @@
 //! over what changed.
 
 pub mod mesh;
+mod strip;
 
 use crate::document::{Command, Sample};
 use crate::map::Session;
@@ -843,19 +844,6 @@ fn area(a: (i32, i32), b: (i32, i32)) -> impl Iterator<Item = (i32, i32)> {
     (z0..=z1).flat_map(move |z| (x0..=x1).map(move |x| (x, z)))
 }
 
-fn tool_button(ui: &mut Ui, label: &str, key: &str, on: bool) -> bool {
-    let text = RichText::new(format!("{label}   {key}"))
-        .size(12.0)
-        .color(if on { TEXT } else { MUTED });
-    ui.add_sized(
-        [ui.available_width(), 26.0],
-        egui::Button::new(text)
-            .fill(if on { RAISED } else { PANEL })
-            .stroke(Line::new(1.0, if on { SOFT } else { BORDER })),
-    )
-    .clicked()
-}
-
 /// The smallest playable square the map rules allow (cells).
 const MIN_PLAYABLE: u32 = 64;
 
@@ -999,149 +987,6 @@ fn panel(ui: &mut Ui, session: &mut Session) -> Option<crate::tabs::Edit> {
             edit = block_out(session, true);
         }
         ui.add_space(10.0);
-    }
-    ui.label(eyebrow("Tools"));
-    for tool in BlockTool::ALL {
-        let key = format!("{:?}", tool.key());
-        if tool_button(ui, tool.name(), &key, session.blocks.tool == tool) {
-            session.blocks.tool = tool;
-        }
-    }
-    ui.add_space(6.0);
-    ui.label(
-        RichText::new(session.blocks.tool.hint())
-            .size(11.0)
-            .color(MUTED),
-    );
-    let tool = session.blocks.tool;
-    if !matches!(tool, BlockTool::Cut | BlockTool::Place | BlockTool::Select) {
-        ui.add_space(8.0);
-        ui.label(eyebrow("Brush"));
-        if !matches!(tool, BlockTool::Ramp | BlockTool::Place | BlockTool::Select) {
-            ui.horizontal(|ui| {
-                let state = &mut session.blocks;
-                let cells = tool == BlockTool::Cells;
-                for (name, brush, lasso) in [
-                    (if cells { "Stroke" } else { "Box" }, cells, false),
-                    ("Brush", true, false),
-                    ("Lasso", false, true),
-                ] {
-                    if cells && name == "Brush" {
-                        continue;
-                    }
-                    let on = state.lasso == lasso && (lasso || cells || state.brush == brush);
-                    if ui
-                        .selectable_label(on, name)
-                        .on_hover_text("B cycles; Lasso fills the loop the drag draws")
-                        .clicked()
-                    {
-                        state.brush = brush;
-                        state.lasso = lasso;
-                    }
-                }
-            });
-        }
-        if tool == BlockTool::Cells {
-            let mut r = session.blocks.cell_radius;
-            ui.add(egui::Slider::new(&mut r, 1..=16).text("cells  [ ]"));
-            session.blocks.cell_radius = r;
-        } else if session.blocks.brush || tool == BlockTool::Ramp {
-            let mut r = session.blocks.radius;
-            ui.add(egui::Slider::new(&mut r, 0..=8).text("blocks  [ ]"));
-            session.blocks.radius = r;
-        }
-    }
-    if tool == BlockTool::Place {
-        ui.add_space(8.0);
-        ui.label(eyebrow("Place"));
-        for (placing, name) in [
-            (Placing::Start, "Start (and its amber)"),
-            (Placing::Amber, "Amber site"),
-            (Placing::Camp, "Creep camp"),
-        ] {
-            if ui
-                .selectable_label(session.blocks.placing == placing, name)
-                .clicked()
-            {
-                session.blocks.placing = placing;
-            }
-        }
-        let t = &mut session.tools;
-        match session.blocks.placing {
-            Placing::Amber | Placing::Start => {
-                ui.add(
-                    egui::Slider::new(&mut t.amber, 500..=6000)
-                        .step_by(100.0)
-                        .text("Amber a node"),
-                );
-            }
-            Placing::Camp => {
-                ui.horizontal(|ui| {
-                    for tier in crate::map::tools::Tier::ALL {
-                        if ui.selectable_label(t.tier == tier, tier.name()).clicked() {
-                            t.tier = tier;
-                        }
-                    }
-                });
-            }
-        }
-    }
-    if tool == BlockTool::Face {
-        ui.add_space(8.0);
-        ui.label(eyebrow("Face"));
-        let faces = session.blocks.faces.clone();
-        if faces.is_empty() {
-            ui.label(
-                RichText::new("This biome has one cliff face.")
-                    .size(11.0)
-                    .color(MUTED),
-            );
-        }
-        for (n, name) in faces.iter().enumerate() {
-            let style = n as u8 + 1;
-            if ui
-                .selectable_label(session.blocks.style == style, name)
-                .clicked()
-            {
-                session.blocks.style = style;
-            }
-        }
-    }
-    if matches!(tool, BlockTool::Paint | BlockTool::Cells) {
-        let cells = tool == BlockTool::Cells;
-        ui.add_space(8.0);
-        ui.label(eyebrow("Kind"));
-        for (n, kind) in BlockKind::ALL.iter().enumerate() {
-            if *kind == BlockKind::Ramp {
-                continue;
-            }
-            let c = mesh::color(Block {
-                level: 2,
-                kind: *kind,
-                ..Block::default()
-            });
-            let swatch = Color32::from_rgb(
-                (c[0].powf(1.0 / 2.2) * 255.0) as u8,
-                (c[1].powf(1.0 / 2.2) * 255.0) as u8,
-                (c[2].powf(1.0 / 2.2) * 255.0) as u8,
-            );
-            ui.horizontal(|ui| {
-                let (rect, _) = ui.allocate_exact_size(egui::vec2(14.0, 14.0), Sense::hover());
-                ui.painter().rect_filled(rect, 2, swatch);
-                let chosen = if cells {
-                    &mut session.blocks.cell_kind
-                } else {
-                    &mut session.blocks.kind
-                };
-                let on = *chosen == *kind;
-                if ui
-                    .selectable_label(on, format!("{}  {}", kind.name(), n + 1))
-                    .clicked()
-                {
-                    *chosen = *kind;
-                }
-            });
-        }
     }
     ui.add_space(12.0);
     ui.label(eyebrow("Playable area"));
@@ -1794,8 +1639,8 @@ pub fn show(
             text += &format!("  ·  {name}");
         }
         painter.text(
-            rect.left_bottom() + egui::vec2(12.0, -12.0),
-            egui::Align2::LEFT_BOTTOM,
+            rect.left_top() + egui::vec2(12.0, 12.0),
+            egui::Align2::LEFT_TOP,
             text,
             egui::FontId::proportional(12.0),
             TEXT,
@@ -1911,6 +1756,8 @@ pub fn show(
             );
         }
     }
+    // The tool strips, floating over the foot of the view.
+    out.edits.extend(strip::show(ui.ctx(), session, rect, docs));
     if let Some(op) = live
         && session.blocks.drag.is_some()
     {
