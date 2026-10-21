@@ -65,7 +65,6 @@ pub enum Tool {
         map: String,
         scale: Option<u32>,
     },
-    MapStroke(MapStrokeArgs),
     MapBlocks(MapBlocksArgs),
     MapPlace(MapPlaceArgs),
     MapRemove(MapRemoveArgs),
@@ -262,42 +261,6 @@ pub struct MapBlocksArgs {
 }
 
 #[derive(Debug, Clone, Deserialize, JsonSchema)]
-pub struct MapStrokeArgs {
-    /// The map: its id or its package path.
-    pub map: String,
-    /// raise, lower, flatten, smooth, cliff, ramp, paint, water, trees or props. A ramp runs
-    /// straight from the first point to the last (from the ground height there to the
-    /// height at the last point, or `level`), twice the radius wide.
-    pub tool: String,
-    /// The stroke's line in world cells (x, z), from (0, 0) at the north-west corner to
-    /// (size, size). One point dabs once.
-    pub points: Vec<[f32; 2]>,
-    /// Brush radius in cells (default 6).
-    pub radius: Option<f32>,
-    /// Brush strength 0 to 1 (default 0.5): how fast raise, lower, smooth and paint act.
-    pub strength: Option<f32>,
-    /// flatten and cliff: the height to level to (ground is -16 to 24; 2 is a new map's
-    /// ground; one cliff level is 3). water: the surface height to flood to. Without it,
-    /// flatten keeps the first point's height and cliff lifts one level.
-    pub level: Option<f32>,
-    /// The opposite action: lower for raise, a level down for cliff, drain for water,
-    /// clear for trees.
-    pub lower: Option<bool>,
-    /// How many times the brush goes over the line (default 1).
-    pub passes: Option<u32>,
-    /// paint: soil, grass, rock or a paint material of the map (map_info lists them).
-    pub ground: Option<String>,
-    /// trees: the scenery to plant (map_info lists the trees), on Warcraft III's staggered
-    /// lattice (two to every 5 × 5 cells); `density` is trees per 100 cells, 8 filling the
-    /// lattice (default 6). props: decoration per 100 cells, spaced wider.
-    pub tree: Option<String>,
-    pub density: Option<f32>,
-    /// props: the decoration to scatter (map_info lists the props); spaced wider than
-    /// trees, at `density` per 100 cells.
-    pub prop: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize, JsonSchema)]
 pub struct MapPlaceArgs {
     /// The map: its id or its package path.
     pub map: String,
@@ -474,7 +437,7 @@ impl Handler {
     }
 
     #[tool(
-        description = "Creates a map package: flat dry ground at height 2 in grass, every ground material as a paint layer, and players 1 and 2 in opposite corners. Shape it with map_stroke and furnish it with map_place."
+        description = "Creates a map package: flat dry ground at height 2 in grass, every ground material as a paint layer, and players 1 and 2 in opposite corners. Shape it in blocks with map_blocks (op flat first) and furnish it with map_place."
     )]
     async fn create_map(
         &self,
@@ -505,16 +468,6 @@ impl Handler {
             scale: args.scale,
         })
         .await
-    }
-
-    #[tool(
-        description = "One brush stroke along a line as one undo step, as the editor's brushes do it: raise, lower, flatten, smooth, cliff (hard steps of one level), ramp (a straight walkable slope between two heights), paint, water, trees and props (decoration that blocks nothing)."
-    )]
-    async fn map_stroke(
-        &self,
-        Parameters(args): Parameters<MapStrokeArgs>,
-    ) -> Result<CallToolResult, ErrorData> {
-        self.ask(Tool::MapStroke(args)).await
     }
 
     #[tool(
@@ -602,7 +555,7 @@ impl Handler {
 
 #[tool_handler(
     name = "Under the Canopy editor",
-    instructions = "Edits the game's base package (units, buildings, items, abilities, effects, races, rules, assets, maps) through the open editor. Find documents with list_elements, read them with read_document and their shape with document_schema, change them with edit (one undo step per call), check with problems, then save. Maps have their own tools: create_map, map_blocks (the block editor, D80), map_stroke, map_place, map_remove, map_info and map_picture. The canopy-* skills in the repository describe the formats."
+    instructions = "Edits the game's base package (units, buildings, items, abilities, effects, races, rules, assets, maps) through the open editor. Find documents with list_elements, read them with read_document and their shape with document_schema, change them with edit (one undo step per call), check with problems, then save. Maps have their own tools: create_map, map_blocks (the block editor, D80), map_place, map_remove, map_info and map_picture. The canopy-* skills in the repository describe the formats."
 )]
 impl ServerHandler for Handler {}
 

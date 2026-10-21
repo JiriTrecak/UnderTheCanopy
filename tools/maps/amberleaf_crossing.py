@@ -2,7 +2,10 @@
 Run with the server up (`just mcp`): `python3 tools/maps/amberleaf_crossing.py`, then
 save with the MCP `save` tool. It creates the map, so remove the package first to rebuild it.
 Player 1 holds the north-west, player 2 the south-east; everything is mirrored by a half
-turn about the centre (R below), so both players have the same distances to everything."""
+turn about the centre (R below), so both players have the same distances to everything.
+
+It no longer runs: its brush strokes (MCP `map_stroke`) went with the brush editor (D81).
+The map stays as it was saved; it is kept as the record of how the map was made."""
 import sys, math, json, random, os; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import mcp
 
 M = 'amberleaf-crossing'

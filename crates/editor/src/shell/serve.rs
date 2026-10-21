@@ -190,7 +190,6 @@ impl Shell {
             Tool::MapCreate(_)
                 | Tool::MapInfo { .. }
                 | Tool::MapPicture { .. }
-                | Tool::MapStroke(_)
                 | Tool::MapBlocks(_)
                 | Tool::MapPlace(_)
                 | Tool::MapRemove(_)

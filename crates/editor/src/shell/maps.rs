@@ -2,9 +2,9 @@
 //! map view, on the map's session, each as one undo step.
 
 use super::*;
-use crate::map::tools::{Ground, Tier, Tool as MapTool, Tools};
+use crate::map::tools::{Placement, Tier};
 use crate::map::view::{self as map_view, Docs};
-use crate::mcp::{MapCreateArgs, MapPlaceArgs, MapStrokeArgs, Tool};
+use crate::mcp::{MapCreateArgs, MapPlaceArgs, Tool};
 use serde_json::json;
 
 impl Shell {
@@ -20,7 +20,6 @@ impl Shell {
                 use base64::Engine;
                 Ok(json!({ "png": base64::engine::general_purpose::STANDARD.encode(png) }))
             }
-            Tool::MapStroke(args) => self.map_stroke(args),
             Tool::MapBlocks(args) => self.map_blocks(args),
             Tool::MapPreview { map } => {
                 let root = self.map_root(&map)?;
@@ -181,100 +180,6 @@ impl Shell {
         Ok(json!({ "created": root }))
     }
 
-    fn map_stroke(&mut self, args: MapStrokeArgs) -> Result<Value, String> {
-        let content = self.content()?;
-        let root = self.map_root(&args.map)?;
-        let map = self.loaded_map(&root)?;
-        let tool = match args.tool.to_lowercase().as_str() {
-            "raise" => MapTool::Raise,
-            "lower" => MapTool::Lower,
-            "flatten" => MapTool::Flatten,
-            "smooth" => MapTool::Smooth,
-            "cliff" => MapTool::Cliff,
-            "ramp" => MapTool::Ramp,
-            "paint" => MapTool::Paint,
-            "water" => MapTool::Water,
-            "trees" => MapTool::Trees,
-            "props" => MapTool::Props,
-            other => {
-                return Err(format!(
-                    "No brush {other}: raise, lower, flatten, smooth, cliff, ramp, paint, water, trees or props"
-                ));
-            }
-        };
-        let ground = match args.ground.as_deref().unwrap_or("grass") {
-            "soil" => Ground::Soil,
-            "grass" => Ground::Grass,
-            "rock" => Ground::Rock,
-            material => Ground::Paint(
-                map.authoring
-                    .terrain
-                    .paint
-                    .iter()
-                    .position(|p| {
-                        p.material == material || p.material.ends_with(&format!(".{material}"))
-                    })
-                    .ok_or_else(|| format!("The map has no paint material {material}"))?,
-            ),
-        };
-        let mut settings = Tools {
-            tool,
-            ground,
-            ..Tools::default()
-        };
-        if let Some(radius) = args.radius {
-            settings.radius = radius.clamp(0.5, 64.0);
-        }
-        if let Some(strength) = args.strength {
-            settings.strength = strength.clamp(0.0, 1.0);
-        }
-        if let Some(density) = args.density {
-            settings.density = density.clamp(0.5, 40.0);
-        }
-        if let Some(tree) = args.tree {
-            settings.tree = if tree.starts_with("scenery.") {
-                tree
-            } else {
-                format!("scenery.{tree}")
-            };
-            if !crate::map::tools::tree_kinds(&content).contains(&settings.tree) {
-                return Err(format!(
-                    "{} is not a tree the package has; map_info lists them",
-                    settings.tree
-                ));
-            }
-        }
-        if let Some(prop) = args.prop {
-            settings.prop = if prop.starts_with("scenery.") {
-                prop
-            } else {
-                format!("scenery.{prop}")
-            };
-            if !crate::map::tools::prop_kinds(&content).contains(&settings.prop) {
-                return Err(format!(
-                    "{} is not a prop the package has; map_info lists them",
-                    settings.prop
-                ));
-            }
-        }
-        let docs = self.map_docs(&root)?;
-        let session = self.maps.get_mut(&root).expect("loaded");
-        let edit = map_view::stroke(
-            session,
-            &content,
-            &docs,
-            settings,
-            &args.points,
-            args.level,
-            args.lower.unwrap_or(false),
-            args.passes.unwrap_or(1).min(50),
-        )?;
-        match edit {
-            Some(edit) => self.run_map_edit(&root, edit, true),
-            None => Ok(json!({ "done": "nothing changed" })),
-        }
-    }
-
     fn map_blocks(&mut self, args: crate::mcp::MapBlocksArgs) -> Result<Value, String> {
         use crate::world::{BlockOp, BlockTool};
         use canopy_content::map::blocks::{BlockKind, Blocks};
@@ -375,9 +280,9 @@ impl Shell {
         let root = self.map_root(&args.map)?;
         self.loaded_map(&root)?;
         let tool = match args.kind.to_lowercase().as_str() {
-            "amber" => MapTool::Amber,
-            "camp" => MapTool::Camp,
-            "start" => MapTool::Start,
+            "amber" => Placement::Amber,
+            "camp" => Placement::Camp,
+            "start" => Placement::Start,
             other => return Err(format!("Nothing places {other}: amber, camp or start")),
         };
         let docs = self.map_docs(&root)?;

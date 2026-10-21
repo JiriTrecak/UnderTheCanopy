@@ -1,126 +1,19 @@
-//! The map editor's tools (docs/editor.md, M3): terrain brushes that change the map's
-//! grids directly (Warcraft III style), and tools that place trees, amber sites, creep
-//! camps and starts. A brush stroke works on the session's map; when it ends, every grid
-//! it touched becomes one patch over the touched rectangle, in one undo step.
+//! What maps are furnished with: starts, amber sites and creep camps, placed as the block
+//! editor's Place and MCP's `map_place` do (and the Warcraft importer); a start's level
+//! pad as patches over the heights; the ground's height; the scenery that counts as trees
+//! and as props. (The brush editor of M3 was removed with D81: maps are made in blocks.)
 
 use crate::document::Command;
 use canopy_content::{
     Content,
     game::Kind,
-    map::{DRY_WATER_HEIGHT, HEIGHT_MAX, HEIGHT_MIN, MAP_HALO, UtcMap, grid::Grid},
+    map::{MAP_HALO, UtcMap, grid::Grid},
 };
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 
 /// A step between neighbouring vertices above this is a cliff (the simulation's 90 cm).
 pub const CLIFF_STEP: f32 = 0.9;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Tool {
-    Select,
-    Raise,
-    Lower,
-    Flatten,
-    Smooth,
-    Cliff,
-    Ramp,
-    Paint,
-    Water,
-    Trees,
-    Props,
-    Amber,
-    Camp,
-    Start,
-}
-
-impl Tool {
-    pub const ALL: [Tool; 14] = [
-        Tool::Select,
-        Tool::Raise,
-        Tool::Lower,
-        Tool::Flatten,
-        Tool::Smooth,
-        Tool::Cliff,
-        Tool::Ramp,
-        Tool::Paint,
-        Tool::Water,
-        Tool::Trees,
-        Tool::Props,
-        Tool::Amber,
-        Tool::Camp,
-        Tool::Start,
-    ];
-
-    pub fn name(self) -> &'static str {
-        match self {
-            Tool::Select => "Select",
-            Tool::Raise => "Raise",
-            Tool::Lower => "Lower",
-            Tool::Flatten => "Flatten",
-            Tool::Smooth => "Smooth",
-            Tool::Cliff => "Cliff",
-            Tool::Ramp => "Ramp",
-            Tool::Paint => "Paint",
-            Tool::Water => "Water",
-            Tool::Trees => "Trees",
-            Tool::Props => "Props",
-            Tool::Amber => "Amber",
-            Tool::Camp => "Camp",
-            Tool::Start => "Start",
-        }
-    }
-
-    pub fn hint(self) -> &'static str {
-        match self {
-            Tool::Select => "Click a start, mine, creep or tree; Delete removes it",
-            Tool::Raise => "Drag to raise the ground (Shift lowers)",
-            Tool::Lower => "Drag to lower the ground",
-            Tool::Flatten => "Drag to level the ground to where the stroke began",
-            Tool::Smooth => "Drag to soften slopes (makes ramps between cliff levels)",
-            Tool::Cliff => "Drag to lift ground one cliff level (Shift lowers one level)",
-            Tool::Ramp => {
-                "Drag from the top of a cliff to the ground below: a walkable ramp as wide as the brush"
-            }
-            Tool::Paint => "Drag to paint the chosen ground",
-            Tool::Water => "Drag to flood to the water level (Shift drains)",
-            Tool::Trees => "Drag to plant trees (Shift clears them)",
-            Tool::Props => "Drag to scatter rocks, logs, mushrooms and flowers (Shift clears them)",
-            Tool::Amber => "Click to place an amber site facing the nearest start",
-            Tool::Camp => "Click to place a creep camp of the chosen strength",
-            Tool::Start => "Click to place a player start with its amber",
-        }
-    }
-
-    /// Whether dragging paints continuously (the others act on a click).
-    pub fn is_brush(self) -> bool {
-        matches!(
-            self,
-            Tool::Raise
-                | Tool::Lower
-                | Tool::Flatten
-                | Tool::Smooth
-                | Tool::Cliff
-                | Tool::Ramp
-                | Tool::Paint
-                | Tool::Water
-                | Tool::Trees
-                | Tool::Props
-        )
-    }
-}
-
-/// What the paint brush lays down.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Ground {
-    /// The biome's bare soil: removes grass, rock and paint.
-    Soil,
-    /// The biome's grass.
-    Grass,
-    /// The biome's rock.
-    Rock,
-    /// A painted material (`terrain.paint[n]`).
-    Paint(usize),
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Tier {
@@ -151,29 +44,22 @@ impl Tier {
     }
 }
 
-/// The tools' settings and the stroke in progress.
+/// What can be placed with a click.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Placement {
+    /// The next player's start, its amber 26 cells towards the middle.
+    Start,
+    Amber,
+    Camp,
+}
+
+/// The placement settings and the selection of a map's session.
 #[derive(Debug, Clone)]
 pub struct Tools {
-    pub tool: Tool,
-    /// Brush radius, cells.
-    pub radius: f32,
-    /// Brush strength, 0 to 1.
-    pub strength: f32,
-    pub ground: Ground,
-    /// The water surface the water brush floods to.
-    pub water_level: f32,
-    /// Height of one cliff level.
-    pub cliff_level: f32,
+    /// The strength of new camps.
     pub tier: Tier,
-    /// Scenery the tree brush plants (a harvestable tree), and trees (or props) per 100
-    /// cells: trees fill their lattice at 8.
-    pub tree: String,
-    pub density: f32,
-    /// Scenery the props brush scatters (decoration that blocks nothing).
-    pub prop: String,
     /// Amber per node of a new site.
     pub amber: u32,
-    pub stroke: Option<Stroke>,
     /// The selected start, entity or object: (kind, id).
     pub selected: Option<(Picked, String)>,
 }
@@ -181,18 +67,8 @@ pub struct Tools {
 impl Default for Tools {
     fn default() -> Self {
         Self {
-            tool: Tool::Raise,
-            radius: 6.0,
-            strength: 0.5,
-            ground: Ground::Grass,
-            water_level: -1.0,
-            cliff_level: 3.0,
             tier: Tier::Easy,
-            tree: String::new(),
-            density: 6.0,
-            prop: String::new(),
             amber: 2500,
-            stroke: None,
             selected: None,
         }
     }
@@ -206,26 +82,14 @@ pub enum Picked {
     Object,
 }
 
-/// A brush stroke in progress: the grids it changed as they were, and the vertices it
-/// touched.
-#[derive(Debug, Clone)]
+/// A change to the terrain's grids in progress (a start's pad): the grids as they were,
+/// and the vertices it touched.
+#[derive(Debug, Clone, Default)]
 pub struct Stroke {
-    pub tool: Tool,
-    /// Grid file → its bytes before the stroke.
+    /// Grid file → its bytes before the change.
     pub before: BTreeMap<String, Vec<u8>>,
     /// Touched vertices: min x, min z, max x, max z (inclusive).
     pub area: Option<[u32; 4]>,
-    /// The flatten height, and the cliff level the stroke lifts to.
-    pub target: f32,
-    pub lower: bool,
-    /// Trees planted (scenery objects) and tree ids cleared.
-    pub planted: Vec<Value>,
-    pub cleared: Vec<String>,
-    /// For trees: the cells already tried.
-    pub tried: std::collections::HashSet<(i32, i32)>,
-    /// For ramps: where the drag began, and where it is now.
-    pub from: Option<[f32; 2]>,
-    pub to: Option<[f32; 2]>,
 }
 
 /// The grids of a map's terrain by file, mutably.
@@ -263,32 +127,9 @@ fn write(bytes: &mut [u8], i: usize, v: f32) {
     bytes[i * 4..i * 4 + 4].copy_from_slice(&v.to_le_bytes());
 }
 
-/// The cliff paint layer: the first painted material whose asset projects onto cliffs.
-pub fn cliff_layer(map: &UtcMap, content: &Content) -> Option<usize> {
-    map.authoring.terrain.paint.iter().position(|layer| {
-        content
-            .landscape
-            .iter()
-            .find(|a| a.id.as_str() == layer.material)
-            .and_then(|a| a.terrain.as_ref())
-            .is_some_and(|t| t.projection.is_some())
-    })
-}
-
 impl Stroke {
-    pub fn new(tool: Tool, target: f32, lower: bool) -> Self {
-        Self {
-            tool,
-            before: BTreeMap::new(),
-            area: None,
-            target,
-            lower,
-            planted: Vec::new(),
-            cleared: Vec::new(),
-            tried: Default::default(),
-            from: None,
-            to: None,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// Remembers `file` as it was before its first change in this stroke.
@@ -384,246 +225,6 @@ pub fn ground_at(map: &UtcMap, x: f32, z: f32) -> f32 {
     top * (1.0 - fz) + bottom * fz
 }
 
-/// One brush application at world (`cx`, `cz`) over `dt` seconds.
-pub fn brush(
-    map: &mut UtcMap,
-    tools: &Tools,
-    stroke: &mut Stroke,
-    cx: f32,
-    cz: f32,
-    dt: f32,
-    cliff: Option<usize>,
-) {
-    let (cells, [x0, z0, x1, z1]) = footprint(map, cx, cz, tools.radius);
-    if cells.is_empty() {
-        return;
-    }
-    let rate = (tools.strength * dt).clamp(0.0, 1.0);
-    let (lo, hi) = (HEIGHT_MIN as f32, HEIGHT_MAX as f32);
-    match stroke.tool {
-        Tool::Raise | Tool::Lower => {
-            stroke.keep(map, "terrain/heights.grid");
-            let sign = if (stroke.tool == Tool::Lower) != stroke.lower {
-                -1.0
-            } else {
-                1.0
-            };
-            let grid = &mut map.authoring.terrain.heights.0;
-            for &(i, _, _, f) in &cells {
-                let h = read(grid, i) + sign * 8.0 * rate * f;
-                write(grid, i, h.clamp(lo, hi));
-            }
-        }
-        Tool::Flatten | Tool::Cliff => {
-            stroke.keep(map, "terrain/heights.grid");
-            let hard = stroke.tool == Tool::Cliff;
-            let grid = &mut map.authoring.terrain.heights.0;
-            for &(i, _, _, f) in &cells {
-                let h = read(grid, i);
-                let next = if hard {
-                    if f > 0.15 { stroke.target } else { h }
-                } else {
-                    h + (stroke.target - h) * (4.0 * rate * f).min(1.0)
-                };
-                write(grid, i, next.clamp(lo, hi));
-            }
-        }
-        Tool::Smooth => {
-            stroke.keep(map, "terrain/heights.grid");
-            let side = map.authoring.terrain.vertices() as usize;
-            let grid = &mut map.authoring.terrain.heights.0;
-            let old = grid.clone();
-            for &(i, x, z, f) in &cells {
-                let (x, z) = (x as usize, z as usize);
-                let mut sum = 0.0;
-                let mut n = 0.0;
-                for dz in -1i64..=1 {
-                    for dx in -1i64..=1 {
-                        let (nx, nz) = (x as i64 + dx, z as i64 + dz);
-                        if nx >= 0 && nz >= 0 && (nx as usize) < side && (nz as usize) < side {
-                            sum += read(&old, nz as usize * side + nx as usize);
-                            n += 1.0;
-                        }
-                    }
-                }
-                let h = read(&old, i);
-                write(grid, i, h + (sum / n - h) * (6.0 * rate * f).min(1.0));
-            }
-        }
-        Tool::Water => {
-            stroke.keep(map, "terrain/water-heights.grid");
-            let level = if stroke.lower {
-                DRY_WATER_HEIGHT as f32
-            } else {
-                tools.water_level
-            };
-            let grid = &mut map.authoring.terrain.water_heights.0;
-            for &(i, _, _, f) in &cells {
-                if f > 0.1 {
-                    write(grid, i, level.clamp(DRY_WATER_HEIGHT as f32, hi));
-                }
-            }
-        }
-        Tool::Paint => paint(map, tools.ground, stroke, &cells, rate, cliff),
-        _ => return,
-    }
-    stroke.touch(x0, z0, x1, z1);
-    if matches!(
-        stroke.tool,
-        Tool::Raise | Tool::Lower | Tool::Flatten | Tool::Smooth | Tool::Cliff
-    ) && let Some(layer) = cliff
-    {
-        mark_cliffs(map, stroke, layer, [x0, z0, x1, z1]);
-    }
-}
-
-/// A straight ramp from world `a` at height `ha` to `b` at `hb`, `width` cells across:
-/// the ground along it is set to the slope between them (blending into its sides over four
-/// cells), and the cliff faces it cuts through are cleared.
-#[allow(clippy::too_many_arguments)]
-pub fn ramp(
-    map: &mut UtcMap,
-    stroke: &mut Stroke,
-    a: [f32; 2],
-    ha: f32,
-    b: [f32; 2],
-    hb: f32,
-    width: f32,
-    cliff: Option<usize>,
-) {
-    let side = map.authoring.terrain.vertices();
-    let halo = MAP_HALO as f32;
-    let half = width / 2.0;
-    let reach = half + 4.0;
-    let (dx, dz) = (b[0] - a[0], b[1] - a[1]);
-    let length2 = (dx * dx + dz * dz).max(1e-6);
-    let lo = |v: f32| ((v - reach + halo).floor().max(0.0)) as u32;
-    let hi = |v: f32| ((v + reach + halo).ceil().max(0.0) as u32).min(side - 1);
-    let (x0, x1) = (lo(a[0].min(b[0])), hi(a[0].max(b[0])));
-    let (z0, z1) = (lo(a[1].min(b[1])), hi(a[1].max(b[1])));
-    if x0 > x1 || z0 > z1 {
-        return;
-    }
-    stroke.keep(map, "terrain/heights.grid");
-    let grid = &mut map.authoring.terrain.heights.0;
-    for z in z0..=z1 {
-        for x in x0..=x1 {
-            let (wx, wz) = (x as f32 - halo, z as f32 - halo);
-            let t = (((wx - a[0]) * dx + (wz - a[1]) * dz) / length2).clamp(0.0, 1.0);
-            let (px, pz) = (a[0] + dx * t, a[1] + dz * t);
-            let d = ((wx - px).powi(2) + (wz - pz).powi(2)).sqrt();
-            if d > reach {
-                continue;
-            }
-            let f = if d <= half {
-                1.0
-            } else {
-                1.0 - (d - half) / 4.0
-            };
-            let i = (z * side + x) as usize;
-            let h = read(grid, i);
-            write(grid, i, h + (ha + (hb - ha) * t - h) * f);
-        }
-    }
-    stroke.touch(x0, z0, x1, z1);
-    if let Some(layer) = cliff {
-        mark_cliffs(map, stroke, layer, [x0, z0, x1, z1]);
-    }
-}
-
-/// Paints `ground` over `cells`: its own weight rises, and what would cover it falls.
-fn paint(
-    map: &mut UtcMap,
-    ground: Ground,
-    stroke: &mut Stroke,
-    cells: &[(usize, u32, u32, f32)],
-    rate: f32,
-    cliff: Option<usize>,
-) {
-    let layers = map.authoring.terrain.paint.len();
-    // Paint layers other than the cliff faces (those follow the slopes).
-    let covering: Vec<usize> = (0..layers)
-        .filter(|&n| Some(n) != cliff)
-        .filter(|&n| match ground {
-            Ground::Paint(k) => n > k,
-            _ => true,
-        })
-        .collect();
-    let mut up: Vec<String> = Vec::new();
-    let mut down: Vec<String> = covering
-        .iter()
-        .map(|n| format!("terrain/paint-{}-weights.grid", n + 1))
-        .collect();
-    match ground {
-        Ground::Paint(k) => up.push(format!("terrain/paint-{}-weights.grid", k + 1)),
-        Ground::Grass => {
-            up.push("terrain/grass.grid".into());
-            down.push("terrain/rock.grid".into());
-        }
-        Ground::Rock => up.push("terrain/rock.grid".into()),
-        Ground::Soil => {
-            down.push("terrain/grass.grid".into());
-            down.push("terrain/rock.grid".into());
-        }
-    }
-    for (file, rising) in up
-        .iter()
-        .map(|f| (f, true))
-        .chain(down.iter().map(|f| (f, false)))
-    {
-        stroke.keep(map, file);
-        let Some(grid) = grid_mut(map, file) else {
-            continue;
-        };
-        for &(i, _, _, f) in cells {
-            let a = (6.0 * rate * f).min(1.0);
-            let w = read(&grid.0, i);
-            let next = if rising {
-                w + (1.0 - w) * a
-            } else {
-                w * (1.0 - a)
-            };
-            write(&mut grid.0, i, next.clamp(0.0, 1.0));
-        }
-    }
-}
-
-/// Cliff faces follow the ground: the cliff layer is full where a neighbouring step is
-/// a cliff and empty elsewhere, within `area` (one vertex wider).
-pub fn mark_cliffs(map: &mut UtcMap, stroke: &mut Stroke, layer: usize, area: [u32; 4]) {
-    let file = format!("terrain/paint-{}-weights.grid", layer + 1);
-    stroke.keep(map, &file);
-    let side = map.authoring.terrain.vertices();
-    let heights = map.authoring.terrain.heights.0.clone();
-    let [x0, z0, x1, z1] = [
-        area[0].saturating_sub(1),
-        area[1].saturating_sub(1),
-        (area[2] + 1).min(side - 1),
-        (area[3] + 1).min(side - 1),
-    ];
-    let Some(grid) = grid_mut(map, &file) else {
-        return;
-    };
-    for z in z0..=z1 {
-        for x in x0..=x1 {
-            let i = (z * side + x) as usize;
-            let h = read(&heights, i);
-            let mut steep = false;
-            for (dx, dz) in [(-1i64, 0i64), (1, 0), (0, -1), (0, 1)] {
-                let (nx, nz) = (x as i64 + dx, z as i64 + dz);
-                if nx < 0 || nz < 0 || nx >= side as i64 || nz >= side as i64 {
-                    continue;
-                }
-                if (read(&heights, (nz * side as i64 + nx) as usize) - h).abs() > CLIFF_STEP {
-                    steep = true;
-                }
-            }
-            write(&mut grid.0, i, if steep { 1.0 } else { 0.0 });
-        }
-    }
-    stroke.touch(x0, z0, x1, z1);
-}
-
 /// A small deterministic hash in 0–1.
 fn noise(a: i64, b: i64, salt: u64) -> f32 {
     let mut x = (a as u64).wrapping_mul(0x9e37_79b9_7f4a_7c15)
@@ -684,148 +285,6 @@ pub fn prop_kinds(content: &Content) -> Vec<String> {
         })
         .map(|s| s.id.to_string())
         .collect()
-}
-
-/// Plants trees (or, for the props brush, decoration) over the brush, one per cell,
-/// spaced, on dry flat-enough ground; or clears them (Shift). The session's map shows them
-/// at once.
-pub fn trees(map: &mut UtcMap, tools: &Tools, stroke: &mut Stroke, cx: f32, cz: f32) {
-    let r = tools.radius;
-    let props = stroke.tool == Tool::Props;
-    if stroke.lower {
-        let before = map.authoring.objects.len();
-        let mut cleared = Vec::new();
-        map.authoring.objects.retain(|o| {
-            let inside = (o.x as f32 - cx).powi(2) + (o.z as f32 - cz).powi(2) <= r * r
-                && o.id.starts_with("prop.") == props;
-            if inside {
-                cleared.push(o.id.clone());
-            }
-            !inside
-        });
-        if map.authoring.objects.len() != before {
-            stroke.cleared.extend(cleared);
-        }
-        return;
-    }
-    let (asset, prefix, spacing) = if props {
-        (&tools.prop, "prop.", 12.0)
-    } else {
-        (&tools.tree, "tree.", 3.0)
-    };
-    if asset.is_empty() {
-        return;
-    }
-    let size = map.size as f32;
-    let mut next = next_id(
-        prefix,
-        map.authoring.objects.iter().map(|o| o.id.clone()).chain(
-            stroke
-                .planted
-                .iter()
-                .filter_map(|v| v["id"].as_str().map(str::to_string)),
-        ),
-    );
-    // Trees stand on Warcraft III's staggered lattice, two to every 5 × 5 cells (about
-    // 3.5 cells apart, as imported maps have them): woods armies see as woods, with lanes
-    // between them. `density` is per 100 cells, so 8 fills every lattice point.
-    let lattice = |x: i32, z: i32| {
-        (x.rem_euclid(5) == 2 && z.rem_euclid(5) == 2)
-            || (x.rem_euclid(5) == 0 && z.rem_euclid(5) == 0)
-    };
-    let chance = if props {
-        tools.density / 100.0
-    } else {
-        tools.density / 8.0
-    }
-    .clamp(0.0, 1.0);
-    for z in (cz - r).floor() as i32..=(cz + r).ceil() as i32 {
-        for x in (cx - r).floor() as i32..=(cx + r).ceil() as i32 {
-            if (x as f32 - cx).powi(2) + (z as f32 - cz).powi(2) > r * r
-                || !stroke.tried.insert((x, z))
-                || (!props && !lattice(x, z))
-                || x < 2
-                || z < 2
-                || x as f32 > size - 3.0
-                || z as f32 > size - 3.0
-                || noise(x as i64, z as i64, if props { 17 } else { 7 }) > chance
-            {
-                continue;
-            }
-            let (fx, fz) = (x as f32, z as f32);
-            // Not in water, not on a cliff, not next to another tree.
-            let ground = ground_at(map, fx, fz);
-            let water = water_at(map, fx, fz);
-            let steep = [(1.0, 0.0), (-1.0, 0.0), (0.0, 1.0), (0.0, -1.0)]
-                .iter()
-                .any(|(dx, dz)| (ground_at(map, fx + dx, fz + dz) - ground).abs() > CLIFF_STEP);
-            let crowded = map
-                .authoring
-                .objects
-                .iter()
-                .any(|o| (o.x as f32 - fx).powi(2) + (o.z as f32 - fz).powi(2) < spacing);
-            if water > ground - 0.2 || steep || crowded {
-                continue;
-            }
-            let object = json!({
-                "asset": asset,
-                "elevation": 0.0,
-                "heightMode": "terrain",
-                "id": format!("{prefix}{next}"),
-                "locked": false,
-                "scale": 0.82 + 0.2 * noise(x as i64, z as i64, 11),
-                "visible": true,
-                "x": fx,
-                "yaw": (noise(x as i64, z as i64, 13) * std::f32::consts::TAU) as f64,
-                "z": fz,
-            });
-            next += 1;
-            if let Ok(o) = serde_json::from_value(object.clone()) {
-                map.authoring.objects.push(o);
-            }
-            stroke.planted.push(object);
-        }
-    }
-}
-
-/// The water surface at world (`x`, `z`) (nearest vertex).
-pub fn water_at(map: &UtcMap, x: f32, z: f32) -> f32 {
-    let side = map.authoring.terrain.vertices() as i64;
-    let vx = ((x + MAP_HALO as f32).round() as i64).clamp(0, side - 1);
-    let vz = ((z + MAP_HALO as f32).round() as i64).clamp(0, side - 1);
-    read(
-        &map.authoring.terrain.water_heights.0,
-        (vz * side + vx) as usize,
-    )
-}
-
-/// The commands that keep a tree stroke: planted trees appended to `scenery.json`,
-/// cleared ones removed (by their place in the document `objects`).
-pub fn tree_commands(root: &str, stroke: &Stroke, objects: &[Value]) -> Vec<Command> {
-    let document = format!("{root}/scenery.json");
-    let mut out = Vec::new();
-    let mut indices: Vec<usize> = stroke
-        .cleared
-        .iter()
-        .filter_map(|id| objects.iter().position(|o| o["id"] == *id))
-        .collect();
-    indices.sort_unstable_by(|a, b| b.cmp(a));
-    indices.dedup();
-    for i in &indices {
-        out.push(Command::Remove {
-            document: document.clone(),
-            pointer: format!("/objects/{i}"),
-        });
-    }
-    for (at, object) in (objects.len() - indices.len()..).zip(&stroke.planted) {
-        out.push(Command::Insert {
-            document: document.clone(),
-            pointer: "/objects".into(),
-            index: at,
-            value: object.clone(),
-        });
-    }
-    out
 }
 
 /// A building position on its 0.5-cell lattice.
@@ -1053,39 +512,6 @@ pub fn level_pad(map: &mut UtcMap, stroke: &mut Stroke, cx: f32, cz: f32, radius
 mod tests {
     use super::*;
 
-    /// A flat 256-cell map at height `h`, dry.
-    fn flat(h: f32) -> UtcMap {
-        let mut map: UtcMap = serde_json::from_value(json!({
-            "v": canopy_content::map::UTCMAP_VERSION,
-            "name": "Test",
-            "size": 256,
-            "playerStarts": [],
-            "entities": [],
-            "camps": [],
-            "authoring": {"version": 1, "objects": [], "terrain": {
-                "version": 1, "size": 256, "heights": "", "waterHeights": "", "waterFlow": "",
-                "waterProfiles": [], "grass": "", "rock": "", "paint": [
-                    {"material": "cliff", "weights": ""}
-                ]
-            }}
-        }))
-        .expect("a test map");
-        let side = map.authoring.terrain.vertices() as usize;
-        let floats = |v: f32| {
-            Grid(
-                std::iter::repeat_n(v, side * side)
-                    .flat_map(f32::to_le_bytes)
-                    .collect(),
-            )
-        };
-        map.authoring.terrain.heights = floats(h);
-        map.authoring.terrain.water_heights = floats(DRY_WATER_HEIGHT as f32);
-        map.authoring.terrain.grass = floats(0.0);
-        map.authoring.terrain.rock = floats(0.0);
-        map.authoring.terrain.paint[0].weights = floats(0.0);
-        map
-    }
-
     #[test]
     fn amber_sites_stay_on_the_lattice_without_overlapping_and_open_to_the_hall() {
         for octant in 0..8 {
@@ -1106,100 +532,6 @@ mod tests {
             let along = |p: &(f64, f64)| p.0 * angle.cos() + p.1 * angle.sin();
             assert!(along(&nodes[2]) < along(&nodes[0]) && along(&nodes[2]) < along(&nodes[4]));
         }
-    }
-
-    #[test]
-    fn props_and_trees_are_planted_apart_and_cleared_apart() {
-        let mut map = flat(1.0);
-        let tools = Tools {
-            tree: "scenery.pine".into(),
-            prop: "scenery.boulder".into(),
-            density: 25.0,
-            radius: 12.0,
-            ..Tools::default()
-        };
-        let plant = |map: &mut UtcMap, tool: Tool, lower: bool, x: f32| {
-            let mut stroke = Stroke::new(tool, 0.0, lower);
-            trees(map, &tools, &mut stroke, x, 100.0);
-            stroke
-        };
-        // Trees at x 100, props beside them at x 120: the brushes overlap in between.
-        let planted = plant(&mut map, Tool::Trees, false, 100.0).planted.len();
-        let scattered = plant(&mut map, Tool::Props, false, 120.0).planted.len();
-        assert!(
-            planted > 0 && scattered > 0,
-            "{planted} trees, {scattered} props"
-        );
-        // Each brush clears only its own kind, over both.
-        assert!(
-            plant(&mut map, Tool::Trees, true, 110.0)
-                .cleared
-                .iter()
-                .all(|i| i.starts_with("tree."))
-        );
-        let cleared = plant(&mut map, Tool::Props, true, 110.0).cleared;
-        assert!(!cleared.is_empty() && cleared.iter().all(|i| i.starts_with("prop.")));
-    }
-
-    #[test]
-    fn a_raise_stroke_becomes_one_patch_per_grid_it_changed() {
-        let mut map = flat(1.0);
-        let tools = Tools::default();
-        let mut stroke = Stroke::new(Tool::Raise, 0.0, false);
-        for _ in 0..10 {
-            brush(&mut map, &tools, &mut stroke, 100.0, 100.0, 0.1, None);
-        }
-        assert!(ground_at(&map, 100.0, 100.0) > 3.0);
-        assert!(
-            (ground_at(&map, 130.0, 130.0) - 1.0).abs() < 1e-6,
-            "outside the brush"
-        );
-        let patches = stroke.patches(&mut map, "maps/t.utcm");
-        assert_eq!(patches.len(), 1);
-        let Command::Patch {
-            document, x, width, ..
-        } = &patches[0]
-        else {
-            panic!("a patch")
-        };
-        assert_eq!(document, "maps/t.utcm/terrain/heights.grid");
-        // The brush's 6-cell radius around vertex 116 (world 100 + the 16-cell halo).
-        assert_eq!((*x, *width), (110, 13));
-    }
-
-    #[test]
-    fn a_cliff_stroke_lifts_a_level_and_paints_its_faces() {
-        let mut map = flat(0.0);
-        let tools = Tools::default();
-        let mut stroke = Stroke::new(Tool::Cliff, 3.0, false);
-        brush(&mut map, &tools, &mut stroke, 100.0, 100.0, 0.1, Some(0));
-        assert_eq!(ground_at(&map, 100.0, 100.0), 3.0);
-        let side = map.authoring.terrain.vertices() as usize;
-        let weights = &map.authoring.terrain.paint[0].weights.0;
-        let at = |x: usize, z: usize| read(weights, z * side + x);
-        // The centre is flat (no face); the rim, where the level drops, is a face.
-        assert_eq!(at(116, 116), 0.0);
-        let rim = (100..132).any(|x| at(x, 116) == 1.0);
-        assert!(rim, "cliff faces along the edge");
-        assert_eq!(stroke.patches(&mut map, "m").len(), 2);
-    }
-
-    #[test]
-    fn painting_raises_its_layer_and_lowers_what_covers_it() {
-        let mut map = flat(0.0);
-        let tools = Tools {
-            ground: Ground::Grass,
-            strength: 1.0,
-            ..Tools::default()
-        };
-        let mut stroke = Stroke::new(Tool::Paint, 0.0, false);
-        for _ in 0..20 {
-            brush(&mut map, &tools, &mut stroke, 50.0, 50.0, 0.1, Some(0));
-        }
-        let side = map.authoring.terrain.vertices() as usize;
-        assert!(read(&map.authoring.terrain.grass.0, 66 * side + 66) > 0.9);
-        // The cliff layer is not paint the brush covers.
-        assert!(!stroke.before.contains_key("terrain/paint-1-weights.grid"));
     }
 
     #[test]

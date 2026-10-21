@@ -213,16 +213,6 @@ impl Editor {
         self.shell.unsaved()
     }
 
-    /// Chooses the open map's tool by name (captures).
-    pub fn set_map_tool(&mut self, name: &str) {
-        self.shell.set_map_tool(name);
-    }
-
-    /// Shows the open map in the block editor (D80) or the classic one (captures).
-    pub fn set_map_editor(&mut self, blocks: bool) {
-        self.shell.set_map_editor(blocks);
-    }
-
     /// Blocks out the open map from its heights (captures).
     pub fn block_out_map(&mut self) {
         self.shell.block_out_map();

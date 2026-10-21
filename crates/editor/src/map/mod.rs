@@ -273,19 +273,8 @@ pub struct Session {
     pub tools: tools::Tools,
     /// The last step came from this session's own stroke: its map already shows it.
     pub own: bool,
-    /// Which editor shows the map: the block editor (D80) or the classic brushes.
-    pub editor: Editor,
+    /// The block editor's state (D80, D81).
     pub blocks: crate::world::State,
-}
-
-/// The editors a map opens in.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum Editor {
-    /// The block editor (D80).
-    #[default]
-    Blocks,
-    /// The brush editor of M3.
-    Classic,
 }
 
 impl Session {
@@ -302,7 +291,6 @@ impl Session {
             camera: Camera::over(640),
             tools: tools::Tools::default(),
             own: false,
-            editor: Editor::default(),
             blocks: Default::default(),
         }
     }

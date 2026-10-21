@@ -444,7 +444,6 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     editor.select(Kind::Maps);
     editor.open_document("maps/skirmish/echo-isles.utcm/map.json");
     settle(&mut editor, rig, 60);
-    editor.set_map_editor(true);
     editor.block_out_map();
     settle(&mut editor, rig, 40);
     // Frame time in the block view (the editor draws every frame it is shown).
@@ -471,7 +470,6 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     // and the world generated from them.
     editor.open_document("maps/showcase/frost-hollow.utcm/map.json");
     settle(&mut editor, rig, 60);
-    editor.set_map_editor(true);
     editor.set_block_view(false);
     settle(&mut editor, rig, 30);
     shoot(&mut editor, rig, "editor-blocks-frost")?;
@@ -521,7 +519,6 @@ fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     // Frozen Dream with point symmetry: a brush stroke and its mirrored twin.
     editor.open_document("maps/skirmish/frozen-dream.utcm/map.json");
     settle(&mut editor, rig, 60);
-    editor.set_map_editor(true);
     editor.set_block_view(false);
     editor.set_block_tool("raise");
     editor.set_block_symmetry("point", true);
@@ -705,7 +702,7 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
         std::thread::sleep(Duration::from_millis(25));
     }
     shoot(&mut editor, rig, "editor-maps")?;
-    // Editing the map through its view: a cliff stroke, trees, a creep camp.
+    // Editing the map through its view, in blocks: blocked out, a raised stroke, a start.
     let frame = |editor: &mut Editor, rig: &mut Rig, events: Vec<egui::Event>| {
         editor.run_headless_with(rig.size, rig.scale, &rig.gpu, events);
         std::thread::sleep(Duration::from_millis(20));
@@ -739,22 +736,24 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
         frame(editor, rig, vec![]);
     };
     editor.undo_all();
-    editor.set_map_editor(false);
-    editor.set_map_tool("cliff");
+    editor.block_out_map();
+    for _ in 0..20 {
+        frame(&mut editor, rig, vec![]);
+    }
+    editor.set_block_tool("raise");
+    editor.set_block_symmetry("off", true);
     drag(&mut editor, rig, (760.0, 640.0), (1000.0, 700.0));
-    editor.set_map_tool("trees");
-    drag(&mut editor, rig, (800.0, 780.0), (1100.0, 800.0));
-    editor.set_map_tool("camp");
+    editor.set_block_tool("place");
     click(&mut editor, rig, (1150.0, 600.0));
     for _ in 0..20 {
         frame(&mut editor, rig, vec![]);
     }
     let unsaved = editor.unsaved();
     anyhow::ensure!(
-        unsaved.iter().any(|d| d.ends_with("terrain/heights.grid"))
-            && unsaved.iter().any(|d| d.ends_with("scenery.json"))
+        unsaved.iter().any(|d| d.ends_with("terrain/blocks.grid"))
+            && unsaved.iter().any(|d| d.ends_with("terrain/heights.grid"))
             && unsaved.iter().any(|d| d.ends_with("map.json")),
-        "the strokes and the camp are unsaved edits: {unsaved:?}"
+        "the blocks, the stroke and the start are unsaved edits: {unsaved:?}"
     );
     shoot(&mut editor, rig, "editor-map-edited")?;
     editor.undo_all();

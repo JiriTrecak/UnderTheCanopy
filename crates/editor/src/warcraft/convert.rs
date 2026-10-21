@@ -7,7 +7,7 @@
 //! which refused maps whose tiles it lacked.
 
 use super::read::{Corner, Map, Terrain};
-use crate::map::tools::{self, Stroke, Tier, Tool};
+use crate::map::tools::{self, Stroke, Tier};
 use canopy_content::Content;
 use canopy_content::map::grid::Grid;
 use canopy_content::map::{DRY_WATER_HEIGHT, HEIGHT_MAX, HEIGHT_MIN, MAP_HALO, MAP_SIZES, UtcMap};
@@ -810,7 +810,7 @@ pub fn convert(
     });
     let pads: Vec<(f64, f64)> = map.player_starts.iter().map(|s| (s.x, s.z)).collect();
     for (x, z) in pads {
-        let mut stroke = Stroke::new(Tool::Flatten, 0.0, false);
+        let mut stroke = Stroke::new();
         tools::level_pad(&mut map, &mut stroke, x as f32, z as f32, 16.0);
     }
 

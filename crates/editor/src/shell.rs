@@ -675,7 +675,7 @@ impl Shell {
             .as_ref()
             .map(|b| b.faces.iter().map(|f| f.name.clone()).collect())
             .unwrap_or_default();
-        let blocks = session.editor == crate::map::Editor::Blocks && !session.blocks.generated;
+        let blocks = !session.blocks.generated;
         match crate::map::build(
             map,
             &content,
@@ -728,7 +728,7 @@ impl Shell {
             .maps
             .entry(root.to_string())
             .or_insert_with(|| crate::map::Session::new(root));
-        if session.loaded_at != Some(generation) && session.tools.stroke.is_none() {
+        if session.loaded_at != Some(generation) && session.blocks.drag.is_none() {
             if std::mem::take(&mut session.own) && session.map.is_some() {
                 session.loaded_at = Some(generation);
             } else {
@@ -2033,40 +2033,9 @@ impl Shell {
             .unwrap_or_default()
     }
 
-    pub fn set_map_tool(&mut self, name: &str) {
-        let Some(root) = self
-            .active_document()
-            .and_then(|d| crate::map::root_of(&d).map(str::to_string))
-        else {
-            return;
-        };
-        if let (Some(session), Some(tool)) = (
-            self.maps.get_mut(&root),
-            crate::map::tools::Tool::ALL
-                .iter()
-                .find(|t| t.name().eq_ignore_ascii_case(name)),
-        ) {
-            session.tools.tool = *tool;
-        }
-    }
-
     fn active_map_root(&mut self) -> Option<String> {
         self.active_document()
             .and_then(|d| crate::map::root_of(&d).map(str::to_string))
-    }
-
-    /// Shows the open map in the block editor or the classic one (captures).
-    pub fn set_map_editor(&mut self, blocks: bool) {
-        if let Some(root) = self.active_map_root()
-            && let Some(session) = self.maps.get_mut(&root)
-        {
-            session.editor = if blocks {
-                crate::map::Editor::Blocks
-            } else {
-                crate::map::Editor::Classic
-            };
-            session.stale = true;
-        }
     }
 
     /// Blocks out the open map from its heights (captures; the panel's button).
