@@ -1,0 +1,10 @@
+{
+  "format": 1,
+  "id": "cinematic-bench",
+  "kind": "map",
+  "name": "Bench: Cinematics",
+  "version": "1.0.0",
+  "dependencies": {
+    "base": ">=0.4.1"
+  }
+}

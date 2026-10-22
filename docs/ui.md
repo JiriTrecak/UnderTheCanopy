@@ -156,7 +156,7 @@ The game's menus are layout documents in `config/ui/layouts/`, one per screen, d
 | `multiplayer`, `lobby` | server status, lobbies, create and join; the room's seats, races, heroes, round trips | `screens/multiplayer.rs` |
 | `loading` | plain panel (skirmish, multiplayer), a campaign mission's art and story with one gold bar, then "Click or press any key to begin" | `screens/loading.rs`, `mod.rs`, `screens/campaign.rs` |
 | `hud` (with `play.json`) | the in-match HUD, chat included (the play module) | `play/hud.rs` |
-| `match-overlay`, `mission-hud` | waiting for players, connection problems; objectives, dialogue, letterbox | `screens/match_ui.rs` |
+| `match-overlay`, `mission-hud` | waiting for players, connection problems; objectives, dialogue, letterbox with the speaker's transmission in the lower bar, the fade filter, the skip hint | `screens/match_ui.rs` |
 | `game-menu`, `result`, `saves`, `settings`, `dialog` | overlays | `match_ui.rs`, `settings_ui.rs`, `mod.rs` |
 | `releases` | What's new and the update details, with the gallery viewer | `screens/releases.rs`, `update/` |
 | `feedback` | Submit feedback: the screenshot, category, description; sending, sent, saved for later | `screens/feedback.rs`, `feedback/` |

@@ -125,6 +125,9 @@ impl Environment {
     }
 }
 
+/// The share of a model's size a close portrait frames, from its top.
+const CLOSE_PORTRAIT: f32 = 0.42;
+
 /// The model the selection portrait shows: a posed live model (its transform's scale
 /// and pose are kept; the portrait places and frames it) and whether it is a building
 /// (framed from higher up).
@@ -132,6 +135,9 @@ impl Environment {
 pub struct PortraitSubject {
     pub instance: ActorInstance,
     pub building: bool,
+    /// Head and shoulders: the upper half of the model fills the frame (a speaker's
+    /// transmission), not all of it.
+    pub close: bool,
 }
 
 /// What is drawn.
@@ -1163,10 +1169,19 @@ impl Renderer {
                         if i & 4 == 0 { min.z } else { max.z },
                     ))
                 });
-                let (lo, hi) = corners.fold(
+                let (mut lo, mut hi) = corners.fold(
                     (Vec3::splat(f32::MAX), Vec3::splat(f32::MIN)),
                     |(lo, hi), c| (lo.min(c), hi.max(c)),
                 );
+                if s.close {
+                    // The top of the model, narrowed round its middle.
+                    let middle = (lo + hi) * 0.5;
+                    lo = middle + (lo - middle) * CLOSE_PORTRAIT;
+                    hi = middle + (hi - middle) * CLOSE_PORTRAIT;
+                    let height = hi.y - lo.y;
+                    hi.y = middle.y + (hi.y - middle.y) / CLOSE_PORTRAIT;
+                    lo.y = hi.y - height;
+                }
                 Some((
                     crate::actors::ActorInstance {
                         transform,

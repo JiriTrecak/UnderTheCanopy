@@ -165,6 +165,72 @@ Built 2026-10-21 (`canopy-content` `campaign`, `canopy-sim` `campaign`, `game/sr
 - **Flow.** Continue runs the next step; a story or card finished, or a mission won, saves the progress and runs the step after it (a won mission shows its victory for 2.5 seconds first). Play, Read and Watch on an earlier step replay it and return to the campaign screen without changing the progress. A lost mission shows its result with Retry and Return to campaign. A loaded save of a campaign mission belongs to the furthest step reached that plays its map. Escape skips a story or card.
 - **Screens** (`config/ui/layouts`): `campaign` (the campaigns as cards), `campaign-steps` (the campaign screen), `card` (story pages revealed paragraph by paragraph with Continue and Skip; chapter and cinematic cards that move on after a few seconds or a click or key), and the `mission-view` of `loading`. `canopy capture-screens --only campaign` captures them.
 
+## Scenes
+
+In-mission cinematics, as Warcraft III builds them with triggers (D88): the mission fades in on a hero already running along a road, the bars come in, the camera cuts and blends between saved cameras, characters turn to each other and speak in the lower bar with their portrait talking, and the player gets the game back. Everything a scene changes is simulation state (`MissionState::cinema`, `crates/sim/src/mission/cinema.rs`), so saves, replays and every peer show the same scene; the picture follows that state (the camera blend and the fade are computed from their start tick and length at the tick drawn).
+
+**Saved cameras** (`mission.cameras` in `map.json`, `canopy_content::map::MapCamera`), placed in the map editor (Place → Special → Camera, [editor](editor.md)):
+
+```json
+"cameras": [
+  {"id": "over-tiv", "x": 84, "y": 112, "height": 3, "distance": 28, "pitch": 11, "yaw": 128, "fov": 32, "roll": 1.5}
+]
+```
+
+`x`, `y`: the point looked at (navigation cells); `height`: its lift above the ground (default 0); `distance`: eye to that point (2–400 world units; one per cell; the game's camera stands 117 away); `pitch`: angle of attack below the horizon (−30 to 89°; the game's is 56); `yaw`: rotation round the point (0 puts the eye due south looking north, as the game's camera; 90 east); `fov`: vertical field of view (10–100°; the game's is 34.3 at 16:9); `roll` (−90 to 90°, default 0). Ids are unique; the check reports cameras outside the map or out of range.
+
+**A scene** is a function of the script's `scenes` table, started with `mission.play(name)`. It reads top to bottom like a Warcraft III trigger, waits included:
+
+```lua
+function on_start()
+  mission.fade_out(0)                      -- black from the first frame
+  mission.play("opening")
+end
+
+function scenes.opening()
+  mission.cinematic(true)                  -- bars in, HUD and selection away, commands refused
+  mission.camera_to("road", 0)             -- a cut
+  mission.move("aurelith", 84, 112)        -- already running when the picture comes up
+  mission.fade_in(2.5)
+  mission.camera_to("follow", 6)           -- an eased six-second blend
+  mission.wait_arrived("aurelith")
+  mission.face("aurelith", 90, 106)
+  mission.wait_facing()
+  mission.speak("tiv", "My Queen! The Hollow's watch-lights went dark.", nil, "Tiv")
+  mission.camera_to("over-tiv", 0)
+  mission.animate("aurelith", "spell")
+  mission.speak("aurelith", "Then we go and ask them why.", nil, "Aurelith")
+  mission.cinematic(false)
+  mission.camera_reset(1.5)                -- back to the game's camera over the last shot
+end
+```
+
+How it runs: the sandbox has no coroutines and a fresh Lua state every run, so a scene cannot be suspended. Instead **every run calls the scene's function from its top**; each call it makes to the `mission` table that is not a query is a numbered *statement*. Statements done in earlier runs are passed over (they answer nothing), the next one is done, and a wait whose time has not come ends the run there; when the function returns, the scene is over. What is saved is the scene's name, how many statements are done and when the last one was. A scene therefore must reach the same statements in the same order every run: branch on variables it set (`mission.set`/`get`) rather than on things that change while it plays. Queries (`tick`, `alive`, `position`, `get`, `clicks`, `playing`, …) answer every run; a new read-only function of the API joins `QUERIES` in `api/scene.rs`. Statements passed over cost nothing of the run's call budget. `on_tick` keeps running beside a scene (`if mission.playing() then return end` keeps it quiet).
+
+**The skip.** Escape skips a skippable scene (`mission.play(name)` is; `mission.play(name, false)` is not): the player's `skipScene` command reaches the simulation, which the next tick runs the rest of the scene at once. Walks still under way end where they lead (the unit is put there), waits pass, moves become placements, turns are made, lines and animations are dropped, cameras cut and fades jump to their end; everything else (spawns, variables, objectives, cinematic mode, `win`) happens as written. So a skipped scene leaves the world as if it had played, which is why a scene ends with what the player should find (cinematic mode off, the camera reset, the objective set). The picture covers the jump with a moment of black.
+
+| Function | Does |
+|---|---|
+| `play(name[, skippable])` | Starts `scenes[name]` (skippable unless `false`); one scene at a time |
+| `playing()` | The scene in play, or nil (query) |
+| `cinematic(on)` | Cinematic mode: letterbox bars slide in, the HUD hides, the selection clears, player commands are refused (the game menu and the skip still work), the world's sounds duck while music and voices keep theirs |
+| `camera_to(id[, seconds])` | Cuts (0, the default) or blends, eased, to a saved camera |
+| `camera_pan(x, y[, seconds])` | The current saved camera, looking at another point |
+| `camera_reset([seconds][, x, y])` | Back to the game's camera, over the last shot's point (or `x`, `y`); the player has it again once the blend ends |
+| `fade_out([seconds][, colour])`, `fade_in([seconds][, colour])` | A fade filter to opaque or clear from where it stands; `black` (default), `white` or `#rrggbb` |
+| `animate(unit, name[, loop])` | The unit plays its model's animation (`attack`, `cast`, any state its model has; `spell` and `victory` fall back to `cast`) once, then its own again, or held with `loop`; `idle` ends it; walking and fighting take precedence |
+| `speak(unit, text[, seconds][, name])` | The unit says a line (its definition's name and portrait unless named); in cinematic mode a transmission in the lower bar with its live portrait. Its length is the reading time (a second plus 15 characters a second, 2.5–20 s) unless given. In a scene it waits for the line to end |
+| `wait(seconds)`, `wait_arrived(unit)`, `wait_facing([unit])`, `wait_line()` | Scene waits: time; the unit's walk (or any order) has ended; the turn has; the line is over |
+| `clicks(unit)` | How often the campaign player clicked the placed unit to select it (query; easter eggs) |
+
+Older functions keep working inside and outside scenes (`move`, `face`, `say`, `spawn`, the unit shots of `camera`, …). The mission fades in from black: the picture stays black until `on_start` has run.
+
+**Presentation** (`game/src/play/shots.rs`, `screens/match_ui.rs`, `config/ui/layouts/mission-hud.json`): letterbox bars of 10 % at the top and 21 % at the bottom, eased in and out over 0.65 s; the lower bar holds the transmission: the speaker's live model in a gold-framed portrait (its icon when it is not drawn), the name in warm gold Georgia, the line in Georgia 19 px; a quiet "Esc Skip" at the top bar's right while a skippable scene plays. Camera blends ease in and out (smoothstep), the distance in proportion, the rotation the short way round; a saved camera's eye keeps above the ground and water. The `@portrait` render target shows the speaker while a line plays in cinematic mode.
+
+**Easter eggs.** Clicking a unit (selecting it) on a mission map sends a `clicked` command, counted per placement for the campaign player and saved (`mission.clicks`). Lines when a hero walks near something are `in_region` in `on_tick`.
+
+The bench: `base/maps/showcase/cinematic-bench.utcm` (authored by `tools/maps/cinematic_bench.py`) plays the Hollow Brood's opening. Captures: `just shot --play --map cinematic-bench --tick <t> --out <png>`.
+
 ## Research: how Warcraft III and StarCraft II do it
 
 - **Warcraft III.** A custom campaign is one `.w3n` archive made in the Campaign Editor: `war3campaign.w3f` (name, difficulty text, author, description, race, the menu's background scene and sound, and the mission buttons: chapter, title, visible at start, which map), the maps, and campaign-wide object data and imports every map shares. The Campaign Editor packages and lays out the menu; the logic lives in each map's triggers: `SetNextLevelBJ` stores the next map and `ChangeLevel` loads it after the score screen; `SetMissionAvailable` unlocks a menu button; heroes travel through a game cache (`StoreUnit`, `SaveGameCache`, `RestoreUnit`). Cutscenes are trigger scripts in the mission map itself: saved cameras, cinematic mode, transmissions (portrait, voice, subtitle), unit animations, fades and waits. Opponents run small campaign AI scripts: defenders kept at home, attack groups (`CampaignAttackerEx`) sent after a wait (`SuicideOnPlayerEx`), every number given for Easy, Normal and Hard.

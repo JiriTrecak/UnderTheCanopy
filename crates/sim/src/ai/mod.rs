@@ -103,7 +103,9 @@ pub fn actors(action: &Action) -> Vec<u32> {
         | Action::Cancel { actor, .. }
         | Action::Rally { actor, .. }
         | Action::Pause { actor, .. } => vec![*actor],
-        Action::Noop | Action::Ping { .. } => Vec::new(),
+        Action::Noop | Action::Ping { .. } | Action::SkipScene | Action::Clicked { .. } => {
+            Vec::new()
+        }
     }
 }
 

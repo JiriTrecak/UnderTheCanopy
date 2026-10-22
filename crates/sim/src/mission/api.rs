@@ -30,6 +30,8 @@ use canopy_content::{
 use std::collections::BTreeMap;
 
 mod campaign;
+mod scene;
+pub use scene::NAMES as SCENE_NAMES;
 
 /// API calls per run.
 pub const CALL_LIMIT: u32 = 256;
@@ -99,6 +101,8 @@ pub(super) struct Api<'a> {
     /// Hero item slots as this run has changed them.
     equipment: BTreeMap<EntityId, Vec<Option<Id>>>,
     calls: u32,
+    /// While the scene plays: the index of the next statement it reaches.
+    cursor: Option<u32>,
 }
 
 impl<'a> Api<'a> {
@@ -118,6 +122,7 @@ impl<'a> Api<'a> {
             effects: Vec::new(),
             equipment: BTreeMap::new(),
             calls: 0,
+            cursor: None,
         }
     }
 
@@ -158,6 +163,13 @@ impl<'a> Api<'a> {
     }
 
     pub(super) fn call(&mut self, name: &str, args: Vec<Scalar>) -> Reply {
+        if self.cursor.is_some() && !scene::QUERIES.contains(&name) {
+            return self.statement(name, args);
+        }
+        self.dispatch(name, args)
+    }
+
+    fn dispatch(&mut self, name: &str, args: Vec<Scalar>) -> Reply {
         self.calls += 1;
         if self.calls > CALL_LIMIT {
             return Err("Mission API call budget exceeded".into());
@@ -214,6 +226,7 @@ impl<'a> Api<'a> {
             "win" => self.effect(MissionEffect::Win),
             "lose" => self.effect(MissionEffect::Lose),
             _ if campaign::NAMES.contains(&name) => self.campaign(name, &a),
+            name if scene::NAMES.contains(&name) => self.scene_call(name, &a),
             _ => Err(format!("Unknown mission function {name}")),
         }
     }

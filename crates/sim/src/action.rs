@@ -208,6 +208,15 @@ pub enum Action {
     Ping {
         position: Option<CellPoint>,
     },
+    /// Skips the mission scene in play (`{"type": "skipScene"}`, Escape). Campaign
+    /// missions only: they never meet the match server, whose frozen protocol (D10) does
+    /// not know it.
+    SkipScene,
+    /// The player clicked an entity to select it (`{"type": "clicked", "actor": 12}`),
+    /// sent on campaign missions only, for `mission.clicks` (easter eggs).
+    Clicked {
+        actor: Actor,
+    },
 }
 
 /// Serializes `None` as `null` and requires the key when reading.
@@ -312,7 +321,8 @@ impl Action {
             | Self::DropItem { actor, .. }
             | Self::UseItem { actor, .. }
             | Self::Produce { actor, .. }
-            | Self::Pause { actor, .. } => ids.push(*actor),
+            | Self::Pause { actor, .. }
+            | Self::Clicked { actor } => ids.push(*actor),
             Self::CastAbility { actor, target, .. } => {
                 ids.push(*actor);
                 if let CastTarget::Unit { entity } = target {

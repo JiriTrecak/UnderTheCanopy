@@ -80,6 +80,11 @@ fn field(ui: &mut Ui, name: &str) {
     ui.label(RichText::new(name).size(11.0).color(MUTED));
 }
 
+/// [`set`] for the other panels of the map.
+pub(super) fn set_value(session: &Session, label: &str, pointer: &str, value: Value) -> Edit {
+    set(session, label, pointer, value)
+}
+
 /// A setting of map.json at `pointer`, as one undo step (typing merges into one).
 fn set(session: &Session, label: &str, pointer: &str, value: Value) -> Edit {
     let mut edit = step(
@@ -716,6 +721,7 @@ fn selection(
             (Picked::Start, "starts"),
             (Picked::Entity, "units, buildings and nodes"),
             (Picked::Object, "scenery"),
+            (Picked::Camera, "cameras"),
         ] {
             let n = count(kind);
             if n > 0 {
@@ -737,6 +743,7 @@ fn selection(
     };
     let cell = |x: f64, z: f64| format!("{x} , {z}");
     match kind {
+        Picked::Camera => super::cameras::panel(ui, session, id, edits),
         Picked::Start => {
             let Some(start) = map
                 .player_starts

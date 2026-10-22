@@ -410,6 +410,19 @@ pub struct UnitInputs<'a> {
     /// Ground speed in the model's own metres per second (world speed over the drawn
     /// scale), measured while moving: gaits with a `nominalSpeed` follow it.
     pub speed: Option<f32>,
+    /// A mission scene's animation (`mission.animate`): the state, the tick it began and
+    /// whether it is held. It plays while the unit stands and fights nothing.
+    pub scripted: Option<(&'a str, u32, bool)>,
+}
+
+/// The state a scripted animation plays: its own, else a near one the model has
+/// (`spell` and `victory` as `cast`).
+pub fn scripted_state<'a>(model: &ModelInfo, name: &'a str) -> &'a str {
+    match name {
+        _ if model.has(name) => name,
+        "spell" | "victory" if model.has(states::CAST) => states::CAST,
+        _ => name,
+    }
 }
 
 /// A unit's animation: the clocks and what the previous tick showed.
@@ -423,6 +436,8 @@ pub struct UnitAnimation {
     cast_key: Option<(u16, u32)>,
     was_casting: bool,
     first: bool,
+    /// The start tick of the scripted animation last begun.
+    scripted: Option<u32>,
 }
 
 /// A building's states (D65). A building at rest holds its `idle` pose and nothing moves;
@@ -528,6 +543,7 @@ impl UnitAnimation {
             cast_key: None,
             was_casting: false,
             first: true,
+            scripted: None,
         })
     }
 
@@ -586,6 +602,17 @@ impl UnitAnimation {
             a.set_state(model, states::ATTACK, true, FADE);
         } else if hurt && !moving && i.work.and_then(|w| w.1).is_none() {
             a.set_state(model, states::HIT, true, FADE);
+        } else if let Some((name, start, looping)) =
+            i.scripted.filter(|_| !moving && i.attack.is_none())
+        {
+            let state = scripted_state(model, name);
+            if self.scripted != Some(start) {
+                a.set_state(model, state, true, FADE);
+                self.scripted = Some(start);
+            } else if looping && a.state != state {
+                a.set_state(model, state, false, FADE);
+            }
+            // Played once, it falls back to idle by itself and stays there.
         } else if moving {
             let carrying = if i.strolling {
                 states::CARRY_WALK
@@ -789,6 +816,33 @@ mod tests {
         }
         assert_eq!(a.state(), "death");
         assert_eq!(a.current(), (5, 1.5));
+    }
+
+    #[test]
+    fn scripted_animations_play_once_or_hold_and_yield_to_walking() {
+        let m = model();
+        let mut u = UnitAnimation::new(&m).unwrap();
+        let at = |tick, scripted| UnitInputs {
+            tick,
+            scripted,
+            ..Default::default()
+        };
+        step(&mut u, &m, at(0, None));
+        step(&mut u, &m, at(1, Some(("spell", 1, false))));
+        assert_eq!(u.animator.state(), "cast", "spell plays as cast");
+        for tick in 2..80 {
+            step(&mut u, &m, at(tick, Some(("spell", 1, false))));
+        }
+        assert_eq!(u.animator.state(), "idle", "once, then back to idle");
+        step(&mut u, &m, at(80, Some(("attack", 80, true))));
+        for tick in 81..200 {
+            step(&mut u, &m, at(tick, Some(("attack", 80, true))));
+        }
+        assert_eq!(u.animator.state(), "attack", "held");
+        let mut walking = at(200, Some(("attack", 80, true)));
+        walking.moving = true;
+        step(&mut u, &m, walking);
+        assert_eq!(u.animator.state(), "run");
     }
 
     #[test]

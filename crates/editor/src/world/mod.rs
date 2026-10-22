@@ -8,6 +8,7 @@
 //! becomes one undo step: the blocks and closed cells whole, heights and water as patches
 //! over what changed.
 
+pub mod cameras;
 pub mod catalog;
 mod features;
 pub mod mesh;
@@ -156,6 +157,8 @@ pub enum Placing {
     Amber,
     /// A piece of scenery.
     Scenery(String),
+    /// A mission's saved camera, looking at where it is placed.
+    Camera,
 }
 
 impl Default for Placing {
@@ -362,6 +365,8 @@ pub struct State {
     pub palette: palette::Palette,
     /// Open the chosen tool's picker on the next frame (captures).
     pub open_picker: bool,
+    /// The view looks through this saved camera; the editor's own camera to return to.
+    pub looking: Option<(String, crate::map::Camera)>,
 }
 
 impl State {
@@ -420,6 +425,7 @@ impl Default for State {
             write_picture: false,
             palette: palette::Palette::default(),
             open_picker: false,
+            looking: None,
         }
     }
 }
@@ -1041,6 +1047,7 @@ fn selection_at(map: &canopy_content::map::UtcMap, picked: Picked, id: &str) -> 
             .iter()
             .find(|o| o.id == id)
             .map(|o| (o.x, o.z)),
+        Picked::Camera => cameras::find(map, id).map(|(_, c)| (c.x, c.y)),
     }
 }
 
@@ -1207,6 +1214,7 @@ fn move_selection(
                 ));
             }
         }
+        Picked::Camera => out.extend(cameras::shift(session, docs, id, (dx, dz))),
         Picked::Object => {
             if let Some((i, o)) = docs.scenery["objects"]
                 .as_array()
@@ -1247,6 +1255,11 @@ fn placed(map: &canopy_content::map::UtcMap) -> Vec<(Picked, String, f64, f64)> 
             .iter()
             .map(|o| (Picked::Object, o.id.clone(), o.x, o.z)),
     );
+    out.extend(
+        cameras::of(map)
+            .iter()
+            .map(|c| (Picked::Camera, c.id.clone(), c.x, c.y)),
+    );
     out
 }
 
@@ -1284,7 +1297,7 @@ fn snapped_delta(
                 .and_then(|m| m.entities.iter().find(|e| &e.id == id))
                 .and_then(|e| content?.definition(e.definition.as_str()))
                 .is_some_and(|d| d.kind == canopy_content::game::Kind::Building),
-            Picked::Object => false,
+            Picked::Object | Picked::Camera => false,
         });
     let step = if lattice || !session.blocks.fine {
         4.0
@@ -1444,7 +1457,7 @@ fn problem(
                 },
             );
         }
-        Placing::Scenery(_) => return None,
+        Placing::Scenery(_) | Placing::Camera => return None,
     }?;
     if let Some(error) =
         canopy_sim::spawn::site_problem(map, terrain, definition, land.x, land.z, land.rotation)
@@ -1485,7 +1498,7 @@ fn move_fits(
                 Some(e) => (Placing::Definition(e.definition.to_string()), e.rotation),
                 None => continue,
             },
-            Picked::Object => continue,
+            Picked::Object | Picked::Camera => continue,
         };
         let land = Landing {
             x: x + delta.0,
@@ -1538,7 +1551,7 @@ pub fn ghost_look(content: &canopy_content::Content, placing: &Placing) -> Optio
                 .unwrap_or(&content.rules.starting_setup);
             crate::map::look_of(content, setup.fort.as_str())
         }
-        Placing::Camp(_) | Placing::Scenery(_) => None,
+        Placing::Camp(_) | Placing::Scenery(_) | Placing::Camera => None,
     }
 }
 
@@ -1574,6 +1587,7 @@ fn move_all(
             Picked::Entity => format!("e {}", group(id)),
             Picked::Start => format!("s {id}"),
             Picked::Object => format!("o {id}"),
+            Picked::Camera => format!("c {id}"),
         };
         if seen.insert(key) {
             out.extend(move_selection(session, content, docs, *kind, id, delta));
@@ -1668,7 +1682,7 @@ fn landing(
             }
         }
         Placing::Camp(_) => point(cell(x), cell(z)),
-        Placing::Scenery(_) => point(free(x), free(z)),
+        Placing::Scenery(_) | Placing::Camera => point(free(x), free(z)),
     }
 }
 
@@ -1709,6 +1723,13 @@ fn place(
         value,
     };
     match placing {
+        Placing::Camera => match cameras::place(session, docs, x, z) {
+            Ok(edit) => Some(edit),
+            Err(why) => {
+                session.error = Some(why);
+                None
+            }
+        },
         Placing::Camp(tier) => {
             session.tools.tier = *tier;
             let mut edit = crate::map::view::place(session, content, docs, Placement::Camp, x, z)
@@ -1981,6 +2002,19 @@ pub fn show(
         }
     }
     let map_size = map.size;
+    // Looking through a saved camera: the view stands where it does (while it lasts).
+    if let Some((id, before)) = session.blocks.looking.clone() {
+        match cameras::find(map, &id) {
+            Some((_, c)) => session.camera = cameras::look_through(map, c),
+            None => {
+                session.camera = before;
+                session.blocks.looking = None;
+            }
+        }
+    }
+    let Some(map) = session.map.as_ref() else {
+        return out;
+    };
     let ground =
         crate::map::tools::ground_at(map, session.camera.focus[0], session.camera.focus[1]);
     let (eye, _, view_projection) = matrices(
@@ -2506,10 +2540,18 @@ pub fn show(
                         }
                     }
                 }
-                // A click picks what is nearest; Shift adds it or takes it away.
+                // A click picks what is nearest (a camera by its body too); Shift adds
+                // it or takes it away.
                 _ => {
                     if let Some(at) = op.path.first() {
-                        let picked = crate::map::view::nearest(session, at[0], at[1]);
+                        let body = input
+                            .pointer
+                            .press_origin()
+                            .zip(session.map.as_ref())
+                            .and_then(|(p, map)| cameras::pick(map, view_projection, rect, p));
+                        let picked = body
+                            .map(|id| (Picked::Camera, id))
+                            .or_else(|| crate::map::view::nearest(session, at[0], at[1]));
                         let selection = &mut session.blocks.selection;
                         match picked {
                             Some(item) if adding => match selection.iter().position(|s| *s == item)
@@ -2543,7 +2585,7 @@ pub fn show(
                     out.edits
                         .extend(place(session, content, docs, &placing, owner, at));
                 }
-                if fits && symmetry != Symmetry::None {
+                if fits && symmetry != Symmetry::None && placing != Placing::Camera {
                     // The mirror's twin: the next player's start, or the next player's
                     // unit or building.
                     let next = |n: u8| n % 8 + 1;
@@ -2703,6 +2745,16 @@ pub fn show(
                 session.blocks.selection.clear();
             }
         }
+    }
+    // The mission's cameras, with their frustums.
+    if let Some(map) = session.map.as_ref() {
+        cameras::draw(
+            &painter,
+            view_projection,
+            rect,
+            map,
+            &session.blocks.selection,
+        );
     }
     // The playable area: a strong line round it, on the ground, and its size at a corner.
     if let Some(map) = session.map.as_ref() {

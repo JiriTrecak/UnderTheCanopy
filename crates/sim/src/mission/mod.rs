@@ -7,6 +7,7 @@
 //! dialogue pauses the game while the lockstep clock keeps running.
 
 mod api;
+pub mod cinema;
 mod effect;
 mod hook;
 pub mod sandbox;
@@ -14,7 +15,7 @@ mod script;
 pub mod state;
 pub mod systems;
 
-pub use api::{CALL_LIMIT, MAX_DAMAGE, NAMES};
+pub use api::{CALL_LIMIT, MAX_DAMAGE, NAMES, SCENE_NAMES};
 pub use effect::{CAMPAIGN_PLAYER, MissionEffect};
 pub use script::Script;
 pub use state::MissionState;
@@ -25,7 +26,11 @@ use crate::{
     entity::Entity,
     state::{FactKind, State},
 };
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
+
+/// Every function of the `mission` table: the old game's, then the scenes'.
+static API: LazyLock<Vec<&'static str>> =
+    LazyLock::new(|| NAMES.iter().chain(SCENE_NAMES.iter()).copied().collect());
 
 /// Simulation ticks per second (docs/decisions.md D3).
 pub const TICKS_PER_SECOND: u32 = 40;
@@ -53,11 +58,17 @@ impl Runtime {
         &self.effects
     }
 
-    /// Step 10 of the tick: turn scripted units, then run the script when due.
-    pub fn tick(&mut self, state: &mut State, catalog: &Catalog) {
-        if let Some(effects) = tick(state, catalog, &self.script, &systems::Live { catalog }) {
-            self.effects = effects;
-        }
+    /// Step 10 of the tick: turn scripted units, then run the script when due. True when
+    /// the run put a unit somewhere at once (a skipped scene), so the spatial model's
+    /// bodies need syncing.
+    pub fn tick(&mut self, state: &mut State, catalog: &Catalog) -> bool {
+        let Some(effects) = tick(state, catalog, &self.script, &systems::Live { catalog }) else {
+            return false;
+        };
+        self.effects = effects;
+        self.effects
+            .iter()
+            .any(|e| matches!(e, MissionEffect::Place { .. }))
     }
 }
 
@@ -91,11 +102,50 @@ pub fn pause(state: &mut State) -> bool {
     true
 }
 
-/// Why player commands are refused right now: a scripted scene or cinematic line.
+/// Why player commands are refused right now: a scripted scene or cinematic line, or
+/// cinematic mode.
 pub fn blocks_commands(state: &State) -> Option<&'static str> {
     let mission = state.mission.as_ref()?;
+    if mission.cinema.on && mission.error.is_none() {
+        return Some("A cinematic is playing");
+    }
     let cinematic = mission.dialogue.as_ref().is_some_and(|d| d.remaining > 0);
     (mission.scene.is_some() || cinematic).then_some("Cinematic dialogue is playing")
+}
+
+/// The campaign player asks to skip the scene in play (Escape): the next tick plays the
+/// rest of it at once. Anything else asking, or nothing skippable playing, changes
+/// nothing.
+pub fn skip(state: &mut State, owner: canopy_content::placement::Owner) {
+    if owner != CAMPAIGN_PLAYER || state.outcome.is_some() {
+        return;
+    }
+    let Some(mission) = state.mission.as_mut().filter(|m| m.error.is_none()) else {
+        return;
+    };
+    if let Some(play) = mission.cinema.scene.as_mut().filter(|s| s.skippable) {
+        play.skipping = true;
+    }
+}
+
+/// The campaign player clicked entity `actor` to select it: a placed entity counts the
+/// click for `mission.clicks`. Ignored during cinematics and from anyone else.
+pub fn clicked(state: &mut State, owner: canopy_content::placement::Owner, actor: u32) {
+    if owner != CAMPAIGN_PLAYER || state.outcome.is_some() || blocks_commands(state).is_some() {
+        return;
+    }
+    let Some(placement) = state
+        .entities
+        .get(crate::entity::EntityId(actor))
+        .filter(|e| alive(e))
+        .and_then(|e| e.placement.clone())
+    else {
+        return;
+    };
+    if let Some(mission) = state.mission.as_mut() {
+        let count = mission.clicks.entry(placement).or_default();
+        *count = count.saturating_add(1);
+    }
 }
 
 /// Advances the mission by one game tick. Returns the applied effects when the script ran
@@ -112,22 +162,26 @@ pub fn tick(
     }
     advance_facing(state, catalog, systems);
     let mission = state.mission.as_ref()?;
-    if mission.started && !state.tick.is_multiple_of(RUN_EVERY) {
+    let due = !mission.started || state.tick.is_multiple_of(RUN_EVERY);
+    // A skip plays out at once rather than at the next run.
+    let skipping = mission.cinema.scene.as_ref().is_some_and(|s| s.skipping);
+    if !due && !skipping {
         return None;
     }
-    let callback = if mission.started {
-        "on_tick"
-    } else {
-        "on_start"
+    let callback = match (due, mission.started) {
+        (false, _) => None,
+        (true, true) => Some("on_tick"),
+        (true, false) => Some("on_start"),
     };
     let mut api = api::Api::new(state, catalog, script, systems, mission.clone());
-    let result = sandbox::run(
-        &script.mission.script,
-        callback,
-        &NAMES,
-        &mut |name, args| api.call(name, args),
-    )
-    .and_then(|_| api.finish());
+    let result =
+        sandbox::execute(&script.mission.script, callback, &API, &mut api).and_then(|ran| {
+            if ran.scene == Some(true) {
+                api.scene_ended();
+            }
+            api.tidy_cinema();
+            api.finish()
+        });
     match result {
         Ok((draft, effects)) => {
             for effect in &effects {
@@ -141,6 +195,8 @@ pub fn tick(
             let mission = state.mission.as_mut()?;
             mission.scene = None;
             mission.facing.clear();
+            // The player gets the game back.
+            mission.cinema = cinema::Cinema::default();
             mission.error = Some(message.clone());
             state.fact(
                 CAMPAIGN_PLAYER,

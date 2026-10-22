@@ -77,6 +77,8 @@ pub enum Picked {
     Start,
     Entity,
     Object,
+    /// A mission's saved camera (`mission.cameras`), by id.
+    Camera,
 }
 
 /// A change to the terrain's grids in progress (a start's pad): the grids as they were,

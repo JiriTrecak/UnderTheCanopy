@@ -15,6 +15,12 @@ use canopy_sim::{mission::state::ObjectiveState, state::Outcome, view::MissionVi
 
 /// Letterbox slide time (old .65 s).
 const LETTERBOX_SECONDS: f32 = 0.65;
+/// The letterbox bars over the view's height (`mh-bar-top`, `mh-bar-bottom`); the
+/// bottom one holds the speaker's portrait and line, as Warcraft III's does.
+const TOP_BAR: f32 = 0.10;
+const BOTTOM_BAR: f32 = 0.21;
+/// A skipped scene's jump hides under black that clears in this many ticks.
+const SKIP_FADE_TICKS: f32 = 24.0;
 /// The dialogue's bottom edge over the view's height (old `bottom: 31%`), and the least
 /// gap it keeps above the play HUD, logical pixels.
 const DIALOGUE_BOTTOM: f32 = 0.31;
@@ -29,6 +35,10 @@ pub struct MissionHud {
     pub hud_top: Option<f32>,
     /// The finished objectives are listed (old `<details>`, closed until clicked).
     pub history_open: bool,
+    /// The (interpolated) tick the picture shows, for fades.
+    pub shown: f32,
+    /// The speaker's live model is in the `@portrait` render target.
+    pub live_speaker: bool,
 }
 
 /// The objectives box as the old mission HUD built it.
@@ -115,7 +125,27 @@ pub fn cinematic(m: &MissionView, decided: bool) -> bool {
         .dialogue
         .as_ref()
         .is_some_and(|d| d.cinematic && d.remaining > 0);
-    (m.scene.is_some() || line) && !decided && m.error.is_none()
+    (m.scene.is_some() || line || m.cinema.on) && !decided && m.error.is_none()
+}
+
+/// The fade filter at `shown` (opacity 0 to 1, colour): the script's fade, black before
+/// `on_start` has run, and a moment of black after a skip.
+pub fn fade(m: &MissionView, shown: f32) -> (f32, [u8; 3]) {
+    if !m.started {
+        return (1.0, [0; 3]);
+    }
+    let (mut opacity, color) = m
+        .cinema
+        .fade
+        .as_ref()
+        .map_or((0.0, [0; 3]), |f| (f.opacity(shown), f.color));
+    if let Some(at) = m.cinema.skipped {
+        let since = shown - at as f32;
+        if since >= 0.0 {
+            opacity = opacity.max(1.0 - since / SKIP_FADE_TICKS);
+        }
+    }
+    (opacity.clamp(0.0, 1.0), color)
 }
 
 /// Whether the dialogue line shows at `tick`: a cinematic line until its paused time
@@ -153,11 +183,33 @@ impl MissionHud {
         dt: f32,
         view_height: f32,
     ) {
+        // The speaker's icon, for a line without a live portrait.
+        let icon = mission
+            .and_then(|m| m.dialogue.as_ref())
+            .and_then(|d| data.content.definition(d.portrait.as_str()))
+            .and_then(|def| widgets::asset_image(data, def.icon.as_str()))
+            .and_then(|e| host.pack_image(gpu, &data.pack, &e));
+        self.present(&mut host.ui, icon, mission, tick, decided, dt, view_height);
+    }
+
+    /// [`Self::show`] with the speaker's icon at hand (captures bind their own images).
+    #[allow(clippy::too_many_arguments)]
+    pub fn present(
+        &mut self,
+        ui: &mut canopy_ui::Ui,
+        icon: Option<canopy_ui::ImageKey>,
+        mission: Option<&MissionView>,
+        tick: u32,
+        decided: bool,
+        dt: f32,
+        view_height: f32,
+    ) {
         let Some(m) = mission else {
-            widgets::visible(&mut host.ui, "mission-hud/objectives", false);
-            widgets::visible(&mut host.ui, "mission-hud/dialogue-wrap", false);
-            widgets::visible(&mut host.ui, "mission-hud/top-bar", false);
-            widgets::visible(&mut host.ui, "mission-hud/bottom-bar", false);
+            widgets::visible(ui, "mission-hud/objectives", false);
+            widgets::visible(ui, "mission-hud/dialogue-wrap", false);
+            widgets::visible(ui, "mission-hud/top-bar", false);
+            widgets::visible(ui, "mission-hud/bottom-bar", false);
+            widgets::visible(ui, "mission-hud/fade", false);
             return;
         };
         let cinematic = cinematic(m, decided);
@@ -168,15 +220,27 @@ impl MissionHud {
         } else {
             (self.letterbox - step).max(target)
         };
-        let bar = view_height * 0.07 * (1.0 - self.letterbox);
-        let ui = &mut host.ui;
+        // The bars slide in eased, as the camera blends.
+        let hidden = 1.0 - canopy_sim::mission::cinema::ease(self.letterbox);
         widgets::visible(ui, "mission-hud/top-bar", self.letterbox > 0.0);
         widgets::visible(ui, "mission-hud/bottom-bar", self.letterbox > 0.0);
         if let Some(n) = ui.find("mission-hud/top-bar") {
-            ui.set_shift(n, 0.0, -bar);
+            ui.set_shift(n, 0.0, -view_height * TOP_BAR * hidden);
         }
         if let Some(n) = ui.find("mission-hud/bottom-bar") {
-            ui.set_shift(n, 0.0, bar);
+            ui.set_shift(n, 0.0, view_height * BOTTOM_BAR * hidden);
+        }
+        let skippable = m
+            .cinema
+            .scene
+            .as_ref()
+            .is_some_and(|s| s.skippable && !s.skipping);
+        widgets::visible(ui, "mission-hud/top-bar/skip", cinematic && skippable);
+        let (opacity, [r, g, b]) = fade(m, self.shown);
+        widgets::visible(ui, "mission-hud/fade", opacity > 0.001 && !decided);
+        if let Some(n) = ui.find("mission-hud/fade") {
+            ui.set_opacity(n, opacity);
+            ui.set_color(n, Some(canopy_ui::Color::rgba(r, g, b, 255)));
         }
         let model = ObjectivesModel::build(&self.objectives, m);
         widgets::visible(ui, "mission-hud/objectives", model.visible && !cinematic);
@@ -230,7 +294,27 @@ impl MissionHud {
             }
         }
         let speaking = dialogue_visible(m, tick, decided);
-        widgets::visible(ui, "mission-hud/dialogue-wrap", speaking);
+        // In cinematic mode the line is a transmission in the lower bar.
+        let transmission = speaking && m.cinema.on;
+        widgets::visible(ui, "mission-hud/bottom-bar/transmission", transmission);
+        widgets::visible(ui, "mission-hud/dialogue-wrap", speaking && !transmission);
+        if let (Some(d), true) = (&m.dialogue, transmission) {
+            widgets::text(
+                ui,
+                "mission-hud/bottom-bar/transmission/speaker",
+                &d.speaker,
+            );
+            widgets::text(ui, "mission-hud/bottom-bar/transmission/text", &d.text);
+            let portrait = if self.live_speaker {
+                Some(ui.image_key("@portrait"))
+            } else {
+                icon
+            };
+            if let Some(n) = ui.find("mission-hud/bottom-bar/transmission/portrait") {
+                ui.set_image(n, portrait);
+            }
+            return;
+        }
         // The dialogue sits at 31 % from the bottom (old), lifted clear of a larger HUD
         //
         let lift = self.hud_top.map_or(0.0, |top| {
@@ -242,13 +326,8 @@ impl MissionHud {
         if let (Some(d), true) = (&m.dialogue, speaking) {
             widgets::text(ui, "mission-hud/dialogue-wrap/speaker", &d.speaker);
             widgets::text(ui, "mission-hud/dialogue-wrap/text", &d.text);
-            let portrait = data
-                .content
-                .definition(d.portrait.as_str())
-                .and_then(|def| widgets::asset_image(data, def.icon.as_str()))
-                .and_then(|e| host.pack_image(gpu, &data.pack, &e));
-            if let Some(n) = host.ui.find("mission-hud/dialogue-wrap/portrait") {
-                host.ui.set_image(n, portrait);
+            if let Some(n) = ui.find("mission-hud/dialogue-wrap/portrait") {
+                ui.set_image(n, icon);
             }
         }
     }
@@ -644,6 +723,9 @@ mod tests {
             dialogue: None,
             scene: None,
             paused: false,
+            started: true,
+            cinema: Default::default(),
+            animations: Vec::new(),
             error: None,
         }
     }

@@ -132,6 +132,10 @@ pub struct InMatch {
     follow: follow::Follow,
     /// The RTS focus before a mission cinematic moved the view.
     cinematic_focus: Option<[f32; 2]>,
+    /// The shot (start, length) whose return to the game's camera was handed over.
+    returned: Option<(u32, u32)>,
+    /// The `@portrait` target shows a cinematic line's speaker.
+    pub live_speaker: bool,
     screen: Option<Screen>,
     stats: DebugStats,
     frames: u32,
@@ -305,6 +309,8 @@ impl InMatch {
             camera_view: None,
             follow: follow::Follow::default(),
             cinematic_focus: None,
+            returned: None,
+            live_speaker: false,
             screen: None,
             stats: DebugStats::default(),
             frames: 0,
@@ -669,6 +675,55 @@ impl InMatch {
         )
     }
 
+    /// The (interpolated) tick the picture shows.
+    pub fn shown_tick(&self) -> f32 {
+        self.live.shown as f32
+    }
+
+    /// The unit speaking the line on screen, if any.
+    fn speaker(&self) -> Option<u32> {
+        let view = &self.play.knowledge().view;
+        let line = view.mission.as_ref()?.dialogue.as_ref()?;
+        (view.tick < line.until || line.remaining > 0)
+            .then_some(line.actor)
+            .flatten()
+            .map(|a| a.0)
+    }
+
+    /// Cinematic mode of the mission shown (a running script, an undecided match).
+    fn cinema_on(&self) -> bool {
+        let view = &self.play.knowledge().view;
+        view.outcome.is_none()
+            && view
+                .mission
+                .as_ref()
+                .is_some_and(|m| m.cinema.on && m.error.is_none())
+    }
+
+    /// The view of a mission's saved-camera shot (`mission.camera_to`): while cinematic
+    /// mode lasts, and while a blend back to the game's camera runs; once that blend
+    /// ends, the game's camera looks where it returned to and is the player's again.
+    fn shot_view(&mut self, aspect: f32) -> Option<CameraView> {
+        let frames = self.scene_targets?.frames?;
+        let tick = self.live.shown as f32;
+        if let Some(target) = frames.returned(tick) {
+            let key = (frames.start, frames.ticks);
+            if self.returned != Some(key) {
+                self.returned = Some(key);
+                if let Some([x, z]) = target {
+                    self.camera.look_at(x, z);
+                }
+                self.cinematic_focus = None;
+            }
+            return None;
+        }
+        if !self.cinema_on() && frames.progress(tick) >= 1.0 {
+            return None;
+        }
+        let saved = frames.at(tick, &self.camera, aspect);
+        Some(saved.view(aspect, self.loaded.scene.terrain()))
+    }
+
     /// The unit whose eyes the camera looks through (its body is not drawn).
     fn first_person_body(&self) -> Option<u32> {
         if self.play.cinematic().is_some() {
@@ -827,7 +882,9 @@ impl InMatch {
         let rts_view = self
             .lens
             .apply(view::frame(&mut self.camera, aspect, &self.loaded.scene));
-        let close = self.close_view(aspect, dt_ms / 1000.0);
+        let close = self
+            .shot_view(aspect)
+            .or_else(|| self.close_view(aspect, dt_ms / 1000.0));
         // Giant canopies open around units in the overhead view only (a close camera
         // would cut holes at eye level).
         host.renderer.set_cutaway(
@@ -909,10 +966,20 @@ impl InMatch {
             MINIMAP_PIXELS,
             &pings,
         );
-        let subject = world_ui
-            .selected
-            .first()
-            .and_then(|&id| self.live.portrait(id, seconds));
+        // A cinematic line's speaker talks in the portrait, else the selection shows.
+        let speaker = self
+            .cinema_on()
+            .then(|| self.speaker())
+            .flatten()
+            .and_then(|id| self.live.portrait(id, seconds))
+            .map(|s| canopy_render::PortraitSubject { close: true, ..s });
+        self.live_speaker = speaker.is_some();
+        let subject = speaker.or_else(|| {
+            world_ui
+                .selected
+                .first()
+                .and_then(|&id| self.live.portrait(id, seconds))
+        });
         host.renderer.set_portrait(gpu, subject, PORTRAIT_PIXELS);
         let focus = [camera_view.target.x, camera_view.target.z];
         self.live.feed_ripples(
@@ -929,7 +996,13 @@ impl InMatch {
             ui.register_image(&name, desc);
         }
         self.hud.update(ui, &self.play);
-        ui.show("hud", !self.hud_hidden);
+        // Cinematic mode hides the HUD and lets go of the selection (Warcraft III).
+        let cinema = self.cinema_on();
+        if cinema && !self.play.selection.ids().is_empty() {
+            self.play.select(Vec::new(), None);
+        }
+        host.audio.set_duck(cinema);
+        ui.show("hud", !self.hud_hidden && !cinema);
         for name in self.hud.take_image_requests() {
             // Each image is uploaded and registered once (missing ones are not retried).
             if !self.images.insert(name.clone()) {

@@ -261,6 +261,12 @@ impl Editor {
         self.shell.set_block_symmetry(symmetry, brush);
     }
 
+    /// Selects a mission's saved camera, looking through it or not, the view standing
+    /// over `focus` at `distance` (captures).
+    pub fn show_camera(&mut self, id: &str, look_through: bool, focus: [f32; 2], distance: f32) {
+        self.shell.show_camera(id, look_through, focus, distance);
+    }
+
     /// Takes back every step (captures).
     pub fn undo_all(&mut self) {
         self.shell.undo_all();

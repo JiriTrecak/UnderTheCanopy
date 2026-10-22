@@ -131,6 +131,8 @@ pub struct Mission {
     pub regions: Vec<Value>,
     pub objectives: Vec<Value>,
     pub script: String,
+    /// Saved cameras (`mission.cameras`), when any.
+    pub cameras: Vec<Value>,
 }
 
 impl Mission {
@@ -154,7 +156,13 @@ impl Mission {
                 json!({"id": "loot", "title": "Loot", "description": "Find the charm", "optional": true}),
             ],
             script: script.into(),
+            cameras: Vec::new(),
         }
+    }
+
+    pub fn camera(mut self, camera: Value) -> Self {
+        self.cameras.push(camera);
+        self
     }
 
     pub fn entity(mut self, placement: Value) -> Self {
@@ -181,6 +189,9 @@ impl Mission {
             "/mission",
             json!({"objectives": self.objectives, "regions": self.regions, "script": self.script}),
         );
+        if !self.cameras.is_empty() {
+            map_fixture::set(&mut document, "/mission/cameras", json!(self.cameras));
+        }
         map_fixture::parse(document).unwrap_or_else(|errors| panic!("{errors}"))
     }
 

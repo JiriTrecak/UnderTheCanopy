@@ -482,9 +482,32 @@ pub fn run(
 
     // A close camera (unit shot, unit camera) keeps the canopies whole.
     let mut close_camera = false;
+    // A saved-camera shot (`mission.camera_to`) frames the picture at this tick, blends
+    // included, while cinematic mode lasts or a blend runs.
+    let tick = game.world.state().tick as f32;
+    let aspect = size[0] as f32 / size[1].max(1) as f32;
+    let cinema_on = view0
+        .mission
+        .as_ref()
+        .is_some_and(|m| m.cinema.on && m.error.is_none());
+    let framed = sim::scene_targets(&game.world, &view0)
+        .and_then(|t| t.frames)
+        .filter(|f| f.returned(tick).is_none() && (cinema_on || f.progress(tick) < 1.0));
+    if let Some(frames) = framed {
+        let saved = frames.at(tick, &camera, aspect);
+        screen.camera = saved.view(aspect, terrain);
+        close_camera = true;
+    } else if let Some([x, z]) = sim::scene_targets(&game.world, &view0)
+        .and_then(|t| t.frames)
+        .and_then(|f| f.returned(tick))
+        .flatten()
+    {
+        camera.look_at(x, z);
+        screen.camera = view::frame(&mut camera, aspect, &loaded.scene);
+    }
     // A mission cinematic looks as the window would once its blends end: a scene's unit
     // shot through its unit, else at the scene through the narrower lens.
-    if let Some(scene) = play.cinematic() {
+    if let (None, Some(scene)) = (framed, play.cinematic()) {
         let targets = sim::scene_targets(&game.world, &view0);
         let shot = play.scene_camera().cloned();
         let subject = |t: &sim::SceneTarget| {
@@ -655,7 +678,61 @@ pub fn run(
         "  hud: update + bind + paint {:.3} ms per frame",
         started.elapsed().as_secs_f64() * 10.0
     );
+    // A cinematic line's speaker talks in the portrait.
+    let speaker = view0
+        .mission
+        .as_ref()
+        .filter(|m| m.cinema.on)
+        .and_then(|m| m.dialogue.as_ref())
+        .filter(|d| d.until > view0.tick)
+        .and_then(|d| d.actor)
+        .and_then(|a| live.portrait(a.0, 12.0))
+        .map(|s| canopy_render::PortraitSubject { close: true, ..s });
+    let live_speaker = speaker.is_some();
+    // The mission HUD over the HUD: letterbox, transmission, fade, objectives.
+    let cinema = view0
+        .mission
+        .as_ref()
+        .is_some_and(|m| m.cinema.on && m.error.is_none());
+    if let Some(m) = view0.mission.as_ref() {
+        ui.show("mission-hud", true);
+        ui.frame(now.as_secs_f64());
+        let icon = m
+            .dialogue
+            .as_ref()
+            .and_then(|d| content.definition(d.portrait.as_str()))
+            .and_then(|def| crate::screens::widgets::content_image(&content, def.icon.as_str()))
+            .and_then(|name| {
+                let desc = renderer
+                    .ui_mut(&gpu)
+                    .load_pack_image(&gpu, &loaded.pack, &name)
+                    .ok()?;
+                ui.register_image(&name, desc);
+                Some(ui.image_key(&name))
+            });
+        let objectives = game
+            .world
+            .mission()
+            .map(|r| r.script.objectives().to_vec())
+            .unwrap_or_default();
+        let mut mission_hud = crate::screens::match_ui::MissionHud::new(objectives);
+        mission_hud.shown = view0.tick as f32;
+        mission_hud.live_speaker = live_speaker;
+        mission_hud.present(
+            &mut ui,
+            icon,
+            Some(m),
+            view0.tick,
+            view0.outcome.is_some(),
+            10.0,
+            size[1] as f32,
+        );
+    }
     hud.update(&mut ui, &play);
+    // Cinematic mode hides the HUD.
+    if cinema {
+        ui.show("hud", false);
+    }
     // Atlas uploads are incremental and only this frame reaches the GPU.
     ui.reset_glyph_atlas();
     let mut list = ui.frame(now.as_secs_f64()).clone();
@@ -678,10 +755,12 @@ pub fn run(
         super::run::MINIMAP_PIXELS,
         &pings,
     );
-    let subject = world_ui
-        .selected
-        .first()
-        .and_then(|&id| live.portrait(id, 12.0));
+    let subject = speaker.or_else(|| {
+        world_ui
+            .selected
+            .first()
+            .and_then(|&id| live.portrait(id, 12.0))
+    });
     renderer.set_portrait(&gpu, subject, super::run::PORTRAIT_PIXELS);
     if let (Some(ghost), Some(def)) = (&world_ui.ghost, &world_ui.ghost_definition) {
         let mut instances = live.instances().to_vec();

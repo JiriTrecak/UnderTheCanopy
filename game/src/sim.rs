@@ -323,11 +323,32 @@ pub struct SceneTarget {
 pub struct SceneTargets {
     pub subject: Option<SceneTarget>,
     pub look_at: Option<SceneTarget>,
+    /// The saved-camera shot (`mission.camera_to`), resolved against the map's cameras.
+    pub frames: Option<crate::play::shots::Frames>,
 }
 
-/// The targets of the camera shot `view`'s mission scene names; `None` without a shot.
+/// The shot of `view`'s mission resolved against the map's cameras.
+fn frames(world: &World, view: &View) -> Option<crate::play::shots::Frames> {
+    let shot = view.mission.as_ref()?.cinema.shot.as_ref()?;
+    let cameras = world.mission()?.script.mission.cameras.as_deref();
+    crate::play::shots::Frames::resolve(shot, cameras.unwrap_or_default())
+}
+
+/// The targets of the camera shot `view`'s mission scene names, and its saved-camera
+/// shot; `None` with neither.
 pub fn scene_targets(world: &World, view: &View) -> Option<SceneTargets> {
-    let camera = view.mission.as_ref()?.scene.as_ref()?.camera.as_ref()?;
+    let frames = frames(world, view);
+    let camera = view
+        .mission
+        .as_ref()
+        .and_then(|m| m.scene.as_ref())
+        .and_then(|s| s.camera.as_ref());
+    let Some(camera) = camera else {
+        return frames.map(|frames| SceneTargets {
+            frames: Some(frames),
+            ..SceneTargets::default()
+        });
+    };
     let find = |placement: &str| {
         world
             .state()
@@ -343,6 +364,7 @@ pub fn scene_targets(world: &World, view: &View) -> Option<SceneTargets> {
     Some(SceneTargets {
         subject: find(&camera.entity),
         look_at: camera.look_at.as_deref().and_then(find),
+        frames,
     })
 }
 
@@ -356,14 +378,31 @@ pub const SCENE_REVEAL_RADIUS: f64 = 36.0;
 /// the AI keep the plain view). `None` when no scene plays, the match is decided or the
 /// viewer has no fog.
 pub fn stage(world: &World, view: &View) -> Option<View> {
-    let scene = view.mission.as_ref()?.scene.as_ref()?;
+    let mission = view.mission.as_ref()?;
+    // A scripted scene's place, else what a cinematic's camera looks at.
+    let position = match &mission.scene {
+        Some(scene) => scene.position,
+        None if mission.cinema.on => {
+            let target = |f: &crate::play::shots::Framing| match f {
+                crate::play::shots::Framing::Saved(s) => Some(s.target),
+                crate::play::shots::Framing::Game(t) => *t,
+            };
+            let frames = frames(world, view)?;
+            let [x, z] = target(&frames.to).or_else(|| target(&frames.from))?;
+            canopy_sim::entity::Milli {
+                x: (x * 1000.0).round() as i32,
+                y: (z * 1000.0).round() as i32,
+            }
+        }
+        None => return None,
+    };
     if view.outcome.is_some() {
         return None;
     }
     let fog = view.fog.as_ref()?;
     let (sx, sy) = (
-        f64::from(scene.position.x) / 1000.0,
-        f64::from(scene.position.y) / 1000.0,
+        f64::from(position.x) / 1000.0,
+        f64::from(position.y) / 1000.0,
     );
     let r = SCENE_REVEAL_RADIUS;
     let size = i64::from(fog.size);
@@ -396,8 +435,8 @@ pub fn stage(world: &World, view: &View) -> Option<View> {
     // A revision of its own, above any the simulation reaches, for every staged state:
     // the renderer reloads the staged fog, and the plain one again afterwards.
     let key = u64::from(fog.revision)
-        ^ (i64::from(scene.position.x) as u64).rotate_left(21)
-        ^ (i64::from(scene.position.y) as u64).rotate_left(42);
+        ^ (i64::from(position.x) as u64).rotate_left(21)
+        ^ (i64::from(position.y) as u64).rotate_left(42);
     let revision = 0x8000_0000 | (key.wrapping_mul(0x9e37_79b9_7f4a_7c15) >> 33) as u32;
     let mut staged = view.clone();
     staged.fog = Some(fog.restaged(cells, revision));

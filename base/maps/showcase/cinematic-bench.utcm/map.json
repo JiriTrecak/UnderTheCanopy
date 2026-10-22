@@ -1,0 +1,117 @@
+{
+  "biome": "frozen-dream",
+  "camps": [],
+  "entities": [
+    {
+      "id": "aurelith",
+      "definition": "unit.ants.queen",
+      "owner": "player.1",
+      "position": {
+        "x": 36.0,
+        "y": 160.0
+      },
+      "rotation": 45.0
+    },
+    {
+      "id": "escort.1",
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "position": {
+        "x": 30.0,
+        "y": 164.0
+      },
+      "rotation": 45.0
+    },
+    {
+      "id": "escort.2",
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "position": {
+        "x": 38.0,
+        "y": 167.0
+      },
+      "rotation": 45.0
+    },
+    {
+      "id": "tiv",
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "position": {
+        "x": 132.0,
+        "y": 64.0
+      },
+      "rotation": 225.0
+    }
+  ],
+  "playerStarts": [],
+  "size": 192,
+  "playable": {
+    "x": 16,
+    "z": 16,
+    "width": 160,
+    "height": 160
+  },
+  "mission": {
+    "objectives": [
+      {
+        "id": "hollow",
+        "title": "The Hollow Brood",
+        "description": "Find out why the Hollow Brood went silent"
+      }
+    ],
+    "regions": [],
+    "cameras": [
+      {
+        "id": "road",
+        "x": 54,
+        "y": 142,
+        "height": 2,
+        "distance": 40,
+        "pitch": 14,
+        "yaw": 135,
+        "fov": 38
+      },
+      {
+        "id": "follow",
+        "x": 80,
+        "y": 115,
+        "height": 2,
+        "distance": 46,
+        "pitch": 26,
+        "yaw": 165,
+        "fov": 38
+      },
+      {
+        "id": "over-queen",
+        "x": 91.5,
+        "y": 104.5,
+        "height": 2.5,
+        "distance": 26,
+        "pitch": 9,
+        "yaw": 300,
+        "fov": 36
+      },
+      {
+        "id": "over-tiv",
+        "x": 86.5,
+        "y": 109.5,
+        "height": 4,
+        "distance": 26,
+        "pitch": 8,
+        "yaw": 120,
+        "fov": 36,
+        "roll": 1.5
+      },
+      {
+        "id": "wide",
+        "x": 89,
+        "y": 107,
+        "height": 0,
+        "distance": 62,
+        "pitch": 32,
+        "yaw": 135,
+        "fov": 40
+      }
+    ]
+  }
+}

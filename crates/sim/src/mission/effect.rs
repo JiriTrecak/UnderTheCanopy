@@ -62,6 +62,15 @@ pub enum MissionEffect {
     },
     /// A campaign variable or the campaign player's tech changes (`crate::campaign`).
     Campaign(crate::campaign::Change),
+    /// Put a unit at a cell at once, ending what it does (a skipped scene's walk);
+    /// `walking`: only while it still has an order.
+    Place {
+        placement: String,
+        destination: Milli,
+        walking: bool,
+    },
+    /// Turn a unit to face a point at once (a skipped scene's turn).
+    Turn { placement: String, target: Milli },
     /// Player 1 wins the mission.
     Win,
     /// Player 1 loses the mission.
@@ -218,6 +227,37 @@ pub(super) fn apply(
         }
         MissionEffect::Ai { player, order } => {
             crate::ai::campaign::command(state, *player, order);
+        }
+        MissionEffect::Place {
+            placement,
+            destination,
+            walking,
+        } => {
+            let Some(id) = living_unit(state, placement) else {
+                return;
+            };
+            if *walking && !state.entities.get(id).is_some_and(|e| systems.has_order(e)) {
+                return;
+            }
+            if !crate::economy::interrupt(state, id, None) {
+                return;
+            }
+            let entity = state.entities.get_mut(id).expect("unit");
+            if let Some(u) = entity.unit.as_mut() {
+                crate::orders::discard_navigation(u);
+                u.order = None;
+            }
+            entity.position = *destination;
+        }
+        MissionEffect::Turn { placement, target } => {
+            if let Some(entity) = entity_by_placement_mut(state, placement)
+                && entity.unit.is_some()
+                && super::alive(entity)
+            {
+                let rotation = i64::from(entity.rotation);
+                entity.rotation =
+                    super::systems::heading(entity.position, rotation, *target) as i32;
+            }
         }
         MissionEffect::Win => {
             state.outcome = Some(Outcome {

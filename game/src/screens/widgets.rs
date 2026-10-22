@@ -310,21 +310,20 @@ fn capital(text: &str) -> String {
 /// The image path of an asset (definition icons, interface art), if published: its
 /// render binding's image, else the record's first image output.
 pub fn asset_image(data: &GameData, asset: &str) -> Option<String> {
-    data.content
+    content_image(&data.content, asset).or_else(|| data.campaign_images.get(asset).cloned())
+}
+
+/// [`asset_image`] from the content alone (without the campaigns' own images).
+pub fn content_image(content: &canopy_content::Content, asset: &str) -> Option<String> {
+    content
         .asset(asset)
         .and_then(|a| a.image.clone())
         .or_else(|| {
-            let record = data
-                .content
-                .manifest
-                .records
-                .iter()
-                .find(|r| r.id == *asset)?;
+            let record = content.manifest.records.iter().find(|r| r.id == *asset)?;
             record
                 .outputs
                 .iter()
                 .find(|o| o.role == canopy_content::assets::OutputRole::Image)
                 .map(|o| o.path.clone())
         })
-        .or_else(|| data.campaign_images.get(asset).cloned())
 }

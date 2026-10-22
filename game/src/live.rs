@@ -116,6 +116,7 @@ impl LiveScene {
         Some(canopy_render::PortraitSubject {
             instance,
             building: b.building,
+            close: false,
         })
     }
 

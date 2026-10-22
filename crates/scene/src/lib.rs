@@ -153,24 +153,27 @@ impl Look {
 }
 
 /// Computer players on the map's starts (the first `players` of them, all by default):
-/// what a spectator watches.
+/// what a spectator watches; a mission's player 1 always (a mission needs no starts).
 pub fn spectator_setup(map: &UtcMap, players: Option<usize>) -> MatchSetup {
-    MatchSetup {
-        seed: 1,
-        slots: map
-            .player_starts
-            .iter()
-            .take(players.unwrap_or(usize::MAX))
-            .map(|start| Slot {
-                player: start.player.saturating_sub(1),
-                kind: SlotKind::Ai,
-                name: None,
-                team: None,
-                hero: None,
-                race: None,
-            })
-            .collect(),
+    let slot = |player: u8| Slot {
+        player,
+        kind: SlotKind::Ai,
+        name: None,
+        team: None,
+        hero: None,
+        race: None,
+    };
+    let mut slots: Vec<Slot> = map
+        .player_starts
+        .iter()
+        .take(players.unwrap_or(usize::MAX))
+        .map(|start| slot(start.player.saturating_sub(1)))
+        .collect();
+    // A mission seats player 1 with or without a start, as its campaign does.
+    if map.mission.is_some() && !slots.iter().any(|s| s.player == 0) {
+        slots.insert(0, slot(0));
     }
+    MatchSetup { seed: 1, slots }
 }
 
 /// A map as the renderer draws it at match start.

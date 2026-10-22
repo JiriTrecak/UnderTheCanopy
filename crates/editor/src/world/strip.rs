@@ -775,6 +775,7 @@ fn settings(
                         [(Picked::Start, id)] => format!("start of player {id}"),
                         [(Picked::Entity, id)] => id.clone(),
                         [(Picked::Object, id)] => format!("prop {id}"),
+                        [(Picked::Camera, id)] => format!("camera {id}"),
                         many => format!("{} selected", many.len()),
                     };
                     ui.label(RichText::new(what).size(12.0).color(TEXT));

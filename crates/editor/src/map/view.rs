@@ -119,6 +119,9 @@ pub(crate) fn nearest(session: &Session, x: f32, z: f32) -> Option<(Picked, Stri
     for o in &map.authoring.objects {
         consider(d(o.x, o.z), Picked::Object, o.id.clone(), 1.5);
     }
+    for c in crate::world::cameras::of(map) {
+        consider(d(c.x, c.y), Picked::Camera, c.id.clone(), 2.0);
+    }
     best.map(|b| (b.1, b.2))
 }
 
@@ -193,6 +196,7 @@ pub(crate) fn delete_all(
         "objects",
         gone_objects,
     ));
+    commands.extend(crate::world::cameras::remove(session, docs, items));
     commands
 }
 

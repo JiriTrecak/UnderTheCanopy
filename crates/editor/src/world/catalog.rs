@@ -249,6 +249,15 @@ impl Catalog {
                         entries: nodes,
                     },
                     breakables,
+                    Group {
+                        name: "Cinematics".into(),
+                        entries: vec![Entry {
+                            placing: Placing::Camera,
+                            name: "Camera".into(),
+                            icon: None,
+                            neutral: true,
+                        }],
+                    },
                 ],
             },
             Category {
