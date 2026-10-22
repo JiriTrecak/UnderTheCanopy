@@ -678,7 +678,8 @@ CAMERAS = [
     {'id': 'victory', 'x': 204, 'y': 236, 'height': 0, 'distance': 200, 'pitch': 48, 'yaw': 20, 'fov': 40},
 ]
 PLAYERS = [
-    {'player': 2, 'race': 'ants', 'team': 'enemy', 'vision': False,
+    # The feral brood, sick with the substance: the same violet-grey as in the Hollow.
+    {'player': 2, 'race': 'ants', 'team': 'enemy', 'vision': False, 'color': '#8a7f96',
      'ai': {'behaviour': 'waves', 'rebuild': False, 'waves': FERAL_WAVES}},
     {'player': 3, 'race': 'ants', 'team': 'ally', 'vision': True,
      'ai': {'behaviour': 'passive', 'dormant': True}},
