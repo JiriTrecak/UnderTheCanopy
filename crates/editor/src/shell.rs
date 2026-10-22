@@ -26,6 +26,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 mod art;
+mod campaigns;
 mod maps;
 mod serve;
 
@@ -141,6 +142,13 @@ enum Dialog {
         id: String,
         folder: String,
     },
+    /// A new campaign package in `campaigns/`: its id, name and race, and the races.
+    NewCampaign {
+        id: String,
+        name: String,
+        race: String,
+        races: Vec<(String, String)>,
+    },
     /// A new map package in `maps/<group>/`.
     NewMap {
         group: String,
@@ -208,7 +216,9 @@ pub struct Shell {
     /// The trail of links followed (editor and document), for Back and Forward.
     back: Vec<(Kind, String)>,
     forward: Vec<(Kind, String)>,
-    structure: Option<u64>,
+    /// (structure, the latest change of a campaign's own documents): the Maps library
+    /// lists missions in their campaign's step order.
+    structure: Option<(u64, u64)>,
     /// Uses of an id: (document, store generation, uses).
     uses: Option<(String, u64, Vec<Use>)>,
     /// An open rename, delete or create dialog.
@@ -270,6 +280,8 @@ pub struct Shell {
         crate::mcp::EncounterArgs,
         tokio::sync::oneshot::Sender<Result<Value, String>>,
     )>,
+    /// Campaign views' thumbnails, states and requests.
+    campaigns: crate::campaign::view::Shared,
     /// The editor is done: back to the menu, or quit the game.
     pub close: Option<Leave>,
 }
@@ -337,6 +349,7 @@ impl Shell {
             assistant: false,
             leaving: None,
             notice: None,
+            campaigns: Default::default(),
             close: None,
         }
     }
@@ -404,6 +417,8 @@ impl Shell {
             } else {
                 Default::default()
             };
+        let campaign_maps = self.campaign_maps();
+        let version = package.manifest.version.to_string();
         let workspace = self
             .workspaces
             .get_mut(&kind)
@@ -429,7 +444,7 @@ impl Shell {
         };
         // The Maps editor's own panel (the map's settings, or what is selected) stands in
         // for the properties.
-        let request = if !panels.properties || kind == Kind::Maps {
+        let request = if !panels.properties || kind == Kind::Maps || kind == Kind::Campaigns {
             None
         } else {
             inspector::show(
@@ -523,6 +538,9 @@ impl Shell {
                 wanted_looks: &mut self.wanted_looks,
                 encounter_size: &mut encounter_size,
                 stale,
+                campaigns: &mut self.campaigns,
+                campaign_maps: &campaign_maps,
+                version: &version,
             },
         );
         if let Some((document, size)) = encounter_size
@@ -574,6 +592,7 @@ impl Shell {
         for edit in edits {
             self.run(edit);
         }
+        self.campaign_requests();
         if let Some(id) = opens.pop() {
             self.open_id(&id);
         }
@@ -585,6 +604,7 @@ impl Shell {
                         map: None,
                         map_package: None,
                         encounter: Some(unit),
+                        campaign: None,
                     });
                 }
                 None => self.say(
@@ -862,7 +882,14 @@ impl Shell {
             .entry(root.to_string())
             .or_insert_with(|| crate::map::Session::new(root));
         if session.loaded_at != Some(generation) && session.blocks.drag.is_none() {
-            if std::mem::take(&mut session.own) && session.map.is_some() {
+            // Nothing of this map changed since it loaded (an edit elsewhere: its
+            // campaign's tech, another document).
+            let prefix = format!("{root}/");
+            let untouched = session.map.is_some()
+                && session
+                    .loaded_at
+                    .is_some_and(|at| store.latest_revision(|p| p.starts_with(&prefix)) <= at);
+            if untouched || (std::mem::take(&mut session.own) && session.map.is_some()) {
                 session.loaded_at = Some(generation);
             } else {
                 let overlay = Arc::new(store.overlay().below(root));
@@ -1016,7 +1043,12 @@ impl Shell {
     /// Reads every editor's library (with unsaved new and deleted documents) when the
     /// documents that exist changed, and gathers every element id.
     fn refresh_libraries(&mut self, package: &Package) {
-        let structure = self.store.as_ref().map(Store::structure);
+        let structure = self.store.as_ref().map(|s| {
+            (
+                s.structure(),
+                s.latest_revision(crate::campaign::lists_maps),
+            )
+        });
         if self.structure == structure && self.workspaces.len() == KINDS.len() {
             return;
         }
@@ -1161,6 +1193,10 @@ impl Shell {
     /// Opens the dialog that creates an element in `kind`'s first collection of files,
     /// next to the open one.
     fn start_create(&mut self, kind: Kind) {
+        if kind == Kind::Campaigns {
+            self.start_new_campaign();
+            return;
+        }
         if kind == Kind::Maps {
             let biomes = self
                 .package
@@ -1234,6 +1270,7 @@ impl Shell {
                 self.uses_of(&document.clone())
             }
             Dialog::Create { .. }
+            | Dialog::NewCampaign { .. }
             | Dialog::NewMap { .. }
             | Dialog::Import { .. }
             | Dialog::ImportStarcraft { .. } => Vec::new(),
@@ -1515,6 +1552,15 @@ impl Shell {
                             outcome = Outcome::Close;
                         }
                     });
+                }
+                Dialog::NewCampaign { id, name, race, races } => {
+                    let root = format!("{}/{id}.utcc", crate::campaign::DIR);
+                    let taken = exists(store, &crate::campaign::document(&root));
+                    match campaigns::new_campaign_dialog(ui, id, name, race, races, taken, &base_version) {
+                        campaigns::Answer::Run(edit) => outcome = Outcome::Run(edit),
+                        campaigns::Answer::Close => outcome = Outcome::Close,
+                        campaigns::Answer::Open => {}
+                    }
                 }
                 Dialog::NewMap { group, id, name, size, biome, biomes } => {
                     ui.label(RichText::new("New map").size(14.0).color(TEXT));
@@ -1840,7 +1886,16 @@ impl Shell {
 
     /// The problems the last check found, if one finished.
     fn problem_count(&self) -> Option<usize> {
-        Some(self.checker.as_ref()?.report()?.problems.len())
+        let report = self.checker.as_ref()?.report()?;
+        Some(report.problems.iter().filter(|p| !p.warning).count())
+    }
+
+    /// The warnings the last check found (the campaign check's).
+    fn warning_count(&self) -> usize {
+        self.checker
+            .as_ref()
+            .and_then(|c| c.report())
+            .map_or(0, |r| r.problems.iter().filter(|p| p.warning).count())
     }
 
     /// The status bar with the check's outcome, and the problems list when open.
@@ -1853,7 +1908,10 @@ impl Shell {
             || report
                 .as_ref()
                 .is_some_and(|r| Some(r.generation) != self.checked);
-        let count = report.as_ref().map(|r| r.problems.len());
+        let count = report
+            .as_ref()
+            .map(|r| r.problems.iter().filter(|p| !p.warning).count());
+        let warnings = self.warning_count();
         let mut toggle = false;
         egui::Panel::bottom("status")
             .exact_size(28.0)
@@ -1895,6 +1953,21 @@ impl Shell {
                                 .on_hover_cursor(egui::CursorIcon::PointingHand)
                                 .clicked();
                         }
+                    }
+                    if warnings > 0 && count.is_some() {
+                        dot(ui, DIRTY);
+                        let text = if warnings == 1 {
+                            "1 warning".into()
+                        } else {
+                            format!("{warnings} warnings")
+                        };
+                        let label = egui::Label::new(RichText::new(text).color(SOFT).size(11.0))
+                            .sense(Sense::click());
+                        toggle |= ui
+                            .add(label)
+                            .on_hover_text("Show or hide the problems and warnings (campaigns: art, tech, heroes, variables)")
+                            .on_hover_cursor(egui::CursorIcon::PointingHand)
+                            .clicked();
                     }
                     if busy && count.is_some() {
                         ui.label(RichText::new("· checking…").color(FAINT).size(11.0));
@@ -1939,6 +2012,16 @@ impl Shell {
                             } else {
                                 format!("{} · {}", problem.file, problem.location)
                             };
+                            if problem.warning {
+                                job.append(
+                                    "warning  ",
+                                    0.0,
+                                    egui::TextFormat::simple(
+                                        egui::FontId::proportional(11.0),
+                                        DIRTY,
+                                    ),
+                                );
+                            }
                             job.append(&place, 0.0, egui::TextFormat::simple(mono, FAINT));
                             job.append(
                                 &format!("  {}", problem.message),
@@ -2386,6 +2469,7 @@ impl Shell {
                     for kind in KINDS {
                         let icon = match kind {
                             Kind::Maps => Icon::Map,
+                            Kind::Campaigns => Icon::Campaign,
                             Kind::Units => Icon::Units,
                             Kind::Abilities => Icon::Abilities,
                             Kind::Effects => Icon::Effects,
@@ -2602,6 +2686,7 @@ impl Shell {
                 map: open.map(|e| e.id),
                 map_package,
                 encounter: None,
+                campaign: None,
             });
         }
     }
@@ -2829,12 +2914,15 @@ fn library_panel(
                 ui.label(eyebrow(&format!("{} library", kind.label())));
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                     let can = kind == Kind::Maps
+                        || kind == Kind::Campaigns
                         || kind
                             .sections()
                             .iter()
                             .any(|(_, c)| c.form == Storage::Files);
                     let hint = if kind == Kind::Maps {
                         "New map".to_string()
+                    } else if kind == Kind::Campaigns {
+                        "New campaign".to_string()
                     } else if can {
                         format!("New in {}", kind.name())
                     } else {

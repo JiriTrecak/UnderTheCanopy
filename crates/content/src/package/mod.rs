@@ -132,6 +132,13 @@ impl Package {
         })
     }
 
+    /// The package nested at `path` (a campaign, a map), through this package's overlay:
+    /// one that exists only as unsaved documents opens too.
+    pub fn nested(&self, path: &str) -> Result<Self, Error> {
+        let overlay = self.overlay.as_ref().map(|o| Arc::new(o.below(path)));
+        Self::open_overlaid(&self.root.join(path), overlay)
+    }
+
     /// This package with `overlay`'s documents in place of its files.
     pub fn with_overlay(mut self, overlay: Arc<Overlay>) -> Self {
         self.overlay = Some(overlay);

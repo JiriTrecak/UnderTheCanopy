@@ -85,6 +85,8 @@ pub enum Tool {
     },
     Encounter(EncounterArgs),
     ImportStarcraft(ImportStarcraftArgs),
+    /// The campaign tools (`crate::campaign::tools`).
+    Campaign(crate::campaign::tools::Call),
 }
 
 /// An ability's encounter, headless (the ability stage's take run to its end).
@@ -554,6 +556,105 @@ impl Handler {
         self.ask(Tool::Encounter(args)).await
     }
 
+    // --- Campaigns (docs/campaign.md, crate::campaign::tools) ------------------------
+
+    #[tool(
+        description = "Creates a campaign package campaigns/<id>.utcc: its package.json and a campaign.json for a race with its first chapter. Add steps with add_campaign_step."
+    )]
+    async fn create_campaign(
+        &self,
+        Parameters(args): Parameters<crate::campaign::tools::CreateCampaign>,
+    ) -> Result<CallToolResult, ErrorData> {
+        use crate::campaign::tools::Call;
+        self.ask(Tool::Campaign(Call::Create(args))).await
+    }
+
+    #[tool(
+        description = "A campaign's steps in order: index, kind, id, title, a mission's map and what its tech makes new and blocks, and the campaign check's problems for it."
+    )]
+    async fn campaign_steps(
+        &self,
+        Parameters(args): Parameters<crate::campaign::tools::CampaignArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        use crate::campaign::tools::Call;
+        self.ask(Tool::Campaign(Call::Steps(args))).await
+    }
+
+    #[tool(
+        description = "Adds a chapter, story, mission or cinematic step to a campaign, one undo step. A new mission gets its own map package of flat blocks in the campaign's missions/ unless it names one there."
+    )]
+    async fn add_campaign_step(
+        &self,
+        Parameters(args): Parameters<crate::campaign::tools::AddStep>,
+    ) -> Result<CallToolResult, ErrorData> {
+        use crate::campaign::tools::Call;
+        self.ask(Tool::Campaign(Call::Add(args))).await
+    }
+
+    #[tool(description = "Moves a campaign's step to another place in its list.")]
+    async fn move_campaign_step(
+        &self,
+        Parameters(args): Parameters<crate::campaign::tools::MoveStep>,
+    ) -> Result<CallToolResult, ErrorData> {
+        use crate::campaign::tools::Call;
+        self.ask(Tool::Campaign(Call::Move(args))).await
+    }
+
+    #[tool(
+        description = "Removes a step from a campaign (a mission's map stays in missions/, listed as not in the campaign)."
+    )]
+    async fn remove_campaign_step(
+        &self,
+        Parameters(args): Parameters<crate::campaign::tools::StepArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        use crate::campaign::tools::Call;
+        self.ask(Tool::Campaign(Call::Remove(args))).await
+    }
+
+    #[tool(
+        description = "Sets fields of a campaign step (title, art, chapterLine, story, heroLevelCap, pages, note, music, map, id …) as one undo step; null removes a field."
+    )]
+    async fn set_campaign_step(
+        &self,
+        Parameters(args): Parameters<crate::campaign::tools::SetStep>,
+    ) -> Result<CallToolResult, ErrorData> {
+        use crate::campaign::tools::Call;
+        self.ask(Tool::Campaign(Call::Set(args))).await
+    }
+
+    #[tool(
+        description = "Sets what a mission's tech makes new or blocks (units, buildings, research of the campaign's race), as the Tech view's clicks do, one undo step. Returns the mission's tech and the contradictions it leaves (something allowed whose building is blocked or locked)."
+    )]
+    async fn set_mission_tech(
+        &self,
+        Parameters(args): Parameters<crate::campaign::tools::SetTech>,
+    ) -> Result<CallToolResult, ErrorData> {
+        use crate::campaign::tools::Call;
+        self.ask(Tool::Campaign(Call::Tech(args))).await
+    }
+
+    #[tool(
+        description = "The campaign race's tech tree in one mission, as the Tech view draws it: every building (by hall tier), unit and research with its state (locked, available, new, blocked), whether it can be reached, and the contradictions."
+    )]
+    async fn mission_tech_tree(
+        &self,
+        Parameters(args): Parameters<crate::campaign::tools::StepArgs>,
+    ) -> Result<CallToolResult, ErrorData> {
+        use crate::campaign::tools::Call;
+        self.ask(Tool::Campaign(Call::Tree(args))).await
+    }
+
+    #[tool(
+        description = "Sets a mission map's computer players and their campaign AI (behaviour, waves, skirmish limits), replacing its list, one undo step; the map gets its mission section when it has none. Returns what the format check says of them."
+    )]
+    async fn set_mission_players(
+        &self,
+        Parameters(args): Parameters<crate::campaign::tools::MissionPlayers>,
+    ) -> Result<CallToolResult, ErrorData> {
+        use crate::campaign::tools::Call;
+        self.ask(Tool::Campaign(Call::Players(args))).await
+    }
+
     #[tool(description = "Removes starts, entities and trees around a point, as one undo step.")]
     async fn map_remove(
         &self,
@@ -565,7 +666,7 @@ impl Handler {
 
 #[tool_handler(
     name = "Under the Canopy editor",
-    instructions = "Edits the game's base package (units, buildings, items, abilities, effects, races, rules, assets, maps) through the open editor. Find documents with list_elements, read them with read_document and their shape with document_schema, change them with edit (one undo step per call), check with problems, then save. Maps have their own tools: create_map, map_blocks (the block editor, D80), map_place, map_remove, map_info and map_picture. The canopy-* skills in the repository describe the formats."
+    instructions = "Edits the game's base package (units, buildings, items, abilities, effects, races, rules, assets, maps) through the open editor. Find documents with list_elements, read them with read_document and their shape with document_schema, change them with edit (one undo step per call), check with problems, then save. Maps have their own tools: create_map, map_blocks (the block editor, D80), map_place, map_remove, map_info and map_picture. Campaigns too: create_campaign, campaign_steps, add_campaign_step, move_campaign_step, remove_campaign_step, set_campaign_step, set_mission_tech, mission_tech_tree and set_mission_players (docs/campaign.md). The canopy-* skills in the repository describe the formats."
 )]
 impl ServerHandler for Handler {}
 

@@ -124,7 +124,7 @@ pub fn show(
             if session.blocks.selection.is_empty()
                 || session.blocks.tool != super::BlockTool::Select
             {
-                map_settings(ui, session, docs, package, &mut edits);
+                map_settings(ui, session, content, docs, package, &mut edits);
             } else if let Some(content) = content {
                 selection(ui, session, content, docs, &mut edits);
             }
@@ -135,6 +135,7 @@ pub fn show(
 fn map_settings(
     ui: &mut Ui,
     session: &mut Session,
+    content: Option<&canopy_content::Content>,
     docs: Option<&Docs>,
     package: Option<&Path>,
     edits: &mut Vec<Edit>,
@@ -203,6 +204,9 @@ fn map_settings(
             }
         }
     });
+
+    // A campaign mission's computer players.
+    crate::campaign::players::show(ui, session, docs, content, edits);
 
     // --- Size ----------------------------------------------------------------------
     section(ui, "Size");

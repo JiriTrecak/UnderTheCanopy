@@ -21,6 +21,8 @@ pub enum View {
     Overview,
     /// An ability's stage: cast on test targets with the real simulation.
     Stage,
+    /// A campaign's steps and settings (`crate::campaign::view`).
+    Campaign,
     /// The form, for documents with no view of their own.
     Form,
 }
@@ -36,6 +38,8 @@ pub enum Sheet {
 fn views(document: &str) -> &'static [(View, &'static str)] {
     if crate::map::root_of(document).is_some() {
         &[(View::Map, "Map")]
+    } else if crate::campaign::root_of(document).is_some() {
+        &[(View::Campaign, "Campaign")]
     } else if is_ability(document) {
         &[(View::Overview, "Overview"), (View::Stage, "Stage")]
     } else if crate::overview::has(document) {
@@ -104,7 +108,7 @@ pub fn is_ability(document: &str) -> bool {
 /// Whether `document`'s element has unsaved changes: for a map, any file of its package
 /// (its blocks, its scenery, its name).
 pub fn unsaved(store: &Store, document: &str) -> bool {
-    match crate::map::root_of(document) {
+    match crate::map::root_of(document).or_else(|| crate::campaign::root_of(document)) {
         Some(root) => {
             let folder = format!("{root}/");
             store.dirty().iter().any(|path| path.starts_with(&folder))
@@ -161,6 +165,11 @@ pub struct Viewer<'a> {
     pub wanted_looks: &'a mut Vec<String>,
     pub encounter_size: &'a mut Option<(String, [u32; 2])>,
     pub stale: bool,
+    /// Campaign views' thumbnails, states and requests; each campaign's mission maps (by
+    /// its folder); the base package's version (new mission maps depend on it).
+    pub campaigns: &'a mut crate::campaign::view::Shared,
+    pub campaign_maps: &'a std::collections::BTreeMap<String, Vec<String>>,
+    pub version: &'a str,
 }
 
 impl TabViewer for Viewer<'_> {
@@ -243,10 +252,27 @@ impl TabViewer for Viewer<'_> {
                     }),
                     _ => None,
                 };
+                // A campaign's mission: its campaign and step, for the Tech view and the
+                // Players section.
+                let mission = crate::campaign::mission_of(&root).and_then(|(campaign, map)| {
+                    let value = self
+                        .store
+                        .get(&crate::campaign::document(campaign))
+                        .ok()
+                        .flatten()?
+                        .clone();
+                    Some(crate::campaign::MissionLink {
+                        campaign: campaign.to_string(),
+                        step: crate::campaign::step_of_map(&value, map),
+                        map: map.to_string(),
+                        value,
+                    })
+                });
                 let session = self
                     .maps
                     .entry(root.clone())
                     .or_insert_with(|| crate::map::Session::new(&root));
+                session.mission = mission;
                 let out = crate::world::show(
                     ui,
                     session,
@@ -334,6 +360,24 @@ impl TabViewer for Viewer<'_> {
                         merge,
                     });
                 }
+            }
+            View::Campaign => {
+                let maps = crate::campaign::root_of(&tab.document)
+                    .and_then(|root| self.campaign_maps.get(root))
+                    .cloned()
+                    .unwrap_or_default();
+                let mut ctx = crate::campaign::view::Ctx {
+                    document: &tab.document,
+                    store: &mut *self.store,
+                    content: self.content.as_deref(),
+                    index: self.index,
+                    root: self.root.as_deref(),
+                    maps,
+                    version: self.version.to_string(),
+                    shared: &mut *self.campaigns,
+                    edits: &mut *self.edits,
+                };
+                crate::campaign::view::show(ui, &mut ctx);
             }
             View::Form => self.form(ui, tab, &value, f32::INFINITY),
         }

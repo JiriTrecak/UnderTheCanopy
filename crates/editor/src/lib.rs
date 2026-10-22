@@ -8,6 +8,7 @@
 //! record the frame. The look is [`theme`] (Tailwind's zinc, as the old spell studio).
 
 mod assets;
+mod campaign;
 mod checker;
 mod document;
 mod encounter;
@@ -67,6 +68,21 @@ pub struct Test {
     pub map_package: Option<std::path::PathBuf>,
     /// A unit trying its abilities near the player's start, instead of a skirmish.
     pub encounter: Option<String>,
+    /// Play from a campaign's step: the game runs the step from the editor's copy of the
+    /// campaign (instead of `map`).
+    pub campaign: Option<CampaignStep>,
+}
+
+/// A campaign step to play from (docs/campaign.md "The editor": Play from here).
+#[derive(Debug, Clone, PartialEq)]
+pub struct CampaignStep {
+    pub campaign: String,
+    pub step: String,
+    /// The step's index in the campaign's list.
+    pub index: usize,
+    /// The campaign package with its unsaved edits (its mission maps too), written to a
+    /// temporary folder.
+    pub package: std::path::PathBuf,
 }
 
 pub struct Editor {
@@ -330,6 +346,38 @@ impl Editor {
 
     pub fn set_assistant(&mut self, open: bool) {
         self.shell.set_assistant(open);
+    }
+
+    /// Runs one of MCP's campaign tools by its name (`add_campaign_step`,
+    /// `set_mission_tech`, …) with its arguments (captures).
+    pub fn campaign_tool(
+        &mut self,
+        tool: &str,
+        args: serde_json::Value,
+    ) -> Result<serde_json::Value, String> {
+        self.shell.campaign_tool(tool, args)
+    }
+
+    /// Selects step `index` of the campaign `document` in its view; none shows the
+    /// campaign's settings (captures).
+    pub fn select_campaign_step(&mut self, document: &str, index: Option<usize>) {
+        self.shell.select_campaign_step(document, index);
+    }
+
+    /// Opens a campaign's mission map at `root`, in its Tech view when `tech` (captures).
+    pub fn open_mission(&mut self, root: &str, tech: bool) {
+        self.shell.open_mission(root, tech);
+    }
+
+    /// The open mission's Tech view: which mission it shows (a step index; none: the
+    /// map's own) and whether only the changes (captures).
+    pub fn set_tech_view(&mut self, mission: Option<usize>, changes_only: bool) {
+        self.shell.set_tech_view(mission, changes_only);
+    }
+
+    /// Interface images whose id holds `text` (captures).
+    pub fn interface_images(&self, text: &str) -> Vec<String> {
+        self.shell.interface_images(text)
     }
 
     fn frame(

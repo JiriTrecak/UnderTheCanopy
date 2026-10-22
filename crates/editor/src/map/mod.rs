@@ -66,7 +66,7 @@ pub fn build(
 ) -> Result<Scene, String> {
     use crate::world::View;
     let blockout = match view {
-        View::Blocks | View::Split => {
+        View::Blocks | View::Split | View::Tech => {
             canopy_content::map::blocks::Blocks::of(&map.authoring.terrain)
                 .and_then(Result::ok)
                 .map(|b| crate::world::mesh::mesh(&b))
@@ -325,6 +325,11 @@ pub struct Session {
     pub sim_terrain: Option<(Option<u64>, Arc<canopy_sim::terrain::Terrain>)>,
     pub generated_version: u64,
     pub generated_due: Option<std::time::Instant>,
+    /// When the map is a campaign's mission: its campaign and step (the Tech view and
+    /// the Players section), set by its tab every frame.
+    pub mission: Option<crate::campaign::MissionLink>,
+    /// The Tech view's state (`crate::campaign::tech`).
+    pub tech: crate::campaign::tech::View,
 }
 
 /// How long the split view's generated world waits after the last change before it is
@@ -352,6 +357,8 @@ impl Session {
             sim_terrain: None,
             generated_version: 0,
             generated_due: None,
+            mission: None,
+            tech: Default::default(),
         }
     }
 
@@ -386,12 +393,40 @@ pub fn new_map(
     size: u32,
     biome: &str,
 ) -> Result<Vec<crate::document::Command>, String> {
+    let root = format!("maps/{group}/{id}.utcm");
+    new_map_at(content, base_version, &root, id, name, size, biome)
+}
+
+/// [`new_map`] at the package folder `root` (a campaign's mission map:
+/// `campaigns/<c>.utcc/missions/<id>.utcm`).
+pub fn new_map_at(
+    content: &Content,
+    base_version: &str,
+    root: &str,
+    id: &str,
+    name: &str,
+    size: u32,
+    biome: &str,
+) -> Result<Vec<crate::document::Command>, String> {
     if !canopy_content::map::valid_size(size) {
         return Err(format!(
             "a map is a multiple of 32 cells from 128 to 1024, not {size}"
         ));
     }
-    let setup = content
+    new_map_of(
+        &setup_of(content),
+        base_version,
+        root,
+        id,
+        name,
+        size,
+        biome,
+    )
+}
+
+/// The starting setup new maps' starts take: the first race's, else the rules' own.
+fn setup_of(content: &Content) -> String {
+    content
         .rules
         .races
         .values()
@@ -399,15 +434,14 @@ pub fn new_map(
         .next()
         .map_or(content.rules.starting_setup.id.to_string(), |s| {
             s.id.to_string()
-        });
-    new_map_of(&setup, base_version, group, id, name, size, biome)
+        })
 }
 
 /// [`new_map`] with its starting setup given.
 fn new_map_of(
     setup: &str,
     base_version: &str,
-    group: &str,
+    root: &str,
     id: &str,
     name: &str,
     size: u32,
@@ -417,7 +451,6 @@ fn new_map_of(
     use canopy_content::map::blocks::{BLOCK, Blocks};
     use serde_json::json;
     canopy_content::Id::new(id)?;
-    let root = format!("maps/{group}/{id}.utcm");
     let corner = |player: u32, x: f64| {
         let (x, z) = tools::start_position(x, x);
         json!({"mainFort": format!("start.player.{player}/main-fort"), "player": player, "setup": setup, "x": x, "z": z})
@@ -547,7 +580,7 @@ mod tests {
         let commands = new_map_of(
             "setup.test",
             "1.0.0",
-            "skirmish",
+            "maps/skirmish/flat.utcm",
             "flat",
             "Flat",
             256,

@@ -20,6 +20,9 @@ pub struct Problem {
     pub message: String,
     /// The file as the loader names it.
     pub file: String,
+    /// Something to settle that does not stop the game loading (the campaign check's
+    /// missing art, contradictions): it never blocks Test in game or saving.
+    pub warning: bool,
 }
 
 /// The outcome of one check.
@@ -104,6 +107,7 @@ impl Checker {
                                 location: e.location,
                                 message: e.message,
                                 file: e.file,
+                                warning: false,
                             })
                             .collect(),
                     };
@@ -119,6 +123,7 @@ impl Checker {
                                 location: String::new(),
                                 message,
                                 file: document.clone(),
+                                warning: false,
                             })
                         };
                         let loaded = canopy_content::package::Package::open_overlaid(
@@ -160,6 +165,11 @@ impl Checker {
                         }
                     }
                 }
+                // What the editor sees wrong with the campaigns.
+                problems.extend(crate::campaign::check::problems(
+                    &package,
+                    content.as_deref(),
+                ));
                 let _ = tx.send(Report {
                     generation,
                     problems,
@@ -208,6 +218,7 @@ impl Checker {
                             "The check crashed; the log says where. Edit again to check again."
                                 .into(),
                         file: String::new(),
+                        warning: false,
                     }],
                     ms: 0.0,
                     content: None,

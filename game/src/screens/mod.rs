@@ -400,6 +400,32 @@ impl Game {
         Ok(())
     }
 
+    /// Test in game from the editor at a campaign's step (Play from here): the campaign
+    /// package at `package` (the editor's copy, unsaved edits included) stands in for its
+    /// campaign and step `step` plays as a replay does, back to the campaign screen after.
+    pub fn test_campaign(
+        &mut self,
+        content: Arc<canopy_content::Content>,
+        package: &std::path::Path,
+        step: usize,
+    ) -> Result<(), String> {
+        let data = self.data.clone().ok_or("the game is still loading")?;
+        let mut testing = data.testing(content);
+        let id = testing
+            .add_test_campaign(package)
+            .map_err(|e| e.to_string())?;
+        if testing
+            .campaign(&id)
+            .is_none_or(|c| step >= c.campaign.steps.len())
+        {
+            return Err(format!("the campaign {id} has no step {step}"));
+        }
+        self.testing = Some(data.clone());
+        self.data = Some(Arc::new(testing));
+        self.run_step(&id, step, false);
+        Ok(())
+    }
+
     /// The test match was left: the game's own data is back. True once, when it happens.
     pub fn test_finished(&mut self) -> bool {
         if self.testing.is_none() || !matches!(self.flow.screen(), Screen::MainMenu) {

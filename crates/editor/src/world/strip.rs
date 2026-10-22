@@ -987,6 +987,23 @@ pub(super) fn view_bar(ctx: &egui::Context, session: &mut Session, view: Rect) {
                             }
                         }
                         key_chip(ui, "H");
+                        // A campaign mission's tech (U).
+                        if session.mission.as_ref().is_some_and(|m| m.step.is_some()) {
+                            divider(ui);
+                            let on = session.blocks.view == View::Tech;
+                            if view_button(
+                                ui,
+                                Icon::Tech,
+                                "Tech",
+                                "What the player may build, train and research in this mission, and in the campaign's others   U",
+                                on,
+                            ) {
+                                let next = session.blocks.toggle(View::Tech);
+                                session.blocks.set_view(next);
+                                session.stale = true;
+                            }
+                            key_chip(ui, "U");
+                        }
                     });
                 });
         });
