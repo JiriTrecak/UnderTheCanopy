@@ -37,6 +37,8 @@ struct Frame {
     fog: vec4f,
     // x: scenery cutaway on (0/1)
     cutaway: vec4f,
+    // rgb: the night's rim on live models; w: their fill (share of the albedo)
+    units: vec4f,
 }
 
 struct PointLight {

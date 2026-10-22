@@ -116,6 +116,9 @@ fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
     f.color = in.color;
     f.owner = actor.color;
     f.front = front;
+    // The night's rim and fill keep units and buildings readable; effect models (tinted)
+    // keep their own look.
+    f.unit = select(0.0, 1.0, all(actor.tint == vec4f(1.0)));
     let shaded = shade_material(f) * actor.tint;
     if ((has(ALPHA_MASK) && shaded.a <= 0.0) || dither_discard(1.0 - actor.look.x, in.clip.xy)) {
         discard;

@@ -30,7 +30,8 @@
       "The editor's campaign tools: campaigns on the rail with their steps as a list (drag to reorder, Play any step, new missions get their own map), a Tech view of each mission's race tree (click New, Blocked or Locked; contradictions in red), the mission's computer players and waves in the map panel, and campaign warnings in the check",
       "The ant campaign's first three missions: The Hollow Brood, where Queen Aurelith finds what the substance has made of her cousins; Founding, a new colony raised in a green glade against the feral brood; and The Glass Road, a beetle causeway of caravans, outposts and a station guarding the condenser. Each has story pages, scenes, side places and secrets.",
       "Campaign missions can give a computer player its own colour, such as a sickly violet-grey for a feral brood; the editor's Players panel picks it",
-      "A paper hornets' nest for map makers, standing on the hornets' cliff in Founding"
+      "A paper hornets' nest for map makers, standing on the hornets' cliff in Founding",
+      "Map editor: maps can set how long a day lasts, so the light can change slowly over a mission"
     ],
     "improved": [
       "Frost Hollow: frozen ice, quiet frosted snow, a bank of roots with pale spires, a crusted shore and big frosted leaves, rebuilt to its drawn layout",
@@ -54,7 +55,10 @@
       "Raising or consuming the dead is refused when there are no corpses nearby, so an ultimate is never wasted on an empty field.",
       "Items lying on the ground show as a leaf-wrapped loot bundle instead of a placeholder",
       "The Underleaf forest looks richer: sunlit moss, bare earth and leaf duff read as distinct grounds, the frame is a forest of giant mushrooms, ferns, nuts and fallen leaves, giant caps no longer shade the play area, beetle walls and road ramps look built, the substance pools look less plastic, and the editor's generated view is no longer too dark",
-      "Cinematic speaker portraits of tall heroes such as Aurelith show head and shoulders"
+      "Cinematic speaker portraits of tall heroes such as Aurelith show head and shoulders",
+      "Cinematics hold the battle: while a scene plays, only its actors move and fight, and enemy waves wait until it ends",
+      "The Hollow Brood: the Hollow's forest has withered around the basin, and the mission now slowly deepens from dusk into night",
+      "Units and buildings stay readable at dusk and night: a soft moonlit rim and fill separate the army from the dark forest floor"
     ],
     "fixed": [
       "Generated cliffs join cleanly at corners and turns, ramps keep their side walls down to the foot, and diagonal cliff edges no longer show a staircase",

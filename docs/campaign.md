@@ -209,11 +209,18 @@ How it runs: the sandbox has no coroutines and a fresh Lua state every run, so a
 
 **The skip.** Escape skips a skippable scene (`mission.play(name)` is; `mission.play(name, false)` is not): the player's `skipScene` command reaches the simulation, which the next tick runs the rest of the scene at once. Walks still under way end where they lead (the unit is put there), waits pass, moves become placements, turns are made, lines and animations are dropped, cameras cut and fades jump to their end; everything else (spawns, variables, objectives, cinematic mode, `win`) happens as written. So a skipped scene leaves the world as if it had played, which is why a scene ends with what the player should find (cinematic mode off, the camera reset, the objective set). The picture covers the jump with a moment of black.
 
+**Cinematic mode holds the battle** (D88, as Warcraft III's campaign triggers pause every unit and the computer players for a cutscene). While `cinematic(true)` is on, the scene owns the moment:
+- **The cast acts, everyone else holds.** The units the script directs while the mode is on (`move`, `attack_move`, `attack`, `follow`, `face`, `animate`, and a skip's placements) are the *cast* (`Cinema::actors`, at most 64, saved). Every other unit and tower stands where it is: it acquires nothing, its swing in progress is undone, a cast in progress is interrupted, cast orders and autocast wait, it neither walks nor starts work. It keeps its orders, so an attack, an attack-move or a wave's march goes on when the mode ends. A run's statements count together: a unit ordered in the same run that turns the mode on joins the cast.
+- **The cast fights only when told.** A cast unit acquires no targets of its own; `attack` and `attack_move` fight as ordered. Held units never strike back.
+- **The computer players wait.** The skirmish AI decides nothing, and the campaign AI's clocks stop: wave lines, free training, rebuilds and revivals fall due as many ticks later as the mode lasted, so nothing launches during a cinematic or all at once after it, and an opening cinematic delays the first waves (`after` counts from its end).
+- **What still happens:** missiles and spell deliveries already in flight land, statuses and auras run their course, buildings train and research, springs pulse, and the script and its `on_tick` run.
+- **When the mode ends** (`cinematic(false)`, a skip that reaches it, or a script error) the cast is dismissed and every unit resumes its orders on the next tick. The hold is simulation state (`mission::held`), so saves, replays and every peer agree.
+
 | Function | Does |
 |---|---|
 | `play(name[, skippable])` | Starts `scenes[name]` (skippable unless `false`); one scene at a time |
 | `playing()` | The scene in play, or nil (query) |
-| `cinematic(on)` | Cinematic mode: letterbox bars slide in, the HUD hides, the selection clears, player commands are refused (the game menu and the skip still work), the world's sounds duck while music and voices keep theirs |
+| `cinematic(on)` | Cinematic mode: letterbox bars slide in, the HUD hides, the selection clears, player commands are refused (the game menu and the skip still work), the world's sounds duck while music and voices keep theirs, and the battle holds: only the units the script directs act, and the computer players wait (above) |
 | `camera_to(id[, seconds])` | Cuts (0, the default) or blends, eased, to a saved camera |
 | `camera_pan(x, y[, seconds])` | The current saved camera, looking at another point |
 | `camera_reset([seconds][, x, y])` | Back to the game's camera, over the last shot's point (or `x`, `y`); the player has it again once the blend ends |

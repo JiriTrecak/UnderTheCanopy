@@ -115,6 +115,7 @@ fn fs_main(in: VsOut, @builtin(front_facing) front: bool) -> SceneOut {
     f.front = front;
     f.tint = vec3f(1.0);
     f.frost = frost_amount();
+    f.unit = 0.0;
     // Scenery never works: active emission stays dark (D65).
     f.activity = 0.0;
     if (has(FOLIAGE)) {

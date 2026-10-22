@@ -35,9 +35,11 @@ pub struct FrameUniform {
     /// x: scenery cutaway on (0/1) ([`crate::cutaway`]); y: frame shade on (0/1), z: world x
     /// and z of the shade's vertex 0, w: 1 / shade vertices per side ([`crate::shade`]).
     pub cutaway: [f32; 4],
+    /// rgb: the night's rim on live models; w: their fill ([`Lighting::unit_rim`]).
+    pub units: [f32; 4],
 }
 
-const _: () = assert!(std::mem::size_of::<FrameUniform>() == 576);
+const _: () = assert!(std::mem::size_of::<FrameUniform>() == 592);
 
 /// Most point lights the frame buffer holds.
 pub const MAX_POINT_LIGHTS: usize = 64;
@@ -129,6 +131,7 @@ impl FrameUniform {
                 ],
                 None => [if p.cutaway { 1.0 } else { 0.0 }, 0.0, 0.0, 0.0],
             },
+            units: v4(l.unit_rim, l.unit_fill),
         }
     }
 

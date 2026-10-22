@@ -15,7 +15,12 @@
     "fillStrength": 0.75,
     "shadowSoftness": 4.5,
     "frost": 0,
-    "shadowCeiling": 30
+    "shadowCeiling": 30,
+    "nightUnits": {
+      "rimTint": "#a9bcff",
+      "rim": 0.4,
+      "fill": 0.25
+    }
   },
   "canopy": {
     "height": 150,

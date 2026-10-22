@@ -260,7 +260,8 @@ impl World {
     /// Step 12: the AI players due this tick decide; their commands are queued for the
     /// next tick on every peer.
     fn think(&mut self, clock: u32) {
-        if self.ai.is_empty() {
+        // Cinematic mode holds the battle: the computer players wait it out.
+        if self.ai.is_empty() || mission::holding(&self.state) {
             return;
         }
         let _span = tracing::trace_span!("ai").entered();
@@ -580,8 +581,11 @@ impl World {
                 self.motion.spatial.sync_bodies(&self.state);
             }
         }
-        // Step 10b: the mission's computer players (campaign AI).
-        if !self.campaign.is_empty() {
+        // Step 10b: the mission's computer players (campaign AI); cinematic mode holds
+        // them, their clocks with them.
+        if mission::holding(&self.state) {
+            ai::campaign::delay(&mut self.state.campaign_ai, 1);
+        } else if !self.campaign.is_empty() {
             let _s = step!("campaign ai");
             let mut ctx =
                 self.economy

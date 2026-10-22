@@ -58,6 +58,7 @@ pub fn advance(motion: &mut Motion, state: &mut State, senses: &Senses, work: Wo
         if u.taunt.is_some()
             || e.caster.as_ref().is_some_and(|c| c.pending.is_some())
             || crate::abilities::statuses::stunned(work.catalog, e)
+            || crate::mission::held(state, e)
         {
             continue;
         }

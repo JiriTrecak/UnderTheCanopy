@@ -343,8 +343,7 @@ pub fn generate(map: &UtcMap, biome: &BiomeConfig) -> Option<Generated> {
         bytes: &out.authoring.terrain.heights.0,
         side: vertices,
     };
-    let mut objects = Vec::new();
-    scatter(&cells, &heights, recipe, seed, &mut objects);
+    let objects = scatter(&cells, recipe, &Dressing::of(map, seed), seed);
     let decals = decals(&cells, &heights, recipe, seed);
     let cliffs = cliffs(&heights, &cells, recipe, seed);
     Some(Generated {
@@ -833,100 +832,209 @@ fn candidates(span: usize, spacing: f32, rng: &mut Rng) -> Vec<Vec2> {
     out
 }
 
+/// A map's own frame dressing (`landscape.scatter`) as the generator applies it: an area
+/// with a wandering, dithered edge, the biome pieces it takes out there and the layers it
+/// adds there.
+struct Dressing {
+    /// `None`: the whole map.
+    area: Option<(Vec2, f32)>,
+    fade: f32,
+    remove: Option<canopy_content::map::ScatterRemoval>,
+    layers: Vec<canopy_render::environment::Scatter>,
+    seed: u64,
+}
+
+/// Metres a map's dressing blends in over at its edge when it does not say.
+const DRESSING_FADE: f32 = 8.0;
+
+impl Dressing {
+    /// The map's dressing, in order; layers that do not read as the biome's format are
+    /// left out with a warning.
+    fn of(map: &UtcMap, seed: u64) -> Vec<Self> {
+        let Some(entries) = map.landscape.as_ref().and_then(|l| l.scatter.as_ref()) else {
+            return Vec::new();
+        };
+        let regions = map.mission.as_ref().map_or(&[][..], |m| &m.regions[..]);
+        entries
+            .iter()
+            .enumerate()
+            .map(|(o, entry)| {
+                let area = match (&entry.area, &entry.region) {
+                    (Some(a), _) => Some((Vec2::new(a.x as f32, a.y as f32), a.radius as f32)),
+                    (None, Some(id)) => regions
+                        .iter()
+                        .find(|r| &r.id == id)
+                        .map(|r| (Vec2::new(r.x as f32, r.y as f32), r.radius as f32)),
+                    (None, None) => None,
+                };
+                let layers = entry
+                    .layers
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(j, layer)| {
+                        serde_json::from_value(layer.clone())
+                            .map_err(|e| {
+                                tracing::warn!("landscape.scatter[{o}].layers[{j}]: {e}");
+                            })
+                            .ok()
+                    })
+                    .collect();
+                Self {
+                    area,
+                    fade: entry.fade.map_or(DRESSING_FADE, |f| f as f32),
+                    remove: entry.remove.clone(),
+                    layers,
+                    seed: seed ^ (o as u64 + 1).wrapping_mul(0xA24B_AED4_963E_E407),
+                }
+            })
+            .collect()
+    }
+
+    /// Whether `p` falls inside: within the fade the edge wanders and dithers, so the
+    /// change reads as a drift rather than a circle.
+    fn contains(&self, p: Vec2) -> bool {
+        let Some((center, radius)) = self.area else {
+            return true;
+        };
+        let d = p.distance(center);
+        if self.fade <= 0.0 {
+            return d <= radius;
+        }
+        let edge = radius + (noise(p.x * 0.045, p.y * 0.045, self.seed) - 0.5) * self.fade;
+        let inside = 1.0 - smoothstep(edge - self.fade, edge, d);
+        let dither = hash(
+            (p.x * 8.0).floor() as i64,
+            (p.y * 8.0).floor() as i64,
+            7,
+            self.seed,
+        );
+        dither < inside
+    }
+
+    /// Whether the biome's `piece` at `p` is taken out.
+    fn removes(&self, piece: &str, p: Vec2) -> bool {
+        self.remove.as_ref().is_some_and(|r| r.removes(piece)) && self.contains(p)
+    }
+}
+
+/// The biome's scatter, less what the map's dressing takes out, then the dressing's own
+/// layers inside their areas. Taking pieces out never moves the others: every candidate
+/// draws its randomness before it is dropped.
 fn scatter(
     cells: &Cells,
-    heights: &Heights,
     recipe: &BlockLook,
+    dressing: &[Dressing],
     seed: u64,
+) -> Vec<AuthoredObject> {
+    let mut out = Vec::new();
+    for (k, rule) in recipe.scatter.iter().enumerate() {
+        let keep = |p: Vec2, piece: &str| !dressing.iter().any(|d| d.removes(piece, p));
+        scatter_layer(cells, rule, k, seed, &keep, &mut out);
+    }
+    for (o, d) in dressing.iter().enumerate() {
+        for (j, rule) in d.layers.iter().enumerate() {
+            let k = 1000 + o * canopy_content::map::MAX_MAP_SCATTER + j;
+            scatter_layer(cells, rule, k, seed, &|p, _| d.contains(p), &mut out);
+        }
+    }
+    out
+}
+
+/// One scatter layer (`k` its seed and id), keeping the pieces `keep` accepts.
+fn scatter_layer(
+    cells: &Cells,
+    rule: &canopy_render::environment::Scatter,
+    k: usize,
+    seed: u64,
+    keep: &dyn Fn(Vec2, &str) -> bool,
     out: &mut Vec<AuthoredObject>,
 ) {
-    let _ = heights;
-    for (k, rule) in recipe.scatter.iter().enumerate() {
-        if rule.pieces.is_empty() || rule.density <= 0.0 {
+    if rule.pieces.is_empty() || rule.density <= 0.0 {
+        return;
+    }
+    let mut rng = Rng(seed ^ (k as u64 + 1).wrapping_mul(0x5851_F42D_4C95_7F2D));
+    let spacing = (100.0 / rule.density).sqrt();
+    let mut placed = 0;
+    for p in candidates(cells.span, spacing, &mut rng) {
+        if rule.max.is_some_and(|m| placed >= m) {
+            break;
+        }
+        let Some(i) = cells.at(p.x, p.y) else {
+            continue;
+        };
+        if !cells.zone_of(i, rule.zone, rule.face) {
             continue;
         }
-        let mut rng = Rng(seed ^ (k as u64 + 1).wrapping_mul(0x5851_F42D_4C95_7F2D));
-        let spacing = (100.0 / rule.density).sqrt();
-        let mut placed = 0;
-        for p in candidates(cells.span, spacing, &mut rng) {
-            if rule.max.is_some_and(|m| placed >= m) {
-                break;
-            }
-            let Some(i) = cells.at(p.x, p.y) else {
-                continue;
-            };
-            if !cells.zone_of(i, rule.zone, rule.face) {
+        if let Some([near, far]) = rule.depth {
+            let d = cells.to_open[i];
+            if d < near || d > far {
                 continue;
             }
-            if let Some([near, far]) = rule.depth {
-                let d = cells.to_open[i];
-                if d < near || d > far {
-                    continue;
-                }
-            }
-            if rule.clump > 0.0 {
-                let gather = smoothstep(
-                    0.3,
-                    0.7,
-                    noise(p.x * 0.07, p.y * 0.07, seed ^ (k as u64 + 71)),
-                );
-                if rng.next() > 1.0 - rule.clump + rule.clump * gather {
-                    continue;
-                }
-            }
-            // A group's piece: from the jittered group cell the point falls in.
-            let pick = if rule.groups > 0.0 {
-                let g = rule.groups;
-                let jx = (noise(p.x / g * 1.7, p.y / g * 1.7, seed ^ 83) - 0.5) * 0.8;
-                let jz = (noise(p.x / g * 1.7, p.y / g * 1.7, seed ^ 89) - 0.5) * 0.8;
-                hash(
-                    (p.x / g + jx).floor() as i64,
-                    (p.y / g + jz).floor() as i64,
-                    k as i64,
-                    seed,
-                )
-            } else {
-                rng.next()
-            };
-            let piece =
-                &rule.pieces[(pick * rule.pieces.len() as f32) as usize % rule.pieces.len()];
-            // Rim dressing faces out of the frame and reaches over its edge.
-            let (at, yaw) = match rule.reach {
-                Some(reach) => {
-                    let dir = Vec2::from_angle(rng.range(-0.5, 0.5)).rotate(cells.outward(i));
-                    (
-                        p + dir * reach * rng.range(0.5, 1.0),
-                        (-dir.x).atan2(-dir.y),
-                    )
-                }
-                None => (p, rng.range(0.0, std::f32::consts::TAU)),
-            };
-            out.push(AuthoredObject {
-                id: format!("generated.{k}.{placed}"),
-                asset: piece.clone(),
-                x: f64::from(at.x),
-                z: f64::from(at.y),
-                elevation: f64::from(rule.elevation),
-                yaw: f64::from(yaw),
-                scale: f64::from({
-                    let random = rng.range(rule.scale[0], rule.scale[1]);
-                    match rule.depth {
-                        Some([near, far]) if rule.grow > 0.0 => {
-                            let t =
-                                ((cells.to_open[i] - near) / (far - near).max(1.0)).clamp(0.0, 1.0);
-                            let deep = (rule.scale[0] + (rule.scale[1] - rule.scale[0]) * t)
-                                * rng.range(0.88, 1.12);
-                            random + (deep - random) * rule.grow
-                        }
-                        _ => random,
-                    }
-                }),
-                height_mode: HeightMode::Terrain,
-                visible: true,
-                locked: false,
-            });
-            placed += 1;
         }
+        if rule.clump > 0.0 {
+            let gather = smoothstep(
+                0.3,
+                0.7,
+                noise(p.x * 0.07, p.y * 0.07, seed ^ (k as u64 + 71)),
+            );
+            if rng.next() > 1.0 - rule.clump + rule.clump * gather {
+                continue;
+            }
+        }
+        // A group's piece: from the jittered group cell the point falls in.
+        let pick = if rule.groups > 0.0 {
+            let g = rule.groups;
+            let jx = (noise(p.x / g * 1.7, p.y / g * 1.7, seed ^ 83) - 0.5) * 0.8;
+            let jz = (noise(p.x / g * 1.7, p.y / g * 1.7, seed ^ 89) - 0.5) * 0.8;
+            hash(
+                (p.x / g + jx).floor() as i64,
+                (p.y / g + jz).floor() as i64,
+                k as i64,
+                seed,
+            )
+        } else {
+            rng.next()
+        };
+        let piece = &rule.pieces[(pick * rule.pieces.len() as f32) as usize % rule.pieces.len()];
+        // Rim dressing faces out of the frame and reaches over its edge.
+        let (at, yaw) = match rule.reach {
+            Some(reach) => {
+                let dir = Vec2::from_angle(rng.range(-0.5, 0.5)).rotate(cells.outward(i));
+                (
+                    p + dir * reach * rng.range(0.5, 1.0),
+                    (-dir.x).atan2(-dir.y),
+                )
+            }
+            None => (p, rng.range(0.0, std::f32::consts::TAU)),
+        };
+        let scale = {
+            let random = rng.range(rule.scale[0], rule.scale[1]);
+            match rule.depth {
+                Some([near, far]) if rule.grow > 0.0 => {
+                    let t = ((cells.to_open[i] - near) / (far - near).max(1.0)).clamp(0.0, 1.0);
+                    let deep = (rule.scale[0] + (rule.scale[1] - rule.scale[0]) * t)
+                        * rng.range(0.88, 1.12);
+                    random + (deep - random) * rule.grow
+                }
+                _ => random,
+            }
+        };
+        if !keep(p, piece) {
+            continue;
+        }
+        out.push(AuthoredObject {
+            id: format!("generated.{k}.{placed}"),
+            asset: piece.clone(),
+            x: f64::from(at.x),
+            z: f64::from(at.y),
+            elevation: f64::from(rule.elevation),
+            yaw: f64::from(yaw),
+            scale: f64::from(scale),
+            height_mode: HeightMode::Terrain,
+            visible: true,
+            locked: false,
+        });
+        placed += 1;
     }
 }
 
@@ -1973,6 +2081,72 @@ mod tests {
         assert_eq!(d[0], 0.0);
         assert_eq!(d[1], 1.0);
         assert!((d[span + 1] - std::f32::consts::SQRT_2).abs() < 1e-5);
+    }
+
+    /// Closed ground everywhere, deep in.
+    fn frame(span: usize) -> Cells {
+        let n = span * span;
+        Cells {
+            span,
+            kind: vec![BlockKind::Wall; n],
+            to_closed: vec![0.0; n],
+            to_open: vec![30.0; n],
+            to_top: vec![99.0; n],
+            to_foot: vec![99.0; n],
+            to_shore: vec![99.0; n],
+            to_water: vec![99.0; n],
+            face: vec![0; n],
+        }
+    }
+
+    #[test]
+    fn a_map_s_dressing_changes_only_its_area() {
+        let recipe: BlockLook = serde_json::from_value(serde_json::json!({
+            "scatter": [{"zone": "frame", "pieces": ["lush-a", "lush-b"], "density": 3, "scale": [1, 1]}]
+        }))
+        .unwrap();
+        let cells = frame(96);
+        let (center, radius, fade) = (Vec2::new(32.0, 32.0), 24.0, 6.0);
+        let dressing = [Dressing {
+            area: Some((center, radius)),
+            fade,
+            remove: Some(canopy_content::map::ScatterRemoval::Pieces(vec![
+                "lush-a".into(),
+            ])),
+            layers: vec![
+                serde_json::from_value(serde_json::json!(
+                    {"zone": "frame", "pieces": ["withered"], "density": 3, "scale": [1, 1]}
+                ))
+                .unwrap(),
+            ],
+            seed: 5,
+        }];
+        let plain = scatter(&cells, &recipe, &[], 11);
+        let dressed = scatter(&cells, &recipe, &dressing, 11);
+        let at = |o: &AuthoredObject| Vec2::new(o.x as f32, o.z as f32).distance(center);
+        let same = |a: &AuthoredObject, b: &AuthoredObject| {
+            a.asset == b.asset && a.x == b.x && a.z == b.z && a.yaw == b.yaw
+        };
+        // Beyond the wandering edge nothing moves; the other piece stays everywhere.
+        for o in &plain {
+            if at(o) > radius + fade || o.asset == "lush-b" {
+                assert!(dressed.iter().any(|d| same(d, o)), "{o:?} moved");
+            }
+        }
+        // Inside, the removed piece is gone and the map's own grows, only there.
+        let inside = |asset: &str, within: f32| {
+            dressed
+                .iter()
+                .filter(|o| o.asset == asset && at(o) < within)
+                .count()
+        };
+        assert_eq!(inside("lush-a", radius - 1.5 * fade), 0);
+        assert!(inside("lush-a", f32::MAX) > 0);
+        assert!(inside("withered", radius - 1.5 * fade) > 10);
+        assert_eq!(
+            inside("withered", f32::MAX),
+            inside("withered", radius + fade)
+        );
     }
 
     #[test]

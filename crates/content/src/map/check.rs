@@ -109,8 +109,8 @@ fn unique<T: Ord>(items: impl IntoIterator<Item = T>) -> bool {
     items.into_iter().all(|item| seen.insert(item))
 }
 
-const LANDSCAPE_KEYS: [&str; 3] = ["environment", "water", "decals"];
-const ENVIRONMENT_KEYS: [&str; 3] = ["hour", "playing", "weather"];
+const LANDSCAPE_KEYS: [&str; 4] = ["environment", "water", "decals", "scatter"];
+const ENVIRONMENT_KEYS: [&str; 4] = ["hour", "playing", "weather", "dayMinutes"];
 const DECAL_KEYS: [&str; 8] = [
     "locked", "id", "kind", "x", "z", "size", "rotation", "opacity",
 ];
@@ -138,7 +138,7 @@ pub(super) fn raw(value: &mut Value, file: &str, errors: &mut Vec<Error>) {
         if !foreign.is_empty() {
             report.fail(
                 "landscape",
-                "only environment, water appearance and placed decals belong in a saved map",
+                "only environment, water appearance, placed decals and frame scatter belong in a saved map",
             );
             for key in foreign {
                 landscape.remove(&key);
@@ -311,6 +311,17 @@ pub(super) fn document(map: &UtcMap, file: &str, errors: &mut Vec<Error>) {
             0.0,
             24.0,
         );
+        if let Some(minutes) = landscape.environment.day_minutes {
+            r.range(
+                "landscape.environment.dayMinutes",
+                minutes,
+                1.0,
+                super::MAX_DAY_MINUTES,
+            );
+        }
+        if let Some(scatter) = &landscape.scatter {
+            map_scatter(r, map, scatter);
+        }
         if let Some(decals) = &landscape.decals {
             r.count("landscape.decals", decals.len(), 0, 2048);
             for (i, d) in decals.iter().enumerate() {
@@ -326,6 +337,66 @@ pub(super) fn document(map: &UtcMap, file: &str, errors: &mut Vec<Error>) {
                 unique(decals.iter().map(|d| d.id.as_str())),
                 "landscape.decals",
                 "duplicate decal id",
+            );
+        }
+    }
+}
+
+/// `landscape.scatter`: where each entry applies and what it does. Its layers are the
+/// biome recipe's format, which the scene checks when it reads them; here they must at
+/// least name their zone and pieces.
+fn map_scatter(r: &mut Report, map: &UtcMap, scatter: &[super::MapScatter]) {
+    let most = super::MAX_MAP_SCATTER;
+    r.count("landscape.scatter", scatter.len(), 0, most);
+    let regions = map.mission.as_ref().map(|m| m.regions.as_slice());
+    for (i, entry) in scatter.iter().enumerate() {
+        let at = format!("landscape.scatter[{i}]");
+        if let Some(area) = &entry.area {
+            r.expect(
+                entry.region.is_none(),
+                &at,
+                "name an area or a region, not both",
+            );
+            let reach = 2047.0 + f64::from(super::MAP_HALO);
+            r.range(&format!("{at}.area.x"), area.x, -reach, reach);
+            r.range(&format!("{at}.area.y"), area.y, -reach, reach);
+            r.range(&format!("{at}.area.radius"), area.radius, 1.0, 2048.0);
+        }
+        if let Some(region) = &entry.region {
+            r.expect(
+                regions.is_some_and(|rs| rs.iter().any(|g| &g.id == region)),
+                format!("{at}.region"),
+                format!("no mission region {region:?}"),
+            );
+        }
+        if let Some(fade) = entry.fade {
+            r.range(&format!("{at}.fade"), fade, 0.0, 64.0);
+        }
+        let removes = match &entry.remove {
+            None | Some(super::ScatterRemoval::All(false)) => false,
+            Some(super::ScatterRemoval::All(true)) => true,
+            Some(super::ScatterRemoval::Pieces(pieces)) => {
+                r.count(&format!("{at}.remove"), pieces.len(), 1, 256);
+                true
+            }
+        };
+        r.expect(
+            removes || !entry.layers.is_empty(),
+            &at,
+            "must remove biome scenery or add layers",
+        );
+        r.count(&format!("{at}.layers"), entry.layers.len(), 0, most);
+        for (j, layer) in entry.layers.iter().enumerate() {
+            let named = layer.get("zone").is_some_and(Value::is_string)
+                && layer
+                    .get("pieces")
+                    .and_then(Value::as_array)
+                    .is_some_and(|p| !p.is_empty() && p.iter().all(Value::is_string))
+                && layer.get("density").is_some_and(Value::is_number);
+            r.expect(
+                named,
+                format!("{at}.layers[{j}]"),
+                "a scatter layer needs a zone, pieces and a density",
             );
         }
     }

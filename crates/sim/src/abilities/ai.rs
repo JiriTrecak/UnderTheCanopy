@@ -829,6 +829,7 @@ pub fn ambient(ctx: &mut Ctx, state: &mut State) {
                 e.unit.as_ref().and_then(|u| u.order.as_ref()),
                 Some(Order::CastAbility { .. })
             )
+            || crate::mission::held(state, e)
         {
             continue;
         }

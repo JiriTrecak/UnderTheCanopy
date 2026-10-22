@@ -430,3 +430,105 @@ end"#;
     world.step();
     assert!(mission(&world).clicks.is_empty());
 }
+
+/// A bandit beats the hero at the gate; at tick 120 a scene turns cinematic mode on for
+/// five seconds, in which the script walks the guard away.
+const HOLD: &str = r#"
+function on_tick()
+  if mission.tick() >= 120 and not mission.get("began") then
+    mission.set("began", mission.tick())
+    mission.play("hold")
+  end
+end
+
+function scenes.hold()
+  mission.cinematic(true)
+  mission.wait(1)
+  mission.move("guard", 52, 56)
+  mission.wait(4)
+  mission.cinematic(false)
+  mission.set("over", mission.tick())
+end
+"#;
+
+fn brawl() -> Mission {
+    let mut mission = Mission::new(HOLD)
+        .entity(json!({"id": "raider", "definition": "unit.brute", "position": {"x": 62, "y": 60}, "owner": "none"}))
+        .camp(json!({"id": "camp.gate", "members": ["raider"], "home": {"x": 62, "y": 60}, "aggroRange": 6, "leash": 12, "aggression": "players"}));
+    mission.entities[1]["position"] = json!({"x": 52, "y": 62});
+    mission
+}
+
+fn hp(world: &World, placement: &str) -> u32 {
+    entity(world, placement).and_then(|e| e.hp).unwrap_or(0)
+}
+
+#[test]
+fn cinematic_mode_holds_the_battle_and_the_cast_still_acts() {
+    let mut world = brawl().world();
+    steps(&mut world, 120);
+    assert_eq!(error(&world), None);
+    let (hero, raider) = (hp(&world, "hero"), hp(&world, "raider"));
+    assert!(hero < 100, "the raider fights the hero: {hero} {raider}");
+    // The scene starts this tick; a swing already released may still land.
+    steps(&mut world, 12);
+    assert!(mission(&world).cinema.on);
+    let (hero, raider) = (hp(&world, "hero"), hp(&world, "raider"));
+    let hero_at = entity(&world, "hero").unwrap().position;
+    // A second of stillness: nobody the script does not direct fights or moves.
+    steps(&mut world, 28);
+    assert_eq!(hp(&world, "hero"), hero);
+    assert_eq!(hp(&world, "raider"), raider);
+    assert_eq!(entity(&world, "hero").unwrap().position, hero_at);
+    // The guard, sent by the script, walks; the raider still holds its swing.
+    let guard_at = entity(&world, "guard").unwrap().position;
+    steps(&mut world, 40);
+    assert_ne!(entity(&world, "guard").unwrap().position, guard_at);
+    assert_eq!(mission(&world).cinema.actors, ["guard"]);
+    assert_eq!((hp(&world, "hero"), hp(&world, "raider")), (hero, raider));
+    // When the mode ends, the cast is dismissed and the fight goes on by itself.
+    until(&mut world, 200, |w| variable(w, "over").is_some());
+    assert!(mission(&world).cinema.actors.is_empty());
+    until(&mut world, 200, |w| hp(w, "hero") < hero);
+}
+
+#[test]
+fn a_skipped_hold_hands_the_battle_back() {
+    let mut world = brawl().world();
+    steps(&mut world, 130);
+    assert!(mission(&world).cinema.on);
+    let hero = hp(&world, "hero");
+    command(&mut world, Action::SkipScene);
+    world.step();
+    let cinema = &mission(&world).cinema;
+    assert!(!cinema.on && cinema.actors.is_empty() && cinema.scene.is_none());
+    // The guard stands where the scene sent it, and the fight resumes.
+    assert_eq!(
+        entity(&world, "guard").unwrap().position,
+        Milli {
+            x: 52_000,
+            y: 56_000
+        }
+    );
+    until(&mut world, 200, |w| hp(w, "hero") < hero);
+}
+
+#[test]
+fn a_held_battle_is_deterministic_across_saves() {
+    let fixture = brawl();
+    let mut reference = fixture.world();
+    let mut trace = Vec::new();
+    for _ in 0..500 {
+        reference.step();
+        trace.push(snapshot(&reference));
+    }
+    for at in [125, 170, 260] {
+        let mut first = fixture.world();
+        steps(&mut first, at);
+        let mut resumed = reload(&first, &fixture);
+        for expected in &trace[at as usize..] {
+            resumed.step();
+            assert_eq!(&snapshot(&resumed), expected, "resumed at {at}");
+        }
+    }
+}

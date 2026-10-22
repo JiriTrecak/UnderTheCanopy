@@ -241,6 +241,11 @@ impl Motion {
                     .map(|t| t.position)
             }))
         });
+        // Cinematic mode holds every unit the script does not direct where it stands.
+        let held = state
+            .entities
+            .get(id)
+            .is_some_and(|e| crate::mission::held(state, e));
         let spatial = &mut self.spatial;
         let Some(e) = state.entities.get_mut(id) else {
             return;
@@ -283,6 +288,7 @@ impl Motion {
         if !ready(e, tick)
             || e.unit.as_ref().is_some_and(|u| u.contained.is_some())
             || crate::abilities::statuses::stunned(catalog, e)
+            || held
         {
             return;
         }

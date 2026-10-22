@@ -647,10 +647,29 @@ pub struct BiomeLight {
     /// ground in the map's own light; its stalk or bole below keeps its long shadow.
     #[serde(default = "shadow_ceiling")]
     pub shadow_ceiling: f32,
+    /// How the army stays readable as the light falls (Warcraft III keeps its units
+    /// readable by night): a moonlit rim and a fill on live models only, full by night,
+    /// half at dusk and dawn, none by day. None when absent.
+    #[serde(default)]
+    pub night_units: Option<NightUnits>,
 }
 
 fn shadow_ceiling() -> f32 {
     75.0
+}
+
+/// Light on units and buildings alone as the night falls ([`BiomeLight::night_units`]).
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct NightUnits {
+    /// The moonlight's colour along a model's silhouette, where its surface turns away
+    /// from the camera, and how strong it is (linear radiance at full night).
+    pub rim_tint: Hex,
+    pub rim: f32,
+    /// A lift of the model's own colour that no shadow takes away, in the rim's hue
+    /// (its share of the albedo at full night): the darkest parts never sink into the
+    /// ground, and team colour keeps its hue.
+    pub fill: f32,
 }
 
 /// The dappled light of the overhead forest.
@@ -1097,6 +1116,10 @@ pub struct Lighting {
     /// Metres over a giant's base above which it casts no shadow
     /// ([`BiomeLight::shadow_ceiling`]).
     pub shadow_ceiling: f32,
+    /// The night's rim on live models (linear radiance) and its fill (share of their
+    /// albedo, in the rim's hue), already weighted by the hour ([`NightUnits`]).
+    pub unit_rim: Vec3,
+    pub unit_fill: f32,
     pub canopy: Canopy,
     pub grade: Grade,
 }
@@ -1213,6 +1236,10 @@ impl Lighting {
             shadow_softness: l.shadow_softness,
             shadow_ceiling: l.shadow_ceiling,
             frost: l.frost,
+            unit_rim: l.night_units.map_or(Vec3::ZERO, |u| {
+                u.rim_tint.linear() * u.rim * tone_weights(hour).2
+            }),
+            unit_fill: l.night_units.map_or(0.0, |u| u.fill * tone_weights(hour).2),
             canopy: biome.canopy,
             grade: biome.grade.clone(),
         }
@@ -1503,6 +1530,7 @@ mod tests {
                 shadow_softness: 3.0,
                 frost: 0.0,
                 shadow_ceiling: 75.0,
+                night_units: None,
             },
             canopy: Canopy {
                 height: 140.0,

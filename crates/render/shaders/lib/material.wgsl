@@ -93,6 +93,24 @@ struct MaterialFragment {
     activity: f32,
     // Rime over the albedo (0 none; scenery takes the biome's, D80).
     frost: f32,
+    // 1 for live models (units, buildings): they take the night's rim and fill.
+    unit: f32,
+}
+
+// The night's light on live models alone (`BiomeLight::night_units`): a moonlit rim
+// where the surface turns away from the camera, strongest on its upper side, and a fill
+// of its own colour in the rim's hue that no shadow takes away, so the army never sinks
+// into the ground by night.
+fn night_unit_light(albedo: vec3f, n: vec3f, view: vec3f, occlusion: f32) -> vec3f {
+    let units = frame.units;
+    if (units.w <= 0.0 && all(units.rgb == vec3f(0.0))) {
+        return vec3f(0.0);
+    }
+    let edge = 1.0 - clamp(dot(n, view), 0.0, 1.0);
+    let rim = edge * edge * edge * (0.45 + 0.55 * clamp(n.y * 0.5 + 0.5, 0.0, 1.0));
+    let hue = units.rgb / max(max(units.r, max(units.g, units.b)), 1e-4);
+    let fill = albedo * mix(vec3f(1.0), hue, 0.5) * units.w * mix(1.0, occlusion, 0.5);
+    return units.rgb * rim + fill;
 }
 
 // Lit colour and coverage of one fragment; alpha 0 means discard.
@@ -168,7 +186,10 @@ fn shade_material(f: MaterialFragment) -> vec4f {
         }
         glow = material.glow.rgb * amount;
     }
-    let color = surface_light(surface, view, f.frag.xy) + emissive + glow;
+    var color = surface_light(surface, view, f.frag.xy) + emissive + glow;
+    if (f.unit > 0.0) {
+        color += night_unit_light(surface.albedo, n, view, occlusion) * f.unit;
+    }
     return vec4f(color, alpha);
 }
 

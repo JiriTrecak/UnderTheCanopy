@@ -113,6 +113,26 @@ pub fn blocks_commands(state: &State) -> Option<&'static str> {
     (mission.scene.is_some() || cinematic).then_some("Cinematic dialogue is playing")
 }
 
+/// Whether cinematic mode holds the battle this tick: units the script does not direct
+/// stand still and fight nothing, and the computer players wait (docs/campaign.md
+/// "Cinematic mode holds the battle").
+pub fn holding(state: &State) -> bool {
+    state
+        .mission
+        .as_ref()
+        .is_some_and(|m| m.cinema.on && m.error.is_none() && state.outcome.is_none())
+}
+
+/// Whether cinematic mode holds entity `e` still: it is not among the units the script
+/// directs. Held units keep their orders and resume them when the mode ends.
+pub fn held(state: &State, e: &Entity) -> bool {
+    holding(state)
+        && state
+            .mission
+            .as_ref()
+            .is_some_and(|m| m.cinema.holds(e.placement.as_deref()))
+}
+
 /// The campaign player asks to skip the scene in play (Escape): the next tick plays the
 /// rest of it at once. Anything else asking, or nothing skippable playing, changes
 /// nothing.
@@ -183,7 +203,8 @@ pub fn tick(
             api.finish()
         });
     match result {
-        Ok((draft, effects)) => {
+        Ok((mut draft, effects)) => {
+            draft.cinema.cast(&effects);
             for effect in &effects {
                 effect::apply(effect, state, catalog, script, systems);
             }

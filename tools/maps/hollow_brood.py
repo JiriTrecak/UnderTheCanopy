@@ -3,7 +3,7 @@ editor's MCP tools: the blocks (terrain), the set dressing, the units, camps and
 mission's players, regions and objectives. The Lua script is the package's own
 `mission.lua`, written by hand; this script never touches it.
 
-A hero's journey across a forest floor at blue hour, Warcraft III's first-mission shape. The
+A hero's journey across a forest floor from dusk into night, Warcraft III's first-mission shape. The
 Queen's column comes in from the south-west along a root path on the south bank of a
 tea-dark stream, past a mushroom circle, fords the stream where dew sprites play, passes a
 dead sentry, climbs a mossy terrace with thornback foragers among the berries, comes down
@@ -39,7 +39,42 @@ PLAY = 320
 SIZE = PLAY + 2 * BORDER
 LO, HI = BORDER, BORDER + PLAY
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-HOUR = 20.0
+HOUR = 18.5
+# Dusk turning to night: a 240-minute day passes six minutes of the clock a minute, so
+# the mission starts at 18:30 and reaches 21:00 after about 25 minutes of play.
+DAY_MINUTES = 240
+# The Hollow's frame withers (landscape.scatter over the biome's giants): round the basin
+# the healthy towers, ferns and greens give way to withered and bleached mushrooms, dead
+# ferns and withered ground, while the leaves, cones and stones of the litter stay.
+HOLLOW = {'x': 306, 'y': 68, 'radius': 84}
+LUSH = ['scenery.giants-porcini', 'scenery.giants-morel', 'scenery.giants-clover',
+        'scenery.giants-sorrel', 'scenery.giants-fiddleheads', 'scenery.giants-fern-frond',
+        'scenery.giants-harts-tongue', 'scenery.giants-grass', 'scenery.giants-bracken',
+        'scenery.giants-fern-crown', 'scenery.giants-parasol', 'scenery.giants-bilberries',
+        'scenery.giants-buttons', 'scenery.giants-moss', 'scenery.giants-mossy-stone']
+WITHERED = [
+    # Rim: toppled caps and dead fern at the edge of play, withered ground pressed flat.
+    {'zone': 'frameEdge', 'pieces': ['scenery.hollow-toppled-mushrooms', 'scenery.hollow-withered-fern',
+                                     'scenery.hollow-withered-fern-tall'],
+     'density': 1.4, 'scale': [1.8, 3.4], 'groups': 14, 'clump': 0.5},
+    {'zone': 'frameEdge', 'pieces': ['scenery.underleaf-patch-withered-a', 'scenery.underleaf-patch-withered-b'],
+     'density': 0.25, 'scale': [0.8, 1.2]},
+    # Mid: dead fern stands, taller inwards.
+    {'zone': 'frame', 'pieces': ['scenery.hollow-withered-fern', 'scenery.hollow-withered-fern-tall'],
+     'density': 0.5, 'scale': [3.5, 8.0], 'groups': 20, 'clump': 0.5, 'depth': [4, 18], 'grow': 0.8},
+    # Towers: withered and bleached mushrooms in clusters of one kind.
+    {'zone': 'frame', 'pieces': ['scenery.giants-withered'],
+     'density': 0.3, 'scale': [1.2, 2.6], 'groups': 22, 'clump': 0.7, 'depth': [8, 34], 'grow': 0.8},
+    {'zone': 'frame', 'pieces': ['scenery.hollow-bleached-mushrooms', 'scenery.hollow-toppled-mushrooms'],
+     'density': 0.09, 'scale': [6.0, 12.0], 'groups': 22, 'clump': 0.6, 'depth': [10, 30], 'grow': 0.8},
+    # Giants: dead caps leaning in from beyond the rect.
+    {'zone': 'frame', 'pieces': ['scenery.giants-withered'],
+     'density': 0.03, 'scale': [2.8, 4.5], 'groups': 50, 'clump': 0.3, 'depth': [24, 200], 'grow': 0.5},
+]
+LANDSCAPE = {
+    'environment': {'hour': HOUR, 'playing': True, 'weather': {'kind': 'clear'}, 'dayMinutes': DAY_MINUTES},
+    'scatter': [{'area': HOLLOW, 'fade': 16, 'remove': LUSH, 'layers': WITHERED}],
+}
 
 
 def blob(cx, cz, r, n=24, squash=1.0, wobble=0.08, seed=0):
@@ -196,10 +231,8 @@ def units(c):
         {'op': 'set', 'document': D, 'pointer': '/playerStarts', 'value': []},
         {'op': 'set', 'document': D, 'pointer': '/entities', 'value': hu.ENTITIES},
         {'op': 'set', 'document': D, 'pointer': '/camps', 'value': hu.CAMPS},
-        # Blue hour, held: the day cycle (24 hours in ten minutes) would run through the
-        # night and into morning within a mission.
-        {'op': 'set', 'document': D, 'pointer': '/landscape',
-         'value': {'environment': {'hour': HOUR, 'playing': False, 'weather': {'kind': 'clear'}}}},
+        # Dusk deepening into night over the mission, and the Hollow's withered frame.
+        {'op': 'set', 'document': D, 'pointer': '/landscape', 'value': LANDSCAPE},
     ])
 
 
@@ -249,8 +282,7 @@ def create(c):
         {'op': 'set', 'document': D, 'pointer': '/entities', 'value': []},
         {'op': 'set', 'document': D, 'pointer': '/camps', 'value': []},
         {'op': 'set', 'document': D, 'pointer': '/playerStarts', 'value': []},
-        {'op': 'set', 'document': D, 'pointer': '/landscape',
-         'value': {'environment': {'hour': HOUR, 'playing': False, 'weather': {'kind': 'clear'}}}},
+        {'op': 'set', 'document': D, 'pointer': '/landscape', 'value': LANDSCAPE},
         {'op': 'set', 'document': f'maps/showcase/{M}.utcm/package.json', 'pointer': '/description',
          'value': 'Prologue, Mission One. The Hollow has gone silent; Queen Aurelith goes to ask it why.'},
     ])
