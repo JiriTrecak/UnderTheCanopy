@@ -1,0 +1,2836 @@
+{
+  "objects": [
+    {
+      "id": "dress.0",
+      "asset": "scenery.giants-beech-trunk",
+      "x": -4,
+      "z": 300,
+      "yaw": 0.6,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.1",
+      "asset": "scenery.giants-beech-trunk",
+      "x": 384,
+      "z": 0,
+      "yaw": 2.2,
+      "scale": 1.1
+    },
+    {
+      "id": "dress.2",
+      "asset": "scenery.giants-beech-trunk",
+      "x": 20,
+      "z": 30,
+      "yaw": 4.0,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.3",
+      "asset": "scenery.giants-root",
+      "x": 40,
+      "z": 330,
+      "yaw": 5.9,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.4",
+      "asset": "scenery.giants-root",
+      "x": 34,
+      "z": 262,
+      "yaw": 0.4,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.5",
+      "asset": "scenery.giants-root",
+      "x": 336,
+      "z": 22,
+      "yaw": 1.1,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.6",
+      "asset": "scenery.giants-root",
+      "x": 360,
+      "z": 52,
+      "yaw": 2.6,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.7",
+      "asset": "scenery.giants-shelf-fungus",
+      "x": 26,
+      "z": 290,
+      "yaw": 1.3,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.8",
+      "asset": "scenery.giants-shelf-fungus",
+      "x": 352,
+      "z": 30,
+      "yaw": 3.9,
+      "scale": 1.1
+    },
+    {
+      "id": "dress.9",
+      "asset": "scenery.giants-parasol",
+      "x": 150,
+      "z": 30,
+      "yaw": 0.7,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.10",
+      "asset": "scenery.giants-parasol",
+      "x": 262,
+      "z": 16,
+      "yaw": 1.6,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.11",
+      "asset": "scenery.giants-parasol",
+      "x": 370,
+      "z": 140,
+      "yaw": 2.4,
+      "scale": 0.85
+    },
+    {
+      "id": "dress.12",
+      "asset": "scenery.giants-parasol",
+      "x": 40,
+      "z": 150,
+      "yaw": 4.4,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.13",
+      "asset": "scenery.giants-parasol",
+      "x": 150,
+      "z": 236,
+      "yaw": 3.1,
+      "scale": 0.75
+    },
+    {
+      "id": "dress.14",
+      "asset": "scenery.giants-parasol",
+      "x": 300,
+      "z": 214,
+      "yaw": 5.0,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.15",
+      "asset": "scenery.giants-branch",
+      "x": 14,
+      "z": 214,
+      "yaw": 1.35,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.16",
+      "asset": "scenery.giants-feather",
+      "x": 328,
+      "z": 340,
+      "yaw": 2.6,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.17",
+      "asset": "scenery.giants-fern-crown",
+      "x": 236,
+      "z": 352,
+      "yaw": 3.444,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.18",
+      "asset": "scenery.giants-fern-crown",
+      "x": 120,
+      "z": 352,
+      "yaw": 2.173,
+      "scale": 0.85
+    },
+    {
+      "id": "dress.19",
+      "asset": "scenery.giants-snail-shell",
+      "x": 60,
+      "z": 204,
+      "yaw": 2.2,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.20",
+      "asset": "scenery.giants-beetle-husk",
+      "x": 316,
+      "z": 302,
+      "yaw": 0.9,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.21",
+      "asset": "scenery.giants-acorn-cup",
+      "x": 206,
+      "z": 46,
+      "yaw": 0.3,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.22",
+      "asset": "scenery.giants-pebbles",
+      "x": 196,
+      "z": 52,
+      "yaw": 1.0,
+      "scale": 0.5
+    },
+    {
+      "id": "dress.23",
+      "asset": "scenery.giants-shelf-fungus",
+      "x": 284,
+      "z": 166,
+      "yaw": 2.0,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.24",
+      "asset": "scenery.giants-bark-slab",
+      "x": 278,
+      "z": 174,
+      "yaw": 0.5,
+      "scale": 0.7
+    },
+    {
+      "id": "dress.25",
+      "asset": "scenery.hollow-collapsed-mound",
+      "x": 322,
+      "z": 52,
+      "yaw": 0.4,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.26",
+      "asset": "scenery.substance-pool-large",
+      "x": 290,
+      "z": 58,
+      "yaw": 0.3,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.27",
+      "asset": "scenery.substance-pool",
+      "x": 326,
+      "z": 84,
+      "yaw": 1.7,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.28",
+      "asset": "scenery.substance-pool-small",
+      "x": 284,
+      "z": 84,
+      "yaw": 2.6,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.29",
+      "asset": "scenery.substance-pool",
+      "x": 112,
+      "z": 164,
+      "yaw": 0.8,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.30",
+      "asset": "scenery.substance-pool-small",
+      "x": 120,
+      "z": 158,
+      "yaw": 2.0,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.31",
+      "asset": "scenery.underleaf-patch-withered-a",
+      "x": 300,
+      "z": 80,
+      "yaw": 0.4,
+      "scale": 1.4
+    },
+    {
+      "id": "dress.32",
+      "asset": "scenery.underleaf-patch-withered-a",
+      "x": 320,
+      "z": 70,
+      "yaw": 2.1,
+      "scale": 1.3
+    },
+    {
+      "id": "dress.33",
+      "asset": "scenery.underleaf-patch-withered-b",
+      "x": 280,
+      "z": 70,
+      "yaw": 4.0,
+      "scale": 1.2
+    },
+    {
+      "id": "dress.34",
+      "asset": "scenery.underleaf-patch-withered-b",
+      "x": 296,
+      "z": 46,
+      "yaw": 5.1,
+      "scale": 1.1
+    },
+    {
+      "id": "dress.35",
+      "asset": "scenery.underleaf-patch-withered-a",
+      "x": 124,
+      "z": 176,
+      "yaw": 1.0,
+      "scale": 1.3
+    },
+    {
+      "id": "dress.36",
+      "asset": "scenery.underleaf-patch-withered-a",
+      "x": 106,
+      "z": 172,
+      "yaw": 2.8,
+      "scale": 1.1
+    },
+    {
+      "id": "dress.37",
+      "asset": "scenery.underleaf-patch-withered-b",
+      "x": 340,
+      "z": 70,
+      "yaw": 3.3,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.38",
+      "asset": "scenery.underleaf-patch-withered-a",
+      "x": 196,
+      "z": 238,
+      "yaw": 1.4,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.39",
+      "asset": "scenery.hollow-bleached-mushrooms",
+      "x": 276,
+      "z": 56,
+      "yaw": 0.0,
+      "scale": 3.2
+    },
+    {
+      "id": "dress.40",
+      "asset": "scenery.hollow-bleached-mushrooms",
+      "x": 334,
+      "z": 92,
+      "yaw": 1.7,
+      "scale": 3.0
+    },
+    {
+      "id": "dress.41",
+      "asset": "scenery.hollow-bleached-mushrooms",
+      "x": 310,
+      "z": 40,
+      "yaw": 3.4,
+      "scale": 2.8
+    },
+    {
+      "id": "dress.42",
+      "asset": "scenery.hollow-bleached-mushrooms",
+      "x": 100,
+      "z": 158,
+      "yaw": 5.1,
+      "scale": 2.8
+    },
+    {
+      "id": "dress.43",
+      "asset": "scenery.hollow-bleached-mushrooms",
+      "x": 132,
+      "z": 160,
+      "yaw": 6.8,
+      "scale": 2.4
+    },
+    {
+      "id": "dress.44",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 292,
+      "z": 92,
+      "yaw": 0.5,
+      "scale": 3.0
+    },
+    {
+      "id": "dress.45",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 338,
+      "z": 58,
+      "yaw": 2.8,
+      "scale": 2.6
+    },
+    {
+      "id": "dress.46",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 118,
+      "z": 182,
+      "yaw": 5.1,
+      "scale": 2.6
+    },
+    {
+      "id": "dress.47",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 272,
+      "z": 76,
+      "yaw": 0.0,
+      "scale": 3.4
+    },
+    {
+      "id": "dress.48",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 346,
+      "z": 76,
+      "yaw": 2.1,
+      "scale": 3.2
+    },
+    {
+      "id": "dress.49",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 300,
+      "z": 34,
+      "yaw": 4.2,
+      "scale": 3.6
+    },
+    {
+      "id": "dress.50",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 318,
+      "z": 100,
+      "yaw": 6.3,
+      "scale": 3.0
+    },
+    {
+      "id": "dress.51",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 104,
+      "z": 152,
+      "yaw": 8.4,
+      "scale": 3.0
+    },
+    {
+      "id": "dress.52",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 140,
+      "z": 176,
+      "yaw": 10.5,
+      "scale": 2.8
+    },
+    {
+      "id": "dress.53",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 96,
+      "z": 180,
+      "yaw": 12.6,
+      "scale": 3.2
+    },
+    {
+      "id": "dress.54",
+      "asset": "scenery.giants-puffballs",
+      "x": 82,
+      "z": 188,
+      "yaw": 0.3,
+      "scale": 0.45
+    },
+    {
+      "id": "dress.55",
+      "asset": "scenery.giants-puffballs",
+      "x": 90,
+      "z": 194,
+      "yaw": 1.9,
+      "scale": 0.4
+    },
+    {
+      "id": "dress.56",
+      "asset": "scenery.giants-puffballs",
+      "x": 76,
+      "z": 200,
+      "yaw": 3.0,
+      "scale": 0.42
+    },
+    {
+      "id": "dress.57",
+      "asset": "scenery.glade-mushroom-ring",
+      "x": 134,
+      "z": 298,
+      "yaw": 0.0,
+      "scale": 1.7
+    },
+    {
+      "id": "dress.58",
+      "asset": "scenery.woodland-river-stones",
+      "x": 184,
+      "z": 260,
+      "yaw": 5.069,
+      "scale": 2.4
+    },
+    {
+      "id": "dress.59",
+      "asset": "scenery.woodland-river-stones",
+      "x": 202,
+      "z": 276,
+      "yaw": 1.732,
+      "scale": 2.2
+    },
+    {
+      "id": "dress.60",
+      "asset": "scenery.woodland-river-stones",
+      "x": 204,
+      "z": 260,
+      "yaw": 3.062,
+      "scale": 2.0
+    },
+    {
+      "id": "dress.61",
+      "asset": "scenery.shore-lily-white",
+      "x": 104,
+      "z": 284,
+      "yaw": 2.063,
+      "scale": 1.6
+    },
+    {
+      "id": "dress.62",
+      "asset": "scenery.shore-lily-white",
+      "x": 118,
+      "z": 286,
+      "yaw": 2.493,
+      "scale": 1.4
+    },
+    {
+      "id": "dress.63",
+      "asset": "scenery.shore-lily-pink",
+      "x": 110,
+      "z": 292,
+      "yaw": 5.843,
+      "scale": 1.2
+    },
+    {
+      "id": "dress.64",
+      "asset": "scenery.shore-lily-pink",
+      "x": 98,
+      "z": 282,
+      "yaw": 0.622,
+      "scale": 1.3
+    },
+    {
+      "id": "dress.65",
+      "asset": "scenery.shore-cattails",
+      "x": 122,
+      "z": 284,
+      "yaw": 2.668,
+      "scale": 2.2
+    },
+    {
+      "id": "dress.66",
+      "asset": "scenery.shore-cattails",
+      "x": 96,
+      "z": 288,
+      "yaw": 1.349,
+      "scale": 2.2
+    },
+    {
+      "id": "dress.67",
+      "asset": "scenery.shore-cattails",
+      "x": 176,
+      "z": 284,
+      "yaw": 2.097,
+      "scale": 2.2
+    },
+    {
+      "id": "dress.68",
+      "asset": "scenery.shore-cattails",
+      "x": 206,
+      "z": 270,
+      "yaw": 5.992,
+      "scale": 2.2
+    },
+    {
+      "id": "dress.69",
+      "asset": "scenery.giants-mycena",
+      "x": 196,
+      "z": 40,
+      "yaw": 0.5,
+      "scale": 0.7
+    },
+    {
+      "id": "dress.70",
+      "asset": "scenery.giants-mycena",
+      "x": 218,
+      "z": 44,
+      "yaw": 2.5,
+      "scale": 0.65
+    },
+    {
+      "id": "dress.71",
+      "asset": "scenery.giants-mycena",
+      "x": 214,
+      "z": 62,
+      "yaw": 4.1,
+      "scale": 0.6
+    },
+    {
+      "id": "dress.72",
+      "asset": "scenery.giants-mycena",
+      "x": 194,
+      "z": 60,
+      "yaw": 5.5,
+      "scale": 0.55
+    },
+    {
+      "id": "dress.73",
+      "asset": "scenery.giants-dew-drops",
+      "x": 202,
+      "z": 58,
+      "yaw": 1.976,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.74",
+      "asset": "scenery.giants-dew-drops",
+      "x": 212,
+      "z": 52,
+      "yaw": 3.647,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.75",
+      "asset": "scenery.giants-dew-drops",
+      "x": 200,
+      "z": 48,
+      "yaw": 2.518,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.76",
+      "asset": "scenery.underleaf-patch-moss-a",
+      "x": 206,
+      "z": 56,
+      "yaw": 0.4,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.77",
+      "asset": "scenery.underleaf-patch-moss-b",
+      "x": 72,
+      "z": 326,
+      "yaw": 0.8,
+      "scale": 1.1
+    },
+    {
+      "id": "dress.78",
+      "asset": "scenery.underleaf-patch-blossoms",
+      "x": 96,
+      "z": 308,
+      "yaw": 2.0,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.79",
+      "asset": "scenery.underleaf-patch-moss-a",
+      "x": 262,
+      "z": 240,
+      "yaw": 0.2,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.80",
+      "asset": "scenery.shore-cattails",
+      "x": 91.76,
+      "z": 277.05,
+      "yaw": 6.109,
+      "scale": 2.334
+    },
+    {
+      "id": "dress.81",
+      "asset": "scenery.shore-cattails",
+      "x": 179.87,
+      "z": 265.58,
+      "yaw": 1.849,
+      "scale": 2.387
+    },
+    {
+      "id": "dress.82",
+      "asset": "scenery.giants-mossy-stone",
+      "x": 208.93,
+      "z": 282.03,
+      "yaw": 1.396,
+      "scale": 0.461
+    },
+    {
+      "id": "dress.83",
+      "asset": "scenery.shore-cattails",
+      "x": 221.0,
+      "z": 271.96,
+      "yaw": 4.099,
+      "scale": 2.778
+    },
+    {
+      "id": "dress.84",
+      "asset": "scenery.shore-cattails",
+      "x": 230.91,
+      "z": 281.69,
+      "yaw": 0.667,
+      "scale": 2.374
+    },
+    {
+      "id": "dress.85",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 364.34,
+      "z": 108.08,
+      "yaw": 2.177,
+      "scale": 3.836
+    },
+    {
+      "id": "dress.86",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 288.74,
+      "z": 27.67,
+      "yaw": 1.38,
+      "scale": 3.619
+    },
+    {
+      "id": "dress.87",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 353.14,
+      "z": 12.29,
+      "yaw": 2.212,
+      "scale": 3.018
+    },
+    {
+      "id": "dress.88",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 311.66,
+      "z": 10.44,
+      "yaw": 4.126,
+      "scale": 3.318
+    },
+    {
+      "id": "dress.89",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 283.37,
+      "z": 95.42,
+      "yaw": 5.122,
+      "scale": 3.715
+    },
+    {
+      "id": "dress.90",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 345.95,
+      "z": 39.02,
+      "yaw": 2.16,
+      "scale": 3.569
+    },
+    {
+      "id": "dress.91",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 366.8,
+      "z": 99.46,
+      "yaw": 1.921,
+      "scale": 3.726
+    },
+    {
+      "id": "dress.92",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 279.83,
+      "z": 136.04,
+      "yaw": 5.645,
+      "scale": 3.629
+    },
+    {
+      "id": "dress.93",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 363.43,
+      "z": 72.62,
+      "yaw": 0.805,
+      "scale": 3.941
+    },
+    {
+      "id": "dress.94",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 264.21,
+      "z": 41.7,
+      "yaw": 0.644,
+      "scale": 3.12
+    },
+    {
+      "id": "dress.95",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 275.67,
+      "z": 95.17,
+      "yaw": 1.982,
+      "scale": 3.446
+    },
+    {
+      "id": "dress.96",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 238.24,
+      "z": 141.47,
+      "yaw": 6.006,
+      "scale": 4.094
+    },
+    {
+      "id": "dress.97",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 299.57,
+      "z": 144.31,
+      "yaw": 0.211,
+      "scale": 3.048
+    },
+    {
+      "id": "dress.98",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 283.07,
+      "z": 22.22,
+      "yaw": 1.391,
+      "scale": 3.834
+    },
+    {
+      "id": "dress.99",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 314.37,
+      "z": 26.29,
+      "yaw": 3.705,
+      "scale": 3.264
+    },
+    {
+      "id": "dress.100",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 342.57,
+      "z": 105.62,
+      "yaw": 3.752,
+      "scale": 3.204
+    },
+    {
+      "id": "dress.101",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 284.46,
+      "z": 4.83,
+      "yaw": 3.793,
+      "scale": 3.029
+    },
+    {
+      "id": "dress.102",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 250.23,
+      "z": 46.16,
+      "yaw": 2.246,
+      "scale": 3.73
+    },
+    {
+      "id": "dress.103",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 327.3,
+      "z": 97.6,
+      "yaw": 4.912,
+      "scale": 3.831
+    },
+    {
+      "id": "dress.104",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 339.09,
+      "z": 41.12,
+      "yaw": 6.147,
+      "scale": 3.811
+    },
+    {
+      "id": "dress.105",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 241.59,
+      "z": 75.78,
+      "yaw": 3.366,
+      "scale": 4.183
+    },
+    {
+      "id": "dress.106",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 338.4,
+      "z": 124.35,
+      "yaw": 2.679,
+      "scale": 3.201
+    },
+    {
+      "id": "dress.107",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 320.38,
+      "z": 30.86,
+      "yaw": 3.355,
+      "scale": 3.43
+    },
+    {
+      "id": "dress.108",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 272.86,
+      "z": 141.09,
+      "yaw": 2.527,
+      "scale": 3.876
+    },
+    {
+      "id": "dress.109",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 347.9,
+      "z": 89.0,
+      "yaw": 3.322,
+      "scale": 4.104
+    },
+    {
+      "id": "dress.110",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 368.84,
+      "z": 89.09,
+      "yaw": 0.501,
+      "scale": 3.71
+    },
+    {
+      "id": "dress.111",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 242.65,
+      "z": 67.11,
+      "yaw": 3.502,
+      "scale": 3.365
+    },
+    {
+      "id": "dress.112",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 290.64,
+      "z": 37.24,
+      "yaw": 1.765,
+      "scale": 3.91
+    },
+    {
+      "id": "dress.113",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 241.42,
+      "z": 93.8,
+      "yaw": 0.601,
+      "scale": 3.183
+    },
+    {
+      "id": "dress.114",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 272.14,
+      "z": 87.84,
+      "yaw": 3.961,
+      "scale": 3.012
+    },
+    {
+      "id": "dress.115",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 271.68,
+      "z": 35.99,
+      "yaw": 1.925,
+      "scale": 3.154
+    },
+    {
+      "id": "dress.116",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 239.02,
+      "z": 43.01,
+      "yaw": 3.82,
+      "scale": 3.196
+    },
+    {
+      "id": "dress.117",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 345.57,
+      "z": 149.83,
+      "yaw": 5.681,
+      "scale": 3.483
+    },
+    {
+      "id": "dress.118",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 362.08,
+      "z": 85.91,
+      "yaw": 1.826,
+      "scale": 4.009
+    },
+    {
+      "id": "dress.119",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 290.01,
+      "z": 140.46,
+      "yaw": 0.924,
+      "scale": 3.583
+    },
+    {
+      "id": "dress.120",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 252.16,
+      "z": 100.9,
+      "yaw": 0.404,
+      "scale": 3.565
+    },
+    {
+      "id": "dress.121",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 245.18,
+      "z": 146.07,
+      "yaw": 5.883,
+      "scale": 3.393
+    },
+    {
+      "id": "dress.122",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 230.24,
+      "z": 49.95,
+      "yaw": 4.301,
+      "scale": 3.291
+    },
+    {
+      "id": "dress.123",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 280.98,
+      "z": 28.84,
+      "yaw": 1.049,
+      "scale": 3.716
+    },
+    {
+      "id": "dress.124",
+      "asset": "scenery.hollow-bleached-mushrooms",
+      "x": 338.34,
+      "z": 89.06,
+      "yaw": 1.603,
+      "scale": 2.845
+    },
+    {
+      "id": "dress.125",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 231.97,
+      "z": 124.37,
+      "yaw": 4.951,
+      "scale": 2.607
+    },
+    {
+      "id": "dress.126",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 233.76,
+      "z": 41.13,
+      "yaw": 2.419,
+      "scale": 3.795
+    },
+    {
+      "id": "dress.127",
+      "asset": "scenery.hollow-bleached-mushrooms",
+      "x": 284.8,
+      "z": 147.16,
+      "yaw": 0.395,
+      "scale": 3.412
+    },
+    {
+      "id": "dress.128",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 300.87,
+      "z": 28.44,
+      "yaw": 2.567,
+      "scale": 3.709
+    },
+    {
+      "id": "dress.129",
+      "asset": "scenery.hollow-bleached-mushrooms",
+      "x": 237.73,
+      "z": 134.29,
+      "yaw": 0.906,
+      "scale": 2.79
+    },
+    {
+      "id": "dress.130",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 325.33,
+      "z": 92.03,
+      "yaw": 3.111,
+      "scale": 2.929
+    },
+    {
+      "id": "dress.131",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 322.82,
+      "z": 146.27,
+      "yaw": 3.824,
+      "scale": 2.609
+    },
+    {
+      "id": "dress.132",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 319.39,
+      "z": 16.35,
+      "yaw": 3.865,
+      "scale": 3.096
+    },
+    {
+      "id": "dress.133",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 321.1,
+      "z": 19.05,
+      "yaw": 1.139,
+      "scale": 2.756
+    },
+    {
+      "id": "dress.134",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 250.62,
+      "z": 86.36,
+      "yaw": 1.769,
+      "scale": 2.756
+    },
+    {
+      "id": "dress.135",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 235.6,
+      "z": 71.56,
+      "yaw": 0.576,
+      "scale": 2.63
+    },
+    {
+      "id": "dress.136",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 306.39,
+      "z": 24.51,
+      "yaw": 3.04,
+      "scale": 3.178
+    },
+    {
+      "id": "dress.137",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 229.23,
+      "z": 82.27,
+      "yaw": 3.285,
+      "scale": 2.906
+    },
+    {
+      "id": "dress.138",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 232.18,
+      "z": 83.96,
+      "yaw": 3.824,
+      "scale": 3.172
+    },
+    {
+      "id": "dress.139",
+      "asset": "scenery.hollow-bleached-mushrooms",
+      "x": 252.36,
+      "z": 80.14,
+      "yaw": 3.353,
+      "scale": 2.642
+    },
+    {
+      "id": "dress.140",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 260.74,
+      "z": 83.71,
+      "yaw": 5.057,
+      "scale": 3.556
+    },
+    {
+      "id": "dress.141",
+      "asset": "scenery.hollow-toppled-mushrooms",
+      "x": 309.52,
+      "z": 134.88,
+      "yaw": 6.168,
+      "scale": 2.728
+    },
+    {
+      "id": "dress.142",
+      "asset": "scenery.hollow-bleached-mushrooms",
+      "x": 343.14,
+      "z": 96.48,
+      "yaw": 1.968,
+      "scale": 3.586
+    },
+    {
+      "id": "dress.143",
+      "asset": "scenery.giants-mycena",
+      "x": 355.4,
+      "z": 108.27,
+      "yaw": 0.33,
+      "scale": 1.167
+    },
+    {
+      "id": "dress.144",
+      "asset": "scenery.giants-mycena",
+      "x": 338.12,
+      "z": 112.34,
+      "yaw": 4.605,
+      "scale": 0.971
+    },
+    {
+      "id": "dress.145",
+      "asset": "scenery.giants-withered",
+      "x": 240.55,
+      "z": 32.67,
+      "yaw": 0.861,
+      "scale": 0.999
+    },
+    {
+      "id": "dress.146",
+      "asset": "scenery.giants-withered",
+      "x": 244.36,
+      "z": 25.02,
+      "yaw": 0.186,
+      "scale": 0.783
+    },
+    {
+      "id": "dress.147",
+      "asset": "scenery.giants-withered",
+      "x": 236.9,
+      "z": 23.54,
+      "yaw": 1.288,
+      "scale": 1.039
+    },
+    {
+      "id": "dress.148",
+      "asset": "scenery.giants-withered",
+      "x": 245.81,
+      "z": 37.28,
+      "yaw": 4.418,
+      "scale": 0.889
+    },
+    {
+      "id": "dress.149",
+      "asset": "scenery.giants-withered",
+      "x": 310.18,
+      "z": 21.3,
+      "yaw": 4.382,
+      "scale": 0.807
+    },
+    {
+      "id": "dress.150",
+      "asset": "scenery.giants-withered",
+      "x": 312.58,
+      "z": 16.41,
+      "yaw": 3.769,
+      "scale": 0.79
+    },
+    {
+      "id": "dress.151",
+      "asset": "scenery.giants-withered",
+      "x": 303.84,
+      "z": 14.73,
+      "yaw": 2.764,
+      "scale": 1.172
+    },
+    {
+      "id": "dress.152",
+      "asset": "scenery.giants-withered",
+      "x": 370.86,
+      "z": 68.35,
+      "yaw": 2.607,
+      "scale": 1.143
+    },
+    {
+      "id": "dress.153",
+      "asset": "scenery.giants-withered",
+      "x": 370.4,
+      "z": 82.16,
+      "yaw": 3.106,
+      "scale": 1.075
+    },
+    {
+      "id": "dress.154",
+      "asset": "scenery.giants-withered",
+      "x": 353.74,
+      "z": 93.64,
+      "yaw": 6.121,
+      "scale": 1.054
+    },
+    {
+      "id": "dress.155",
+      "asset": "scenery.giants-withered",
+      "x": 349.2,
+      "z": 99.23,
+      "yaw": 0.105,
+      "scale": 0.763
+    },
+    {
+      "id": "dress.156",
+      "asset": "scenery.giants-withered",
+      "x": 358.07,
+      "z": 99.95,
+      "yaw": 0.786,
+      "scale": 1.086
+    },
+    {
+      "id": "dress.157",
+      "asset": "scenery.giants-withered",
+      "x": 355.17,
+      "z": 86.59,
+      "yaw": 5.699,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.158",
+      "asset": "scenery.giants-inkcap",
+      "x": 378.97,
+      "z": 120.01,
+      "yaw": 5.032,
+      "scale": 0.911
+    },
+    {
+      "id": "dress.159",
+      "asset": "scenery.giants-inkcap",
+      "x": 391.66,
+      "z": 134.34,
+      "yaw": 3.228,
+      "scale": 0.991
+    },
+    {
+      "id": "dress.160",
+      "asset": "scenery.giants-inkcap",
+      "x": 389.14,
+      "z": 119.39,
+      "yaw": 4.506,
+      "scale": 0.796
+    },
+    {
+      "id": "dress.161",
+      "asset": "scenery.giants-withered",
+      "x": 299.07,
+      "z": 4.46,
+      "yaw": 4.77,
+      "scale": 0.968
+    },
+    {
+      "id": "dress.162",
+      "asset": "scenery.giants-withered",
+      "x": 304.87,
+      "z": -0.08,
+      "yaw": 2.626,
+      "scale": 0.952
+    },
+    {
+      "id": "dress.163",
+      "asset": "scenery.giants-withered",
+      "x": 311.96,
+      "z": -2.1,
+      "yaw": 5.693,
+      "scale": 1.049
+    },
+    {
+      "id": "dress.164",
+      "asset": "scenery.giants-withered",
+      "x": 298.5,
+      "z": -2.75,
+      "yaw": 1.014,
+      "scale": 0.799
+    },
+    {
+      "id": "dress.165",
+      "asset": "scenery.giants-withered",
+      "x": 249.51,
+      "z": 66.77,
+      "yaw": 5.349,
+      "scale": 1.002
+    },
+    {
+      "id": "dress.166",
+      "asset": "scenery.giants-withered",
+      "x": 232.15,
+      "z": 60.6,
+      "yaw": 3.843,
+      "scale": 0.782
+    },
+    {
+      "id": "dress.167",
+      "asset": "scenery.giants-withered",
+      "x": 230.73,
+      "z": 70.45,
+      "yaw": 4.376,
+      "scale": 0.88
+    },
+    {
+      "id": "dress.168",
+      "asset": "scenery.giants-withered",
+      "x": 241.91,
+      "z": 59.09,
+      "yaw": 6.097,
+      "scale": 0.877
+    },
+    {
+      "id": "dress.169",
+      "asset": "scenery.giants-withered",
+      "x": 236.25,
+      "z": 64.09,
+      "yaw": 3.197,
+      "scale": 0.839
+    },
+    {
+      "id": "dress.170",
+      "asset": "scenery.giants-inkcap",
+      "x": 381.08,
+      "z": 72.56,
+      "yaw": 5.793,
+      "scale": 0.999
+    },
+    {
+      "id": "dress.171",
+      "asset": "scenery.giants-inkcap",
+      "x": 379.84,
+      "z": 64.41,
+      "yaw": 6.281,
+      "scale": 0.756
+    },
+    {
+      "id": "dress.172",
+      "asset": "scenery.giants-mycena",
+      "x": 363.65,
+      "z": 35.93,
+      "yaw": 2.143,
+      "scale": 0.76
+    },
+    {
+      "id": "dress.173",
+      "asset": "scenery.giants-withered",
+      "x": 292.01,
+      "z": 6.14,
+      "yaw": 2.867,
+      "scale": 1.057
+    },
+    {
+      "id": "dress.174",
+      "asset": "scenery.giants-withered",
+      "x": 285.63,
+      "z": 14.61,
+      "yaw": 1.199,
+      "scale": 0.775
+    },
+    {
+      "id": "dress.175",
+      "asset": "scenery.giants-withered",
+      "x": 287.91,
+      "z": -1.03,
+      "yaw": 0.216,
+      "scale": 0.763
+    },
+    {
+      "id": "dress.176",
+      "asset": "scenery.giants-mycena",
+      "x": 368.2,
+      "z": 117.9,
+      "yaw": 1.588,
+      "scale": 0.858
+    },
+    {
+      "id": "dress.177",
+      "asset": "scenery.giants-inkcap",
+      "x": 361.76,
+      "z": 27.64,
+      "yaw": 6.031,
+      "scale": 0.896
+    },
+    {
+      "id": "dress.178",
+      "asset": "scenery.giants-withered",
+      "x": 256.46,
+      "z": 72.19,
+      "yaw": 4.176,
+      "scale": 1.143
+    },
+    {
+      "id": "dress.179",
+      "asset": "scenery.giants-withered",
+      "x": 253.32,
+      "z": 59.28,
+      "yaw": 2.987,
+      "scale": 0.892
+    },
+    {
+      "id": "dress.180",
+      "asset": "scenery.giants-withered",
+      "x": 258.07,
+      "z": 63.93,
+      "yaw": 2.975,
+      "scale": 0.847
+    },
+    {
+      "id": "dress.181",
+      "asset": "scenery.giants-bracken",
+      "x": 349.56,
+      "z": 17.28,
+      "yaw": 4.363,
+      "scale": 0.607
+    },
+    {
+      "id": "dress.182",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 231.2,
+      "z": 27.51,
+      "yaw": 0.622,
+      "scale": 0.792
+    },
+    {
+      "id": "dress.183",
+      "asset": "scenery.giants-twig",
+      "x": 296.86,
+      "z": 23.14,
+      "yaw": 5.451,
+      "scale": 0.775
+    },
+    {
+      "id": "dress.184",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 243.51,
+      "z": 24.04,
+      "yaw": 5.956,
+      "scale": 0.684
+    },
+    {
+      "id": "dress.185",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 249.73,
+      "z": 51.99,
+      "yaw": 5.078,
+      "scale": 0.963
+    },
+    {
+      "id": "dress.186",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 373.16,
+      "z": 115.25,
+      "yaw": 1.814,
+      "scale": 0.75
+    },
+    {
+      "id": "dress.187",
+      "asset": "scenery.giants-bracken",
+      "x": 261.03,
+      "z": 40.96,
+      "yaw": 0.752,
+      "scale": 0.965
+    },
+    {
+      "id": "dress.188",
+      "asset": "scenery.giants-bracken",
+      "x": 387.7,
+      "z": 97.15,
+      "yaw": 5.617,
+      "scale": 0.651
+    },
+    {
+      "id": "dress.189",
+      "asset": "scenery.giants-bracken",
+      "x": 355.95,
+      "z": 11.64,
+      "yaw": 1.645,
+      "scale": 0.772
+    },
+    {
+      "id": "dress.190",
+      "asset": "scenery.giants-bracken",
+      "x": 370.81,
+      "z": 13.13,
+      "yaw": 0.299,
+      "scale": 0.771
+    },
+    {
+      "id": "dress.191",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 315.58,
+      "z": 22.67,
+      "yaw": 1.785,
+      "scale": 0.871
+    },
+    {
+      "id": "dress.192",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 366.91,
+      "z": 134.39,
+      "yaw": 2.525,
+      "scale": 0.79
+    },
+    {
+      "id": "dress.193",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 241.33,
+      "z": 36.65,
+      "yaw": 0.98,
+      "scale": 0.669
+    },
+    {
+      "id": "dress.194",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 252.16,
+      "z": 63.26,
+      "yaw": 3.68,
+      "scale": 0.603
+    },
+    {
+      "id": "dress.195",
+      "asset": "scenery.giants-twig",
+      "x": 308.09,
+      "z": 12.49,
+      "yaw": 2.898,
+      "scale": 0.67
+    },
+    {
+      "id": "dress.196",
+      "asset": "scenery.giants-twig",
+      "x": 341.41,
+      "z": 20.98,
+      "yaw": 6.151,
+      "scale": 0.812
+    },
+    {
+      "id": "dress.197",
+      "asset": "scenery.giants-twig",
+      "x": 367.19,
+      "z": -2.13,
+      "yaw": 4.051,
+      "scale": 0.816
+    },
+    {
+      "id": "dress.198",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 366.44,
+      "z": 125.86,
+      "yaw": 6.211,
+      "scale": 0.733
+    },
+    {
+      "id": "dress.199",
+      "asset": "scenery.giants-twig",
+      "x": 344.21,
+      "z": 27.36,
+      "yaw": 5.099,
+      "scale": 0.814
+    },
+    {
+      "id": "dress.200",
+      "asset": "scenery.giants-bracken",
+      "x": 385.52,
+      "z": 75.01,
+      "yaw": 2.884,
+      "scale": 0.71
+    },
+    {
+      "id": "dress.201",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 252.17,
+      "z": 11.41,
+      "yaw": 2.993,
+      "scale": 0.692
+    },
+    {
+      "id": "dress.202",
+      "asset": "scenery.giants-twig",
+      "x": 335.16,
+      "z": 4.98,
+      "yaw": 3.242,
+      "scale": 0.629
+    },
+    {
+      "id": "dress.203",
+      "asset": "scenery.giants-twig",
+      "x": 384.56,
+      "z": 124.98,
+      "yaw": 2.771,
+      "scale": 0.937
+    },
+    {
+      "id": "dress.204",
+      "asset": "scenery.giants-bracken",
+      "x": 378.14,
+      "z": 121.91,
+      "yaw": 3.266,
+      "scale": 0.944
+    },
+    {
+      "id": "dress.205",
+      "asset": "scenery.giants-twig",
+      "x": 368.33,
+      "z": 5.37,
+      "yaw": 4.076,
+      "scale": 0.656
+    },
+    {
+      "id": "dress.206",
+      "asset": "scenery.giants-twig",
+      "x": 238.21,
+      "z": 146.67,
+      "yaw": 0.856,
+      "scale": 0.849
+    },
+    {
+      "id": "dress.207",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 380.23,
+      "z": 111.36,
+      "yaw": 4.988,
+      "scale": 0.902
+    },
+    {
+      "id": "dress.208",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 358.99,
+      "z": 123.07,
+      "yaw": 4.969,
+      "scale": 0.885
+    },
+    {
+      "id": "dress.209",
+      "asset": "scenery.giants-twig",
+      "x": 379.26,
+      "z": 78.02,
+      "yaw": 4.867,
+      "scale": 0.992
+    },
+    {
+      "id": "dress.210",
+      "asset": "scenery.giants-bracken",
+      "x": 305.25,
+      "z": 23.59,
+      "yaw": 1.608,
+      "scale": 0.758
+    },
+    {
+      "id": "dress.211",
+      "asset": "scenery.giants-twig",
+      "x": 390.1,
+      "z": 131.98,
+      "yaw": 6.207,
+      "scale": 0.677
+    },
+    {
+      "id": "dress.212",
+      "asset": "scenery.giants-bracken",
+      "x": 271.63,
+      "z": 24.49,
+      "yaw": 2.014,
+      "scale": 0.757
+    },
+    {
+      "id": "dress.213",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 233.49,
+      "z": 50.02,
+      "yaw": 1.076,
+      "scale": 0.722
+    },
+    {
+      "id": "dress.214",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 248.29,
+      "z": 92.57,
+      "yaw": 1.331,
+      "scale": 0.756
+    },
+    {
+      "id": "dress.215",
+      "asset": "scenery.giants-bracken",
+      "x": 330.28,
+      "z": -2.28,
+      "yaw": 0.437,
+      "scale": 0.669
+    },
+    {
+      "id": "dress.216",
+      "asset": "scenery.giants-twig",
+      "x": 358.03,
+      "z": 46.13,
+      "yaw": 4.325,
+      "scale": 0.849
+    },
+    {
+      "id": "dress.217",
+      "asset": "scenery.giants-bracken",
+      "x": 250.56,
+      "z": 28.38,
+      "yaw": 1.403,
+      "scale": 0.776
+    },
+    {
+      "id": "dress.218",
+      "asset": "scenery.giants-twig",
+      "x": 360.54,
+      "z": 57.97,
+      "yaw": 1.544,
+      "scale": 0.624
+    },
+    {
+      "id": "dress.219",
+      "asset": "scenery.giants-bracken",
+      "x": 235.34,
+      "z": 67.73,
+      "yaw": 2.559,
+      "scale": 0.626
+    },
+    {
+      "id": "dress.220",
+      "asset": "scenery.giants-twig",
+      "x": 374.47,
+      "z": 95.01,
+      "yaw": 1.679,
+      "scale": 0.852
+    },
+    {
+      "id": "dress.221",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 388.53,
+      "z": 90.81,
+      "yaw": 1.076,
+      "scale": 0.859
+    },
+    {
+      "id": "dress.222",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 351.64,
+      "z": 34.89,
+      "yaw": 2.924,
+      "scale": 0.853
+    },
+    {
+      "id": "dress.223",
+      "asset": "scenery.giants-twig",
+      "x": 317.1,
+      "z": 29.72,
+      "yaw": 5.283,
+      "scale": 0.83
+    },
+    {
+      "id": "dress.224",
+      "asset": "scenery.giants-twig",
+      "x": 294.94,
+      "z": 5.67,
+      "yaw": 0.721,
+      "scale": 0.803
+    },
+    {
+      "id": "dress.225",
+      "asset": "scenery.giants-bracken",
+      "x": 303.17,
+      "z": 146.19,
+      "yaw": 4.606,
+      "scale": 0.75
+    },
+    {
+      "id": "dress.226",
+      "asset": "scenery.giants-twig",
+      "x": 395.65,
+      "z": 74.91,
+      "yaw": 0.331,
+      "scale": 0.784
+    },
+    {
+      "id": "dress.227",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 348.85,
+      "z": 6.58,
+      "yaw": 3.906,
+      "scale": 0.833
+    },
+    {
+      "id": "dress.228",
+      "asset": "scenery.giants-bracken",
+      "x": 261.74,
+      "z": 51.13,
+      "yaw": 3.549,
+      "scale": 0.836
+    },
+    {
+      "id": "dress.229",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 355.36,
+      "z": 83.37,
+      "yaw": 0.176,
+      "scale": 0.678
+    },
+    {
+      "id": "dress.230",
+      "asset": "scenery.giants-bracken",
+      "x": 245.44,
+      "z": 148.57,
+      "yaw": 5.509,
+      "scale": 0.682
+    },
+    {
+      "id": "dress.231",
+      "asset": "scenery.giants-twig",
+      "x": 357.32,
+      "z": 53.29,
+      "yaw": 3.346,
+      "scale": 0.767
+    },
+    {
+      "id": "dress.232",
+      "asset": "scenery.giants-bracken",
+      "x": 379.36,
+      "z": 26.94,
+      "yaw": 4.701,
+      "scale": 0.736
+    },
+    {
+      "id": "dress.233",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 394.94,
+      "z": 132.12,
+      "yaw": 1.424,
+      "scale": 0.627
+    },
+    {
+      "id": "dress.234",
+      "asset": "scenery.giants-bracken",
+      "x": 334.86,
+      "z": 12.56,
+      "yaw": 4.731,
+      "scale": 0.817
+    },
+    {
+      "id": "dress.235",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 316.17,
+      "z": -8.76,
+      "yaw": 1.37,
+      "scale": 0.835
+    },
+    {
+      "id": "dress.236",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 359.65,
+      "z": 106.65,
+      "yaw": 3.794,
+      "scale": 0.748
+    },
+    {
+      "id": "dress.237",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 297.28,
+      "z": 139.82,
+      "yaw": 6.176,
+      "scale": 0.744
+    },
+    {
+      "id": "dress.238",
+      "asset": "scenery.giants-twig",
+      "x": 244.17,
+      "z": 12.24,
+      "yaw": 5.595,
+      "scale": 0.99
+    },
+    {
+      "id": "dress.239",
+      "asset": "scenery.giants-twig",
+      "x": 310.82,
+      "z": 15.72,
+      "yaw": 4.863,
+      "scale": 0.64
+    },
+    {
+      "id": "dress.240",
+      "asset": "scenery.giants-twig",
+      "x": 241.11,
+      "z": 79.57,
+      "yaw": 2.831,
+      "scale": 0.816
+    },
+    {
+      "id": "dress.241",
+      "asset": "scenery.giants-bracken",
+      "x": 232.3,
+      "z": 134.11,
+      "yaw": 5.86,
+      "scale": 0.719
+    },
+    {
+      "id": "dress.242",
+      "asset": "scenery.giants-twig",
+      "x": 282.37,
+      "z": 15.23,
+      "yaw": 4.004,
+      "scale": 0.862
+    },
+    {
+      "id": "dress.243",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 375.57,
+      "z": 144.9,
+      "yaw": 2.857,
+      "scale": 0.641
+    },
+    {
+      "id": "dress.244",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 341.68,
+      "z": -6.71,
+      "yaw": 2.996,
+      "scale": 0.934
+    },
+    {
+      "id": "dress.245",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 347.3,
+      "z": 137.17,
+      "yaw": 2.722,
+      "scale": 0.603
+    },
+    {
+      "id": "dress.246",
+      "asset": "scenery.giants-twig",
+      "x": 366.44,
+      "z": 26.87,
+      "yaw": 3.286,
+      "scale": 0.98
+    },
+    {
+      "id": "dress.247",
+      "asset": "scenery.giants-twig",
+      "x": 259.99,
+      "z": 61.06,
+      "yaw": 1.542,
+      "scale": 0.984
+    },
+    {
+      "id": "dress.248",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 366.37,
+      "z": 108.6,
+      "yaw": 0.937,
+      "scale": 0.848
+    },
+    {
+      "id": "dress.249",
+      "asset": "scenery.giants-bracken",
+      "x": 357.7,
+      "z": -8.0,
+      "yaw": 0.911,
+      "scale": 0.92
+    },
+    {
+      "id": "dress.250",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 245.63,
+      "z": 59.28,
+      "yaw": 6.105,
+      "scale": 0.643
+    },
+    {
+      "id": "dress.251",
+      "asset": "scenery.giants-twig",
+      "x": 251.26,
+      "z": 33.75,
+      "yaw": 1.235,
+      "scale": 0.681
+    },
+    {
+      "id": "dress.252",
+      "asset": "scenery.giants-twig",
+      "x": 367.03,
+      "z": 47.23,
+      "yaw": 2.221,
+      "scale": 0.893
+    },
+    {
+      "id": "dress.253",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 376.84,
+      "z": 88.47,
+      "yaw": 0.891,
+      "scale": 0.69
+    },
+    {
+      "id": "dress.254",
+      "asset": "scenery.giants-twig",
+      "x": 387.85,
+      "z": 39.11,
+      "yaw": 4.573,
+      "scale": 0.771
+    },
+    {
+      "id": "dress.255",
+      "asset": "scenery.giants-twig",
+      "x": 356.56,
+      "z": 64.48,
+      "yaw": 3.705,
+      "scale": 0.929
+    },
+    {
+      "id": "dress.256",
+      "asset": "scenery.giants-twig",
+      "x": 287.3,
+      "z": 31.2,
+      "yaw": 1.168,
+      "scale": 0.799
+    },
+    {
+      "id": "dress.257",
+      "asset": "scenery.giants-bracken",
+      "x": 381.58,
+      "z": 21.15,
+      "yaw": 5.448,
+      "scale": 0.924
+    },
+    {
+      "id": "dress.258",
+      "asset": "scenery.giants-bracken",
+      "x": 293.83,
+      "z": 17.51,
+      "yaw": 4.246,
+      "scale": 0.698
+    },
+    {
+      "id": "dress.259",
+      "asset": "scenery.giants-bracken",
+      "x": 277.58,
+      "z": 18.39,
+      "yaw": 1.452,
+      "scale": 0.761
+    },
+    {
+      "id": "dress.260",
+      "asset": "scenery.giants-twig",
+      "x": 289.11,
+      "z": 26.95,
+      "yaw": 3.629,
+      "scale": 0.747
+    },
+    {
+      "id": "dress.261",
+      "asset": "scenery.giants-bracken",
+      "x": 324.37,
+      "z": 106.22,
+      "yaw": 1.9,
+      "scale": 0.652
+    },
+    {
+      "id": "dress.262",
+      "asset": "scenery.giants-twig",
+      "x": 371.91,
+      "z": 51.17,
+      "yaw": 0.378,
+      "scale": 0.643
+    },
+    {
+      "id": "dress.263",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 304.32,
+      "z": 15.61,
+      "yaw": 1.316,
+      "scale": 0.7
+    },
+    {
+      "id": "dress.264",
+      "asset": "scenery.giants-twig",
+      "x": 266.01,
+      "z": 36.46,
+      "yaw": 0.487,
+      "scale": 0.986
+    },
+    {
+      "id": "dress.265",
+      "asset": "scenery.giants-twig",
+      "x": 347.32,
+      "z": 31.01,
+      "yaw": 6.177,
+      "scale": 0.798
+    },
+    {
+      "id": "dress.266",
+      "asset": "scenery.giants-bracken",
+      "x": 349.03,
+      "z": -5.94,
+      "yaw": 5.153,
+      "scale": 0.607
+    },
+    {
+      "id": "dress.267",
+      "asset": "scenery.giants-twig",
+      "x": 385.19,
+      "z": 137.94,
+      "yaw": 6.115,
+      "scale": 0.718
+    },
+    {
+      "id": "dress.268",
+      "asset": "scenery.giants-bracken",
+      "x": 271.29,
+      "z": 135.7,
+      "yaw": 5.716,
+      "scale": 0.873
+    },
+    {
+      "id": "dress.269",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 296.22,
+      "z": 29.51,
+      "yaw": 5.064,
+      "scale": 0.903
+    },
+    {
+      "id": "dress.270",
+      "asset": "scenery.giants-bracken",
+      "x": 304.84,
+      "z": -5.6,
+      "yaw": 0.53,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.271",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 285.93,
+      "z": 247.71,
+      "yaw": 5.298,
+      "scale": 3.813
+    },
+    {
+      "id": "dress.272",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 166.37,
+      "z": 104.4,
+      "yaw": 0.848,
+      "scale": 3.548
+    },
+    {
+      "id": "dress.273",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 138.85,
+      "z": 118.09,
+      "yaw": 1.417,
+      "scale": 2.866
+    },
+    {
+      "id": "dress.274",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 227.77,
+      "z": 124.39,
+      "yaw": 4.906,
+      "scale": 2.878
+    },
+    {
+      "id": "dress.275",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 259.3,
+      "z": 93.35,
+      "yaw": 6.183,
+      "scale": 3.044
+    },
+    {
+      "id": "dress.276",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 311.95,
+      "z": 279.8,
+      "yaw": 4.808,
+      "scale": 3.681
+    },
+    {
+      "id": "dress.277",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 335.31,
+      "z": 186.33,
+      "yaw": 5.224,
+      "scale": 3.778
+    },
+    {
+      "id": "dress.278",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 259.56,
+      "z": 55.3,
+      "yaw": 4.463,
+      "scale": 3.457
+    },
+    {
+      "id": "dress.279",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 317.91,
+      "z": 313.46,
+      "yaw": 0.993,
+      "scale": 3.963
+    },
+    {
+      "id": "dress.280",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 223.67,
+      "z": 128.89,
+      "yaw": 5.948,
+      "scale": 3.397
+    },
+    {
+      "id": "dress.281",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 258.83,
+      "z": 198.47,
+      "yaw": 3.891,
+      "scale": 3.883
+    },
+    {
+      "id": "dress.282",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 311.59,
+      "z": 260.88,
+      "yaw": 2.945,
+      "scale": 3.14
+    },
+    {
+      "id": "dress.283",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 252.58,
+      "z": 260.44,
+      "yaw": 0.209,
+      "scale": 3.361
+    },
+    {
+      "id": "dress.284",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 217.92,
+      "z": 56.02,
+      "yaw": 0.632,
+      "scale": 3.383
+    },
+    {
+      "id": "dress.285",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 306.22,
+      "z": 309.01,
+      "yaw": 2.125,
+      "scale": 3.569
+    },
+    {
+      "id": "dress.286",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 332.72,
+      "z": 197.5,
+      "yaw": 4.836,
+      "scale": 3.629
+    },
+    {
+      "id": "dress.287",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 344.2,
+      "z": 126.29,
+      "yaw": 4.248,
+      "scale": 2.86
+    },
+    {
+      "id": "dress.288",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 285.18,
+      "z": 309.56,
+      "yaw": 3.527,
+      "scale": 3.51
+    },
+    {
+      "id": "dress.289",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 300.06,
+      "z": 310.23,
+      "yaw": 4.788,
+      "scale": 2.951
+    },
+    {
+      "id": "dress.290",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 256.17,
+      "z": 345.71,
+      "yaw": 2.892,
+      "scale": 3.126
+    },
+    {
+      "id": "dress.291",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 268.82,
+      "z": 282.14,
+      "yaw": 4.518,
+      "scale": 3.264
+    },
+    {
+      "id": "dress.292",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 209.7,
+      "z": 16.48,
+      "yaw": 5.168,
+      "scale": 2.825
+    },
+    {
+      "id": "dress.293",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 287.43,
+      "z": 277.8,
+      "yaw": 2.927,
+      "scale": 2.821
+    },
+    {
+      "id": "dress.294",
+      "asset": "scenery.hollow-withered-fern-tall",
+      "x": 282.45,
+      "z": 359.57,
+      "yaw": 3.385,
+      "scale": 2.86
+    },
+    {
+      "id": "dress.295",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 287.83,
+      "z": 173.96,
+      "yaw": 2.037,
+      "scale": 2.959
+    },
+    {
+      "id": "dress.296",
+      "asset": "scenery.hollow-withered-fern",
+      "x": 329.58,
+      "z": 104.72,
+      "yaw": 2.472,
+      "scale": 3.92
+    },
+    {
+      "id": "dress.297",
+      "asset": "scenery.giants-withered",
+      "x": 292.08,
+      "z": 21.66,
+      "yaw": 4.42,
+      "scale": 1.036
+    },
+    {
+      "id": "dress.298",
+      "asset": "scenery.giants-withered",
+      "x": 282.78,
+      "z": 34.51,
+      "yaw": 3.225,
+      "scale": 0.947
+    },
+    {
+      "id": "dress.299",
+      "asset": "scenery.giants-withered",
+      "x": 372.34,
+      "z": 166.25,
+      "yaw": 3.421,
+      "scale": 0.999
+    },
+    {
+      "id": "dress.300",
+      "asset": "scenery.giants-withered",
+      "x": 371.75,
+      "z": 172.44,
+      "yaw": 0.535,
+      "scale": 0.757
+    },
+    {
+      "id": "dress.301",
+      "asset": "scenery.giants-withered",
+      "x": 365.56,
+      "z": 169.23,
+      "yaw": 5.926,
+      "scale": 0.913
+    },
+    {
+      "id": "dress.302",
+      "asset": "scenery.giants-withered",
+      "x": 380.06,
+      "z": 173.75,
+      "yaw": 4.888,
+      "scale": 0.942
+    },
+    {
+      "id": "dress.303",
+      "asset": "scenery.giants-withered",
+      "x": 336.6,
+      "z": 102.25,
+      "yaw": 1.002,
+      "scale": 0.839
+    },
+    {
+      "id": "dress.304",
+      "asset": "scenery.giants-withered",
+      "x": 194.4,
+      "z": 15.84,
+      "yaw": 1.316,
+      "scale": 1.062
+    },
+    {
+      "id": "dress.305",
+      "asset": "scenery.giants-withered",
+      "x": 205.44,
+      "z": 4.93,
+      "yaw": 5.973,
+      "scale": 0.874
+    },
+    {
+      "id": "dress.306",
+      "asset": "scenery.giants-withered",
+      "x": 195.95,
+      "z": 5.76,
+      "yaw": 4.827,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.307",
+      "asset": "scenery.giants-inkcap",
+      "x": 230.17,
+      "z": 35.25,
+      "yaw": 1.361,
+      "scale": 0.753
+    },
+    {
+      "id": "dress.308",
+      "asset": "scenery.giants-withered",
+      "x": 188.37,
+      "z": 208.79,
+      "yaw": 3.293,
+      "scale": 1.009
+    },
+    {
+      "id": "dress.309",
+      "asset": "scenery.giants-withered",
+      "x": 184.8,
+      "z": 202.72,
+      "yaw": 6.136,
+      "scale": 0.925
+    },
+    {
+      "id": "dress.310",
+      "asset": "scenery.giants-withered",
+      "x": 89.35,
+      "z": 79.92,
+      "yaw": 2.149,
+      "scale": 1.088
+    },
+    {
+      "id": "dress.311",
+      "asset": "scenery.giants-withered",
+      "x": 93.43,
+      "z": 74.65,
+      "yaw": 1.578,
+      "scale": 0.81
+    },
+    {
+      "id": "dress.312",
+      "asset": "scenery.giants-withered",
+      "x": 87.68,
+      "z": 70.33,
+      "yaw": 3.972,
+      "scale": 0.912
+    },
+    {
+      "id": "dress.313",
+      "asset": "scenery.giants-withered",
+      "x": 99.45,
+      "z": 72.24,
+      "yaw": 5.447,
+      "scale": 0.938
+    },
+    {
+      "id": "dress.314",
+      "asset": "scenery.giants-withered",
+      "x": 249.67,
+      "z": 299.27,
+      "yaw": 2.252,
+      "scale": 0.854
+    },
+    {
+      "id": "dress.315",
+      "asset": "scenery.giants-withered",
+      "x": 249.78,
+      "z": 289.56,
+      "yaw": 3.678,
+      "scale": 1.056
+    },
+    {
+      "id": "dress.316",
+      "asset": "scenery.giants-withered",
+      "x": 254.91,
+      "z": 294.2,
+      "yaw": 2.326,
+      "scale": 0.835
+    },
+    {
+      "id": "dress.317",
+      "asset": "scenery.giants-withered",
+      "x": 243.09,
+      "z": 295.67,
+      "yaw": 3.636,
+      "scale": 0.811
+    },
+    {
+      "id": "dress.318",
+      "asset": "scenery.giants-withered",
+      "x": 178.64,
+      "z": 147.96,
+      "yaw": 0.943,
+      "scale": 0.863
+    },
+    {
+      "id": "dress.319",
+      "asset": "scenery.giants-withered",
+      "x": 165.86,
+      "z": 151.88,
+      "yaw": 0.789,
+      "scale": 1.099
+    },
+    {
+      "id": "dress.320",
+      "asset": "scenery.giants-withered",
+      "x": 169.27,
+      "z": 144.79,
+      "yaw": 2.067,
+      "scale": 0.775
+    },
+    {
+      "id": "dress.321",
+      "asset": "scenery.giants-withered",
+      "x": 174.89,
+      "z": 158.53,
+      "yaw": 6.231,
+      "scale": 0.831
+    },
+    {
+      "id": "dress.322",
+      "asset": "scenery.giants-withered",
+      "x": 212.31,
+      "z": 133.9,
+      "yaw": 6.27,
+      "scale": 0.751
+    },
+    {
+      "id": "dress.323",
+      "asset": "scenery.giants-withered",
+      "x": 214.09,
+      "z": 140.08,
+      "yaw": 5.12,
+      "scale": 1.01
+    },
+    {
+      "id": "dress.324",
+      "asset": "scenery.giants-mycena",
+      "x": 346.06,
+      "z": 273.44,
+      "yaw": 0.82,
+      "scale": 0.811
+    },
+    {
+      "id": "dress.325",
+      "asset": "scenery.giants-mycena",
+      "x": 331.07,
+      "z": 266.19,
+      "yaw": 2.795,
+      "scale": 0.878
+    },
+    {
+      "id": "dress.326",
+      "asset": "scenery.giants-mycena",
+      "x": 334.98,
+      "z": 275.31,
+      "yaw": 3.869,
+      "scale": 0.81
+    },
+    {
+      "id": "dress.327",
+      "asset": "scenery.giants-mycena",
+      "x": 289.79,
+      "z": 187.7,
+      "yaw": 5.412,
+      "scale": 0.813
+    },
+    {
+      "id": "dress.328",
+      "asset": "scenery.giants-mycena",
+      "x": 276.29,
+      "z": 187.53,
+      "yaw": 1.16,
+      "scale": 0.716
+    },
+    {
+      "id": "dress.329",
+      "asset": "scenery.giants-mycena",
+      "x": 227.41,
+      "z": 153.91,
+      "yaw": 2.932,
+      "scale": 0.938
+    },
+    {
+      "id": "dress.330",
+      "asset": "scenery.giants-mycena",
+      "x": 229.12,
+      "z": 139.02,
+      "yaw": 5.55,
+      "scale": 0.759
+    },
+    {
+      "id": "dress.331",
+      "asset": "scenery.giants-mycena",
+      "x": 221.36,
+      "z": 147.6,
+      "yaw": 4.902,
+      "scale": 0.701
+    },
+    {
+      "id": "dress.332",
+      "asset": "scenery.giants-mycena",
+      "x": 184.58,
+      "z": 18.76,
+      "yaw": 5.624,
+      "scale": 0.861
+    },
+    {
+      "id": "dress.333",
+      "asset": "scenery.giants-mycena",
+      "x": 187.65,
+      "z": 30.11,
+      "yaw": 1.092,
+      "scale": 0.988
+    },
+    {
+      "id": "dress.334",
+      "asset": "scenery.giants-mycena",
+      "x": 176.69,
+      "z": 24.97,
+      "yaw": 0.963,
+      "scale": 0.739
+    },
+    {
+      "id": "dress.335",
+      "asset": "scenery.giants-mycena",
+      "x": 369.76,
+      "z": 192.38,
+      "yaw": 1.376,
+      "scale": 0.896
+    },
+    {
+      "id": "dress.336",
+      "asset": "scenery.giants-mycena",
+      "x": 378.66,
+      "z": 195.58,
+      "yaw": 1.137,
+      "scale": 0.898
+    },
+    {
+      "id": "dress.337",
+      "asset": "scenery.giants-mycena",
+      "x": 371.47,
+      "z": 201.34,
+      "yaw": 2.934,
+      "scale": 0.753
+    },
+    {
+      "id": "dress.338",
+      "asset": "scenery.giants-mycena",
+      "x": 261.77,
+      "z": 78.16,
+      "yaw": 2.499,
+      "scale": 0.708
+    },
+    {
+      "id": "dress.339",
+      "asset": "scenery.giants-mycena",
+      "x": 355.57,
+      "z": 171.62,
+      "yaw": 5.204,
+      "scale": 0.716
+    },
+    {
+      "id": "dress.340",
+      "asset": "scenery.giants-mycena",
+      "x": 360.24,
+      "z": 177.78,
+      "yaw": 5.449,
+      "scale": 0.739
+    },
+    {
+      "id": "dress.341",
+      "asset": "scenery.giants-mycena",
+      "x": 324.19,
+      "z": 6.83,
+      "yaw": 6.009,
+      "scale": 0.751
+    },
+    {
+      "id": "dress.342",
+      "asset": "scenery.giants-mycena",
+      "x": 314.28,
+      "z": 193.84,
+      "yaw": 4.165,
+      "scale": 0.749
+    },
+    {
+      "id": "dress.343",
+      "asset": "scenery.giants-mycena",
+      "x": 324.2,
+      "z": 211.46,
+      "yaw": 2.917,
+      "scale": 0.817
+    },
+    {
+      "id": "dress.344",
+      "asset": "scenery.giants-mycena",
+      "x": 250.82,
+      "z": 202.07,
+      "yaw": 1.958,
+      "scale": 0.806
+    },
+    {
+      "id": "dress.345",
+      "asset": "scenery.giants-mycena",
+      "x": 241.36,
+      "z": 198.91,
+      "yaw": 1.343,
+      "scale": 0.786
+    },
+    {
+      "id": "dress.346",
+      "asset": "scenery.giants-bilberries",
+      "x": 193.3,
+      "z": 93.25,
+      "yaw": 1.568,
+      "scale": 1.143
+    },
+    {
+      "id": "dress.347",
+      "asset": "scenery.giants-bilberries",
+      "x": 188.4,
+      "z": 96.92,
+      "yaw": 2.636,
+      "scale": 0.925
+    },
+    {
+      "id": "dress.348",
+      "asset": "scenery.giants-bilberries",
+      "x": 203.65,
+      "z": 89.32,
+      "yaw": 2.843,
+      "scale": 0.779
+    },
+    {
+      "id": "dress.349",
+      "asset": "scenery.giants-bilberries",
+      "x": 200.45,
+      "z": 92.15,
+      "yaw": 0.59,
+      "scale": 1.148
+    },
+    {
+      "id": "dress.350",
+      "asset": "scenery.giants-bilberries",
+      "x": 205.4,
+      "z": 93.91,
+      "yaw": 0.01,
+      "scale": 1.133
+    },
+    {
+      "id": "dress.351",
+      "asset": "scenery.giants-bilberries",
+      "x": 200.97,
+      "z": 84.9,
+      "yaw": 3.042,
+      "scale": 1.144
+    },
+    {
+      "id": "dress.352",
+      "asset": "scenery.giants-bilberries",
+      "x": 197.12,
+      "z": 91.6,
+      "yaw": 4.414,
+      "scale": 0.876
+    },
+    {
+      "id": "dress.353",
+      "asset": "scenery.giants-bilberries",
+      "x": 199.16,
+      "z": 89.07,
+      "yaw": 0.92,
+      "scale": 0.832
+    }
+  ]
+}

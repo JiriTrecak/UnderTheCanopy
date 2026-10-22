@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "hollow-brood",
+  "kind": "map",
+  "name": "The Hollow Brood",
+  "version": "1.0.0",
+  "dependencies": {
+    "base": ">=0.4.1"
+  },
+  "description": "Prologue, Mission One. The Hollow has gone silent; Queen Aurelith goes to ask it why."
+}
