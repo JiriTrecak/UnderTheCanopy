@@ -128,6 +128,45 @@ fn packages_round_trip() {
     assert!(canopy_content::map::package::load(&folder.join("missing.utcm")).is_err());
 }
 
+/// A mission's autoplay plan travels with its package (`autoplay.lua`) but is no part of
+/// the map's identity: adding or changing it leaves the digest as it was.
+#[test]
+fn an_autoplay_plan_travels_outside_the_identity() {
+    use canopy_content::map::package::{self, AUTOPLAY_SCRIPT};
+    let folder = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("map-autoplay");
+    let _ = std::fs::remove_dir_all(&folder);
+    let mut document = with(
+        "/mission",
+        json!({"script": "function on_start() end", "regions": []}),
+    );
+    set(&mut document, "/playerStarts", json!([]));
+    let mut parsed = parse(document).unwrap_or_else(|e| panic!("{e}"));
+    parsed.authoring.terrain =
+        canopy_content::map::blocks::Blocks::flat(parsed.size).terrain(parsed.size);
+    let path = folder.join("plan.utcm");
+    package::write(&parsed, "plan", "1.0.0", &path).expect("written");
+    assert!(!path.join(AUTOPLAY_SCRIPT).exists());
+    let digest = |p: &std::path::Path| {
+        canopy_content::package::Package::open(p)
+            .unwrap()
+            .digest()
+            .unwrap()
+    };
+    let without = digest(&path);
+    parsed.mission.as_mut().unwrap().autoplay = Some("go(10, 10)\n".into());
+    package::write(&parsed, "plan", "1.0.0", &path).expect("written");
+    assert_eq!(
+        std::fs::read_to_string(path.join(AUTOPLAY_SCRIPT)).unwrap(),
+        "go(10, 10)\n"
+    );
+    let loaded = package::load(&path).unwrap_or_else(|e| panic!("{e}"));
+    assert_eq!(loaded, parsed);
+    assert_eq!(digest(&path), without);
+    // The mission script is part of it.
+    std::fs::write(path.join("mission.lua"), "x = 2").unwrap();
+    assert_ne!(digest(&path), without);
+}
+
 #[test]
 fn accepts_what_the_old_parser_tolerates() {
     for (pointer, value) in [

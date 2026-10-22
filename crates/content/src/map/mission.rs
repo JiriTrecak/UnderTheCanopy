@@ -41,4 +41,9 @@ pub struct Mission {
     pub players: Vec<super::players::MissionPlayer>,
     /// Saved cameras scenes cut and blend to (`camera.rs`).
     pub cameras: Option<Vec<super::MapCamera>>,
+    /// The autoplay plan (`autoplay.lua` beside `mission.lua`, docs/campaign.md
+    /// "Autoplay"): Lua that steers player 1 to victory with a player's commands. Not part
+    /// of the map's identity: it changes no match, only who plays it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub autoplay: Option<String>,
 }

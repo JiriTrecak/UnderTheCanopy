@@ -605,6 +605,7 @@ impl Shell {
                         map_package: None,
                         encounter: Some(unit),
                         campaign: None,
+                        autoplay: false,
                     });
                 }
                 None => self.say(
@@ -2528,11 +2529,24 @@ impl Shell {
             self.notice = None;
         }
         let notice = self.notice.clone();
-        let mut clicked = (false, false, false, false);
+        let mut clicked = (false, false, false, false, false);
         let mut travel = None;
         let (can_back, can_forward) = (!self.back.is_empty(), !self.forward.is_empty());
         // The data of a check that passed for the latest edits.
         let testable = self.testable();
+        // The open map has an autoplay plan (docs/campaign.md "Autoplay"): Test with AI.
+        let planned = (self.current == Kind::Maps)
+            .then(|| self.active_document())
+            .flatten()
+            .and_then(|d| self.workspaces.get(&Kind::Maps).map(|w| w.element(&d)))
+            .zip(self.package.as_ref().ok())
+            .is_some_and(|(element, package)| {
+                package
+                    .root
+                    .join(&element.path)
+                    .join(canopy_content::map::package::AUTOPLAY_SCRIPT)
+                    .is_file()
+            });
         egui::Panel::top("header")
             .exact_size(HEADER)
             .resizable(false)
@@ -2619,6 +2633,18 @@ impl Shell {
                             .on_hover_text(hint)
                             .on_disabled_hover_text(hint)
                             .clicked();
+                        if planned {
+                            let hint = if ready {
+                                "Play this mission with its autoplay plan steering player 1, sped up; scenes play at normal speed"
+                            } else {
+                                "Fix the problems first: the game loads only a package that passes the check"
+                            };
+                            clicked.4 = ui
+                                .add_enabled(ready, egui::Button::new("Test with AI"))
+                                .on_hover_text(hint)
+                                .on_disabled_hover_text(hint)
+                                .clicked();
+                        }
                         let (line, _) = ui.allocate_exact_size(vec2(1.0, 20.0), Sense::hover());
                         ui.painter().rect_filled(line, 0, BORDER);
                         let hint = |verb: &str, label: &Option<String>, keys: &str| match label {
@@ -2660,7 +2686,7 @@ impl Shell {
         if let Some(ahead) = travel {
             self.travel(ahead);
         }
-        if clicked.3
+        if (clicked.3 || clicked.4)
             && let Some(content) = testable
         {
             // The open map, when the maps editor shows one.
@@ -2687,6 +2713,7 @@ impl Shell {
                 map_package,
                 encounter: None,
                 campaign: None,
+                autoplay: clicked.4,
             });
         }
     }

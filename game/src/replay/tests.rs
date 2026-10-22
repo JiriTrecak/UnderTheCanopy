@@ -52,6 +52,7 @@ fn record() -> (Replay, World, Arc<canopy_content::map::UtcMap>) {
     let recorder = Recorder::new(&world);
     let mut driver = Driver::Live {
         recorder: Some(recorder.clone()),
+        autoplay: None,
     };
     let mut presenter = Presenter::new(
         &world,

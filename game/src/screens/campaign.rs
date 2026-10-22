@@ -244,6 +244,13 @@ pub fn show_steps(
         };
         let (kind, act) = kind_label(step);
         let title = plain(step.title());
+        // Play with AI: a mission whose map has an autoplay plan.
+        let planned = step
+            .mission()
+            .and_then(|m| data.map(m.map.as_str()))
+            .is_some_and(|m| m.autoplay);
+        widgets::visible(ui, &format!("{base}/row/ai"), planned);
+        widgets::visible(ui, &format!("{base}/next/ai"), planned);
         match entry {
             Entry::Heading { .. } => {
                 widgets::text(ui, &format!("{base}/heading/label"), &title);

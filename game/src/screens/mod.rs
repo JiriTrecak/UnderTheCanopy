@@ -112,6 +112,8 @@ struct Rerun {
     colors: Option<Vec<usize>>,
     /// A campaign mission's start (tech, carried heroes, level cap, variables).
     campaign: Option<canopy_sim::campaign::CampaignStart>,
+    /// The mission's autoplay plan plays it (Play with AI); a restart plays it so again.
+    autoplay: bool,
 }
 
 struct Loading {
@@ -160,6 +162,9 @@ pub struct Game {
     progress: std::collections::BTreeMap<String, crate::campaign::Progress>,
     /// The campaign step being played (a card or a mission), if any.
     campaign_play: Option<crate::campaign::Playing>,
+    /// Steps run from now on play with their missions' autoplay plans (Play with AI);
+    /// until the campaign screen shows again.
+    campaign_autoplay: bool,
     /// The story, chapter or cinematic card on screen.
     card: Option<campaign::Card>,
     /// The campaign screen's list, which its buttons index.
@@ -288,6 +293,7 @@ impl Game {
             courier: crate::feedback::Courier::new(&paths.user),
             progress: std::collections::BTreeMap::new(),
             campaign_play: None,
+            campaign_autoplay: false,
             card: None,
             campaign_entries: Vec::new(),
             scroll_steps: 0,
@@ -368,6 +374,7 @@ impl Game {
         map: Option<String>,
         map_package: Option<std::path::PathBuf>,
         encounter: Option<String>,
+        autoplay: bool,
     ) -> Result<(), String> {
         let data = self.data.clone().ok_or("the game is still loading")?;
         let mut testing = data.testing(content);
@@ -393,6 +400,7 @@ impl Game {
                 races: None,
                 human: Some(0),
                 encounter,
+                autoplay,
             },
             tick: 0,
             camera: None,
@@ -703,6 +711,7 @@ impl Game {
                 let progress = crate::campaign::Progress::load(&self.paths, campaign);
                 self.progress.insert(campaign.clone(), progress);
                 self.campaign_play = None;
+                self.campaign_autoplay = false;
                 self.card = None;
                 self.scroll_steps = 20;
                 self.audio.stop_music(1.5);
@@ -728,7 +737,15 @@ impl Game {
             self.end_match();
         }
         self.dialog = None;
-        let hold = start.kind == MatchKind::Campaign && self.campaign_play.is_some();
+        // Autoplay begins at once: it is for watching a mission play, fast.
+        let hold = start.kind == MatchKind::Campaign
+            && self.campaign_play.as_ref().is_some_and(|p| {
+                !p.autoplay
+                    || !self
+                        .data
+                        .as_ref()
+                        .is_some_and(|d| d.map(&start.map).is_some_and(|m| m.autoplay))
+            });
         self.loading = Some(Loading {
             job: Some(LoadJob::spawn(self.paths.clone(), data, job)),
             start,
@@ -765,6 +782,7 @@ impl Game {
             replay: None,
             map_path: None,
             campaign: rerun.campaign.clone(),
+            autoplay: rerun.autoplay,
         }));
         self.last_match = Some(Rerun {
             setup,
@@ -786,6 +804,7 @@ impl Game {
             origin: Origin::Skirmish,
             colors: self.skirmish.colors(),
             campaign: None,
+            autoplay: false,
         });
     }
 
@@ -826,6 +845,7 @@ impl Game {
             campaign: campaign.to_string(),
             step,
             straight,
+            autoplay: self.campaign_autoplay,
         });
         let screen = Screen::Step {
             campaign: campaign.to_string(),
@@ -1002,6 +1022,7 @@ impl Game {
             },
             colors: None,
             campaign: Some(start),
+            autoplay: self.campaign_play.as_ref().is_some_and(|p| p.autoplay),
         });
     }
 
@@ -1061,6 +1082,7 @@ impl Game {
             origin: origin.clone(),
             colors: None,
             campaign,
+            autoplay: false,
         });
         let start = PendingStart {
             kind,
@@ -1083,6 +1105,7 @@ impl Game {
             replay: None,
             map_path: None,
             campaign: None,
+            autoplay: false,
         }));
         self.saves_status.clear();
         self.start_loading(job, start, origin);
@@ -1116,12 +1139,34 @@ impl Game {
                 campaign: c.id().to_string(),
                 step,
                 straight: step == next,
+                autoplay: false,
             },
             start,
         ))
     }
 
+    /// The campaign step that plays `map`, when a campaign holds it.
+    fn mission_step(&self, map: &str) -> Option<(String, usize)> {
+        let data = self.data.as_ref()?;
+        let campaign = data.campaign(data.map(map)?.campaign.as_deref()?)?;
+        let step = campaign
+            .campaign
+            .steps
+            .iter()
+            .position(|s| s.mission().is_some_and(|m| m.map.as_str() == map))?;
+        Some((campaign.id().to_string(), step))
+    }
+
     fn start_dev(&mut self, dev: DevStart) {
+        // Autoplay plays a campaign's mission as its step: its tech, level cap and HUD.
+        if dev.spec.autoplay
+            && dev.spec.human.is_some()
+            && let Some((campaign, step)) = self.mission_step(&dev.spec.map)
+        {
+            self.campaign_autoplay = true;
+            self.run_step(&campaign, step, false);
+            return;
+        }
         let start = PendingStart {
             kind: MatchKind::Skirmish,
             me: dev.spec.human,
@@ -1556,6 +1601,7 @@ impl Game {
                     replay: None,
                     map_path: None,
                     campaign: None,
+                    autoplay: false,
                 }));
                 self.start_loading(job, start, Origin::Multiplayer);
             }
@@ -1824,6 +1870,20 @@ impl Game {
                     self.run_step(&campaign, step, step == next);
                 }
             }
+            "steps.autoplay" if clicked => {
+                if let (Screen::Campaign { campaign }, Some(step)) = (
+                    self.flow.screen().clone(),
+                    action
+                        .index
+                        .and_then(|i| self.campaign_entries.get(i))
+                        .and_then(campaign::Entry::step),
+                ) && let Some(c) = data.campaign(&campaign)
+                {
+                    let next = self.campaign_progress(&campaign).next(&c.campaign);
+                    self.campaign_autoplay = true;
+                    self.run_step(&campaign, step, step == next);
+                }
+            }
             "card.next" if clicked => self.card_next(),
             "card.skip" if clicked => self.finish_step(),
             // Skirmish (the map list is shared with hosting a lobby).
@@ -2022,6 +2082,22 @@ impl Game {
             }
             "mission.history" if clicked => {
                 self.mission_hud.history_open = !self.mission_hud.history_open;
+            }
+            "autoplay.take" if clicked => {
+                if let Some(playing) = &self.playing {
+                    playing.autoplay(crate::sim::AutoplayControl::TakeOver);
+                }
+            }
+            "autoplay.speed1" | "autoplay.speed2" | "autoplay.speed4" | "autoplay.speed8"
+                if clicked =>
+            {
+                if let (Some(playing), Some(speed)) = (
+                    &self.playing,
+                    name.strip_prefix("autoplay.speed")
+                        .and_then(|n| n.parse::<f32>().ok()),
+                ) {
+                    playing.autoplay(crate::sim::AutoplayControl::Speed(speed));
+                }
             }
             "saves.export" if clicked => {
                 if let Some(meta) = action.index.and_then(|i| self.saves_list.get(i)).cloned() {
@@ -2406,6 +2482,7 @@ impl Game {
             replay: Some(Arc::new(replay)),
             map_path,
             campaign: None,
+            autoplay: false,
         }));
         self.last_match = None;
         self.start_loading(job, start, Origin::Replays);
@@ -2706,6 +2783,7 @@ impl Game {
                 self.mission_hud.hud_top = hud_top;
                 self.mission_hud.shown = playing.game.shown_tick();
                 self.mission_hud.live_speaker = playing.game.live_speaker;
+                self.mission_hud.autoplay = playing.status().autoplay;
                 self.mission_hud.show(
                     &mut self.host,
                     gpu,

@@ -237,6 +237,7 @@ impl Shell {
             map: None,
             map_package: None,
             encounter: None,
+            autoplay: false,
             campaign: Some(crate::CampaignStep {
                 campaign: id,
                 step: campaign::text(&step, "id").to_string(),

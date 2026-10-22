@@ -181,6 +181,8 @@ pub struct Playing {
     pub campaign: String,
     pub step: usize,
     pub straight: bool,
+    /// Its mission plays with the map's autoplay plan (Play with AI).
+    pub autoplay: bool,
 }
 
 #[cfg(test)]

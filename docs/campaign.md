@@ -266,6 +266,51 @@ Older functions keep working inside and outside scenes (`move`, `face`, `say`, `
 
 The bench: `base/maps/showcase/cinematic-bench.utcm` (authored by `tools/maps/cinematic_bench.py`) plays the Hollow Brood's opening. Captures: `just shot --play --map cinematic-bench --tick <t> --out <png>`. Any mission scene, staged mid-mission when it needs to be: `just shot --play --map <mission.utcm> --scene <name>|all|list --out <folder> [--sheet] [--compare <rev>] [--set <variable>=<value>]` (`game/src/play/preview`; skill `canopy-scenes`, "Seeing it").
 
+## Autoplay
+
+A mission can play itself (D93): `autoplay.lua` beside `mission.lua` is a small plan that steers player 1 to victory with a player's commands. It is for checking a mission fast, headless or on screen, sped up with its scenes at normal speed.
+
+**What it is.** The plan reads only what player 1 could know and issues ordinary commands through the normal queue, so an autoplay match is an ordinary replay (`canopy_sim::autoplay`). It runs in its own Lua sandbox, apart from the mission script: one state for the whole run, its chunk a coroutine resumed after every step; the steps that take time wait and the plan goes on when they are done. While a cinematic plays the plan waits (it never skips a scene). The plan is not part of the map's identity: adding or changing it changes no save, replay or multiplayer identity. A loaded save plays on by hand.
+
+**The plan's API** (globals; a placement is the map's id, `x, z` are cells):
+
+| Steps (they take time) | Do |
+|---|---|
+| `go(x, z [, how])` | The army attack-moves there (`"walk"`: a plain move; `"hero"`: the leading hero alone) and the plan waits until the leading hero arrives (10 cells, 3 alone), the army stands still near it, or 3 minutes pass. A goal nobody can reach comes nearer, 4 cells at a time, as a player clicks again; units that cannot get there are left out. Returns true on arrival |
+| `attack(id)` | The army attacks the placement until it falls (seen, or a building gone from its place with the ground in sight); unseen, it walks to where it was last seen or the map puts it |
+| `pickup([id [, unit]])` | The hero (the plan's leading one by default) walks up to the item and picks it up; without an id, every item lying in sight within 14 cells |
+| `wait(seconds)` · `wait_clock(minutes)` · `wait_until(test [, seconds])` · `wait_objective(id [, seconds])` · `mass(n [, seconds])` | Time; the mission clock; a function of the plan's own; an objective completed (false if failed or timed out); an army of `n` |
+
+| Standing orders and commands (at once) | Do |
+|---|---|
+| `hero{"queen", learn = {…}, heal = "binding", heal_below = 0.6, shield = "binding", shield_below = 0.4, potions = {"item.…"}, potion_below = 0.35, fight = {"binding", …}}` | A hero's own turn every 2 s: learns the list in order (a name twice is rank two), shields itself when hurt, heals the most wounded near it (never itself), drinks a potion when low, casts its `fight` spells at the fight near it. The first `hero{}` leads the army |
+| `economy(on)` | The colony is the skirmish AI's, held to the mission's tech: it builds, trains, researches and defends; the plan's walks, attacks and pushes keep their units |
+| `push(x, z [, n])` / `push()` | From now on the army attack-moves there every 2 s while it is at least `n` (between steps) |
+| `keep(unit, x, z)` / `keep(unit)` | Holds a unit apart from the army, waiting at a point (the Queen out of an assault); badly hurt it is the AI's again |
+| `click(id [, times])` · `train(unit [, n])` · `research(id)` · `build(definition, x, z)` · `cast(unit, binding [, id | x, z])` · `use_item(item [, unit])` · `learn(unit, ability)` | A player's commands; each answers whether it was sent |
+| `army()` · `army_center()` · `alive(id)` · `position(id)` · `hp(id)` · `level(id)` · `objective(id)` · `stock(item)` · `count(definition)` · `scene()` · `clock()` | What player 1 knows: `alive` is nil while it cannot tell, `objective` `"active"`, `"completed"` or `"failed"` |
+| `say(…)` | A line in the run's log |
+
+The sandbox has the core language, `ipairs`, `select`, `type`, `tostring`, `tonumber`, `error`, `assert`, `string`, `table` and `math` without random numbers: no clock, files, `pairs` or coroutines of its own. A plan that errors stops with its line (`autoplay.lua:12: …`), and one that runs two million instructions without waiting stops too.
+
+```lua
+hero{"queen", learn = {"living-light", "cocoon", "one-body"},
+     heal = "living-light", shield = "cocoon", potions = {"item.resin-salve"}}
+attack("cache.salve")
+pickup()
+go(116, 296)
+click("frog", 10)            -- the easter egg
+go(330, 136)
+attack("rubble")
+wait_objective("survivors", 60)
+go(300, 66)
+wait_objective("ashka", 240)
+```
+
+**Headless.** `just autoplay <mission>` plays a mission (its map or step id, or a `.utcm` path) as its campaign starts it (the tech up to it, the level cap; no carried heroes) and prints the plan's steps, the objectives, refused commands, the time and the outcome; `--talk` adds the mission's lines, `--seed`, `--minutes`, `--plan <file>` plays another plan on the map, `--verify` replays the run's commands alone and compares. `AUTOPLAY_COMMANDS=1` prints every command and `AUTOPLAY_WATCH=<placement>` one unit's state every 10 s. `just campaign-test` plays every shipped mission's plan with `--verify` and fails unless all win (about 30 s; it is not part of `just check`).
+
+**In the game.** Play with AI beside Play on the campaign screen (a mission whose map has a plan; the run's following missions play with theirs too), the editor's Test with AI beside Test in game, and `just play --map <mission> --autoplay` (a campaign's mission plays as its step). The match starts at 4× (1×, 2×, 4×, 8× at the top, or = and −); a cinematic drops it to 1× by itself and it returns after; Take over (F7) ends the plan and hands the match back at 1×. The camera follows the plan's fight, else its leading hero, else its army, until the viewer moves it (then six seconds). Refused commands show no red message while the plan plays; the plan's log goes to the game's log (`autoplay` target). Captures: `just shot --play --map <mission> --autoplay --tick <t>` plays the plan up to `t` and shows its line.
+
 ## Research: how Warcraft III and StarCraft II do it
 
 - **Warcraft III.** A custom campaign is one `.w3n` archive made in the Campaign Editor: `war3campaign.w3f` (name, difficulty text, author, description, race, the menu's background scene and sound, and the mission buttons: chapter, title, visible at start, which map), the maps, and campaign-wide object data and imports every map shares. The Campaign Editor packages and lays out the menu; the logic lives in each map's triggers: `SetNextLevelBJ` stores the next map and `ChangeLevel` loads it after the score screen; `SetMissionAvailable` unlocks a menu button; heroes travel through a game cache (`StoreUnit`, `SaveGameCache`, `RestoreUnit`). Cutscenes are trigger scripts in the mission map itself: saved cameras, cinematic mode, transmissions (portrait, voice, subtitle), unit animations, fades and waits. Opponents run small campaign AI scripts: defenders kept at home, attack groups (`CampaignAttackerEx`) sent after a wait (`SuicideOnPlayerEx`), every number given for Easy, Normal and Hard.

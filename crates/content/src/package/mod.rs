@@ -266,7 +266,9 @@ pub fn check_order(packages: &[Package]) -> Vec<Error> {
 
 /// Extensions of the files that make up a package's identity: everything that can change a
 /// match (documents, scripts, map grids). Models, textures and sounds never change the
-/// simulation and are left out, so hashing stays cheap.
+/// simulation and are left out, so hashing stays cheap. A mission's autoplay plan
+/// ([`crate::map::package::AUTOPLAY_SCRIPT`] in a map package) is left out too: it decides
+/// who plays, never what a match is.
 pub const IDENTITY_EXTENSIONS: [&str; 3] = ["json", "lua", "grid"];
 
 impl Package {
@@ -278,7 +280,7 @@ impl Package {
             for entry in std::fs::read_dir(dir)? {
                 let entry = entry?;
                 let name = entry.file_name().to_string_lossy().into_owned();
-                if name.starts_with('.') {
+                if name.starts_with('.') || outside_identity(dir, &name) {
                     continue;
                 }
                 let path = entry.path();
@@ -314,6 +316,14 @@ impl Package {
         }
         Ok(hash.finalize().into())
     }
+}
+
+/// A file in `dir` that is no part of a package's identity: a map package's autoplay plan.
+pub fn outside_identity(dir: &Path, name: &str) -> bool {
+    name == crate::map::package::AUTOPLAY_SCRIPT
+        && dir
+            .extension()
+            .is_some_and(|e| e == crate::package::MAP_EXTENSION)
 }
 
 #[cfg(test)]

@@ -220,6 +220,9 @@ pub struct Play {
     markers: Vec<(Marker, Duration)>,
     message: Option<(String, Duration)>,
     seen_fact: Option<u32>,
+    /// Refused commands show no message (autoplay plays: its refusals are not the
+    /// player's).
+    pub quiet_facts: bool,
     hero_press: Option<(usize, Duration)>,
     idle_cursor: usize,
     dropoff_cursor: usize,
@@ -277,6 +280,7 @@ impl Play {
             markers: Vec::new(),
             message: None,
             seen_fact: None,
+            quiet_facts: false,
             hero_press: None,
             idle_cursor: 0,
             dropoff_cursor: 0,
@@ -460,6 +464,7 @@ impl Play {
             self.seen_fact.is_none_or(|s| f.id > s) && f.kind == canopy_sim::state::FactKind::Error
         });
         if let Some(f) = unseen
+            && !self.quiet_facts
             && self.know.view.tick.saturating_sub(f.tick) < ERROR_FACT_TICKS
         {
             self.message = Some((f.message.clone(), self.now));
@@ -1303,7 +1308,10 @@ impl Play {
             | Shortcut::HealthFriendly
             | Shortcut::HealthEnemy
             | Shortcut::ToggleHud
-            | Shortcut::Debug => {}
+            | Shortcut::Debug
+            | Shortcut::TakeOver
+            | Shortcut::AutoplayFaster
+            | Shortcut::AutoplaySlower => {}
         }
         true
     }

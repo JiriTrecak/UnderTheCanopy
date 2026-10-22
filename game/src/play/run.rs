@@ -155,7 +155,18 @@ pub struct InMatch {
     networked: bool,
     /// The snapshots' generation last seen (a replay seek starts a new one).
     generation: u32,
+    /// Autoplay as of the simulation thread's last loop, when the match has it.
+    autoplay: Option<sim::AutoplayLive>,
+    /// The camera's focus autoplay set last frame, and when the viewer last moved it away
+    /// (the camera then stays theirs for [`FOLLOW_PAUSE`]).
+    followed: Option<[f32; 2]>,
+    camera_moved: Option<Instant>,
 }
+
+/// How long autoplay's camera leaves the view to a viewer who moved it.
+const FOLLOW_PAUSE: Duration = Duration::from_secs(6);
+/// How quickly autoplay's camera closes on the action, seconds (exponential).
+const FOLLOW_SECONDS: f32 = 0.8;
 
 impl InMatch {
     /// Uploads the scene, starts `game` on the simulation thread and attaches the HUD.
@@ -332,6 +343,9 @@ impl InMatch {
             lens: cinematic::Lens::default(),
             scene_targets: None,
             generation: 0,
+            autoplay: None,
+            followed: None,
+            camera_moved: None,
         };
         this.stats.networked = start.chat_server;
         this.stats.players = this
@@ -529,6 +543,26 @@ impl InMatch {
             if code == KeyCode::F9 || shortcuts.contains(&Shortcut::Debug) {
                 self.debug_open = !self.debug_open;
                 return;
+            }
+            // Autoplay: take over, or play it faster or slower.
+            if let Some(a) = self.autoplay.as_ref().filter(|a| a.on) {
+                let speeds = sim::AUTOPLAY_SPEEDS;
+                let at = speeds.iter().position(|&s| s >= a.speed).unwrap_or(0);
+                let control = if shortcuts.contains(&Shortcut::TakeOver) {
+                    Some(sim::AutoplayControl::TakeOver)
+                } else if shortcuts.contains(&Shortcut::AutoplayFaster) {
+                    Some(sim::AutoplayControl::Speed(
+                        speeds[(at + 1).min(speeds.len() - 1)],
+                    ))
+                } else if shortcuts.contains(&Shortcut::AutoplaySlower) {
+                    Some(sim::AutoplayControl::Speed(speeds[at.saturating_sub(1)]))
+                } else {
+                    None
+                };
+                if let Some(control) = control {
+                    self.sim.control(sim::Control::Autoplay(control));
+                    return;
+                }
             }
             // Escape also brings a hidden HUD back (old `enableHudToggle`).
             if shortcuts.contains(&Shortcut::ToggleHud)
@@ -790,6 +824,32 @@ impl InMatch {
             }
             (None, None) => {}
         }
+        // Autoplay's camera follows the action (its fight, its hero, its army) unless the
+        // viewer moved the view away lately.
+        if let Some(a) = self.autoplay.as_ref().filter(|a| a.on)
+            && cinematic.is_none()
+            && self.play.camera_mode == CameraMode::Rts
+        {
+            let now = Instant::now();
+            if let Some(f) = self.followed
+                && ((f[0] - self.camera.focus[0]).abs() > 0.01
+                    || (f[1] - self.camera.focus[1]).abs() > 0.01)
+            {
+                self.camera_moved = Some(now);
+            }
+            let paused = self.camera_moved.is_some_and(|t| now - t < FOLLOW_PAUSE);
+            match (a.focus, paused) {
+                (Some([x, z]), false) => {
+                    let k = 1.0 - (-dt_ms / 1000.0 / FOLLOW_SECONDS).exp();
+                    let [fx, fz] = self.camera.focus;
+                    self.camera.look_at(fx + (x - fx) * k, fz + (z - fz) * k);
+                    self.followed = Some(self.camera.focus);
+                }
+                _ => self.followed = None,
+            }
+        } else {
+            self.followed = None;
+        }
         let steer =
             free && !typing && cinematic.is_none() && self.play.camera_mode == CameraMode::Rts;
         let mut dir = [0.0f32, 0.0];
@@ -862,6 +922,9 @@ impl InMatch {
             debug.open = self.debug_open;
         }
         let typing = host.ui.wants_keyboard();
+        // Autoplay: its refusals are not the player's to read.
+        self.autoplay = self.sim.live().autoplay;
+        self.play.quiet_facts = self.autoplay.as_ref().is_some_and(|a| a.on);
         self.update_camera(size, scale, dt_ms, free, typing);
         let aspect = size[0] as f32 / size[1].max(1) as f32;
 

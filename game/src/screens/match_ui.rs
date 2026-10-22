@@ -39,6 +39,9 @@ pub struct MissionHud {
     pub shown: f32,
     /// The speaker's live model is in the `@portrait` render target.
     pub live_speaker: bool,
+    /// Autoplay, when the match is played by its mission's plan (docs/campaign.md
+    /// "Autoplay").
+    pub autoplay: Option<crate::sim::AutoplayLive>,
 }
 
 /// The objectives box as the old mission HUD built it.
@@ -118,6 +121,15 @@ impl ObjectivesModel {
     }
 }
 
+/// A speed as the autoplay line writes it: `4`, `0.5`.
+fn speed_text(speed: f32) -> String {
+    if speed.fract() == 0.0 {
+        format!("{speed:.0}")
+    } else {
+        format!("{speed}")
+    }
+}
+
 /// A cinematic holds the match: a scripted scene or a cinematic line still playing, while
 /// the match is undecided and the script is running (old `MissionHud.active`).
 pub fn cinematic(m: &MissionView, decided: bool) -> bool {
@@ -192,6 +204,36 @@ impl MissionHud {
         self.present(&mut host.ui, icon, mission, tick, decided, dt, view_height);
     }
 
+    /// The autoplay line at the top: its speed (1× while a cinematic plays), its step, the
+    /// speeds to pick and Take over. Gone once the player took over.
+    fn show_autoplay(&self, ui: &mut canopy_ui::Ui) {
+        let Some(a) = self.autoplay.as_ref().filter(|a| a.on) else {
+            widgets::visible(ui, "mission-hud/autoplay", false);
+            return;
+        };
+        widgets::visible(ui, "mission-hud/autoplay", true);
+        let label = if a.running < a.speed {
+            format!("Autoplay {}× · scene", speed_text(a.running))
+        } else {
+            format!("Autoplay {}×", speed_text(a.speed))
+        };
+        widgets::text(ui, "mission-hud/autoplay/label", &label);
+        widgets::text(ui, "mission-hud/autoplay/step", &a.label);
+        for speed in crate::sim::AUTOPLAY_SPEEDS {
+            let text = format!("{}×", speed_text(speed));
+            let text = if speed == a.speed {
+                format!("[color=#f0e3c3]{text}[/color]")
+            } else {
+                text
+            };
+            widgets::text(
+                ui,
+                &format!("mission-hud/autoplay/speeds/s{}", speed_text(speed)),
+                &text,
+            );
+        }
+    }
+
     /// [`Self::show`] with the speaker's icon at hand (captures bind their own images).
     #[allow(clippy::too_many_arguments)]
     pub fn present(
@@ -204,6 +246,7 @@ impl MissionHud {
         dt: f32,
         view_height: f32,
     ) {
+        self.show_autoplay(ui);
         let Some(m) = mission else {
             widgets::visible(ui, "mission-hud/objectives", false);
             widgets::visible(ui, "mission-hud/dialogue-wrap", false);

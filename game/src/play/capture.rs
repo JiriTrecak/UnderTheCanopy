@@ -72,6 +72,12 @@ pub fn run(
     while rig.game.world.tick() < options.tick {
         rig.step()?;
     }
+    // Autoplay's camera follows its action, as in the game.
+    if options.camera.is_none()
+        && let Some([x, z]) = rig.autoplay_live().and_then(|a| a.focus)
+    {
+        rig.look_at(x, z);
+    }
     rig.input(script)?;
     let pixels = rig.render(true)?;
     if std::env::var_os("CANOPY_SHOT_HUD").is_some()
@@ -128,6 +134,8 @@ pub struct Rig {
     screen: Screen,
     ui: Ui,
     hud: Hud,
+    /// `--autoplay`: the mission's plan plays player 1 as the match steps.
+    autoplay: Option<canopy_sim::autoplay::Autoplay>,
 }
 
 impl Rig {
@@ -161,8 +169,16 @@ impl Rig {
                 content: None,
                 encounter: None,
                 exploration,
+                autoplay: options.autoplay,
             },
         )?;
+        let autoplay = match &mut game.driver {
+            sim::Driver::Live { autoplay, .. } => autoplay.take(),
+            sim::Driver::Replay(_) => None,
+        }
+        .map(|spec| canopy_sim::autoplay::Autoplay::new(&spec.source, spec.map))
+        .transpose()
+        .map_err(|e| anyhow::anyhow!("autoplay plan: {e}"))?;
         let seat = me.map_or(Seat::Observer, Seat::Player);
         // Sandbox maps show revealed to a local player, as in the game (`run.rs`).
         let shown = (loaded.sandbox && me.is_some()).then_some(Seat::Observer);
@@ -293,6 +309,7 @@ impl Rig {
             screen,
             ui,
             hud,
+            autoplay,
         };
         rig.refresh();
         Ok(rig)
@@ -311,7 +328,30 @@ impl Rig {
         .with_context(|| format!("the local session stopped at tick {}", game.world.tick()))?;
         self.previous = Some(std::mem::replace(&mut self.newest, advanced.presentation));
         self.view = advanced.view;
+        if let Some(plan) = &mut self.autoplay {
+            for action in plan.tick(&mut game.world) {
+                game.session.send(action);
+            }
+            for line in plan.drain_lines() {
+                println!("{line}");
+            }
+        }
         Ok(())
+    }
+
+    /// Autoplay as the HUD shows it (at its starting speed; 1× while a cinematic plays),
+    /// and where its camera looks.
+    fn autoplay_live(&self) -> Option<sim::AutoplayLive> {
+        let plan = self.autoplay.as_ref()?;
+        let world = &self.game.world;
+        let cinematic = canopy_sim::mission::blocks_commands(world.state()).is_some();
+        Some(sim::AutoplayLive {
+            on: true,
+            speed: sim::AUTOPLAY_SPEED,
+            running: if cinematic { 1.0 } else { sim::AUTOPLAY_SPEED },
+            label: plan.label().to_string(),
+            focus: plan.focus(world).map(|(x, z)| [x, z]),
+        })
     }
 
     /// Points the game's camera at a ground point (cells), as the player would.
@@ -754,6 +794,7 @@ impl Rig {
         if self.observe {
             self.hud.colonies = Some(Arc::new(sim::colonies(&self.game.world)));
         }
+        let autoplay = self.autoplay_live();
         let (ui, hud) = (&mut self.ui, &mut self.hud);
         ui.show("hud", true);
         // Two passes: the first lists the images the HUD needs.
@@ -834,6 +875,7 @@ impl Rig {
             let mut mission_hud = crate::screens::match_ui::MissionHud::new(objectives);
             mission_hud.shown = view0.tick as f32;
             mission_hud.live_speaker = live_speaker;
+            mission_hud.autoplay = autoplay;
             mission_hud.present(
                 ui,
                 icon,

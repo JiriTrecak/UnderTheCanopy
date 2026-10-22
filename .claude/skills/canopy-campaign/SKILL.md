@@ -20,7 +20,8 @@ Design rule (AGENTS.md): a new mission starts as a design in docs/story.md, agre
 | The ant campaign | `base/campaigns/vanguard.utcc/` (`campaign.json`, `package.json`, `missions/<id>.utcm`) |
 | Its art | `base/assets/interface/campaign/vanguard/<name>/` (background, chapter cards, story pages, mission loading art) |
 | Map generators | `tools/maps/<mission>.py` (and `_dress.py`, `_units.py` splits); script sources `tools/maps/<mission>.lua` where kept |
-| Headless runners | `crates/sim/examples/mission_walk.rs`, `crates/sim/examples/mission_playtest.rs` |
+| Autoplay | each mission's `autoplay.lua`; `crates/sim/src/autoplay/`; runner `crates/sim/examples/autoplay.rs` (`just autoplay`, `just campaign-test`) |
+| Probes | `crates/sim/examples/mission_walk.rs`, `crates/sim/examples/mission_playtest.rs` |
 | Campaign AI | `crates/sim/src/ai/campaign/` |
 | Mission API (Lua) | `crates/sim/src/mission/` (`api.rs`, `api/scene.rs`, `cinema.rs`) |
 | The biome | `base/landscape/biomes/underleaf.json`, scenery `base/scenery/underleaf/`, giants `base/scenery/giants/` |
@@ -80,10 +81,12 @@ Neutral features (D87): `building.neutral.amber-cache`, `supply-crate`, `seed-po
 
 ## Proving a mission
 
-Every change to a mission ends with a headless playthrough that wins. Both runners are in `crates/sim/examples`; read their headers.
-- **mission_walk:** a plain player with the starting army walking a route of `go:x,z`, `attack:<placement>` and `wait:<ticks>`, with `--cap`, `--learn`, `--heal`, `--shield`. Scenes are skipped; `--watch` plays them. For missions without a base (The Hollow Brood).
-- **mission_playtest:** the skirmish AI as player 1, held to the campaign tech up to the mission (`--tech`), with `--push "min:x,z;…"` (repeated every 2 s), `--mass N` (wait until the army is N), `--click id:n@min`, `--skip`, `--human`, `--style`, and `--reach "from:x,y;name:x,y"` (ground reachability only). For base missions.
-- **Current routes:** Hollow Brood (mission_walk, cap 3, caches first, then road, webs, sick pool, terrace, hornets, rim, rubble, chamber, wait, Hollow, Ashka); Founding (seed 1, pushes `12:300,100;17:322,80;24:110,120;27:86,92`, click `alate-sleeper:3@2`, wins about 28 min); Glass Road (`--mass 18`, pushes `10:168,210;14:288,170;17:340,152;22:372,64;28:340,72;34:372,64;38:340,72;44:372,64`, wins seeds 1–8 in 25–32 min).
+Every change to a mission ends with its autoplay plan winning headless (docs/campaign.md "Autoplay", D93). Each mission map carries `autoplay.lua` beside `mission.lua`: a small plan that steers player 1 to victory with a player's commands (its API is in docs/campaign.md). Add only that file when you write one; it is outside the map's identity.
+- **`just autoplay <mission>`** plays one mission as its campaign starts it and prints the plan's steps, objectives, refused commands, time and outcome. `--talk` adds the mission's lines, `--seed N`, `--plan <file>` tries another plan on the map without touching it, `--verify` replays the commands alone. `AUTOPLAY_COMMANDS=1` prints every command, `AUTOPLAY_WATCH=queen` a unit's order, route and tunnel trip every 10 s.
+- **`just campaign-test`** plays every shipped plan with `--verify` (about 30 s) and fails unless all win. Run it after changing a mission, its waves or the simulation. Check new plans on several seeds (`--seed 1` to `8`): base missions run on the skirmish AI's economy and vary.
+- **Writing a plan.** Missions without a base: `hero{}` with its learn order, heal and shield, then `go`, `attack`, `pickup()` through the side places in order. Base missions: `economy(true)`, then `mass(n)` before every assault and `push`/`attack` on the targets; `keep("queen", x, z)` holds her out of an assault the mission would be lost with. Visit the side places that make the difficulty work and click the easter egg once. The Queen (radius 3) does not fit narrow ways (Founding's sap spring, nook, mushrooms and waterfall cache; the Glass Road glade and the old tunnel's mouth): don't route her there.
+- **As of 2026-10-22**: The Hollow Brood wins in about 10 minutes (every objective, the caches, frog, webs, burrow, wreck, survivors); Founding in 17–18 minutes on every seed tried (Alate clicked); The Glass Road on 10 of 12 seeds in 22–35 minutes (outposts, engineer, the gate with 30, the Queen home during the assault). Its losses are the economy collapsing under the waves or the Queen falling at the camp; the old tunnel cannot carry an army (a tunnel trip to an unreachable mouth waits forever).
+- `mission_walk` and `mission_playtest` (`crates/sim/examples`) remain for probes: `--reach "from:x,y;name:x,y"` (ground reachability only), `--human` (an idle colony against the waves), `PLAYTEST_AI=1` (the skirmish AI's decisions).
 - Don't run `ai_duels`.
 
 ## Checking a mission

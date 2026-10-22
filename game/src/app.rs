@@ -108,6 +108,7 @@ impl App {
                 races: o.races.clone(),
                 human: (!o.spectate && o.crowd.is_none()).then_some(0),
                 encounter: None,
+                autoplay: o.autoplay,
             },
             tick: o.tick,
             camera: o
@@ -209,6 +210,7 @@ impl App {
                     test.map,
                     test.map_package,
                     test.encounter,
+                    test.autoplay,
                 ),
             };
             match started {

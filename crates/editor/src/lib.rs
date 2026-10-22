@@ -71,6 +71,8 @@ pub struct Test {
     /// Play from a campaign's step: the game runs the step from the editor's copy of the
     /// campaign (instead of `map`).
     pub campaign: Option<CampaignStep>,
+    /// Test with AI: the map's autoplay plan steers player 1 (docs/campaign.md "Autoplay").
+    pub autoplay: bool,
 }
 
 /// A campaign step to play from (docs/campaign.md "The editor": Play from here).

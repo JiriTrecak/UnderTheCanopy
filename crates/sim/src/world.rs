@@ -75,6 +75,18 @@ pub struct World {
     ai: ai::Brains,
     /// The mission's computer players (campaign AI), from the map; memories in the state.
     campaign: ai::campaign::Campaign,
+    /// The commands the last step applied, with whether each was accepted (derived, never
+    /// saved): receipts for players driven from outside the world ([`World::applied`]).
+    applied: Vec<Applied>,
+}
+
+/// A command a step applied, and whether the game accepted it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Applied {
+    pub player: u8,
+    pub seq: u32,
+    pub action: Action,
+    pub accepted: bool,
 }
 
 impl World {
@@ -219,6 +231,7 @@ impl World {
             events: abilities::Events::default(),
             ai: brains,
             campaign,
+            applied: Vec::new(),
         };
         world.sync_ai_tech();
         world.prepare_ai();
@@ -328,6 +341,102 @@ impl World {
     /// What each AI player is doing, for the debug overlay.
     pub fn ai_summaries(&self) -> Vec<ai::Summary> {
         ai::Brains::summaries(&self.state.ai)
+    }
+
+    /// The commands the last step applied, in the order applied, with their receipts.
+    pub fn applied(&self) -> &[Applied] {
+        &self.applied
+    }
+
+    /// A skirmish AI for `player` that the match does not run itself: a helper outside the
+    /// world (autoplay's economy) decides with it through [`World::assist`] and sends its
+    /// commands as the player's own. Held to the player's locked tech as it stands now.
+    /// Returns the brain and its fresh memory.
+    pub fn assistant(&mut self, map: &UtcMap, player: u8) -> (ai::Brains, Vec<ai::Memory>) {
+        let mut setup = self.setup.clone();
+        setup.slots.retain(|s| s.player == player);
+        for slot in &mut setup.slots {
+            slot.kind = crate::setup::SlotKind::Ai;
+            if slot.race.is_none() {
+                slot.race = Some(self.catalog.content.rules.default_race.clone());
+            }
+        }
+        let mut brains = ai::Brains::new(
+            &self.catalog,
+            map,
+            self.terrain.clone(),
+            &setup,
+            appearance_scales(map, &self.terrain),
+        );
+        let memories = brains.memories(setup.seed);
+        brains.forbid(
+            player,
+            crate::campaign::locked(&self.state, Owner::Player(player)),
+        );
+        self.economy.index(&self.state, &self.catalog);
+        let tick = mission::clock(&self.state);
+        let spells = abilities::Ctx {
+            senses: combat::Senses {
+                catalog: &self.catalog,
+                terrain: &self.terrain,
+                vision: &self.vision,
+                rules: &self.sight,
+                combat: &self.combat.rules,
+                camps: &self.combat.camps,
+                teams: &self.combat.teams,
+                cache: None,
+            },
+            spatial: &mut self.motion.spatial,
+            events: &mut self.events,
+            economy: &mut self.economy,
+            limits: self.combat.limits,
+            suppress: 0,
+        };
+        let input = ai::frame::Input {
+            state: &self.state,
+            catalog: &self.catalog,
+            spells: &spells,
+        };
+        brains.prepare(&input, tick);
+        (brains, memories)
+    }
+
+    /// One decision of an [`World::assistant`] brain, as the match's own AI players decide
+    /// after a step: the commands it issues, to be sent as its player's for the next tick.
+    /// Nothing while cinematic mode holds the battle.
+    pub fn assist(&mut self, brains: &ai::Brains, memories: &mut [ai::Memory]) -> Vec<ai::Command> {
+        if mission::holding(&self.state) {
+            return Vec::new();
+        }
+        self.economy.index(&self.state, &self.catalog);
+        let tick_now = self.tick();
+        let spells = abilities::Ctx {
+            senses: combat::Senses {
+                catalog: &self.catalog,
+                terrain: &self.terrain,
+                vision: &self.vision,
+                rules: &self.sight,
+                combat: &self.combat.rules,
+                camps: &self.combat.camps,
+                teams: &self.combat.teams,
+                cache: None,
+            },
+            spatial: &mut self.motion.spatial,
+            events: &mut self.events,
+            economy: &mut self.economy,
+            limits: self.combat.limits,
+            suppress: 0,
+        };
+        let input = ai::frame::Input {
+            state: &self.state,
+            catalog: &self.catalog,
+            spells: &spells,
+        };
+        brains
+            .decide(&input, memories, tick_now, &[])
+            .into_iter()
+            .map(|(_, command)| command)
+            .collect()
     }
 
     /// The lockstep clock commands are scheduled on. It runs on while cinematic dialogue
@@ -647,6 +756,7 @@ impl World {
             .partition(|c| c.tick <= tick);
         self.pending = keep;
         due.sort_by_key(|c| (c.tick, c.player, c.seq));
+        self.applied.clear();
         for command in due {
             let owner = Owner::Player(command.player);
             let result = self.apply(owner, &command.action);
@@ -661,6 +771,12 @@ impl World {
                 tick,
                 accepted,
             );
+            self.applied.push(Applied {
+                player: command.player,
+                seq: command.seq,
+                action: command.action,
+                accepted,
+            });
         }
     }
 
@@ -1093,6 +1209,7 @@ impl World {
             events: abilities::Events::default(),
             ai: brains,
             campaign,
+            applied: Vec::new(),
         };
         world.sync_ai_tech();
         world.prepare_ai();

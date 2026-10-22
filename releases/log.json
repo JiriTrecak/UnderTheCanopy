@@ -35,7 +35,9 @@
       "The beetles' Supply Cart: a slow, sturdy, unarmed draft beetle hauling glass tanks of substance along their roads; whoever breaks one takes the amber it carries",
       "Mission scenes can make heroes and soldiers kneel or lie asleep, and raise a light or an effect where the story needs one",
       "The Hollow Brood's webbed hollow is strung with old spider webs and the lost patrol's silk cocoons, the Hollow's dead lie along the road, and an amber-lit broodkeepers' shrine stands in the Moonlit Hollow; the Glass Road's station has a gate that must be broken down",
-      "A new enchanted forest weather: a warm golden evening with cool blue shade and gold fireflies drifting through the forest in loose swarms. The Hollow Brood now plays under it"
+      "A new enchanted forest weather: a warm golden evening with cool blue shade and gold fireflies drifting through the forest in loose swarms. The Hollow Brood now plays under it",
+      "Play with AI: a campaign mission with an autoplay plan can play itself from the campaign screen, sped up (1×, 2×, 4× or 8×, 4× to start) with its scenes at normal speed and the camera following the action; Take over (F7) hands it back to you",
+      "The editor's Test with AI plays the open mission with its autoplay plan, and the game's --autoplay flag plays a mission so from the command line"
     ],
     "improved": [
       "Frost Hollow: frozen ice, quiet frosted snow, a bank of roots with pale spires, a crusted shore and big frosted leaves, rebuilt to its drawn layout",

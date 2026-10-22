@@ -167,6 +167,7 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
             content: None,
             encounter: None,
             exploration: None,
+            autoplay: false,
         },
     )?;
 
