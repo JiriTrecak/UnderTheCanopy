@@ -408,7 +408,10 @@ impl Hud {
             }
             if let Some(value) = ui.find_in(cell, "value") {
                 let text = format!("{}/{}", s.committed, s.capacity);
-                if s.over_capacity > 0 {
+                if s.capacity == 0 {
+                    // No base at all (a mission's party on the road): nothing to be over.
+                    ui.set_text(value, &s.committed.to_string());
+                } else if s.over_capacity > 0 {
                     ui.set_text(value, &format!("[color=#ed8d77]{text}[/color]"));
                 } else {
                     ui.set_text(value, &text);
