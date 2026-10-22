@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "glass-road",
+  "kind": "map",
+  "name": "The Glass Road",
+  "version": "1.0.0",
+  "dependencies": {
+    "base": ">=0.4.1"
+  },
+  "description": "Act I, Mission Three. The beetles keep substance in glass and are not changed by it: Aurelith takes the Glass Road to their station to learn how."
+}

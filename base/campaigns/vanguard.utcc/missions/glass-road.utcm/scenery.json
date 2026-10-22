@@ -1,0 +1,3804 @@
+{
+  "objects": [
+    {
+      "id": "dress.0",
+      "asset": "scenery.beetle-road-ramp",
+      "x": 104,
+      "z": 232,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.1",
+      "asset": "scenery.beetle-road-ramp",
+      "x": 120,
+      "z": 200,
+      "yaw": 3.142,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.2",
+      "asset": "scenery.beetle-road-ramp",
+      "x": 248,
+      "z": 144,
+      "yaw": 3.142,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.3",
+      "asset": "scenery.beetle-road-ramp",
+      "x": 232,
+      "z": 204,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.4",
+      "asset": "scenery.beetle-road-ramp",
+      "x": 288,
+      "z": 200,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.5",
+      "asset": "scenery.beetle-road-straight",
+      "x": 160,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.6",
+      "asset": "scenery.beetle-road-straight",
+      "x": 152,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.7",
+      "asset": "scenery.beetle-road-straight",
+      "x": 144,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.8",
+      "asset": "scenery.beetle-road-straight",
+      "x": 136,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.9",
+      "asset": "scenery.beetle-road-straight",
+      "x": 128,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.10",
+      "asset": "scenery.beetle-road-junction",
+      "x": 120,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.11",
+      "asset": "scenery.beetle-road-straight",
+      "x": 112,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.12",
+      "asset": "scenery.beetle-road-junction",
+      "x": 104,
+      "z": 216,
+      "yaw": -1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.13",
+      "asset": "scenery.beetle-road-straight",
+      "x": 96,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.14",
+      "asset": "scenery.beetle-road-straight",
+      "x": 88,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.15",
+      "asset": "scenery.beetle-road-straight",
+      "x": 80,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.16",
+      "asset": "scenery.beetle-road-straight",
+      "x": 72,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.17",
+      "asset": "scenery.beetle-road-straight",
+      "x": 64,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.18",
+      "asset": "scenery.beetle-road-straight",
+      "x": 56,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.19",
+      "asset": "scenery.beetle-road-straight",
+      "x": 48,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.20",
+      "asset": "scenery.beetle-road-straight",
+      "x": 40,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.21",
+      "asset": "scenery.beetle-road-straight",
+      "x": 32,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.22",
+      "asset": "scenery.beetle-road-straight",
+      "x": 24,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.23",
+      "asset": "scenery.beetle-road-straight",
+      "x": 16,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.24",
+      "asset": "scenery.beetle-road-straight",
+      "x": 8,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.25",
+      "asset": "scenery.beetle-road-straight",
+      "x": 0,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.26",
+      "asset": "scenery.beetle-road-straight",
+      "x": -8,
+      "z": 216,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.27",
+      "asset": "scenery.beetle-road-straight",
+      "x": 168,
+      "z": 208,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.28",
+      "asset": "scenery.beetle-road-straight",
+      "x": 168,
+      "z": 200,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.29",
+      "asset": "scenery.beetle-road-straight",
+      "x": 168,
+      "z": 192,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.30",
+      "asset": "scenery.beetle-road-straight",
+      "x": 168,
+      "z": 184,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.31",
+      "asset": "scenery.beetle-road-straight",
+      "x": 168,
+      "z": 176,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.32",
+      "asset": "scenery.beetle-road-straight",
+      "x": 168,
+      "z": 168,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.33",
+      "asset": "scenery.beetle-road-straight",
+      "x": 176,
+      "z": 160,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.34",
+      "asset": "scenery.beetle-road-straight",
+      "x": 184,
+      "z": 160,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.35",
+      "asset": "scenery.beetle-road-straight",
+      "x": 192,
+      "z": 160,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.36",
+      "asset": "scenery.beetle-road-straight",
+      "x": 200,
+      "z": 160,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.37",
+      "asset": "scenery.beetle-road-straight",
+      "x": 208,
+      "z": 160,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.38",
+      "asset": "scenery.beetle-road-crossing",
+      "x": 216,
+      "z": 160,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.39",
+      "asset": "scenery.beetle-road-crossing",
+      "x": 224,
+      "z": 160,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.40",
+      "asset": "scenery.beetle-road-junction",
+      "x": 232,
+      "z": 160,
+      "yaw": -1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.41",
+      "asset": "scenery.beetle-road-crossing",
+      "x": 240,
+      "z": 160,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.42",
+      "asset": "scenery.beetle-road-junction",
+      "x": 248,
+      "z": 160,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.43",
+      "asset": "scenery.beetle-road-straight",
+      "x": 256,
+      "z": 160,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.44",
+      "asset": "scenery.beetle-road-straight",
+      "x": 264,
+      "z": 160,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.45",
+      "asset": "scenery.beetle-road-straight",
+      "x": 272,
+      "z": 160,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.46",
+      "asset": "scenery.beetle-road-straight",
+      "x": 280,
+      "z": 160,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.47",
+      "asset": "scenery.beetle-road-junction",
+      "x": 288,
+      "z": 160,
+      "yaw": -1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.48",
+      "asset": "scenery.beetle-road-straight",
+      "x": 296,
+      "z": 160,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.49",
+      "asset": "scenery.beetle-road-straight",
+      "x": 304,
+      "z": 160,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.50",
+      "asset": "scenery.beetle-road-straight",
+      "x": 312,
+      "z": 160,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.51",
+      "asset": "scenery.beetle-road-straight",
+      "x": 320,
+      "z": 160,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.52",
+      "asset": "scenery.beetle-road-straight",
+      "x": 328,
+      "z": 160,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.53",
+      "asset": "scenery.beetle-road-straight",
+      "x": 336,
+      "z": 160,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.54",
+      "asset": "scenery.beetle-road-corner",
+      "x": 168,
+      "z": 216,
+      "yaw": 3.142,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.55",
+      "asset": "scenery.beetle-road-corner",
+      "x": 168,
+      "z": 160,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.56",
+      "asset": "scenery.beetle-road-corner",
+      "x": 340,
+      "z": 160,
+      "yaw": 3.142,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.57",
+      "asset": "scenery.beetle-road-crossing",
+      "x": 216,
+      "z": 172,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.58",
+      "asset": "scenery.beetle-road-crossing",
+      "x": 216,
+      "z": 180,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.59",
+      "asset": "scenery.beetle-road-crossing",
+      "x": 216,
+      "z": 188,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.60",
+      "asset": "scenery.beetle-road-crossing",
+      "x": 224,
+      "z": 172,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.61",
+      "asset": "scenery.beetle-road-crossing",
+      "x": 224,
+      "z": 180,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.62",
+      "asset": "scenery.beetle-road-crossing",
+      "x": 224,
+      "z": 188,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.63",
+      "asset": "scenery.beetle-road-crossing",
+      "x": 232,
+      "z": 172,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.64",
+      "asset": "scenery.beetle-road-crossing",
+      "x": 232,
+      "z": 180,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.65",
+      "asset": "scenery.beetle-road-crossing",
+      "x": 232,
+      "z": 188,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.66",
+      "asset": "scenery.beetle-road-crossing",
+      "x": 240,
+      "z": 172,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.67",
+      "asset": "scenery.beetle-road-crossing",
+      "x": 240,
+      "z": 180,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.68",
+      "asset": "scenery.beetle-road-crossing",
+      "x": 240,
+      "z": 188,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.69",
+      "asset": "scenery.beetle-road-ramp",
+      "x": 340,
+      "z": 144,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.70",
+      "asset": "scenery.beetle-road-straight",
+      "x": 340,
+      "z": 132,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.71",
+      "asset": "scenery.beetle-road-straight",
+      "x": 340,
+      "z": 124,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.72",
+      "asset": "scenery.beetle-road-straight",
+      "x": 340,
+      "z": 116,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.73",
+      "asset": "scenery.beetle-road-ramp",
+      "x": 340,
+      "z": 104,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.74",
+      "asset": "scenery.beetle-road-straight",
+      "x": 340,
+      "z": 92,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.75",
+      "asset": "scenery.beetle-road-straight",
+      "x": 340,
+      "z": 84,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.76",
+      "asset": "scenery.beetle-road-straight",
+      "x": 340,
+      "z": 76,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.77",
+      "asset": "scenery.beetle-road-end",
+      "x": 340,
+      "z": 68,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.78",
+      "asset": "scenery.beetle-lantern",
+      "x": 36.0,
+      "z": 210.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.79",
+      "asset": "scenery.beetle-lantern",
+      "x": 36.0,
+      "z": 222.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.80",
+      "asset": "scenery.beetle-lantern",
+      "x": 60.0,
+      "z": 210.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.81",
+      "asset": "scenery.beetle-lantern",
+      "x": 60.0,
+      "z": 222.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.82",
+      "asset": "scenery.beetle-lantern",
+      "x": 84.0,
+      "z": 210.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.83",
+      "asset": "scenery.beetle-lantern",
+      "x": 84.0,
+      "z": 222.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.84",
+      "asset": "scenery.beetle-lantern",
+      "x": 132.0,
+      "z": 210.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.85",
+      "asset": "scenery.beetle-lantern",
+      "x": 156.0,
+      "z": 210.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.86",
+      "asset": "scenery.beetle-lantern",
+      "x": 156.0,
+      "z": 222.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.87",
+      "asset": "scenery.beetle-lantern",
+      "x": 162.0,
+      "z": 200.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.88",
+      "asset": "scenery.beetle-lantern",
+      "x": 174.0,
+      "z": 200.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.89",
+      "asset": "scenery.beetle-lantern",
+      "x": 162.0,
+      "z": 176.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.90",
+      "asset": "scenery.beetle-lantern",
+      "x": 184.0,
+      "z": 154.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.91",
+      "asset": "scenery.beetle-lantern",
+      "x": 184.0,
+      "z": 166.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.92",
+      "asset": "scenery.beetle-lantern",
+      "x": 208.0,
+      "z": 154.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.93",
+      "asset": "scenery.beetle-lantern",
+      "x": 304.0,
+      "z": 154.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.94",
+      "asset": "scenery.beetle-lantern",
+      "x": 304.0,
+      "z": 166.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.95",
+      "asset": "scenery.beetle-lantern",
+      "x": 328.0,
+      "z": 154.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.96",
+      "asset": "scenery.beetle-lantern",
+      "x": 328.0,
+      "z": 166.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.97",
+      "asset": "scenery.beetle-lantern",
+      "x": 334.0,
+      "z": 122.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.98",
+      "asset": "scenery.beetle-lantern",
+      "x": 346.0,
+      "z": 122.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.99",
+      "asset": "scenery.beetle-lantern",
+      "x": 334.0,
+      "z": 86.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.100",
+      "asset": "scenery.beetle-lantern",
+      "x": 346.0,
+      "z": 86.0,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.101",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 40,
+      "z": 208.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.102",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 48,
+      "z": 208.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.103",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 56,
+      "z": 208.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.104",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 64,
+      "z": 208.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.105",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 72,
+      "z": 208.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.106",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 80,
+      "z": 208.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.107",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 88,
+      "z": 208.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.108",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 136,
+      "z": 208.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.109",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 144,
+      "z": 208.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.110",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 152,
+      "z": 208.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.111",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 175.4,
+      "z": 204,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.112",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 175.4,
+      "z": 196,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.113",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 175.4,
+      "z": 188,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.114",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 175.4,
+      "z": 180,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.115",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 175.4,
+      "z": 172,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.116",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 180,
+      "z": 152.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.117",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 188,
+      "z": 152.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.118",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 196,
+      "z": 152.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.119",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 204,
+      "z": 152.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.120",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 212,
+      "z": 152.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.121",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 220,
+      "z": 152.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.122",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 260,
+      "z": 152.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.123",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 268,
+      "z": 152.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.124",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 276,
+      "z": 152.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.125",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 300,
+      "z": 152.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.126",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 308,
+      "z": 152.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.127",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 316,
+      "z": 152.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.128",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 324,
+      "z": 152.6,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.129",
+      "asset": "scenery.beetle-substance-tank-small",
+      "x": 180,
+      "z": 203,
+      "yaw": 0.4,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.130",
+      "asset": "scenery.beetle-substance-tank-small",
+      "x": 180,
+      "z": 219,
+      "yaw": 2.1,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.131",
+      "asset": "scenery.beetle-substance-tank",
+      "x": 196,
+      "z": 186,
+      "yaw": 1.2,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.132",
+      "asset": "scenery.beetle-substance-tank-small",
+      "x": 263,
+      "z": 189,
+      "yaw": 0.9,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.133",
+      "asset": "scenery.beetle-substance-tank-small",
+      "x": 312,
+      "z": 189,
+      "yaw": 2.4,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.134",
+      "asset": "scenery.beetle-wall-tower",
+      "x": 214,
+      "z": 194,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.135",
+      "asset": "scenery.beetle-wall",
+      "x": 222,
+      "z": 194.8,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.136",
+      "asset": "scenery.beetle-wall-tower",
+      "x": 246,
+      "z": 194,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.137",
+      "asset": "scenery.beetle-lantern",
+      "x": 246,
+      "z": 172,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.138",
+      "asset": "scenery.beetle-condenser",
+      "x": 340,
+      "z": 56,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.139",
+      "asset": "scenery.beetle-wall",
+      "x": 300,
+      "z": 41.2,
+      "yaw": 3.142,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.140",
+      "asset": "scenery.beetle-wall",
+      "x": 300,
+      "z": 94.8,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.141",
+      "asset": "scenery.beetle-wall",
+      "x": 308,
+      "z": 41.2,
+      "yaw": 3.142,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.142",
+      "asset": "scenery.beetle-wall",
+      "x": 308,
+      "z": 94.8,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.143",
+      "asset": "scenery.beetle-wall",
+      "x": 316,
+      "z": 41.2,
+      "yaw": 3.142,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.144",
+      "asset": "scenery.beetle-wall",
+      "x": 316,
+      "z": 94.8,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.145",
+      "asset": "scenery.beetle-wall",
+      "x": 324,
+      "z": 41.2,
+      "yaw": 3.142,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.146",
+      "asset": "scenery.beetle-wall",
+      "x": 324,
+      "z": 94.8,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.147",
+      "asset": "scenery.beetle-wall",
+      "x": 332,
+      "z": 41.2,
+      "yaw": 3.142,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.148",
+      "asset": "scenery.beetle-wall",
+      "x": 340,
+      "z": 41.2,
+      "yaw": 3.142,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.149",
+      "asset": "scenery.beetle-wall",
+      "x": 348,
+      "z": 41.2,
+      "yaw": 3.142,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.150",
+      "asset": "scenery.beetle-wall",
+      "x": 356,
+      "z": 41.2,
+      "yaw": 3.142,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.151",
+      "asset": "scenery.beetle-wall",
+      "x": 356,
+      "z": 94.8,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.152",
+      "asset": "scenery.beetle-wall",
+      "x": 364,
+      "z": 41.2,
+      "yaw": 3.142,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.153",
+      "asset": "scenery.beetle-wall",
+      "x": 364,
+      "z": 94.8,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.154",
+      "asset": "scenery.beetle-wall",
+      "x": 372,
+      "z": 41.2,
+      "yaw": 3.142,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.155",
+      "asset": "scenery.beetle-wall",
+      "x": 372,
+      "z": 94.8,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.156",
+      "asset": "scenery.beetle-wall",
+      "x": 380,
+      "z": 41.2,
+      "yaw": 3.142,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.157",
+      "asset": "scenery.beetle-wall",
+      "x": 380,
+      "z": 94.8,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.158",
+      "asset": "scenery.beetle-wall",
+      "x": 388,
+      "z": 41.2,
+      "yaw": 3.142,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.159",
+      "asset": "scenery.beetle-wall",
+      "x": 388,
+      "z": 94.8,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.160",
+      "asset": "scenery.beetle-wall",
+      "x": 396,
+      "z": 41.2,
+      "yaw": 3.142,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.161",
+      "asset": "scenery.beetle-wall",
+      "x": 396,
+      "z": 94.8,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.162",
+      "asset": "scenery.beetle-wall",
+      "x": 293.2,
+      "z": 48,
+      "yaw": -1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.163",
+      "asset": "scenery.beetle-wall",
+      "x": 402.8,
+      "z": 48,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.164",
+      "asset": "scenery.beetle-wall",
+      "x": 293.2,
+      "z": 56,
+      "yaw": -1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.165",
+      "asset": "scenery.beetle-wall",
+      "x": 402.8,
+      "z": 56,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.166",
+      "asset": "scenery.beetle-wall",
+      "x": 293.2,
+      "z": 64,
+      "yaw": -1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.167",
+      "asset": "scenery.beetle-wall",
+      "x": 402.8,
+      "z": 64,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.168",
+      "asset": "scenery.beetle-wall",
+      "x": 293.2,
+      "z": 72,
+      "yaw": -1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.169",
+      "asset": "scenery.beetle-wall",
+      "x": 402.8,
+      "z": 72,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.170",
+      "asset": "scenery.beetle-wall",
+      "x": 293.2,
+      "z": 80,
+      "yaw": -1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.171",
+      "asset": "scenery.beetle-wall",
+      "x": 402.8,
+      "z": 80,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.172",
+      "asset": "scenery.beetle-wall",
+      "x": 293.2,
+      "z": 88,
+      "yaw": -1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.173",
+      "asset": "scenery.beetle-wall",
+      "x": 402.8,
+      "z": 88,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.174",
+      "asset": "scenery.beetle-wall-tower",
+      "x": 294,
+      "z": 42,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.175",
+      "asset": "scenery.beetle-wall-tower",
+      "x": 402,
+      "z": 42,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.176",
+      "asset": "scenery.beetle-wall-tower",
+      "x": 294,
+      "z": 94,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.177",
+      "asset": "scenery.beetle-wall-tower",
+      "x": 402,
+      "z": 94,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.178",
+      "asset": "scenery.beetle-wall-tower",
+      "x": 330,
+      "z": 94,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.179",
+      "asset": "scenery.beetle-wall-tower",
+      "x": 350,
+      "z": 94,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.180",
+      "asset": "scenery.beetle-substance-tank",
+      "x": 324,
+      "z": 46,
+      "yaw": 0.074,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.181",
+      "asset": "scenery.beetle-substance-tank",
+      "x": 396,
+      "z": 64,
+      "yaw": 0.674,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.182",
+      "asset": "scenery.beetle-substance-tank-small",
+      "x": 300,
+      "z": 46,
+      "yaw": 2.357,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.183",
+      "asset": "scenery.beetle-substance-tank-small",
+      "x": 310,
+      "z": 46,
+      "yaw": 4.103,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.184",
+      "asset": "scenery.beetle-substance-tank-small",
+      "x": 398,
+      "z": 78,
+      "yaw": 0.832,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.185",
+      "asset": "scenery.beetle-substance-tank-small",
+      "x": 316,
+      "z": 62,
+      "yaw": 0.675,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.186",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 304,
+      "z": 52,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.187",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 312,
+      "z": 52,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.188",
+      "asset": "scenery.beetle-pipe-run",
+      "x": 320,
+      "z": 52,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.189",
+      "asset": "scenery.beetle-substance-tank",
+      "x": 324,
+      "z": 116,
+      "yaw": 0.6,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.190",
+      "asset": "scenery.beetle-substance-tank",
+      "x": 356,
+      "z": 116,
+      "yaw": 2.6,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.191",
+      "asset": "scenery.beetle-lantern",
+      "x": 320,
+      "z": 132,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.192",
+      "asset": "scenery.beetle-lantern",
+      "x": 360,
+      "z": 132,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.193",
+      "asset": "scenery.beetle-lantern",
+      "x": 320,
+      "z": 100,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.194",
+      "asset": "scenery.beetle-lantern",
+      "x": 360,
+      "z": 100,
+      "yaw": 0.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.195",
+      "asset": "scenery.giants-pebbles",
+      "x": 312,
+      "z": 72,
+      "yaw": 1.0,
+      "scale": 0.6
+    },
+    {
+      "id": "dress.196",
+      "asset": "scenery.lookdev-root-arch",
+      "x": 59,
+      "z": 261.5,
+      "yaw": 1.571,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.197",
+      "asset": "scenery.giants-acorn-cup",
+      "x": 238,
+      "z": 232,
+      "yaw": 0.6,
+      "scale": 1.1
+    },
+    {
+      "id": "dress.198",
+      "asset": "scenery.giants-acorn",
+      "x": 252,
+      "z": 224,
+      "yaw": 2.2,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.199",
+      "asset": "scenery.giants-leaf-oak",
+      "x": 90,
+      "z": 304,
+      "yaw": 1.1,
+      "scale": 0.7
+    },
+    {
+      "id": "dress.200",
+      "asset": "scenery.giants-acorn",
+      "x": 146,
+      "z": 312,
+      "yaw": 0.4,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.201",
+      "asset": "scenery.shore-cattails",
+      "x": 244.69,
+      "z": 326.9,
+      "yaw": 0.364,
+      "scale": 6.925
+    },
+    {
+      "id": "dress.202",
+      "asset": "scenery.shore-cattails",
+      "x": 243.69,
+      "z": 328.87,
+      "yaw": 1.23,
+      "scale": 8.372
+    },
+    {
+      "id": "dress.203",
+      "asset": "scenery.shore-cattails",
+      "x": 241.49,
+      "z": 335.25,
+      "yaw": 2.352,
+      "scale": 8.387
+    },
+    {
+      "id": "dress.204",
+      "asset": "scenery.shore-cattails",
+      "x": 241.11,
+      "z": 337.32,
+      "yaw": 2.498,
+      "scale": 8.651
+    },
+    {
+      "id": "dress.205",
+      "asset": "scenery.shore-cattails",
+      "x": 240.37,
+      "z": 334.63,
+      "yaw": 1.079,
+      "scale": 6.539
+    },
+    {
+      "id": "dress.206",
+      "asset": "scenery.shore-cattails",
+      "x": 237.35,
+      "z": 345.21,
+      "yaw": 5.21,
+      "scale": 8.605
+    },
+    {
+      "id": "dress.207",
+      "asset": "scenery.shore-cattails",
+      "x": 238.1,
+      "z": 345.46,
+      "yaw": 4.379,
+      "scale": 6.775
+    },
+    {
+      "id": "dress.208",
+      "asset": "scenery.shore-cattails",
+      "x": 239.79,
+      "z": 343.15,
+      "yaw": 0.248,
+      "scale": 7.344
+    },
+    {
+      "id": "dress.209",
+      "asset": "scenery.shore-cattails",
+      "x": 232.81,
+      "z": 349.18,
+      "yaw": 1.279,
+      "scale": 8.997
+    },
+    {
+      "id": "dress.210",
+      "asset": "scenery.shore-cattails",
+      "x": 230.58,
+      "z": 351.01,
+      "yaw": 5.379,
+      "scale": 8.24
+    },
+    {
+      "id": "dress.211",
+      "asset": "scenery.shore-cattails",
+      "x": 233.95,
+      "z": 351.27,
+      "yaw": 1.77,
+      "scale": 6.694
+    },
+    {
+      "id": "dress.212",
+      "asset": "scenery.shore-cattails",
+      "x": 230.32,
+      "z": 351.09,
+      "yaw": 2.248,
+      "scale": 9.828
+    },
+    {
+      "id": "dress.213",
+      "asset": "scenery.shore-cattails",
+      "x": 224.92,
+      "z": 356.29,
+      "yaw": 1.181,
+      "scale": 7.819
+    },
+    {
+      "id": "dress.214",
+      "asset": "scenery.shore-cattails",
+      "x": 225.52,
+      "z": 354.1,
+      "yaw": 4.733,
+      "scale": 8.247
+    },
+    {
+      "id": "dress.215",
+      "asset": "scenery.shore-cattails",
+      "x": 222.79,
+      "z": 352.72,
+      "yaw": 5.898,
+      "scale": 6.477
+    },
+    {
+      "id": "dress.216",
+      "asset": "scenery.shore-cattails",
+      "x": 221.04,
+      "z": 354.79,
+      "yaw": 0.348,
+      "scale": 8.447
+    },
+    {
+      "id": "dress.217",
+      "asset": "scenery.shore-cattails",
+      "x": 219.13,
+      "z": 357.63,
+      "yaw": 5.889,
+      "scale": 7.961
+    },
+    {
+      "id": "dress.218",
+      "asset": "scenery.shore-cattails",
+      "x": 219.45,
+      "z": 357.61,
+      "yaw": 2.913,
+      "scale": 9.189
+    },
+    {
+      "id": "dress.219",
+      "asset": "scenery.shore-cattails",
+      "x": 219.51,
+      "z": 356.18,
+      "yaw": 4.975,
+      "scale": 6.098
+    },
+    {
+      "id": "dress.220",
+      "asset": "scenery.shore-cattails",
+      "x": 209.33,
+      "z": 356.67,
+      "yaw": 2.251,
+      "scale": 7.13
+    },
+    {
+      "id": "dress.221",
+      "asset": "scenery.shore-cattails",
+      "x": 208.64,
+      "z": 356.8,
+      "yaw": 0.749,
+      "scale": 9.461
+    },
+    {
+      "id": "dress.222",
+      "asset": "scenery.shore-cattails",
+      "x": 208.13,
+      "z": 359.08,
+      "yaw": 1.239,
+      "scale": 6.773
+    },
+    {
+      "id": "dress.223",
+      "asset": "scenery.shore-cattails",
+      "x": 201.99,
+      "z": 353.74,
+      "yaw": 3.08,
+      "scale": 8.838
+    },
+    {
+      "id": "dress.224",
+      "asset": "scenery.shore-cattails",
+      "x": 201.79,
+      "z": 352.41,
+      "yaw": 1.168,
+      "scale": 8.458
+    },
+    {
+      "id": "dress.225",
+      "asset": "scenery.shore-cattails",
+      "x": 194.16,
+      "z": 351.06,
+      "yaw": 4.699,
+      "scale": 8.979
+    },
+    {
+      "id": "dress.226",
+      "asset": "scenery.shore-cattails",
+      "x": 197.4,
+      "z": 353.32,
+      "yaw": 3.478,
+      "scale": 6.665
+    },
+    {
+      "id": "dress.227",
+      "asset": "scenery.shore-cattails",
+      "x": 197.04,
+      "z": 351.04,
+      "yaw": 2.549,
+      "scale": 6.563
+    },
+    {
+      "id": "dress.228",
+      "asset": "scenery.shore-cattails",
+      "x": 193.52,
+      "z": 344.0,
+      "yaw": 3.524,
+      "scale": 9.677
+    },
+    {
+      "id": "dress.229",
+      "asset": "scenery.shore-cattails",
+      "x": 191.03,
+      "z": 346.53,
+      "yaw": 0.227,
+      "scale": 7.889
+    },
+    {
+      "id": "dress.230",
+      "asset": "scenery.shore-cattails",
+      "x": 193.27,
+      "z": 343.87,
+      "yaw": 3.219,
+      "scale": 7.739
+    },
+    {
+      "id": "dress.231",
+      "asset": "scenery.shore-cattails",
+      "x": 190.05,
+      "z": 336.06,
+      "yaw": 1.191,
+      "scale": 6.858
+    },
+    {
+      "id": "dress.232",
+      "asset": "scenery.shore-cattails",
+      "x": 188.16,
+      "z": 337.32,
+      "yaw": 2.21,
+      "scale": 9.084
+    },
+    {
+      "id": "dress.233",
+      "asset": "scenery.shore-cattails",
+      "x": 188.59,
+      "z": 333.37,
+      "yaw": 2.712,
+      "scale": 8.608
+    },
+    {
+      "id": "dress.234",
+      "asset": "scenery.shore-cattails",
+      "x": 188.45,
+      "z": 331.49,
+      "yaw": 0.408,
+      "scale": 6.616
+    },
+    {
+      "id": "dress.235",
+      "asset": "scenery.shore-cattails",
+      "x": 189.05,
+      "z": 333.15,
+      "yaw": 5.887,
+      "scale": 7.109
+    },
+    {
+      "id": "dress.236",
+      "asset": "scenery.shore-cattails",
+      "x": 186.91,
+      "z": 330.96,
+      "yaw": 5.336,
+      "scale": 6.984
+    },
+    {
+      "id": "dress.237",
+      "asset": "scenery.shore-cattails",
+      "x": 184.44,
+      "z": 321.14,
+      "yaw": 3.796,
+      "scale": 9.073
+    },
+    {
+      "id": "dress.238",
+      "asset": "scenery.shore-cattails",
+      "x": 186.88,
+      "z": 323.25,
+      "yaw": 4.247,
+      "scale": 6.082
+    },
+    {
+      "id": "dress.239",
+      "asset": "scenery.shore-cattails",
+      "x": 192.6,
+      "z": 313.76,
+      "yaw": 5.15,
+      "scale": 7.234
+    },
+    {
+      "id": "dress.240",
+      "asset": "scenery.shore-cattails",
+      "x": 191.46,
+      "z": 314.39,
+      "yaw": 3.325,
+      "scale": 6.887
+    },
+    {
+      "id": "dress.241",
+      "asset": "scenery.shore-cattails",
+      "x": 191.55,
+      "z": 314.98,
+      "yaw": 1.454,
+      "scale": 8.823
+    },
+    {
+      "id": "dress.242",
+      "asset": "scenery.shore-cattails",
+      "x": 194.58,
+      "z": 308.06,
+      "yaw": 0.648,
+      "scale": 8.197
+    },
+    {
+      "id": "dress.243",
+      "asset": "scenery.shore-cattails",
+      "x": 192.24,
+      "z": 309.88,
+      "yaw": 4.562,
+      "scale": 7.71
+    },
+    {
+      "id": "dress.244",
+      "asset": "scenery.shore-cattails",
+      "x": 193.99,
+      "z": 308.2,
+      "yaw": 4.793,
+      "scale": 9.738
+    },
+    {
+      "id": "dress.245",
+      "asset": "scenery.shore-cattails",
+      "x": 191.83,
+      "z": 310.41,
+      "yaw": 3.276,
+      "scale": 6.307
+    },
+    {
+      "id": "dress.246",
+      "asset": "scenery.shore-cattails",
+      "x": 202.53,
+      "z": 305.03,
+      "yaw": 4.114,
+      "scale": 9.603
+    },
+    {
+      "id": "dress.247",
+      "asset": "scenery.shore-cattails",
+      "x": 203.91,
+      "z": 306.03,
+      "yaw": 2.033,
+      "scale": 6.675
+    },
+    {
+      "id": "dress.248",
+      "asset": "scenery.shore-cattails",
+      "x": 200.96,
+      "z": 306.55,
+      "yaw": 0.341,
+      "scale": 8.277
+    },
+    {
+      "id": "dress.249",
+      "asset": "scenery.shore-cattails",
+      "x": 210.76,
+      "z": 302.34,
+      "yaw": 0.348,
+      "scale": 9.478
+    },
+    {
+      "id": "dress.250",
+      "asset": "scenery.shore-cattails",
+      "x": 211.73,
+      "z": 305.0,
+      "yaw": 2.473,
+      "scale": 9.007
+    },
+    {
+      "id": "dress.251",
+      "asset": "scenery.shore-cattails",
+      "x": 210.49,
+      "z": 305.33,
+      "yaw": 4.721,
+      "scale": 9.823
+    },
+    {
+      "id": "dress.252",
+      "asset": "scenery.shore-cattails",
+      "x": 218.08,
+      "z": 304.83,
+      "yaw": 2.722,
+      "scale": 6.549
+    },
+    {
+      "id": "dress.253",
+      "asset": "scenery.shore-cattails",
+      "x": 218.2,
+      "z": 305.17,
+      "yaw": 5.223,
+      "scale": 6.501
+    },
+    {
+      "id": "dress.254",
+      "asset": "scenery.shore-cattails",
+      "x": 223.77,
+      "z": 307.69,
+      "yaw": 4.649,
+      "scale": 9.336
+    },
+    {
+      "id": "dress.255",
+      "asset": "scenery.shore-cattails",
+      "x": 224.8,
+      "z": 307.3,
+      "yaw": 2.521,
+      "scale": 6.277
+    },
+    {
+      "id": "dress.256",
+      "asset": "scenery.shore-cattails",
+      "x": 225.01,
+      "z": 307.61,
+      "yaw": 4.878,
+      "scale": 9.861
+    },
+    {
+      "id": "dress.257",
+      "asset": "scenery.shore-cattails",
+      "x": 232.91,
+      "z": 305.82,
+      "yaw": 4.678,
+      "scale": 7.728
+    },
+    {
+      "id": "dress.258",
+      "asset": "scenery.shore-cattails",
+      "x": 230.08,
+      "z": 305.13,
+      "yaw": 4.799,
+      "scale": 8.168
+    },
+    {
+      "id": "dress.259",
+      "asset": "scenery.shore-cattails",
+      "x": 231.71,
+      "z": 306.16,
+      "yaw": 4.148,
+      "scale": 7.929
+    },
+    {
+      "id": "dress.260",
+      "asset": "scenery.shore-cattails",
+      "x": 230.02,
+      "z": 307.16,
+      "yaw": 1.882,
+      "scale": 9.387
+    },
+    {
+      "id": "dress.261",
+      "asset": "scenery.shore-cattails",
+      "x": 239.17,
+      "z": 315.96,
+      "yaw": 4.904,
+      "scale": 8.791
+    },
+    {
+      "id": "dress.262",
+      "asset": "scenery.shore-cattails",
+      "x": 237.32,
+      "z": 314.62,
+      "yaw": 3.509,
+      "scale": 6.712
+    },
+    {
+      "id": "dress.263",
+      "asset": "scenery.shore-cattails",
+      "x": 239.35,
+      "z": 321.25,
+      "yaw": 5.135,
+      "scale": 9.901
+    },
+    {
+      "id": "dress.264",
+      "asset": "scenery.shore-cattails",
+      "x": 238.01,
+      "z": 319.38,
+      "yaw": 3.681,
+      "scale": 6.594
+    },
+    {
+      "id": "dress.265",
+      "asset": "scenery.shore-cattails",
+      "x": 240.85,
+      "z": 320.97,
+      "yaw": 3.205,
+      "scale": 9.269
+    },
+    {
+      "id": "dress.266",
+      "asset": "scenery.giants-snail-shell",
+      "x": 234,
+      "z": 60,
+      "yaw": 2.6,
+      "scale": 0.95
+    },
+    {
+      "id": "dress.267",
+      "asset": "scenery.shore-lily-pink",
+      "x": 224.54,
+      "z": 318.74,
+      "yaw": 2.72,
+      "scale": 6.541
+    },
+    {
+      "id": "dress.268",
+      "asset": "scenery.shore-lily-white",
+      "x": 199.14,
+      "z": 333.77,
+      "yaw": 5.262,
+      "scale": 7.067
+    },
+    {
+      "id": "dress.269",
+      "asset": "scenery.shore-lily-white",
+      "x": 196.37,
+      "z": 344.73,
+      "yaw": 4.94,
+      "scale": 7.008
+    },
+    {
+      "id": "dress.270",
+      "asset": "scenery.shore-lily-pink",
+      "x": 193.37,
+      "z": 330.0,
+      "yaw": 1.127,
+      "scale": 6.409
+    },
+    {
+      "id": "dress.271",
+      "asset": "scenery.shore-lily-white",
+      "x": 223.76,
+      "z": 317.81,
+      "yaw": 4.247,
+      "scale": 8.214
+    },
+    {
+      "id": "dress.272",
+      "asset": "scenery.shore-lily-white",
+      "x": 199.35,
+      "z": 320.5,
+      "yaw": 5.146,
+      "scale": 8.36
+    },
+    {
+      "id": "dress.273",
+      "asset": "scenery.shore-lily-pink",
+      "x": 234.72,
+      "z": 339.92,
+      "yaw": 3.82,
+      "scale": 6.868
+    },
+    {
+      "id": "dress.274",
+      "asset": "scenery.shore-lily-white",
+      "x": 221.33,
+      "z": 343.06,
+      "yaw": 4.868,
+      "scale": 8.544
+    },
+    {
+      "id": "dress.275",
+      "asset": "scenery.shore-lily-white",
+      "x": 204.89,
+      "z": 342.91,
+      "yaw": 0.44,
+      "scale": 7.242
+    },
+    {
+      "id": "dress.276",
+      "asset": "scenery.giants-clover",
+      "x": 376.77,
+      "z": 352.44,
+      "yaw": 0.312,
+      "scale": 0.974
+    },
+    {
+      "id": "dress.277",
+      "asset": "scenery.giants-sorrel",
+      "x": 384.97,
+      "z": 359.58,
+      "yaw": 0.391,
+      "scale": 1.001
+    },
+    {
+      "id": "dress.278",
+      "asset": "scenery.giants-clover",
+      "x": 387.03,
+      "z": 370.33,
+      "yaw": 0.971,
+      "scale": 0.909
+    },
+    {
+      "id": "dress.279",
+      "asset": "scenery.giants-sorrel",
+      "x": 383.34,
+      "z": 380.26,
+      "yaw": 0.863,
+      "scale": 1.144
+    },
+    {
+      "id": "dress.280",
+      "asset": "scenery.giants-clover",
+      "x": 376.76,
+      "z": 388.87,
+      "yaw": 4.231,
+      "scale": 1.125
+    },
+    {
+      "id": "dress.281",
+      "asset": "scenery.giants-sorrel",
+      "x": 366.0,
+      "z": 390.65,
+      "yaw": 1.497,
+      "scale": 1.117
+    },
+    {
+      "id": "dress.282",
+      "asset": "scenery.giants-clover",
+      "x": 355.49,
+      "z": 388.43,
+      "yaw": 5.54,
+      "scale": 0.99
+    },
+    {
+      "id": "dress.283",
+      "asset": "scenery.giants-sorrel",
+      "x": 348.08,
+      "z": 380.6,
+      "yaw": 4.307,
+      "scale": 1.121
+    },
+    {
+      "id": "dress.284",
+      "asset": "scenery.giants-clover",
+      "x": 345.67,
+      "z": 370.32,
+      "yaw": 1.579,
+      "scale": 0.903
+    },
+    {
+      "id": "dress.285",
+      "asset": "scenery.giants-sorrel",
+      "x": 347.49,
+      "z": 359.83,
+      "yaw": 5.542,
+      "scale": 1.042
+    },
+    {
+      "id": "dress.286",
+      "asset": "scenery.giants-clover",
+      "x": 355.39,
+      "z": 352.7,
+      "yaw": 4.147,
+      "scale": 1.062
+    },
+    {
+      "id": "dress.287",
+      "asset": "scenery.giants-mossy-stone",
+      "x": 354,
+      "z": 379,
+      "yaw": 0.631,
+      "scale": 0.7
+    },
+    {
+      "id": "dress.288",
+      "asset": "scenery.giants-mossy-stone",
+      "x": 379,
+      "z": 364,
+      "yaw": 5.485,
+      "scale": 0.7
+    },
+    {
+      "id": "dress.289",
+      "asset": "scenery.giants-moss",
+      "x": 360.96,
+      "z": 362.07,
+      "yaw": 2.064,
+      "scale": 0.6
+    },
+    {
+      "id": "dress.290",
+      "asset": "scenery.giants-moss",
+      "x": 370.88,
+      "z": 377.74,
+      "yaw": 2.194,
+      "scale": 0.6
+    },
+    {
+      "id": "dress.291",
+      "asset": "scenery.giants-moss",
+      "x": 367.19,
+      "z": 381.05,
+      "yaw": 3.971,
+      "scale": 0.6
+    },
+    {
+      "id": "dress.292",
+      "asset": "scenery.giants-moss",
+      "x": 380.05,
+      "z": 365.86,
+      "yaw": 2.796,
+      "scale": 0.6
+    },
+    {
+      "id": "dress.293",
+      "asset": "scenery.giants-moss",
+      "x": 364.29,
+      "z": 362.06,
+      "yaw": 2.601,
+      "scale": 0.6
+    },
+    {
+      "id": "dress.294",
+      "asset": "scenery.giants-moss",
+      "x": 352.5,
+      "z": 363.95,
+      "yaw": 0.252,
+      "scale": 0.6
+    },
+    {
+      "id": "dress.295",
+      "asset": "scenery.giants-beetle-husk",
+      "x": 54,
+      "z": 72,
+      "yaw": 2.4,
+      "scale": 1.1
+    },
+    {
+      "id": "dress.296",
+      "asset": "scenery.beetle-substance-tank-small",
+      "x": 66,
+      "z": 64,
+      "yaw": 1.2,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.297",
+      "asset": "scenery.giants-dew-drops",
+      "x": 74,
+      "z": 78,
+      "yaw": 0.4,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.298",
+      "asset": "scenery.giants-beech-trunk",
+      "x": 444,
+      "z": 446,
+      "yaw": 0.6,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.299",
+      "asset": "scenery.giants-beech-trunk",
+      "x": -6,
+      "z": 10,
+      "yaw": 2.0,
+      "scale": 1.1
+    },
+    {
+      "id": "dress.300",
+      "asset": "scenery.giants-root",
+      "x": 398,
+      "z": 418,
+      "yaw": 2.6,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.301",
+      "asset": "scenery.giants-root",
+      "x": 430,
+      "z": 384,
+      "yaw": 1.4,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.302",
+      "asset": "scenery.giants-root",
+      "x": 30,
+      "z": 40,
+      "yaw": 5.4,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.303",
+      "asset": "scenery.giants-branch",
+      "x": 196,
+      "z": 10,
+      "yaw": 0.06,
+      "scale": 1.15
+    },
+    {
+      "id": "dress.304",
+      "asset": "scenery.giants-feather",
+      "x": 252,
+      "z": 424,
+      "yaw": 2.9,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.305",
+      "asset": "scenery.giants-parasol",
+      "x": 110,
+      "z": 6,
+      "yaw": 0.5,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.306",
+      "asset": "scenery.giants-parasol",
+      "x": 330,
+      "z": 4,
+      "yaw": 1.7,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.307",
+      "asset": "scenery.giants-parasol",
+      "x": 446,
+      "z": 230,
+      "yaw": 2.4,
+      "scale": 0.85
+    },
+    {
+      "id": "dress.308",
+      "asset": "scenery.giants-fern-crown",
+      "x": 6,
+      "z": 150,
+      "yaw": 0.4,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.309",
+      "asset": "scenery.giants-fern-crown",
+      "x": 444,
+      "z": 300,
+      "yaw": 1.6,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.310",
+      "asset": "scenery.giants-fern-crown",
+      "x": 150,
+      "z": 440,
+      "yaw": 3.0,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.311",
+      "asset": "scenery.giants-shelf-fungus",
+      "x": 420,
+      "z": 424,
+      "yaw": 3.6,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.312",
+      "asset": "scenery.giants-shelf-fungus",
+      "x": 22,
+      "z": 34,
+      "yaw": 0.8,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.313",
+      "asset": "scenery.giants-bracken",
+      "x": 402.8,
+      "z": 247.89,
+      "yaw": 3.735,
+      "scale": 0.724
+    },
+    {
+      "id": "dress.314",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 395.18,
+      "z": 252.15,
+      "yaw": 2.911,
+      "scale": 0.933
+    },
+    {
+      "id": "dress.315",
+      "asset": "scenery.giants-withered",
+      "x": 401.0,
+      "z": 253.09,
+      "yaw": 1.508,
+      "scale": 0.708
+    },
+    {
+      "id": "dress.316",
+      "asset": "scenery.giants-bracken",
+      "x": 395.08,
+      "z": 256.74,
+      "yaw": 1.77,
+      "scale": 0.983
+    },
+    {
+      "id": "dress.317",
+      "asset": "scenery.giants-withered",
+      "x": 392.13,
+      "z": 258.57,
+      "yaw": 4.304,
+      "scale": 0.818
+    },
+    {
+      "id": "dress.318",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 401.06,
+      "z": 258.41,
+      "yaw": 3.78,
+      "scale": 0.897
+    },
+    {
+      "id": "dress.319",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 392.47,
+      "z": 264.1,
+      "yaw": 3.495,
+      "scale": 0.84
+    },
+    {
+      "id": "dress.320",
+      "asset": "scenery.giants-withered",
+      "x": 395.94,
+      "z": 269.14,
+      "yaw": 4.257,
+      "scale": 0.84
+    },
+    {
+      "id": "dress.321",
+      "asset": "scenery.giants-bracken",
+      "x": 390.19,
+      "z": 269.18,
+      "yaw": 2.134,
+      "scale": 0.751
+    },
+    {
+      "id": "dress.322",
+      "asset": "scenery.giants-withered",
+      "x": 388.58,
+      "z": 268.68,
+      "yaw": 0.434,
+      "scale": 0.776
+    },
+    {
+      "id": "dress.323",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 392.38,
+      "z": 273.96,
+      "yaw": 2.762,
+      "scale": 0.791
+    },
+    {
+      "id": "dress.324",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 383.76,
+      "z": 273.59,
+      "yaw": 2.397,
+      "scale": 0.928
+    },
+    {
+      "id": "dress.325",
+      "asset": "scenery.giants-withered",
+      "x": 384.36,
+      "z": 277.99,
+      "yaw": 2.366,
+      "scale": 0.74
+    },
+    {
+      "id": "dress.326",
+      "asset": "scenery.giants-bracken",
+      "x": 380.77,
+      "z": 276.26,
+      "yaw": 4.823,
+      "scale": 0.737
+    },
+    {
+      "id": "dress.327",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 384.05,
+      "z": 284.07,
+      "yaw": 1.037,
+      "scale": 0.715
+    },
+    {
+      "id": "dress.328",
+      "asset": "scenery.giants-withered",
+      "x": 376.23,
+      "z": 280.83,
+      "yaw": 5.552,
+      "scale": 0.862
+    },
+    {
+      "id": "dress.329",
+      "asset": "scenery.giants-bracken",
+      "x": 376.95,
+      "z": 286.67,
+      "yaw": 6.258,
+      "scale": 0.949
+    },
+    {
+      "id": "dress.330",
+      "asset": "scenery.giants-withered",
+      "x": 370.13,
+      "z": 288.91,
+      "yaw": 3.788,
+      "scale": 0.871
+    },
+    {
+      "id": "dress.331",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 364.43,
+      "z": 288.38,
+      "yaw": 2.417,
+      "scale": 0.806
+    },
+    {
+      "id": "dress.332",
+      "asset": "scenery.giants-bracken",
+      "x": 361.26,
+      "z": 288.0,
+      "yaw": 4.679,
+      "scale": 0.85
+    },
+    {
+      "id": "dress.333",
+      "asset": "scenery.giants-withered",
+      "x": 354.73,
+      "z": 290.44,
+      "yaw": 5.535,
+      "scale": 0.706
+    },
+    {
+      "id": "dress.334",
+      "asset": "scenery.giants-bracken",
+      "x": 353.85,
+      "z": 281.92,
+      "yaw": 5.456,
+      "scale": 0.787
+    },
+    {
+      "id": "dress.335",
+      "asset": "scenery.giants-withered",
+      "x": 348.21,
+      "z": 282.01,
+      "yaw": 1.996,
+      "scale": 0.827
+    },
+    {
+      "id": "dress.336",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 348.91,
+      "z": 286.25,
+      "yaw": 5.001,
+      "scale": 0.743
+    },
+    {
+      "id": "dress.337",
+      "asset": "scenery.giants-bracken",
+      "x": 345.18,
+      "z": 287.33,
+      "yaw": 1.881,
+      "scale": 0.712
+    },
+    {
+      "id": "dress.338",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 342.92,
+      "z": 279.8,
+      "yaw": 4.8,
+      "scale": 0.801
+    },
+    {
+      "id": "dress.339",
+      "asset": "scenery.giants-withered",
+      "x": 339.7,
+      "z": 285.94,
+      "yaw": 3.71,
+      "scale": 0.831
+    },
+    {
+      "id": "dress.340",
+      "asset": "scenery.giants-bracken",
+      "x": 341.07,
+      "z": 278.39,
+      "yaw": 1.329,
+      "scale": 0.869
+    },
+    {
+      "id": "dress.341",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 336.98,
+      "z": 282.34,
+      "yaw": 5.209,
+      "scale": 0.722
+    },
+    {
+      "id": "dress.342",
+      "asset": "scenery.giants-withered",
+      "x": 337.03,
+      "z": 276.74,
+      "yaw": 5.976,
+      "scale": 0.812
+    },
+    {
+      "id": "dress.343",
+      "asset": "scenery.giants-bracken",
+      "x": 330.04,
+      "z": 226.64,
+      "yaw": 4.026,
+      "scale": 0.891
+    },
+    {
+      "id": "dress.344",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 329.0,
+      "z": 222.39,
+      "yaw": 0.485,
+      "scale": 0.761
+    },
+    {
+      "id": "dress.345",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 337.81,
+      "z": 219.37,
+      "yaw": 0.162,
+      "scale": 0.739
+    },
+    {
+      "id": "dress.346",
+      "asset": "scenery.giants-withered",
+      "x": 332.75,
+      "z": 217.41,
+      "yaw": 0.297,
+      "scale": 0.843
+    },
+    {
+      "id": "dress.347",
+      "asset": "scenery.giants-bracken",
+      "x": 340.53,
+      "z": 220.79,
+      "yaw": 1.891,
+      "scale": 0.936
+    },
+    {
+      "id": "dress.348",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 337.16,
+      "z": 213.38,
+      "yaw": 4.135,
+      "scale": 0.769
+    },
+    {
+      "id": "dress.349",
+      "asset": "scenery.giants-withered",
+      "x": 341.59,
+      "z": 217.03,
+      "yaw": 4.753,
+      "scale": 0.978
+    },
+    {
+      "id": "dress.350",
+      "asset": "scenery.giants-bracken",
+      "x": 344.29,
+      "z": 208.66,
+      "yaw": 3.121,
+      "scale": 0.86
+    },
+    {
+      "id": "dress.351",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 375.38,
+      "z": 214.65,
+      "yaw": 4.769,
+      "scale": 0.915
+    },
+    {
+      "id": "dress.352",
+      "asset": "scenery.giants-bracken",
+      "x": 376.09,
+      "z": 209.26,
+      "yaw": 1.603,
+      "scale": 0.972
+    },
+    {
+      "id": "dress.353",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 384.0,
+      "z": 212.1,
+      "yaw": 0.691,
+      "scale": 0.923
+    },
+    {
+      "id": "dress.354",
+      "asset": "scenery.giants-withered",
+      "x": 383.06,
+      "z": 218.99,
+      "yaw": 5.827,
+      "scale": 0.807
+    },
+    {
+      "id": "dress.355",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 386.41,
+      "z": 221.96,
+      "yaw": 1.642,
+      "scale": 0.837
+    },
+    {
+      "id": "dress.356",
+      "asset": "scenery.giants-bracken",
+      "x": 388.18,
+      "z": 218.97,
+      "yaw": 0.969,
+      "scale": 0.742
+    },
+    {
+      "id": "dress.357",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 388.96,
+      "z": 226.85,
+      "yaw": 0.854,
+      "scale": 0.879
+    },
+    {
+      "id": "dress.358",
+      "asset": "scenery.giants-bracken",
+      "x": 387.14,
+      "z": 230.41,
+      "yaw": 1.69,
+      "scale": 0.813
+    },
+    {
+      "id": "dress.359",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 394.63,
+      "z": 226.88,
+      "yaw": 3.207,
+      "scale": 0.805
+    },
+    {
+      "id": "dress.360",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 394.32,
+      "z": 233.82,
+      "yaw": 1.764,
+      "scale": 0.957
+    },
+    {
+      "id": "dress.361",
+      "asset": "scenery.giants-bracken",
+      "x": 399.74,
+      "z": 233.91,
+      "yaw": 2.562,
+      "scale": 0.991
+    },
+    {
+      "id": "dress.362",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 400.77,
+      "z": 239.43,
+      "yaw": 1.143,
+      "scale": 0.852
+    },
+    {
+      "id": "dress.363",
+      "asset": "scenery.giants-chestnut-burr",
+      "x": 400.67,
+      "z": 245.53,
+      "yaw": 0.28,
+      "scale": 0.939
+    },
+    {
+      "id": "dress.364",
+      "asset": "scenery.giants-pine-cone",
+      "x": 75.45,
+      "z": 30.47,
+      "yaw": 1.919,
+      "scale": 0.825
+    },
+    {
+      "id": "dress.365",
+      "asset": "scenery.giants-pine-cone",
+      "x": 56.24,
+      "z": 27.97,
+      "yaw": 5.403,
+      "scale": 0.958
+    },
+    {
+      "id": "dress.366",
+      "asset": "scenery.giants-pine-cone",
+      "x": 61.14,
+      "z": 47.87,
+      "yaw": 5.964,
+      "scale": 0.985
+    },
+    {
+      "id": "dress.367",
+      "asset": "scenery.giants-pine-cone",
+      "x": 457.89,
+      "z": 30.14,
+      "yaw": 2.438,
+      "scale": 1.094
+    },
+    {
+      "id": "dress.368",
+      "asset": "scenery.giants-pine-cone",
+      "x": 469.49,
+      "z": 59.65,
+      "yaw": 5.19,
+      "scale": 0.833
+    },
+    {
+      "id": "dress.369",
+      "asset": "scenery.giants-pine-cone",
+      "x": 434.74,
+      "z": 40.17,
+      "yaw": 1.488,
+      "scale": 1.033
+    },
+    {
+      "id": "dress.370",
+      "asset": "scenery.giants-pine-cone",
+      "x": 442.28,
+      "z": 55.45,
+      "yaw": 4.273,
+      "scale": 1.031
+    },
+    {
+      "id": "dress.371",
+      "asset": "scenery.giants-pine-cone",
+      "x": -8.87,
+      "z": 90.11,
+      "yaw": 6.08,
+      "scale": 1.02
+    },
+    {
+      "id": "dress.372",
+      "asset": "scenery.giants-pine-cone",
+      "x": 0.93,
+      "z": 97.87,
+      "yaw": 0.254,
+      "scale": 0.764
+    },
+    {
+      "id": "dress.373",
+      "asset": "scenery.giants-pine-cone",
+      "x": 18.22,
+      "z": 71.0,
+      "yaw": 5.196,
+      "scale": 0.771
+    },
+    {
+      "id": "dress.374",
+      "asset": "scenery.giants-pine-cone",
+      "x": 18.2,
+      "z": 90.37,
+      "yaw": 0.048,
+      "scale": 1.147
+    },
+    {
+      "id": "dress.375",
+      "asset": "scenery.giants-pine-cone",
+      "x": 394.29,
+      "z": 187.42,
+      "yaw": 2.065,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.376",
+      "asset": "scenery.giants-pine-cone",
+      "x": 374.97,
+      "z": 199.83,
+      "yaw": 4.485,
+      "scale": 1.148
+    },
+    {
+      "id": "dress.377",
+      "asset": "scenery.giants-pine-cone",
+      "x": 42.42,
+      "z": 109.48,
+      "yaw": 4.176,
+      "scale": 0.888
+    },
+    {
+      "id": "dress.378",
+      "asset": "scenery.giants-pine-cone",
+      "x": 18.03,
+      "z": 107.36,
+      "yaw": 3.87,
+      "scale": 1.12
+    },
+    {
+      "id": "dress.379",
+      "asset": "scenery.giants-pine-cone",
+      "x": 34.52,
+      "z": 82.8,
+      "yaw": 5.46,
+      "scale": 0.914
+    },
+    {
+      "id": "dress.380",
+      "asset": "scenery.giants-pine-cone",
+      "x": 44.01,
+      "z": 91.3,
+      "yaw": 2.177,
+      "scale": 0.875
+    },
+    {
+      "id": "dress.381",
+      "asset": "scenery.giants-pine-cone",
+      "x": 125.54,
+      "z": 54.52,
+      "yaw": 0.095,
+      "scale": 1.086
+    },
+    {
+      "id": "dress.382",
+      "asset": "scenery.giants-pine-cone",
+      "x": 124.68,
+      "z": 75.98,
+      "yaw": 2.15,
+      "scale": 0.983
+    },
+    {
+      "id": "dress.383",
+      "asset": "scenery.giants-pine-cone",
+      "x": 143.46,
+      "z": 62.29,
+      "yaw": 4.759,
+      "scale": 0.815
+    },
+    {
+      "id": "dress.384",
+      "asset": "scenery.giants-pine-cone",
+      "x": 142.32,
+      "z": 46.12,
+      "yaw": 4.166,
+      "scale": 0.756
+    },
+    {
+      "id": "dress.385",
+      "asset": "scenery.giants-pine-cone",
+      "x": 265.18,
+      "z": 296.51,
+      "yaw": 5.652,
+      "scale": 1.052
+    },
+    {
+      "id": "dress.386",
+      "asset": "scenery.giants-pine-cone",
+      "x": 253.46,
+      "z": 284.89,
+      "yaw": 1.065,
+      "scale": 1.115
+    },
+    {
+      "id": "dress.387",
+      "asset": "scenery.giants-pine-cone",
+      "x": 408.97,
+      "z": 182.03,
+      "yaw": 2.278,
+      "scale": 0.914
+    },
+    {
+      "id": "dress.388",
+      "asset": "scenery.giants-pine-cone",
+      "x": 443.94,
+      "z": 184.9,
+      "yaw": 0.286,
+      "scale": 0.986
+    },
+    {
+      "id": "dress.389",
+      "asset": "scenery.giants-pine-cone",
+      "x": 421.02,
+      "z": 173.95,
+      "yaw": 4.698,
+      "scale": 0.968
+    },
+    {
+      "id": "dress.390",
+      "asset": "scenery.giants-pine-cone",
+      "x": 422.91,
+      "z": 206.36,
+      "yaw": 2.444,
+      "scale": 1.021
+    },
+    {
+      "id": "dress.391",
+      "asset": "scenery.giants-pine-cone",
+      "x": 470.48,
+      "z": 317.05,
+      "yaw": 2.044,
+      "scale": 0.948
+    },
+    {
+      "id": "dress.392",
+      "asset": "scenery.giants-pine-cone",
+      "x": 445.08,
+      "z": -1.38,
+      "yaw": 1.005,
+      "scale": 1.03
+    },
+    {
+      "id": "dress.393",
+      "asset": "scenery.giants-pine-cone",
+      "x": 421.15,
+      "z": 2.35,
+      "yaw": 2.958,
+      "scale": 1.088
+    },
+    {
+      "id": "dress.394",
+      "asset": "scenery.giants-pine-cone",
+      "x": 103.38,
+      "z": 68.02,
+      "yaw": 1.865,
+      "scale": 0.97
+    },
+    {
+      "id": "dress.395",
+      "asset": "scenery.giants-pine-cone",
+      "x": 455.89,
+      "z": 399.28,
+      "yaw": 3.025,
+      "scale": 0.901
+    },
+    {
+      "id": "dress.396",
+      "asset": "scenery.giants-pine-cone",
+      "x": 441.04,
+      "z": 406.77,
+      "yaw": 3.505,
+      "scale": 0.943
+    },
+    {
+      "id": "dress.397",
+      "asset": "scenery.giants-pine-cone",
+      "x": 420.19,
+      "z": 403.46,
+      "yaw": 2.883,
+      "scale": 1.037
+    },
+    {
+      "id": "dress.398",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 384.86,
+      "z": 190.2,
+      "yaw": 3.69,
+      "scale": 0.861
+    },
+    {
+      "id": "dress.399",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 395.87,
+      "z": 195.26,
+      "yaw": 5.646,
+      "scale": 0.739
+    },
+    {
+      "id": "dress.400",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 408.16,
+      "z": 179.89,
+      "yaw": 0.957,
+      "scale": 0.849
+    },
+    {
+      "id": "dress.401",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 393.9,
+      "z": 174.96,
+      "yaw": 5.4,
+      "scale": 0.747
+    },
+    {
+      "id": "dress.402",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 413.23,
+      "z": 263.49,
+      "yaw": 2.604,
+      "scale": 0.897
+    },
+    {
+      "id": "dress.403",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 416.87,
+      "z": 241.84,
+      "yaw": 5.84,
+      "scale": 1.01
+    },
+    {
+      "id": "dress.404",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 414.3,
+      "z": 218.98,
+      "yaw": 3.401,
+      "scale": 0.87
+    },
+    {
+      "id": "dress.405",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 436.62,
+      "z": 229.33,
+      "yaw": 1.998,
+      "scale": 0.748
+    },
+    {
+      "id": "dress.406",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 422.37,
+      "z": 276.61,
+      "yaw": 4.093,
+      "scale": 1.032
+    },
+    {
+      "id": "dress.407",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 435.16,
+      "z": 259.96,
+      "yaw": 0.002,
+      "scale": 0.785
+    },
+    {
+      "id": "dress.408",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 313.12,
+      "z": 417.41,
+      "yaw": 6.274,
+      "scale": 0.98
+    },
+    {
+      "id": "dress.409",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 326.07,
+      "z": 413.38,
+      "yaw": 1.84,
+      "scale": 0.983
+    },
+    {
+      "id": "dress.410",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 346.96,
+      "z": 426.33,
+      "yaw": 1.417,
+      "scale": 0.96
+    },
+    {
+      "id": "dress.411",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 103.41,
+      "z": 107.06,
+      "yaw": 3.626,
+      "scale": 0.934
+    },
+    {
+      "id": "dress.412",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 84.72,
+      "z": 95.26,
+      "yaw": 0.141,
+      "scale": 0.731
+    },
+    {
+      "id": "dress.413",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 86.22,
+      "z": 106.11,
+      "yaw": 0.709,
+      "scale": 0.729
+    },
+    {
+      "id": "dress.414",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 120.93,
+      "z": 115.7,
+      "yaw": 3.095,
+      "scale": 0.771
+    },
+    {
+      "id": "dress.415",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 155.53,
+      "z": 350.35,
+      "yaw": 0.18,
+      "scale": 1.015
+    },
+    {
+      "id": "dress.416",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 159.41,
+      "z": 361.78,
+      "yaw": 0.638,
+      "scale": 0.926
+    },
+    {
+      "id": "dress.417",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 164.53,
+      "z": 374.13,
+      "yaw": 0.364,
+      "scale": 0.908
+    },
+    {
+      "id": "dress.418",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 141.5,
+      "z": 371.14,
+      "yaw": 1.477,
+      "scale": 0.837
+    },
+    {
+      "id": "dress.419",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 163.84,
+      "z": 143.81,
+      "yaw": 3.094,
+      "scale": 0.882
+    },
+    {
+      "id": "dress.420",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 145.1,
+      "z": 128.67,
+      "yaw": 4.385,
+      "scale": 1.039
+    },
+    {
+      "id": "dress.421",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 158.25,
+      "z": 135.56,
+      "yaw": 0.853,
+      "scale": 0.896
+    },
+    {
+      "id": "dress.422",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 239.28,
+      "z": 357.2,
+      "yaw": 0.07,
+      "scale": 0.711
+    },
+    {
+      "id": "dress.423",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 226.74,
+      "z": 365.14,
+      "yaw": 5.495,
+      "scale": 1.046
+    },
+    {
+      "id": "dress.424",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 256.9,
+      "z": 367.16,
+      "yaw": 4.313,
+      "scale": 0.895
+    },
+    {
+      "id": "dress.425",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 239.8,
+      "z": 374.15,
+      "yaw": 4.742,
+      "scale": 0.77
+    },
+    {
+      "id": "dress.426",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 247.14,
+      "z": 406.25,
+      "yaw": 3.786,
+      "scale": 0.954
+    },
+    {
+      "id": "dress.427",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 250.09,
+      "z": 380.78,
+      "yaw": 4.533,
+      "scale": 0.895
+    },
+    {
+      "id": "dress.428",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 240.43,
+      "z": 384.17,
+      "yaw": 1.953,
+      "scale": 0.753
+    },
+    {
+      "id": "dress.429",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 234.24,
+      "z": 401.66,
+      "yaw": 1.044,
+      "scale": 0.87
+    },
+    {
+      "id": "dress.430",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 246.19,
+      "z": 392.19,
+      "yaw": 5.363,
+      "scale": 0.96
+    },
+    {
+      "id": "dress.431",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 375.6,
+      "z": 106.02,
+      "yaw": 0.139,
+      "scale": 0.851
+    },
+    {
+      "id": "dress.432",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 371.48,
+      "z": 122.24,
+      "yaw": 6.009,
+      "scale": 0.835
+    },
+    {
+      "id": "dress.433",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 385.65,
+      "z": 103.95,
+      "yaw": 3.252,
+      "scale": 0.915
+    },
+    {
+      "id": "dress.434",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 178.18,
+      "z": 262.15,
+      "yaw": 1.571,
+      "scale": 0.827
+    },
+    {
+      "id": "dress.435",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 184.65,
+      "z": 271.97,
+      "yaw": 4.47,
+      "scale": 0.99
+    },
+    {
+      "id": "dress.436",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 170.5,
+      "z": 280.91,
+      "yaw": 0.405,
+      "scale": 0.979
+    },
+    {
+      "id": "dress.437",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 104.99,
+      "z": 392.48,
+      "yaw": 1.596,
+      "scale": 0.835
+    },
+    {
+      "id": "dress.438",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 107.3,
+      "z": 418.27,
+      "yaw": 3.927,
+      "scale": 0.731
+    },
+    {
+      "id": "dress.439",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 92.95,
+      "z": 421.33,
+      "yaw": 1.527,
+      "scale": 0.866
+    },
+    {
+      "id": "dress.440",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 106.78,
+      "z": 402.78,
+      "yaw": 5.33,
+      "scale": 0.995
+    },
+    {
+      "id": "dress.441",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 93.07,
+      "z": 401.72,
+      "yaw": 0.741,
+      "scale": 0.744
+    },
+    {
+      "id": "dress.442",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 113.41,
+      "z": 84.64,
+      "yaw": 2.147,
+      "scale": 0.784
+    },
+    {
+      "id": "dress.443",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 131.7,
+      "z": 113.1,
+      "yaw": 1.129,
+      "scale": 0.817
+    },
+    {
+      "id": "dress.444",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 141.59,
+      "z": 106.58,
+      "yaw": 5.184,
+      "scale": 0.764
+    },
+    {
+      "id": "dress.445",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 134.5,
+      "z": 87.62,
+      "yaw": 3.462,
+      "scale": 1.017
+    },
+    {
+      "id": "dress.446",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 154.76,
+      "z": 107.26,
+      "yaw": 2.631,
+      "scale": 0.879
+    },
+    {
+      "id": "dress.447",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 41.62,
+      "z": 400.04,
+      "yaw": 2.867,
+      "scale": 0.864
+    },
+    {
+      "id": "dress.448",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 52.92,
+      "z": 380.76,
+      "yaw": 3.584,
+      "scale": 0.834
+    },
+    {
+      "id": "dress.449",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 31.12,
+      "z": 402.7,
+      "yaw": 3.772,
+      "scale": 0.726
+    },
+    {
+      "id": "dress.450",
+      "asset": "scenery.giants-pine-needles-b",
+      "x": 29.32,
+      "z": 414.11,
+      "yaw": 3.069,
+      "scale": 0.861
+    },
+    {
+      "id": "dress.451",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 173.74,
+      "z": 30.24,
+      "yaw": 4.969,
+      "scale": 0.975
+    },
+    {
+      "id": "dress.452",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 129.1,
+      "z": 30.04,
+      "yaw": 0.652,
+      "scale": 1.016
+    },
+    {
+      "id": "dress.453",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 152.47,
+      "z": 27.71,
+      "yaw": 3.922,
+      "scale": 0.999
+    },
+    {
+      "id": "dress.454",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 164.74,
+      "z": 2.78,
+      "yaw": 3.506,
+      "scale": 1.028
+    },
+    {
+      "id": "dress.455",
+      "asset": "scenery.giants-pine-needles-a",
+      "x": 151.36,
+      "z": 5.41,
+      "yaw": 1.743,
+      "scale": 0.721
+    },
+    {
+      "id": "dress.456",
+      "asset": "scenery.giants-dew-drop",
+      "x": 228.82,
+      "z": 262.8,
+      "yaw": 1.167,
+      "scale": 0.773
+    },
+    {
+      "id": "dress.457",
+      "asset": "scenery.giants-dew-drop",
+      "x": 227.54,
+      "z": 264.04,
+      "yaw": 2.003,
+      "scale": 1.087
+    },
+    {
+      "id": "dress.458",
+      "asset": "scenery.giants-dew-drop",
+      "x": 229.61,
+      "z": 266.63,
+      "yaw": 1.025,
+      "scale": 1.117
+    },
+    {
+      "id": "dress.459",
+      "asset": "scenery.giants-dew-drop",
+      "x": 166.77,
+      "z": 292.83,
+      "yaw": 6.098,
+      "scale": 0.983
+    },
+    {
+      "id": "dress.460",
+      "asset": "scenery.giants-dew-drop",
+      "x": 171.19,
+      "z": 293.17,
+      "yaw": 1.162,
+      "scale": 0.996
+    },
+    {
+      "id": "dress.461",
+      "asset": "scenery.giants-dew-drop",
+      "x": 106.18,
+      "z": 207.49,
+      "yaw": 2.545,
+      "scale": 0.915
+    },
+    {
+      "id": "dress.462",
+      "asset": "scenery.giants-dew-drop",
+      "x": 103.12,
+      "z": 207.73,
+      "yaw": 3.035,
+      "scale": 1.062
+    },
+    {
+      "id": "dress.463",
+      "asset": "scenery.giants-dew-drop",
+      "x": 103.44,
+      "z": 205.44,
+      "yaw": 0.973,
+      "scale": 0.758
+    },
+    {
+      "id": "dress.464",
+      "asset": "scenery.giants-dew-drop",
+      "x": 141.87,
+      "z": 316.15,
+      "yaw": 6.071,
+      "scale": 0.814
+    },
+    {
+      "id": "dress.465",
+      "asset": "scenery.giants-dew-drop",
+      "x": 144.96,
+      "z": 314.94,
+      "yaw": 4.505,
+      "scale": 0.754
+    },
+    {
+      "id": "dress.466",
+      "asset": "scenery.giants-dew-drop",
+      "x": 145.78,
+      "z": 318.73,
+      "yaw": 4.965,
+      "scale": 0.908
+    },
+    {
+      "id": "dress.467",
+      "asset": "scenery.giants-dew-drop",
+      "x": 76.35,
+      "z": 113.32,
+      "yaw": 1.318,
+      "scale": 1.102
+    },
+    {
+      "id": "dress.468",
+      "asset": "scenery.giants-dew-drops",
+      "x": 19.61,
+      "z": 203.27,
+      "yaw": 4.216,
+      "scale": 0.912
+    },
+    {
+      "id": "dress.469",
+      "asset": "scenery.giants-dew-drops",
+      "x": 20.13,
+      "z": 199.73,
+      "yaw": 4.465,
+      "scale": 0.817
+    },
+    {
+      "id": "dress.470",
+      "asset": "scenery.giants-dew-drops",
+      "x": 362.44,
+      "z": 401.58,
+      "yaw": 2.902,
+      "scale": 1.126
+    },
+    {
+      "id": "dress.471",
+      "asset": "scenery.giants-dew-drops",
+      "x": 361.51,
+      "z": 398.22,
+      "yaw": 2.189,
+      "scale": 0.994
+    },
+    {
+      "id": "dress.472",
+      "asset": "scenery.giants-dew-drop",
+      "x": 153.6,
+      "z": 310.64,
+      "yaw": 1.937,
+      "scale": 0.767
+    },
+    {
+      "id": "dress.473",
+      "asset": "scenery.giants-dew-drop",
+      "x": 156.74,
+      "z": 307.91,
+      "yaw": 4.527,
+      "scale": 1.01
+    },
+    {
+      "id": "dress.474",
+      "asset": "scenery.giants-dew-drop",
+      "x": 157.94,
+      "z": 311.0,
+      "yaw": 3.784,
+      "scale": 1.025
+    }
+  ]
+}

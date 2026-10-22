@@ -289,7 +289,7 @@ def entities():
     # The hall and the lodge in the east half, the condenser at the end of the road; two
     # wellheads either side of the gate power its towers. The yard inside the gate stays
     # open, so the lodge's waves and the Queen's army can pass.
-    ent('station.bastion', 'building.beetles.great-bastion', 375.5, 55.5, B)
+    ent('station.bastion', 'building.beetles.great-bastion', 377.5, 53.5, B)
     ent('station.lodge', 'building.beetles.war-lodge', 383.5, 79.5, B)
     for i, x in enumerate((315.5, 363.5)):
         ent(f'station.deposit.{i}', 'building.neutral.corrupted-root', x, 79.5)
@@ -838,21 +838,12 @@ def frame_giants(frame):
             piece = ('chestnut-burr', 'bracken', 'withered', 'chestnut-burr')[(k + r) % 4]
             giant(frame, piece, BRIAR[0] + r * math.cos(a) + rng.uniform(-2, 2),
                   BRIAR[1] + r * math.sin(a) + rng.uniform(-2, 2), rng.uniform(0.7, 1.0), overlap=0.45)
-    # The Glass Road's mood: pine cones and their needles, acorns and cups, twigs, pebbles.
-    clusters(frame, ['pine-cone'], 16, 8, 90, size=(2, 4), spread=1.3, scale=(0.75, 1.15))
-    clusters(frame, ['fern-crown', 'grass', 'harts-tongue', 'fern-frond'], 18, 18, 120, size=(2, 4), spread=1.2)
-    clusters(frame, ['porcini', 'inkcap', 'morel'], 6, 20, 90, size=(2, 3), spread=1.4, scale=(0.7, 1.0))
-    clusters(frame, ['chestnut-burr', 'bracken', 'withered'], 10, 2, 22, size=(3, 5), spread=1.2,
-             box=(BRIAR[0] - 60, BRIAR[1] - 60, BRIAR[0] + 60, BRIAR[1] + 60))
-    clusters(frame, ['clover', 'sorrel', 'fiddleheads', 'harts-tongue'], 26, 4, 40, size=(3, 6), spread=1.1)
-    clusters(frame, ['moss', 'moss', 'buttons', 'bilberries'], 26, 0, 10, size=(2, 5), spread=1.4, scale=(0.6, 1.1))
-    clusters(frame, ['pebbles', 'mossy-stone'], 10, 1, 30, size=(1, 3), spread=1.5, scale=(0.5, 0.9))
-    clusters(frame, ['acorn', 'acorn', 'acorn-cup', 'hazelnut', 'beechnut'], 18, 1, 18, size=(2, 3), spread=1.5,
-             scale=(0.7, 1.0))
-    clusters(frame, ['dew-drops', 'dew-drop'], 14, 0, 20, size=(1, 3), spread=2.0)
-    scatter(frame, ['pine-needles-a', 'pine-needles-b', 'pine-needles-a', 'pine-needles-b', 'twig', 'leaf-beech',
-                    'leaf-oak', 'bracken', 'maple-seed', 'leaf-maple'], 520, 0, 120, scale=(0.55, 1.05), overlap=0.3)
-    scatter(frame, ['moss', 'clover', 'sorrel', 'fiddleheads', 'buttons'], 220, 2, 110, scale=(0.7, 1.2), overlap=0.6)
+    # The Glass Road's own mood over the biome's frame of giants (which brings the litter,
+    # rim, seeds, mid layers, towers and ferns by itself): stands of pine cones with their
+    # needles, a few dew drops.
+    clusters(frame, ['pine-cone'], 12, 10, 90, size=(2, 4), spread=1.3, scale=(0.75, 1.15))
+    clusters(frame, ['pine-needles-a', 'pine-needles-b'], 14, 2, 40, size=(3, 6), spread=1.6, scale=(0.7, 1.05))
+    clusters(frame, ['dew-drops', 'dew-drop'], 8, 1, 14, size=(1, 3), spread=2.0)
 
 
 def create(c):
