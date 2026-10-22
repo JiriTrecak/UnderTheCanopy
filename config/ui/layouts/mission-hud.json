@@ -12,8 +12,34 @@
   "root": {
     "class": "mh",
     "children": [
-      { "id": "top-bar", "class": "mh-bar", "style": { "top": "0" }, "visible": false },
-      { "id": "bottom-bar", "class": "mh-bar", "style": { "bottom": "0" }, "visible": false },
+      { "id": "fade", "class": "mh-fade", "visible": false },
+      {
+        "id": "top-bar", "class": "mh-bar mh-bar-top", "style": { "top": "0" }, "visible": false,
+        "children": [
+          { "id": "skip", "kind": "label", "class": "mh-skip", "text": "Esc  Skip", "visible": false }
+        ]
+      },
+      {
+        "id": "bottom-bar", "class": "mh-bar mh-bar-bottom", "style": { "bottom": "0" }, "visible": false,
+        "children": [
+          {
+            "id": "transmission", "class": "mh-transmission", "visible": false,
+            "children": [
+              {
+                "class": "mh-tx-frame",
+                "children": [ { "id": "portrait", "kind": "image", "class": "mh-tx-portrait" } ]
+              },
+              {
+                "class": "mh-tx-copy",
+                "children": [
+                  { "id": "speaker", "kind": "label", "class": "mh-tx-speaker" },
+                  { "id": "text", "kind": "label", "class": "mh-tx-text" }
+                ]
+              }
+            ]
+          }
+        ]
+      },
       {
         "id": "objectives", "class": "mh-objectives",
         "children": [

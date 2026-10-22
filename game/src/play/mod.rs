@@ -26,6 +26,7 @@ pub mod picking;
 pub mod placement;
 pub mod run;
 pub mod selection;
+pub mod shots;
 
 use crate::settings::Chord;
 use canopy_content::game::Kind;
@@ -310,9 +311,9 @@ impl Play {
         self.know.me.is_none()
     }
 
-    /// A mission cinematic holds the match (old `MissionHud.active`): a scene, or a
-    /// cinematic line still playing, before the outcome and without a script error.
-    /// Returns where the scene stands (x, z) when it has a place.
+    /// A mission cinematic holds the match (old `MissionHud.active`): a scene, a
+    /// cinematic line still playing or cinematic mode, before the outcome and without a
+    /// script error. Returns where the scene stands (x, z) when it has a place.
     pub fn cinematic(&self) -> Option<Option<[f32; 2]>> {
         let v = &self.know.view;
         let m = v.mission.as_ref()?;
@@ -328,9 +329,22 @@ impl Play {
                 scene.position.x as f32 / 1000.0,
                 scene.position.y as f32 / 1000.0,
             ])),
-            None if line => Some(None),
+            None if line || m.cinema.on => Some(None),
             None => None,
         }
+    }
+
+    /// A scene plays that Escape may skip (and no skip is under way).
+    pub fn skippable(&self) -> bool {
+        let v = &self.know.view;
+        v.outcome.is_none()
+            && v.mission.as_ref().is_some_and(|m| {
+                m.error.is_none()
+                    && m.cinema
+                        .scene
+                        .as_ref()
+                        .is_some_and(|s| s.skippable && !s.skipping)
+            })
     }
 
     /// The camera shot of the scene a cinematic plays, if it has one.
@@ -905,6 +919,10 @@ impl Play {
             }
             return;
         };
+        // Missions count the player's clicks on placed units (`mission.clicks`).
+        if !self.observer() && self.know.view.mission.is_some() {
+            self.send(vec![(Action::Clicked { actor: t.id }, None)]);
+        }
         let own_unit = k
             .entity(t.id)
             .is_some_and(|e| k.controlled(e) && k.is_unit(e));
@@ -1032,10 +1050,12 @@ impl Play {
                         shift: self.mods.shift,
                         meta: self.mods.logo,
                     };
-                    if !*repeat
-                        && (*key == "Escape"
-                            || self.keymap.pressed(&chord).contains(&Shortcut::GameMenu))
-                    {
+                    let menu = self.keymap.pressed(&chord).contains(&Shortcut::GameMenu);
+                    if !*repeat && *key == "Escape" && !menu && self.skippable() {
+                        // Escape skips a scene, as in Warcraft III; the menu key still
+                        // opens the menu.
+                        self.send(vec![(Action::SkipScene, None)]);
+                    } else if !*repeat && (*key == "Escape" || menu) {
                         self.events.push(Event::OpenMenu);
                     }
                     return;

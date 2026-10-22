@@ -989,6 +989,12 @@ impl Presenter {
         let mut fighting: Vec<[f32; 2]> = Vec::new();
         let by_id: BTreeMap<EntityId, &EntityView> =
             view.entities.iter().map(|e| (e.id(), e)).collect();
+        // Animations a mission scene asked for.
+        let scripted: BTreeMap<EntityId, &canopy_sim::mission::cinema::Animation> = view
+            .mission
+            .iter()
+            .flat_map(|m| m.animations.iter().map(|(id, a)| (*id, a)))
+            .collect();
         // Towers fight through their crew (D68): what each lookout's crew aims at, and
         // whether it fired this tick, for the tower's attack clip and turret.
         let mut towers: BTreeMap<EntityId, Tower> = BTreeMap::new();
@@ -1319,6 +1325,9 @@ impl Presenter {
                                 .is_some_and(|c| c.as_str() == "base"),
                             cast_contact: asset.cast_contact.map(|c| c as f32),
                             speed: tracked.speed.map(|s| s / scale.max(1e-3)),
+                            scripted: scripted
+                                .get(&id)
+                                .map(|a| (a.name.as_str(), a.start, a.looping)),
                         };
                         let mut decision = animation.step(&info, &inputs);
                         events = std::mem::take(&mut decision.events);

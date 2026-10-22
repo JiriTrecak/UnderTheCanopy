@@ -1,7 +1,7 @@
 //! The Lua sandbox: vendored Lua 5.4 through mlua, a fresh library-free state per run.
 //!
-//! No standard library is opened, so scripts reach nothing but the core language and the
-//! `mission` table: no filesystem, clock, randomness, metatables, coroutines, `pcall` or
+//! No standard library is opened, so scripts reach nothing but the core language, the
+//! `mission` table and the `scenes` table they fill: no filesystem, clock, randomness, metatables, coroutines, `pcall` or
 //! table iteration. Lua's string-hash seed only affects iteration order, which is
 //! therefore unobservable. Every run is bounded by an instruction count (deterministic:
 //! it counts VM instructions, never time) and a string size.
@@ -50,6 +50,33 @@ impl Scalar {
 pub struct Ran {
     /// VM instructions executed, top-level chunk included.
     pub instructions: u32,
+    /// The scene the host asked for: `Some(true)` when its function returned, `Some(false)`
+    /// when a wait ended the run first.
+    pub scene: Option<bool>,
+}
+
+/// What a host error must read for the sandbox to treat it as a scene's wait, not a
+/// failure: the scene's function stops there and the run succeeds.
+pub const SUSPEND: &str = "\u{1}scene waits";
+
+/// The other side of the sandbox: the API's calls, and the scene to play after the
+/// callback.
+pub trait Host {
+    fn call(&mut self, name: &'static str, args: Vec<Scalar>) -> Result<Vec<Scalar>, String>;
+
+    /// The function of the script's `scenes` table to call after the callback, asked once
+    /// the callback returned; calls from then on come from the scene.
+    fn scene(&mut self) -> Option<String> {
+        None
+    }
+}
+
+struct Calls<'a>(&'a mut dyn FnMut(&'static str, Vec<Scalar>) -> Result<Vec<Scalar>, String>);
+
+impl Host for Calls<'_> {
+    fn call(&mut self, name: &'static str, args: Vec<Scalar>) -> Result<Vec<Scalar>, String> {
+        (self.0)(name, args)
+    }
 }
 
 /// Runs `source`'s top level, then the global function `callback` if the script defines
@@ -61,21 +88,34 @@ pub fn run(
     api: &[&'static str],
     host: &mut dyn FnMut(&'static str, Vec<Scalar>) -> Result<Vec<Scalar>, String>,
 ) -> Result<Ran, String> {
+    execute(source, Some(callback), api, &mut Calls(host))
+}
+
+/// [`run`] for a mission: the callback (none for a run that only plays the scene), then
+/// the scene the host names, `scenes[name]()`, whose waits may end the run early.
+pub fn execute(
+    source: &str,
+    callback: Option<&str>,
+    api: &[&'static str],
+    host: &mut dyn Host,
+) -> Result<Ran, String> {
     let lua = state().map_err(|e| message(&e))?;
     hook::install(&lua).map_err(|e| message(&e))?;
     let active = Cell::new(false);
+    let suspended = Cell::new(false);
     let failure = RefCell::new(None::<String>);
     let host = RefCell::new(host);
+    let mut scene = None;
     let result = lua.scope(|scope| {
         let table = lua.create_table()?;
         for &name in api {
-            let (active, failure, host) = (&active, &failure, &host);
+            let (active, suspended, failure, host) = (&active, &suspended, &failure, &host);
             let function = scope.create_function(move |lua, args: MultiValue| {
                 let outcome = if active.get() {
                     args.into_iter()
                         .map(scalar)
                         .collect::<Result<Vec<_>, _>>()
-                        .and_then(|args| (host.borrow_mut())(name, args))
+                        .and_then(|args| host.borrow_mut().call(name, args))
                 } else {
                     Err(
                         "Call the mission API inside on_start/on_tick, not at script top level"
@@ -87,6 +127,12 @@ pub fn run(
                         .into_iter()
                         .map(|v| value(lua, v))
                         .collect::<mlua::Result<MultiValue>>(),
+                    // Nothing in the sandbox can catch an error, so this one unwinds the
+                    // scene's function straight back to the host.
+                    Err(reason) if reason == SUSPEND => {
+                        suspended.set(true);
+                        Err(mlua::Error::runtime("scene waits"))
+                    }
                     Err(reason) => {
                         let reason = format!("{}{reason}", location(lua));
                         *failure.borrow_mut() = Some(reason.clone());
@@ -97,24 +143,49 @@ pub fn run(
             table.raw_set(name, function)?;
         }
         // A fresh environment: mlua always opens the base library into the real globals,
-        // which the script must not reach.
+        // which the script must not reach. `scenes` holds the script's scene functions.
         let globals = lua.create_table()?;
         globals.raw_set("mission", table)?;
+        globals.raw_set("scenes", lua.create_table()?)?;
         load(&lua, source, globals.clone())?.call::<()>(())?;
-        match globals.raw_get::<Value>(callback)? {
-            Value::Nil => Ok(()),
-            Value::Function(function) => {
-                active.set(true);
-                function.call::<()>(())
+        if let Some(callback) = callback {
+            match globals.raw_get::<Value>(callback)? {
+                Value::Nil => {}
+                Value::Function(function) => {
+                    active.set(true);
+                    function.call::<()>(())?;
+                }
+                _ => {
+                    return Err(mlua::Error::runtime(format!(
+                        "{callback} must be a function"
+                    )));
+                }
             }
-            _ => Err(mlua::Error::runtime(format!(
-                "{callback} must be a function"
-            ))),
         }
+        let Some(name) = host.borrow_mut().scene() else {
+            return Ok(());
+        };
+        let function = match globals.raw_get::<Value>("scenes")? {
+            Value::Table(scenes) => scenes.raw_get::<Value>(name.as_str())?,
+            _ => Value::Nil,
+        };
+        let Value::Function(function) = function else {
+            return Err(mlua::Error::runtime(format!(
+                "scenes.{name} must be a function"
+            )));
+        };
+        active.set(true);
+        match function.call::<()>(()) {
+            Ok(()) => scene = Some(true),
+            Err(_) if suspended.get() => scene = Some(false),
+            Err(error) => return Err(error),
+        }
+        Ok(())
     });
     match result {
         Ok(()) => Ok(Ran {
             instructions: hook::instructions(&lua),
+            scene,
         }),
         // An API refusal is reported as the API phrased it, not as mlua wrapped it.
         Err(error) => Err(failure.into_inner().unwrap_or_else(|| message(&error))),

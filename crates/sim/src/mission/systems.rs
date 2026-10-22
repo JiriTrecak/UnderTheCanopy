@@ -102,7 +102,7 @@ const FULL_TURN: i64 = 360_000;
 
 /// World yaw toward `to` in millidegrees (+y forward, clockwise); `rotation` when already
 /// there.
-fn heading(from: Milli, rotation: i64, to: Milli) -> i64 {
+pub(super) fn heading(from: Milli, rotation: i64, to: Milli) -> i64 {
     let dx = f64::from(to.x - from.x) / 1000.0;
     let dy = f64::from(to.y - from.y) / 1000.0;
     if dx * dx + dy * dy < 1e-10 {

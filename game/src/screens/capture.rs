@@ -241,6 +241,9 @@ fn sample_mission(portrait: canopy_content::Id) -> canopy_sim::view::MissionView
         }),
         scene: None,
         paused: false,
+        started: true,
+        cinema: Default::default(),
+        animations: Vec::new(),
         error: None,
     }
 }
@@ -309,6 +312,7 @@ pub fn run(
             "editor" => editor(&mut rig, &paths)?,
             "blocks" => blocks(&mut rig, &paths)?,
             "neutrals" => neutrals(&mut rig, &paths)?,
+            "cameras" => cameras(&mut rig, &paths)?,
             "settings" => settings_tabs(&mut rig)?,
             "campaign" => campaigns(&mut rig, &paths)?,
             "replays" => {
@@ -562,6 +566,40 @@ fn neutrals(rig: &mut Rig, paths: &Paths) -> Result<()> {
 /// library of several collections.
 /// The block editor (D80) on Frozen Dream: a raised area, a ramp and a diagonal cut; then
 /// Frozen Dream in every view.
+/// A mission's saved cameras in the block editor: the cinematic bench's cameras with
+/// their frustums, one selected with its panel, and the view through it.
+fn cameras(rig: &mut Rig, paths: &Paths) -> Result<()> {
+    use canopy_editor::{Editor, Kind};
+    let format = CAPTURE_FORMAT.remove_srgb_suffix();
+    let mut editor = Editor::headless(&rig.gpu, format, crate::app::editor_setup(paths));
+    let settle = |editor: &mut Editor, rig: &mut Rig, n: usize| {
+        for _ in 0..n {
+            editor.run_headless(rig.size, rig.scale, &rig.gpu);
+            std::thread::sleep(Duration::from_millis(25));
+        }
+    };
+    let shoot = |editor: &mut Editor, rig: &mut Rig, name: &str| -> Result<()> {
+        let mut encoder = rig
+            .gpu
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        editor.paint(&mut encoder, &rig.target.ui_view);
+        rig.gpu.queue.submit([encoder.finish()]);
+        rig.save(name)
+    };
+    editor.select(Kind::Maps);
+    editor.open_document("maps/showcase/cinematic-bench.utcm/map.json");
+    settle(&mut editor, rig, 60);
+    editor.set_block_view("generated");
+    editor.show_camera("over-tiv", false, [86.0, 112.0], 120.0);
+    settle(&mut editor, rig, 40);
+    shoot(&mut editor, rig, "editor-cameras")?;
+    editor.show_camera("over-tiv", true, [86.0, 112.0], 120.0);
+    settle(&mut editor, rig, 40);
+    shoot(&mut editor, rig, "editor-cameras-look-through")?;
+    Ok(())
+}
+
 fn blocks(rig: &mut Rig, paths: &Paths) -> Result<()> {
     use canopy_editor::{Editor, Kind};
     let format = CAPTURE_FORMAT.remove_srgb_suffix();

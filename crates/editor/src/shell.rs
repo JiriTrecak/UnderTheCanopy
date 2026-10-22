@@ -2301,6 +2301,25 @@ impl Shell {
         }
     }
 
+    /// Selects saved camera `id` (looking through it or not), the view over `focus`.
+    pub fn show_camera(&mut self, id: &str, look_through: bool, focus: [f32; 2], distance: f32) {
+        if let Some(root) = self.active_map_root()
+            && let Some(session) = self.maps.get_mut(&root)
+        {
+            if let Some((_, before)) = session.blocks.looking.take() {
+                session.camera = before;
+            }
+            session.camera.focus = focus;
+            session.camera.distance = distance;
+            session.blocks.tool = crate::world::BlockTool::Select;
+            session.blocks.selection = vec![(crate::map::tools::Picked::Camera, id.to_string())];
+            if look_through {
+                session.blocks.looking = Some((id.to_string(), session.camera));
+            }
+            session.stale = true;
+        }
+    }
+
     pub fn undo_all(&mut self) {
         while let Some(store) = &mut self.store
             && store.undo().is_some()

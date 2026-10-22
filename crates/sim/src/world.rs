@@ -574,8 +574,11 @@ impl World {
         // Step 10: the mission script.
         if let Some(mission) = &mut self.mission {
             let _s = step!("mission");
-            mission.tick(&mut self.state, &self.catalog);
+            let placed = mission.tick(&mut self.state, &self.catalog);
             self.motion.spatial.sync_static(&self.state);
+            if placed {
+                self.motion.spatial.sync_bodies(&self.state);
+            }
         }
         // Step 10b: the mission's computer players (campaign AI).
         if !self.campaign.is_empty() {
@@ -645,6 +648,18 @@ impl World {
     }
 
     fn apply(&mut self, owner: Owner, action: &Action) -> Result<(), String> {
+        // Escape during a scene: allowed while every other command is refused.
+        match action {
+            Action::SkipScene => {
+                mission::skip(&mut self.state, owner);
+                return Ok(());
+            }
+            Action::Clicked { actor } => {
+                mission::clicked(&mut self.state, owner, *actor);
+                return Ok(());
+            }
+            _ => {}
+        }
         if let Some(reason) = mission::blocks_commands(&self.state) {
             return Err(reason.into());
         }

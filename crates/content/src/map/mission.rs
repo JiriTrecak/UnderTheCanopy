@@ -39,4 +39,6 @@ pub struct Mission {
     /// The computer players and the campaign AI that plays them (`players`).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub players: Vec<super::players::MissionPlayer>,
+    /// Saved cameras scenes cut and blend to (`camera.rs`).
+    pub cameras: Option<Vec<super::MapCamera>>,
 }

@@ -20,13 +20,13 @@ fn content() -> Arc<Content> {
     Arc::new(Content::load(data()).unwrap_or_else(|errors| panic!("{errors}")))
 }
 
-/// The shipped maps that can hold a match (not testbeds), fewest starts first.
+/// The shipped maps that can hold a match (not testbeds or missions), fewest starts first.
 fn maps() -> Vec<UtcMap> {
     let mut maps: Vec<UtcMap> = map::library(data())
         .unwrap_or_else(|errors| panic!("{errors}"))
         .iter()
         .map(|file| file.load().unwrap_or_else(|errors| panic!("{errors}")))
-        .filter(|map| !map.sandbox)
+        .filter(|map| !map.sandbox && map.mission.is_none())
         .collect();
     maps.sort_by(|a, b| (a.player_starts.len(), &a.name).cmp(&(b.player_starts.len(), &b.name)));
     maps

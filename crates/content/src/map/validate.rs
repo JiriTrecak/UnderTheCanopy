@@ -454,6 +454,20 @@ fn playable(v: &mut Validator) {
     {
         v.fail("mission.regions", "Mission region outside map.");
     }
+    if let Some(mission) = &map.mission {
+        let cameras = mission.cameras.as_deref().unwrap_or_default();
+        for (i, camera) in cameras.iter().enumerate() {
+            if let Some(problem) = camera.problem(map.size) {
+                v.fail("mission.cameras", problem);
+            }
+            if cameras[..i].iter().any(|c| c.id == camera.id) {
+                v.fail(
+                    "mission.cameras",
+                    format!("Camera {} is defined twice", camera.id),
+                );
+            }
+        }
+    }
     if map.mission.is_none()
         && !map.sandbox
         && !(v.has_start(Owner::Player(0)) && v.has_start(Owner::Player(1)))

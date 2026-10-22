@@ -66,7 +66,15 @@ pub struct Audio {
     granted: Vec<usize>,
     selector: Selector,
     stats: Stats,
+    /// A cinematic plays: the world's sounds step back (music and voices keep theirs).
+    ducked: bool,
+    /// The effects bus's gain from ducking, eased towards its target.
+    duck: f32,
 }
+
+/// The effects bus's gain while a cinematic plays, and how fast it eases there (s).
+pub const DUCK_GAIN: f32 = 0.3;
+const DUCK_SECONDS: f32 = 0.4;
 
 impl Audio {
     /// Audio on the default output device. Without one (or if it cannot be opened)
@@ -115,6 +123,8 @@ impl Audio {
             granted: Vec::new(),
             selector: Selector::default(),
             stats: Stats::default(),
+            ducked: false,
+            duck: 1.0,
         }
     }
 
@@ -251,6 +261,11 @@ impl Audio {
         self.background = background;
     }
 
+    /// Ducks the world's sounds (the effects bus) while a cinematic plays.
+    pub fn set_duck(&mut self, ducked: bool) {
+        self.ducked = ducked;
+    }
+
     pub fn limits(&self) -> &Limits {
         &self.limits
     }
@@ -297,7 +312,11 @@ impl Audio {
         } else {
             self.settings.master()
         };
-        let buses = Bus::ALL.map(|bus| self.settings.bus(bus));
+        let target = if self.ducked { DUCK_GAIN } else { 1.0 };
+        let ease = 1.0 - (-frame.real_dt.max(0.0) / DUCK_SECONDS).exp();
+        self.duck += (target - self.duck) * ease;
+        let mut buses = Bus::ALL.map(|bus| self.settings.bus(bus));
+        buses[Bus::Effects.index()] *= self.duck;
         let audible = |category: Category| master * buses[category.bus().index()] > 0.0;
         let output = &self.output;
         let voices = self.selector.select(

@@ -82,7 +82,12 @@ fn shipped_maps_simulate_deterministically() {
     assert!(!maps.is_empty());
     for file in maps {
         let map = file.load().unwrap_or_else(|errors| panic!("{errors}"));
-        let setup = setup(map.player_starts.len());
+        // A mission seats player 1 with or without a start.
+        let setup = setup(
+            map.player_starts
+                .len()
+                .max(usize::from(map.mission.is_some())),
+        );
         let start = || {
             let mut world = World::new(content.clone(), &map, setup.clone())
                 .unwrap_or_else(|e| panic!("{}: {e}", file.id));

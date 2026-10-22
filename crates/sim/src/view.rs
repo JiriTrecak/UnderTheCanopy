@@ -171,6 +171,12 @@ pub struct MissionView {
     pub paused: bool,
     /// The script stopped with this error.
     pub error: Option<String>,
+    /// `on_start` has run (the picture stays black until then).
+    pub started: bool,
+    /// Cinematic mode, the shot, the fade and the scene in play.
+    pub cinema: crate::mission::cinema::Cinema,
+    /// The cinema's animations by the entity that plays them, in entity order.
+    pub animations: Vec<(EntityId, crate::mission::cinema::Animation)>,
 }
 
 /// The viewer's power network (D66): its powered discs (every owner's for an observer)
@@ -368,7 +374,7 @@ impl View {
                 .get(&owner)
                 .map(|&fort| BTreeMap::from([(owner, fort)]))
                 .unwrap_or_default(),
-            mission: state.mission.as_ref().map(mission),
+            mission: state.mission.as_ref().map(|m| mission(state, m)),
             outcome: state.outcome.clone(),
             colony: Some(crate::economy::view::colony(state, catalog, economy, owner)),
             deliveries: economy
@@ -439,7 +445,7 @@ impl View {
             facts: state.facts.clone(),
             deaths: state.knowledge.cues.clone(),
             objectives: state.objectives.clone(),
-            mission: state.mission.as_ref().map(mission),
+            mission: state.mission.as_ref().map(|m| mission(state, m)),
             outcome: state.outcome.clone(),
             colony: None,
             deliveries: economy.deliveries.clone(),
@@ -522,8 +528,24 @@ fn remembered_view(sighting: &Sighting, relation: Relation) -> EntityView {
     }
 }
 
-fn mission(m: &crate::mission::MissionState) -> MissionView {
+fn mission(state: &State, m: &crate::mission::MissionState) -> MissionView {
+    let mut animations: Vec<_> = m
+        .cinema
+        .animations
+        .iter()
+        .filter_map(|a| {
+            let e = state
+                .entities
+                .iter()
+                .find(|e| e.placement.as_deref() == Some(a.placement.as_str()))?;
+            Some((e.id, a.clone()))
+        })
+        .collect();
+    animations.sort_by_key(|(id, _)| *id);
     MissionView {
+        started: m.started,
+        cinema: m.cinema.clone(),
+        animations,
         objective: m.objective.clone(),
         objectives: m.objective_states.clone(),
         dialogue: m.dialogue.clone(),

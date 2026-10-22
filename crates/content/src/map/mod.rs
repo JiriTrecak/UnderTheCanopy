@@ -11,6 +11,7 @@
 
 mod authoring;
 pub mod blocks;
+mod camera;
 mod check;
 pub mod grid;
 mod library;
@@ -24,6 +25,9 @@ pub use authoring::{
     AuthoredObject, DRY_WATER_HEIGHT, DecodedPaint, DecodedTerrain, GridError, HEIGHT_MAX,
     HEIGHT_MIN, HeightMode, PaintLayer, SavedScene, TerrainData, TextureGrid, TextureLayout,
     WaterFlow, decode_base64, decode_floats,
+};
+pub use camera::{
+    CAMERA_DISTANCE, CAMERA_FOV, CAMERA_HEIGHT, CAMERA_PITCH, CAMERA_ROLL, MapCamera,
 };
 pub use library::{MAP_GROUPS, MAPS_FOLDER, MapFile, folder, library};
 pub use mission::{Mission, Objective, Region};

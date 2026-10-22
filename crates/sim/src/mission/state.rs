@@ -36,6 +36,12 @@ pub struct MissionState {
     pub next_dialogue: u32,
     /// Set once by the first failed run; the script never runs again.
     pub error: Option<String>,
+    /// Cinematic mode, shots, fades, animations and the scene in play (`cinema.rs`).
+    #[serde(default, skip_serializing_if = "super::cinema::Cinema::is_empty")]
+    pub cinema: super::cinema::Cinema,
+    /// How often the campaign player clicked each placed entity (`mission.clicks`).
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub clicks: BTreeMap<String, u32>,
 }
 
 impl Default for MissionState {
@@ -52,6 +58,8 @@ impl Default for MissionState {
             facing: Vec::new(),
             next_dialogue: 1,
             error: None,
+            cinema: super::cinema::Cinema::default(),
+            clicks: BTreeMap::new(),
         }
     }
 }

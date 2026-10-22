@@ -33,6 +33,7 @@ fn mission(script: &str) -> canopy_content::map::UtcMap {
         script: script.into(),
         regions: Vec::new(),
         players: Vec::new(),
+        cameras: None,
     });
     map
 }

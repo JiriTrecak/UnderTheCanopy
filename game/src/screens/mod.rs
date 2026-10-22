@@ -2678,6 +2678,8 @@ impl Game {
                     .and_then(|d| self.host.ui.rect(d))
                     .map(|r| r.y / ctx.scale.max(0.1));
                 self.mission_hud.hud_top = hud_top;
+                self.mission_hud.shown = playing.game.shown_tick();
+                self.mission_hud.live_speaker = playing.game.live_speaker;
                 self.mission_hud.show(
                     &mut self.host,
                     gpu,

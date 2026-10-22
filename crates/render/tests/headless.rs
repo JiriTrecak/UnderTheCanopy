@@ -639,6 +639,7 @@ fn effects_fog_world_ui_and_hud_images_render() {
         Some(PortraitSubject {
             instance: ActorInstance::rest(0, Mat4::IDENTITY),
             building: false,
+            close: false,
         }),
         64,
     );
