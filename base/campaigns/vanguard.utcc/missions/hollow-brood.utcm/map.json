@@ -1,0 +1,1262 @@
+{
+  "biome": "underleaf",
+  "camps": [
+    {
+      "id": "mushrooms",
+      "members": [
+        "mushrooms.0",
+        "mushrooms.1",
+        "mushrooms.2",
+        "mushrooms.puffcap.0"
+      ],
+      "home": {
+        "x": 134,
+        "y": 298
+      },
+      "aggroRange": 10,
+      "leash": 22,
+      "aggression": "players",
+      "lootPool": "loot.camp.easy"
+    },
+    {
+      "id": "ford",
+      "members": [
+        "ford.wisp.0",
+        "ford.wisp.1",
+        "ford.sprite.0",
+        "ford.sprite.1"
+      ],
+      "home": {
+        "x": 194,
+        "y": 262
+      },
+      "aggroRange": 10,
+      "leash": 22,
+      "aggression": "players",
+      "fixedDrops": [
+        "item.moon-dew"
+      ]
+    },
+    {
+      "id": "webs",
+      "members": [
+        "webs.0",
+        "webs.1",
+        "webs.2",
+        "webs.spitter.0"
+      ],
+      "home": {
+        "x": 74,
+        "y": 194
+      },
+      "aggroRange": 11,
+      "leash": 24,
+      "aggression": "players",
+      "fixedDrops": [
+        "item.resin-salve"
+      ]
+    },
+    {
+      "id": "burrow",
+      "members": [
+        "burrow.0"
+      ],
+      "home": {
+        "x": 72,
+        "y": 112
+      },
+      "aggroRange": 8,
+      "leash": 16,
+      "aggression": "players"
+    },
+    {
+      "id": "husk",
+      "members": [
+        "husk.0",
+        "husk.1",
+        "husk.spitter.0",
+        "husk.spitter.1"
+      ],
+      "home": {
+        "x": 306,
+        "y": 294
+      },
+      "aggroRange": 10,
+      "leash": 22,
+      "aggression": "players",
+      "lootPool": "loot.camp.easy"
+    },
+    {
+      "id": "thorns",
+      "members": [
+        "thorns.0",
+        "thorns.1",
+        "thorns.2",
+        "thorns.3"
+      ],
+      "home": {
+        "x": 200,
+        "y": 106
+      },
+      "aggroRange": 10,
+      "leash": 22,
+      "aggression": "players",
+      "lootPool": "loot.camp.easy"
+    },
+    {
+      "id": "hornets",
+      "members": [
+        "hornets.guard.0",
+        "hornets.guard.1",
+        "hornets.wasp.0",
+        "hornets.wasp.1",
+        "hornets.mother.0"
+      ],
+      "home": {
+        "x": 272,
+        "y": 158
+      },
+      "aggroRange": 12,
+      "leash": 20,
+      "aggression": "players",
+      "fixedDrops": [
+        "item.thornband",
+        "item.restoration-draught"
+      ]
+    },
+    {
+      "id": "wisp",
+      "members": [
+        "wisp.0"
+      ],
+      "home": {
+        "x": 215,
+        "y": 48
+      },
+      "aggroRange": 4,
+      "leash": 12,
+      "aggression": "passive",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "frog",
+      "members": [
+        "frog"
+      ],
+      "home": {
+        "x": 110,
+        "y": 288
+      },
+      "aggroRange": 3,
+      "leash": 30,
+      "aggression": "passive"
+    }
+  ],
+  "entities": [
+    {
+      "id": "queen",
+      "definition": "unit.ants.queen",
+      "owner": "player.1",
+      "position": {
+        "x": 60,
+        "y": 334
+      },
+      "rotation": 40
+    },
+    {
+      "id": "tiv",
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "position": {
+        "x": 112,
+        "y": 304
+      },
+      "rotation": 220
+    },
+    {
+      "id": "raider.1",
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "position": {
+        "x": 56,
+        "y": 330
+      },
+      "rotation": 40
+    },
+    {
+      "id": "raider.2",
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "position": {
+        "x": 65,
+        "y": 339
+      },
+      "rotation": 40
+    },
+    {
+      "id": "raider.3",
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "position": {
+        "x": 51,
+        "y": 338
+      },
+      "rotation": 40
+    },
+    {
+      "id": "raider.4",
+      "definition": "unit.ants.warrior",
+      "owner": "player.1",
+      "position": {
+        "x": 60,
+        "y": 345
+      },
+      "rotation": 40
+    },
+    {
+      "id": "needler.1",
+      "definition": "unit.ants.archer",
+      "owner": "player.1",
+      "position": {
+        "x": 48,
+        "y": 346
+      },
+      "rotation": 40
+    },
+    {
+      "id": "needler.2",
+      "definition": "unit.ants.archer",
+      "owner": "player.1",
+      "position": {
+        "x": 54,
+        "y": 352
+      },
+      "rotation": 40
+    },
+    {
+      "id": "cache.salve",
+      "definition": "building.neutral.amber-cache",
+      "owner": "none",
+      "position": {
+        "x": 69.5,
+        "y": 305.5
+      },
+      "rotation": 0,
+      "initialState": {
+        "inventory": {
+          "item.resin-salve": 1
+        }
+      }
+    },
+    {
+      "id": "cache.dew",
+      "definition": "building.neutral.amber-cache",
+      "owner": "none",
+      "position": {
+        "x": 93.5,
+        "y": 329.5
+      },
+      "rotation": 0,
+      "initialState": {
+        "inventory": {
+          "item.moon-dew": 1
+        }
+      }
+    },
+    {
+      "id": "mushrooms.0",
+      "definition": "unit.neutral.capling",
+      "owner": "none",
+      "position": {
+        "x": 128,
+        "y": 293
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "mushrooms.1",
+      "definition": "unit.neutral.capling",
+      "owner": "none",
+      "position": {
+        "x": 141,
+        "y": 295
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "mushrooms.2",
+      "definition": "unit.neutral.capling",
+      "owner": "none",
+      "position": {
+        "x": 133,
+        "y": 305
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "mushrooms.puffcap.0",
+      "definition": "unit.neutral.puffcap",
+      "owner": "none",
+      "position": {
+        "x": 135,
+        "y": 298
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "ford.wisp.0",
+      "definition": "unit.neutral.puddle-wisp",
+      "owner": "none",
+      "position": {
+        "x": 186,
+        "y": 262
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "ford.wisp.1",
+      "definition": "unit.neutral.puddle-wisp",
+      "owner": "none",
+      "position": {
+        "x": 198,
+        "y": 258
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "ford.sprite.0",
+      "definition": "unit.neutral.dew-sprite",
+      "owner": "none",
+      "position": {
+        "x": 192,
+        "y": 255
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "ford.sprite.1",
+      "definition": "unit.neutral.dew-sprite",
+      "owner": "none",
+      "position": {
+        "x": 202,
+        "y": 262
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "sentry",
+      "definition": "unit.ants.warrior",
+      "owner": "player.3",
+      "position": {
+        "x": 198,
+        "y": 231
+      },
+      "rotation": 220,
+      "activation": "script",
+      "appearance": {
+        "scale": 1.15
+      }
+    },
+    {
+      "id": "webs.0",
+      "definition": "unit.neutral.webling",
+      "owner": "none",
+      "position": {
+        "x": 80,
+        "y": 196
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "webs.1",
+      "definition": "unit.neutral.webling",
+      "owner": "none",
+      "position": {
+        "x": 70,
+        "y": 200
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "webs.2",
+      "definition": "unit.neutral.webling",
+      "owner": "none",
+      "position": {
+        "x": 76,
+        "y": 188
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "webs.spitter.0",
+      "definition": "unit.neutral.spitter",
+      "owner": "none",
+      "position": {
+        "x": 66,
+        "y": 192
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "patrol.kesh",
+      "definition": "unit.ants.warrior",
+      "owner": "player.4",
+      "position": {
+        "x": 84,
+        "y": 192
+      },
+      "rotation": 90,
+      "activation": "script"
+    },
+    {
+      "id": "patrol.2",
+      "definition": "unit.ants.warrior",
+      "owner": "player.4",
+      "position": {
+        "x": 79,
+        "y": 198
+      },
+      "rotation": 120,
+      "activation": "script"
+    },
+    {
+      "id": "whistle",
+      "definition": "item.scout-whistle",
+      "owner": "none",
+      "position": {
+        "x": 82,
+        "y": 196
+      },
+      "rotation": 0,
+      "activation": "script"
+    },
+    {
+      "id": "burrow.0",
+      "definition": "unit.neutral.spitter",
+      "owner": "none",
+      "position": {
+        "x": 70,
+        "y": 108
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "cache.burrow",
+      "definition": "building.neutral.amber-cache",
+      "owner": "none",
+      "position": {
+        "x": 73.5,
+        "y": 113.5
+      },
+      "rotation": 0,
+      "initialState": {
+        "inventory": {
+          "item.trailkeeper-flask": 1
+        }
+      }
+    },
+    {
+      "id": "feral.sick.1",
+      "definition": "unit.ants.warrior",
+      "owner": "player.8",
+      "position": {
+        "x": 118,
+        "y": 170
+      },
+      "rotation": 200,
+      "appearance": {
+        "scale": 1.12
+      }
+    },
+    {
+      "id": "feral.sick.2",
+      "definition": "unit.ants.warrior",
+      "owner": "player.8",
+      "position": {
+        "x": 124,
+        "y": 160
+      },
+      "rotation": 200,
+      "appearance": {
+        "scale": 1.12
+      }
+    },
+    {
+      "id": "feral.sick.3",
+      "definition": "unit.ants.warrior",
+      "owner": "player.8",
+      "position": {
+        "x": 112,
+        "y": 176
+      },
+      "rotation": 200,
+      "appearance": {
+        "scale": 1.12
+      }
+    },
+    {
+      "id": "feral.sick.burster",
+      "definition": "unit.ants.burster",
+      "owner": "player.8",
+      "position": {
+        "x": 128,
+        "y": 168
+      },
+      "rotation": 200,
+      "appearance": {
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "spring",
+      "definition": "building.neutral.sap-spring",
+      "owner": "none",
+      "position": {
+        "x": 261.5,
+        "y": 237.5
+      },
+      "rotation": 0
+    },
+    {
+      "id": "husk.0",
+      "definition": "unit.neutral.webling",
+      "owner": "none",
+      "position": {
+        "x": 300,
+        "y": 290
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "husk.1",
+      "definition": "unit.neutral.webling",
+      "owner": "none",
+      "position": {
+        "x": 310,
+        "y": 288
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "husk.spitter.0",
+      "definition": "unit.neutral.spitter",
+      "owner": "none",
+      "position": {
+        "x": 304,
+        "y": 298
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "husk.spitter.1",
+      "definition": "unit.neutral.spitter",
+      "owner": "none",
+      "position": {
+        "x": 312,
+        "y": 296
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "crate.husk",
+      "definition": "building.neutral.supply-crate",
+      "owner": "none",
+      "position": {
+        "x": 305.5,
+        "y": 293.5
+      },
+      "rotation": 0,
+      "initialState": {
+        "inventory": {
+          "item.quickstep-spurs": 1
+        }
+      }
+    },
+    {
+      "id": "thorns.0",
+      "definition": "unit.neutral.thorn-slinger",
+      "owner": "none",
+      "position": {
+        "x": 194,
+        "y": 102
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "thorns.1",
+      "definition": "unit.neutral.thorn-slinger",
+      "owner": "none",
+      "position": {
+        "x": 204,
+        "y": 100
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "thorns.2",
+      "definition": "unit.neutral.thorn-slinger",
+      "owner": "none",
+      "position": {
+        "x": 198,
+        "y": 112
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "thorns.3",
+      "definition": "unit.neutral.thorn-slinger",
+      "owner": "none",
+      "position": {
+        "x": 208,
+        "y": 108
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "hornets.guard.0",
+      "definition": "unit.neutral.hornet-guard",
+      "owner": "none",
+      "position": {
+        "x": 266,
+        "y": 152
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "hornets.guard.1",
+      "definition": "unit.neutral.hornet-guard",
+      "owner": "none",
+      "position": {
+        "x": 274,
+        "y": 150
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "hornets.wasp.0",
+      "definition": "unit.neutral.needle-wasp",
+      "owner": "none",
+      "position": {
+        "x": 270,
+        "y": 162
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "hornets.wasp.1",
+      "definition": "unit.neutral.needle-wasp",
+      "owner": "none",
+      "position": {
+        "x": 280,
+        "y": 156
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "hornets.mother.0",
+      "definition": "unit.neutral.nest-mother",
+      "owner": "none",
+      "position": {
+        "x": 278,
+        "y": 164
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "feral.rim.1",
+      "definition": "unit.ants.warrior",
+      "owner": "player.8",
+      "position": {
+        "x": 298,
+        "y": 116
+      },
+      "rotation": 200,
+      "appearance": {
+        "scale": 1.12
+      }
+    },
+    {
+      "id": "feral.rim.2",
+      "definition": "unit.ants.warrior",
+      "owner": "player.8",
+      "position": {
+        "x": 306,
+        "y": 112
+      },
+      "rotation": 200,
+      "appearance": {
+        "scale": 1.12
+      }
+    },
+    {
+      "id": "rubble",
+      "definition": "building.neutral.rubble",
+      "owner": "none",
+      "position": {
+        "x": 329.5,
+        "y": 145.5
+      },
+      "rotation": 0,
+      "initialState": {
+        "health": 260
+      }
+    },
+    {
+      "id": "survivor.1",
+      "definition": "unit.ants.warrior",
+      "owner": "player.3",
+      "position": {
+        "x": 326,
+        "y": 155
+      },
+      "rotation": 0,
+      "activation": "script"
+    },
+    {
+      "id": "survivor.2",
+      "definition": "unit.ants.warrior",
+      "owner": "player.3",
+      "position": {
+        "x": 327,
+        "y": 163
+      },
+      "rotation": 330,
+      "activation": "script"
+    },
+    {
+      "id": "survivor.3",
+      "definition": "unit.ants.archer",
+      "owner": "player.3",
+      "position": {
+        "x": 329,
+        "y": 171
+      },
+      "rotation": 20,
+      "activation": "script"
+    },
+    {
+      "id": "nurse",
+      "definition": "unit.ants.settler",
+      "owner": "player.3",
+      "position": {
+        "x": 336,
+        "y": 154
+      },
+      "rotation": 340,
+      "activation": "script"
+    },
+    {
+      "id": "chamber.spring",
+      "definition": "building.neutral.sap-spring",
+      "owner": "none",
+      "position": {
+        "x": 337.5,
+        "y": 165.5
+      },
+      "rotation": 0
+    },
+    {
+      "id": "lantern",
+      "definition": "item.broodkeeper-lantern",
+      "owner": "none",
+      "position": {
+        "x": 206,
+        "y": 53
+      },
+      "rotation": 0
+    },
+    {
+      "id": "wisp.0",
+      "definition": "unit.neutral.willow-wisp",
+      "owner": "none",
+      "position": {
+        "x": 215,
+        "y": 48
+      },
+      "rotation": 0.0
+    },
+    {
+      "id": "frog",
+      "definition": "unit.neutral.tree-frog",
+      "owner": "none",
+      "position": {
+        "x": 110,
+        "y": 288
+      },
+      "rotation": 160
+    },
+    {
+      "id": "heartseed",
+      "definition": "item.heartseed",
+      "owner": "none",
+      "position": {
+        "x": 110,
+        "y": 289
+      },
+      "rotation": 0,
+      "activation": "script"
+    },
+    {
+      "id": "feral.gate.1",
+      "definition": "unit.ants.warrior",
+      "owner": "player.8",
+      "position": {
+        "x": 298,
+        "y": 86
+      },
+      "rotation": 180,
+      "appearance": {
+        "scale": 1.12
+      }
+    },
+    {
+      "id": "feral.gate.2",
+      "definition": "unit.ants.warrior",
+      "owner": "player.8",
+      "position": {
+        "x": 310,
+        "y": 86
+      },
+      "rotation": 180,
+      "appearance": {
+        "scale": 1.12
+      }
+    },
+    {
+      "id": "feral.gate.3",
+      "definition": "unit.ants.burster",
+      "owner": "player.8",
+      "position": {
+        "x": 304,
+        "y": 80
+      },
+      "rotation": 180,
+      "appearance": {
+        "scale": 1.12
+      }
+    },
+    {
+      "id": "feral.pools.1",
+      "definition": "unit.ants.burster",
+      "owner": "player.8",
+      "position": {
+        "x": 276,
+        "y": 82
+      },
+      "rotation": 120,
+      "appearance": {
+        "scale": 1.12
+      }
+    },
+    {
+      "id": "feral.east.1",
+      "definition": "unit.ants.warrior",
+      "owner": "player.8",
+      "position": {
+        "x": 326,
+        "y": 76
+      },
+      "rotation": 240,
+      "appearance": {
+        "scale": 1.12
+      }
+    },
+    {
+      "id": "feral.east.2",
+      "definition": "unit.ants.archer",
+      "owner": "player.8",
+      "position": {
+        "x": 334,
+        "y": 80
+      },
+      "rotation": 240,
+      "appearance": {
+        "scale": 1.12
+      }
+    },
+    {
+      "id": "feral.nest.1",
+      "definition": "unit.ants.warrior",
+      "owner": "player.8",
+      "position": {
+        "x": 308,
+        "y": 56
+      },
+      "rotation": 200,
+      "appearance": {
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "feral.nest.2",
+      "definition": "unit.ants.warrior",
+      "owner": "player.8",
+      "position": {
+        "x": 312,
+        "y": 64
+      },
+      "rotation": 200,
+      "appearance": {
+        "scale": 1.1
+      }
+    },
+    {
+      "id": "ashka",
+      "definition": "unit.ants.reaver-queen",
+      "owner": "player.8",
+      "position": {
+        "x": 290,
+        "y": 58
+      },
+      "rotation": 200
+    }
+  ],
+  "playerStarts": [],
+  "size": 384,
+  "playable": {
+    "x": 32,
+    "z": 32,
+    "width": 320,
+    "height": 320
+  },
+  "landscape": {
+    "environment": {
+      "hour": 20.0,
+      "playing": false,
+      "weather": {
+        "kind": "clear"
+      }
+    }
+  },
+  "mission": {
+    "objectives": [
+      {
+        "id": "reach",
+        "title": "The Hollow",
+        "description": "Follow the root path north-east to the Hollow"
+      },
+      {
+        "id": "survivors",
+        "title": "Survivors",
+        "description": "Break through the fallen tunnel east of the rim and find who is digging"
+      },
+      {
+        "id": "ashka",
+        "title": "Mother Ashka",
+        "description": "Go down into the Hollow and put Mother Ashka to rest"
+      },
+      {
+        "id": "patrol",
+        "title": "The lost patrol",
+        "description": "Find Kesh's patrol in the old webs to the north-west",
+        "optional": true
+      }
+    ],
+    "regions": [
+      {
+        "id": "start",
+        "x": 84,
+        "y": 318,
+        "radius": 24
+      },
+      {
+        "id": "mushrooms",
+        "x": 134,
+        "y": 298,
+        "radius": 26
+      },
+      {
+        "id": "ford",
+        "x": 192,
+        "y": 264,
+        "radius": 20
+      },
+      {
+        "id": "sentry",
+        "x": 198,
+        "y": 242,
+        "radius": 16
+      },
+      {
+        "id": "junction",
+        "x": 150,
+        "y": 208,
+        "radius": 18
+      },
+      {
+        "id": "webs",
+        "x": 76,
+        "y": 196,
+        "radius": 26
+      },
+      {
+        "id": "sick",
+        "x": 126,
+        "y": 170,
+        "radius": 28
+      },
+      {
+        "id": "spring",
+        "x": 262,
+        "y": 238,
+        "radius": 18
+      },
+      {
+        "id": "husk",
+        "x": 306,
+        "y": 294,
+        "radius": 18
+      },
+      {
+        "id": "terrace",
+        "x": 182,
+        "y": 116,
+        "radius": 18
+      },
+      {
+        "id": "hornets",
+        "x": 258,
+        "y": 140,
+        "radius": 14
+      },
+      {
+        "id": "glade",
+        "x": 206,
+        "y": 54,
+        "radius": 13
+      },
+      {
+        "id": "rim",
+        "x": 300,
+        "y": 118,
+        "radius": 14
+      },
+      {
+        "id": "chamber",
+        "x": 330,
+        "y": 140,
+        "radius": 14
+      },
+      {
+        "id": "hollow",
+        "x": 304,
+        "y": 92,
+        "radius": 14
+      },
+      {
+        "id": "nest",
+        "x": 300,
+        "y": 66,
+        "radius": 30
+      },
+      {
+        "id": "frog",
+        "x": 110,
+        "y": 288,
+        "radius": 10
+      }
+    ],
+    "players": [
+      {
+        "player": 8,
+        "race": "ants",
+        "team": "enemy",
+        "vision": false,
+        "ai": {
+          "behaviour": "passive"
+        }
+      },
+      {
+        "player": 3,
+        "race": "ants",
+        "team": "ally",
+        "ai": {
+          "behaviour": "passive",
+          "dormant": true
+        }
+      },
+      {
+        "player": 4,
+        "race": "ants",
+        "team": "ally",
+        "ai": {
+          "behaviour": "passive",
+          "dormant": true
+        }
+      }
+    ],
+    "cameras": [
+      {
+        "id": "open-road",
+        "x": 70,
+        "y": 328,
+        "height": 2,
+        "distance": 38,
+        "pitch": 12,
+        "yaw": 128,
+        "fov": 38
+      },
+      {
+        "id": "open-follow",
+        "x": 84,
+        "y": 318,
+        "height": 2,
+        "distance": 54,
+        "pitch": 30,
+        "yaw": 150,
+        "fov": 38
+      },
+      {
+        "id": "over-queen",
+        "x": 97,
+        "y": 310,
+        "height": 2.5,
+        "distance": 34,
+        "pitch": 13,
+        "yaw": 300,
+        "fov": 30
+      },
+      {
+        "id": "over-tiv",
+        "x": 85,
+        "y": 317,
+        "height": 3.5,
+        "distance": 26,
+        "pitch": 8,
+        "yaw": 118,
+        "fov": 34,
+        "roll": 1.5
+      },
+      {
+        "id": "open-wide",
+        "x": 100,
+        "y": 308,
+        "height": 0,
+        "distance": 80,
+        "pitch": 42,
+        "yaw": 160,
+        "fov": 40
+      },
+      {
+        "id": "sentry",
+        "x": 196,
+        "y": 238,
+        "height": 1,
+        "distance": 44,
+        "pitch": 50,
+        "yaw": 90,
+        "fov": 36
+      },
+      {
+        "id": "sentry-low",
+        "x": 194,
+        "y": 238,
+        "height": 1,
+        "distance": 30,
+        "pitch": 34,
+        "yaw": 20,
+        "fov": 32
+      },
+      {
+        "id": "webs",
+        "x": 82,
+        "y": 194,
+        "height": 2,
+        "distance": 30,
+        "pitch": 24,
+        "yaw": 60,
+        "fov": 38
+      },
+      {
+        "id": "rim-wide",
+        "x": 308,
+        "y": 66,
+        "height": 0,
+        "distance": 78,
+        "pitch": 36,
+        "yaw": 4,
+        "fov": 42
+      },
+      {
+        "id": "rim-tiv",
+        "x": 300,
+        "y": 116,
+        "height": 3,
+        "distance": 24,
+        "pitch": 10,
+        "yaw": 70,
+        "fov": 34
+      },
+      {
+        "id": "chamber",
+        "x": 331,
+        "y": 148,
+        "height": 2,
+        "distance": 28,
+        "pitch": 28,
+        "yaw": 200,
+        "fov": 38
+      },
+      {
+        "id": "over-nurse",
+        "x": 330,
+        "y": 140,
+        "height": 3,
+        "distance": 22,
+        "pitch": 9,
+        "yaw": 30,
+        "fov": 34
+      },
+      {
+        "id": "hollow-wide",
+        "x": 304,
+        "y": 70,
+        "height": 0,
+        "distance": 70,
+        "pitch": 38,
+        "yaw": 0,
+        "fov": 42
+      },
+      {
+        "id": "ashka",
+        "x": 292,
+        "y": 62,
+        "height": 4,
+        "distance": 34,
+        "pitch": 18,
+        "yaw": 45,
+        "fov": 38
+      },
+      {
+        "id": "ashka-close",
+        "x": 295,
+        "y": 66,
+        "height": 5,
+        "distance": 24,
+        "pitch": 12,
+        "yaw": 110,
+        "fov": 34
+      },
+      {
+        "id": "closing",
+        "x": 300,
+        "y": 66,
+        "height": 2,
+        "distance": 30,
+        "pitch": 30,
+        "yaw": 30,
+        "fov": 36
+      },
+      {
+        "id": "frog",
+        "x": 110,
+        "y": 288,
+        "height": 1,
+        "distance": 16,
+        "pitch": 22,
+        "yaw": 340,
+        "fov": 34
+      }
+    ]
+  }
+}
