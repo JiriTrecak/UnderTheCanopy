@@ -84,6 +84,13 @@ impl Environment {
     pub fn with_weather(mut self, weather: crate::environment::Weather) -> Self {
         use crate::environment::Weather;
         weather.light(&mut self.lighting);
+        // A weather with its own finish re-bakes the grade (biomes mixing in a daytime
+        // lookup keep theirs).
+        if self.lighting.grade.daytime_lut_strength <= 0.0
+            && weather.grade(&mut self.lighting.grade)
+        {
+            self.grade = crate::environment::bake_grade(&self.lighting.grade, None);
+        }
         let mut motes = self.motes.take().unwrap_or(crate::environment::Motes {
             dust: 0,
             dust_brightness: 0.0,
@@ -92,6 +99,7 @@ impl Environment {
             leaf_size: 0.3,
             snow: 0,
             rain: 0,
+            fireflies: 0,
         });
         let atmosphere = &mut self.post.atmosphere;
         match weather {
@@ -118,8 +126,16 @@ impl Environment {
                 atmosphere.height_falloff = 10.0;
                 atmosphere.overhead_strength = 1.0;
             }
+            Weather::EnchantedForest => {
+                motes.fireflies = 1400;
+                self.post.bloom.strength = (self.post.bloom.strength * 1.5).max(0.2);
+            }
         }
-        let any = motes.dust > 0 || motes.leaves > 0 || motes.snow > 0 || motes.rain > 0;
+        let any = motes.dust > 0
+            || motes.leaves > 0
+            || motes.snow > 0
+            || motes.rain > 0
+            || motes.fireflies > 0;
         self.motes = any.then_some(motes);
         self
     }

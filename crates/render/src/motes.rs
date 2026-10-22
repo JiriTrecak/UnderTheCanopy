@@ -1,6 +1,6 @@
 //! Ambient motes (`shaders/motes.wgsl`): dust glinting where light falls through the
 //! canopy, and leaves drifting down, from a biome's `motes`; and a map's weather, snow
-//! drifting down and rain streaking through the view. Both are generated on the GPU
+//! drifting down, rain streaking through the view and fireflies wandering over the ground. Both are generated on the GPU
 //! from the instance index in fields that follow the camera and wrap around it, so they
 //! need no buffers beyond one uniform: the dust only for close cameras (it is too small to
 //! see from the RTS view), the leaves for every view. Render only.
@@ -24,6 +24,12 @@ const DUST_FIELD: f32 = 14.0;
 const LEAF_HEIGHT: f32 = 50.0;
 /// Height of the snow and rain above the camera's target (metres).
 const WEATHER_HEIGHT: f32 = 60.0;
+/// Fireflies: their field's share of the weather field (they gather round what the
+/// camera looks at), how high over the ground they wander (metres) and how bright they
+/// glow (into the HDR target, so bloom haloes them).
+const FIREFLY_FIELD: f32 = 0.7;
+const FIREFLY_HEIGHT: f32 = 4.0;
+const FIREFLY_BRIGHTNESS: f32 = 6.0;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
@@ -39,6 +45,8 @@ struct MotesUniform {
     weather: [f32; 4],
     // rgb: the light falling on snow and rain (linear)
     weather_color: [f32; 4],
+    // x firefly count, y the field's half size, z its height, w brightness
+    fireflies: [f32; 4],
 }
 
 pub struct MotesGpu {
@@ -49,6 +57,7 @@ pub struct MotesGpu {
     leaves: wgpu::RenderPipeline,
     snow: wgpu::RenderPipeline,
     rain: wgpu::RenderPipeline,
+    fireflies: wgpu::RenderPipeline,
     /// This frame's close-view share (no dust at RTS pitches).
     close: f32,
     pub bytes: u64,
@@ -212,6 +221,7 @@ impl MotesGpu {
                 Some(wgpu::BlendState::ALPHA_BLENDING),
                 false,
             ),
+            fireflies: pipeline("vs_firefly", "fs_firefly", Some(additive), false),
             close: 0.0,
             bytes,
         })
@@ -256,6 +266,12 @@ impl MotesGpu {
             up: [up.x, up.y, up.z, 0.0],
             weather: [c.snow as f32, c.rain as f32, field, WEATHER_HEIGHT],
             weather_color: [weather_light.x, weather_light.y, weather_light.z, 0.0],
+            fireflies: [
+                c.fireflies as f32,
+                field * FIREFLY_FIELD,
+                FIREFLY_HEIGHT,
+                FIREFLY_BRIGHTNESS,
+            ],
         };
         queue.write_buffer(&self.buffer, 0, bytemuck::bytes_of(&uniform));
     }
@@ -276,7 +292,8 @@ impl MotesGpu {
         1
     }
 
-    /// The map's snow and rain (blended over the scene); returns the draw count.
+    /// The map's snow and rain (blended over the scene) and fireflies (additive); returns
+    /// the draw count.
     pub fn draw_weather<'a>(
         &'a self,
         pass: &mut wgpu::RenderPass<'a>,
@@ -286,6 +303,7 @@ impl MotesGpu {
         for (count, pipeline) in [
             (self.config.snow, &self.snow),
             (self.config.rain, &self.rain),
+            (self.config.fireflies, &self.fireflies),
         ] {
             if count == 0 {
                 continue;

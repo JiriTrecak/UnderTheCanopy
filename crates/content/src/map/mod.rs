@@ -138,6 +138,9 @@ pub enum WeatherKind {
     Spores,
     /// Sunlight in shafts through the air.
     GodRays,
+    /// An enchanted evening: a soft violet-blue cast and fireflies drifting low over the
+    /// ground (D92).
+    EnchantedForest,
 }
 
 /// Unknown keys are dropped, as the old parser's non-strict schema does.

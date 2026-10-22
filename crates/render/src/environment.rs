@@ -551,6 +551,9 @@ pub struct Motes {
     /// Raindrops streaking down round the view (a map's rain).
     #[serde(default)]
     pub rain: u32,
+    /// Fireflies drifting low over the ground round the view (an enchanted forest).
+    #[serde(default)]
+    pub fireflies: u32,
 }
 
 /// A map's weather (`landscape.environment.weather`): it adds to the biome's look.
@@ -562,6 +565,9 @@ pub enum Weather {
     Snow,
     /// Sunlight in shafts through a light haze.
     GodRays,
+    /// An enchanted evening: the light a little softer and cast towards violet-blue, with
+    /// fireflies; light-handed, so play stays clear (D92).
+    EnchantedForest,
 }
 
 impl Weather {
@@ -588,6 +594,47 @@ impl Weather {
                 lighting.sun *= 1.12;
                 lighting.sun_intensity *= 1.12;
             }
+            Weather::EnchantedForest => {
+                // A warm golden key that holds its strength into the evening (low, so it
+                // rakes and throws long shadows) against a cool violet-blue fill.
+                let gold = Vec3::new(1.0, 0.6, 0.28);
+                let intensity = lighting.sun_intensity.max(ENCHANTED_SUN) * 0.85;
+                lighting.sun_color = gold;
+                lighting.sun_intensity = intensity;
+                lighting.sun = gold * intensity;
+                // High enough to reach into clearings between the giants: its own azimuth,
+                // at least ENCHANTED_ELEVATION up.
+                let d = lighting.sun_direction;
+                let flat = Vec3::new(d.x, 0.0, d.z).normalize_or(Vec3::X);
+                let up = d.y.max(ENCHANTED_ELEVATION.sin());
+                lighting.sun_direction = (flat * (1.0 - up * up).sqrt() + Vec3::Y * up).normalize();
+                lighting.ambient *= Vec3::new(0.92, 0.94, 1.1);
+                lighting.sky *= Vec3::new(0.9, 0.92, 1.1);
+            }
+        }
+    }
+}
+
+/// The least sun an enchanted forest keeps (before its share), so its evening stays golden,
+/// and the least elevation it keeps (radians), so it still reaches the ground.
+const ENCHANTED_SUN: f32 = 5.6;
+const ENCHANTED_ELEVATION: f32 = 0.58;
+
+impl Weather {
+    /// The finish under this weather, when it has its own: an enchanted forest is richer
+    /// and warmer in the light, bluer in the shade.
+    pub fn grade(self, grade: &mut Grade) -> bool {
+        match self {
+            Weather::EnchantedForest => {
+                grade.contrast = (grade.contrast * 1.06).min(2.0);
+                grade.saturation = (grade.saturation * 1.14).min(2.0);
+                grade.shadow_tint = Hex([0x2c, 0x40, 0x78]);
+                grade.highlight_tint = Hex([0xff, 0xe0, 0xae]);
+                grade.split_strength = grade.split_strength.max(0.55);
+                grade.vignette = grade.vignette.max(0.36);
+                true
+            }
+            _ => false,
         }
     }
 }

@@ -992,3 +992,12 @@ Jiri wants campaign maps "expansive, with neutrals, lots of interesting points, 
 - **The open side is the clearer one**, tested along five lines of sight against scenery, buildings and other units, with the eye kept over the map; a pair keeps one side of its line for the whole exchange, either way round (seen from the pair's first placement by name), so cuts never cross the line. The side taken is remembered per pair while the cinematic lasts.
 - **Options travel as a table.** The sandbox now passes a flat Lua table of named scalars to the API, sorted by name (iteration order never shows); nested tables are refused.
 - **`display.portrait`** (`{focus, size, turn}` in model space) lets a model whose automatic close portrait misses its face say what to frame and from which side; a single on that model tries that side first. The ant general uses it.
+
+## D92. The enchanted forest weather (2026-10-22, Jiri: "I'd love to see more lights, colors, maybe some fireflies"; he picked "firefly dusk" from ten painted previews of a game screenshot, for the first mission — review: visible)
+
+- **What it is.** `weather.kind: "enchantedForest"`: an evening that feels magical without getting in the way of play. The Hollow Brood, the campaign's first mission, plays under it.
+- **Light** (`Weather::light`): a warm golden sun that keeps at least a fixed strength into the evening and at least about 33° of elevation along its own azimuth, so it reaches clearings between the giants in lit patches with long shadows; a cooler violet-blue ambient and sky for the shade.
+- **Finish** (`Weather::grade`): a little more contrast and saturation, shadows split towards deep blue and highlights towards warm gold, a slightly deeper vignette; the grade is re-baked for it (biomes mixing in a daytime lookup keep theirs). Bloom is half again as strong.
+- **Fireflies** (`motes.wgsl`, `vs_firefly`): 1,400 generated on the GPU from the instance index in a field following the camera, like the snow: loose swarms of about nine round slowly roaming centres, wandering within four metres of the ground, each blinking on its own rhythm (most faint, a few bright), a few pixels across from the RTS camera with a white-gold core in a warm halo, additive into the HDR target so bloom carries them. No lights.
+- **Not done:** warm pools of light on the ground under the swarms (the previews' glow) and glowing mushroom gills; both would need light the effect-light budget does not have.
+

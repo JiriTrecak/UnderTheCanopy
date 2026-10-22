@@ -21,6 +21,8 @@ struct Motes {
     weather: vec4f,
     // rgb: the light falling on snow and rain (linear)
     weather_color: vec4f,
+    // x firefly count, y the field's half size, z its height, w brightness
+    fireflies: vec4f,
 }
 
 @group(1) @binding(0) var<uniform> motes: Motes;
@@ -295,3 +297,73 @@ fn fs_weather(in: WeatherOut) -> SceneOut {
     let light = motes.weather_color.rgb * tint;
     return scene_out(vec4f(light, alpha), in.world);
 }
+
+// --- Fireflies (an enchanted forest) --------------------------------------------------
+
+struct FireflyOut {
+    @builtin(position) clip: vec4f,
+    @location(0) world: vec3f,
+    @location(1) quad: vec2f,
+    @location(2) glow: f32,
+}
+
+@vertex
+fn vs_firefly(@builtin(vertex_index) vertex: u32, @builtin(instance_index) index: u32) -> FireflyOut {
+    let t = motes.params.w;
+    let seed = hash3(index * 13u + 41u);
+    let seed2 = hash3(index * 13u + 89u);
+    let phase = seed2 * 6.2831853;
+    // In loose swarms of about nine round a slowly drifting centre, each wandering in
+    // loops a metre or two wide, low over the ground round what the camera looks at;
+    // the field wraps as the camera moves, so swarms and dark gaps alternate.
+    let height = motes.fireflies.z;
+    let half = vec3f(motes.fireflies.y, height * 0.5, motes.fireflies.y);
+    let centre = motes.leaves.xyz + vec3f(0.0, 4.0 + 0.4 + height * 0.5, 0.0);
+    let wander = vec3f(
+        sin(t * (0.21 + 0.17 * seed2.x) + phase.x) * 1.6 + sin(t * 0.53 + phase.z) * 0.5,
+        sin(t * (0.33 + 0.2 * seed2.y) + phase.y) * 0.6,
+        cos(t * (0.19 + 0.15 * seed2.z) + phase.z) * 1.6 + cos(t * 0.47 + phase.x) * 0.5,
+    );
+    let swarm = hash3((index / 9u) * 17u + 5u);
+    let spread = (seed - vec3f(0.5)) * vec3f(9.0, 0.0, 9.0);
+    let lift = vec3f(0.0, (seed.y - 0.5) * height, 0.0);
+    let roam = vec3f(sin(t * 0.05 + swarm.x * 6.28) * 6.0, 0.0, cos(t * 0.04 + swarm.z * 6.28) * 6.0);
+    let p = wrapped(vec3f(swarm.x, 0.5, swarm.z), spread + lift + roam + wander, centre, half);
+    let edge = abs(p - centre) / half;
+    let fade = 1.0 - smoothstep(0.7, 1.0, max(edge.x, edge.z));
+    // Each blinks on its own rhythm: a slow glow up and down, dark between, so only some
+    // are lit at a time.
+    let rate = 0.35 + 0.45 * seed.x;
+    let wave = 0.5 + 0.5 * sin(t * rate * 6.2831853 * 0.25 + phase.y);
+    let blink = smoothstep(0.45, 1.0, wave);
+    // A spark of a few pixels from the RTS camera, never a disc close to the lens.
+    let distance = length(p - frame.eye.xyz);
+    let size = clamp(distance * (0.0032 + 0.0016 * seed.z), 0.06, 0.5);
+    let c = corner(vertex);
+    var out: FireflyOut;
+    out.world = p + (motes.right.xyz * c.x + motes.up.xyz * c.y) * size;
+    out.clip = frame.view_proj * vec4f(out.world, 1.0);
+    out.quad = c;
+    // Most are faint, a few bright.
+    let strength = 0.3 + 0.7 * seed2.x * seed2.x;
+    out.glow = fade * blink * strength * smoothstep(4.0, 10.0, distance);
+    if (out.glow < 0.002) {
+        out.clip = vec4f(0.0, 0.0, -1.0, 1.0);
+    }
+    return out;
+}
+
+@fragment
+fn fs_firefly(in: FireflyOut) -> SceneOut {
+    let r = dot(in.quad, in.quad);
+    if (r > 1.0) {
+        discard;
+    }
+    // A white-gold core in a warm gold glow.
+    let core = exp(-r * 22.0);
+    let halo = exp(-r * 3.2) * 0.4;
+    let gold = vec3f(1.0, 0.72, 0.28);
+    let light = (gold * halo + mix(gold, vec3f(1.0, 0.95, 0.8), 0.6) * core) * in.glow * motes.fireflies.w;
+    return scene_out(vec4f(light, 0.0), in.world);
+}
+

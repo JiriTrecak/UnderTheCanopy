@@ -924,7 +924,7 @@
       "hour": 18.5,
       "playing": true,
       "weather": {
-        "kind": "clear"
+        "kind": "enchantedForest"
       },
       "dayMinutes": 240
     },

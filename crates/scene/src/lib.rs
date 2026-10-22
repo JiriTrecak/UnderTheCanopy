@@ -430,6 +430,7 @@ pub fn weather_of(map: &canopy_content::map::UtcMap) -> canopy_render::environme
         Some(WeatherKind::Rain) => Weather::Rain,
         Some(WeatherKind::Snow) => Weather::Snow,
         Some(WeatherKind::GodRays) => Weather::GodRays,
+        Some(WeatherKind::EnchantedForest) => Weather::EnchantedForest,
         Some(WeatherKind::Clear | WeatherKind::Spores) | None => Weather::Clear,
     }
 }
