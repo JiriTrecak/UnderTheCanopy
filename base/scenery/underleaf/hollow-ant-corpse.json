@@ -1,0 +1,12 @@
+{
+  "id": "scenery.hollow-ant-corpse",
+  "name": "Hollow: dead ant",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.hollow-ant-corpse",
+  "blocker": {
+    "width": 4.0,
+    "depth": 1.7,
+    "shape": "ellipse"
+  }
+}

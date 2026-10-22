@@ -1,0 +1,19 @@
+{
+  "id": "scenery.beetle-gate-towers",
+  "name": "Glass Road: station gate towers",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.beetle-gate-towers",
+  "blockers": [
+    {
+      "width": 3.6,
+      "depth": 3.6,
+      "x": -9.8
+    },
+    {
+      "width": 3.6,
+      "depth": 3.6,
+      "x": 9.8
+    }
+  ]
+}

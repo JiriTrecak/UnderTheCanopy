@@ -17,8 +17,8 @@ Optional per item, applied in this order before sizing:
   height, so a trunk grows taller while its buttress roots keep their shape;
 - "sink": share of the height pushed below the ground;
 - "sway": metres the top of a piece with `capabilities.wind` sways (default 0.5);
-- "glow": {"color": [r, g, b], "strength", "hue": "violet"}: makes the texels of that hue
-  self-lit (bioluminescent gills), the rest of the material stays unlit.
+- "glow": {"color": [r, g, b], "strength", "hue": "violet" | "amber"}: makes the texels of
+  that hue self-lit (bioluminescent gills, a burning lantern), the rest stays unlit.
 
 For each item: joins the meshes, puts the pivot at the centre of the base (lowest point at 0),
 scales to the requested size, decimates to the triangle budget, shrinks every texture,
@@ -50,9 +50,13 @@ def glow_image(mat, node, img, glow):
     w, h = img.size
     px = np.array(img.pixels[:], dtype=np.float32).reshape(h, w, 4)
     r, g, b = px[:, :, 0], px[:, :, 1], px[:, :, 2]
-    # Violet to blue: blue leads, red at least near green; weighted by brightness.
-    # Only strongly coloured texels glow (gills, rims), not pale lilac caps.
-    hue = np.clip((b - np.maximum(r, g) - glow.get('threshold', 0.16)) / 0.18, 0.0, 1.0) * np.clip((b - 0.3) / 0.3, 0.0, 1.0)
+    if glow.get('hue') == 'amber':
+        # Warm gold to amber: red leads blue by far, bright; sand and bone stay unlit.
+        hue = np.clip((r - b - glow.get('threshold', 0.35)) / 0.2, 0.0, 1.0) * np.clip((r - 0.6) / 0.25, 0.0, 1.0)
+    else:
+        # Violet to blue: blue leads, red at least near green; weighted by brightness.
+        # Only strongly coloured texels glow (gills, rims), not pale lilac caps.
+        hue = np.clip((b - np.maximum(r, g) - glow.get('threshold', 0.16)) / 0.18, 0.0, 1.0) * np.clip((b - 0.3) / 0.3, 0.0, 1.0)
     out = np.zeros_like(px)
     out[:, :, :3] = hue[:, :, None] * np.array(glow['color'], np.float32)
     out[:, :, 3] = 1.0

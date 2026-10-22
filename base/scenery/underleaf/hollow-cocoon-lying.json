@@ -1,0 +1,12 @@
+{
+  "id": "scenery.hollow-cocoon-lying",
+  "name": "Hollow: silk cocoon, lying",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.hollow-cocoon-lying",
+  "blocker": {
+    "width": 5.4,
+    "depth": 2.5,
+    "shape": "ellipse"
+  }
+}

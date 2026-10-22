@@ -1,0 +1,20 @@
+{
+  "id": "scenery.hollow-broodkeepers-shrine",
+  "name": "Hollow: broodkeepers' shrine",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.hollow-broodkeepers-shrine",
+  "blocker": {
+    "width": 8.0,
+    "depth": 5.8,
+    "shape": "ellipse"
+  },
+  "light": {
+    "x": 0,
+    "y": 3.0,
+    "z": 1.75,
+    "color": "#ffb24f",
+    "intensity": 2.4,
+    "range": 14
+  }
+}

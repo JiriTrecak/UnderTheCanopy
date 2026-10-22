@@ -1,0 +1,12 @@
+{
+  "id": "scenery.hollow-ant-husk",
+  "name": "Hollow: withered ant husk",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.hollow-ant-husk",
+  "blocker": {
+    "width": 3.6,
+    "depth": 1.4,
+    "shape": "ellipse"
+  }
+}
