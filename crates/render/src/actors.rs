@@ -232,7 +232,31 @@ struct GpuModel {
     animated: bool,
     /// The joints an aim turns (towers).
     turret: Option<Turret>,
+    /// A humanoid's neck and head top at rest (model space): a close portrait frames
+    /// its head and shoulders.
+    head: Option<(Vec3, Vec3)>,
     casts: bool,
+}
+
+/// The neck and the top of the head of a humanoid rig (`Neck`, then `HeadTop_End` or
+/// `Head`, with or without a rig prefix such as `mixamorig:`), when the head is above the
+/// neck. Creature rigs (an ant's `Head_0`) have none.
+fn humanoid_head(skeleton: &canopy_assets::Skeleton) -> Option<(Vec3, Vec3)> {
+    let find = |name: &str| {
+        skeleton
+            .joints
+            .iter()
+            .find(|j| {
+                j.name == name
+                    || j.name
+                        .rsplit_once(':')
+                        .is_some_and(|(_, last)| last == name)
+            })
+            .map(|j| Vec3::from_array(j.origin))
+    };
+    let neck = find("Neck")?;
+    let top = find("HeadTop_End").or_else(|| find("Head"))?;
+    (top.y > neck.y).then_some((neck, top))
 }
 
 struct DepthBuffers {
@@ -592,6 +616,14 @@ impl ActorsGpu {
         }
     }
 
+    /// A loaded humanoid model's neck and head top at rest (model space).
+    pub fn head(&self, model: u32) -> Option<(Vec3, Vec3)> {
+        match self.slots.get(model as usize) {
+            Some(Slot::Ready(m)) => m.head,
+            _ => None,
+        }
+    }
+
     /// Draws the portrait's model (inside the portrait pass).
     pub fn draw_portrait(&self, pass: &mut wgpu::RenderPass<'_>, frame: &wgpu::BindGroup) -> u32 {
         let (Some((m, index)), Some(_)) = (self.portrait_slot, &self.actor_group) else {
@@ -875,6 +907,7 @@ impl ActorsGpu {
             ),
             animated,
             turret: meta.skeleton.as_ref().and_then(Turret::of),
+            head: meta.skeleton.as_ref().and_then(humanoid_head),
         })
     }
 

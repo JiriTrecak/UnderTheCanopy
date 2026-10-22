@@ -28,8 +28,10 @@ pub struct Scene {
     pub keys: Vec<(tools::Picked, String)>,
     /// The model of what Place holds, loaded for its ghost: model index and scale.
     pub ghost: Option<(u32, f64)>,
-    /// The player colours, linear.
+    /// The team colours by slot, linear: the player colours with mission players' own.
     pub colors: Vec<[f32; 3]>,
+    /// The player colours themselves, linear, in `COLOR_NAMES` order.
+    pub palette: Vec<[f32; 3]>,
     pub biome: String,
     pub hour: f32,
     /// The map's weather.
@@ -144,7 +146,8 @@ pub fn build(
             owner_color: None,
         });
     }
-    let colors = colors(look);
+    let palette = colors(look);
+    let colors = canopy_scene::player_colors(&look.players, map);
     let mut models: Vec<String> = Vec::new();
     let mut model_index = |file: &str| -> u32 {
         match models.iter().position(|m| m == file) {
@@ -252,6 +255,7 @@ pub fn build(
         keys,
         ghost,
         colors,
+        palette,
         biome: map.biome().to_string(),
         weather: canopy_scene::weather_of(map),
         hour,

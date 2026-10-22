@@ -320,7 +320,7 @@ fn mission_rules() {
             wave(json!({})),
             wave(json!({"from": {"region": "edge"}, "target": {"region": "gate"}, "until": 600})),
             skirmish(json!({})),
-            {"player": 4, "race": "test", "team": "ally", "ai": {"behaviour": "base", "dormant": true, "rebuild": false}},
+            {"player": 4, "race": "test", "team": "ally", "color": "#8a7a99", "ai": {"behaviour": "base", "dormant": true, "rebuild": false}},
         ])
         .as_array()
         .map(|list| {
@@ -338,6 +338,10 @@ fn mission_rules() {
         canopy_content::map::WaveSource::Region("edge".into())
     );
     assert!(!read[2].shares_vision());
+    // A player's own colour: `#rrggbb` or a player colour's name.
+    use canopy_content::map::PlayerColor;
+    assert_eq!(read[3].color(), Some(PlayerColor::Rgb([0x8a, 0x7a, 0x99])));
+    assert_eq!(PlayerColor::parse("purple"), Some(PlayerColor::Palette(5)));
     let text = serde_json::to_string(read).unwrap();
     let back: Vec<canopy_content::map::MissionPlayer> = serde_json::from_str(&text).unwrap();
     assert_eq!(&back, read);
@@ -375,6 +379,14 @@ fn mission_rules() {
             json!([{"player": 2, "team": "enemy", "vision": true}]),
         ),
         ("/mission/players", json!([{"player": 2, "team": "foe"}])),
+        (
+            "/mission/players",
+            json!([{"player": 2, "team": "enemy", "color": "mauve"}]),
+        ),
+        (
+            "/mission/players",
+            json!([{"player": 2, "team": "enemy", "color": "#8a7a9"}]),
+        ),
         (
             "/mission/players",
             json!([{"player": 2, "team": "enemy", "ai": {"behaviour": "rush"}}]),

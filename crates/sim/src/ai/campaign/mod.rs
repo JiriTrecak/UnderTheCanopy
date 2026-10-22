@@ -469,32 +469,92 @@ impl Play<'_, '_> {
         orders::issue(self.ctx.state, id, order, false).then_some((x, y))
     }
 
-    /// Where a wave aimed at `target` goes from `from`.
+    /// Where a wave aimed at `target` goes from `from`: a region's centre, an enemy unit's
+    /// position, or the side of an enemy building facing `from` (a building's centre lies
+    /// inside its footprint, where no route ends).
     fn resolve(&self, target: &WaveTarget, from: Milli) -> Option<Milli> {
         match target {
             WaveTarget::Region(id) => self.campaign.region(id),
             WaveTarget::Nearest => self
                 .nearest_enemy(from, |e| e.unit.is_some())
+                .map(|e| e.position)
                 .or_else(|| self.resolve(&WaveTarget::Base, from)),
-            WaveTarget::Base => {
-                let forts = self.campaign.forts.iter().filter(|(o, _)| self.enemy(*o));
-                let fort = forts
-                    .filter_map(|(_, placement)| {
-                        self.ctx.state.entities.iter().find(|e| {
-                            e.placement.as_deref() == Some(placement.as_str()) && living(e)
-                        })
-                    })
-                    .filter(|e| self.enemy(e.owner))
-                    .min_by_key(|e| (distance2(e.position, from), e.id))
-                    .map(|e| e.position);
-                fort.or_else(|| self.nearest_enemy(from, |e| e.unit.is_none()))
-                    .or_else(|| self.nearest_enemy(from, |e| e.unit.is_some()))
+            WaveTarget::Base => self.base(from).map(|e| self.approach(e, from)).or_else(|| {
+                self.nearest_enemy(from, |e| e.unit.is_some())
+                    .map(|e| e.position)
+            }),
+        }
+    }
+
+    /// The enemy base a wave marches on: the nearest living main fort (a player start's
+    /// `mainFort`, else any building of a race's fort line: its starting fort and what it
+    /// upgrades into), else the nearest enemy building. Never a unit.
+    fn base(&self, from: Milli) -> Option<&Entity> {
+        let started = self
+            .campaign
+            .forts
+            .iter()
+            .filter(|(o, _)| self.enemy(*o))
+            .filter_map(|(_, placement)| {
+                self.ctx
+                    .state
+                    .entities
+                    .iter()
+                    .find(|e| e.placement.as_deref() == Some(placement.as_str()) && living(e))
+            })
+            .filter(|e| self.enemy(e.owner))
+            .min_by_key(|e| (distance2(e.position, from), e.id));
+        let forts = self.fort_line();
+        started
+            .or_else(|| {
+                self.nearest_enemy(from, |e| {
+                    e.unit.is_none() && forts.contains(&self.ctx.catalog.id(e.definition))
+                })
+            })
+            .or_else(|| self.nearest_enemy(from, |e| e.unit.is_none()))
+    }
+
+    /// Every race's main fort and the buildings it upgrades into.
+    fn fort_line(&self) -> Vec<&Id> {
+        let content = &self.ctx.catalog.content;
+        let rules = &content.rules;
+        let mut out: Vec<&Id> = Vec::new();
+        let setups = std::iter::once(&rules.starting_setup).chain(
+            rules
+                .races
+                .values()
+                .filter_map(|r| r.starting_setup.as_ref()),
+        );
+        for setup in setups {
+            let mut next = Some(&setup.fort);
+            while let Some(id) = next.filter(|id| !out.contains(id)) {
+                out.push(id);
+                next = content
+                    .definition(id.as_str())
+                    .and_then(|d| d.upgrade.as_ref())
+                    .map(|u| &u.target);
             }
+        }
+        out
+    }
+
+    /// The point just outside `building`'s footprint nearest `from`.
+    fn approach(&self, building: &Entity, from: Milli) -> Milli {
+        let d = self.ctx.catalog.get(building.definition);
+        let Some(f) = &d.footprint else {
+            return building.position;
+        };
+        // Half the longer side, so any rotation stays inside, and two cells of room.
+        let reach = (f.width.max(f.depth) as i32 * Milli::CELL) / 2 + 2 * Milli::CELL;
+        let p = building.position;
+        Milli {
+            x: p.x + (from.x - p.x).clamp(-reach, reach),
+            y: p.y + (from.y - p.y).clamp(-reach, reach),
         }
     }
 
     /// The nearest living enemy entity that `filter` accepts (units or buildings).
-    fn nearest_enemy(&self, from: Milli, filter: impl Fn(&Entity) -> bool) -> Option<Milli> {
+    fn nearest_enemy(&self, from: Milli, filter: impl Fn(&Entity) -> bool) -> Option<&Entity> {
         let index = &self.ctx.index;
         index
             .units
@@ -504,12 +564,12 @@ impl Play<'_, '_> {
             .filter(|e| {
                 self.enemy(e.owner)
                     && living(e)
+                    && e.hp.is_some_and(|hp| hp > 0)
                     && e.ready_tick <= self.tick
                     && e.unit.as_ref().is_none_or(|u| u.contained.is_none())
                     && filter(e)
             })
             .min_by_key(|e| (distance2(e.position, from), e.id))
-            .map(|e| e.position)
     }
 }
 

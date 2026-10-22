@@ -303,6 +303,46 @@ pub(crate) fn drop_position(
     (origin.0, origin.1)
 }
 
+/// A neutral that would not fight `source` unprompted (a lone creature outside any camp,
+/// a passive camp's member) answers a player's blow: when idle, it attacks the striker as
+/// a forced attack, which ends once the striker is gone or out of its sight.
+pub fn answer(
+    senses: &crate::combat::Senses,
+    state: &mut State,
+    source: EntityId,
+    target: EntityId,
+) {
+    let (Some(s), Some(t)) = (state.entities.get(source), state.entities.get(target)) else {
+        return;
+    };
+    let idle = t.unit.as_ref().is_some_and(|u| {
+        u.order.is_none()
+            && u.target.is_none()
+            && u.order_queue.is_empty()
+            && !u.camp.as_ref().is_some_and(|c| c.returning)
+    });
+    if t.owner != Owner::Nobody
+        || s.owner == Owner::Nobody
+        || !idle
+        || t.hp.is_none_or(|hp| hp == 0)
+        || s.hp.is_none_or(|hp| hp == 0)
+        || senses.weapon(t).is_none()
+        || !senses.reaches(t, s)
+        || senses.hostile(t, s)
+    {
+        return;
+    }
+    crate::orders::issue(
+        state,
+        target,
+        crate::orders::Order::Attack {
+            target: source,
+            force: true,
+        },
+        false,
+    );
+}
+
 /// Whether a neutral unit at `eye` sees `target` within `radius` cells over the terrain.
 pub fn neutral_sees(
     sight: &crate::vision::Sight,

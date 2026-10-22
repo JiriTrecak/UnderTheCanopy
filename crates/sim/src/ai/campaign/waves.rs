@@ -4,9 +4,14 @@
 //! says so. Under way it keeps attacking until its units are gone; its heroes then walk
 //! home.
 
-use super::{Memory, Play, Purpose, Wave, living, seconds};
+use super::{Memory, Play, Purpose, Wave, living, seconds, within};
 use crate::{catalog::Def, entity::Milli};
 use canopy_content::map::{Behaviour, WaveSource};
+
+/// A wave unit this close to where it was sent has arrived (cells).
+const ARRIVED: i64 = 8;
+/// An arrived wave unit attacks enemies this close (cells).
+const ENGAGE: i64 = 24;
 
 impl Play<'_, '_> {
     /// Sends the waves that are due (Waves behaviour only; timers keep running otherwise).
@@ -159,7 +164,17 @@ impl Play<'_, '_> {
                         }
                         _ => target,
                     };
-                    if let Some(to) = to {
+                    // Arrived with nothing in reach to fight on its own: it goes for the
+                    // nearest enemy there (a building's defenders, the building itself).
+                    let arrived = to.is_none_or(|to| within(from, to, ARRIVED));
+                    let foe = self
+                        .nearest_enemy(from, |_| true)
+                        .filter(|t| arrived && within(t.position, from, ENGAGE))
+                        .map(|t| match t.unit {
+                            Some(_) => t.position,
+                            None => self.approach(t, from),
+                        });
+                    if let Some(to) = foe.or(to) {
                         self.send(id, to, true);
                     }
                 }

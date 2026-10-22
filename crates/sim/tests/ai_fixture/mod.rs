@@ -41,6 +41,9 @@ pub const SMITE: &str = "ability.test.smite";
 pub const RUSH: &str = "ability.test.rush";
 pub const CHARM: &str = "item.test.charm";
 pub const WARD: &str = "ability.test.ward";
+/// Lands the caster and raises a house where it stood, using the caster up (a colony's
+/// founder, as the ants' Alate).
+pub const FOUND: &str = "ability.test.found";
 
 pub const P1: Owner = Owner::Player(0);
 pub const P2: Owner = Owner::Player(1);
@@ -307,6 +310,15 @@ fn library() -> Value {
         ),
         passive(RUSH),
         passive(WARD),
+        ability(
+            FOUND,
+            "targeted",
+            "self",
+            &["ally"],
+            0,
+            0,
+            json!([{"op": "found", "target": "caster", "building": HOUSE, "consume": true}]),
+        ),
     ];
     let presentations: Vec<Value> = abilities
         .iter()
@@ -593,6 +605,8 @@ pub fn spawn(world: &mut World, id: &str, definition: &str, owner: Owner, x: f64
 
 /// An altar: revives fallen heroes (campaign tests).
 pub const ALTAR: &str = "building.test.altar";
+/// A soldier that can found a house ([`FOUND`]), its AI casting it (campaign tests).
+pub const FOUNDER: &str = "unit.test.founder";
 
 /// [`content`] with an altar that revives heroes (the campaign AI's tests).
 pub fn campaign_content() -> Arc<Content> {
@@ -614,6 +628,19 @@ pub fn campaign_content() -> Arc<Content> {
                 "workTicks": 100, "workTicksPerLevel": 0, "queueCapacity": 2,
             });
             definitions.push(altar);
+            let mut founder = definitions
+                .iter()
+                .find(|d| d["id"] == SOLDIER)
+                .expect("soldier")
+                .clone();
+            founder["id"] = json!(FOUNDER);
+            founder["name"] = json!(FOUNDER);
+            founder["behaviors"]["abilities"] = json!({"maxMana": 10, "manaRegenPerSecond": 0, "bindings": [
+                {"id": "found", "ability": FOUND, "initialRank": 1, "controls": ["player", "ai", "scenario"],
+                    "command": {"hotkey": "Q", "column": 1},
+                    "ai": {"preference": "enemy", "intervalTicks": 40}},
+            ]});
+            definitions.push(founder);
             load(game, "sim-ai-campaign")
         })
         .clone()

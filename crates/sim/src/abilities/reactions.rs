@@ -204,6 +204,7 @@ pub fn resolve(ctx: &mut Ctx, state: &mut State) {
         if ev.damage == 0 {
             continue;
         }
+        crate::camps::answer(&ctx.senses, state, ev.source, ev.target);
         if ev.weapon && state.entities.get(ev.source).is_some_and(actor::alive) {
             run(ctx, state, ev.source, ev.target, TriggerEvent::WeaponHit);
         }

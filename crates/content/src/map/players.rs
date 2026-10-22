@@ -25,14 +25,53 @@ pub struct MissionPlayer {
     pub team: Team,
     /// An ally shares its sight with player 1 (the default for allies). Enemies never do.
     pub vision: Option<bool>,
+    /// Its team colour over its slot's: a player colour's name ([`COLOR_NAMES`]) or
+    /// `#rrggbb` (a feral brood's sickly tint).
+    pub color: Option<String>,
     #[serde(default)]
     pub ai: PlayerAi,
+}
+
+/// The player colours by name, in slot order (`config/players.json` names them alike).
+pub const COLOR_NAMES: [&str; 8] = [
+    "red", "blue", "green", "yellow", "orange", "purple", "teal", "white",
+];
+
+/// A mission player's own colour.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PlayerColor {
+    /// One of the player colours, by its index in [`COLOR_NAMES`].
+    Palette(usize),
+    /// sRGB.
+    Rgb([u8; 3]),
+}
+
+impl PlayerColor {
+    /// `red` … `white`, or `#rrggbb`.
+    pub fn parse(text: &str) -> Option<Self> {
+        if let Some(hex) = text.strip_prefix('#') {
+            if hex.len() != 6 || !hex.bytes().all(|b| b.is_ascii_hexdigit()) {
+                return None;
+            }
+            let byte = |i: usize| u8::from_str_radix(&hex[i * 2..i * 2 + 2], 16).ok();
+            return Some(Self::Rgb([byte(0)?, byte(1)?, byte(2)?]));
+        }
+        COLOR_NAMES
+            .iter()
+            .position(|n| *n == text)
+            .map(Self::Palette)
+    }
 }
 
 impl MissionPlayer {
     /// Whether player 1's team sees what this player sees.
     pub fn shares_vision(&self) -> bool {
         self.team == Team::Ally && self.vision.unwrap_or(true)
+    }
+
+    /// Its own colour, when the map gives it one (and it is well formed).
+    pub fn color(&self) -> Option<PlayerColor> {
+        self.color.as_deref().and_then(PlayerColor::parse)
     }
 }
 
@@ -214,6 +253,15 @@ pub(super) fn check(m: &Mission) -> Vec<(String, String)> {
         seen.push(p.player);
         if p.vision == Some(true) && p.team == Team::Enemy {
             fail(format!("{at}.vision"), "Only allies share their vision");
+        }
+        if p.color
+            .as_deref()
+            .is_some_and(|c| PlayerColor::parse(c).is_none())
+        {
+            fail(
+                format!("{at}.color"),
+                "must be #rrggbb or a player colour: red, blue, green, yellow, orange, purple, teal or white",
+            );
         }
         let ai = &p.ai;
         if ai.waves.len() > 16 {
