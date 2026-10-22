@@ -4,8 +4,14 @@
     "mh-active": {
       "class": "mh-active",
       "children": [
-        { "id": "title", "kind": "label", "class": "mh-title" },
-        { "id": "description", "kind": "label", "class": "mh-description" }
+        { "id": "bullet", "class": "mh-bullet" },
+        {
+          "id": "copy", "class": "mh-active-copy",
+          "children": [
+            { "id": "title", "kind": "label", "class": "mh-title" },
+            { "id": "description", "kind": "label", "class": "mh-description" }
+          ]
+        }
       ]
     }
   },
@@ -43,7 +49,7 @@
       {
         "id": "objectives", "class": "mh-objectives",
         "children": [
-          { "id": "caption", "kind": "label", "class": "mh-caption", "text": "Current objective" },
+          { "id": "caption", "kind": "label", "class": "mh-caption", "text": "Objectives" },
           { "id": "objective", "kind": "label", "class": "mh-objective" },
           { "id": "active", "class": "mh-actives", "repeat": "mh-active" },
           {

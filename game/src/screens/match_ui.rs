@@ -44,7 +44,7 @@ pub struct MissionHud {
 /// The objectives box as the old mission HUD built it.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ObjectivesModel {
-    /// "Current objective" or "Script error".
+    /// "Objectives" or "Script error".
     pub caption: &'static str,
     /// The script's objective line (or the error); `None` once a required objective is
     /// listed in its place.
@@ -68,7 +68,7 @@ impl ObjectivesModel {
             caption: if m.error.is_some() {
                 "Script error"
             } else {
-                "Current objective"
+                "Objectives"
             },
             visible: !line.is_empty(),
             text: Some(line),
@@ -257,10 +257,23 @@ impl MissionHud {
                 let Some(n) = ui.child(list, i) else {
                     continue;
                 };
-                if let Some(t) = ui.find_in(n, "title") {
-                    ui.set_text(t, title);
+                // Optional objectives are quieter: a muted mark and a muted "Optional".
+                let optional = title.strip_prefix("Optional: ");
+                if let Some(b) = ui.find_in(n, "bullet") {
+                    ui.set_color(
+                        b,
+                        optional.map(|_| canopy_ui::Color::rgba(0x8f, 0xa0, 0x8b, 0xd0)),
+                    );
                 }
-                if let Some(d) = ui.find_in(n, "description") {
+                if let Some(t) = ui.find_in(n, "copy/title") {
+                    match optional {
+                        Some(rest) => {
+                            ui.set_text(t, &format!("[color=#9fae9b]Optional ·[/color] {rest}"))
+                        }
+                        None => ui.set_text(t, title),
+                    }
+                }
+                if let Some(d) = ui.find_in(n, "copy/description") {
                     ui.set_text(d, description);
                     ui.set_visible(d, !description.is_empty());
                 }
