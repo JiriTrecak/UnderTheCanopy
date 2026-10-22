@@ -69,12 +69,19 @@ pub struct PaintWeights<'a> {
     pub weights: &'a [f32],
 }
 
-/// Vertex weights (0–255) of the six built-in layers followed by the custom ones
-/// (`cliffs[k]` says whether custom layer `k` is a cliff), from the paint layers in order.
-pub fn vertex_weights(g: &Grids<'_>, paints: &[PaintWeights<'_>], cliffs: &[bool]) -> Vec<Vec<u8>> {
+/// Vertex weights (0–255) of the six built-in layers, the biome's `extras` extra ones
+/// (fed only by paint) and the custom ones (`cliffs[k]` says whether custom layer `k` is
+/// a cliff), from the paint layers in order.
+pub fn vertex_weights(
+    g: &Grids<'_>,
+    paints: &[PaintWeights<'_>],
+    extras: usize,
+    cliffs: &[bool],
+) -> Vec<Vec<u8>> {
     let w = g.vertices;
     let n = w * w;
-    let mut masks = vec![vec![0u8; n]; FIXED + cliffs.len()];
+    let mut masks = vec![vec![0u8; n]; FIXED + extras + cliffs.len()];
+    let mut extra = vec![0f32; extras];
     let height = |x: i64, z: i64| {
         g.heights[(z.clamp(0, w as i64 - 1) as usize) * w + x.clamp(0, w as i64 - 1) as usize]
     };
@@ -87,6 +94,7 @@ pub fn vertex_weights(g: &Grids<'_>, paints: &[PaintWeights<'_>], cliffs: &[bool
         let mut rock = g.rock[i];
         let (mut road, mut stones, mut bed) = (0.0f32, 0.0f32, 0.0f32);
         custom.iter_mut().for_each(|c| *c = 0.0);
+        extra.iter_mut().for_each(|e| *e = 0.0);
         for paint in paints {
             let weight = paint.weights[i];
             if weight <= 0.0 || paint.channel == Channel::Ignored {
@@ -110,6 +118,9 @@ pub fn vertex_weights(g: &Grids<'_>, paints: &[PaintWeights<'_>], cliffs: &[bool
                 stones = stones * (1.0 - weight) + own(STONES);
                 rock = rock * (1.0 - weight) + own(ROCK);
                 bed = bed * (1.0 - weight) + own(WATERBED);
+                for (e, value) in extra.iter_mut().enumerate() {
+                    *value = *value * (1.0 - weight) + own(FIXED + e);
+                }
             }
             for (k, value) in custom.iter_mut().enumerate() {
                 if cliffs[k] != cliff {
@@ -129,8 +140,11 @@ pub fn vertex_weights(g: &Grids<'_>, paints: &[PaintWeights<'_>], cliffs: &[bool
         masks[WATERBED][i] = round_u8(((water - ground + 0.1) * 5.0).max(bed).clamp(0.0, 1.0));
         masks[STONES][i] = round_u8(stones);
         masks[ROCK][i] = round_u8(rock.max((slope - 0.7).clamp(0.0, 1.0)));
+        for (e, value) in extra.iter().enumerate() {
+            masks[FIXED + e][i] = round_u8(*value);
+        }
         for (k, value) in custom.iter().enumerate() {
-            masks[FIXED + k][i] = value.clamp(0.0, 255.0) as u8;
+            masks[FIXED + extras + k][i] = value.clamp(0.0, 255.0) as u8;
         }
     }
     masks
@@ -369,11 +383,12 @@ pub fn build(
         grass: &grass_cover,
         rock: &decoded.rock,
     };
-    let mut masks = vertex_weights(&grids, &paints, &cliffs);
+    let extras = fixed.len() - FIXED;
+    let mut masks = vertex_weights(&grids, &paints, extras, &cliffs);
     let layout = decoded.texture;
-    let codes = atlas_codes(&masks[FIXED..], &cliffs, w, &layout, origin);
+    let codes = atlas_codes(&masks[FIXED + extras..], &cliffs, w, &layout, origin);
 
-    let mut layers = Vec::with_capacity(FIXED + customs.len());
+    let mut layers = Vec::with_capacity(fixed.len() + customs.len());
     for (c, layer) in fixed.iter().enumerate() {
         let kind = if c == SOIL {
             LayerKind::Base {
@@ -460,7 +475,7 @@ pub fn build(
             occlusion: Some(tile_entry(id, runtime.occlusion_metalness.index)),
             tint: [reflectance; 3],
             painted: ground.shading == Some(Shading::Painted),
-            mask: std::mem::take(&mut masks[FIXED + k]),
+            mask: std::mem::take(&mut masks[FIXED + extras + k]),
             cells: cells_data,
         });
     }
@@ -563,6 +578,7 @@ mod tests {
         let masks = vertex_weights(
             &grids(&heights, &water, &zero),
             &paints,
+            0,
             &[false, false, true],
         );
         assert!(masks[SOIL].iter().all(|&v| v == 255));
@@ -589,7 +605,7 @@ mod tests {
             grass: &grass,
             rock: &zero,
         };
-        let masks = vertex_weights(&g, &[], &[]);
+        let masks = vertex_weights(&g, &[], 0, &[]);
         // x = 0: under water (waterbed, no grass); x = 4: dry, grass.
         assert_eq!(masks[WATERBED][W * 4], 255);
         assert_eq!(masks[GRASS][W * 4], 0);

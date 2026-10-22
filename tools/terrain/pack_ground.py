@@ -6,7 +6,7 @@ Runs on Blender's bundled Python, which has numpy and OpenImageIO:
 
     "$(ls /Applications/Blender.app/Contents/Resources/*/python/bin/python3* | head -1)" \
         tools/terrain/pack_ground.py <image> <asset name> \
-        [--roughness 0.92] [--normal 2.5] [--blur 2] [--tags autumn] [--name "…"]
+        [--roughness 0.92] [--normal 2.5] [--blur 2] [--saturation 1] [--value 1] [--tags autumn] [--name "…"]
 
 writes `base/assets/terrain/<asset name>/` (albedo.png, data.bin, source.png, asset.json) and
 `base/assets/terrain/<asset name>-normal/` (data.bin, asset.json), ids
@@ -85,11 +85,15 @@ def main():
     p.add_argument('--roughness', type=float, default=0.92)
     p.add_argument('--normal', type=float, default=2.5, help='normal strength')
     p.add_argument('--blur', type=int, default=2, help='height blur radius, texels')
+    p.add_argument('--saturation', type=float, default=1.0, help='scales the colour around its grey')
+    p.add_argument('--value', type=float, default=1.0, help='scales the brightness (sRGB)')
     p.add_argument('--tags', default='autumn')
     p.add_argument('--title', default=None)
     a = p.parse_args()
 
     albedo = seamless(read_rgb(a.image))
+    grey = albedo @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
+    albedo = np.clip((grey[..., None] + (albedo - grey[..., None]) * a.saturation) * a.value, 0.0, 1.0)
     lum = to_linear(albedo) @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
     height = blur(lum, a.blur)
     height = (height - height.min()) / max(1e-6, height.max() - height.min())

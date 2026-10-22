@@ -6,11 +6,12 @@ sickened by the forest's liquid magic), procedural in Blender, headless:
 Substance is the forest's own magic: liquid, blue-violet, and it ALWAYS glows (as on the
 deposit, docs/art-direction.md: never green). A pool is three parts:
 - the liquid: a perfectly still, glossy sheet just above the ground, its emission a
-  violet field of slow swirls and brighter veins, dimmer towards its rim, over-bright so
-  the bloom picks it up;
-- a crust round it: a low, pale, crystalline rim of mineral the substance left as it
+  violet field of slow swirls and veins, deep and dark at its rim and brightest in the
+  middle; bright enough to read as magic at dusk, never a lamp from across the map;
+- a crust round it: a low, mottled grey-lilac rim of mineral the substance left as it
   seeped, faintly lit from inside at its inner edge;
-- crystal shards in clusters along the rim, tilted outwards, pale lilac and softly lit.
+- a geode's rim: short, chunky, faceted crystals in clusters, cloudy pale lilac with a
+  dim inner light, among dull grey pebbles (no tall spikes: those read as plastic).
 
 Outlines are seeded blobs, so the sizes differ in shape too. Pivot at the centre on the
 ground; nothing blocks (decoration on the ground, units walk round or over it).
@@ -52,8 +53,8 @@ def liquid_texture(size=512, seed=3):
     field = (field - field.min()) / (field.max() - field.min())
     veins = np.exp(-((field - 0.55) / 0.025) ** 2) * 0.5 + np.exp(-((field - 0.3) / 0.02) ** 2) * 0.3
     r = np.sqrt(x * x + y * y)
-    core = np.clip(1.1 - r * 0.8, 0.3, 1.0)
-    glow = (0.35 + 0.5 * field)[..., None] * VIOLET + veins[..., None] * LILAC * 0.45
+    core = np.clip(1.15 - r * 1.05, 0.12, 1.0) ** 1.4
+    glow = (0.3 + 0.55 * field)[..., None] * VIOLET + veins[..., None] * LILAC * 0.4
     return (glow * core[..., None]).astype(np.float32)
 
 
@@ -76,8 +77,8 @@ def build(name, radius, seed, crystals, title):
     rng = random.Random(seed * 7)
     # --- Liquid: a fan over the outline, UVs planar over the pool.
     liquid_img = kit._array_image(name + '-liquid', liquid_texture(seed=seed))
-    mat_liquid = kit.material(name + '-liquid', color=(0.08, 0.04, 0.2), roughness=0.08,
-                              emissive=liquid_img, emission=4.0)
+    mat_liquid = kit.material(name + '-liquid', color=(0.05, 0.03, 0.12), roughness=0.06,
+                              emissive=liquid_img, emission=2.2)
     bm = bmesh.new()
     uv = bm.loops.layers.uv.verify()
     level = 0.1
@@ -95,15 +96,19 @@ def build(name, radius, seed, crystals, title):
     kit.finish(liquid, mat_liquid, smooth=False)
     # --- Crust: a low rim along the outline, its profile from the ground up to a crest and
     # down to the liquid; the inner lip's UV v is 1, where the crust texture glows.
-    crust_rgb = np.ones((64, 64, 3), np.float32)
+    crng = np.random.default_rng(seed)
     v = np.linspace(0, 1, 64)[:, None]
-    crust_rgb *= (0.62 + 0.1 * np.sin(np.linspace(0, 40, 64))[None, :, None] * 0.3)
-    crust_rgb = crust_rgb * np.array((0.8, 0.76, 0.9), np.float32)
+    mottle = crng.uniform(0.0, 1.0, (8, 8)).repeat(8, 0).repeat(8, 1)
+    for _ in range(3):  # soften the blocks into blotches
+        mottle = (mottle + np.roll(mottle, 1, 0) + np.roll(mottle, 1, 1) + np.roll(mottle, -1, 0)
+                  + np.roll(mottle, -1, 1)) / 5
+    crust_rgb = (0.36 + 0.16 * mottle)[..., None] * np.array((0.86, 0.83, 0.92), np.float32)
+    crust_rgb = np.ascontiguousarray(crust_rgb * (0.85 + 0.25 * v[..., None]), np.float32)
     crust_img = kit._array_image(name + '-crust', crust_rgb)
     glow = (np.clip((v - 0.55) / 0.45, 0, 1) ** 2)[..., None] * np.ones((64, 64, 1), np.float32) * VIOLET
     glow_img = kit._array_image(name + '-crust-glow', glow.astype(np.float32))
-    mat_crust = kit.material(name + '-crust', base=crust_img, roughness=0.55,
-                             emissive=glow_img, emission=2.2)
+    mat_crust = kit.material(name + '-crust', base=crust_img, roughness=0.75,
+                             emissive=glow_img, emission=1.2)
     profile = [  # (outward offset, height, v)
         (0.55 * min(1.0, radius / 2.0), 0.0, 0.0),
         (0.32, 0.12, 0.3),
@@ -135,40 +140,51 @@ def build(name, radius, seed, crystals, title):
     bm.free()
     crust = kit.link(bpy.data.objects.new(name + '-crust', me))
     kit.finish(crust, mat_crust)
-    # --- Crystals: clusters of hexagonal shards on the rim, tilted outwards.
-    shard_rgb = np.ones((8, 8, 3), np.float32) * np.array((0.8, 0.74, 0.95), np.float32)
+    # --- Crystals: a geode's rim of short, chunky, faceted crystals in clusters, cloudy
+    # pale lilac with a dim inner light, and dull grey pebbles among them.
+    shard_rgb = np.ones((8, 8, 3), np.float32) * np.array((0.66, 0.62, 0.78), np.float32)
     mat_shard = kit.material(name + '-shard', base=kit._array_image(name + '-shard', shard_rgb),
-                             roughness=0.2, emissive=kit._array_image(name + '-shard-glow', np.ones((8, 8, 3), np.float32) * VIOLET),
-                             emission=1.4)
+                             roughness=0.32, emissive=kit._array_image(name + '-shard-glow', np.ones((8, 8, 3), np.float32) * VIOLET),
+                             emission=0.45)
+    mat_pebble = kit.material(name + '-pebble', color=(0.3, 0.29, 0.3), roughness=0.85)
     perimeter = sum((mathutils.Vector(pts[i]) - mathutils.Vector(pts[i - 1])).length for i in range(n))
-    shards = []
+    shards, pebbles = [], []
     s = 0
-    for k in range(int(perimeter / 0.3)):
+    for k in range(int(perimeter / 0.55)):
         i = rng.randrange(n)
         x, y = pts[i]
         out = mathutils.Vector((x, y, 0)).normalized()
-        base = mathutils.Vector((x, y, 0.14)) + out * rng.uniform(-0.05, 0.25)
-        big = rng.random() < 0.12
-        for _ in range(rng.randint(1, 3) + (2 if big else 0)):
-            h = rng.uniform(0.5, 1.1) if big else rng.uniform(0.12, 0.4)
-            h *= min(1.3, 0.55 + radius / 5.0)
-            r = h * rng.uniform(0.17, 0.26)
-            ob = kit.cylinder(f'{name}-shard-{s}', r, h, verts=6, r_top=r * 0.12)
+        base = mathutils.Vector((x, y, 0.1)) + out * rng.uniform(0.0, 0.3)
+        big = rng.random() < 0.06
+        for _ in range(rng.randint(2, 4) + (2 if big else 0)):
+            h = rng.uniform(0.35, 0.7) if big else rng.uniform(0.1, 0.32)
+            h *= min(1.2, 0.6 + radius / 6.0)
+            r = h * rng.uniform(0.32, 0.5)
+            ob = kit.cylinder(f'{name}-shard-{s}', r, h, verts=rng.choice((5, 6, 6, 7)), r_top=r * rng.uniform(0.15, 0.45))
             s += 1
-            lean = rng.uniform(0.2, 0.9)
-            tilt = mathutils.Vector((out.x * lean + rng.uniform(-0.3, 0.3), out.y * lean + rng.uniform(-0.3, 0.3), 1.0)).normalized()
+            lean = rng.uniform(0.25, 0.75)
+            tilt = mathutils.Vector((out.x * lean + rng.uniform(-0.35, 0.35), out.y * lean + rng.uniform(-0.35, 0.35), 1.0)).normalized()
             ob.rotation_mode = 'QUATERNION'
             ob.rotation_quaternion = mathutils.Vector((0, 0, 1)).rotation_difference(tilt) @ mathutils.Quaternion((0, 0, 1), rng.uniform(0, 6.3))
-            ob.location = base + mathutils.Vector((rng.uniform(-0.18, 0.18), rng.uniform(-0.18, 0.18), -0.06))
+            ob.location = base + mathutils.Vector((rng.uniform(-0.22, 0.22), rng.uniform(-0.22, 0.22), -0.08))
             kit.finish(ob, mat_shard, smooth=False, uv=0.5)
             shards.append(ob)
+        if rng.random() < 0.7:
+            pr = rng.uniform(0.12, 0.28) * min(1.2, 0.6 + radius / 6.0)
+            pb = kit.dome(f'{name}-pebble-{s}', pr, at=tuple(base + out * rng.uniform(0.2, 0.55) + mathutils.Vector((0, 0, -0.08))),
+                          squash=rng.uniform(0.45, 0.7), segments=8, rings=4)
+            kit.finish(pb, mat_pebble, smooth=True, uv=0.5)
+            pebbles.append(pb)
     # One object per material: join the shards.
-    bpy.ops.object.select_all(action='DESELECT')
-    for ob in shards:
-        ob.select_set(True)
-    bpy.context.view_layer.objects.active = shards[0]
-    bpy.ops.object.join()
-    bpy.context.view_layer.objects.active.name = name + '-shards'
+    for group, label in ((shards, '-shards'), (pebbles, '-pebbles')):
+        if not group:
+            continue
+        bpy.ops.object.select_all(action='DESELECT')
+        for ob in group:
+            ob.select_set(True)
+        bpy.context.view_layer.objects.active = group[0]
+        bpy.ops.object.join()
+        bpy.context.view_layer.objects.active.name = name + label
     for ob in bpy.data.objects:
         ob.select_set(False)
     tris = sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in bpy.data.objects if o.type == 'MESH')

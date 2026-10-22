@@ -6,7 +6,7 @@
   "model": "asset.models.environment.hollow-collapsed-mound",
   "blocker": {
     "width": 19.0,
-    "depth": 16.0,
+    "depth": 16.5,
     "shape": "ellipse"
   }
 }

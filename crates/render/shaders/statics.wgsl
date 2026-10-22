@@ -207,10 +207,11 @@ fn vs_depth(@location(0) position: vec4f, @builtin(instance_index) slot: u32) ->
     return out;
 }
 
-// A giant's parts above the RTS ceiling cast no shadow: the playable ground's light is the
-// map's (and the drifting canopy's), never a crown's; the bole below keeps its long shadow.
+// A giant's parts above the biome's shadow ceiling cast no shadow: the playable ground's
+// light is the map's (and the drifting canopy's), never a crown's or a cap's; the bole or
+// stalk below keeps its long shadow.
 fn above_shadow_ceiling(height: f32) -> bool {
-    return model.wind.z > 0.0 && height > RTS_CEILING;
+    return model.wind.z > 0.0 && height > frame.haze_range.w;
 }
 
 @fragment

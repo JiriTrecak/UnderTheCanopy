@@ -4,7 +4,7 @@
 
 spec.json: {"out": "<base/assets/environment>", "tags": [...] (optional, replaces the default
 ["lookdev", "tripo"]), "license": "..." (optional), "items": [{"name", "glb", "height" | "width"
-(metres after scaling), "triangles" (budget), "texture" (pixels, square), "tone", "saturation", "tint" ([r, g, b] multiplier),
+(metres after scaling), "title" (optional display name), "triangles" (budget), "texture" (pixels, square), "tone", "saturation", "tint" ([r, g, b] multiplier),
 "kind": "prop"|"foliage"|"tree", "tags": [...]}]}.
 
 Optional per item, applied in this order before sizing:
@@ -197,7 +197,7 @@ def process(item):
                               export_jpeg_quality=90, export_extras=bool(wind))
     final = sum(len(p.vertices) - 2 for p in obj.data.polygons)
     asset = {
-        'id': 'asset.models.environment.' + item['name'], 'name': item['name'].replace('-', ' '),
+        'id': 'asset.models.environment.' + item['name'], 'name': item.get('title', item['name'].replace('-', ' ')),
         'kind': item.get('kind', 'prop'), 'tags': spec.get('tags', ['lookdev', 'tripo']) + item.get('tags', []),
         'resources': [{'role': 'geometry', 'index': 1, 'format': 'glb'},
                       {'role': 'source', 'index': 1, 'format': 'blend'}],
