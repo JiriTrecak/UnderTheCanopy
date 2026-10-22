@@ -66,7 +66,7 @@ WITHERED = [
     {'zone': 'frame', 'pieces': ['scenery.giants-withered'],
      'density': 0.3, 'scale': [1.2, 2.6], 'groups': 22, 'clump': 0.7, 'depth': [8, 34], 'grow': 0.8},
     {'zone': 'frame', 'pieces': ['scenery.hollow-bleached-mushrooms', 'scenery.hollow-toppled-mushrooms'],
-     'density': 0.14, 'scale': [6.0, 12.0], 'groups': 22, 'clump': 0.6, 'depth': [6, 30], 'grow': 0.8},
+     'density': 0.09, 'scale': [6.0, 12.0], 'groups': 22, 'clump': 0.6, 'depth': [10, 30], 'grow': 0.8},
     # Giants: dead caps leaning in from beyond the rect.
     {'zone': 'frame', 'pieces': ['scenery.giants-withered'],
      'density': 0.03, 'scale': [2.8, 4.5], 'groups': 50, 'clump': 0.3, 'depth': [24, 200], 'grow': 0.5},

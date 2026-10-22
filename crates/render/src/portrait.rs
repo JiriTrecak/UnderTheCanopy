@@ -46,6 +46,9 @@ pub fn lighting(world: &Lighting) -> Lighting {
     l.ground = Vec3::ZERO;
     l.canopy.strength = 0.0;
     l.canopy.cloud_shadow = 0.0;
+    // The portrait has its own key light whatever the hour.
+    l.unit_rim = Vec3::ZERO;
+    l.unit_fill = 0.0;
     l
 }
 
