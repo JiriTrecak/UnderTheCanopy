@@ -47,6 +47,7 @@ Cross-reference rules live in `crates/content/src/registry.rs`. When unsure of a
 
 - **Required:** `model` (an asset or scenery id: what it is drawn with), `icon` (an icon asset), `body`, `dimensions`.
 - **Unit-only:** `supplyCost`; `maxOwned` (at most that many living or in training per player: one Juggernaut at a time).
+- **`bounty`** (units and buildings): `[{"item": "item.amber", "amount": 75}]`, currencies its killer's owner gains when an opponent kills it (Warcraft III's bounty; the beetles' Supply Cart spills its amber), rising as "+N" where it fell.
 - **`presentation`** says how *this* unit shows its model:
   - `projectile` and `projectileSocket` (the missile's visual effect and the model node it leaves from);
   - `launchEffect`: a full effect played as each missile or shell leaves, from the projectile socket to the target and lasting the flight: muzzle flash, steam, a `beam` to the target, and the shot's trail: a `missile` layer on the projectile's arc (a glowing head, or invisible with `intensity: 0`) that particle and ribbon layers `ride` in world space (D77; builders in `tools/content/vfx_layers.py`, shared flights `effect.weapons.*-flight`). A magical shot may drop `projectile` and let the launch effect's glowing head be the shot;

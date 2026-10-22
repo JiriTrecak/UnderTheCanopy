@@ -1,5 +1,6 @@
 //! Cinematics in the saved mission state (docs/campaign.md "Scenes"): cinematic mode, the
-//! saved-camera shot, the fade, scripted animations and the scene a script plays.
+//! saved-camera shot, the fade, scripted animations, effects and lights at points, and the
+//! scene a script plays.
 //!
 //! The picture follows this state, so a save or a replay shows the same scene: the game
 //! computes a camera blend or a fade from its start tick and length at the tick it draws.
@@ -12,6 +13,10 @@ use serde_with::skip_serializing_none;
 pub const MAX_ANIMATIONS: usize = 32;
 /// Moves a scene remembers to finish when it is skipped.
 pub const MAX_SCENE_MOVES: usize = 64;
+/// Effects a mission plays at points at once.
+pub const MAX_POINT_EFFECTS: usize = 16;
+/// Lights a mission holds at points at once (the renderer shows eight effect lights).
+pub const MAX_POINT_LIGHTS: usize = 4;
 /// Fully opaque, in thousandths.
 pub const OPAQUE: u16 = 1000;
 /// Units a cinematic directs at once ([`Cinema::actors`]); the oldest leave first.
@@ -35,6 +40,12 @@ pub struct Cinema {
     pub fade: Option<Fade>,
     /// Units playing a named animation, oldest first.
     pub animations: Vec<Animation>,
+    /// Effect definitions played at points (`mission.effect_at`), oldest first.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub effects: Vec<PointEffect>,
+    /// Lights held at points (`mission.light_at`), oldest first.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub lights: Vec<PointLight>,
     /// The scene the script plays.
     pub scene: Option<ScenePlay>,
     /// Game tick at which the latest scene was skipped (the picture covers the jump).
@@ -151,6 +162,59 @@ pub struct Animation {
     pub name: String,
     pub start: u32,
     pub looping: bool,
+}
+
+/// An effect definition a mission plays at a point, named by the script's `key`: once for
+/// its own length, or held (a looping effect) until `until` or until the script stops it.
+#[skip_serializing_none]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PointEffect {
+    pub key: String,
+    /// The effect definition (`effect.…`).
+    pub effect: String,
+    /// Where, milli-cells; on the ground.
+    pub position: Milli,
+    pub start: u32,
+    /// Game tick it ends; none: when the script stops it.
+    pub until: Option<u32>,
+}
+
+/// A point light a mission holds, named by the script's `key`: its intensity ramps from
+/// `from` to `to` (thousandths) over `ticks` from `start`, then holds; a light ramped to
+/// nothing is gone.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PointLight {
+    pub key: String,
+    pub position: Milli,
+    /// Above the ground, milli-cells.
+    pub height: u32,
+    pub color: [u8; 3],
+    /// Reach, milli-cells.
+    pub radius: u32,
+    pub from: u32,
+    pub to: u32,
+    pub start: u32,
+    pub ticks: u32,
+}
+
+impl PointLight {
+    /// Intensity in thousandths at game tick `tick`, exactly (the simulation's own use).
+    pub fn at(&self, tick: u32) -> u32 {
+        if self.ticks == 0 {
+            return self.to;
+        }
+        let done = tick.saturating_sub(self.start).min(self.ticks);
+        let (from, to) = (i64::from(self.from), i64::from(self.to));
+        (from + (to - from) * i64::from(done) / i64::from(self.ticks)) as u32
+    }
+
+    /// Intensity at game tick `tick` (fractions while interpolating), eased in and out.
+    pub fn intensity(&self, tick: f32) -> f32 {
+        let t = ease(progress(self.start, self.ticks, tick));
+        (self.from as f32 + (self.to as f32 - self.from as f32) * t) / 1000.0
+    }
 }
 
 /// A scene in play (`mission.play`). Each run calls the scene's function from its top:

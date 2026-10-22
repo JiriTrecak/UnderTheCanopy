@@ -643,6 +643,9 @@ pub struct Definition {
     pub placement_on: Option<PlacementOn>,
     /// Goods the building makes by itself while it stands complete.
     pub income: Option<Income>,
+    /// Warcraft III's bounty: currencies its killer's owner gains when an enemy kills it
+    /// (a supply cart spills its amber for whoever breaks it).
+    pub bounty: Option<Vec<Cost>>,
     /// A tunnel mound: its owner's units travel underground between such buildings
     /// when that is faster than walking (the ants' tunnels).
     pub tunnel: Option<Tunnel>,

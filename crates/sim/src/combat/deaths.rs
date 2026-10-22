@@ -1,5 +1,5 @@
 //! What follows a death (old end of `Combat.resolve` and `Game.onCombatDeath`): pursuers
-//! who saw it stop, the killer's side earns experience, a camp may pay out, the body
+//! who saw it stop, the killer's side earns experience and any bounty, a camp may pay out, the body
 //! becomes a corpse, witnesses remember it, and the entity leaves the world, except a hero,
 //! who is kept as fallen.
 
@@ -64,6 +64,13 @@ pub fn process(ctx: &mut crate::abilities::Ctx, state: &mut State, dead: &[Dead]
             .map(|c| c.id.as_str());
         if senses.opponents(owner, None, target.owner, camp) {
             heroes::award(state, senses.catalog, senses.teams, ctx.limits, d.id, owner);
+            crate::economy::income::bounty(
+                state,
+                senses.catalog,
+                &mut ctx.economy.deliveries,
+                d.id,
+                owner,
+            );
         }
     }
     for d in dead {

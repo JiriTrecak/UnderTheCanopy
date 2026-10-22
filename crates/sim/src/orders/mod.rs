@@ -222,5 +222,6 @@ pub fn issue(state: &mut crate::state::State, id: EntityId, order: Order, append
     }
     u.order = Some(order);
     u.retry_at = tick;
+    crate::mission::released(state, id);
     true
 }

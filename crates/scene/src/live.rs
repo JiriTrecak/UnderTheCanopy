@@ -32,7 +32,8 @@ use crate::{
     },
     damage::{Damaged, Fires},
     effects::{
-        BladeSample, EffectDirector, EffectScene, EffectSnapshot, HitDust, ModelRef, Play, Spark,
+        BladeSample, EffectDirector, EffectScene, EffectSnapshot, HitDust, ModelRef, Play,
+        ScriptedLight, Spark,
     },
     models::{ModelCatalog, ModelInfo},
     obstruction::Hull,
@@ -588,6 +589,9 @@ pub struct Presenter {
     /// The world jumped (a replay seek): the next presentation rebuilds the hidden trees
     /// from the world instead of from the change since the last one.
     jumped: bool,
+    /// Effects a mission plays at points (`mission.effect_at`), by key: the play's start
+    /// tick and its cues.
+    point_effects: BTreeMap<String, (u32, Vec<u32>)>,
 }
 
 /// A melee blow that lands this tick.
@@ -788,6 +792,7 @@ impl Presenter {
                 })
                 .collect(),
             jumped: false,
+            point_effects: BTreeMap::new(),
         };
         presenter.preload(world);
         presenter
@@ -878,6 +883,7 @@ impl Presenter {
         self.last_tick = None;
         self.pops.clear();
         self.effects.reset();
+        self.point_effects.clear();
         self.jumped = true;
     }
 
@@ -1809,7 +1815,8 @@ impl Presenter {
             .filter(|a| a.key >> 40 == Part::Entity as u64)
             .map(|a| (a.key as u32, a.position))
             .collect();
-        let effects = self.effects.update(
+        self.point_effects(view);
+        let mut effects = self.effects.update(
             view,
             &EffectWorld {
                 anchors: &anchors,
@@ -1819,6 +1826,7 @@ impl Presenter {
             },
             catalog,
         );
+        effects.lights = self.point_lights(view);
 
         actors.sort_by_key(|a| a.key);
         // Jumps further than a walk do not interpolate.
@@ -1845,6 +1853,79 @@ impl Presenter {
         }
     }
 
+    /// The ground under a point, world units.
+    fn ground(&self, position: Milli) -> Vec3 {
+        let (x, y) = cells(position);
+        let floor = self
+            .terrain
+            .floor(x, y, None)
+            .unwrap_or_else(|| self.terrain.field().sample(x, y));
+        Vec3::new(x as f32, floor as f32, y as f32)
+    }
+
+    /// Starts the effects a mission plays at points and stops those it ended
+    /// (`mission.effect_at`). A play keeps its start tick, so one seen late (a loaded save)
+    /// shows where it would be by now.
+    fn point_effects(&mut self, view: &View) {
+        let wanted: BTreeMap<&str, &canopy_sim::mission::cinema::PointEffect> = view
+            .mission
+            .iter()
+            .flat_map(|m| m.cinema.effects.iter())
+            .map(|e| (e.key.as_str(), e))
+            .collect();
+        let effects = &mut self.effects;
+        self.point_effects.retain(|key, (start, cues)| {
+            let keep = wanted.get(key.as_str()).is_some_and(|e| e.start == *start);
+            if !keep {
+                effects.stop(cues);
+            }
+            keep
+        });
+        for (key, e) in wanted {
+            if self.point_effects.contains_key(key) {
+                continue;
+            }
+            let Some(effect) = self.effects.find(&e.effect) else {
+                continue;
+            };
+            let at = self.ground(e.position);
+            let cues = self.effects.play(Play {
+                effect,
+                tick: f64::from(e.start),
+                seed: e.start ^ (e.position.x as u32).wrapping_mul(0x9e37_79b9),
+                at,
+                from: None,
+                radius: None,
+            });
+            self.point_effects.insert(key.to_string(), (e.start, cues));
+        }
+    }
+
+    /// The lights a mission holds at points (`mission.light_at`).
+    fn point_lights(&self, view: &View) -> Vec<ScriptedLight> {
+        let srgb = |c: u8| {
+            let c = f32::from(c) / 255.0;
+            if c <= 0.04045 {
+                c / 12.92
+            } else {
+                ((c + 0.055) / 1.055).powf(2.4)
+            }
+        };
+        view.mission
+            .iter()
+            .flat_map(|m| m.cinema.lights.iter())
+            .map(|l| ScriptedLight {
+                position: self.ground(l.position) + Vec3::Y * (l.height as f32 / 1000.0),
+                color: l.color.map(srgb),
+                range: l.radius as f32 / 1000.0,
+                from: l.from as f32 / 1000.0,
+                to: l.to as f32 / 1000.0,
+                start: f64::from(l.start),
+                ticks: f64::from(l.ticks),
+            })
+            .collect()
+    }
+
     /// Goods that reached a player's own stock this tick rise as "+N" where they arrived
     /// (above the worker who carried them in, or above the building whose income they
     /// are), in the item's colour. Only a player's own, and only what they see: an
@@ -1861,7 +1942,18 @@ impl Presenter {
                 .find(|b| b.id == id.0 && !b.remembered && b.hp.is_none_or(|hp| hp > 0))
         };
         for d in view.deliveries.iter().filter(|d| d.owner == owner) {
-            let Some(b) = d.carrier.and_then(body).or_else(|| body(d.store)) else {
+            // A bounty rises where its payer fell.
+            let at = d
+                .carrier
+                .and_then(body)
+                .or_else(|| body(d.store))
+                .map(|b| b.position + Vec3::Y * (b.height + 0.4))
+                .or_else(|| {
+                    self.corpses
+                        .get(&d.store)
+                        .map(|c| c.actor.position + Vec3::Y * 1.5)
+                });
+            let Some(position) = at else {
                 continue;
             };
             let color = self
@@ -1870,7 +1962,7 @@ impl Presenter {
                 .copied()
                 .unwrap_or_else(|| crate::world_ui::linear(POP_INK));
             self.pops.push(Pop {
-                position: b.position + Vec3::Y * (b.height + 0.4),
+                position,
                 text: format!("+{}", d.amount),
                 color,
                 tick,

@@ -305,6 +305,35 @@ pub struct EffectSnapshot {
     pub hit_dust: Vec<HitDust>,
     /// Fire points of damaged buildings in sight.
     pub fires: Vec<Fire>,
+    /// Lights a mission holds at points (`mission.light_at`).
+    pub lights: Vec<ScriptedLight>,
+}
+
+/// A light a mission holds at a point: its strength eases from `from` to `to` over
+/// `ticks` from `start`, then holds. The first of the effect lights.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ScriptedLight {
+    pub position: Vec3,
+    /// Linear colour.
+    pub color: [f32; 3],
+    pub range: f32,
+    pub from: f32,
+    pub to: f32,
+    pub start: f64,
+    pub ticks: f64,
+}
+
+impl ScriptedLight {
+    /// The strength at render tick `tick`.
+    pub fn strength(&self, tick: f64) -> f32 {
+        let t = if self.ticks <= 0.0 {
+            1.0
+        } else {
+            ((tick - self.start) / self.ticks).clamp(0.0, 1.0) as f32
+        };
+        let t = t * t * (3.0 - 2.0 * t);
+        self.from + (self.to - self.from) * t
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -1216,6 +1245,7 @@ impl EffectDirector {
                 .collect(),
             hit_dust: self.hit_dust.iter().copied().collect(),
             fires: self.fires.clone(),
+            lights: Vec::new(),
         }
     }
 

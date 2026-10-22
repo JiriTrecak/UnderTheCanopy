@@ -90,6 +90,12 @@
             "time": 2.683
           }
         ]
+      },
+      {
+        "semantic": "kneel",
+        "clip": "kneel",
+        "loop": false,
+        "events": []
       }
     ],
     "groundContact": {

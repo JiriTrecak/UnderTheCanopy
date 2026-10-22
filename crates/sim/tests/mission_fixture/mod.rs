@@ -63,6 +63,12 @@ fn game() -> Value {
     hall["behaviors"] = json!({"storage": {"capacity": 50, "accepts": ["item.amber"]}});
     let mut big = unit(json!({"movement": movement, "combat": combat}));
     big["body"]["maxHp"] = json!(300);
+    // A hostile camp's wagon whose killer takes the amber it carries.
+    let mut cart = unit(json!({"movement": movement, "combat": combat, "campDefense": {}}));
+    cart["body"]["maxHp"] = json!(3);
+    cart["bounty"] = json!([{"item": "item.amber", "amount": 30}]);
+    let mut hunter = unit(json!({"movement": movement, "combat": combat}));
+    hunter["vision"] = json!(10);
     json!({
         "behaviorSets": [],
         "actions": {"navigation": {"back": meta}, "categories": {}, "actions": actions, "overrides": {}},
@@ -94,6 +100,9 @@ fn game() -> Value {
             definition("item.wood", "item", json!({"stackLimit": 100})),
             definition("unit.bandit", "unit", unit(json!({"movement": movement, "combat": combat, "campDefense": {}}))),
             definition("unit.brute", "unit", big),
+            definition("unit.cart", "unit", cart),
+            definition("unit.scout", "unit", unit(json!({"movement": movement, "playerControl": {}}))),
+            definition("unit.hunter", "unit", hunter),
             definition("unit.marshal", "unit", hero),
             definition("unit.settler", "unit", unit(json!({"movement": movement, "work": {"carryCapacity": 1, "builds": []}}))),
             definition("unit.statue", "unit", unit(json!({}))),
@@ -110,13 +119,24 @@ pub fn content() -> Arc<Content> {
                 canopy_content::testing::image("asset.icon"),
                 canopy_content::testing::model("asset.model"),
             ];
+            let mut folder = canopy_content::testing::DataFolder::new(game(), records);
+            folder.effects = effects();
             Arc::new(
-                canopy_content::testing::DataFolder::new(game(), records)
+                folder
                     .load("sim-missions")
                     .unwrap_or_else(|errors| panic!("{errors}")),
             )
         })
         .clone()
+}
+
+/// A held glow (looping) and a burst (once) for `mission.effect_at`.
+fn effects() -> Value {
+    let light = |duration: u32| json!({"id": "light", "shape": "light", "colour": "#ffffff", "accent": "#ffffff", "durationTicks": duration, "count": 1, "size": 4, "height": 1});
+    json!([
+        {"id": "effect.glow", "name": "Glow", "durationTicks": 40, "loop": true, "layers": [light(40)]},
+        {"id": "effect.burst", "name": "Burst", "durationTicks": 20, "loop": false, "layers": [light(20)]},
+    ])
 }
 
 /// A placement owned by player 1.

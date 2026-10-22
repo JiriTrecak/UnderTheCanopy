@@ -72,6 +72,9 @@ pub struct Animator {
     fading: Vec<Fading>,
     /// The current clip's rate (clip seconds per second of game time).
     rate: f32,
+    /// A one-shot that ends holds its last pose instead of returning to idle (a held
+    /// scripted animation: a kneel stays down).
+    hold: bool,
 }
 
 impl Animator {
@@ -93,6 +96,7 @@ impl Animator {
             fade_in: None,
             fading: Vec::new(),
             rate: SPEED,
+            hold: false,
         })
     }
 
@@ -160,8 +164,22 @@ impl Animator {
         self.advance_fades(model, dt * SPEED);
         let duration = model.duration(self.current.clip);
         let finished = advance(&mut self.current, duration, dt * self.rate);
-        if finished && self.state != states::DEATH && model.has(states::IDLE) {
+        if finished && !self.hold && self.state != states::DEATH && model.has(states::IDLE) {
             self.set_state(model, states::IDLE, false, FADE);
+        }
+    }
+
+    /// Moves the current clip `seconds` of game time on at once, without fades: a one-shot
+    /// that ends there returns to idle unless held.
+    pub fn skip(&mut self, model: &ModelInfo, seconds: f32) {
+        let duration = model.duration(self.current.clip);
+        let time = self.current.time + seconds * SPEED;
+        if !self.current.once {
+            self.current.time = if duration > 0.0 { time % duration } else { 0.0 };
+        } else if time < duration || self.hold || self.state == states::DEATH {
+            self.current.time = time.min(duration);
+        } else if model.has(states::IDLE) {
+            self.set_state(model, states::IDLE, false, 0.0);
         }
     }
 
@@ -588,6 +606,7 @@ impl UnitAnimation {
         });
         let mut decision = Decision::default();
         let moving = i.moving;
+        a.hold = false;
         if i.charging {
             // A physical lunge owns the pose even while cast recovery is active.
             a.set_state(model, states::CHARGE, false, 0.025);
@@ -606,13 +625,21 @@ impl UnitAnimation {
             i.scripted.filter(|_| !moving && i.attack.is_none())
         {
             let state = scripted_state(model, name);
+            // Played once, it falls back to idle by itself and stays there; held, a looping
+            // clip loops and a one-shot (a kneel) stays in its last pose.
+            a.hold = looping;
             if self.scripted != Some(start) {
-                a.set_state(model, state, true, FADE);
+                // Seen late (a unit coming into view, a loaded save), it shows where it is
+                // by now: a kneel that began long ago is down already.
+                let late = i.tick.saturating_sub(start) as f32 * TICK_SECONDS;
+                a.set_state(model, state, true, if late > FADE { 0.0 } else { FADE });
+                if late > FADE {
+                    a.skip(model, late);
+                }
                 self.scripted = Some(start);
             } else if looping && a.state != state {
                 a.set_state(model, state, false, FADE);
             }
-            // Played once, it falls back to idle by itself and stays there.
         } else if moving {
             let carrying = if i.strolling {
                 states::CARRY_WALK
@@ -839,10 +866,24 @@ mod tests {
             step(&mut u, &m, at(tick, Some(("attack", 80, true))));
         }
         assert_eq!(u.animator.state(), "attack", "held");
+        assert!(
+            u.animator.phase(&m) > 0.99,
+            "a held one-shot (a kneel) stays in its last pose"
+        );
         let mut walking = at(200, Some(("attack", 80, true)));
         walking.moving = true;
         step(&mut u, &m, walking);
         assert_eq!(u.animator.state(), "run");
+
+        // Seen late (a loaded save), a held pose is already where it would be by now, and a
+        // one-off is over.
+        let mut late = UnitAnimation::new(&m).unwrap();
+        step(&mut late, &m, at(500, Some(("attack", 100, true))));
+        assert_eq!(late.animator.state(), "attack");
+        assert!(late.animator.phase(&m) > 0.99);
+        let mut over = UnitAnimation::new(&m).unwrap();
+        step(&mut over, &m, at(500, Some(("attack", 100, false))));
+        assert_eq!(over.animator.state(), "idle");
     }
 
     #[test]

@@ -256,6 +256,20 @@ fn advance_facing(state: &mut State, catalog: &Catalog, systems: &dyn Systems) {
     }
 }
 
+/// A unit given an order leaves the pose a mission scene held it in (`mission.animate`):
+/// it walks or fights from here, as Warcraft III's units do.
+pub fn released(state: &mut State, id: crate::entity::EntityId) {
+    let Some(placement) = state.entities.get(id).and_then(|e| e.placement.as_deref()) else {
+        return;
+    };
+    if let Some(mission) = state.mission.as_mut() {
+        mission
+            .cinema
+            .animations
+            .retain(|a| a.placement != placement);
+    }
+}
+
 fn alive(entity: &Entity) -> bool {
     entity.hp.is_none_or(|hp| hp > 0)
 }

@@ -71,6 +71,8 @@ pub enum MissionEffect {
     },
     /// Turn a unit to face a point at once (a skipped scene's turn).
     Turn { placement: String, target: Milli },
+    /// A currency added to a player's stock, or taken (negative, never below nothing).
+    Stock { owner: Owner, item: Id, amount: i32 },
     /// Player 1 wins the mission.
     Win,
     /// Player 1 loses the mission.
@@ -257,6 +259,35 @@ pub(super) fn apply(
                 let rotation = i64::from(entity.rotation);
                 entity.rotation =
                     super::systems::heading(entity.position, rotation, *target) as i32;
+            }
+        }
+        MissionEffect::Stock {
+            owner,
+            item,
+            amount,
+        } => {
+            use crate::{economy::stock, state::FactKind};
+            let wallet = state.wallets.entry(*owner).or_default();
+            let change = amount.unsigned_abs();
+            if *amount >= 0 {
+                stock::add(wallet, item, change);
+                stock::record(
+                    state,
+                    *owner,
+                    FactKind::Produced,
+                    "Mission",
+                    Some((item, change)),
+                );
+            } else {
+                let taken = change.min(stock::quantity(wallet, item.as_str()));
+                stock::take(wallet, item.as_str(), taken);
+                stock::record(
+                    state,
+                    *owner,
+                    FactKind::Consumed,
+                    "Mission",
+                    Some((item, taken)),
+                );
             }
         }
         MissionEffect::Win => {

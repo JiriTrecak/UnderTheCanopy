@@ -534,6 +534,18 @@ impl EffectEvaluator {
             strips.clear();
         }
         let t = t.clamp(0.0, 1.0);
+        // A mission's lights come first: a scene's light never waits for a free slot.
+        for light in &b.lights {
+            let strength = light.strength(tick);
+            if strength > 0.0 && out.lights.len() < MAX_EFFECT_LIGHTS {
+                out.lights.push(PointLight {
+                    position: light.position.to_array(),
+                    range: light.range,
+                    color: (Vec3::from_array(light.color) * strength).to_array(),
+                    pad: 0.0,
+                });
+            }
+        }
         let older = a.map_or(&[][..], |a| &a.cues[..]);
         let mut j = 0;
         let table = self.table.clone();

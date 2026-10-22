@@ -483,7 +483,6 @@ pub fn assign(ctx: &mut Ctx) {
 /// building's training, research and revivals only the one queued first advances (D72).
 pub fn advance(ctx: &mut Ctx) {
     let _span = tracing::trace_span!("economy advance").entered();
-    ctx.deliveries.clear();
     revival::advance(ctx);
     work::advance_jobs(ctx);
     production::advance_training(ctx);

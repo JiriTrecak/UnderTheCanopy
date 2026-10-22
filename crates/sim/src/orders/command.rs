@@ -201,6 +201,7 @@ pub fn apply(
                     continue;
                 }
                 crate::economy::interrupt(state, id, None);
+                crate::mission::released(state, id);
                 applied.push(id);
             }
         }

@@ -429,6 +429,8 @@ impl World {
                 tracing::trace_span!(concat!("tick: ", $name)).entered()
             };
         }
+        // Goods that reached a stock this tick (deliveries, income, bounties) start afresh.
+        self.economy.deliveries.clear();
         {
             let _s = step!("commands");
             self.apply_due();

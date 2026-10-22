@@ -120,6 +120,12 @@
         "clip": "carry_run",
         "loop": true,
         "events": []
+      },
+      {
+        "semantic": "kneel",
+        "clip": "kneel",
+        "loop": false,
+        "events": []
       }
     ],
     "groundContact": {

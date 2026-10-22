@@ -1,0 +1,37 @@
+{
+  "id": "unit.beetles.supply-cart",
+  "name": "Supply Cart",
+  "description": "A draft beetle hauling glass tanks of substance along the beetles' roads. Slow, sturdy and unarmed; whoever breaks one takes the amber it carries.",
+  "model": "asset.models.units.beetles-supply-cart",
+  "icon": "asset.portraits.units.beetles-supply-cart",
+  "selectionClass": "army",
+  "body": {
+    "maxHp": 900,
+    "armor": 4,
+    "armorType": "heavy"
+  },
+  "vision": 20,
+  "behaviorSets": [
+    "behavior-set.ground-army"
+  ],
+  "behaviors": {
+    "movement": {
+      "speed": 6
+    }
+  },
+  "bounty": [
+    {
+      "item": "item.amber",
+      "amount": 75
+    }
+  ],
+  "level": 2,
+  "supplyCost": 0,
+  "unitNature": "mechanical",
+  "dimensions": {
+    "radius": 2.4,
+    "height": 3.6,
+    "formationSpacing": 6.0
+  },
+  "modelScale": 1.4
+}

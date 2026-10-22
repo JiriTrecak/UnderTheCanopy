@@ -1,0 +1,107 @@
+{
+  "id": "asset.models.units.beetles-supply-cart",
+  "name": "Supply Cart",
+  "kind": "unit",
+  "tags": [
+    "beetles",
+    "machine",
+    "cart",
+    "tripo",
+    "animated",
+    "team-mask"
+  ],
+  "race": "beetles",
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "teamColor": {
+      "mode": "mask",
+      "slots": [
+        "TC_beetles-supply-cart"
+      ]
+    },
+    "animations": [
+      {
+        "semantic": "idle",
+        "clip": "idle",
+        "loop": true,
+        "events": []
+      },
+      {
+        "semantic": "walk",
+        "clip": "walk",
+        "loop": true,
+        "events": [],
+        "nominalSpeed": 0.623
+      },
+      {
+        "semantic": "run",
+        "clip": "walk",
+        "loop": true,
+        "events": [],
+        "nominalSpeed": 0.623
+      },
+      {
+        "semantic": "hit",
+        "clip": "hit",
+        "loop": false,
+        "events": []
+      },
+      {
+        "semantic": "death",
+        "clip": "death",
+        "loop": false,
+        "events": []
+      }
+    ],
+    "sockets": [
+      {
+        "name": "tanks",
+        "node": "socket_tanks",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "beetle",
+        "node": "socket_beetle",
+        "offset": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "display": {
+    "scale": 2,
+    "character": "base",
+    "healthHeight": 2.1
+  },
+  "license": "Generated with Tripo (image to 3D, segmentation) from an ImageGen (gpt-image-2) concept for Under the Canopy; grounded and animated by tools/units/supply_cart.py."
+}
