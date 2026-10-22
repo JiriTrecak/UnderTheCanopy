@@ -1,0 +1,7 @@
+{
+  "id": "scenery.glade-waterfall",
+  "name": "Glade: waterfall",
+  "category": "water",
+  "type": "prop",
+  "model": "asset.models.environment.glade-waterfall"
+}

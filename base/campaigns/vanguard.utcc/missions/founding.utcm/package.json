@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "founding",
+  "kind": "map",
+  "name": "Founding",
+  "version": "1.0.0",
+  "dependencies": {
+    "base": ">=0.4.0"
+  },
+  "description": "Prologue, Mission Two. A new colony in a quiet morning glade, under attack from the feral brood."
+}

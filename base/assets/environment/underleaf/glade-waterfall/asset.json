@@ -1,0 +1,40 @@
+{
+  "id": "asset.models.environment.glade-waterfall",
+  "name": "Glade waterfall",
+  "kind": "prop",
+  "tags": [
+    "underleaf",
+    "glade",
+    "water",
+    "procedural"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "vegetationClearance": 0,
+    "groundContact": {
+      "mode": "terrain"
+    }
+  },
+  "license": "Original procedural model for Under the Canopy (tools/props/waterfall.py)."
+}

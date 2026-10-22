@@ -1,0 +1,1543 @@
+{
+  "biome": "underleaf",
+  "camps": [
+    {
+      "id": "mushrooms",
+      "members": [
+        "mushrooms.1",
+        "mushrooms.2",
+        "mushrooms.3",
+        "mushrooms.4"
+      ],
+      "home": {
+        "x": 130,
+        "y": 300
+      },
+      "aggroRange": 8,
+      "leash": 16,
+      "aggression": "players",
+      "fixedDrops": [
+        "item.resin-salve"
+      ]
+    },
+    {
+      "id": "bog-toads",
+      "members": [
+        "bog-toads.1",
+        "bog-toads.2",
+        "bog-toads.3",
+        "bog-toads.4",
+        "bog-toads.5"
+      ],
+      "home": {
+        "x": 80,
+        "y": 272
+      },
+      "aggroRange": 10,
+      "leash": 20,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "rootbound",
+      "members": [
+        "rootbound.1",
+        "rootbound.2",
+        "rootbound.3"
+      ],
+      "home": {
+        "x": 338,
+        "y": 226
+      },
+      "aggroRange": 10,
+      "leash": 20,
+      "aggression": "players",
+      "lootPool": "loot.camp.medium"
+    },
+    {
+      "id": "hornets",
+      "members": [
+        "hornets.1",
+        "hornets.2",
+        "hornets.3",
+        "hornets.4",
+        "hornets.5"
+      ],
+      "home": {
+        "x": 198,
+        "y": 108
+      },
+      "aggroRange": 11,
+      "leash": 18,
+      "aggression": "players",
+      "fixedDrops": [
+        "item.warcaller-standard"
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "definition": "building.ants.fort",
+      "id": "colony.nest",
+      "owner": "player.1",
+      "position": {
+        "x": 201.5,
+        "y": 241.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete",
+        "inventory": {
+          "item.amber": 350
+        }
+      }
+    },
+    {
+      "definition": "unit.ants.queen",
+      "id": "queen",
+      "owner": "player.1",
+      "position": {
+        "x": 202,
+        "y": 340
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "raider.1",
+      "owner": "player.1",
+      "position": {
+        "x": 198,
+        "y": 346
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "raider.2",
+      "owner": "player.1",
+      "position": {
+        "x": 206,
+        "y": 346
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "raider.3",
+      "owner": "player.1",
+      "position": {
+        "x": 198,
+        "y": 352
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "raider.4",
+      "owner": "player.1",
+      "position": {
+        "x": 206,
+        "y": 352
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "id": "needler.1",
+      "owner": "player.1",
+      "position": {
+        "x": 199,
+        "y": 359
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.archer",
+      "id": "needler.2",
+      "owner": "player.1",
+      "position": {
+        "x": 205,
+        "y": 359
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.settler",
+      "id": "worker.1",
+      "owner": "player.1",
+      "position": {
+        "x": 197,
+        "y": 366
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.settler",
+      "id": "worker.2",
+      "owner": "player.1",
+      "position": {
+        "x": 201,
+        "y": 366
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.settler",
+      "id": "worker.3",
+      "owner": "player.1",
+      "position": {
+        "x": 205,
+        "y": 366
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.settler",
+      "id": "worker.4",
+      "owner": "player.1",
+      "position": {
+        "x": 197,
+        "y": 371
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.ants.settler",
+      "id": "worker.5",
+      "owner": "player.1",
+      "position": {
+        "x": 201,
+        "y": 371
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.glade.0",
+      "owner": "none",
+      "position": {
+        "x": 185.5,
+        "y": 213.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.glade.1",
+      "owner": "none",
+      "position": {
+        "x": 181.5,
+        "y": 213.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.glade.2",
+      "owner": "none",
+      "position": {
+        "x": 177.5,
+        "y": 217.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.glade.3",
+      "owner": "none",
+      "position": {
+        "x": 173.5,
+        "y": 221.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.glade.4",
+      "owner": "none",
+      "position": {
+        "x": 173.5,
+        "y": 225.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.glade-south.0",
+      "owner": "none",
+      "position": {
+        "x": 153.5,
+        "y": 249.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.glade-south.1",
+      "owner": "none",
+      "position": {
+        "x": 157.5,
+        "y": 257.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.glade-south.2",
+      "owner": "none",
+      "position": {
+        "x": 161.5,
+        "y": 261.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.glade-south.3",
+      "owner": "none",
+      "position": {
+        "x": 165.5,
+        "y": 265.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.glade-south.4",
+      "owner": "none",
+      "position": {
+        "x": 173.5,
+        "y": 269.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.roots.0",
+      "owner": "none",
+      "position": {
+        "x": 361.5,
+        "y": 221.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.roots.1",
+      "owner": "none",
+      "position": {
+        "x": 357.5,
+        "y": 213.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.roots.2",
+      "owner": "none",
+      "position": {
+        "x": 353.5,
+        "y": 209.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.roots.3",
+      "owner": "none",
+      "position": {
+        "x": 349.5,
+        "y": 205.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.roots.4",
+      "owner": "none",
+      "position": {
+        "x": 341.5,
+        "y": 201.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.bog.0",
+      "owner": "none",
+      "position": {
+        "x": 61.5,
+        "y": 285.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.bog.1",
+      "owner": "none",
+      "position": {
+        "x": 65.5,
+        "y": 293.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.bog.2",
+      "owner": "none",
+      "position": {
+        "x": 69.5,
+        "y": 297.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-3"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.bog.3",
+      "owner": "none",
+      "position": {
+        "x": 73.5,
+        "y": 301.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-1"
+      }
+    },
+    {
+      "definition": "building.neutral.amber-mine",
+      "id": "amber.bog.4",
+      "owner": "none",
+      "position": {
+        "x": 81.5,
+        "y": 305.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "amount": 2500,
+        "construction": "complete"
+      },
+      "appearance": {
+        "asset": "asset.models.resources.amber-crystal-2"
+      }
+    },
+    {
+      "definition": "building.neutral.corrupted-root",
+      "id": "substance-spring",
+      "owner": "none",
+      "position": {
+        "x": 259.5,
+        "y": 231.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "building.ants.barracks",
+      "id": "burrow.ne.1",
+      "owner": "player.2",
+      "position": {
+        "x": 313.5,
+        "y": 69.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "building.ants.barracks",
+      "id": "burrow.ne.2",
+      "owner": "player.2",
+      "position": {
+        "x": 345.5,
+        "y": 97.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "building.ants.tower",
+      "id": "spire.ne",
+      "owner": "player.2",
+      "position": {
+        "x": 299.5,
+        "y": 115.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "building.ants.barracks",
+      "id": "burrow.nw",
+      "owner": "player.2",
+      "position": {
+        "x": 81.5,
+        "y": 89.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "building.ants.tower",
+      "id": "spire.nw",
+      "owner": "player.2",
+      "position": {
+        "x": 107.5,
+        "y": 115.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "feral.1",
+      "owner": "player.2",
+      "position": {
+        "x": 302,
+        "y": 92
+      },
+      "rotation": 148.69893907698219
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "feral.2",
+      "owner": "player.2",
+      "position": {
+        "x": 306,
+        "y": 96
+      },
+      "rotation": 40.95548255026539
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "feral.3",
+      "owner": "player.2",
+      "position": {
+        "x": 326,
+        "y": 86
+      },
+      "rotation": 282.2160825347991
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "feral.4",
+      "owner": "player.2",
+      "position": {
+        "x": 330,
+        "y": 90
+      },
+      "rotation": 64.75474644401419
+    },
+    {
+      "definition": "unit.ants.archer",
+      "id": "feral.5",
+      "owner": "player.2",
+      "position": {
+        "x": 316,
+        "y": 104
+      },
+      "rotation": 80.29631497033071
+    },
+    {
+      "definition": "unit.ants.archer",
+      "id": "feral.6",
+      "owner": "player.2",
+      "position": {
+        "x": 340,
+        "y": 72
+      },
+      "rotation": 270.8876823324235
+    },
+    {
+      "definition": "unit.ants.burster",
+      "id": "feral.7",
+      "owner": "player.2",
+      "position": {
+        "x": 322,
+        "y": 112
+      },
+      "rotation": 137.37653178549263
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "feral.8",
+      "owner": "player.2",
+      "position": {
+        "x": 288,
+        "y": 124
+      },
+      "rotation": 163.1252379793286
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "feral.9",
+      "owner": "player.2",
+      "position": {
+        "x": 296,
+        "y": 124
+      },
+      "rotation": 94.69924984664178
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "feral.10",
+      "owner": "player.2",
+      "position": {
+        "x": 92,
+        "y": 104
+      },
+      "rotation": 65.84753645405367
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "feral.11",
+      "owner": "player.2",
+      "position": {
+        "x": 98,
+        "y": 100
+      },
+      "rotation": 204.782670632896
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "feral.12",
+      "owner": "player.2",
+      "position": {
+        "x": 70,
+        "y": 104
+      },
+      "rotation": 202.55909534519026
+    },
+    {
+      "definition": "unit.ants.archer",
+      "id": "feral.13",
+      "owner": "player.2",
+      "position": {
+        "x": 86,
+        "y": 112
+      },
+      "rotation": 200.60429825338585
+    },
+    {
+      "definition": "unit.ants.warrior",
+      "id": "feral.14",
+      "owner": "player.2",
+      "position": {
+        "x": 112,
+        "y": 128
+      },
+      "rotation": 238.68466988950019
+    },
+    {
+      "definition": "unit.ants.royal-alchemist",
+      "id": "oleander",
+      "owner": "player.3",
+      "position": {
+        "x": 40,
+        "y": 238
+      },
+      "rotation": 90.0,
+      "activation": "script"
+    },
+    {
+      "definition": "unit.ants.settler",
+      "id": "porter.1",
+      "owner": "player.3",
+      "position": {
+        "x": 36,
+        "y": 233
+      },
+      "rotation": 90.0,
+      "activation": "script"
+    },
+    {
+      "definition": "unit.ants.settler",
+      "id": "porter.2",
+      "owner": "player.3",
+      "position": {
+        "x": 36,
+        "y": 243
+      },
+      "rotation": 90.0,
+      "activation": "script"
+    },
+    {
+      "definition": "unit.ants.winglancer",
+      "id": "alate-sleeper",
+      "owner": "player.3",
+      "position": {
+        "x": 148,
+        "y": 212
+      },
+      "rotation": 120.0
+    },
+    {
+      "definition": "unit.neutral.capling",
+      "id": "mushrooms.1",
+      "owner": "none",
+      "position": {
+        "x": 125,
+        "y": 296
+      },
+      "rotation": 38.65980825409009
+    },
+    {
+      "definition": "unit.neutral.capling",
+      "id": "mushrooms.2",
+      "owner": "none",
+      "position": {
+        "x": 135,
+        "y": 296
+      },
+      "rotation": 141.34019174590992
+    },
+    {
+      "definition": "unit.neutral.capling",
+      "id": "mushrooms.3",
+      "owner": "none",
+      "position": {
+        "x": 130,
+        "y": 305
+      },
+      "rotation": 270.0
+    },
+    {
+      "definition": "unit.neutral.puffcap",
+      "id": "mushrooms.4",
+      "owner": "none",
+      "position": {
+        "x": 130,
+        "y": 299
+      },
+      "rotation": 90.0
+    },
+    {
+      "definition": "unit.neutral.young-toad",
+      "id": "bog-toads.1",
+      "owner": "none",
+      "position": {
+        "x": 74,
+        "y": 270
+      },
+      "rotation": 18.43494882292201
+    },
+    {
+      "definition": "unit.neutral.young-toad",
+      "id": "bog-toads.2",
+      "owner": "none",
+      "position": {
+        "x": 86,
+        "y": 272
+      },
+      "rotation": 180.0
+    },
+    {
+      "definition": "unit.neutral.tree-frog",
+      "id": "bog-toads.3",
+      "owner": "none",
+      "position": {
+        "x": 70,
+        "y": 278
+      },
+      "rotation": 329.03624346792645
+    },
+    {
+      "definition": "unit.neutral.tree-frog",
+      "id": "bog-toads.4",
+      "owner": "none",
+      "position": {
+        "x": 90,
+        "y": 278
+      },
+      "rotation": 210.96375653207352
+    },
+    {
+      "definition": "unit.neutral.tadpole-spirit",
+      "id": "bog-toads.5",
+      "owner": "none",
+      "position": {
+        "x": 80,
+        "y": 280
+      },
+      "rotation": 270.0
+    },
+    {
+      "definition": "unit.neutral.rootling",
+      "id": "rootbound.1",
+      "owner": "none",
+      "position": {
+        "x": 332,
+        "y": 222
+      },
+      "rotation": 33.690067525979785
+    },
+    {
+      "definition": "unit.neutral.rootling",
+      "id": "rootbound.2",
+      "owner": "none",
+      "position": {
+        "x": 344,
+        "y": 230
+      },
+      "rotation": 213.69006752597977
+    },
+    {
+      "definition": "unit.neutral.old-root",
+      "id": "rootbound.3",
+      "owner": "none",
+      "position": {
+        "x": 340,
+        "y": 220
+      },
+      "rotation": 108.43494882292202
+    },
+    {
+      "definition": "unit.neutral.hornet-guard",
+      "id": "hornets.1",
+      "owner": "none",
+      "position": {
+        "x": 192,
+        "y": 108
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "unit.neutral.hornet-guard",
+      "id": "hornets.2",
+      "owner": "none",
+      "position": {
+        "x": 204,
+        "y": 104
+      },
+      "rotation": 146.30993247402023
+    },
+    {
+      "definition": "unit.neutral.needle-wasp",
+      "id": "hornets.3",
+      "owner": "none",
+      "position": {
+        "x": 188,
+        "y": 100
+      },
+      "rotation": 38.65980825409009
+    },
+    {
+      "definition": "unit.neutral.needle-wasp",
+      "id": "hornets.4",
+      "owner": "none",
+      "position": {
+        "x": 200,
+        "y": 96
+      },
+      "rotation": 99.46232220802563
+    },
+    {
+      "definition": "unit.neutral.nest-mother",
+      "id": "hornets.5",
+      "owner": "none",
+      "position": {
+        "x": 196,
+        "y": 102
+      },
+      "rotation": 71.56505117707799
+    },
+    {
+      "definition": "building.neutral.sap-spring",
+      "id": "sap-spring",
+      "owner": "none",
+      "position": {
+        "x": 145.5,
+        "y": 345.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "building.neutral.merchant",
+      "id": "peddler",
+      "owner": "none",
+      "position": {
+        "x": 305.5,
+        "y": 313.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete",
+        "wares": [
+          {
+            "item": "item.resin-salve",
+            "price": [
+              {
+                "item": "item.amber",
+                "amount": 75
+              }
+            ],
+            "stock": 3,
+            "restockTicks": 2400
+          },
+          {
+            "item": "item.moon-dew",
+            "price": [
+              {
+                "item": "item.amber",
+                "amount": 75
+              }
+            ],
+            "stock": 2,
+            "restockTicks": 2400
+          },
+          {
+            "item": "item.trailkeeper-flask",
+            "price": [
+              {
+                "item": "item.amber",
+                "amount": 125
+              }
+            ],
+            "stock": 2,
+            "restockTicks": 3600
+          },
+          {
+            "item": "item.mossweave-wraps",
+            "price": [
+              {
+                "item": "item.amber",
+                "amount": 150
+              }
+            ],
+            "stock": 1,
+            "restockTicks": 7200
+          },
+          {
+            "item": "item.scout-whistle",
+            "price": [
+              {
+                "item": "item.amber",
+                "amount": 100
+              }
+            ],
+            "stock": 1,
+            "restockTicks": 4800
+          }
+        ]
+      }
+    },
+    {
+      "definition": "building.neutral.amber-cache",
+      "id": "falls-cache",
+      "owner": "none",
+      "position": {
+        "x": 153.5,
+        "y": 133.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete",
+        "inventory": {
+          "item.quickstep-spurs": 1,
+          "item.restoration-draught": 1
+        }
+      }
+    },
+    {
+      "definition": "building.neutral.rubble",
+      "id": "nook-rubble",
+      "owner": "none",
+      "position": {
+        "x": 333.5,
+        "y": 321.5
+      },
+      "rotation": 90.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "building.neutral.dew-spring",
+      "id": "nook-spring",
+      "owner": "none",
+      "position": {
+        "x": 361.5,
+        "y": 337.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "item.moon-dew",
+      "id": "nook-dew",
+      "owner": "none",
+      "position": {
+        "x": 350,
+        "y": 342
+      },
+      "rotation": 0.0
+    },
+    {
+      "definition": "building.neutral.amber-cache",
+      "id": "road-cache",
+      "owner": "none",
+      "position": {
+        "x": 189.5,
+        "y": 329.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete",
+        "inventory": {
+          "item.resin-salve": 1
+        }
+      }
+    },
+    {
+      "definition": "building.neutral.seed-pod",
+      "id": "road-pod.1",
+      "owner": "none",
+      "position": {
+        "x": 221.5,
+        "y": 349.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "building.neutral.seed-pod",
+      "id": "road-pod.2",
+      "owner": "none",
+      "position": {
+        "x": 185.5,
+        "y": 365.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "building.neutral.seed-pod",
+      "id": "roots-pod",
+      "owner": "none",
+      "position": {
+        "x": 361.5,
+        "y": 233.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
+      "definition": "building.neutral.supply-crate",
+      "id": "den-crate",
+      "owner": "none",
+      "position": {
+        "x": 97.5,
+        "y": 73.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete",
+        "inventory": {
+          "item.trailkeeper-flask": 1
+        }
+      }
+    },
+    {
+      "definition": "building.neutral.seed-pod",
+      "id": "hollow-pod",
+      "owner": "none",
+      "position": {
+        "x": 133.5,
+        "y": 337.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    }
+  ],
+  "playerStarts": [],
+  "size": 416,
+  "playable": {
+    "x": 32,
+    "z": 32,
+    "width": 352,
+    "height": 352
+  },
+  "landscape": {
+    "environment": {
+      "hour": 9.0,
+      "playing": false,
+      "weather": {
+        "kind": "clear"
+      }
+    }
+  },
+  "mission": {
+    "players": [
+      {
+        "player": 2,
+        "race": "ants",
+        "team": "enemy",
+        "vision": false,
+        "ai": {
+          "behaviour": "waves",
+          "rebuild": false,
+          "waves": [
+            {
+              "after": 180,
+              "every": 90,
+              "units": [
+                {
+                  "unit": "unit.ants.warrior",
+                  "count": 3
+                }
+              ],
+              "grow": {
+                "every": 2,
+                "unit": "unit.ants.warrior",
+                "count": 1
+              },
+              "from": "trained",
+              "target": {
+                "region": "front"
+              }
+            },
+            {
+              "after": 480,
+              "every": 90,
+              "units": [
+                {
+                  "unit": "unit.ants.burster",
+                  "count": 1
+                },
+                {
+                  "unit": "unit.ants.archer",
+                  "count": 1
+                }
+              ],
+              "grow": {
+                "every": 2,
+                "unit": "unit.ants.burster",
+                "count": 1
+              },
+              "from": "trained",
+              "target": {
+                "region": "front"
+              }
+            },
+            {
+              "after": 720,
+              "every": 130,
+              "units": [
+                {
+                  "unit": "unit.ants.archer",
+                  "count": 2
+                }
+              ],
+              "grow": {
+                "every": 3,
+                "unit": "unit.ants.archer",
+                "count": 1
+              },
+              "from": "trained",
+              "target": {
+                "region": "front"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "player": 3,
+        "race": "ants",
+        "team": "ally",
+        "vision": true,
+        "ai": {
+          "behaviour": "passive",
+          "dormant": true
+        }
+      }
+    ],
+    "objectives": [
+      {
+        "id": "colony",
+        "title": "Build the colony",
+        "description": "Raise a Brood Mound and a Soldier Burrow in the glade."
+      },
+      {
+        "id": "burrows",
+        "title": "Destroy the feral burrows",
+        "description": "Destroy the feral burrows on the north-east ridge and in the den across the ravine."
+      },
+      {
+        "id": "spring",
+        "title": "The substance spring",
+        "optional": true,
+        "description": "Build a Substance Siphon on the spring at the glade's east edge."
+      }
+    ],
+    "cameras": [
+      {
+        "id": "arrival",
+        "x": 202,
+        "y": 338,
+        "height": 3,
+        "distance": 62,
+        "pitch": 17,
+        "yaw": 165,
+        "fov": 38
+      },
+      {
+        "id": "glade-mouth",
+        "x": 222,
+        "y": 278,
+        "height": 2,
+        "distance": 72,
+        "pitch": 22,
+        "yaw": 205,
+        "fov": 40
+      },
+      {
+        "id": "rise-front",
+        "x": 236,
+        "y": 270,
+        "height": 5,
+        "distance": 34,
+        "pitch": 10,
+        "yaw": 40,
+        "fov": 34
+      },
+      {
+        "id": "rise-over",
+        "x": 252,
+        "y": 289,
+        "height": 2,
+        "distance": 46,
+        "pitch": 25,
+        "yaw": 228,
+        "fov": 36,
+        "roll": 1.5
+      },
+      {
+        "id": "glade-wide",
+        "x": 204,
+        "y": 244,
+        "height": 0,
+        "distance": 130,
+        "pitch": 34,
+        "yaw": 150,
+        "fov": 40
+      },
+      {
+        "id": "west-road",
+        "x": 54,
+        "y": 238,
+        "height": 1,
+        "distance": 64,
+        "pitch": 32,
+        "yaw": 118,
+        "fov": 40
+      },
+      {
+        "id": "meet-over-queen",
+        "x": 167,
+        "y": 238,
+        "height": 5,
+        "distance": 40,
+        "pitch": 10,
+        "yaw": 72,
+        "fov": 34
+      },
+      {
+        "id": "meet-over-oleander",
+        "x": 178,
+        "y": 238,
+        "height": 5,
+        "distance": 38,
+        "pitch": 10,
+        "yaw": 252,
+        "fov": 34,
+        "roll": -1.5
+      },
+      {
+        "id": "spring",
+        "x": 260,
+        "y": 232,
+        "height": 1,
+        "distance": 40,
+        "pitch": 22,
+        "yaw": 200,
+        "fov": 38
+      },
+      {
+        "id": "victory",
+        "x": 204,
+        "y": 236,
+        "height": 0,
+        "distance": 200,
+        "pitch": 48,
+        "yaw": 20,
+        "fov": 40
+      }
+    ],
+    "regions": [
+      {
+        "id": "rise",
+        "x": 237,
+        "y": 272,
+        "radius": 6
+      },
+      {
+        "id": "glade",
+        "x": 204,
+        "y": 238,
+        "radius": 44
+      },
+      {
+        "id": "sap",
+        "x": 146,
+        "y": 346,
+        "radius": 16
+      },
+      {
+        "id": "merchant",
+        "x": 306,
+        "y": 314,
+        "radius": 18
+      },
+      {
+        "id": "bog",
+        "x": 80,
+        "y": 282,
+        "radius": 24
+      },
+      {
+        "id": "roots",
+        "x": 342,
+        "y": 220,
+        "radius": 22
+      },
+      {
+        "id": "hornets",
+        "x": 198,
+        "y": 104,
+        "radius": 20
+      },
+      {
+        "id": "falls",
+        "x": 154,
+        "y": 134,
+        "radius": 9
+      },
+      {
+        "id": "bridge",
+        "x": 96,
+        "y": 172,
+        "radius": 14
+      },
+      {
+        "id": "ridge",
+        "x": 322,
+        "y": 86,
+        "radius": 40
+      },
+      {
+        "id": "den",
+        "x": 88,
+        "y": 92,
+        "radius": 36
+      },
+      {
+        "id": "spring",
+        "x": 260,
+        "y": 232,
+        "radius": 16
+      },
+      {
+        "id": "nook",
+        "x": 356,
+        "y": 334,
+        "radius": 14
+      },
+      {
+        "id": "mushrooms",
+        "x": 130,
+        "y": 300,
+        "radius": 16
+      },
+      {
+        "id": "alate-near",
+        "x": 148,
+        "y": 212,
+        "radius": 16
+      },
+      {
+        "id": "west",
+        "x": 40,
+        "y": 238,
+        "radius": 10
+      },
+      {
+        "id": "meet",
+        "x": 168,
+        "y": 238,
+        "radius": 8
+      },
+      {
+        "id": "front",
+        "x": 214,
+        "y": 214,
+        "radius": 10
+      }
+    ]
+  }
+}
