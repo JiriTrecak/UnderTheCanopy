@@ -230,7 +230,7 @@ How it runs: the sandbox has no coroutines and a fresh Lua state every run, so a
 | `light_at(key, x, y, colour, intensity, radius[, seconds][, height])` | A point light (`white` or `#rrggbb`; intensity 0–100, an effect light's is about 10–35; radius 0.5–60 cells; height above the ground, default 2) that eases from where the light of that `key` stands (nothing, when new) to `intensity` over `seconds`, then holds; ramped to 0 it is gone. A skip makes it jump to its end. At most four; they come before every other effect light |
 | `stop_effect(key)` | Ends the effect and the light of that `key` at once |
 | `speak(unit, text[, seconds][, name])` | The unit says a line (its definition's name and portrait unless named); in cinematic mode a transmission in the lower bar with its live portrait. Its length is the reading time (a second plus 15 characters a second, 2.5–20 s) unless given. In a scene it waits for the line to end |
-| `wait(seconds)`, `wait_arrived(unit)`, `wait_facing([unit])`, `wait_line()` | Scene waits: time; the unit's walk (or any order) has ended; the turn has; the line is over |
+| `wait(seconds)`, `wait_arrived(unit)`, `wait_facing([unit])`, `wait_line()` | Scene waits: time; the unit's walk (or any order) has ended, or a scene walk has had twice its straight time at the unit's speed and three seconds (a crowd or a base in its way never hangs the scene); the turn has; the line is over |
 | `clicks(unit)` | How often the campaign player clicked the placed unit to select it (query; easter eggs) |
 
 Older functions keep working inside and outside scenes (`move`, `face`, `say`, `spawn`, the unit shots of `camera`, …). The mission fades in from black: the picture stays black until `on_start` has run.

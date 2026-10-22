@@ -51,6 +51,7 @@ end
 
 function on_start()
   mission.fade_out(0)
+  mission.animate("alate-sleeper", "sleep", true) -- until the sneeze wakes it
   mission.play("opening")
 end
 

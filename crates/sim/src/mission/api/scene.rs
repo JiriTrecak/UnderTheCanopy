@@ -25,6 +25,9 @@ use crate::mission::{
 };
 use canopy_content::game::Kind;
 
+/// The least time a scene waits for a walk before it gives up on it.
+const STUCK_TICKS: u32 = 3 * TICKS_PER_SECOND;
+
 pub const NAMES: [&str; 18] = [
     "clicks",
     "play",
@@ -100,6 +103,7 @@ impl Host for Api<'_> {
             for SceneMove {
                 placement,
                 destination,
+                ..
             } in std::mem::take(&mut play.moves)
             {
                 self.effects.push(MissionEffect::Place {
@@ -198,11 +202,14 @@ impl Api<'_> {
         }) = self.effects[effects..].last()
         {
             let (placement, destination) = (placement.clone(), *destination);
+            let from =
+                entity_by_placement(self.state, &placement).map_or(destination, |e| e.position);
             if let Some(play) = self.draft.cinema.scene.as_mut() {
                 play.moves.retain(|m| m.placement != placement);
                 play.moves.push(SceneMove {
                     placement,
                     destination,
+                    from,
                 });
                 if play.moves.len() > MAX_SCENE_MOVES {
                     play.moves.remove(0);
@@ -269,8 +276,33 @@ impl Api<'_> {
                         | MissionEffect::Follow { placement, .. }
                         | MissionEffect::Attack { placement, .. } if placement == id)
                 });
-                Ok(!ordered
-                    && self
+                if ordered {
+                    return Ok(false);
+                }
+                // A walk that cannot go on (a crowd held still in its way, a base built
+                // round it) ends the wait once it has had time enough, so a scene never
+                // hangs: twice the straight walk at the unit's speed, and three seconds.
+                let placement = self.placement(a.get(0))?;
+                let speed = self
+                    .placed(placement)?
+                    .behaviors
+                    .movement
+                    .as_ref()
+                    .map_or(0.0, |m| m.speed);
+                let play = self.draft.cinema.scene.as_ref();
+                let since = play.map_or(0, |s| s.since);
+                let walk = play
+                    .and_then(|s| s.moves.iter().find(|m| &m.placement == id))
+                    .filter(|_| speed > 0.0)
+                    .map_or(0.0, |m| {
+                        let dx = f64::from(m.destination.x - m.from.x) / 1000.0;
+                        let dy = f64::from(m.destination.y - m.from.y) / 1000.0;
+                        (dx * dx + dy * dy).sqrt() / speed * f64::from(2 * TICKS_PER_SECOND)
+                    });
+                #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+                let patience = STUCK_TICKS.saturating_add(walk.min(f64::from(u32::MAX)) as u32);
+                Ok(self.state.tick.saturating_sub(since) >= patience
+                    || self
                         .entity(a.get(0))?
                         .filter(|e| e.unit.is_some() && alive(e))
                         .is_none_or(|e| !self.systems.has_order(e)))

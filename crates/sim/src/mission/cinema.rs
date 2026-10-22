@@ -243,6 +243,9 @@ pub struct ScenePlay {
 pub struct SceneMove {
     pub placement: String,
     pub destination: Milli,
+    /// Where the walk began: how long a scene waits for it follows from its length.
+    #[serde(default)]
+    pub from: Milli,
 }
 
 fn progress(start: u32, ticks: u32, tick: f32) -> f32 {

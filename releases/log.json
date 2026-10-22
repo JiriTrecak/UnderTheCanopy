@@ -73,7 +73,8 @@
       "Map editor: moving a start turns its hall to the middle and no longer collides with its own old spot; symmetric raises, twins and camps now mirror exactly",
       "Editor: Cook finishes in the window, renamed ids reach pickers and links at once, and maps show unsaved block edits on their tab",
       "Campaign creatures placed on their own outside a camp (a sleeping Alate, a tree frog) no longer vanish a moment into the mission; they keep to themselves and fight back when attacked",
-      "Campaign attack waves sent at your base march on your main fort and fight there, instead of standing at their own buildings or idling by a worker"
+      "Campaign attack waves sent at your base march on your main fort and fight there, instead of standing at their own buildings or idling by a worker",
+      "Campaign scenes no longer hang when a unit cannot reach its mark, for example when buildings or a waiting crowd stand in its way"
     ],
     "knownIssues": []
   },

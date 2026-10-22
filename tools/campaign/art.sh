@@ -25,6 +25,6 @@ for pair in "$@"; do
 }
 J
   # The editor's one file format: 2-space JSON.
-  python3 -c "import json,sys; p=sys.argv[1]; open(p,'w').write(json.dumps(json.load(open(p)), indent=2) + '\\n')" "$dir/asset.json"
+  python3 -c "import json,sys; p=sys.argv[1]; d=json.load(open(p)); open(p,'w').write(json.dumps(d, indent=2) + '\\n')" "$dir/asset.json"
   echo "$name"
 done

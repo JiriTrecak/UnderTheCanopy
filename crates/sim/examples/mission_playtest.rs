@@ -196,7 +196,7 @@ fn main() {
     let mut seq = 0;
     while world.tick() < end && world.state().outcome.is_none() {
         let now = world.tick();
-        if now.is_multiple_of(15 * TICKS_PER_SECOND)
+        if now.is_multiple_of(2 * TICKS_PER_SECOND)
             && let Some(&(_, x, y)) = args
                 .pushes
                 .iter()

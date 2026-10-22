@@ -321,6 +321,36 @@ end"#;
     assert_eq!(variable(&world, "done"), boolean(true));
 }
 
+#[test]
+fn a_scene_does_not_hang_on_a_walk_that_cannot_go_on() {
+    // A crowd the scene holds still stands all round the hero: its walk can never start.
+    let script = r#"
+function on_start() mission.play("s") end
+function scenes.s()
+  mission.cinematic(true)
+  mission.move("hero", 80, 60)
+  mission.wait_arrived("hero")
+  mission.cinematic(false)
+  mission.set("over", mission.tick())
+end"#;
+    let mut crowded = Mission::new(script);
+    crowded.entities.retain(|e| e["id"] == "hero");
+    let around = (-2..=2).flat_map(|dx| (-2..=2).map(move |dy| (dx, dy)));
+    for (i, (dx, dy)) in around.filter(|&d| d != (0, 0)).enumerate() {
+        crowded = crowded.entity(unit(
+            &format!("crowd.{i}"),
+            "unit.warrior",
+            f64::from(60 + dx),
+            f64::from(60 + dy),
+        ));
+    }
+    let mut world = crowded.world();
+    let taken = until(&mut world, 2400, |w| variable(w, "over").is_some());
+    assert_eq!(error(&world), None);
+    assert!(taken > 100, "the walk is given its time first: {taken}");
+    assert!(!mission(&world).cinema.on);
+}
+
 fn snapshot(world: &World) -> String {
     serde_json::to_string(&world.save()).unwrap()
 }
