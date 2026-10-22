@@ -797,8 +797,8 @@
       "id": "porter.2",
       "owner": "player.3",
       "position": {
-        "x": 36,
-        "y": 243
+        "x": 42,
+        "y": 242
       },
       "rotation": 90.0,
       "activation": "script"
@@ -1329,44 +1329,43 @@
     "cameras": [
       {
         "id": "arrival",
-        "x": 202,
-        "y": 338,
+        "x": 203,
+        "y": 330,
         "height": 3,
         "distance": 62,
-        "pitch": 17,
-        "yaw": 165,
-        "fov": 38
+        "pitch": 13,
+        "yaw": 172,
+        "fov": 24
       },
       {
         "id": "glade-mouth",
-        "x": 222,
-        "y": 278,
+        "x": 220,
+        "y": 280,
         "height": 2,
         "distance": 72,
-        "pitch": 22,
-        "yaw": 205,
-        "fov": 40
+        "pitch": 26,
+        "yaw": 250,
+        "fov": 36
       },
       {
         "id": "rise-front",
         "x": 236,
-        "y": 270,
-        "height": 5,
-        "distance": 34,
-        "pitch": 10,
-        "yaw": 40,
-        "fov": 34
+        "y": 271,
+        "height": 7,
+        "distance": 44,
+        "pitch": 5,
+        "yaw": 287.7,
+        "fov": 18
       },
       {
         "id": "rise-over",
-        "x": 252,
-        "y": 289,
-        "height": 2,
-        "distance": 46,
-        "pitch": 25,
-        "yaw": 228,
-        "fov": 36,
-        "roll": 1.5
+        "x": 224.7,
+        "y": 275.3,
+        "height": 2.2,
+        "distance": 14,
+        "pitch": 18,
+        "yaw": 150.6,
+        "fov": 30
       },
       {
         "id": "glade-wide",
@@ -1380,33 +1379,33 @@
       },
       {
         "id": "west-road",
-        "x": 54,
+        "x": 52,
         "y": 238,
-        "height": 1,
-        "distance": 64,
-        "pitch": 32,
-        "yaw": 118,
-        "fov": 40
+        "height": 4,
+        "distance": 52,
+        "pitch": 20,
+        "yaw": 104,
+        "fov": 30
       },
       {
         "id": "meet-over-queen",
-        "x": 167,
-        "y": 238,
-        "height": 5,
-        "distance": 40,
-        "pitch": 10,
-        "yaw": 72,
-        "fov": 34
+        "x": 167.4,
+        "y": 240.1,
+        "height": 6.5,
+        "distance": 44,
+        "pitch": 6,
+        "yaw": 124,
+        "fov": 22
       },
       {
         "id": "meet-over-oleander",
-        "x": 178,
-        "y": 238,
-        "height": 5,
-        "distance": 38,
-        "pitch": 10,
-        "yaw": 252,
-        "fov": 34,
+        "x": 180.1,
+        "y": 240.3,
+        "height": 7,
+        "distance": 40,
+        "pitch": 6,
+        "yaw": 230,
+        "fov": 24,
         "roll": -1.5
       },
       {
@@ -1420,12 +1419,22 @@
         "fov": 38
       },
       {
-        "id": "victory",
+        "id": "victory-close",
         "x": 204,
         "y": 236,
+        "height": 6,
+        "distance": 32,
+        "pitch": 20,
+        "yaw": 10,
+        "fov": 26
+      },
+      {
+        "id": "victory",
+        "x": 202,
+        "y": 244,
         "height": 0,
-        "distance": 200,
-        "pitch": 48,
+        "distance": 104,
+        "pitch": 42,
         "yaw": 20,
         "fov": 40
       }

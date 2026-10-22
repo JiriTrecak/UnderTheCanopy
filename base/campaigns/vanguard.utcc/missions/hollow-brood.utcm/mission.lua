@@ -45,6 +45,14 @@ local function play(name)
   mission.play(name)
 end
 
+-- A shot on a unit where it stands now: a saved camera's angle, panned onto it (a walk in a
+-- scene ends short when the army stands in its way).
+local function shot_on(camera, unit)
+  local x, y = mission.position(unit)
+  mission.camera_to(camera, 0)
+  mission.camera_pan(x, y, 0)
+end
+
 local function column(x, y)
   mission.move("queen", x, y)
   mission.move("raider.1", x - 5, y + 3)
@@ -237,37 +245,58 @@ function scenes.sentry()
   mission.cinematic(true)
   mission.camera_to("sentry", 1.2)
   mission.move("queen", 189, 243)
+  if mission.get("tiv_ok") then
+    mission.move("tiv", 201, 238)
+  end
   mission.spawn("sentry")
   mission.move("sentry", 195, 237)
   mission.wait_arrived("queen")
   mission.face("queen", 195, 237)
   mission.wait_arrived("sentry")
-  mission.camera_to("sentry-low", 0)
+  if mission.get("tiv_ok") then
+    mission.wait_arrived("tiv")
+    mission.face("tiv", 195, 237)
+  end
+  shot_on("sentry-low", "queen")
   mission.damage("sentry", 5000)
   mission.speak("queen", "This was one of Ashka's. Look at its shell.", nil, "Aurelith")
   if mission.get("tiv_ok") then
+    shot_on("sentry-tiv", "tiv")
     mission.speak("tiv", "Split open... as if something grew inside it.", nil, "Tiv")
+    shot_on("sentry-low", "queen")
   end
   mission.speak("queen", "Stay close. Whatever did this is still out here.", nil, "Aurelith")
   mission.cinematic(false)
   mission.camera_reset(1.2)
 end
 
+-- The Queen comes to the webs' mouth; Tiv runs to his brother; Kesh turns from one to the other.
 function scenes.patrol()
   mission.cinematic(true)
   mission.camera_to("webs", 1.0)
-  mission.face("patrol.kesh", mission.get("qx"), mission.get("qy"))
-  mission.face("patrol.2", mission.get("qx"), mission.get("qy"))
+  mission.move("queen", 99, 198)
+  mission.face("patrol.kesh", 99, 198)
+  mission.face("patrol.2", 99, 198)
   mission.wait(0.8)
   if mission.get("tiv_ok") then
-    mission.move("tiv", 76, 190)
+    mission.move("tiv", 90, 199)
+    mission.face("patrol.kesh", 90, 199)
+    mission.camera_to("webs-kesh", 0)
     mission.speak("patrol.kesh", "Tiv? Tiv! I knew you'd come.", nil, "Kesh")
+    mission.wait_arrived("tiv")
+    mission.face("tiv", 84, 192)
+    shot_on("webs-tiv", "tiv")
     mission.speak("tiv", "Hold still, brother. These webs stink.", nil, "Tiv")
+    mission.face("patrol.kesh", 99, 198)
   else
+    mission.camera_to("webs-kesh", 0)
     mission.speak("patrol.kesh", "Light... the Queen's light. You found us.", nil, "Kesh")
   end
+  mission.camera_to("webs-kesh", 0)
   mission.speak("patrol.kesh", "We tracked the Hollow's foragers in here, my Queen. The webs were waiting.", nil, "Kesh")
+  mission.face("queen", 84, 192)
   mission.speak("patrol.kesh", "Take my whistle. It has called us home through worse.", nil, "Kesh")
+  shot_on("webs-queen", "queen")
   mission.speak("queen", "Then walk home with us, Kesh. We go to the Hollow.", nil, "Aurelith")
   mission.transfer("patrol.kesh", "player.1")
   mission.transfer("patrol.2", "player.1")
@@ -282,12 +311,19 @@ function scenes.rim()
   mission.cinematic(true)
   mission.camera_to("rim-wide", 1.5)
   mission.move("queen", 300, 114)
+  if mission.get("tiv_ok") then
+    mission.move("tiv", 302, 121)
+  end
   mission.wait(1.0)
   mission.speak("queen", "The Hollow. Its nest still glows...", nil, "Aurelith")
+  mission.face("queen", 304, 80)
+  shot_on("rim-queen", "queen")
   mission.speak("queen", "...but nothing down there moves the way it should.", nil, "Aurelith")
-  mission.camera_to("rim-tiv", 0)
   if mission.get("tiv_ok") then
+    mission.face("tiv", 330, 145) -- towards the fallen tunnel
+    shot_on("rim-tiv", "tiv")
     mission.speak("tiv", "Listen! Digging, my Queen. Behind the fallen tunnel, east of here.", nil, "Tiv")
+    shot_on("rim-queen", "queen")
   else
     mission.speak("queen", "Listen. Someone is digging behind that fallen tunnel.", nil, "Aurelith")
   end
@@ -309,17 +345,25 @@ function scenes.survivors()
   mission.wait_arrived("nurse")
   mission.face("nurse", 330, 133)
   mission.face("queen", 330, 141)
+  mission.face("survivor.1", 330, 133)
+  mission.face("survivor.2", 330, 133)
+  mission.face("survivor.3", 330, 133)
   -- They kneel to her where their walks end; the transfers below stand them up.
   mission.animate("nurse", "kneel", true)
   mission.animate("survivor.1", "kneel", true)
   mission.animate("survivor.2", "kneel", true)
   mission.animate("survivor.3", "kneel", true)
-  mission.camera_to("over-nurse", 0)
+  -- Down past the Queen onto the kneeling, and up at her as they see her.
+  shot_on("over-nurse", "nurse")
   mission.speak("nurse", "Queen Aurelith... you came. We prayed someone would.", nil, "Nurse Ardi")
+  shot_on("survivors-queen", "queen")
   mission.speak("queen", "What happened here?", nil, "Aurelith")
+  shot_on("over-nurse", "nurse")
   mission.speak("nurse", "They drank from the deep pool. Then they stopped sleeping.", nil, "Nurse Ardi")
   mission.speak("nurse", "Mother Ashka drank first, and drank the most. She does not know us now.", nil, "Nurse Ardi")
+  shot_on("over-survivor", "survivor.1")
   mission.speak("survivor.1", "Let us fight beside you, my Queen. Let us put her to rest.", nil, "Hollow Raider")
+  shot_on("survivors-queen", "queen")
   mission.speak("queen", "Then come. All of you who can.", nil, "Aurelith")
   mission.transfer("survivor.1", "player.1")
   mission.transfer("survivor.2", "player.1")
@@ -338,18 +382,24 @@ function scenes.ashka()
   mission.wait(1.0)
   mission.camera_to("ashka", 0)
   mission.animate("ashka", "spell")
+  mission.face("queen", 296, 68)
+  if mission.get("tiv_ok") then
+    mission.face("tiv", 296, 68)
+  end
   mission.wait(0.8)
   mission.move("ashka", 296, 68)
   mission.wait_arrived("ashka")
   mission.face("ashka", mission.get("qx"), mission.get("qy"))
   mission.wait_facing("ashka")
-  mission.camera_to("ashka-close", 0)
+  shot_on("ashka-queen", "queen")
   mission.speak("queen", "Mother Ashka! It is Aurelith, of the Amber Court.", nil, "Aurelith")
+  mission.camera_to("ashka-close", 0)
   mission.speak("ashka", "...so loud... the song is so loud...", nil, "Mother Ashka")
   if mission.get("tiv_ok") then
-    mission.say("Tiv", "unit.ants.warrior", "She doesn't know you, my Queen.", 3)
-    mission.wait_line()
+    shot_on("ashka-tiv", "tiv")
+    mission.speak("tiv", "She doesn't know you, my Queen.", 3, "Tiv")
   end
+  shot_on("ashka-queen", "queen")
   mission.speak("queen", "Then I will help her sleep.", nil, "Aurelith")
   if not mission.get("found") then
     mission.objective("Put Mother Ashka to rest")
@@ -364,14 +414,16 @@ end
 -- Ashka, lucid for a moment as she dies; Aurelith's vow.
 function scenes.closing()
   mission.cinematic(true)
+  -- From the side, the Queen standing over her; then the Queen past her, swearing.
   mission.camera_to("closing", 0)
-  mission.camera_pan(mission.get("ax"), mission.get("ay"), 0)
+  mission.camera_pan(mission.get("ax") + 1.5, mission.get("ay") + 1.5, 0)
   mission.move("queen", mission.get("ax") + 3, mission.get("ay") + 3)
   mission.wait_arrived("queen")
   mission.face("queen", mission.get("ax"), mission.get("ay"))
   mission.wait_facing("queen")
   mission.say("Mother Ashka", "unit.ants.reaver-queen", "It sang to us... we drank... and it gave, and gave...", 6)
   mission.wait_line()
+  shot_on("closing-queen", "queen")
   mission.speak("queen", "No ant will drink like this again. I swear it.", nil, "Aurelith")
   mission.wait(1.5)
   mission.fade_out(2.5)

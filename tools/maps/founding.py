@@ -574,7 +574,7 @@ for k, (d, x, z) in enumerate(FERAL):
 # Oleander and her porters (player 3, dormant): they arrive along the west road.
 entity('unit.ants.royal-alchemist', 'oleander', 40, 238, 'player.3', 90.0, activation='script')
 entity('unit.ants.settler', 'porter.1', 36, 233, 'player.3', 90.0, activation='script')
-entity('unit.ants.settler', 'porter.2', 36, 243, 'player.3', 90.0, activation='script')
+entity('unit.ants.settler', 'porter.2', 42, 242, 'player.3', 90.0, activation='script')
 
 # The sleeping Alate in its flower (the easter egg): it belongs to the dormant ally, so
 # nobody's warriors bite it (a placed neutral unit outside a camp is killed at once).
@@ -663,19 +663,24 @@ FERAL_WAVES = [
 # Saved cameras for the scenes (docs/campaign.md "Scenes"): yaw 0 puts the eye due south
 # looking north, 90 east; eyes stand over open ground or high above the giants.
 CAMERAS = [
-    # The opening: down the south road as the column comes up it, then over the glade.
-    {'id': 'arrival', 'x': 202, 'y': 338, 'height': 3, 'distance': 62, 'pitch': 17, 'yaw': 165, 'fov': 38},
-    {'id': 'glade-mouth', 'x': 222, 'y': 278, 'height': 2, 'distance': 72, 'pitch': 22, 'yaw': 205, 'fov': 40},
-    {'id': 'rise-front', 'x': 236, 'y': 270, 'height': 5, 'distance': 34, 'pitch': 10, 'yaw': 40, 'fov': 34},
-    {'id': 'rise-over', 'x': 252, 'y': 289, 'height': 2, 'distance': 46, 'pitch': 25, 'yaw': 228, 'fov': 36, 'roll': 1.5},
+    # The opening: the column running up the south road towards the camera (the scene pans
+    # along), the glade and the mossy ring as they stream in, the Queen in the ring's mouth
+    # from her column, and Tiv close, looking up at her.
+    {'id': 'arrival', 'x': 203, 'y': 330, 'height': 3, 'distance': 62, 'pitch': 13, 'yaw': 172, 'fov': 24},
+    {'id': 'glade-mouth', 'x': 220, 'y': 280, 'height': 2, 'distance': 72, 'pitch': 26, 'yaw': 250, 'fov': 36},
+    {'id': 'rise-front', 'x': 236, 'y': 271, 'height': 7, 'distance': 44, 'pitch': 5, 'yaw': 287.7, 'fov': 18},
+    {'id': 'rise-over', 'x': 224.7, 'y': 275.3, 'height': 2.2, 'distance': 14, 'pitch': 18, 'yaw': 150.6, 'fov': 30},
     {'id': 'glade-wide', 'x': 204, 'y': 244, 'height': 0, 'distance': 130, 'pitch': 34, 'yaw': 150, 'fov': 40},
-    # Oleander's arrival: the west road wide, then the two of them.
-    {'id': 'west-road', 'x': 54, 'y': 238, 'height': 1, 'distance': 64, 'pitch': 32, 'yaw': 118, 'fov': 40},
-    {'id': 'meet-over-queen', 'x': 167, 'y': 238, 'height': 5, 'distance': 40, 'pitch': 10, 'yaw': 72, 'fov': 34},
-    {'id': 'meet-over-oleander', 'x': 178, 'y': 238, 'height': 5, 'distance': 38, 'pitch': 10, 'yaw': 252, 'fov': 34, 'roll': -1.5},
+    # Oleander's arrival: down the west road with her (panned along), then the two of them,
+    # each past the other's shoulder, and the spring she names.
+    {'id': 'west-road', 'x': 52, 'y': 238, 'height': 4, 'distance': 52, 'pitch': 20, 'yaw': 104, 'fov': 30},
+    {'id': 'meet-over-queen', 'x': 167.4, 'y': 240.1, 'height': 6.5, 'distance': 44, 'pitch': 6, 'yaw': 124, 'fov': 22},
+    {'id': 'meet-over-oleander', 'x': 180.1, 'y': 240.3, 'height': 7, 'distance': 40, 'pitch': 6, 'yaw': 230, 'fov': 24,
+     'roll': -1.5},
     {'id': 'spring', 'x': 260, 'y': 232, 'height': 1, 'distance': 40, 'pitch': 22, 'yaw': 200, 'fov': 38},
-    # The victory: the glade from high above.
-    {'id': 'victory', 'x': 204, 'y': 236, 'height': 0, 'distance': 200, 'pitch': 48, 'yaw': 20, 'fov': 40},
+    # The victory: whoever speaks where the fighting left them (panned there), then the colony.
+    {'id': 'victory-close', 'x': 204, 'y': 236, 'height': 6, 'distance': 32, 'pitch': 20, 'yaw': 10, 'fov': 26},
+    {'id': 'victory', 'x': 202, 'y': 244, 'height': 0, 'distance': 104, 'pitch': 42, 'yaw': 20, 'fov': 40},
 ]
 PLAYERS = [
     # The feral brood, sick with the substance: the same violet-grey as in the Hollow.
