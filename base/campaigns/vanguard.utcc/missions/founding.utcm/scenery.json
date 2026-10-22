@@ -435,8 +435,8 @@
     {
       "id": "dress.54",
       "asset": "scenery.giants-acorn-cup",
-      "x": 158,
-      "z": 286,
+      "x": 162,
+      "z": 290,
       "yaw": 2.0,
       "scale": 1.0
     },
@@ -483,8 +483,8 @@
     {
       "id": "dress.60",
       "asset": "scenery.giants-moss",
-      "x": 160,
-      "z": 140,
+      "x": 165,
+      "z": 138,
       "yaw": 1.313,
       "scale": 0.8
     },

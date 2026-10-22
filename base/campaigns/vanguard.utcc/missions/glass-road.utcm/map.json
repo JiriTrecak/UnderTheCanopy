@@ -455,10 +455,10 @@
       "id": "tunnel.in",
       "owner": "player.1",
       "position": {
-        "x": 47.5,
+        "x": 43.5,
         "y": 263.5
       },
-      "rotation": 0.0,
+      "rotation": 90.0,
       "initialState": {
         "construction": "complete"
       },
@@ -469,8 +469,8 @@
       "id": "tunnel.out",
       "owner": "player.1",
       "position": {
-        "x": 303.5,
-        "y": 59.5
+        "x": 275.5,
+        "y": 67.5
       },
       "rotation": 0.0,
       "initialState": {
@@ -2125,12 +2125,12 @@
       },
       {
         "id": "tunnel-out",
-        "x": 303.5,
-        "y": 59.5,
+        "x": 275.5,
+        "y": 67.5,
         "height": 2,
-        "distance": 40.11,
-        "pitch": 20.43,
-        "yaw": 49.32,
+        "distance": 52.0,
+        "pitch": 38.0,
+        "yaw": -115.0,
         "fov": 36
       },
       {

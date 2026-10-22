@@ -748,7 +748,7 @@
       "id": "dress.93",
       "asset": "scenery.beetle-lantern",
       "x": 304.0,
-      "z": 154.0,
+      "z": 151.5,
       "yaw": 0.0,
       "scale": 1.5
     },
@@ -756,7 +756,7 @@
       "id": "dress.94",
       "asset": "scenery.beetle-lantern",
       "x": 304.0,
-      "z": 166.0,
+      "z": 168.5,
       "yaw": 0.0,
       "scale": 1.5
     },
@@ -764,7 +764,7 @@
       "id": "dress.95",
       "asset": "scenery.beetle-lantern",
       "x": 328.0,
-      "z": 154.0,
+      "z": 151.5,
       "yaw": 0.0,
       "scale": 1.5
     },
@@ -772,7 +772,7 @@
       "id": "dress.96",
       "asset": "scenery.beetle-lantern",
       "x": 328.0,
-      "z": 166.0,
+      "z": 168.5,
       "yaw": 0.0,
       "scale": 1.5
     },

@@ -24,6 +24,7 @@ The forest runs on **substance**, its magic. Beetles keep it in glass; bees tran
 - **Tunnels, the signature** (built, D74). Every mound is a tunnel entrance: the Nest and its tiers, and every Brood Mound. A unit ordered to walk somewhere travels underground automatically when a trip from the mound nearest it to the mound nearest its destination is faster than walking (by two seconds or more). It walks to the first mound and goes under at its mouth, travels underground at 60 cells a second, then comes up at the other mound and walks on.
   - Each mound lets one unit under every 12 ticks (a little over three a second); the rest queue at its mouth. Wider Tunnels I and II each let 50% more through.
   - Units underground can't be seen, attacked or ordered. If the mound they are headed to falls, they come up where it stood. Units walking or queued to a fallen mound walk on.
+  - Only mounds a unit can walk to, and from which it can walk on to its destination, are used: a mound behind a closed gate is no way in or out. Heroes, too broad to stand right at a mouth, go under from a little further off; a unit that cannot reach the mouth in time (a crowd stands in front of it) walks instead.
   - A mound works (D65: its animation, glow and effects) while ants pass through it.
   - The mutated castes can't use tunnels: the Burster, Honeypot and Reaver Queen. Flyers never do.
   - Routing is always automatic; whether a player may switch it off stays open.
