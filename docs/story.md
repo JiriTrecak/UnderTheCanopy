@@ -37,6 +37,7 @@ The ants' art stays bio-magic (living light, blossoms, never corruption) until t
 | 4 | Story | What the Hollow Sang | Ashka's last words; Aurelith's vow; Oleander's letter |
 | 5 | Mission | **Founding** | A new colony in a quiet glade, under feral attack; Oleander joins |
 | 6 | Chapter | Act I: The Glass | |
+| 6a | Story | The Keepers of Glass | The glade takes root; Oleander's beetle vial, light that does not stain the glass; Aurelith marches east to her mother's general |
 | 7 | Mission | **The Glass Road** | The beetles hold substance without changing; Aurelith is refused and takes a condenser; Korrath joins |
 | 8 | Cinematic | The Condenser Hums | (later) Oleander wakes the condenser; for a moment, something answers |
 | 9 | Mission | The Engine Yards | The beetles come for their machine |
