@@ -27,7 +27,8 @@ struct Frame {
     shadow: vec4f,
     // rgb: background; w: view fade (0 at RTS pitches, 1 near the horizon)
     background: vec4f,
-    // rgb: haze colour; z/w unused; x of haze_range: start, y: end, z: frost (0–1)
+    // rgb: haze colour; haze_range x: start, y: end, z: frost (0–1), w: the giants'
+    // shadow ceiling (metres over their base)
     haze: vec4f,
     haze_range: vec4f,
     // x: point light count

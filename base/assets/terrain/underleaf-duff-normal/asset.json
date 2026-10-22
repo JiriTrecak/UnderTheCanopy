@@ -1,0 +1,18 @@
+{
+  "id": "asset.terrain.underleaf-duff-normal",
+  "name": "Underleaf duff · normal/height",
+  "kind": "terrain-material",
+  "tags": [
+    "lookdev",
+    "imagegen",
+    "underleaf"
+  ],
+  "resources": [
+    {
+      "role": "data",
+      "index": 1,
+      "format": "bin"
+    }
+  ],
+  "license": "Original ImageGen terrain texture for Under the Canopy (gpt-image-2), made seamless and packed by tools/terrain/pack_ground.py."
+}

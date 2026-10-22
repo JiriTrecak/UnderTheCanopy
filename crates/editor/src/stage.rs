@@ -14,6 +14,8 @@ use std::sync::Arc;
 /// The zinc stage behind previews (`#18181b`, linear).
 const STAGE: Vec3 = Vec3::new(0.0091, 0.0091, 0.0109);
 const FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8UnormSrgb;
+/// The same texels as egui samples them (gamma-encoded, not decoded).
+const SHOWN: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 
 /// What a viewport wants drawn this frame.
 #[derive(Debug, Clone, PartialEq)]
@@ -121,7 +123,12 @@ pub struct Stage {
     stage_environment: canopy_render::Environment,
     environment: String,
     target: wgpu::Texture,
+    /// The renderer draws through the sRGB view; egui samples the same texels through
+    /// `shown`, a plain `Rgba8Unorm` view, as egui-wgpu expects of native textures (it
+    /// treats what it samples as gamma-encoded: through the sRGB view the picture showed
+    /// decoded, far too dark).
     view: wgpu::TextureView,
+    shown: wgpu::TextureView,
     size: [u32; 2],
     loaded: Option<Loaded>,
     texture: Option<egui::TextureId>,
@@ -129,7 +136,7 @@ pub struct Stage {
     live: Live,
 }
 
-fn target(gpu: &Gpu, size: [u32; 2]) -> (wgpu::Texture, wgpu::TextureView) {
+fn target(gpu: &Gpu, size: [u32; 2]) -> (wgpu::Texture, wgpu::TextureView, wgpu::TextureView) {
     let texture = gpu.device.create_texture(&wgpu::TextureDescriptor {
         label: Some("editor viewport"),
         size: wgpu::Extent3d {
@@ -142,10 +149,14 @@ fn target(gpu: &Gpu, size: [u32; 2]) -> (wgpu::Texture, wgpu::TextureView) {
         dimension: wgpu::TextureDimension::D2,
         format: FORMAT,
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
-        view_formats: &[],
+        view_formats: &[SHOWN],
     });
     let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-    (texture, view)
+    let shown = texture.create_view(&wgpu::TextureViewDescriptor {
+        format: Some(SHOWN),
+        ..Default::default()
+    });
+    (texture, view, shown)
 }
 
 impl Stage {
@@ -161,7 +172,7 @@ impl Stage {
         environment.lighting.background = STAGE;
         let size = [256, 256];
         let renderer = Renderer::new(gpu, FORMAT, size, environment.clone());
-        let (target, view) = target(gpu, size);
+        let (target, view, shown) = target(gpu, size);
         Ok(Self {
             renderer,
             pack,
@@ -170,6 +181,7 @@ impl Stage {
             environment: "stage".into(),
             target,
             view,
+            shown,
             size,
             loaded: None,
             texture: None,
@@ -188,19 +200,19 @@ impl Stage {
         let size = [size[0].clamp(16, 4096), size[1].clamp(16, 4096)];
         if size != self.size || self.texture.is_none() {
             self.size = size;
-            (self.target, self.view) = target(gpu, size);
+            (self.target, self.view, self.shown) = target(gpu, size);
             self.renderer.resize(gpu, size);
             match self.texture {
                 Some(id) => egui.update_egui_texture_from_wgpu_texture(
                     &gpu.device,
-                    &self.view,
+                    &self.shown,
                     wgpu::FilterMode::Linear,
                     id,
                 ),
                 None => {
                     self.texture = Some(egui.register_native_texture(
                         &gpu.device,
-                        &self.view,
+                        &self.shown,
                         wgpu::FilterMode::Linear,
                     ))
                 }

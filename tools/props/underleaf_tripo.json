@@ -1,0 +1,29 @@
+{
+  "out": "base/assets/environment/underleaf",
+  "tags": [
+    "underleaf",
+    "hollow",
+    "tripo"
+  ],
+  "license": "Generated with Tripo (image to 3D) from a gpt-image-2 concept for Under the Canopy; made game-ready by tools/props/import_tripo.py (tools/props/underleaf_tripo.json).",
+  "items": [
+    {
+      "name": "hollow-collapsed-mound",
+      "glb": "hollow-collapsed-mound.glb",
+      "width": 22,
+      "triangles": 16000,
+      "texture": 2048,
+      "tone": 0.86,
+      "saturation": 0.85,
+      "weld": true,
+      "tags": [
+        "ants",
+        "landmark"
+      ],
+      "title": "Collapsed ant mound",
+      "capabilities": {
+        "vegetationClearance": 3
+      }
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "id": "asset.terrain.underleaf-moss",
-  "name": "Underleaf moss · albedo/roughness",
+  "name": "Underleaf cushion moss · albedo/roughness",
   "kind": "terrain-material",
   "tags": [
     "lookdev",

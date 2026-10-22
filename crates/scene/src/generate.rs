@@ -752,6 +752,53 @@ fn ground(map: &mut UtcMap, cells: &Cells, recipe: &BlockLook, biome: &BiomeConf
             variants: None,
         });
     }
+    // Soft patches over walkable ground: never under the frame's cover, which paint
+    // would erase.
+    for (k, patch) in recipe.patches.iter().enumerate() {
+        let salt = seed ^ (k as u64 + 61).wrapping_mul(0x2127_599B_F432_5C37);
+        let threshold = 1.0 - patch.cover.clamp(0.0, 1.0);
+        let soft = patch.softness.max(0.01);
+        let scale = patch.scale.max(1.0);
+        let mut weights = Vec::with_capacity(side * side);
+        for vz in 0..side {
+            for vx in 0..side {
+                let (wx, wz) = (vx as f32 - halo, vz as f32 - halo);
+                let d = at_vertex(&into, span, vx, vz);
+                let open = 1.0 - smoothstep(-0.2, 1.4, d + ragged(vx, vz, 11) * 1.1);
+                if open <= 0.0 {
+                    weights.push(0.0);
+                    continue;
+                }
+                // Large shapes, their outline frayed by finer noise so no patch is a blob.
+                let n = noise(wx / scale, wz / scale, salt) * 0.62
+                    + noise(wx * 2.3 / scale, wz * 2.3 / scale, salt ^ 5) * 0.26
+                    + noise(wx * 7.0 / scale, wz * 7.0 / scale, salt ^ 9) * 0.12;
+                let mut w = smoothstep(threshold - soft, threshold + soft, n);
+                if patch.edge > 0.0 {
+                    let out = -d + ragged(vx, vz, 37) * patch.edge * 0.25;
+                    w = w.max(smoothstep(patch.edge, patch.edge * 0.15, out));
+                }
+                if !patch.levels.is_empty() {
+                    let at = (heights_before[vz * side + vx]
+                        - canopy_content::map::blocks::BASE_HEIGHT)
+                        / LEVEL_HEIGHT;
+                    w *= patch
+                        .levels
+                        .iter()
+                        .map(|&l| {
+                            smoothstep(0.0, 1.0, (1.0 - (at - f32::from(l)).abs()) * 1.6 - 0.3)
+                        })
+                        .fold(0.0, f32::max);
+                }
+                weights.push(w * open * patch.strength);
+            }
+        }
+        paint.push(PaintLayer {
+            material: patch.material.clone(),
+            weights: floats(weights.into_iter()),
+            variants: None,
+        });
+    }
     // Paint that a biome layer takes feeds that layer; anything else is the map's own.
     let _ = &biome.terrain;
     if let Some(material) = &recipe.rubble {
@@ -811,8 +858,38 @@ fn scatter(
             if !cells.zone_of(i, rule.zone, rule.face) {
                 continue;
             }
+            if let Some([near, far]) = rule.depth {
+                let d = cells.to_open[i];
+                if d < near || d > far {
+                    continue;
+                }
+            }
+            if rule.clump > 0.0 {
+                let gather = smoothstep(
+                    0.3,
+                    0.7,
+                    noise(p.x * 0.07, p.y * 0.07, seed ^ (k as u64 + 71)),
+                );
+                if rng.next() > 1.0 - rule.clump + rule.clump * gather {
+                    continue;
+                }
+            }
+            // A group's piece: from the jittered group cell the point falls in.
+            let pick = if rule.groups > 0.0 {
+                let g = rule.groups;
+                let jx = (noise(p.x / g * 1.7, p.y / g * 1.7, seed ^ 83) - 0.5) * 0.8;
+                let jz = (noise(p.x / g * 1.7, p.y / g * 1.7, seed ^ 89) - 0.5) * 0.8;
+                hash(
+                    (p.x / g + jx).floor() as i64,
+                    (p.y / g + jz).floor() as i64,
+                    k as i64,
+                    seed,
+                )
+            } else {
+                rng.next()
+            };
             let piece =
-                &rule.pieces[(rng.next() * rule.pieces.len() as f32) as usize % rule.pieces.len()];
+                &rule.pieces[(pick * rule.pieces.len() as f32) as usize % rule.pieces.len()];
             // Rim dressing faces out of the frame and reaches over its edge.
             let (at, yaw) = match rule.reach {
                 Some(reach) => {
@@ -831,7 +908,19 @@ fn scatter(
                 z: f64::from(at.y),
                 elevation: f64::from(rule.elevation),
                 yaw: f64::from(yaw),
-                scale: f64::from(rng.range(rule.scale[0], rule.scale[1])),
+                scale: f64::from({
+                    let random = rng.range(rule.scale[0], rule.scale[1]);
+                    match rule.depth {
+                        Some([near, far]) if rule.grow > 0.0 => {
+                            let t =
+                                ((cells.to_open[i] - near) / (far - near).max(1.0)).clamp(0.0, 1.0);
+                            let deep = (rule.scale[0] + (rule.scale[1] - rule.scale[0]) * t)
+                                * rng.range(0.88, 1.12);
+                            random + (deep - random) * rule.grow
+                        }
+                        _ => random,
+                    }
+                }),
                 height_mode: HeightMode::Terrain,
                 visible: true,
                 locked: false,

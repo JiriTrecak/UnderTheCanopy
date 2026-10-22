@@ -137,6 +137,18 @@ def road(name, title, sides, length=TILE, rise=0.0):
         else:
             parts += edging(m, 1 if s == 'n' else -1, along='x', offset=0.0)
     if rise:
+        # A ramp is built into the block ramp, not laid on it: an embankment of cut stone
+        # under the paving whose sides slope out and down into the ground at about 50°,
+        # as the block ramp's own sides do, so where the ground falls away beside it the
+        # ramp shows a built bank, never a slab's edge over a gap.
+        depth, spread = 3.2, 2.6
+        bed = kit.box('bed', (TILE - 0.1, length, depth), at=(0, 0, -depth / 2 + 0.02))
+        for v in bed.data.vertices:
+            if v.co.z < 0:
+                v.co.x *= (TILE / 2 + spread) / (TILE / 2)
+        kit.finish(bed, m['stone'], bevel=0.04, uv=2.0)
+        parts.append(bed)
+    if rise:
         # Bevel and shear: every vertex climbs with y, the pivot at the ramp's middle.
         bpy.ops.object.select_all(action='DESELECT')
         for o in parts:
@@ -398,6 +410,9 @@ def gate_tower(name='beetle-wall-tower', title='Glass Road: wall tower'):
 
 if '--only' in sys.argv:
     condenser()
+    sys.exit(0)
+if '--ramp' in sys.argv:
+    road('beetle-road-ramp', 'Glass Road: ramp', 'we', length=16.0, rise=3.0)
     sys.exit(0)
 if '--walls' in sys.argv:
     wall()

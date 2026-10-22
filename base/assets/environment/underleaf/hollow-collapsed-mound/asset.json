@@ -5,9 +5,9 @@
   "tags": [
     "underleaf",
     "hollow",
+    "tripo",
     "ants",
-    "landmark",
-    "procedural"
+    "landmark"
   ],
   "resources": [
     {
@@ -32,10 +32,10 @@
     "forward": "+Z"
   },
   "capabilities": {
-    "vegetationClearance": 3,
     "groundContact": {
       "mode": "pivot"
-    }
+    },
+    "vegetationClearance": 3
   },
-  "license": "Original procedural model for Under the Canopy (tools/props/hollow_mound.py)."
+  "license": "Generated with Tripo (image to 3D) from a gpt-image-2 concept for Under the Canopy; made game-ready by tools/props/import_tripo.py (tools/props/underleaf_tripo.json)."
 }

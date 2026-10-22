@@ -235,6 +235,9 @@ pub struct BlockLook {
     /// blended down ramps by their height.
     #[serde(default)]
     pub levels: Vec<LevelGround>,
+    /// Soft patches of other grounds over walkable ground, after the levels' own.
+    #[serde(default)]
+    pub patches: Vec<GroundPatch>,
     /// Closed ground's cover in the biome's grass layer (0 none, 1 full).
     #[serde(default = "one")]
     pub frame_cover: f32,
@@ -267,6 +270,35 @@ pub struct LevelGround {
     pub level: u8,
     /// A terrain material.
     pub material: String,
+}
+
+/// Soft patches of a ground over walkable ground (never closed ground): large, calm
+/// variation such as moss in drifts or leaf duff along the frame.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct GroundPatch {
+    /// A terrain material.
+    pub material: String,
+    /// Metres across a typical patch.
+    pub scale: f32,
+    /// Share of the ground the patches cover (0–1).
+    pub cover: f32,
+    /// How soft a patch's edge is (0.05 crisp to 0.4 a long fade).
+    #[serde(default = "patch_softness")]
+    pub softness: f32,
+    /// The patch at its fullest (0–1).
+    #[serde(default = "one")]
+    pub strength: f32,
+    /// Only on these levels (blended down ramps); every level when empty.
+    #[serde(default)]
+    pub levels: Vec<u8>,
+    /// Also a band this many metres wide along closed ground, fading out across it.
+    #[serde(default)]
+    pub edge: f32,
+}
+
+fn patch_softness() -> f32 {
+    0.15
 }
 
 /// A cliff face a map's blocks can choose (their face style).
@@ -484,6 +516,19 @@ pub struct Scatter {
     pub reach: Option<f32>,
     /// Only where the blocks chose this face style.
     pub face: Option<u8>,
+    /// 0–1: how much they gather in clumps instead of spreading evenly.
+    #[serde(default)]
+    pub clump: f32,
+    /// Metres across a group: neighbours within one share a piece, so the frame grows in
+    /// stands of one species rather than a mix (0: each piece picked on its own).
+    #[serde(default)]
+    pub groups: f32,
+    /// Only this many cells into closed ground (nearest, farthest).
+    pub depth: Option<[f32; 2]>,
+    /// 0–1: how much the scale follows the depth into closed ground (small near its
+    /// edge, large deep in) instead of being random; needs `depth`.
+    #[serde(default)]
+    pub grow: f32,
 }
 
 /// A biome's ambient motes.
@@ -597,6 +642,15 @@ pub struct BiomeLight {
     /// cliffs turn frosty; units and buildings never do (D80).
     #[serde(default)]
     pub frost: f32,
+    /// Metres over its base above which a giant (scenery with the `canopy` capability)
+    /// casts no shadow (D64): its crown or cap above stays in view but leaves the playable
+    /// ground in the map's own light; its stalk or bole below keeps its long shadow.
+    #[serde(default = "shadow_ceiling")]
+    pub shadow_ceiling: f32,
+}
+
+fn shadow_ceiling() -> f32 {
+    75.0
 }
 
 /// The dappled light of the overhead forest.
@@ -702,11 +756,15 @@ pub struct TerrainLayers {
     pub waterbed: GroundLayer,
     pub stones: GroundLayer,
     pub rock: GroundLayer,
+    /// More tiled grounds after the six, fed only by paint (a block recipe's patches):
+    /// paint of a material one of them names goes to it.
+    #[serde(default)]
+    pub extra: Vec<GroundLayer>,
 }
 
 impl TerrainLayers {
-    /// In layer order.
-    pub fn ordered(&self) -> [&GroundLayer; 6] {
+    /// In layer order: the six built-in layers, then the extra ones.
+    pub fn ordered(&self) -> Vec<&GroundLayer> {
         [
             &self.soil,
             &self.grass,
@@ -715,6 +773,9 @@ impl TerrainLayers {
             &self.stones,
             &self.rock,
         ]
+        .into_iter()
+        .chain(&self.extra)
+        .collect()
     }
 }
 
@@ -881,6 +942,7 @@ impl BiomeConfig {
         range("light.ambientStrength", l.ambient_strength, 0.0, 3.0)?;
         range("light.fillStrength", l.fill_strength, 0.0, 3.0)?;
         range("light.shadowSoftness", l.shadow_softness, 0.0, 8.0)?;
+        range("light.shadowCeiling", l.shadow_ceiling, 5.0, 500.0)?;
         let c = &self.canopy;
         range("canopy.height", c.height, 12.0, 256.0)?;
         range("canopy.scale", c.scale, 16.0, 1024.0)?;
@@ -899,10 +961,14 @@ impl BiomeConfig {
         range("grade.shadowLift", g.shadow_lift, 0.0, 1.0)?;
         range("grade.vignette", g.vignette, 0.0, 1.0)?;
         range("grade.daytimeLutStrength", g.daytime_lut_strength, 0.0, 1.0)?;
-        for (name, layer) in ["soil", "grass", "dirt", "waterbed", "stones", "rock"]
+        if self.terrain.extra.len() > 8 {
+            return Err("terrain.extra takes at most 8 layers".into());
+        }
+        let names = ["soil", "grass", "dirt", "waterbed", "stones", "rock"]
             .iter()
-            .zip(self.terrain.ordered())
-        {
+            .map(|n| n.to_string())
+            .chain((0..self.terrain.extra.len()).map(|k| format!("extra[{k}]")));
+        for (name, layer) in names.zip(self.terrain.ordered()) {
             range(&format!("terrain.{name}.tiling"), layer.tiling, 0.001, 16.0)?;
             range(&format!("terrain.{name}.blend"), layer.blend, -4.0, 4.0)?;
             range(&format!("terrain.{name}.edge"), layer.edge, 0.0, 1.0)?;
@@ -1028,6 +1094,9 @@ pub struct Lighting {
     pub shadow_softness: f32,
     /// Rime on the scenery ([`BiomeLight::frost`]).
     pub frost: f32,
+    /// Metres over a giant's base above which it casts no shadow
+    /// ([`BiomeLight::shadow_ceiling`]).
+    pub shadow_ceiling: f32,
     pub canopy: Canopy,
     pub grade: Grade,
 }
@@ -1142,6 +1211,7 @@ impl Lighting {
             ],
             environment: env.irradiance.map(|c| Vec3::from_array(c) * env.intensity),
             shadow_softness: l.shadow_softness,
+            shadow_ceiling: l.shadow_ceiling,
             frost: l.frost,
             canopy: biome.canopy,
             grade: biome.grade.clone(),
@@ -1432,6 +1502,7 @@ mod tests {
                 fill_strength: 0.8,
                 shadow_softness: 3.0,
                 frost: 0.0,
+                shadow_ceiling: 75.0,
             },
             canopy: Canopy {
                 height: 140.0,
@@ -1491,6 +1562,7 @@ mod tests {
                 waterbed: layer(),
                 stones: layer(),
                 rock: layer(),
+                extra: Vec::new(),
             },
             water: "w".into(),
             surroundings: Surroundings {

@@ -4,37 +4,38 @@
   "preview": "asset.biomes.underleaf",
   "daylight": "temperate",
   "light": {
-    "sunTint": "#ffd9a6",
-    "sunStrength": 1.8,
-    "sunDirection": 150,
+    "sunTint": "#ffd49c",
+    "sunStrength": 2.25,
+    "sunDirection": 118,
     "sunHeight": 32,
-    "ambientTint": "#93a69c",
-    "ambientStrength": 0.55,
-    "skyTint": "#b8c7cf",
-    "bounceTint": "#a8946a",
-    "fillStrength": 0.85,
+    "ambientTint": "#8a9dab",
+    "ambientStrength": 0.5,
+    "skyTint": "#aebfcc",
+    "bounceTint": "#a08c66",
+    "fillStrength": 0.75,
     "shadowSoftness": 4.5,
-    "frost": 0
+    "frost": 0,
+    "shadowCeiling": 30
   },
   "canopy": {
     "height": 150,
-    "scale": 150,
+    "scale": 100,
     "coverage": 0.45,
     "softness": 0.2,
-    "strength": 0.55,
+    "strength": 0.62,
     "sway": 1.2,
     "speed": 0.3,
     "cloudShadow": 0.04,
     "seed": 517
   },
   "grade": {
-    "exposure": 1.05,
-    "contrast": 1.12,
-    "saturation": 1.06,
+    "exposure": 1.1,
+    "contrast": 1.15,
+    "saturation": 1.04,
     "highlightShoulder": 0.5,
-    "shadowTint": "#4b5a68",
+    "shadowTint": "#3f5266",
     "highlightTint": "#fff0da",
-    "splitStrength": 0.35,
+    "splitStrength": 0.42,
     "shadowLift": 0.015,
     "vignette": 0.3,
     "daytimeLut": "asset.texture.woodland-daytime-grades/data.json#day",
@@ -84,7 +85,8 @@
       "albedo": "asset.terrain.underleaf-moss",
       "normal": "asset.terrain.underleaf-moss-normal",
       "tiling": 0.3,
-      "blend": -1
+      "blend": 0.35,
+      "breakup": 0.4
     },
     "waterbed": {
       "albedo": "asset.terrain.underleaf-streambed",
@@ -104,7 +106,16 @@
       "tiling": 0.4,
       "blend": -1,
       "edge": 1
-    }
+    },
+    "extra": [
+      {
+        "albedo": "asset.terrain.underleaf-duff",
+        "normal": "asset.terrain.underleaf-duff-normal",
+        "tiling": 0.32,
+        "blend": 0.25,
+        "breakup": 0.2
+      }
+    ]
   },
   "water": "water.underleaf-stream",
   "surroundings": {
@@ -114,9 +125,9 @@
     "hazeStart": 150,
     "hazeEnd": 850,
     "forest": {
-      "trunk": "scenery.mega-oak-trunk",
-      "mushroom": "scenery.mega-mushroom",
-      "log": "scenery.mega-fallen-log",
+      "trunk": "scenery.giants-beech-trunk",
+      "mushroom": "scenery.giants-parasol",
+      "log": "scenery.giants-branch",
       "limbTexture": "asset.textures.forest-giants-bark",
       "rings": [
         {
@@ -233,15 +244,15 @@
           "normal": "asset.terrain.underleaf-masonry-normal/data.bin",
           "tile": 3.0,
           "roughness": 0.8,
-          "stone": 2.2,
+          "stone": 6.0,
           "grain": [
-            2.5,
-            0.7,
-            2.5
+            4.0,
+            1.0,
+            4.0
           ],
-          "relief": 0.3,
-          "slope": 0.9,
-          "wander": 0.2,
+          "relief": 0.06,
+          "slope": 0.55,
+          "wander": 0.05,
           "rubble": 0.0,
           "rampRubble": 0,
           "rampStones": [
@@ -253,16 +264,7 @@
         }
       }
     ],
-    "levels": [
-      {
-        "level": 2,
-        "material": "asset.terrain.underleaf-moss"
-      },
-      {
-        "level": 3,
-        "material": "asset.terrain.underleaf-moss"
-      }
-    ],
+    "levels": [],
     "decals": [
       {
         "zone": "groundEdge",
@@ -403,107 +405,223 @@
       {
         "zone": "frame",
         "pieces": [
-          "scenery.pl-fern-sword",
-          "scenery.pl-fern-sword-b",
-          "scenery.pl-fern-bushy",
-          "scenery.pl-fern-bushy-b"
+          "scenery.giants-leaf-oak",
+          "scenery.giants-leaf-beech",
+          "scenery.giants-leaf-maple",
+          "scenery.giants-bracken"
         ],
-        "density": 1.6,
+        "density": 0.35,
         "scale": [
-          3.5,
-          6.0
-        ]
-      },
-      {
-        "zone": "frame",
-        "pieces": [
-          "scenery.pl-clover-sorrel",
-          "scenery.pl-clover-a",
-          "scenery.pl-grass-lush-a",
-          "scenery.pl-grass-lush-b"
-        ],
-        "density": 1.4,
-        "scale": [
-          3.0,
-          5.0
-        ]
-      },
-      {
-        "zone": "frame",
-        "pieces": [
-          "scenery.lookdev-puffball",
-          "scenery.mega-mushroom"
-        ],
-        "density": 0.04,
-        "scale": [
-          0.3,
-          0.55
-        ]
-      },
-      {
-        "zone": "frameEdge",
-        "pieces": [
-          "scenery.pl-fern-bushy",
-          "scenery.pl-fern-bushy-b",
-          "scenery.pl-clover-sorrel",
-          "scenery.pl-clover-a"
-        ],
-        "density": 1.2,
-        "scale": [
-          2.4,
-          4.0
-        ]
-      },
-      {
-        "zone": "frameEdge",
-        "pieces": [
-          "scenery.lookdev-leaf-oak",
-          "scenery.lookdev-leaf-beech",
-          "scenery.lookdev-acorn",
-          "scenery.woodland-mushroom-cluster"
-        ],
-        "density": 0.25,
-        "scale": [
-          0.5,
-          0.9
-        ]
-      },
-      {
-        "zone": "rim",
-        "pieces": [
-          "scenery.pl-fern-sword",
-          "scenery.pl-fern-sword-b"
-        ],
-        "density": 0.7,
-        "scale": [
-          2.6,
-          4.0
-        ],
-        "reach": 2.0
-      },
-      {
-        "zone": "frameEdge",
-        "pieces": [
-          "scenery.lookdev-root-d",
-          "scenery.lookdev-root-b"
-        ],
-        "density": 0.03,
-        "scale": [
-          0.35,
-          0.55
-        ]
-      },
-      {
-        "zone": "cliffFoot",
-        "pieces": [
-          "scenery.woodland-moss-boulder",
-          "scenery.meadow-boulder"
-        ],
-        "density": 0.08,
-        "scale": [
-          0.5,
+          0.55,
           1.0
+        ],
+        "groups": 26,
+        "clump": 0.3,
+        "depth": [
+          2,
+          60
         ]
+      },
+      {
+        "zone": "frame",
+        "pieces": [
+          "scenery.giants-pine-needles-a",
+          "scenery.giants-pine-needles-b",
+          "scenery.giants-twig",
+          "scenery.giants-maple-seed"
+        ],
+        "density": 0.22,
+        "scale": [
+          0.6,
+          1.0
+        ],
+        "groups": 30,
+        "clump": 0.4,
+        "depth": [
+          1,
+          60
+        ]
+      },
+      {
+        "zone": "frameEdge",
+        "pieces": [
+          "scenery.giants-moss",
+          "scenery.giants-pebbles",
+          "scenery.giants-mossy-stone",
+          "scenery.giants-buttons",
+          "scenery.giants-bilberries"
+        ],
+        "density": 2.2,
+        "scale": [
+          0.55,
+          1.0
+        ],
+        "groups": 16,
+        "clump": 0.55
+      },
+      {
+        "zone": "frame",
+        "pieces": [
+          "scenery.giants-acorn",
+          "scenery.giants-hazelnut",
+          "scenery.giants-beechnut",
+          "scenery.giants-acorn-cup"
+        ],
+        "density": 0.35,
+        "scale": [
+          0.7,
+          1.0
+        ],
+        "groups": 24,
+        "clump": 0.75,
+        "depth": [
+          3,
+          12
+        ]
+      },
+      {
+        "zone": "frame",
+        "pieces": [
+          "scenery.giants-clover",
+          "scenery.giants-sorrel",
+          "scenery.giants-fiddleheads"
+        ],
+        "density": 0.9,
+        "scale": [
+          0.55,
+          1.15
+        ],
+        "groups": 18,
+        "clump": 0.6,
+        "depth": [
+          4.5,
+          14
+        ],
+        "grow": 0.7
+      },
+      {
+        "zone": "frame",
+        "pieces": [
+          "scenery.giants-porcini",
+          "scenery.giants-inkcap",
+          "scenery.giants-morel"
+        ],
+        "density": 0.32,
+        "scale": [
+          0.55,
+          1.15
+        ],
+        "groups": 22,
+        "clump": 0.75,
+        "depth": [
+          8,
+          34
+        ],
+        "grow": 0.8
+      },
+      {
+        "zone": "frame",
+        "pieces": [
+          "scenery.giants-fern-frond",
+          "scenery.giants-harts-tongue",
+          "scenery.giants-grass"
+        ],
+        "density": 0.3,
+        "scale": [
+          0.65,
+          1.2
+        ],
+        "groups": 26,
+        "clump": 0.5,
+        "depth": [
+          10,
+          50
+        ],
+        "grow": 0.8
+      },
+      {
+        "zone": "frame",
+        "pieces": [
+          "scenery.giants-chestnut-burr",
+          "scenery.giants-pine-cone",
+          "scenery.giants-bark-slab"
+        ],
+        "density": 0.07,
+        "scale": [
+          0.75,
+          1.1
+        ],
+        "groups": 40,
+        "clump": 0.5,
+        "depth": [
+          8,
+          40
+        ]
+      },
+      {
+        "zone": "frame",
+        "pieces": [
+          "scenery.giants-root"
+        ],
+        "density": 0.015,
+        "scale": [
+          0.8,
+          1.2
+        ],
+        "depth": [
+          14,
+          60
+        ]
+      },
+      {
+        "zone": "frame",
+        "pieces": [
+          "scenery.giants-fern-crown",
+          "scenery.giants-parasol"
+        ],
+        "density": 0.035,
+        "scale": [
+          0.8,
+          1.2
+        ],
+        "groups": 60,
+        "clump": 0.3,
+        "depth": [
+          24,
+          200
+        ],
+        "grow": 0.5
+      }
+    ],
+    "patches": [
+      {
+        "material": "asset.terrain.underleaf-moss",
+        "scale": 34,
+        "cover": 0.72,
+        "softness": 0.16,
+        "levels": [
+          2,
+          3
+        ]
+      },
+      {
+        "material": "asset.terrain.underleaf-moss",
+        "scale": 46,
+        "cover": 0.22,
+        "softness": 0.14,
+        "strength": 0.9,
+        "levels": [
+          0,
+          1
+        ]
+      },
+      {
+        "material": "asset.terrain.underleaf-duff",
+        "scale": 16,
+        "cover": 0.3,
+        "softness": 0.2,
+        "strength": 0.8,
+        "edge": 10
       }
     ]
   }
