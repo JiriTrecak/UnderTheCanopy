@@ -90,6 +90,12 @@
             "time": 0.5
           }
         ]
+      },
+      {
+        "semantic": "sleep",
+        "clip": "sleep",
+        "loop": true,
+        "events": []
       }
     ],
     "groundContact": {

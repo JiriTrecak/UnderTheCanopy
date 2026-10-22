@@ -107,6 +107,12 @@
         "loop": true,
         "events": [],
         "nominalSpeed": 2.292
+      },
+      {
+        "semantic": "sleep",
+        "clip": "sleep",
+        "loop": true,
+        "events": []
       }
     ],
     "groundContact": {
