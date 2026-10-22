@@ -35,7 +35,7 @@
       "The beetles' Supply Cart: a slow, sturdy, unarmed draft beetle hauling glass tanks of substance along their roads; whoever breaks one takes the amber it carries",
       "Mission scenes can make heroes and soldiers kneel or lie asleep, and raise a light or an effect where the story needs one",
       "The Hollow Brood's webbed hollow is strung with old spider webs and the lost patrol's silk cocoons, the Hollow's dead lie along the road, and an amber-lit broodkeepers' shrine stands in the Moonlit Hollow; the Glass Road's station has a gate that must be broken down",
-      "A new enchanted forest weather: a warm golden evening with cool blue shade and gold fireflies drifting through the forest in loose swarms. The Hollow Brood now plays under it",
+      "A new enchanted forest weather: a warm golden evening with cool blue shade and a gentle sprinkle of gold fireflies drifting through the forest. The Hollow Brood now plays under it",
       "Play with AI: a campaign mission with an autoplay plan can play itself from the campaign screen, sped up (1×, 2×, 4× or 8×, 4× to start) with its scenes at normal speed and the camera following the action; Take over (F7) hands it back to you",
       "The editor's Test with AI plays the open mission with its autoplay plan, and the game's --autoplay flag plays a mission so from the command line"
     ],
@@ -59,7 +59,6 @@
       "Editor: no more row of view tabs; a document's Form and JSON open as modals from the tab bar, beside its other views",
       "The ant Queen is redesigned as a true hero: Living Light heals an ally or sears an enemy, Cocoon makes her untouchable while she keeps fighting, One Body shields the army around her, and her ultimate Rebirth raises up to 8 fallen allies, changed by raw substance. Her old Found, Royal Jelly and Exodus are gone.",
       "Raising or consuming the dead is refused when there are no corpses nearby, so an ultimate is never wasted on an empty field.",
-      "Items lying on the ground show as a leaf-wrapped loot bundle instead of a placeholder",
       "The Underleaf forest looks richer: sunlit moss, bare earth and leaf duff read as distinct grounds, the frame is a forest of giant mushrooms, ferns, nuts and fallen leaves, giant caps no longer shade the play area, beetle walls and road ramps look built, the substance pools look less plastic, and the editor's generated view is no longer too dark",
       "Cinematic speaker portraits of tall heroes such as Aurelith show head and shoulders",
       "Cinematics hold the battle: while a scene plays, only its actors move and fight, and enemy waves wait until it ends",
@@ -74,7 +73,6 @@
       "Mission scenes frame each line on its speaker where they actually stand: singles, over-the-shoulder, two and wide shots that find the characters, keep to one side of a conversation and look past giant ferns. The Glass Road's opening, gate and closing scenes use them, and General Korrath's dialogue portrait now shows his face",
       "A full lighting pass: warmer sunlight, cool blue shade under the canopy instead of dark mud, a golden hour before dusk and a clearer moonlit night, in both the summer forest and the frozen maps",
       "A new main menu: the ant queen looks out over a grand sunlit forest with the ants' spire city, the beetles' forge and a battle raging in the clearing below",
-      "Fireflies in the enchanted forest are fewer and smaller, a gentle sprinkle instead of a swarm",
       "Water looks natural: shores follow rounded, wandering banks instead of blocky steps, shallow edges deepen gradually, and rivers visibly flow downstream along their banks"
     ],
     "fixed": [
@@ -102,7 +100,67 @@
       "The Hollow Brood: Aurelith can reach the Moonlit Hollow's lantern past her escort and step into the survivors' chamber, and the last survivor no longer stays stuck behind the spring",
       "Tunnels: heroes go underground at mounds, units no longer wait forever in front of a crowded mound, and mounds behind a closed gate are never chosen"
     ],
-    "knownIssues": []
+    "knownIssues": [
+      "Play with AI on The Glass Road can stall at the station on rare runs when the army takes the old tunnel; Take over (F7) to finish by hand"
+    ],
+    "images": [
+      {
+        "file": "a2eb9851a6f52c557fa00212d6aa0e7696ec1885c923b4ca7416775f7c50872c.webp",
+        "alt": "The new main menu: the ant queen looks out over the forest, the ants' spire city, the beetles' forge and a battle in the clearing below.",
+        "caption": "The new main menu: the ant queen looks out over the forest, the ants' spire city, the beetles' forge and a battle in the clearing below.",
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "file": "52bf8d9a58560b54bb144143b8718ac2b9a6c964b05d5f5cf59c12c35576ff76.webp",
+        "alt": "The ant campaign: every step reached so far, the next one ahead, and Play with AI beside Play.",
+        "caption": "The ant campaign: every step reached so far, the next one ahead, and Play with AI beside Play.",
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "file": "6c150a17d30b1fc69eb80dbb1eb7c1177c857fdf4f1efbab3460f140575b69b3.webp",
+        "alt": "A story page of the ant campaign: Queen Aurelith watches her colony wake from the Spire.",
+        "caption": "A story page of the ant campaign: Queen Aurelith watches her colony wake from the Spire.",
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "file": "65e664ce6a3761acf019126f02fd40a915b81f3e340d48a3c344fb436946bb01.webp",
+        "alt": "The Hollow Brood opens at dusk: Tiv brings his Queen word that the Hollow's watch-lights went dark.",
+        "caption": "The Hollow Brood opens at dusk: Tiv brings his Queen word that the Hollow's watch-lights went dark.",
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "file": "3b4bea7ce6cc9752b5c98853a5480c79f5ba227193b274b5f9927d2b006ffca8.webp",
+        "alt": "Aurelith faces Mother Ashka, the Hollow's queen, twisted by the substance she could not stop drinking.",
+        "caption": "Aurelith faces Mother Ashka, the Hollow's queen, twisted by the substance she could not stop drinking.",
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "file": "2c640689cbc800eb725c7e2dc04872a4bdc9d5a16a2dba02d5848052e11fe514.webp",
+        "alt": "The webbed hollow: old spider webs and the lost patrol's silk cocoons, guarded by spiders.",
+        "caption": "The webbed hollow: old spider webs and the lost patrol's silk cocoons, guarded by spiders.",
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "file": "fff96808a65a143412525b2e87986b83698e57c6c6c6b556ba0598c84c7f8910.webp",
+        "alt": "The Glass Road: the beetle causeway climbs to the station's gate under giant mushrooms and ferns.",
+        "caption": "The Glass Road: the beetle causeway climbs to the station's gate under giant mushrooms and ferns.",
+        "width": 1280,
+        "height": 720
+      },
+      {
+        "file": "3565575003a5b83efb84bcca3832cbb19c3424998d988622e97e97a3218a7852.webp",
+        "alt": "Play with AI: Founding plays itself at 4×, the new colony rising in the glade against the feral brood.",
+        "caption": "Play with AI: Founding plays itself at 4×, the new colony rising in the glade against the feral brood.",
+        "width": 1280,
+        "height": 720
+      }
+    ]
   },
   "releases": [
     {
