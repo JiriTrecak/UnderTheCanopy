@@ -121,7 +121,7 @@ impl Shell {
         })
     }
 
-    fn content(&self) -> Result<Arc<canopy_content::Content>, String> {
+    pub(super) fn content(&self) -> Result<Arc<canopy_content::Content>, String> {
         self.checker
             .as_ref()
             .and_then(|c| c.content().cloned())

@@ -201,6 +201,23 @@ impl GameData {
         Ok(())
     }
 
+    /// Puts the campaign package at `path` in place of its campaign, with its mission
+    /// maps and art (the editor's copy with its unsaved edits). Returns its id.
+    pub fn add_test_campaign(&mut self, path: &Path) -> Result<String> {
+        let campaign = canopy_content::campaign::open(path).map_err(|e| anyhow!("{e}"))?;
+        let id = campaign.id().to_string();
+        self.maps
+            .retain(|m| m.campaign.as_deref() != Some(id.as_str()));
+        self.campaigns.retain(|c| c.id() != id);
+        let campaign = Arc::new(campaign);
+        let one = std::slice::from_ref(&campaign);
+        add_missions(&mut self.maps, one, &self.pack);
+        self.campaign_images.extend(campaign_images(one));
+        self.campaigns.push(campaign);
+        self.campaigns.sort_by(|a, b| a.id().cmp(b.id()));
+        Ok(id)
+    }
+
     pub fn map(&self, id: &str) -> Option<&MapEntry> {
         self.maps.iter().find(|m| m.id() == id)
     }

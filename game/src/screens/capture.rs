@@ -313,6 +313,7 @@ pub fn run(
             "blocks" => blocks(&mut rig, &paths)?,
             "neutrals" => neutrals(&mut rig, &paths)?,
             "cameras" => cameras(&mut rig, &paths)?,
+            "editor-campaigns" => editor_campaigns(&mut rig, &paths)?,
             "settings" => settings_tabs(&mut rig)?,
             "campaign" => campaigns(&mut rig, &paths)?,
             "replays" => {
@@ -350,7 +351,7 @@ pub fn run(
                 feedback_match(&mut rig)?;
             }
             other => anyhow::bail!(
-                "unknown capture group {other} (releases, multiplayer, editor, blocks, neutrals, settings, feedback, replays, campaign)"
+                "unknown capture group {other} (releases, multiplayer, editor, blocks, neutrals, cameras, settings, feedback, replays, campaign, editor-campaigns)"
             ),
         }
         let _ = std::fs::remove_dir_all(&user);
@@ -1207,6 +1208,306 @@ fn editor(rig: &mut Rig, paths: &Paths) -> Result<()> {
             .get("ants")
             .is_some_and(|r| r.name != "Ants (editor test)"),
         "the game's own data is back"
+    );
+    editor_campaigns(rig, paths)
+}
+
+/// The editor's campaign tools (docs/editor.md "Campaigns") on the package's first
+/// campaign, filled in memory through the campaign tools agents use (nothing is saved):
+/// its steps with art, a mission selected, a story selected, a mission's Tech view (all of
+/// it, a contradiction in red, and only its changes), its Players, and the warnings.
+fn editor_campaigns(rig: &mut Rig, paths: &Paths) -> Result<()> {
+    use canopy_editor::{Editor, Kind};
+    use serde_json::{Value, json};
+    let format = CAPTURE_FORMAT.remove_srgb_suffix();
+    let mut editor = Editor::headless(&rig.gpu, format, crate::app::editor_setup(paths));
+    let shoot = |editor: &mut Editor, rig: &mut Rig, name: &str| -> Result<()> {
+        // Frames until the check is in, and time for the art to decode.
+        let start = Instant::now();
+        let mut frames = 0;
+        while frames < 24 || (editor.checking() && start.elapsed() < Duration::from_secs(30)) {
+            editor.run_headless(rig.size, rig.scale, &rig.gpu);
+            std::thread::sleep(Duration::from_millis(15));
+            frames += 1;
+        }
+        let mut encoder = rig
+            .gpu
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        editor.paint(&mut encoder, &rig.target.ui_view);
+        rig.gpu.queue.submit([encoder.finish()]);
+        rig.save(name)
+    };
+    let tool = |editor: &mut Editor, name: &str, args: Value| {
+        editor
+            .campaign_tool(name, args)
+            .map_err(|e| anyhow::anyhow!("{name}: {e}"))
+    };
+    editor.select(Kind::Campaigns);
+    editor.open_first(1);
+    // The first check passes before missions can make their maps.
+    for _ in 0..4 {
+        editor.run_headless(rig.size, rig.scale, &rig.gpu);
+    }
+    let start = Instant::now();
+    while editor.checking() && start.elapsed() < Duration::from_secs(30) {
+        editor.run_headless(rig.size, rig.scale, &rig.gpu);
+        std::thread::sleep(Duration::from_millis(15));
+    }
+    let document = editor.active_document().context("a campaign")?;
+    let root = document
+        .strip_suffix("/campaign.json")
+        .context("a campaign's document")?
+        .to_string();
+    let id = root
+        .rsplit('/')
+        .next()
+        .and_then(|n| n.strip_suffix(".utcc"))
+        .context("a campaign id")?
+        .to_string();
+    // Its art, whatever the campaign's interface images are.
+    let art = editor.interface_images(&format!("campaign.{id}"));
+    let pick = |words: &[&str], n: usize| -> Value {
+        art.iter()
+            .filter(|a| words.iter().any(|w| a.contains(w)))
+            .nth(n)
+            .or_else(|| art.get(n))
+            .map_or(Value::Null, |a| json!(a))
+    };
+    // More steps after the campaign's own: a story, two missions with new maps, a chapter
+    // between them and a cinematic.
+    let added = [
+        (
+            "story",
+            "What the Hollow Sang",
+            json!({"pages": [
+                {"art": pick(&["story"], 2), "text": "Ashes, and a vow."},
+                {"art": pick(&["story"], 3), "text": "No ant will change again."},
+            ]}),
+        ),
+        (
+            "mission",
+            "Founding",
+            json!({"art": pick(&["founding"], 0), "chapterLine": "Prologue · Mission Two",
+                   "story": "A quiet glade, and the first walls of a new colony."}),
+        ),
+        (
+            "chapter",
+            "Act I: The Glass",
+            json!({"art": pick(&["chapter"], 1)}),
+        ),
+        (
+            "mission",
+            "The Glass Road",
+            json!({"art": pick(&["glass"], 0), "chapterLine": "Act I · Mission Three"}),
+        ),
+        (
+            "cinematic",
+            "The Condenser Hums",
+            json!({"note": "The condenser wakes; for a moment, something answers."}),
+        ),
+    ];
+    for (kind, title, fields) in added {
+        let step = tool(
+            &mut editor,
+            "add_campaign_step",
+            json!({"campaign": id, "kind": kind, "title": title}),
+        )?["index"]
+            .clone();
+        let fields: serde_json::Map<String, Value> = fields
+            .as_object()
+            .cloned()
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|(_, v)| !v.is_null())
+            .collect();
+        tool(
+            &mut editor,
+            "set_campaign_step",
+            json!({"campaign": id, "step": step, "fields": fields}),
+        )?;
+    }
+    let listed = tool(&mut editor, "campaign_steps", json!({"campaign": id}))?;
+    let missions: Vec<(usize, String)> = listed["steps"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter(|s| s["kind"] == "mission")
+        .filter_map(|s| {
+            Some((
+                s["index"].as_u64()? as usize,
+                format!("{root}/missions/{}.utcm", s["map"].as_str()?),
+            ))
+        })
+        .collect();
+    anyhow::ensure!(missions.len() >= 3, "three missions: {missions:?}");
+    // Tech, from the race's own tree: the first hall, what it trains and two buildings
+    // with their units in the first mission; the next hall and its research in the
+    // second; in the third, a building blocked though a unit it trains stays new (a
+    // contradiction, in red).
+    let (first, second, third) = (missions[0].0, missions[1].0, missions[2].0);
+    let tree = tool(
+        &mut editor,
+        "mission_tech_tree",
+        json!({"campaign": id, "step": first}),
+    )?;
+    let nodes = tree["nodes"].as_array().cloned().unwrap_or_default();
+    let halls: Vec<String> = tree["halls"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|h| h.as_str().map(str::to_string))
+        .collect();
+    let under = |card: &str| -> Vec<String> {
+        nodes
+            .iter()
+            .filter(|n| n["under"] == card && n["id"] != card)
+            .filter_map(|n| n["id"].as_str().map(str::to_string))
+            .collect()
+    };
+    let buildings: Vec<String> = nodes
+        .iter()
+        .filter(|n| {
+            n["kind"] == "building"
+                && n["tier"] == 1
+                && !under(n["id"].as_str().unwrap_or("")).is_empty()
+        })
+        .filter_map(|n| n["id"].as_str().map(str::to_string))
+        .collect();
+    let set = |editor: &mut Editor, step: usize, ids: Vec<(String, &str)>| -> Result<()> {
+        let set: serde_json::Map<String, Value> =
+            ids.into_iter().map(|(id, s)| (id, json!(s))).collect();
+        tool(
+            editor,
+            "set_mission_tech",
+            json!({"campaign": id, "step": step, "set": set}),
+        )?;
+        Ok(())
+    };
+    let mut one = Vec::new();
+    if let Some(hall) = halls.first() {
+        one.push((hall.clone(), "new"));
+        one.extend(under(hall).into_iter().map(|u| (u, "new")));
+    }
+    for b in buildings.iter().take(2) {
+        one.push((b.clone(), "new"));
+        one.extend(under(b).into_iter().take(2).map(|u| (u, "new")));
+    }
+    set(&mut editor, first, one)?;
+    let mut two = Vec::new();
+    if let Some(hall) = halls.get(1) {
+        two.push((hall.clone(), "new"));
+        two.extend(under(hall).into_iter().map(|u| (u, "new")));
+    }
+    set(&mut editor, second, two)?;
+    if let Some(b) = buildings.get(2).or(buildings.first()) {
+        let mut three = vec![(b.clone(), "blocked")];
+        three.extend(under(b).into_iter().rev().take(1).map(|u| (u, "new")));
+        set(&mut editor, third, three)?;
+    }
+    // The first mission's computer players: an enemy sending waves of the race's
+    // fighters, an ally holding its base.
+    let fighters: Vec<String> = nodes
+        .iter()
+        .filter(|n| n["kind"] == "unit")
+        .filter_map(|n| n["id"].as_str().map(str::to_string))
+        .skip(1)
+        .take(3)
+        .collect();
+    let race = tool(&mut editor, "campaign_steps", json!({"campaign": id}))?["race"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    let wave = |after: u32, every: u32, counts: &[u32]| {
+        json!({"after": after, "every": every,
+               "units": fighters.iter().zip(counts).map(|(u, c)| json!({"unit": u, "count": c})).collect::<Vec<_>>(),
+               "from": "trained", "target": "base"})
+    };
+    let mut first_wave = wave(120, 90, &[2, 1]);
+    if let Some(unit) = fighters.first() {
+        first_wave["grow"] = json!({"every": 3, "unit": unit, "count": 1});
+    }
+    first_wave["hero"] = json!(true);
+    let mut late = wave(600, 120, &[3, 2, 2]);
+    late["target"] = json!("nearest");
+    tool(
+        &mut editor,
+        "set_mission_players",
+        json!({"map": missions[0].1.clone(), "players": [
+            {"player": 2, "race": race, "team": "enemy",
+             "ai": {"behaviour": "waves", "waves": [first_wave, late]}},
+            {"player": 3, "race": race, "team": "ally", "vision": true,
+             "ai": {"behaviour": "base", "rebuild": false}},
+        ]}),
+    )?;
+
+    editor.select(Kind::Campaigns);
+    editor.open_document(&document);
+    editor.select_campaign_step(&document, None);
+    shoot(&mut editor, rig, "editor-campaign")?;
+    editor.select_campaign_step(&document, Some(first));
+    shoot(&mut editor, rig, "editor-campaign-mission")?;
+    editor.select_campaign_step(&document, Some(1));
+    shoot(&mut editor, rig, "editor-campaign-story")?;
+    editor.show_problems(true);
+    shoot(&mut editor, rig, "editor-campaign-problems")?;
+    editor.show_problems(false);
+    // The Tech view of the first mission's map, then the third mission's (its blocked
+    // building and the contradiction), then only what the third changes.
+    editor.open_mission(&missions[0].1, true);
+    for _ in 0..40 {
+        editor.run_headless(rig.size, rig.scale, &rig.gpu);
+        std::thread::sleep(Duration::from_millis(25));
+    }
+    shoot(&mut editor, rig, "editor-campaign-tech")?;
+    editor.set_tech_view(Some(third), false);
+    shoot(&mut editor, rig, "editor-campaign-tech-contradiction")?;
+    editor.set_tech_view(Some(third), true);
+    shoot(&mut editor, rig, "editor-campaign-tech-changes")?;
+    editor.set_tech_view(None, false);
+    // The map itself with its Players in the panel.
+    editor.set_block_view("blocks");
+    for _ in 0..20 {
+        editor.run_headless(rig.size, rig.scale, &rig.gpu);
+        std::thread::sleep(Duration::from_millis(25));
+    }
+    // The panel scrolled down to the players and their waves.
+    let over = egui::pos2(
+        (rig.size[0] as f32 - 150.0) / rig.scale,
+        (rig.size[1] as f32 * 0.6) / rig.scale,
+    );
+    for _ in 0..6 {
+        editor.run_headless_with(
+            rig.size,
+            rig.scale,
+            &rig.gpu,
+            vec![
+                egui::Event::PointerMoved(over),
+                egui::Event::MouseWheel {
+                    unit: egui::MouseWheelUnit::Point,
+                    delta: egui::vec2(0.0, -120.0),
+                    phase: egui::TouchPhase::Move,
+                    modifiers: egui::Modifiers::NONE,
+                },
+            ],
+        );
+    }
+    shoot(&mut editor, rig, "editor-campaign-players")?;
+    let unsaved = editor.unsaved();
+    anyhow::ensure!(
+        unsaved.iter().any(|d| d.ends_with("campaign.json"))
+            && unsaved
+                .iter()
+                .any(|d| d.contains("/missions/") && d.ends_with("terrain/blocks.grid")),
+        "the steps and the missions' maps are unsaved edits: {unsaved:?}"
+    );
+    editor.undo_all();
+    for _ in 0..4 {
+        editor.run_headless(rig.size, rig.scale, &rig.gpu);
+    }
+    anyhow::ensure!(
+        editor.unsaved().is_empty(),
+        "undo takes every campaign edit back"
     );
     Ok(())
 }

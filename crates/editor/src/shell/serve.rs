@@ -197,6 +197,9 @@ impl Shell {
         ) {
             return self.answer_map(tool);
         }
+        if let Tool::Campaign(call) = tool {
+            return self.answer_campaign(call);
+        }
         match tool {
             Tool::Status => {
                 let store = self.store.as_ref().expect("checked");

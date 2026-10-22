@@ -197,12 +197,21 @@ impl App {
             return;
         }
         if let Some(test) = output.test {
-            match session.game.test_in_game(
-                test.content,
-                test.map,
-                test.map_package,
-                test.encounter,
-            ) {
+            let started = match &test.campaign {
+                // Play from a campaign's step.
+                Some(step) => {
+                    session
+                        .game
+                        .test_campaign(test.content.clone(), &step.package, step.index)
+                }
+                None => session.game.test_in_game(
+                    test.content,
+                    test.map,
+                    test.map_package,
+                    test.encounter,
+                ),
+            };
+            match started {
                 Ok(()) => {
                     session.suspended = session.editor.take();
                     session.game.audio.set_background(false);

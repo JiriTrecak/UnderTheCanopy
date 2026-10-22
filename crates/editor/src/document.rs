@@ -473,6 +473,22 @@ impl Store {
         self.documents.get(document).map_or(0, |d| d.revision)
     }
 
+    /// The latest change of any document or grid that `keep` accepts (0 when none
+    /// changed): a view derived from them is current while it matches.
+    pub fn latest_revision(&self, keep: impl Fn(&str) -> bool) -> u64 {
+        let documents = self
+            .documents
+            .iter()
+            .filter(|(path, _)| keep(path))
+            .map(|(_, d)| d.revision);
+        let grids = self
+            .grids
+            .iter()
+            .filter(|(path, _)| keep(path))
+            .map(|(_, g)| g.revision);
+        documents.chain(grids).max().unwrap_or(0)
+    }
+
     /// Whether `document` differs from its file.
     pub fn is_dirty(&self, document: &str) -> bool {
         if is_grid(document) {

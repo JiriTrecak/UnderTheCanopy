@@ -47,6 +47,9 @@ pub enum Icon {
     PanelRight,
     Minimap,
     Symmetry,
+    // Campaigns: the rail's banner, the Tech view's tree.
+    Campaign,
+    Tech,
 }
 
 /// One stroke of an icon: an open or closed polyline in grid units.
@@ -386,6 +389,27 @@ fn parts(icon: Icon) -> Vec<Part> {
             Open(vec![[12.0, 3.0], [12.0, 6.0]]),
             Open(vec![[12.0, 10.5], [12.0, 13.5]]),
             Open(vec![[12.0, 18.0], [12.0, 21.0]]),
+        ],
+        // A banner on its pole: a campaign.
+        Icon::Campaign => vec![
+            Open(vec![[5.0, 21.0], [5.0, 3.0]]),
+            Closed(vec![
+                [5.0, 4.0],
+                [19.0, 4.0],
+                [16.0, 8.5],
+                [19.0, 13.0],
+                [5.0, 13.0],
+            ]),
+        ],
+        // A hall over three branches: a tech tree.
+        Icon::Tech => vec![
+            Closed(vec![[9.0, 3.0], [15.0, 3.0], [15.0, 8.0], [9.0, 8.0]]),
+            Open(vec![[12.0, 8.0], [12.0, 12.0]]),
+            Open(vec![[5.0, 15.0], [5.0, 12.0], [19.0, 12.0], [19.0, 15.0]]),
+            Open(vec![[12.0, 12.0], [12.0, 15.0]]),
+            circle([5.0, 18.0], 2.5),
+            circle([12.0, 18.0], 2.5),
+            circle([19.0, 18.0], 2.5),
         ],
     }
 }

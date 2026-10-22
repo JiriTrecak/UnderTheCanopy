@@ -4,7 +4,7 @@
 use canopy_content::{
     assets::package::{ASSETS, SCENERY, WATER},
     collections::*,
-    package::{Collection, Form, Found, MANIFEST, MAP_EXTENSION, Package},
+    package::{CAMPAIGN_EXTENSION, Collection, Form, Found, MANIFEST, MAP_EXTENSION, Package},
 };
 use serde_json::Value;
 
@@ -12,6 +12,7 @@ use serde_json::Value;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Kind {
     Maps,
+    Campaigns,
     Units,
     Abilities,
     Effects,
@@ -20,8 +21,9 @@ pub enum Kind {
     Assets,
 }
 
-pub const KINDS: [Kind; 7] = [
+pub const KINDS: [Kind; 8] = [
     Kind::Maps,
+    Kind::Campaigns,
     Kind::Units,
     Kind::Abilities,
     Kind::Effects,
@@ -35,12 +37,19 @@ const MAPS: Collection = Collection {
     form: Form::Packages(MAP_EXTENSION),
 };
 const BIOMES: Collection = Collection::files("landscape/biomes");
+/// Campaigns' mission maps (`campaigns/<id>.utcc/missions/<map>.utcm`): the Maps editor
+/// opens them; its library lists them under each campaign (`crate::campaign`).
+const MISSION_MAPS: Collection = Collection {
+    dir: crate::campaign::DIR,
+    form: Form::Packages(MAP_EXTENSION),
+};
 
 impl Kind {
     /// The editor's name in its header.
     pub fn name(self) -> &'static str {
         match self {
             Kind::Maps => "Maps",
+            Kind::Campaigns => "Campaigns",
             Kind::Units => "Units and heroes",
             Kind::Abilities => "Abilities",
             Kind::Effects => "Effects",
@@ -54,6 +63,7 @@ impl Kind {
     pub fn label(self) -> &'static str {
         match self {
             Kind::Maps => "Maps",
+            Kind::Campaigns => "Campaigns",
             Kind::Units => "Units",
             Kind::Abilities => "Abilities",
             Kind::Effects => "Effects",
@@ -67,6 +77,7 @@ impl Kind {
     pub fn plural(self) -> &'static str {
         match self {
             Kind::Maps => "maps",
+            Kind::Campaigns => "campaigns",
             Kind::Units => "units",
             Kind::Abilities => "abilities",
             Kind::Effects => "effects",
@@ -83,6 +94,9 @@ impl Kind {
 
     /// The editor and collection that hold `document`.
     pub fn collection_of(document: &str) -> Option<(Kind, &'static Collection)> {
+        if crate::campaign::is_mission_document(document) {
+            return Some((Kind::Maps, &MISSION_MAPS));
+        }
         KINDS.into_iter().find_map(|kind| {
             kind.sections()
                 .iter()
@@ -99,6 +113,7 @@ impl Kind {
     pub fn sections(self) -> &'static [(&'static str, Collection)] {
         match self {
             Kind::Maps => &[("Maps", MAPS)],
+            Kind::Campaigns => &[("Campaigns", CAMPAIGNS)],
             Kind::Units => &[("Units", UNITS)],
             Kind::Abilities => &[("Abilities", ABILITIES)],
             Kind::Effects => &[("Effects", EFFECTS)],
@@ -182,6 +197,10 @@ impl Library {
                 );
             }
             sort(&mut nodes);
+            // The Maps library lists each campaign's mission maps too, in step order.
+            if kind == Kind::Maps {
+                nodes.extend(crate::campaign::maps_group(package));
+            }
             let count = nodes.iter().map(Node::count).sum::<usize>();
             library.count += count;
             if sections.len() == 1 {
@@ -220,14 +239,19 @@ impl Node {
 fn element(package: &Package, collection: &Collection, found: Found) -> Element {
     let (document, value) = match collection.form {
         Form::Folders(manifest) => (format!("{}/{manifest}", found.path), found.value),
-        Form::Packages(_) => {
+        Form::Packages(extension) => {
             let manifest = format!("{}/{MANIFEST}", found.path);
             let value = package
                 .read_text(&manifest)
                 .ok()
                 .and_then(|text| serde_json::from_str(&text).ok())
                 .unwrap_or(Value::Null);
-            (format!("{}/map.json", found.path), value)
+            let document = if extension == CAMPAIGN_EXTENSION {
+                crate::campaign::FILE
+            } else {
+                "map.json"
+            };
+            (format!("{}/{document}", found.path), value)
         }
         _ => (found.path.clone(), found.value),
     };

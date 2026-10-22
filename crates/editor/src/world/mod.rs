@@ -262,6 +262,9 @@ pub enum View {
     /// The blocks and the generated world side by side, one camera; the world follows
     /// the blocks a moment after the last edit.
     Split,
+    /// A campaign mission's tech: the race's tree with its state in the mission
+    /// (`crate::campaign::tech`).
+    Tech,
 }
 
 impl View {
@@ -271,6 +274,7 @@ impl View {
             "generated" => Some(View::Generated),
             "pathing" => Some(View::Pathing),
             "split" => Some(View::Split),
+            "tech" => Some(View::Tech),
             _ => None,
         }
     }
@@ -376,7 +380,7 @@ impl State {
         if self.view == mode {
             self.before
         } else {
-            if !matches!(self.view, View::Pathing | View::Split) {
+            if !matches!(self.view, View::Pathing | View::Split | View::Tech) {
                 self.before = self.view;
             }
             mode
@@ -428,6 +432,11 @@ impl Default for State {
             looking: None,
         }
     }
+}
+
+/// A floating, bordered strip's frame (the tool strips', for other overlays on the view).
+pub fn strip_frame() -> egui::Frame {
+    strip::frame()
 }
 
 /// The map's blocks, when it has them.
@@ -2023,7 +2032,14 @@ pub fn show(
         rect.width() / rect.height().max(1.0),
     );
     let input = ui.input(|i| i.clone());
-    navigate(&input, &response, rect, &mut session.camera, map_size);
+    // A mission map's Tech view (U) stands in for the map while it shows.
+    let tech = session.mission.as_ref().is_some_and(|m| m.step.is_some());
+    if !tech && session.blocks.view == View::Tech {
+        session.blocks.view = session.blocks.before;
+    }
+    if session.blocks.view != View::Tech {
+        navigate(&input, &response, rect, &mut session.camera, map_size);
+    }
     // G switches between the blocks and the generated world, H shows where ground units
     // walk and back, V both side by side and back, M shows or hides the minimap, wherever
     // the pointer is, unless a field is being typed in.
@@ -2042,9 +2058,14 @@ pub fn show(
             panels.minimap = !panels.minimap;
             panels.set(ui.ctx());
             None
-        } else if let Some(mode) = [(egui::Key::H, View::Pathing), (egui::Key::V, View::Split)]
-            .into_iter()
-            .find_map(|(key, mode)| input.key_pressed(key).then_some(mode))
+        } else if let Some(mode) = [
+            (egui::Key::H, View::Pathing),
+            (egui::Key::V, View::Split),
+            (egui::Key::U, View::Tech),
+        ]
+        .into_iter()
+        .filter(|(_, mode)| tech || *mode != View::Tech)
+        .find_map(|(key, mode)| input.key_pressed(key).then_some(mode))
         {
             Some(session.blocks.toggle(mode))
         } else {
@@ -2055,6 +2076,15 @@ pub fn show(
         {
             session.stale = true;
         }
+    }
+    if session.blocks.view == View::Tech
+        && let Some(link) = session.mission.clone()
+    {
+        out.size = None;
+        let tech = crate::campaign::tech::show(ui, full, session, &link, content);
+        out.edits.extend(tech.edits);
+        strip::view_bar(ui.ctx(), session, full);
+        return out;
     }
     // The keys act over the map, never while a text field takes typing (a search, a name).
     let typing = ui.ctx().egui_wants_keyboard_input();
