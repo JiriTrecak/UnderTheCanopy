@@ -3799,6 +3799,14 @@
       "z": 311.0,
       "yaw": 3.784,
       "scale": 1.025
+    },
+    {
+      "id": "dress.475",
+      "asset": "scenery.beetle-gate-towers",
+      "x": 339.5,
+      "z": 133.5,
+      "yaw": 0.0,
+      "scale": 1.0
     }
   ]
 }

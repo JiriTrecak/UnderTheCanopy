@@ -2,14 +2,15 @@
 dresses the frame with the forest-floor giants itself (`blocks.scatter`); this places what
 belongs to the mission: the giants that mark its corners (beech trunks, parasols, the
 branch ridge, the feather), the landmarks in play (the webs' snail shell, the beetle husk,
-the shrine's acorn cup), the Underleaf mission pieces at the places, the stream's reeds,
+the broodkeepers' shrine), the Underleaf mission pieces at the places, the stream's reeds,
 and the forest going wrong along the road: from the sick pool on, stands of withered
 plants, dissolving ink caps and glowing bonnets, thickest round the Hollow (`wrong`).
 
 A piece stands only where it fits: deep enough in the forest for its height (faster where
 the camera looks over play at it than where it stands between the camera and play), its
 blocker clear of open ground, out of the saved cameras' lines of sight. Seeded, so a
-rebuild gives the same map."""
+rebuild gives the same map. The mission's own props (webs, the lost patrol's cocoons, the
+Hollow's dead) come last, so the pieces before them keep their ids."""
 import json, math, os, random, struct
 from collections import deque
 
@@ -240,10 +241,11 @@ def dress(package, size, stream, sightlines=()):
     put(G + 'feather', 328, 340, 0.9, 2.6, force=True)
     put(G + 'fern-crown', 236, 352, 0.9, force=True)
     put(G + 'fern-crown', 120, 352, 0.85, force=True)
-    # Landmarks in play: the webs' snail shell, the beetle wreck, the shrine's acorn cup.
+    # Landmarks in play: the webs' snail shell, the beetle wreck, the broodkeepers' shrine at
+    # the Moonlit Hollow's north end, facing the way in (its lantern lies in front of it).
     put(G + 'snail-shell', 60, 204, 1.0, 2.2, force=True)
     put(G + 'beetle-husk', 316, 302, 1.0, 0.9, force=True)
-    put(G + 'acorn-cup', 206, 46, 0.9, 0.3, force=True)
+    put(U + 'hollow-broodkeepers-shrine', 206, 45, 1.0, 0.0, force=True)
     put(G + 'pebbles', 196, 52, 0.5, 1.0, force=True)
     # The hornets' paper nest: a stack of shelf fungus and bark at the ledge's back (a real
     # paper nest is a prop still to make).
@@ -267,9 +269,9 @@ def dress(package, size, stream, sightlines=()):
     for i, (x, z, s) in enumerate([(272, 76, 3.4), (346, 76, 3.2), (300, 34, 3.6), (318, 100, 3.0), (104, 152, 3.0),
                                    (140, 176, 2.8), (96, 180, 3.2)]):
         put(U + ('hollow-withered-fern' if i % 2 else 'hollow-withered-fern-tall'), x, z, s, i * 2.1, force=True)
-    # The webbed hollow: the lost patrol's cocoons (puffballs, until there is a cocoon).
-    for x, z, s, a in [(82, 188, 0.45, 0.3), (90, 194, 0.4, 1.9), (76, 200, 0.42, 3.0)]:
-        put(G + 'puffballs', x, z, s, a, force=True)
+    # The webbed hollow: the lost patrol's cocoons, standing, hanging from a dead stalk, lying.
+    for piece, x, z, a in [('standing', 82, 188, 0.3), ('hanging', 90, 194, 1.9), ('lying', 76, 200, 3.0)]:
+        put(U + 'hollow-cocoon-' + piece, x, z, 1.0, a, force=True)
     # The mushroom circle on the road, the ford's stones and reeds, the lily pool.
     put(U + 'glade-mushroom-ring', 134, 298, 1.7, 0.0, force=True)
     for x, z, s in [(184, 260, 2.4), (202, 276, 2.2), (204, 260, 2.0)]:
@@ -325,4 +327,24 @@ def dress(package, size, stream, sightlines=()):
     d.least_wrong = 0.0
     # The thornbacks' berry bushes round their clearing on the terrace.
     d.clusters((g('bilberries'), g('bilberries')), 8, 0, 8, size=(3, 5), spread=1.2, box=(176, 86, 226, 130))
+
+    # --- The mission's props, last so the pieces above keep their ids ----------------------
+    # The webbed hollow: old webs along its edges, their high sides to the trees (sheets
+    # west and north-west, curtains south and north-east), tangles over the floor, and more
+    # of the patrol's cocoons.
+    for piece, x, z, s, a in [('sheet', 54, 196, 1.0, 1.571), ('sheet', 60, 182, 0.8, 2.4),
+                              ('drape', 76, 210, 1.0, 3.142), ('drape', 95, 186, 0.8, 5.5),
+                              ('tangle', 64, 204, 0.9, 0.7), ('tangle', 92, 203, 0.7, 2.3),
+                              ('tangle', 70, 186, 0.6, 4.1)]:
+        put(U + 'hollow-web-' + piece, x, z, s, a, force=True)
+    for piece, x, z, s, a in [('standing', 60, 200, 0.9, 2.0), ('lying', 66, 191, 0.9, 1.1),
+                              ('hanging', 88, 206, 0.9, 4.0)]:
+        put(U + 'hollow-cocoon-' + piece, x, z, s, a, force=True)
+    # The Hollow's dead (fallen units sink, so these stay), on the verges, out of the lanes: two
+    # of the watch by the road where the dead sentry falls, more on the rim and down in the
+    # Hollow, bleached by the substance.
+    for piece, x, z, a in [('husk', 183, 237, 1.0), ('corpse', 176, 224, 2.2), ('corpse', 254, 120, 2.6),
+                           ('husk', 256, 106, 0.4), ('husk', 281, 84, 2.0), ('corpse', 341, 62, 5.0),
+                           ('husk', 274, 52, 3.3), ('husk', 300, 45, 4.4)]:
+        put(U + 'hollow-ant-' + piece, x, z, 1.0, a, force=True)
     return d.objects()

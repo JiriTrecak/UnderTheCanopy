@@ -9,7 +9,9 @@ The map (x east, z south; playable 32–416):
   (z 216) east to an outpost at its first bend (168, 216), north, then east along a canal
   past the abandoned toll house (216, 160) and a second outpost (276, 160) to the station;
 - the beetle station on a walled plateau (level 4) in the north-east, its forecourt
-  (level 3) below the gate, the condenser at the end of the road's axis (340, 60);
+  (level 3) below the gate, the condenser at the end of the road's axis (340, 60); the
+  station gate (a breakable building of the road's player 5, between two towers of
+  scenery) closes the road where it comes up into the forecourt;
 - off the road: the bog pond (south), the briar thicket and its amber (east), the Hollow
   Stag's sacred grove on a root knoll (south-east), the hornets' ledge (north), a spring in
   the north-west wood, the surveyor's glade behind a gap in the trees (north-west, secret),
@@ -75,6 +77,7 @@ RAMPS = [(104, 232, 0, 1, 2), (120, 200, 0, -1, 2), (248, 144, 0, -1, 2),
 PLATEAU = (292, 40, 404, 96)   # the station, level 4
 FORECOURT = (316, 96, 368, 136)  # below the gate, level 3
 GATE = (340, 96)
+STATION_GATE = (339.5, 133.5)  # the gate where the road comes up into the forecourt (16 x 4)
 CONDENSER = (340, 56)
 CAMP = (100, 342)
 NEST = (97.5, 349.5)
@@ -238,7 +241,7 @@ def camp(id, home, members, aggro=10, leash=24, loot=None, drops=None):
 P1, P2, P3, P4, P5 = 'player.1', 'player.2', 'player.3', 'player.4', 'player.5'
 # Waypoints of the caravans along the causeway, west to east (the script has the same).
 ROUTE = [(36, ROAD_A), (100, ROAD_A), (ROAD_B, ROAD_A), (ROAD_B, ROAD_C), (216, ROAD_C),
-         (276, ROAD_C), (ROAD_D, ROAD_C), (ROAD_D, 124)]
+         (276, ROAD_C), (ROAD_D, ROAD_C), (ROAD_D, 142)]  # the last at the station gate
 CARAVANS = 6
 # Where an ambushed caravan's crates fall: one spot every 24 cells along the road.
 SPILLS = []
@@ -294,6 +297,10 @@ def entities():
     for i, x in enumerate((315.5, 363.5)):
         ent(f'station.deposit.{i}', 'building.neutral.corrupted-root', x, 79.5)
         ent(f'station.well.{i}', 'building.beetles.substance-well', x, 79.5, B)
+    # The station gate closes the road into the forecourt until it is broken. It is the
+    # road's player 5, which never rebuilds (the station's player would raise it again behind
+    # the Queen's army); the script holds the lodge's waves until it falls.
+    ent('station.gate', 'building.neutral.beetle-gate', *STATION_GATE, P5)
     ent('station.tower.0', 'building.beetles.hornwatch', 327.5, 87.5, B)
     ent('station.tower.1', 'building.beetles.hornwatch', 355.5, 87.5, B)
     ent('vosk', 'unit.beetles.coilkeeper', 344, 86, B, 180, experience=1120)
@@ -781,6 +788,12 @@ def station():
     put('giants-pebbles', 312, 72, 1.0, 0.6)
 
 
+def station_gate():
+    """The station gate's towers (scenery) beside its leaves (the building). Placed after
+    everything else, so the other pieces keep their ids."""
+    put('beetle-gate-towers', *STATION_GATE)
+
+
 def places():
     """Low pieces that make the side places readable, on or beside playable ground."""
     # The tunnel's mouth at the camp: a root arch over the gap, roots either side.
@@ -900,6 +913,7 @@ if __name__ == '__main__':
         if e['definition'].startswith('unit.') and frame.crowded(e['position']['x'], e['position']['y']):
             print('warning: placed by closed ground:', e['id'], e['position'])
     frame_giants(frame)
+    station_gate()
     print(len(SCENERY), 'scenery objects')
     c.call('edit', label='The camp, the station, the road and the forest', commands=[
         {'op': 'set', 'document': SC, 'pointer': '/objects', 'value': SCENERY},

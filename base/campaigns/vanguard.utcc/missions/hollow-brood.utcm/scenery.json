@@ -170,11 +170,11 @@
     },
     {
       "id": "dress.21",
-      "asset": "scenery.giants-acorn-cup",
+      "asset": "scenery.hollow-broodkeepers-shrine",
       "x": 206,
-      "z": 46,
-      "yaw": 0.3,
-      "scale": 0.9
+      "z": 45,
+      "yaw": 0.0,
+      "scale": 1.0
     },
     {
       "id": "dress.22",
@@ -434,27 +434,27 @@
     },
     {
       "id": "dress.54",
-      "asset": "scenery.giants-puffballs",
+      "asset": "scenery.hollow-cocoon-standing",
       "x": 82,
       "z": 188,
       "yaw": 0.3,
-      "scale": 0.45
+      "scale": 1.0
     },
     {
       "id": "dress.55",
-      "asset": "scenery.giants-puffballs",
+      "asset": "scenery.hollow-cocoon-hanging",
       "x": 90,
       "z": 194,
       "yaw": 1.9,
-      "scale": 0.4
+      "scale": 1.0
     },
     {
       "id": "dress.56",
-      "asset": "scenery.giants-puffballs",
+      "asset": "scenery.hollow-cocoon-lying",
       "x": 76,
       "z": 200,
       "yaw": 3.0,
-      "scale": 0.42
+      "scale": 1.0
     },
     {
       "id": "dress.57",
@@ -2831,6 +2831,150 @@
       "z": 89.07,
       "yaw": 0.92,
       "scale": 0.832
+    },
+    {
+      "id": "dress.354",
+      "asset": "scenery.hollow-web-sheet",
+      "x": 54,
+      "z": 196,
+      "yaw": 1.571,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.355",
+      "asset": "scenery.hollow-web-sheet",
+      "x": 60,
+      "z": 182,
+      "yaw": 2.4,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.356",
+      "asset": "scenery.hollow-web-drape",
+      "x": 76,
+      "z": 210,
+      "yaw": 3.142,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.357",
+      "asset": "scenery.hollow-web-drape",
+      "x": 95,
+      "z": 186,
+      "yaw": 5.5,
+      "scale": 0.8
+    },
+    {
+      "id": "dress.358",
+      "asset": "scenery.hollow-web-tangle",
+      "x": 64,
+      "z": 204,
+      "yaw": 0.7,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.359",
+      "asset": "scenery.hollow-web-tangle",
+      "x": 92,
+      "z": 203,
+      "yaw": 2.3,
+      "scale": 0.7
+    },
+    {
+      "id": "dress.360",
+      "asset": "scenery.hollow-web-tangle",
+      "x": 70,
+      "z": 186,
+      "yaw": 4.1,
+      "scale": 0.6
+    },
+    {
+      "id": "dress.361",
+      "asset": "scenery.hollow-cocoon-standing",
+      "x": 60,
+      "z": 200,
+      "yaw": 2.0,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.362",
+      "asset": "scenery.hollow-cocoon-lying",
+      "x": 66,
+      "z": 191,
+      "yaw": 1.1,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.363",
+      "asset": "scenery.hollow-cocoon-hanging",
+      "x": 88,
+      "z": 206,
+      "yaw": 4.0,
+      "scale": 0.9
+    },
+    {
+      "id": "dress.364",
+      "asset": "scenery.hollow-ant-husk",
+      "x": 183,
+      "z": 237,
+      "yaw": 1.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.365",
+      "asset": "scenery.hollow-ant-corpse",
+      "x": 176,
+      "z": 224,
+      "yaw": 2.2,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.366",
+      "asset": "scenery.hollow-ant-corpse",
+      "x": 254,
+      "z": 120,
+      "yaw": 2.6,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.367",
+      "asset": "scenery.hollow-ant-husk",
+      "x": 256,
+      "z": 106,
+      "yaw": 0.4,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.368",
+      "asset": "scenery.hollow-ant-husk",
+      "x": 281,
+      "z": 84,
+      "yaw": 2.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.369",
+      "asset": "scenery.hollow-ant-corpse",
+      "x": 341,
+      "z": 62,
+      "yaw": 5.0,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.370",
+      "asset": "scenery.hollow-ant-husk",
+      "x": 274,
+      "z": 52,
+      "yaw": 3.3,
+      "scale": 1.0
+    },
+    {
+      "id": "dress.371",
+      "asset": "scenery.hollow-ant-husk",
+      "x": 300,
+      "z": 45,
+      "yaw": 4.4,
+      "scale": 1.0
     }
   ]
 }

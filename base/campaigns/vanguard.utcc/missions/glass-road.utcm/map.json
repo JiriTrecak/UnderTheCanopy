@@ -557,6 +557,19 @@
       }
     },
     {
+      "definition": "building.neutral.beetle-gate",
+      "id": "station.gate",
+      "owner": "player.5",
+      "position": {
+        "x": 339.5,
+        "y": 133.5
+      },
+      "rotation": 0.0,
+      "initialState": {
+        "construction": "complete"
+      }
+    },
+    {
       "definition": "building.beetles.hornwatch",
       "id": "station.tower.0",
       "owner": "player.2",
