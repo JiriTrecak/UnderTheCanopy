@@ -235,7 +235,7 @@ def camp(id, home, members, aggro=10, leash=24, loot=None, drops=None):
     CAMPS.append(c)
 
 
-P1, P2, P3, P4 = 'player.1', 'player.2', 'player.3', 'player.4'
+P1, P2, P3, P4, P5 = 'player.1', 'player.2', 'player.3', 'player.4', 'player.5'
 # Waypoints of the caravans along the causeway, west to east (the script has the same).
 ROUTE = [(36, ROAD_A), (100, ROAD_A), (ROAD_B, ROAD_A), (ROAD_B, ROAD_C), (216, ROAD_C),
          (276, ROAD_C), (ROAD_D, ROAD_C), (ROAD_D, 124)]
@@ -297,9 +297,9 @@ def entities():
     ent('station.tower.0', 'building.beetles.hornwatch', 327.5, 87.5, B)
     ent('station.tower.1', 'building.beetles.hornwatch', 355.5, 87.5, B)
     ent('vosk', 'unit.beetles.coilkeeper', 344, 86, B, 180, experience=1120)
-    for i, (x, z) in enumerate([(334, 80), (346, 80), (326, 70), (354, 70)]):
+    for i, (x, z) in enumerate([(334, 80), (346, 80), (354, 70)]):
         ent(f'station.shield.{i}', 'unit.beetles.shieldbearer', x, z, B, 180)
-    for i, (x, z) in enumerate([(324, 64), (356, 64), (392, 68), (396, 46)]):
+    for i, (x, z) in enumerate([(324, 64), (356, 64), (392, 68)]):
         ent(f'station.bolter.{i}', 'unit.beetles.bolter', x, z, B, 180)
     for i, (x, z) in enumerate([(395, 60), (396, 90)]):
         ent(f'station.tinker.{i}', 'unit.beetles.worker', x, z, B, 200)
@@ -311,11 +311,11 @@ def entities():
             ('east', (287.5, 179.5), [(271.5, 179.5), (303.5, 179.5)],
              [('shieldbearer', 280, 160), ('shieldbearer', 296, 160), ('bolter', 279, 170), ('bolter', 296, 170)])]:
         ent(f'outpost.{name}.deposit', 'building.neutral.corrupted-root', *well)
-        ent(f'outpost.{name}.well', 'building.beetles.substance-well', *well, B)
+        ent(f'outpost.{name}.well', 'building.beetles.substance-well', *well, P5)
         for i, t in enumerate(towers):
-            ent(f'outpost.{name}.tower.{i}', 'building.beetles.hornwatch', *t, B)
+            ent(f'outpost.{name}.tower.{i}', 'building.beetles.hornwatch', *t, P5)
         for i, (u, x, z) in enumerate(guard):
-            ent(f'outpost.{name}.{u}.{i}', f'unit.beetles.{u}', x, z, B, 270)
+            ent(f'outpost.{name}.{u}.{i}', f'unit.beetles.{u}', x, z, P5, 270)
 
     # --- Caravans (player 3), spawned one after another at the west end of the road. ---
     for n in range(CARAVANS):
@@ -393,17 +393,21 @@ def entities():
 PLAYERS = [
     {'player': 2, 'race': 'beetles', 'team': 'enemy', 'vision': False,
      'ai': {'behaviour': 'waves', 'rebuild': True, 'waves': [
-         # Turned on when Vosk refuses the Queen at the gate (ai_waves).
-         {'every': 110, 'until': 540, 'from': 'trained', 'target': {'region': 'camp'},
-          'units': [{'unit': 'unit.beetles.shieldbearer', 'count': 2}, {'unit': 'unit.beetles.bolter', 'count': 2}],
-          'grow': {'every': 2, 'unit': 'unit.beetles.bolter', 'count': 1}},
+         # Turned on when Vosk refuses the Queen at the gate (ai_waves), the first at once:
+         # Shieldbearers and Bolters, a Breacher more every third wave. Wave times count
+         # from the match's start, so one line carries the whole escalation. They march on
+         # the camp by region (a `base` target can pick a lone worker and idle).
          {'every': 120, 'from': 'trained', 'target': {'region': 'camp'},
-          'units': [{'unit': 'unit.beetles.shieldbearer', 'count': 3}, {'unit': 'unit.beetles.bolter', 'count': 3},
-                    {'unit': 'unit.beetles.breacher', 'count': 2}],
+          'units': [{'unit': 'unit.beetles.shieldbearer', 'count': 2}, {'unit': 'unit.beetles.bolter', 'count': 2}],
           'grow': {'every': 3, 'unit': 'unit.beetles.breacher', 'count': 1}},
      ]}},
+    # The caravans: carts and their guards, moved by the script.
     {'player': 3, 'race': 'beetles', 'team': 'enemy', 'vision': False, 'ai': {'behaviour': 'passive'}},
+    # The engineer asleep by the toll house: friendly, out of everyone's way.
     {'player': 4, 'race': 'beetles', 'team': 'ally', 'vision': False, 'ai': {'behaviour': 'passive'}},
+    # The road's outposts: they hold their ground and stay down once broken (the station's
+    # own player rebuilds).
+    {'player': 5, 'race': 'beetles', 'team': 'enemy', 'vision': False, 'ai': {'behaviour': 'passive'}},
 ]
 
 REGIONS = [

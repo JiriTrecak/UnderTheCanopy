@@ -620,16 +620,6 @@
       "id": "station.shield.2",
       "owner": "player.2",
       "position": {
-        "x": 326.0,
-        "y": 70.0
-      },
-      "rotation": 180.0
-    },
-    {
-      "definition": "unit.beetles.shieldbearer",
-      "id": "station.shield.3",
-      "owner": "player.2",
-      "position": {
         "x": 354.0,
         "y": 70.0
       },
@@ -662,16 +652,6 @@
       "position": {
         "x": 392.0,
         "y": 68.0
-      },
-      "rotation": 180.0
-    },
-    {
-      "definition": "unit.beetles.bolter",
-      "id": "station.bolter.3",
-      "owner": "player.2",
-      "position": {
-        "x": 396.0,
-        "y": 46.0
       },
       "rotation": 180.0
     },
@@ -711,7 +691,7 @@
     {
       "definition": "building.beetles.substance-well",
       "id": "outpost.west.well",
-      "owner": "player.2",
+      "owner": "player.5",
       "position": {
         "x": 187.5,
         "y": 211.5
@@ -724,7 +704,7 @@
     {
       "definition": "building.beetles.hornwatch",
       "id": "outpost.west.tower.0",
-      "owner": "player.2",
+      "owner": "player.5",
       "position": {
         "x": 187.5,
         "y": 195.5
@@ -737,7 +717,7 @@
     {
       "definition": "building.beetles.hornwatch",
       "id": "outpost.west.tower.1",
-      "owner": "player.2",
+      "owner": "player.5",
       "position": {
         "x": 187.5,
         "y": 227.5
@@ -750,7 +730,7 @@
     {
       "definition": "unit.beetles.shieldbearer",
       "id": "outpost.west.shieldbearer.0",
-      "owner": "player.2",
+      "owner": "player.5",
       "position": {
         "x": 168.0,
         "y": 202.0
@@ -760,7 +740,7 @@
     {
       "definition": "unit.beetles.shieldbearer",
       "id": "outpost.west.shieldbearer.1",
-      "owner": "player.2",
+      "owner": "player.5",
       "position": {
         "x": 162.0,
         "y": 222.0
@@ -770,7 +750,7 @@
     {
       "definition": "unit.beetles.bolter",
       "id": "outpost.west.bolter.2",
-      "owner": "player.2",
+      "owner": "player.5",
       "position": {
         "x": 158.0,
         "y": 208.0
@@ -780,7 +760,7 @@
     {
       "definition": "unit.beetles.bolter",
       "id": "outpost.west.bolter.3",
-      "owner": "player.2",
+      "owner": "player.5",
       "position": {
         "x": 178.0,
         "y": 222.0
@@ -803,7 +783,7 @@
     {
       "definition": "building.beetles.substance-well",
       "id": "outpost.east.well",
-      "owner": "player.2",
+      "owner": "player.5",
       "position": {
         "x": 287.5,
         "y": 179.5
@@ -816,7 +796,7 @@
     {
       "definition": "building.beetles.hornwatch",
       "id": "outpost.east.tower.0",
-      "owner": "player.2",
+      "owner": "player.5",
       "position": {
         "x": 271.5,
         "y": 179.5
@@ -829,7 +809,7 @@
     {
       "definition": "building.beetles.hornwatch",
       "id": "outpost.east.tower.1",
-      "owner": "player.2",
+      "owner": "player.5",
       "position": {
         "x": 303.5,
         "y": 179.5
@@ -842,7 +822,7 @@
     {
       "definition": "unit.beetles.shieldbearer",
       "id": "outpost.east.shieldbearer.0",
-      "owner": "player.2",
+      "owner": "player.5",
       "position": {
         "x": 280.0,
         "y": 160.0
@@ -852,7 +832,7 @@
     {
       "definition": "unit.beetles.shieldbearer",
       "id": "outpost.east.shieldbearer.1",
-      "owner": "player.2",
+      "owner": "player.5",
       "position": {
         "x": 296.0,
         "y": 160.0
@@ -862,7 +842,7 @@
     {
       "definition": "unit.beetles.bolter",
       "id": "outpost.east.bolter.2",
-      "owner": "player.2",
+      "owner": "player.5",
       "position": {
         "x": 279.0,
         "y": 170.0
@@ -872,7 +852,7 @@
     {
       "definition": "unit.beetles.bolter",
       "id": "outpost.east.bolter.3",
-      "owner": "player.2",
+      "owner": "player.5",
       "position": {
         "x": 296.0,
         "y": 170.0
@@ -2096,29 +2076,6 @@
           "rebuild": true,
           "waves": [
             {
-              "every": 110,
-              "until": 540,
-              "from": "trained",
-              "target": {
-                "region": "camp"
-              },
-              "units": [
-                {
-                  "unit": "unit.beetles.shieldbearer",
-                  "count": 2
-                },
-                {
-                  "unit": "unit.beetles.bolter",
-                  "count": 2
-                }
-              ],
-              "grow": {
-                "every": 2,
-                "unit": "unit.beetles.bolter",
-                "count": 1
-              }
-            },
-            {
               "every": 120,
               "from": "trained",
               "target": {
@@ -2127,14 +2084,10 @@
               "units": [
                 {
                   "unit": "unit.beetles.shieldbearer",
-                  "count": 3
+                  "count": 2
                 },
                 {
                   "unit": "unit.beetles.bolter",
-                  "count": 3
-                },
-                {
-                  "unit": "unit.beetles.breacher",
                   "count": 2
                 }
               ],
@@ -2160,6 +2113,15 @@
         "player": 4,
         "race": "beetles",
         "team": "ally",
+        "vision": false,
+        "ai": {
+          "behaviour": "passive"
+        }
+      },
+      {
+        "player": 5,
+        "race": "beetles",
+        "team": "enemy",
         "vision": false,
         "ai": {
           "behaviour": "passive"
