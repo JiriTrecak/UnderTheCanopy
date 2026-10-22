@@ -43,6 +43,8 @@ pub struct MatchSpec<'a> {
     /// How much of the map the players know at the start, when not the map's own (a scene
     /// preview shows a mission as a player who walked it knows it).
     pub exploration: Option<map::Exploration>,
+    /// The mission's autoplay plan steers the local player, when the map has one.
+    pub autoplay: bool,
 }
 
 /// What the renderer draws of a map: the scene, its lighting and the asset pack.
@@ -111,7 +113,7 @@ impl Match {
     /// The recording of this match, if it is recorded.
     pub fn recorder(&self) -> Option<crate::replay::record::Recorder> {
         match &self.driver {
-            crate::sim::Driver::Live { recorder } => recorder.clone(),
+            crate::sim::Driver::Live { recorder, .. } => recorder.clone(),
             crate::sim::Driver::Replay(_) => None,
         }
     }
@@ -216,6 +218,7 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
     let recorded = spec.crowd.is_none() && !spec.gallery && spec.encounter.is_none();
     let driver = crate::sim::Driver::Live {
         recorder: recorded.then(|| crate::replay::record::Recorder::new(&world)),
+        autoplay: autoplay_spec(&map, spec.autoplay && human.is_some()),
     };
     let (mut loaded, game) = assemble(
         &map,
@@ -358,6 +361,17 @@ pub struct MatchRequest {
     /// A campaign mission: what its campaign hands it (tech, carried heroes, level cap,
     /// variables).
     pub campaign: Option<canopy_sim::campaign::CampaignStart>,
+    /// The mission's autoplay plan steers the local player (docs/campaign.md "Autoplay").
+    pub autoplay: bool,
+}
+
+/// The autoplay plan of `map` when it has one and `wanted`.
+fn autoplay_spec(map: &map::UtcMap, wanted: bool) -> Option<crate::sim::AutoplaySpec> {
+    let source = map.mission.as_ref()?.autoplay.clone().filter(|_| wanted)?;
+    Some(crate::sim::AutoplaySpec {
+        source,
+        map: Arc::new(map.clone()),
+    })
 }
 
 /// A prepared match and what the game needs to know about it.
@@ -414,6 +428,8 @@ pub fn prepare(
     progress(Stage::World, 0.25);
     let colors = request.colors.clone();
     let mut playback = None;
+    // A loaded save plays on by hand: autoplay's plan starts only with a mission.
+    let fresh = request.resume.is_none();
     let (world, session) = match request.resume {
         _ if let Some(replay) = &request.replay => {
             let p = crate::replay::playback::Playback::new(
@@ -454,6 +470,7 @@ pub fn prepare(
         Some(p) => crate::sim::Driver::Replay(Box::new(p)),
         None => crate::sim::Driver::Live {
             recorder: Some(crate::replay::record::Recorder::new(&world)),
+            autoplay: autoplay_spec(&map, request.autoplay && request.me.is_some() && fresh),
         },
     };
     let (mut loaded, game) = assemble(

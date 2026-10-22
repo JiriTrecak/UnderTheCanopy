@@ -114,6 +114,8 @@ impl Chord {
                 "Backquote" => "`".into(),
                 "BracketLeft" => "[".into(),
                 "BracketRight" => "]".into(),
+                "Equal" => "=".into(),
+                "Minus" => "-".into(),
                 "Backspace" => "Backspace".into(),
                 other => other.into(),
             }
@@ -230,6 +232,8 @@ const KEYS: &[(&str, KeyCode)] = {
         ("Backquote", Backquote),
         ("BracketLeft", BracketLeft),
         ("BracketRight", BracketRight),
+        ("Equal", Equal),
+        ("Minus", Minus),
         ("Delete", Delete),
         ("Alt", AltLeft),
         ("Alt", AltRight),
@@ -339,6 +343,13 @@ pub fn catalog() -> Vec<Entry> {
             format!("Use inventory slot {}", n + 1),
             key,
         );
+    }
+    for (id, label, key) in [
+        ("autoplay.takeOver", "Take over from autoplay", "F7"),
+        ("autoplay.faster", "Autoplay faster", "Equal"),
+        ("autoplay.slower", "Autoplay slower", "Minus"),
+    ] {
+        add(id.into(), "Autoplay", label.into(), key);
     }
     for (id, label, key) in [
         ("health.all", "Show all health bars (hold)", "Alt"),

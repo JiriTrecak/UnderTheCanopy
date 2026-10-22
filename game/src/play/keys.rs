@@ -33,6 +33,11 @@ pub enum Shortcut {
     ToggleHud,
     Debug,
     Cancel,
+    /// Autoplay (docs/campaign.md "Autoplay"): hand the match back to the player, or play
+    /// it faster or slower.
+    TakeOver,
+    AutoplayFaster,
+    AutoplaySlower,
     RotateClockwise,
     RotateCounterclockwise,
     /// Zero-based inventory slot.
@@ -75,6 +80,9 @@ impl Shortcut {
             "health.all" => HealthAll,
             "health.friendly" => HealthFriendly,
             "health.enemy" => HealthEnemy,
+            "autoplay.takeOver" => TakeOver,
+            "autoplay.faster" => AutoplayFaster,
+            "autoplay.slower" => AutoplaySlower,
             _ => {
                 if let Some(n) = numbered("heroes.select") {
                     Hero(n.checked_sub(1)?)

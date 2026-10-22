@@ -34,6 +34,8 @@ pub struct MapEntry {
     pub mission: bool,
     /// The campaign whose `missions/` hold the map.
     pub campaign: Option<String>,
+    /// A mission with an autoplay plan (Play with AI).
+    pub autoplay: bool,
     /// Pack entry of the preview image.
     pub preview: Option<String>,
     pub playable: bool,
@@ -82,6 +84,7 @@ impl MapEntry {
             sandbox: s.sandbox,
             mission: s.mission,
             campaign: None,
+            autoplay: s.autoplay,
             preview,
             playable,
             file,

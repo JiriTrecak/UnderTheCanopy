@@ -1,7 +1,7 @@
 //! Command-line options.
 //!
 //! ```text
-//! canopy [--data <folder>] [--no-vsync] [--map <id> | --spectate <id>] [--players <n>] [--races <race,…>]
+//! canopy [--data <folder>] [--no-vsync] [--map <id> [--autoplay] | --spectate <id>] [--players <n>] [--races <race,…>]
 //!        [--tick <n>] [--camera <x,z,zoom[,yaw]>] [--hour <h>] [graphics]
 //! canopy edit [--data <folder>]  (opens the editor; docs/editor.md)
 //! canopy mcp [--data <folder>]   (the editor's MCP server without a window)
@@ -29,7 +29,8 @@
 //! ```
 //!
 //! `--map` plays a skirmish (you on the first start, computer players on the others, or
-//! on the first `--players` starts); `--spectate` watches computer players on every
+//! on the first `--players` starts); with `--autoplay` the map's autoplay plan plays you
+//! (a campaign's mission as its step, sped up, docs/campaign.md "Autoplay"); `--spectate` watches computer players on every
 //! start (or the first `--players`); `--tick` fast-forwards the match first. A shot's `battle`
 //! camera looks at the largest fight of that tick. `--crowd <n>` replaces the match by a
 //! measured battle of eight players with `n` soldiers each; `--colors i,j,…` gives slot
@@ -188,6 +189,9 @@ pub struct Options {
     pub map: Option<String>,
     /// Watch computer players instead of playing.
     pub spectate: bool,
+    /// `--autoplay`: the mission's autoplay plan plays player 1 (docs/campaign.md
+    /// "Autoplay"); a campaign's mission plays as its step.
+    pub autoplay: bool,
     /// Computer players on the map's first starts (all by default).
     pub players: Option<usize>,
     /// Simulate to this tick before showing anything.
@@ -292,6 +296,7 @@ impl Options {
             vsync: true,
             map: None,
             spectate: false,
+            autoplay: false,
             players: None,
             races: None,
             tick: 0,
@@ -359,6 +364,7 @@ impl Options {
                 "--data" => options.data = Some(value("--data")?.into()),
                 "--no-vsync" => options.vsync = false,
                 "--map" => options.map = Some(value("--map")?),
+                "--autoplay" => options.autoplay = true,
                 "--spectate" => {
                     options.map = Some(value("--spectate")?);
                     options.spectate = true;
@@ -500,7 +506,7 @@ impl Options {
                     size = [w.parse().context("--size")?, h.parse().context("--size")?];
                 }
                 other => bail!(
-                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --races, --tick, --crowd, --gallery, --only, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --preset, --lod-pixels, --shadow-map, --biome, --weather; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --sequence, --effect, --flight, --viewer, --select, --health, --damage, --kill, --play, --observe, --input, --scene, --sheet, --compare, --set)"
+                    "unknown option {other} (expected --data, --no-vsync, --map, --autoplay, --spectate, --players, --races, --tick, --crowd, --gallery, --only, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --preset, --lod-pixels, --shadow-map, --biome, --weather; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --sequence, --effect, --flight, --viewer, --select, --health, --damage, --kill, --play, --observe, --input, --scene, --sheet, --compare, --set)"
                 ),
             }
             first = false;

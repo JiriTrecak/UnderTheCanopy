@@ -67,6 +67,12 @@ fn game() -> Value {
     let mut cart = unit(json!({"movement": movement, "combat": combat, "campDefense": {}}));
     cart["body"]["maxHp"] = json!(3);
     cart["bounty"] = json!([{"item": "item.amber", "amount": 30}]);
+    // A hero and a soldier the player commands (autoplay).
+    let mut captain = hero.clone();
+    captain["behaviors"]["playerControl"] = json!({});
+    captain["vision"] = json!(10);
+    let mut soldier = unit(json!({"movement": movement, "combat": combat, "playerControl": {}}));
+    soldier["vision"] = json!(10);
     let mut hunter = unit(json!({"movement": movement, "combat": combat}));
     hunter["vision"] = json!(10);
     json!({
@@ -101,6 +107,8 @@ fn game() -> Value {
             definition("unit.bandit", "unit", unit(json!({"movement": movement, "combat": combat, "campDefense": {}}))),
             definition("unit.brute", "unit", big),
             definition("unit.cart", "unit", cart),
+            definition("unit.captain", "unit", captain),
+            definition("unit.soldier", "unit", soldier),
             definition("unit.scout", "unit", unit(json!({"movement": movement, "playerControl": {}}))),
             definition("unit.hunter", "unit", hunter),
             definition("unit.marshal", "unit", hero),

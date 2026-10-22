@@ -15,6 +15,7 @@
           "children": [
             { "id": "kind", "kind": "label", "class": "cs-row-kind" },
             { "id": "title", "kind": "label", "class": "cs-row-title" },
+            { "id": "ai", "kind": "button", "class": "cs-act cs-ai", "text": "Play with AI", "action": "steps.autoplay", "visible": false },
             { "id": "act", "kind": "button", "class": "cs-act", "text": "Play", "action": "steps.act" }
           ]
         },
@@ -30,6 +31,7 @@
                 { "id": "line", "kind": "label", "class": "cs-next-line" }
               ]
             },
+            { "id": "ai", "kind": "button", "class": "cs-act cs-ai", "text": "Play with AI", "action": "steps.autoplay", "visible": false },
             { "id": "act", "kind": "button", "class": "cs-act cs-next-act", "text": "Play", "action": "steps.act" }
           ]
         }

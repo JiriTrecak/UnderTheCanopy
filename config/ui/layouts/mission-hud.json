@@ -62,6 +62,28 @@
         ]
       },
       {
+        "id": "autoplay", "class": "mh-auto", "visible": false,
+        "children": [
+          {
+            "class": "mh-auto-box",
+            "children": [
+              { "id": "label", "kind": "label", "class": "mh-auto-label", "text": "Autoplay 4×" },
+              { "id": "step", "kind": "label", "class": "mh-auto-step" },
+              {
+                "id": "speeds", "class": "mh-auto-speeds",
+                "children": [
+                  { "id": "s1", "kind": "button", "class": "mh-auto-speed", "text": "1×", "action": "autoplay.speed1" },
+                  { "id": "s2", "kind": "button", "class": "mh-auto-speed", "text": "2×", "action": "autoplay.speed2" },
+                  { "id": "s4", "kind": "button", "class": "mh-auto-speed", "text": "4×", "action": "autoplay.speed4" },
+                  { "id": "s8", "kind": "button", "class": "mh-auto-speed", "text": "8×", "action": "autoplay.speed8" }
+                ]
+              },
+              { "id": "take", "kind": "button", "class": "mh-auto-take", "text": "Take over", "action": "autoplay.take" }
+            ]
+          }
+        ]
+      },
+      {
         "id": "dialogue-wrap", "class": "mh-dialogue-wrap", "visible": false,
         "children": [
           {

@@ -447,6 +447,11 @@ impl Playing {
         self.game.live().newest()
     }
 
+    /// Autoplay's speed, or the player taking over.
+    pub fn autoplay(&self, control: crate::sim::AutoplayControl) {
+        self.game.sim().control(Control::Autoplay(control));
+    }
+
     pub fn status(&self) -> LiveStatus {
         self.game.sim().live()
     }

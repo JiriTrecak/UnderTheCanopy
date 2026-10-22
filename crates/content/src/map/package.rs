@@ -10,6 +10,7 @@
 //! │                    they make: heights, water-heights, water-flow and (blocked)
 //! │                    (.grid, see [`super::grid`])
 //! ├─ mission.lua       the mission script, when there is a mission
+//! ├─ autoplay.lua      a mission's autoplay plan, when it has one (not in the identity)
 //! └─ preview.webp      the menus' picture
 //! ```
 //!
@@ -32,6 +33,8 @@ use std::path::Path;
 pub const MAP_FILE: &str = "map.json";
 pub const SCENERY_FILE: &str = "scenery.json";
 pub const MISSION_SCRIPT: &str = "mission.lua";
+/// A mission's autoplay plan (docs/campaign.md "Autoplay"), outside the map's identity.
+pub const AUTOPLAY_SCRIPT: &str = "autoplay.lua";
 pub const PREVIEW_FILE: &str = "preview.webp";
 pub const TERRAIN_DIR: &str = "terrain";
 
@@ -115,6 +118,9 @@ pub fn load_package(package: &Package) -> Result<UtcMap, Errors> {
             ))
         })?;
         mission.insert("script".into(), Value::String(script));
+        if let Ok(plan) = package.read_text(AUTOPLAY_SCRIPT) {
+            mission.insert("autoplay".into(), Value::String(plan));
+        }
     }
     document.insert("v".into(), json!(super::UTCMAP_VERSION));
     document.insert("name".into(), json!(package.manifest.name));
@@ -225,6 +231,11 @@ pub fn write(map: &UtcMap, id: &str, version: &str, dir: &Path) -> std::io::Resu
     {
         std::fs::write(dir.join(MISSION_SCRIPT), script)?;
     }
+    if let Some(Value::Object(mission)) = document.get_mut("mission")
+        && let Some(Value::String(plan)) = mission.remove("autoplay")
+    {
+        std::fs::write(dir.join(AUTOPLAY_SCRIPT), plan)?;
+    }
     if document
         .get("stamps")
         .and_then(Value::as_array)
@@ -295,6 +306,8 @@ pub struct MapSummary {
     pub placed_players: Vec<u8>,
     /// Whether the package has [`PREVIEW_FILE`].
     pub preview: bool,
+    /// A mission with an autoplay plan ([`AUTOPLAY_SCRIPT`]).
+    pub autoplay: bool,
 }
 
 /// Reads [`MapSummary`] of the map package at `dir`: its manifest and `map.json`, not the
@@ -353,5 +366,6 @@ pub fn summary(dir: &Path) -> Result<MapSummary, Errors> {
             players
         },
         preview: package.root.join(PREVIEW_FILE).is_file(),
+        autoplay: document.mission.is_some() && package.root.join(AUTOPLAY_SCRIPT).is_file(),
     })
 }

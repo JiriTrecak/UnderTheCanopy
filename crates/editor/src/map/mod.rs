@@ -608,12 +608,21 @@ mod tests {
         };
         let overlay = Arc::new(store.overlay().below(map_root));
         check(Package::open_overlaid(&root.join(map_root), Some(overlay.clone())).unwrap());
-        // The copy Test in game plays.
+        // A mission's autoplay plan beside the documents (written by hand, never by the
+        // editor) goes with the copy Test in game plays and outlives saving.
+        let plan = canopy_content::map::package::AUTOPLAY_SCRIPT;
+        std::fs::create_dir_all(root.join(map_root)).unwrap();
+        std::fs::write(root.join(map_root).join(plan), "wait(1)\n").unwrap();
         let copy = root.join("copy/flat.utcm");
         write_overlaid(&root.join(map_root), &overlay, &copy).unwrap();
         check(Package::open(&copy).unwrap());
+        assert!(copy.join(plan).is_file());
         store.save().unwrap();
         check(Package::open(&root.join(map_root)).unwrap());
+        assert_eq!(
+            std::fs::read_to_string(root.join(map_root).join(plan)).unwrap(),
+            "wait(1)\n"
+        );
         let _ = std::fs::remove_dir_all(&root);
     }
 }

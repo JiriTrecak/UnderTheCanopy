@@ -206,6 +206,8 @@ pub enum Control {
     Seek(u32),
     /// Replays: the transport's pause, apart from the game menu's.
     Hold(bool),
+    /// Autoplay's speed, or the player taking over.
+    Autoplay(AutoplayControl),
 }
 
 /// What feeds the world its commands: the session (recorded when a recorder is given),
@@ -213,14 +215,55 @@ pub enum Control {
 pub enum Driver {
     Live {
         recorder: Option<crate::replay::record::Recorder>,
+        /// A mission's autoplay plan steering the local player (docs/campaign.md
+        /// "Autoplay"): its commands go through the session like the player's own.
+        autoplay: Option<AutoplaySpec>,
     },
     Replay(Box<crate::replay::playback::Playback>),
 }
 
 impl Driver {
     pub fn live() -> Self {
-        Self::Live { recorder: None }
+        Self::Live {
+            recorder: None,
+            autoplay: None,
+        }
     }
+}
+
+/// What starts autoplay on the simulation thread (the plan's Lua state lives there).
+#[derive(Clone)]
+pub struct AutoplaySpec {
+    /// The plan (`autoplay.lua`).
+    pub source: String,
+    pub map: Arc<canopy_content::map::UtcMap>,
+}
+
+/// The autoplay speeds the HUD offers (D93): more ticks a second, never longer ticks.
+pub const AUTOPLAY_SPEEDS: [f32; 4] = [1.0, 2.0, 4.0, 8.0];
+/// Autoplay's starting speed.
+pub const AUTOPLAY_SPEED: f32 = 4.0;
+
+/// What the window thread asks of autoplay.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum AutoplayControl {
+    Speed(f32),
+    /// The player takes over: the plan stops for good and the match runs at 1×.
+    TakeOver,
+}
+
+/// Autoplay as of the simulation thread's last loop.
+#[derive(Debug, Clone, PartialEq)]
+pub struct AutoplayLive {
+    /// The plan still plays.
+    pub on: bool,
+    /// The speed chosen, and the one the match runs at (1× while a cinematic plays).
+    pub speed: f32,
+    pub running: f32,
+    /// The plan's step (`go 300,100`), or why it stopped.
+    pub label: String,
+    /// Where the camera follows it: its fight, its leading hero or its army (cells).
+    pub focus: Option<[f32; 2]>,
 }
 
 /// What a replay's transport shows, as of the simulation thread's last loop.
@@ -266,6 +309,8 @@ pub struct LiveStatus {
     pub tick: u32,
     /// A replay's transport (replays only).
     pub replay: Option<ReplayLive>,
+    /// Autoplay (matches it plays).
+    pub autoplay: Option<AutoplayLive>,
 }
 
 /// What a networked seat reports once its world is built (`ready`).
@@ -780,7 +825,7 @@ pub fn advance_with(
 ) -> Option<Advanced> {
     let started = Instant::now();
     match driver {
-        Driver::Live { recorder } => {
+        Driver::Live { recorder, .. } => {
             let turn = session.advance(world)?;
             if let Some(recorder) = recorder {
                 recorder.stepped(&turn.commands, world);
@@ -894,6 +939,7 @@ impl SimThread {
             paused: false,
             tick: world.tick(),
             replay: replaying.then(ReplayLive::default),
+            autoplay: None,
         }));
         let handle = {
             let mailbox = mailbox.clone();
@@ -964,6 +1010,24 @@ impl SimThread {
                     let mut generation = 0u32;
                     let mut last_seek: Option<(u32, f32)> = None;
                     let mut reported = false;
+                    // Autoplay: the plan lives on this thread (its Lua state stays here),
+                    // asked after every step; its commands go through the session.
+                    let spec = match &mut driver {
+                        Driver::Live { autoplay, .. } => autoplay.take(),
+                        Driver::Replay(_) => None,
+                    };
+                    let had_autoplay = spec.is_some();
+                    let mut autoplay = spec.and_then(|spec| {
+                        canopy_sim::autoplay::Autoplay::new(&spec.source, spec.map)
+                            .inspect_err(|error| tracing::error!(%error, "autoplay plan"))
+                            .ok()
+                    });
+                    let mut auto_speed = AUTOPLAY_SPEED;
+                    let mut auto_label = String::new();
+                    let mut auto_focus: Option<[f32; 2]> = None;
+                    // The speed the schedule runs at: the debug overlay's, or autoplay's
+                    // (1× while a cinematic plays, so it can be watched).
+                    let mut running = speed;
                     let first_decided = first_view.outcome.is_some();
                     mailbox.publish(Arc::new(Snapshot {
                         presentation: first,
@@ -994,18 +1058,22 @@ impl SimThread {
                                     let _ = reply.send(world.save());
                                 }
                                 Control::Chat(text) => session.chat(&text),
-                                Control::Speed(s)
-                                    if !networked && !tick_length.is_zero() && s > 0.0 =>
-                                {
-                                    let now_tick = world.tick();
-                                    epoch += pace * (now_tick - origin);
-                                    origin = now_tick;
-                                    pace = tick_length.div_f32(s);
-                                    speed = s;
-                                }
+                                Control::Speed(s) if !networked && s > 0.0 => speed = s,
                                 Control::Shown(seat) if !networked => shown = seat,
                                 Control::Seek(tick) if replaying => seek = Some(tick),
-                                Control::Speed(_) | Control::Shown(_) | Control::Seek(_) => {}
+                                Control::Autoplay(AutoplayControl::Speed(s)) if s > 0.0 => {
+                                    auto_speed = s;
+                                }
+                                Control::Autoplay(AutoplayControl::TakeOver) => {
+                                    if autoplay.take().is_some() {
+                                        auto_label = "taken over".into();
+                                        tracing::info!("autoplay: taken over");
+                                    }
+                                }
+                                Control::Speed(_)
+                                | Control::Shown(_)
+                                | Control::Seek(_)
+                                | Control::Autoplay(_) => {}
                             }
                         }
                         if let (Some(target), Driver::Replay(playback)) = (seek, &mut driver) {
@@ -1067,10 +1135,36 @@ impl SimThread {
                             }
                             _ => {}
                         }
+                        // A new pace from the newest tick on, so the schedule stays
+                        // continuous: the debug overlay's speed, or autoplay's.
+                        let wanted = match &autoplay {
+                            Some(_)
+                                if canopy_sim::mission::blocks_commands(world.state())
+                                    .is_some() =>
+                            {
+                                1.0
+                            }
+                            Some(_) => auto_speed,
+                            None => speed,
+                        };
+                        if wanted != running && !tick_length.is_zero() && !networked {
+                            let now_tick = world.tick();
+                            epoch += pace * (now_tick - origin);
+                            origin = now_tick;
+                            pace = tick_length.div_f32(wanted);
+                            running = wanted;
+                        }
                         if let Ok(mut l) = live.try_lock() {
                             l.status = session.status();
                             l.paused = paused_at.is_some();
                             l.tick = world.tick();
+                            l.autoplay = had_autoplay.then(|| AutoplayLive {
+                                on: autoplay.is_some(),
+                                speed: auto_speed,
+                                running,
+                                label: auto_label.clone(),
+                                focus: auto_focus,
+                            });
                             if let Driver::Replay(p) = &driver {
                                 let a = p.analysis();
                                 let desync = match (p.desync, a.desync) {
@@ -1129,6 +1223,20 @@ impl SimThread {
                             std::thread::sleep(Duration::from_millis(1));
                             continue;
                         };
+                        if let Some(plan) = &mut autoplay {
+                            let _span = tracing::trace_span!("autoplay").entered();
+                            for action in plan.tick(&mut world) {
+                                session.send(action);
+                            }
+                            for line in plan.drain_lines() {
+                                tracing::info!(target: "autoplay", "{line}");
+                            }
+                            auto_label = match plan.status() {
+                                canopy_sim::autoplay::Status::Failed(e) => format!("stopped: {e}"),
+                                _ => plan.label().to_string(),
+                            };
+                            auto_focus = plan.focus(&world).map(|(x, z)| [x, z]);
+                        }
                         if observing && !replaying {
                             tally.observe(&world);
                         }

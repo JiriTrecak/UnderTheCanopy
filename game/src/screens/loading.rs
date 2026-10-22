@@ -34,6 +34,9 @@ pub struct DevSpec {
     pub human: Option<u8>,
     /// Trying an ability with this unit (the editor's encounter).
     pub encounter: Option<String>,
+    /// The map's autoplay plan steers the local player (`--autoplay`, the editor's Test
+    /// with AI).
+    pub autoplay: bool,
 }
 
 enum Message {
@@ -111,6 +114,7 @@ fn dev(
             content: Some(data.content.clone()),
             encounter: spec.encounter.as_deref(),
             exploration: None,
+            autoplay: spec.autoplay,
         },
     )?;
     progress(Stage::Gpu, 0.85);

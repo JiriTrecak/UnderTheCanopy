@@ -39,6 +39,14 @@ profile *args: cook
 bench-sim *args="--map frozen-dream --crowd 50 --ticks 1600":
     cargo run -q --release -p canopy-sim --example match_bench -- --data "{{justfile_directory()}}" {{args}}
 
+# Play a mission headless with its autoplay plan (docs/campaign.md, Autoplay): `just autoplay <mission id or .utcm path> [--seed n] [--talk] [--verify]`
+autoplay *args:
+    cargo run -q --release -p canopy-sim --example autoplay -- --data "{{justfile_directory()}}" {{args}}
+
+# Every shipped mission's autoplay plan must win (several minutes; not part of `just check`)
+campaign-test *args:
+    cargo run -q --release -p canopy-sim --example autoplay -- --data "{{justfile_directory()}}" --all --verify {{args}}
+
 # Cook published assets into target/cooked/canopy.pack; `just cook --inspect <asset id>` shows one, `--stats` the whole pack
 cook *args:
     cargo run -q -p canopy-cook -- --data "{{justfile_directory()}}" --out "{{justfile_directory()}}/target/cooked" {{args}}
