@@ -229,6 +229,29 @@ pub fn tick(
     }
 }
 
+/// Applies effects outside a script run, as a successful run applies its own: tools stage
+/// a scene's cast this way (a spawn counts as the script's, so the script cannot spawn
+/// that placement again).
+pub fn apply_effects(
+    state: &mut State,
+    catalog: &Catalog,
+    script: &Script,
+    effects: &[MissionEffect],
+) {
+    for effect in effects {
+        if let MissionEffect::Spawn { placement, .. } = effect {
+            let Some(mission) = state.mission.as_mut() else {
+                return;
+            };
+            if mission.spawned.contains(placement) {
+                continue;
+            }
+            mission.spawned.push(placement.clone());
+        }
+        effect::apply(effect, state, catalog, script, &systems::Live { catalog });
+    }
+}
+
 /// Turns units toward their scripted facing; a unit leaves the list once it faces its
 /// target, dies, or receives an order.
 fn advance_facing(state: &mut State, catalog: &Catalog, systems: &dyn Systems) {

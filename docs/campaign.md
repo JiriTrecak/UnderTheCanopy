@@ -239,7 +239,7 @@ Older functions keep working inside and outside scenes (`move`, `face`, `say`, `
 
 **Easter eggs.** Clicking a unit (selecting it) on a mission map sends a `clicked` command, counted per placement for the campaign player and saved (`mission.clicks`). Lines when a hero walks near something are `in_region` in `on_tick`. A lone creature placed for nobody outside any camp (a tree frog on a lily pad, a sleeping Alate) stays where it stands: no player fights it unprompted, it casts its own creature spells as camp creatures do but never a colony's (a neutral founds nothing, so a neutral Alate stays an Alate), takes only a forced attack, and answers a blow by attacking its striker until the striker is gone or out of its sight (a passive camp's members answer the same way).
 
-The bench: `base/maps/showcase/cinematic-bench.utcm` (authored by `tools/maps/cinematic_bench.py`) plays the Hollow Brood's opening. Captures: `just shot --play --map cinematic-bench --tick <t> --out <png>`.
+The bench: `base/maps/showcase/cinematic-bench.utcm` (authored by `tools/maps/cinematic_bench.py`) plays the Hollow Brood's opening. Captures: `just shot --play --map cinematic-bench --tick <t> --out <png>`. Any mission scene, staged mid-mission when it needs to be: `just shot --play --map <mission.utcm> --scene <name>|all|list --out <folder> [--sheet] [--compare <rev>] [--set <variable>=<value>]` (`game/src/play/preview`; skill `canopy-scenes`, "Seeing it").
 
 ## Research: how Warcraft III and StarCraft II do it
 

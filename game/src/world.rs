@@ -40,6 +40,9 @@ pub struct MatchSpec<'a> {
     /// Trying an ability: this unit near the local player's start, with allies and
     /// creeps (`canopy_sim::crowd::encounter`).
     pub encounter: Option<&'a str>,
+    /// How much of the map the players know at the start, when not the map's own (a scene
+    /// preview shows a mission as a player who walked it knows it).
+    pub exploration: Option<map::Exploration>,
 }
 
 /// What the renderer draws of a map: the scene, its lighting and the asset pack.
@@ -114,6 +117,24 @@ impl Match {
     }
 }
 
+/// Reads map `id`: a map of the library, or a map package's path (tests and captures of
+/// maps the game does not ship).
+pub fn read_map(paths: &Paths, id: &str) -> Result<map::UtcMap> {
+    let path = std::path::Path::new(id);
+    if path
+        .extension()
+        .is_some_and(|e| e == canopy_content::package::MAP_EXTENSION)
+    {
+        return map::package::load(path).map_err(|e| anyhow!("{e}"));
+    }
+    let library = crate::data::map_files(paths)?;
+    let file = library.iter().find(|m| m.id == id).with_context(|| {
+        let ids: Vec<&str> = library.iter().map(|m| m.id.as_str()).collect();
+        format!("no map {id} (maps: {})", ids.join(", "))
+    })?;
+    file.load().map_err(|e| anyhow!("{}: {e}", file.file))
+}
+
 /// Loads a match on map `spec.map` with its biome's look.
 pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
     let id = spec.map;
@@ -126,22 +147,10 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
         None => Content::load(&paths.data),
     };
     let content = Arc::new(content.map_err(|e| anyhow!("content: {e}"))?);
-    // A map package's path instead of an id loads that package (tests and captures of maps
-    // the game does not ship).
-    let path = std::path::Path::new(id);
-    let mut map = if path
-        .extension()
-        .is_some_and(|e| e == canopy_content::package::MAP_EXTENSION)
-    {
-        map::package::load(path).map_err(|e| anyhow!("{e}"))?
-    } else {
-        let library = crate::data::map_files(paths)?;
-        let file = library.iter().find(|m| m.id == id).with_context(|| {
-            let ids: Vec<&str> = library.iter().map(|m| m.id.as_str()).collect();
-            format!("no map {id} (maps: {})", ids.join(", "))
-        })?;
-        file.load().map_err(|e| anyhow!("{}: {e}", file.file))?
-    };
+    let mut map = read_map(paths, id)?;
+    if let Some(exploration) = spec.exploration {
+        map.initial_exploration = Some(exploration);
+    }
     // Other weather than the map's, to preview it (`--weather`).
     if let Some(weather) = spec.weather {
         let kind: canopy_content::map::WeatherKind =

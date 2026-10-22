@@ -18,6 +18,9 @@
 //!             [--select all|player:<slot>|<id,…>] [--health damaged|always|selected]
 //!             [--damage <percent>[,<percent>…]] [--data <folder>] [graphics]
 //!             [--play | --observe] [--input <script>] (the HUD; see `play::capture`)
+//! canopy shot --play --map <mission> --scene <name> --out <folder> [--sheet] [--compare <rev>]
+//!             [--set <variable>=<value>]…  (a mission scene's frames; see `play::preview`)
+//! canopy shot --map <mission> --scene list  (the mission's scenes)
 //! graphics: [--preset low|medium|high|ultra] (first; later options adjust it)
 //!           [--render-scale <0.5–1>] [--no-contact] [--no-bloom] [--haze off|low|medium|high]
 //!           [--lod-pixels <px>] (live models' level-of-detail deviation; 0: full detail)
@@ -239,6 +242,16 @@ pub struct Options {
     pub play: bool,
     pub observe: bool,
     pub input: String,
+    /// `--scene <name>`: a mission scene's frames instead of one shot (`play::preview`);
+    /// `list` prints the mission's scenes.
+    pub scene: Option<String>,
+    /// `--sheet`: a scene preview's contact sheet.
+    pub sheet: bool,
+    /// `--compare <rev>`: a scene preview also plays the map as it was at this revision,
+    /// side by side.
+    pub compare: Option<String>,
+    /// `--set <variable>=<value>`: mission variables a scene preview starts with.
+    pub variables: Vec<(String, String)>,
 }
 
 /// What a shot selects (world UI reviews).
@@ -306,6 +319,10 @@ impl Options {
             play: false,
             observe: false,
             input: String::new(),
+            scene: None,
+            sheet: false,
+            compare: None,
+            variables: Vec::new(),
         };
         let mut out = None;
         let mut size = [1920, 1080];
@@ -466,6 +483,16 @@ impl Options {
                 "--play" => options.play = true,
                 "--observe" => options.observe = true,
                 "--input" => options.input = value("--input")?,
+                "--scene" => options.scene = Some(value("--scene")?),
+                "--sheet" => options.sheet = true,
+                "--compare" => options.compare = Some(value("--compare")?),
+                "--set" => {
+                    let text = value("--set")?;
+                    let (name, value) = text.split_once('=').context("--set <variable>=<value>")?;
+                    options
+                        .variables
+                        .push((name.trim().to_owned(), value.trim().to_owned()));
+                }
                 "--out" => out = Some(PathBuf::from(value("--out")?)),
                 "--size" => {
                     let text = value("--size")?;
@@ -473,7 +500,7 @@ impl Options {
                     size = [w.parse().context("--size")?, h.parse().context("--size")?];
                 }
                 other => bail!(
-                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --races, --tick, --crowd, --gallery, --only, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --preset, --lod-pixels, --shadow-map, --biome, --weather; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --sequence, --effect, --flight, --viewer, --select, --health, --damage, --kill, --play, --observe, --input)"
+                    "unknown option {other} (expected --data, --no-vsync, --map, --spectate, --players, --races, --tick, --crowd, --gallery, --only, --colors, --camera, --hour, --render-scale, --no-contact, --no-bloom, --haze, --preset, --lod-pixels, --shadow-map, --biome, --weather; shot: --out, --size, --time, --frames, --no-shadows, --pitch, --movers, --sequence, --effect, --flight, --viewer, --select, --health, --damage, --kill, --play, --observe, --input, --scene, --sheet, --compare, --set)"
                 ),
             }
             first = false;
@@ -498,7 +525,13 @@ impl Options {
                 only,
             };
         } else if shot {
-            let out = out.context("shot needs --out <png>")?;
+            // `--scene list` prints and writes nothing.
+            let listing = options.scene.as_deref() == Some("list");
+            let out = match out {
+                Some(out) => out,
+                None if listing => PathBuf::new(),
+                None => bail!("shot needs --out <png>"),
+            };
             if options.map.is_none() {
                 bail!("shot needs --map <id>");
             }

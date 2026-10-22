@@ -24,6 +24,7 @@ pub mod orders;
 pub mod overlay;
 pub mod picking;
 pub mod placement;
+pub mod preview;
 pub mod run;
 pub mod selection;
 pub mod shots;

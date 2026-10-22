@@ -368,6 +368,17 @@ impl World {
         self.mission.as_ref()
     }
 
+    /// Applies mission effects outside a script run (tools staging a scene's cast:
+    /// spawns, placements, turns), then syncs the spatial model as a run would.
+    pub fn apply_mission_effects(&mut self, effects: &[mission::MissionEffect]) {
+        let Some(runtime) = &self.mission else {
+            return;
+        };
+        mission::apply_effects(&mut self.state, &self.catalog, &runtime.script, effects);
+        self.motion.spatial.sync_static(&self.state);
+        self.motion.spatial.sync_bodies(&self.state);
+    }
+
     /// Limits what `player` may build, train and research to its race's tech without
     /// `locked` (a campaign's computer player held back to the mission's tech).
     pub fn limit_tech(&mut self, player: u8, locked: impl IntoIterator<Item = canopy_content::Id>) {

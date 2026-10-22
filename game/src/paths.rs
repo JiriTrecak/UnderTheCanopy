@@ -79,6 +79,12 @@ impl Paths {
     pub fn repository(&self) -> Option<&Path> {
         is_repository(&self.data).then_some(self.data.as_path())
     }
+
+    /// Scratch space of a repository checkout's tools (`target/tmp`, which `just tidy`
+    /// empties).
+    pub fn scratch(&self) -> Option<PathBuf> {
+        self.repository().map(|r| r.join("target").join("tmp"))
+    }
 }
 
 fn is_repository(data: &Path) -> bool {
