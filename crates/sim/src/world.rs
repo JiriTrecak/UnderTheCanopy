@@ -1197,7 +1197,10 @@ fn compile(map: &UtcMap, catalog: &Catalog) -> Result<Terrain, SetupError> {
 
 /// Appearance scales of map and scenery placements: resource collision discs scale with
 /// them.
-fn appearance_scales(map: &UtcMap, terrain: &Terrain) -> std::collections::BTreeMap<String, f64> {
+pub(crate) fn appearance_scales(
+    map: &UtcMap,
+    terrain: &Terrain,
+) -> std::collections::BTreeMap<String, f64> {
     map.entities
         .iter()
         .chain(&terrain.scene().resources)

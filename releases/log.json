@@ -86,7 +86,8 @@
       "Computer players no longer stop building once the ground around their hall is full: they build further out on the open ground they can reach",
       "Computer players held to a mission's tech no longer wait on an upgrade or research the mission keeps from them",
       "Campaign waves sent to a place where a building now stands march to the open ground beside it instead of waiting at home",
-      "Large heroes such as the ant Queen pick up items lying against walls and buildings, and step free when wedged on a cliff edge beside a ramp"
+      "Large heroes such as the ant Queen pick up items lying against walls and buildings, and step free when wedged on a cliff edge beside a ramp",
+      "Campaign: the Hollow Stag's grove and the surveyor's glade on the Glass Road and the waterfall cache in Founding can be reached again, and creeps and survivors no longer stand stuck in the scenery"
     ],
     "knownIssues": []
   },

@@ -86,6 +86,17 @@ Every change to a mission ends with a headless playthrough that wins. Both runne
 - **Current routes:** Hollow Brood (mission_walk, cap 3, caches first, then road, webs, sick pool, terrace, hornets, rim, rubble, chamber, wait, Hollow, Ashka); Founding (seed 1, pushes `12:300,100;17:322,80;24:110,120;27:86,92`, click `alate-sleeper:3@2`, wins about 28 min); Glass Road (`--mass 18`, pushes `10:168,210;14:288,170;17:340,152;22:372,64;28:340,72;34:372,64;38:340,72;44:372,64`, wins seeds 1–8 in 25–32 min).
 - Don't run `ai_duels`.
 
+## Checking a mission
+
+`just check` runs the mission check over every shipped mission (`crates/sim/tests/mission_shipped.rs`, about 1.5 s; docs/campaign.md "Checking a mission"; `canopy_sim::mission::check`). It catches the pitfalls below without playing, by the simulation's own navigation:
+- **Stranded units:** placed units and scripted spawns that cannot start a route where they stand, or reach under 300 cells. The finding names the nearest ground the body fits on.
+- **Wave regions** whose centre lies in a building or on closed ground.
+- **Routes:** player 1 into every region (its smallest walker), each wave line from its sources to its target (its largest unit), with the real pathfinder, and the narrowest width of each. A region player 1's large units (radius 3) cannot enter is flagged, not failed.
+- **Corridor spawns:** a scripted neutral building where the corridor is under 13 cells.
+- **A dry run of every scene,** skipped with every scripted placement spawned: no script error, cinematic mode off at its end, nobody left where it cannot step.
+
+Read the routes, widths and flags with `cargo test -p canopy-sim --test mission_shipped -- --nocapture`. Fix a finding in the map package (map.json, scenery.json, mission.lua, or the blocks for terrain), then prove the mission again.
+
 ## Pitfalls that already cost a day
 
 - **Scenery blockers on a road** (a corpse prop, a crate) can cut it for the pathfinder even when `--reach` says the ground connects. Debris units walk past has no blocker.
