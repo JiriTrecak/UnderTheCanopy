@@ -932,6 +932,17 @@ fn definition_rules(check: &mut Checker, d: &Definition) {
             );
         }
     }
+    for bounty in d.bounty.iter().flatten() {
+        let currency = check
+            .definition(at, bounty.item.as_str(), Kind::Item)
+            .is_some_and(|i| i.currency == Some(true));
+        if !matches!(d.kind, Kind::Unit | Kind::Building) || !currency || bounty.amount == 0 {
+            check.fail(
+                at,
+                "a bounty requires a unit or building, a currency item and a positive amount",
+            );
+        }
+    }
     if let Some(tunnel) = &d.tunnel
         && (d.kind != Kind::Building || tunnel.interval_ticks == 0 || tunnel.speed == 0)
     {

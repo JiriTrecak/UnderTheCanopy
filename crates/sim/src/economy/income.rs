@@ -5,9 +5,12 @@
 //! player, and powered when it needs power (D66); every `intervalTicks` it adds `amount`
 //! of the item to its owner's wallet. An unpowered building holds its count, as training
 //! does. The count lives on the entity, so saves and replays resume it exactly.
+//!
+//! A definition's `bounty` pays the owner of whoever kills it (Warcraft III's bounty).
 
 use super::{Ctx, Delivery, alive, stock};
 use crate::state::FactKind;
+use crate::{catalog::Catalog, entity::EntityId, state::State};
 use canopy_content::placement::Owner;
 
 /// Step 9: every building with income advances one tick, in id order.
@@ -54,6 +57,48 @@ pub fn advance(ctx: &mut Ctx) {
             item: income.item.clone(),
             amount: income.amount,
             store: id,
+            carrier: None,
+        });
+    }
+}
+
+/// The bounty of `dead` goes to `killer`'s stock, rising as "+N" where it fell. The caller
+/// decides that the kill counts (an enemy's, not the owner's own or nobody's).
+pub fn bounty(
+    state: &mut State,
+    catalog: &Catalog,
+    deliveries: &mut Vec<Delivery>,
+    dead: EntityId,
+    killer: Owner,
+) {
+    let Some(e) = state.entities.get(dead) else {
+        return;
+    };
+    let Some(bounty) = catalog.get(e.definition).bounty.as_ref() else {
+        return;
+    };
+    if killer == Owner::Nobody {
+        return;
+    }
+    for paid in bounty {
+        stock::add(
+            state.wallets.entry(killer).or_default(),
+            &paid.item,
+            paid.amount,
+        );
+        stock::record(
+            state,
+            killer,
+            FactKind::Produced,
+            "Bounty",
+            Some((&paid.item, paid.amount)),
+        );
+        deliveries.push(Delivery {
+            tick: state.tick,
+            owner: killer,
+            item: paid.item.clone(),
+            amount: paid.amount,
+            store: dead,
             carrier: None,
         });
     }

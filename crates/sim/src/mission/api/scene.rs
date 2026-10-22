@@ -1,5 +1,6 @@
 //! The scene half of the `mission` table (docs/campaign.md "Scenes"): scenes and their
-//! waits, cinematic mode, saved cameras, fades, animations and spoken lines.
+//! waits, cinematic mode, saved cameras, fades, animations, effects and lights at points,
+//! and spoken lines.
 //!
 //! A scene is a function of the script's `scenes` table, started with `mission.play`.
 //! Every run calls it from the top. Each call it makes to the API, other than a query, is
@@ -14,8 +15,8 @@ use super::{Api, Args, Reply, milli, none, number, one, round, text};
 use crate::mission::{
     TICKS_PER_SECOND, alive,
     cinema::{
-        self, Animation, Fade, MAX_ANIMATIONS, MAX_SCENE_MOVES, OPAQUE, Pose, SceneMove, ScenePlay,
-        Shot,
+        self, Animation, Fade, MAX_ANIMATIONS, MAX_POINT_EFFECTS, MAX_POINT_LIGHTS,
+        MAX_SCENE_MOVES, OPAQUE, PointEffect, PointLight, Pose, SceneMove, ScenePlay, Shot,
     },
     effect::MissionEffect,
     entity_by_placement,
@@ -24,7 +25,7 @@ use crate::mission::{
 };
 use canopy_content::game::Kind;
 
-pub const NAMES: [&str; 15] = [
+pub const NAMES: [&str; 18] = [
     "clicks",
     "play",
     "playing",
@@ -35,6 +36,9 @@ pub const NAMES: [&str; 15] = [
     "fade_out",
     "fade_in",
     "animate",
+    "effect_at",
+    "light_at",
+    "stop_effect",
     "speak",
     "wait",
     "wait_arrived",
@@ -69,6 +73,18 @@ const READING_RATE: f64 = 15.0;
 const LINE_SECONDS: (f64, f64) = (2.5, 20.0);
 /// Non-looping animations are forgotten this long after they started, ticks.
 const ANIMATION_MEMORY: u32 = 30 * TICKS_PER_SECOND;
+/// A one-shot effect at a point is kept this long past its own length (its particles'
+/// tails), ticks.
+const EFFECT_TAIL: u32 = 10 * TICKS_PER_SECOND;
+/// The `mission` functions that order a unit: the order ends a pose the scene holds it in.
+const ORDERS: [&str; 6] = [
+    "move",
+    "attack_move",
+    "follow",
+    "attack",
+    "transfer",
+    "transform",
+];
 
 impl Host for Api<'_> {
     fn call(&mut self, name: &'static str, args: Vec<Scalar>) -> Reply {
@@ -291,7 +307,8 @@ impl Api<'_> {
         self.draft.cinema.skipped = Some(tick);
     }
 
-    /// Animations of the living, the newest [`MAX_ANIMATIONS`].
+    /// Animations of the living, the newest [`MAX_ANIMATIONS`]; effects and lights at
+    /// points that are over.
     pub(in crate::mission) fn tidy_cinema(&mut self) {
         let tick = self.state.tick;
         let state = self.state;
@@ -302,6 +319,24 @@ impl Api<'_> {
         });
         let extra = cinema.animations.len().saturating_sub(MAX_ANIMATIONS);
         cinema.animations.drain(..extra);
+        cinema
+            .effects
+            .retain(|e| e.until.is_none_or(|until| tick < until));
+        cinema
+            .lights
+            .retain(|l| l.to > 0 || tick < l.start.saturating_add(l.ticks));
+    }
+
+    /// An order the run gave ends the pose its unit held (`animate`): it walks or fights
+    /// from here. An animation started after the order in the same run stays.
+    pub(super) fn ordered(&mut self, name: &str, a: &Args) {
+        if !ORDERS.contains(&name) {
+            return;
+        }
+        if let Ok(placement) = self.placement(a.get(0)) {
+            let id = &placement.id;
+            self.draft.cinema.animations.retain(|x| &x.placement != id);
+        }
     }
 
     pub(super) fn scene_call(&mut self, name: &str, a: &Args) -> Reply {
@@ -425,6 +460,82 @@ impl Api<'_> {
                         looping,
                     });
                 }
+                none()
+            }
+            "effect_at" => {
+                let key = identifier(a.get(0), 64, "Effect key")?;
+                let id = text(a.get(1), 120)?;
+                let effect = self
+                    .catalog
+                    .content
+                    .effects
+                    .iter()
+                    .find(|e| e.id.as_str() == id)
+                    .ok_or_else(|| format!("Unknown effect: {id}"))?;
+                let position = milli(self.coordinate(a.get(2))?, self.coordinate(a.get(3))?);
+                let until = match a.get(4) {
+                    // A burst a skip passes over is not seen.
+                    Scalar::Nil if !effect.looping && skipping => return none(),
+                    Scalar::Nil if effect.looping => None,
+                    Scalar::Nil => Some(tick + effect.duration_ticks + EFFECT_TAIL),
+                    raw => Some(tick + seconds(raw, false)?),
+                };
+                let list = &mut self.draft.cinema.effects;
+                list.retain(|e| e.key != key);
+                list.push(PointEffect {
+                    key,
+                    effect: effect.id.to_string(),
+                    position,
+                    start: tick,
+                    until,
+                });
+                let extra = list.len().saturating_sub(MAX_POINT_EFFECTS);
+                list.drain(..extra);
+                none()
+            }
+            "light_at" => {
+                let key = identifier(a.get(0), 64, "Light key")?;
+                let position = milli(self.coordinate(a.get(1))?, self.coordinate(a.get(2))?);
+                let color = match a.get(3) {
+                    Scalar::String(name) => cinema::color(name),
+                    _ => None,
+                }
+                .ok_or("Light colour must be white or #rrggbb")?;
+                let thousandths = |raw: &Scalar, min: f64, max: f64, what: &str| {
+                    number(raw, min, max)
+                        .map(|v| (v * 1000.0).round() as u32)
+                        .map_err(|_| format!("Light {what} must be a number in {min}..{max}"))
+                };
+                let to = thousandths(a.get(4), 0.0, 100.0, "intensity")?;
+                let radius = thousandths(a.get(5), 0.5, 60.0, "radius")?;
+                let ticks = seconds(a.get(6), skipping)?;
+                let height = match a.get(7) {
+                    Scalar::Nil => 2000,
+                    raw => thousandths(raw, 0.0, 30.0, "height")?,
+                };
+                let list = &mut self.draft.cinema.lights;
+                // A light already shining ramps on from where it stands.
+                let from = list.iter().find(|l| l.key == key).map_or(0, |l| l.at(tick));
+                list.retain(|l| l.key != key);
+                list.push(PointLight {
+                    key,
+                    position,
+                    height,
+                    color,
+                    radius,
+                    from,
+                    to,
+                    start: tick,
+                    ticks,
+                });
+                let extra = list.len().saturating_sub(MAX_POINT_LIGHTS);
+                list.drain(..extra);
+                none()
+            }
+            "stop_effect" => {
+                let key = identifier(a.get(0), 64, "Effect key")?;
+                self.draft.cinema.effects.retain(|e| e.key != key);
+                self.draft.cinema.lights.retain(|l| l.key != key);
                 none()
             }
             "speak" => self.speak(a),

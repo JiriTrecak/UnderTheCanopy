@@ -1,4 +1,4 @@
-//! The `mission` table: 43 functions over a draft of the mission state (the computer
+//! The `mission` table: 44 functions over a draft of the mission state (the computer
 //! players' five in [`ai`], the campaign's four in [`campaign`]).
 //!
 //! Calls read the game state as it was when the run began and write only to the draft and
@@ -40,7 +40,7 @@ pub const MAX_DAMAGE: usize = 64;
 /// Camera transition when a shot gives none.
 const DEFAULT_TRANSITION_MS: u32 = 350;
 
-pub const NAMES: [&str; 43] = [
+pub const NAMES: [&str; 44] = [
     "has_item",
     "give_item",
     "take_item",
@@ -48,6 +48,7 @@ pub const NAMES: [&str; 43] = [
     "tick",
     "count",
     "stock",
+    "give_stock",
     "alive",
     "position",
     "in_region",
@@ -175,58 +176,65 @@ impl<'a> Api<'a> {
             return Err("Mission API call budget exceeded".into());
         }
         let a = Args(args);
+        let reply = self.run(name, &a)?;
+        self.ordered(name, &a);
+        Ok(reply)
+    }
+
+    fn run(&mut self, name: &str, a: &Args) -> Reply {
         match name {
-            "has_item" => self.has_item(&a),
+            "has_item" => self.has_item(a),
             "give_item" => {
                 let item = self.item(a.get(1))?;
-                self.exchange(&a, None, Some(item))
+                self.exchange(a, None, Some(item))
             }
             "take_item" => {
                 let item = self.item(a.get(1))?;
-                self.exchange(&a, Some(item), None)
+                self.exchange(a, Some(item), None)
             }
             "dialogue_busy" => one(Scalar::Boolean(self.dialogue_busy())),
             "tick" => one(Scalar::Integer(i64::from(self.state.tick))),
-            "count" => self.count(&a),
-            "stock" => self.stock(&a),
+            "count" => self.count(a),
+            "stock" => self.stock(a),
+            "give_stock" => self.give_stock(a),
             "alive" => one(Scalar::Boolean(self.entity(a.get(0))?.is_some_and(alive))),
-            "position" => self.position(&a),
-            "in_region" => self.in_region(&a),
-            "arrived" => self.arrived(&a),
+            "position" => self.position(a),
+            "in_region" => self.in_region(a),
+            "arrived" => self.arrived(a),
             "facing_done" => one(Scalar::Boolean(self.draft.facing.is_empty())),
-            "get" => self.get(&a),
-            "set" => self.set(&a),
-            "damage" => self.damage(&a),
-            "recover" => self.recover(&a),
-            "spawn" => self.spawn(&a),
-            "move" => self.order_move(&a, false),
-            "attack_move" => self.order_move(&a, true),
-            "follow" => self.follow(&a),
-            "attack" => self.attack(&a),
-            "transfer" => self.transfer(&a),
-            "transform" => self.transform(&a),
-            "begin_scene" => self.begin_scene(&a),
+            "get" => self.get(a),
+            "set" => self.set(a),
+            "damage" => self.damage(a),
+            "recover" => self.recover(a),
+            "spawn" => self.spawn(a),
+            "move" => self.order_move(a, false),
+            "attack_move" => self.order_move(a, true),
+            "follow" => self.follow(a),
+            "attack" => self.attack(a),
+            "transfer" => self.transfer(a),
+            "transform" => self.transform(a),
+            "begin_scene" => self.begin_scene(a),
             "end_scene" => {
                 self.draft.scene = None;
                 none()
             }
-            "camera" => self.camera(&a),
-            "face" => self.face(&a),
-            "say" => self.say(&a),
-            "begin_objective" => self.begin_objective(&a),
-            "complete_objective" => self.end_objective(&a, ObjectiveState::Completed),
-            "fail_objective" => self.end_objective(&a, ObjectiveState::Failed),
+            "camera" => self.camera(a),
+            "face" => self.face(a),
+            "say" => self.say(a),
+            "begin_objective" => self.begin_objective(a),
+            "complete_objective" => self.end_objective(a, ObjectiveState::Completed),
+            "fail_objective" => self.end_objective(a, ObjectiveState::Failed),
             "objective" => {
                 self.draft.objective = text(a.get(0), 500)?.to_string();
                 none()
             }
             "ai_waves" | "ai_attack_now" | "ai_target" | "ai_behaviour" | "ai_wake" => {
-                self.ai(name, &a)
+                self.ai(name, a)
             }
             "win" => self.effect(MissionEffect::Win),
             "lose" => self.effect(MissionEffect::Lose),
-            _ if campaign::NAMES.contains(&name) => self.campaign(name, &a),
-            name if scene::NAMES.contains(&name) => self.scene_call(name, &a),
+            _ if campaign::NAMES.contains(&name) => self.campaign(name, a),
+            name if scene::NAMES.contains(&name) => self.scene_call(name, a),
             _ => Err(format!("Unknown mission function {name}")),
         }
     }
@@ -384,6 +392,29 @@ impl<'a> Api<'a> {
             .copied()
             .unwrap_or(0);
         one(Scalar::Integer(i64::from(amount)))
+    }
+
+    /// Adds a currency to a player's stock, or takes it (a negative amount, never below
+    /// nothing).
+    fn give_stock(&mut self, a: &Args) -> Reply {
+        let owner = self.seated(a.get(0))?;
+        if owner == Owner::Nobody {
+            return Err("Stock belongs to a player".into());
+        }
+        let id = text(a.get(1), 120)?;
+        let item = self
+            .definition(id)
+            .filter(|d| d.kind == Kind::Item && d.currency == Some(true))
+            .ok_or("Stock requires an economy currency item")?;
+        let amount = number(a.get(2), -1_000_000.0, 1_000_000.0)?;
+        if amount.fract() != 0.0 {
+            return Err("A stock amount must be an integer".into());
+        }
+        self.effect(MissionEffect::Stock {
+            owner,
+            item: item.id.clone(),
+            amount: amount as i32,
+        })
     }
 
     fn position(&self, a: &Args) -> Reply {
