@@ -649,6 +649,7 @@ CLIMB = {'n': 0.0, 'w': HALF_PI, 's': math.pi, 'e': -HALF_PI}
 KERB = {'w': 0.0, 's': HALF_PI, 'e': math.pi, 'n': -HALF_PI}  # a junction's one kerb
 SHOULDER = 6.0  # lanterns, either side of the middle line
 PIPE = 7.4      # the pipe line, on the north or east shoulder
+LANTERN = 1.5   # lantern posts a head taller than the beetles who keep them
 
 # Side ramps off the causeway, from RAMPS: (ramp centre, which run, the way it falls).
 SIDE = [((104, 232), 'A', 's'), ((120, 200), 'A', 'n'), ((248, 144), 'C', 'n'),
@@ -723,7 +724,7 @@ def road():
             for s in (-1, 1):
                 lx, lz = x + s * SHOULDER * nx, z + s * SHOULDER * nz
                 if not near_side(lx, lz, 9) and not busy(lx, lz, 1.5):
-                    put('beetle-lantern', lx, lz)
+                    put('beetle-lantern', lx, lz, 0.0, LANTERN)
 
     lanterns([(x, ROAD_A, 0, 1) for x in range(36, ROAD_B - 8, 24)])
     lanterns([(ROAD_B, z, 1, 0) for z in range(200, ROAD_C + 8, -24)])
@@ -747,7 +748,7 @@ def road():
     put('beetle-wall-tower', 214, 194)
     put('beetle-wall', 222, 194.8, 0.0)
     put('beetle-wall-tower', 246, 194)
-    put('beetle-lantern', 246, 172)
+    put('beetle-lantern', 246, 172, 0.0, LANTERN)
 
 
 def station():
@@ -775,7 +776,7 @@ def station():
     put('beetle-substance-tank', 324, 116, 0.6)
     put('beetle-substance-tank', 356, 116, 2.6)
     for x, z in ((320, 132), (360, 132), (320, 100), (360, 100)):
-        put('beetle-lantern', x, z)
+        put('beetle-lantern', x, z, 0.0, LANTERN)
     # The old ant tunnel comes up in the back yard: an old collapse beside it.
     put('giants-pebbles', 312, 72, 1.0, 0.6)
 
