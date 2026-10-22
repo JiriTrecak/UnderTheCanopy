@@ -270,6 +270,32 @@ fn waves_arrive_at_regions_and_go_where_they_are_sent() {
     run(&mut world, 41);
     let id = made(&world, P2, SOLDIER)[0];
     assert!(near(heading(&world, id), 40, 60, 0));
+
+    // A building put up over the region's centre: the wave makes for the open ground
+    // beside it, where a route can end, and gets there.
+    let cover = place_for("cover", HOUSE, "player.1", 129.5, 129.5);
+    let mut world = start(&map(
+        vec![cover],
+        json!([enemy(json!({"behaviour": "waves", "waves": [to_gate]}))]),
+        "",
+    ));
+    run(&mut world, 41);
+    let wave = made(&world, P2, SOLDIER);
+    for &id in &wave {
+        let to = heading(&world, id);
+        assert!(near(to, 128, 128, 4), "{to:?}");
+        let inside = to.is_some_and(|(x, y)| (128..=131).contains(&x) && (128..=131).contains(&y));
+        assert!(!inside, "outside the house: {to:?}");
+    }
+    run(&mut world, 1200);
+    assert!(
+        wave.iter()
+            .any(|&id| near(Some(cell_of(&world, id)), 128, 128, 5)),
+        "{:?}",
+        wave.iter()
+            .map(|&id| cell_of(&world, id))
+            .collect::<Vec<_>>()
+    );
 }
 
 #[test]

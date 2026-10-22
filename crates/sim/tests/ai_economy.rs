@@ -282,3 +282,34 @@ fn a_colony_whose_field_runs_low_builds_a_hall_at_the_next_field() {
     );
     assert_eq!(m.metrics.rejected, 0, "{:?}", m.trace);
 }
+
+#[test]
+fn a_colony_with_no_room_near_home_builds_where_its_open_ground_goes_on() {
+    // Home is a pocket with no room for a barracks; a lane too narrow to build in leads
+    // east to a meadow further off than the rings searched around home reach.
+    let open = |x: i32, z: i32| {
+        ((24..=48).contains(&x) && (24..=58).contains(&z))
+            || ((49..=111).contains(&x) && (33..=35).contains(&z))
+            || ((112..=200).contains(&x) && (12..=70).contains(&z))
+            || ((185..=240).contains(&x) && (180..=240).contains(&z))
+    };
+    let mut world = world(&closed_skirmish(vec![], open), false);
+    run_until(&mut world, 20_000, |w| !all_of(w, P1, BARRACKS).is_empty());
+    let barracks = get(&world, all_of(&world, P1, BARRACKS)[0]);
+    assert!(barracks.position.x > 112_000, "{:?}", barracks.position);
+}
+
+#[test]
+fn a_colony_held_to_a_mission_tech_never_plans_what_it_forbids() {
+    let army = |w: &World| all_of(w, P1, SOLDIER).len() + all_of(w, P1, ARCHER).len();
+    // Free to, the colony upgrades its hall once it has an army.
+    let mut free = keep_world(&skirmish(vec![], vec![]), false);
+    run_until(&mut free, 30_000, |w| !all_of(w, P1, KEEP).is_empty());
+    // Held to a tech without the keep, it never asks for one and spends on its army.
+    let mut held = keep_world(&skirmish(vec![], vec![]), false);
+    held.limit_tech(0, [canopy_content::Id::new(KEEP).unwrap()]);
+    run_until(&mut held, 30_000, |w| army(w) >= 8);
+    assert!(all_of(&held, P1, KEEP).is_empty());
+    let m = memory(&held, 0);
+    assert_eq!(m.metrics.rejected, 0, "{:?}", m.trace);
+}

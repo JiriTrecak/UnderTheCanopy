@@ -127,6 +127,27 @@ fn item_auras_reach_allies_and_enemies() {
 }
 
 #[test]
+fn an_item_against_a_building_is_reached_from_the_heros_edge() {
+    // The item lies just inside a building's footprint: the hero's centre stops a body's
+    // radius off the wall, further from the item than its pickup range.
+    let entities = vec![
+        placed("a", "unit.hero", 110.0, 101.0, 1),
+        placed("b", "item.sword", 102.0, 101.0, 0),
+        placed("h", "building.barracks", 101.5, 101.5, 0),
+    ];
+    let played = Script::new(
+        "items-wall",
+        gear_spec(),
+        entities,
+        200,
+        vec![(1, 1, pick(1, 2, false))],
+    )
+    .play();
+    assert_eq!(slots(&played, "a")[0], Some("item.sword".into()));
+    assert!(played.errors().is_empty(), "{:?}", played.errors());
+}
+
+#[test]
 fn pickups_and_uses_are_validated() {
     let mut spec = gear_spec();
     spec.definitions.push(item(

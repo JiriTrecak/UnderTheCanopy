@@ -71,6 +71,9 @@ pub fn pickup_error(
     None
 }
 
+/// Whether `target` lies within the hero's pickup range of its body's edge: a wide hero
+/// cannot stand over an item lying against a wall or a building, so its centre stays
+/// further off.
 fn within_reach(ctx: &Ctx, hero: &Entity, target: &Entity) -> bool {
     let range = ctx
         .catalog()
@@ -78,7 +81,8 @@ fn within_reach(ctx: &Ctx, hero: &Entity, target: &Entity) -> bool {
         .behaviors
         .inventory
         .as_ref()
-        .map_or(0.0, |i| i.pickup_range);
+        .map_or(0.0, |i| i.pickup_range)
+        + ctx.spatial.body_of(hero).radius;
     let (dx, dy) = (
         f64::from(hero.position.x - target.position.x) / 1000.0,
         f64::from(hero.position.y - target.position.y) / 1000.0,

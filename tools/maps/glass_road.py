@@ -439,22 +439,32 @@ REGIONS = [
 # the ground there). Heroes stand 6–9 m tall.
 SHOTS = [
     # The opening: the camp from the south-east, the road's lanterns beyond; then the
-    # conversation between Aurelith (113, 327) and Korrath (112, 316), Oleander (121, 330).
+    # conversation between Aurelith (113, 327, facing north) and Korrath (112, 316, facing
+    # south), Oleander (103, 332). Each line is framed on its speaker's face: over the
+    # listener's shoulder, or a clean single from the speaker's front.
     ('op-wide', (176, 404, 42), (108, 326, 0), 40, 0),
     ('op-follow', (146, 370, 16), (116, 330, 3), 36, 0),
-    ('op-over-queen', (127, 349, 10), (111, 314, 5), 30, 0),
+    ('op-over-queen', (131, 343, 10), (111, 314, 5), 30, 0),
     ('op-over-korrath', (99, 293, 11), (114, 329, 5), 30, -1.5),
     ('op-two', (84, 324, 9), (108, 329, 5), 34, 0),
-    ('op-korrath', (125, 310, 7), (112, 316, 6), 26, 1.5),
+    ('op-korrath', (90, 318, 8), (112, 320, 6.5), 33, 0),
     ('op-road', (118, 300, 26), (106, 228, 6), 40, 0),
     # The tunnel's far end: the yard behind the station's west wall.
     ('tunnel-out', (332, 84, 16), (303.5, 59.5, 2), 36, 0),
-    # The gate: the station from below, Vosk on the gate, the Queen at the road's end.
+    # The gate: the station from below; then the parley across the closed gate, Vosk
+    # (340, 98) on the station's edge above the forecourt, Aurelith (340, 154) at the foot
+    # of the road's last ramp, Korrath and Oleander either side behind her.
     ('gate-wide', (318, 214, 22), (342, 90, 6), 38, 0),
     ('gate-up', (348, 178, 7), (340, 102, 7), 32, 0),
-    ('gate-vosk', (347, 172, 8), (340, 98, 4.5), 22, 0),
-    ('gate-vosk-close', (344, 120, 3), (340, 98, 5), 30, 1.5),
-    ('gate-queen', (335, 86, 9), (340, 154, 3.5), 26, -1),
+    # Aurelith from the ramp below the gate: her face, the road behind her.
+    ('gate-queen', (341, 141, 6), (340, 155, 7.5), 28, 0),
+    # Vosk from the forecourt below him, either side.
+    ('gate-vosk', (335, 121, 5), (340, 98, 8), 26, 0),
+    ('gate-vosk-close', (345, 124, 7), (340, 98, 7), 22, 1.5),
+    # Over Vosk's shoulder, high on the station's edge, down past the gate onto Aurelith.
+    ('gate-over-vosk', (341, 110, 17), (340, 154, 6), 26, 0),
+    # Over Aurelith's shoulder, up past the gate onto Vosk.
+    ('gate-over-queen', (346, 168, 13), (340, 98, 7), 18, 0),
     ('gate-lodge', (352, 112, 16), (379, 83, 4), 38, 0),
     # The closing: the condenser, the Queen's hands on the glass, a crane up into violet.
     ('cond-wide', (316, 116, 20), (340, 58, 6), 40, 0),

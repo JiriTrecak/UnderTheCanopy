@@ -94,6 +94,7 @@ fn game() -> Value {
             definition("unit.flyer", "unit", unit(0.6, 1.0, 1.5, json!({"playerControl": control, "movement": {"speed": 8, "locomotion": "air", "flightHeight": 3}}))),
             definition("unit.post", "unit", unit(0.4, 1.5, 1.0, json!({"playerControl": control}))),
             definition("unit.trooper", "unit", unit(1.5, 4.8, 3.25, json!({"playerControl": control, "movement": {"speed": 12}}))),
+            definition("unit.giant", "unit", unit(3.0, 9.6, 6.5, json!({"playerControl": control, "movement": {"speed": 6}}))),
             definition("unit.walker", "unit", unit(0.4, 1.5, 1.0, json!({"playerControl": control, "movement": {"speed": 4}}))),
             definition("unit.wanderer", "unit", unit(0.4, 1.5, 1.0, json!({
                 "playerControl": control,

@@ -216,6 +216,9 @@ pub struct Memory {
     pub failed_sites: BTreeMap<String, u32>,
     /// Where the next building site search starts; the AI's only randomness.
     pub placement_cursor: u32,
+    /// Where the next search over the open ground beyond the rings goes on from.
+    #[serde(default)]
+    pub far_cursor: u32,
     pub orders: BTreeMap<u32, OrderMemo>,
     pub worker_returns: BTreeMap<u32, WorkerReturn>,
     /// Commands issued and not yet applied.
@@ -246,6 +249,7 @@ impl Memory {
             inspected: BTreeMap::new(),
             failed_sites: BTreeMap::new(),
             placement_cursor: seed % 192,
+            far_cursor: 0,
             orders: BTreeMap::new(),
             worker_returns: BTreeMap::new(),
             pending: Vec::new(),

@@ -79,7 +79,11 @@
       "Campaign creatures placed on their own outside a camp (a sleeping Alate, a tree frog) no longer vanish a moment into the mission; they keep to themselves and fight back when attacked",
       "Campaign attack waves sent at your base march on your main fort and fight there, instead of standing at their own buildings or idling by a worker",
       "Campaign scenes no longer hang when a unit cannot reach its mark, for example when buildings or a waiting crowd stand in its way",
-      "Cinematic portraits of heroes whose head juts forward, such as General Korrath, show their head instead of a close-up of their armour"
+      "Cinematic portraits of heroes whose head juts forward, such as General Korrath, show their head instead of a close-up of their armour",
+      "Computer players no longer stop building once the ground around their hall is full: they build further out on the open ground they can reach",
+      "Computer players held to a mission's tech no longer wait on an upgrade or research the mission keeps from them",
+      "Campaign waves sent to a place where a building now stands march to the open ground beside it instead of waiting at home",
+      "Large heroes such as the ant Queen pick up items lying against walls and buildings, and step free when wedged on a cliff edge beside a ramp"
     ],
     "knownIssues": []
   },
