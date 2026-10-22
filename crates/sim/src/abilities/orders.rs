@@ -240,6 +240,8 @@ pub fn tick(ctx: &mut Ctx, state: &mut State, plan: bool) {
                     e.unit.as_ref().and_then(|u| u.order.as_ref()),
                     Some(Order::CastAbility { .. })
                 )
+                // Held by cinematic mode: the order waits for the mode to end.
+                && !crate::mission::held(state, e)
         })
         .map(|e| e.id)
         .collect();

@@ -142,6 +142,7 @@ pub fn requests(
             || e.caster.as_ref().is_some_and(|c| c.pending.is_some())
             || crate::abilities::statuses::stunned(catalog, e)
             || crate::abilities::statuses::rooted(catalog, e)
+            || crate::mission::held(state, e)
         {
             continue;
         }

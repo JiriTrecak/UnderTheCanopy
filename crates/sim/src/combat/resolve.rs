@@ -134,7 +134,8 @@ pub fn begin_attack(senses: &Senses, state: &mut State, a: EntityId, b: EntityId
 }
 
 /// Whether the unit stands down from weapon combat this tick: casting, charging by an
-/// ability, stunned, disarmed or ethereal (old resolve and plan guards).
+/// ability, stunned, disarmed or ethereal (old resolve and plan guards), or held by
+/// cinematic mode.
 pub fn standing_down(senses: &Senses, state: &State, e: &Entity) -> bool {
     let catalog = senses.catalog;
     e.caster.as_ref().is_some_and(|c| c.pending.is_some())
@@ -142,6 +143,7 @@ pub fn standing_down(senses: &Senses, state: &State, e: &Entity) -> bool {
         || statuses::stunned(catalog, e)
         || statuses::disarmed(catalog, e)
         || statuses::ethereal(catalog, e)
+        || crate::mission::held(state, e)
 }
 
 /// Damage `raw_milli` of `kind` does to `target` after matchup and armour, without

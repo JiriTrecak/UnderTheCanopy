@@ -269,6 +269,48 @@ fn scripts_steer_pause_and_send_waves() {
 }
 
 #[test]
+fn cinematic_mode_holds_the_waves_back() {
+    let line = json!({"after": 5, "every": 5, "units": [{"unit": SOLDIER, "count": 1}], "from": {"region": "edge"}});
+    let script = r#"
+        function on_start() mission.play("opening") end
+        function on_tick()
+          if mission.tick() == 1100 then mission.play("later") end
+        end
+        function scenes.opening() mission.cinematic(true) mission.wait(10) mission.cinematic(false) end
+        function scenes.later() mission.cinematic(true) mission.wait(20) mission.cinematic(false) end"#;
+    let mut world = start(&map(
+        Vec::new(),
+        json!([enemy(json!({"behaviour": "waves", "waves": [line]}))]),
+        script,
+    ));
+    // Five seconds count from the end of the ten-second opening, not from the start.
+    run(&mut world, 590);
+    assert!(made(&world, P2, SOLDIER).is_empty());
+    run(&mut world, 20);
+    assert_eq!(made(&world, P2, SOLDIER).len(), 1);
+    // Waves at 15, 20 and 25 seconds; the scene at 27.5 holds the fourth and those under way.
+    run(&mut world, 1101 - 610);
+    assert_eq!(made(&world, P2, SOLDIER).len(), 3);
+    let at = world
+        .state()
+        .entities
+        .get(made(&world, P2, SOLDIER)[0])
+        .unwrap()
+        .position;
+    run(&mut world, 785);
+    assert_eq!(made(&world, P2, SOLDIER).len(), 3);
+    let held = world
+        .state()
+        .entities
+        .get(made(&world, P2, SOLDIER)[0])
+        .unwrap();
+    assert_eq!(held.position, at);
+    // Then it falls due 2.5 seconds after the scene, as it would have without it.
+    run(&mut world, 135);
+    assert_eq!(made(&world, P2, SOLDIER).len(), 4);
+}
+
+#[test]
 fn scripts_switch_behaviours_and_name_only_computer_players() {
     let line = json!({"after": 1, "every": 100, "units": [{"unit": SOLDIER, "count": 1}], "from": {"region": "edge"}});
     let script = r#"function on_tick() if mission.tick() == 200 then mission.ai_behaviour(2, "waves") end end"#;

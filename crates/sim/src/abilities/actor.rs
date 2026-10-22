@@ -141,7 +141,9 @@ pub fn of(senses: &Senses, state: &State, e: &Entity) -> Actor {
             immune,
             super::library::control::SILENCE,
         )
-        || held;
+        || held
+        // Cinematic mode halts the casts of everyone the script does not direct.
+        || crate::mission::held(state, e);
     let sight = senses.sight(state);
     let point = sight.sight_point(e);
     Actor {

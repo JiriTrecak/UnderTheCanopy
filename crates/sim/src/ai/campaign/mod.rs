@@ -348,6 +348,29 @@ pub fn command(state: &mut State, player: u8, order: &Order) {
     }
 }
 
+/// Holds every computer player's clock back by `ticks` (cinematic mode): waves, free
+/// training, rebuilds and revivals fall due that much later, so nothing launches during
+/// a cinematic or all at once after it.
+pub fn delay(memories: &mut [Memory], ticks: u32) {
+    for m in memories {
+        // Before activation too: an opening cinematic delays the first waves.
+        m.since = m.since.saturating_add(ticks);
+        for line in &mut m.lines {
+            if let Some(next) = &mut line.next {
+                *next = next.saturating_add(ticks);
+            }
+        }
+        for training in &mut m.training {
+            training.done = training.done.saturating_add(ticks);
+        }
+        for post in &mut m.posts {
+            if let Some(due) = &mut post.due {
+                *due = due.saturating_add(ticks);
+            }
+        }
+    }
+}
+
 /// One player's turn.
 struct Play<'p, 'c> {
     campaign: &'p Campaign,

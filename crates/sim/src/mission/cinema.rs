@@ -14,14 +14,22 @@ pub const MAX_ANIMATIONS: usize = 32;
 pub const MAX_SCENE_MOVES: usize = 64;
 /// Fully opaque, in thousandths.
 pub const OPAQUE: u16 = 1000;
+/// Units a cinematic directs at once ([`Cinema::actors`]); the oldest leave first.
+pub const MAX_ACTORS: usize = 64;
 
 /// Everything cinematic about a mission.
 #[skip_serializing_none]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Cinema {
-    /// Cinematic mode: letterbox, the HUD hidden, player commands refused.
+    /// Cinematic mode: letterbox, the HUD hidden, player commands refused, and the battle
+    /// held: every unit the script does not direct stands still and fights nothing, and
+    /// the computer players wait (`mission::held`).
     pub on: bool,
+    /// Placements the script directed while cinematic mode was on (ordered, turned or
+    /// animated), oldest first: the cast, which alone acts. Cleared when the mode ends.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub actors: Vec<String>,
     /// The camera the view holds or blends to.
     pub shot: Option<Shot>,
     pub fade: Option<Fade>,
@@ -36,6 +44,40 @@ pub struct Cinema {
 impl Cinema {
     pub fn is_empty(&self) -> bool {
         *self == Self::default()
+    }
+
+    /// After a run: the units its effects and animations directed join the cast while
+    /// cinematic mode is on; the cast is dismissed when the mode is off.
+    pub(super) fn cast(&mut self, effects: &[super::MissionEffect]) {
+        if !self.on {
+            self.actors.clear();
+            return;
+        }
+        use super::MissionEffect as E;
+        let directed = effects.iter().filter_map(|e| match e {
+            E::Move { placement, .. }
+            | E::Follow { placement, .. }
+            | E::Attack { placement, .. }
+            | E::Face { placement }
+            | E::Place { placement, .. }
+            | E::Turn { placement, .. } => Some(placement.as_str()),
+            _ => None,
+        });
+        let animated = self.animations.iter().map(|a| a.placement.as_str());
+        let mut actors = std::mem::take(&mut self.actors);
+        for placement in directed.chain(animated) {
+            if !actors.iter().any(|a| a == placement) {
+                actors.push(placement.to_string());
+            }
+        }
+        let extra = actors.len().saturating_sub(MAX_ACTORS);
+        actors.drain(..extra);
+        self.actors = actors;
+    }
+
+    /// Whether cinematic mode holds the placed unit `placement` (none: unplaced) still.
+    pub fn holds(&self, placement: Option<&str>) -> bool {
+        self.on && placement.is_none_or(|p| !self.actors.iter().any(|a| a == p))
     }
 }
 

@@ -50,7 +50,8 @@
       "The ant Queen is redesigned as a true hero: Living Light heals an ally or sears an enemy, Cocoon makes her untouchable while she keeps fighting, One Body shields the army around her, and her ultimate Rebirth raises up to 8 fallen allies, changed by raw substance. Her old Found, Royal Jelly and Exodus are gone.",
       "Raising or consuming the dead is refused when there are no corpses nearby, so an ultimate is never wasted on an empty field.",
       "Items lying on the ground show as a leaf-wrapped loot bundle instead of a placeholder",
-      "The Underleaf forest looks richer: sunlit moss, bare earth and leaf duff read as distinct grounds, the frame is a forest of giant mushrooms, ferns, nuts and fallen leaves, giant caps no longer shade the play area, beetle walls and road ramps look built, the substance pools look less plastic, and the editor's generated view is no longer too dark"
+      "The Underleaf forest looks richer: sunlit moss, bare earth and leaf duff read as distinct grounds, the frame is a forest of giant mushrooms, ferns, nuts and fallen leaves, giant caps no longer shade the play area, beetle walls and road ramps look built, the substance pools look less plastic, and the editor's generated view is no longer too dark",
+      "Cinematics hold the battle: while a scene plays, only its actors move and fight, and enemy waves wait until it ends"
     ],
     "fixed": [
       "Generated cliffs join cleanly at corners and turns, ramps keep their side walls down to the foot, and diagonal cliff edges no longer show a staircase",

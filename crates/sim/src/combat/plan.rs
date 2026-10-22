@@ -98,6 +98,16 @@ fn plan_unit(
     unpowered: &BTreeSet<EntityId>,
 ) {
     let tick = state.tick;
+    // Cinematic mode holds the battle: a unit the script does not direct stands still,
+    // its swing undone, and keeps its orders for when the mode ends.
+    if crate::mission::held(state, state.entities.get(id).expect("unit")) {
+        let u = unit_mut(state, id);
+        crate::orders::suspend_combat(u, tick);
+        discard_navigation(u);
+        u.combat.cooldown = u.combat.cooldown.saturating_sub(1);
+        spatial.update_body(state.entities.get(id).expect("unit"));
+        return;
+    }
     // A lookout without power is dark: whoever stands in it neither aims nor shoots
     // until power returns (D66). Its orders stay.
     if unit(state, id)
@@ -233,6 +243,23 @@ fn plan_unit(
             return;
         }
         _ => {}
+    }
+    // The script's cast fights only when told to: no acquiring in cinematic mode.
+    if crate::mission::holding(state)
+        && !matches!(
+            order,
+            Some(
+                Order::Attack { .. }
+                    | Order::Move {
+                        attack_move: true,
+                        ..
+                    }
+            )
+        )
+    {
+        crate::orders::suspend_combat(unit_mut(state, id), tick);
+        spatial.update_body(state.entities.get(id).expect("unit"));
+        return;
     }
     let holding = matches!(order, Some(Order::Hold)) || unit(state, id).garrison.is_some();
     if holding {
