@@ -243,7 +243,7 @@ P1, P2, P3, P4, P5 = 'player.1', 'player.2', 'player.3', 'player.4', 'player.5'
 ROUTE = [(36, ROAD_A), (100, ROAD_A), (ROAD_B, ROAD_A), (ROAD_B, ROAD_C), (216, ROAD_C),
          (276, ROAD_C), (ROAD_D, ROAD_C), (ROAD_D, 142)]  # the last at the station gate
 CARAVANS = 6
-# Where an ambushed caravan's crates fall: one spot every 24 cells along the road.
+# Where an ambushed caravan's goods fall: one spot every 24 cells along the road.
 SPILLS = []
 
 
@@ -326,16 +326,17 @@ def entities():
 
     # --- Caravans (player 3), spawned one after another at the west end of the road. ---
     for n in range(CARAVANS):
-        for i, (u, dx, dz) in enumerate([('worker', 0, -2), ('worker', 4, 2), ('bolter', -5, -3), ('bolter', -5, 3)]):
-            role = 'cart' if u == 'worker' else 'guard'
+        for i, (u, dx, dz) in enumerate([('supply-cart', 0, -3), ('supply-cart', 7, 3), ('bolter', -7, -3), ('bolter', -7, 3)]):
+            role = 'cart' if u == 'supply-cart' else 'guard'
             ent(f'caravan.{n}.{role}.{i % 2}', f'unit.beetles.{u}', ROUTE[0][0] + dx + 2, ROUTE[0][1] + dz,
                 P3, 90, script=True)
     SPILLS[:] = spill_spots()
     loot = ['item.resin-salve', 'item.moon-dew', 'item.trailkeeper-flask', 'item.resin-salve',
             'item.heartseed', 'item.moon-dew', 'item.thornband', 'item.quickstep-spurs']
+    # What a broken caravan leaves on the road: its goods, lying where anyone can walk (a
+    # crate on the walled causeway would close it; the carts' bounty pays the amber).
     for i, (x, z) in enumerate(SPILLS):
-        ent(f'spill.{i}', 'building.neutral.supply-crate', x, z, script=True,
-            inventory={loot[i % len(loot)]: 1})
+        ent(f'spill.{i}', loot[i % len(loot)], math.floor(x), math.floor(z), script=True)
 
     # --- The toll house: the peddler, and the engineer asleep by his broken cart. ---
     ent('toll.peddler', 'building.neutral.merchant', 237.5, 181.5, wares=[

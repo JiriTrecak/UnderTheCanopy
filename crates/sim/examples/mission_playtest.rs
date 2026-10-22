@@ -23,7 +23,9 @@
 //!
 //! `--tech` lists what player 1 may build, train and research (the campaign's tech up to the
 //! mission); everything else of its race is locked, as the campaign would lock it. Without
-//! it nothing is locked. `--human` seats player 1 as a human who does nothing, to see what
+//! it nothing is locked. `--mass 20` holds every push until the army has that many units
+//! (a player gathers before attacking; the skirmish AI would feed them in one by one).
+//! `--human` seats player 1 as a human who does nothing, to see what
 //! the waves do to an idle colony.
 #![allow(clippy::disallowed_methods)] // wall-clock timing of the run
 
@@ -42,6 +44,7 @@ struct Args {
     style: Option<canopy_sim::ai::AiStyle>,
     every: u32,
     human: bool,
+    mass: usize,
     pushes: Vec<(u32, u32, u32)>,
     reach: Vec<(String, i64, i64)>,
     clicks: Vec<(String, u32, u32)>,
@@ -58,6 +61,7 @@ fn args() -> Result<Args, String> {
         style: None,
         every: 60,
         human: false,
+        mass: 0,
         pushes: Vec::new(),
         reach: Vec::new(),
         clicks: Vec::new(),
@@ -82,6 +86,7 @@ fn args() -> Result<Args, String> {
                 );
             }
             "--human" => out.human = true,
+            "--mass" => out.mass = value()?.parse().map_err(|e| format!("--mass: {e}"))?,
             "--click" => {
                 let v = value()?;
                 let parse = || -> Option<(String, u32, u32)> {
@@ -217,6 +222,11 @@ fn main() {
                 })
                 .map(|e| e.id.0)
                 .collect();
+            let army = if army.len() >= args.mass {
+                army
+            } else {
+                Vec::new()
+            };
             for actors in army.chunks(canopy_sim::action::MAX_ACTORS) {
                 seq += 1;
                 let _ = world.enqueue(canopy_sim::Queued {

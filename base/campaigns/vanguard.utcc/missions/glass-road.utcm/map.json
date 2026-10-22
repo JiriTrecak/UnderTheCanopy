@@ -873,23 +873,23 @@
       "rotation": 270.0
     },
     {
-      "definition": "unit.beetles.worker",
+      "definition": "unit.beetles.supply-cart",
       "id": "caravan.0.cart.0",
       "owner": "player.3",
       "position": {
         "x": 38.0,
-        "y": 214.0
+        "y": 213.0
       },
       "rotation": 90.0,
       "activation": "script"
     },
     {
-      "definition": "unit.beetles.worker",
+      "definition": "unit.beetles.supply-cart",
       "id": "caravan.0.cart.1",
       "owner": "player.3",
       "position": {
-        "x": 42.0,
-        "y": 218.0
+        "x": 45.0,
+        "y": 219.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -899,7 +899,7 @@
       "id": "caravan.0.guard.0",
       "owner": "player.3",
       "position": {
-        "x": 33.0,
+        "x": 31.0,
         "y": 213.0
       },
       "rotation": 90.0,
@@ -910,30 +910,30 @@
       "id": "caravan.0.guard.1",
       "owner": "player.3",
       "position": {
-        "x": 33.0,
+        "x": 31.0,
         "y": 219.0
       },
       "rotation": 90.0,
       "activation": "script"
     },
     {
-      "definition": "unit.beetles.worker",
+      "definition": "unit.beetles.supply-cart",
       "id": "caravan.1.cart.0",
       "owner": "player.3",
       "position": {
         "x": 38.0,
-        "y": 214.0
+        "y": 213.0
       },
       "rotation": 90.0,
       "activation": "script"
     },
     {
-      "definition": "unit.beetles.worker",
+      "definition": "unit.beetles.supply-cart",
       "id": "caravan.1.cart.1",
       "owner": "player.3",
       "position": {
-        "x": 42.0,
-        "y": 218.0
+        "x": 45.0,
+        "y": 219.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -943,7 +943,7 @@
       "id": "caravan.1.guard.0",
       "owner": "player.3",
       "position": {
-        "x": 33.0,
+        "x": 31.0,
         "y": 213.0
       },
       "rotation": 90.0,
@@ -954,30 +954,30 @@
       "id": "caravan.1.guard.1",
       "owner": "player.3",
       "position": {
-        "x": 33.0,
+        "x": 31.0,
         "y": 219.0
       },
       "rotation": 90.0,
       "activation": "script"
     },
     {
-      "definition": "unit.beetles.worker",
+      "definition": "unit.beetles.supply-cart",
       "id": "caravan.2.cart.0",
       "owner": "player.3",
       "position": {
         "x": 38.0,
-        "y": 214.0
+        "y": 213.0
       },
       "rotation": 90.0,
       "activation": "script"
     },
     {
-      "definition": "unit.beetles.worker",
+      "definition": "unit.beetles.supply-cart",
       "id": "caravan.2.cart.1",
       "owner": "player.3",
       "position": {
-        "x": 42.0,
-        "y": 218.0
+        "x": 45.0,
+        "y": 219.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -987,7 +987,7 @@
       "id": "caravan.2.guard.0",
       "owner": "player.3",
       "position": {
-        "x": 33.0,
+        "x": 31.0,
         "y": 213.0
       },
       "rotation": 90.0,
@@ -998,30 +998,30 @@
       "id": "caravan.2.guard.1",
       "owner": "player.3",
       "position": {
-        "x": 33.0,
+        "x": 31.0,
         "y": 219.0
       },
       "rotation": 90.0,
       "activation": "script"
     },
     {
-      "definition": "unit.beetles.worker",
+      "definition": "unit.beetles.supply-cart",
       "id": "caravan.3.cart.0",
       "owner": "player.3",
       "position": {
         "x": 38.0,
-        "y": 214.0
+        "y": 213.0
       },
       "rotation": 90.0,
       "activation": "script"
     },
     {
-      "definition": "unit.beetles.worker",
+      "definition": "unit.beetles.supply-cart",
       "id": "caravan.3.cart.1",
       "owner": "player.3",
       "position": {
-        "x": 42.0,
-        "y": 218.0
+        "x": 45.0,
+        "y": 219.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -1031,7 +1031,7 @@
       "id": "caravan.3.guard.0",
       "owner": "player.3",
       "position": {
-        "x": 33.0,
+        "x": 31.0,
         "y": 213.0
       },
       "rotation": 90.0,
@@ -1042,30 +1042,30 @@
       "id": "caravan.3.guard.1",
       "owner": "player.3",
       "position": {
-        "x": 33.0,
+        "x": 31.0,
         "y": 219.0
       },
       "rotation": 90.0,
       "activation": "script"
     },
     {
-      "definition": "unit.beetles.worker",
+      "definition": "unit.beetles.supply-cart",
       "id": "caravan.4.cart.0",
       "owner": "player.3",
       "position": {
         "x": 38.0,
-        "y": 214.0
+        "y": 213.0
       },
       "rotation": 90.0,
       "activation": "script"
     },
     {
-      "definition": "unit.beetles.worker",
+      "definition": "unit.beetles.supply-cart",
       "id": "caravan.4.cart.1",
       "owner": "player.3",
       "position": {
-        "x": 42.0,
-        "y": 218.0
+        "x": 45.0,
+        "y": 219.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -1075,7 +1075,7 @@
       "id": "caravan.4.guard.0",
       "owner": "player.3",
       "position": {
-        "x": 33.0,
+        "x": 31.0,
         "y": 213.0
       },
       "rotation": 90.0,
@@ -1086,30 +1086,30 @@
       "id": "caravan.4.guard.1",
       "owner": "player.3",
       "position": {
-        "x": 33.0,
+        "x": 31.0,
         "y": 219.0
       },
       "rotation": 90.0,
       "activation": "script"
     },
     {
-      "definition": "unit.beetles.worker",
+      "definition": "unit.beetles.supply-cart",
       "id": "caravan.5.cart.0",
       "owner": "player.3",
       "position": {
         "x": 38.0,
-        "y": 214.0
+        "y": 213.0
       },
       "rotation": 90.0,
       "activation": "script"
     },
     {
-      "definition": "unit.beetles.worker",
+      "definition": "unit.beetles.supply-cart",
       "id": "caravan.5.cart.1",
       "owner": "player.3",
       "position": {
-        "x": 42.0,
-        "y": 218.0
+        "x": 45.0,
+        "y": 219.0
       },
       "rotation": 90.0,
       "activation": "script"
@@ -1119,7 +1119,7 @@
       "id": "caravan.5.guard.0",
       "owner": "player.3",
       "position": {
-        "x": 33.0,
+        "x": 31.0,
         "y": 213.0
       },
       "rotation": 90.0,
@@ -1130,265 +1130,175 @@
       "id": "caravan.5.guard.1",
       "owner": "player.3",
       "position": {
-        "x": 33.0,
+        "x": 31.0,
         "y": 219.0
       },
       "rotation": 90.0,
       "activation": "script"
     },
     {
-      "definition": "building.neutral.supply-crate",
+      "definition": "item.resin-salve",
       "id": "spill.0",
       "owner": "none",
       "position": {
-        "x": 45.5,
-        "y": 213.5
+        "x": 45.0,
+        "y": 213.0
       },
       "rotation": 0.0,
-      "initialState": {
-        "inventory": {
-          "item.resin-salve": 1
-        },
-        "construction": "complete"
-      },
       "activation": "script"
     },
     {
-      "definition": "building.neutral.supply-crate",
+      "definition": "item.moon-dew",
       "id": "spill.1",
       "owner": "none",
       "position": {
-        "x": 69.5,
-        "y": 221.5
+        "x": 69.0,
+        "y": 221.0
       },
       "rotation": 0.0,
-      "initialState": {
-        "inventory": {
-          "item.moon-dew": 1
-        },
-        "construction": "complete"
-      },
       "activation": "script"
     },
     {
-      "definition": "building.neutral.supply-crate",
+      "definition": "item.trailkeeper-flask",
       "id": "spill.2",
       "owner": "none",
       "position": {
-        "x": 89.5,
-        "y": 213.5
+        "x": 89.0,
+        "y": 213.0
       },
       "rotation": 0.0,
-      "initialState": {
-        "inventory": {
-          "item.trailkeeper-flask": 1
-        },
-        "construction": "complete"
-      },
       "activation": "script"
     },
     {
-      "definition": "building.neutral.supply-crate",
+      "definition": "item.resin-salve",
       "id": "spill.3",
       "owner": "none",
       "position": {
-        "x": 109.5,
-        "y": 213.5
+        "x": 109.0,
+        "y": 213.0
       },
       "rotation": 0.0,
-      "initialState": {
-        "inventory": {
-          "item.resin-salve": 1
-        },
-        "construction": "complete"
-      },
       "activation": "script"
     },
     {
-      "definition": "building.neutral.supply-crate",
+      "definition": "item.heartseed",
       "id": "spill.4",
       "owner": "none",
       "position": {
-        "x": 133.5,
-        "y": 221.5
+        "x": 133.0,
+        "y": 221.0
       },
       "rotation": 0.0,
-      "initialState": {
-        "inventory": {
-          "item.heartseed": 1
-        },
-        "construction": "complete"
-      },
       "activation": "script"
     },
     {
-      "definition": "building.neutral.supply-crate",
+      "definition": "item.moon-dew",
       "id": "spill.5",
       "owner": "none",
       "position": {
-        "x": 157.5,
-        "y": 213.5
+        "x": 157.0,
+        "y": 213.0
       },
       "rotation": 0.0,
-      "initialState": {
-        "inventory": {
-          "item.moon-dew": 1
-        },
-        "construction": "complete"
-      },
       "activation": "script"
     },
     {
-      "definition": "building.neutral.supply-crate",
+      "definition": "item.thornband",
       "id": "spill.6",
       "owner": "none",
       "position": {
-        "x": 165.5,
-        "y": 201.5
+        "x": 165.0,
+        "y": 201.0
       },
       "rotation": 0.0,
-      "initialState": {
-        "inventory": {
-          "item.thornband": 1
-        },
-        "construction": "complete"
-      },
       "activation": "script"
     },
     {
-      "definition": "building.neutral.supply-crate",
+      "definition": "item.quickstep-spurs",
       "id": "spill.7",
       "owner": "none",
       "position": {
-        "x": 173.5,
-        "y": 173.5
+        "x": 173.0,
+        "y": 173.0
       },
       "rotation": 0.0,
-      "initialState": {
-        "inventory": {
-          "item.quickstep-spurs": 1
-        },
-        "construction": "complete"
-      },
       "activation": "script"
     },
     {
-      "definition": "building.neutral.supply-crate",
+      "definition": "item.resin-salve",
       "id": "spill.8",
       "owner": "none",
       "position": {
-        "x": 181.5,
-        "y": 157.5
+        "x": 181.0,
+        "y": 157.0
       },
       "rotation": 0.0,
-      "initialState": {
-        "inventory": {
-          "item.resin-salve": 1
-        },
-        "construction": "complete"
-      },
       "activation": "script"
     },
     {
-      "definition": "building.neutral.supply-crate",
+      "definition": "item.moon-dew",
       "id": "spill.9",
       "owner": "none",
       "position": {
-        "x": 205.5,
-        "y": 165.5
+        "x": 205.0,
+        "y": 165.0
       },
       "rotation": 0.0,
-      "initialState": {
-        "inventory": {
-          "item.moon-dew": 1
-        },
-        "construction": "complete"
-      },
       "activation": "script"
     },
     {
-      "definition": "building.neutral.supply-crate",
+      "definition": "item.trailkeeper-flask",
       "id": "spill.10",
       "owner": "none",
       "position": {
-        "x": 229.5,
-        "y": 157.5
+        "x": 229.0,
+        "y": 157.0
       },
       "rotation": 0.0,
-      "initialState": {
-        "inventory": {
-          "item.trailkeeper-flask": 1
-        },
-        "construction": "complete"
-      },
       "activation": "script"
     },
     {
-      "definition": "building.neutral.supply-crate",
+      "definition": "item.resin-salve",
       "id": "spill.11",
       "owner": "none",
       "position": {
-        "x": 261.5,
-        "y": 165.5
+        "x": 261.0,
+        "y": 165.0
       },
       "rotation": 0.0,
-      "initialState": {
-        "inventory": {
-          "item.resin-salve": 1
-        },
-        "construction": "complete"
-      },
       "activation": "script"
     },
     {
-      "definition": "building.neutral.supply-crate",
+      "definition": "item.heartseed",
       "id": "spill.12",
       "owner": "none",
       "position": {
-        "x": 285.5,
-        "y": 157.5
+        "x": 285.0,
+        "y": 157.0
       },
       "rotation": 0.0,
-      "initialState": {
-        "inventory": {
-          "item.heartseed": 1
-        },
-        "construction": "complete"
-      },
       "activation": "script"
     },
     {
-      "definition": "building.neutral.supply-crate",
+      "definition": "item.moon-dew",
       "id": "spill.13",
       "owner": "none",
       "position": {
-        "x": 309.5,
-        "y": 165.5
+        "x": 309.0,
+        "y": 165.0
       },
       "rotation": 0.0,
-      "initialState": {
-        "inventory": {
-          "item.moon-dew": 1
-        },
-        "construction": "complete"
-      },
       "activation": "script"
     },
     {
-      "definition": "building.neutral.supply-crate",
+      "definition": "item.thornband",
       "id": "spill.14",
       "owner": "none",
       "position": {
-        "x": 329.5,
-        "y": 157.5
+        "x": 329.0,
+        "y": 157.0
       },
       "rotation": 0.0,
-      "initialState": {
-        "inventory": {
-          "item.thornband": 1
-        },
-        "construction": "complete"
-      },
       "activation": "script"
     },
     {

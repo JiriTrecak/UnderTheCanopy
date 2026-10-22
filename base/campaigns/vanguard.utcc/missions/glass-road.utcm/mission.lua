@@ -151,9 +151,10 @@ function scenes.opening()
   talk("queen", "My mother is not here.")
   mission.camera_to("op-korrath", 0)
   mission.wait(1.2)
-  mission.animate("korrath", "cast")
+  mission.animate("korrath", "kneel", true)
   mission.wait(1)
   talk("korrath", "...Then my mandibles are yours, my Queen.")
+  mission.animate("korrath", "idle")
   mission.camera_to("op-road", 4)
   talk("oleander", "The road runs north of the camp. Its outposts will not let us pass quietly.")
   mission.set("phase", "road")
@@ -229,6 +230,9 @@ function scenes.closing()
   mission.camera_to("cond-faces", 0)
   talk("oleander", "Now we can learn what it is.")
   mission.camera_to("cond-rise", 5)
+  -- The condenser wakes to her: its light rises, and keeps rising into the fade.
+  mission.effect_at("condenser-hum", "effect.buildings.alembic-glow", 340, 57)
+  mission.light_at("condenser", 340, 57, "#9b6cff", 40, 18, 4, 3)
   mission.wait(2)
   mission.fade_out(3, "#2b1450")
   mission.wait(3)
@@ -243,7 +247,7 @@ local function member(n, role, i)
 end
 
 local function spill(x, z)
-  -- The two nearest spots not used yet get a crate each.
+  -- The two nearest spots not used yet get one of its goods each.
   local used = get("spilled", 0)
   for _ = 1, 2 do
     local best, bestd = nil, 0
@@ -320,8 +324,8 @@ local function caravans(now)
     target = ROUTE[wp]
   end
   -- Send the column on (and again when a hop takes too long: a fight, a crowd).
-  local ox, oz = 0, 2
-  if wp > 1 and ROUTE[wp][1] == ROUTE[wp - 1][1] then ox, oz = 2, 0 end
+  local ox, oz = 0, 3
+  if wp > 1 and ROUTE[wp][1] == ROUTE[wp - 1][1] then ox, oz = 3, 0 end
   local back = 6 * get("heading", 1)
   for i = 0, 1 do
     local s = 1 - 2 * i
@@ -350,6 +354,7 @@ local function engineer(now)
         if not given and mission.alive(HEROES[i]) then given = mission.give_item(HEROES[i], "item.moon-dew") end
       end
       local qx, qz = mission.position("queen")
+      mission.animate("engineer", "idle")
       if qx ~= nil then mission.face("engineer", qx, qz) end
     end
     return
@@ -391,6 +396,7 @@ function on_start()
   mission.set("phase", "opening")
   for i = 1, #HEROES do mission.set("live_" .. HEROES[i], true) end
   mission.set("live_vosk", true)
+  mission.animate("engineer", "sleep", true) -- until three clicks wake him
   mission.fade_out(0)
   mission.play("opening")
 end
