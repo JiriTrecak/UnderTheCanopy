@@ -657,8 +657,8 @@
       "definition": "unit.neutral.nest-mother",
       "owner": "none",
       "position": {
-        "x": 278,
-        "y": 164
+        "x": 275,
+        "y": 158
       },
       "rotation": 0.0
     },
@@ -729,7 +729,7 @@
       "owner": "player.3",
       "position": {
         "x": 329,
-        "y": 171
+        "y": 166
       },
       "rotation": 20,
       "activation": "script"
@@ -770,8 +770,8 @@
       "definition": "unit.neutral.willow-wisp",
       "owner": "none",
       "position": {
-        "x": 215,
-        "y": 48
+        "x": 210,
+        "y": 52
       },
       "rotation": 0.0
     },

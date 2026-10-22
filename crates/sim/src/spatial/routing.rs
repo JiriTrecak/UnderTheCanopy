@@ -154,6 +154,51 @@ impl Spatial {
         self.find_grid_path(start, goal, blocked, max_cost, body, asker, 128)
     }
 
+    /// How many ground cells `body` can walk to from `start`, counting up to `limit`: the
+    /// grid search's own steps, so what it counts a route can reach. Maps with bridge
+    /// decks walk their surfaces instead, and answer `limit`.
+    pub fn room(&mut self, start: u32, body: &Body, limit: usize) -> usize {
+        if self.layered() || body.air || !self.valid_node(start) {
+            return limit;
+        }
+        self.reach(start, body, limit).len()
+    }
+
+    /// The ground cells `body` can walk to from `start`, in breadth-first order, at most
+    /// `limit` of them: the grid search's own steps, so a route search reaches exactly
+    /// these. Ground only.
+    pub fn reach(&mut self, start: u32, body: &Body, limit: usize) -> Vec<u32> {
+        if !self.valid_node(start) || start >= self.size * self.size {
+            return Vec::new();
+        }
+        let radius = body.radius_milli();
+        self.ensure_navigation(radius);
+        let size = self.size;
+        let step = self.step_for(radius);
+        let mut seen = CellSet::new((size * size) as usize);
+        seen.insert(start);
+        let mut queue = vec![start];
+        let mut next = 0;
+        while next < queue.len() && queue.len() < limit {
+            let cell = queue[next];
+            next += 1;
+            let (x, y) = ((cell % size) as i32, (cell / size) as i32);
+            for (dx, dy) in crate::navigation::grid::DIRECTIONS {
+                let (nx, ny) = (x + dx, y + dy);
+                if nx < 0 || ny < 0 || nx >= size as i32 || ny >= size as i32 {
+                    continue;
+                }
+                let to = ny as u32 * size + nx as u32;
+                if queue.len() < limit && !seen.contains(to) && can_traverse(size, cell, to, &step)
+                {
+                    seen.insert(to);
+                    queue.push(to);
+                }
+            }
+        }
+        queue
+    }
+
     /// Grid A* (or the walk-surface search on layered maps), confined to a sector corridor
     /// for long routes with a full-search fallback (old `findGridPath`).
     #[allow(clippy::too_many_arguments)]
@@ -561,6 +606,35 @@ impl Spatial {
         if body.air || self.route_origin(here, from, None, body).is_some() {
             return None;
         }
+        self.wedge_exit(here, Some(id), body, None)
+    }
+
+    /// Where a route for `body` standing at `at` starts, other units disregarded: its own
+    /// cell, a neighbouring centre it reaches, or where it steps to when terrain wedges it
+    /// ([`Spatial::route`]). `None`: no route can ever start there.
+    pub fn route_start(&self, at: Fixed, body: &Body) -> Option<u32> {
+        let (x, y) = crate::entity::Milli { x: at.x, y: at.y }.cell();
+        let here = Spot::new(x, y, at.deck);
+        if let Some(node) = self.route_origin(here, at, None, body) {
+            return Some(node);
+        }
+        if body.air {
+            return None;
+        }
+        let nobody = |_: &super::BodyRecord| false;
+        self.wedge_exit(here, None, body, Some(&nobody))
+            .and_then(|spot| self.node(spot))
+    }
+
+    /// The nearest free cell centre within two cells beyond a wedged body's radius where it
+    /// stands on one level and from which it can step on to a neighbouring centre.
+    fn wedge_exit(
+        &self,
+        here: Spot,
+        except: Option<EntityId>,
+        body: &Body,
+        known: Option<&dyn Fn(&super::BodyRecord) -> bool>,
+    ) -> Option<Spot> {
         let leaves = |p: Spot| {
             let at = p.fixed();
             self.level(at, body)
@@ -576,7 +650,7 @@ impl Spatial {
         // Two cells beyond the body's own radius: a wide body (a hero's) straddles an
         // edge from further off its centre.
         let reach = 2 + body.radius.ceil() as i32;
-        self.nearest(here, reach, Some(id), Some(body), Some(&leaves), None)
+        self.nearest(here, reach, except, Some(body), Some(&leaves), known)
     }
 
     /// Plans a route for `e` to `destination` and stores it on the unit (old `route`).

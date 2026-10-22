@@ -7,6 +7,7 @@
 //! dialogue pauses the game while the lockstep clock keeps running.
 
 mod api;
+pub mod check;
 pub mod cinema;
 mod effect;
 mod hook;

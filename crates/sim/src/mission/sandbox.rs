@@ -208,6 +208,32 @@ pub fn validate(source: &str) -> Result<(), String> {
         .map_err(|e| message(&e))
 }
 
+/// The names of the functions the script's top level puts in its `scenes` table, sorted:
+/// what `mission.play` can start (the mission check plays each one).
+pub fn scene_names(source: &str) -> Result<Vec<String>, String> {
+    let lua = state().map_err(|e| message(&e))?;
+    hook::install(&lua).map_err(|e| message(&e))?;
+    let mut names = (|| -> mlua::Result<Vec<String>> {
+        let globals = lua.create_table()?;
+        // The API is out of reach at the top level; an empty table stands in for it, so a
+        // script that keeps a reference to one of its functions still loads.
+        globals.raw_set("mission", lua.create_table()?)?;
+        let scenes = lua.create_table()?;
+        globals.raw_set("scenes", scenes.clone())?;
+        load(&lua, source, globals)?.call::<()>(())?;
+        let mut names = Vec::new();
+        for pair in scenes.pairs::<Value, Value>() {
+            if let (Value::String(name), Value::Function(_)) = pair? {
+                names.push(name.to_str()?.to_string());
+            }
+        }
+        Ok(names)
+    })()
+    .map_err(|e| message(&e))?;
+    names.sort();
+    Ok(names)
+}
+
 fn state() -> mlua::Result<Lua> {
     Lua::new_with(StdLib::NONE, LuaOptions::default())
 }
