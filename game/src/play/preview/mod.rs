@@ -507,9 +507,24 @@ fn slug(text: &str) -> String {
 }
 
 /// The camera the scene holds: a saved camera's id (`+pan` when panned onto another
-/// point), `a → b` during a blend, or `game` for the game's own.
+/// point), a shot preset (`single:korrath`, `over:queen>korrath`, `wide:camp`), `a → b`
+/// during a blend, or `game` for the game's own.
 fn camera(m: Option<&MissionState>, tick: u32) -> String {
     let name = |p: &Pose| {
+        if let Some(preset) = &p.preset {
+            let kind = match preset.kind {
+                canopy_sim::mission::cinema::PresetKind::Single => "single",
+                canopy_sim::mission::cinema::PresetKind::Over => "over",
+                canopy_sim::mission::cinema::PresetKind::Two => "two",
+                canopy_sim::mission::cinema::PresetKind::Wide => "wide",
+            };
+            let subject = if preset.actors.is_empty() {
+                "region".to_owned()
+            } else {
+                preset.actors.join(">")
+            };
+            return format!("{kind}:{subject}");
+        }
         let id = p.camera.as_deref().unwrap_or("game");
         if p.target.is_some() {
             format!("{id}+pan")

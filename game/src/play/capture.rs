@@ -635,7 +635,16 @@ impl Rig {
             .and_then(|t| t.frames)
             .filter(|f| f.returned(tick).is_none() && (cinema_on || f.progress(tick) < 1.0));
         if let Some(frames) = &framed {
-            let saved = frames.at(tick, &self.camera, aspect);
+            let stage = super::presets::Live {
+                live: &self.live,
+                actors: self.renderer.actors(),
+                obstacles: &self.loaded.obstacles,
+                ground: terrain,
+                size: self.loaded.scene.size as f32,
+            };
+            let saved = frames.at(tick, &self.camera, aspect, &mut |p| {
+                super::presets::place(p, &stage, aspect, None)
+            });
             screen.camera = saved.view(aspect, terrain);
             close_camera = true;
         } else if let Some([x, z]) = targets

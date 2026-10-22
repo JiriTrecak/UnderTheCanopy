@@ -640,6 +640,7 @@ fn effects_fog_world_ui_and_hud_images_render() {
             instance: ActorInstance::rest(0, Mat4::IDENTITY),
             building: false,
             close: false,
+            framing: None,
         }),
         64,
     );

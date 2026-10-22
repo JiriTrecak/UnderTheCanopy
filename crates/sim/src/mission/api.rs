@@ -37,6 +37,8 @@ pub use scene::NAMES as SCENE_NAMES;
 pub const CALL_LIMIT: u32 = 256;
 /// Scripted damage events per run.
 pub const MAX_DAMAGE: usize = 64;
+/// What a variable refuses to hold.
+const VARIABLE_VALUE: &str = "A variable holds a string, a number or a boolean";
 /// Camera transition when a shot gives none.
 const DEFAULT_TRANSITION_MS: u32 = 350;
 
@@ -482,6 +484,7 @@ impl<'a> Api<'a> {
             Scalar::Integer(i) => Variable::Integer(*i),
             Scalar::Number(n) => Variable::Number(*n),
             Scalar::Boolean(b) => Variable::Boolean(*b),
+            Scalar::Table(_) => return Err(VARIABLE_VALUE.into()),
         };
         self.draft.variables.insert(key, value);
         none()

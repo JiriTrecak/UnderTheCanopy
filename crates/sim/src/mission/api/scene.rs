@@ -1,5 +1,5 @@
 //! The scene half of the `mission` table (docs/campaign.md "Scenes"): scenes and their
-//! waits, cinematic mode, saved cameras, fades, animations, effects and lights at points,
+//! waits, cinematic mode, saved cameras and shot presets, fades, animations, effects and lights at points,
 //! and spoken lines.
 //!
 //! A scene is a function of the script's `scenes` table, started with `mission.play`.
@@ -12,11 +12,13 @@
 //! had played.
 
 use super::{Api, Args, Reply, milli, none, number, one, round, text};
+use crate::entity::Milli;
 use crate::mission::{
     TICKS_PER_SECOND, alive,
     cinema::{
         self, Animation, Fade, MAX_ANIMATIONS, MAX_POINT_EFFECTS, MAX_POINT_LIGHTS,
-        MAX_SCENE_MOVES, OPAQUE, PointEffect, PointLight, Pose, SceneMove, ScenePlay, Shot,
+        MAX_SCENE_MOVES, OPAQUE, PointEffect, PointLight, Pose, Preset, PresetKind, SceneMove,
+        ScenePlay, Shot, Side,
     },
     effect::MissionEffect,
     entity_by_placement,
@@ -28,12 +30,13 @@ use canopy_content::game::Kind;
 /// The least time a scene waits for a walk before it gives up on it.
 const STUCK_TICKS: u32 = 3 * TICKS_PER_SECOND;
 
-pub const NAMES: [&str; 18] = [
+pub const NAMES: [&str; 19] = [
     "clicks",
     "play",
     "playing",
     "cinematic",
     "camera_to",
+    "shot",
     "camera_pan",
     "camera_reset",
     "fade_out",
@@ -413,10 +416,21 @@ impl Api<'_> {
                 }
                 let pose = Pose {
                     camera: Some(id.to_string()),
-                    target: None,
+                    ..Pose::default()
                 };
                 let ticks = seconds(a.get(1), skipping)?;
                 self.shoot(pose, ticks)
+            }
+            "shot" => {
+                let (preset, blend) = self.preset(a)?;
+                let ticks = seconds(&blend, skipping)?;
+                self.shoot(
+                    Pose {
+                        preset: Some(preset),
+                        ..Pose::default()
+                    },
+                    ticks,
+                )
             }
             "camera_pan" => {
                 let target = milli(self.coordinate(a.get(0))?, self.coordinate(a.get(1))?);
@@ -432,6 +446,7 @@ impl Api<'_> {
                     Pose {
                         camera: Some(camera),
                         target: Some(target),
+                        preset: None,
                     },
                     ticks,
                 )
@@ -447,8 +462,8 @@ impl Api<'_> {
                 }
                 self.shoot(
                     Pose {
-                        camera: None,
                         target,
+                        ..Pose::default()
                     },
                     ticks,
                 )
@@ -579,14 +594,104 @@ impl Api<'_> {
         self.script.mission.cameras.iter().flatten()
     }
 
-    /// Where the view looks now: the current pose's pan, else its saved camera's target.
+    /// Where the view looks now: the current pose's pan, else its saved camera's target,
+    /// else where its preset's first actor stands (or its region).
     fn looked_at(&self) -> Option<crate::entity::Milli> {
         let pose = &self.draft.cinema.shot.as_ref()?.to;
+        if let Some(preset) = &pose.preset {
+            let actor = preset
+                .actors
+                .first()
+                .and_then(|p| entity_by_placement(self.state, p))
+                .map(|e| e.position);
+            return actor.or(preset.region.map(|(centre, _)| centre));
+        }
         pose.target.or_else(|| {
             let id = pose.camera.as_deref()?;
             let camera = self.cameras().find(|c| c.id == id)?;
             Some(milli(camera.x, camera.y))
         })
+    }
+
+    /// `shot(kind, subjects…[, options])`: the preset and its blend (`seconds`, raw).
+    fn preset(&self, a: &Args) -> Result<(Preset, Scalar), String> {
+        let kind = match a.get(0) {
+            Scalar::String(name) => PresetKind::parse(name),
+            _ => None,
+        }
+        .ok_or("A shot is single, over, two or wide")?;
+        let unit = |raw: &Scalar| -> Result<String, String> {
+            let placement = self.placement(raw)?;
+            if self.placed(placement)?.kind != Kind::Unit {
+                return Err(format!("A shot frames units: {}", placement.id));
+            }
+            Ok(placement.id.clone())
+        };
+        let (actors, region, options) = match kind {
+            PresetKind::Single => (vec![unit(a.get(1))?], None, a.get(2)),
+            PresetKind::Over | PresetKind::Two => {
+                let pair = vec![unit(a.get(1))?, unit(a.get(2))?];
+                if pair[0] == pair[1] {
+                    return Err("A shot of two frames two units".into());
+                }
+                (pair, None, a.get(3))
+            }
+            PresetKind::Wide => {
+                let id = text(a.get(1), 120)?;
+                match self.script.region(id) {
+                    Some(r) if self.script.placement(id).is_none() => {
+                        let radius = round(r.radius * f64::from(Milli::CELL)).max(0) as u32;
+                        (
+                            Vec::new(),
+                            Some((milli(f64::from(r.x), f64::from(r.y)), radius)),
+                            a.get(2),
+                        )
+                    }
+                    _ => (vec![unit(a.get(1))?], None, a.get(2)),
+                }
+            }
+        };
+        let mut preset = Preset {
+            kind,
+            actors,
+            region,
+            side: None,
+            distance: None,
+            height: None,
+            fov: None,
+            roll: None,
+        };
+        let mut blend = Scalar::Nil;
+        let entries = match options {
+            Scalar::Nil => &[][..],
+            Scalar::Table(entries) => entries.as_slice(),
+            _ => return Err("Shot options are a table: {side = \"left\", fov = 30}".into()),
+        };
+        let thousandths = |raw: &Scalar, min: f64, max: f64, what: &str| {
+            number(raw, min, max)
+                .map(|v| round(v * 1000.0))
+                .map_err(|_| format!("Shot {what} must be a number in {min}..{max}"))
+        };
+        for (key, value) in entries {
+            match key.as_str() {
+                "side" => {
+                    preset.side = Some(match value {
+                        Scalar::String(s) if s == "left" => Side::Left,
+                        Scalar::String(s) if s == "right" => Side::Right,
+                        _ => return Err("Shot side must be left or right".into()),
+                    });
+                }
+                "distance" => {
+                    preset.distance = Some(thousandths(value, 1.0, 400.0, "distance")? as u32);
+                }
+                "height" => preset.height = Some(thousandths(value, -20.0, 200.0, "height")?),
+                "fov" => preset.fov = Some(thousandths(value, 10.0, 100.0, "fov")? as u32),
+                "roll" => preset.roll = Some(thousandths(value, -90.0, 90.0, "roll")?),
+                "seconds" => blend = value.clone(),
+                other => return Err(format!("Unknown shot option: {other}")),
+            }
+        }
+        Ok((preset, blend))
     }
 
     fn shoot(&mut self, to: Pose, ticks: u32) -> Reply {

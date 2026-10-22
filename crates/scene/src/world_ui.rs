@@ -1657,6 +1657,7 @@ mod tests {
             model: 0,
             scale: 1.0,
             idle: None,
+            portrait: None,
             footprint: None,
             deposit: false,
             unpowered: false,

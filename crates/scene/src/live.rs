@@ -300,6 +300,8 @@ pub struct Body {
     pub model: u32,
     pub scale: f32,
     pub idle: Option<(u16, f32)>,
+    /// Its model's own close portrait framing (asset.json `display.portrait`).
+    pub portrait: Option<canopy_render::PortraitFraming>,
     /// A building's footprint on the map (cells, turned by its rotation): the minimap.
     pub footprint: Option<[f32; 2]>,
     /// A deposit with something left to harvest.
@@ -1677,7 +1679,13 @@ impl Presenter {
                 _ => {}
             }
             if matches!(d.kind, Kind::Unit | Kind::Building | Kind::Item) {
-                bodies.push(self.body_of(e, d, &actor, tick));
+                let mut body = self.body_of(e, d, &actor, tick);
+                body.portrait = asset.portrait.map(|p| canopy_render::PortraitFraming {
+                    focus: Vec3::new(p.focus[0] as f32, p.focus[1] as f32, p.focus[2] as f32),
+                    size: p.size as f32,
+                    turn: p.turn.map(|t| (t as f32).to_radians()),
+                });
+                bodies.push(body);
             }
             if !hide {
                 actors.push(actor);
@@ -2111,6 +2119,7 @@ impl Presenter {
                 .get(actor.model)
                 .state(crate::animation::states::IDLE)
                 .map(|st| (st.clip, self.catalog.get(actor.model).duration(st.clip))),
+            portrait: None,
             footprint: d
                 .footprint
                 .as_ref()

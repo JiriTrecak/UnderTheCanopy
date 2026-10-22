@@ -103,9 +103,10 @@ impl AssetFile {
     }
 }
 
-/// How a model is shown: scale, animation profile and health bar height. A definition
-/// may override the health bar height and profile for its own use (the placeholder model
-/// stands in for many).
+/// How a model is shown: scale, animation profile, health bar height and, when the
+/// automatic framing misses its face, what its close dialogue portrait shows. A
+/// definition may override the health bar height and profile for its own use (the
+/// placeholder model stands in for many).
 #[skip_serializing_none]
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -113,6 +114,7 @@ pub struct Display {
     pub scale: Option<f64>,
     pub character: Option<crate::Id>,
     pub health_height: Option<f64>,
+    pub portrait: Option<crate::game::PortraitFrame>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
@@ -242,6 +244,17 @@ pub fn index(packages: &[Package], files: Files, errors: &mut Vec<Error>) -> Ass
     for asset in &out.assets {
         let id = asset.id.as_str();
         let label = paths.get(id).cloned().unwrap_or_default();
+        if let Some(p) = asset.display.as_ref().and_then(|d| d.portrait) {
+            let finite = p.focus.iter().all(|v| v.is_finite());
+            let turn = p.turn.is_none_or(|t| (-180.0..=180.0).contains(&t));
+            if !finite || !turn || !p.size.is_finite() || p.size <= 0.0 {
+                errors.push(Error::new(
+                    &label,
+                    "display.portrait",
+                    "a portrait frames a finite focus with a positive size, turned -180 to 180 degrees",
+                ));
+            }
+        }
         for file in &asset.resources {
             let name = file.name();
             let found = folders[id]
@@ -301,6 +314,7 @@ pub fn index(packages: &[Package], files: Files, errors: &mut Vec<Error>) -> Ass
                 scale: display.scale,
                 character: display.character.clone(),
                 health_height: display.health_height,
+                portrait: display.portrait,
                 ..RenderAsset::empty()
             });
             // A placed piece of scenery is drawn as its prototype; felled, as its model.

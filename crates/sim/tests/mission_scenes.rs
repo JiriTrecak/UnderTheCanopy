@@ -562,3 +562,174 @@ fn a_held_battle_is_deterministic_across_saves() {
         }
     }
 }
+
+/// The hero walks to the gate and speaks over the guard's shoulder; a single on the
+/// guard answers; the scene ends on a wide shot of the gate's region and hands the
+/// camera back where that shot looked.
+const PRESETS: &str = r#"
+function on_start()
+  mission.play("talk")
+end
+
+function scenes.talk()
+  mission.cinematic(true)
+  mission.shot("wide", "hero", { distance = 30, seconds = 2 })
+  mission.move("hero", 66, 60)
+  mission.wait_arrived("hero")
+  mission.shot("over", "guard", "hero", { side = "left", fov = 28 })
+  mission.speak("hero", "Open the gate.", 1)
+  mission.shot("single", "guard", { height = 1.2, roll = -2 })
+  mission.speak("guard", "Who asks?", 1)
+  mission.shot("two", "hero", "guard")
+  mission.shot("wide", "gate", { seconds = 3 })
+  mission.wait(1)
+  mission.cinematic(false)
+  mission.camera_reset(1)
+  mission.set("ended", true)
+end
+"#;
+
+fn preset(world: &World) -> Option<canopy_sim::mission::cinema::Preset> {
+    mission(world).cinema.shot.as_ref()?.to.preset.clone()
+}
+
+/// Presets keep the actors and what the scene asked for, not a camera: the picture
+/// frames the actors wherever their walk left them.
+#[test]
+fn shot_presets_frame_actors_wherever_they_stand() {
+    use canopy_sim::mission::cinema::{Pose, PresetKind, Side};
+    let mut world = Mission::new(PRESETS).world();
+    world.step();
+    assert_eq!(error(&world), None);
+    // A wide shot on the hero, blended in, at the distance asked for.
+    let wide = preset(&world).expect("a preset");
+    assert_eq!(wide.kind, PresetKind::Wide);
+    assert_eq!(wide.actors, ["hero"]);
+    assert_eq!(wide.distance, Some(30_000));
+    assert_eq!(mission(&world).cinema.shot.as_ref().unwrap().ticks, 80);
+
+    // Over the guard's left shoulder onto the hero, cut.
+    until(&mut world, 2000, |w| {
+        preset(w).is_some_and(|p| p.kind == PresetKind::Over)
+    });
+    let over = preset(&world).unwrap();
+    assert_eq!(over.actors, ["guard", "hero"]);
+    assert_eq!((over.side, over.fov), (Some(Side::Left), Some(28_000)));
+    assert_eq!(mission(&world).cinema.shot.as_ref().unwrap().ticks, 0);
+    until(&mut world, 400, |w| {
+        preset(w).is_some_and(|p| p.kind == PresetKind::Single)
+    });
+    let single = preset(&world).unwrap();
+    assert_eq!((single.height, single.roll), (Some(1_200), Some(-2_000)));
+    // The region's wide shot keeps its centre and radius.
+    until(&mut world, 400, |w| {
+        preset(w).is_some_and(|p| p.kind == PresetKind::Wide && p.actors.is_empty())
+    });
+    let region = preset(&world).unwrap().region.expect("a region");
+    assert_eq!(
+        region,
+        (
+            Milli {
+                x: 60_000,
+                y: 64_000
+            },
+            4_000
+        )
+    );
+    // Back to the game's camera over where the gate's shot looked.
+    until(&mut world, 400, |w| variable(w, "ended").is_some());
+    let shot = mission(&world).cinema.shot.clone().unwrap();
+    assert_eq!(
+        shot.to,
+        Pose {
+            target: Some(Milli {
+                x: 60_000,
+                y: 64_000
+            }),
+            ..Pose::default()
+        }
+    );
+}
+
+#[test]
+fn a_skip_cuts_past_presets_and_presets_resume_alike() {
+    let fixture = Mission::new(PRESETS);
+    let mut world = fixture.world();
+    steps(&mut world, 20);
+    command(&mut world, Action::SkipScene);
+    world.step();
+    assert_eq!(error(&world), None);
+    assert_eq!(variable(&world, "ended"), boolean(true));
+    let shot = mission(&world).cinema.shot.clone().unwrap();
+    assert_eq!(shot.ticks, 0, "a skip cuts");
+    assert_eq!(shot.to.preset, None, "the camera is the player's again");
+
+    // Saved with a preset in place, a world resumes as if never saved.
+    let mut reference = fixture.world();
+    let mut trace = Vec::new();
+    for _ in 0..400 {
+        reference.step();
+        trace.push(snapshot(&reference));
+    }
+    assert!(trace.iter().any(|s| s.contains("\"preset\"")));
+    for at in [5, 200] {
+        let mut first = fixture.world();
+        steps(&mut first, at);
+        let mut resumed = reload(&first, &fixture);
+        for expected in &trace[at as usize..] {
+            resumed.step();
+            assert_eq!(&snapshot(&resumed), expected, "resumed at {at}");
+        }
+    }
+}
+
+#[test]
+fn shot_presets_refuse_what_they_cannot_frame() {
+    let run = |body: &str| {
+        let script =
+            format!("function on_start() mission.play('s') end\nfunction scenes.s()\n{body}\nend");
+        let mut world = Mission::new(&script).world();
+        steps(&mut world, 3);
+        error(&world).map(str::to_string)
+    };
+    assert_eq!(run("mission.shot('single', 'hero')"), None);
+    assert_eq!(
+        run("mission.shot('over', 'hero', 'guard', {side = 'right'})"),
+        None
+    );
+    for (body, refusal) in [
+        ("mission.shot('close', 'hero')", "single, over, two or wide"),
+        (
+            "mission.shot('single', 'hall')",
+            "A shot frames units: hall",
+        ),
+        (
+            "mission.shot('single', 'nobody')",
+            "Unknown entity ID: nobody",
+        ),
+        ("mission.shot('two', 'hero', 'hero')", "frames two units"),
+        (
+            "mission.shot('single', 'hero', {zoom = 2})",
+            "Unknown shot option: zoom",
+        ),
+        (
+            "mission.shot('single', 'hero', {side = 'up'})",
+            "left or right",
+        ),
+        (
+            "mission.shot('single', 'hero', {fov = 5})",
+            "Shot fov must be",
+        ),
+        (
+            "mission.shot('single', 'hero', 3)",
+            "Shot options are a table",
+        ),
+        (
+            "mission.shot('single', 'hero', {seconds = -1})",
+            "Expected a number",
+        ),
+    ] {
+        let error = run(body).unwrap_or_default();
+        assert!(error.contains(refusal), "{body}: {error}");
+    }
+}

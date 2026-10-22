@@ -87,7 +87,7 @@ function on_tick() mission.set("ran", true) end"#;
 fn an_error_clears_the_scene_and_turning_but_keeps_progress() {
     let script = r#"
 function on_start() mission.set("kept", 1) mission.begin_scene(5, 5) mission.face("hero", 70, 60) end
-function on_tick() mission.get({}) end"#;
+function on_tick() mission.get(function() end) end"#;
     let mut world = world(script);
     world.step();
     assert!(mission(&world).scene.is_some());
@@ -99,7 +99,7 @@ function on_tick() mission.get({}) end"#;
             .error
             .as_deref()
             .unwrap()
-            .ends_with("Mission API accepts only strings, numbers and booleans")
+            .ends_with("Mission API accepts only strings, numbers, booleans and tables of options")
     );
     assert_eq!(state.scene, None);
     assert!(state.facing.is_empty());

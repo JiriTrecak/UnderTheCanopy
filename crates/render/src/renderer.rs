@@ -142,7 +142,22 @@ pub struct PortraitSubject {
     /// Head and shoulders: the upper half of the model fills the frame (a speaker's
     /// transmission), not all of it.
     pub close: bool,
+    /// The model's own close framing (asset.json `display.portrait`), used over the
+    /// automatic one when `close`.
+    pub framing: Option<PortraitFraming>,
 }
+
+/// What a close portrait frames, in model space: a cube of side `size` round `focus`,
+/// the model turned `turn` radians about its vertical axis (default [`PORTRAIT_TURN`]).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PortraitFraming {
+    pub focus: Vec3,
+    pub size: f32,
+    pub turn: Option<f32>,
+}
+
+/// How far a portrait turns its model from facing the viewer, radians.
+pub const PORTRAIT_TURN: f32 = -0.32;
 
 /// What is drawn.
 #[derive(Debug, Clone, Default)]
@@ -1165,7 +1180,9 @@ impl Renderer {
                 .filter(|_| self.portrait.is_some());
             let portrait = subject.and_then(|s| {
                 let (min, max) = actors.rest_bounds(s.instance.model)?;
-                let transform = Mat4::from_rotation_y(-0.32) * s.instance.transform;
+                let framing = s.framing.filter(|_| s.close);
+                let turn = framing.and_then(|f| f.turn).unwrap_or(PORTRAIT_TURN);
+                let transform = Mat4::from_rotation_y(turn) * s.instance.transform;
                 let corners = (0..8).map(|i| {
                     transform.transform_point3(Vec3::new(
                         if i & 1 == 0 { min.x } else { max.x },
@@ -1178,7 +1195,13 @@ impl Renderer {
                     |(lo, hi), c| (lo.min(c), hi.max(c)),
                 );
                 let head = actors.head(s.instance.model).filter(|_| s.close);
-                if let Some((neck, top)) = head {
+                if let Some(f) = framing {
+                    // The model says what its portrait shows.
+                    let centre = transform.transform_point3(f.focus);
+                    let half = Vec3::splat(f.size * s.instance.transform.x_axis.length() * 0.5);
+                    lo = centre - half;
+                    hi = centre + half;
+                } else if let Some((neck, top)) = head {
                     // A humanoid: head and shoulders round its head, whatever its staff,
                     // wings or train span.
                     let (neck, top) = (

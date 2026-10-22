@@ -8,7 +8,8 @@ description: Warcraft III-style in-mission cutscenes in Under the Canopy: the sc
 Authority:
 - **docs/campaign.md "Scenes":** the API table and the hold.
 - **Decisions:** D88 (cinematics) and D89 (staging) in docs/decisions.md.
-- **Code:** `crates/sim/src/mission/api/scene.rs` and `cinema.rs`; the picture in `game/src/play/shots.rs` and `screens/match_ui.rs`.
+- **Decisions:** D91 (shot presets, portrait framing).
+- **Code:** `crates/sim/src/mission/api/scene.rs` and `cinema.rs`; the picture in `game/src/play/shots.rs`, `presets.rs` and `screens/match_ui.rs`.
 
 ## How a scene runs
 
@@ -22,16 +23,17 @@ Authority:
 ```lua
 function scenes.meeting()
   mission.cinematic(true)
-  mission.camera_to("meet-wide", 0)            -- establishing
+  mission.shot("wide", "glade")                 -- establishing: a region
   mission.move("queen", 178, 238)
   mission.move("oleander", 168, 238)
+  mission.shot("wide", "queen", { seconds = 5 }) -- follows her walk
   mission.wait_arrived("queen")                 -- gives up after 2x the walk + 3 s
   mission.face("queen", 168, 238)
   mission.face("oleander", 178, 238)
   mission.wait_facing()
-  mission.camera_to("meet-over-queen", 0)       -- over her shoulder onto the speaker
+  mission.shot("over", "queen", "oleander")     -- over her shoulder onto the speaker
   mission.speak("oleander", "I had your letter.", nil, "Oleander")
-  mission.camera_to("meet-over-oleander", 0)
+  mission.shot("over", "oleander", "queen")
   mission.speak("queen", "Then tell me.", nil, "Aurelith")
   mission.animate("korrath", "kneel", true)     -- held until his next order
   mission.cinematic(false)
@@ -39,9 +41,22 @@ function scenes.meeting()
 end
 ```
 
+## Shot presets: the default for lines
+
+`mission.shot(kind, subject…[, options])` frames actors where they actually stand, from their drawn position, facing, posed face and height, so a line stays on its speaker when a walk stops short:
+- `shot("single", unit)`: head and shoulders to the waist, from the unit's front side. For important lines.
+- `shot("over", from, to)`: over `from`'s shoulder onto `to`'s face. For exchanges.
+- `shot("two", a, b)`: both from the side of their line.
+- `shot("wide", unit_or_region)`: establishing. On a moving unit with `seconds`, it follows the walk.
+- Options table: `side` (`"left"`/`"right"`, seen from the first actor), `distance`, `height` (eye above the first actor's feet), `fov`, `roll`, `seconds` (blend; 0 cuts).
+
+Leave `side` open unless a shot needs it: the picture takes the side with the clearer view (giant forest pieces, buildings, other units) and keeps a pair on one side of its line for the whole exchange. Over-the-shoulder pairs cut back and forth correctly either way round.
+
+A speaker whose close portrait shows gear instead of a face gets `display.portrait` in its model's `asset.json` (canopy-assets); its `turn` also picks the side its singles favour.
+
 ## Saved cameras
 
-`mission.cameras[]` in map.json: `{id, x, y, height, distance, pitch, yaw, fov, roll}`. Generators keep them as SHOTS (eye point, target point, fov, roll) and convert with their own formula; mirror any change both ways. The missions' scripts also have a helper (`shot_on` in The Hollow Brood, `close_on` in Founding) that keeps a saved camera's angle but aims it at where the speaker actually stands. Use it whenever a walk may stop short.
+`mission.cameras[]` in map.json: `{id, x, y, height, distance, pitch, yaw, fov, roll}`. Use them for places a scene shows for themselves (a building waking, a road), not for speakers. Generators keep them as SHOTS (eye point, target point, fov, roll) and convert with their own formula; mirror any change both ways. Older scenes use helpers (`shot_on` in The Hollow Brood, `close_on` in Founding) that pan a saved camera onto a speaker; convert them to presets when you touch them.
 
 ## Shot grammar
 
