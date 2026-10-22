@@ -1185,7 +1185,8 @@ impl Renderer {
                         transform.transform_point3(neck),
                         transform.transform_point3(top),
                     );
-                    let head = top.y - neck.y;
+                    // The head's length, not its rise: an ant's head juts forward.
+                    let head = (top - neck).length();
                     let (x, z) = ((neck.x + top.x) * 0.5, (neck.z + top.z) * 0.5);
                     let (bottom, roof) = (
                         neck.y - head * PORTRAIT_SHOULDERS,
