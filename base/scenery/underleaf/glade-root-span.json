@@ -1,0 +1,7 @@
+{
+  "id": "scenery.glade-root-span",
+  "name": "Glade: root under a bridge",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-root"
+}
