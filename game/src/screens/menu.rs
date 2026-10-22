@@ -1,24 +1,27 @@
-//! The main menu's living background (old `menuEffects.ts`): glowing fires with rising
-//! embers, drifting dust motes and slow light shafts over the forest art, laid out in the
-//! art's own 1672 × 941 space and mapped through its `cover` fit. Boxes of the UI stand in
-//! for the old canvas drawing: radial glows flicker, small hot ellipses lick upwards as
-//! flame tongues, dots drift and fade, soft vertical shafts sway. The old shafts were
-//! slanted (the UI cannot rotate boxes) and its smoke sprites are not drawn.
+//! The main menu's living background (old `menuEffects.ts`): flickering fire light with
+//! rising embers, drifting pollen motes and slow light shafts over the forest art, laid
+//! out in the art's own 3840 × 2160 space and mapped through its `cover` fit. Boxes of the
+//! UI stand in for the old canvas drawing: radial glows flicker, small hot ellipses lick
+//! upwards as flame tongues, dots drift and fade, soft vertical shafts sway. The old
+//! shafts were slanted (the UI cannot rotate boxes) and its smoke sprites are not drawn.
 
 use super::ui_host::UiHost;
 
 /// The art's size, in which effect positions are given.
-const ART: [f32; 2] = [1672.0, 941.0];
-/// Fire centres in art pixels (old `FIRES`).
-const FIRES: [[f32; 2]; 3] = [[1453.0, 474.0], [1340.0, 599.0], [1116.0, 479.0]];
-/// Light shafts: art x at the top and their sway phase.
+const ART: [f32; 2] = [3840.0, 2160.0];
+/// Fire light in art pixels: the beetle forge's furnace door and two war machines'
+/// muzzle flashes in the battle.
+const FIRES: [[f32; 2]; 3] = [[2810.0, 730.0], [2085.0, 1195.0], [1945.0, 1390.0]];
+/// Light shafts: art x at the top (the god rays through the canopy) and their sway phase.
 const RAYS: [(f32, f32); 5] = [
-    (700.0, 0.0),
-    (790.0, 1.3),
-    (880.0, 2.1),
-    (1300.0, 3.4),
-    (1420.0, 4.2),
+    (1536.0, 0.0),
+    (1848.0, 1.3),
+    (2160.0, 2.1),
+    (2424.0, 3.4),
+    (2640.0, 4.2),
 ];
+/// Art pixels per pixel of the old 1672-wide art, for drifts given in its units.
+const UNIT: f32 = ART[0] / 1672.0;
 const MOTES: usize = 24;
 const EMBERS: usize = 24;
 
@@ -96,8 +99,8 @@ pub fn animate(host: &mut UiHost, t: f32, view: [f32; 2]) {
     if let Some(list) = ui.find("main-menu/effects/rays") {
         for (i, (x, phase)) in RAYS.iter().enumerate() {
             if let Some(node) = ui.child(list, i) {
-                let sway = (t * 0.17 + phase).sin() * 24.0;
-                let [sx, sy] = map([*x + sway, -120.0]);
+                let sway = (t * 0.17 + phase).sin() * 24.0 * UNIT;
+                let [sx, sy] = map([*x + sway, -120.0 * UNIT]);
                 ui.set_shift(node, sx - 60.0, sy);
                 ui.set_opacity(node, 0.35 + 0.3 * (t * 0.23 + phase * 1.7).sin().abs());
             }
@@ -111,8 +114,9 @@ pub fn animate(host: &mut UiHost, t: f32, view: [f32; 2]) {
             let fire = FIRES[i % FIRES.len()];
             let period = 2.2 + noise(i as u32, 1) * 1.8;
             let age = ((t + noise(i as u32, 2) * period) % period) / period;
-            let drift = (noise(i as u32, 3) - 0.5) * 60.0 + (t * 1.3 + i as f32).sin() * 8.0 * age;
-            let [x, y] = map([fire[0] + drift * age, fire[1] - 20.0 - age * 160.0]);
+            let drift =
+                ((noise(i as u32, 3) - 0.5) * 60.0 + (t * 1.3 + i as f32).sin() * 8.0 * age) * UNIT;
+            let [x, y] = map([fire[0] + drift * age, fire[1] - (20.0 + age * 160.0) * UNIT]);
             ui.set_shift(node, x, y);
             ui.set_opacity(node, (1.0 - age) * (age * 8.0).min(1.0));
         }
@@ -127,8 +131,8 @@ pub fn animate(host: &mut UiHost, t: f32, view: [f32; 2]) {
                 noise(i as u32, 5) * ART[1] * 0.8,
             ];
             let speed = 6.0 + noise(i as u32, 6) * 10.0;
-            let x = base[0] + (t * 0.11 + i as f32).sin() * 30.0 + t * speed * 0.4;
-            let y = base[1] + (t * 0.07 + i as f32 * 2.0).cos() * 18.0 - t * speed * 0.2;
+            let x = base[0] + ((t * 0.11 + i as f32).sin() * 30.0 + t * speed * 0.4) * UNIT;
+            let y = base[1] + ((t * 0.07 + i as f32 * 2.0).cos() * 18.0 - t * speed * 0.2) * UNIT;
             let wrapped = [x.rem_euclid(ART[0]), y.rem_euclid(ART[1])];
             let [sx, sy] = map(wrapped);
             ui.set_shift(node, sx, sy);

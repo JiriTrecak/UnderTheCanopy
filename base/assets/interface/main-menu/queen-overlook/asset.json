@@ -1,0 +1,17 @@
+{
+  "id": "asset.interface.main-menu.queen-overlook",
+  "name": "Queen overlook",
+  "kind": "interface",
+  "tags": [
+    "main-menu",
+    "original"
+  ],
+  "resources": [
+    {
+      "role": "image",
+      "index": 1,
+      "format": "png"
+    }
+  ],
+  "license": "Original Under the Canopy main menu artwork, generated with gpt-image-2 from an approved composition."
+}

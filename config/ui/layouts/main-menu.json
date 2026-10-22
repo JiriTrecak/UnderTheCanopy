@@ -10,7 +10,7 @@
   "root": {
     "class": "mm",
     "children": [
-      { "id": "art", "kind": "image", "class": "cover", "image": "menu-aftermath" },
+      { "id": "art", "kind": "image", "class": "cover", "image": "menu-welcome" },
       {
         "id": "effects", "class": "mm-layer",
         "children": [

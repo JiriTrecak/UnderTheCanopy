@@ -338,7 +338,7 @@ fn vs_firefly(@builtin(vertex_index) vertex: u32, @builtin(instance_index) index
     let blink = smoothstep(0.45, 1.0, wave);
     // A spark of a few pixels from the RTS camera, never a disc close to the lens.
     let distance = length(p - frame.eye.xyz);
-    let size = clamp(distance * (0.0032 + 0.0016 * seed.z), 0.06, 0.5);
+    let size = clamp(distance * (0.0016 + 0.0008 * seed.z), 0.03, 0.25);
     let c = corner(vertex);
     var out: FireflyOut;
     out.world = p + (motes.right.xyz * c.x + motes.up.xyz * c.y) * size;

@@ -127,7 +127,7 @@ impl Environment {
                 atmosphere.overhead_strength = 1.0;
             }
             Weather::EnchantedForest => {
-                motes.fireflies = 1400;
+                motes.fireflies = 280;
                 self.post.bloom.strength = (self.post.bloom.strength * 1.5).max(0.2);
             }
         }
