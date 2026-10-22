@@ -779,7 +779,7 @@ def station():
 def places():
     """Low pieces that make the side places readable, on or beside playable ground."""
     # The tunnel's mouth at the camp: a root arch over the gap, roots either side.
-    put('lookdev-root-arch', 59, TUNNEL_IN[1], HALF_PI, 0.9)
+    put('lookdev-root-arch', 54, TUNNEL_IN[1], HALF_PI, 0.9)
     # The meadow's landmark, an acorn cup with its acorn: the scale at a glance.
     put('giants-acorn-cup', 238, 232, 0.6, 1.1)
     put('giants-acorn', 252, 224, 2.2, 1.0)
