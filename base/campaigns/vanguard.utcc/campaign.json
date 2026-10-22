@@ -11,78 +11,119 @@
     },
     {
       "kind": "story",
-      "id": "the-hollow",
-      "title": "The Hollow",
+      "id": "the-broods",
+      "title": "The Broods",
       "pages": [
         {
-          "art": "asset.interface.campaign.vanguard.story-hollow-1",
-          "text": "A placeholder story. The real campaign replaces it.\n\nBeneath the frost the old colony sleeps, and its Queen wakes alone."
+          "art": "asset.interface.campaign.vanguard.story-broods-1",
+          "text": "Under the canopy, every colony keeps one law above the rest: the Queen tends the brood.\n\nAurelith had worn the crown for a single winter. From the high balconies of the Spire she could watch her whole colony wake: workers at the amber stores, soldiers at the gates, nurses carrying the young up into the light."
         },
         {
-          "art": "asset.interface.campaign.vanguard.story-hollow-2",
-          "text": "With only an escort at her side she sets out for the hollow, where the first light of the thaw breaks through the canopy."
+          "art": "asset.interface.campaign.vanguard.story-broods-2",
+          "text": "But the other broods were changing.\n\nFor generations the ants had drunk the substance raw, the living light that wells up from the roots. It made them strong. It made them swell and shine. And with every generation, it asked a little more of them."
+        },
+        {
+          "art": "asset.interface.campaign.vanguard.story-broods-3",
+          "text": "Then, three nights ago, the watch-lights of the Hollow Brood went dark.\n\nNo runner came. No scout returned. Before dawn, Aurelith had chosen her escort."
         }
       ]
     },
     {
       "kind": "mission",
-      "id": "first-light",
-      "map": "vanguard-first-light",
-      "title": "First Light",
+      "id": "hollow-brood",
+      "map": "hollow-brood",
+      "title": "The Hollow Brood",
       "chapterLine": "Prologue · Mission One",
       "art": "asset.interface.campaign.vanguard.hollow-brood",
-      "story": "A placeholder mission for the campaign screens.\n\nThe Queen and her escort must drive the creatures out of the hollow before the colony can follow.",
+      "story": "The Hollow Brood were our cousins: the same mothers, the same roots, the same light.\n\nNow their nest is silent. Take the old root road along the stream, learn what has become of them, and bring home whoever is left.",
       "heroLevelCap": 3,
+      "tech": {
+        "new": [],
+        "blocked": []
+      }
+    },
+    {
+      "kind": "story",
+      "id": "what-the-hollow-sang",
+      "title": "What the Hollow Sang",
+      "pages": [
+        {
+          "art": "asset.interface.campaign.vanguard.story-hollow-1",
+          "text": "Mother Ashka had been the oldest queen in the forest. When the substance began to change her, she kept drinking, because by then she could not stop.\n\n\"It sang to us,\" she said at the end. \"We drank, and it gave, and gave.\""
+        },
+        {
+          "art": "asset.interface.campaign.vanguard.story-hollow-2",
+          "text": "Aurelith swore that no ant would ever drink like that again. She did not yet know how.\n\nThree days later a letter came, sealed in amber, from an alchemist the colony had banished long ago: I know what the substance is. I know who has learned to hold it. Find me in the green glade."
+        }
+      ]
+    },
+    {
+      "kind": "mission",
+      "id": "founding",
+      "map": "founding",
+      "title": "Founding",
+      "chapterLine": "Prologue · Mission Two",
+      "art": "asset.interface.campaign.vanguard.founding",
+      "story": "The survivors of the Hollow cannot go home, and Aurelith will not send them back to the Spire to drink with the rest.\n\nIn a green glade beyond the stream, where the substance runs clean from a single spring, she means to found a new colony: one that is never ruled by it.\n\nThe feral brood has followed her scent.",
+      "heroLevelCap": 4,
       "tech": {
         "new": [
           "building.ants.fort",
           "unit.ants.settler",
+          "building.ants.house",
           "building.ants.barracks",
-          "unit.ants.warrior"
+          "unit.ants.warrior",
+          "unit.ants.archer",
+          "building.ants.ironroot-forge",
+          "research.ants.mandibles-1",
+          "research.ants.carapace-1",
+          "building.ants.tower",
+          "building.ants.sanctuary",
+          "unit.ants.queen",
+          "unit.ants.royal-alchemist",
+          "building.ants.substance-well"
+        ],
+        "blocked": []
+      }
+    },
+    {
+      "kind": "chapter",
+      "id": "act-1",
+      "title": "Act I: The Glass",
+      "art": "asset.interface.campaign.vanguard.chapter-act-1"
+    },
+    {
+      "kind": "mission",
+      "id": "glass-road",
+      "map": "glass-road",
+      "title": "The Glass Road",
+      "chapterLine": "Act I · Mission Three",
+      "art": "asset.interface.campaign.vanguard.glass-road",
+      "story": "Oleander has told her of the beetles, who keep the substance in glass and are never changed by it.\n\nAt the end of the Glass Road stands the station where they distil it, and in its heart, the condenser. Aurelith will ask for its secret.\n\nIf they refuse her, she will take it.",
+      "heroLevelCap": 5,
+      "tech": {
+        "new": [
+          "building.ants.great-mound",
+          "building.ants.bombardier-workshop",
+          "building.ants.fungus-garden",
+          "unit.ants.burster",
+          "unit.ants.queensguard",
+          "unit.ants.bombardier",
+          "unit.ants.marshal",
+          "research.ants.mandibles-2",
+          "research.ants.needle-hardening-1",
+          "research.ants.wider-tunnels-1",
+          "research.ants.barbed-needles",
+          "research.ants.volatile-sacs"
         ],
         "blocked": []
       }
     },
     {
       "kind": "cinematic",
-      "id": "the-thaw",
-      "title": "The Thaw",
-      "note": "The colony streams out of the ground behind the Queen."
-    },
-    {
-      "kind": "chapter",
-      "id": "chapter-one",
-      "title": "Chapter One: Roots",
-      "art": "asset.interface.campaign.vanguard.chapter-act-1"
-    },
-    {
-      "kind": "story",
-      "id": "the-broods",
-      "title": "The Broods",
-      "pages": [
-        {
-          "art": "asset.interface.campaign.vanguard.story-broods-1",
-          "text": "A placeholder story page between the missions."
-        }
-      ]
-    },
-    {
-      "kind": "mission",
-      "id": "deeper-roots",
-      "map": "vanguard-first-light",
-      "title": "Deeper Roots",
-      "chapterLine": "Chapter One · Mission Two",
-      "art": "asset.interface.campaign.vanguard.founding",
-      "story": "A placeholder second mission on the same map: the Queen returns, carrying what she learned.",
-      "heroLevelCap": 5,
-      "tech": {
-        "new": [
-          "unit.ants.archer"
-        ],
-        "blocked": [
-          "unit.ants.warrior"
-        ]
-      }
+      "id": "condenser-hums",
+      "title": "The Condenser Hums",
+      "note": "At night in the camp, Oleander wakes the condenser. The substance in the glass turns towards Aurelith, and for a moment, something answers."
     }
   ]
 }
