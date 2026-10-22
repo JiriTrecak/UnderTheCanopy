@@ -110,6 +110,7 @@ fn dev(
             human: spec.human,
             content: Some(data.content.clone()),
             encounter: spec.encounter.as_deref(),
+            exploration: None,
         },
     )?;
     progress(Stage::Gpu, 0.85);

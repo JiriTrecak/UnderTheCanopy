@@ -135,6 +135,9 @@ fn apply_kill(which: &str, game: &mut world::Match) {
 }
 
 pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Result<()> {
+    if let Some(scene) = &options.scene {
+        return crate::play::preview::run(options, paths, out, size, scene);
+    }
     if options.play || options.observe {
         return crate::play::capture::run(
             options,
@@ -163,6 +166,7 @@ pub fn run(options: &Options, paths: &Paths, out: &Path, size: [u32; 2]) -> Resu
             human: None,
             content: None,
             encounter: None,
+            exploration: None,
         },
     )?;
 

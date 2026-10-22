@@ -408,6 +408,7 @@ dependencies = [
  "canopy-scene",
  "canopy-sim",
  "canopy-ui",
+ "cosmic-text",
  "directories",
  "egui",
  "egui-wgpu",

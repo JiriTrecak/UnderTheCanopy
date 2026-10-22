@@ -71,11 +71,29 @@ Dialogue portraits are the speaker's live model. Humanoid rigs frame head and sh
 ## Seeing it
 
 ```bash
-just shot --play --map base/campaigns/vanguard.utcc/missions/<id>.utcm --tick <t> --out target/review/<x>.png
+just shot --play --map base/campaigns/vanguard.utcc/missions/<id>.utcm --scene <name> --out target/review/scenes/<id>/<name> --sheet
 ```
 
-This renders the mission at tick t (40 ticks a second) with the letterbox and the speaker's portrait. To find a line's tick, run `mission_playtest` (it prints each line with its time), or step through captures.
+This plays `scenes.<name>` from its start at normal speed and writes:
+- `00-establishing.png`: the scene's first shot, once it has faded in (or just before it cuts to its first line);
+- `NN-<speaker>.png`: each line 0.75 s after it starts, with the letterbox and the speaker's portrait;
+- `lines.txt`: each frame's tick, speaker, line and camera (`id`, `id+pan` for a `shot_on`/`camera_pan`, `a → b` mid-blend);
+- `sheet.png` with `--sheet`: a labelled contact sheet.
 
-A scene that needs the player somewhere won't play from the start. Make a scratch copy of the map whose `on_start` puts the cast in place and calls `mission.play("<scene>")`, capture it, then delete the copy. Never commit it. `base/maps/showcase/cinematic-bench.utcm` is a bench of the Hollow Brood opening.
+Other forms:
+- `--scene list` prints the mission's scenes; `--scene all` plays each into its own folder of `--out`, and `--sheet` adds one sheet of them all.
+- `--compare <git rev>` also plays the scene from the map as it was at that revision (into `before/`) and writes `pair-NN.png`, before on the left. Show Jiri these pairs for a reframing.
+- `--set <variable>=<value>` (repeatable) picks a branch, e.g. `--set tiv_ok=false`.
 
-Review each line's frame yourself. Show Jiri side-by-side before/after pairs; the reframing pass kept them under `target/review/scenes/<scene>/pair-NN.png`.
+The opening (the scene `on_start` plays) plays as a new mission starts. Any other scene is staged mid-mission, as the script would reach it, and the map shows explored. The opening is skipped, then:
+- script-activated units the scene names appear, and so do those the script spawns just before `play("<name>")`;
+- units the trigger's condition needs gone (`not mission.alive("…")`, without an `or`) fall;
+- the variables set just before `play("<name>")` are set. Variables the scene reads that nothing set default to a unit's position (variables the script fills from `mission.position`), else to `true`;
+- objectives the scene ends are active;
+- a dry run up to the first line learns the walks. Each walker starts 5 cells short of its mark, or on it when the way is blocked. A unit that is only turned, and stands far from what it turns to, is put 8 cells from it.
+
+The tool prints what it staged. Mid-mission state the trigger reaches through earlier blocks is not staged (e.g. the webs' spiders in the patrol scene stay alive), and neither are helper conditions like `all_dead`. Read frames with that in mind.
+
+`just shot --play --map … --tick <t> --out <png>` still renders one tick of a mission played from its start. `lines.txt` gives an opening's line ticks. `base/maps/showcase/cinematic-bench.utcm` is a bench of the Hollow Brood opening.
+
+Review each line's frame yourself before showing Jiri.
