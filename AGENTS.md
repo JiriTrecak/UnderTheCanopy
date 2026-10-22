@@ -29,6 +29,7 @@ A Warcraft III–style RTS on the forest floor, being rebuilt natively in Rust. 
 
 Several agents build in this checkout, and Cargo never deletes old builds: `target/` once reached 433 GB. No old builds are kept.
 - `just tidy` purges per-agent cook folders (`target/cooked-*`), `target/ci`, `target/tmp` and the incremental caches, and a whole profile once it passes 40 GB. `just check` runs it first.
+- A new worktree runs `just worktree-prime` first: Git LFS files from the local cache, and the main checkout's build and cooked pack cloned copy-on-write, so its first build recompiles only the workspace (minutes, a few GB) instead of everything (20–40 GB).
 - Cook into `target/cooked` only. If parallel work needs its own pack, cook into `target/cooked-<name>` and delete it as soon as the work lands; `just tidy` removes any left over.
 - Your scratchpad holds only what you still need. Delete raw exports (Tripo GLBs, image batches), render series and data copies once their result is in the repository, and before you end a task.
 

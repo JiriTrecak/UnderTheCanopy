@@ -73,6 +73,28 @@ tidy:
 tidy:
     $t = Join-Path "{{justfile_directory()}}" "target"; if (Test-Path $t) { Get-ChildItem $t -Directory | Where-Object { $_.Name -like "cooked-*" -or $_.Name -in @("ci", "tmp") } | Remove-Item -Recurse -Force; foreach ($p in "debug", "release") { $d = Join-Path $t $p; Remove-Item (Join-Path $d "incremental") -Recurse -Force -ErrorAction SilentlyContinue; if ((Test-Path $d) -and ((Get-ChildItem $d -Recurse -File | Measure-Object Length -Sum).Sum -gt 40GB)) { "tidy: $p is over 40 GB of builds; cleaning it"; foreach ($s in "deps", "build", ".fingerprint", "examples") { Remove-Item (Join-Path $d $s) -Recurse -Force -ErrorAction SilentlyContinue } } } }
 
+# Prime a new git worktree: Git LFS files from the local cache, the main checkout's release build and cooked pack cloned copy-on-write (first build recompiles only the workspace)
+[unix]
+worktree-prime:
+    #!/bin/sh
+    set -e
+    here="{{justfile_directory()}}"
+    main=$(cd "$(git -C "$here" rev-parse --path-format=absolute --git-common-dir)/.." && pwd)
+    if [ "$main" = "$here" ]; then echo "worktree-prime: run it in a worktree, not in the main checkout"; exit 1; fi
+    git -C "$here" lfs checkout
+    mkdir -p "$here/target"
+    for dir in release cooked; do
+        [ -d "$main/target/$dir" ] || continue
+        if [ -e "$here/target/$dir" ]; then echo "worktree-prime: target/$dir exists, left as it is"; continue; fi
+        cp -cR "$main/target/$dir" "$here/target/$dir" 2>/dev/null \
+            || cp --reflink=auto -R "$main/target/$dir" "$here/target/$dir"
+        echo "worktree-prime: target/$dir cloned from the main checkout"
+    done
+
+[windows]
+worktree-prime:
+    $here = "{{justfile_directory()}}"; $main = Split-Path (git -C $here rev-parse --path-format=absolute --git-common-dir); git -C $here lfs checkout; foreach ($d in "release", "cooked") { $src = Join-Path $main "target/$d"; $dst = Join-Path $here "target/$d"; if ((Test-Path $src) -and -not (Test-Path $dst)) { Copy-Item $src $dst -Recurse } }
+
 # Build the platform package (.app on macOS, NSIS installer on Windows)
 package:
     cargo packager -p canopy --release --formats {{package_format}}
