@@ -104,16 +104,20 @@ fn sun_visibility(world: vec3f, normal: vec3f, frag: vec2f) -> f32 {
     return lit / f32(VOGEL_TAPS);
 }
 
-// The overhead canopy's shade projected along the sun (old `overheadShade`); it
-// darkens everything under it, as in the old composite.
-fn canopy_light(p: vec3f) -> f32 {
+// The overhead canopy's shade projected along the sun (old `overheadShade`): 0 in the
+// open, the biome's strength under the crowns.
+fn canopy_shade(p: vec3f) -> f32 {
     let s = frame.sun_direction.xyz;
     if (frame.canopy.w < 0.5 || p.y >= frame.canopy.y || s.y <= 0.01) {
-        return 1.0;
+        return 0.0;
     }
     let uv = (p.xz + s.xz * (frame.canopy.y - p.y) / s.y) * frame.canopy.x + frame.canopy_offset.xy;
-    let shade = textureSampleLevel(canopy_pattern, repeat_sampler, uv, 0.0).r;
-    return 1.0 - shade * frame.canopy.z;
+    return textureSampleLevel(canopy_pattern, repeat_sampler, uv, 0.0).r * frame.canopy.z;
+}
+
+// The sun's share that comes through the canopy at `p`.
+fn canopy_light(p: vec3f) -> f32 {
+    return 1.0 - canopy_shade(p);
 }
 
 fn point_light_sum(s: Surface, diffuse: vec3f) -> vec3f {
@@ -176,7 +180,11 @@ fn surface_light(s: Surface, view: vec3f, frag: vec2f) -> vec3f {
             + diffuse * environment_irradiance(n) * (1.0 - fe)) * s.occlusion
             + reflection * s.occlusion;
     }
-    return (direct + indirect + point_light_sum(s, diffuse)) * canopy_light(s.position);
+    // The crowns take the sun; the cool sky still reaches the shade beneath them, and
+    // the lights of spells and fires shine in it undimmed.
+    let shade = canopy_shade(s.position);
+    return direct * (1.0 - shade) + indirect * (1.0 - shade * frame.canopy_offset.z)
+        + point_light_sum(s, diffuse);
 }
 
 // Distance haze towards the surroundings colour (beyond the map only).

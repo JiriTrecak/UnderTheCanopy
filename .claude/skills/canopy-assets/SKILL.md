@@ -99,7 +99,7 @@ Optional fields:
 
 ## Landscape
 
-- `landscape/biomes/<id>.json` sets each biome's look: lighting, fixed ground layers, water, forest pieces. The renderer reads the base package's biomes. Its optional `motes` adds dust in the canopy's light and falling leaves; `atmosphere.overheadStrength` and `shaftElevation` shape the light shafts per camera (D64).
+- `landscape/biomes/<id>.json` sets each biome's look: lighting, fixed ground layers, water, forest pieces. The renderer reads the base package's biomes. Its optional `motes` adds dust in the canopy's light and falling leaves; `atmosphere.overheadStrength` and `shaftElevation` shape the light shafts per camera (D64). `canopy.strength` is how much sun the crowns take, `canopy.skyShade` the share of that shade that also falls on the sky's light (default 1; lower keeps the shade cool and lit, D94).
 - `landscape/water/<name>.json` is a water profile (a biome's water, or one a map's water flow names). An optional `glint` (0 none) adds sun glitter on the ripples.
 
 ```json water

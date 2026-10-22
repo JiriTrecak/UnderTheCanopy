@@ -71,7 +71,8 @@
       "The mission objective list is smaller and quieter: a gold mark per objective, optional ones muted, on a soft fade instead of a boxed panel",
       "The Royal Alchemist, Oleander, is remade: a calmer six-legged ant alchemist in an ivory robe with a royal-blue mantle, holding one glowing flask of substance, with a new portrait to match",
       "Items lying on the ground are a plump loot sack that sparkles gold, so a dropped item reads at a glance instead of looking like a small green box",
-      "Mission scenes frame each line on its speaker where they actually stand: singles, over-the-shoulder, two and wide shots that find the characters, keep to one side of a conversation and look past giant ferns. The Glass Road's opening, gate and closing scenes use them, and General Korrath's dialogue portrait now shows his face"
+      "Mission scenes frame each line on its speaker where they actually stand: singles, over-the-shoulder, two and wide shots that find the characters, keep to one side of a conversation and look past giant ferns. The Glass Road's opening, gate and closing scenes use them, and General Korrath's dialogue portrait now shows his face",
+      "A full lighting pass: warmer sunlight, cool blue shade under the canopy instead of dark mud, a golden hour before dusk and a clearer moonlit night, in both the summer forest and the frozen maps"
     ],
     "fixed": [
       "Generated cliffs join cleanly at corners and turns, ramps keep their side walls down to the foot, and diagonal cliff edges no longer show a staircase",

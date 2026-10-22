@@ -107,7 +107,7 @@ impl FrameUniform {
                 l.canopy.strength,
                 if l.canopy.strength > 0.0 { 1.0 } else { 0.0 },
             ],
-            canopy_offset: [offset[0], offset[1], 0.0, 0.0],
+            canopy_offset: [offset[0], offset[1], l.canopy.sky_shade, 0.0],
             shadow: [
                 p.shadow_texel,
                 l.shadow_softness,

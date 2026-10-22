@@ -21,7 +21,7 @@ struct Frame {
     environment: array<vec4f, 9>,
     // x: 1/scale, y: height, z: strength, w: enabled
     canopy: vec4f,
-    // xy: drift offset in pattern units
+    // xy: drift offset in pattern units, z: share of the shade on the sky's light
     canopy_offset: vec4f,
     // x: 1/resolution, y: filter radius (texels), z: normal offset (world), w: depth bias
     shadow: vec4f,

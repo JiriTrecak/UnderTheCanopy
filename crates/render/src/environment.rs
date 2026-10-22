@@ -608,8 +608,11 @@ impl Weather {
                 let flat = Vec3::new(d.x, 0.0, d.z).normalize_or(Vec3::X);
                 let up = d.y.max(ENCHANTED_ELEVATION.sin());
                 lighting.sun_direction = (flat * (1.0 - up * up).sqrt() + Vec3::Y * up).normalize();
-                lighting.ambient *= Vec3::new(0.92, 0.94, 1.1);
-                lighting.sky *= Vec3::new(0.9, 0.92, 1.1);
+                // The fill stays violet rather than the clear night's blue, and the crowns
+                // shade it too: deep pools between the beams, where the fireflies glow.
+                lighting.ambient *= Vec3::new(1.06, 0.84, 0.61);
+                lighting.sky *= Vec3::new(1.15, 0.92, 0.72);
+                lighting.canopy.sky_shade = 1.0;
             }
         }
     }
@@ -719,6 +722,10 @@ pub struct NightUnits {
     pub fill: f32,
 }
 
+fn full_shade() -> f32 {
+    1.0
+}
+
 /// The dappled light of the overhead forest.
 #[derive(Debug, Clone, Copy, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -728,6 +735,10 @@ pub struct Canopy {
     pub coverage: f32,
     pub softness: f32,
     pub strength: f32,
+    /// Share of the shade that falls on the sky's light as well as the sun's (1 darkens
+    /// everything under the crowns alike; lower keeps the shade lit by the cool sky).
+    #[serde(default = "full_shade")]
+    pub sky_shade: f32,
     pub sway: f32,
     pub speed: f32,
     pub cloud_shadow: f32,
@@ -1014,6 +1025,7 @@ impl BiomeConfig {
         range("canopy.scale", c.scale, 16.0, 1024.0)?;
         range("canopy.softness", c.softness, 0.01, 0.45)?;
         range("canopy.strength", c.strength, 0.0, 1.0)?;
+        range("canopy.skyShade", c.sky_shade, 0.0, 1.0)?;
         range("canopy.coverage", c.coverage, 0.1, 0.95)?;
         range("canopy.sway", c.sway, 0.0, 3.0)?;
         range("canopy.speed", c.speed, 0.0, 2.0)?;
@@ -1585,6 +1597,7 @@ mod tests {
                 coverage: 0.55,
                 softness: 0.22,
                 strength: 0.14,
+                sky_shade: 1.0,
                 sway: 1.2,
                 speed: 0.35,
                 cloud_shadow: 0.0,
