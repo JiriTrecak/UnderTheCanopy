@@ -6,9 +6,11 @@
     "ants",
     "hero",
     "tripo",
+    "skinned",
+    "tripo",
     "skinned"
   ],
-  "race": "ants",
+  "race": "beetles",
   "resources": [
     {
       "role": "geometry",
@@ -64,7 +66,7 @@
         "events": [
           {
             "name": "hit",
-            "time": 1.133
+            "time": 1.333
           }
         ]
       },

@@ -38,8 +38,8 @@ hit: hit_to_body_01, death, cast: cast_a_spell; height 1, `keepViolet`).
 
 The ants' centaurs were made with (Tripo exports of walk, run, slash, hit_to_body_01, cast_a_spell):
     herald.glb --ignore "-0.271,-0.148"   (the staff's foot)
-    royal-alchemist.glb --feet "-0.339,-0.392;0.255,-0.405;0.449,0.174;-0.456,0.182;0.396,-0.081;-0.294,0.046"
-        (the robe's hem reaches the ground as far out as a middle leg)
+    royal-alchemist.glb   (Oleander as reworked on 2026-10-22, one flask and a short robe: the
+        six feet are found unaided; the reference must show six separate legs, or Tripo makes four)
     gardener.glb --feet "-0.40,0.30;0.41,0.30;-0.386,-0.061;0.376,0.022;-0.166,-0.147;0.153,-0.141"
         --upper "0,0.0,0.40;0,-0.07,0.55;0,-0.06,0.72;-0.13,-0.06,0.52;-0.23,-0.15,0.44;0.13,-0.06,0.52;0.17,-0.08,0.31"
 """
