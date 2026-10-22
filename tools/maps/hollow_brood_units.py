@@ -139,7 +139,9 @@ def build():
     unit('ashka', 'unit.ants.reaver-queen', FERAL, 290, 58, 200)
 
     players = [
-        {'player': 8, 'race': 'ants', 'team': 'enemy', 'vision': False, 'ai': {'behaviour': 'passive'}},
+        # The feral brood, sick with the substance: the same violet-grey as in Founding.
+        {'player': 8, 'race': 'ants', 'team': 'enemy', 'vision': False, 'color': '#8a7f96',
+         'ai': {'behaviour': 'passive'}},
         {'player': 3, 'race': 'ants', 'team': 'ally', 'ai': {'behaviour': 'passive', 'dormant': True}},
         {'player': 4, 'race': 'ants', 'team': 'ally', 'ai': {'behaviour': 'passive', 'dormant': True}},
     ]

@@ -3,10 +3,5 @@
   "name": "Hollow: dead ant",
   "category": "landmark",
   "type": "prop",
-  "model": "asset.models.environment.hollow-ant-corpse",
-  "blocker": {
-    "width": 4.0,
-    "depth": 1.7,
-    "shape": "ellipse"
-  }
+  "model": "asset.models.environment.hollow-ant-corpse"
 }

@@ -1193,6 +1193,7 @@
         "race": "ants",
         "team": "enemy",
         "vision": false,
+        "color": "#8a7f96",
         "ai": {
           "behaviour": "passive"
         }
