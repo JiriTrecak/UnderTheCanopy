@@ -1,0 +1,16 @@
+{
+  "id": "scenery.giants-hornet-nest",
+  "name": "Hornets' nest",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.giants-hornet-nest",
+  "blockers": [
+    {
+      "width": 11.05,
+      "depth": 11.01,
+      "shape": "ellipse",
+      "x": 0.0,
+      "z": 0.0
+    }
+  ]
+}

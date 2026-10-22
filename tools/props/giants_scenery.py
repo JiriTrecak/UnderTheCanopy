@@ -23,6 +23,7 @@ PIECES = {
     'giants-chestnut-burr': ('Chestnut burr', 'landmark', 'body', 0.8),
     'giants-hazelnut': ('Hazelnut', 'landmark', 'body', 0.8),
     'giants-pine-cone': ('Pine cone', 'landmark', 'body', 0.8),
+    'giants-hornet-nest': ("Hornets' nest", 'landmark', 'body', 0.85),
     'giants-maple-seed': ('Maple seed', 'landmark', 'body', 0.6),
     'giants-bilberries': ('Bilberry sprig', 'foliage', 'foot', 1.0),
     'giants-parasol': ('Parasol mushroom', 'foliage', 'foot', 1.0),

@@ -9,6 +9,7 @@
     {"name": "giants-chestnut-burr", "glb": "giants-chestnut-burr.glb", "width": 14, "triangles": 9000, "texture": 1024, "tone": 0.82, "saturation": 0.82, "weld": true, "tags": ["seed"]},
     {"name": "giants-hazelnut", "glb": "giants-hazelnut.glb", "width": 8, "triangles": 7000, "texture": 1024, "tone": 0.85, "saturation": 0.85, "weld": true, "tags": ["seed"]},
     {"name": "giants-pine-cone", "glb": "giants-pine-cone.glb", "width": 18, "triangles": 9000, "texture": 1024, "tone": 0.85, "saturation": 0.85, "weld": true, "tags": ["seed", "pine"]},
+    {"name": "giants-hornet-nest", "glb": "giants-hornet-nest.glb", "width": 13, "triangles": 12000, "texture": 1024, "tone": 0.85, "saturation": 0.85, "weld": true, "title": "Hornets' nest", "tags": ["hornets", "nest"]},
     {"name": "giants-maple-seed", "flat": true, "glb": "giants-maple-seed.glb", "width": 16, "triangles": 5000, "texture": 1024, "tone": 0.82, "saturation": 0.8, "weld": true, "tags": ["seed"]},
     {"name": "giants-bilberries", "glb": "giants-bilberries.glb", "height": 7, "triangles": 6000, "texture": 1024, "tone": 0.85, "saturation": 0.85, "weld": true, "tags": ["berries"]},
 

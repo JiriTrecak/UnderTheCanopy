@@ -450,11 +450,11 @@
     },
     {
       "id": "dress.56",
-      "asset": "scenery.giants-pine-cone",
+      "asset": "scenery.giants-hornet-nest",
       "x": 186,
       "z": 94,
       "yaw": 0.5,
-      "scale": 0.75
+      "scale": 1.0
     },
     {
       "id": "dress.57",
