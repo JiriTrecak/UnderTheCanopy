@@ -1,0 +1,7 @@
+{
+  "id": "scenery.hollow-web-drape",
+  "name": "Hollow: draped web strands",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.hollow-web-drape"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "building.neutral.beetle-gate",
+  "name": "Station Gate",
+  "description": "A beetle gate of riveted steel and brass across a road. Nothing passes until it is broken down.",
+  "model": "asset.models.buildings.beetle-gate",
+  "icon": "asset.portraits.buildings.neutral-beetle-gate",
+  "footprint": {
+    "width": 16,
+    "depth": 4
+  },
+  "entrance": {
+    "x": 0.5,
+    "y": 2.5
+  },
+  "body": {
+    "maxHp": 1800,
+    "armor": 5,
+    "armorType": "structure"
+  },
+  "behaviors": {}
+}

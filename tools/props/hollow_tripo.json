@@ -1,0 +1,87 @@
+{
+  "out": "base/assets/environment/underleaf",
+  "tags": [
+    "underleaf",
+    "hollow",
+    "tripo"
+  ],
+  "license": "Generated with Tripo (image to 3D) from a gpt-image-2 concept for Under the Canopy; made game-ready by tools/props/import_tripo.py (tools/props/hollow_tripo.json).",
+  "items": [
+    {
+      "name": "hollow-cocoon-standing",
+      "title": "Silk cocoon, standing",
+      "glb": "mp-cocoon-standing.glb",
+      "height": 5.5,
+      "triangles": 6000,
+      "texture": 1024,
+      "tone": 0.86,
+      "saturation": 0.8,
+      "weld": true,
+      "tags": ["webs", "cocoon"]
+    },
+    {
+      "name": "hollow-cocoon-lying",
+      "title": "Silk cocoon, lying",
+      "glb": "mp-cocoon-lying.glb",
+      "width": 6.0,
+      "triangles": 6000,
+      "texture": 1024,
+      "tone": 0.86,
+      "saturation": 0.8,
+      "weld": true,
+      "tags": ["webs", "cocoon"]
+    },
+    {
+      "name": "hollow-cocoon-hanging",
+      "title": "Silk cocoon on a dead stalk",
+      "glb": "mp-cocoon-hanging.glb",
+      "height": 8.5,
+      "triangles": 7000,
+      "texture": 1024,
+      "tone": 0.84,
+      "saturation": 0.8,
+      "weld": true,
+      "tags": ["webs", "cocoon"]
+    },
+    {
+      "name": "hollow-ant-corpse",
+      "title": "Dead ant",
+      "glb": "mp-ant-corpse-dark.glb",
+      "lay": [65, 0, 0],
+      "width": 5.0,
+      "triangles": 7000,
+      "texture": 1024,
+      "tone": 1.15,
+      "saturation": 0.85,
+      "weld": true,
+      "tags": ["ants", "dead"]
+    },
+    {
+      "name": "hollow-ant-husk",
+      "title": "Withered ant husk",
+      "glb": "mp-ant-corpse-bleached.glb",
+      "lay": [80, 0, 0],
+      "width": 5.0,
+      "triangles": 7000,
+      "texture": 1024,
+      "tone": 0.92,
+      "saturation": 0.85,
+      "weld": true,
+      "tags": ["ants", "dead", "sick"]
+    },
+    {
+      "name": "hollow-broodkeepers-shrine",
+      "title": "Broodkeepers' shrine",
+      "glb": "mp-broodkeepers-shrine.glb",
+      "height": 10.0,
+      "triangles": 14000,
+      "texture": 2048,
+      "tone": 0.9,
+      "saturation": 0.8,
+      "weld": true,
+      "glow": {"hue": "amber", "color": [1.0, 0.72, 0.32], "strength": 2.5},
+      "tags": ["ants", "landmark", "shrine"],
+      "capabilities": {"vegetationClearance": 3}
+    }
+  ]
+}

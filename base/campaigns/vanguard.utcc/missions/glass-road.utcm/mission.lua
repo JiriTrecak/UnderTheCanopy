@@ -9,7 +9,8 @@
 --   tunnel    the rubble north of the camp broken: the old tunnel comes up behind the
 --             station's west wall.
 --   gate      at the foot of the station, Coilkeeper Vosk refuses the Queen from the wall;
---             the War Lodge's waves start.
+--             the War Lodge wakes. Its waves march once the station's gate (the road's
+--             way into the forecourt) is broken: until then they could not get out.
 --   closing   the station fallen, the Queen at the condenser; Oleander's line; victory.
 -- Over play (lines in on_tick): the caravans, the places the Queen finds, Korrath and the
 -- rubble, the sleeping engineer (click him three times), Vosk when the station falls.
@@ -26,7 +27,7 @@ local SECOND = 40
 local SPILLS = { { 45.5, 213.5 }, { 69.5, 221.5 }, { 89.5, 213.5 }, { 109.5, 213.5 }, { 133.5, 221.5 }, { 157.5, 213.5 }, { 165.5, 201.5 }, { 173.5, 173.5 }, { 181.5, 157.5 }, { 205.5, 165.5 }, { 229.5, 157.5 }, { 261.5, 165.5 }, { 285.5, 157.5 }, { 309.5, 165.5 }, { 329.5, 157.5 }
 }
 local ROUTE = { { 36, 216 }, { 100, 216 }, { 168, 216 }, { 168, 160 }, { 216, 160 }, { 276, 160 },
-  { 340, 160 }, { 340, 124 } }
+  { 340, 160 }, { 340, 142 } }  -- the last at the station's gate
 local CARAVANS = 6
 local AMBUSHES = 3
 local HEROES = { "queen", "oleander", "korrath" }
@@ -83,6 +84,7 @@ local TALKS = {
   grove = { { "oleander", "Careful. That is the Hollow Stag. Older than the road, older than any of us.", 6 } },
   glade = { { "queen", "A beetle surveyor... he never made it home. Look at what he carried.", 5 } },
   fallen = { { "vosk", "Take it, then. Drink from it. And see what answers.", 6 } },
+  gate_down = { { "korrath", "The gate is down, Majesty! Now the lodge comes out to meet us.", 5 } },
   inside = {
     { "vosk", "Ants inside my walls? Seal the yard! Wake the lodge!", 5 },
     { "queen", "We came to ask, Coilkeeper. Now we take.", 4 },
@@ -103,6 +105,16 @@ local function start_talk(name)
   mission.set("talk", name)
   mission.set("line", 1)
   return true
+end
+
+-- The War Lodge's waves: at once while the station's gate is open, else once it breaks
+-- (a closed gate would hold them in the forecourt).
+local function waves()
+  if mission.alive("station.gate") then
+    mission.set("waves_wait", true)
+  else
+    mission.ai_waves(2, true)
+  end
 end
 
 -- Scenes -------------------------------------------------------------------------------
@@ -184,11 +196,15 @@ function scenes.gate()
   mission.camera_to("gate-queen", 0)
   talk("vosk", "Turn your column around. The next ant on my road goes home in pieces.")
   mission.camera_to("gate-lodge", 2)
-  talk("korrath", "They're opening the lodge, Majesty. Here they come.")
+  if mission.alive("station.gate") then
+    talk("korrath", "They're waking the lodge behind that gate, Majesty. Break it, and they come out.")
+  else
+    talk("korrath", "They're opening the lodge, Majesty. Here they come.")
+  end
   mission.set("phase", "war")
   mission.complete_objective("speak")
   mission.begin_objective("condenser")
-  mission.ai_waves(2, true)
+  waves()
   mission.cinematic(false)
   mission.move("vosk", 344, 86) -- back from the gate, to his post by the condenser
   mission.camera_reset(1.5, 340, 160)
@@ -429,11 +445,19 @@ function on_tick()
       mission.set("phase", "war")
       mission.complete_objective("speak")
       mission.begin_objective("condenser")
-      mission.ai_waves(2, true)
+      waves()
       mission.set("talk", nil)
       start_talk("inside")
     end
   elseif phase == "war" then
+    if mission.get("waves_wait") and not mission.alive("station.gate") then
+      mission.set("waves_wait", nil)
+      if not mission.get("fallen") then
+        mission.ai_waves(2, true)
+        mission.set("pending_gate", true)
+      end
+    end
+    if mission.get("pending_gate") and start_talk("gate_down") then mission.set("pending_gate", nil) end
     if not mission.get("fallen") and not mission.alive("station.bastion") then
       mission.set("fallen", true)
       mission.ai_waves(2, false)

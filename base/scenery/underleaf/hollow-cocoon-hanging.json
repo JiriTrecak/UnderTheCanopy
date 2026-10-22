@@ -1,0 +1,14 @@
+{
+  "id": "scenery.hollow-cocoon-hanging",
+  "name": "Hollow: silk cocoon on a dead stalk",
+  "category": "landmark",
+  "type": "prop",
+  "model": "asset.models.environment.hollow-cocoon-hanging",
+  "blocker": {
+    "width": 1.9,
+    "depth": 1.9,
+    "shape": "ellipse",
+    "x": -1.6,
+    "z": 0.0
+  }
+}

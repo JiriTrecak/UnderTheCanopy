@@ -1,0 +1,41 @@
+{
+  "id": "asset.models.environment.beetle-gate-towers",
+  "name": "Glass Road: station gate towers",
+  "kind": "prop",
+  "tags": [
+    "underleaf",
+    "glass-road",
+    "beetles",
+    "tripo",
+    "wall"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "vegetationClearance": 1,
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "license": "Generated with Tripo (image to 3D) from an ImageGen (gpt-image-2) concept for Under the Canopy; made game-ready by tools/buildings/beetle_gate.py."
+}

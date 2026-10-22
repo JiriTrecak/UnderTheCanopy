@@ -84,6 +84,19 @@
     ".asset-work/concepts/buildings/neutral-merchant-1.png"
    ],
    "subject": "the PILL-BUG PEDDLER, a travelling merchant: a friendly slate-grey pill bug with a tiny lantern on its antenna, harnessed in front of a small wooden cart piled with jars, potion bottles and amber, under a striped cream-and-rust awning. The striped awning and the pill bug's round armoured back are the signature. No ground."
+  },
+  {
+   "name": "building-neutral-beetle-gate",
+   "kind": "building",
+   "faction": "neutral",
+   "dir": "base/assets/portraits/buildings/neutral-beetle-gate",
+   "id": "asset.portraits.buildings.neutral-beetle-gate",
+   "title": "Station Gate portrait",
+   "refs": [
+    ".asset-work/concepts/buildings/mp-beetle-gate-1.png"
+   ],
+   "refnote": "Draw the closed double gate of the reference seen straight from the front: its two steel leaves and brass bar, only the inner edges of the stone towers.",
+   "subject": "the STATION GATE, a closed beetle fortress gate: two heavy leaves of dark riveted steel framed in brass, a big royal-blue panel on each and a thick brass locking bar across both, the edges of grey stone gateposts at its sides. Seen straight from the front, level; fill the frame's width. No ground."
   }
  ]
 }

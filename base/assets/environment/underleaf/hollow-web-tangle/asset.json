@@ -1,0 +1,44 @@
+{
+  "id": "asset.models.environment.hollow-web-tangle",
+  "name": "Web tangle",
+  "kind": "prop",
+  "tags": [
+    "underleaf",
+    "hollow",
+    "webs",
+    "procedural"
+  ],
+  "resources": [
+    {
+      "role": "geometry",
+      "index": 1,
+      "format": "glb"
+    },
+    {
+      "role": "albedo",
+      "index": 1,
+      "format": "png"
+    },
+    {
+      "role": "source",
+      "index": 1,
+      "format": "blend"
+    }
+  ],
+  "transform": {
+    "scale": 1,
+    "pivot": [
+      0,
+      0,
+      0
+    ],
+    "up": "Y",
+    "forward": "+Z"
+  },
+  "capabilities": {
+    "groundContact": {
+      "mode": "pivot"
+    }
+  },
+  "license": "Original procedural model for Under the Canopy (tools/props/build_webs.py), silk painted with gpt-image-2.5."
+}
