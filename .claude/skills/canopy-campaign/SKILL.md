@@ -55,10 +55,11 @@ Aurelith in game is crimson and gold, with team colour on her gown. Player 1 is 
 
 ## Mission maps
 
-Missions live in the campaign package. Each map is authored by a Python generator talking to the editor's MCP:
+Missions live in the campaign package. A new map is blocked out by a Python generator talking to the editor's MCP:
 1. Start the server: `CANOPY_MCP_PORT=<free port> just mcp` (headless). Several checkouts each use their own port, and `tools/maps/mcp.py` reads the same variable. Stop it when done.
 2. Run the generator. It shapes blocks (`map_blocks`), places scenery and entities, writes the `mission` section (players, regions, objectives, cameras) and copies the Lua.
-3. Later edits are **targeted**: edit map.json, scenery.json and mission.lua directly (2-space JSON, keys in place), and mirror the change in the generator so a re-run keeps it. Never re-run a whole generator over a map others have edited unless you verify it reproduces the map exactly.
+
+**Once a map has shipped, the map package is the only source of truth.** Edit it through the editor, its MCP tools, or targeted edits of map.json, scenery.json and mission.lua (2-space JSON, keys in place). Don't mirror changes back into the generator, and never re-run a generator over a shipped map: it would undo everyone's later edits. The generators in `tools/maps/` remain as a record of how each map was blocked out. (The first three missions were built before this rule, so their generators partly mirror later edits; don't rely on that.)
 
 A mission map has:
 - **A clear main road** and its objective.
