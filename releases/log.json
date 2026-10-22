@@ -74,7 +74,8 @@
       "Mission scenes frame each line on its speaker where they actually stand: singles, over-the-shoulder, two and wide shots that find the characters, keep to one side of a conversation and look past giant ferns. The Glass Road's opening, gate and closing scenes use them, and General Korrath's dialogue portrait now shows his face",
       "A full lighting pass: warmer sunlight, cool blue shade under the canopy instead of dark mud, a golden hour before dusk and a clearer moonlit night, in both the summer forest and the frozen maps",
       "A new main menu: the ant queen looks out over a grand sunlit forest with the ants' spire city, the beetles' forge and a battle raging in the clearing below",
-      "Fireflies in the enchanted forest are fewer and smaller, a gentle sprinkle instead of a swarm"
+      "Fireflies in the enchanted forest are fewer and smaller, a gentle sprinkle instead of a swarm",
+      "Water looks natural: shores follow rounded, wandering banks instead of blocky steps, shallow edges deepen gradually, and rivers visibly flow downstream along their banks"
     ],
     "fixed": [
       "Generated cliffs join cleanly at corners and turns, ramps keep their side walls down to the foot, and diagonal cliff edges no longer show a staircase",

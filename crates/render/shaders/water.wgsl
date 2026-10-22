@@ -126,10 +126,25 @@ fn swell_amplitude(depth: f32, pr: Profile) -> f32 {
 }
 
 // One world-space wave field, bent and varied in broad moving patches, advected by
-// the flow. Bounded by 1.
+// the flow ([`swell_layer`] is one undrifted layer). Bounded by 1.
 fn swell_field(world: vec2f, flow: vec2f, pr: Profile) -> f32 {
+    // Still water needs one layer; a current carries two phases that cross-fade as each
+    // resets, so the waves run downstream forever without shearing at bends.
+    if (dot(flow, flow) < 0.0004) {
+        return swell_layer(world, pr);
+    }
+    let cycle = 6.0;
+    let phase = fract(water_time() / cycle);
+    let other = fract(phase + 0.5);
+    let w = 1.0 - abs(phase * 2.0 - 1.0);
+    let a = swell_layer(world - flow * phase * cycle * 0.5, pr);
+    let b = swell_layer(world - flow * other * cycle * 0.5 + vec2f(13.0, 7.0), pr);
+    return a * w + b * (1.0 - w);
+}
+
+fn swell_layer(world: vec2f, pr: Profile) -> f32 {
     let t = water_time();
-    let p = (world - flow * t * 0.5) * (TAU / pr.swell.y);
+    let p = world * (TAU / pr.swell.y);
     let tt = t * pr.swell.z;
     let drift = vec2f(tt * 0.035, -tt * 0.025);
     let warp = vec2f(water_noise(p * 0.38 + drift), water_noise(p * 0.31 - drift + 17.0)) - 0.5;
@@ -200,6 +215,25 @@ fn foam_cells(p: vec2f) -> f32 {
     return nearest;
 }
 
+// The current's streaks at `p`: long ridges of value noise along the flow, carried
+// downstream in two phases that cross-fade as each resets, so a bend never smears them
+// (a flow map). 0–1 around 0.5; `along` is the flow's unit direction.
+fn current_streaks(p: vec2f, flow: vec2f, along: vec2f, speed: f32) -> f32 {
+    let t = water_time();
+    let cycle = 3.0;
+    let phase = fract(t / cycle);
+    let across = vec2f(-along.y, along.x);
+    var total = 0.0;
+    for (var k = 0; k < 2; k++) {
+        let ph = fract(phase + f32(k) * 0.5);
+        let q = p - flow * speed * ph * cycle;
+        let local = vec2f(dot(q, along) * 0.16, dot(q, across) * 0.75) + f32(k) * vec2f(37.0, 11.0);
+        let v = water_noise(local) * 0.7 + water_noise(local * vec2f(1.7, 1.9) + 5.0) * 0.3;
+        total += v * (1.0 - abs(ph * 2.0 - 1.0));
+    }
+    return total;
+}
+
 // What the water column does to the bed's colour: the shallow colour's tint and the
 // per-channel absorption.
 fn absorption(column: f32, pr: Profile) -> vec3f {
@@ -242,6 +276,13 @@ fn fs_main(in: VsOut) -> SceneOut {
     let flow = flow_at(p);
     let flow_dir = flow.rg * 2.0 - 1.0;
     let open = openness(depth, pr);
+    // The current: streaks carried downstream, read as ridges and a soft sheen.
+    let current = length(flow_dir);
+    let along = flow_dir / max(current, 0.0001);
+    var run = 0.5;
+    if (current > 0.02) {
+        run = current_streaks(p, flow_dir, along, 1.0 + pr.extra.y * 2.0);
+    }
 
     // Swell normal by forward differences of the displaced height; the amplitude is
     // evaluated at the neighbours too, so normals follow the shallow/deep blend.
@@ -254,6 +295,8 @@ fn fs_main(in: VsOut) -> SceneOut {
     let fine = pr.effects.y * mix(0.3, 0.65, open) * (1.0 - smoothstep(0.15, 0.75, pixel)) * smoothstep(0.0, 0.2, depth);
     let rq = p * pr.effects.x * 5.0 + vec2f(t * 0.14, -t * 0.09);
     slope += vec2f(cos(rq.x + sin(rq.y)), cos(rq.y * 0.87 + sin(rq.x))) * fine;
+    slope += vec2f(-along.y, along.x) * (run - 0.5) * 0.08 * current * smoothstep(0.0, 0.3, depth)
+        * (1.0 - smoothstep(0.3, 0.9, pixel));
     let crest = smoothstep(0.48, 0.88, h0) * open * smoothstep(0.005, 0.12, amplitude);
     var normal = normalize(vec3f(-slope.x, 1.0, -slope.y));
 
@@ -324,6 +367,9 @@ fn fs_main(in: VsOut) -> SceneOut {
     let r = clamp((fresnel + 0.045 * open) * pr.deep.a, 0.0, 0.7);
     m *= 1.0 - r;
     a = a * (1.0 - r) + reflected * r;
+    // The current's sheen: pale runs of reflected sky along its streaks.
+    let sheen = smoothstep(0.56, 0.82, run) * current * smoothstep(0.05, 0.4, column);
+    a += vec3f(0.62, 0.78, 0.84) * luminance(body_light) * sheen * 0.08 * (0.4 + 0.6 * shadow);
     let half_light = normalize(to_eye + sun_dir);
     let highlight = pow(max(dot(normal, half_light), 0.0), 120.0);
     a += vec3f(0.65, 0.86, 0.94) * body_light * highlight * pr.deep.a * 0.10 * shadow;

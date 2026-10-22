@@ -12,6 +12,9 @@
 //!   levels, broken into protruding stone blocks by cellular noise in world space (so
 //!   faces join), with a lip at the top and a flared foot; rubble rocks at the foot, on
 //!   ramps and a few along the tops.
+//! - **Water** (D95): shores along a rounded, wandering outline with banks sloping inside
+//!   the water's cells, one surface per body of water over a smoothed bed, and currents
+//!   down long, narrow bodies ([`currents`]).
 //! - **Decals** and **scenery** scattered by zone.
 
 use canopy_content::map::blocks::{BLOCK, BlockKind, Blocks, LEVEL_HEIGHT};
@@ -339,18 +342,151 @@ pub fn generate(map: &UtcMap, biome: &BiomeConfig) -> Option<Generated> {
     );
     let mut out = map.clone();
     ground(&mut out, &cells, recipe, biome, seed);
+    currents(&mut out, &cells);
     let heights = Heights {
         bytes: &out.authoring.terrain.heights.0,
         side: vertices,
     };
     let objects = scatter(&cells, recipe, &Dressing::of(map, seed), seed);
     let decals = decals(&cells, &heights, recipe, seed);
-    let cliffs = cliffs(&heights, &cells, recipe, seed);
+    let water = Heights {
+        bytes: &out.authoring.terrain.water_heights.0,
+        side: vertices,
+    };
+    let cliffs = cliffs(&heights, &water, &cells, recipe, seed);
     Some(Generated {
         map: out,
         objects,
         dressing: DressingDesc { cliffs, decals },
     })
+}
+
+/// Rivers flow (the look only): each body of open water long and narrow enough to be a
+/// river runs from its end nearer the map's edge to its far end, along its channel (down
+/// the walking distance from its source), fastest mid-stream; lakes lie still. Writes the
+/// direction and a little foam where it runs fast into the cells' flow, keeping their
+/// water profile.
+fn currents(map: &mut UtcMap, cells: &Cells) {
+    let span = cells.span;
+    let n = span * span;
+    let water = |i: usize| cells.kind[i].water();
+    let neighbours = |i: usize| {
+        let (x, z) = (i % span, i / span);
+        [(1i32, 0i32), (-1, 0), (0, 1), (0, -1)]
+            .into_iter()
+            .filter_map(move |(dx, dz)| {
+                let (nx, nz) = (x as i32 + dx, z as i32 + dz);
+                (nx >= 0 && nz >= 0 && nx < span as i32 && nz < span as i32)
+                    .then(|| nz as usize * span + nx as usize)
+            })
+    };
+    // Walking distance within one body from `from` (unreached: f32::MAX).
+    let walk = |from: usize| {
+        let mut d = vec![f32::MAX; n];
+        let mut queue = std::collections::VecDeque::from([from]);
+        d[from] = 0.0;
+        while let Some(i) = queue.pop_front() {
+            for j in neighbours(i) {
+                if water(j) && d[j] == f32::MAX {
+                    d[j] = d[i] + 1.0;
+                    queue.push_back(j);
+                }
+            }
+        }
+        d
+    };
+    let farthest = |d: &[f32]| {
+        (0..n)
+            .filter(|&i| d[i] < f32::MAX)
+            .max_by(|&a, &b| d[a].total_cmp(&d[b]).then(b.cmp(&a)))
+            .unwrap_or(0)
+    };
+    let to_dry = distance(span, |i| !water(i));
+    let edge = |i: usize| {
+        let (x, z) = (i % span, i / span);
+        x.min(z).min(span - 1 - x).min(span - 1 - z)
+    };
+    let mut flow = vec![[0.0f32; 3]; n];
+    let mut seen = vec![false; n];
+    for start in 0..n {
+        if !water(start) || seen[start] {
+            continue;
+        }
+        let around = walk(start);
+        let body: Vec<usize> = (0..n).filter(|&i| around[i] < f32::MAX).collect();
+        for &i in &body {
+            seen[i] = true;
+        }
+        let a = farthest(&around);
+        let from_a = walk(a);
+        let b = farthest(&from_a);
+        let length = from_a[b];
+        let width = body.len() as f32 / length.max(1.0);
+        let river = smoothstep(3.0, 7.0, length / width.max(1.0));
+        if river <= 0.0 {
+            continue;
+        }
+        let from = if edge(b) < edge(a) { walk(b) } else { from_a };
+        for &i in &body {
+            let (x, z) = ((i % span) as i32, (i / span) as i32);
+            let at = |dx: i32, dz: i32| {
+                let (nx, nz) = (x + dx, z + dz);
+                if nx < 0 || nz < 0 || nx >= span as i32 || nz >= span as i32 {
+                    return from[i];
+                }
+                let j = nz as usize * span + nx as usize;
+                if from[j] < f32::MAX { from[j] } else { from[i] }
+            };
+            // Along the banks: across the distance to the shore, the way the walk from
+            // the source goes (straight down that walk mid-stream, where the distance
+            // to the shore has no slope).
+            let down = Vec2::new(at(1, 0) - at(-1, 0), at(0, 1) - at(0, -1)).normalize_or_zero();
+            let shore = |dx: i32, dz: i32| {
+                let (nx, nz) = (
+                    (x + dx).clamp(0, span as i32 - 1),
+                    (z + dz).clamp(0, span as i32 - 1),
+                );
+                to_dry[nz as usize * span + nx as usize]
+            };
+            let across = Vec2::new(shore(1, 0) - shore(-1, 0), shore(0, 1) - shore(0, -1)) * 0.5;
+            let mut bank = Vec2::new(-across.y, across.x);
+            if bank.dot(down) < 0.0 {
+                bank = -bank;
+            }
+            let g = down
+                .lerp(bank.normalize_or_zero(), across.length().min(1.0) * 0.6)
+                .normalize_or_zero();
+            let speed = river * (0.45 + 0.55 * smoothstep(0.5, 3.0, to_dry[i]));
+            let g = g * speed;
+            flow[i] = [
+                g.x,
+                g.y,
+                river * (1.0 - smoothstep(0.5, 2.0, to_dry[i])) * 0.3,
+            ];
+        }
+    }
+    // Smoothed, so bends turn gradually; only water cells move.
+    let mut fields: Vec<Vec<f32>> = (0..3)
+        .map(|k| flow.iter().map(|f| f[k]).collect())
+        .collect();
+    for field in &mut fields {
+        *field = blur(field, span, 5);
+    }
+    let terrain = &mut map.authoring.terrain;
+    let mut bytes = terrain.water_flow.0.clone();
+    if bytes.len() != n * 4 {
+        return;
+    }
+    let byte = |v: f32| (128.0 + v.clamp(-1.0, 1.0) * 127.0).round() as u8;
+    for i in 0..n {
+        if !water(i) {
+            continue;
+        }
+        bytes[i * 4] = byte(fields[0][i]);
+        bytes[i * 4 + 1] = byte(fields[1][i]);
+        bytes[i * 4 + 2] = (fields[2][i].clamp(0.0, 1.0) * 255.0).round() as u8;
+    }
+    terrain.water_flow = Grid(bytes);
 }
 
 fn classify(blocks: &Blocks, heights: &Heights, span: usize) -> Cells {
@@ -539,10 +675,13 @@ fn ground(map: &mut UtcMap, cells: &Cells, recipe: &BlockLook, biome: &BiomeConf
         }
         terrain.heights = Grid(bytes);
     }
-    // A lake's bank slopes under its water over a few cells instead of stepping along the
-    // cells (the look only, as above): the ground near the water relaxes towards the water
-    // just under its surface, and the water spreads over what sinks below it, so its edge
-    // runs where the slope crosses the surface.
+    // A lake's or river's shore follows a rounded outline instead of the cells' staircase
+    // (the look only, as above): a signed distance to the water, blurred so the blocks'
+    // corners round off and a diagonal's steps run straight, wandering a little. The bank
+    // slopes down to the water at that outline inside the water's cells, where nothing
+    // walks, so the ground units stand on keeps its height (a low bank may round a little
+    // into the land too); the bed falls away beyond it and the water lies under the
+    // banks, its edge where the slope crosses its surface.
     {
         let read = |b: &[u8], i: usize| {
             f32::from_le_bytes([b[i * 4], b[i * 4 + 1], b[i * 4 + 2], b[i * 4 + 3]])
@@ -551,68 +690,153 @@ fn ground(map: &mut UtcMap, cells: &Cells, recipe: &BlockLook, biome: &BiomeConf
         let ground: Vec<f32> = (0..n).map(|i| read(&terrain.heights.0, i)).collect();
         let water: Vec<f32> = (0..n).map(|i| read(&terrain.water_heights.0, i)).collect();
         let wet: Vec<bool> = (0..n).map(|i| water[i] > ground[i] + 0.05).collect();
-        // Each vertex near water: the surface of the water nearest it.
+        // Shallow and deep water side by side lie at one level (the higher), so no step runs
+        // along the surface where they meet.
+        let mut water = water;
+        for _ in 0..4 {
+            let prev = water.clone();
+            for i in 0..n {
+                if !wet[i] {
+                    continue;
+                }
+                let (x, z) = (i % side, i / side);
+                for (dx, dz) in [(1i32, 0i32), (-1, 0), (0, 1), (0, -1)] {
+                    let (nx, nz) = (x as i32 + dx, z as i32 + dz);
+                    if nx < 0 || nz < 0 || nx >= side as i32 || nz >= side as i32 {
+                        continue;
+                    }
+                    let j = nz as usize * side + nx as usize;
+                    if wet[j] && prev[j] > water[i] && prev[j] - water[i] < 0.5 {
+                        water[i] = prev[j];
+                    }
+                }
+            }
+        }
+        // The ground blurred, so under the water a shallow shelf slopes into a deep channel
+        // instead of dropping at its cells' edge.
+        let bed: Vec<f32> = (0..n).map(|i| ground[i]).collect();
+        let bed = blur(&bed, side, 3);
+        // Per vertex near the shore: the nearest water's surface and depth, and the
+        // nearest bank's height.
+        let reach = 6i32;
         let mut surface = vec![f32::NAN; n];
-        let band = 3.5f32;
+        let mut deep = vec![0.0f32; n];
+        let mut top = vec![f32::NAN; n];
         for vz in 0..side {
             for vx in 0..side {
                 let i = vz * side + vx;
-                if wet[i] || at_vertex(&cells.to_water, span, vx, vz) > band {
+                if at_vertex(&cells.to_water, span, vx, vz) > reach as f32 {
                     continue;
                 }
-                let r = 4i32;
-                let mut best = (f32::MAX, f32::NAN);
-                for dz in -r..=r {
-                    for dx in -r..=r {
+                let mut wet_near = (i32::MAX, 0usize);
+                let mut dry_near = (i32::MAX, 0usize);
+                for dz in -reach..=reach {
+                    for dx in -reach..=reach {
                         let (x, z) = (vx as i32 + dx, vz as i32 + dz);
                         if x < 0 || z < 0 || x >= side as i32 || z >= side as i32 {
                             continue;
                         }
                         let j = z as usize * side + x as usize;
-                        let d = (dx * dx + dz * dz) as f32;
-                        if wet[j] && d < best.0 {
-                            best = (d, water[j]);
+                        let d = dx * dx + dz * dz;
+                        if wet[j] && d < wet_near.0 {
+                            wet_near = (d, j);
+                        }
+                        if !wet[j] && d < dry_near.0 {
+                            dry_near = (d, j);
                         }
                     }
                 }
-                surface[i] = best.1;
+                if wet_near.0 < i32::MAX {
+                    let j = wet_near.1;
+                    surface[i] = water[j];
+                    deep[i] = water[j] - if wet[i] { bed[i] } else { ground[j] };
+                }
+                if dry_near.0 < i32::MAX {
+                    top[i] = ground[dry_near.1];
+                }
             }
         }
-        // Relax the band: water vertices held just under the surface, the band averaged.
-        let mut h: Vec<f32> = (0..n)
+        // Signed distance to the cells' shore in metres (positive in the water), rounded.
+        let to_wet = distance(side, |i| wet[i]);
+        let to_dry = distance(side, |i| !wet[i]);
+        let signed: Vec<f32> = (0..n)
             .map(|i| {
                 if wet[i] {
-                    ground[i].max(water[i] - 0.6)
+                    to_dry[i] - 0.5
                 } else {
-                    ground[i]
+                    0.5 - to_wet[i]
                 }
             })
             .collect();
-        for _ in 0..6 {
-            let prev = h.clone();
-            for vz in 1..side - 1 {
-                for vx in 1..side - 1 {
-                    let i = vz * side + vx;
-                    if surface[i].is_nan() {
-                        continue;
-                    }
-                    let mut sum = 0.0;
-                    for (dx, dz) in [(1i32, 0i32), (-1, 0), (0, 1), (0, -1)] {
-                        sum += prev[(vz as i32 + dz) as usize * side + (vx as i32 + dx) as usize];
-                    }
-                    h[i] = (sum / 4.0 * 0.7 + prev[i] * 0.3).min(ground[i]);
-                }
-            }
-        }
+        let rounded = blur(&signed, side, 4);
+        // A channel's middle (where the distance peaks across it) never dries, so rounding
+        // never closes a narrow stream.
+        let peak = |c: f32, a: f32, b: f32| c >= a && c >= b && (c > a || c > b);
+        let ridge: Vec<bool> = (0..n)
+            .map(|i| {
+                let (x, z) = (i % side, i / side);
+                wet[i]
+                    && x > 0
+                    && z > 0
+                    && x + 1 < side
+                    && z + 1 < side
+                    && (peak(signed[i], signed[i - 1], signed[i + 1])
+                        || peak(signed[i], signed[i - side], signed[i + side]))
+            })
+            .collect();
         let mut heights = terrain.heights.0.clone();
         let mut waters = terrain.water_heights.0.clone();
-        for i in 0..n {
-            if surface[i].is_nan() || h[i] >= ground[i] {
-                continue;
-            }
-            heights[i * 4..i * 4 + 4].copy_from_slice(&h[i].to_le_bytes());
-            if h[i] < surface[i] {
-                waters[i * 4..i * 4 + 4].copy_from_slice(&surface[i].to_le_bytes());
+        for vz in 0..side {
+            for vx in 0..side {
+                let i = vz * side + vx;
+                let level = surface[i];
+                if level.is_nan() {
+                    continue;
+                }
+                let bank = if wet[i] { top[i] } else { ground[i] };
+                if bank.is_nan() {
+                    continue;
+                }
+                let rise = (bank - level).max(0.05);
+                let (wx, wz) = (vx as f32 - halo, vz as f32 - halo);
+                let wander = (noise(wx * 0.13, wz * 0.13, seed ^ 61) - 0.5) * 1.6
+                    + (noise(wx * 0.5, wz * 0.5, seed ^ 67) - 0.5) * 0.5;
+                // A high bank needs room for its slope: its edge sits further into the water.
+                let slope = 0.6 + rise.min(4.0) * 0.8;
+                let low = smoothstep(1.2, 0.4, rise);
+                let mut s = signed[i].min(rounded[i] + low * 2.0) + wander - slope * 0.5;
+                // Walkable ground keeps its height, but for its outermost metre (where no
+                // unit stands, their bodies keep off deep water), which rounds with the bank,
+                // and a low bank's corners.
+                let mut edge = 1.0;
+                if !wet[i] {
+                    edge = smoothstep(-1.6 - low, -0.5, signed[i]);
+                    if edge <= 0.0 {
+                        continue;
+                    }
+                    s = (rounded[i] + wander - slope * 0.5).min(0.0);
+                }
+                if ridge[i] {
+                    s = s.max(signed[i].min(1.5) * 0.5);
+                }
+                let h = if s <= 0.0 {
+                    // The bank: from the water's edge up to the land over the slope's width.
+                    level + rise * smoothstep(0.0, slope, -s)
+                } else {
+                    // The bed: falling away from the edge to the water's own depth over four
+                    // metres, so the water darkens gradually from its edge.
+                    level - deep[i].max(0.3) * smoothstep(-0.4, 4.0, s)
+                };
+                let h = if wet[i] {
+                    h
+                } else {
+                    ground[i] + (h.min(ground[i]) - ground[i]) * edge
+                };
+                if (h - ground[i]).abs() > 0.001 {
+                    heights[i * 4..i * 4 + 4].copy_from_slice(&h.to_le_bytes());
+                }
+                // The water lies under the bank too; the ground hides it there.
+                waters[i * 4..i * 4 + 4].copy_from_slice(&level.to_le_bytes());
             }
         }
         terrain.heights = Grid(heights);
@@ -1421,7 +1645,7 @@ fn runs(segments: &mut [Segment], face: &[usize]) {
     }
 }
 
-fn contours(heights: &Heights, cells: &Cells, side: usize) -> Vec<Segment> {
+fn contours(heights: &Heights, water: &Heights, cells: &Cells, side: usize) -> Vec<Segment> {
     // The least drop across a cell edge that makes a wall: deeper than a shallow water's
     // bed lies; beside a ramp, steeper than a ramp ever falls (a level over two blocks at
     // the most), so its sides keep their walls almost to its foot.
@@ -1483,6 +1707,7 @@ fn contours(heights: &Heights, cells: &Cells, side: usize) -> Vec<Segment> {
                     let across = Vec2::new(-(b - a).y, (b - a).x).normalize_or(Vec2::X) * *s;
                     let q = mid + across * 0.8;
                     cells.at(q.x, q.y).is_some_and(|i| cells.kind[i].water())
+                        || water.at(q.x, q.y) > heights.at(q.x, q.y) + 0.05
                 });
                 if into_water {
                     continue;
@@ -1881,7 +2106,13 @@ fn shore(mesh: &mut MeshBuilder, heights: &Heights, cells: &Cells, shore: &Shore
 }
 
 /// The cliffs, one mesh per face material: the biome's cliff (face style 0) and its faces.
-fn cliffs(heights: &Heights, cells: &Cells, recipe: &BlockLook, seed: u64) -> Vec<CliffMesh> {
+fn cliffs(
+    heights: &Heights,
+    water: &Heights,
+    cells: &Cells,
+    recipe: &BlockLook,
+    seed: u64,
+) -> Vec<CliffMesh> {
     let _span = tracing::info_span!("blocks_cliffs").entered();
     let Some(cliff) = recipe.cliff.as_ref() else {
         return Vec::new();
@@ -1906,7 +2137,7 @@ fn cliffs(heights: &Heights, cells: &Cells, recipe: &BlockLook, seed: u64) -> Ve
         .collect();
     let mut rng = Rng(seed ^ 0xC11F);
     let side = heights.side;
-    let mut segments = contours(heights, cells, side);
+    let mut segments = contours(heights, water, cells, side);
     // The face of the column above each drop.
     let faces: Vec<usize> = segments
         .iter()
