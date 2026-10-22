@@ -157,7 +157,76 @@ pub struct EnvironmentConditions {
     pub hour: f64,
     pub playing: bool,
     pub weather: Option<WeatherConditions>,
+    /// Minutes of match time a whole day takes while time passes ([`DAY_MINUTES`] when
+    /// absent): a mission that turns slowly from dusk to night sets a long day.
+    pub day_minutes: Option<f64>,
 }
+
+/// Minutes of match time per day when a map does not say (the old game's ten).
+pub const DAY_MINUTES: f64 = 10.0;
+/// The longest day a map may set: a whole day lasts at most a full real day.
+pub const MAX_DAY_MINUTES: f64 = 1440.0;
+
+impl EnvironmentConditions {
+    /// Minutes of match time per day.
+    pub fn day_minutes(&self) -> f64 {
+        self.day_minutes.unwrap_or(DAY_MINUTES)
+    }
+}
+
+/// A map's own frame dressing over its biome's (`blocks.scatter`, D80): inside its area
+/// (the whole map when it names none), the biome's scenery can be taken out and the
+/// map's own layers added, so a map can wither one corner of a lush biome.
+#[skip_serializing_none]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct MapScatter {
+    /// A circle of cells.
+    pub area: Option<ScatterArea>,
+    /// A mission region's circle (`mission.regions`) instead of an area.
+    pub region: Option<String>,
+    /// Metres over which the change blends in at the edge, along a wandering line (8 when
+    /// absent; 0 a hard edge).
+    pub fade: Option<f64>,
+    /// The biome's scenery taken out inside: `true` all of it, or the scenery ids listed.
+    pub remove: Option<ScatterRemoval>,
+    /// Scatter layers in the biome recipe's own format (`blocks.scatter`), placed only
+    /// inside.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub layers: Vec<Value>,
+}
+
+/// A circle of cells (as mission regions are).
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ScatterArea {
+    pub x: f64,
+    pub y: f64,
+    pub radius: f64,
+}
+
+/// Which of the biome's scenery a [`MapScatter`] takes out.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(untagged)]
+pub enum ScatterRemoval {
+    /// `true`: every piece; `false`: none.
+    All(bool),
+    /// These scenery ids.
+    Pieces(Vec<String>),
+}
+
+impl ScatterRemoval {
+    /// Whether the biome's `piece` is taken out.
+    pub fn removes(&self, piece: &str) -> bool {
+        match self {
+            Self::All(all) => *all,
+            Self::Pieces(pieces) => pieces.iter().any(|p| p == piece),
+        }
+    }
+}
+
+/// Most entries in `landscape.scatter`, and most layers in one.
+pub const MAX_MAP_SCATTER: usize = 16;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "kebab-case")]
@@ -193,6 +262,8 @@ pub struct Decal {
 pub struct Landscape {
     pub environment: EnvironmentConditions,
     pub decals: Option<Vec<Decal>>,
+    /// The map's own frame dressing over its biome's, in order.
+    pub scatter: Option<Vec<MapScatter>>,
     /// Retired per-map water appearance: accepted in any form, always `None` after load.
     #[serde(default, skip_serializing)]
     pub water: Option<Retired>,

@@ -143,6 +143,14 @@ fn accepts_what_the_old_parser_tolerates() {
             "/landscape",
             json!({"environment": {"hour": 24, "playing": false}, "decals": []}),
         ),
+        (
+            "/landscape",
+            json!({"environment": {"hour": 18.5, "playing": true, "dayMinutes": 120}, "scatter": [
+                {"area": {"x": 40, "y": 40, "radius": 20}, "fade": 6, "remove": ["scenery.a"],
+                 "layers": [{"zone": "frame", "pieces": ["scenery.b"], "density": 0.3, "scale": [1, 2]}]},
+                {"remove": true}
+            ]}),
+        ),
         ("/initialExploration", json!("hidden")),
         ("/biome", json!("frozen-dream")),
         ("/v", json!(3.0)),
@@ -244,6 +252,22 @@ fn rejects_what_the_old_parser_rejects() {
         ),
         ("/landscape", json!({"water": {}})),
         ("/landscape", Value::Null),
+        (
+            "/landscape",
+            json!({"environment": {"hour": 1, "playing": true, "dayMinutes": 0}}),
+        ),
+        (
+            "/landscape",
+            json!({"environment": {"hour": 1, "playing": true}, "scatter": [{"region": "nowhere", "remove": true}]}),
+        ),
+        (
+            "/landscape",
+            json!({"environment": {"hour": 1, "playing": true}, "scatter": [{"area": {"x": 1, "y": 1, "radius": 9}}]}),
+        ),
+        (
+            "/landscape",
+            json!({"environment": {"hour": 1, "playing": true}, "scatter": [{"layers": [{"pieces": ["scenery.b"]}]}]}),
+        ),
         (
             "/landscape",
             json!({"environment": {"hour": 1, "playing": false}, "decals": [{"id": "d", "kind": "pebbles", "x": 0, "z": 0, "size": 40, "rotation": 0, "opacity": 1}]}),

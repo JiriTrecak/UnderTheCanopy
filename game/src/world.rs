@@ -57,19 +57,20 @@ pub struct Loaded {
     pub obstacles: canopy_scene::obstruction::Obstacles,
 }
 
-/// Seconds of match time per in-game day (old `DAY_CYCLE_SECONDS`).
-pub const DAY_SECONDS: f32 = 600.0;
-
-/// The hour `seconds` of match time after `start` (old `Sky.tick`).
-pub fn day_hour(start: f32, seconds: f32) -> f32 {
-    canopy_render::environment::wrap_hour(start + seconds / DAY_SECONDS * 24.0)
+/// The hour `seconds` of match time after `start` when a day lasts `day_seconds` (old
+/// `Sky.tick`, whose day was ten minutes).
+pub fn day_hour(start: f32, seconds: f32, day_seconds: f32) -> f32 {
+    canopy_render::environment::wrap_hour(start + seconds / day_seconds.max(1.0) * 24.0)
 }
 
 /// The old sky's day cycle in a match: the hour starts at the map's and advances 24 hours
-/// every [`DAY_SECONDS`] of match time; sandboxes and a requested hour stay fixed.
+/// every `day_seconds` of match time (the map's `dayMinutes`, ten by default); sandboxes
+/// and a requested hour stay fixed.
 #[derive(Debug, Clone)]
 pub struct DayCycle {
     pub start_hour: f32,
+    /// Seconds of match time per day.
+    pub day_seconds: f32,
     pub lighting: canopy_render::environment::LightingConfig,
     pub biome: canopy_render::environment::BiomeConfig,
     /// The map's weather, which tones the light too.
@@ -79,7 +80,7 @@ pub struct DayCycle {
 impl DayCycle {
     /// The hour after `seconds` of match time.
     pub fn hour(&self, seconds: f32) -> f32 {
-        day_hour(self.start_hour, seconds)
+        day_hour(self.start_hour, seconds, self.day_seconds)
     }
 
     /// The light at `seconds` of match time.
@@ -150,8 +151,10 @@ pub fn load(paths: &Paths, spec: &MatchSpec<'_>) -> Result<(Loaded, Match)> {
                 hour: 12.0,
                 playing: true,
                 weather: None,
+                day_minutes: None,
             },
             decals: None,
+            scatter: None,
             water: None,
         });
         landscape.environment.weather = Some(canopy_content::map::WeatherConditions { kind });
@@ -252,8 +255,15 @@ fn assemble(
     let presenter = scene.presenter(&world, map, pack.clone());
     // The clock runs unless the map holds its hour (`landscape.environment.playing`).
     let dynamic = map.landscape.as_ref().is_none_or(|l| l.environment.playing);
+    let day_minutes = map
+        .landscape
+        .as_ref()
+        .map_or(canopy_content::map::DAY_MINUTES, |l| {
+            l.environment.day_minutes()
+        });
     let day = (hour.is_none() && !map.sandbox && dynamic).then(|| DayCycle {
         start_hour: scene.hour,
+        day_seconds: (day_minutes * 60.0) as f32,
         lighting: look.lighting.clone(),
         biome: look.biome.clone(),
         weather: canopy_scene::weather_of(map),
@@ -473,11 +483,14 @@ pub fn prepare(
 #[cfg(test)]
 mod tests {
     #[test]
-    fn a_match_day_lasts_ten_minutes() {
+    fn a_match_day_lasts_its_map_s_minutes() {
         use super::day_hour;
-        assert_eq!(day_hour(9.5, 0.0), 9.5);
-        assert!((day_hour(9.5, 150.0) - 15.5).abs() < 1e-4);
-        assert!((day_hour(9.5, 600.0) - 9.5).abs() < 1e-3);
-        assert!((day_hour(20.0, 300.0) - 8.0).abs() < 1e-4);
+        // The old game's ten minutes.
+        assert_eq!(day_hour(9.5, 0.0, 600.0), 9.5);
+        assert!((day_hour(9.5, 150.0, 600.0) - 15.5).abs() < 1e-4);
+        assert!((day_hour(9.5, 600.0, 600.0) - 9.5).abs() < 1e-3);
+        assert!((day_hour(20.0, 300.0, 600.0) - 8.0).abs() < 1e-4);
+        // A long day: three hours of dusk over 25 minutes.
+        assert!((day_hour(18.5, 1500.0, 12_000.0) - 21.5).abs() < 1e-3);
     }
 }

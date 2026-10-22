@@ -10,7 +10,7 @@ use crate::tabs::Edit;
 use crate::theme::*;
 use crate::widgets::eyebrow;
 use canopy_content::map::blocks::{BLOCK, Block, BlockKind, Blocks};
-use canopy_content::map::{MAP_HALO, WeatherKind};
+use canopy_content::map::{DAY_MINUTES, MAP_HALO, MAX_DAY_MINUTES, WeatherKind};
 use egui::{RichText, Sense, Ui, vec2};
 use serde_json::{Value, json};
 use std::path::Path;
@@ -286,7 +286,8 @@ fn map_settings(
         .map_or(WeatherKind::Clear, |w| w.kind);
     let hour = environment.as_ref().map_or(12.0, |e| e.hour);
     let dynamic = environment.as_ref().is_none_or(|e| e.playing);
-    let mut next = (weather, hour, dynamic);
+    let day_minutes = environment.as_ref().and_then(|e| e.day_minutes);
+    let mut next = (weather, hour, dynamic, day_minutes);
     field(ui, "Weather");
     ui.horizontal_wrapped(|ui| {
         for (kind, name) in WEATHER {
@@ -321,10 +322,34 @@ fn map_settings(
     }
     ui.checkbox(&mut next.2, "Time passes")
         .on_hover_text("The day goes on from this hour during the match; off, it stays");
-    if next != (weather, hour, dynamic) {
+    if next.2 {
+        field(ui, "Day length");
+        let mut minutes = next.3.unwrap_or(DAY_MINUTES) as f32;
+        let response = ui
+            .add(
+                egui::Slider::new(&mut minutes, 1.0..=MAX_DAY_MINUTES as f32)
+                    .logarithmic(true)
+                    .step_by(1.0)
+                    .custom_formatter(|v, _| format!("{v:.0} min a day"))
+                    .custom_parser(|s| s.split_whitespace().next()?.parse().ok()),
+            )
+            .on_hover_text(
+                "Minutes of match time a whole day takes (the game's ten unless set): \
+                 a long day turns slowly from dusk to night",
+            );
+        if response.changed() {
+            next.3 = (f64::from(minutes) != DAY_MINUTES).then_some(f64::from(minutes));
+        }
+        let hours = 24.0 / next.3.unwrap_or(DAY_MINUTES);
+        ui.weak(format!("{hours:.2} hours pass a minute"));
+    }
+    if next != (weather, hour, dynamic, day_minutes) {
         let mut environment = json!({"hour": next.1, "playing": next.2});
         if next.0 != WeatherKind::Clear {
             environment["weather"] = json!({"kind": next.0});
+        }
+        if let Some(minutes) = next.3 {
+            environment["dayMinutes"] = json!(minutes);
         }
         edits.push(if docs.map.get("landscape").is_some_and(Value::is_object) {
             set(

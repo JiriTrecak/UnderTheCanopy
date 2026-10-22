@@ -921,12 +921,143 @@
   },
   "landscape": {
     "environment": {
-      "hour": 20.0,
-      "playing": false,
+      "hour": 18.5,
+      "playing": true,
       "weather": {
         "kind": "clear"
+      },
+      "dayMinutes": 240
+    },
+    "scatter": [
+      {
+        "area": {
+          "x": 306,
+          "y": 68,
+          "radius": 84
+        },
+        "fade": 16,
+        "remove": [
+          "scenery.giants-porcini",
+          "scenery.giants-morel",
+          "scenery.giants-clover",
+          "scenery.giants-sorrel",
+          "scenery.giants-fiddleheads",
+          "scenery.giants-fern-frond",
+          "scenery.giants-harts-tongue",
+          "scenery.giants-grass",
+          "scenery.giants-bracken",
+          "scenery.giants-fern-crown",
+          "scenery.giants-parasol",
+          "scenery.giants-bilberries",
+          "scenery.giants-buttons",
+          "scenery.giants-moss",
+          "scenery.giants-mossy-stone"
+        ],
+        "layers": [
+          {
+            "zone": "frameEdge",
+            "pieces": [
+              "scenery.hollow-toppled-mushrooms",
+              "scenery.hollow-withered-fern",
+              "scenery.hollow-withered-fern-tall"
+            ],
+            "density": 1.4,
+            "scale": [
+              1.8,
+              3.4
+            ],
+            "groups": 14,
+            "clump": 0.5
+          },
+          {
+            "zone": "frameEdge",
+            "pieces": [
+              "scenery.underleaf-patch-withered-a",
+              "scenery.underleaf-patch-withered-b"
+            ],
+            "density": 0.25,
+            "scale": [
+              0.8,
+              1.2
+            ]
+          },
+          {
+            "zone": "frame",
+            "pieces": [
+              "scenery.hollow-withered-fern",
+              "scenery.hollow-withered-fern-tall"
+            ],
+            "density": 0.5,
+            "scale": [
+              3.5,
+              8.0
+            ],
+            "groups": 20,
+            "clump": 0.5,
+            "depth": [
+              4,
+              18
+            ],
+            "grow": 0.8
+          },
+          {
+            "zone": "frame",
+            "pieces": [
+              "scenery.giants-withered"
+            ],
+            "density": 0.3,
+            "scale": [
+              1.2,
+              2.6
+            ],
+            "groups": 22,
+            "clump": 0.7,
+            "depth": [
+              8,
+              34
+            ],
+            "grow": 0.8
+          },
+          {
+            "zone": "frame",
+            "pieces": [
+              "scenery.hollow-bleached-mushrooms",
+              "scenery.hollow-toppled-mushrooms"
+            ],
+            "density": 0.14,
+            "scale": [
+              6.0,
+              12.0
+            ],
+            "groups": 22,
+            "clump": 0.6,
+            "depth": [
+              6,
+              30
+            ],
+            "grow": 0.8
+          },
+          {
+            "zone": "frame",
+            "pieces": [
+              "scenery.giants-withered"
+            ],
+            "density": 0.03,
+            "scale": [
+              2.8,
+              4.5
+            ],
+            "groups": 50,
+            "clump": 0.3,
+            "depth": [
+              24,
+              200
+            ],
+            "grow": 0.5
+          }
+        ]
       }
-    }
+    ]
   },
   "mission": {
     "objectives": [
