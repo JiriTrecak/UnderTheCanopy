@@ -492,12 +492,13 @@ impl Play<'_, '_> {
         orders::issue(self.ctx.state, id, order, false).then_some((x, y))
     }
 
-    /// Where a wave aimed at `target` goes from `from`: a region's centre, an enemy unit's
-    /// position, or the side of an enemy building facing `from` (a building's centre lies
-    /// inside its footprint, where no route ends).
+    /// Where a wave aimed at `target` goes from `from`: a region's centre (or the open
+    /// ground nearest it, when a building stands there), an enemy unit's position, or the
+    /// side of an enemy building facing `from` (a building's centre lies inside its
+    /// footprint, where no route ends).
     fn resolve(&self, target: &WaveTarget, from: Milli) -> Option<Milli> {
         match target {
-            WaveTarget::Region(id) => self.campaign.region(id),
+            WaveTarget::Region(id) => self.campaign.region(id).map(|c| self.open_near(c)),
             WaveTarget::Nearest => self
                 .nearest_enemy(from, |e| e.unit.is_some())
                 .map(|e| e.position)
@@ -507,6 +508,22 @@ impl Play<'_, '_> {
                     .map(|e| e.position)
             }),
         }
+    }
+
+    /// `at`, or the nearest cell a ground body may stand on when `at` is closed (a
+    /// building put up over a region's centre): a route ends only on open ground. Units
+    /// standing there do not count.
+    fn open_near(&self, at: Milli) -> Milli {
+        let (x, y) = at.cell();
+        let spatial = &self.ctx.spatial;
+        let nobody = |_: &crate::spatial::bodies::BodyRecord| false;
+        let here = Spot::new(x, y, None);
+        if spatial.free(here, None, None, Some(&nobody)) {
+            return at;
+        }
+        spatial
+            .nearest(here, OPEN_REACH, None, None, None, Some(&nobody))
+            .map_or(at, |s| milli_cell(s.x, s.y))
     }
 
     /// The enemy base a wave marches on: the nearest living main fort (a player start's
@@ -609,6 +626,9 @@ fn distance2(a: Milli, b: Milli) -> i64 {
 fn within(a: Milli, b: Milli, cells: i64) -> bool {
     distance2(a, b) <= (cells * i64::from(Milli::CELL)).pow(2)
 }
+
+/// How far from a closed region centre a wave looks for open ground (cells).
+const OPEN_REACH: i32 = 32;
 
 fn milli_cell(x: i32, y: i32) -> Milli {
     Milli {

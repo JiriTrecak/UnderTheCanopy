@@ -27,6 +27,10 @@
 //! (a player gathers before attacking; the skirmish AI would feed them in one by one).
 //! `--human` seats player 1 as a human who does nothing, to see what
 //! the waves do to an idle colony.
+//!
+//! Environment: `PLAYTEST_WHERE=1` lists every unit and building with its order at each
+//! report, `PLAYTEST_AI=1` player 1's supply and the AI's plan and latest decisions, and
+//! `PLAYTEST_DBG=<id suffix>` the movement state of the units it names.
 #![allow(clippy::disallowed_methods)] // wall-clock timing of the run
 
 use canopy_content::{Content, Id, map};
@@ -398,23 +402,71 @@ fn report(world: &World) {
             .filter(|e| e.hp.is_some_and(|hp| hp > 0))
         {
             let owner = format!("{:?}", e.owner);
-            if owner.contains("Nobody") || (e.unit.is_none() && e.construction.is_none()) {
+            if owner.contains("Nobody") || e.resource.is_some() || e.item.is_some() {
                 continue;
             }
             let id = catalog.id(e.definition).as_str();
+            let order = e
+                .unit
+                .as_ref()
+                .and_then(|u| u.order.as_ref())
+                .map(|o| format!(" {o:?}"))
+                .unwrap_or_default();
+            if std::env::var("PLAYTEST_DBG").is_ok_and(|d| id.ends_with(d.as_str()))
+                && let Some(u) = e.unit.as_ref()
+            {
+                println!(
+                    "            movement: route {} goal {:?} seg {:?} detour {:?} settled {} moved {:?} retry {} idle {:?} target {:?} contained {:?}",
+                    u.route.len(),
+                    u.goal,
+                    u.segment.is_some(),
+                    u.detour.is_some(),
+                    u.settled,
+                    u.last_moved_tick,
+                    u.retry_at,
+                    u.idle,
+                    u.target,
+                    u.contained
+                );
+            }
             println!(
-                "          {owner} {id} at {},{}{}",
+                "          {owner} {id} at {},{}{}{}",
                 e.position.x / 1000,
                 e.position.y / 1000,
                 if e.construction.is_some() {
                     " (site)"
                 } else {
                     ""
-                }
+                },
+                order.chars().take(160).collect::<String>()
             );
         }
     }
     if let Some(wallet) = state.wallets.iter().next() {
         println!("        wallet {:?}", wallet);
+    }
+    if std::env::var("PLAYTEST_AI").is_ok() {
+        let colony = canopy_sim::economy::view::colony(
+            state,
+            catalog,
+            world.economy(),
+            canopy_content::placement::Owner::Player(0),
+        );
+        println!("        supply {:?}", colony.supply);
+        for s in world.ai_summaries().iter().filter(|s| s.player == 0) {
+            println!(
+                "        ai {}: {} — plan {:?} {:?}",
+                s.player, s.mission, s.plan, s.metrics
+            );
+            for t in &s.trace {
+                println!(
+                    "          {} {:?} {} — {}",
+                    clock(t.tick),
+                    t.accepted,
+                    t.action,
+                    t.reason
+                );
+            }
+        }
     }
 }

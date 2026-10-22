@@ -16,7 +16,7 @@ use crate::{
     economy::{production::lane_size, revival, supply},
     heroes::Roster,
     orders::Order,
-    terrain::footprint::{Extent, resource_center_separation},
+    terrain::footprint::{BUILDING_CELL, Extent, resource_center_separation},
 };
 use canopy_content::{
     Id,
@@ -187,6 +187,14 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
                 return self.emit(action, reason);
             }
         }
+        // The rings reach only so far and pass between buildings: a base that fills its
+        // ground near home looks over all the open ground it can walk to, nearest first.
+        if near.is_none()
+            && d.power.is_none()
+            && let Some(action) = self.far_site(def, worker, origin)
+        {
+            return self.emit(action, reason);
+        }
         if d.power.is_some() {
             // A building that needs power looks inside the powered discs before the
             // network grows: nearest home first, so the base stays compact.
@@ -233,6 +241,49 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
             .inspected
             .insert(nosite, f.tick + NO_SITE_RETRY_TICKS);
         false
+    }
+
+    /// A site for `def` anywhere on the open, explored ground within [`FAR_REACH`] of
+    /// `origin` that is connected to home, on the building lattice and nearest first.
+    /// Each search checks [`FAR_BUDGET`] of them and the next one goes on from there, so
+    /// a large base is looked over in a few searches; a site found starts it from the
+    /// nearest again.
+    fn far_site(&mut self, def: Def, worker: u32, origin: Pt) -> Option<Action> {
+        let f = self.b.f;
+        let geo = f.geo;
+        let steps = (FAR_REACH / BUILDING_CELL).ceil() as i32;
+        let mut points: Vec<(i64, Pt)> = Vec::new();
+        for gy in -steps..=steps {
+            for gx in -steps..=steps {
+                let p = Pt::new(
+                    origin.x + f64::from(gx) * BUILDING_CELL,
+                    origin.y + f64::from(gy) * BUILDING_CELL,
+                );
+                let d = dist(p, origin);
+                let open = geo
+                    .index(p)
+                    .is_some_and(|i| f.land(i) && f.explored(i) > 0 && !f.blocked(i));
+                if d <= FAR_REACH && open && geo.connected(f.home, p) {
+                    // Centimetres: equal distances stay in row order.
+                    points.push(((d * 100.0).round() as i64, p));
+                }
+            }
+        }
+        if points.is_empty() {
+            return None;
+        }
+        // Stable: equal distances keep their row-by-row order.
+        points.sort_by_key(|&(d, _)| d);
+        let start = self.b.s.far_cursor as usize % points.len();
+        for k in 0..FAR_BUDGET.min(points.len()) {
+            let (_, cursor) = points[(start + k) % points.len()];
+            if let Some(action) = self.site(def, worker, cursor) {
+                self.b.s.far_cursor = 0;
+                return Some(action);
+            }
+        }
+        self.b.s.far_cursor = ((start + FAR_BUDGET) % points.len()) as u32;
+        None
     }
 
     /// The build order for `def` snapped at `cursor`, turned to face home, when the site
@@ -285,6 +336,7 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
                     .iter()
                     .flat_map(|work| &work.builds)
             })
+            .filter(|id| !f.rules.forbidden.contains(id))
             .collect();
         buildable.sort();
         buildable.dedup();
@@ -360,6 +412,13 @@ impl<'b, 'f, 'a> Planner<'b, 'f, 'a> {
         false
     }
 }
+
+/// How far from where it would build a colony looks for open ground once the rings
+/// around it are full (cells).
+const FAR_REACH: f64 = 128.0;
+
+/// Sites one far search checks.
+const FAR_BUDGET: usize = 96;
 
 /// How long a building that grew the network without finding a site waits before it
 /// grows the network again.
@@ -592,6 +651,7 @@ pub(super) fn expansion(
                 .iter()
                 .flat_map(|work| &work.builds)
         })
+        .filter(|id| !f.rules.forbidden.contains(id))
         .collect();
     let trains_worker = |d: &Definition| {
         d.behaviors.production.as_ref().is_some_and(|prod| {
@@ -843,9 +903,12 @@ fn run(p: &mut Planner) {
         .collect();
     buildable.sort();
     buildable.dedup();
+    // What the mission's tech forbids is never planned for: a step waiting on it would
+    // wait forever.
+    let open = |id: &Id| !rules.forbidden.contains(id);
     let defs: Vec<Def> = (0..definitions.len())
         .map(|i| Def(i as u16))
-        .filter(|&d| buildable.binary_search(&catalog.id(d)).is_ok())
+        .filter(|&d| buildable.binary_search(&catalog.id(d)).is_ok() && open(catalog.id(d)))
         .collect();
     let trains_worker = |d: &Definition| {
         d.behaviors.production.as_ref().is_some_and(|prod| {
@@ -1202,7 +1265,7 @@ fn run(p: &mut Planner) {
     }
     hero_choices.retain(|&d| {
         let d = catalog.get(d);
-        d.is_hero() && !roster.definitions.contains(&d.id)
+        d.is_hero() && !roster.definitions.contains(&d.id) && open(&d.id)
     });
     hero_choices.sort_by(|&a, &b| {
         let (da, db) = (catalog.get(a), catalog.get(b));
@@ -1247,7 +1310,7 @@ fn run(p: &mut Planner) {
     });
     let fulfils = &f.input.economy().tables().fulfils;
     let useful_upgrade = |d: &Definition| -> bool {
-        let Some(upgrade) = &d.upgrade else {
+        let Some(upgrade) = d.upgrade.as_ref().filter(|u| open(&u.target)) else {
             return false;
         };
         let Some(target_def) = def_of(&upgrade.target) else {
@@ -1496,7 +1559,7 @@ fn run(p: &mut Planner) {
                 .map_or(&[][..], |r| &r.outputs);
             let mut choices: Vec<(&Id, &canopy_content::game::Research)> = outputs
                 .iter()
-                .filter(|id| !f.researched.contains(id) && !pending.contains(id))
+                .filter(|id| !f.researched.contains(id) && !pending.contains(id) && open(id))
                 .filter_map(|id| Some((id, content.rules.research.get(id.as_str())?)))
                 .filter(|(_, r)| {
                     f.available(r.requires.as_deref())

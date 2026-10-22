@@ -549,8 +549,8 @@ impl Spatial {
     }
 
     /// Where a body wedged by terrain steps to, if it is wedged: the nearest free cell
-    /// centre within two cells where it stands on one level and from which it can step on
-    /// to a neighbouring centre.
+    /// centre within two cells beyond its radius where it stands on one level and from
+    /// which it can step on to a neighbouring centre.
     ///
     /// The sweep forbids crossing a step too high to climb, but not standing across one:
     /// a body sliding along a cliff edge (beside a ramp, typically) can end up straddling
@@ -573,7 +573,10 @@ impl Spatial {
                     })
                 })
         };
-        self.nearest(here, 2, Some(id), Some(body), Some(&leaves), None)
+        // Two cells beyond the body's own radius: a wide body (a hero's) straddles an
+        // edge from further off its centre.
+        let reach = 2 + body.radius.ceil() as i32;
+        self.nearest(here, reach, Some(id), Some(body), Some(&leaves), None)
     }
 
     /// Plans a route for `e` to `destination` and stores it on the unit (old `route`).

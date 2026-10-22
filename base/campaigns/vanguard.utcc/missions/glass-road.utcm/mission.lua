@@ -186,15 +186,16 @@ function scenes.gate()
   mission.wait(2)
   mission.face("vosk", 340, 154)
   mission.face("queen", 340, 98)
-  mission.camera_to("gate-vosk", 0)
-  talk("queen", "Keeper of the glass! I am Aurelith, Queen of the ants. I would speak with you.")
+  -- Each line on its speaker: a single from the front, or over the listener's shoulder.
   mission.camera_to("gate-queen", 0)
-  talk("vosk", "Coilkeeper Vosk. I know what you are, little queen. Your broods drink the light raw, and it eats them from the inside.")
+  talk("queen", "Keeper of the glass! I am Aurelith, Queen of the ants. I would speak with you.")
   mission.camera_to("gate-vosk", 0)
+  talk("vosk", "Coilkeeper Vosk. I know what you are, little queen. Your broods drink the light raw, and it eats them from the inside.")
+  mission.camera_to("gate-over-vosk", 0)
   talk("queen", "Then teach us your glass, and they will never drink again.")
   mission.camera_to("gate-vosk-close", 0)
   talk("vosk", "Glass is not for those who drink.")
-  mission.camera_to("gate-queen", 0)
+  mission.camera_to("gate-over-queen", 0)
   talk("vosk", "Turn your column around. The next ant on my road goes home in pieces.")
   mission.camera_to("gate-lodge", 2)
   if mission.alive("station.gate") then
@@ -231,7 +232,7 @@ function scenes.closing()
   talk("oleander", "Now we can learn what it is.")
   mission.camera_to("cond-rise", 5)
   -- The condenser wakes to her: its light rises, and keeps rising into the fade.
-  mission.effect_at("condenser-hum", "effect.buildings.alembic-glow", 340, 57)
+  mission.effect_at("condenser_hum", "effect.buildings.alembic-glow", 340, 57)
   mission.light_at("condenser", 340, 57, "#9b6cff", 40, 18, 4, 3)
   mission.wait(2)
   mission.fade_out(3, "#2b1450")
@@ -293,6 +294,14 @@ local function caravans(now)
   if lead == nil then
     mission.set("caravan_live", false)
     mission.set("caravan_at", now + 100 * SECOND)
+    -- Its guards, carts lost, fall back up the road to the station's gate, fighting
+    -- whatever they meet: the gate's guard grows with every escort that survives.
+    local gate = ROUTE[#ROUTE]
+    for i = 0, 1 do
+      if mission.alive(member(n, "guard", i)) then
+        mission.attack_move(member(n, "guard", i), gate[1] - 4 + 8 * i, gate[2] + 4)
+      end
+    end
     spill(get("cx", ROUTE[1][1]), get("cz", ROUTE[1][2]))
     local count = get("ambushed", 0) + 1
     mission.set("ambushed", count)

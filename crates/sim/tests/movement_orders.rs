@@ -82,11 +82,17 @@ fn walkers_go_around_a_cliff_and_never_cross_it() {
 
 #[test]
 fn a_body_wedged_across_a_cliff_edge_steps_free_and_goes_where_it_is_sent() {
-    // A 3 m cliff along x = 99.5 (cells from x = 100 up are high). A wide body that slid
-    // along it stands across the edge where every sweep to a cell centre around it crosses
-    // the step: no route can start from there.
+    wedged_body_steps_free("unit.trooper", 100, 100_400);
+    // A very wide body (a hero's) straddles the edge from further off its centre.
+    wedged_body_steps_free("unit.giant", 100, 99_600);
+}
+
+/// A 3 m cliff along x = 99.5 (cells from x = 100 up are high). A wide body that slid
+/// along it stands across the edge where every sweep to a cell centre around it crosses
+/// the step: no route can start from there.
+fn wedged_body_steps_free(definition: &str, cell: i32, x: i32) {
     let map = map(
-        vec![unit("t", "unit.trooper", 100, 50)],
+        vec![unit("t", definition, cell, 50)],
         walls(|x, _| x >= 100),
         vec![],
     );
@@ -98,14 +104,18 @@ fn a_body_wedged_across_a_cliff_edge_steps_free_and_goes_where_it_is_sent() {
         .entities
         .get_mut(canopy_sim::entity::EntityId(t))
         .unwrap();
-    e.position.x = 100_400;
+    e.position.x = x;
     let e = e.clone();
     world.spatial_mut().update_body(&e);
-    assert_eq!(at(&world, "t"), (100.4, 50.0), "placed across the edge");
+    assert_eq!(
+        at(&world, "t"),
+        (f64::from(x) / 1000.0, 50.0),
+        "placed across the edge"
+    );
     let spatial = world.spatial();
     let body = spatial.body_of(&e);
     let from = canopy_sim::spatial::Fixed::new(e.position.x, e.position.y);
-    let wedged = (99..=101).all(|x| {
+    let wedged = (cell - 1..=cell + 1).all(|x| {
         (49..=51).all(|y| {
             !spatial.clear_segment(
                 from,
@@ -115,13 +125,13 @@ fn a_body_wedged_across_a_cliff_edge_steps_free_and_goes_where_it_is_sent() {
             )
         })
     });
-    assert!(wedged, "the set-up wedges the body");
+    assert!(wedged, "the set-up wedges {definition}");
     command(
         &mut world,
         json!({"type": "move", "actors": [t], "destination": {"x": 120, "y": 50}}),
     );
     run(&mut world, 400);
-    assert_eq!(at(&world, "t"), (120.0, 50.0));
+    assert_eq!(at(&world, "t"), (120.0, 50.0), "{definition}");
     assert!(errors(&world).is_empty(), "{:?}", errors(&world));
 }
 

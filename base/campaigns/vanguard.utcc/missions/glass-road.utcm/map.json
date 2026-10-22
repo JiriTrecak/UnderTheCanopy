@@ -2077,9 +2077,9 @@
         "x": 111,
         "y": 314,
         "height": 5,
-        "distance": 38.81,
-        "pitch": 7.4,
-        "yaw": 24.57,
+        "distance": 35.58,
+        "pitch": 8.08,
+        "yaw": 34.59,
         "fov": 30
       },
       {
@@ -2106,13 +2106,12 @@
       {
         "id": "op-korrath",
         "x": 112,
-        "y": 316,
-        "height": 6,
-        "distance": 14.35,
-        "pitch": 4.0,
-        "yaw": 114.78,
-        "fov": 26,
-        "roll": 1.5
+        "y": 320,
+        "height": 6.5,
+        "distance": 22.14,
+        "pitch": 3.88,
+        "yaw": 264.81,
+        "fov": 33
       },
       {
         "id": "op-road",
@@ -2155,36 +2154,55 @@
         "fov": 32
       },
       {
+        "id": "gate-queen",
+        "x": 340,
+        "y": 155,
+        "height": 7.5,
+        "distance": 14.05,
+        "pitch": 2.29,
+        "yaw": 175.91,
+        "fov": 28
+      },
+      {
         "id": "gate-vosk",
         "x": 340,
         "y": 98,
-        "height": 4.5,
-        "distance": 74.51,
-        "pitch": -3.94,
-        "yaw": 5.4,
-        "fov": 22
+        "height": 8,
+        "distance": 24.2,
+        "pitch": -13.44,
+        "yaw": 347.74,
+        "fov": 26
       },
       {
         "id": "gate-vosk-close",
         "x": 340,
         "y": 98,
-        "height": 5,
-        "distance": 22.83,
-        "pitch": -11.69,
-        "yaw": 10.3,
-        "fov": 30,
+        "height": 7,
+        "distance": 26.61,
+        "pitch": -5.66,
+        "yaw": 10.89,
+        "fov": 22,
         "roll": 1.5
       },
       {
-        "id": "gate-queen",
+        "id": "gate-over-vosk",
         "x": 340,
         "y": 154,
-        "height": 3.5,
-        "distance": 69.15,
-        "pitch": 9.57,
-        "yaw": 184.21,
-        "fov": 26,
-        "roll": -1
+        "height": 6,
+        "distance": 46.3,
+        "pitch": 18.09,
+        "yaw": 178.7,
+        "fov": 26
+      },
+      {
+        "id": "gate-over-queen",
+        "x": 340,
+        "y": 98,
+        "height": 7,
+        "distance": 70.31,
+        "pitch": -2.14,
+        "yaw": 4.9,
+        "fov": 18
       },
       {
         "id": "gate-lodge",

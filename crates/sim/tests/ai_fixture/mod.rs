@@ -404,6 +404,49 @@ pub fn pumping_content() -> Arc<Content> {
         .clone()
 }
 
+/// What the hall upgrades into in [`keep_content`].
+pub const KEEP: &str = "building.test.keep";
+
+/// [`content`] with a hall that upgrades into a keep (tech limit tests).
+pub fn keep_content() -> Arc<Content> {
+    static CONTENT: OnceLock<Arc<Content>> = OnceLock::new();
+    CONTENT
+        .get_or_init(|| {
+            let mut game = game();
+            let definitions = game["definitions"].as_array_mut().expect("definitions");
+            let hall = definitions
+                .iter_mut()
+                .find(|d| d["id"] == HALL)
+                .expect("hall");
+            hall["upgrade"] = json!({"target": KEEP, "items": [{"item": AMBER, "amount": 30}],
+                "workTicks": 60});
+            let mut keep = hall.clone();
+            keep["id"] = json!(KEEP);
+            keep["name"] = json!(KEEP);
+            keep.as_object_mut().expect("keep").remove("upgrade");
+            definitions.push(keep);
+            load(game, "sim-ai-keep")
+        })
+        .clone()
+}
+
+/// A world on [`keep_content`].
+pub fn keep_world(map: &UtcMap, both: bool) -> World {
+    World::new(keep_content(), map, setup(both)).unwrap_or_else(|e| panic!("{e}"))
+}
+
+/// [`skirmish`] on ground closed (forest floor: never walked or built on) everywhere
+/// `open` leaves out.
+pub fn closed_skirmish(extra: Vec<Value>, open: impl Fn(i32, i32) -> bool) -> UtcMap {
+    let span = SIZE as i32 + 2 * HALO;
+    let blocked: Vec<u8> = (0..span * span)
+        .map(|i| u8::from(!open(i % span - HALO, i / span - HALO)))
+        .collect();
+    let mut document = skirmish_document(extra, vec![]);
+    document["authoring"]["terrain"]["blocked"] = json!(base64(&blocked));
+    UtcMap::from_value(document, "ai.utcmap").unwrap_or_else(|errors| panic!("{errors}"))
+}
+
 /// A world on [`pumping_content`].
 pub fn pumping_world(map: &UtcMap, both: bool) -> World {
     World::new(pumping_content(), map, setup(both)).unwrap_or_else(|e| panic!("{e}"))
@@ -479,6 +522,12 @@ pub const AWAY: (f64, f64) = (211.5, 211.5);
 /// A two-player skirmish on flat ground, both colonies beside amber deposits; `extra`
 /// adds placements, `camps` neutral camps. Explored from the start.
 pub fn skirmish(extra: Vec<Value>, camps: Vec<Value>) -> UtcMap {
+    UtcMap::from_value(skirmish_document(extra, camps), "ai.utcmap")
+        .unwrap_or_else(|errors| panic!("{errors}"))
+}
+
+/// [`skirmish`]'s document.
+fn skirmish_document(extra: Vec<Value>, camps: Vec<Value>) -> Value {
     let mut entities = vec![
         place_for("mine-1", MINE, "none", 33.5, 53.5),
         place_for("mine-2", MINE, "none", 41.5, 53.5),
@@ -486,7 +535,7 @@ pub fn skirmish(extra: Vec<Value>, camps: Vec<Value>) -> UtcMap {
         place_for("mine-4", MINE, "none", 217.5, 193.5),
     ];
     entities.extend(extra);
-    let document = json!({
+    json!({
         "v": 3, "size": SIZE, "name": "AI skirmish", "stamps": [],
         "initialExploration": "explored",
         "playerStarts": [
@@ -495,8 +544,7 @@ pub fn skirmish(extra: Vec<Value>, camps: Vec<Value>) -> UtcMap {
         ],
         "entities": entities, "camps": camps,
         "authoring": {"version": 1, "terrain": flat(), "objects": []},
-    });
-    UtcMap::from_value(document, "ai.utcmap").unwrap_or_else(|errors| panic!("{errors}"))
+    })
 }
 
 /// A camp that attacks players, guarding `home` with its member placements.
