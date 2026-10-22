@@ -65,7 +65,9 @@
       "A mission played without a base shows only the army's supply, not a red count over an empty limit",
       "Player 1 is always blue, in campaigns, skirmish and multiplayer; red is the second player's colour",
       "The cutscenes of The Hollow Brood and Founding are reframed in the Warcraft III manner: every line is seen on the one who says it, from establishing shots, over-the-shoulder shots and clean singles, without backs or giant props filling the frame",
-      "The mission objective list is smaller and quieter: a gold mark per objective, optional ones muted, on a soft fade instead of a boxed panel"
+      "The mission objective list is smaller and quieter: a gold mark per objective, optional ones muted, on a soft fade instead of a boxed panel",
+      "The Royal Alchemist, Oleander, is remade: a calmer six-legged ant alchemist in an ivory robe with a royal-blue mantle, holding one glowing flask of substance, with a new portrait to match",
+      "Items lying on the ground are a plump loot sack that sparkles gold, so a dropped item reads at a glance instead of looking like a small green box"
     ],
     "fixed": [
       "Generated cliffs join cleanly at corners and turns, ramps keep their side walls down to the foot, and diagonal cliff edges no longer show a staircase",

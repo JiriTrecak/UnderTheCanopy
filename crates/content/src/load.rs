@@ -10,7 +10,7 @@ use crate::{
     assets::{self, Manifest, landscape::LandscapeAsset},
     effects::{self, VisualEffect},
     error::{Error, Errors, parse},
-    game::{Actions, Definition, RenderAsset, Rules},
+    game::{Actions, Definition, Kind, RenderAsset, Rules},
     package::{Collection, Layers, Package, check_order},
     registry,
 };
@@ -223,8 +223,9 @@ fn read_source(
 }
 
 /// A definition's look: `model` (its model's render asset, when there is one) with the
-/// definition's presentation applied.
-fn look(model: Option<&RenderAsset>, d: &Definition) -> RenderAsset {
+/// definition's presentation applied; an item (not a currency) without effects of its own
+/// takes the rules' `itemEffects` (D90).
+fn look(model: Option<&RenderAsset>, d: &Definition, rules: Option<&Rules>) -> RenderAsset {
     let mut look = model.cloned().unwrap_or_else(RenderAsset::empty);
     look.id = d.model.clone();
     if let Some(p) = &d.presentation {
@@ -241,6 +242,13 @@ fn look(model: Option<&RenderAsset>, d: &Definition) -> RenderAsset {
         look.cast_contact = p.cast_contact;
         look.camera_anchor = p.camera_anchor.clone();
         look.effects = p.effects.clone();
+    }
+    if d.kind == Kind::Item
+        && d.currency != Some(true)
+        && look.effects.is_none()
+        && let Some(rules) = rules.filter(|r| !r.item_effects.is_empty())
+    {
+        look.effects = Some(rules.item_effects.clone());
     }
     look
 }
@@ -334,7 +342,7 @@ impl Content {
         };
         let looks = definitions
             .iter()
-            .map(|d| look(asset_of(d.model.as_str()), d))
+            .map(|d| look(asset_of(d.model.as_str()), d, rules.as_ref()))
             .collect();
         Some(Self {
             definitions,
@@ -397,7 +405,7 @@ impl Content {
     /// ability encounter). It is not checked again.
     pub fn put_definition(&mut self, d: Definition) {
         let asset = self.asset(d.model.as_str()).cloned();
-        let shown = look(asset.as_ref(), &d);
+        let shown = look(asset.as_ref(), &d, Some(&self.rules));
         match self
             .definitions
             .binary_search_by(|x| x.id.as_str().cmp(d.id.as_str()))

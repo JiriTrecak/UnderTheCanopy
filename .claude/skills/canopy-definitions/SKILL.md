@@ -219,6 +219,8 @@ Warcraft III's destructibles, fountains and Goblin Merchant, as neutral building
 
 Items placed on a map (`entities`, owner `none`) lie on the ground until a hero picks them up, like dropped loot.
 
+On the ground an item shows its `model` (the base game's items all lie as the loot sack, `asset.models.props.neutral-loot-bundle`) and plays the rules' `itemEffects` (`rules/game.json`: `[{effect, state: "always"}]`, the gold loot glint, D90) unless its own `presentation.effects` declares item effects (state `always`). Currencies never take the rules' effects.
+
 ```json item
 {
   "id": "item.example.ward",

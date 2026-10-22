@@ -6,5 +6,11 @@
   "supplyIcon": "asset.icons.resource-supply",
   "constructionHpPermille": 100,
   "constructionRefundPermille": 750,
-  "repairTicks": 4
+  "repairTicks": 4,
+  "itemEffects": [
+    {
+      "effect": "effect.items.loot-glint",
+      "state": "always"
+    }
+  ]
 }

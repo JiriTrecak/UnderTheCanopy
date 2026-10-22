@@ -1,6 +1,6 @@
 {
   "id": "asset.models.props.neutral-loot-bundle",
-  "name": "Loot Bundle",
+  "name": "Loot Sack",
   "kind": "prop",
   "tags": [
     "original",
@@ -36,7 +36,7 @@
   },
   "display": {
     "scale": 1,
-    "healthHeight": 2.1
+    "healthHeight": 3.3
   },
   "license": "Original artwork for Under the Canopy: concept by gpt-image-2, model by Tripo (image to 3D), made game-ready by tools/props/neutral_features.py."
 }

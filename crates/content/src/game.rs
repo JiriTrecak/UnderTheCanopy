@@ -729,6 +729,8 @@ impl StateEffect {
         "build",
         "chop",
     ];
+    /// An item's state: `always`, while it lies on the ground in sight.
+    pub const ITEM_STATES: &[&str] = &["always"];
 }
 
 impl Definition {
@@ -1025,6 +1027,10 @@ pub struct Rules {
     pub default_race: String,
     #[serde(default)]
     pub races: BTreeMap<String, Race>,
+    /// Effects every item lying on the ground plays whose own `presentation.effects`
+    /// declares none (D90): what marks dropped loot. States: `always`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub item_effects: Vec<StateEffect>,
 }
 
 /// A race with the global starting setup filled in where it has none.

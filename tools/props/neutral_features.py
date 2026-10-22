@@ -3,8 +3,8 @@
     /Applications/Blender.app/Contents/MacOS/Blender -b -P tools/props/neutral_features.py -- \\
         <name> <tripo.glb>
 
-Breakable crates and rubble, the two springs, the merchant's cart and the loot bundle every
-hero item lies on the ground as (D86). Each is Tripo's image-to-3D model of an approved
+Breakable crates and rubble, the two springs, the merchant's cart and the loot sack every
+hero item lies on the ground as (D86, D90). Each is Tripo's image-to-3D model of an approved
 gpt-image concept (`art/styles/neutral-<name>.png`); this script, after
 `tools/props/substance_deposit.py`:
 
@@ -42,7 +42,10 @@ SPECS = {
     'sap-spring': ('Sap Spring', (12, 12), 11.4, 6000, 1024, ('gold', 2.2), 0.62),
     'dew-spring': ('Dew Spring', (12, 12), 10.6, 6000, 1024, ('violet', 1.6), 0.42),
     'merchant': ('Pill-Bug Peddler', (12, 12), 11.6, 9000, 1024, ('gold', 1.2), None),
-    'loot-bundle': ('Loot Bundle', None, 2.2, 1200, 512, ('gold', 2.0), None),
+    # Every dropped item lies on the ground as this plump sack (D90): wider than an ant
+    # warrior's stance so it reads from the RTS camera, with a gold sparkle from the rules'
+    # item effects.
+    'loot-bundle': ('Loot Sack', None, 3.0, 3000, 1024, ('gold', 0.8), None),
 }
 TITLE, FOOTPRINT, ACROSS, TRIANGLES, TEXTURE, GLOW, POOL = SPECS[NAME]
 OUT = os.path.join(ROOT, 'base', 'assets', 'props', 'neutral-' + NAME)

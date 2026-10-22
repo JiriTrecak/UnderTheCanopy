@@ -439,6 +439,13 @@ struct BuildingTrack {
     aim: f32,
 }
 
+/// An item on the ground and the effects it plays (D90: the glint of dropped loot).
+#[derive(Debug, Clone)]
+struct ItemTrack {
+    cues: StateCues,
+    seen: u32,
+}
+
 /// What a tower's crew does this tick.
 #[derive(Debug, Clone, Copy, Default)]
 struct Tower {
@@ -554,6 +561,7 @@ pub struct Presenter {
     construction: BTreeMap<String, ConstructionPresentation>,
     units: BTreeMap<EntityId, Tracked>,
     buildings: BTreeMap<EntityId, BuildingTrack>,
+    items: BTreeMap<EntityId, ItemTrack>,
     corpses: BTreeMap<EntityId, Corpse>,
     origins: BTreeMap<(Part, u32), (u32, Vec3)>,
     /// Weapon flights whose launch effect played (with their launch tick).
@@ -744,6 +752,7 @@ impl Presenter {
             construction,
             units: BTreeMap::new(),
             buildings: BTreeMap::new(),
+            items: BTreeMap::new(),
             corpses: BTreeMap::new(),
             origins: BTreeMap::new(),
             fired: BTreeMap::new(),
@@ -871,6 +880,7 @@ impl Presenter {
     pub fn reset(&mut self) {
         self.units.clear();
         self.buildings.clear();
+        self.items.clear();
         self.corpses.clear();
         self.origins.clear();
         self.felling.clear();
@@ -1632,6 +1642,37 @@ impl Presenter {
                         .max(info.rest_max[2] - info.rest_min[2]);
                     let h = info.rest_max[1] - info.rest_min[1];
                     actor.body = Some([(w * 0.5 * scale).max(0.3), (h * scale).max(0.3)]);
+                    // It plays its `always` effects while it lies in sight (D90).
+                    if let Some(effects) = asset.effects.as_deref() {
+                        let track = self.items.entry(id).or_insert_with(|| ItemTrack {
+                            cues: StateCues::default(),
+                            seen: tick,
+                        });
+                        track.seen = tick;
+                        let mount = Mount {
+                            info: &info,
+                            sockets: asset.sockets.as_deref(),
+                            clip: (0, 0.0),
+                            position: actor.position,
+                            rotation: actor.rotation,
+                            scale: actor.scale,
+                            aim: None,
+                        };
+                        let always = |s: &str| s == "always";
+                        track.cues.update(
+                            &mut self.effects,
+                            effects,
+                            id.0,
+                            tick,
+                            &Doing {
+                                shown: !e.remembered && !hide,
+                                in_state: &always,
+                                events: &[],
+                            },
+                            &mount,
+                            &mut moves,
+                        );
+                    }
                 }
                 _ => {}
             }
@@ -1652,6 +1693,17 @@ impl Presenter {
             .collect();
         for id in stale {
             let mut track = self.buildings.remove(&id).expect("listed");
+            track.cues.stop(&mut self.effects);
+        }
+        // Items picked up or out of the view stop glinting.
+        let lifted: Vec<EntityId> = self
+            .items
+            .iter()
+            .filter(|(_, t)| t.seen != tick)
+            .map(|(&id, _)| id)
+            .collect();
+        for id in lifted {
+            let mut track = self.items.remove(&id).expect("listed");
             track.cues.stop(&mut self.effects);
         }
         let gone: Vec<EntityId> = self

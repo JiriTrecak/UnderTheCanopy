@@ -236,6 +236,7 @@ pub fn validate(content: &Content, errors: &mut Vec<Error>) {
     render_assets(&mut check);
     damage_tables(&mut check);
     loot(&mut check);
+    item_effects(&mut check);
     for definition in &content.definitions {
         definition_rules(&mut check, definition);
     }
@@ -1472,6 +1473,24 @@ fn races(check: &mut Checker) {
     }
 }
 
+/// `rules.itemEffects` (D90): known effects in an item's `always` state, at the model's
+/// origin or a `socket*` node (items share no declared sockets).
+fn item_effects(check: &mut Checker) {
+    let content = check.content;
+    for e in &content.rules.item_effects {
+        let at = "rules.itemEffects";
+        if e.event.is_some() || e.state.as_deref() != Some("always") {
+            check.fail(at, "an item effect plays in state always");
+        }
+        if !content.effects.iter().any(|v| v.id == e.effect) {
+            check.fail(at, format!("unknown item effect {}", e.effect));
+        }
+        if e.socket.as_ref().is_some_and(|s| !s.starts_with("socket")) {
+            check.fail(at, "an item effect's socket is a socket* model node");
+        }
+    }
+}
+
 /// A `presentation.effects` entry (D65): a known effect, exactly one of a state the
 /// definition's kind has and a clip event, and a socket as models name them.
 fn state_effect(check: &mut Checker, d: &Definition, e: &crate::game::StateEffect) {
@@ -1480,8 +1499,12 @@ fn state_effect(check: &mut Checker, d: &Definition, e: &crate::game::StateEffec
     let states = match d.kind {
         Kind::Building => StateEffect::BUILDING_STATES,
         Kind::Unit => StateEffect::UNIT_STATES,
+        Kind::Item => StateEffect::ITEM_STATES,
         _ => {
-            check.fail(at, "presentation effects are for units and buildings");
+            check.fail(
+                at,
+                "presentation effects are for units, buildings and items",
+            );
             return;
         }
     };
