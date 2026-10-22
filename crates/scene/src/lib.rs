@@ -44,6 +44,30 @@ pub struct Players {
     pub names: Vec<String>,
 }
 
+/// The team colours (linear) by slot for a match on `map`: the player colours, with a
+/// mission player's own `color` over its slot's.
+pub fn player_colors(players: &Players, map: &UtcMap) -> Vec<[f32; 3]> {
+    let palette: Vec<[f32; 3]> = players
+        .colors
+        .iter()
+        .map(|c| c.linear().to_array())
+        .collect();
+    let mut colors = palette.clone();
+    for p in map.mission.iter().flat_map(|m| &m.players) {
+        let own = match p.color() {
+            Some(canopy_content::map::PlayerColor::Palette(i)) => palette.get(i).copied(),
+            Some(canopy_content::map::PlayerColor::Rgb(rgb)) => Some(Hex(rgb).linear().to_array()),
+            None => None,
+        };
+        if let (Some(own), Some(slot)) =
+            (own, colors.get_mut(usize::from(p.player.saturating_sub(1))))
+        {
+            *slot = own;
+        }
+    }
+    colors
+}
+
 impl Players {
     pub fn load(data: &Path) -> Result<Self> {
         let path = data.join(CONFIG_FOLDER).join(PLAYERS_FILE);
@@ -55,6 +79,22 @@ impl Players {
             bail!(
                 "{}: needs a colour for each of the 8 players",
                 path.display()
+            );
+        }
+        // Mission players name their colour (`mission.players[].color`) by these names.
+        let named =
+            players
+                .names
+                .iter()
+                .map(|n| n.to_lowercase())
+                .eq(canopy_content::map::COLOR_NAMES
+                    .iter()
+                    .map(|n| n.to_string()));
+        if !named {
+            bail!(
+                "{}: names must be {} (mission players name colours by them)",
+                path.display(),
+                canopy_content::map::COLOR_NAMES.join(", ")
             );
         }
         Ok(players)
@@ -272,12 +312,7 @@ pub fn build(
         .into_iter()
         .map(|p| (p.id.clone(), p))
         .collect();
-    let colors: Vec<[f32; 3]> = look
-        .players
-        .colors
-        .iter()
-        .map(|c| c.linear().to_array())
-        .collect();
+    let colors = player_colors(&look.players, map);
     let mut scene = statics::build(world, content, map, &scenery);
     let mut dressing = None;
     if let Some(generated) = generated {

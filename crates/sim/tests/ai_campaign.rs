@@ -159,11 +159,12 @@ fn waves_are_trained_on_time_and_march_on_the_base() {
     run(&mut world, 33);
     let wave = made(&world, P2, SOLDIER);
     assert_eq!(wave.len(), 2);
-    // Launched at the next decision once all are out: toward player 1's hall.
+    // Launched at the next decision once all are out: toward player 1's hall, the side
+    // of its footprint facing them.
     run(&mut world, 40);
     for &id in &wave {
         assert!(
-            near(heading(&world, id), 40, 40, 1),
+            near(heading(&world, id), 46, 46, 1),
             "{:?}",
             order(&world, id)
         );
@@ -171,6 +172,38 @@ fn waves_are_trained_on_time_and_march_on_the_base() {
     // The next wave 20 seconds after the first.
     run(&mut world, 1062 - 302);
     assert_eq!(made(&world, P2, SOLDIER).len(), 4);
+}
+
+/// Without player starts, `base` is the player's fort (its race's starting fort line), not
+/// a nearer house or worker; the wave heads for the fort's near side and fights there.
+#[test]
+fn base_waves_march_on_the_fort_and_fight_there() {
+    let line = json!({"after": 5, "units": [{"unit": SOLDIER, "count": 2}]});
+    let extra = vec![
+        place_for("p1-house", HOUSE, "player.1", 109.5, 201.5),
+        place_for("p1-worker", WORKER, "player.1", 160.0, 199.0),
+    ];
+    let mut world = start(&map(
+        extra,
+        json!([enemy(json!({"behaviour": "waves", "waves": [line]}))]),
+        "",
+    ));
+    run(&mut world, 302);
+    let wave = made(&world, P2, SOLDIER);
+    assert_eq!(wave.len(), 2);
+    // The hall at (39.5, 39.5), 8 cells wide: its side facing the wave.
+    for &id in &wave {
+        assert!(
+            near(heading(&world, id), 45, 45, 1),
+            "{:?}",
+            order(&world, id)
+        );
+    }
+    let hall = placed(&world, "p1-hall").expect("hall").id;
+    let full = placed(&world, "p1-hall").and_then(|e| e.hp);
+    run_until(&mut world, 4000, |w| {
+        w.state().entities.get(hall).and_then(|e| e.hp) < full
+    });
 }
 
 #[test]
@@ -309,10 +342,11 @@ fn allies_march_on_the_enemy_and_share_their_sight() {
     run(&mut world, 41);
     let wave = made(&world, P3, SOLDIER);
     assert_eq!(wave.len(), 2);
-    // Player 1's hall is nearer, but allies go for the enemy's buildings.
+    // Player 1's hall is nearer, but allies go for the enemy's buildings (the barracks'
+    // side facing them).
     for &id in &wave {
         assert!(
-            near(heading(&world, id), 200, 200, 1),
+            near(heading(&world, id), 194, 194, 1),
             "{:?}",
             order(&world, id)
         );
@@ -545,4 +579,60 @@ fn campaign_matches_are_deterministic() {
     let enemy = &a.state().campaign_ai[0];
     assert!(enemy.lines.iter().all(|l| l.sent >= 2));
     assert!(placed(&a, "p4-a").is_some() || !made(&a, P4, ARCHER).is_empty());
+}
+
+/// A lone creature placed for nobody outside any camp (an easter egg): it stays where it
+/// stands, never uses its colony's abilities, fights back when attacked, and its clicks
+/// are counted.
+#[test]
+fn lone_neutrals_stay_fight_back_and_are_clicked() {
+    let loner = place_for("loner", FOUNDER, "none", 48.0, 60.0);
+    let players = json!([enemy(json!({"behaviour": "passive"}))]);
+    let mut world = start(&map(vec![loner], players, ""));
+    let id = placed(&world, "loner").expect("placed").id;
+    let full = placed(&world, "loner").and_then(|e| e.hp);
+    run(&mut world, 2000);
+    let e = placed(&world, "loner").expect("the loner stays");
+    assert_eq!((e.id, e.hp), (id, full));
+    assert!(
+        all_of(&world, Owner::Nobody, HOUSE).is_empty(),
+        "nobody founds"
+    );
+    for _ in 0..3 {
+        command(&mut world, canopy_sim::Action::Clicked { actor: id.0 });
+        world.step();
+    }
+    let clicks = world
+        .state()
+        .mission
+        .as_ref()
+        .map(|m| m.clicks.get("loner").copied());
+    assert_eq!(clicks, Some(Some(3)));
+    // Attacked (a neutral takes a forced attack), it answers: the attacker is hurt.
+    let soldier = placed(&world, "p1-a").expect("soldier").id;
+    let soldier_full = placed(&world, "p1-a").and_then(|e| e.hp);
+    command(
+        &mut world,
+        canopy_sim::Action::Attack {
+            actors: vec![soldier.0],
+            target: id.0,
+            force: Some(true),
+            append: None,
+        },
+    );
+    run_until(&mut world, 1200, |w| {
+        w.state().entities.get(soldier).and_then(|e| e.hp) < soldier_full
+    });
+}
+
+fn command(world: &mut World, action: canopy_sim::Action) {
+    let tick = world.tick();
+    world
+        .enqueue(canopy_sim::Queued {
+            tick,
+            player: 0,
+            seq: 0,
+            action,
+        })
+        .expect("queued");
 }

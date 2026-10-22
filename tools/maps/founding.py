@@ -430,8 +430,8 @@ put('withered', 360, 76, 1.0, yaw=0.3, force=True)
 # A familiar thing near the colony: an acorn in its cup at the glade's south-west rim.
 put('acorn-cup', 158, 286, 1.0, yaw=2.0, force=True)
 put('acorn', 166, 292, 0.9, yaw=0.4, force=True)
-# The hornets' paper nest on its cliff: a weathered cone as its stand-in.
-put('pine-cone', 186, 94, 0.75, yaw=0.5, force=True)
+# The hornets' paper nest on its cliff.
+put('hornet-nest', 186, 94, 1.0, yaw=0.5, force=True)
 # The waterfall: mossy stones, shelf fungus and dew round the ledge.
 for x, z, piece, s in ((146, 130, 'mossy-stone', 0.7), (161, 128, 'shelf-fungus', 0.6),
                        (147, 141, 'dew-drops', 1.0), (160, 140, 'moss', 0.8), (152, 126, 'dew-drop', 1.0)):

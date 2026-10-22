@@ -69,6 +69,86 @@ fn srgb(c: [f32; 3]) -> Color32 {
     Color32::from_rgb(s(c[0]), s(c[1]), s(c[2]))
 }
 
+/// The colour a mission player plays in: its own `color`, else its slot's.
+fn team_color(palette: &[Color32], player: &Value, number: u64) -> Color32 {
+    use canopy_content::map::PlayerColor;
+    match player["color"].as_str().and_then(PlayerColor::parse) {
+        Some(PlayerColor::Rgb([r, g, b])) => Color32::from_rgb(r, g, b),
+        Some(PlayerColor::Palette(i)) => palette.get(i).copied().unwrap_or(CONTROL),
+        None => palette
+            .get(number.saturating_sub(1) as usize)
+            .copied()
+            .unwrap_or(CONTROL),
+    }
+}
+
+/// The player's colour: its slot's (no `color`), one of the player colours by name, or
+/// any colour (`#rrggbb`) from the picker.
+fn color_row(
+    ui: &mut Ui,
+    palette: &[Color32],
+    player: &mut Value,
+    number: u64,
+    salt: impl std::hash::Hash + std::fmt::Debug,
+    drag: &mut bool,
+) {
+    use canopy_content::map::{COLOR_NAMES, PlayerColor};
+    let current = player["color"].as_str().and_then(PlayerColor::parse);
+    let mut chosen: Option<Option<String>> = None;
+    ui.horizontal_wrapped(|ui| {
+        ui.spacing_mut().item_spacing.x = 3.0;
+        ui.label(RichText::new("Colour").size(11.0).color(MUTED));
+        if ui
+            .selectable_label(current.is_none(), "Slot")
+            .on_hover_text(format!("Player {number}'s own colour"))
+            .clicked()
+        {
+            chosen = Some(None);
+        }
+        for (i, name) in COLOR_NAMES.iter().enumerate() {
+            let fill = palette.get(i).copied().unwrap_or(CONTROL);
+            let (rect, response) = ui.allocate_exact_size(vec2(16.0, 16.0), Sense::click());
+            ui.painter().circle_filled(rect.center(), 6.5, fill);
+            if current == Some(PlayerColor::Palette(i)) {
+                ui.painter()
+                    .circle_stroke(rect.center(), 7.5, Stroke::new(1.5, TEXT));
+            }
+            if response.on_hover_text(*name).clicked() {
+                chosen = Some(Some(name.to_string()));
+            }
+        }
+        let shown = team_color(palette, player, number);
+        let mut rgb = [shown.r(), shown.g(), shown.b()];
+        let custom = matches!(current, Some(PlayerColor::Rgb(_)));
+        ui.push_id(salt, |ui| {
+            let response = egui::widgets::color_picker::color_edit_button_srgb(ui, &mut rgb)
+                .on_hover_text("Any colour: a tint no player has (a feral brood's)");
+            if custom {
+                ui.painter().rect_stroke(
+                    response.rect.expand(1.0),
+                    3,
+                    Stroke::new(1.5, TEXT),
+                    egui::StrokeKind::Outside,
+                );
+            }
+            if response.changed() {
+                chosen = Some(Some(format!("#{:02x}{:02x}{:02x}", rgb[0], rgb[1], rgb[2])));
+                // Dragging in the picker folds into one undo step.
+                *drag = true;
+            }
+        });
+    });
+    match chosen {
+        Some(Some(color)) => player["color"] = json!(color),
+        Some(None) => {
+            if let Some(o) = player.as_object_mut() {
+                o.shift_remove("color");
+            }
+        }
+        None => {}
+    }
+}
+
 /// A choice among a few, as a row of segments.
 fn segments(ui: &mut Ui, current: &str, choices: &[(&str, &str, &str)]) -> Option<String> {
     let mut chosen = None;
@@ -256,10 +336,10 @@ pub fn show(
                 .collect()
         })
         .unwrap_or_default();
-    let colors: Vec<Color32> = session
+    let palette: Vec<Color32> = session
         .scene
         .as_ref()
-        .map(|s| s.colors.iter().map(|c| srgb(*c)).collect())
+        .map(|s| s.palette.iter().map(|c| srgb(*c)).collect())
         .unwrap_or_default();
     let mut drag = false;
     let mut remove = None;
@@ -275,10 +355,7 @@ pub fn show(
                 ui.set_width(ui.available_width());
                 ui.horizontal(|ui| {
                     let (dot, _) = ui.allocate_exact_size(vec2(12.0, 12.0), Sense::hover());
-                    let color = colors
-                        .get(number.saturating_sub(1) as usize)
-                        .copied()
-                        .unwrap_or(CONTROL);
+                    let color = team_color(&palette, player, number);
                     ui.painter().circle_filled(dot.center(), 5.5, color);
                     ui.label(
                         RichText::new(format!("Player {number}"))
@@ -339,6 +416,7 @@ pub fn show(
                         }
                     }
                 });
+                color_row(ui, &palette, player, number, (&session.root, i), &mut drag);
                 if !player["ai"].is_object() {
                     player["ai"] = json!({"behaviour": "passive"});
                 }

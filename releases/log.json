@@ -28,7 +28,9 @@
       "The Underleaf showcase map, showing the new forest biome from a sunken hollow to a beetle road",
       "Campaign missions can play Warcraft-style cinematic scenes: letterbox bars, fades, saved camera cuts and blends, characters speaking with a live portrait in the lower bar, and Escape to skip",
       "The editor's campaign tools: campaigns on the rail with their steps as a list (drag to reorder, Play any step, new missions get their own map), a Tech view of each mission's race tree (click New, Blocked or Locked; contradictions in red), the mission's computer players and waves in the map panel, and campaign warnings in the check",
-      "The ant campaign's first three missions: The Hollow Brood, where Queen Aurelith finds what the substance has made of her cousins; Founding, a new colony raised in a green glade against the feral brood; and The Glass Road, a beetle causeway of caravans, outposts and a station guarding the condenser. Each has story pages, scenes, side places and secrets."
+      "The ant campaign's first three missions: The Hollow Brood, where Queen Aurelith finds what the substance has made of her cousins; Founding, a new colony raised in a green glade against the feral brood; and The Glass Road, a beetle causeway of caravans, outposts and a station guarding the condenser. Each has story pages, scenes, side places and secrets.",
+      "Campaign missions can give a computer player its own colour, such as a sickly violet-grey for a feral brood; the editor's Players panel picks it",
+      "A paper hornets' nest for map makers, standing on the hornets' cliff in Founding"
     ],
     "improved": [
       "Frost Hollow: frozen ice, quiet frosted snow, a bank of roots with pale spires, a crusted shore and big frosted leaves, rebuilt to its drawn layout",
@@ -51,7 +53,8 @@
       "The ant Queen is redesigned as a true hero: Living Light heals an ally or sears an enemy, Cocoon makes her untouchable while she keeps fighting, One Body shields the army around her, and her ultimate Rebirth raises up to 8 fallen allies, changed by raw substance. Her old Found, Royal Jelly and Exodus are gone.",
       "Raising or consuming the dead is refused when there are no corpses nearby, so an ultimate is never wasted on an empty field.",
       "Items lying on the ground show as a leaf-wrapped loot bundle instead of a placeholder",
-      "The Underleaf forest looks richer: sunlit moss, bare earth and leaf duff read as distinct grounds, the frame is a forest of giant mushrooms, ferns, nuts and fallen leaves, giant caps no longer shade the play area, beetle walls and road ramps look built, the substance pools look less plastic, and the editor's generated view is no longer too dark"
+      "The Underleaf forest looks richer: sunlit moss, bare earth and leaf duff read as distinct grounds, the frame is a forest of giant mushrooms, ferns, nuts and fallen leaves, giant caps no longer shade the play area, beetle walls and road ramps look built, the substance pools look less plastic, and the editor's generated view is no longer too dark",
+      "Cinematic speaker portraits of tall heroes such as Aurelith show head and shoulders"
     ],
     "fixed": [
       "Generated cliffs join cleanly at corners and turns, ramps keep their side walls down to the foot, and diagonal cliff edges no longer show a staircase",
@@ -62,7 +65,9 @@
       "Editor: text typed into a field is no longer lost when clicking elsewhere, switching documents, saving or leaving",
       "Map editor: tool keys, Delete and arrow keys no longer act while typing in a search or name field",
       "Map editor: moving a start turns its hall to the middle and no longer collides with its own old spot; symmetric raises, twins and camps now mirror exactly",
-      "Editor: Cook finishes in the window, renamed ids reach pickers and links at once, and maps show unsaved block edits on their tab"
+      "Editor: Cook finishes in the window, renamed ids reach pickers and links at once, and maps show unsaved block edits on their tab",
+      "Campaign creatures placed on their own outside a camp (a sleeping Alate, a tree frog) no longer vanish a moment into the mission; they keep to themselves and fight back when attacked",
+      "Campaign attack waves sent at your base march on your main fort and fight there, instead of standing at their own buildings or idling by a worker"
     ],
     "knownIssues": []
   },

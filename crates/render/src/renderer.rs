@@ -127,6 +127,10 @@ impl Environment {
 
 /// The share of a model's size a close portrait frames, from its top.
 const CLOSE_PORTRAIT: f32 = 0.42;
+/// A humanoid's close portrait, in lengths of its head (neck to head top): how far it
+/// reaches below the neck (the shoulders) and above the head (a crown, hair).
+const PORTRAIT_SHOULDERS: f32 = 1.3;
+const PORTRAIT_CROWN: f32 = 0.45;
 
 /// The model the selection portrait shows: a posed live model (its transform's scale
 /// and pose are kept; the portrait places and frames it) and whether it is a building
@@ -1173,7 +1177,24 @@ impl Renderer {
                     (Vec3::splat(f32::MAX), Vec3::splat(f32::MIN)),
                     |(lo, hi), c| (lo.min(c), hi.max(c)),
                 );
-                if s.close {
+                let head = actors.head(s.instance.model).filter(|_| s.close);
+                if let Some((neck, top)) = head {
+                    // A humanoid: head and shoulders round its head, whatever its staff,
+                    // wings or train span.
+                    let (neck, top) = (
+                        transform.transform_point3(neck),
+                        transform.transform_point3(top),
+                    );
+                    let head = top.y - neck.y;
+                    let (x, z) = ((neck.x + top.x) * 0.5, (neck.z + top.z) * 0.5);
+                    let (bottom, roof) = (
+                        neck.y - head * PORTRAIT_SHOULDERS,
+                        top.y + head * PORTRAIT_CROWN,
+                    );
+                    let half = (roof - bottom) * 0.5;
+                    lo = Vec3::new(x - half, bottom, z - head * 0.5);
+                    hi = Vec3::new(x + half, roof, z + head * 0.5);
+                } else if s.close {
                     // The top of the model, narrowed round its middle.
                     let middle = (lo + hi) * 0.5;
                     lo = middle + (lo - middle) * CLOSE_PORTRAIT;

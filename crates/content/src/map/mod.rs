@@ -32,8 +32,8 @@ pub use camera::{
 pub use library::{MAP_GROUPS, MAPS_FOLDER, MapFile, folder, library};
 pub use mission::{Mission, Objective, Region};
 pub use players::{
-    Behaviour, Grow, MissionPlayer, PlayerAi, SkirmishLimits, Team, WaveLine, WaveSource,
-    WaveTarget, WaveUnit,
+    Behaviour, COLOR_NAMES, Grow, MissionPlayer, PlayerAi, PlayerColor, SkirmishLimits, Team,
+    WaveLine, WaveSource, WaveTarget, WaveUnit,
 };
 pub use stamp::{SourceTransform, Stamp, StampVariant, Walk, WalkConnections, WalkMesh};
 pub use validate::validate;

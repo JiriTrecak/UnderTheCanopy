@@ -277,6 +277,10 @@ pub fn validate_aim(
     };
     for op in candidates {
         if let Effect::Found(f) = op {
+            // A colony founds; a neutral (a race's unit placed for nobody) never does.
+            if c.owner == Owner::Nobody {
+                return Err("Only a colony can found");
+            }
             let at = if f.target == Anchor::Caster {
                 c.position
             } else {
@@ -458,6 +462,9 @@ pub fn apply(ctx: &mut Ctx, state: &mut State, a: &Apply) -> i64 {
         }
         Effect::ReleaseContained(_) => target.map_or(0, |t| release_hosted(ctx, state, t)),
         Effect::Found(f) => {
+            if a.owner == Owner::Nobody {
+                return 0;
+            }
             let catalog = ctx.senses.catalog;
             let Some(def) = catalog.find(f.building.as_str()) else {
                 return 0;
