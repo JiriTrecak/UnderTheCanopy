@@ -45,9 +45,9 @@ def build():
     # --- The Queen's column, running north-east along the root path. ---------------------
     unit('queen', 'unit.ants.queen', P1, 60, 334, 40)
     unit('tiv', 'unit.ants.warrior', P1, 112, 304, 220)
-    for i, (x, z) in enumerate([(56, 330), (65, 339), (51, 338), (60, 345)]):
+    for i, (x, z) in enumerate([(56, 330), (65, 339), (51, 338), (56, 344)]):
         unit(f'raider.{i + 1}', 'unit.ants.warrior', P1, x, z, 40)
-    for i, (x, z) in enumerate([(48, 346), (54, 352)]):
+    for i, (x, z) in enumerate([(48, 346), (46, 342)]):
         unit(f'needler.{i + 1}', 'unit.ants.archer', P1, x, z, 40)
 
     # --- 1. The start: two amber caches by the road. -------------------------------------
@@ -178,28 +178,42 @@ def eye(c):
 
 CAMERAS = [
     # The opening: low by the road as the column comes up, then over the stream behind it,
-    # two shoulders for the talk, and wide as they set off.
+    # Tiv past the Queen's shoulder and the Queen alone, and wide as they set off.
     camera('open-road', 70, 328, 2, 38, 12, 128, 38),
     camera('open-follow', 84, 318, 2, 54, 30, 150, 38),
-    camera('over-queen', 97, 310, 2.5, 34, 13, 300, 30),
-    camera('over-tiv', 85, 317, 3.5, 26, 8, 118, 34, 1.5),
+    camera('over-queen', 97, 311, 2.6, 34, 9, 313.9, 22),
+    camera('over-tiv', 77.5, 324.1, 7, 46, 6, 109.9, 17, 1.5),
     camera('open-wide', 100, 308, 0, 80, 42, 160, 40),
-    # The dead sentry.
-    camera('sentry', 196, 238, 1, 44, 50, 90, 36),
-    camera('sentry-low', 194, 238, 1, 30, 34, 20, 32),
-    # The webs: the cocoons break.
-    camera('webs', 82, 194, 2, 30, 24, 60, 38),
-    # The rim: the Hollow below, its nest still lit.
+    # The dead sentry: high as it staggers out of the ferns, then the Queen and Tiv from beyond
+    # it. The scenes pan a single onto its speaker where the walk left them (`shot_on`).
+    camera('sentry', 193, 240, 1, 44, 36, 160, 34),
+    camera('sentry-low', 189, 243, 6.5, 30, 14, 157, 24),
+    camera('sentry-tiv', 201, 238, 2.2, 16, 18, 238.5, 30),
+    # The webs: in from their mouth, Kesh past Tiv, Tiv past Kesh, the Queen past them both.
+    camera('webs', 86, 195, 1, 46, 30, 75, 36),
+    camera('webs-kesh', 84, 192, 2.2, 20, 14, 48, 30),
+    camera('webs-tiv', 90, 199, 2.2, 18, 12, 234.6, 28),
+    camera('webs-queen', 99, 198, 7, 34, 8, 233.2, 20),
+    # The rim: the Hollow below, its nest still lit; the Queen from below the rim, Tiv
+    # towards the fallen tunnel.
     camera('rim-wide', 308, 66, 0, 78, 36, 4, 42),
-    camera('rim-tiv', 300, 116, 3, 24, 10, 70, 34),
-    # The survivors' tunnel.
-    camera('chamber', 331, 148, 2, 28, 28, 200, 38),
-    camera('over-nurse', 330, 140, 3, 22, 9, 30, 34),
-    # Ashka.
+    camera('rim-queen', 300, 114, 7, 30, 10, 192, 24),
+    camera('rim-tiv', 302, 121, 2.2, 20, 12, 41.4, 28),
+    # The survivors' tunnel: from above as they come out, down past the Queen onto the
+    # kneeling, and up at her as they see her.
+    camera('chamber', 327, 143, 1, 40, 48, 196, 34),
+    camera('over-nurse', 330, 141, 1.5, 22, 28, 232, 30),
+    camera('survivors-queen', 330, 133, 7, 32, 4, 12, 24),
+    camera('over-survivor', 325, 146, 1.8, 20, 26, 184, 30),
+    # Ashka: the Hollow, her rising, then each speaker from the other's side.
     camera('hollow-wide', 304, 70, 0, 70, 38, 0, 42),
     camera('ashka', 292, 62, 4, 34, 18, 45, 38),
-    camera('ashka-close', 295, 66, 5, 24, 12, 110, 34),
-    camera('closing', 300, 66, 2, 30, 30, 30, 36),
+    camera('ashka-queen', 303, 96, 7, 30, 8, 188, 24),
+    camera('ashka-close', 296, 68, 4, 30, 12, 28, 28),
+    camera('ashka-tiv', 298, 99, 2.2, 18, 14, 212, 30),
+    # Her death: the Queen over her from the side, then the Queen past her.
+    camera('closing', 300, 66, 3, 30, 16, 135, 30),
+    camera('closing-queen', 301, 69, 6.5, 30, 16, 225, 24),
     # The frog.
     camera('frog', 110, 288, 1, 16, 22, 340, 34),
 ]

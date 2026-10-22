@@ -208,8 +208,8 @@
       "definition": "unit.ants.warrior",
       "owner": "player.1",
       "position": {
-        "x": 60,
-        "y": 345
+        "x": 56,
+        "y": 344
       },
       "rotation": 40
     },
@@ -228,8 +228,8 @@
       "definition": "unit.ants.archer",
       "owner": "player.1",
       "position": {
-        "x": 54,
-        "y": 352
+        "x": 46,
+        "y": 342
       },
       "rotation": 40
     },
@@ -1241,22 +1241,22 @@
       {
         "id": "over-queen",
         "x": 97,
-        "y": 310,
-        "height": 2.5,
+        "y": 311,
+        "height": 2.6,
         "distance": 34,
-        "pitch": 13,
-        "yaw": 300,
-        "fov": 30
+        "pitch": 9,
+        "yaw": 313.9,
+        "fov": 22
       },
       {
         "id": "over-tiv",
-        "x": 85,
-        "y": 317,
-        "height": 3.5,
-        "distance": 26,
-        "pitch": 8,
-        "yaw": 118,
-        "fov": 34,
+        "x": 77.5,
+        "y": 324.1,
+        "height": 7,
+        "distance": 46,
+        "pitch": 6,
+        "yaw": 109.9,
+        "fov": 17,
         "roll": 1.5
       },
       {
@@ -1271,33 +1271,73 @@
       },
       {
         "id": "sentry",
-        "x": 196,
-        "y": 238,
+        "x": 193,
+        "y": 240,
         "height": 1,
         "distance": 44,
-        "pitch": 50,
-        "yaw": 90,
-        "fov": 36
+        "pitch": 36,
+        "yaw": 160,
+        "fov": 34
       },
       {
         "id": "sentry-low",
-        "x": 194,
-        "y": 238,
-        "height": 1,
+        "x": 189,
+        "y": 243,
+        "height": 6.5,
         "distance": 30,
-        "pitch": 34,
-        "yaw": 20,
-        "fov": 32
+        "pitch": 14,
+        "yaw": 157,
+        "fov": 24
+      },
+      {
+        "id": "sentry-tiv",
+        "x": 201,
+        "y": 238,
+        "height": 2.2,
+        "distance": 16,
+        "pitch": 18,
+        "yaw": 238.5,
+        "fov": 30
       },
       {
         "id": "webs",
-        "x": 82,
-        "y": 194,
-        "height": 2,
-        "distance": 30,
-        "pitch": 24,
-        "yaw": 60,
-        "fov": 38
+        "x": 86,
+        "y": 195,
+        "height": 1,
+        "distance": 46,
+        "pitch": 30,
+        "yaw": 75,
+        "fov": 36
+      },
+      {
+        "id": "webs-kesh",
+        "x": 84,
+        "y": 192,
+        "height": 2.2,
+        "distance": 20,
+        "pitch": 14,
+        "yaw": 48,
+        "fov": 30
+      },
+      {
+        "id": "webs-tiv",
+        "x": 90,
+        "y": 199,
+        "height": 2.2,
+        "distance": 18,
+        "pitch": 12,
+        "yaw": 234.6,
+        "fov": 28
+      },
+      {
+        "id": "webs-queen",
+        "x": 99,
+        "y": 198,
+        "height": 7,
+        "distance": 34,
+        "pitch": 8,
+        "yaw": 233.2,
+        "fov": 20
       },
       {
         "id": "rim-wide",
@@ -1310,34 +1350,64 @@
         "fov": 42
       },
       {
-        "id": "rim-tiv",
+        "id": "rim-queen",
         "x": 300,
-        "y": 116,
-        "height": 3,
-        "distance": 24,
+        "y": 114,
+        "height": 7,
+        "distance": 30,
         "pitch": 10,
-        "yaw": 70,
-        "fov": 34
+        "yaw": 192,
+        "fov": 24
+      },
+      {
+        "id": "rim-tiv",
+        "x": 302,
+        "y": 121,
+        "height": 2.2,
+        "distance": 20,
+        "pitch": 12,
+        "yaw": 41.4,
+        "fov": 28
       },
       {
         "id": "chamber",
-        "x": 331,
-        "y": 148,
-        "height": 2,
-        "distance": 28,
-        "pitch": 28,
-        "yaw": 200,
-        "fov": 38
+        "x": 327,
+        "y": 143,
+        "height": 1,
+        "distance": 40,
+        "pitch": 48,
+        "yaw": 196,
+        "fov": 34
       },
       {
         "id": "over-nurse",
         "x": 330,
-        "y": 140,
-        "height": 3,
+        "y": 141,
+        "height": 1.5,
         "distance": 22,
-        "pitch": 9,
-        "yaw": 30,
-        "fov": 34
+        "pitch": 28,
+        "yaw": 232,
+        "fov": 30
+      },
+      {
+        "id": "survivors-queen",
+        "x": 330,
+        "y": 133,
+        "height": 7,
+        "distance": 32,
+        "pitch": 4,
+        "yaw": 12,
+        "fov": 24
+      },
+      {
+        "id": "over-survivor",
+        "x": 325,
+        "y": 146,
+        "height": 1.8,
+        "distance": 20,
+        "pitch": 26,
+        "yaw": 184,
+        "fov": 30
       },
       {
         "id": "hollow-wide",
@@ -1360,24 +1430,54 @@
         "fov": 38
       },
       {
+        "id": "ashka-queen",
+        "x": 303,
+        "y": 96,
+        "height": 7,
+        "distance": 30,
+        "pitch": 8,
+        "yaw": 188,
+        "fov": 24
+      },
+      {
         "id": "ashka-close",
-        "x": 295,
-        "y": 66,
-        "height": 5,
-        "distance": 24,
+        "x": 296,
+        "y": 68,
+        "height": 4,
+        "distance": 30,
         "pitch": 12,
-        "yaw": 110,
-        "fov": 34
+        "yaw": 28,
+        "fov": 28
+      },
+      {
+        "id": "ashka-tiv",
+        "x": 298,
+        "y": 99,
+        "height": 2.2,
+        "distance": 18,
+        "pitch": 14,
+        "yaw": 212,
+        "fov": 30
       },
       {
         "id": "closing",
         "x": 300,
         "y": 66,
-        "height": 2,
+        "height": 3,
         "distance": 30,
-        "pitch": 30,
-        "yaw": 30,
-        "fov": 36
+        "pitch": 16,
+        "yaw": 135,
+        "fov": 30
+      },
+      {
+        "id": "closing-queen",
+        "x": 301,
+        "y": 69,
+        "height": 6.5,
+        "distance": 30,
+        "pitch": 16,
+        "yaw": 225,
+        "fov": 24
       },
       {
         "id": "frog",

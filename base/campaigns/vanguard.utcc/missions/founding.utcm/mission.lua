@@ -10,16 +10,17 @@ local ALCHEMIST = "unit.ants.royal-alchemist"
 local SECOND = 40 -- ticks
 local NEST = {202, 242}
 
--- The column that arrives in the opening, and where each stands in the glade.
+-- The column that arrives in the opening, and where each stands in the glade: the warriors
+-- gather on the open ground at the mouth of the mossy ring, Tiv (raider.1) in front.
 local COLUMN = {
-  {"raider.1", 247, 283}, {"raider.2", 253, 285}, {"raider.3", 242, 288}, {"raider.4", 249, 290},
-  {"needler.1", 256, 290}, {"needler.2", 244, 294},
+  {"raider.1", 226, 276}, {"raider.2", 221, 281}, {"raider.3", 218, 274}, {"raider.4", 214, 280},
+  {"needler.1", 217, 285}, {"needler.2", 211, 276},
   {"worker.1", 186, 222}, {"worker.2", 180, 226}, {"worker.3", 190, 228}, {"worker.4", 168, 256},
   {"worker.5", 172, 262},
 }
 local RISE = {236, 271}
-local ADDRESS = {250, 287} -- where she turns to speak to her column
-local MEET = {queen = {178, 238}, oleander = {168, 238}, porters = {{162, 233}, {161, 243}}}
+local ADDRESS = {222, 279} -- where she turns to speak to her column
+local MEET = {queen = {182, 238}, oleander = {166, 238}, porters = {{159, 232}, {158, 244}}}
 local BURROWS_NE = {"burrow.ne.1", "burrow.ne.2"}
 local BURROWS_NW = {"burrow.nw"}
 
@@ -65,9 +66,10 @@ function scenes.opening()
     mission.move(COLUMN[i][1], COLUMN[i][2], COLUMN[i][3])
   end
   mission.fade_in(2.5)
+  mission.camera_pan(205, 312, 6) -- running up the road towards the glade
   mission.wait(2)
   mission.speak("raider.1", "My Queen, the glade! Just as the scouts said.", nil, "Tiv")
-  mission.camera_to("glade-mouth", 6)
+  mission.camera_to("glade-mouth", 3)
   mission.wait_arrived("queen")
   mission.face("queen", ADDRESS[1], ADDRESS[2])
   mission.wait_arrived("raider.1")
@@ -107,6 +109,7 @@ function scenes.oleander()
   -- The shot tracks her down the road (the west is unexplored: her own sight lights it).
   mission.camera_pan(MEET.oleander[1] - 6, MEET.oleander[2], 11)
   mission.speak("oleander", "Majesty! Hold your stings. It's only me, and my stills.", nil, "Oleander")
+  mission.wait(5) -- the shot follows her the rest of the way
   mission.wait_arrived("oleander")
   if mission.get("queen-near") then
     mission.wait_arrived("queen")
@@ -136,8 +139,12 @@ function scenes.oleander()
     mission.say("Aurelith", QUEEN, "Then we will learn their glass. Stay with us, Oleander.", 5, true)
     mission.wait_line()
   end
-  mission.camera_to("spring", 2.5)
-  mission.speak("oleander", "Gladly. And you have a spring at your door, raw and bright. Siphon it, carefully, and I can begin.", nil, "Oleander")
+  -- She answers on her own shot, and the camera goes to the spring as she names it.
+  mission.camera_to("meet-over-queen", 0)
+  mission.say("Oleander", ALCHEMIST, "Gladly. And you have a spring at your door, raw and bright. Siphon it, carefully, and I can begin.", 7.5, false, "oleander")
+  mission.wait(2)
+  mission.camera_to("spring", 3)
+  mission.wait_line()
   mission.transfer("oleander", P1)
   mission.transform("porter.1", "unit.ants.settler", P1)
   mission.transform("porter.2", "unit.ants.settler", P1)
@@ -148,16 +155,33 @@ function scenes.oleander()
   mission.camera_reset(1.5, MEET.oleander[1], MEET.oleander[2])
 end
 
+-- A speaker where the fighting left them, turned to the camera ("<key>x"/"<key>y" set as the
+-- scene starts while they live; on_tick sets them).
+local function close_on(unit, key, camera)
+  local x, y = mission.get(key .. "x"), mission.get(key .. "y")
+  mission.face(unit, x, y + 10)
+  mission.camera_to(camera, 0)
+  mission.camera_pan(x, y, 0)
+  mission.wait_facing(unit)
+end
+
 -- Victory: both burrow sites have fallen.
 function scenes.victory()
   mission.cinematic(true)
-  mission.camera_to("glade-wide", 0)
-  mission.speak("queen", "The burrows are broken. The glade is ours.", nil, "Aurelith")
-  mission.camera_to("victory", 6)
-  if mission.get("oleander-joined") then
+  if mission.get("qx") then
+    close_on("queen", "q", "victory-close")
+    mission.speak("queen", "The burrows are broken. The glade is ours.", nil, "Aurelith")
+  else
+    mission.camera_to("glade-wide", 0)
+    mission.say("Aurelith", QUEEN, "The burrows are broken. The glade is ours.", 4, false)
+    mission.wait_line()
+  end
+  if mission.get("ox") then
+    close_on("oleander", "o", "victory-close")
     mission.speak("oleander", "Then the beetles are next, Majesty. Their glass is waiting.", nil, "Oleander")
   end
-  mission.wait(1.5)
+  mission.camera_to("victory", 6)
+  mission.wait(4)
   mission.fade_out(2)
   mission.wait(2)
   mission.win()
@@ -244,6 +268,16 @@ function on_tick()
   if mission.get("ne-down") and mission.get("nw-down") and mission.get("colony-done") then
     mission.complete_objective("burrows")
     mission.set("over", true)
+    if mission.alive("queen") then
+      local x, y = mission.position("queen")
+      mission.set("qx", x)
+      mission.set("qy", y)
+    end
+    if mission.get("oleander-joined") and mission.alive("oleander") then
+      local x, y = mission.position("oleander")
+      mission.set("ox", x)
+      mission.set("oy", y)
+    end
     mission.play("victory", false)
     return
   end
