@@ -94,6 +94,77 @@ fn units_too_big_for_tunnels_walk() {
 }
 
 #[test]
+fn a_body_broader_than_the_mouth_goes_under_too() {
+    // Its centre can never come within the mouth's three cells of the mound: it goes under
+    // once it stands within two cells of its own radius.
+    let mut world = mounds(&[("g", "unit.giant", 112.0)]);
+    go(&mut world, &["g"], 224, 112);
+    let went_under = run_until(&mut world, 400, |w| underground(w, "g"));
+    assert!(went_under < 400);
+}
+
+#[test]
+fn a_walled_in_mound_is_no_way_in() {
+    // The eastern mound stands in a ring of enemy towers: a march west from beside it walks
+    // the whole way rather than waiting forever at a mouth it cannot reach.
+    let mut entities = vec![
+        placed("west", "building.mound", 21.5, 101.5, 1),
+        placed("east", "building.mound", 221.5, 101.5, 1),
+        placed("a", "unit.swordsman", 232.0, 112.0, 1),
+    ];
+    let ring = [
+        (-4.0, -4.0),
+        (0.0, -4.0),
+        (4.0, -4.0),
+        (-4.0, 0.0),
+        (4.0, 0.0),
+        (-4.0, 4.0),
+        (0.0, 4.0),
+        (4.0, 4.0),
+    ];
+    for (n, (dx, dy)) in ring.into_iter().enumerate() {
+        let id = format!("ring.{n}");
+        entities.push(placed(&id, "building.tower", 221.5 + dx, 101.5 + dy, 2));
+    }
+    let mut world = world(&map(entities));
+    go(&mut world, &["a"], 20, 112);
+    for _ in 0..600 {
+        run(&mut world, 1);
+        assert!(!underground(&world, "a"));
+    }
+    let (x, _) = cell(&world, "a");
+    assert!(x < 200, "still at {x}");
+}
+
+#[test]
+fn a_mouth_held_shut_is_given_up_for_the_walk() {
+    // Giants hold their ground on the western mound's mouth: a swordsman's trip waits a
+    // while for it, then he walks the whole way.
+    let mut entities = vec![
+        placed("west", "building.mound", 21.5, 101.5, 1),
+        placed("east", "building.mound", 221.5, 101.5, 1),
+        placed("a", "unit.swordsman", 40.0, 112.0, 1),
+    ];
+    for (n, (x, y)) in [(15.0, 106.0), (22.0, 108.0), (29.0, 106.0)]
+        .into_iter()
+        .enumerate()
+    {
+        entities.push(placed(&format!("wall.{n}"), "unit.giant", x, y, 1));
+    }
+    let mut world = world(&map(entities));
+    let wall: Vec<u32> = (0..3).map(|n| id(&world, &format!("wall.{n}"))).collect();
+    command(&mut world, 1, json!({"type": "hold", "actors": wall}));
+    run(&mut world, 2);
+    go(&mut world, &["a"], 224, 112);
+    for _ in 0..1600 {
+        run(&mut world, 1);
+        assert!(!underground(&world, "a"));
+    }
+    let (x, _) = cell(&world, "a");
+    assert!(x > 80, "still at {x}");
+}
+
+#[test]
 fn a_mound_lets_one_unit_under_at_a_time() {
     let mut world = mounds(&[
         ("a", "unit.swordsman", 98.0),

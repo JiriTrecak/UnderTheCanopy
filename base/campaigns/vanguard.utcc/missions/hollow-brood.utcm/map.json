@@ -728,8 +728,8 @@
       "definition": "unit.ants.archer",
       "owner": "player.3",
       "position": {
-        "x": 329,
-        "y": 166
+        "x": 331,
+        "y": 157
       },
       "rotation": 20,
       "activation": "script"

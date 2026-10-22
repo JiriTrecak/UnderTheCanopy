@@ -211,6 +211,7 @@ pub fn game() -> Value {
                 json!({"underground": false}),
             )),
             definition("unit.critter", "unit", camp_member(blade(6, 40, 8))),
+            definition("unit.giant", "unit", fighter(4.0, 300, 2, "armor.heavy", 4.0, blade(10, 40, 12))),
             definition("unit.hero", "unit", hero),
             definition("unit.knight", "unit", fighter(0.5, 160, 6, "armor.heavy", 3.0, blade(14, 50, 12))),
             definition("unit.lancer", "unit", fighter(0.4, 110, 1, "armor.light", 5.0, with(

@@ -1,6 +1,7 @@
 -- The Hollow Brood, played by its plan (docs/campaign.md "Autoplay"): the Queen's column
--- takes the caches and the side places worth the detour, frees the lost patrol, breaks
--- through to the survivors and puts Mother Ashka to rest. Scenes play out; the plan waits.
+-- takes the caches and the side places worth the detour (the Moonlit Hollow's lantern
+-- too), frees the lost patrol, breaks through to the survivors and puts Mother Ashka to
+-- rest. Scenes play out; the plan waits.
 
 hero{"queen",
   learn = {"living-light", "cocoon", "one-body"},
@@ -49,9 +50,12 @@ pickup()
 go(254, 238)
 wait(20)
 
--- The terrace, and a look into the Moonlit Hollow above it (the shrine's wisp sleeps).
+-- The terrace, and the Moonlit Hollow above it: the Queen climbs alone past the sleeping
+-- wisp for the shrine's lantern, and comes back down to the column.
 go(198, 110)
-go(204, 66, "walk")
+go(206, 58, "hero")
+pickup("lantern")
+go(198, 110)
 
 -- The rim, the rubble and the survivors behind it.
 go(296, 122)

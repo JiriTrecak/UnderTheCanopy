@@ -16,17 +16,22 @@ use crate::{
     catalog::Catalog,
     entity::{Entity, EntityId, Milli, Place},
     orders::Order,
-    spatial::Spatial,
+    spatial::{Spatial, Spot},
     state::State,
 };
 use canopy_content::{Id, placement::Owner};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-/// How close to the mound's mouth a unit must come to go under, in cells.
+/// How close to the mound's mouth a unit must come to go under, in cells; a body broader
+/// than that (a hero) only has to come within two cells of its own radius, since it cannot
+/// stand nearer the mound.
 const MOUTH: i64 = 3;
 /// A trip must save this much time over walking to be worth it, in ticks.
 const MARGIN_TICKS: i64 = 80;
+/// Slack beyond twice the straight walk to the mouth and the queue before a unit that has
+/// not gone under gives its trip up, in ticks.
+const GIVE_UP_TICKS: i64 = 400;
 /// Ticks per second.
 const SECOND: i64 = 40;
 
@@ -67,6 +72,10 @@ pub struct Trip {
     /// Underground, coming up at the exit on this tick; `None` while walking to the
     /// entry or queued at its mouth.
     pub arrives: Option<u32>,
+    /// The tick by which it should have gone under: a unit still short of the mouth then
+    /// (a crowd stands in front of it) gives the trip up and walks.
+    #[serde(default)]
+    pub until: u32,
 }
 
 fn mound<'a>(catalog: &'a Catalog, e: &Entity) -> Option<&'a canopy_content::game::Tunnel> {
@@ -136,11 +145,14 @@ fn transit(catalog: &Catalog, entry: &Entity, exit: &Entity) -> u32 {
 }
 
 /// Before `id` routes towards `destination` (cells): starts a tunnel trip when one is
-/// faster than walking. Returns where to walk instead: the entry mound's mouth.
+/// faster than walking. Returns where to walk instead: the entry mound's mouth. Only mounds
+/// on the ground each leg walks count: the entry where the unit can walk to its mouth, the
+/// exit where its mouth can walk to the destination (a mound behind a closed gate is no
+/// way in or out).
 pub fn steer(
     state: &mut State,
     catalog: &Catalog,
-    spatial: &Spatial,
+    spatial: &mut Spatial,
     id: EntityId,
     destination: &Place,
 ) -> Option<Place> {
@@ -161,18 +173,31 @@ pub fn steer(
         x: destination.x * 1000,
         y: destination.y * 1000,
     };
-    let owned = mounds(state, catalog, e.owner);
-    let nearest = |p: Milli| {
-        owned
-            .iter()
-            .filter_map(|&m| state.entities.get(m))
-            .min_by(|a, b| {
-                distance(mouth(catalog, a), p)
-                    .total_cmp(&distance(mouth(catalog, b), p))
-                    .then(a.id.cmp(&b.id))
-            })
+    let here = spatial.entity_node(e)?;
+    let goal = spatial.node(Spot::new(destination.x, destination.y, None))?;
+    // Each mound with its mouth and the node there, in id order.
+    let owned: Vec<(&Entity, Milli, u32)> = mounds(state, catalog, e.owner)
+        .iter()
+        .filter_map(|&m| state.entities.get(m))
+        .filter_map(|m| {
+            let at = mouth(catalog, m);
+            let node = spatial.node(Spot::new(at.x / 1000, at.y / 1000, None))?;
+            Some((m, at, node))
+        })
+        .collect();
+    let nearest = |p: Milli, spatial: &mut Spatial, joins: &dyn Fn(&mut Spatial, u32) -> bool| {
+        let mut best: Option<(f64, &Entity)> = None;
+        for &(m, at, node) in &owned {
+            let d = distance(at, p);
+            if best.is_some_and(|(b, other)| (b, other.id) <= (d, m.id)) || !joins(spatial, node) {
+                continue;
+            }
+            best = Some((d, m));
+        }
+        best.map(|(_, m)| m)
     };
-    let (entry, exit) = (nearest(e.position)?, nearest(target)?);
+    let entry = nearest(e.position, spatial, &|s, node| s.connected(here, node))?;
+    let exit = nearest(target, spatial, &|s, node| s.connected(node, goal))?;
     if entry.id == exit.id {
         return None;
     }
@@ -187,8 +212,10 @@ pub fn steer(
                 .is_some_and(|t| t.entry == entry.id && t.arrives.is_none())
         })
         .count() as i64;
-    let through = walk(e.position, mouth(catalog, entry))
-        + queued * i64::from(interval(state, catalog, entry))
+    let approach = walk(e.position, mouth(catalog, entry));
+    let queue = queued * i64::from(interval(state, catalog, entry));
+    let through = approach
+        + queue
         + i64::from(transit(catalog, entry, exit))
         + walk(mouth(catalog, exit), target);
     if through + MARGIN_TICKS >= walk(e.position, target) {
@@ -198,6 +225,7 @@ pub fn steer(
         entry: entry.id,
         exit: exit.id,
         arrives: None,
+        until: state.tick + (2 * approach + queue + GIVE_UP_TICKS) as u32,
     };
     let m = mouth(catalog, entry);
     state.entities.get_mut(id)?.unit.as_mut()?.tunnel = Some(trip);
@@ -263,7 +291,9 @@ pub fn tick(state: &mut State, catalog: &Catalog, spatial: &mut Spatial) {
                     continue;
                 }
                 let (entry, exit) = (entry.expect("entry"), exit.expect("exit"));
-                let near = distance(e.position, mouth(catalog, entry)) <= MOUTH as f64;
+                let reach =
+                    (MOUTH as f64).max(spatial.profiles.get(e.definition).body.radius + 2.0);
+                let near = distance(e.position, mouth(catalog, entry)) <= reach;
                 let open = state
                     .tunnels
                     .gates
@@ -276,6 +306,8 @@ pub fn tick(state: &mut State, catalog: &Catalog, spatial: &mut Spatial) {
                     state.tunnels.gates.insert(entry_id, next);
                     state.tunnels.traffic.insert(entry_id, tick);
                     go_under(state, spatial, id, entry_id, position, arrives);
+                } else if !near && tick > trip.until {
+                    give_up(state, spatial, id);
                 }
             }
             Some(arrives) if arrives <= tick => {
@@ -309,6 +341,18 @@ fn clear(state: &mut State, id: EntityId) {
         u.tunnel = None;
         crate::orders::discard_navigation(u);
         u.retry_at = 0;
+    }
+}
+
+/// A trip whose mouth the unit has not reached in time ends, and the unit walks to its
+/// destination instead.
+fn give_up(state: &mut State, spatial: &mut Spatial, id: EntityId) {
+    clear(state, id);
+    let e = state.entities.get_mut(id).expect("traveller");
+    if let Some(Order::Move { destination, .. }) = e.unit.as_ref().and_then(|u| u.order.clone())
+        && destination.surface.is_none()
+    {
+        spatial.route_default(e, Spot::new(destination.x, destination.y, None));
     }
 }
 
