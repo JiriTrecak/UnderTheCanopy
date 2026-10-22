@@ -60,7 +60,7 @@ fn paint(material: &str, grass: Rgb, soil: Rgb, winter: bool) -> Option<Rgb> {
 
 /// The player colours (the game's ownership palette).
 const PLAYERS: [u32; 8] = [
-    0xff3038, 0x338dff, 0x35de53, 0xf2cf35, 0xed842a, 0x9656cf, 0x36cbd0, 0xffffff,
+    0x338dff, 0xff3038, 0x35de53, 0xf2cf35, 0xed842a, 0x9656cf, 0x36cbd0, 0xffffff,
 ];
 
 /// The preview of `map`; `trees` tells which scenery assets are trees.
@@ -398,10 +398,10 @@ mod tests {
         map.authoring.terrain.water_flow = Grid([128u8, 128, 0, 0].repeat(span * span));
         let image = render(&map, &|_| false).unwrap();
         assert_eq!(image.dimensions(), (SIZE, SIZE));
-        // The starts' crosses meet at their centres: red for player 1, blue for 2.
+        // The starts' crosses meet at their centres: blue for player 1, red for 2.
         let at = |x: f64, z: f64| image.get_pixel((x * 2.0) as u32, (z * 2.0) as u32).0;
-        assert_eq!(&at(61.5, 61.5)[..3], &[0xff, 0x30, 0x38]);
-        assert_eq!(&at(193.5, 193.5)[..3], &[0x33, 0x8d, 0xff]);
+        assert_eq!(&at(61.5, 61.5)[..3], &[0x33, 0x8d, 0xff]);
+        assert_eq!(&at(193.5, 193.5)[..3], &[0xff, 0x30, 0x38]);
         // Elsewhere: the biome's grass.
         let grass = at(128.0, 30.0);
         assert!(grass[1] > grass[0] && grass[1] > grass[2], "{grass:?}");

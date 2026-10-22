@@ -62,7 +62,8 @@
       "Cinematics hold the battle: while a scene plays, only its actors move and fight, and enemy waves wait until it ends",
       "The Hollow Brood: the Hollow's forest has withered around the basin, and the mission now slowly deepens from dusk into night",
       "Units and buildings stay readable at dusk and night: a soft moonlit rim and fill separate the army from the dark forest floor",
-      "A mission played without a base shows only the army's supply, not a red count over an empty limit"
+      "A mission played without a base shows only the army's supply, not a red count over an empty limit",
+      "Player 1 is always blue, in campaigns, skirmish and multiplayer; red is the second player's colour"
     ],
     "fixed": [
       "Generated cliffs join cleanly at corners and turns, ramps keep their side walls down to the foot, and diagonal cliff edges no longer show a staircase",

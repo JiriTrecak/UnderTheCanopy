@@ -33,8 +33,9 @@ pub struct MissionPlayer {
 }
 
 /// The player colours by name, in slot order (`config/players.json` names them alike).
+/// Player 1 is blue.
 pub const COLOR_NAMES: [&str; 8] = [
-    "red", "blue", "green", "yellow", "orange", "purple", "teal", "white",
+    "blue", "red", "green", "yellow", "orange", "purple", "teal", "white",
 ];
 
 /// A mission player's own colour.
