@@ -92,8 +92,9 @@ impl Cinema {
     }
 }
 
-/// Where a camera stands: a saved camera (optionally panned to another target), or the
-/// game's own camera (`camera: None`) looking at `target` (or wherever the player looks).
+/// Where a camera stands: a saved camera (optionally panned to another target), a shot
+/// preset on the actors where they stand, or the game's own camera (neither) looking at
+/// `target` (or wherever the player looks).
 #[skip_serializing_none]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -102,6 +103,72 @@ pub struct Pose {
     pub camera: Option<String>,
     /// The point looked at instead of the saved camera's own (a pan), milli-cells.
     pub target: Option<Milli>,
+    /// A shot preset (`mission.shot`): the picture frames its actors as it draws them.
+    pub preset: Option<Preset>,
+}
+
+/// An actor-relative shot (`mission.shot`). The simulation keeps what the script asked
+/// for; where the camera stands follows in the picture, from the actors' drawn positions,
+/// facing, pose and model height, so the shot finds its speakers wherever a walk left
+/// them.
+#[skip_serializing_none]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Preset {
+    pub kind: PresetKind,
+    /// The placements framed, in the call's order: one (single, wide on a unit) or two
+    /// (over: from, to; two). None for a wide shot of a region.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub actors: Vec<String>,
+    /// A wide shot's region: its centre (milli-cells) and radius (milli-cells).
+    pub region: Option<(Milli, u32)>,
+    /// Which side the camera stands on; none: the picture picks the clearer one.
+    pub side: Option<Side>,
+    /// Eye to the framed point, milli-cells.
+    pub distance: Option<u32>,
+    /// The eye's height above the (first) actor's feet, milli-cells.
+    pub height: Option<i32>,
+    /// Vertical field of view, millidegrees.
+    pub fov: Option<u32>,
+    /// Millidegrees.
+    pub roll: Option<i32>,
+}
+
+/// The framings `mission.shot` knows.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum PresetKind {
+    /// One unit's face, head and shoulders to the waist, from its front side.
+    Single,
+    /// Over the first unit's shoulder onto the second's face.
+    Over,
+    /// Both units in three-quarter profile.
+    Two,
+    /// An establishing shot of a unit or a region.
+    Wide,
+}
+
+impl PresetKind {
+    pub fn parse(name: &str) -> Option<Self> {
+        Some(match name {
+            "single" => Self::Single,
+            "over" => Self::Over,
+            "two" => Self::Two,
+            "wide" => Self::Wide,
+            _ => return None,
+        })
+    }
+}
+
+/// A side of a shot, seen from its first actor: a single's camera stands at the unit's
+/// left or right front, an over-the-shoulder looks over the first unit's left or right
+/// shoulder, a two shot stands on the first unit's left or right of the line between
+/// them, and a wide shot turns round its subject that way.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Side {
+    Left,
+    Right,
 }
 
 /// A cut (`ticks` 0) or a blend from one pose to another, eased in and out.

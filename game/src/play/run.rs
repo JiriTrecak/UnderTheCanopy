@@ -134,6 +134,8 @@ pub struct InMatch {
     cinematic_focus: Option<[f32; 2]>,
     /// The shot (start, length) whose return to the game's camera was handed over.
     returned: Option<(u32, u32)>,
+    /// The sides shot presets took while a cinematic lasts.
+    sides: super::presets::Sides,
     /// The `@portrait` target shows a cinematic line's speaker.
     pub live_speaker: bool,
     screen: Option<Screen>,
@@ -310,6 +312,7 @@ impl InMatch {
             follow: follow::Follow::default(),
             cinematic_focus: None,
             returned: None,
+            sides: super::presets::Sides::default(),
             live_speaker: false,
             screen: None,
             stats: DebugStats::default(),
@@ -703,7 +706,11 @@ impl InMatch {
     /// The view of a mission's saved-camera shot (`mission.camera_to`): while cinematic
     /// mode lasts, and while a blend back to the game's camera runs; once that blend
     /// ends, the game's camera looks where it returned to and is the player's again.
-    fn shot_view(&mut self, aspect: f32) -> Option<CameraView> {
+    fn shot_view(
+        &mut self,
+        aspect: f32,
+        actors: Option<&canopy_render::actors::ActorsGpu>,
+    ) -> Option<CameraView> {
         let frames = self.scene_targets?.frames?;
         let tick = self.live.shown as f32;
         if let Some(target) = frames.returned(tick) {
@@ -718,10 +725,22 @@ impl InMatch {
             return None;
         }
         if !self.cinema_on() && frames.progress(tick) >= 1.0 {
+            self.sides.clear();
             return None;
         }
-        let saved = frames.at(tick, &self.camera, aspect);
-        Some(saved.view(aspect, self.loaded.scene.terrain()))
+        let terrain = self.loaded.scene.terrain();
+        let stage = super::presets::Live {
+            live: &self.live,
+            actors,
+            obstacles: &self.loaded.obstacles,
+            ground: terrain,
+            size: self.loaded.scene.size as f32,
+        };
+        let sides = &mut self.sides;
+        let saved = frames.at(tick, &self.camera, aspect, &mut |p| {
+            super::presets::place(p, &stage, aspect, Some(&mut *sides))
+        });
+        Some(saved.view(aspect, terrain))
     }
 
     /// The unit whose eyes the camera looks through (its body is not drawn).
@@ -883,7 +902,7 @@ impl InMatch {
             .lens
             .apply(view::frame(&mut self.camera, aspect, &self.loaded.scene));
         let close = self
-            .shot_view(aspect)
+            .shot_view(aspect, host.renderer.actors())
             .or_else(|| self.close_view(aspect, dt_ms / 1000.0));
         // Giant canopies open around units in the overhead view only (a close camera
         // would cut holes at eye level).

@@ -1077,6 +1077,8 @@ pub struct RenderAsset {
     pub cast_contact: Option<f64>,
     pub scenery_asset: Option<String>,
     pub effects: Option<Vec<StateEffect>>,
+    /// The model's close dialogue portrait, when it frames it itself.
+    pub portrait: Option<PortraitFrame>,
 }
 
 fn default_anchor_distance() -> f64 {
@@ -1125,6 +1127,21 @@ impl RenderAsset {
             cast_contact: None,
             scenery_asset: None,
             effects: None,
+            portrait: None,
         }
     }
+}
+
+/// What a model's close dialogue portrait frames (asset.json `display.portrait`), in the
+/// model's own space (its metres, before its display scale): a cube of side `size` round
+/// `focus`, for a model whose automatic framing misses its face; `turn` turns the model
+/// that many degrees about its vertical axis (default −18, a little to the viewer's
+/// left), for a face its gear hides from the front.
+#[skip_serializing_none]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct PortraitFrame {
+    pub focus: [f64; 3],
+    pub size: f64,
+    pub turn: Option<f64>,
 }

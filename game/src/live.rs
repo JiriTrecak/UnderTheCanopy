@@ -117,7 +117,24 @@ impl LiveScene {
             instance,
             building: b.building,
             close: false,
+            framing: b.portrait,
         })
+    }
+
+    /// Entity `id`'s live model as the latest frame draws it, with its model's own
+    /// portrait framing: what a scene's shot preset frames.
+    pub fn entity_actor(
+        &self,
+        id: u32,
+    ) -> Option<(&ActorInstance, Option<canopy_render::PortraitFraming>)> {
+        let key = ((canopy_scene::live::Part::Entity as u64) << 40) | u64::from(id);
+        let instance = self.instances.get(self.keys.binary_search(&key).ok()?)?;
+        let portrait = self
+            .ui_bodies
+            .binary_search_by_key(&id, |b| b.id)
+            .ok()
+            .and_then(|i| self.ui_bodies[i].portrait);
+        Some((instance, portrait))
     }
 
     /// The units giant canopy models open around (old `cutawaySubjects`): the living

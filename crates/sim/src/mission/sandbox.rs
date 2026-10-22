@@ -2,7 +2,8 @@
 //!
 //! No standard library is opened, so scripts reach nothing but the core language, the
 //! `mission` table and the `scenes` table they fill: no filesystem, clock, randomness, metatables, coroutines, `pcall` or
-//! table iteration. Lua's string-hash seed only affects iteration order, which is
+//! table iteration. A call's options table (`{side = "left"}`) reaches the API with its
+//! entries sorted by name, so the order it was built in never shows. Lua's string-hash seed only affects iteration order, which is
 //! therefore unobservable. Every run is bounded by an instruction count (deterministic:
 //! it counts VM instructions, never time) and a string size.
 
@@ -27,7 +28,13 @@ pub enum Scalar {
     Integer(i64),
     Number(f64),
     String(String),
+    /// A call's options: a flat table of named scalars (`{side = "left", fov = 30}`),
+    /// sorted by name.
+    Table(Vec<(String, Scalar)>),
 }
+
+/// Entries an options table may hold.
+pub const TABLE_LIMIT: usize = 16;
 
 impl Scalar {
     /// A number for a script: integral values become Lua integers, so `"x" .. n` reads
@@ -249,6 +256,30 @@ fn load(lua: &Lua, source: &str, globals: Table) -> mlua::Result<mlua::Function>
 
 fn scalar(value: Value) -> Result<Scalar, String> {
     Ok(match value {
+        Value::Table(table) => {
+            let mut entries = Vec::new();
+            for pair in table.pairs::<Value, Value>() {
+                let (key, value) = pair.map_err(|e| message(&e))?;
+                let Value::String(key) = key else {
+                    return Err("Mission API options are named: {name = value}".into());
+                };
+                let key = key
+                    .to_str()
+                    .map_err(|_| "Mission API strings must be valid UTF-8".to_string())?
+                    .to_string();
+                if matches!(value, Value::Table(_)) {
+                    return Err("Mission API options hold strings, numbers and booleans".into());
+                }
+                entries.push((key, scalar(value)?));
+                if entries.len() > TABLE_LIMIT {
+                    return Err(format!(
+                        "Mission API options hold at most {TABLE_LIMIT} entries"
+                    ));
+                }
+            }
+            entries.sort_by(|a, b| a.0.cmp(&b.0));
+            Scalar::Table(entries)
+        }
         Value::Nil => Scalar::Nil,
         Value::Boolean(b) => Scalar::Boolean(b),
         Value::Integer(i) => Scalar::Integer(i),
@@ -258,7 +289,11 @@ fn scalar(value: Value) -> Result<Scalar, String> {
                 .map_err(|_| "Mission API strings must be valid UTF-8".to_string())?
                 .to_string(),
         ),
-        _ => return Err("Mission API accepts only strings, numbers and booleans".into()),
+        _ => {
+            return Err(
+                "Mission API accepts only strings, numbers, booleans and tables of options".into(),
+            );
+        }
     })
 }
 
@@ -269,6 +304,13 @@ fn value(lua: &Lua, scalar: Scalar) -> mlua::Result<Value> {
         Scalar::Integer(i) => Value::Integer(i),
         Scalar::Number(n) => Value::Number(n),
         Scalar::String(s) => Value::String(lua.create_string(s)?),
+        Scalar::Table(entries) => {
+            let table = lua.create_table()?;
+            for (key, entry) in entries {
+                table.raw_set(key, value(lua, entry)?)?;
+            }
+            Value::Table(table)
+        }
     })
 }
 
@@ -365,10 +407,38 @@ mod tests {
                 Scalar::Number(4.0),
             ]]
         );
-        let (result, _) = run_with("function on_start() mission.echo({}) end", "on_start");
+        // Options tables arrive sorted by name, flat.
+        let (result, calls) = run_with(
+            "function on_start() mission.echo({z = 1, a = 'x', m = true}) end",
+            "on_start",
+        );
+        result.unwrap();
+        assert_eq!(
+            calls,
+            [vec![Scalar::Table(vec![
+                ("a".into(), Scalar::String("x".into())),
+                ("m".into(), Scalar::Boolean(true)),
+                ("z".into(), Scalar::Integer(1)),
+            ])]]
+        );
+        for (table, error) in [
+            ("{ {} }", "options are named"),
+            ("{1, 2}", "options are named"),
+            ("{a = {}}", "hold strings, numbers and booleans"),
+        ] {
+            let (result, _) = run_with(
+                &format!("function on_start() mission.echo({table}) end"),
+                "on_start",
+            );
+            assert!(result.unwrap_err().contains(error), "{table}");
+        }
+        let (result, _) = run_with(
+            "function on_start() mission.echo(function() end) end",
+            "on_start",
+        );
         assert_eq!(
             result.unwrap_err(),
-            "[string \"mission.lua\"]:1: Mission API accepts only strings, numbers and booleans"
+            "[string \"mission.lua\"]:1: Mission API accepts only strings, numbers, booleans and tables of options"
         );
         let (result, _) = run_with("function on_start() mission.echo('\\255') end", "on_start");
         assert!(result.unwrap_err().ends_with("must be valid UTF-8"));

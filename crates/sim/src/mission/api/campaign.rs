@@ -69,6 +69,7 @@ impl Api<'_> {
             Scalar::Integer(i) => Some(Variable::Integer(*i)),
             Scalar::Number(n) => Some(Variable::Number(*n)),
             Scalar::Boolean(b) => Some(Variable::Boolean(*b)),
+            Scalar::Table(_) => return Err(super::VARIABLE_VALUE.into()),
         };
         if let Some(value) = &value {
             // Count the variables as this run has left them.

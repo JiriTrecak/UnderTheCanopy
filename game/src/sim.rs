@@ -327,11 +327,25 @@ pub struct SceneTargets {
     pub frames: Option<crate::play::shots::Frames>,
 }
 
-/// The shot of `view`'s mission resolved against the map's cameras.
+/// The shot of `view`'s mission resolved against the map's cameras and, for a preset, the
+/// entities its placements made (from the whole state, as the unit shots' targets).
 fn frames(world: &World, view: &View) -> Option<crate::play::shots::Frames> {
     let shot = view.mission.as_ref()?.cinema.shot.as_ref()?;
     let cameras = world.mission()?.script.mission.cameras.as_deref();
-    crate::play::shots::Frames::resolve(shot, cameras.unwrap_or_default())
+    let find = |placement: &str| {
+        world
+            .state()
+            .entities
+            .iter()
+            .find(|e| e.placement.as_deref() == Some(placement))
+            .map(|e| {
+                (
+                    e.id.0,
+                    [e.position.x as f32 / 1000.0, e.position.y as f32 / 1000.0],
+                )
+            })
+    };
+    crate::play::shots::Frames::resolve(shot, cameras.unwrap_or_default(), &find)
 }
 
 /// The targets of the camera shot `view`'s mission scene names, and its saved-camera
@@ -379,20 +393,24 @@ pub const SCENE_REVEAL_RADIUS: f64 = 36.0;
 /// viewer has no fog.
 pub fn stage(world: &World, view: &View) -> Option<View> {
     let mission = view.mission.as_ref()?;
-    // A scripted scene's place, else what a cinematic's camera looks at.
-    let position = match &mission.scene {
-        Some(scene) => scene.position,
+    // A scripted scene's place, else what a cinematic's camera looks at (all of a wide
+    // shot's region or out to a two-actor preset's second actor).
+    let (position, r) = match &mission.scene {
+        Some(scene) => (scene.position, SCENE_REVEAL_RADIUS),
         None if mission.cinema.on => {
-            let target = |f: &crate::play::shots::Framing| match f {
-                crate::play::shots::Framing::Saved(s) => Some(s.target),
-                crate::play::shots::Framing::Game(t) => *t,
-            };
             let frames = frames(world, view)?;
-            let [x, z] = target(&frames.to).or_else(|| target(&frames.from))?;
-            canopy_sim::entity::Milli {
-                x: (x * 1000.0).round() as i32,
-                y: (z * 1000.0).round() as i32,
-            }
+            let [x, z] = frames.to.target().or_else(|| frames.from.target())?;
+            let reach = match frames.to {
+                crate::play::shots::Framing::Preset(p) => p.reach,
+                _ => 0.0,
+            };
+            (
+                canopy_sim::entity::Milli {
+                    x: (x * 1000.0).round() as i32,
+                    y: (z * 1000.0).round() as i32,
+                },
+                SCENE_REVEAL_RADIUS.max(f64::from(reach)),
+            )
         }
         None => return None,
     };
@@ -404,7 +422,6 @@ pub fn stage(world: &World, view: &View) -> Option<View> {
         f64::from(position.x) / 1000.0,
         f64::from(position.y) / 1000.0,
     );
-    let r = SCENE_REVEAL_RADIUS;
     let size = i64::from(fog.size);
     let near = |x: i64, y: i64| ((x as f64 - sx).hypot(y as f64 - sy)) <= r;
     let mut cells = (*fog.cells).clone();
