@@ -157,12 +157,18 @@ publishes to it.
 - Base URL: https://d3dte7yaa1v3g8.cloudfront.net
 - Update feed: https://d3dte7yaa1v3g8.cloudfront.net/stable.json
 - Changelog index: https://d3dte7yaa1v3g8.cloudfront.net/changelog.json
+- Download page: https://d3dte7yaa1v3g8.cloudfront.net/download, the one link to share. It
+  reads `stable.json` when opened and offers the newest package with its title, gallery
+  and install steps, so it never needs updating for a release. Its source is
+  `releases/site/download.html`; `just release-site` uploads it (refusing any account but
+  the release one).
 
 S3 blocks public access; CloudFront serves only the `updates/` prefix:
 
 ```text
 updates/stable.json                         → /stable.json
 updates/changelog.json                      → /changelog.json
+updates/download                            → /download (the download page, text/html)
 updates/releases/<version>/changelog.json   → /releases/<version>/changelog.json
 updates/releases/<version>/<platform>.json
 updates/releases/<version>/<package>

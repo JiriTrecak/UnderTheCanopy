@@ -151,3 +151,14 @@ release-build *args:
 [unix]
 release-publish *args:
     cargo run -q -p canopy-release-tool -- publish "$@"
+
+# Upload the download page (releases/site/download.html) to <BaseUrl>/download: it reads the feed, so one link always offers the newest release
+[unix]
+release-site *args:
+    #!/bin/sh
+    set -e
+    account=$(aws sts get-caller-identity --query Account --output text {{args}})
+    if [ "$account" != "533797168831" ]; then echo "release-site: AWS account $account is not the release account 533797168831"; exit 1; fi
+    aws s3 cp "{{justfile_directory()}}/releases/site/download.html" "s3://under-canopy-releases-533797168831-eu-west-2/updates/download" \
+        --content-type "text/html; charset=utf-8" --cache-control "max-age=60" {{args}}
+    echo "release-site: https://d3dte7yaa1v3g8.cloudfront.net/download"
