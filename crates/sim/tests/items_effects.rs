@@ -68,7 +68,12 @@ fn active_items_strike_enemies_and_shield_the_hero() {
         ],
     )
     .play();
-    assert!(played.errors().iter().any(|e| e == "Item is cooling down"));
+    assert!(
+        played
+            .errors()
+            .iter()
+            .any(|e| e == "message.item-is-cooling-down")
+    );
     for (placement, hit) in [("f", true), ("g", true), ("h", false)] {
         let max = max_hp(&played, placement);
         assert_eq!(played.hp(placement) < max, hit, "{placement}");
@@ -194,8 +199,8 @@ fn item_use_is_blocked_by_statuses() {
         played
             .errors()
             .iter()
-            .any(|e| e == "Cannot use items while busy or stunned"
-                || e == "This item cannot be used"),
+            .any(|e| e == "message.cannot-use-items-while-busy-or"
+                || e == "message.this-item-cannot-be-used"),
         "{:?}",
         played.errors()
     );

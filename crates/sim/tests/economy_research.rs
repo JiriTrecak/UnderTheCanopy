@@ -28,11 +28,11 @@ fn research_is_paid_progresses_and_completes_for_the_colony() {
     );
     assert_eq!(
         try_command(&mut world, research(house, TOOLS)),
-        Some("Select a completed research building".into())
+        Some("message.select-a-completed-research-building".into())
     );
     assert_eq!(
         try_command(&mut world, research(forge, "research.test.unknown")),
-        Some("Select a completed research building".into())
+        Some("message.select-a-completed-research-building".into())
     );
     assert_eq!(
         try_command(&mut world, research(forge, VIGOUR)),
@@ -45,7 +45,7 @@ fn research_is_paid_progresses_and_completes_for_the_colony() {
     );
     assert_eq!(
         try_command(&mut world, research(other, TOOLS)),
-        Some("Research already queued".into())
+        Some("message.research-already-queued".into())
     );
     let done = run_until(&mut world, 60, |w| {
         !w.state().economy.researched(P1).is_empty()
@@ -83,7 +83,7 @@ fn research_is_paid_progresses_and_completes_for_the_colony() {
     );
     assert_eq!(
         try_command(&mut world, research(forge, TOOLS)),
-        Some("Already researched".into())
+        Some("message.already-researched".into())
     );
 }
 
@@ -100,14 +100,14 @@ fn cancelled_research_is_refunded_and_full_queues_refuse() {
     assert_eq!(wallet(&world, P1, AMBER), 90);
     assert_eq!(
         try_command(&mut world, research(forge, TOOLS)),
-        Some("Research queue is full".into())
+        Some("message.research-queue-is-full".into())
     );
     assert_eq!(
         try_command(
             &mut world,
             json!({"type": "cancelResearch", "actor": forge, "research": TOOLS})
         ),
-        Some("Research is not queued here".into())
+        Some("message.research-is-not-queued-here".into())
     );
     assert_eq!(
         try_command(
@@ -161,11 +161,11 @@ fn an_upgrade_transforms_the_building_in_place() {
     let (hall, house) = (id(&world, "hall"), id(&world, "house"));
     assert_eq!(
         try_command(&mut world, json!({"type": "upgrade", "actor": house})),
-        Some("Select a completed upgradeable building".into())
+        Some("message.select-a-completed-upgradeable-building".into())
     );
     assert_eq!(
         try_command(&mut world, json!({"type": "cancelUpgrade", "actor": hall})),
-        Some("No upgrade in progress".into())
+        Some("message.no-upgrade-in-progress".into())
     );
     assert_eq!(
         try_command(&mut world, json!({"type": "upgrade", "actor": hall})),
@@ -174,7 +174,7 @@ fn an_upgrade_transforms_the_building_in_place() {
     assert_eq!(wallet(&world, P1, AMBER), 70);
     assert_eq!(
         try_command(&mut world, json!({"type": "upgrade", "actor": hall})),
-        Some("Upgrade already in progress".into())
+        Some("message.upgrade-already-in-progress".into())
     );
     // Production waits while the hall is upgrading.
     command(
@@ -218,7 +218,7 @@ fn a_cancelled_upgrade_is_refunded() {
     assert_eq!(wallet(&world, P1, AMBER), 0);
     assert_eq!(
         try_command(&mut world, json!({"type": "upgrade", "actor": hall})),
-        Some("Upgrade already in progress".into())
+        Some("message.upgrade-already-in-progress".into())
     );
     run(&mut world, 10);
     assert_eq!(
@@ -238,6 +238,6 @@ fn a_cancelled_upgrade_is_refunded() {
     let hall = id(&poor, "hall");
     assert_eq!(
         try_command(&mut poor, json!({"type": "upgrade", "actor": hall})),
-        Some("Insufficient resources".into())
+        Some("message.insufficient-resources".into())
     );
 }

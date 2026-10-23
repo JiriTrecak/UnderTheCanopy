@@ -96,21 +96,21 @@ pub fn enqueue(ctx: &mut Ctx, b: EntityId, hero: EntityId) -> Result<(), String>
         .revival
         .as_ref()
         .filter(|_| e.revival.is_some() && e.construction.is_none())
-        .ok_or("Select a completed revival building")?;
+        .ok_or("message.select-a-completed-revival-building")?;
     let h = ctx
         .state
         .entities
         .get(hero)
         .filter(|h| fallen(h) && h.owner == owner)
-        .ok_or("Choose one of your fallen heroes")?;
+        .ok_or("message.choose-one-of-your-fallen-heroes")?;
     if crate::abilities::world_ops::returning(h) {
-        return Err("Hero is already returning through an ability".into());
+        return Err("message.hero-is-already-returning-through-an".into());
     }
     if queued(ctx, hero) {
-        return Err("Hero is already being revived".into());
+        return Err("message.hero-is-already-being-revived".into());
     }
     if production::lane_size(e) >= policy.queue_capacity as usize {
-        return Err("Revival queue is full".into());
+        return Err("message.revival-queue-is-full".into());
     }
     let supply = colony(ctx.state, ctx.catalog, ctx.index, owner);
     let hint = ctx.tables.hints.get(&owner).map(String::as_str);
@@ -122,7 +122,7 @@ pub fn enqueue(ctx: &mut Ctx, b: EntityId, hero: EntityId) -> Result<(), String>
     let (bill, _) = terms(policy, level);
     let Some(payment) = stock::reserve(ctx.state, ctx.catalog, ctx.index, owner, &costs(&bill))
     else {
-        return Err("Insufficient resources".into());
+        return Err("message.insufficient-resources".into());
     };
     stock::pay(ctx.state, &payment);
     let id = lane::next(ctx.state);
@@ -148,7 +148,7 @@ pub fn cancel(ctx: &mut Ctx, b: EntityId, hero: EntityId) -> Result<(), String> 
         .revival
         .as_ref()
         .and_then(|r| r.queue.iter().position(|q| q.hero == hero))
-        .ok_or("Hero is not queued here")?;
+        .ok_or("message.hero-is-not-queued-here")?;
     let level = e.revival.as_ref().expect("revival").queue[index].level;
     let bill = ctx
         .catalog
@@ -248,7 +248,7 @@ pub fn advance(ctx: &mut Ctx) {
                 ctx.state,
                 owner,
                 FactKind::Consumed,
-                "Hero revival completed",
+                "message.hero-revival-completed",
                 Some((item, *amount)),
             );
         }

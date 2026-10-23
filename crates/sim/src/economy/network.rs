@@ -244,7 +244,7 @@ pub fn hints(catalog: &Catalog, setup: &crate::setup::MatchSetup) -> BTreeMap<Ow
         // A seat playing buildings of another race (a sandbox, a mission) still gets
         // a name: any race's cheapest node.
         if let Some(d) = cheapest(roster).or_else(|| cheapest(None)) {
-            out.insert(Owner::Player(slot.player), d.name.clone());
+            out.insert(Owner::Player(slot.player), d.id.to_string());
         }
     }
     out
@@ -253,8 +253,11 @@ pub fn hints(catalog: &Catalog, setup: &crate::setup::MatchSetup) -> BTreeMap<Ow
 /// The refusal for a building placed outside the network.
 pub fn outside(hint: Option<&str>) -> String {
     match hint {
-        Some(node) => format!("Build inside your network: extend it with a {node}"),
-        None => "Build inside your network".into(),
+        Some(node) => crate::msg!(
+            "message.build-inside-network-with",
+            node = canopy_content::text::name(node)
+        ),
+        None => "message.build-inside-network".into(),
     }
 }
 

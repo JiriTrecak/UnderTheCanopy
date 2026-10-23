@@ -278,22 +278,22 @@ pub fn cast_reason(
     let catalog = ctx.catalog();
     let spell = ctx.ability(ability);
     let (Some(e), Some(t)) = (state.entities.get(source), state.entities.get(target)) else {
-        return Err("This unit cannot use that weapon ability");
+        return Err("message.this-unit-cannot-use-that-weapon");
     };
     let profile = super::forms::weapon_def(catalog, e);
     let combat = catalog.get(profile).behaviors.combat.as_ref();
     let Some(w) = &spell.weapon_cast else {
-        return Err("This unit cannot use that weapon ability");
+        return Err("message.this-unit-cannot-use-that-weapon");
     };
     let held = e
         .unit
         .as_ref()
         .is_none_or(|u| u.contained.is_some() || u.garrison.is_some() || u.release.is_some());
     let Some(combat) = combat.filter(|c| c.shell.is_none()) else {
-        return Err("This unit cannot use that weapon ability");
+        return Err("message.this-unit-cannot-use-that-weapon");
     };
     if held {
-        return Err("This unit cannot use that weapon ability");
+        return Err("message.this-unit-cannot-use-that-weapon");
     }
     let kind = if combat.projectile.is_some() {
         WeaponFilter::Projectile
@@ -301,7 +301,7 @@ pub fn cast_reason(
         WeaponFilter::Melee
     };
     if w.weapon != WeaponFilter::Any && w.weapon != kind {
-        return Err("Ability requires a different weapon kind");
+        return Err("message.ability-requires-a-different-weapon-kind");
     }
     let weapon = ctx.senses.combat.weapon(profile).expect("weapon");
     let spell_type = ctx.senses.combat.spell;
@@ -311,10 +311,10 @@ pub fn cast_reason(
         || statuses::ethereal(catalog, e)
         || (weapon.damage_type != spell_type && statuses::ethereal(catalog, t))
     {
-        return Err("Weapon cannot attack this target");
+        return Err("message.weapon-cannot-attack-this-target");
     }
     if e.unit.as_ref().is_some_and(|u| u.work.cargo.is_some()) {
-        return Err("Return carried resources before using this weapon ability");
+        return Err("message.return-carried-resources-before-using-this");
     }
     Ok(())
 }
@@ -411,7 +411,7 @@ pub fn tick(ctx: &mut Ctx, state: &mut State) {
                 .copied()
                 != Some(order.rank);
         let reason = if invalid {
-            Err("Weapon order interrupted")
+            Err("message.weapon-order-interrupted")
         } else {
             let control = first_control(ctx, e, order.binding);
             let id_str = binding.expect("binding").id.clone();
@@ -506,7 +506,12 @@ pub fn release(
     if let Some(o) = &order
         && (o.target != target || extras.is_empty())
     {
-        abandon(ctx, state, source, "Weapon ability could not release");
+        abandon(
+            ctx,
+            state,
+            source,
+            "message.weapon-ability-could-not-release",
+        );
         return Err(Unreleasable);
     }
     let Some((ability, rank, bonus, status)) = enhance(

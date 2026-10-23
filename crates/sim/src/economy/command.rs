@@ -100,7 +100,7 @@ pub fn apply(
         _ => true,
     };
     if !point_valid {
-        return Err("Destination is not on a declared walk surface".into());
+        return Err("message.destination-is-not-on-a-declared".into());
     }
     let ids: Vec<EntityId> = match action {
         Action::Build { actors, .. } => actors.iter().map(|&a| EntityId(a)).collect(),
@@ -119,13 +119,13 @@ pub fn apply(
         | Action::CancelUpgrade { actor }
         | Action::Revive { actor, .. }
         | Action::CancelRevival { actor, .. } => vec![EntityId(*actor)],
-        _ => return Err("Invalid request".into()),
+        _ => return Err("message.invalid-request".into()),
     };
     if ids
         .iter()
         .any(|&id| ctx.state.entities.get(id).is_some_and(|e| e.owner != owner))
     {
-        return Err("Not your actors".into());
+        return Err("message.not-your-actors".into());
     }
     let eligible: Vec<EntityId> = ids
         .into_iter()
@@ -145,7 +145,7 @@ pub fn apply(
         })
         .collect();
     if eligible.is_empty() {
-        return Err("No eligible controlled actors".into());
+        return Err("message.no-eligible-controlled-actors".into());
     }
     match action {
         Action::Construct { target, append, .. } => construct(
@@ -199,7 +199,7 @@ fn construct(
         .entities
         .get(target)
         .filter(|t| t.construction.is_some() && alive(t) && t.owner == owner)
-        .ok_or("Select an owned unfinished building")?;
+        .ok_or("message.select-an-owned-unfinished-building")?;
     let site_id = ctx.catalog.id(site.definition);
     let builder = eligible
         .iter()
@@ -217,7 +217,7 @@ fn construct(
                     && can_issue(e, append)
             })
         })
-        .ok_or("Select an eligible worker")?;
+        .ok_or("message.select-eligible-worker")?;
     issue(ctx.state, builder, Order::Construct { target }, append);
     Ok(vec![builder])
 }
@@ -237,7 +237,7 @@ fn gather(
         t.resource.as_ref().is_some_and(|r| r.amount > 0) && senses.sight(ctx).seen(owner, t)
     });
     if !visible {
-        return Err("Resource is not visible".into());
+        return Err("message.resource-is-not-visible".into());
     }
     if !append
         && ctx
@@ -246,7 +246,7 @@ fn gather(
             .get(target)
             .is_some_and(|t| !harvest::open_to(ctx, owner, t))
     {
-        return Err("Build on this deposit first; only its builder gathers here".into());
+        return Err("message.build-on-this-deposit-first-only".into());
     }
     let mut actors = Vec::new();
     for &id in eligible {
@@ -267,7 +267,7 @@ fn gather(
         actors.push(id);
     }
     if actors.is_empty() {
-        return Err("No eligible workers can gather this resource".into());
+        return Err("message.no-eligible-workers-can-gather-this".into());
     }
     Ok(actors)
 }
@@ -297,20 +297,20 @@ fn workplace(
         && e.construction.is_some()
     {
         if queue.is_some() {
-            return Err("Project has no training queue".into());
+            return Err("message.project-has-no-training-queue".into());
         }
         work::remove(ctx, actor, true);
         return Ok(());
     }
     let policy = ctx.catalog.get(e.definition).behaviors.production.as_ref();
     let Some(policy) = policy.filter(|_| e.construction.is_none() && e.production.is_some()) else {
-        return Err("No completed production capability".into());
+        return Err("message.no-completed-production-capability".into());
     };
     match action {
         Action::Produce { definition, .. } => production::produce(ctx, actor, definition.as_str()),
         Action::Cancel { queue, .. } => match queue {
             Some(entry) if production::cancel_entry(ctx, actor, *entry) => Ok(()),
-            _ => Err("Queue entry no longer exists".into()),
+            _ => Err("message.queue-entry-no-longer-exists".into()),
         },
         Action::Pause { paused, .. } => {
             production::pause(ctx, actor, *paused);
@@ -328,7 +328,7 @@ fn workplace(
                     .is_some_and(|d| d.kind == Kind::Unit)
             });
             if !units {
-                return Err("No unit production".into());
+                return Err("message.no-unit-production".into());
             }
             let rally = match target {
                 Some(target) => {
@@ -341,7 +341,7 @@ fn workplace(
                                     && t.unit.as_ref().is_some_and(|u| u.contained.is_none())))
                     });
                     Some(production::rally_on(
-                        t.ok_or("Rally onto a visible resource or friendly unit")?,
+                        t.ok_or("message.rally-onto-a-visible-resource-or")?,
                     ))
                 }
                 None => destination.as_ref().map(|d| super::Rally {
@@ -356,6 +356,6 @@ fn workplace(
             production::set_rally(ctx, actor, rally);
             Ok(())
         }
-        _ => Err("Invalid request".into()),
+        _ => Err("message.invalid-request".into()),
     }
 }

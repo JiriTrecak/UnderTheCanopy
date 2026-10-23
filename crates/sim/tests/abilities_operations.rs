@@ -57,7 +57,7 @@ fn branches_heal_allies_and_damage_enemies() {
         played
             .errors()
             .iter()
-            .any(|e| e == "Target does not match spell filters")
+            .any(|e| e == "message.target-does-not-match-spell-filters")
     );
     assert_eq!(played.at(EventKind::Damaged, "c")[0].amount, Some(60));
     let healed = played.at(EventKind::Healed, "b");
@@ -461,7 +461,10 @@ fn corpses_raise_with_resurrect_and_heroes_revive() {
     .set(0, "c", json!({"hp": 10}))
     .play();
     assert!(
-        played.errors().iter().any(|e| e == "No corpses nearby"),
+        played
+            .errors()
+            .iter()
+            .any(|e| e == "message.no-corpses-nearby"),
         "{:?}",
         played.errors()
     );
@@ -616,7 +619,10 @@ fn vision_reveals_an_area() {
         "visible while the vision lasts"
     );
     assert!(
-        played.errors().iter().any(|e| e == "Target is not visible"),
+        played
+            .errors()
+            .iter()
+            .any(|e| e == "message.target-is-not-visible"),
         "and hidden after"
     );
 }
@@ -654,7 +660,7 @@ fn convert_respects_filters_and_conditions() {
         played
             .errors()
             .iter()
-            .any(|e| e == "Target does not match spell filters")
+            .any(|e| e == "message.target-does-not-match-spell-filters")
     );
     assert_eq!(played.count(EventKind::Converted), 1);
     assert_eq!(played.entity("b").owner, Owner::Player(0));
@@ -711,7 +717,12 @@ fn contain_digests_and_releases() {
         ],
     )
     .play();
-    assert!(played.errors().iter().any(|e| e == "Carrier is full"));
+    assert!(
+        played
+            .errors()
+            .iter()
+            .any(|e| e == "message.carrier-is-full")
+    );
     assert_eq!(played.count(EventKind::Contained), 1);
     assert!(played.count(EventKind::Digested) >= 4);
     assert_eq!(played.count(EventKind::ReleasedContained), 1);

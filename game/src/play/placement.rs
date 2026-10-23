@@ -236,8 +236,8 @@ fn check(
         let milli = |v: f64| (v * 1000.0).round() as i64;
         let network = &k.view.network;
         if !network.fields.iter().any(|f| f.covers(milli(x), milli(y))) {
-            return Some(canopy_sim::economy::network::outside(
-                network.hint.as_deref(),
+            return Some(crate::text::message(
+                &canopy_sim::economy::network::outside(network.hint.as_deref()),
             ));
         }
     }

@@ -101,7 +101,7 @@ pub enum Change {
 
 /// Why `owner` may not build, train or research `id` right now, if it may not.
 pub fn refused(state: &State, owner: Owner, id: &str) -> Option<String> {
-    (!allowed(state, owner, id)).then(|| "Not available in this mission".to_string())
+    (!allowed(state, owner, id)).then(|| "message.not-available-in-mission".to_string())
 }
 
 /// Whether `owner`'s tech allows `id` (everything is allowed without a limit).

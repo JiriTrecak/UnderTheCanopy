@@ -239,7 +239,7 @@ fn shields_mana_shields_damage_taken_and_immunities() {
         played
             .errors()
             .iter()
-            .any(|e| e == "Target is immune to this spell")
+            .any(|e| e == "message.target-is-immune-to-this-spell")
     );
     // Sleep breaks on damage.
     let drowse = played
@@ -363,7 +363,7 @@ fn taunts_force_attacks_on_the_challenger() {
         played
             .errors()
             .iter()
-            .any(|e| e == "No eligible controlled actors" || e.contains("taunt")),
+            .any(|e| e == "message.no-eligible-controlled-actors" || e.contains("taunt")),
         "{:?}",
         played.errors()
     );
@@ -488,7 +488,10 @@ fn concealment_hides_until_detected_or_broken() {
     )
     .play();
     assert!(
-        hidden.errors().iter().any(|e| e == "Target is not visible"),
+        hidden
+            .errors()
+            .iter()
+            .any(|e| e == "message.target-is-not-visible"),
         "{:?}",
         hidden.errors()
     );

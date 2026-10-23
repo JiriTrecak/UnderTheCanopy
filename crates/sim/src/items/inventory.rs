@@ -43,7 +43,7 @@ pub fn pickup_error(
         .filter(|s| !s.is_empty());
     let Some(slots) = slots.filter(|_| catalog.get(h.definition).behaviors.inventory.is_some())
     else {
-        return Some("This unit has no inventory");
+        return Some("message.this-unit-has-no-inventory");
     };
     let t = state.entities.get(target);
     let effect = t.and_then(|t| catalog.items.get(t.definition));
@@ -52,7 +52,7 @@ pub fn pickup_error(
             && (t.owner == Owner::Nobody || t.owner == h.owner)
     }) && effect.is_some();
     if !valid {
-        return Some("Cannot pick up this item");
+        return Some("message.cannot-pick-up-this-item");
     }
     if let ItemEffect::Consumable {
         on_pickup: Some(true),
@@ -62,11 +62,11 @@ pub fn pickup_error(
         return if h.progression.is_some() {
             None
         } else {
-            Some("Only a hero can use this item")
+            Some("message.only-a-hero-can-use-this")
         };
     }
     if !slots.contains(&None) {
-        return Some("Inventory is full");
+        return Some("message.inventory-is-full");
     }
     None
 }
@@ -178,7 +178,7 @@ pub fn plan(ctx: &mut Ctx, state: &mut State) {
                 None => false,
             };
             if !routed {
-                stop(state, hero, Some("Item is unreachable"));
+                stop(state, hero, Some("message.item-is-unreachable"));
                 continue;
             }
             state
@@ -247,14 +247,14 @@ pub fn drop(
     slot: usize,
 ) -> Result<(), &'static str> {
     let Some(e) = state.entities.get(hero) else {
-        return Err("Inventory slot is empty");
+        return Err("message.inventory-slot-is-empty");
     };
     let Some(item) = e
         .equipment
         .as_ref()
         .and_then(|q| q.slots.get(slot).copied().flatten())
     else {
-        return Err("Inventory slot is empty");
+        return Err("message.inventory-slot-is-empty");
     };
     let (x, y) = e.position.cell();
     let origin = (x, y, e.surface.clone());
@@ -349,7 +349,7 @@ pub fn apply(
                 .get(target)
                 .is_some_and(|t| ctx.senses.sight(state).seen(owner, t));
             if !seen {
-                return Err("Item is not visible".into());
+                return Err("message.item-is-not-visible".into());
             }
             if let Some(error) = pickup_error(ctx, state, hero, target) {
                 return Err(error.into());
@@ -360,7 +360,7 @@ pub fn apply(
                 Order::Pickup { target },
                 append.unwrap_or(false),
             ) {
-                return Err("Order queue is full".into());
+                return Err("message.order-queue-is-full".into());
             }
             Ok(())
         }
@@ -372,7 +372,7 @@ pub fn apply(
             let hero = crate::abilities::orders::actor_of(ctx, state, owner, *actor)?;
             effects::use_item(ctx, state, hero, *slot as usize).map_err(str::to_string)
         }
-        _ => Err("Invalid request".into()),
+        _ => Err("message.invalid-request".into()),
     }
 }
 

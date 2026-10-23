@@ -72,7 +72,13 @@ pub fn advance(ctx: &mut Ctx, teams: &Teams) -> bool {
             .map(|e| e.id)
             .collect();
         if !abandoned.is_empty() {
-            economy::stock::record(ctx.state, owner, FactKind::Death, "Colony defeated", None);
+            economy::stock::record(
+                ctx.state,
+                owner,
+                FactKind::Death,
+                "message.colony-defeated",
+                None,
+            );
             changed = true;
         }
         for id in abandoned {

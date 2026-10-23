@@ -150,7 +150,7 @@ fn an_unreachable_destination_ends_the_order_with_an_error() {
         json!({"type": "move", "actors": [a], "destination": {"x": 80, "y": 80}}),
     );
     run(&mut world, 5);
-    assert_eq!(errors(&world), ["Move destination is unreachable"]);
+    assert_eq!(errors(&world), ["message.move-destination-is-unreachable"]);
     assert!(order(&world, "a").is_none());
     assert_eq!(at(&world, "a"), (20.0, 20.0));
 }
@@ -220,7 +220,7 @@ fn queued_orders_run_in_turn_and_the_queue_is_bounded() {
         entity(&world, "a").unit.as_ref().unwrap().order_queue.len(),
         16
     );
-    assert_eq!(errors(&world), ["No actors support that order"]);
+    assert_eq!(errors(&world), ["message.no-actors-support-that-order"]);
 }
 
 #[test]
@@ -306,8 +306,8 @@ fn followers_keep_close_to_a_moving_leader() {
     assert_eq!(
         errors(&world),
         [
-            "No actors support that order",
-            "Follow requires a visible friendly unit"
+            "message.no-actors-support-that-order",
+            "message.follow-requires-a-visible-friendly-unit"
         ]
     );
 }
@@ -429,11 +429,11 @@ fn commands_are_validated_like_the_old_game() {
     assert_eq!(
         errors(&world),
         [
-            "No eligible controlled actors",
-            "Destination is not on a declared walk surface",
-            "Destination is not on a declared walk surface",
-            "No actors support that order",
-            "No actors support that order",
+            "message.no-eligible-controlled-actors",
+            "message.destination-is-not-on-a-declared",
+            "message.destination-is-not-on-a-declared",
+            "message.no-actors-support-that-order",
+            "message.no-actors-support-that-order",
         ]
     );
 }

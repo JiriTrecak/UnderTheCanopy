@@ -679,7 +679,8 @@ fn the_ghost_agrees_with_the_simulation_where_the_player_sees() {
                         rotation,
                     );
                     assert_eq!(
-                        ghost.problem, verdict,
+                        ghost.problem,
+                        verdict.map(|v| crate::text::message(&v)),
                         "{definition} at {:?} turned {rotation}",
                         ghost.point
                     );
@@ -727,7 +728,12 @@ fn a_well_snaps_onto_its_deposit_and_workers_sent_to_it_gather_there() {
             Some(canopy_sim::entity::EntityId(workers[0])),
             0,
         );
-        assert_eq!(ghost.problem, verdict, "{:?}", ghost.point);
+        assert_eq!(
+            ghost.problem,
+            verdict.map(|v| crate::text::message(&v)),
+            "{:?}",
+            ghost.point
+        );
         assert_eq!(ghost.center == [at.0 as f32, at.1 as f32], on, "{ghost:?}");
         assert_eq!(ghost.problem.is_none(), on, "{ghost:?}");
     }

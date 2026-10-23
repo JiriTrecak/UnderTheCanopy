@@ -64,7 +64,7 @@ fn the_owner_sees_its_ledger_queues_and_workers() {
     let private = hall_view.private.as_ref().unwrap();
     let training = private.economy.training.expect("training");
     assert_eq!(training.total, 20);
-    assert_eq!(private.economy.status.as_deref(), Some("Training"));
+    assert_eq!(private.economy.status.as_deref(), Some("status.training"));
     assert_eq!(private.economy.production.as_ref().unwrap().queue.len(), 2);
     // The feller's job, label and chopping pose facing the tree.
     let feller_view = view.entity(canopy_sim::entity::EntityId(feller)).unwrap();

@@ -176,7 +176,7 @@ fn passive_camps_fight_only_when_attacked_by_force() {
         json!({"type": "attack", "actors": [h], "target": c}),
     );
     run(&mut world, 1);
-    assert_eq!(errors(&world), ["No actors support that order"]);
+    assert_eq!(errors(&world), ["message.no-actors-support-that-order"]);
     command(
         &mut world,
         1,

@@ -39,10 +39,10 @@ pub fn aim(target: &CastTarget) -> Aim {
 pub fn actor_of(ctx: &Ctx, state: &State, owner: Owner, actor: u32) -> Result<EntityId, String> {
     let id = EntityId(actor);
     let Some(e) = state.entities.get(id) else {
-        return Err("No eligible controlled actors".into());
+        return Err("message.no-eligible-controlled-actors".into());
     };
     if e.owner != owner {
-        return Err("Not your actors".into());
+        return Err("message.not-your-actors".into());
     }
     let ok = super::actor::alive(e)
         && ctx
@@ -57,7 +57,7 @@ pub fn actor_of(ctx: &Ctx, state: &State, owner: Owner, actor: u32) -> Result<En
     if ok {
         Ok(id)
     } else {
-        Err("No eligible controlled actors".into())
+        Err("message.no-eligible-controlled-actors".into())
     }
 }
 
@@ -89,7 +89,7 @@ pub fn apply(
                 _ => false,
             };
             if !ok {
-                return Err("This ability cannot autocast".into());
+                return Err("message.this-ability-cannot-autocast".into());
             }
             let (i, _) = found.expect("binding");
             let c = state
@@ -112,7 +112,7 @@ pub fn apply(
             let id = actor_of(ctx, state, owner, *actor)?;
             learn(ctx, state, id, ability).map_err(str::to_string)
         }
-        _ => Err("Invalid request".into()),
+        _ => Err("message.invalid-request".into()),
     }
 }
 
@@ -127,13 +127,13 @@ pub fn learn(
     let policy = ctx.catalog().spells.caster(e.definition);
     let found = policy.and_then(|p| p.binding(binding));
     let Some(c) = &e.caster else {
-        return Err("Cannot learn this ability");
+        return Err("message.cannot-learn-this-ability");
     };
     let Some((index, b)) = found.filter(|(_, b)| b.learning.is_some()) else {
-        return Err("Cannot learn this ability");
+        return Err("message.cannot-learn-this-ability");
     };
     if !super::actor::alive(e) || c.pending.is_some() || c.weapon_order.is_some() {
-        return Err("Cannot learn this ability");
+        return Err("message.cannot-learn-this-ability");
     }
     let level = Stats::of(ctx.catalog(), e, crate::stats::research(state, e.owner)).level;
     let rank = c.ranks.get(index).copied().unwrap_or(0);
@@ -143,10 +143,10 @@ pub fn learn(
         .expect("learning")
         .get(usize::from(rank))
     else {
-        return Err("Ability is fully learned");
+        return Err("message.ability-is-fully-learned");
     };
     if required > level {
-        return Err("Hero level is too low");
+        return Err("message.hero-level-is-too-low");
     }
     let bindings = &policy.expect("policy").bindings;
     let spent: u32 = bindings
@@ -163,7 +163,7 @@ pub fn learn(
         })
         .sum();
     if spent >= level {
-        return Err("No skill points available");
+        return Err("message.no-skill-points-available");
     }
     state
         .entities
@@ -220,7 +220,7 @@ pub fn issue(
             if crate::orders::issue(state, id, order, false) {
                 Ok(())
             } else {
-                Err("Caster cannot move to cast")
+                Err("message.caster-cannot-move-to-cast")
             }
         }
     }
@@ -258,7 +258,7 @@ pub fn tick(ctx: &mut Ctx, state: &mut State, plan: bool) {
         };
         let aim = aim(&target);
         let reason = if e.owner != owner {
-            Err("Caster changed owner")
+            Err("message.caster-changed-owner")
         } else {
             cast::reason(ctx, state, id, &binding, aim, control, false)
         };

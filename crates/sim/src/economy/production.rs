@@ -379,7 +379,7 @@ fn consume_inputs(ctx: &mut Ctx, b: EntityId, def: Def) {
             ctx.state,
             owner,
             FactKind::Consumed,
-            "Production input consumed",
+            "message.production-input-consumed",
             Some((&cost.item, cost.amount)),
         );
     }
@@ -605,13 +605,13 @@ pub fn produce(ctx: &mut Ctx, b: EntityId, definition: &str) -> Result<(), Strin
         .find(definition)
         .filter(|_| policy.mode == ProductionMode::Queued)
         .filter(|_| policy.outputs.iter().any(|o| o.as_str() == definition))
-        .ok_or("Unsupported output")?;
+        .ok_or("message.unsupported-output")?;
     // A campaign's tech (`campaign`).
     if let Some(reason) = crate::campaign::refused(ctx.state, owner, definition) {
         return Err(reason);
     }
     if lane_size(e) >= policy.queue_capacity.unwrap_or(0) as usize {
-        return Err("Queue is full".into());
+        return Err("message.queue-is-full".into());
     }
     let target = ctx.catalog.get(def);
     if let Some(reason) = supply::prerequisite(ctx, owner, target.requires.as_deref()) {
@@ -630,7 +630,7 @@ pub fn produce(ctx: &mut Ctx, b: EntityId, definition: &str) -> Result<(), Strin
         return Err(reason);
     }
     if !enqueue(ctx, b, def) {
-        return Err("Insufficient unreserved materials".into());
+        return Err("message.insufficient-materials".into());
     }
     Ok(())
 }

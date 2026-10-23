@@ -88,7 +88,7 @@ fn the_economy_is_deterministic_and_survives_save_and_restore() {
     assert!(
         !errors(&a)
             .iter()
-            .any(|e| e != "Move destination is unreachable"),
+            .any(|e| e != "message.move-destination-is-unreachable"),
         "{:?}",
         errors(&a)
     );

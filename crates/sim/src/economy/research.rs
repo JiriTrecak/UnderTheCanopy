@@ -16,13 +16,13 @@ pub fn enqueue(ctx: &mut Ctx, b: EntityId, id: &Id) -> Result<(), String> {
     let policy = ctx.catalog.get(e.definition).behaviors.research.as_ref();
     let recipe = ctx.catalog.content.rules.research.get(id.as_str());
     let (Some(policy), Some(recipe)) = (policy, recipe) else {
-        return Err("Select a completed research building".into());
+        return Err("message.select-a-completed-research-building".into());
     };
     if !policy.outputs.contains(id) || e.research.is_none() || e.construction.is_some() {
-        return Err("Select a completed research building".into());
+        return Err("message.select-a-completed-research-building".into());
     }
     if ctx.state.economy.researched(owner).contains(id) {
-        return Err("Already researched".into());
+        return Err("message.already-researched".into());
     }
     // A campaign's tech (`campaign`).
     if let Some(reason) = crate::campaign::refused(ctx.state, owner, id.as_str()) {
@@ -38,18 +38,18 @@ pub fn enqueue(ctx: &mut Ctx, b: EntityId, id: &Id) -> Result<(), String> {
         })
     });
     if queued {
-        return Err("Research already queued".into());
+        return Err("message.research-already-queued".into());
     }
     let capacity = policy.queue_capacity as usize;
     if e.research.as_ref().map_or(0, |r| r.queue.len()) >= capacity {
-        return Err("Research queue is full".into());
+        return Err("message.research-queue-is-full".into());
     }
     if let Some(reason) = supply::prerequisite(ctx, owner, recipe.requires.as_deref()) {
         return Err(reason);
     }
     let Some(payment) = stock::reserve(ctx.state, ctx.catalog, ctx.index, owner, &recipe.items)
     else {
-        return Err("Insufficient resources".into());
+        return Err("message.insufficient-resources".into());
     };
     stock::pay(ctx.state, &payment);
     let order = lane::next(ctx.state);
@@ -75,7 +75,7 @@ pub fn cancel(ctx: &mut Ctx, b: EntityId, id: &Id) -> Result<(), String> {
         .get(b)
         .and_then(|e| e.research.as_ref())
         .and_then(|r| r.queue.iter().position(|q| &q.id == id))
-        .ok_or("Research is not queued here")?;
+        .ok_or("message.research-is-not-queued-here")?;
     let items = ctx
         .catalog
         .content
@@ -155,7 +155,7 @@ pub fn advance(ctx: &mut Ctx) {
                 ctx.state,
                 owner,
                 FactKind::Consumed,
-                "Research completed",
+                "message.research-completed",
                 Some((&cost.item, cost.amount)),
             );
         }

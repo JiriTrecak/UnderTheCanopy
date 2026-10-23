@@ -318,7 +318,7 @@ fn springs_restore_any_unit_near_them_and_cannot_be_attacked() {
     assert!(
         played
             .errors()
-            .contains(&"Target is not visible and damageable".to_string()),
+            .contains(&"message.target-is-not-visible-and-damageable".to_string()),
         "a spring has no body to attack: {:?}",
         played.errors()
     );
@@ -359,9 +359,9 @@ fn shops_sell_to_heroes_in_range_with_limited_stock_that_grows_back() {
     let errors = played.errors();
     for expected in [
         "A hero must stand near the shop",
-        "Insufficient resources",
-        "Sold out",
-        "Not sold here",
+        "message.insufficient-resources",
+        "message.sold-out",
+        "message.not-sold-here",
     ] {
         assert!(
             errors.iter().any(|e| e == expected),

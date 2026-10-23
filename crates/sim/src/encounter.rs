@@ -880,7 +880,7 @@ impl Take {
             if f.kind == FactKind::Error && f.owner == Owner::Player(0) {
                 self.refusals.push(Refusal {
                     tick: f.tick.saturating_sub(start),
-                    message: f.message.clone(),
+                    message: self.world.catalog().content.text.say(&f.message),
                 });
             }
         }

@@ -103,7 +103,7 @@ fn cancelling_a_site_refunds_half_and_loses_the_rest() {
             &mut world,
             json!({"type": "cancel", "actor": site, "queue": 5})
         ),
-        Some("Project has no training queue".into())
+        Some("message.project-has-no-training-queue".into())
     );
     assert_eq!(
         try_command(&mut world, json!({"type": "cancel", "actor": site})),
@@ -145,12 +145,17 @@ fn placement_rules_reject_with_the_old_messages() {
     fund(&mut world, P1, AMBER, 1000);
     fund(&mut world, P1, WOOD, 1000);
     let (worker, soldier) = (id(&world, "worker"), id(&world, "soldier"));
+    let within = canopy_sim::msg!(
+        "message.build-within",
+        cells = 8,
+        name = canopy_content::text::name("resource.test.tree")
+    );
     let cases: Vec<(Value, &str)> = vec![
         // Workers only build what they know, so the command never reaches the unknown
         // definition check; placement queries (the AI) do.
         (
             build(worker, SOLDIER, 29.5, 29.5),
-            "Select an eligible worker",
+            "message.select-eligible-worker",
         ),
         (
             build(worker, HOUSE, 30.0, 29.5),
@@ -158,29 +163,32 @@ fn placement_rules_reject_with_the_old_messages() {
         ),
         (
             build(soldier, HOUSE, 29.5, 29.5),
-            "Select an eligible worker",
+            "message.select-eligible-worker",
+        ),
+        (build(worker, HALL, 255.5, 255.5), "message.explore-first"),
+        (
+            build(worker, HOUSE, 253.5, 253.5),
+            "message.entrance-blocked",
+        ),
+        (build(worker, FORESTER, 29.5, 29.5), within.as_str()),
+        (
+            build(worker, HOUSE, 25.5, 25.5),
+            "message.placement-blocked",
         ),
         (
-            build(worker, HALL, 255.5, 255.5),
-            "Explore this location first",
+            build(worker, HOUSE, 21.5, 21.5),
+            "message.placement-blocked",
         ),
-        (build(worker, HOUSE, 253.5, 253.5), "Entrance blocked"),
+        (build(worker, HOUSE, 37.5, 13.5), "message.deposit-access"),
         (
-            build(worker, FORESTER, 29.5, 29.5),
-            "Build within 8 cells of resource.test.tree",
+            build(worker, BARRACKS, 75.5, 19.5),
+            "message.flatter-ground",
         ),
-        (build(worker, HOUSE, 25.5, 25.5), "Placement blocked"),
-        (build(worker, HOUSE, 21.5, 21.5), "Placement blocked"),
-        (
-            build(worker, HOUSE, 37.5, 13.5),
-            "Leave access around the resource deposit",
-        ),
-        (build(worker, BARRACKS, 75.5, 19.5), "Choose flatter ground"),
-        (build(worker, HOUSE, 29.5, 33.5), "Entrance blocked"),
+        (build(worker, HOUSE, 29.5, 33.5), "message.entrance-blocked"),
         (
             json!({"type": "build", "actors": [worker], "definition": HOUSE,
                 "position": {"x": 29.5, "y": 29.5, "surface": "deck"}}),
-            "Destination is not on a declared walk surface",
+            "message.destination-is-not-on-a-declared",
         ),
     ];
     for (action, message) in cases {
@@ -203,7 +211,7 @@ fn placement_rules_reject_with_the_old_messages() {
             Some(canopy_sim::entity::EntityId(worker)),
             0
         ),
-        Some("Unknown building".into())
+        Some("message.unknown-building".into())
     );
     assert_eq!(
         world.can_build(
@@ -218,7 +226,7 @@ fn placement_rules_reject_with_the_old_messages() {
     fund(&mut world, P1, AMBER, 5);
     assert_eq!(
         try_command(&mut world, build(worker, HOUSE, 29.5, 29.5)),
-        Some("Insufficient unreserved materials".into())
+        Some("message.insufficient-materials".into())
     );
     assert!(all_of(&world, P1, HOUSE).len() == 1, "only the blocker");
 }
@@ -266,7 +274,7 @@ fn the_building_limit_counts_sites_too() {
     );
     assert_eq!(
         try_command(&mut world, build(worker, HOUSE, 37.5, 29.5)),
-        Some("Building limit reached".into())
+        Some("message.building-limit".into())
     );
 }
 
@@ -288,7 +296,7 @@ fn a_full_order_queue_refuses_an_appended_build() {
     action["append"] = json!(true);
     assert_eq!(
         try_command(&mut world, action),
-        Some("Order queue is full".into())
+        Some("message.order-queue-is-full".into())
     );
 }
 
@@ -319,14 +327,14 @@ fn construct_orders_join_sites_and_finish_them() {
             &mut world,
             json!({"type": "construct", "actors": [helper], "target": theirs})
         ),
-        Some("Select an owned unfinished building".into())
+        Some("message.select-an-owned-unfinished-building".into())
     );
     assert_eq!(
         try_command(
             &mut world,
             json!({"type": "construct", "actors": [soldier], "target": site})
         ),
-        Some("Select an eligible worker".into())
+        Some("message.select-eligible-worker".into())
     );
     assert_eq!(
         try_command(

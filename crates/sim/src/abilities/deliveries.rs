@@ -361,7 +361,7 @@ fn step(ctx: &mut Ctx, state: &mut State, mut shot: Shot) -> Option<Shot> {
                         shot.cast,
                         shot.ability,
                         EventKind::Cancelled,
-                        Extra::reason("Charge interrupted or obstructed"),
+                        Extra::reason("message.charge-interrupted-or-obstructed"),
                         None,
                     );
                     return None;

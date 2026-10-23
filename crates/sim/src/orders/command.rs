@@ -40,12 +40,12 @@ pub fn spot(spatial: &Spatial, point: &CellPoint) -> Result<Spot, String> {
         Some(name) => Some(
             spatial
                 .deck_id(name)
-                .ok_or("Destination is not on a declared walk surface")?,
+                .ok_or("message.destination-is-not-on-a-declared")?,
         ),
     };
     let spot = Spot::new(point.x as i32, point.y as i32, deck);
     if !spatial.valid_spot(spot) {
-        return Err("Destination is not on a declared walk surface".into());
+        return Err("message.destination-is-not-on-a-declared".into());
     }
     Ok(spot)
 }
@@ -67,7 +67,7 @@ pub fn apply(
     action: &Action,
 ) -> Result<Vec<EntityId>, String> {
     if state.outcome.is_some() {
-        return Err("Match has ended".into());
+        return Err("message.match-ended".into());
     }
     let destination = match action {
         Action::Move { destination, .. } | Action::Patrol { destination, .. } => {
@@ -84,7 +84,7 @@ pub fn apply(
         | Action::Garrison { actors, append, .. } => (actors, append.unwrap_or(false)),
         Action::Stop { actors } => (actors, false),
         Action::Unload { actor } => (std::slice::from_ref(actor), false),
-        _ => return Err("Invalid request".into()),
+        _ => return Err("message.invalid-request".into()),
     };
     let mut ids: Vec<EntityId> = actors.iter().map(|&a| EntityId(a)).collect();
     ids.sort_unstable();
@@ -92,7 +92,7 @@ pub fn apply(
         .iter()
         .any(|&id| state.entities.get(id).is_some_and(|e| e.owner != owner))
     {
-        return Err("Not your actors".into());
+        return Err("message.not-your-actors".into());
     }
     let eligible: Vec<EntityId> = ids
         .into_iter()
@@ -107,7 +107,7 @@ pub fn apply(
         })
         .collect();
     if eligible.is_empty() {
-        return Err("No eligible controlled actors".into());
+        return Err("message.no-eligible-controlled-actors".into());
     }
     if matches!(action, Action::Garrison { .. } | Action::Unload { .. }) {
         let seen = |state: &State, e: &crate::entity::Entity| senses.sight(state).seen(owner, e);
@@ -132,7 +132,7 @@ pub fn apply(
                                 .is_some_and(|u| u.contained.is_none() && u.release.is_none())
                     });
                     if !valid {
-                        return Err("Follow requires a visible friendly unit".into());
+                        return Err("message.follow-requires-a-visible-friendly-unit".into());
                     }
                     Some(target)
                 }
@@ -174,7 +174,7 @@ pub fn apply(
                     })
             });
             if !valid {
-                return Err("Target is not visible and damageable".into());
+                return Err("message.target-is-not-visible-and-damageable".into());
             }
             for &id in &eligible {
                 if !movable(state, spatial, id) {
@@ -297,7 +297,7 @@ pub fn apply(
         _ => unreachable!(),
     }
     if applied.is_empty() {
-        return Err("No actors support that order".into());
+        return Err("message.no-actors-support-that-order".into());
     }
     Ok(applied)
 }

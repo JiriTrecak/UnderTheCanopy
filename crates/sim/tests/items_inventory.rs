@@ -182,11 +182,11 @@ fn pickups_and_uses_are_validated() {
     .play();
     let errors = played.errors();
     for expected in [
-        "Item is not visible",
-        "This unit has no inventory",
-        "Inventory slot is empty",
-        "This item cannot be used",
-        "Not your actors",
+        "message.item-is-not-visible",
+        "message.this-unit-has-no-inventory",
+        "message.inventory-slot-is-empty",
+        "message.this-item-cannot-be-used",
+        "message.not-your-actors",
     ] {
         assert!(
             errors.iter().any(|e| e == expected),
@@ -238,7 +238,7 @@ fn consumables_heal_restore_and_grant_permanent_bonuses() {
     .play();
     let errors = played.errors();
     assert!(
-        errors.iter().any(|e| e == "Item is cooling down"),
+        errors.iter().any(|e| e == "message.item-is-cooling-down"),
         "{errors:?}"
     );
     let bonuses = played

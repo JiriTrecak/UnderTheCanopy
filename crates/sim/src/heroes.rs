@@ -245,7 +245,7 @@ pub fn award(
             u64::from(share) * u64::from(multiplier) * (1000 + u64::from(bonus)) / 1_000_000;
         let cap = ceiling(e);
         let owner = e.owner;
-        let name = catalog.get(e.definition).name.clone();
+        let name = canopy_content::text::name(&catalog.get(e.definition).id);
         let e = state.entities.get_mut(id).expect("hero");
         let progression = e.progression.as_mut().expect("progression");
         progression.experience =
@@ -268,7 +268,11 @@ pub fn award(
             state.fact(
                 owner,
                 FactKind::Command,
-                format!("{name} reached level {}", after.level),
+                crate::msg!(
+                    "message.reached-level",
+                    name = name.clone(),
+                    level = after.level
+                ),
             );
         }
     }

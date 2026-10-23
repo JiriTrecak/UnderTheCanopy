@@ -118,13 +118,18 @@ pub fn colony(state: &State, catalog: &Catalog, index: &super::Index, owner: Own
 /// Why a unit costing `cost` cannot be queued now (old `supplyAdmission`).
 pub fn admission(supply: &Supply, cost: u32, hint: Option<&str>) -> Option<String> {
     if supply.units + supply.queued_units >= supply.unit_limit {
-        return Some("Unit limit reached".into());
+        return Some("message.unit-limit-reached".into());
     }
     if cost > 0 && supply.committed + cost > supply.capacity {
         let (c, cap) = (supply.committed, supply.capacity);
         return Some(match hint {
-            Some(name) => format!("Not enough supply ({c}/{cap}). Build a {name}."),
-            None => format!("Not enough supply ({c}/{cap})."),
+            Some(id) => crate::msg!(
+                "message.not-enough-supply-build",
+                used = c,
+                capacity = cap,
+                name = canopy_content::text::name(id)
+            ),
+            None => crate::msg!("message.not-enough-supply", used = c, capacity = cap),
         });
     }
     None
@@ -218,7 +223,7 @@ pub fn hints(catalog: &Catalog, setup: &MatchSetup) -> BTreeMap<Owner, String> {
                     .then_with(|| a.id.cmp(&b.id))
             });
         if let Some(d) = pick {
-            out.insert(Owner::Player(slot.player), d.name.clone());
+            out.insert(Owner::Player(slot.player), d.id.to_string());
         }
     }
     out
@@ -336,13 +341,14 @@ pub fn hero_admission(
         return None;
     }
     if roster.definitions.contains(&d.id) {
-        return Some("This hero already belongs to your roster. Revive fallen heroes.".into());
+        return Some("message.this-hero-already-belongs-to-your".into());
     }
     let used = roster.used();
     (used >= roster.capacity as usize).then(|| {
-        format!(
-            "Hero roster full ({used}/{}). Upgrade a Hall.",
-            roster.capacity
+        crate::msg!(
+            "message.hero-roster-full",
+            count = used,
+            capacity = roster.capacity
         )
     })
 }

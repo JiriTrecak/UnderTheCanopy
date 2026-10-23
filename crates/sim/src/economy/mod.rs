@@ -182,27 +182,31 @@ pub enum Status {
 }
 
 impl Status {
-    /// The old game's status line; `supply` names the building that adds supply.
+    /// The old game's status line, as a text library key or an encoded message (D96);
+    /// `supply` is the id of the building that adds supply.
     pub fn label(self, supply: Option<&str>) -> String {
         match self {
-            Self::Idle => "Idle".into(),
-            Self::Paused => "Paused".into(),
-            Self::Upgrading => "Upgrading".into(),
-            Self::RevivingHero => "Reviving hero".into(),
-            Self::WaitingForStoredResources => "Waiting for stored resources".into(),
-            Self::Training => "Training".into(),
-            Self::WorkerBusy => "Worker busy".into(),
-            Self::WaitingForWorker => "Waiting for worker".into(),
-            Self::Planting => "Planting".into(),
-            Self::NoReachableResource => "No reachable eligible resource".into(),
-            Self::UnitLimitReached => "Unit limit reached".into(),
-            Self::Researching => "Researching".into(),
+            Self::Idle => "status.idle".into(),
+            Self::Paused => "status.paused".into(),
+            Self::Upgrading => "status.upgrading".into(),
+            Self::RevivingHero => "status.reviving-hero".into(),
+            Self::WaitingForStoredResources => "status.waiting-for-stored-resources".into(),
+            Self::Training => "status.training".into(),
+            Self::WorkerBusy => "status.worker-busy".into(),
+            Self::WaitingForWorker => "status.waiting-for-worker".into(),
+            Self::Planting => "status.planting".into(),
+            Self::NoReachableResource => "status.no-reachable-resource".into(),
+            Self::UnitLimitReached => "message.unit-limit-reached".into(),
+            Self::Researching => "status.researching".into(),
             Self::SupplyBlocked => match supply {
-                Some(name) => format!("Supply blocked — build a {name} or free supply"),
-                None => "Supply blocked — free supply".into(),
+                Some(id) => crate::msg!(
+                    "status.supply-blocked-build",
+                    name = canopy_content::text::name(id)
+                ),
+                None => "status.supply-blocked".into(),
             },
-            Self::DeploymentBlocked => "Deployment blocked".into(),
-            Self::Unpowered => "Unpowered: outside the network".into(),
+            Self::DeploymentBlocked => "status.deployment-blocked".into(),
+            Self::Unpowered => "status.unpowered".into(),
         }
     }
 }

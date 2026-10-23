@@ -12,7 +12,7 @@ use economy_fixture::*;
 use serde_json::{Value, json};
 use std::collections::BTreeSet;
 
-const REFUSED: &str = "Not available in this mission";
+const REFUSED: &str = "message.not-available-in-mission";
 
 fn ids(list: &[&str]) -> BTreeSet<Id> {
     list.iter().map(|i| Id::new(*i).unwrap()).collect()

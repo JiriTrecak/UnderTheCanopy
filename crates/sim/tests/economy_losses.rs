@@ -36,7 +36,7 @@ fn a_carrier_killed_on_its_way_loses_its_goods() {
         .state()
         .facts
         .iter()
-        .find(|f| f.message == "Carrier cargo lost")
+        .find(|f| f.message == "message.carrier-cargo-lost")
         .expect("loss recorded");
     assert_eq!(
         (lost.kind, lost.owner, lost.amount),
@@ -67,7 +67,7 @@ fn a_hero_fallen_in_combat_is_revived() {
             &mut world,
             json!({"type": "produce", "actor": sanctuary, "definition": HERO})
         ),
-        Some("This hero already belongs to your roster. Revive fallen heroes.".into())
+        Some("message.this-hero-already-belongs-to-your".into())
     );
     assert_eq!(
         try_command(

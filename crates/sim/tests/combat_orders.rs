@@ -49,9 +49,9 @@ fn attack_commands_are_checked_like_the_old_game() {
     assert_eq!(
         errors(&world),
         [
-            "Target is not visible and damageable",
-            "No actors support that order",
-            "Not your actors",
+            "message.target-is-not-visible-and-damageable",
+            "message.no-actors-support-that-order",
+            "message.not-your-actors",
         ]
     );
     let _ = w;

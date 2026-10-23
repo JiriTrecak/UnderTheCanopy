@@ -118,5 +118,5 @@ fn flyers_cross_walls_and_water_and_ignore_ground_bodies() {
     assert!(max_dy < 0.01, "{max_dy}");
     // The cliff runs the whole map: the walker cannot follow.
     assert!(at(&world, "g").0 < 60.0);
-    assert_eq!(errors(&world), ["Move destination is unreachable"]);
+    assert_eq!(errors(&world), ["message.move-destination-is-unreachable"]);
 }

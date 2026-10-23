@@ -222,36 +222,36 @@ pub fn use_item(
     let catalog = ctx.catalog();
     let tick = state.tick;
     let Some(e) = state.entities.get(hero) else {
-        return Err("This item cannot be used");
+        return Err("message.this-item-cannot-be-used");
     };
     let item = e
         .equipment
         .as_ref()
         .and_then(|q| q.slots.get(slot).copied().flatten());
     let Some(item) = item else {
-        return Err("This item cannot be used");
+        return Err("message.this-item-cannot-be-used");
     };
     let Some(decl) = catalog.items.get(item) else {
-        return Err("This item cannot be used");
+        return Err("message.this-item-cannot-be-used");
     };
     let effect = decl.effect.clone();
     let consumable = matches!(effect, ItemEffect::Consumable { .. });
     if effect.active().is_none() && !consumable {
-        return Err("This item cannot be used");
+        return Err("message.this-item-cannot-be-used");
     }
     if !actor::alive(e)
         || crate::abilities::statuses::stunned(catalog, e)
         || crate::abilities::statuses::item_blocked(catalog, e)
         || e.caster.as_ref().is_some_and(|c| c.pending.is_some())
     {
-        return Err("Cannot use items while busy or stunned");
+        return Err("message.cannot-use-items-while-busy-or");
     }
     if let ItemEffect::Consumable {
         permanent: Some(_), ..
     } = &effect
     {
         if !power_up(ctx, state, hero, item) {
-            return Err("Only a hero can use this item");
+            return Err("message.only-a-hero-can-use-this");
         }
         consume(state, hero, slot);
         return Ok(());
@@ -263,10 +263,10 @@ pub fn use_item(
         (r.ready_tick, r.charges)
     };
     if ready > tick {
-        return Err("Item is cooling down");
+        return Err("message.item-is-cooling-down");
     }
     if charges == Some(0) {
-        return Err("No charges remaining");
+        return Err("message.no-charges-remaining");
     }
     let relation = match active.as_ref().map_or(ActiveTarget::Caster, |a| a.target) {
         ActiveTarget::Caster => Relation::Caster,
@@ -293,7 +293,7 @@ pub fn use_item(
         .and_then(|a| a.heal_max_permille)
         .unwrap_or(0);
     if recipients.is_empty() {
-        return Err("No targets in range");
+        return Err("message.no-targets-in-range");
     }
     let only_restores = active.as_ref().is_none_or(|a| {
         a.status.is_none() && a.damage.is_none() && a.reduce_ability_cooldown_ticks.is_none()
@@ -306,7 +306,7 @@ pub fn use_item(
                 || (mana > 0 && e.caster.as_ref().is_some_and(|c| c.mana < stats.max_mana))
         });
         if !useful {
-            return Err("Health and mana are already full");
+            return Err("message.health-and-mana-are-already-full");
         }
     }
     for &t in &recipients {

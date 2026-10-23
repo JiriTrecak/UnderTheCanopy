@@ -143,13 +143,13 @@ fn commands_are_validated() {
     let played = script.play();
     let errors = played.errors();
     for expected in [
-        "Invalid target relationship",
-        "Not enough mana",
-        "Target does not match spell filters",
-        "Not your actors",
-        "Learn this ability first",
-        "Caster is busy",
-        "Ability is cooling down",
+        "message.invalid-target-relationship",
+        "message.not-enough-mana",
+        "message.target-does-not-match-spell-filters",
+        "message.not-your-actors",
+        "message.learn-this-ability-first",
+        "message.caster-is-busy",
+        "message.ability-is-cooling-down",
     ] {
         assert!(
             errors.iter().any(|e| e == expected),
@@ -244,7 +244,7 @@ fn silence_blocks_casting() {
         played
             .errors()
             .iter()
-            .any(|e| e == "Caster is unable to cast"),
+            .any(|e| e == "message.caster-is-unable-to-cast"),
         "{:?}",
         played.errors()
     );
@@ -330,8 +330,12 @@ fn heroes_learn_ranks_with_skill_points() {
     .set(50, "a", json!({"experience": 300}))
     .play();
     let errors = played.errors();
-    assert!(errors.iter().any(|e| e == "Learn this ability first"));
-    assert!(errors.iter().any(|e| e == "Hero level is too low"));
+    assert!(
+        errors
+            .iter()
+            .any(|e| e == "message.learn-this-ability-first")
+    );
+    assert!(errors.iter().any(|e| e == "message.hero-level-is-too-low"));
     let damage: Vec<i64> = played
         .of(EventKind::Damaged)
         .iter()
@@ -402,7 +406,7 @@ fn channels_release_waves_until_interrupted() {
     assert_eq!(broken.count(EventKind::Cancelled), 1);
     assert_eq!(
         broken.of(EventKind::Cancelled)[0].reason.as_deref(),
-        Some("Channel target lost")
+        Some("message.channel-target-lost")
     );
     assert!(broken.count(EventKind::Drained) >= 1);
     assert!(broken.total(EventKind::Drained) >= 25);

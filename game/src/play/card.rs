@@ -368,13 +368,14 @@ fn supply_hint(k: &Knowledge) -> Option<String> {
                 .as_ref()
                 .map_or(0, |c| c.items().iter().map(|i| i.amount).sum::<u32>())
         })
-        .map(|d| d.name.clone())
+        .map(|d| d.id.to_string())
 }
 
 /// Why a unit costing `cost` supply cannot be queued (old `supplyAdmission`).
 fn supply_admission(k: &Knowledge, cost: u32) -> Option<String> {
     let colony = k.view.colony.as_ref()?;
     canopy_sim::economy::supply::admission(&colony.supply, cost, supply_hint(k).as_deref())
+        .map(|m| crate::text::message(&m))
 }
 
 /// Why a hero cannot be trained (old `heroAdmission`).

@@ -360,21 +360,21 @@ fn gather_command_validation() {
             &mut world,
             json!({"type": "gather", "actors": [worker], "target": empty})
         ),
-        Some("Resource is not visible".into())
+        Some("message.resource-is-not-visible".into())
     );
     assert_eq!(
         try_command(
             &mut world,
             json!({"type": "gather", "actors": [soldier], "target": mine})
         ),
-        Some("No eligible workers can gather this resource".into())
+        Some("message.no-eligible-workers-can-gather-this".into())
     );
     assert_eq!(
         try_command(
             &mut world,
             json!({"type": "gather", "actors": [theirs], "target": mine})
         ),
-        Some("Not your actors".into())
+        Some("message.not-your-actors".into())
     );
     assert_eq!(
         try_command(

@@ -105,17 +105,17 @@ pub fn tick(ctx: &mut Ctx, state: &mut State) {
             reason = if tick >= instance.expires {
                 Some("Expired")
             } else if source.as_ref().is_some_and(|s| s.owner != instance.owner) {
-                Some("Owner changed")
+                Some("message.owner-changed")
             } else if d.ends_with_caster && !source.as_ref().is_some_and(|s| s.alive) {
-                Some("Caster died")
+                Some("message.caster-died")
             } else if d.ends_with_caster && source.as_ref().is_some_and(|s| !s.targetable) {
-                Some("Caster unavailable")
+                Some("message.caster-unavailable")
             } else if center.is_none() || target_lost {
-                Some("Target lost")
+                Some("message.target-lost")
             } else if target_ineligible {
-                Some("Target no longer eligible")
+                Some("message.target-no-longer-eligible")
             } else if tethered {
-                Some("Tether broken")
+                Some("message.tether-broken")
             } else {
                 None
             };
@@ -127,7 +127,7 @@ pub fn tick(ctx: &mut Ctx, state: &mut State) {
                     .and_then(|e| e.caster.as_ref())
                     .map_or(0, |c| c.mana);
                 if mana < upkeep {
-                    reason = Some("Mana exhausted");
+                    reason = Some("message.mana-exhausted");
                 } else {
                     if upkeep > 0
                         && let Some(c) = state
@@ -195,7 +195,7 @@ pub fn tick(ctx: &mut Ctx, state: &mut State) {
                 }
             }
         } else {
-            reason = Some("Definition unavailable");
+            reason = Some("message.definition-unavailable");
         }
         // Programs may have toggled or ended instances: find this one again.
         let at = state

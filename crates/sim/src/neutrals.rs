@@ -240,13 +240,13 @@ fn take_problem(catalog: &Catalog, hero: &Entity, item: Def) -> Option<&'static 
         return hero
             .progression
             .is_none()
-            .then_some("Only a hero can use this item");
+            .then_some("message.only-a-hero-can-use-this");
     }
     let free = hero
         .equipment
         .as_ref()
         .is_some_and(|q| q.slots.contains(&None));
-    (!free).then_some("Inventory is full")
+    (!free).then_some("message.inventory-is-full")
 }
 
 /// The units of `owner` that could carry what a shop sells, within its range, nearest
@@ -290,19 +290,22 @@ pub fn buy(
     item: &Id,
 ) -> Result<(), String> {
     let catalog = ctx.catalog();
-    let s = state.entities.get(shop).ok_or("Shop is not visible")?;
+    let s = state
+        .entities
+        .get(shop)
+        .ok_or("message.shop-is-not-visible")?;
     if !ctx.senses.sight(state).seen(owner, s) || s.hp.is_some_and(|hp| hp == 0) {
-        return Err("Shop is not visible".into());
+        return Err("message.shop-is-not-visible".into());
     }
     let stalls = &s.shop.as_ref().expect("a shop").stalls;
     let Some(slot) = stalls.iter().position(|st| &st.ware.item == item) else {
-        return Err("Not sold here".into());
+        return Err("message.not-sold-here".into());
     };
     let stall = &stalls[slot];
     if stall.stock == 0 {
-        return Err("Sold out".into());
+        return Err("message.sold-out".into());
     }
-    let def = catalog.find(item.as_str()).ok_or("Not sold here")?;
+    let def = catalog.find(item.as_str()).ok_or("message.not-sold-here")?;
     let price = stall.ware.price.clone();
     let candidates = buyers(catalog, state, owner, s);
     if candidates.is_empty() {
@@ -320,13 +323,13 @@ pub fn buy(
         }
     });
     let Some(hero) = hero else {
-        return Err(problem.unwrap_or("Inventory is full").into());
+        return Err(problem.unwrap_or("message.inventory-is-full").into());
     };
     {
         let ectx = ctx.economy.ctx(state, catalog, ctx.spatial);
         let reservation =
             crate::economy::stock::reserve(ectx.state, catalog, ectx.index, owner, &price)
-                .ok_or("Insufficient resources")?;
+                .ok_or("message.insufficient-resources")?;
         crate::economy::stock::pay(ectx.state, &reservation);
         for cost in &price {
             crate::economy::stock::record(

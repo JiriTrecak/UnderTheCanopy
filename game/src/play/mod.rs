@@ -467,7 +467,7 @@ impl Play {
             && !self.quiet_facts
             && self.know.view.tick.saturating_sub(f.tick) < ERROR_FACT_TICKS
         {
-            self.message = Some((f.message.clone(), self.now));
+            self.message = Some((crate::text::message(&f.message), self.now));
         }
         if newest.is_some() {
             self.seen_fact = newest;

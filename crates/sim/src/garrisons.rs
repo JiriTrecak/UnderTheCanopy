@@ -417,7 +417,7 @@ pub fn command(
             let append = append.unwrap_or(false);
             let host = state.entities.get(EntityId(*target));
             let Some(host) = host.filter(|h| visible(state, h)) else {
-                return Err("No visible friendly watchtower".into());
+                return Err("message.no-visible-friendly-watchtower".into());
             };
             let chosen = eligible_actors.iter().copied().find(|&id| {
                 let e = state.entities.get(id).expect("actor");
@@ -426,9 +426,7 @@ pub fn command(
                     && available(state, catalog, spatial, e, host)
             });
             let Some(id) = chosen else {
-                return Err(
-                    "The watchtower needs one available Archer and an empty lookout".into(),
-                );
+                return Err("message.the-watchtower-needs-one-available-archer".into());
             };
             let host = host.id;
             issue(state, id, Order::Garrison { target: host }, append);
@@ -450,14 +448,14 @@ pub fn command(
                 })
                 .map(|e| e.id);
             let Some(occupant) = occupant else {
-                return Err("The watchtower is empty".into());
+                return Err("message.the-watchtower-is-empty".into());
             };
             let e = state.entities.get_mut(occupant).expect("occupant");
             leave(e.unit.as_mut().expect("unit"));
             settle(spatial, e);
             Ok(vec![host])
         }
-        _ => Err("Invalid request".into()),
+        _ => Err("message.invalid-request".into()),
     }
 }
 

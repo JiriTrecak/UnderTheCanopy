@@ -220,7 +220,7 @@ fn charges_carry_the_caster_to_the_target() {
         played
             .errors()
             .iter()
-            .any(|e| e == "Target does not match spell filters")
+            .any(|e| e == "message.target-does-not-match-spell-filters")
     );
     assert_eq!(played.count(EventKind::Impact), 1);
     assert_eq!(played.at(EventKind::StatusApplied, "b").len(), 1);
@@ -458,8 +458,8 @@ fn weapon_casts_enhance_the_next_shot() {
         played
             .errors()
             .iter()
-            .any(|e| e == "This unit cannot use that weapon ability"
-                || e == "Ability requires a different weapon kind"),
+            .any(|e| e == "message.this-unit-cannot-use-that-weapon"
+                || e == "message.ability-requires-a-different-weapon-kind"),
         "{:?}",
         played.errors()
     );

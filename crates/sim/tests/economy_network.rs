@@ -60,8 +60,9 @@ fn buildings_that_need_power_are_placed_only_inside_the_network() {
     // 22 cells from the nexus: outside its 16.
     assert_eq!(
         try_command(&mut world, build(worker, WORKSHOP, 41.5, 21.5)),
-        Some(format!(
-            "Build inside your network: extend it with a {PYLON}"
+        Some(canopy_sim::msg!(
+            "message.build-inside-network-with",
+            node = canopy_content::text::name(PYLON)
         ))
     );
     assert_eq!(wallet(&world, P1, AMBER), 100, "nothing is paid");

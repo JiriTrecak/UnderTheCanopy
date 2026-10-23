@@ -3,6 +3,20 @@
 //! No I/O, clocks or threads: the same commands on the same content and map produce the
 //! same results on every machine.
 
+/// An encoded message (D96) the simulation keeps where it once kept English:
+/// `msg!("message.build-on", name = name(id))`, `msg!("message.build-within", cells = 12, name = name(id))`.
+#[macro_export]
+macro_rules! msg {
+    ($key:literal) => {
+        canopy_content::text::Message::new($key).encode()
+    };
+    ($key:literal, $($name:ident = $value:expr),+ $(,)?) => {
+        canopy_content::text::Message::new($key)
+            $(.with(stringify!($name), $value))+
+            .encode()
+    };
+}
+
 pub mod abilities;
 pub mod action;
 pub mod ai;

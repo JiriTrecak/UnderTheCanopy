@@ -173,7 +173,7 @@ impl World {
                     .entities
                     .iter()
                     .find(|e| e.placement.as_deref() == Some(start.main_fort.as_str()))
-                    .ok_or_else(|| SetupError("Missing main fort".into()))?;
+                    .ok_or_else(|| SetupError("message.missing-main-fort".into()))?;
                 state.objectives.insert(start.owner(), fort.id.0);
             }
         }
@@ -797,10 +797,10 @@ impl World {
             return Err(reason.into());
         }
         if self.state.outcome.is_some() {
-            return Err("Match has ended".into());
+            return Err("message.match-ended".into());
         }
         if self.defeated(owner) {
-            return Err("Your colony has been defeated".into());
+            return Err("message.your-colony-has-been-defeated".into());
         }
         match action {
             Action::Noop => Ok(()),

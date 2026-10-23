@@ -89,7 +89,7 @@ pub fn can_build(
         d.kind == Kind::Building && matches!(d.creation, Some(Creation::Construct { .. }))
     });
     let Some(def) = def else {
-        return Some("Unknown building".into());
+        return Some("message.unknown-building".into());
     };
     let d = ctx.catalog.get(def);
     let f = Foundation::of(def, point, rotation);
@@ -98,7 +98,7 @@ pub fn can_build(
         return Some(error.into());
     }
     if point.surface.is_some() {
-        return Some("Buildings require ground foundations".into());
+        return Some("message.buildings-require-ground-foundations".into());
     }
     let eligible = builder
         .and_then(|b| ctx.state.entities.get(b))
@@ -117,10 +117,10 @@ pub fn can_build(
                     .is_some_and(|u| u.contained.is_none() && u.release.is_none())
         });
     if !eligible {
-        return Some("Select an eligible worker".into());
+        return Some("message.select-eligible-worker".into());
     }
     if ctx.state.outcome.is_some() {
-        return Some("Match has ended".into());
+        return Some("message.match-ended".into());
     }
     if let Some(reason) = supply::prerequisite(ctx, owner, d.requires.as_deref()) {
         return Some(reason);
@@ -133,7 +133,7 @@ pub fn can_build(
         .filter(|e| e.owner == owner)
         .count();
     if buildings >= ctx.catalog.content.rules.max_buildings as usize {
-        return Some("Building limit reached".into());
+        return Some("message.building-limit".into());
     }
     let size = i64::from(ctx.spatial.size());
     let extent = Extent::of(d.footprint.as_ref());
@@ -146,7 +146,7 @@ pub fn can_build(
         .collect();
     let on_map: Vec<u32> = cells.iter().flatten().copied().collect();
     if cells.iter().any(Option::is_none) || !sight.explored(owner, &on_map) {
-        return Some("Explore this location first".into());
+        return Some("message.explore-first".into());
     }
     if let Some(rule) = &d.placement_near {
         let source = ctx.catalog.find(rule.source.as_str());
@@ -164,8 +164,12 @@ pub fn can_build(
                     && sight.seen(owner, e)
             });
         if !near {
-            let name = source.map_or(rule.source.as_str(), |s| ctx.catalog.get(s).name.as_str());
-            return Some(format!("Build within {} cells of {name}", rule.radius));
+            let id = source.map_or(rule.source.as_str(), |s| ctx.catalog.get(s).id.as_str());
+            return Some(crate::msg!(
+                "message.build-within",
+                cells = rule.radius,
+                name = canopy_content::text::name(id)
+            ));
         }
     }
     if d.power.is_some() && !ctx.network.covers(owner, i64::from(f.x), i64::from(f.y)) {
@@ -178,7 +182,9 @@ pub fn can_build(
         // standing one nobody has built on yet. Its footprint is the resource's own, so the
         // ground rules were the map's to keep; only the doorway must be open.
         let source = ctx.catalog.find(rule.source.as_str());
-        let name = source.map_or(rule.source.as_str(), |s| ctx.catalog.get(s).name.as_str());
+        let name = canopy_content::text::name(
+            source.map_or(rule.source.as_str(), |s| ctx.catalog.get(s).id.as_str()),
+        );
         let at = Milli { x: f.x, y: f.y };
         let resource = ctx
             .index
@@ -194,13 +200,13 @@ pub fn can_build(
                     && sight.seen(owner, e)
             });
         let Some(resource) = resource else {
-            return Some(format!("Build on a {name}"));
+            return Some(crate::msg!("message.build-on", name = name));
         };
         if super::harvest::building_on(ctx, resource).is_some() {
-            return Some(format!("This {name} is already built on"));
+            return Some(crate::msg!("message.already-built-on", name = name));
         }
         if !door_open(&ctx.ground(), def, f, rotation) {
-            return Some("Entrance blocked".into());
+            return Some("message.entrance-blocked".into());
         }
         return affordable(ctx, owner, def);
     }
@@ -243,23 +249,23 @@ fn ground(
         })
     });
     if blocked_cell || blocked_body {
-        return Some("Placement blocked");
+        return Some("message.placement-blocked");
     }
     if access_blocked(ctx, bounds) {
-        return Some("Leave access around the resource deposit");
+        return Some("message.deposit-access");
     }
     let terrain = ctx.spatial.terrain();
     let wet = on_map.iter().any(|&c| {
         i32::from(terrain.height_cm(c as usize)) <= i32::from(terrain.water_cm(c as usize)) + 10
     });
     if wet {
-        return Some("Build on dry ground");
+        return Some("message.dry-ground");
     }
     if !terrain.foundation_fits(*bounds) {
-        return Some("Choose flatter ground");
+        return Some("message.flatter-ground");
     }
     if !door_open(ctx, def, f, rotation) {
-        return Some("Entrance blocked");
+        return Some("message.entrance-blocked");
     }
     None
 }
@@ -384,7 +390,7 @@ fn affordable(ctx: &Ctx, owner: Owner, def: Def) -> Option<String> {
     )
     .is_none()
     {
-        return Some("Insufficient unreserved materials".into());
+        return Some("message.insufficient-materials".into());
     }
     None
 }
@@ -486,9 +492,9 @@ pub fn check_build(
         .copied()
         .find(|&b| !constructing(ctx, b))
         .or(builders.first().copied())
-        .ok_or("Select an eligible worker")?;
+        .ok_or("message.select-eligible-worker")?;
     if !crate::orders::can_issue(ctx.state.entities.get(builder).expect("builder"), append) {
-        return Err("Order queue is full".into());
+        return Err("message.order-queue-is-full".into());
     }
     if let Some(reason) = can_build(
         ctx,
@@ -703,7 +709,7 @@ pub fn advance_construct(ctx: &mut Ctx, id: u32) {
             ctx.state,
             owner,
             crate::state::FactKind::Consumed,
-            "Production input consumed",
+            "message.production-input-consumed",
             Some((&cost.item, cost.amount)),
         );
     }

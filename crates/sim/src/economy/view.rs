@@ -75,7 +75,8 @@ pub struct PrivateWork {
     pub job: Option<JobView>,
     pub employment: Option<EntityId>,
     pub pending_move: Option<Place>,
-    /// The old status line: "Available", "harvest", "Delivering before move", …
+    /// The old status line ("Available", "harvest", "Delivering before move", …), as a text
+    /// library key or an encoded message (D96).
     pub label: String,
     pub production: Option<Production>,
     /// The workplace status line.
@@ -460,13 +461,13 @@ pub fn private(
                     .clone()
             });
         out.label = if u.work.pending_move.is_some() {
-            "Delivering before move".into()
+            "message.delivering-before-move".into()
         } else if u.release.is_some() {
-            "Waiting for release".into()
+            "status.waiting-for-release".into()
         } else if u.contained.is_some() {
-            "Training".into()
+            "status.training".into()
         } else if u.work.cargo.is_some() && job.is_none() {
-            "Cargo blocked".into()
+            "status.cargo-blocked".into()
         } else if let Some(job) = job {
             match &label {
                 Some(label) => format!("{label} · {}", job.kind.name()),
@@ -475,12 +476,12 @@ pub fn private(
         } else if let Some(label) = label {
             format!("{label} · waiting")
         } else if u.order.is_some() {
-            "Following order".into()
+            "status.following-order".into()
         } else {
-            "Available".into()
+            "status.available".into()
         };
     } else {
-        out.label = "Available".into();
+        out.label = "status.available".into();
     }
     if let Some(c) = &e.construction {
         let total = match &d.creation {

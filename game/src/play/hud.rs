@@ -901,7 +901,11 @@ impl Hud {
             } else if !self.queue.is_empty() {
                 self.active = Some(self.queue.remove(0));
             }
-            status = w.status.clone().filter(|s| !s.is_empty());
+            status = w
+                .status
+                .as_deref()
+                .filter(|s| !s.is_empty())
+                .map(crate::text::message);
         }
         // A building that makes goods by itself says what it makes (D62: a well).
         if let Some(income) = &d.income
@@ -942,7 +946,9 @@ impl Hud {
         // Out of the network its work waits (D66), whatever it is.
         let unpowered = e.work.as_ref().is_some_and(|w| w.unpowered);
         if unpowered {
-            status = Some(canopy_sim::economy::Status::Unpowered.label(None));
+            status = Some(crate::text::message(
+                &canopy_sim::economy::Status::Unpowered.label(None),
+            ));
         }
         if let Some(c) = e.public.construction {
             let total = d.creation.as_ref().map_or(1, |c| match c {

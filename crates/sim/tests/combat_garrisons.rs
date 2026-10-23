@@ -47,7 +47,7 @@ fn an_archer_walks_in_and_stands_on_the_lookout() {
     run(&mut world, 1);
     assert_eq!(
         errors(&world),
-        ["The watchtower needs one available Archer and an empty lookout"]
+        ["message.the-watchtower-needs-one-available-archer"]
     );
     command(
         &mut world,
@@ -115,7 +115,10 @@ fn the_lookout_shoots_and_cannot_be_targeted() {
         json!({"type": "attack", "actors": [e1], "target": a}),
     );
     run(&mut world, 1);
-    assert_eq!(errors(&world), ["Target is not visible and damageable"]);
+    assert_eq!(
+        errors(&world),
+        ["message.target-is-not-visible-and-damageable"]
+    );
     command(
         &mut world,
         2,
@@ -149,7 +152,7 @@ fn orders_unload_and_a_lost_tower_put_the_archer_outside() {
     assert_eq!((outside.x / 1000, outside.y / 1000), (102, 104));
     command(&mut world, 1, json!({"type": "unload", "actor": t}));
     run(&mut world, 1);
-    assert_eq!(errors(&world), ["The watchtower is empty"]);
+    assert_eq!(errors(&world), ["message.the-watchtower-is-empty"]);
     // Back in, then the tower is destroyed: the archer is released.
     command(
         &mut world,

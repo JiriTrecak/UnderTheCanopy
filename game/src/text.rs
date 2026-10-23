@@ -67,6 +67,12 @@ macro_rules! tr {
     };
 }
 
+/// Text the simulation produced (a key, an encoded message or older plain English), as
+/// players read it (D96).
+pub fn message(text: &str) -> String {
+    get().say(text)
+}
+
 /// A layout lookup for the UI ([`canopy_ui::UiConfig::localize`]).
 pub fn lookup(key: &str) -> Option<String> {
     get().get(key).map(str::to_string)

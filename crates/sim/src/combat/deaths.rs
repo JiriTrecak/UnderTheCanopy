@@ -107,7 +107,7 @@ fn credited(
     });
     // Abilities hear of the death and its casts end; units other than heroes drop items.
     crate::abilities::reactions::death(ctx, state, id);
-    crate::abilities::cast::cancel(ctx, state, id, "Caster died");
+    crate::abilities::cast::cancel(ctx, state, id, "message.caster-died");
     let senses = ctx.senses;
     camps::on_death(state, senses.catalog, ctx.spatial, senses.camps, id);
     crate::neutrals::on_death(state, senses.catalog, ctx.spatial, id);
@@ -119,7 +119,7 @@ fn credited(
     let e = state.entities.get_mut(id).expect("dead");
     e.statuses.clear();
     let (owner, hero) = (e.owner, senses.combat.profile(e.definition).hero);
-    state.fact(owner, FactKind::Death, "Entity destroyed");
+    state.fact(owner, FactKind::Death, "message.entity-destroyed");
     // Split forms and carriers let go of what they hold (old `onRemoving`).
     crate::abilities::world_ops::removing(ctx, state, id);
     crate::abilities::world_ops::release_hosted(ctx, state, id);

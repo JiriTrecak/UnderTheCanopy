@@ -67,7 +67,13 @@ fn levelling_raises_stats_and_keeps_damage_taken() {
             .state()
             .facts
             .iter()
-            .any(|f| f.kind == FactKind::Command && f.message == "unit.hero reached level 2")
+            .any(|f| f.kind == FactKind::Command
+                && f.message
+                    == canopy_sim::msg!(
+                        "message.reached-level",
+                        name = canopy_content::text::name("unit.hero"),
+                        level = 2
+                    ))
     );
 }
 

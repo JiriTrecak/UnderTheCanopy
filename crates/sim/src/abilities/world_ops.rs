@@ -55,7 +55,7 @@ fn sacrifice_reason(
     target: EntityId,
 ) -> Option<&'static str> {
     let (Some(s), Some(t)) = (state.entities.get(source), state.entities.get(target)) else {
-        return Some("Sacrifice requires an owned, living non-hero unit other than the caster");
+        return Some("message.sacrifice-requires-an-owned-living-non");
     };
     let bad = !alive(s)
         || s.unit.is_none()
@@ -69,7 +69,7 @@ fn sacrifice_reason(
         || hero(ctx, t)
         || split_member(t)
         || held(t);
-    bad.then_some("Sacrifice requires an owned, living non-hero unit other than the caster")
+    bad.then_some("message.sacrifice-requires-an-owned-living-non")
 }
 
 fn hero(ctx: &Ctx, e: &crate::entity::Entity) -> bool {
@@ -130,16 +130,16 @@ fn contain_reason(
 ) -> Option<&'static str> {
     let h = state.entities.get(host);
     if h.is_none_or(|h| h.unit.is_none() || !alive(h) || held(h)) {
-        return Some("Carrier is unavailable");
+        return Some("message.carrier-is-unavailable");
     }
     let v = state.entities.get(victim);
     if v.is_none_or(|v| {
         v.unit.is_none() || !alive(v) || v.id == host || hero(ctx, v) || split_member(v) || held(v)
     }) {
-        return Some("Choose an available non-hero unit");
+        return Some("message.choose-an-available-non-hero-unit");
     }
     if !occupants(state, victim).is_empty() {
-        return Some("Cannot contain another occupied carrier");
+        return Some("message.cannot-contain-another-occupied-carrier");
     }
     let held_units = occupants(state, host);
     let mut capacity = capacity;
@@ -149,7 +149,7 @@ fn contain_reason(
             capacity = capacity.min(op.capacity);
         }
     }
-    (held_units.len() as u32 >= capacity).then_some("Carrier is full")
+    (held_units.len() as u32 >= capacity).then_some("message.carrier-is-full")
 }
 
 fn contained(state: &State, id: EntityId) -> Option<&Containment> {
@@ -216,7 +216,7 @@ fn convert_reason(
 ) -> Option<String> {
     let e = state.entities.get(id)?;
     if e.unit.is_none() || !alive(e) || e.fallen || hero(ctx, e) {
-        return Some("Choose a living non-hero unit".into());
+        return Some("message.choose-a-living-non-hero-unit".into());
     }
     if owner != Owner::Nobody
         && ctx
@@ -226,13 +226,13 @@ fn convert_reason(
             .player_control
             .is_none()
     {
-        return Some("Unit does not support player control".into());
+        return Some("message.unit-does-not-support-player-control".into());
     }
     if split_member(e) || held(e) {
-        return Some("Unit is unavailable".into());
+        return Some("message.unit-is-unavailable".into());
     }
     if e.owner == owner && (owner != Owner::Nobody || actor::camp(e) == camp) {
-        return Some("Unit already belongs to this controller".into());
+        return Some("message.unit-already-belongs-to-this-controller".into());
     }
     let cost = match policy {
         SupplyPolicy::Require => ctx.catalog().get(e.definition).supply_cost.unwrap_or(0),
@@ -279,7 +279,7 @@ pub fn validate_aim(
         if let Effect::Found(f) = op {
             // A colony founds; a neutral (a race's unit placed for nobody) never does.
             if c.owner == Owner::Nobody {
-                return Err("Only a colony can found");
+                return Err("message.only-a-colony-can-found");
             }
             let at = if f.target == Anchor::Caster {
                 c.position
@@ -298,7 +298,7 @@ pub fn validate_aim(
             if def.is_none_or(|d| {
                 crate::economy::construction::found_site(&ground, c.owner, d, at).is_none()
             }) {
-                return Err("No room to found here");
+                return Err("message.no-room-to-found-here");
             }
             continue;
         }
@@ -319,7 +319,7 @@ pub fn validate_aim(
             let views = super::corpses::visible(ctx, state, &caster_actor);
             let radius = library::value(spell, rank, radius);
             if super::corpses::select(&views, radius, relations, filter, order, point).is_empty() {
-                return Err("No corpses nearby");
+                return Err("message.no-corpses-nearby");
             }
             continue;
         }
@@ -359,7 +359,7 @@ pub fn validate_aim(
         {
             let radius = library::value(spell, rank, &t.amount);
             if landing(ctx, state, caster, t, radius, point, None, c.position).is_none() {
-                return Err("No clear arrival position");
+                return Err("message.no-clear-arrival-position");
             }
         }
         if op.target() != Anchor::Target {
@@ -393,12 +393,16 @@ pub fn validate_aim(
 /// Rejection messages are static in the cast path; dynamic supply messages are interned.
 fn leak(message: String) -> &'static str {
     match message.as_str() {
-        "Choose a living non-hero unit" => "Choose a living non-hero unit",
-        "Unit does not support player control" => "Unit does not support player control",
-        "Unit is unavailable" => "Unit is unavailable",
-        "Unit already belongs to this controller" => "Unit already belongs to this controller",
-        "Unit limit reached" => "Unit limit reached",
-        _ => "Not enough supply",
+        "message.choose-a-living-non-hero-unit" => "message.choose-a-living-non-hero-unit",
+        "message.unit-does-not-support-player-control" => {
+            "message.unit-does-not-support-player-control"
+        }
+        "message.unit-is-unavailable" => "message.unit-is-unavailable",
+        "message.unit-already-belongs-to-this-controller" => {
+            "message.unit-already-belongs-to-this-controller"
+        }
+        "message.unit-limit-reached" => "message.unit-limit-reached",
+        _ => "message.not-enough-supply-short",
     }
 }
 
@@ -986,10 +990,10 @@ fn split_reason(
     rank: u8,
 ) -> Result<(), &'static str> {
     if !occupants(state, parent).is_empty() {
-        return Err("Release contained units before entering a linked form");
+        return Err("message.release-contained-units-before-entering-a");
     }
     let Some(p) = state.entities.get(parent) else {
-        return Err("Unit cannot enter a linked form");
+        return Err("message.unit-cannot-enter-a-linked-form");
     };
     if p.unit.is_none()
         || !alive(p)
@@ -997,14 +1001,14 @@ fn split_reason(
         || split_member(p)
         || held(p)
     {
-        return Err("Unit cannot enter a linked form");
+        return Err("message.unit-cannot-enter-a-linked-form");
     }
     let s = supply(ctx, state, p.owner);
     if s.units + s.queued_units + op.members.len() as u32 > s.unit_limit {
-        return Err("Unit limit reached");
+        return Err("message.unit-limit-reached");
     }
     if split_plan(ctx, state, parent, op, rank).is_none() {
-        return Err("Not enough clear space for every form member");
+        return Err("message.not-enough-clear-space-for-every");
     }
     Ok(())
 }
@@ -1361,7 +1365,7 @@ pub fn transfer(
         return false;
     }
     release_hosted(ctx, state, id);
-    cast::cancel(ctx, state, id, "Owner changed");
+    cast::cancel(ctx, state, id, "message.owner-changed");
     {
         let mut ectx = ctx.economy.ctx(state, ctx.senses.catalog, ctx.spatial);
         crate::economy::work::detach_unit(&mut ectx, id);

@@ -315,7 +315,11 @@ pub(crate) fn move_order(
                     u.order = None;
                     discard_navigation(u);
                     spatial.update_body(e);
-                    state.fact(owner, FactKind::Error, "Move destination is unreachable");
+                    state.fact(
+                        owner,
+                        FactKind::Error,
+                        "message.move-destination-is-unreachable",
+                    );
                 }
             }
         }

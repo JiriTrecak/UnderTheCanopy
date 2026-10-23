@@ -29,13 +29,9 @@ fn a_colony_without_buildings_is_defeated_and_the_last_team_wins() {
         world.state().entities.iter().all(|e| e.owner != P2),
         "the defeated colony leaves"
     );
-    assert!(
-        world
-            .state()
-            .facts
-            .iter()
-            .any(|f| f.owner == P2 && f.kind == FactKind::Death && f.message == "Colony defeated")
-    );
+    assert!(world.state().facts.iter().any(|f| f.owner == P2
+        && f.kind == FactKind::Death
+        && f.message == "message.colony-defeated"));
     let tick = world.state().tick;
     let fingerprint = world.fingerprint();
     run(&mut world, 3);
@@ -44,7 +40,7 @@ fn a_colony_without_buildings_is_defeated_and_the_last_team_wins() {
     let worker = all_of(&world, P1, WORKER)[0];
     assert_eq!(
         try_command(&mut world, json!({"type": "stop", "actors": [worker]})),
-        Some("Match has ended".into())
+        Some("message.match-ended".into())
     );
 }
 
@@ -95,7 +91,7 @@ fn allies_win_together_and_a_defeated_player_is_refused() {
             .state()
             .facts
             .iter()
-            .any(|f| f.owner == P2 && f.message == "Your colony has been defeated")
+            .any(|f| f.owner == P2 && f.message == "message.your-colony-has-been-defeated")
     );
     for hall in halls(&world, p3) {
         world.remove_entity(EntityId(hall));

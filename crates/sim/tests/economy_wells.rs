@@ -44,11 +44,17 @@ fn a_well_stands_exactly_on_a_free_deposit() {
     let (worker, helper) = (id(&world, "worker"), id(&world, "helper"));
     assert_eq!(
         try_command(&mut world, build(worker, WELL, 29.5, 29.5)),
-        Some(format!("Build on a {SPRING}"))
+        Some(canopy_sim::msg!(
+            "message.build-on",
+            name = canopy_content::text::name(SPRING)
+        ))
     );
     assert_eq!(
         try_command(&mut world, build(worker, WELL, AT.0 + 4.0, AT.1)),
-        Some(format!("Build on a {SPRING}")),
+        Some(canopy_sim::msg!(
+            "message.build-on",
+            name = canopy_content::text::name(SPRING)
+        )),
         "next to it is not on it"
     );
     assert_eq!(
@@ -64,7 +70,10 @@ fn a_well_stands_exactly_on_a_free_deposit() {
     );
     assert_eq!(
         try_command(&mut world, build(helper, WELL, AT.0, AT.1)),
-        Some(format!("This {SPRING} is already built on"))
+        Some(canopy_sim::msg!(
+            "message.already-built-on",
+            name = canopy_content::text::name(SPRING)
+        ))
     );
     world.verify_economy().unwrap();
 }

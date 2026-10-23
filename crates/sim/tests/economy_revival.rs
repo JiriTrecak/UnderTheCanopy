@@ -74,7 +74,7 @@ fn a_fallen_hero_is_revived_beside_the_doorway() {
         .state()
         .facts
         .iter()
-        .find(|f| f.message == "Hero revival completed")
+        .find(|f| f.message == "message.hero-revival-completed")
         .unwrap();
     assert_eq!(
         (consumed.kind, consumed.amount),
@@ -100,23 +100,23 @@ fn revival_validation_and_refund() {
     );
     assert_eq!(
         try_command(&mut world, revive(hall, fallen)),
-        Some("Select a completed revival building".into())
+        Some("message.select-a-completed-revival-building".into())
     );
     assert_eq!(
         try_command(&mut world, revive(sanctuary, enemy)),
-        Some("Choose one of your fallen heroes".into())
+        Some("message.choose-one-of-your-fallen-heroes".into())
     );
     assert_eq!(try_command(&mut world, revive(sanctuary, fallen)), None);
     assert_eq!(
         try_command(&mut world, revive(sanctuary, fallen)),
-        Some("Hero is already being revived".into())
+        Some("message.hero-is-already-being-revived".into())
     );
     assert_eq!(
         try_command(
             &mut world,
             json!({"type": "cancelRevival", "actor": sanctuary, "hero": enemy})
         ),
-        Some("Hero is not queued here".into())
+        Some("message.hero-is-not-queued-here".into())
     );
     run(&mut world, 10);
     assert_eq!(
@@ -131,7 +131,7 @@ fn revival_validation_and_refund() {
     fund(&mut world, P1, AMBER, 10);
     assert_eq!(
         try_command(&mut world, revive(sanctuary, fallen)),
-        Some("Insufficient resources".into())
+        Some("message.insufficient-resources".into())
     );
 }
 
@@ -154,7 +154,7 @@ fn revival_and_training_share_one_lane_in_queue_order() {
             &mut world,
             json!({"type": "produce", "actor": sanctuary, "definition": SOLDIER})
         ),
-        Some("Queue is full".into()),
+        Some("message.queue-is-full".into()),
         "three entries fill the shared lane"
     );
     // The first soldier trains while the revival waits.
@@ -181,7 +181,7 @@ fn the_roster_keeps_a_fallen_hero_and_refuses_a_second_copy() {
             &mut world,
             json!({"type": "produce", "actor": sanctuary, "definition": HERO})
         ),
-        Some("This hero already belongs to your roster. Revive fallen heroes.".into())
+        Some("message.this-hero-already-belongs-to-your".into())
     );
     let mut empty = self::world(&sandbox(vec![
         place("hall", HALL, 19.5, 19.5),
@@ -202,7 +202,7 @@ fn the_roster_keeps_a_fallen_hero_and_refuses_a_second_copy() {
             &mut empty,
             json!({"type": "produce", "actor": other, "definition": HERO})
         ),
-        Some("This hero already belongs to your roster. Revive fallen heroes.".into()),
+        Some("message.this-hero-already-belongs-to-your".into()),
         "a queued hero holds its place"
     );
     let _ = EntityId(other);

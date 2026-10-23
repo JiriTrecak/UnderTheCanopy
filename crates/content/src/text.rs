@@ -157,6 +157,126 @@ impl Text {
     }
 }
 
+/// A message by key with its arguments, carried as a string where the simulation keeps
+/// text (facts, refusals): saves and replays hold no English, and each player reads it in
+/// their own language ([`Text::message`]). A string that is not an encoded message is
+/// shown as it is (older saves).
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct Message {
+    #[serde(rename = "k")]
+    pub key: String,
+    #[serde(rename = "a", default, skip_serializing_if = "Vec::is_empty")]
+    pub args: Vec<(String, MessageArg)>,
+}
+
+/// An argument of a [`Message`]: plain text, a number, or an element whose name the
+/// reader's text library gives (`<id>.name`).
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MessageArg {
+    Text(String),
+    Number(f64),
+    Name(String),
+}
+
+impl From<&str> for MessageArg {
+    fn from(text: &str) -> Self {
+        Self::Text(text.to_string())
+    }
+}
+
+impl From<String> for MessageArg {
+    fn from(text: String) -> Self {
+        Self::Text(text)
+    }
+}
+
+impl From<&String> for MessageArg {
+    fn from(text: &String) -> Self {
+        Self::Text(text.clone())
+    }
+}
+
+macro_rules! number_message_arg {
+    ($($t:ty),*) => {$(
+        impl From<$t> for MessageArg {
+            fn from(n: $t) -> Self {
+                Self::Number(n as f64)
+            }
+        }
+    )*};
+}
+number_message_arg!(u8, u16, u32, u64, usize, i32, i64, f32, f64);
+
+/// The element `id`'s name as a message argument.
+pub fn name(id: impl std::fmt::Display) -> MessageArg {
+    MessageArg::Name(id.to_string())
+}
+
+/// What starts an encoded message.
+const MESSAGE_MARK: char = '\u{1}';
+
+impl Message {
+    pub fn new(key: &str) -> Self {
+        Self {
+            key: key.to_string(),
+            args: Vec::new(),
+        }
+    }
+
+    pub fn with(mut self, name: &str, arg: impl Into<MessageArg>) -> Self {
+        self.args.push((name.to_string(), arg.into()));
+        self
+    }
+
+    /// The message as a string the simulation can keep.
+    pub fn encode(&self) -> String {
+        let json = serde_json::to_string(self).unwrap_or_default();
+        format!("{MESSAGE_MARK}{json}")
+    }
+
+    /// A string [`encode`](Self::encode)d, if it is one.
+    pub fn decode(string: &str) -> Option<Self> {
+        serde_json::from_str(string.strip_prefix(MESSAGE_MARK)?).ok()
+    }
+}
+
+impl Text {
+    /// Text the simulation keeps, as this library reads it: a key, an encoded
+    /// [`Message`], or anything else as it is (D96).
+    pub fn say(&self, text: &str) -> String {
+        self.get(text)
+            .map_or_else(|| self.message(text), str::to_string)
+    }
+
+    /// A message as this library reads it: an encoded [`Message`] formatted with its
+    /// arguments (names looked up), anything else as it is.
+    pub fn message(&self, string: &str) -> String {
+        let Some(m) = Message::decode(string) else {
+            return string.to_string();
+        };
+        let owned: Vec<(String, String, Option<f64>)> = m
+            .args
+            .iter()
+            .map(|(n, a)| match a {
+                MessageArg::Text(t) => (n.clone(), t.clone(), None),
+                MessageArg::Number(x) => (n.clone(), String::new(), Some(*x)),
+                MessageArg::Name(id) => (
+                    n.clone(),
+                    self.get(&format!("{id}.name"))
+                        .map_or_else(|| id.clone(), str::to_string),
+                    None,
+                ),
+            })
+            .collect();
+        let args: Vec<(&str, Arg)> = owned
+            .iter()
+            .map(|(n, t, x)| (n.as_str(), x.map_or(Arg::Text(t.as_str()), Arg::Number)))
+            .collect();
+        self.format(&m.key, &args)
+    }
+}
+
 /// Every `.json` document beneath `dir` in `package`, in path order.
 fn documents(package: &Package, dir: &str, errors: &mut Vec<Error>) -> Vec<(String, Value)> {
     let mut out = Vec::new();
@@ -460,6 +580,26 @@ mod tests {
     fn markup_and_hash_outside_plurals_stay_literal() {
         let s = "[color=#fcd34d]Mission complete[/color] #1";
         assert_eq!(format(s, &[]), s);
+    }
+
+    #[test]
+    fn messages_travel_as_strings_and_read_by_key() {
+        let text = Text::from_entries(
+            "en",
+            [
+                (
+                    "message.build-within".to_string(),
+                    "Build within {cells} cells of {name}".to_string(),
+                ),
+                ("building.x.name".to_string(), "Hall".to_string()),
+            ],
+        );
+        let m = Message::new("message.build-within")
+            .with("cells", 12u32)
+            .with("name", name("building.x"))
+            .encode();
+        assert_eq!(text.message(&m), "Build within 12 cells of Hall");
+        assert_eq!(text.message("Plain old text"), "Plain old text");
     }
 
     #[test]

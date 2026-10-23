@@ -14,14 +14,14 @@ pub fn enqueue(ctx: &mut Ctx, b: EntityId) -> Result<(), String> {
         .upgrade
         .as_ref()
         .filter(|_| e.construction.is_none())
-        .ok_or("Select a completed upgradeable building")?;
+        .ok_or("message.select-a-completed-upgradeable-building")?;
     if e.upgrade.is_some() {
-        return Err("Upgrade already in progress".into());
+        return Err("message.upgrade-already-in-progress".into());
     }
     let target = ctx
         .catalog
         .find(recipe.target.as_str())
-        .ok_or("Select a completed upgradeable building")?;
+        .ok_or("message.select-a-completed-upgradeable-building")?;
     // A campaign's tech (`campaign`).
     if let Some(reason) = crate::campaign::refused(ctx.state, owner, recipe.target.as_str()) {
         return Err(reason);
@@ -32,7 +32,7 @@ pub fn enqueue(ctx: &mut Ctx, b: EntityId) -> Result<(), String> {
     }
     let Some(payment) = stock::reserve(ctx.state, ctx.catalog, ctx.index, owner, &recipe.items)
     else {
-        return Err("Insufficient resources".into());
+        return Err("message.insufficient-resources".into());
     };
     stock::pay(ctx.state, &payment);
     ctx.state.entities.get_mut(b).expect("building").upgrade = Some(UpgradeTask {
@@ -46,7 +46,7 @@ pub fn enqueue(ctx: &mut Ctx, b: EntityId) -> Result<(), String> {
 pub fn cancel(ctx: &mut Ctx, b: EntityId) -> Result<(), String> {
     let e = ctx.state.entities.get(b).expect("building");
     if e.upgrade.is_none() {
-        return Err("No upgrade in progress".into());
+        return Err("message.no-upgrade-in-progress".into());
     }
     let items = ctx
         .catalog
@@ -88,7 +88,7 @@ pub fn advance(ctx: &mut Ctx) {
                 ctx.state,
                 owner,
                 FactKind::Consumed,
-                "Building upgrade completed",
+                "message.building-upgrade-completed",
                 Some((&cost.item, cost.amount)),
             );
         }

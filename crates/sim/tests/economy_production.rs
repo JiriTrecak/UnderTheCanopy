@@ -65,7 +65,7 @@ fn a_queued_unit_is_paid_trained_and_deployed() {
         .state()
         .facts
         .iter()
-        .find(|f| f.message == "Production input consumed")
+        .find(|f| f.message == "message.production-input-consumed")
         .unwrap();
     assert_eq!(
         (consumed.kind, consumed.amount),
@@ -89,15 +89,15 @@ fn production_command_validation() {
     );
     assert_eq!(
         try_command(&mut world, produce(hall, SOLDIER)),
-        Some("Unsupported output".into())
+        Some("message.unsupported-output".into())
     );
     assert_eq!(
         try_command(&mut world, produce(house, WORKER)),
-        Some("No completed production capability".into())
+        Some("message.no-completed-production-capability".into())
     );
     assert_eq!(
         try_command(&mut world, produce(forester, TREE)),
-        Some("Unsupported output".into())
+        Some("message.unsupported-output".into())
     );
     for _ in 0..3 {
         command(&mut world, produce(hall, WORKER));
@@ -105,28 +105,28 @@ fn production_command_validation() {
     world.step();
     assert_eq!(
         try_command(&mut world, produce(hall, WORKER)),
-        Some("Queue is full".into())
+        Some("message.queue-is-full".into())
     );
     assert_eq!(
         try_command(
             &mut world,
             json!({"type": "cancel", "actor": hall, "queue": 999})
         ),
-        Some("Queue entry no longer exists".into())
+        Some("message.queue-entry-no-longer-exists".into())
     );
     assert_eq!(
         try_command(
             &mut world,
             json!({"type": "rally", "actor": forester, "destination": {"x": 5, "y": 5}})
         ),
-        Some("No unit production".into())
+        Some("message.no-unit-production".into())
     );
     assert_eq!(
         try_command(
             &mut world,
             json!({"type": "rally", "actor": hall, "destination": null, "target": theirs})
         ),
-        Some("Rally onto a visible resource or friendly unit".into())
+        Some("message.rally-onto-a-visible-resource-or".into())
     );
     fund(&mut world, P1, AMBER, 0);
     let mut world2 = hall_world(vec![]);
@@ -134,7 +134,7 @@ fn production_command_validation() {
     let hall2 = id(&world2, "hall");
     assert_eq!(
         try_command(&mut world2, produce(hall2, WORKER)),
-        Some("Insufficient unreserved materials".into())
+        Some("message.insufficient-materials".into())
     );
 }
 
@@ -306,7 +306,10 @@ fn supply_limits_queueing_and_training() {
     assert_eq!(p.queue.len(), 1);
     assert_eq!(
         p.status.label(world.economy().hint(P1)),
-        "Supply blocked — build a building.test.house or free supply"
+        canopy_sim::msg!(
+            "status.supply-blocked-build",
+            name = canopy_content::text::name("building.test.house")
+        )
     );
     let colony = world.view(P1).colony.unwrap();
     assert_eq!(
@@ -319,7 +322,12 @@ fn supply_limits_queueing_and_training() {
     );
     assert_eq!(
         try_command(&mut world, produce(hall, WORKER)),
-        Some("Not enough supply (7/6). Build a building.test.house.".into())
+        Some(canopy_sim::msg!(
+            "message.not-enough-supply-build",
+            used = 7,
+            capacity = 6,
+            name = canopy_content::text::name("building.test.house")
+        ))
     );
 }
 
@@ -344,7 +352,7 @@ fn the_unit_limit_counts_queued_units() {
     world.step();
     assert_eq!(
         try_command(&mut world, produce(hall, WORKER)),
-        Some("Unit limit reached".into())
+        Some("message.unit-limit-reached".into())
     );
 }
 

@@ -29,7 +29,7 @@ pub enum Aim {
     Point(Milli),
 }
 
-pub const OUT_OF_RANGE: &str = "Target is out of range";
+pub const OUT_OF_RANGE: &str = "message.target-is-out-of-range";
 
 /// The caster's ability state, policy and stats (old `CasterAccess`).
 pub struct Access {
@@ -112,36 +112,36 @@ pub fn eligibility(
 ) -> Result<(), &'static str> {
     let spell = ctx.ability(ability);
     if !caster.alive || caster.blocked {
-        return Err("Caster is unable to cast");
+        return Err("message.caster-is-unable-to-cast");
     }
     if spell.delivery.is_some()
         && state.abilities.deliveries.len() + delivery_count(spell, rank)
             > super::state::MAX_DELIVERIES
     {
-        return Err("Too many active spell deliveries");
+        return Err("message.too-many-active-spell-deliveries");
     }
     let range = library::value(spell, rank, &spell.targeting.range).max(0) * 1000;
     if spell.targeting.kind == TargetingKind::Caster {
         if aim != Aim::Unit(caster.id) {
-            return Err("This ability targets its caster");
+            return Err("message.this-ability-targets-its-caster");
         }
         if !matches_target(spell, caster, caster, Side::Ally) {
-            return Err("Target does not match spell filters");
+            return Err("message.target-does-not-match-spell-filters");
         }
         if !accepts(spell, caster, Side::Ally) {
-            return Err("Target is immune to this spell");
+            return Err("message.target-is-immune-to-this-spell");
         }
         return validate_world(ctx, state, caster.id, aim, ability, rank);
     }
     let target_id = match aim {
         Aim::Point(p) => {
             if spell.targeting.kind != TargetingKind::Point || !valid_point(ctx, p) {
-                return Err("Choose a valid ground position");
+                return Err("message.choose-a-valid-ground-position");
             }
             if spell.targeting.visible
                 && !super::visible_point(ctx, state, caster.owner, p, Some(caster))
             {
-                return Err("Target is not visible");
+                return Err("message.target-is-not-visible");
             }
             validate_world(ctx, state, caster.id, aim, ability, rank)?;
             if !ignore_range && caster.distance2(p) > range * range {
@@ -152,32 +152,32 @@ pub fn eligibility(
         Aim::Unit(id) => id,
     };
     if spell.targeting.kind != TargetingKind::Unit {
-        return Err("Choose a ground position");
+        return Err("message.choose-a-ground-position");
     }
     let Some(target) = actor::get(&ctx.senses, state, target_id) else {
-        return Err("Choose a living unit");
+        return Err("message.choose-a-living-unit");
     };
     if !target.alive || (!target.unit && spell.targeting.include_buildings != Some(true)) {
-        return Err("Choose a living unit");
+        return Err("message.choose-a-living-unit");
     }
     if !target.targetable {
-        return Err("Target cannot be targeted");
+        return Err("message.target-cannot-be-targeted");
     }
     if target.id == caster.id && !spell.targeting.allow_self {
-        return Err("Cannot target self");
+        return Err("message.cannot-target-self");
     }
     let side = actor::relation(&ctx.senses, caster, &target);
     if !side.is(&spell.targeting.relations) {
-        return Err("Invalid target relationship");
+        return Err("message.invalid-target-relationship");
     }
     if !super::visible(ctx, state, caster.owner, target.id, Some(caster)) {
-        return Err("Target is not visible");
+        return Err("message.target-is-not-visible");
     }
     if !matches_target(spell, &target, caster, side) {
-        return Err("Target does not match spell filters");
+        return Err("message.target-does-not-match-spell-filters");
     }
     if !accepts(spell, &target, side) {
-        return Err("Target is immune to this spell");
+        return Err("message.target-is-immune-to-this-spell");
     }
     let effects = release_effects(spell, side, caster, &target);
     if accepting
@@ -185,7 +185,7 @@ pub fn eligibility(
         && effects.iter().all(|e| matches!(e, Effect::Heal(_)))
         && target.hp >= target.max_hp
     {
-        return Err("Target is already at full health");
+        return Err("message.target-is-already-at-full-health");
     }
     validate_world(ctx, state, caster.id, aim, ability, rank)?;
     if !ignore_range && caster.distance2(target.position) > range * range {
@@ -222,7 +222,7 @@ fn validate_world(
         return if ok {
             Ok(())
         } else {
-            Err("Charge requires grounded units")
+            Err("message.charge-requires-grounded-units")
         };
     }
     world_ops::validate_aim(ctx, state, caster, aim, ability, rank)
@@ -265,24 +265,24 @@ pub fn reason_as(
     ignore_range: bool,
 ) -> Result<(), &'static str> {
     let Some(e) = state.entities.get(caster) else {
-        return Err("Cannot cast this ability");
+        return Err("message.cannot-cast-this-ability");
     };
     let Some(policy) = ctx.catalog().spells.caster(e.definition) else {
-        return Err("Cannot cast this ability");
+        return Err("message.cannot-cast-this-ability");
     };
     let Some((index, b)) = policy.binding(binding) else {
-        return Err("Cannot cast this ability");
+        return Err("message.cannot-cast-this-ability");
     };
     let Some(state_caster) = e.caster.as_ref() else {
-        return Err("Cannot cast this ability");
+        return Err("message.cannot-cast-this-ability");
     };
     let spell = ctx.ability(b.ability);
     if spell.activation == Activation::Passive || !b.allows(control) {
-        return Err("Cannot cast this ability");
+        return Err("message.cannot-cast-this-ability");
     }
     let rank = state_caster.ranks.get(index).copied().unwrap_or(0);
     if library::parameters(spell, rank).is_none() {
-        return Err("Learn this ability first");
+        return Err("message.learn-this-ability-first");
     }
     let ability = b.ability;
     // The caster's snapshot (its stats are not needed here).
@@ -304,18 +304,18 @@ pub fn reason_as(
         return if actor.alive {
             Ok(())
         } else {
-            Err("Caster is unable to cast")
+            Err("message.caster-is-unable-to-cast")
         };
     }
     if state_caster.pending.is_some() || deliveries::charging(ctx.catalog(), state, caster) {
-        return Err("Caster is busy");
+        return Err("message.caster-is-busy");
     }
     if state_caster.cooldowns.get(&ability).copied().unwrap_or(0) > state.tick {
-        return Err("Ability is cooling down");
+        return Err("message.ability-is-cooling-down");
     }
     let cost = library::value(spell, rank, &spell.cast.cost.amount).max(0) as u32;
     if state_caster.mana < cost {
-        return Err("Not enough mana");
+        return Err("message.not-enough-mana");
     }
     eligibility(ctx, state, actor, aim, ability, rank, true, ignore_range)?;
     if spell.weapon_cast.is_some()
@@ -408,7 +408,7 @@ pub fn cast(
             old.cast,
             ability,
             EventKind::Finished,
-            Extra::reason("Toggled off"),
+            Extra::reason("message.toggled-off"),
             None,
         );
         return Ok(());
@@ -419,7 +419,7 @@ pub fn cast(
         .and_then(|e| e.caster.as_ref())
         .is_some_and(|c| c.weapon_order.is_some())
     {
-        cancel(ctx, state, caster, "Replaced by a new ability");
+        cancel(ctx, state, caster, "message.replaced-by-a-new-ability");
     }
     if spell.weapon_cast.is_some()
         && let Aim::Unit(target) = aim
@@ -655,12 +655,12 @@ pub fn tick_casters(ctx: &mut Ctx, state: &mut State) {
                 .is_some_and(|c| actor::distance2(access.actor.position, c.origin) > 10_000);
             if !access.actor.alive || access.actor.blocked || p.owner != access.actor.owner || moved
             {
-                cancel(ctx, state, id, "Caster interrupted");
+                cancel(ctx, state, id, "message.caster-interrupted");
             } else if p.phase == Phase::Channeling
                 && let Some(target) = p.target
                 && channel_target_lost(ctx, state, &access.actor, p, target)
             {
-                cancel(ctx, state, id, "Channel target lost");
+                cancel(ctx, state, id, "message.channel-target-lost");
             } else if p.phase == Phase::Recovering && p.finish_tick <= tick {
                 state
                     .entities

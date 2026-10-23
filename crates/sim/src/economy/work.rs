@@ -562,7 +562,7 @@ pub fn release_references(ctx: &mut Ctx, id: EntityId, cancel: bool) {
             ctx.state,
             owner,
             FactKind::Lost,
-            "Unfinished technology lost",
+            "message.unfinished-technology-lost",
             Some((item, *amount)),
         );
     }
@@ -601,7 +601,7 @@ pub fn release_references(ctx: &mut Ctx, id: EntityId, cancel: bool) {
             ctx.state,
             owner,
             FactKind::Lost,
-            "Carrier cargo lost",
+            "message.carrier-cargo-lost",
             Some((&cargo.item, cargo.amount)),
         );
     }
@@ -686,7 +686,7 @@ pub fn record_losses(
             state,
             e.owner,
             FactKind::Lost,
-            "Ground goods lost",
+            "message.ground-goods-lost",
             Some((&id, item.quantity)),
         );
     }
