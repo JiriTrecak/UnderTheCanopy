@@ -68,6 +68,7 @@ From the repository root, with the intended changes merged and `just check` pass
 ```sh
 git lfs pull
 just release-prepare 0.3.1 --title "Short release title"     # --milestone for 0.X.0
+just server-deploy                                              # every release: the server's version follows the game
 just release-build
 just release-publish --artifact build/releases/0.3.1/darwin-aarch64/artifact.json
 just release-publish --artifact build/releases/0.3.1/darwin-aarch64/artifact.json --apply
@@ -77,6 +78,10 @@ just release-publish --artifact build/releases/0.3.1/darwin-aarch64/artifact.jso
    Unreleased, and sets the app version in `Cargo.toml` and `Cargo.lock`, the base package's `package.json` and the match server's `server/package.json` (the server's health check reports it, so a deployed server shows which game it belongs to). It refuses an
    empty Unreleased. Commit the result. Frozen notes never change; corrections go into a
    newer release.
+   Then deploy the match server (`just server-deploy`, docs/server.md) on **every** release,
+   before publishing: prepare set its version, and its health check
+   (`https://18.134.138.1/api/health`) must report the released game's version even when no
+   server code changed.
 2. **Build** requires the log to have a release for the app version. It verifies the
    galleries, loads the signing key (before the long build), runs the same packaging as
    `just package` (`cargo packager`), and checks the bundle's `Info.plist`: the version must

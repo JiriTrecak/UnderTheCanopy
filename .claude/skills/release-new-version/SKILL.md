@@ -52,19 +52,22 @@ Free text after the command:
    ```
    Read both results. Any failure stops the release: report it (or fix it, commit, and rerun
    from here if it's clearly a small mechanical fix).
-5. **The match server.**
-   - If `server/` changed since the last release (`git diff --stat <last release>..HEAD --
-     server/`), deploy it before publishing the game, as docs/server.md says:
-     `just server-deploy`.
-   - It refuses while a match is being played. Don't force it; report and stop.
-   - Then check its health over HTTPS as the deploy script reports.
-6. **Prepare.**
+5. **Prepare.**
    ```sh
    just release-prepare <version> --title "<title>"     # + --milestone only if Jiri said so
    ```
    Then commit what it changed (Cargo.toml, Cargo.lock, base/package.json,
    server/package.json, releases/log.json) as `Release <version>: <title>`, as earlier
    releases are.
+6. **The match server, every release.** Prepare sets the server's version, and its health
+   check reports it, so the deployed server must always match the released game, even when
+   no server code changed. Deploy it now, from the prepared commit and before publishing,
+   so new games find a matching server (docs/server.md):
+   ```sh
+   just server-deploy
+   ```
+   - It refuses while a match is being played. Don't force it; report and stop.
+   - Then check that `https://18.134.138.1/api/health` reports the new version.
 7. **Build, sign and stage.**
    ```sh
    just release-build
@@ -105,7 +108,7 @@ In a few lines:
 - the version and title;
 - what it contains (the note headlines);
 - the checks run and their results;
-- whether the server was deployed;
+- the server deployed, with the version its health check reports;
 - the feed showing the version;
 - the update test, done or not;
 - whether `main` was pushed.
