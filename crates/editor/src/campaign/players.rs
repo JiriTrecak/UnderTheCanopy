@@ -821,7 +821,7 @@ fn write(session: &Session, link: &MissionLink, docs: &Docs, players: Value, dra
         }
     } else {
         let step = link.step.and_then(|s| super::steps(&link.value).get(s));
-        let title = step.map_or("", |s| super::text(s, "title"));
+        let title = step.map_or("", |s| link.title(s));
         let order = link
             .step
             .and_then(|s| {

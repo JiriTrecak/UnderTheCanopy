@@ -8,7 +8,7 @@
 //! hatched; something allowed that cannot be reached is a contradiction, in red.
 //! Positions are computed from the content every frame, never saved.
 
-use super::{MissionLink, StepKind, Tech, TechState, mission_numbers, steps, text};
+use super::{MissionLink, StepKind, Tech, TechState, mission_numbers, steps};
 use crate::document::Context;
 use crate::icons::{self, Icon};
 use crate::library::Kind as Editor;
@@ -806,7 +806,7 @@ pub fn show(
         .zip(mission_numbers(&link.value))
         .enumerate()
         .filter(|(_, (s, _))| StepKind::of(s) == Some(StepKind::Mission))
-        .map(|(i, (s, n))| (i, n.unwrap_or(0), text(s, "title").to_string()))
+        .map(|(i, (s, n))| (i, n.unwrap_or(0), link.title(s).to_string()))
         .collect();
     let Some(own) = link.step else {
         return out;

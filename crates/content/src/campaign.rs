@@ -301,6 +301,8 @@ pub fn has_content(package: &Package) -> bool {
     ]
     .iter()
     .any(|c| package.is_dir(c.dir))
+        // Its own text (a mission's dialogue lines, D96) plays with it too.
+        || package.is_dir(&crate::text::folder(crate::text::SOURCE_LANGUAGE))
 }
 
 /// Opens the campaign package at `dir`: its manifest, `campaign.json` and its maps. The
@@ -408,7 +410,17 @@ pub fn validate(campaign: &CampaignPackage, content: &Content) -> Vec<Error> {
             fail(at, format!("unknown asset {id}"));
         }
     };
+    // Fields hold library keys (D96): the base text with the campaign's own over it.
+    let mut library = content.text.clone();
+    library.layer(std::slice::from_ref(&campaign.package), &mut Vec::new());
     let text = |fail: &mut dyn FnMut(String, String), at: String, value: &str, most: usize| {
+        let value = match library.get(value) {
+            Some(said) => said,
+            None if crate::text::looks_like_key(value) => {
+                return fail(at, format!("names {value}, which no text file holds"));
+            }
+            None => value,
+        };
         let length = value.chars().count();
         if value.trim().is_empty() || length > most {
             fail(at, format!("must be 1 to {most} characters"));

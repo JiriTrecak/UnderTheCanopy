@@ -351,7 +351,10 @@ fn preview(
             .dialogue
             .as_ref()
             .filter(|d| spoken != Some(d.id))
-            .map(|d| (d.id, d.speaker.clone(), d.text.clone()));
+            .map(|d| {
+                let say = crate::text::message;
+                (d.id, say(&d.speaker), say(&d.text))
+            });
         let fade = m.cinema.fade.as_ref().map_or(0, |f| f.at(game_tick));
         let over = failed.is_some() || m.cinema.scene.is_none() || world.state().outcome.is_some();
         if !established {

@@ -35,6 +35,8 @@ A linear list of steps:
 - `mission`: map, title, chapterLine, art, story (the loading screen), heroLevelCap, tech `{new, blocked}`;
 - `cinematic`: a placeholder card for now.
 
+Every word is a text key (D96; docs/campaign.md "Formats"): steps' fields name `campaign.<campaign>.<step>.<field>` in the campaign's `text/en/campaign.json`, speakers `speaker.<name>` there; objectives and script lines name `objective.<mission>.<id>.*` and `line.<mission>.<words>` in the mission's `text/en/mission.json`. Write a new line into the text file first, then name its key in the Lua (`mission.speak("queen", "line.founding.here-we-start", nil, "speaker.aurelith")`); `cargo test -p canopy-content --test campaign_format` catches a key no file holds.
+
 Each step has a stable `id`, and progress records the furthest step by id. Tech is cumulative: each mission lists only what becomes `new` (or `blocked`); everything not yet new is locked. The Tech view (editor, U) shows the race's tree.
 
 Rules of the flow:

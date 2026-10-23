@@ -275,3 +275,52 @@ fn shipped_campaigns_are_valid() {
         }
     }
 }
+
+/// Every text key a shipped mission names, in its objectives and its script, is in the base,
+/// campaign or mission text (D96).
+#[test]
+fn shipped_missions_name_only_known_text() {
+    let data = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../.."));
+    let content = Content::load(data).unwrap_or_else(|errors| panic!("{errors}"));
+    let campaigns = campaign::library(data).unwrap_or_else(|errors| panic!("{errors}"));
+    for c in &campaigns {
+        for file in &c.missions {
+            let mission =
+                canopy_content::package::Package::open(&file.path).expect("mission package");
+            let mut library = content.text.clone();
+            let mut errors = Vec::new();
+            library.layer(&[c.package.clone(), mission], &mut errors);
+            assert!(errors.is_empty(), "{}: {errors:#?}", file.file);
+            let loaded = file.load().unwrap_or_else(|errors| panic!("{errors}"));
+            let mut named: Vec<String> = Vec::new();
+            for o in loaded
+                .mission
+                .iter()
+                .flat_map(|m| m.objectives.iter().flatten())
+            {
+                named.extend([o.title.clone(), o.description.clone()]);
+            }
+            if let Ok(script) = std::fs::read_to_string(file.path.join("mission.lua")) {
+                named.extend(
+                    script
+                        .split('"')
+                        .skip(1)
+                        .step_by(2)
+                        .filter(|s| {
+                            ["line.", "objective.", "campaign."]
+                                .iter()
+                                .any(|p| s.starts_with(p))
+                        })
+                        .map(str::to_string),
+                );
+            }
+            for key in named {
+                assert!(
+                    library.get(&key).is_some() || !canopy_content::text::looks_like_key(&key),
+                    "{}: names {key}, which no text file holds",
+                    file.file
+                );
+            }
+        }
+    }
+}

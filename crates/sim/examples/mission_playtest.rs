@@ -153,7 +153,18 @@ fn main() {
         eprintln!("{e}");
         std::process::exit(2);
     });
-    let content = Arc::new(Content::load(&args.data).unwrap_or_else(|e| panic!("content: {e}")));
+    let mut content = Content::load(&args.data).unwrap_or_else(|e| panic!("content: {e}"));
+    // The mission's lines and names: its campaign's text and its own over the base's.
+    let packages: Vec<_> = args
+        .map
+        .ancestors()
+        .filter(|p| p.extension().is_some_and(|e| e == "utcc"))
+        .take(1)
+        .chain([args.map.as_path()])
+        .filter_map(|p| canopy_content::package::Package::open(p).ok())
+        .collect();
+    content.text.layer(&packages, &mut Vec::new());
+    let content = Arc::new(content);
     let map = map::package::load(&args.map).unwrap_or_else(|e| panic!("{e}"));
     let race = content.rules.default_race.clone();
     let locked: std::collections::BTreeSet<Id> = match &args.tech {
@@ -288,7 +299,8 @@ fn main() {
         if let Some(mission) = &state.mission {
             if let Some(line) = mission.dialogue.as_ref().filter(|d| d.id != said) {
                 said = line.id;
-                println!("{clock}  {}: {}", line.speaker, line.text);
+                let say = |s: &str| content.text.say(s);
+                println!("{clock}  {}: {}", say(&line.speaker), say(&line.text));
             }
             for (id, objective) in &mission.objective_states {
                 if objectives.get(id) != Some(objective) {

@@ -1311,19 +1311,19 @@
     "objectives": [
       {
         "id": "colony",
-        "title": "Build the colony",
-        "description": "Raise a Brood Mound and a Soldier Burrow in the glade."
+        "title": "objective.founding.colony.title",
+        "description": "objective.founding.colony.description"
       },
       {
         "id": "burrows",
-        "title": "Destroy the feral burrows",
-        "description": "Destroy the feral burrows on the north-east ridge and in the den across the ravine."
+        "title": "objective.founding.burrows.title",
+        "description": "objective.founding.burrows.description"
       },
       {
         "id": "spring",
-        "title": "The substance spring",
+        "title": "objective.founding.spring.title",
         "optional": true,
-        "description": "Build a Substance Siphon on the spring at the glade's east edge."
+        "description": "objective.founding.spring.description"
       }
     ],
     "cameras": [

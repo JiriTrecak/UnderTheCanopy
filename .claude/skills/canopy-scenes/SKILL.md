@@ -32,9 +32,9 @@ function scenes.meeting()
   mission.face("oleander", 178, 238)
   mission.wait_facing()
   mission.shot("over", "queen", "oleander")     -- over her shoulder onto the speaker
-  mission.speak("oleander", "I had your letter.", nil, "Oleander")
+  mission.speak("oleander", "line.founding.i-had-your-letter-i", nil, "speaker.oleander")
   mission.shot("over", "oleander", "queen")
-  mission.speak("queen", "Then tell me.", nil, "Aurelith")
+  mission.speak("queen", "line.founding.then-tell-me-it-can", nil, "speaker.aurelith")
   mission.animate("korrath", "kneel", true)     -- held until his next order
   mission.cinematic(false)
   mission.camera_reset(1.5)

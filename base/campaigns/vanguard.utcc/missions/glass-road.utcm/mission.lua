@@ -33,10 +33,10 @@ local AMBUSHES = 3
 local HEROES = { "queen", "oleander", "korrath" }
 
 local who = {
-  queen = { "Aurelith", "unit.ants.queen" },
-  oleander = { "Oleander", "unit.ants.royal-alchemist" },
-  korrath = { "Korrath", "unit.ants.marshal" },
-  vosk = { "Coilkeeper Vosk", "unit.beetles.coilkeeper" },
+  queen = { "speaker.aurelith", "unit.ants.queen" },
+  oleander = { "speaker.oleander", "unit.ants.royal-alchemist" },
+  korrath = { "speaker.korrath", "unit.ants.marshal" },
+  vosk = { "speaker.coilkeeper-vosk", "unit.beetles.coilkeeper" },
   engineer = { "Beetle engineer", "unit.beetles.worker" },
 }
 
@@ -60,39 +60,38 @@ local function talk(id, text)
   if mission.get("live_" .. id) then
     mission.speak(id, text, nil, w[1])
   else
-    local seconds = 1 + #text / 15
-    if seconds < 2.5 then seconds = 2.5 end
-    mission.say(w[1], w[2], text, seconds, false)
+    -- No seconds: the line reads as long as its text (the same rule as speak).
+    mission.say(w[1], w[2], text, nil, false)
   end
   mission.wait_line()
 end
 
 local TALKS = {
-  caravan = { { "korrath", "Carts on the road, Majesty. The beetles feed that station from the west. Cut the supply and the glass goes thirsty.", 7 } },
-  ambush1 = { { "korrath", "That's one cart that won't reach the glass.", 4 } },
-  ambush2 = { { "oleander", "Salves, flasks, sealed jars... they live well, these beetles.", 5 } },
-  ambush3 = { { "korrath", "Three caravans. The station will feel that, Majesty.", 5 } },
+  caravan = { { "korrath", "line.glass-road.carts-on-the-road-majesty", 7 } },
+  ambush1 = { { "korrath", "line.glass-road.that-s-one-cart-that", 4 } },
+  ambush2 = { { "oleander", "line.glass-road.salves-flasks-sealed-jars-they", 5 } },
+  ambush3 = { { "korrath", "line.glass-road.three-caravans-the-station-will", 5 } },
   rubble = {
-    { "korrath", "Majesty, that rubble. That's ant work. Old ant work.", 5 },
-    { "queen", "A tunnel? This far from any nest?", 4 },
-    { "korrath", "Our grandmothers dug toward the glass long before the beetles paved over it. Break it open.", 6 },
+    { "korrath", "line.glass-road.majesty-that-rubble-that-s", 5 },
+    { "queen", "line.glass-road.a-tunnel-this-far-from", 4 },
+    { "korrath", "line.glass-road.our-grandmothers-dug-toward-the", 6 },
   },
-  outpost = { { "korrath", "Hornwatch towers. Beetle guns never tire. Bring the whole column, not a handful.", 6 } },
-  toll = { { "oleander", "An old toll house. The beetles would charge the rain to cross their road.", 5 } },
-  bog = { { "oleander", "Toads in the bog... and something bottled under the reeds. Beetle-made.", 5 } },
-  briar = { { "korrath", "Amber under those thorns. Clear the briars and we can raise a second nest here.", 6 } },
-  grove = { { "oleander", "Careful. That is the Hollow Stag. Older than the road, older than any of us.", 6 } },
-  glade = { { "queen", "A beetle surveyor... he never made it home. Look at what he carried.", 5 } },
-  fallen = { { "vosk", "Take it, then. Drink from it. And see what answers.", 6 } },
-  gate_down = { { "korrath", "The gate is down, Majesty! Now the lodge comes out to meet us.", 5 } },
+  outpost = { { "korrath", "line.glass-road.hornwatch-towers-beetle-guns-never", 6 } },
+  toll = { { "oleander", "line.glass-road.an-old-toll-house-the", 5 } },
+  bog = { { "oleander", "line.glass-road.toads-in-the-bog-and", 5 } },
+  briar = { { "korrath", "line.glass-road.amber-under-those-thorns-clear", 6 } },
+  grove = { { "oleander", "line.glass-road.careful-that-is-the-hollow", 6 } },
+  glade = { { "queen", "line.glass-road.a-beetle-surveyor-he-never", 5 } },
+  fallen = { { "vosk", "line.glass-road.take-it-then-drink-from", 6 } },
+  gate_down = { { "korrath", "line.glass-road.the-gate-is-down-majesty", 5 } },
   inside = {
-    { "vosk", "Ants inside my walls? Seal the yard! Wake the lodge!", 5 },
-    { "queen", "We came to ask, Coilkeeper. Now we take.", 4 },
+    { "vosk", "line.glass-road.ants-inside-my-walls-seal", 5 },
+    { "queen", "line.glass-road.we-came-to-ask-coilkeeper", 4 },
   },
-  snore = { { "engineer", "Hnnnk... zzz... pressure's fine... zzz...", 3 } },
+  snore = { { "engineer", "line.glass-road.hnnnk-zzz-pressure-s-fine", 3 } },
   woken = {
-    { "engineer", "Wha- ants?! I wasn't sleeping! I was listening to the boiler!", 5 },
-    { "engineer", "Fine, fine. Take this, and don't tell the Coilkeeper you saw me.", 5 },
+    { "engineer", "line.glass-road.wha-ants-i-wasn-t", 5 },
+    { "engineer", "line.glass-road.fine-fine-take-this-and", 5 },
   },
 }
 
@@ -138,27 +137,27 @@ function scenes.opening()
   mission.face("korrath", 113, 327)
   mission.wait_facing()
   mission.shot("over", "queen", "korrath")
-  talk("korrath", "Majesty. Your mother set me to hold the end of this road. I hear her daughter means to walk it.")
+  talk("korrath", "line.glass-road.majesty-your-mother-set-me")
   mission.shot("over", "korrath", "queen")
-  talk("queen", "The beetles keep substance in glass, General, and it never changes them. I mean to learn how.")
+  talk("queen", "line.glass-road.the-beetles-keep-substance-in")
   mission.shot("single", "oleander")
-  talk("oleander", "They keep a condenser at the far end of the road. Whatever they know is in that machine.")
+  talk("oleander", "line.glass-road.they-keep-a-condenser-at")
   mission.shot("over", "queen", "korrath")
-  talk("korrath", "And when they will not share it?")
+  talk("korrath", "line.glass-road.and-when-they-will-not")
   mission.shot("over", "korrath", "queen")
-  talk("queen", "Then I will take it. No brood of ours will rot in the dark again.")
+  talk("queen", "line.glass-road.then-i-will-take-it")
   mission.shot("single", "korrath")
-  talk("korrath", "Your mother would have called it madness.")
+  talk("korrath", "line.glass-road.your-mother-would-have-called")
   mission.shot("single", "queen")
-  talk("queen", "My mother is not here.")
+  talk("queen", "line.glass-road.my-mother-is-not-here")
   mission.shot("single", "korrath")
   mission.wait(1.2)
   mission.animate("korrath", "kneel", true)
   mission.wait(1)
-  talk("korrath", "...Then my mandibles are yours, my Queen.")
+  talk("korrath", "line.glass-road.then-my-mandibles-are-yours")
   mission.animate("korrath", "idle")
   mission.shot("wide", "outpost-w", { seconds = 4 })
-  talk("oleander", "The road runs north of the camp. Its outposts will not let us pass quietly.")
+  talk("oleander", "line.glass-road.the-road-runs-north-of")
   mission.set("phase", "road")
   mission.set("caravan_at", 45 * SECOND) -- counted from the end of the opening, below
   mission.begin_objective("speak")
@@ -171,8 +170,8 @@ function scenes.tunnel()
   mission.cinematic(true)
   mission.camera_to("tunnel-out", 0)
   mission.wait(1)
-  talk("korrath", "It runs under the road and comes up behind their west wall. They have forgotten it was ever dug.")
-  talk("queen", "Then we have not.")
+  talk("korrath", "line.glass-road.it-runs-under-the-road")
+  talk("queen", "line.glass-road.then-we-have-not")
   mission.cinematic(false)
   mission.camera_reset(1, 64, 262)
 end
@@ -191,20 +190,20 @@ function scenes.gate()
   -- Each line on its speaker, where the walk left them: a single from the front, or over
   -- the listener's shoulder.
   mission.shot("single", "queen")
-  talk("queen", "Keeper of the glass! I am Aurelith, Queen of the ants. I would speak with you.")
+  talk("queen", "line.glass-road.keeper-of-the-glass-i")
   mission.shot("over", "queen", "vosk")
-  talk("vosk", "Coilkeeper Vosk. I know what you are, little queen. Your broods drink the light raw, and it eats them from the inside.")
+  talk("vosk", "line.glass-road.coilkeeper-vosk-i-know-what")
   mission.shot("over", "vosk", "queen")
-  talk("queen", "Then teach us your glass, and they will never drink again.")
+  talk("queen", "line.glass-road.then-teach-us-your-glass")
   mission.shot("single", "vosk")
-  talk("vosk", "Glass is not for those who drink.")
+  talk("vosk", "line.glass-road.glass-is-not-for-those")
   mission.shot("over", "queen", "vosk")
-  talk("vosk", "Turn your column around. The next ant on my road goes home in pieces.")
+  talk("vosk", "line.glass-road.turn-your-column-around-the")
   mission.shot("single", "korrath")
   if mission.alive("station.gate") then
-    talk("korrath", "They're waking the lodge behind that gate, Majesty. Break it, and they come out.")
+    talk("korrath", "line.glass-road.they-re-waking-the-lodge")
   else
-    talk("korrath", "They're opening the lodge, Majesty. Here they come.")
+    talk("korrath", "line.glass-road.they-re-opening-the-lodge")
   end
   mission.set("phase", "war")
   mission.complete_objective("speak")
@@ -213,7 +212,7 @@ function scenes.gate()
   mission.cinematic(false)
   mission.move("vosk", 344, 86) -- back from the gate, to his post by the condenser
   mission.camera_reset(1.5, 340, 160)
-  talk("oleander", "The condenser is behind that wall. Break their Great Bastion and the station is ours.")
+  talk("oleander", "line.glass-road.the-condenser-is-behind-that")
 end
 
 function scenes.closing()
@@ -230,9 +229,9 @@ function scenes.closing()
   mission.shot("single", "queen")
   mission.wait(1)
   mission.animate("queen", "cast")
-  talk("queen", "It's warm. It hums... like something breathing in its sleep.")
+  talk("queen", "line.glass-road.it-s-warm-it-hums")
   mission.shot("single", "oleander")
-  talk("oleander", "Now we can learn what it is.")
+  talk("oleander", "line.glass-road.now-we-can-learn-what")
   mission.camera_to("cond-rise", 5)
   -- The condenser wakes to her: its light rises, and keeps rising into the fade.
   mission.effect_at("condenser_hum", "effect.buildings.alembic-glow", 340, 57)
@@ -480,7 +479,7 @@ function on_tick()
       mission.set("fallen", true)
       mission.ai_waves(2, false)
       mission.ai_behaviour(2, "passive")
-      mission.objective("Bring Aurelith to the condenser.")
+      mission.objective("line.glass-road.bring-aurelith-to-the-condenser")
       if mission.alive("vosk") then
         mission.set("talk", nil)
         mission.set("pending_fallen", true)

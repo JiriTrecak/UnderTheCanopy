@@ -157,6 +157,8 @@ impl GameData {
         let mut maps = load_maps(paths, &pack)?;
         add_missions(&mut maps, &campaigns, &pack);
         let campaign_images = campaign_images(&campaigns);
+        install_text(&content, &campaigns, &maps);
+        let campaigns = campaigns.into_iter().map(read_campaign).collect();
         progress(BootStage::Maps, 1.0);
         tracing::info!(
             packaged,
@@ -213,6 +215,10 @@ impl GameData {
             .retain(|m| m.campaign.as_deref() != Some(id.as_str()));
         self.campaigns.retain(|c| c.id() != id);
         let campaign = Arc::new(campaign);
+        let mut layers = self.campaigns.clone();
+        layers.push(campaign.clone());
+        install_text(&self.content, &layers, &self.maps);
+        let campaign = read_campaign(campaign);
         let one = std::slice::from_ref(&campaign);
         add_missions(&mut self.maps, one, &self.pack);
         self.campaign_images.extend(campaign_images(one));
@@ -425,6 +431,54 @@ fn load_maps(paths: &Paths, pack: &Pack) -> Result<Vec<MapEntry>> {
     }
     maps.sort_by(|a, b| a.name.cmp(&b.name).then(a.id().cmp(b.id())));
     Ok(maps)
+}
+
+/// Makes the game's text the base library with every campaign's and map's own on top
+/// (D96): titles, story pages, objectives and dialogue lines read from anywhere.
+fn install_text(content: &Content, campaigns: &[Arc<CampaignPackage>], maps: &[MapEntry]) {
+    let mut text = content.text.clone();
+    let mut packages: Vec<canopy_content::package::Package> = Vec::new();
+    for campaign in campaigns {
+        packages.push(campaign.package.clone());
+    }
+    for map in maps {
+        if let Ok(package) = canopy_content::package::Package::open(&map.file.path) {
+            packages.push(package);
+        }
+    }
+    let mut errors = Vec::new();
+    text.layer(&packages, &mut errors);
+    for error in &errors {
+        tracing::warn!(%error, "text library");
+    }
+    crate::text::install(text);
+}
+
+/// A campaign as players read it: its steps' titles, chapter lines, stories, pages and
+/// notes, written as text library keys (D96), read from the game's text.
+fn read_campaign(campaign: Arc<CampaignPackage>) -> Arc<CampaignPackage> {
+    use canopy_content::campaign::Step;
+    let say = |text: &mut String| *text = crate::text::message(text);
+    let mut campaign = (*campaign).clone();
+    for step in &mut campaign.campaign.steps {
+        match step {
+            Step::Chapter(s) => say(&mut s.title),
+            Step::Story(s) => {
+                say(&mut s.title);
+                s.pages.iter_mut().for_each(|p| say(&mut p.text));
+            }
+            Step::Mission(m) => {
+                say(&mut m.title);
+                m.chapter_line.iter_mut().for_each(say);
+                m.story.iter_mut().for_each(say);
+            }
+            Step::Cinematic(s) => {
+                say(&mut s.title);
+                s.note.iter_mut().for_each(say);
+            }
+        }
+    }
+    Arc::new(campaign)
 }
 
 #[cfg(test)]

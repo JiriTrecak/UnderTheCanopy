@@ -120,7 +120,7 @@ fn a_scene_plays_its_statements_and_waits_in_order() {
     });
     let line = mission(&world).dialogue.clone().unwrap();
     assert_eq!(line.text, "Open the gate.");
-    assert_eq!(line.speaker, "unit.marshal");
+    assert_eq!(line.speaker, "unit.marshal.name", "the unit's name, by key");
     assert_eq!(line.actor, Some(entity(&world, "hero").unwrap().id));
     assert!(!line.cinematic, "a scene's line never pauses the game");
     let spoke = world.state().tick;

@@ -1063,23 +1063,23 @@
     "objectives": [
       {
         "id": "reach",
-        "title": "The Hollow",
-        "description": "Follow the root path north-east to the Hollow"
+        "title": "objective.hollow-brood.reach.title",
+        "description": "objective.hollow-brood.reach.description"
       },
       {
         "id": "survivors",
-        "title": "Survivors",
-        "description": "Break through the fallen tunnel east of the rim and find who is digging"
+        "title": "objective.hollow-brood.survivors.title",
+        "description": "objective.hollow-brood.survivors.description"
       },
       {
         "id": "ashka",
-        "title": "Mother Ashka",
-        "description": "Go down into the Hollow and put Mother Ashka to rest"
+        "title": "objective.hollow-brood.ashka.title",
+        "description": "objective.hollow-brood.ashka.description"
       },
       {
         "id": "patrol",
-        "title": "The lost patrol",
-        "description": "Find Kesh's patrol in the old webs to the north-west",
+        "title": "objective.hollow-brood.patrol.title",
+        "description": "objective.hollow-brood.patrol.description",
         "optional": true
       }
     ],

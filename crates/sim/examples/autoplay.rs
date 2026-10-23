@@ -280,7 +280,11 @@ fn play(args: &Args, base: &Arc<Content>, mission: &Mission) -> Result<Played, S
         }) {
             // Each reason once in a row, or again after ten seconds.
             if fact.message != refused.1 || fact.tick >= refused.2 + 10 * SECOND {
-                println!("{}  refused: {}", clock(state.tick), fact.message);
+                println!(
+                    "{}  refused: {}",
+                    clock(state.tick),
+                    content.text.say(&fact.message)
+                );
                 refused.2 = fact.tick;
                 if std::env::var_os("AUTOPLAY_COMMANDS").is_some() {
                     for e in state.entities.iter().filter(|e| {
@@ -305,7 +309,13 @@ fn play(args: &Args, base: &Arc<Content>, mission: &Mission) -> Result<Played, S
                 && let Some(line) = m.dialogue.as_ref().filter(|d| d.id != said)
             {
                 said = line.id;
-                println!("{}    {}: {}", clock(state.tick), line.speaker, line.text);
+                let say = |s: &str| content.text.say(s);
+                println!(
+                    "{}    {}: {}",
+                    clock(state.tick),
+                    say(&line.speaker),
+                    say(&line.text)
+                );
             }
             for (id, objective) in &m.objective_states {
                 if objectives.get(id) != Some(objective) {

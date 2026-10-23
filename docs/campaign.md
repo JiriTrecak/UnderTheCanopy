@@ -103,18 +103,23 @@ The shapes every part builds against (2026-10-21). Field names are camelCase JSO
   "background": "asset.interface.campaign.vanguard-background",
   "card": "asset.interface.campaign.ants",
   "steps": [
-    {"kind": "chapter", "id": "prologue", "title": "Prologue"},
-    {"kind": "story", "id": "the-hollow", "title": "The Hollow",
-     "pages": [{"art": "asset.interface.campaign.vanguard.story-hollow-1", "text": "…"}]},
-    {"kind": "mission", "id": "hollow-brood", "map": "hollow-brood", "title": "The Hollow Brood",
-     "chapterLine": "Prologue · Mission One", "art": "asset.interface.campaign.vanguard.hollow-brood",
-     "story": "…\n\n…", "heroLevelCap": 3,
+    {"kind": "chapter", "id": "prologue", "title": "campaign.vanguard.prologue.title"},
+    {"kind": "story", "id": "the-hollow", "title": "campaign.vanguard.the-hollow.title",
+     "pages": [{"art": "asset.interface.campaign.vanguard.story-hollow-1",
+                "text": "campaign.vanguard.the-hollow.page-1"}]},
+    {"kind": "mission", "id": "hollow-brood", "map": "hollow-brood",
+     "title": "campaign.vanguard.hollow-brood.title",
+     "chapterLine": "campaign.vanguard.hollow-brood.chapter-line",
+     "art": "asset.interface.campaign.vanguard.hollow-brood",
+     "story": "campaign.vanguard.hollow-brood.story", "heroLevelCap": 3,
      "tech": {"new": ["building.ants.fort", "unit.ants.settler"], "blocked": []}},
-    {"kind": "cinematic", "id": "condenser-hums", "title": "The Condenser Hums", "note": "What it will show."}
+    {"kind": "cinematic", "id": "condenser-hums", "title": "campaign.vanguard.condenser-hums.title",
+     "note": "campaign.vanguard.condenser-hums.note"}
   ]
 }
 ```
 
+- **Text** (D96): every word a player reads is a key into the text library, as in the base game. The campaign's `text/en/campaign.json` holds its steps' text, `campaign.<campaign>.<step>.<field>` (`title`, `chapter-line`, `story`, `note`, `page-<n>`), and its speakers' names, `speaker.<name>` (`speaker.aurelith`), shared by its missions. Each mission map's `text/en/mission.json` holds its objectives, `objective.<mission>.<id>.title` and `.description` (what the map's objectives name), and its script's lines, `line.<mission>.<words>` (`line.founding.here-we-start-again-and`). The game layers base, campaign and mission text, so a mission may also name base keys (`unit.ants.queen.name`). The editor's campaign view shows and edits the text, writing new keys as it goes. A field holding a dotted key no text file has is an error, and a test checks the keys every shipped mission's objectives and script name.
 - Every step has an `id` unique in the campaign (progress, Play from here). Optional on every step: `music` (an audio asset). Story pages may add `narration` (an audio asset). Chapters may add `art`.
 - A mission's `map` is a map id among the package's `missions/` maps. Its tech: everything listed in `new` by this mission or any before it, minus this mission's `blocked`; whatever no mission has listed is locked. A race's starting setup still places its units and buildings.
 - **Carried heroes** need no list: when a mission is won, every hero of player 1 is saved by its definition (level, experience, learned abilities, items, permanent bonuses); when a mission starts, every hero of player 1 the map places whose definition has a saved state takes it on. `heroLevelCap` caps them.
@@ -209,10 +214,10 @@ function scenes.opening()
   mission.wait_arrived("aurelith")
   mission.face("aurelith", 90, 106)
   mission.wait_facing()
-  mission.speak("tiv", "My Queen! The Hollow's watch-lights went dark.", nil, "Tiv")
+  mission.speak("tiv", "line.hollow-brood.my-queen-the-hollow-s", nil, "speaker.tiv")
   mission.camera_to("over-tiv", 0)
   mission.animate("aurelith", "spell")
-  mission.speak("aurelith", "Then we go and ask them why.", nil, "Aurelith")
+  mission.speak("aurelith", "line.hollow-brood.then-we-go-and-ask", nil, "speaker.aurelith")
   mission.cinematic(false)
   mission.camera_reset(1.5)                -- back to the game's camera over the last shot
 end
@@ -243,7 +248,7 @@ How it runs: the sandbox has no coroutines and a fresh Lua state every run, so a
 | `effect_at(key, effect, x, y[, seconds])` | Plays an effect definition (`effect.…`) on the ground at a point: a one-shot for its own length, a looping one held until `seconds` pass or the script stops it. The same `key` replaces it. A skip passes over a one-shot |
 | `light_at(key, x, y, colour, intensity, radius[, seconds][, height])` | A point light (`white` or `#rrggbb`; intensity 0–100, an effect light's is about 10–35; radius 0.5–60 cells; height above the ground, default 2) that eases from where the light of that `key` stands (nothing, when new) to `intensity` over `seconds`, then holds; ramped to 0 it is gone. A skip makes it jump to its end. At most four; they come before every other effect light |
 | `stop_effect(key)` | Ends the effect and the light of that `key` at once |
-| `speak(unit, text[, seconds][, name])` | The unit says a line (its definition's name and portrait unless named); in cinematic mode a transmission in the lower bar with its live portrait. Its length is the reading time (a second plus 15 characters a second, 2.5–20 s) unless given. In a scene it waits for the line to end |
+| `speak(unit, line[, seconds][, name])` | The unit says a line (a text key; its definition's name, `<definition>.name`, and portrait unless a `speaker.*` key names it); in cinematic mode a transmission in the lower bar with its live portrait. Its length is the reading time of its English text (a second plus 15 characters a second, 2.5–20 s) unless given. In a scene it waits for the line to end. `say(name, icon, line[, seconds]…)` takes keys the same way, and `nil` seconds is the reading time |
 | `wait(seconds)`, `wait_arrived(unit)`, `wait_facing([unit])`, `wait_line()` | Scene waits: time; the unit's walk (or any order) has ended, or a scene walk has had twice its straight time at the unit's speed and three seconds (a crowd or a base in its way never hangs the scene); the turn has; the line is over |
 | `clicks(unit)` | How often the campaign player clicked the placed unit to select it (query; easter eggs) |
 

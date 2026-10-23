@@ -109,12 +109,12 @@ function on_tick()
 
   -- 1. The caches by the road.
   if not mission.get("caches") and mission.tick() > (mission.get("opened_at") or 0) + 40 then
-    line("caches", "tiv", "Hollow caches, my Queen. Their foragers hid what they could spare. Break them open.", "Tiv")
+    line("caches", "tiv", "line.hollow-brood.hollow-caches-my-queen-their", "speaker.tiv")
   end
 
   -- 2. The mushroom circle.
   if not mission.get("mushrooms") and mission.get("caches") and mission.in_region("queen", "mushrooms") then
-    line("mushrooms", "tiv", "Caplings. They sleep in rings like that, and wake hungry.", "Tiv")
+    line("mushrooms", "tiv", "line.hollow-brood.caplings-they-sleep-in-rings", "speaker.tiv")
   end
 
   -- 4. The dead sentry: one of the Hollow's watch staggers out of the ferns and falls.
@@ -126,7 +126,7 @@ function on_tick()
 
   -- 5. The lost patrol.
   if not mission.get("patrol_told") and (near("junction") or near("webs")) then
-    if line("patrol_line", "tiv", "My Queen... my brother Kesh took a patrol north-west, toward the old webs. They never came back.", "Tiv")
+    if line("patrol_line", "tiv", "line.hollow-brood.my-queen-my-brother-kesh", "speaker.tiv")
         or not mission.alive("tiv") then
       mission.set("patrol_told", true)
       mission.begin_objective("patrol")
@@ -148,27 +148,27 @@ function on_tick()
 
   -- 6. The sick pool.
   if not mission.get("sick") and near("sick") then
-    if line("sick", "queen", "It shouldn't glow like that.", "Aurelith") then
+    if line("sick", "queen", "line.hollow-brood.it-shouldn-t-glow-like", "speaker.aurelith") then
       mission.set("sick_at", mission.tick())
     end
   end
   if mission.get("sick_at") and not mission.get("sick2") and mission.tick() > mission.get("sick_at") + 140 then
-    line("sick2", "tiv", "Those are Hollow ants drinking, my Queen. Or they were.", "Tiv")
+    line("sick2", "tiv", "line.hollow-brood.those-are-hollow-ants-drinking", "speaker.tiv")
   end
 
   -- Places along the way.
   if not mission.get("spring") and near("spring") then
-    line("spring", "tiv", "A sap spring. Rest here if the road wears on you.", "Tiv")
+    line("spring", "tiv", "line.hollow-brood.a-sap-spring-rest-here", "speaker.tiv")
   end
   if not mission.get("husk") and near("husk") then
-    line("husk", "queen", "A beetle's husk... and their crates. They come this far from their glass roads?", "Aurelith")
+    line("husk", "queen", "line.hollow-brood.a-beetle-s-husk-and", "speaker.aurelith")
   end
   if not mission.get("hornets") and near("hornets") then
-    line("hornets", "tiv", "Hornets. Unless you want the whole nest on us, my Queen, let them be.", "Tiv")
+    line("hornets", "tiv", "line.hollow-brood.hornets-unless-you-want-the", "speaker.tiv")
   end
   -- 9. Secret: the Moonlit Hollow.
   if not mission.get("glade") and mission.in_region("queen", "glade") then
-    line("glade", "queen", "An old broodkeepers' shrine... and its lantern still burns. Let the wisp sleep.", "Aurelith")
+    line("glade", "queen", "line.hollow-brood.an-old-broodkeepers-shrine-and", "speaker.aurelith")
   end
 
   -- 8. The rim: the Hollow comes into view once its picket is down, or the rubble breaks.
@@ -223,12 +223,12 @@ function scenes.opening()
   mission.face("tiv", 86, 318)
   mission.camera_to("over-queen", 0)
   mission.wait_facing()
-  mission.speak("tiv", "My Queen! The Hollow's watch-lights went dark three nights ago.", nil, "Tiv")
-  mission.speak("tiv", "We sent scouts. Not one came back.", nil, "Tiv")
+  mission.speak("tiv", "line.hollow-brood.my-queen-the-hollow-s", nil, "speaker.tiv")
+  mission.speak("tiv", "line.hollow-brood.we-sent-scouts-not-one", nil, "speaker.tiv")
   mission.camera_to("over-tiv", 0)
-  mission.speak("queen", "Mother Ashka would never let her lights go dark.", nil, "Aurelith")
+  mission.speak("queen", "line.hollow-brood.mother-ashka-would-never-let", nil, "speaker.aurelith")
   mission.animate("queen", "spell")
-  mission.speak("queen", "Then we go and ask them why.", nil, "Aurelith")
+  mission.speak("queen", "line.hollow-brood.then-we-go-and-ask", nil, "speaker.aurelith")
   mission.camera_to("open-wide", 3)
   column(102, 309)
   mission.move("tiv", 110, 304)
@@ -259,13 +259,13 @@ function scenes.sentry()
   end
   shot_on("sentry-low", "queen")
   mission.damage("sentry", 5000)
-  mission.speak("queen", "This was one of Ashka's. Look at its shell.", nil, "Aurelith")
+  mission.speak("queen", "line.hollow-brood.this-was-one-of-ashka", nil, "speaker.aurelith")
   if mission.get("tiv_ok") then
     shot_on("sentry-tiv", "tiv")
-    mission.speak("tiv", "Split open... as if something grew inside it.", nil, "Tiv")
+    mission.speak("tiv", "line.hollow-brood.split-open-as-if-something", nil, "speaker.tiv")
     shot_on("sentry-low", "queen")
   end
-  mission.speak("queen", "Stay close. Whatever did this is still out here.", nil, "Aurelith")
+  mission.speak("queen", "line.hollow-brood.stay-close-whatever-did-this", nil, "speaker.aurelith")
   mission.cinematic(false)
   mission.camera_reset(1.2)
 end
@@ -282,22 +282,22 @@ function scenes.patrol()
     mission.move("tiv", 90, 199)
     mission.face("patrol.kesh", 90, 199)
     mission.camera_to("webs-kesh", 0)
-    mission.speak("patrol.kesh", "Tiv? Tiv! I knew you'd come.", nil, "Kesh")
+    mission.speak("patrol.kesh", "line.hollow-brood.tiv-tiv-i-knew-you", nil, "speaker.kesh")
     mission.wait_arrived("tiv")
     mission.face("tiv", 84, 192)
     shot_on("webs-tiv", "tiv")
-    mission.speak("tiv", "Hold still, brother. These webs stink.", nil, "Tiv")
+    mission.speak("tiv", "line.hollow-brood.hold-still-brother-these-webs", nil, "speaker.tiv")
     mission.face("patrol.kesh", 99, 198)
   else
     mission.camera_to("webs-kesh", 0)
-    mission.speak("patrol.kesh", "Light... the Queen's light. You found us.", nil, "Kesh")
+    mission.speak("patrol.kesh", "line.hollow-brood.light-the-queen-s-light", nil, "speaker.kesh")
   end
   mission.camera_to("webs-kesh", 0)
-  mission.speak("patrol.kesh", "We tracked the Hollow's foragers in here, my Queen. The webs were waiting.", nil, "Kesh")
+  mission.speak("patrol.kesh", "line.hollow-brood.we-tracked-the-hollow-s", nil, "speaker.kesh")
   mission.face("queen", 84, 192)
-  mission.speak("patrol.kesh", "Take my whistle. It has called us home through worse.", nil, "Kesh")
+  mission.speak("patrol.kesh", "line.hollow-brood.take-my-whistle-it-has", nil, "speaker.kesh")
   shot_on("webs-queen", "queen")
-  mission.speak("queen", "Then walk home with us, Kesh. We go to the Hollow.", nil, "Aurelith")
+  mission.speak("queen", "line.hollow-brood.then-walk-home-with-us", nil, "speaker.aurelith")
   mission.transfer("patrol.kesh", "player.1")
   mission.transfer("patrol.2", "player.1")
   if mission.get("patrol_told") then
@@ -315,19 +315,19 @@ function scenes.rim()
     mission.move("tiv", 302, 121)
   end
   mission.wait(1.0)
-  mission.speak("queen", "The Hollow. Its nest still glows...", nil, "Aurelith")
+  mission.speak("queen", "line.hollow-brood.the-hollow-its-nest-still", nil, "speaker.aurelith")
   mission.face("queen", 304, 80)
   shot_on("rim-queen", "queen")
-  mission.speak("queen", "...but nothing down there moves the way it should.", nil, "Aurelith")
+  mission.speak("queen", "line.hollow-brood.but-nothing-down-there-moves", nil, "speaker.aurelith")
   if mission.get("tiv_ok") then
     mission.face("tiv", 330, 145) -- towards the fallen tunnel
     shot_on("rim-tiv", "tiv")
-    mission.speak("tiv", "Listen! Digging, my Queen. Behind the fallen tunnel, east of here.", nil, "Tiv")
+    mission.speak("tiv", "line.hollow-brood.listen-digging-my-queen-behind", nil, "speaker.tiv")
     shot_on("rim-queen", "queen")
   else
-    mission.speak("queen", "Listen. Someone is digging behind that fallen tunnel.", nil, "Aurelith")
+    mission.speak("queen", "line.hollow-brood.listen-someone-is-digging-behind", nil, "speaker.aurelith")
   end
-  mission.speak("queen", "Survivors. Break through to them.", nil, "Aurelith")
+  mission.speak("queen", "line.hollow-brood.survivors-break-through-to-them", nil, "speaker.aurelith")
   mission.complete_objective("reach")
   mission.begin_objective("survivors")
   mission.cinematic(false)
@@ -355,16 +355,16 @@ function scenes.survivors()
   mission.animate("survivor.3", "kneel", true)
   -- Down past the Queen onto the kneeling, and up at her as they see her.
   shot_on("over-nurse", "nurse")
-  mission.speak("nurse", "Queen Aurelith... you came. We prayed someone would.", nil, "Nurse Ardi")
+  mission.speak("nurse", "line.hollow-brood.queen-aurelith-you-came-we", nil, "speaker.nurse-ardi")
   shot_on("survivors-queen", "queen")
-  mission.speak("queen", "What happened here?", nil, "Aurelith")
+  mission.speak("queen", "line.hollow-brood.what-happened-here", nil, "speaker.aurelith")
   shot_on("over-nurse", "nurse")
-  mission.speak("nurse", "They drank from the deep pool. Then they stopped sleeping.", nil, "Nurse Ardi")
-  mission.speak("nurse", "Mother Ashka drank first, and drank the most. She does not know us now.", nil, "Nurse Ardi")
+  mission.speak("nurse", "line.hollow-brood.they-drank-from-the-deep", nil, "speaker.nurse-ardi")
+  mission.speak("nurse", "line.hollow-brood.mother-ashka-drank-first-and", nil, "speaker.nurse-ardi")
   shot_on("over-survivor", "survivor.1")
-  mission.speak("survivor.1", "Let us fight beside you, my Queen. Let us put her to rest.", nil, "Hollow Raider")
+  mission.speak("survivor.1", "line.hollow-brood.let-us-fight-beside-you", nil, "speaker.hollow-raider")
   shot_on("survivors-queen", "queen")
-  mission.speak("queen", "Then come. All of you who can.", nil, "Aurelith")
+  mission.speak("queen", "line.hollow-brood.then-come-all-of-you", nil, "speaker.aurelith")
   mission.transfer("survivor.1", "player.1")
   mission.transfer("survivor.2", "player.1")
   mission.transfer("survivor.3", "player.1")
@@ -392,17 +392,17 @@ function scenes.ashka()
   mission.face("ashka", mission.get("qx"), mission.get("qy"))
   mission.wait_facing("ashka")
   shot_on("ashka-queen", "queen")
-  mission.speak("queen", "Mother Ashka! It is Aurelith, of the Amber Court.", nil, "Aurelith")
+  mission.speak("queen", "line.hollow-brood.mother-ashka-it-is-aurelith", nil, "speaker.aurelith")
   mission.camera_to("ashka-close", 0)
-  mission.speak("ashka", "...so loud... the song is so loud...", nil, "Mother Ashka")
+  mission.speak("ashka", "line.hollow-brood.so-loud-the-song-is", nil, "speaker.mother-ashka")
   if mission.get("tiv_ok") then
     shot_on("ashka-tiv", "tiv")
-    mission.speak("tiv", "She doesn't know you, my Queen.", 3, "Tiv")
+    mission.speak("tiv", "line.hollow-brood.she-doesn-t-know-you", 3, "speaker.tiv")
   end
   shot_on("ashka-queen", "queen")
-  mission.speak("queen", "Then I will help her sleep.", nil, "Aurelith")
+  mission.speak("queen", "line.hollow-brood.then-i-will-help-her", nil, "speaker.aurelith")
   if not mission.get("found") then
-    mission.objective("Put Mother Ashka to rest")
+    mission.objective("line.hollow-brood.put-mother-ashka-to-rest")
   end
   mission.cinematic(false)
   mission.camera_reset(1.0)
@@ -421,10 +421,10 @@ function scenes.closing()
   mission.wait_arrived("queen")
   mission.face("queen", mission.get("ax"), mission.get("ay"))
   mission.wait_facing("queen")
-  mission.say("Mother Ashka", "unit.ants.reaver-queen", "It sang to us... we drank... and it gave, and gave...", 6)
+  mission.say("speaker.mother-ashka", "unit.ants.reaver-queen", "line.hollow-brood.it-sang-to-us-we", 6)
   mission.wait_line()
   shot_on("closing-queen", "queen")
-  mission.speak("queen", "No ant will drink like this again. I swear it.", nil, "Aurelith")
+  mission.speak("queen", "line.hollow-brood.no-ant-will-drink-like", nil, "speaker.aurelith")
   mission.wait(1.5)
   mission.fade_out(2.5)
   mission.wait(2.5)
@@ -436,7 +436,7 @@ end
 
 -- The tree frog, clicked ten times: it croaks, hops away and leaves a Heartseed.
 function scenes.frog()
-  mission.speak("frog", "Rrrrribbit.", 2, "Tree Frog")
+  mission.speak("frog", "line.hollow-brood.rrrrribbit", 2, "speaker.tree-frog")
   mission.animate("frog", "attack")
   mission.wait(0.6)
   mission.move("frog", 100, 290)

@@ -6,25 +6,25 @@
     {
       "kind": "chapter",
       "id": "prologue",
-      "title": "Prologue",
+      "title": "campaign.vanguard.prologue.title",
       "art": "asset.interface.campaign.vanguard.chapter-prologue"
     },
     {
       "kind": "story",
       "id": "the-broods",
-      "title": "The Broods",
+      "title": "campaign.vanguard.the-broods.title",
       "pages": [
         {
           "art": "asset.interface.campaign.vanguard.story-broods-1",
-          "text": "Under the canopy, every colony keeps one law above the rest: the Queen tends the brood.\n\nAurelith had worn the crown for a single winter. From the high balconies of the Spire she could watch her whole colony wake: workers at the amber stores, soldiers at the gates, nurses carrying the young up into the light."
+          "text": "campaign.vanguard.the-broods.page-1"
         },
         {
           "art": "asset.interface.campaign.vanguard.story-broods-2",
-          "text": "But the other broods were changing.\n\nFor generations the ants had drunk the substance raw, the living light that wells up from the roots. It made them strong. It made them swell and shine. And with every generation, it asked a little more of them."
+          "text": "campaign.vanguard.the-broods.page-2"
         },
         {
           "art": "asset.interface.campaign.vanguard.story-broods-3",
-          "text": "Then, three nights ago, the watch-lights of the Hollow Brood went dark.\n\nNo runner came. No scout returned. Before dawn, Aurelith had chosen her escort."
+          "text": "campaign.vanguard.the-broods.page-3"
         }
       ]
     },
@@ -32,10 +32,10 @@
       "kind": "mission",
       "id": "hollow-brood",
       "map": "hollow-brood",
-      "title": "The Hollow Brood",
-      "chapterLine": "Prologue · Mission One",
+      "title": "campaign.vanguard.hollow-brood.title",
+      "chapterLine": "campaign.vanguard.hollow-brood.chapter-line",
       "art": "asset.interface.campaign.vanguard.hollow-brood",
-      "story": "The Hollow Brood were our cousins: the same mothers, the same roots, the same light.\n\nNow their nest is silent. Take the old root road along the stream, learn what has become of them, and bring home whoever is left.",
+      "story": "campaign.vanguard.hollow-brood.story",
       "heroLevelCap": 3,
       "tech": {
         "new": [],
@@ -45,15 +45,15 @@
     {
       "kind": "story",
       "id": "what-the-hollow-sang",
-      "title": "What the Hollow Sang",
+      "title": "campaign.vanguard.what-the-hollow-sang.title",
       "pages": [
         {
           "art": "asset.interface.campaign.vanguard.story-hollow-1",
-          "text": "Mother Ashka had been the oldest queen in the forest. When the substance began to change her, she kept drinking, because by then she could not stop.\n\n\"It sang to us,\" she said at the end. \"We drank, and it gave, and gave.\""
+          "text": "campaign.vanguard.what-the-hollow-sang.page-1"
         },
         {
           "art": "asset.interface.campaign.vanguard.story-hollow-2",
-          "text": "Aurelith swore that no ant would ever drink like that again. She did not yet know how.\n\nThree days later a letter came, sealed in amber, from an alchemist the colony had banished long ago: I know what the substance is. I know who has learned to hold it. Find me in the green glade."
+          "text": "campaign.vanguard.what-the-hollow-sang.page-2"
         }
       ]
     },
@@ -61,10 +61,10 @@
       "kind": "mission",
       "id": "founding",
       "map": "founding",
-      "title": "Founding",
-      "chapterLine": "Prologue · Mission Two",
+      "title": "campaign.vanguard.founding.title",
+      "chapterLine": "campaign.vanguard.founding.chapter-line",
       "art": "asset.interface.campaign.vanguard.founding",
-      "story": "The survivors of the Hollow cannot go home, and Aurelith will not send them back to the Spire to drink with the rest.\n\nIn a green glade beyond the stream, where the substance runs clean from a single spring, she means to found a new colony: one that is never ruled by it.\n\nThe feral brood has followed her scent.",
+      "story": "campaign.vanguard.founding.story",
       "heroLevelCap": 4,
       "tech": {
         "new": [
@@ -89,21 +89,21 @@
     {
       "kind": "chapter",
       "id": "act-1",
-      "title": "Act I: The Glass",
+      "title": "campaign.vanguard.act-1.title",
       "art": "asset.interface.campaign.vanguard.chapter-act-1"
     },
     {
       "kind": "story",
       "id": "keepers-of-glass",
-      "title": "The Keepers of Glass",
+      "title": "campaign.vanguard.keepers-of-glass.title",
       "pages": [
         {
           "art": "asset.interface.campaign.vanguard.story-glass-1",
-          "text": "The glade colony took root. Within a season it had its walls and its brood halls, and not one of its ants drank raw.\n\nThen one night Oleander set a slender vial on the Queen's table: beetle glass, capped in brass, full of a light that did not stain it. \"The beetles hold it,\" she said. \"And it never touches them.\""
+          "text": "campaign.vanguard.keepers-of-glass.page-1"
         },
         {
           "art": "asset.interface.campaign.vanguard.story-glass-2",
-          "text": "Aurelith did not sleep that night. By dawn the glade was arming.\n\nShe sent no envoy and asked no leave of the Spire. She marched east, toward the lanterns of the Glass Road, where her mother's old general still held the last ant camp on the beetles' border."
+          "text": "campaign.vanguard.keepers-of-glass.page-2"
         }
       ]
     },
@@ -111,10 +111,10 @@
       "kind": "mission",
       "id": "glass-road",
       "map": "glass-road",
-      "title": "The Glass Road",
-      "chapterLine": "Act I · Mission Three",
+      "title": "campaign.vanguard.glass-road.title",
+      "chapterLine": "campaign.vanguard.glass-road.chapter-line",
       "art": "asset.interface.campaign.vanguard.glass-road",
-      "story": "Oleander has told her of the beetles, who keep the substance in glass and are never changed by it.\n\nAt the end of the Glass Road stands the station where they distil it, and in its heart, the condenser. Aurelith will ask for its secret.\n\nIf they refuse her, she will take it.",
+      "story": "campaign.vanguard.glass-road.story",
       "heroLevelCap": 5,
       "tech": {
         "new": [
@@ -137,8 +137,8 @@
     {
       "kind": "cinematic",
       "id": "condenser-hums",
-      "title": "The Condenser Hums",
-      "note": "At night in the camp, Oleander wakes the condenser. The substance in the glass turns towards Aurelith, and for a moment, something answers."
+      "title": "campaign.vanguard.condenser-hums.title",
+      "note": "campaign.vanguard.condenser-hums.note"
     }
   ]
 }

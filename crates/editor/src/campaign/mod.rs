@@ -467,6 +467,16 @@ fn read_json(package: &Package, path: &str) -> Option<Value> {
         .and_then(|text| serde_json::from_str(&text).ok())
 }
 
+/// The campaign's text file (D96): its steps' titles, pages, lines and notes.
+pub fn text_file(root: &str) -> String {
+    format!("{root}/text/{}/campaign.json", crate::text::LANGUAGE)
+}
+
+/// A step field's text: the library's when the field holds one of its keys, else the field.
+pub fn said<'a>(library: &'a Value, value: &'a str) -> &'a str {
+    library.get(value).and_then(Value::as_str).unwrap_or(value)
+}
+
 /// Every campaign package of `package`: its folder, its name and its campaign.json.
 pub fn campaigns(package: &Package) -> Vec<(String, String, Value)> {
     let mut errors = Vec::new();
@@ -490,6 +500,7 @@ pub fn maps_group(package: &Package) -> Option<Node> {
     for (root, name, campaign) in campaigns(package) {
         let maps = mission_maps(package, &root);
         let numbers = mission_numbers(&campaign);
+        let library = read_json(package, &text_file(&root)).unwrap_or_default();
         let mut children = Vec::new();
         let mut listed = BTreeSet::new();
         let element = |map: &str, name: String| {
@@ -507,7 +518,7 @@ pub fn maps_group(package: &Package) -> Option<Node> {
             if !maps.iter().any(|m| m == map) || !listed.insert(map.to_string()) {
                 continue;
             }
-            let title = match text(step, "title") {
+            let title = match said(&library, text(step, "title")) {
                 "" => map,
                 title => title,
             };
@@ -551,11 +562,18 @@ pub struct MissionLink {
     /// The map's id, and the step whose mission plays it (none: not in the campaign).
     pub map: String,
     pub step: Option<usize>,
+    /// The campaign's text library, which its steps' titles name.
+    pub library: Value,
 }
 
 impl MissionLink {
     pub fn document(&self) -> String {
         document(&self.campaign)
+    }
+
+    /// A step's title as shown.
+    pub fn title<'a>(&'a self, step: &'a Value) -> &'a str {
+        said(&self.library, text(step, "title"))
     }
 
     /// The campaign's race.

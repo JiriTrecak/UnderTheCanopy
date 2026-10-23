@@ -66,7 +66,10 @@ impl ObjectivesModel {
     /// Old `MissionHud.update`: the line, then the active objectives with descriptions
     /// (a required one replaces the line), then the finished ones in a collapsed list.
     pub fn build(definitions: &[Objective], m: &MissionView) -> Self {
-        let line = m.error.clone().unwrap_or_else(|| m.objective.clone());
+        let line = m
+            .error
+            .clone()
+            .unwrap_or_else(|| crate::text::message(&m.objective));
         let mut model = Self {
             caption: if m.error.is_some() {
                 tr!("match.script-error")
@@ -81,14 +84,15 @@ impl ObjectivesModel {
             return model;
         }
         // Definition order first; ids the map does not define (none should) after.
-        let mut shown: Vec<(&str, &str, &str, bool, ObjectiveState)> = definitions
+        // Titles and descriptions may be text library keys (D96).
+        let mut shown: Vec<(&str, String, String, bool, ObjectiveState)> = definitions
             .iter()
             .filter_map(|o| {
                 let state = *m.objectives.get(&o.id)?;
                 Some((
                     o.id.as_str(),
-                    o.title.as_str(),
-                    o.description.as_str(),
+                    crate::text::message(&o.title),
+                    crate::text::message(&o.description),
                     o.optional,
                     state,
                 ))
@@ -96,10 +100,12 @@ impl ObjectivesModel {
             .collect();
         for (id, state) in &m.objectives {
             if !definitions.iter().any(|o| &o.id == id) {
-                shown.push((id.as_str(), id.as_str(), "", false, *state));
+                shown.push((id.as_str(), id.clone(), String::new(), false, *state));
             }
         }
-        for &(_, title, description, optional, state) in &shown {
+        for (_, title, description, optional, state) in &shown {
+            let (title, description, optional, state) =
+                (title.as_str(), description.as_str(), *optional, *state);
             match state {
                 ObjectiveState::Active => {
                     let prefix = if optional {
@@ -361,9 +367,13 @@ impl MissionHud {
             widgets::text(
                 ui,
                 "mission-hud/bottom-bar/transmission/speaker",
-                &d.speaker,
+                &crate::text::message(&d.speaker),
             );
-            widgets::text(ui, "mission-hud/bottom-bar/transmission/text", &d.text);
+            widgets::text(
+                ui,
+                "mission-hud/bottom-bar/transmission/text",
+                &crate::text::message(&d.text),
+            );
             let portrait = if self.live_speaker {
                 Some(ui.image_key("@portrait"))
             } else {
@@ -383,8 +393,16 @@ impl MissionHud {
             ui.set_shift(n, 0.0, -lift);
         }
         if let (Some(d), true) = (&m.dialogue, speaking) {
-            widgets::text(ui, "mission-hud/dialogue-wrap/speaker", &d.speaker);
-            widgets::text(ui, "mission-hud/dialogue-wrap/text", &d.text);
+            widgets::text(
+                ui,
+                "mission-hud/dialogue-wrap/speaker",
+                &crate::text::message(&d.speaker),
+            );
+            widgets::text(
+                ui,
+                "mission-hud/dialogue-wrap/text",
+                &crate::text::message(&d.text),
+            );
             if let Some(n) = ui.find("mission-hud/dialogue-wrap/portrait") {
                 ui.set_image(n, icon);
             }

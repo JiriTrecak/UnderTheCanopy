@@ -112,6 +112,124 @@ impl Ctx<'_> {
         }
     }
 
+    /// The campaign's text file (D96): its steps' titles, pages, lines and notes.
+    fn text_file(&self) -> String {
+        super::text_file(self.campaign_root())
+    }
+
+    fn library(&mut self) -> Option<Value> {
+        self.store.get(&self.text_file()).ok().flatten().cloned()
+    }
+
+    /// What a step field shows: the library's text when it holds a key, else itself.
+    fn say(&mut self, value: &str) -> String {
+        self.library()
+            .and_then(|t| t.get(value).and_then(Value::as_str).map(str::to_string))
+            .unwrap_or_else(|| value.to_string())
+    }
+
+    /// A free key under the step for `name` (`campaign.<campaign>.<step>.<name>`).
+    fn key(&mut self, step: &Value, name: &str) -> String {
+        let manifest = format!("{}/package.json", self.campaign_root());
+        let campaign = self
+            .store
+            .get(&manifest)
+            .ok()
+            .flatten()
+            .and_then(|m| m.get("id").and_then(Value::as_str).map(str::to_string))
+            .unwrap_or_else(|| "campaign".into());
+        let base = format!("campaign.{campaign}.{}.{name}", text(step, "id"));
+        let library = self.library().unwrap_or_default();
+        let mut key = base.clone();
+        let mut n = 2;
+        while library.get(&key).is_some() {
+            key = format!("{base}-{n}");
+            n += 1;
+        }
+        key
+    }
+
+    /// The commands that write `entries` into the text file, creating it when missing.
+    fn put_text(&mut self, entries: Vec<(String, String)>) -> Vec<Command> {
+        let file = self.text_file();
+        if self.library().is_some() {
+            entries
+                .into_iter()
+                .map(|(key, value)| Command::Set {
+                    document: file.clone(),
+                    pointer: crate::text::pointer(&key),
+                    value: json!(value),
+                    at: None,
+                })
+                .collect()
+        } else {
+            let map: serde_json::Map<String, Value> =
+                entries.into_iter().map(|(k, v)| (k, json!(v))).collect();
+            vec![Command::Create {
+                document: file,
+                value: Value::Object(map),
+            }]
+        }
+    }
+
+    /// The command that drops a key's text, when the library holds it.
+    fn drop_text(&mut self, key: &str) -> Option<Command> {
+        self.library()?.get(key)?;
+        Some(Command::Remove {
+            document: self.text_file(),
+            pointer: crate::text::pointer(key),
+        })
+    }
+
+    /// Edits the text a field of `holder` (at `at`) names: the library entry when the field
+    /// holds a key, else a new entry `name` under the step with the field set to its key.
+    /// An empty optional field is removed with its text.
+    fn edit_text(
+        &mut self,
+        label: &str,
+        (step, holder, at): (&Value, &Value, &str),
+        field: &str,
+        name: &str,
+        value: &str,
+        optional: bool,
+    ) {
+        let held = text(holder, field).to_string();
+        let keyed = self.library().is_some_and(|t| t.get(&held).is_some());
+        let pointer = format!("{at}/{field}");
+        let merge = Some(format!("{}{pointer}", self.document));
+        let commands = if value.is_empty() && optional {
+            let mut commands: Vec<Command> = self.drop_text(&held).into_iter().collect();
+            if holder.get(field).is_some() {
+                commands.push(Command::Remove {
+                    document: self.document.to_string(),
+                    pointer: pointer.clone(),
+                });
+            }
+            commands
+        } else if keyed {
+            self.put_text(vec![(held, value.to_string())])
+        } else {
+            let key = self.key(step, name);
+            let mut commands = self.put_text(vec![(key.clone(), value.to_string())]);
+            commands.push(Command::Set {
+                document: self.document.to_string(),
+                pointer: pointer.clone(),
+                value: json!(key),
+                at: None,
+            });
+            commands
+        };
+        if commands.is_empty() {
+            return;
+        }
+        self.edits.push(Edit {
+            label: label.to_string(),
+            context: self.context(Some(pointer)),
+            commands,
+            merge,
+        });
+    }
+
     fn step(&mut self, label: &str, commands: Vec<Command>) {
         if commands.is_empty() {
             return;
@@ -156,7 +274,13 @@ fn step_art(step: &Value) -> &str {
 }
 
 /// What a step's row says under its title.
-fn subtitle(campaign: &Value, index: usize, step: &Value, maps: &[String]) -> String {
+fn subtitle(
+    campaign: &Value,
+    index: usize,
+    step: &Value,
+    maps: &[String],
+    say: impl Fn(&str) -> String,
+) -> String {
     match StepKind::of(step) {
         Some(StepKind::Mission) => {
             let map = text(step, "map");
@@ -179,7 +303,7 @@ fn subtitle(campaign: &Value, index: usize, step: &Value, maps: &[String]) -> St
                 n => format!("{n} pages"),
             }
         }
-        Some(StepKind::Cinematic) => match text(step, "note") {
+        Some(StepKind::Cinematic) => match say(text(step, "note")).as_str() {
             "" => "A placeholder card for now".into(),
             note => note.lines().next().unwrap_or_default().to_string(),
         },
@@ -391,7 +515,7 @@ fn steps_list(ui: &mut Ui, ctx: &mut Ctx, campaign: &Value, manifest: &Value, st
             if let Some(to) = target {
                 let commands = super::move_step(ctx.document, campaign, from, to);
                 if !commands.is_empty() {
-                    let title = text(&list[from], "title").to_string();
+                    let title = ctx.say(text(&list[from], "title"));
                     ctx.step(&format!("Move {title}"), commands);
                     let landed = if to > from { to - 1 } else { to };
                     state.selected = Some(landed);
@@ -490,9 +614,9 @@ fn row(
         painter.text(
             pos2(x, rect.top() + 22.0),
             Align2::LEFT_TOP,
-            match text(step, "title") {
-                "" => "Untitled chapter",
-                t => t,
+            match ctx.say(text(step, "title")).as_str() {
+                "" => "Untitled chapter".to_string(),
+                t => t.to_string(),
             },
             FontId::proportional(17.0),
             TEXT,
@@ -533,10 +657,11 @@ fn row(
             FontId::proportional(9.5),
             color.gamma_multiply(0.9),
         );
-        let title = match text(step, "title") {
-            "" => "Untitled",
-            t => t,
+        let title = match ctx.say(text(step, "title")).as_str() {
+            "" => "Untitled".to_string(),
+            t => t.to_string(),
         };
+        let library = ctx.library();
         let right = rect.right() - 170.0;
         let clip = Rect::from_min_max(pos2(x, rect.top()), pos2(right, rect.bottom()));
         let painter = painter.with_clip_rect(clip.intersect(painter.clip_rect()));
@@ -550,7 +675,13 @@ fn row(
         painter.text(
             pos2(x, rect.top() + 48.0),
             Align2::LEFT_TOP,
-            subtitle(campaign, i, step, &ctx.maps),
+            subtitle(campaign, i, step, &ctx.maps, |v| {
+                library
+                    .as_ref()
+                    .and_then(|t| t.get(v).and_then(Value::as_str))
+                    .unwrap_or(v)
+                    .to_string()
+            }),
             FontId::proportional(11.5),
             MUTED,
         );
@@ -595,7 +726,7 @@ fn row(
         });
     }
     if delete {
-        let title = text(step, "title").to_string();
+        let title = ctx.say(text(step, "title"));
         ctx.step(
             &format!("Remove {title}"),
             vec![Command::Remove {
@@ -650,7 +781,17 @@ fn add_step(ctx: &mut Ctx, campaign: &Value, kind: StepKind, at: usize, state: &
         }
         map = Some(map_id);
     }
-    let step = super::new_step(kind, &id, &title, map.as_deref());
+    let mut step = super::new_step(kind, &id, &title, map.as_deref());
+    let mut entries = Vec::new();
+    let key = ctx.key(&step, "title");
+    entries.push((key.clone(), title.clone()));
+    step["title"] = json!(key);
+    if let Some(page) = step.pointer_mut("/pages/0/text") {
+        let key = ctx.key(&json!({ "id": id }), "page-1");
+        entries.push((key.clone(), page.as_str().unwrap_or_default().to_string()));
+        *page = json!(key);
+    }
+    commands.extend(ctx.put_text(entries));
     commands.push(super::insert_step(ctx.document, campaign, at, step));
     ctx.step(&format!("Add {}", kind.label().to_lowercase()), commands);
     state.selected = Some(at.min(steps(campaign).len()));
@@ -863,8 +1004,16 @@ fn step_panel(ui: &mut Ui, ctx: &mut Ctx, campaign: &Value, i: usize, state: &mu
         );
     }
     field(ui, "Title");
-    if let Some(v) = line(ui, text(&step, "title")) {
-        ctx.set("Step title", &format!("{at}/title"), json!(v), true);
+    let shown = ctx.say(text(&step, "title"));
+    if let Some(v) = line(ui, &shown) {
+        ctx.edit_text(
+            "Step title",
+            (&step, &step, &at),
+            "title",
+            "title",
+            &v,
+            false,
+        );
     }
     let images = ctx.choices("assets/interface/");
     let sounds = ctx.choices("assets/audio/");
@@ -918,13 +1067,13 @@ fn step_panel(ui: &mut Ui, ctx: &mut Ctx, campaign: &Value, i: usize, state: &mu
                                         .on_hover_text("Remove this page")
                                         .clicked()
                                     {
-                                        ctx.step(
-                                            "Remove page",
-                                            vec![Command::Remove {
-                                                document: ctx.document.to_string(),
-                                                pointer: pointer.clone(),
-                                            }],
-                                        );
+                                        let mut commands: Vec<Command> =
+                                            ctx.drop_text(text(page, "text")).into_iter().collect();
+                                        commands.push(Command::Remove {
+                                            document: ctx.document.to_string(),
+                                            pointer: pointer.clone(),
+                                        });
+                                        ctx.step("Remove page", commands);
                                     }
                                 },
                             );
@@ -943,10 +1092,18 @@ fn step_panel(ui: &mut Ui, ctx: &mut Ctx, campaign: &Value, i: usize, state: &mu
                             ctx.set_optional("Page art", page, &pointer, "art", &v);
                         }
                         field(ui, "Text");
-                        if let Some(v) = multiline(ui, text(page, "text"), 4) {
-                            ctx.set("Page text", &format!("{pointer}/text"), json!(v), true);
+                        let shown = ctx.say(text(page, "text"));
+                        if let Some(v) = multiline(ui, &shown, 4) {
+                            ctx.edit_text(
+                                "Page text",
+                                (&step, page, &pointer),
+                                "text",
+                                &format!("page-{}", p + 1),
+                                &v,
+                                false,
+                            );
                         }
-                        if text(page, "text").trim().is_empty() {
+                        if shown.trim().is_empty() {
                             ui.label(
                                 RichText::new("A page needs some text")
                                     .size(11.0)
@@ -966,22 +1123,24 @@ fn step_panel(ui: &mut Ui, ctx: &mut Ctx, campaign: &Value, i: usize, state: &mu
                 ui.add_space(6.0);
             }
             if ui.button("+ Page").clicked() {
-                let command = if step.get("pages").is_some_and(Value::is_array) {
+                let key = ctx.key(&step, &format!("page-{}", pages.len() + 1));
+                let mut commands = ctx.put_text(vec![(key.clone(), "A new page.".into())]);
+                commands.push(if step.get("pages").is_some_and(Value::is_array) {
                     Command::Insert {
                         document: ctx.document.to_string(),
                         pointer: format!("{at}/pages"),
                         index: pages.len(),
-                        value: json!({"text": "A new page."}),
+                        value: json!({ "text": key }),
                     }
                 } else {
                     Command::Set {
                         document: ctx.document.to_string(),
                         pointer: format!("{at}/pages"),
-                        value: json!([{"text": "A new page."}]),
+                        value: json!([{ "text": key }]),
                         at: None,
                     }
-                };
-                ctx.step("Add page", vec![command]);
+                });
+                ctx.step("Add page", commands);
             }
         }
         Some(StepKind::Mission) => {
@@ -1037,13 +1196,24 @@ fn step_panel(ui: &mut Ui, ctx: &mut Ctx, campaign: &Value, i: usize, state: &mu
             });
             section(ui, "Loading screen");
             field(ui, "Chapter line");
-            if let Some(v) = line(ui, text(&step, "chapterLine")) {
-                ctx.set_optional("Chapter line", &step, &at, "chapterLine", &v);
+            let shown = ctx.say(text(&step, "chapterLine"));
+            if let Some(v) = line(ui, &shown) {
+                let place = (&step, &step, at.as_str());
+                ctx.edit_text(
+                    "Chapter line",
+                    place,
+                    "chapterLine",
+                    "chapter-line",
+                    &v,
+                    true,
+                );
             }
             art(ui, ctx, state, "Illustration", "art", 16.0 / 9.0);
             field(ui, "Story");
-            if let Some(v) = multiline(ui, text(&step, "story"), 6) {
-                ctx.set_optional("Mission story", &step, &at, "story", &v);
+            let shown = ctx.say(text(&step, "story"));
+            if let Some(v) = multiline(ui, &shown, 6) {
+                let place = (&step, &step, at.as_str());
+                ctx.edit_text("Mission story", place, "story", "story", &v, true);
             }
             section(ui, "Heroes");
             let cap = step.get("heroLevelCap").and_then(Value::as_u64);
@@ -1084,8 +1254,10 @@ fn step_panel(ui: &mut Ui, ctx: &mut Ctx, campaign: &Value, i: usize, state: &mu
         }
         Some(StepKind::Cinematic) => {
             field(ui, "What it will show");
-            if let Some(v) = multiline(ui, text(&step, "note"), 5) {
-                ctx.set_optional("Cinematic note", &step, &at, "note", &v);
+            let shown = ctx.say(text(&step, "note"));
+            if let Some(v) = multiline(ui, &shown, 5) {
+                let place = (&step, &step, at.as_str());
+                ctx.edit_text("Cinematic note", place, "note", "note", &v, true);
             }
             ui.label(
                 RichText::new("For now the game shows a placeholder card; the scene and the cinematic player come later.")

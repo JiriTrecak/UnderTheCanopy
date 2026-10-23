@@ -257,11 +257,19 @@ impl TabViewer for Viewer<'_> {
                         .ok()
                         .flatten()?
                         .clone();
+                    let library = self
+                        .store
+                        .get(&crate::campaign::text_file(campaign))
+                        .ok()
+                        .flatten()
+                        .cloned()
+                        .unwrap_or_default();
                     Some(crate::campaign::MissionLink {
                         campaign: campaign.to_string(),
                         step: crate::campaign::step_of_map(&value, map),
                         map: map.to_string(),
                         value,
+                        library,
                     })
                 });
                 let session = self

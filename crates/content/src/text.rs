@@ -74,11 +74,18 @@ impl Text {
     /// Reads `language` from `packages` in load order; a later package overrides a key,
     /// two files of one package setting the same key is an error.
     pub fn read(packages: &[Package], language: &str, errors: &mut Vec<Error>) -> Self {
-        let dir = folder(language);
         let mut text = Self {
             language: language.to_string(),
             ..Self::default()
         };
+        text.layer(packages, errors);
+        text
+    }
+
+    /// Reads `packages` on top of this library (their keys override).
+    pub fn layer(&mut self, packages: &[Package], errors: &mut Vec<Error>) {
+        let dir = folder(&self.language);
+        let text = self;
         for package in packages {
             let mut mine: BTreeMap<String, String> = BTreeMap::new();
             for (path, value) in documents(package, &dir, errors) {
@@ -117,7 +124,6 @@ impl Text {
                 }
             }
         }
-        text
     }
 
     /// The string for `key`, when the library has it.
@@ -329,6 +335,12 @@ pub fn check_key(key: &str) -> Result<(), String> {
     } else {
         Err("a key is words of letters, digits, dashes and underscores, joined by dots".into())
     }
+}
+
+/// Whether a field's string reads as a library key rather than text: words joined by dots,
+/// no spaces (`campaign.vanguard.prologue.title`).
+pub fn looks_like_key(string: &str) -> bool {
+    string.contains('.') && check_key(string).is_ok()
 }
 
 /// A string's placeholders parse.

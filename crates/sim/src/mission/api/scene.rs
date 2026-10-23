@@ -719,15 +719,12 @@ impl Api<'_> {
         let definition = self.catalog.get(speaker.definition);
         let line = text(a.get(1), 2000)?.to_string();
         let ticks = match a.get(2) {
-            Scalar::Nil => {
-                let reading = 1.0 + line.chars().count() as f64 / READING_RATE;
-                reading.clamp(LINE_SECONDS.0, LINE_SECONDS.1) * f64::from(TICKS_PER_SECOND)
-            }
-            raw => number(raw, 0.5, 60.0)? * f64::from(TICKS_PER_SECOND),
+            Scalar::Nil => reading_ticks(self.catalog, &line),
+            raw => round(number(raw, 0.5, 60.0)? * f64::from(TICKS_PER_SECOND)) as u32,
         };
-        let ticks = round(ticks) as u32;
         let name = match a.get(3) {
-            Scalar::Nil => definition.name.clone(),
+            // The speaker's own name, as a text library key.
+            Scalar::Nil => format!("{}.name", definition.id),
             raw => text(raw, 80)?.to_string(),
         };
         let id = self.draft.next_dialogue;
@@ -780,4 +777,13 @@ fn identifier(raw: &Scalar, max: usize, what: &str) -> Result<String, String> {
             "{what} names use letters, digits and underscores: {name}"
         ))
     }
+}
+
+/// How long a line shows when the script gives no time: as long as it reads. A line named
+/// by key reads as long as its source text (D96), so every player computes the same
+/// duration, whatever language they read it in.
+pub(super) fn reading_ticks(catalog: &crate::catalog::Catalog, line: &str) -> u32 {
+    let source = catalog.content.text.get(line).unwrap_or(line);
+    let reading = 1.0 + source.chars().count() as f64 / READING_RATE;
+    round(reading.clamp(LINE_SECONDS.0, LINE_SECONDS.1) * f64::from(TICKS_PER_SECOND)) as u32
 }

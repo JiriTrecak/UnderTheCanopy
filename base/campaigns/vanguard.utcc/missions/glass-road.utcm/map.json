@@ -1887,19 +1887,19 @@
     "objectives": [
       {
         "id": "speak",
-        "title": "Speak with the beetles",
-        "description": "Take the Glass Road to the beetle station and ask its keeper for the secret of the glass."
+        "title": "objective.glass-road.speak.title",
+        "description": "objective.glass-road.speak.description"
       },
       {
         "id": "condenser",
-        "title": "Take the condenser",
-        "description": "Break the beetle station (its Great Bastion) and bring Aurelith to the condenser."
+        "title": "objective.glass-road.condenser.title",
+        "description": "objective.glass-road.condenser.description"
       },
       {
         "id": "caravans",
-        "title": "Ambush the caravans",
+        "title": "objective.glass-road.caravans.title",
         "optional": true,
-        "description": "Ambush three beetle supply caravans on the Glass Road: kill both carts of each."
+        "description": "objective.glass-road.caravans.description"
       }
     ],
     "regions": [
